@@ -46,6 +46,11 @@ try:
 except ImportError:
     from cross_platform import CrossPlatformFile
 
+try:
+    from src.participants_sessions import filter_rows_to_session
+except ImportError:
+    from participants_sessions import filter_rows_to_session
+
 
 def _import_read_tabular_file():
     try:
@@ -321,6 +326,8 @@ class ParticipantsConverter:
         separator: str = "auto",
         sheet: str | int = 0,
         reject_conflicting_repeats: bool = False,
+        session_column: Optional[str] = None,
+        session_value: Optional[str] = None,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -331,6 +338,8 @@ class ParticipantsConverter:
             output_file: Optional path to write converted data. If None, uses participants.tsv
             separator: CSV/TSV separator override ("auto" for auto-detect)
             sheet: Excel sheet name or 0-based index (Excel files only)
+            session_column / session_value: For a longitudinal source file, keep only
+                the rows of this one session (exact label match) before converting.
             reject_conflicting_repeats: Fail (and write nothing) when a participant
                 appears in several rows with different values, instead of keeping
                 the first non-empty value with a warning. Merge leaves this off:
@@ -381,6 +390,19 @@ class ParticipantsConverter:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")
             messages.append(f"✗ Failed to load source file: {e}")
             return False, None, messages
+
+        if session_column and session_value:
+            try:
+                total_rows = len(df)
+                df = filter_rows_to_session(df, session_column, session_value)
+            except ValueError as e:
+                self._log("ERROR", str(e))
+                messages.append(f"✗ {e}")
+                return False, None, messages
+            messages.append(
+                f"✓ Kept {len(df)} of {total_rows} rows for session "
+                f"'{session_value}' (column '{session_column}')"
+            )
 
         # Validate mapping
         is_valid, validation_errors = self.validate_mapping(mapping)

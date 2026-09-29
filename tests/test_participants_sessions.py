@@ -1,0 +1,101 @@
+"""Longitudinal source files: find the session column and reduce to one session."""
+
+import pandas as pd
+
+import pytest
+
+from src.participants_sessions import filter_rows_to_session, find_session_candidates
+
+
+def test_session_column_with_several_labels_is_a_candidate():
+    df = pd.DataFrame(
+        {
+            "participant_id": ["a", "a", "b", "b"],
+            "session": ["baseline", "followup", "baseline", "followup"],
+            "age": [30, 31, 40, 41],
+        }
+    )
+
+    assert find_session_candidates(df) == [
+        {"column": "session", "values": ["baseline", "followup"]}
+    ]
+
+
+def test_session_column_with_a_single_label_is_not_a_candidate():
+    df = pd.DataFrame({"participant_id": ["a", "b"], "session": ["baseline", "baseline"]})
+
+    assert find_session_candidates(df) == []
+
+
+def test_columns_that_are_not_session_like_are_ignored():
+    df = pd.DataFrame({"participant_id": ["a", "b"], "group": ["x", "y"]})
+
+    assert find_session_candidates(df) == []
+
+
+def test_common_session_column_names_are_recognised():
+    df = pd.DataFrame(
+        {"participant_id": ["a", "a"], "Visit": ["v1", "v2"], "time_point": [1, 2]}
+    )
+
+    assert [c["column"] for c in find_session_candidates(df)] == ["Visit", "time_point"]
+
+
+def test_labels_are_compared_exactly_never_normalized():
+    df = pd.DataFrame({"participant_id": ["a", "a", "a"], "ses": ["1", "01", "pre"]})
+
+    # "1" and "01" stay two different labels (order is numeric, then text).
+    assert find_session_candidates(df)[0]["values"] == ["01", "1", "pre"]
+
+
+def test_whole_number_floats_from_spreadsheets_are_integer_labels():
+    df = pd.DataFrame({"participant_id": ["a", "a"], "session": [1.0, 2.0]})
+
+    assert find_session_candidates(df)[0]["values"] == ["1", "2"]
+
+
+def test_missing_cells_are_not_labels_and_numbers_sort_numerically():
+    df = pd.DataFrame(
+        {"participant_id": list("abcd"), "session": ["10", "2", None, "2"]}
+    )
+
+    assert find_session_candidates(df)[0]["values"] == ["2", "10"]
+
+
+def _longitudinal():
+    return pd.DataFrame(
+        {
+            "participant_id": ["a", "a", "b", "b"],
+            "session": ["baseline", "followup", "baseline", "followup"],
+            "age": [30, 31, 40, 41],
+        }
+    )
+
+
+def test_filter_keeps_only_the_chosen_session():
+    kept = filter_rows_to_session(_longitudinal(), "session", "baseline")
+
+    assert list(kept["participant_id"]) == ["a", "b"]
+    assert list(kept["age"]) == [30, 40]
+
+
+def test_filter_matches_labels_exactly():
+    df = pd.DataFrame({"participant_id": ["a", "b"], "ses": ["1", "01"]})
+
+    assert list(filter_rows_to_session(df, "ses", "01")["participant_id"]) == ["b"]
+
+
+def test_filter_matches_whole_number_float_labels():
+    df = pd.DataFrame({"participant_id": ["a", "b"], "session": [1.0, 2.0]})
+
+    assert list(filter_rows_to_session(df, "session", "1")["participant_id"]) == ["a"]
+
+
+def test_filter_rejects_an_unknown_column():
+    with pytest.raises(ValueError, match="Session column 'wave' not found"):
+        filter_rows_to_session(_longitudinal(), "wave", "baseline")
+
+
+def test_filter_rejects_a_session_that_is_not_in_the_column():
+    with pytest.raises(ValueError, match="Session 'month6' not found"):
+        filter_rows_to_session(_longitudinal(), "session", "month6")
