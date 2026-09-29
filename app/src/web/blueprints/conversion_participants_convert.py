@@ -63,6 +63,8 @@ def _write_participants_outputs(
     neurobagel_schema: dict,
     existing_files: list[str],
     log_msg,
+    session_column: str = "",
+    session_value: str = "",
 ) -> dict[str, Any]:
     """Run ParticipantsConverter, write participants.tsv/json, return the
     success result payload (no "log" key -- callers merge that in)."""
@@ -76,6 +78,8 @@ def _write_participants_outputs(
         separator=converter_separator,
         sheet=sheet_arg,
         reject_conflicting_repeats=True,
+        session_column=session_column or None,
+        session_value=session_value or None,
     )
 
     for msg in messages:
@@ -171,6 +175,8 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                         neurobagel_schema=neurobagel_schema,
                         existing_files=existing_files,
                         log_msg=log_msg,
+                        session_column=config.get("session_column", ""),
+                        session_value=config.get("session_value", ""),
                     )
                 except ValueError as e:
                     _participants_job_store.failure(job_id, str(e) or "Conversion failed")
