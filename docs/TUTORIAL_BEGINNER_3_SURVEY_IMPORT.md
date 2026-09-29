@@ -65,7 +65,8 @@ to get one; do whichever suits you, then move on to Part B either way.
 
 ### Fast path: use the ready-made template
 
-Copy `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` into
+Download {download}`survey-wellbeing.json <../examples/workshop/chapter_3_survey_import/survey-wellbeing.json>`
+(or find `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` in a checkout) and copy it into
 your project at `code/library/survey/survey-wellbeing.json` (create the
 `survey/` subfolder if it doesn't exist yet). That's it — this file already
 defines everything the import needs:
@@ -96,7 +97,7 @@ back to this page for Part B once you have a saved template either way.
 
 ### 2. Choose the source file
 
-Select `examples/workshop/raw_data/wellbeing.xlsx` as
+Select `wellbeing.xlsx` ({download}`download <../examples/workshop/raw_data/wellbeing.xlsx>`, the same file as in Chapter 2) as
 the **Survey File**.
 
 ```{tip}

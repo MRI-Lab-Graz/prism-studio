@@ -55,7 +55,11 @@ something you can grep for.
 
 ## 1. Look at the source file
 
-Open `examples/workshop/raw_data/wellbeing.xlsx`. It has
+Download the example spreadsheet:
+{download}`wellbeing.xlsx <../examples/workshop/raw_data/wellbeing.xlsx>`
+(also available as plain text, {download}`wellbeing.tsv <../examples/workshop/raw_data/wellbeing.tsv>`).
+Working from a repository checkout instead? It is at
+`examples/workshop/raw_data/wellbeing.xlsx`. It has
 one row per participant with columns like `participant_id`, `session`,
 `age`, `sex`, `education`, `handedness`, `WB01`-`WB05`, `completion_date`.
 Only the demographic columns matter for this chapter — `WB01`-`WB05` are the
