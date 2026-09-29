@@ -15,6 +15,14 @@ following skills before doing any other work:
 
 This applies regardless of how trivial the request looks.
 
+## Always use TDD
+
+For every feature or bug fix, invoke `superpowers:test-driven-development`
+and follow it: write a failing test that reproduces the problem first,
+watch it fail, then write the fix. For bugs, also invoke
+`superpowers:systematic-debugging` before proposing a fix. Don't write the
+test after the fix; a test that never failed proves nothing.
+
 ## `src/` vs `app/src/`: dual-tree drift is a live, recurring bug source
 
 **Intended architecture** (per `docs/PROJECT_OVERVIEW.md`): `src/` is the one

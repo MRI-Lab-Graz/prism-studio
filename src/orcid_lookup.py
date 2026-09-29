@@ -134,14 +134,28 @@ def _has_public_person_details(person: dict[str, Any]) -> bool:
     return any(token in serialized for token in ('"value":', '"url":', '"city":', '"country":'))
 
 
+def _extract_public_email(person: dict[str, Any]) -> str:
+    """Return the primary public email (else first public one); "" if none."""
+    emails = person.get("emails")
+    entries = emails.get("email") if isinstance(emails, dict) else None
+    if not isinstance(entries, list):
+        return ""
+    public = [
+        e for e in entries
+        if isinstance(e, dict) and e.get("visibility") == "public" and e.get("email")
+    ]
+    public.sort(key=lambda e: not e.get("primary"))
+    return str(public[0]["email"]).strip() if public else ""
+
+
 def _fetch_person_profile(
     orcid_path: str, timeout_seconds: float
-) -> tuple[str, str, bool]:
+) -> tuple[str, str, bool, str]:
     person_url = f"{_ORCID_PUBLIC_API_BASE}/{quote(orcid_path)}/person"
     person = _fetch_json(person_url, timeout_seconds=timeout_seconds)
     name = person.get("name")
     if not isinstance(name, dict):
-        return "", "", _has_public_person_details(person)
+        return "", "", _has_public_person_details(person), _extract_public_email(person)
 
     given_value = name.get("given-names")
     family_value = name.get("family-name")
@@ -152,11 +166,11 @@ def _fetch_person_profile(
         given = _normalize_name_token(str(given_value.get("value") or ""))
     if isinstance(family_value, dict):
         family = _normalize_name_token(str(family_value.get("value") or ""))
-    return given, family, _has_public_person_details(person)
+    return given, family, _has_public_person_details(person), _extract_public_email(person)
 
 
 def _fetch_person_name(orcid_path: str, timeout_seconds: float) -> tuple[str, str]:
-    given, family, _has_public_details = _fetch_person_profile(
+    given, family, _has_public_details, _email = _fetch_person_profile(
         orcid_path,
         timeout_seconds,
     )
@@ -252,10 +266,11 @@ def _candidate_rank(candidate: dict[str, Any], query_given: str, query_family: s
 def _build_candidate(orcid_path: str, timeout_seconds: float) -> dict[str, Any]:
     given, family = "", ""
     has_public_person_details = False
+    email = ""
     affiliation = ""
 
     try:
-        given, family, has_public_person_details = _fetch_person_profile(
+        given, family, has_public_person_details, email = _fetch_person_profile(
             orcid_path,
             timeout_seconds,
         )
@@ -273,7 +288,7 @@ def _build_candidate(orcid_path: str, timeout_seconds: float) -> dict[str, Any]:
     if not display_name:
         display_name = f"ORCID {orcid_path}"
 
-    public_data_available = bool(affiliation or has_public_person_details)
+    public_data_available = bool(affiliation or email or has_public_person_details)
 
     return {
         "orcid_id": orcid_path,
@@ -282,6 +297,7 @@ def _build_candidate(orcid_path: str, timeout_seconds: float) -> dict[str, Any]:
         "family_name": family,
         "display_name": display_name,
         "affiliation": affiliation,
+        "email": email,
         "public_data_available": public_data_available,
         "public_data_status": (
             "Public profile data available"

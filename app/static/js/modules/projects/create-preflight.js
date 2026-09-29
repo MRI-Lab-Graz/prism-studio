@@ -1,3 +1,23 @@
+// Describe *why* a project name is invalid, so users typing spaces or
+// accented/special characters (e.g. German umlauts, "ß") get an explicit
+// hint instead of a generic message that doesn't name their actual problem.
+export function describeProjectNameProblem(rawValue) {
+    const value = rawValue.trim();
+    if (value === '') {
+        return '';
+    }
+    if (/\s/.test(rawValue)) {
+        return 'No spaces allowed — use "_" or "-" instead (e.g. "my_study").';
+    }
+    if (/[äöüÄÖÜß]/.test(value)) {
+        return 'German umlauts and "ß" are not allowed — use plain letters instead (e.g. "ae", "oe", "ue", "ss").';
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+        return 'Only letters, numbers, underscores (_) and hyphens (-) are allowed.';
+    }
+    return '';
+}
+
 export function initCreatePreflightController({
     fetchWithApiFallback,
     escapeHtml,
@@ -245,26 +265,6 @@ export function initCreatePreflightController({
         );
     }
 
-    // Describe *why* a project name is invalid, so users typing spaces or
-    // accented/special characters (e.g. German umlauts, "ß") get an explicit
-    // hint instead of a generic message that doesn't name their actual problem.
-    function describeProjectNameProblem(rawValue) {
-        const value = rawValue.trim();
-        if (value === '') {
-            return '';
-        }
-        if (/\s/.test(rawValue)) {
-            return 'No spaces allowed — use "_" or "-" instead (e.g. "my_study").';
-        }
-        if (/[äöüÄÖÜß]/.test(value)) {
-            return 'German umlauts and "ß" are not allowed — use plain letters instead (e.g. "ae", "oe", "ue", "ss").';
-        }
-        if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-            return 'Only letters, numbers, underscores (_) and hyphens (-) are allowed.';
-        }
-        return '';
-    }
-
     const projectNameInput = document.getElementById('projectName');
     if (projectNameInput) {
         projectNameInput.addEventListener('input', function(event) {
@@ -275,9 +275,11 @@ export function initCreatePreflightController({
             if (problem) {
                 event.target.classList.add('is-invalid');
                 errorDiv.textContent = problem;
+                errorDiv.classList.add('d-block');
             } else {
                 event.target.classList.remove('is-invalid');
                 errorDiv.textContent = '';
+                errorDiv.classList.remove('d-block');
             }
 
             clearCreateResult();

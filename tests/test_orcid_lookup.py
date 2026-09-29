@@ -8,6 +8,7 @@ from src.orcid_lookup import (
     _build_search_query,
     _candidate_rank,
     _extract_orcid_path,
+    _extract_public_email,
     _extract_primary_affiliation_from_payload,
     _fetch_json,
     _fetch_person_name,
@@ -135,7 +136,7 @@ class TestOrcidLookup(unittest.TestCase):
             )
             self.assertEqual(
                 _fetch_person_profile("0000-0000", timeout_seconds=1.0),
-                ("Ada", "Lovelace", False),
+                ("Ada", "Lovelace", False, ""),
             )
 
         with patch("src.orcid_lookup._fetch_json", return_value={"name": []}):
@@ -399,10 +400,32 @@ class TestOrcidLookup(unittest.TestCase):
         self.assertEqual(candidates[0]["orcid_id"], preferred)
         self.assertEqual(candidates[1]["orcid_id"], "0000-0002-3237-1450")
 
+    def test_extract_public_email_prefers_primary_public(self):
+        person = {
+            "emails": {
+                "email": [
+                    {"email": "a@x.org", "visibility": "public", "primary": False},
+                    {"email": "b@x.org", "visibility": "public", "primary": True},
+                ]
+            }
+        }
+        self.assertEqual(_extract_public_email(person), "b@x.org")
+        self.assertEqual(_extract_public_email({"emails": {"email": []}}), "")
+        self.assertEqual(_extract_public_email({"emails": None}), "")
+        self.assertEqual(_extract_public_email({}), "")
+
+    def test_build_candidate_includes_email(self):
+        with patch(
+            "src.orcid_lookup._fetch_person_profile",
+            return_value=("Karl", "Koschutnig", True, "k@uni.at"),
+        ), patch("src.orcid_lookup._fetch_primary_affiliation", return_value=""):
+            candidate = _build_candidate("0000-0001-6234-0498", timeout_seconds=1.0)
+        self.assertEqual(candidate["email"], "k@uni.at")
+
     def test_build_candidate_marks_limited_public_data(self):
         with patch(
             "src.orcid_lookup._fetch_person_profile",
-            return_value=("Andreas", "Fink", False),
+            return_value=("Andreas", "Fink", False, ""),
         ), patch(
             "src.orcid_lookup._fetch_primary_affiliation",
             return_value="",

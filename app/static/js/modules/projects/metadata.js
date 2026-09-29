@@ -681,6 +681,7 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     const lastInput = row.querySelector('.author-last');
     const orcidInput = row.querySelector('.author-orcid');
     const affiliationInput = row.querySelector('.author-affiliation');
+    const emailInput = row.querySelector('.author-email');
 
     if (firstInput && !String(firstInput.value || '').trim() && candidate.given_names) {
         firstInput.value = String(candidate.given_names || '').trim();
@@ -693,6 +694,9 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     }
     if (affiliationInput && !String(affiliationInput.value || '').trim() && candidate.affiliation) {
         affiliationInput.value = String(candidate.affiliation || '').trim();
+    }
+    if (emailInput && !String(emailInput.value || '').trim() && candidate.email) {
+        emailInput.value = String(candidate.email || '').trim();
     }
 
     _validateAuthorOptionalFields(row);
