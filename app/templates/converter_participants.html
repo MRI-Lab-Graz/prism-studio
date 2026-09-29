@@ -195,6 +195,13 @@
                     <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
                 </h6>
 
+                <!-- Merge preview legend (only shown when the merge adds/changes cells) -->
+                <div id="participantsPreviewDiffLegend" class="small mb-2 d-none">
+                    <span class="prism-diff-legend prism-diff-new-row">new participant</span>
+                    <span class="prism-diff-legend prism-diff-filled">filled value</span>
+                    <span class="prism-diff-legend prism-diff-conflict"><del>existing</del> <ins>incoming</ins> conflict</span>
+                </div>
+
                 <!-- TSV Preview -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-sm table-hover" id="participantsPreviewTable">

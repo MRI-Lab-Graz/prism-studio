@@ -450,3 +450,39 @@
         font-size: 1.05rem;
     }
 }
+
+/* Merge preview (Sociodemographics): git-diff style marks for what the merge
+   adds or changes. Green = added/filled, amber = conflict (old struck, new
+   underlined). */
+.prism-diff-new-row > td,
+.prism-diff-legend.prism-diff-new-row {
+    background-color: rgba(31, 139, 92, 0.14);
+}
+
+td.prism-diff-filled,
+.prism-diff-legend.prism-diff-filled {
+    background-color: rgba(31, 139, 92, 0.32);
+    font-weight: 600;
+}
+
+td.prism-diff-conflict,
+.prism-diff-legend.prism-diff-conflict {
+    background-color: rgba(255, 193, 7, 0.35);
+}
+
+.prism-diff-conflict del {
+    color: #b02a37;
+}
+
+.prism-diff-conflict ins {
+    color: #146c43;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.prism-diff-legend {
+    display: inline-block;
+    padding: 1px 8px;
+    margin-right: 6px;
+    border-radius: 4px;
+}

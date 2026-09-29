@@ -2333,18 +2333,45 @@ export function initParticipants() {
         });
         thead.appendChild(headerRow);
     
+        // Merge preview only: git-diff style marks for new rows and changed cells.
+        const diff = previewData.preview_diff || {};
+        const newParticipants = new Set(diff.new_participants || []);
+        const cellChanges = diff.cells || {};
+        const legend = document.getElementById('participantsPreviewDiffLegend');
+        if (legend) {
+            legend.classList.toggle(
+                'd-none',
+                newParticipants.size === 0 && Object.keys(cellChanges).length === 0
+            );
+        }
+
         previewRows.forEach(row => {
             const tr = document.createElement('tr');
+            const participantId = String(row[idColumn] ?? row.participant_id ?? '').trim();
+            const isNewRow = newParticipants.has(participantId);
+            if (isNewRow) tr.classList.add('prism-diff-new-row');
             columns.forEach(col => {
                 const td = document.createElement('td');
                 const rawVal = row[col];
                 const hasData = rawVal !== null && rawVal !== undefined && String(rawVal).trim() !== '';
-                if (extraColumns.includes(col) && !hasData) {
+                const change = cellChanges[participantId]?.[col];
+                if (change && change.kind === 'conflict') {
+                    td.classList.add('prism-diff-conflict');
+                    td.innerHTML = `<del>${formatPreviewCell(col, change.existing_value)}</del> <ins>${formatPreviewCell(col, change.incoming_value)}</ins>`;
+                    td.title = `Conflict: the project has "${change.existing_value}", the incoming file has "${change.incoming_value}". The project value is kept and the merge is blocked until this is resolved.`;
+                } else if (change && change.kind === 'filled') {
+                    td.classList.add('prism-diff-filled');
+                    td.innerHTML = formatPreviewCell(col, rawVal);
+                    td.title = 'Value filled in by this merge';
+                } else if (extraColumns.includes(col) && !hasData) {
                     // Custom column with no data in this preview row
                     td.innerHTML = '<span class="text-muted" style="font-size:.8em">—</span>';
                     td.title = 'Not present in source file for this row';
                 } else {
                     td.innerHTML = formatPreviewCell(col, rawVal);
+                }
+                if (isNewRow && col === idColumn) {
+                    td.innerHTML += ' <span class="badge bg-success">NEW</span>';
                 }
                 tr.appendChild(td);
             });

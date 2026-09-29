@@ -231,6 +231,11 @@ it deliberately refuses to do.
    Summary shows counts for matched participants, new participants, filled
    values, and conflicts. You should see `1 new participant` (DEMO021) and
    `1 conflict` (DEMO003's `age`).
+   The **Data Preview** table below the summary marks the changes like a
+   `git diff`: the new participant's row is green with a **NEW** badge, filled
+   values are green, and a conflicting value shows the project's value struck
+   through and the incoming one underlined (hover for the details). A legend
+   above the table explains the colours.
 
 ```{warning}
 **Merge won't overwrite an existing value, even to fix it.** It only fills

@@ -180,6 +180,23 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         self.assertIn("annotatedData[targetColumnName].Units = colData.unit;", module)
         self.assertNotIn("annotatedData[targetColumnName].Unit =", module)
 
+    def test_merge_preview_table_marks_new_rows_and_changed_cells(self):
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+        template = (
+            REPO_ROOT / "app" / "templates" / "converter_participants.html"
+        ).read_text(encoding="utf-8")
+        css = (REPO_ROOT / "app" / "static" / "css" / "converter.css").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("previewData.preview_diff", module)
+        self.assertIn("prism-diff-new-row", module)
+        self.assertIn("prism-diff-conflict", module)
+        self.assertIn("prism-diff-filled", module)
+        self.assertIn('id="participantsPreviewDiffLegend"', template)
+        self.assertIn("td.prism-diff-conflict", css)
+
+
 
 if __name__ == "__main__":
     unittest.main()

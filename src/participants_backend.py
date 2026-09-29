@@ -1555,6 +1555,35 @@ def _create_backup(path: Path) -> str | None:
     return str(backup_path)
 
 
+def _select_merge_preview_rows(
+    merged_df: pd.DataFrame, changed_ids: set[str], preview_limit: int
+) -> pd.DataFrame:
+    """First ``preview_limit`` merged rows, plus rows the merge adds or changes.
+
+    New participants are appended after the existing ones, so a plain head()
+    hides exactly the rows the user most wants to see. Extra changed rows are
+    capped at ``preview_limit`` so a huge merge cannot flood the preview.
+    """
+    limit = max(int(preview_limit or 20), 1)
+    head = merged_df.head(limit)
+    ids = merged_df["participant_id"].astype(str).str.strip()
+    extra_mask = ids.isin(changed_ids) & ~merged_df.index.isin(head.index)
+    return pd.concat([head, merged_df[extra_mask].head(limit)])
+
+
+def _build_merge_preview_diff(
+    preview_ids: list[str],
+    new_ids: set[str],
+    cell_changes: dict[str, dict[str, dict[str, str]]],
+) -> dict[str, Any]:
+    """Which preview rows are new and which cells are filled or in conflict."""
+    shown = set(preview_ids)
+    return {
+        "new_participants": [pid for pid in preview_ids if pid in new_ids],
+        "cells": {pid: cols for pid, cols in cell_changes.items() if pid in shown},
+    }
+
+
 def _plan_participants_merge(
     project_root: Path,
     source_file: str | Path,
@@ -1755,6 +1784,9 @@ def _plan_participants_merge(
 
     fill_actions: list[dict[str, str]] = []
     conflicts: list[dict[str, str]] = []
+    # Every cell the merge fills or disputes (not capped like fill_actions /
+    # conflicts), so the preview table can highlight them git-diff style.
+    cell_changes: dict[str, dict[str, dict[str, str]]] = {}
     fillable_value_count = 0
     conflict_count = 0
     auto_resolved_equivalent_count = 0
@@ -1788,6 +1820,12 @@ def _plan_participants_merge(
 
             if column not in existing_columns:
                 merged_row[column] = _participant_value_text(incoming_value)
+                if not _is_missing_participant_value(incoming_value):
+                    cell_changes.setdefault(participant_id, {})[column] = {
+                        "kind": "filled",
+                        "existing_value": "",
+                        "incoming_value": _participant_value_text(incoming_value),
+                    }
                 continue
 
             if keep_both_column and not _is_missing_participant_value(incoming_value):
@@ -1799,6 +1837,11 @@ def _plan_participants_merge(
                 next_value = _participant_value_text(incoming_value)
                 merged_row[column] = next_value
                 fillable_value_count += 1
+                cell_changes.setdefault(participant_id, {})[column] = {
+                    "kind": "filled",
+                    "existing_value": _participant_value_text(existing_value),
+                    "incoming_value": next_value,
+                }
                 if len(fill_actions) < preview_limit:
                     fill_actions.append(
                         {
@@ -1842,6 +1885,11 @@ def _plan_participants_merge(
                     continue
 
                 conflict_count += 1
+                cell_changes.setdefault(participant_id, {})[column] = {
+                    "kind": "conflict",
+                    "existing_value": existing_text,
+                    "incoming_value": incoming_text,
+                }
                 if include_all_conflicts or len(conflicts) < preview_limit:
                     conflicts.append(
                         {
@@ -1983,7 +2031,16 @@ def _plan_participants_merge(
         )
     )
 
-    preview_df = merged_df.head(max(int(preview_limit or 20), 1)).astype(object)
+    preview_df = _select_merge_preview_rows(
+        merged_df,
+        set(new_participant_ids) | set(cell_changes),
+        preview_limit,
+    ).astype(object)
+    preview_diff = _build_merge_preview_diff(
+        [str(value).strip() for value in preview_df["participant_id"]],
+        set(new_participant_ids),
+        cell_changes,
+    )
 
     session_resolution_required = bool(
         (session_resolution_payload.get("unresolved_columns") or [])
@@ -2022,6 +2079,7 @@ def _plan_participants_merge(
         "fill_actions": fill_actions,
         "conflicts": conflicts,
         "preview_rows": preview_df.to_dict(orient="records"),
+        "preview_diff": preview_diff,
         "column_values": _collect_preview_column_values(merged_df),
         "messages": messages,
         "schema_fields_added": schema_fields_added,
