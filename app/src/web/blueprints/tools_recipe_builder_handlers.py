@@ -20,6 +20,7 @@ from src.recipe_builder import (  # noqa: F401 - RecipeSaveError re-exported
     extract_items_from_template,
     extract_items_missing_ranges_from_template,
     extract_template_reversed_items,
+    extract_template_study_metadata,
     find_templates,
     save_recipe_to_project,
 )
@@ -139,6 +140,9 @@ def handle_api_recipe_builder_items(
         match["full_path"],
         modality=modality,
     )
+    template_metadata = extract_template_study_metadata(
+        match["full_path"], modality=modality
+    )
     return (
         jsonify(
             {
@@ -151,6 +155,7 @@ def handle_api_recipe_builder_items(
                 "item_ranges": item_ranges,
                 "template_reversed_items": template_reversed_items,
                 "items_missing_ranges": items_missing_ranges,
+                "template_metadata": template_metadata,
             }
         ),
         200,

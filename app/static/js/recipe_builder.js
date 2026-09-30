@@ -241,6 +241,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rbMetaDesc').value = '';
         document.getElementById('rbMetaCitation').value = '';
         document.getElementById('rbMetaDoi').value = '';
+        const metaNote = document.getElementById('rbMetaFromTemplate');
+        if (metaNote) metaNote.classList.add('d-none');
         resetVariationSelect();
         renderInversionBox();
         showBuilderArea(false);
@@ -581,6 +583,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('rbMetaDesc').value     = '';
             document.getElementById('rbMetaCitation').value = '';
             document.getElementById('rbMetaDoi').value      = '';
+            const metaFromTemplateNote = document.getElementById('rbMetaFromTemplate');
+            if (metaFromTemplateNote) metaFromTemplateNote.classList.add('d-none');
 
             // Import recipe BEFORE any rendering
             if (recipeData.recipe) {
@@ -588,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 showStatus('<i class="fas fa-file-import me-1"></i>Existing recipe loaded.', 'info');
             } else {
                 statusEl.innerHTML = '';
+                prefillMetadataFromTemplate(itemsData.template_metadata);
             }
 
             const missingRangeItems = itemsData.items_missing_ranges || [];
@@ -615,6 +620,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (requestToken !== loadRequestToken || task !== selectedTask) return;
             showStatus(_escHtml(error.message || 'Failed to load template data.'), 'danger');
         }
+    }
+
+    // A NEW recipe starts from what the template already says about the instrument
+    // (an existing recipe keeps exactly its own values).
+    function prefillMetadataFromTemplate(templateMetadata) {
+        const values = templateMetadata || {};
+        let filled = 0;
+        [
+            ['rbMetaName', 'name'],
+            ['rbMetaDesc', 'description'],
+            ['rbMetaCitation', 'citation'],
+            ['rbMetaDoi', 'doi'],
+        ].forEach(([fieldId, key]) => {
+            const value = String(values[key] || '').trim();
+            if (!value) return;
+            document.getElementById(fieldId).value = value;
+            filled += 1;
+        });
+        const note = document.getElementById('rbMetaFromTemplate');
+        if (note) note.classList.toggle('d-none', filled === 0);
     }
 
     // ── Import existing recipe ────────────────────────────────────────────

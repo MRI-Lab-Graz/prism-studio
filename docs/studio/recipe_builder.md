@@ -37,9 +37,32 @@ For instruments with named scoring variants, **Add/remove variation** builds ent
 under `VersionedScores.<variation name>`, each holding its own independent `Scores`
 list.
 
+## Missing answers (per scale)
+
+Each scale has **If answers are missing**, one plain choice that stands for the recipe
+fields `Missing` and `MinValid`:
+
+- **Use the answered items** (default) — a sum or mean uses whatever was answered.
+  Someone who answered 3 of 5 items gets the sum (or mean) of those 3; a sum is then
+  lower than a complete response.
+- **Require at least N** — the score is computed only when at least N items are
+  answered, otherwise it is left empty (`n/a`).
+- **Require all items** — any missing item leaves the score empty.
+
+An answer counts as missing when the cell is empty, `n/a` or not a number. `formula`
+scores are always left empty when any item they use is missing. The **What happens when
+this recipe runs** box on the right restates all of this for your current scales, plus
+which items are reverse-coded, and reminds you that raw data is never changed.
+
 ## Step 5 — Metadata and save
 
-Fill in Recipe Metadata (Name, Description, Citation, DOI), then **Save**. The server
+**Recipe Metadata** describes the recipe as a whole (not single items or scales) and
+feeds the output metadata and the generated Methods text. For a *new* recipe it is
+pre-filled from the template's own `Study` block (name, citation, DOI; for biometrics also
+the description) and marked "Pre-filled from the template" — edit as needed. An existing
+recipe keeps its own values.
+
+Fill in or adjust Recipe Metadata (Name, Description, Citation, DOI), then **Save**. The server
 re-validates the task/biometric name, confirms the referenced template still exists,
 and checks item references before writing. Recipes save to:
 

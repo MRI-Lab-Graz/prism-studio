@@ -29,8 +29,18 @@ result you report — that's what `Scores` is for.
 
 ## Missing-data handling
 
-Common choices: `ignore` (a score can still be meaningful with limited missing data)
-or `require_all` (every item must be present).
+An answer is missing when the cell is empty, `n/a` or not a number. For `sum`/`mean`
+scores:
+
+- `Missing: "ignore"` (default) — only the answered items are used (the sum of 3 of 5
+  items is lower than a complete response).
+- `MinValid: N` — the score is left empty (`n/a`) if fewer than N items are answered.
+- `Missing: "require_all"` (aliases `all`, `strict`) — any missing item leaves the score
+  empty.
+
+`formula` scores are left empty whenever any item they use is missing (earlier versions
+treated a missing item as 0, so an unanswered questionnaire scored 0). Recipe Builder
+offers these as one choice per scale, "If answers are missing".
 
 ## Example and design process
 

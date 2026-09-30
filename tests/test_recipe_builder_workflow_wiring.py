@@ -137,5 +137,22 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("_escHtml(data.path", script)
 
 
+    def test_new_recipes_are_prefilled_from_the_template_but_saved_ones_are_not(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('id="rbMetaFromTemplate"', template)
+        self.assertIn("Pre-filled from the template", template)
+
+        load = script[script.index("async function loadItemsAndRecipe") :]
+        load = load[: load.index("configureItemInfoLanguageSelector(")]
+        # An existing recipe keeps its own values; only a new one is pre-filled.
+        existing, _, fresh = load.partition("if (recipeData.recipe) {")
+        branch_existing, _, branch_new = fresh.partition("} else {")
+        self.assertIn("importRecipe(recipeData.recipe)", branch_existing)
+        self.assertNotIn("prefillMetadataFromTemplate(", branch_existing)
+        self.assertIn("prefillMetadataFromTemplate(itemsData.template_metadata)", branch_new)
+
+
 if __name__ == "__main__":
     unittest.main()

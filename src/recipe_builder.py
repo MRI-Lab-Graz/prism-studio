@@ -262,6 +262,37 @@ def _pick_item_description(value) -> str:
     return ""
 
 
+def extract_template_study_metadata(json_path: str, *, modality: str) -> dict[str, str]:
+    """Name/description/citation/DOI of a template, to pre-fill a new recipe.
+
+    Read from the template's own ``Study`` block (survey: OriginalName, Citation,
+    DOI; biometrics: OriginalName, Description). A localized name is reduced to
+    one readable string. Anything missing is an empty string.
+    """
+    empty = {"name": "", "description": "", "citation": "", "doi": ""}
+    path = Path(json_path)
+    if not path.is_file():
+        return empty
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return empty
+    study = data.get("Study") if isinstance(data, dict) else None
+    if not isinstance(study, dict):
+        return empty
+
+    def text(key: str) -> str:
+        return _pick_item_description(study.get(key))
+
+    return {
+        "name": text("OriginalName"),
+        "description": text("Description") if modality == "biometrics" else "",
+        "citation": text("Citation"),
+        "doi": text("DOI"),
+    }
+
+
 def extract_item_description_metadata_from_template(
     json_path: str,
     *,
