@@ -595,7 +595,7 @@ export async function deleteCurrentTemplate(context) {
     if (!res.ok) {
       throw new Error(data.error || `Delete failed (${res.status})`);
     }
-    context.currentTemplate = null;
+    context.currentTemplate = {};
     context.originalTemplate = null;
     context.currentTemplateFilename = null;
     context.selectedItemId = null;

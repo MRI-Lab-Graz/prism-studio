@@ -5,7 +5,8 @@
  * Authors / Version / ..., and so on).
  *
  * The builder owns: RecipeVersion/Kind, the info block's task key and
- * Name/Description/Citation, Transforms.Invert, Scores and VersionedScores.
+ * Name/Description/Citation, Transforms.Invert, Scores (incl. the optional IRV
+ * score) and VersionedScores.
  */
 
 /** Text shown in a metadata field for a stored value (a localized value becomes one string). */
@@ -28,6 +29,15 @@ function applyMetadataField(info, key, typedText) {
     else delete info[key];
 }
 
+/** Score that reports how much one person's answers vary (Method "irv"; 0 = same answer every time). */
+const IRV_NAME = 'IRV';
+
+/** Take the IRV score out of a saved score list: { scores without it, hasIrv }. */
+export function splitIrvScore(scores) {
+    const isIrv = s => s && s.Method === 'irv' && s.Name === IRV_NAME;
+    return { scores: (scores || []).filter(s => !isIrv(s)), hasIrv: (scores || []).some(isIrv) };
+}
+
 export function buildRecipe({
     loaded,
     modality,
@@ -38,6 +48,7 @@ export function buildRecipe({
     invertTransform,
     scores,
     versionedScores,
+    irvItems,
 }) {
     const recipe = loaded ? structuredClone(loaded) : {};
     recipe.RecipeVersion = recipe.RecipeVersion || '1.0';
@@ -56,7 +67,8 @@ export function buildRecipe({
     if (Object.keys(transforms).length > 0) recipe.Transforms = transforms;
     else delete recipe.Transforms;
 
-    if (scores && scores.length > 0) recipe.Scores = scores;
+    const allScores = [...(scores || []), ...(irvItems && irvItems.length ? [{ Name: IRV_NAME, Method: 'irv', Items: [...irvItems] }] : [])];
+    if (allScores.length > 0) recipe.Scores = allScores;
     else delete recipe.Scores;
 
     if (versionedScores && Object.keys(versionedScores).length > 0) recipe.VersionedScores = versionedScores;

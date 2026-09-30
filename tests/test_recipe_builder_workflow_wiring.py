@@ -184,6 +184,17 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         importer = importer[: importer.index("function scoreToScale")]
         self.assertIn("metadataFieldText(s.Name)", importer)
 
+    def test_irv_checkbox_is_wired_into_save_and_import(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('id="rbIncludeIrv"', template)
+        self.assertIn("irvItems:", script)
+        importer = script[script.index("function importRecipe(") :]
+        importer = importer[: importer.index("function scoreToScale")]
+        self.assertIn("splitIrvScore(", importer)
+        self.assertIn("rbIncludeIrv", importer)
+
 
 if __name__ == "__main__":
     unittest.main()

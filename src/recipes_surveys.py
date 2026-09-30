@@ -1109,6 +1109,12 @@ def _generate_recipes_boilerplate_sections(
                     method_desc = "sum score" if lang == "en" else "Summenwert"
                 elif s_method == "mean":
                     method_desc = "mean score" if lang == "en" else "Mittelwert"
+                elif s_method == "irv":
+                    method_desc = (
+                        "response variability (SD of raw answers)"
+                        if lang == "en"
+                        else "Antwortvariabilität (SD der Rohantworten)"
+                    )
                 elif s_method == "map":
                     method_desc = (
                         "categorical mapping"

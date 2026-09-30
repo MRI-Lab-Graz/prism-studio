@@ -59,11 +59,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Assembles the saved JSON on top of the loaded recipe so nothing the builder
     // does not edit is lost (modules/recipe-builder/recipe-merge.js).
-    let buildRecipe, metadataFieldText;
+    let buildRecipe, metadataFieldText, splitIrvScore;
     const recipeMergeReady = import(
         new URL('./modules/recipe-builder/recipe-merge.js', recipeBuilderScriptUrl).href
     ).then(mod => {
-        ({ buildRecipe, metadataFieldText } = mod);
+        ({ buildRecipe, metadataFieldText, splitIrvScore } = mod);
     });
 
     function loadSharedFetchWithApiFallback() {
@@ -234,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.itemDescriptionLanguages = [];
         state.itemInfoLanguage = '';
         state.loadedRecipe = null;
+        document.getElementById('rbIncludeIrv').checked = false;
         state.selectedItems = new Set();
         state.activeScaleId = null;
         state.expandedScaleIds = new Set();
@@ -663,7 +664,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Scale range is auto-detected from the template — ignore recipe's stored Scale
         (inv.Items || []).forEach(it => state.inverted.add(it));
 
-        state.scales[''] = (recipe.Scores || []).map(scoreToScale);
+        const { scores: ownScores, hasIrv } = splitIrvScore(recipe.Scores);
+        document.getElementById('rbIncludeIrv').checked = hasIrv;
+        state.scales[''] = ownScores.map(scoreToScale);
 
         const vs = recipe.VersionedScores || {};
         Object.entries(vs).forEach(([key, scores]) => {
@@ -1406,6 +1409,7 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             invertTransform,
             scores: (state.scales[''] || []).map(scaleToScore),
+            irvItems: document.getElementById('rbIncludeIrv').checked ? state.allItems : null,
             versionedScores,
         });
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildRecipe, metadataFieldText } from './recipe-merge.js';
+import { buildRecipe, metadataFieldText, splitIrvScore } from './recipe-merge.js';
 
 const LOADED = {
     RecipeVersion: '1.0',
@@ -132,5 +132,27 @@ describe('metadataFieldText', () => {
         expect(metadataFieldText({ de: 'Nur', en: 'Only' })).toBe('Only');
         expect(metadataFieldText({ de: 'Nur Deutsch' })).toBe('Nur Deutsch');
         expect(metadataFieldText(undefined)).toBe('');
+    });
+});
+
+describe('IRV (response variability) score', () => {
+    const base = { loaded: null, modality: 'survey', infoKey: 'Survey', taskKey: 'TaskName', task: 'wb', metadata: { name: '', description: '', citation: '' } };
+
+    it('adds one IRV score over the given items when asked', () => {
+        const recipe = buildRecipe({ ...base, scores: [{ Name: 'Total', Method: 'sum', Items: ['A'] }], irvItems: ['A', 'B'] });
+        expect(recipe.Scores.at(-1)).toEqual({ Name: 'IRV', Method: 'irv', Items: ['A', 'B'] });
+        expect(recipe.Scores).toHaveLength(2);
+    });
+
+    it('adds nothing when not asked', () => {
+        const recipe = buildRecipe({ ...base, scores: [{ Name: 'Total', Method: 'sum', Items: ['A'] }], irvItems: null });
+        expect(recipe.Scores.map(s => s.Name)).toEqual(['Total']);
+    });
+
+    it('splits a saved IRV score off so the box can be ticked on import', () => {
+        const { scores, hasIrv } = splitIrvScore([{ Name: 'Total', Method: 'sum' }, { Name: 'IRV', Method: 'irv', Items: ['A'] }]);
+        expect(hasIrv).toBe(true);
+        expect(scores.map(s => s.Name)).toEqual(['Total']);
+        expect(splitIrvScore([{ Name: 'Total', Method: 'sum' }]).hasIrv).toBe(false);
     });
 });

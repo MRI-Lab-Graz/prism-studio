@@ -4,6 +4,7 @@ import ast
 import json
 import math
 import operator
+import statistics
 from typing import Any
 
 _SAFE_FORMULA_BINOPS: dict[type[ast.operator], Any] = {
@@ -442,8 +443,14 @@ def _calculate_scores(
         values: list[float] = []
         any_missing = False
         for item_id in items:
+            # IRV measures raw clicking behaviour, so it ignores reverse-coding.
             v = _get_item_value(
-                item_id, current_row, invert_items, invert_min, invert_max, item_scales
+                item_id,
+                current_row,
+                set() if method == "irv" else invert_items,
+                invert_min,
+                invert_max,
+                item_scales,
             )
             if v is None:
                 any_missing = True
@@ -491,6 +498,9 @@ def _calculate_scores(
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)
+        elif method == "irv":
+            # Sample SD of the raw answers; 0 = the same click every time.
+            result = statistics.stdev(values) if len(values) >= 2 else None
         elif method not in {"sum", "mean"}:
             result = None
         elif not values:

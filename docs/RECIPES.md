@@ -64,6 +64,15 @@ When scoring runs successfully, outputs may include recipe-specific output folde
 `survey_scores.tsv`, derivative metadata (`dataset_description.json`), and
 methods-related outputs when enabled.
 
+## Response variability (IRV)
+
+Tick **Add response variability (IRV) per subject** in the Recipe Builder (or add
+`{ "Name": "IRV", "Method": "irv", "Items": [...] }` to `Scores` by hand). It adds one
+column: the standard deviation of that person's *raw* answers across the items
+(reverse-coding is ignored). `0` means the same answer to every question, which can
+indicate straight-lining but is a flag to review, not proof. It is empty with fewer than
+two answered items; `MinValid` works as for other scores.
+
 ## Common mistakes
 
 Treating a saved recipe as if it already generated outputs; building many scales

@@ -421,6 +421,16 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         editor = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
         self.assertIn("Overwrite it?", editor)
 
+    def test_delete_does_not_null_the_template_before_rendering(self):
+        """renderAll() dereferences currentTemplate; nulling it made the render throw
+        and skipped the template-list refresh, so a deleted file stayed in the dropdown."""
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        deleted = source[source.index("export async function deleteCurrentTemplate") :]
+        deleted = deleted[: deleted.index("export function bindTemplateEditorSourceWorkflowEvents")]
+
+        self.assertNotIn("context.currentTemplate = null", deleted)
+        self.assertIn("context.currentTemplate = {}", deleted)
+
 
 if __name__ == "__main__":
     unittest.main()

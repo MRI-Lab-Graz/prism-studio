@@ -16,7 +16,7 @@ from typing import Any
 from src.constants import SUPPORTED_MODALITIES
 
 ALLOWED_DERIVED_METHODS = {"max", "min", "mean", "avg", "sum", "map", "formula"}
-ALLOWED_SCORE_METHODS = {"sum", "mean", "formula", "map"}
+ALLOWED_SCORE_METHODS = {"sum", "mean", "formula", "map", "irv"}
 ALLOWED_MISSING = {"ignore", "require_all", "all", "strict"}
 
 

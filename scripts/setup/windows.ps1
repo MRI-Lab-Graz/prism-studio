@@ -12,7 +12,7 @@
     1. Check if 'uv' is installed.
     2. Check if tkinter is available (required for folder picker).
     3. Create a virtual environment in .\.venv
-    4. Install dependencies from requirements.txt into the virtual environment.
+    4. Install dependencies from requirements-runtime.txt (no optional/docs/dev extras) into the virtual environment.
     5. Optional: Install build and/or developer dependencies.
 
 .PARAMETER Build
@@ -35,7 +35,7 @@ Param(
 
 # --- Configuration ---
 $VenvDir = ".venv"
-$RequirementsFile = "requirements.txt"
+$RequirementsFile = "requirements-runtime.txt"
 $BuildRequirementsFile = "requirements-build.txt"
 $DevRequirementsFile = "requirements-dev.txt"
 
@@ -149,7 +149,7 @@ if (-not (Get-Command "deno" -ErrorAction SilentlyContinue)) {
     Write-Info "Deno is already installed."
 }
 
-# 3. Check for requirements.txt
+# 3. Check for the requirements file
 if (-not (Test-Path "$RequirementsFile")) {
     Write-Error "'$RequirementsFile' not found."
     Write-Info "Please make sure the requirements file exists in the project root."
