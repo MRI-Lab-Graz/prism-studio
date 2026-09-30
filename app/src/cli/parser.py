@@ -466,6 +466,26 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_datalad = subparsers.add_parser(
+        "datalad", help="Check and set up DataLad, git-annex and SSH access to a server"
+    )
+    datalad_subparsers = parser_datalad.add_subparsers(dest="action", help="Action")
+    parser_datalad_doctor = datalad_subparsers.add_parser(
+        "doctor", help="Check tools, SSH key and (optionally) server login"
+    )
+    parser_datalad_doctor.add_argument(
+        "--url", help="Server URL to test (ria+ssh://user@host/path, user@host:path)"
+    )
+    parser_datalad_doctor.add_argument(
+        "--project", help="Project root; uses its configured DataLad server URL"
+    )
+    parser_datalad_doctor.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+    datalad_subparsers.add_parser(
+        "keygen", help="Create an SSH key (id_ed25519) and print the public key for your admin"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",

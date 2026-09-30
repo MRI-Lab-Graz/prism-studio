@@ -18,6 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   converter tabs show a "Session mapping" panel (empty inputs) and keep
   Preview/Convert disabled until the session name is saved.
 
+### Fixed
+- **File Management > Organizer: uploading a folder never worked in Chrome/Edge.**
+  Browsers send folder-picked files under their relative path (`flat/sub-01_...`),
+  which the server turned into `flat_sub-01_...` and rejected ("No valid files to
+  convert"). Only the file name is used now (Organizer and the physio batch upload).
+- **DataLad "Save DataLad Snapshot" now says what it did.** It always showed the
+  generic "Current project is tracked by DataLad." (even for errors) and reported
+  "saved" on a clean tree. It now shows the commit message used, "No DataLad changes
+  were pending", or the real failure reason.
+- **A new project's `.prismrc.json` is written in its final form**, so a later
+  settings save no longer shows up as a pending change in a fresh DataLad project.
+- **Init PRISM on BIDS** no longer logs a 404 in the browser console on every run
+  (the progress poll started before the server had registered the job).
+
 ### Changed
 - **Setup scripts renamed to `install.cmd` / `install.sh`** at the repo root,
   so users aren't left picking between multiple similarly-named `setup.*`

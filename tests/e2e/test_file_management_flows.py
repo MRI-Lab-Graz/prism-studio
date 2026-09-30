@@ -350,3 +350,85 @@ def test_wide_to_long_keeps_typed_session_labels_exactly(app_page, studio_url, p
     assert eventually(out.exists)
     sessions = [line.split(",")[-1] for line in out.read_text().splitlines()[1:]]
     assert sessions == ["1", "1", "01", "01"]
+
+
+def test_wide_to_long_refuses_duplicate_ids_and_writes_nothing(app_page, studio_url, project, tmp_path):
+    app_page.allowed_http[400] = "/api/"  # the refusal is the point of this test
+    open_wide_to_long(
+        app_page, studio_url, tmp_path,
+        content="participant_id,T1_ADS01,T2_ADS01\nP1,1,2\nP1,3,4\nP2,5,6\n",
+    )
+    app_page.select_option("#wideLongIdColumn", "participant_id")
+
+    app_page.click("#wideLongConvertBtn")
+
+    expect(app_page.locator("#fm-wide-to-long-panel")).to_contain_text("non-unique values", timeout=30000)
+    expect(app_page.locator("#fm-wide-to-long-panel")).to_contain_text("P1")
+    assert not (project / "sourcedata").exists()
+
+
+def build_runs_project(project):
+    build_two_subjects(project, ids=("01",))
+    folder = project / "sub-01" / "ses-1" / "survey"
+    for run in ("01", "03"):
+        (folder / f"sub-01_ses-1_task-wb_run-{run}_survey.tsv").write_text(f"WB01\n{run}\n")
+
+
+def apply_after_preview(page, preview_btn, apply_btn):
+    page.click(preview_btn)
+    expect(page.locator(apply_btn)).to_be_enabled(timeout=30000)
+    page.click(apply_btn)
+
+
+def test_session_rewrite_adds_exactly_the_text_asked_for(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+    app_page.select_option("#repoSessionRewriteExample", "ses-1")
+    app_page.fill("#repoSessionRewriteAddText", "T")
+
+    apply_after_preview(app_page, "#repoSessionRewritePreviewBtn", "#repoSessionRewriteBtn")
+
+    assert eventually(lambda: (project / "sub-01/ses-T1").exists()), project_files(project)
+    assert not (project / "sub-01/ses-1").exists()
+    survey = sorted(p.name for p in (project / "sub-01/ses-T1/survey").iterdir())
+    assert all(name.startswith("sub-01_ses-T1_") for name in survey), survey
+
+
+def test_run_renumbering_closes_the_gap_and_only_the_gap(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+
+    apply_after_preview(app_page, "#runRenumberPreviewBtn", "#runRenumberApplyBtn")
+
+    survey = project / "sub-01/ses-1/survey"
+    assert eventually(lambda: (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").exists()), project_files(project)
+    assert not (survey / "sub-01_ses-1_task-wb_run-03_survey.tsv").exists()
+    assert (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").read_text() == "WB01\n03\n"  # run 03's data
+    assert (survey / "sub-01_ses-1_task-wb_run-01_survey.tsv").read_text() == "WB01\n01\n"
+
+
+def test_filename_part_rename_changes_the_task_in_every_matching_file(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+    app_page.select_option("#repoEntityRewriteModality", "survey")
+    app_page.select_option("#repoEntityRewritePart", "_task")
+    app_page.fill("#repoEntityRewriteValue", "wellbeing")
+
+    apply_after_preview(app_page, "#repoEntityRewritePreviewBtn", "#repoEntityRewriteBtn")
+
+    survey = project / "sub-01/ses-1/survey"
+    assert eventually(lambda: any("task-wellbeing" in n for n in project_files(project))), project_files(project)
+    names = sorted(p.name for p in survey.iterdir())
+    assert not [n for n in names if "task-wb_" in n or "task-wb." in n], names
+
+
+def test_delete_scans_tsv_removes_only_scans_files(app_page, studio_url, project):
+    build_two_subjects(project)
+    for sid in ("1291003", "1291004"):
+        (project / f"sub-{sid}/ses-1/sub-{sid}_ses-1_scans.tsv").write_text("filename\tacq_time\n")
+    open_delete_tab(app_page, studio_url)
+
+    app_page.click("#fileDeleteScansTsvBtn")
+
+    assert eventually(lambda: not [f for f in project_files(project) if f.endswith("_scans.tsv")]), project_files(project)
+    assert len([f for f in project_files(project) if f.endswith("_survey.tsv")]) == 2  # data files untouched
