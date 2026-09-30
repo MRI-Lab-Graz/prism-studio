@@ -16,6 +16,10 @@ import {
     setSessionChoiceSession,
 } from './participants-session-choice.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
+import {
+    REPLACE_CONFIRMATION_MESSAGE,
+    discardsExistingSchema,
+} from './participants-replace-policy.js';
 import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
 import {
     getParticipantsMergeHarmonizationDecisions as getParticipantsMergeHarmonizationDecisionsPayload,
@@ -288,6 +292,17 @@ export function initParticipants() {
                 || participantsExistingFilesInfo.has_participants_tsv
             )
         );
+    }
+
+    // Replace over existing files starts from a clean annotation state.
+    function currentReplaceDiscardsSchema() {
+        return discardsExistingSchema({
+            mode: getParticipantsWorkflowMode(),
+            fileAction: getParticipantsFileAction(),
+            hasParticipantsTsv: Boolean(
+                participantsExistingFilesInfo && participantsExistingFilesInfo.has_participants_tsv
+            ),
+        });
     }
 
     function getParticipantsFileAction() {
@@ -1530,6 +1545,21 @@ export function initParticipants() {
                 return;
             }
 
+            const chosenCase = PARTICIPANTS_CASE_CONFIG[normalizeParticipantsCaseId(caseId)];
+            if (
+                chosenCase
+                && discardsExistingSchema({
+                    mode: chosenCase.mode,
+                    fileAction: chosenCase.fileAction,
+                    hasParticipantsTsv: Boolean(
+                        participantsExistingFilesInfo && participantsExistingFilesInfo.has_participants_tsv
+                    ),
+                })
+                && !window.confirm(REPLACE_CONFIRMATION_MESSAGE)
+            ) {
+                return;
+            }
+
             applyParticipantsWorkflowCase(caseId);
             resetParticipantsPanelState();
             updateParticipantsWorkflowModeUi();
@@ -2668,7 +2698,7 @@ export function initParticipants() {
             : {};
         const projectPath = resolveCurrentProjectPath();
 
-        if (!projectPath) {
+        if (!projectPath || currentReplaceDiscardsSchema()) {
             return baseSchema;
         }
     
@@ -3647,16 +3677,19 @@ export function initParticipants() {
         const hasPreviewSchema = !!(window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.neurobagel_schema);
     
         // Prefer currently saved project participants.json (important after conversion).
+        // (Replace over existing files skips this: the old annotations are discarded.)
         let loadedProjectSchema = false;
-        try {
-            const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
-            const schemaData = await schemaResponse.json();
-            if (schemaData.success && schemaData.exists && schemaData.schema) {
-                window.existingParticipantsData = schemaData.schema;
-                loadedProjectSchema = true;
+        if (!currentReplaceDiscardsSchema()) {
+            try {
+                const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
+                const schemaData = await schemaResponse.json();
+                if (schemaData.success && schemaData.exists && schemaData.schema) {
+                    window.existingParticipantsData = schemaData.schema;
+                    loadedProjectSchema = true;
+                }
+            } catch (error) {
+                console.warn('Could not load existing participants schema:', error);
             }
-        } catch (error) {
-            console.warn('Could not load existing participants schema:', error);
         }
 
         // Fallback to current preview schema only if no saved project schema exists yet.

@@ -68,7 +68,10 @@ If `participants.tsv` already exists in the project, the tab asks you to choose 
 workflow before Review/Save unlock:
 
 - **Replace** — the imported file becomes the new source of truth; current
-  `participants.tsv`/`.json` are fully replaced.
+  `participants.tsv`/`.json` are fully replaced, **including their annotations**
+  (NeuroBagel terms, descriptions, value labels). Studio asks for confirmation when you
+  choose Replace, and the annotation panel then starts clean. To keep the annotations,
+  use **Modify** (edit the current files) or **Merge** (enrich them) instead.
 - **Modify** — the current files stay authoritative; edit them (e.g. their metadata)
   in place without importing a new source file.
 - **Merge** — safely combines an imported table into the current files: it fills

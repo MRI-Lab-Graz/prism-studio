@@ -292,6 +292,40 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         # ... and Convert cannot run while the question is unanswered.
         self.assertIn("sessionChoiceBlockReason(", module)
 
+    def test_replace_ignores_the_old_participants_json_and_asks_first(self):
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("./participants-replace-policy.js", module)
+
+        # Site 1: the preview must not merge the saved participants.json over it.
+        preview_schema = module[
+            module.index("async function buildEffectivePreviewSchema") :
+            module.index("// Preview button handler")
+        ]
+        self.assertIn("currentReplaceDiscardsSchema()", preview_schema)
+
+        # Site 2: the annotation panel must not load the saved participants.json.
+        loader = module[
+            module.index("// Prefer currently saved project participants.json") :
+            module.index("// Only fetch project participants.tsv columns")
+        ]
+        self.assertIn("currentReplaceDiscardsSchema()", loader)
+
+        # The shared helper is built on the tested policy.
+        helper = module[
+            module.index("function currentReplaceDiscardsSchema") :
+            module.index("function getParticipantsFileAction")
+        ]
+        self.assertIn("discardsExistingSchema({", helper)
+
+        # Choosing Replace over existing files asks before discarding them.
+        card_click = module[
+            module.index("participantsCaseGuideCards.addEventListener('click'") :
+            module.index("// Run immediately")
+        ]
+        self.assertIn("REPLACE_CONFIRMATION_MESSAGE", card_click)
+        self.assertIn("window.confirm(", card_click)
+
 
 if __name__ == "__main__":
     unittest.main()
