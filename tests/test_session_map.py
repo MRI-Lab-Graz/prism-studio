@@ -129,3 +129,36 @@ def test_conversion_map_by_project_state(tmp_path):
     make_project(tmp_path, None)
     with pytest.raises(TimepointsNotDeclaredError, match="Timepoints"):
         session_map_for_conversion(tmp_path)
+
+
+def test_remove_session_entries_drops_only_the_named_labels(tmp_path):
+    from src.session_map import remove_session_entries
+
+    root = make_project(tmp_path)
+    save_session_map(root, {"pre": "1", "T0": "1", "post": "2"})
+    assert remove_session_entries(root, ["T0"]) == {"pre": "1", "post": "2"}
+    assert load_session_map(root) == {"pre": "1", "post": "2"}
+
+
+def test_removing_a_label_that_is_not_mapped_is_an_error_and_changes_nothing(tmp_path):
+    from src.session_map import remove_session_entries
+
+    root = make_project(tmp_path)
+    save_session_map(root, {"pre": "1"})
+    with pytest.raises(SessionMapError, match="'01'"):
+        remove_session_entries(root, ["pre", "01"])  # exact match: '01' is not 'pre' or '1'
+    assert load_session_map(root) == {"pre": "1"}  # the valid one was not removed either
+
+
+def test_unmapped_session_labels_for_a_project(tmp_path):
+    from src.session_map import unmapped_session_labels
+
+    assert unmapped_session_labels(tmp_path, ["pre"]) == []  # no project.json: no gate
+    make_project(tmp_path, "single")
+    assert unmapped_session_labels(tmp_path, ["pre"]) == []
+    make_project(tmp_path, "multiple")
+    save_session_map(tmp_path, {"post": "2"})
+    assert unmapped_session_labels(tmp_path, ["pre", "post"]) == ["pre"]
+    make_project(tmp_path, None)
+    with pytest.raises(TimepointsNotDeclaredError):
+        unmapped_session_labels(tmp_path, ["pre"])

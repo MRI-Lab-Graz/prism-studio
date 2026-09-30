@@ -12,7 +12,11 @@ APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
-from src.cli.commands.session_map import cmd_session_map_set, cmd_session_map_show  # noqa: E402
+from src.cli.commands.session_map import (  # noqa: E402
+    cmd_session_map_set,
+    cmd_session_map_show,
+    cmd_session_map_unset,
+)
 from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
 from src.session_map import load_session_map  # noqa: E402
 
@@ -109,3 +113,57 @@ def test_output_folder_that_is_a_longitudinal_project_applies_its_rule_without_t
     assert info.value.code == 1
     assert "session-map set" in error_line(capsys)
     assert not list(proj.glob("sub-*"))  # nothing was written into the project
+
+
+def test_unset_removes_a_mistyped_entry(proj, capsys):
+    cmd_session_map_set(SimpleNamespace(project=str(proj), label="pree", target="1"))
+    cmd_session_map_set(SimpleNamespace(project=str(proj), label="pre", target="1"))
+
+    cmd_session_map_unset(SimpleNamespace(project=str(proj), label="pree"))
+
+    assert load_session_map(proj) == {"pre": "1"}
+
+
+def test_unset_of_an_unknown_label_exits_2_and_keeps_the_map(proj, capsys):
+    cmd_session_map_set(SimpleNamespace(project=str(proj), label="pre", target="1"))
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as info:
+        cmd_session_map_unset(SimpleNamespace(project=str(proj), label="post"))
+    assert info.value.code == 2
+    assert "'post'" in capsys.readouterr().out
+    assert load_session_map(proj) == {"pre": "1"}
+
+
+def batch_args(tmp_path, output_dir):
+    return SimpleNamespace(
+        session_map="t1:ses-1", input_dir=str(tmp_path), output_dir=str(output_dir),
+        library=None, id_map=None, task=None, subject_id_col=None,
+    )
+
+
+def test_limesurvey_batch_is_refused_in_a_longitudinal_project(tmp_path, proj, capsys, monkeypatch):
+    from src.cli.commands import survey as survey_cmds
+
+    called = []
+    monkeypatch.setattr(survey_cmds, "batch_convert_lsa", lambda *a, **k: called.append(1))
+
+    with pytest.raises(SystemExit) as info:
+        survey_cmds.cmd_survey_import_limesurvey_batch(batch_args(tmp_path, proj))
+
+    assert info.value.code == 2
+    assert "survey convert" in capsys.readouterr().out  # where the session map is enforced
+    assert not called
+
+
+def test_limesurvey_batch_into_a_plain_folder_behaves_as_before(tmp_path, monkeypatch):
+    from src.cli.commands import survey as survey_cmds
+
+    called = []
+    monkeypatch.setattr(survey_cmds, "batch_convert_lsa", lambda *a, **k: called.append(1))
+    monkeypatch.setattr(survey_cmds, "check_uniqueness", lambda *a, **k: True)
+    out = tmp_path / "plain"
+    out.mkdir()
+
+    survey_cmds.cmd_survey_import_limesurvey_batch(batch_args(tmp_path, out))
+
+    assert called == [1]

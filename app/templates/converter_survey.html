@@ -150,9 +150,9 @@
                             <div id="sessionMapPanel" class="alert alert-warning d-none mb-3" role="region" aria-labelledby="sessionMapPanelTitle">
                                 <strong id="sessionMapPanelTitle">Session mapping required</strong>
                                 <p class="small mb-2">This project has several timepoints. Say which session name each label in your file stands for. Nothing is filled in for you.</p>
-                                <div id="sessionMapRows"></div>
-                                <button type="button" class="btn btn-sm btn-warning mt-2" id="sessionMapSaveBtn" disabled>Save session map</button>
-                                <span class="small ms-2" id="sessionMapStatus" aria-live="polite"></span>
+                                <div id="sessionMapRows" data-role="rows"></div>
+                                <button type="button" class="btn btn-sm btn-warning mt-2" id="sessionMapSaveBtn" data-role="save" disabled>Save session map</button>
+                                <span class="small ms-2" id="sessionMapStatus" data-role="status" aria-live="polite"></span>
                             </div>
 
                             <hr class="my-4">

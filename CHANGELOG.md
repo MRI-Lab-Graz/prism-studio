@@ -14,7 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `code/session_map.json` (`prism_tools.py session-map show|set`); nothing is
   guessed or filled in, and several source labels may share one session. Blank
   session cells, `duplicate_handling=sessions` and files without any session are
-  refused instead of defaulting to `ses-1`.
+  refused instead of defaulting to `ses-1`. The Survey and Sociodemographics
+  converter tabs show a "Session mapping" panel (empty inputs) and keep
+  Preview/Convert disabled until the session name is saved.
 
 ### Changed
 - **Setup scripts renamed to `install.cmd` / `install.sh`** at the repo root,

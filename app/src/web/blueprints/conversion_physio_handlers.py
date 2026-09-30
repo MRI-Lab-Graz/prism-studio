@@ -22,6 +22,7 @@ from werkzeug.utils import secure_filename
 # Shared utilities
 from .conversion_job_store import ConversionJobStore
 from .conversion_utils import (
+    upload_basename,
     normalize_filename,
     require_existing_project_root,
     resolve_existing_project_root,
@@ -349,7 +350,7 @@ def api_batch_convert_start():
         for f in files:
             if not f or not f.filename:
                 continue
-            filename = secure_filename(f.filename)
+            filename = secure_filename(upload_basename(f.filename))
             lower_name = filename.lower()
             if lower_name.endswith(".nii.gz"):
                 ext = ".nii.gz"
@@ -795,7 +796,7 @@ def api_batch_convert():
     for f in files:
         if not f or not f.filename:
             continue
-        filename = secure_filename(f.filename)
+        filename = secure_filename(upload_basename(f.filename))
 
         # Handle .nii.gz and .tsv.gz
         lower_name = filename.lower()

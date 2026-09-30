@@ -52,6 +52,8 @@ def dispatch_prism_tools(
             handlers["session_map_show"](args)
         elif args.action == "set":
             handlers["session_map_set"](args)
+        elif args.action == "unset":
+            handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
     elif args.command == "environment":

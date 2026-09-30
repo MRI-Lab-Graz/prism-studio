@@ -1269,6 +1269,7 @@ export function initSurveyConvert(elements) {
         const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
         if (!filename || filename.toLowerCase().endsWith('.lss') || !idValue || idValue === 'auto') {
             hideVersionWizard();
+            if (sessionMapPanel) sessionMapPanel.hide();
             return { hasMultivariant: false, skipped: true };
         }
 
@@ -1282,6 +1283,7 @@ export function initSurveyConvert(elements) {
         });
         if (!workflowRequest.filename) {
             hideVersionWizard();
+            if (sessionMapPanel) sessionMapPanel.hide();
             return { hasMultivariant: false, skipped: true };
         }
 

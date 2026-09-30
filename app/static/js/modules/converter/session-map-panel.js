@@ -26,13 +26,27 @@ export function entriesToSave(labels, typed) {
 }
 
 /**
- * Thin DOM wrapper. `root` holds #sessionMapRows, #sessionMapSaveBtn, #sessionMapStatus.
+ * Groups of digit-only labels that differ only by leading zeros ('1', '01', '001').
+ * They are different labels and stay different; this only lets the panel point it out.
+ */
+export function numericTwinLabels(labels) {
+    const groups = new Map();
+    for (const label of labels) {
+        if (!/^\d+$/.test(label)) continue;
+        const key = String(BigInt(label));
+        groups.set(key, [...(groups.get(key) ?? []), label]);
+    }
+    return [...groups.values()].filter((group) => group.length > 1);
+}
+
+/**
+ * Thin DOM wrapper. `root` holds elements with data-role="rows" | "save" | "status".
  * `save(entries)` POSTs to /api/session-map and resolves on success; `onSaved()` re-runs detection.
  */
 export function createSessionMapPanel({ root, save, onSaved, onChange }) {
-    const rows = root.querySelector('#sessionMapRows');
-    const saveBtn = root.querySelector('#sessionMapSaveBtn');
-    const status = root.querySelector('#sessionMapStatus');
+    const rows = root.querySelector('[data-role="rows"]');
+    const saveBtn = root.querySelector('[data-role="save"]');
+    const status = root.querySelector('[data-role="status"]');
     let labels = [];
     const typed = {};
 
@@ -43,7 +57,18 @@ export function createSessionMapPanel({ root, save, onSaved, onChange }) {
 
     function show(unmapped) {
         labels = unmapped.slice();
+        // Only what is visible may count toward Save: drop names of labels no longer listed.
+        for (const key of Object.keys(typed)) {
+            if (!labels.includes(key)) delete typed[key];
+        }
+        const warnings = numericTwinLabels(labels).map((group) => {
+            const note = document.createElement('div');
+            note.className = 'small text-warning mb-1';
+            note.textContent = `${group.map((label) => `'${label}'`).join(', ')} are different session labels. Map each one yourself; PRISM does not treat them as the same.`;
+            return note;
+        });
         rows.replaceChildren(
+            ...warnings,
             ...labels.map((label) => {
                 if (label === '') {
                     const note = document.createElement('div');
@@ -59,6 +84,7 @@ export function createSessionMapPanel({ root, save, onSaved, onChange }) {
                 const input = document.createElement('input');
                 input.className = 'form-control';
                 input.placeholder = 'session name (letters and digits)';
+                input.value = typed[label] ?? '';
                 input.setAttribute('aria-label', `Session name for ${label === '' ? 'empty label' : label}`);
                 input.addEventListener('input', () => {
                     typed[label] = input.value;

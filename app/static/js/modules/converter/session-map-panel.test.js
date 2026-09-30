@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canSaveSessionMap, entriesToSave, validSessionName } from './session-map-panel.js';
+import { canSaveSessionMap, entriesToSave, numericTwinLabels, validSessionName } from './session-map-panel.js';
 
 describe('session map panel rules', () => {
     it('accepts letters and digits only', () => {
@@ -26,5 +26,15 @@ describe('session map panel rules', () => {
         // the other labels can still be saved while the blank one is left to be fixed in the file
         expect(canSaveSessionMap(['', 'pre'], { pre: '1' })).toBe(true);
         expect(entriesToSave(['', 'pre'], { '': '9', pre: '1' })).toEqual({ pre: '1' });
+    });
+
+    it('spots labels that differ only by leading zeros, without ever treating them as equal', () => {
+        expect(numericTwinLabels(['1', '01', 'pre'])).toEqual([['1', '01']]);
+        expect(numericTwinLabels(['1', '2', 'pre'])).toEqual([]);
+        expect(numericTwinLabels(['1', '01', '001', '2'])).toEqual([['1', '01', '001']]);
+        expect(numericTwinLabels(['', '0', '00'])).toEqual([['0', '00']]);
+        expect(numericTwinLabels(['12345678901234567890', '012345678901234567890'])).toEqual([
+            ['12345678901234567890', '012345678901234567890'],
+        ]);
     });
 });

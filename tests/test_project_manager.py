@@ -1448,6 +1448,90 @@ class TestProjectManager(unittest.TestCase):
             commands,
         )
 
+    def test_created_prismrc_is_already_in_the_form_save_config_writes(self):
+        """A later settings save must not rewrite a fresh project's .prismrc.json
+        (in a DataLad project that shows up as a pending change right after creation)."""
+        from src.config import load_config, save_config
+
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+            self.assertTrue(result.get("success"), result)
+
+            prismrc = project_path / ".prismrc.json"
+            created = prismrc.read_text(encoding="utf-8")
+            save_config(load_config(str(project_path)), str(project_path))
+
+            self.assertEqual(prismrc.read_text(encoding="utf-8"), created)
+
+    def _snapshot_message(self, save_process, head_moves=None):
+        """Run save_datalad_snapshot with `datalad save` answering `save_process`.
+
+        head_moves: True/False = `git rev-parse HEAD` changes / stays the same across the
+        save; None = git cannot tell (empty answer)."""
+        state = {"saved": False}
+
+        def fake_run(command, *args, **kwargs):
+            if len(command) > 1 and command[1] == "save":
+                state["saved"] = True
+                return save_process
+            if command[:3] == ["git", "rev-parse", "HEAD"] and head_moves is not None:
+                moved = head_moves and state["saved"]
+                return Mock(returncode=0, stdout="bbb\n" if moved else "aaa\n", stderr="")
+            return Mock(returncode=0, stdout="", stderr="")
+
+        manager = ProjectManager()
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            (project_path / ".datalad").mkdir(parents=True, exist_ok=True)
+            with patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad"):
+                with patch("src.project_manager.subprocess.run", side_effect=fake_run):
+                    with patch(
+                        "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
+                        return_value=set(),
+                    ):
+                        return manager.save_datalad_snapshot(
+                            project_path, message="Checkpoint metadata updates"
+                        )
+
+    def test_save_datalad_snapshot_reports_what_it_saved_not_the_tracking_status(self):
+        result = self._snapshot_message(
+            Mock(returncode=0, stdout="save (ok: 1)", stderr=""), head_moves=True
+        )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Checkpoint metadata updates", result.get("message", ""))
+        self.assertNotEqual(result.get("message"), "Current project is tracked by DataLad.")
+
+    def test_a_clean_save_that_exits_zero_is_reported_as_nothing_pending(self):
+        """Real `datalad save` prints nothing and exits 0 on a clean tree; HEAD does not move."""
+        result = self._snapshot_message(
+            Mock(returncode=0, stdout="", stderr=""), head_moves=False
+        )
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("No DataLad changes were pending", result.get("message", ""))
+        self.assertTrue(result.get("datalad", {}).get("no_changes"))
+
+    def test_when_git_cannot_tell_a_zero_exit_still_counts_as_saved(self):
+        result = self._snapshot_message(Mock(returncode=0, stdout="", stderr=""))
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("Checkpoint metadata updates", result.get("message", ""))
+
+    def test_save_datalad_snapshot_says_when_there_was_nothing_to_save(self):
+        result = self._snapshot_message(Mock(returncode=1, stdout="", stderr="nothing to save"))
+
+        self.assertTrue(result.get("success"), result)
+        self.assertIn("No DataLad changes were pending", result.get("message", ""))
+
+    def test_save_datalad_snapshot_failure_reports_the_reason(self):
+        result = self._snapshot_message(Mock(returncode=1, stdout="", stderr="disk is full"))
+
+        self.assertFalse(result.get("success"))
+        self.assertIn("disk is full", result.get("error", ""))
+
     @patch("src.project_manager.shutil.which", return_value="/usr/bin/datalad")
     def test_save_datalad_snapshot_rejects_non_datalad_project(self, _mock_which):
         manager = ProjectManager()

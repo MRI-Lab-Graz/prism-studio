@@ -47,6 +47,11 @@
           ],
           "description": "Type of study design"
         },
+        "Timepoints": {
+          "type": "string",
+          "enum": ["single", "multiple"],
+          "description": "Whether the study has one timepoint (cross-sectional) or several (longitudinal). Several: every session label of an import must be mapped in code/session_map.json"
+        },
         "TypeDescription": {
           "type": "string",
           "description": "Additional description of study design (e.g., '2x2 factorial design', 'Two-wave panel study with 4-week interval')"

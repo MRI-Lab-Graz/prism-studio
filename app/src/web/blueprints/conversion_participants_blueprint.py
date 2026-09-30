@@ -38,6 +38,8 @@ from src.participants_backend import (
     format_identical_rows_warning,
 )
 from src.participants_sessions import scope_to_session
+from src.session_map import SessionMapError
+from src.session_map import unmapped_session_labels as _unmapped_session_labels
 
 
 from .conversion_participants_io import (
@@ -326,6 +328,17 @@ def api_participants_preview():
             except ValueError as session_error:
                 return jsonify({"error": str(session_error)}), 400
 
+            # Longitudinal project: tell the page which chosen session still needs a map entry.
+            chosen_session = request.form.get("session_value", "").strip()
+            unmapped_session_labels: list[str] = []
+            if chosen_session and request.form.get("session_column", "").strip():
+                try:
+                    unmapped_session_labels = _unmapped_session_labels(
+                        _get_session_project_root(), [chosen_session]
+                    )
+                except SessionMapError as session_map_error:
+                    return jsonify({"error": str(session_map_error)}), 400
+
             from src.converters.id_detection import (
                 detect_id_column as _detect_id,
                 has_prismmeta_columns as _has_pm_cols,
@@ -490,6 +503,7 @@ def api_participants_preview():
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
+                    "unmapped_session_labels": unmapped_session_labels,
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []
                     ),

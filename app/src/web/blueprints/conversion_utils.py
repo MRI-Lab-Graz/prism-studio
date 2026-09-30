@@ -510,6 +510,14 @@ def looks_like_wrong_delimiter(df: pd.DataFrame, used_delimiter: str | None) -> 
     return any(delimiter in header for delimiter in candidate_delimiters)
 
 
+def upload_basename(filename: str | None) -> str:
+    """File name of an uploaded file, without any folder part.
+
+    Browsers send a file picked through a folder chooser under its relative path
+    (``flat/sub-01_task-x.tsv``); only the name itself is meaningful to PRISM."""
+    return str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+
+
 def should_retry_with_official_library(err: Exception) -> bool:
     """Return true when converter error suggests official-template fallback."""
     msg = str(err).lower()

@@ -85,7 +85,9 @@ def _new_page(browser, studio_url, project_path=None):
         if msg.type != "error":
             return
         if any(f"status of {status}" in msg.text for status in page.allowed_http):
-            return  # the matching response is allowed (browsers log it without the URL)
+            # Browsers log a failed response without its URL, so this filter is URL-blind
+            # on purpose; the response listener below (status AND URL) is the real guard.
+            return
         problems.append(f"console: {msg.text}")
 
     page.on("pageerror", lambda err: problems.append(f"JS error: {err}"))

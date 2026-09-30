@@ -398,8 +398,11 @@ export function initProjectInitOnBidsController({
 
         (async function pollInitBidsJobLog() {
             while (keepPollingJobLog) {
-                await drainInitBidsJobLog();
+                // Wait first: the server registers the job while handling the request sent
+                // right after this loop starts, so an immediate poll would just log a 404.
                 await new Promise((resolve) => window.setTimeout(resolve, 1000));
+                if (!keepPollingJobLog) break;
+                await drainInitBidsJobLog();
             }
         })();
 

@@ -645,6 +645,21 @@ def cmd_survey_import_limesurvey_batch(args):
         sys.exit(1)
     input_dir = str(Path(args.input_dir).resolve())
     output_dir = str(Path(args.output_dir).resolve())
+    try:
+        from src.session_map import session_map_for_conversion
+
+        gated = session_map_for_conversion(output_dir) is not None
+    except ValueError as exc:  # SessionMapError, e.g. Timepoints not declared
+        print(f"Error: {exc}")
+        sys.exit(2)
+    if gated:
+        print(
+            "Error: this project has several timepoints, so its session names come "
+            "from code/session_map.json. The legacy --session-map (t1:ses-1) would "
+            "bypass it. Use `prism_tools.py survey convert` (one file per run; "
+            "--session or a session column) instead."
+        )
+        sys.exit(2)
     library_path = str(Path(args.library).resolve()) if args.library else None
     id_map_file = (
         str(Path(args.id_map).resolve()) if getattr(args, "id_map", None) else None

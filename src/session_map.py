@@ -54,8 +54,8 @@ class SessionsNotMappedError(SessionMapError):
         super().__init__(
             f"Session label(s) not in the session map: {shown}. This project has "
             "several timepoints, so every session label must be mapped by you. "
-            f"Add them to {MAP_FILE.as_posix()} (Survey tab of the Converter, "
-            "'Session mapping' panel, or `prism_tools.py session-map set`), then run again."
+            f"Add them to {MAP_FILE.as_posix()} (the 'Session mapping' panel on the Converter's "
+            "Survey or Sociodemographics tab, or `prism_tools.py session-map set`), then run again."
         )
 
 
@@ -133,6 +133,21 @@ def set_session_entries(
     return merged
 
 
+def remove_session_entries(
+    project_path: str | Path, labels: Iterable[str]
+) -> dict[str, str]:
+    """Drop entries by exact source label; an unknown label changes nothing and raises."""
+    current = load_session_map(project_path)
+    wanted = [str(label).strip() for label in labels]
+    unknown = [label for label in wanted if label not in current]
+    if unknown:
+        shown = ", ".join(repr(label) for label in unknown)
+        raise SessionMapError(f"Not in the session map (labels match exactly): {shown}")
+    remaining = {k: v for k, v in current.items() if k not in wanted}
+    save_session_map(project_path, remaining)
+    return remaining
+
+
 def unmapped_labels(labels: Iterable[object], mapping: Mapping[str, str]) -> list[str]:
     """Labels without an entry, deduplicated, in order of first appearance.
     A blank label is reported as '' (it is never defaulted)."""
@@ -164,6 +179,14 @@ def session_map_for_conversion(
     if state == "undeclared":
         raise TimepointsNotDeclaredError()
     return load_session_map(project_path)
+
+
+def unmapped_session_labels(
+    project_path: str | Path | None, labels: Iterable[object]
+) -> list[str]:
+    """Labels of an import that still lack a map entry ([] when no gate applies)."""
+    mapping = session_map_for_conversion(project_path)
+    return [] if mapping is None else unmapped_labels(labels, mapping)
 
 
 def require_sessions_mapped(

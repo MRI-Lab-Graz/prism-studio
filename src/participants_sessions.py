@@ -12,14 +12,27 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:  # the standalone validator image has no pandas; session_label needs none
+    pd = None  # type: ignore[assignment]
 
 _SESSION_COLUMN_ALIASES = {"ses", "session", "sessionid", "visit", "timepoint", "wave"}
 
 
+def _is_missing(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return False
+    if pd is not None:
+        return bool(pd.isna(value))
+    return value != value  # NaN is the only missing scalar left without pandas
+
+
 def session_label(value: Any) -> str:
     """Exact string label of a session cell ('' for missing)."""
-    if value is None or (not isinstance(value, str) and pd.isna(value)):
+    if _is_missing(value):
         return ""
     if isinstance(value, float) and value.is_integer():
         return str(int(value))

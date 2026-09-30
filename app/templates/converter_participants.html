@@ -208,6 +208,15 @@
                 </div>
             </div>
 
+            <!-- Longitudinal project: the user names the session being imported (nothing is pre-filled) -->
+            <div id="participantsSessionMapPanel" class="alert alert-warning d-none mt-3" role="region" aria-labelledby="participantsSessionMapTitle">
+                <strong id="participantsSessionMapTitle">Session mapping required</strong>
+                <p class="small mb-2">This project has several timepoints. Say which session name the session you are importing stands for. Nothing is filled in for you.</p>
+                <div data-role="rows"></div>
+                <button type="button" class="btn btn-sm btn-warning mt-2" data-role="save" disabled>Save session map</button>
+                <span class="small ms-2" data-role="status" aria-live="polite"></span>
+            </div>
+
             <!-- Messages -->
             <div id="participantsError" class="alert alert-danger d-none mt-3"></div>
             <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>

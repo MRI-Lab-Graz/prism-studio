@@ -16,6 +16,7 @@ import {
     setSessionChoiceLongitudinal,
     setSessionChoiceSession,
 } from './participants-session-choice.js';
+import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
@@ -168,6 +169,7 @@ export function initParticipants() {
     function clearParticipantsSelectedFile({ resetSourcedataSelection = false } = {}) {
         participantsServerFilePath = '';
         updateParticipantsSessionCandidates([]);
+        updateParticipantsSessionMapPanel([]);
 
         const fileInput = document.getElementById('participantsDataFile');
         if (fileInput) {
@@ -454,15 +456,26 @@ export function initParticipants() {
     }
 
     // Why a plain file import cannot be applied yet ('' when nothing blocks).
-    function participantsSessionBlockReason() {
+    // Plain file import (not the merge route, not editing the existing file).
+    function participantsUsesPlainFileRoute() {
         const mode = getParticipantsWorkflowMode();
         const fileAction = mode === 'file' ? getParticipantsFileAction() : 'replace';
-        const useMergeRoute = mode === 'file' && fileAction === 'merge' && canModifyExistingParticipants();
-        return sessionChoiceBlockReasonForRoute(
+        return mode === 'file' && !(fileAction === 'merge' && canModifyExistingParticipants());
+    }
+
+    function participantsSessionBlockReason() {
+        const mode = getParticipantsWorkflowMode();
+        const useMergeRoute = mode === 'file' && !participantsUsesPlainFileRoute();
+        const choiceReason = sessionChoiceBlockReasonForRoute(
             { mode, useMergeRoute },
             participantsSessionCandidates,
             participantsSessionChoice
         );
+        if (choiceReason) return choiceReason;
+        if (participantsUsesPlainFileRoute() && participantsSessionMapPanel && participantsSessionMapPanel.isPending()) {
+            return 'Map the session name first (Session mapping panel above).';
+        }
+        return '';
     }
 
     function canApplyParticipantsConversion() {
@@ -2579,6 +2592,35 @@ export function initParticipants() {
     let participantsSessionCandidates = [];
     let participantsSessionChoice = createSessionChoiceState();
 
+    // Longitudinal project: the user names the session being imported (nothing is filled in for them).
+    const participantsSessionMapPanelEl = document.getElementById('participantsSessionMapPanel');
+    const participantsSessionMapPanel = participantsSessionMapPanelEl
+        ? createSessionMapPanel({
+            root: participantsSessionMapPanelEl,
+            save: async (entries) => {
+                const response = await fetchWithApiFallback('/api/session-map', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_path: resolveCurrentProjectPath() || '', entries }),
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Could not save the session map.');
+            },
+            onSaved: () => document.getElementById('participantsPreviewBtn')?.click(),
+            onChange: () => refreshParticipantsConvertButtonForSessionChoice(),
+        })
+        : null;
+
+    function updateParticipantsSessionMapPanel(labels) {
+        if (!participantsSessionMapPanel) return;
+        const list = Array.isArray(labels) ? labels : [];
+        if (list.length > 0 && participantsUsesPlainFileRoute()) {
+            participantsSessionMapPanel.show(list);
+        } else {
+            participantsSessionMapPanel.hide();
+        }
+    }
+
     function renderParticipantsSessionChoice() {
         const card = document.getElementById('participantsSessionChoiceCard');
         if (!card) return;
@@ -3033,6 +3075,7 @@ export function initParticipants() {
             });
             window.participantsTsvData = previewColumnValues;
             updateParticipantsSessionCandidates(data.session_candidates);
+            updateParticipantsSessionMapPanel(data.unmapped_session_labels);
             if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
                 window.pendingAdditionalParticipantColumns.forEach((columnName) => {
                     const cleanedName = String(columnName || '').trim();

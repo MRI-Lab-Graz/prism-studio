@@ -349,6 +349,9 @@ python prism_tools.py session-map show --project /absolute/path/to/my-project --
 # Map one source label (exactly as it appears in the data) to a session name (letters and digits)
 python prism_tools.py session-map set --project /absolute/path/to/my-project --label pre --target 1
 python prism_tools.py session-map set --project /absolute/path/to/my-project --label T0 --target 1
+
+# Remove a mistyped entry (exact label)
+python prism_tools.py session-map unset --project /absolute/path/to/my-project --label pree
 ```
 
 `survey convert` and the participants importer stop with the list of unmapped labels until
@@ -357,6 +360,10 @@ a file with a session column (it never silently picks "the first one"); use
 `--session <label>` to import one session, or to label a file that has no session column
 (the label must be in the map). If `--project` is omitted but `--output` is a PRISM project,
 that project's rules apply. Projects with `Timepoints: single` behave as before.
+
+The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a different,
+older per-import rename of LimeSurvey archives. It is refused when the output folder is a
+project with several timepoints (use `survey convert`, which enforces the session map).
 
 ### Environment
 

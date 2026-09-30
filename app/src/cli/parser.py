@@ -456,6 +456,16 @@ def build_prism_tools_parsers(
         "--target", required=True, help="Session name to write (letters and digits)"
     )
 
+    parser_session_map_unset = session_map_subparsers.add_parser(
+        "unset", help="Remove one source label from the session map (exact match)"
+    )
+    parser_session_map_unset.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_session_map_unset.add_argument(
+        "--label", required=True, help="Source label to remove, exactly as mapped"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",

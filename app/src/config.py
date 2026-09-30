@@ -228,22 +228,11 @@ def load_config(dataset_path: str) -> PrismConfig:
         return PrismConfig()
 
 
-def save_config(
-    config: PrismConfig, dataset_path: str, filename: str = ".prismrc.json"
-) -> str:
-    """
-    Save configuration to dataset directory.
+def config_to_dict(config: PrismConfig) -> dict:
+    """The JSON form of a config, exactly as ``save_config`` writes it.
 
-    Args:
-        config: PrismConfig instance to save
-        dataset_path: Path to dataset root
-        filename: Config filename (default: .prismrc.json)
-
-    Returns:
-        Path to saved config file
-    """
-    config_path = os.path.join(dataset_path, filename)
-
+    Also used to create a project's first ``.prismrc.json``, so a later save never
+    rewrites a file that nobody edited."""
     # Convert to JSON-friendly format
     data = {
         "schemaVersion": config.schema_version,
@@ -282,6 +271,25 @@ def save_config(
 
     if config.rsync_exclude_patterns:
         data["rsyncExcludePatterns"] = config.rsync_exclude_patterns
+    return data
+
+
+def save_config(
+    config: PrismConfig, dataset_path: str, filename: str = ".prismrc.json"
+) -> str:
+    """
+    Save configuration to dataset directory.
+
+    Args:
+        config: PrismConfig instance to save
+        dataset_path: Path to dataset root
+        filename: Config filename (default: .prismrc.json)
+
+    Returns:
+        Path to saved config file
+    """
+    config_path = os.path.join(dataset_path, filename)
+    data = config_to_dict(config)
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)

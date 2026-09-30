@@ -9,6 +9,7 @@ from src.session_map import (
     SessionMapError,
     load_session_map,
     project_timepoints,
+    remove_session_entries,
     set_session_entries,
 )
 
@@ -41,3 +42,12 @@ def cmd_session_map_set(args) -> None:
         print(f"Error: {exc}")
         sys.exit(2)
     print(f"Mapped {args.label!r} -> {args.target}")
+
+
+def cmd_session_map_unset(args) -> None:
+    try:
+        remove_session_entries(args.project, [args.label])
+    except SessionMapError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
+    print(f"Removed {args.label!r} from the session map")

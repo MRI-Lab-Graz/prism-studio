@@ -1972,9 +1972,15 @@ class ProjectManager:
             message=message,
             datalad_executable=status.get("executable"),
             recursive=True,
+            detect_no_changes=True,
         )
+        save_message = save_result.get("message")
         refreshed_status = self.get_datalad_status(project_path)
         save_result.update(refreshed_status)
+        if save_message:
+            # The refreshed status carries its own generic "tracked by DataLad" message;
+            # what the user needs to read is what the save itself did (or why it failed).
+            save_result["message"] = save_message
         if gitattributes_policy_updated:
             save_result["gitattributes_policy_updated"] = True
             save_result["message"] = (
@@ -5448,8 +5454,12 @@ git push -u origin main
         datalad_executable: Optional[str] = None,
         updated_only: bool = False,
         recursive: bool = False,
+        detect_no_changes: bool = False,
     ) -> Dict[str, Any]:
-        """Run a DataLad save command and normalize the result payload."""
+        """Run a DataLad save command and normalize the result payload.
+
+        ``detect_no_changes`` compares git HEAD before and after (two extra git calls) so a
+        clean tree is reported as "nothing pending" instead of "saved"."""
         normalized_message = str(message or "").strip() or "Save PRISM project changes"
         result: Dict[str, Any] = {
             "available": False,
@@ -5475,6 +5485,7 @@ git push -u origin main
             save_command.append("--updated")
         save_command.extend(["-m", normalized_message])
 
+        head_before = self._git_head(project_path) if detect_no_changes else None
         try:
             process = subprocess.run(
                 save_command,
@@ -5495,6 +5506,17 @@ git push -u origin main
             return result
 
         if process.returncode == 0:
+            # On a clean tree `datalad save` prints nothing and still exits 0. If HEAD did not
+            # move (a recursive save also moves the root's subdataset pointers), nothing was saved.
+            head_after = self._git_head(project_path) if detect_no_changes else None
+            if head_before and head_after and head_before == head_after:
+                result["no_changes"] = True
+                result["message"] = (
+                    "No DataLad changes were pending in the project or nested datasets."
+                    if recursive
+                    else "No DataLad changes were pending."
+                )
+                return result
             result["saved"] = True
             if recursive:
                 result["message"] = (
@@ -5518,6 +5540,23 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    @staticmethod
+    def _git_head(project_path: Path) -> Optional[str]:
+        """Current HEAD commit of the project, or None if git cannot say."""
+        try:
+            process = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=str(project_path),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=30,
+            )
+        except Exception:
+            return None
+        sha = (process.stdout or "").strip() if process.returncode == 0 else ""
+        return sha or None
 
     def _has_staged_changes_for_path(
         self, project_path: Path, relative_dataset_text: str, *, timeout: float
@@ -6918,21 +6957,25 @@ git push -u origin main
         return "\n".join(lines) + "\n"
 
     def _create_prismrc(self) -> Dict[str, Any]:
-        """Create .prismrc.json content."""
-        return {
-            "schemaVersion": "stable",
-            "strictMode": False,
-            "runBids": False,
-            "ignorePaths": [
-                "library/**",
-                "recipe/**",
-                "sourcedata/**",
-                "derivatives/**",
-                "analysis/**",
-                "paper/**",
-                "code/**",
-            ],
-        }
+        """Create .prismrc.json content in the canonical form ``save_config`` writes."""
+        from src.config import PrismConfig, config_to_dict
+
+        return config_to_dict(
+            PrismConfig(
+                schema_version="stable",
+                strict_mode=False,
+                run_bids=False,
+                ignore_paths=[
+                    "library/**",
+                    "recipe/**",
+                    "sourcedata/**",
+                    "derivatives/**",
+                    "analysis/**",
+                    "paper/**",
+                    "code/**",
+                ],
+            )
+        )
 
     def _create_readme(self, name: str, sessions: int, modalities: List[str]) -> str:
         """Create README.md content with YODA instructions."""
