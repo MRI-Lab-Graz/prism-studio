@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.participants_backend import (
+    _sorted_session_values,
     apply_participants_merge,
     normalize_participant_mapping,
     preview_participants_merge,
@@ -76,3 +77,10 @@ def test_a_label_that_is_not_in_the_file_is_not_rewritten_into_one_that_is(tmp_p
     # "01" is not a session of this file, so the decision must stay unresolved.
     assert payload["session_resolution_required"] is True
     assert payload["session_resolution_candidates"][0]["selected_session"] == "01"
+
+
+@pytest.mark.parametrize("arrival_order", [["1", "01"], ["01", "1"]])
+def test_session_order_does_not_depend_on_arrival_order(arrival_order):
+    # Sets iterate in a hash-seed dependent order; equal numeric value must not
+    # make the result order depend on it.
+    assert _sorted_session_values(arrival_order) == ["01", "1"]

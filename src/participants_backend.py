@@ -906,10 +906,12 @@ def _find_session_column_name(columns: list[str], preferred: str = "") -> str:
 
 
 def _sorted_session_values(values: set[str]) -> list[str]:
-    def sort_key(raw: str) -> tuple[int, float | str]:
+    def sort_key(raw: str) -> tuple[Any, ...]:
         numeric = _parse_participant_numeric_value(raw)
         if numeric is not None:
-            return (0, numeric)
+            # The label breaks ties ("1" vs "01"): otherwise the order follows
+            # the set's hash-seed dependent iteration order.
+            return (0, numeric, str(raw))
         return (1, str(raw))
 
     return sorted((str(value).strip() for value in values if str(value).strip()), key=sort_key)
