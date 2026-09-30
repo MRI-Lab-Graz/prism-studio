@@ -16,6 +16,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { openRemoteFolderPicker } from './remote_folder_picker.js';
 import { isRiaUrl } from '../../shared/ssh-target.js';
+import { initDataladSetupCheck } from './datalad_setup_check.js';
 
 const PROGRESS_PREFIX = 'dataladServer';
 
@@ -313,6 +314,8 @@ export function initDataladServerSection() {
 
     const configForm = getById('dataladServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
+
+    initDataladSetupCheck();
 
     showDataladServerCard();
 }
