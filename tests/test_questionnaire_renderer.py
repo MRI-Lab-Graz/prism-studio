@@ -154,6 +154,14 @@ def test_render_mixed_types(mixed_template):
     assert "Rate your pain" in full_text
 
 
+def _docx_parts(buf):
+    """Content of every part of a .docx (zip entry timestamps are not content)."""
+    import zipfile
+
+    with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as archive:
+        return {name: archive.read(name) for name in archive.namelist()}
+
+
 def test_render_randomized(likert_template):
     from src.questionnaire_renderer import render_questionnaire_docx
     from docx import Document
@@ -168,8 +176,9 @@ def test_render_randomized(likert_template):
         language="en",
         options={"randomize_items": True, "random_seed": 42},
     )
-    # Same seed = same output
-    assert buf1.getvalue() == buf2.getvalue()
+    # Same seed = same output (compare content: raw zip bytes carry render-time
+    # stamps, which made this test fail whenever the renders straddled a tick)
+    assert _docx_parts(buf1) == _docx_parts(buf2)
 
     buf3 = render_questionnaire_docx(
         likert_template,
@@ -183,6 +192,28 @@ def test_render_randomized(likert_template):
     # At least verify both produce valid docs
     assert len(doc1.tables) > 0
     assert len(doc3.tables) > 0
+
+
+def test_same_seed_renders_the_same_content_even_when_the_clock_moves(
+    likert_template, monkeypatch
+):
+    """A .docx is a zip whose entries carry the render time (2 s resolution), so
+    raw bytes differ whenever two renders straddle a tick. What must be equal for
+    the same seed is the content of the document parts."""
+    import time
+
+    from src.questionnaire_renderer import render_questionnaire_docx
+
+    real_time = time.time
+    ticks = iter(range(0, 10_000, 10))
+    monkeypatch.setattr(time, "time", lambda: real_time() + next(ticks))
+
+    options = {"randomize_items": True, "random_seed": 42}
+    buf1 = render_questionnaire_docx(likert_template, language="en", options=options)
+    buf2 = render_questionnaire_docx(likert_template, language="en", options=options)
+
+    assert buf1.getvalue() != buf2.getvalue()  # the zip timestamps moved
+    assert _docx_parts(buf1) == _docx_parts(buf2)  # the content did not
 
 
 def test_hidden_items_excluded(likert_template):
