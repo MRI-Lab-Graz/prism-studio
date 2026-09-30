@@ -2919,6 +2919,10 @@ export function initParticipants() {
             const dataWarningsHtml = dataWarnings
                 .map(message => `<div class="mt-2"><i class="fas fa-triangle-exclamation me-2"></i>${escapeHtml(message)}</div>`)
                 .join('');
+            // Warnings get the amber style; alert-info is green in this theme.
+            const hasWarnings = formatWarnings.length > 0 || dataWarnings.length > 0;
+            infoDiv.classList.toggle('alert-warning', hasWarnings);
+            infoDiv.classList.toggle('alert-info', !hasWarnings);
             if (formatWarnings.length > 0) {    
                 const columnListHtml = problemColumns.length > 0
                     ? `

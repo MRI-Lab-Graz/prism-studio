@@ -362,6 +362,18 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         # Only the clicked answer is filled.
         self.assertIn("toggle('btn-primary'", module)
 
+    def test_warnings_in_the_info_box_use_the_warning_style(self):
+        """A warning must not sit in the green info box (the theme's alert-info is
+        green, so an identical-rows warning read as good news)."""
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        block = module[
+            module.index("const dataWarnings = Array.isArray(data.data_warnings)") :
+            module.index("previewStage = 'rendering preview table'")
+        ]
+        self.assertIn("classList.toggle('alert-warning', hasWarnings)", block)
+        self.assertIn("classList.toggle('alert-info', !hasWarnings)", block)
+
 
 if __name__ == "__main__":
     unittest.main()
