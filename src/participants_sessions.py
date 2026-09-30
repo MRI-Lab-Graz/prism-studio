@@ -9,6 +9,7 @@ integer ``1``, not a different label.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Any
 
 import pandas as pd
@@ -30,11 +31,21 @@ def _looks_like_session_column(name: Any) -> bool:
     return normalized in _SESSION_COLUMN_ALIASES or normalized.startswith("session")
 
 
-def _label_sort_key(label: str) -> tuple[int, float, str]:
-    try:
-        return (0, float(label), label)
-    except ValueError:
-        return (1, 0.0, label)
+def _natural_key(label: str) -> tuple[Any, ...]:
+    # re.split keeps text at even and digit runs at odd positions, so keys of
+    # different labels always compare str-with-str and int-with-int. The label
+    # itself is the final tie-break ("01" vs "1"), which keeps the order stable.
+    parts = re.split(r"(\d+)", label)
+    return (tuple(int(p) if i % 2 else p for i, p in enumerate(parts)), label)
+
+
+def sort_session_labels(labels: Iterable[str]) -> list[str]:
+    """Session labels in natural string order; the labels are never converted.
+
+    Digit runs inside the text compare by size ("2" < "10", "ses-2" < "ses-10");
+    nothing is parsed as a decimal or exponent.
+    """
+    return sorted(labels, key=_natural_key)
 
 
 def find_session_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -47,7 +58,7 @@ def find_session_candidates(df: pd.DataFrame) -> list[dict[str, Any]]:
         labels.discard("")
         if len(labels) >= 2:
             candidates.append(
-                {"column": str(column), "values": sorted(labels, key=_label_sort_key)}
+                {"column": str(column), "values": sort_session_labels(labels)}
             )
     return candidates
 

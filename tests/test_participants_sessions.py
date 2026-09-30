@@ -8,6 +8,7 @@ from src.participants_sessions import (
     filter_rows_to_session,
     find_session_candidates,
     scope_to_session,
+    sort_session_labels,
 )
 
 
@@ -121,3 +122,25 @@ def test_scope_to_session_without_a_choice_keeps_every_row():
 def test_scope_to_session_rejects_a_session_that_is_not_in_the_file():
     with pytest.raises(ValueError, match="Session 'month6' not found"):
         scope_to_session(_longitudinal(), "session", "month6")
+
+
+def test_natural_order_compares_digit_runs_by_size_but_keeps_labels_as_text():
+    assert sort_session_labels(["10", "2", "1"]) == ["1", "2", "10"]
+    assert sort_session_labels(["ses-10", "ses-2", "pre"]) == ["pre", "ses-2", "ses-10"]
+
+
+def test_natural_order_never_rewrites_a_label():
+    labels = ["01", "1", "1.0", "baseline"]
+
+    assert sorted(sort_session_labels(labels)) == sorted(labels)
+    assert all(isinstance(label, str) for label in sort_session_labels(labels))
+
+
+@pytest.mark.parametrize("arrival", [["1", "01"], ["01", "1"]])
+def test_natural_order_is_the_same_whatever_order_labels_arrive_in(arrival):
+    assert sort_session_labels(arrival) == ["01", "1"]
+
+
+def test_natural_order_does_not_parse_decimals_or_exponents():
+    # "1e3" and "1,5" are text with digit runs, not numbers.
+    assert sort_session_labels(["1e3", "2", "1,5"]) == ["1,5", "1e3", "2"]

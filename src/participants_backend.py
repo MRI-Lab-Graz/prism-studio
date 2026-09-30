@@ -21,7 +21,7 @@ from typing import Any, Callable, cast
 import pandas as pd
 
 from src.participants_converter import ParticipantsConverter
-from src.participants_sessions import session_label
+from src.participants_sessions import session_label, sort_session_labels
 from src.subject_id_matching import build_subject_id_matcher
 
 
@@ -906,15 +906,9 @@ def _find_session_column_name(columns: list[str], preferred: str = "") -> str:
 
 
 def _sorted_session_values(values: set[str]) -> list[str]:
-    def sort_key(raw: str) -> tuple[Any, ...]:
-        numeric = _parse_participant_numeric_value(raw)
-        if numeric is not None:
-            # The label breaks ties ("1" vs "01"): otherwise the order follows
-            # the set's hash-seed dependent iteration order.
-            return (0, numeric, str(raw))
-        return (1, str(raw))
-
-    return sorted((str(value).strip() for value in values if str(value).strip()), key=sort_key)
+    return sort_session_labels(
+        str(value).strip() for value in values if str(value).strip()
+    )
 
 
 def _unique_column_name(base: str, existing_columns: list[str]) -> str:
