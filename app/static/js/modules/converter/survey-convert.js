@@ -28,6 +28,7 @@ import { createSurveyFileSeparatorController } from './survey-file-separator-con
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
 import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
+import { createSessionMapPanel } from './session-map-panel.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
 import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
@@ -128,6 +129,24 @@ export function initSurveyConvert(elements) {
     const surveyVersionWizardCount = document.getElementById('surveyVersionWizardCount');
     const surveyVersionWizardStatus = document.getElementById('surveyVersionWizardStatus');
     const surveyVersionWizardApplyBtn = document.getElementById('surveyVersionWizardApplyBtn');
+    // Longitudinal projects: the user maps every session label (nothing is filled in for them).
+    const sessionMapPanelEl = document.getElementById('sessionMapPanel');
+    const sessionMapPanel = sessionMapPanelEl
+        ? createSessionMapPanel({
+            root: sessionMapPanelEl,
+            save: async (entries) => {
+                const response = await fetchWithApiFallback('/api/session-map', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_path: resolveCurrentProjectPath() || '', entries }),
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Could not save the session map.');
+            },
+            onSaved: () => syncVersionWizardContext(),
+            onChange: () => updateConvertBtn(),
+        })
+        : null;
     let selectedTemplateVersions = {};
     let appliedTemplateVersionSelectionSignature = '';
     let versionWizardState = {
@@ -1277,12 +1296,18 @@ export function initSurveyConvert(elements) {
             }
             if (!response.ok) {
                 hideVersionWizard();
-                if (showErrors && data?.error && data.error !== 'id_column_required') {
+                if (data?.error === 'sessions_not_mapped' && sessionMapPanel) {
+                    sessionMapPanel.show(data.unmapped_labels || []);
+                } else if (sessionMapPanel) {
+                    sessionMapPanel.hide();
+                }
+                if (showErrors && data?.error && data.error !== 'id_column_required' && data.error !== 'sessions_not_mapped') {
                     convertError.textContent = data.error;
                     convertError.classList.remove('d-none');
                 }
                 return { hasMultivariant: false, error: true };
             }
+            if (sessionMapPanel) sessionMapPanel.hide();
 
             const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                 ? data.multivariant_tasks
@@ -1722,6 +1747,7 @@ export function initSurveyConvert(elements) {
         const isAwaitingConfirmation = hasRunningRequest && surveyWorkflowProgressController.getIsSurveyRunAwaitingConfirmation();
         const versionSelectionsPending = hasMultiVersionWizardTasks() && !hasAppliedVersionWizardSelections();
         const valueOffsetSelectionsPending = hasManualTaskValueOffsets() && !hasAppliedTaskValueOffsetSelections();
+        const sessionMapPending = Boolean(sessionMapPanel && sessionMapPanel.isPending());
         const hasFreshPreviewReview = hasFreshSurveyPreviewSelectionState();
         const selectedPreviewTasks = getSelectedSurveyTasksForConversion();
         const hasSelectedPreviewTasks = selectedPreviewTasks.length > 0;
@@ -1730,11 +1756,12 @@ export function initSurveyConvert(elements) {
             || blockedByTemplateGate
             || versionSelectionsPending
             || valueOffsetSelectionsPending
+            || sessionMapPending
             || !hasFreshPreviewReview
             || !hasSelectedPreviewTasks;
         
         if (previewBtn) {
-            previewBtn.disabled = !hasFile || versionSelectionsPending || valueOffsetSelectionsPending;
+            previewBtn.disabled = !hasFile || versionSelectionsPending || valueOffsetSelectionsPending || sessionMapPending;
             previewBtn.style.display = '';
             previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Step 4: Preview (Dry-Run)';
             convertBtn.parentElement.classList.remove('col-12');
@@ -1746,6 +1773,8 @@ export function initSurveyConvert(elements) {
                 previewBtn.title = 'Apply questionnaire version selections first.';
             } else if (valueOffsetSelectionsPending) {
                 previewBtn.title = 'Apply manual offsets first.';
+            } else if (sessionMapPending) {
+                previewBtn.title = 'Map the session labels first.';
             } else {
                 previewBtn.removeAttribute('title');
             }
@@ -1763,6 +1792,8 @@ export function initSurveyConvert(elements) {
                 convertBtn.title = 'Apply questionnaire version selections and rerun Preview before converting.';
             } else if (valueOffsetSelectionsPending) {
                 convertBtn.title = 'Apply manual offsets and rerun Preview before converting.';
+            } else if (sessionMapPending) {
+                convertBtn.title = 'Map the session labels first.';
             } else if (!hasFreshPreviewReview) {
                 convertBtn.title = 'Run Preview after the latest changes before converting.';
             } else if (!hasSelectedPreviewTasks) {

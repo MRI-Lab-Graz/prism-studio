@@ -177,6 +177,7 @@ export function initCreateProjectController({
             },
             StudyDesign: {
                 Type: document.getElementById('smSDType').value || undefined,
+                Timepoints: document.getElementById('smSDTimepoints').value || undefined,
                 TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
                 Blinding: document.getElementById('smSDBlinding').value || undefined,
                 Randomization: document.getElementById('smSDRandomization').value || undefined,

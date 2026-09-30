@@ -423,6 +423,39 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_session_map = subparsers.add_parser(
+        "session-map",
+        help="Session map for longitudinal projects (code/session_map.json)",
+    )
+    session_map_subparsers = parser_session_map.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_session_map_show = session_map_subparsers.add_parser(
+        "show", help="Show the project's timepoint declaration and session map"
+    )
+    parser_session_map_show.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_session_map_show.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_session_map_set = session_map_subparsers.add_parser(
+        "set", help="Map one source session label to a session name"
+    )
+    parser_session_map_set.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_session_map_set.add_argument(
+        "--label",
+        required=True,
+        help="Source label exactly as it appears in the data",
+    )
+    parser_session_map_set.add_argument(
+        "--target", required=True, help="Session name to write (letters and digits)"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",
@@ -587,6 +620,15 @@ def build_prism_tools_parsers(
         "--session-column",
         dest="session_column",
         help="Optional column name for session labels (default: auto-detect; otherwise ses-1)",
+    )
+    parser_survey_convert.add_argument(
+        "--session",
+        default=None,
+        help=(
+            "Session label exactly as it appears in the data: with a session column, "
+            "import only that session's rows; without one, label every row with it. "
+            "Longitudinal projects: the label must be in code/session_map.json"
+        ),
     )
     parser_survey_convert.add_argument(
         "--run-column",
@@ -2083,6 +2125,7 @@ def build_prism_tools_parsers(
         "root": parser,
         "survey": parser_survey,
         "participants": parser_participants,
+        "session-map": parser_session_map,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
         "physio": parser_physio,

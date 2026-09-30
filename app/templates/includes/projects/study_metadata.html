@@ -280,6 +280,17 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
+                                    <label class="form-label fw-bold small" for="smSDTimepoints">
+                                        <span class="badge bg-danger">REQUIRED</span> Timepoints
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smSDTimepoints">
+                                        <option value="">-- Select --</option>
+                                        <option value="single">One timepoint (cross-sectional)</option>
+                                        <option value="multiple">Several timepoints (longitudinal)</option>
+                                    </select>
+                                    <small class="text-muted">Several timepoints: every session label in an import must be mapped by you (Converter).</small>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label fw-bold small">Condition Type</label>
                                     <select class="form-select form-select-sm" id="smSDConditionType">
                                         <option value="">-- N/A --</option>

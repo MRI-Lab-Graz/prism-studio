@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     createSessionChoiceState,
     sessionChoiceBlockReason,
+    sessionChoiceBlockReasonForRoute,
     sessionChoiceFormFields,
     setSessionChoiceColumn,
     setSessionChoiceLongitudinal,
@@ -86,5 +87,23 @@ describe('participants session choice', () => {
         state = setSessionChoiceSession(state, '01');
 
         expect(sessionChoiceFormFields(state).session_value).toBe('01');
+    });
+
+    describe('sessionChoiceBlockReasonForRoute', () => {
+        const unanswered = createSessionChoiceState();
+
+        it('blocks a plain file import that still owes the answer', () => {
+            expect(sessionChoiceBlockReasonForRoute({ mode: 'file', useMergeRoute: false }, ONE, unanswered)).toMatch(/longitudinal/i);
+        });
+
+        it('never blocks the merge route or modifying the existing file', () => {
+            expect(sessionChoiceBlockReasonForRoute({ mode: 'file', useMergeRoute: true }, ONE, unanswered)).toBe('');
+            expect(sessionChoiceBlockReasonForRoute({ mode: 'existing', useMergeRoute: false }, ONE, unanswered)).toBe('');
+        });
+
+        it('does not block once the question is answered', () => {
+            const answeredNo = setSessionChoiceLongitudinal(unanswered, false, ONE);
+            expect(sessionChoiceBlockReasonForRoute({ mode: 'file', useMergeRoute: false }, ONE, answeredNo)).toBe('');
+        });
     });
 });

@@ -250,3 +250,13 @@ def test_compute_methods_completeness_eligibility_core_needs_only_inclusion():
     eligibility = completeness["sections"]["Eligibility"]
     assert eligibility["required_total"] == 1
     assert eligibility["required_filled"] == 1
+
+
+def test_timepoints_blocks_project_creation_but_not_the_core_readiness_score():
+    from src.web.blueprints.projects_metadata_helpers import (
+        CREATION_BLOCKING_FIELDS,
+        REQUIRED_FIELDS_SCHEMA,
+    )
+
+    assert "Timepoints" in CREATION_BLOCKING_FIELDS["StudyDesign"]
+    assert "Timepoints" not in REQUIRED_FIELDS_SCHEMA["StudyDesign"]  # third tier, not CORE

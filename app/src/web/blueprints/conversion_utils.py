@@ -514,7 +514,9 @@ def should_retry_with_official_library(err: Exception) -> bool:
     """Return true when converter error suggests official-template fallback."""
     msg = str(err).lower()
     return isinstance(err, ValueError) and (
-        "no survey item columns matched" in msg or "unknown surveys:" in msg
+        "no survey item columns matched" in msg
+        or "unknown surveys:" in msg
+        or "no survey templates were found" in msg
     )
 
 

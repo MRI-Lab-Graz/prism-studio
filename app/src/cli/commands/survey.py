@@ -246,6 +246,9 @@ def cmd_survey_convert(args):
         if getattr(args, "project", None):
             p = Path(args.project).resolve()
             project_path = p.parent if p.is_file() else p
+        elif (output_root / "project.json").is_file():
+            # Writing into a PRISM project: the project's own rules (session map) apply.
+            project_path = output_root
 
         result = convert_survey_file_to_prism_dataset(
             input_path=str(input_path),
@@ -254,6 +257,7 @@ def cmd_survey_convert(args):
             survey=args.survey,
             id_column=args.id_column,
             session_column=args.session_column,
+            session=getattr(args, "session", None),
             run_column=getattr(args, "run_column", None),
             sheet=args.sheet,
             unknown=args.unknown,

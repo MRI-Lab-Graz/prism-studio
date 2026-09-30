@@ -9,6 +9,7 @@ from typing import Any
 from flask import current_app, has_app_context, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
+from src.session_map import SessionsNotMappedError
 from src.survey_workflow_service import (
     SUPPORTED_SURVEY_INPUT_MESSAGE,
     SUPPORTED_SURVEY_INPUT_SUFFIXES,
@@ -818,6 +819,7 @@ def api_survey_detect_version_context():
         detect_survey_version_contexts=_detect_survey_version_contexts,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
+        sessions_not_mapped_error_cls=SessionsNotMappedError,
         unmatched_groups_error_cls=UnmatchedGroupsError,
         format_unmatched_groups_response=_format_unmatched_groups_response,
     )

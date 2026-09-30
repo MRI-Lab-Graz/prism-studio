@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Session map for longitudinal projects.** New required study-metadata field
+  `StudyDesign.Timepoints` (one or several). In a project with several timepoints,
+  every session label of an import must be mapped by the user in
+  `code/session_map.json` (`prism_tools.py session-map show|set`); nothing is
+  guessed or filled in, and several source labels may share one session. Blank
+  session cells, `duplicate_handling=sessions` and files without any session are
+  refused instead of defaulting to `ses-1`.
+
 ### Changed
 - **Setup scripts renamed to `install.cmd` / `install.sh`** at the repo root,
   so users aren't left picking between multiple similarly-named `setup.*`

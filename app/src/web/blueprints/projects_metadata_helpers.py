@@ -334,6 +334,7 @@ REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
 # metadata.js's computeLocalCompleteness.
 CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {
     "Basics": {"Name", "Authors", "Keywords"},
+    "StudyDesign": {"Timepoints"},
 }
 
 

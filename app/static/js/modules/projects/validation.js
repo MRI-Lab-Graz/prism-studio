@@ -53,6 +53,7 @@ const METADATA_VALIDATION_FIELDS = [
     'smOverviewCV',
     'smOverviewQA',
     'smSDType',
+    'smSDTimepoints',
     'smSDConditionType',
     'smSDTypeDesc',
     'smSDBlinding',

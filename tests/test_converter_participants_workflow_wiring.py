@@ -289,8 +289,11 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("sessionChoiceFormFields(participantsSessionChoice)", module)
         # ... the card is fed by the preview response ...
         self.assertIn("data.session_candidates", module)
-        # ... and Convert cannot run while the question is unanswered.
-        self.assertIn("sessionChoiceBlockReason(", module)
+        # ... and Convert is disabled (and refused on click) while the question is unanswered.
+        self.assertIn("sessionChoiceBlockReasonForRoute(", module)
+        can_apply = module[module.index("function canApplyParticipantsConversion") :]
+        self.assertIn("participantsSessionBlockReason()", can_apply[:400])
+        self.assertIn("const sessionBlockReason = participantsSessionBlockReason();", module)
 
     def test_replace_ignores_the_old_participants_json_and_asks_first(self):
         module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")

@@ -59,6 +59,7 @@ from src.cli.commands.participants import (
     cmd_participants_save_mapping,
     cmd_participants_save_schema,
 )
+from src.cli.commands.session_map import cmd_session_map_set, cmd_session_map_show
 from src.cli.commands.recipes import (
     cmd_recipes_biometrics,
     cmd_recipes_save,
@@ -139,6 +140,8 @@ def main() -> None:
             "participants_neurobagel_schema": cmd_participants_neurobagel_schema,
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
+            "session_map_show": cmd_session_map_show,
+            "session_map_set": cmd_session_map_set,
             "survey_import_lsq": cmd_survey_import_lsq,
             "dataset_rename_sessions": cmd_dataset_rename_sessions,
             "dataset_renumber_runs": cmd_dataset_renumber_runs,

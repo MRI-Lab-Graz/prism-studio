@@ -4,6 +4,8 @@ from pathlib import Path
 import json
 from typing import Any
 
+from src.participants_sessions import session_label
+from src.session_map import SessionMapError, session_map_for_conversion
 from src.utils.naming import sanitize_id
 
 
@@ -41,6 +43,29 @@ def _normalize_session_id(session_id: str | None) -> str | None:
     return f"ses-{label}"
 
 
+def _output_session_id_fn(project_path: Path):
+    """Raw session label -> the ``ses-*`` folder it was written to.
+
+    In a longitudinal project that is the user's map (``pre`` -> ``ses-1``), so
+    project.json records sessions that exist on disk. Labels the map does not
+    know (other converters, already-mapped ``ses-1``) fall back to plain
+    normalization, exactly as before.
+    """
+    try:
+        session_map = session_map_for_conversion(project_path)
+    except SessionMapError:
+        session_map = None
+
+    def to_output_session(raw: str | None) -> str | None:
+        if session_map:
+            key = session_label(raw)
+            if key in session_map:
+                return f"ses-{session_map[key]}"
+        return _normalize_session_id(raw)
+
+    return to_output_session
+
+
 def _normalize_run_value(run_value: Any) -> str | None:
     if run_value in {None, ""}:
         return None
@@ -58,8 +83,10 @@ def _normalize_template_version_selections(
     raw_overrides: Any,
     *,
     default_session: str | None,
+    session_id_fn=None,
 ) -> list[dict[str, Any]]:
     """Normalize template-version payloads to task/session/run/version entries."""
+    session_id_fn = session_id_fn or _normalize_session_id
     normalized: list[dict[str, Any]] = []
 
     def _append_entry(
@@ -74,7 +101,7 @@ def _normalize_template_version_selections(
         if not task_name or not version_name:
             return
 
-        session_name = _normalize_session_id(
+        session_name = session_id_fn(
             str(session_value).strip()
             if session_value not in {None, ""}
             else default_session
@@ -154,7 +181,8 @@ def register_session_in_project(
     except (json.JSONDecodeError, OSError):
         return
 
-    normalized_session_id = _normalize_session_id(session_id)
+    to_output_session = _output_session_id_fn(project_path)
+    normalized_session_id = to_output_session(session_id)
     if not normalized_session_id:
         return
     session_id = normalized_session_id
@@ -162,11 +190,13 @@ def register_session_in_project(
     selection_updates = _normalize_template_version_selections(
         template_version_overrides,
         default_session=session_id,
+        session_id_fn=to_output_session,
     )
     if selection_updates:
         existing_selections = _normalize_template_version_selections(
             data.get("TemplateVersionSelections"),
             default_session=None,
+            session_id_fn=to_output_session,
         )
         merged: dict[tuple[str, str | None, str | None], dict[str, Any]] = {}
         for entry in existing_selections + selection_updates:

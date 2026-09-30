@@ -23,6 +23,7 @@ def handle_api_survey_detect_version_context(
     detect_survey_version_contexts,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
+    sessions_not_mapped_error_cls,
     unmatched_groups_error_cls,
     format_unmatched_groups_response,
 ):
@@ -151,6 +152,17 @@ def handle_api_survey_detect_version_context(
                     "message": str(error),
                     "missing_ids": error.missing_ids,
                     "suggestions": error.suggestions,
+                }
+            ),
+            409,
+        )
+    except sessions_not_mapped_error_cls as error:
+        return (
+            jsonify(
+                {
+                    "error": "sessions_not_mapped",
+                    "message": str(error),
+                    "unmapped_labels": error.labels,
                 }
             ),
             409,

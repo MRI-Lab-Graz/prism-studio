@@ -10,7 +10,7 @@ import { createParticipantsSourcedataQuickSelectController } from './participant
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
 import {
     createSessionChoiceState,
-    sessionChoiceBlockReason,
+    sessionChoiceBlockReasonForRoute,
     sessionChoiceFormFields,
     setSessionChoiceColumn,
     setSessionChoiceLongitudinal,
@@ -453,8 +453,24 @@ export function initParticipants() {
         };
     }
 
+    // Why a plain file import cannot be applied yet ('' when nothing blocks).
+    function participantsSessionBlockReason() {
+        const mode = getParticipantsWorkflowMode();
+        const fileAction = mode === 'file' ? getParticipantsFileAction() : 'replace';
+        const useMergeRoute = mode === 'file' && fileAction === 'merge' && canModifyExistingParticipants();
+        return sessionChoiceBlockReasonForRoute(
+            { mode, useMergeRoute },
+            participantsSessionCandidates,
+            participantsSessionChoice
+        );
+    }
+
     function canApplyParticipantsConversion() {
         if (!participantsPreviewCompleted) {
+            return false;
+        }
+
+        if (participantsSessionBlockReason()) {
             return false;
         }
 
@@ -2617,10 +2633,24 @@ export function initParticipants() {
         }
     }
 
+    // Answering does not always change what is sent (e.g. "No"), so no preview refresh follows;
+    // keep the Convert button and its hint in step with the answer.
+    function refreshParticipantsConvertButtonForSessionChoice() {
+        if (!participantsPreviewCompleted) return;
+        if (window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.merge_mode) return;
+        const convertBtn = document.getElementById('participantsConvertBtn');
+        const convertHint = document.getElementById('convertBtnHint');
+        const reason = participantsSessionBlockReason();
+        if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
+        if (convertHint && reason) convertHint.textContent = reason;
+        else if (convertHint) convertHint.textContent = getParticipantsWorkflowUiCopy().convertReadyHint;
+    }
+
     function applyParticipantsSessionChoice(nextState) {
         const before = JSON.stringify(sessionChoiceFormFields(participantsSessionChoice));
         participantsSessionChoice = nextState;
         renderParticipantsSessionChoice();
+        refreshParticipantsConvertButtonForSessionChoice();
         if (JSON.stringify(sessionChoiceFormFields(participantsSessionChoice)) !== before) {
             refreshParticipantsPreviewAfterSessionChoice();
         }
@@ -3095,7 +3125,7 @@ export function initParticipants() {
                         : 'Resolve merge conflicts first';
                 }
             } else {
-                convertHint.textContent = workflowUiCopy.convertReadyHint;
+                convertHint.textContent = participantsSessionBlockReason() || workflowUiCopy.convertReadyHint;
             }
         }
 
@@ -3389,9 +3419,7 @@ export function initParticipants() {
         setParticipantsPrimaryActionButtonsDisabled(true);
 
         try {
-            const sessionBlockReason = mode === 'file' && !useMergeRoute
-                ? sessionChoiceBlockReason(participantsSessionCandidates, participantsSessionChoice)
-                : '';
+            const sessionBlockReason = participantsSessionBlockReason();
             if (sessionBlockReason) {
                 errorDiv.textContent = sessionBlockReason;
                 errorDiv.classList.remove('d-none');

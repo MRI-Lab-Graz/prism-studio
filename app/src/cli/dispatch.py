@@ -47,6 +47,13 @@ def dispatch_prism_tools(
             handlers["participants_fix_bids"](args)
         else:
             parsers["participants"].print_help()
+    elif args.command == "session-map":
+        if args.action == "show":
+            handlers["session_map_show"](args)
+        elif args.action == "set":
+            handlers["session_map_set"](args)
+        else:
+            parsers["session-map"].print_help()
     elif args.command == "environment":
         if args.action == "preview":
             handlers["environment_preview"](args)

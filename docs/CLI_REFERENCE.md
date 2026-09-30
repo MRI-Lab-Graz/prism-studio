@@ -334,6 +334,30 @@ python prism_tools.py participants save-schema --project /absolute/path/to/my-pr
 python prism_tools.py participants fix-bids --file /absolute/path/to/my-project/participants.tsv --dry-run
 ```
 
+### Session map
+
+In a project whose study metadata says `Timepoints: multiple` (Study Design, Projects page),
+every session label in an import must be mapped by you in `code/session_map.json`. PRISM
+never suggests, orders or fills in session names: `1`, `01` and `pre` are three different
+labels, and even `1 -> 1` has to be written down once. Several source labels may map to one
+session (`T0 -> 1` and `pre -> 1`). Existing converted data is never rewritten.
+
+```bash
+# Show the declaration and the map
+python prism_tools.py session-map show --project /absolute/path/to/my-project --json
+
+# Map one source label (exactly as it appears in the data) to a session name (letters and digits)
+python prism_tools.py session-map set --project /absolute/path/to/my-project --label pre --target 1
+python prism_tools.py session-map set --project /absolute/path/to/my-project --label T0 --target 1
+```
+
+`survey convert` and the participants importer stop with the list of unmapped labels until
+they are all in the map. In a longitudinal project `survey convert` imports every session of
+a file with a session column (it never silently picks "the first one"); use
+`--session <label>` to import one session, or to label a file that has no session column
+(the label must be in the map). If `--project` is omitted but `--output` is a PRISM project,
+that project's rules apply. Projects with `Timepoints: single` behave as before.
+
 ### Environment
 
 **`environment preview`** / **`convert`**:

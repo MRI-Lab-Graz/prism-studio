@@ -58,33 +58,67 @@ def project(tmp_path):
     root = tmp_path / "study"
     (root / "code" / "library" / "survey").mkdir(parents=True)
     # A real PRISM project always has these; the pages request them on load.
-    (root / "project.json").write_text(json.dumps({"Basics": {"Name": "e2e"}}))
+    (root / "project.json").write_text(
+        json.dumps({"Basics": {"Name": "e2e"}, "StudyDesign": {"Timepoints": "single"}})
+    )
     (root / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0"})
     )
     return root
 
 
+def _new_page(browser, studio_url, project_path=None):
+    """Yield-able (context, page, problems); fails-on-error is asserted by the caller."""
+    context = browser.new_context(viewport={"width": 1600, "height": 1000})  # navbar collapses below ~1300
+    if project_path is not None:
+        resp = context.request.post(
+            f"{studio_url}/api/projects/current",
+            data={"path": str(project_path), "name": "e2e"},
+        )
+        assert resp.ok, resp.text()
+    page = context.new_page()
+    problems: list[str] = []
+    # A test that expects a failing response says so: page.allowed_http[409] = "/api/some-endpoint"
+    page.allowed_http = {}
+
+    def note_console(msg):
+        if msg.type != "error":
+            return
+        if any(f"status of {status}" in msg.text for status in page.allowed_http):
+            return  # the matching response is allowed (browsers log it without the URL)
+        problems.append(f"console: {msg.text}")
+
+    page.on("pageerror", lambda err: problems.append(f"JS error: {err}"))
+    page.on("console", note_console)
+
+    def note_failed_response(r):
+        if r.status >= 400:
+            allowed_url = page.allowed_http.get(r.status)
+            if allowed_url and allowed_url in r.url:
+                return
+            try:
+                body = r.text()[:200]
+            except Exception:
+                body = "<no body>"
+            problems.append(f"HTTP {r.status}: {r.url} -> {body}")
+
+    page.on("response", note_failed_response)
+    return context, page, problems
+
+
 @pytest.fixture
 def app_page(browser, studio_url, project):
     """A page with the throwaway project open; fails the test on any browser-side error."""
-    context = browser.new_context()
-    resp = context.request.post(
-        f"{studio_url}/api/projects/current",
-        data={"path": str(project), "name": "e2e"},
-    )
-    assert resp.ok, resp.text()
-    page = context.new_page()
-    problems: list[str] = []
-    page.on("pageerror", lambda err: problems.append(f"JS error: {err}"))
-    page.on(
-        "console",
-        lambda msg: msg.type == "error" and problems.append(f"console: {msg.text}"),
-    )
-    page.on(
-        "response",
-        lambda r: r.status >= 400 and problems.append(f"HTTP {r.status}: {r.url}"),
-    )
+    context, page, problems = _new_page(browser, studio_url, project)
+    yield page
+    context.close()
+    assert not problems, "\n".join(problems)
+
+
+@pytest.fixture
+def bare_page(browser, studio_url):
+    """A page with no project open (fresh install); fails the test on any browser-side error."""
+    context, page, problems = _new_page(browser, studio_url)
     yield page
     context.close()
     assert not problems, "\n".join(problems)

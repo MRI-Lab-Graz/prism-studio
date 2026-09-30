@@ -32,6 +32,8 @@ from src.subject_id_matching import (
     build_subject_id_matcher,
     load_existing_participant_ids,
 )
+from src.participants_sessions import session_label
+from src.session_map import SessionsNotMappedError, apply_session_map
 from src.utils.naming import sanitize_id
 
 try:
@@ -171,9 +173,46 @@ class SurveyIdNormalizers:
     is_missing: Any
 
 
-def build_survey_id_normalizers(project_path: str | Path | None) -> SurveyIdNormalizers:
+class _MappedSessionNormalizer:
+    """Session normalizer of a longitudinal project: the user's map is the only
+    source of session names.
+
+    ``__call__`` turns a SOURCE label of the data into ``ses-<target>``.
+    ``for_override`` handles template-version selections, which name sessions in
+    OUTPUT space (``ses-1``, as the version wizard and project.json store them) or
+    by source label; it only ever accepts a session the user defined.
+    """
+
+    def __init__(self, session_map: dict[str, str]) -> None:
+        self._map = session_map
+        self._targets = set(session_map.values())
+
+    def __call__(self, val) -> str:
+        return f"ses-{apply_session_map(val, self._map)}"
+
+    def for_override(self, val) -> str:
+        key = session_label(val)
+        if key in self._map:
+            return f"ses-{self._map[key]}"
+        label = key[4:] if key[:4].lower() == "ses-" else key
+        if label in self._targets:
+            return f"ses-{label}"
+        raise SessionsNotMappedError([key])
+
+
+def session_normalizer_for_overrides(normalize_ses_fn):
+    """The normalizer to use for template-version override sessions."""
+    return getattr(normalize_ses_fn, "for_override", normalize_ses_fn)
+
+
+def build_survey_id_normalizers(
+    project_path: str | Path | None, session_map: dict[str, str] | None = None
+) -> SurveyIdNormalizers:
     """Build the subject/session/run-ID normalizers and missing-value check
     shared across survey conversion.
+
+    When ``session_map`` is given (longitudinal project), ``normalize_ses``
+    uses only that map: an unmapped label raises instead of being guessed.
 
     normalize_sub additionally resolves against the project's existing
     participants.tsv IDs (via build_subject_id_matcher) so e.g. a bare "1"
@@ -241,7 +280,11 @@ def build_survey_id_normalizers(project_path: str | Path | None) -> SurveyIdNorm
 
     return SurveyIdNormalizers(
         normalize_sub=normalize_sub,
-        normalize_ses=normalize_ses,
+        normalize_ses=(
+            _MappedSessionNormalizer(session_map)
+            if session_map is not None
+            else normalize_ses
+        ),
         normalize_run=normalize_run,
         is_missing=is_missing,
     )

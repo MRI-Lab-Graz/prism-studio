@@ -42,6 +42,14 @@ export function sessionChoiceBlockReason(candidates, state) {
     return '';
 }
 
+/**
+ * Same as sessionChoiceBlockReason, but only for the route that writes one row
+ * per participant from the file (not the merge route, not editing the existing file).
+ */
+export function sessionChoiceBlockReasonForRoute({ mode, useMergeRoute }, candidates, state) {
+    return mode === 'file' && !useMergeRoute ? sessionChoiceBlockReason(candidates, state) : '';
+}
+
 /** Form fields to send to the preview/convert endpoints. */
 export function sessionChoiceFormFields(state) {
     if (state.longitudinal === true && state.column && state.session) {

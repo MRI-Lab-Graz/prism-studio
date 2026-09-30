@@ -6,6 +6,7 @@ import pytest
 PAGES = [
     "/",
     "/projects",
+    "/projects/share",
     "/converter",
     "/validate",
     "/recipes",

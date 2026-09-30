@@ -5780,5 +5780,47 @@ class TestRenamerTemplateRequirements(unittest.TestCase):
         self.assertIn('id="renamerIdFromFolder"', template)
 
 
+class TestSurveyVersionContextUnmappedSessions(unittest.TestCase):
+    def test_detect_version_context_reports_unmapped_sessions_as_409(self):
+        import importlib
+
+        from src.session_map import SessionsNotMappedError
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-detect-version-contexts",
+            view_func=handlers.api_survey_detect_version_context,
+            methods=["POST"],
+        )
+        with patch.object(
+            handlers,
+            "_resolve_effective_library_path",
+            return_value=Path("/tmp/library"),
+        ):
+            with patch.object(
+                handlers,
+                "_detect_survey_version_contexts",
+                side_effect=SessionsNotMappedError(["post"]),
+            ):
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-detect-version-contexts",
+                        data={
+                            "excel": (io.BytesIO(b"Code,WB01\n1,5\n"), "input.csv"),
+                            "id_column": "Code",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 409)
+        payload = response.get_json()
+        self.assertEqual(payload["error"], "sessions_not_mapped")
+        self.assertEqual(payload["unmapped_labels"], ["post"])
+
+
 if __name__ == "__main__":
     unittest.main()

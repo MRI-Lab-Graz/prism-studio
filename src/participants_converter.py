@@ -69,6 +69,17 @@ def _import_read_tabular_file():
 _read_tabular_file = _import_read_tabular_file()
 
 
+def _import_session_map():
+    try:
+        from src import session_map
+    except ImportError:
+        import session_map
+    return session_map
+
+
+_session_map = _import_session_map()
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -399,9 +410,14 @@ class ParticipantsConverter:
 
         if session_column and session_value:
             try:
+                session_map = _session_map.session_map_for_conversion(self.dataset_path)
+                if session_map is not None and session_column in df.columns:
+                    # Longitudinal project: the session being imported must be mapped
+                    # (participants.tsv itself carries no session column).
+                    _session_map.require_sessions_mapped(session_map, [session_value])
                 total_rows = len(df)
                 df = filter_rows_to_session(df, session_column, session_value)
-            except ValueError as e:
+            except ValueError as e:  # SessionMapError is a ValueError
                 self._log("ERROR", str(e))
                 messages.append(f"✗ {e}")
                 return False, None, messages

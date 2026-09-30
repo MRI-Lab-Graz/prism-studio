@@ -555,6 +555,11 @@ modular_blueprints = [
         "conversion_participants_bp",
         "conversion_participants",
     ),
+    (
+        "src.web.blueprints.session_map_blueprint",
+        "session_map_bp",
+        "session_map",
+    ),
     ("src.web.blueprints.validation", "validation_bp", "validation"),
     ("src.web.blueprints.tools", "tools_bp", "tools"),
     (

@@ -139,6 +139,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 
         const sd = sm.StudyDesign || {};
         document.getElementById('smSDType').value = sd.Type || '';
+        document.getElementById('smSDTimepoints').value = sd.Timepoints || '';
         document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
         document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
         document.getElementById('smSDBlinding').value = sd.Blinding || '';
@@ -415,6 +416,7 @@ function _buildStudyMetadataPayload() {
         },
         StudyDesign: {
             Type: document.getElementById('smSDType').value || undefined,
+            Timepoints: document.getElementById('smSDTimepoints').value || undefined,
             TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
             Blinding: document.getElementById('smSDBlinding').value || undefined,
             Randomization: document.getElementById('smSDRandomization').value || undefined,
@@ -2213,6 +2215,9 @@ export function validateAllMandatoryFields() {
         Basics: {
             Name: 'Dataset Name (min. 3 characters)',
             Keywords: 'Keywords (at least 3, comma-separated)'
+        },
+        StudyDesign: {
+            Timepoints: 'Timepoints (one or several)'
         }
     };
 
@@ -2355,7 +2360,7 @@ function refreshMetadataValidationState(options = {}) {
         'metadataDOI', 'metadataHED', 'metadataKeywords',
         'metadataHowToAcknowledge', 'metadataReferences',
         'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
-        'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
+        'smSDType', 'smSDTimepoints', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
         'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
         'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
         'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcDebriefing',
@@ -2778,7 +2783,7 @@ export function updateCreateProjectButton() {
 const mandatoryFieldIds = [
     'metadataName',
     'metadataKeywords',
-    'smOverviewMain', 'smSDType', 'smRecMethod',
+    'smOverviewMain', 'smSDType', 'smSDTimepoints', 'smRecMethod',
     'smRecPeriodStartYear', 'smRecPeriodStartMonth',
     'smRecPeriodEndYear', 'smRecPeriodEndMonth',
     'smRecLocationOnlineOnly',
@@ -3192,6 +3197,7 @@ const _smHintFieldMap = {
     'Recruitment.Period.Start': { el: null, type: 'period-start' },
     'Recruitment.Period.End': { el: null, type: 'period-end' },
     'StudyDesign.Type': { el: 'smSDType', type: 'select' },
+    'StudyDesign.Timepoints': { el: 'smSDTimepoints', type: 'select' },
     'Conditions.Type': { el: 'smSDConditionType', type: 'select' },
     'Eligibility.ActualSampleSize': { el: 'smEligSampleSize', type: 'input' }
 };
@@ -3650,7 +3656,8 @@ export function computeLocalCompleteness() {
     // (e.g. recruitment period, compensation) or should not be forced to
     // decide it immediately (e.g. ethics/funding).
     const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords'])
+        Basics: new Set(['Name', 'Authors', 'Keywords']),
+        StudyDesign: new Set(['Timepoints'])
     };
 
     const addField = (section, name, isFilled) => {
@@ -3726,6 +3733,7 @@ export function computeLocalCompleteness() {
     addField('Overview', 'QualityAssessment', getOverviewList('smOverviewQA').length > 0);
 
     addField('StudyDesign', 'Type', textFilled(sdType));
+    addField('StudyDesign', 'Timepoints', textFilled(document.getElementById('smSDTimepoints')?.value));
     addField('StudyDesign', 'ConditionType', textFilled(document.getElementById('smSDConditionType')?.value));
     addField('StudyDesign', 'TypeDescription', textFilled(document.getElementById('smSDTypeDesc')?.value));
     if (isExperimental) {

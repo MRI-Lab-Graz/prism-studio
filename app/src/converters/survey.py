@@ -38,6 +38,13 @@ from ..utils.io import (
 from ..utils.naming import sanitize_id
 from ..bids_integration import check_and_update_bidsignore
 from ..constants import DEFAULT_BIDS_VERSION
+from ..session_map import (
+    SessionMapError,
+    TimepointsNotDeclaredError,
+    load_session_map,
+    project_timepoints,
+    require_sessions_mapped,
+)
 from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
     LIMESURVEY_SYSTEM_COLUMNS,
@@ -1405,7 +1412,20 @@ def _convert_survey_dataframe_to_prism_dataset(
             "pandas is required for survey conversion. Ensure dependencies are installed via install.sh (or install.cmd on Windows)"
         ) from e
 
-    id_normalizers = _survey_core.build_survey_id_normalizers(project_path)
+    timepoints = project_timepoints(project_path) if project_path else None
+    session_map = (
+        load_session_map(project_path)
+        if project_path and timepoints == "multiple"
+        else None
+    )
+    if session_map is not None and duplicate_handling == "sessions":
+        raise SessionMapError(
+            "Duplicate handling 'sessions' invents session names (1, 2, ...), which "
+            "longitudinal projects do not allow. Add a real session column instead."
+        )
+    id_normalizers = _survey_core.build_survey_id_normalizers(
+        project_path, session_map=session_map
+    )
     _normalize_sub_id = id_normalizers.normalize_sub
     _normalize_ses_id = id_normalizers.normalize_ses
     _normalize_run_id = id_normalizers.normalize_run
@@ -1514,6 +1534,10 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_ses_col=res_ses_col,
     )
 
+    if session_map is not None and not session and res_ses_col:
+        # Longitudinal project: never fall back to "the first session" (an ordering guess).
+        session = "all"
+
     # --- Filter Rows by Selected Session ---
     # If both session column exists and a specific session is selected,
     # filter to only rows matching that session.
@@ -1526,6 +1550,26 @@ def _convert_survey_dataframe_to_prism_dataset(
         duplicate_handling=duplicate_handling,
         detected_sessions=detected_sessions,
     )
+
+    # A project that never said one-or-several timepoints is only asked to declare it
+    # when this import actually carries sessions; a session-less import runs as before.
+    if timepoints == "undeclared" and (
+        (res_ses_col and res_ses_col in df.columns) or (session and session != "all")
+    ):
+        raise TimepointsNotDeclaredError()
+
+    # Longitudinal project: every session label being imported needs a map entry.
+    if session_map is not None:
+        if res_ses_col and res_ses_col in df.columns:
+            session_labels = df[res_ses_col].tolist()
+        elif session and session != "all":
+            session_labels = [session]
+        else:
+            raise SessionMapError(
+                "This project has several timepoints: the file needs a session "
+                "column, or a session must be chosen."
+            )
+        require_sessions_mapped(session_map, session_labels)
 
     # --- Extract LimeSurvey System Columns ---
     # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
@@ -2233,7 +2277,9 @@ def _resolve_requested_template_version(
             continue
         entry_session = entry.get("session")
         if entry_session not in {None, ""}:
-            entry_session = normalize_ses_fn(entry_session)
+            entry_session = _survey_core.session_normalizer_for_overrides(
+                normalize_ses_fn
+            )(entry_session)
         else:
             entry_session = None
         if entry_session is not None and entry_session != session:
@@ -2366,7 +2412,9 @@ def _build_task_context_maps(
         task_override_entries = template_override_contexts_by_task.get(task, [])
         task_override_sessions = sorted(
             {
-                normalize_ses_fn(raw_session)
+                _survey_core.session_normalizer_for_overrides(normalize_ses_fn)(
+                    raw_session
+                )
                 for raw_session in (
                     entry.get("session") for entry in task_override_entries
                 )

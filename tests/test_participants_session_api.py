@@ -22,7 +22,10 @@ CROSS_SECTIONAL_CSV = "participant_id,age,sex\n1,30,2\n2,40,1\n"
 def client(tmp_path):
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "project.json").write_text("{}", encoding="utf-8")
+    # A current project always declares its timepoints; an undeclared one is refused on purpose.
+    (project / "project.json").write_text(
+        '{"StudyDesign": {"Timepoints": "single"}}', encoding="utf-8"
+    )
     app = Flask(__name__)
     app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(participants_module.conversion_participants_bp)
