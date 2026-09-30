@@ -23,6 +23,19 @@ watch it fail, then write the fix. For bugs, also invoke
 `superpowers:systematic-debugging` before proposing a fix. Don't write the
 test after the fix; a test that never failed proves nothing.
 
+## One implementation: every command lives in the backend/CLI, the GUI only calls it
+
+Every Studio feature (converters, validator, recipes, file management, ...)
+**except the Projects pages** (create/open project, study metadata) is a
+command: its logic is implemented once in the backend (`src/`) and exposed
+through the command line (`prism_tools.py` / `src/cli`). The GUI (Flask routes,
+JavaScript) is a thin adapter that runs that same command/function - it must
+never carry its own copy of the logic ("double code"). A feature is not done
+until it works from the command line, with the same options the GUI offers
+(see also the GUI/CLI parity rule). GUI-only state (which card is shown, which
+button is blocked) stays in the GUI; anything that decides what the data
+becomes belongs in the backend.
+
 ## `src/` vs `app/src/`: dual-tree drift is a live, recurring bug source
 
 **Intended architecture** (per `docs/PROJECT_OVERVIEW.md`): `src/` is the one
