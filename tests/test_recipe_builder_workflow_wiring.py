@@ -164,5 +164,26 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertNotIn("DOI", script)
 
 
+    def test_saving_keeps_everything_the_builder_does_not_edit(self):
+        """buildRecipeJSON used to build a fresh recipe, dropping Psychometrics, Usage,
+        References, Transforms.Derived and any other loaded content on save."""
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("./modules/recipe-builder/recipe-merge.js", script)
+        self.assertIn("state.loadedRecipe = recipeData.recipe || null", script)
+
+        build = script[script.index("function buildRecipeJSON()") :]
+        build = build[: build.index("// ── Preview")]
+        self.assertIn("buildRecipe({", build)
+        self.assertIn("loaded: state.loadedRecipe", build)
+        # The old from-scratch construction is gone.
+        self.assertNotIn("RecipeVersion: '1.0'", build)
+
+        # A localized Name/Description is shown as text, not "[object Object]".
+        importer = script[script.index("function importRecipe(") :]
+        importer = importer[: importer.index("function scoreToScale")]
+        self.assertIn("metadataFieldText(s.Name)", importer)
+
+
 if __name__ == "__main__":
     unittest.main()

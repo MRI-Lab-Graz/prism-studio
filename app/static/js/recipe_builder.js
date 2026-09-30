@@ -57,6 +57,15 @@ document.addEventListener('DOMContentLoaded', function () {
         } = mod);
     });
 
+    // Assembles the saved JSON on top of the loaded recipe so nothing the builder
+    // does not edit is lost (modules/recipe-builder/recipe-merge.js).
+    let buildRecipe, metadataFieldText;
+    const recipeMergeReady = import(
+        new URL('./modules/recipe-builder/recipe-merge.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({ buildRecipe, metadataFieldText } = mod);
+    });
+
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
             sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
@@ -132,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
         itemDescriptionsI18n: {},       // { itemId: { lang: "question text" } }
         itemDescriptionLanguages: [],    // language keys available in template descriptions
         itemInfoLanguage: '',            // selected language key for hover info
+        loadedRecipe:     null,         // the saved recipe as loaded (null for a new one)
         selectedItems:    new Set(),    // items checked in the item pool
         activeScaleId:    null,         // id of the currently focused scale card (or null)
         expandedScaleIds: new Set(),    // scale cards manually expanded for visual comparison
@@ -223,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.itemDescriptionsI18n = {};
         state.itemDescriptionLanguages = [];
         state.itemInfoLanguage = '';
+        state.loadedRecipe = null;
         state.selectedItems = new Set();
         state.activeScaleId = null;
         state.expandedScaleIds = new Set();
@@ -542,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function () {
         compatibilityNotice.innerHTML = '';
 
         try {
-            await missingDataReady;
+            await Promise.all([missingDataReady, recipeMergeReady]);
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
@@ -583,6 +594,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('rbMetaCitation').value = '';
             const metaFromTemplateNote = document.getElementById('rbMetaFromTemplate');
             if (metaFromTemplateNote) metaFromTemplateNote.classList.add('d-none');
+
+            state.loadedRecipe = recipeData.recipe || null;
 
             // Import recipe BEFORE any rendering
             if (recipeData.recipe) {
@@ -642,9 +655,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Import existing recipe ────────────────────────────────────────────
     function importRecipe(recipe) {
         const s = recipe.Biometrics || recipe.Survey || {};
-        document.getElementById('rbMetaName').value     = s.Name        || '';
-        document.getElementById('rbMetaDesc').value     = s.Description || '';
-        document.getElementById('rbMetaCitation').value = s.Citation    || '';
+        document.getElementById('rbMetaName').value     = metadataFieldText(s.Name);
+        document.getElementById('rbMetaDesc').value     = metadataFieldText(s.Description);
+        document.getElementById('rbMetaCitation').value = metadataFieldText(s.Citation);
 
         const inv = (recipe.Transforms || {}).Invert || {};
         // Scale range is auto-detected from the template — ignore recipe's stored Scale
@@ -1356,25 +1369,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Build recipe JSON ─────────────────────────────────────────────────
     function buildRecipeJSON() {
-        const name = document.getElementById('rbMetaName').value.trim();
-        const desc = document.getElementById('rbMetaDesc').value.trim();
-        const cite = document.getElementById('rbMetaCitation').value.trim();
         const modality = selectedModality();
-        const infoKey = selectedInfoKey();
-        const taskKey = selectedTaskKey();
 
-        const recipe = {
-            RecipeVersion: '1.0',
-            Kind: modality,
-            [infoKey]: { [taskKey]: selectedTask },
-        };
-        if (name) recipe[infoKey].Name        = name;
-        if (desc) recipe[infoKey].Description = desc;
-        if (cite) recipe[infoKey].Citation    = cite;
-
+        let invertTransform = null;
         if (state.inverted.size > 0) {
-            const invertedArr = [...state.inverted];
-            const { transform, itemsWithoutRange } = buildInvertTransform(invertedArr, getItemRange);
+            const { transform, itemsWithoutRange } = buildInvertTransform([...state.inverted], getItemRange);
             // Items with no auto-detected MinValue/MaxValue are excluded from
             // the emitted Invert.Items rather than silently defaulted to a
             // hardcoded 1-7 range -- see modules/recipe-builder/scale-fallback.js.
@@ -1386,19 +1385,29 @@ document.addEventListener('DOMContentLoaded', function () {
                     'warning'
                 );
             }
-            if (transform) recipe.Transforms = { Invert: transform };
+            invertTransform = transform;
         }
 
-        const defaultScales = state.scales[''] || [];
-        if (defaultScales.length > 0) recipe.Scores = defaultScales.map(scaleToScore);
+        const versionedScores = {};
+        Object.keys(state.scales)
+            .filter(k => k !== '' && (state.scales[k] || []).length > 0)
+            .forEach(k => { versionedScores[k] = state.scales[k].map(scaleToScore); });
 
-        const versionedKeys = Object.keys(state.scales).filter(k => k !== '' && (state.scales[k] || []).length > 0);
-        if (versionedKeys.length > 0) {
-            recipe.VersionedScores = {};
-            versionedKeys.forEach(k => { recipe.VersionedScores[k] = state.scales[k].map(scaleToScore); });
-        }
-
-        return recipe;
+        return buildRecipe({
+            loaded: state.loadedRecipe,
+            modality,
+            infoKey: selectedInfoKey(),
+            taskKey: selectedTaskKey(),
+            task: selectedTask,
+            metadata: {
+                name: document.getElementById('rbMetaName').value.trim(),
+                description: document.getElementById('rbMetaDesc').value.trim(),
+                citation: document.getElementById('rbMetaCitation').value.trim(),
+            },
+            invertTransform,
+            scores: (state.scales[''] || []).map(scaleToScore),
+            versionedScores,
+        });
     }
 
     // ── Preview ───────────────────────────────────────────────────────────

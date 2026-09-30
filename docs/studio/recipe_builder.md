@@ -74,6 +74,11 @@ code/recipes/biometrics/recipe-<name>.json
 **Preview JSON** opens a read-only view of the recipe as it will be saved, with no
 server round-trip.
 
+Opening a saved recipe and saving it again changes only what the builder edits (metadata
+name/description/citation, reverse coding, scores, variations). Everything else in the
+file is kept as it was: sections such as `Psychometrics`, `Usage` or `References`,
+`Transforms.Derived`, and further `Survey` keys such as `Authors`.
+
 ## Running a saved recipe
 
 ![PRISM Studio Analysis Output screen](../_static/screenshots/prism-studio-analysis-output.png)
