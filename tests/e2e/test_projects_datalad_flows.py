@@ -177,3 +177,20 @@ def test_init_on_a_bids_dataset_with_datalad_switched_on_tracks_it(bare_page, st
 
     expect(bare_page.locator("#initBidsResult")).to_contain_text("project.json", timeout=180000)
     assert_tracked_and_text_is_not_annexed(root, "project.json", "participants.tsv", "dataset_description.json")
+
+
+def test_sync_to_an_unreachable_server_explains_what_is_wrong(bare_page, studio_url, project):
+    if not shutil.which("ssh"):
+        pytest.skip("ssh is not installed")
+    open_datalad_card(bare_page, studio_url, project)
+    enable_datalad(bare_page)
+    bare_page.goto(f"{studio_url}/projects/share")
+    if not bare_page.locator("#dataladServerUrl").is_visible():
+        bare_page.locator('[data-bs-target="#pushServerSection"]').click()
+    bare_page.fill("#dataladServerUrl", "ssh://nobody@no-such-host.invalid/srv/x")
+
+    bare_page.click("#dataladServerSyncBtn")
+
+    result = bare_page.locator("#dataladServerResult")
+    expect(result).to_contain_text("Cannot reach the server", timeout=120000)
+    expect(result).to_contain_text("Details:")

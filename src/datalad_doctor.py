@@ -6,6 +6,7 @@ Pure functions; `which`/`run` are injectable so tests never touch the network.
 
 from __future__ import annotations
 
+import functools
 import re
 import shutil
 import subprocess
@@ -46,7 +47,7 @@ def parse_ssh_target(url: str) -> Optional[tuple]:
 def classify_ssh_error(stderr: str) -> tuple:
     """(code, plain-language message) for the common ways an SSH login fails."""
     low = (stderr or "").lower()
-    if "permission denied" in low:
+    if "permission denied (" in low:  # ssh's "(publickey,...)"; a bare local "Permission denied" is not a key problem
         return "key_rejected", "The server did not accept your SSH key."
     if "host key verification failed" in low or "remote host identification has changed" in low:
         return "host_key", (
@@ -137,3 +138,27 @@ def run_doctor(
         results.append(_check_server(url, which("ssh"), pubkey, run))
     return results
 
+
+
+def explain_failure(message: str) -> str:
+    """Prefix a failed push/sync message with a plain-language SSH explanation, keeping the original text."""
+    kind, plain = classify_ssh_error(message)
+    if kind == "unknown":
+        return message
+    return (
+        f"{plain} Use \"Check this computer\" (or `prism_tools.py datalad doctor`) to see what to fix."
+        f"\n\nDetails: {message}"
+    )
+
+
+def explain_ssh_failures(fn):
+    """Decorator for ProjectManager push operations returning {"success", "message", ...}."""
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        if isinstance(result, dict) and not result.get("success") and result.get("message"):
+            result["message"] = explain_failure(str(result["message"]))
+        return result
+
+    return wrapper

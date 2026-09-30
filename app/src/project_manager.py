@@ -50,6 +50,7 @@ from src.project_export_helpers import (
 )
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
+from src.datalad_doctor import explain_ssh_failures
 from src.entity_rules import load_entity_rules
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
@@ -6374,6 +6375,7 @@ git push -u origin main
         result["connected"] = bool(exists_result.get("exists"))
         return result
 
+    @explain_ssh_failures
     def sync_project_to_ria(
         self,
         project_path: Path,
@@ -6655,6 +6657,7 @@ git push -u origin main
 
         return {"success": True, "message": "RIA clone retrieved and validated successfully."}
 
+    @explain_ssh_failures
     def finalize_project_upload(
         self,
         project_path: Path,

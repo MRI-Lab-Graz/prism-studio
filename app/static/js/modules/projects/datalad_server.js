@@ -193,7 +193,7 @@ async function runRiaJob({ startEndpoint, statusEndpointBase, button, originalTe
             setHtml(resultDiv, `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Failed</h5>
-                    <p class="mb-0">${escapeHtml(error.message || 'Operation failed.')}</p>
+                    <p class="mb-0" style="white-space: pre-wrap;">${escapeHtml(error.message || 'Operation failed.')}</p>
                 </div>
             `);
         }
