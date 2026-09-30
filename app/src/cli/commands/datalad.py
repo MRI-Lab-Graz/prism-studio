@@ -31,3 +31,55 @@ def cmd_datalad_doctor(args) -> None:
     if not all(r["ok"] for r in results):
         sys.exit(1)
 
+
+
+def _manager():
+    from src.project_manager import ProjectManager
+
+    return ProjectManager()
+
+
+def _run_push_operation(args, operation: str, **extra) -> None:
+    """Shared by sync/finalize: run the ProjectManager operation, print, set the exit code."""
+    as_json = getattr(args, "json", False)
+
+    def progress(percent: int, message: str) -> None:
+        print(f"[{percent:3d}%] {message}")
+
+    try:
+        result = getattr(_manager(), operation)(
+            args.project,
+            ria_url=args.url,
+            sibling_name=args.sibling_name,
+            alias=args.alias,
+            progress_callback=None if as_json else progress,
+            **extra,
+        )
+    except ValueError as exc:  # e.g. no server URL configured
+        print(f"Error: {exc}")
+        sys.exit(2)
+    if as_json:
+        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+    else:
+        print(result.get("message", ""))
+    if not result.get("success"):
+        sys.exit(1)
+
+
+def cmd_datalad_sync(args) -> None:
+    _run_push_operation(args, "sync_project_to_ria", verify=args.verify)
+
+
+def cmd_datalad_finalize(args) -> None:
+    if not args.yes:
+        print(
+            "Finalize pushes once more, verifies, then removes this computer's connection to "
+            "the server (local files are kept). Re-run with --yes to do it."
+        )
+        sys.exit(2)
+    _run_push_operation(
+        args,
+        "finalize_project_upload",
+        verify_mode=args.verify_mode,
+        mark_annex_dead=args.mark_annex_dead,
+    )

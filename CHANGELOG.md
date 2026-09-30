@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **DataLad server setup and CLI.** `prism_tools.py datalad doctor` checks Git, git-annex,
+  DataLad, the SSH client, an SSH key and (with a server URL) a real key-based login, and
+  says what to fix; the same check is the "Check this computer" button on the Share page and
+  the project-creation form. `datalad sync` / `datalad finalize` give the Push to Server
+  actions a command line. Failed pushes now explain SSH problems (key rejected, host key,
+  unreachable server) in plain words, and the install hint is platform-aware (Windows:
+  Git for Windows + `py -m pip install datalad git-annex`).
 - **Session map for longitudinal projects.** New required study-metadata field
   `StudyDesign.Timepoints` (one or several). In a project with several timepoints,
   every session label of an import must be mapped by the user in
@@ -27,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generic "Current project is tracked by DataLad." (even for errors) and reported
   "saved" on a clean tree. It now shows the commit message used, "No DataLad changes
   were pending", or the real failure reason.
+- **Renaming a task in File Management keeps the sidecar in step.** Renaming the
+  `_task` part of filenames now also updates `TaskName` (and `Study.TaskName`) in the
+  renamed sidecars, only where it equals the old label (a written description such as
+  "Wellbeing check" is left alone). The preview lists the sidecars it will update.
+- **Delete Files says how much it is about to delete.** The confirmation names the
+  number of files, and warns explicitly when every subject is selected with no filter
+  (which deletes every file in the project).
 - **A new project's `.prismrc.json` is written in its final form**, so a later
   settings save no longer shows up as a pending change in a fresh DataLad project.
 - **Init PRISM on BIDS** no longer logs a 404 in the browser console on every run

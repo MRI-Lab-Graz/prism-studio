@@ -59,6 +59,10 @@ def dispatch_prism_tools(
     elif args.command == "datalad":
         if args.action == "doctor":
             handlers["datalad_doctor"](args)
+        elif args.action == "sync":
+            handlers["datalad_sync"](args)
+        elif args.action == "finalize":
+            handlers["datalad_finalize"](args)
         else:
             parsers["datalad"].print_help()
     elif args.command == "environment":

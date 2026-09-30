@@ -59,7 +59,11 @@ from src.cli.commands.participants import (
     cmd_participants_save_mapping,
     cmd_participants_save_schema,
 )
-from src.cli.commands.datalad import cmd_datalad_doctor
+from src.cli.commands.datalad import (
+    cmd_datalad_doctor,
+    cmd_datalad_finalize,
+    cmd_datalad_sync,
+)
 from src.cli.commands.session_map import (
     cmd_session_map_set,
     cmd_session_map_show,
@@ -146,6 +150,8 @@ def main() -> None:
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
             "datalad_doctor": cmd_datalad_doctor,
+            "datalad_sync": cmd_datalad_sync,
+            "datalad_finalize": cmd_datalad_finalize,
             "session_map_show": cmd_session_map_show,
             "session_map_set": cmd_session_map_set,
             "session_map_unset": cmd_session_map_unset,

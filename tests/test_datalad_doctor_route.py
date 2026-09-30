@@ -25,3 +25,15 @@ def test_doctor_handler_returns_checks_for_the_given_url(monkeypatch):
         body = mod.handle_datalad_doctor().get_json()
     assert seen["url"] == "ria+ssh://u@h/s"
     assert body == {"success": True, "checks": [{"name": "git", "ok": True, "detail": "", "fix": ""}]}
+
+
+def test_preflight_and_project_status_carry_the_platform_install_command(tmp_path):
+    from src.datalad_doctor import install_command
+    from src.project_manager import ProjectManager
+
+    mod = importlib.import_module("src.web.blueprints.projects_lifecycle_handlers")
+    assert mod._get_datalad_preflight_status()["install_command"] == install_command()
+    status = ProjectManager().get_datalad_status(str(tmp_path))
+    assert status["install_command"] == install_command()
+    placeholder = ProjectManager()._busy_datalad_status_placeholder(str(tmp_path))
+    assert placeholder["install_command"] == install_command()

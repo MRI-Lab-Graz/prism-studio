@@ -33,6 +33,9 @@ def enable_datalad(page):
     page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.accept()))
     page.click("#projectBoxDataladEnableBtn")
     expect(page.locator("#projectBoxDataladStateBadge")).to_have_text("Tracked", timeout=120000)
+    # The badge flips first; the structure repair (subdatasets) finishes in the background and
+    # commits whatever is on disk, so wait for the page's own "complete" signal.
+    expect(page.locator("#projectBoxDataladHint")).to_contain_text("structure is complete", timeout=120000)
     return messages
 
 

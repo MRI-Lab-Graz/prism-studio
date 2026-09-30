@@ -10,17 +10,38 @@ import functools
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
 
 _DOCS = "https://handbook.datalad.org/en/latest/intro/installation.html"
-_TOOL_FIX = {
-    "git": "Install Git: https://git-scm.com/downloads",
-    "git-annex": f"Install git-annex (Windows: use the installer). See {_DOCS}",
-    "datalad": "Install with: uv tool install datalad git-annex  (or see " + _DOCS + ")",
-    "ssh": "Install/enable the OpenSSH client (Windows: Settings > Optional features > OpenSSH Client)",
-}
+_GIT_WINDOWS = "https://git-scm.com/download/win"
+
+
+def install_command(platform: Optional[str] = None) -> str:
+    """Shell command that installs DataLad + git-annex. Windows has Python but not uv."""
+    if (platform or sys.platform).startswith("win"):
+        return "py -m pip install datalad git-annex"
+    return "uv tool install datalad git-annex"
+
+
+def install_hint(platform: Optional[str] = None) -> str:
+    """One sentence for error messages (callers append '. Learn more: ...')."""
+    if (platform or sys.platform).startswith("win"):
+        return (
+            f"Install Git for Windows ({_GIT_WINDOWS}), then run: {install_command('win32')} "
+            "and restart PRISM Studio"
+        )
+    return f"Install with: {install_command(platform)}"
+
+
+def _tool_fix(tool: str) -> str:
+    if tool == "git":
+        return f"Install Git: {_GIT_WINDOWS if sys.platform.startswith('win') else 'https://git-scm.com/downloads'}"
+    if tool == "ssh":
+        return "Install/enable the OpenSSH client (Windows: Settings > Optional features > OpenSSH Client)"
+    return f"{install_hint()}. See {_DOCS}"  # git-annex, datalad
 _VERSION_ARGS = {"git": "--version", "git-annex": "version", "datalad": "--version", "ssh": "-V"}
 _KEY_NAMES = ("id_ed25519", "id_ecdsa", "id_rsa")
 _SCP_LIKE = re.compile(r"^([^@/\s:]+)@([^:/\s]+):(?!//)")
@@ -86,7 +107,7 @@ def _check_server(url: str, ssh_path: Optional[str], pubkey: str, run: Run) -> d
     if target is None:
         return _result("server", True, "Local or non-SSH location; no SSH login needed.")
     if not ssh_path:
-        return _result("server", False, "No SSH client.", _TOOL_FIX["ssh"])
+        return _result("server", False, "No SSH client.", _tool_fix("ssh"))
     user, host, port = target
     login = f"{user}@{host}" if user else host
     # accept-new trusts an unseen host on first contact (same as answering "yes" to
@@ -121,7 +142,7 @@ def run_doctor(
     for tool in ("git", "git-annex", "datalad", "ssh"):
         path = which(tool)
         if not path:
-            results.append(_result(tool, False, "Not found on PATH.", _TOOL_FIX[tool]))
+            results.append(_result(tool, False, "Not found on PATH.", _tool_fix(tool)))
             continue
         _, out = run([path, _VERSION_ARGS[tool]])
         results.append(_result(tool, True, (out.strip().splitlines() or [path])[0]))

@@ -28,13 +28,28 @@ def project_files(project):
     )
 
 
+_PAGE = {"current": None}
+
+
+@pytest.fixture(autouse=True)
+def _remember_page(request):
+    """Lets eventually() wait through the page, so Playwright keeps answering dialogs."""
+    _PAGE["current"] = request.getfixturevalue("app_page") if "app_page" in request.fixturenames else None
+    yield
+    _PAGE["current"] = None
+
+
 def eventually(condition, timeout=30.0):
-    """Poll the disk: the page disables its button at click time, long before the work is done."""
+    """Poll the disk: the page disables its button at click time, long before the work is done.
+
+    Waits via page.wait_for_timeout when a page exists: time.sleep would block Playwright's
+    event loop, and a confirm() that opens after the click would never be answered."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if condition():
             return True
-        time.sleep(0.2)
+        page = _PAGE["current"]
+        page.wait_for_timeout(200) if page is not None else time.sleep(0.2)
     return False
 
 
@@ -127,10 +142,18 @@ def add_second_task(project, ids=("1291003", "1291004")):
 
 
 def open_delete_tab(page, studio_url, answer="accept"):
-    page.on("dialog", lambda dialog: dialog.accept() if answer == "accept" else dialog.dismiss())
+    """Open the Delete tab; returns the list that collects every confirmation message."""
+    messages = []
+
+    def respond(dialog):
+        messages.append(dialog.message)
+        dialog.accept() if answer == "accept" else dialog.dismiss()
+
+    page.on("dialog", respond)
     page.goto(f"{studio_url}/file-management")
     page.click("#fm-delete-tab")
     expect(page.locator("#fileDeleteSubj_sub-1291003")).to_be_attached(timeout=30000)
+    return messages
 
 
 def tick_subject(page, subject):
@@ -420,6 +443,8 @@ def test_filename_part_rename_changes_the_task_in_every_matching_file(app_page, 
     assert eventually(lambda: any("task-wellbeing" in n for n in project_files(project))), project_files(project)
     names = sorted(p.name for p in survey.iterdir())
     assert not [n for n in names if "task-wb_" in n or "task-wb." in n], names
+    sidecar = json.loads((survey / "sub-01_ses-1_task-wellbeing_survey.json").read_text())
+    assert sidecar["Study"]["TaskName"] == "wellbeing"  # the sidecar follows the filename
 
 
 def test_delete_scans_tsv_removes_only_scans_files(app_page, studio_url, project):
@@ -432,3 +457,60 @@ def test_delete_scans_tsv_removes_only_scans_files(app_page, studio_url, project
 
     assert eventually(lambda: not [f for f in project_files(project) if f.endswith("_scans.tsv")]), project_files(project)
     assert len([f for f in project_files(project) if f.endswith("_survey.tsv")]) == 2  # data files untouched
+
+
+def test_delete_confirmation_says_how_many_files_are_about_to_go(app_page, studio_url, project):
+    build_two_subjects(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    tick_subject(app_page, "sub-1291003")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages)), "no confirmation was asked"
+    assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]
+
+
+def test_delete_without_any_filter_is_refused_and_nothing_is_listed(app_page, studio_url, project):
+    app_page.allowed_http[400] = "/api/file-management/delete"  # the refusal is the point
+    build_two_subjects(project)
+    before = snapshot(project)
+    open_delete_tab(app_page, studio_url)
+
+    app_page.click("#fileDeletePreviewBtn")
+
+    expect(app_page.locator("#fm-delete-panel")).to_contain_text("Specify at least one filter", timeout=30000)
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_disabled()
+    assert snapshot(project) == before
+
+
+def test_selecting_every_subject_warns_that_every_file_goes(app_page, studio_url, project):
+    build_two_subjects(project)
+    before = snapshot(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    app_page.click("#fileDeleteSelectAllSubjectsBtn")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages)), "no confirmation was asked"
+    assert "EVERY file" in messages[0] and "4 files" in messages[0], messages[0]
+    assert snapshot(project) == before  # dismissed: nothing deleted
+
+
+def test_a_filter_only_delete_is_not_described_as_deleting_everything(app_page, studio_url, project):
+    build_two_subjects(project)
+    add_second_task(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    app_page.click("#fileDeleteAddFilterBtn")
+    app_page.select_option(".file-delete-key-select", "task")
+    app_page.select_option(".file-delete-value-select", "other")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages))
+    assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]

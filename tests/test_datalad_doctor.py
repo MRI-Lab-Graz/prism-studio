@@ -7,7 +7,13 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.datalad_doctor import classify_ssh_error, parse_ssh_target, run_doctor  # noqa: E402
+from src.datalad_doctor import (  # noqa: E402
+    classify_ssh_error,
+    install_command,
+    install_hint,
+    parse_ssh_target,
+    run_doctor,
+)
 
 
 @pytest.mark.parametrize(
@@ -128,3 +134,25 @@ def test_non_ssh_url_is_reported_not_crashed(tmp_path):
     res = _by_name(run_doctor("ria+file:///x", which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert res["server"]["ok"] is True
     assert "local" in res["server"]["detail"].lower()
+
+
+def test_install_command_is_pip_on_windows_where_uv_is_not_installed():
+    assert install_command("win32") == "py -m pip install datalad git-annex"
+    assert install_command("darwin") == "uv tool install datalad git-annex"
+    assert install_command("linux") == "uv tool install datalad git-annex"
+
+
+def test_windows_hint_also_asks_for_git_for_windows_and_a_restart():
+    hint = install_hint("win32")
+    assert "Git for Windows" in hint and "py -m pip install datalad git-annex" in hint
+    assert "uv" not in hint
+    assert "restart" in hint.lower()
+    assert install_hint("darwin") == "Install with: uv tool install datalad git-annex"
+
+
+def test_doctor_shows_the_windows_install_steps_on_windows(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, "platform", "win32")
+    which, ssh_dir = _env(tmp_path, tools=("git", "ssh"))
+    res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
+    assert "py -m pip install datalad git-annex" in res["datalad"]["fix"]
+    assert "py -m pip install datalad git-annex" in res["git-annex"]["fix"]

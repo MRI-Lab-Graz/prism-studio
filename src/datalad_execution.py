@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from src.datalad_doctor import install_hint
+
 _GET_ERROR_PATH_RE = re.compile(r"^(?:get|install)\(error\):\s*(\S+)", re.MULTILINE)
 
 
@@ -18,7 +20,7 @@ def _extract_get_error_paths(detail: str) -> list[str]:
     "get(error): sub-01/foo.nii.gz (file) [not available]"."""
     return _GET_ERROR_PATH_RE.findall(detail)
 
-DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
+DATALAD_INSTALL_HINT = install_hint()
 DATALAD_DOCS_URL = "https://www.datalad.org/"
 
 

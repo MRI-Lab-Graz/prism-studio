@@ -25,6 +25,7 @@ import re
 import json
 from typing import Any, Dict, Optional, cast
 
+from src.datalad_doctor import install_hint
 from src.datalad_execution import (
     is_datalad_dataset,
     resolve_datalad_executable,
@@ -2831,7 +2832,7 @@ def compute_survey_recipes(
         if not datalad_executable:
             raise ValueError(
                 "This project is tracked by DataLad and recipe scoring changes "
-                "require DataLad. Install with: uv tool install datalad git-annex."
+                f"require DataLad. {install_hint()}."
             )
         # Scope the save to everything this run actually touched: the
         # derivative output tree, the seeded recipe copies under code/, and

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,6 +30,7 @@ _TEXT_SUFFIXES = {
 _TEXT_FILENAMES = {".bidsignore"}
 _DOUBLE_SUFFIXES = (".nii.gz", ".tsv.gz")
 _NON_EDITABLE_ENTITIES = {"sub"}
+_TASK_LABEL = re.compile(r"(?:^|_)task-([A-Za-z0-9]+)(?=_|\.|$)")
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
 # rather than hardcoded here, so adding/reordering an entity only requires a
 # rules-file edit.
@@ -205,6 +208,9 @@ class BidsEntityRewriter:
 
         replacements = self._build_text_replacements(plan.file_ops)
         changed_text_files = self._rewrite_text_file_contents(replacements)
+        for sidecar in self._rewrite_task_names(plan.file_ops):
+            if sidecar not in changed_text_files:
+                changed_text_files.append(sidecar)
         result = self._plan_to_dict(plan, applied=True)
         result["text_update_count"] = len(changed_text_files)
         result["text_update_files"] = [
@@ -320,6 +326,9 @@ class BidsEntityRewriter:
 
         replacements = self._build_text_replacements(file_ops)
         preview_text_updates = self._preview_text_updates(replacements)
+        for sidecar in self._preview_task_name_updates(file_ops):
+            if sidecar not in preview_text_updates:
+                preview_text_updates.append(sidecar)
         conflicts = self._detect_rename_conflicts(file_ops)
 
         return _EntityRewritePlan(
@@ -619,6 +628,70 @@ class BidsEntityRewriter:
             _add_replacement(old_session_relative, new_session_relative)
 
         return sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True)
+
+    @staticmethod
+    def _task_labels(op: "_RenameOperation") -> tuple[str, str] | None:
+        """(old, new) task label of a renamed sidecar, or None when the task did not change."""
+        if op.old_path.suffix.lower() != ".json":
+            return None
+        old = _TASK_LABEL.search(op.old_path.name)
+        new = _TASK_LABEL.search(op.new_path.name)
+        if not old or not new or old.group(1) == new.group(1):
+            return None
+        return old.group(1), new.group(1)
+
+    @staticmethod
+    def _sidecar_task_name_holders(data: object, old_label: str) -> list[dict]:
+        """The dicts in a sidecar whose TaskName is exactly the old task label."""
+        holders: list[dict] = []
+        if isinstance(data, dict):
+            if data.get("TaskName") == old_label:
+                holders.append(data)
+            study = data.get("Study")
+            if isinstance(study, dict) and study.get("TaskName") == old_label:
+                holders.append(study)
+        return holders
+
+    def _preview_task_name_updates(self, file_ops: list["_RenameOperation"]) -> list[Path]:
+        """Sidecars (under their current name) whose TaskName follows a task rename."""
+        updated: list[Path] = []
+        for op in file_ops:
+            labels = self._task_labels(op)
+            if labels is None:
+                continue
+            try:
+                data = json.loads(op.old_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if self._sidecar_task_name_holders(data, labels[0]):
+                updated.append(op.old_path)
+        return updated
+
+    def _rewrite_task_names(self, file_ops: list["_RenameOperation"]) -> list[Path]:
+        """After the renames: make TaskName in each renamed sidecar match its new task label.
+
+        Only a TaskName that equals the old label is changed; a human-written
+        description such as "Wellbeing check" is never touched."""
+        changed: list[Path] = []
+        for op in file_ops:
+            labels = self._task_labels(op)
+            if labels is None:
+                continue
+            old_label, new_label = labels
+            try:
+                data = json.loads(op.new_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            holders = self._sidecar_task_name_holders(data, old_label)
+            if not holders:
+                continue
+            for holder in holders:
+                holder["TaskName"] = new_label
+            op.new_path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+            changed.append(op.new_path)
+        return changed
 
     def _preview_text_updates(self, replacements: list[tuple[str, str]]) -> list[Path]:
         if not replacements:

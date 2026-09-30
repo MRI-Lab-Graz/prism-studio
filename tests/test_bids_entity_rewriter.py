@@ -328,3 +328,68 @@ def test_bids_entity_rewriter_detects_collision_against_broken_symlink_target(tm
     )
 
     assert preview["conflicts"]
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    import json
+
+    _touch_file(path, json.dumps(payload).encode("utf-8"))
+
+
+def _read_json(path: Path) -> dict:
+    import json
+
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _survey_project(tmp_path: Path) -> tuple[Path, Path]:
+    root = tmp_path / "project"
+    folder = root / "sub-01" / "ses-1" / "survey"
+    _touch_file(folder / "sub-01_ses-1_task-wb_survey.tsv", b"WB01\n1\n")
+    _write_json(
+        folder / "sub-01_ses-1_task-wb_survey.json",
+        {"Study": {"TaskName": "wb", "OriginalName": "Wellbeing"}, "TaskName": "wb"},
+    )
+    return root, folder
+
+
+def test_task_rename_updates_the_sidecar_task_name_of_the_renamed_files(tmp_path):
+    root, folder = _survey_project(tmp_path)
+    # a second subject whose TaskName is a human description, not the label: must stay as written
+    _touch_file(folder.parent.parent.parent / "sub-02" / "ses-1" / "survey" / "sub-02_ses-1_task-wb_survey.tsv")
+    _write_json(
+        root / "sub-02" / "ses-1" / "survey" / "sub-02_ses-1_task-wb_survey.json",
+        {"Study": {"TaskName": "Wellbeing check"}},
+    )
+    rewriter = BidsEntityRewriter(root)
+
+    rewriter.apply(modality="survey", entity="_task", operation="rename", replacement="wellbeing")
+
+    renamed = _read_json(root / "sub-01/ses-1/survey/sub-01_ses-1_task-wellbeing_survey.json")
+    assert renamed["TaskName"] == "wellbeing"
+    assert renamed["Study"]["TaskName"] == "wellbeing"
+    assert renamed["Study"]["OriginalName"] == "Wellbeing"  # nothing else is touched
+    other = _read_json(root / "sub-02/ses-1/survey/sub-02_ses-1_task-wellbeing_survey.json")
+    assert other["Study"]["TaskName"] == "Wellbeing check"
+
+
+def test_task_rename_preview_lists_the_sidecars_it_will_update_and_changes_nothing(tmp_path):
+    root, folder = _survey_project(tmp_path)
+    before = (folder / "sub-01_ses-1_task-wb_survey.json").read_bytes()
+
+    preview = BidsEntityRewriter(root).preview(
+        modality="survey", entity="_task", operation="rename", replacement="wellbeing"
+    )
+
+    assert "sub-01/ses-1/survey/sub-01_ses-1_task-wb_survey.json" in preview["text_update_files"]
+    assert (folder / "sub-01_ses-1_task-wb_survey.json").read_bytes() == before
+
+
+def test_renaming_another_entity_leaves_task_name_alone(tmp_path):
+    root, folder = _survey_project(tmp_path)
+    _touch_file(folder / "sub-01_ses-1_task-wb_acq-a_survey.tsv")
+    _write_json(folder / "sub-01_ses-1_task-wb_acq-a_survey.json", {"TaskName": "wb"})
+
+    BidsEntityRewriter(root).apply(modality="survey", entity="_acq", operation="rename", replacement="b")
+
+    assert _read_json(folder / "sub-01_ses-1_task-wb_acq-b_survey.json")["TaskName"] == "wb"

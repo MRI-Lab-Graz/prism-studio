@@ -483,6 +483,43 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    def _add_push_options(sub):
+        sub.add_argument("--project", required=True, help="Project root")
+        sub.add_argument(
+            "--url",
+            help="Server URL (ria+ssh://user@host/path, user@host:path); default: the project's saved setting",
+        )
+        sub.add_argument("--sibling-name", help="Sibling name (default: saved setting, else ria-store)")
+        sub.add_argument("--alias", help="Store alias (RIA stores only)")
+        sub.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    parser_datalad_sync = datalad_subparsers.add_parser(
+        "sync", help="Connect to the DataLad server (if needed) and push; safe to repeat"
+    )
+    _add_push_options(parser_datalad_sync)
+    parser_datalad_sync.add_argument(
+        "--verify",
+        action="store_true",
+        help="Also confirm every annexed file reached the server (slower)",
+    )
+    parser_datalad_finalize = datalad_subparsers.add_parser(
+        "finalize",
+        help="Last push, verification, then disconnect this computer from the server (files kept)",
+    )
+    _add_push_options(parser_datalad_finalize)
+    parser_datalad_finalize.add_argument(
+        "--verify-mode",
+        choices=["fast", "full"],
+        default="fast",
+        help="full = also clone the server copy and validate it before disconnecting (slower)",
+    )
+    parser_datalad_finalize.add_argument(
+        "--mark-annex-dead", action="store_true", help="Mark the local annex copy dead after disconnecting"
+    )
+    parser_datalad_finalize.add_argument(
+        "--yes", action="store_true", help="Confirm the disconnect (required)"
+    )
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",
