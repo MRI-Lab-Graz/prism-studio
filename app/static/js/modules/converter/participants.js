@@ -1,5 +1,6 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { isSameProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
@@ -19,6 +20,7 @@ import { createParticipantsMergePreviewRefreshController } from './participants-
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
+    effectiveSelectedCase,
 } from './participants-replace-policy.js';
 import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
 import {
@@ -76,6 +78,8 @@ export function initParticipants() {
     let participantsWorkflowMode = 'file';
     let participantsFileAction = 'replace';
     let participantsSelectedCaseId = '1';
+    // The workflow card the user actually clicked, per project. The default above is not a choice.
+    let participantsExplicitCase = { projectPath: '', caseId: '' };
     let participantsServerFilePath = '';
     let participantsOverwriteWarningRequested = false;
     const runController = createJobRunController();
@@ -346,7 +350,19 @@ export function initParticipants() {
             return;
         }
 
-        if (!participantsSelectedCaseId || !availableCases.includes(participantsSelectedCaseId)) {
+        const chosenCaseId = isSameProjectPath(
+            participantsExplicitCase.projectPath,
+            resolveCurrentProjectPath()
+        )
+            ? participantsExplicitCase.caseId
+            : '';
+        const keptCaseId = effectiveSelectedCase({
+            requiresSelection: true,
+            availableCases,
+            selectedCaseId: participantsSelectedCaseId,
+            chosenCaseId,
+        });
+        if (keptCaseId === null) {
             participantsSelectedCaseId = null;
             setParticipantsWorkflowMode('file');
             setParticipantsFileAction('replace');
@@ -1561,6 +1577,10 @@ export function initParticipants() {
             }
 
             applyParticipantsWorkflowCase(caseId);
+            participantsExplicitCase = {
+                projectPath: resolveCurrentProjectPath(),
+                caseId: participantsSelectedCaseId || '',
+            };
             resetParticipantsPanelState();
             updateParticipantsWorkflowModeUi();
             updateParticipantsButtonState();

@@ -326,6 +326,23 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("REPLACE_CONFIRMATION_MESSAGE", card_click)
         self.assertIn("window.confirm(", card_click)
 
+    def test_an_unchosen_default_workflow_does_not_count_as_selected(self):
+        """The built-in default case must not look "already selected" for a project
+        with existing files, or clicking Replace never shows the confirmation."""
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        sync = module[
+            module.index("function syncParticipantsWorkflowSelection") :
+            module.index("function getExistingParticipantFileNames")
+        ]
+        self.assertIn("effectiveSelectedCase(", sync)
+
+        card_click = module[
+            module.index("participantsCaseGuideCards.addEventListener('click'") :
+            module.index("// Run immediately")
+        ]
+        self.assertIn("participantsExplicitCase = {", card_click)
+
 
 if __name__ == "__main__":
     unittest.main()

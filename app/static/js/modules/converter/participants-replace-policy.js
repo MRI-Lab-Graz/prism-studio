@@ -13,3 +13,20 @@ export const REPLACE_CONFIRMATION_MESSAGE =
 export function discardsExistingSchema({ mode, fileAction, hasParticipantsTsv }) {
     return mode === 'file' && fileAction === 'replace' && Boolean(hasParticipantsTsv);
 }
+
+/**
+ * Which workflow card counts as selected. When the project already has
+ * participant files the user must pick Replace, Modify or Merge: the built-in
+ * default ('1') is not a choice, so it must not suppress the Replace
+ * confirmation by looking "already selected".
+ */
+export function effectiveSelectedCase({
+    requiresSelection,
+    availableCases,
+    selectedCaseId,
+    chosenCaseId,
+}) {
+    if (!requiresSelection) return selectedCaseId;
+    const isChosen = Boolean(chosenCaseId) && selectedCaseId === chosenCaseId;
+    return isChosen && availableCases.includes(selectedCaseId) ? selectedCaseId : null;
+}

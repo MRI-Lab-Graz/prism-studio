@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
+    effectiveSelectedCase,
 } from './participants-replace-policy.js';
 
 describe('participants Replace policy', () => {
@@ -34,5 +35,33 @@ describe('participants Replace policy', () => {
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/participants\.tsv/);
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/participants\.json/);
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/annotations/i);
+    });
+});
+
+
+describe('effectiveSelectedCase', () => {
+    const existing = { requiresSelection: true, availableCases: ['1', '2', '3'] };
+
+    it('an unchosen default is not a choice when the user must pick a workflow', () => {
+        expect(effectiveSelectedCase({ ...existing, selectedCaseId: '1', chosenCaseId: '' })).toBe(null);
+    });
+
+    it('keeps the workflow the user picked', () => {
+        expect(effectiveSelectedCase({ ...existing, selectedCaseId: '2', chosenCaseId: '2' })).toBe('2');
+    });
+
+    it('drops a pick that is no longer available', () => {
+        expect(
+            effectiveSelectedCase({
+                requiresSelection: true,
+                availableCases: ['1'],
+                selectedCaseId: '3',
+                chosenCaseId: '3',
+            })
+        ).toBe(null);
+    });
+
+    it('a selection that differs from the recorded pick is not a choice', () => {
+        expect(effectiveSelectedCase({ ...existing, selectedCaseId: '1', chosenCaseId: '2' })).toBe(null);
     });
 });
