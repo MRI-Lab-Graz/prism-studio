@@ -74,11 +74,23 @@ def test_missing_tool_fails_with_fix(tmp_path):
     assert res["datalad"]["ok"] is False
 
 
-def test_no_key_fails_and_points_to_keygen(tmp_path):
+def test_no_key_fails_and_points_to_the_it_admin(tmp_path):
     which, ssh_dir = _env(tmp_path, key=False)
     res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert res["ssh-key"]["ok"] is False
-    assert "keygen" in res["ssh-key"]["fix"]
+    assert "IT" in res["ssh-key"]["fix"]
+    assert "keygen" not in res["ssh-key"]["fix"]
+
+
+def test_rejected_login_without_a_key_points_to_the_it_admin(tmp_path):
+    which, ssh_dir = _env(tmp_path, key=False)
+
+    def run(cmd):
+        return (255, "Permission denied (publickey).") if "BatchMode=yes" in cmd else (0, "v1")
+
+    res = _by_name(run_doctor("ssh://kalle@h/store", which=which, run=run, ssh_dir=ssh_dir))
+    assert "IT" in res["server"]["fix"]
+    assert "keygen" not in res["server"]["fix"]
 
 
 def test_server_check_uses_batchmode_ssh_and_reports_ok(tmp_path):

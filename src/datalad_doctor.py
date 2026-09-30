@@ -103,7 +103,7 @@ def _check_server(url: str, ssh_path: Optional[str], pubkey: str, run: Run) -> d
         fix += (
             f" Send this public key to the server admin:\n{pubkey}"
             if pubkey
-            else " You have no key yet: run `prism datalad keygen`, then send the public key to the admin."
+            else " You have no SSH key yet: ask your IT admin to set one up for you."
         )
     return _result("server", False, output.strip(), fix)
 
@@ -131,30 +131,9 @@ def run_doctor(
     else:
         results.append(
             _result("ssh-key", False, f"No SSH key in {ssh_dir}.",
-                    "Run `prism datalad keygen`, then send the printed public key to the server admin.")
+                    "Ask your IT admin to set up an SSH key for you and register it on the server.")
         )
     if url:
         results.append(_check_server(url, which("ssh"), pubkey, run))
     return results
 
-
-def generate_key(
-    ssh_dir: Optional[Path] = None,
-    *,
-    which: Callable[[str], Optional[str]] = shutil.which,
-    run: Run = _default_run,
-) -> str:
-    """Create ~/.ssh/id_ed25519 (never overwriting) and return the public key to send to the admin."""
-    ssh_dir = Path(ssh_dir) if ssh_dir else Path.home() / ".ssh"
-    key = ssh_dir / "id_ed25519"
-    if key.exists():
-        raise FileExistsError(f"{key} already exists; not overwriting it.")
-    keygen = which("ssh-keygen")
-    if not keygen:
-        raise RuntimeError(_TOOL_FIX["ssh"])
-    ssh_dir.mkdir(parents=True, exist_ok=True)
-    # ponytail: empty passphrase so BatchMode logins work without an ssh-agent; add a --passphrase option if admins require one.
-    code, output = run([keygen, "-t", "ed25519", "-N", "", "-C", "prism-studio", "-f", str(key)])
-    if code != 0:
-        raise RuntimeError(output.strip() or "ssh-keygen failed")
-    return Path(f"{key}.pub").read_text().strip()

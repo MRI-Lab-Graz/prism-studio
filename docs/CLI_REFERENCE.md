@@ -531,7 +531,7 @@ you're a new user, prefer `prism-validator ...`, `python prism_tools.py ...`, an
 ## DataLad setup check
 
 Checks that this machine can use DataLad with a DataLad server: Git, git-annex, DataLad,
-the SSH client, an SSH key, and (with a server URL) a real key-based login. Each failed
+the SSH client, an SSH key (set up by your IT admin, not by PRISM), and (with a server URL) a real key-based login. Each failed
 check prints what to do; the exit code is 1 if anything failed. The Studio GUI calls the
 same function (`GET /api/projects/datalad/doctor?url=...`).
 
@@ -539,7 +539,4 @@ same function (`GET /api/projects/datalad/doctor?url=...`).
 python prism_tools.py datalad doctor
 python prism_tools.py datalad doctor --url ria+ssh://user@server.example.org/data/store
 python prism_tools.py datalad doctor --project /absolute/path/to/my-project --json
-
-# No SSH key yet: create one (never overwrites) and send the printed public key to your admin
-python prism_tools.py datalad keygen
 ```

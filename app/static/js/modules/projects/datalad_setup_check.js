@@ -24,25 +24,30 @@ export function renderDoctorChecks(checks) {
     return `<ul class="list-group mb-3">${rows.join('')}</ul>`;
 }
 
-async function onCheckClick() {
-    const btn = getById('dataladServerCheckBtn');
-    const originalText = btn ? btn.innerHTML : '';
-    const url = (getById('dataladServerUrl')?.value || '').trim();
+/**
+ * A check button is `<button data-datalad-check data-result="<id>" data-url-input="<id>">`:
+ * the result list goes into #<data-result>; #<data-url-input> (optional) holds the server URL to test.
+ */
+async function onCheckClick(event) {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    const url = (getById(btn.dataset.urlInput)?.value || '').trim();
     setButtonLoading(btn, true, 'Checking...', originalText);
     try {
         const query = url ? `?url=${encodeURIComponent(url)}` : '';
         const resp = await fetchWithApiFallback(`/api/projects/datalad/doctor${query}`);
         if (!resp.ok) throw new Error('Could not run the setup check');
         const body = await resp.json();
-        setHtml('dataladServerCheckResult', renderDoctorChecks(body.checks));
+        setHtml(getById(btn.dataset.result), renderDoctorChecks(body.checks));
     } catch (error) {
-        setHtml('dataladServerCheckResult', `<div class="alert alert-danger">${escapeHtml(error.message)}</div>`);
+        setHtml(getById(btn.dataset.result), `<div class="alert alert-danger">${escapeHtml(error.message)}</div>`);
     } finally {
         setButtonLoading(btn, false, null, originalText);
     }
 }
 
 export function initDataladSetupCheck() {
-    const btn = getById('dataladServerCheckBtn');
-    if (btn) btn.addEventListener('click', onCheckClick);
+    document.querySelectorAll('[data-datalad-check]').forEach((btn) => {
+        btn.addEventListener('click', onCheckClick);
+    });
 }

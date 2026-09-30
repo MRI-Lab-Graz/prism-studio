@@ -328,11 +328,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         share_template_content = SHARE_PAGE_TEMPLATE.read_text(encoding="utf-8")
         page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
 
-        # initializeProjectsPage() no longer touches the archival modules.
+        # initializeProjectsPage() no longer touches the archival modules (only the
+        # DataLad setup check, which also serves the create form).
         self.assertIn(
             "export function initializeProjectsPage() {\n"
             "    initProjectsPage();\n"
             "    initProjectValidation();\n"
+            "    initDataladSetupCheck();\n"
             "}",
             index_content,
         )

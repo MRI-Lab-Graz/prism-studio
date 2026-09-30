@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 
-from src.datalad_doctor import generate_key, run_doctor
+from src.datalad_doctor import run_doctor
 
 
 def _server_url(args):
@@ -31,12 +31,3 @@ def cmd_datalad_doctor(args) -> None:
     if not all(r["ok"] for r in results):
         sys.exit(1)
 
-
-def cmd_datalad_keygen(args) -> None:
-    try:
-        pub = generate_key()
-    except (FileExistsError, RuntimeError) as exc:
-        print(f"Error: {exc}")
-        sys.exit(2)
-    print("Created an SSH key. Send this public key to your server admin:\n")
-    print(pub)

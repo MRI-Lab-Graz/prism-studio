@@ -1,4 +1,4 @@
-"""prism_tools.py datalad doctor / keygen."""
+"""prism_tools.py datalad doctor."""
 
 import json
 import sys
@@ -13,7 +13,6 @@ for p in (ROOT, ROOT / "app"):
         sys.path.insert(0, str(p))
 
 import src.cli.commands.datalad as cli  # noqa: E402
-from src.datalad_doctor import generate_key  # noqa: E402
 
 
 def _results(ok):
@@ -42,23 +41,3 @@ def test_doctor_takes_server_url_from_project_config(monkeypatch, tmp_path):
     cli.cmd_datalad_doctor(SimpleNamespace(url=None, project=str(tmp_path), json=True))
     assert seen["url"] == "ria+ssh://u@h/s"
 
-
-def test_generate_key_runs_ssh_keygen_and_returns_public_key(tmp_path):
-    def fake_run(cmd):
-        key = Path(cmd[cmd.index("-f") + 1])
-        key.write_text("PRIVATE")
-        Path(f"{key}.pub").write_text("ssh-ed25519 AAAA me\n")
-        return 0, ""
-
-    pub = generate_key(tmp_path / ".ssh", which=lambda n: "/bin/ssh-keygen", run=fake_run)
-    assert pub == "ssh-ed25519 AAAA me"
-    assert (tmp_path / ".ssh" / "id_ed25519").exists()
-
-
-def test_generate_key_never_overwrites_an_existing_key(tmp_path):
-    ssh_dir = tmp_path / ".ssh"
-    ssh_dir.mkdir()
-    (ssh_dir / "id_ed25519").write_text("MINE")
-    with pytest.raises(FileExistsError):
-        generate_key(ssh_dir, which=lambda n: "/bin/ssh-keygen", run=lambda c: (0, ""))
-    assert (ssh_dir / "id_ed25519").read_text() == "MINE"

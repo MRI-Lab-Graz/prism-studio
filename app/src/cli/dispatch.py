@@ -59,8 +59,6 @@ def dispatch_prism_tools(
     elif args.command == "datalad":
         if args.action == "doctor":
             handlers["datalad_doctor"](args)
-        elif args.action == "keygen":
-            handlers["datalad_keygen"](args)
         else:
             parsers["datalad"].print_help()
     elif args.command == "environment":

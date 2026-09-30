@@ -482,9 +482,6 @@ def build_prism_tools_parsers(
     parser_datalad_doctor.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
-    datalad_subparsers.add_parser(
-        "keygen", help="Create an SSH key (id_ed25519) and print the public key for your admin"
-    )
 
     parser_environment = subparsers.add_parser(
         "environment",
