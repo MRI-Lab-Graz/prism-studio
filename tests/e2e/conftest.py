@@ -7,6 +7,7 @@ Skips itself when playwright or its Chromium is not installed:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 import threading
 from pathlib import Path
@@ -56,11 +57,17 @@ def browser():
 def project(tmp_path):
     root = tmp_path / "study"
     (root / "code" / "library" / "survey").mkdir(parents=True)
+    # A real PRISM project always has these; the pages request them on load.
+    (root / "project.json").write_text(json.dumps({"Basics": {"Name": "e2e"}}))
+    (root / "dataset_description.json").write_text(
+        json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0"})
+    )
     return root
 
 
 @pytest.fixture
-def page(browser, studio_url, project):
+def app_page(browser, studio_url, project):
+    """A page with the throwaway project open; fails the test on any browser-side error."""
     context = browser.new_context()
     resp = context.request.post(
         f"{studio_url}/api/projects/current",
@@ -68,7 +75,22 @@ def page(browser, studio_url, project):
     )
     assert resp.ok, resp.text()
     page = context.new_page()
-    page.on("pageerror", lambda err: pytest.fail(f"JS error on page: {err}"))
-    page.goto(f"{studio_url}/template-editor")
+    problems: list[str] = []
+    page.on("pageerror", lambda err: problems.append(f"JS error: {err}"))
+    page.on(
+        "console",
+        lambda msg: msg.type == "error" and problems.append(f"console: {msg.text}"),
+    )
+    page.on(
+        "response",
+        lambda r: r.status >= 400 and problems.append(f"HTTP {r.status}: {r.url}"),
+    )
     yield page
     context.close()
+    assert not problems, "\n".join(problems)
+
+
+@pytest.fixture
+def page(app_page, studio_url):
+    app_page.goto(f"{studio_url}/template-editor")
+    return app_page
