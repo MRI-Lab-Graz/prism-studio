@@ -21,6 +21,7 @@ from typing import Any, Callable, cast
 import pandas as pd
 
 from src.participants_converter import ParticipantsConverter
+from src.participants_sessions import session_label
 from src.subject_id_matching import build_subject_id_matcher
 
 
@@ -865,21 +866,6 @@ def _resolve_source_column_for_standard_variable(
     return ""
 
 
-def _normalize_session_value(value: Any) -> str:
-    if _is_missing_participant_value(value):
-        return ""
-
-    text = str(value).strip()
-    if not text:
-        return ""
-
-    numeric_value = _parse_participant_numeric_value(text)
-    if numeric_value is not None and abs(numeric_value - round(numeric_value)) < 1e-12:
-        return str(int(round(numeric_value)))
-
-    return text
-
-
 def _sanitize_session_token(value: str) -> str:
     token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
     token = re.sub(r"-+", "-", token).strip("-")
@@ -1331,7 +1317,7 @@ def _build_participants_merge_input(
             ParticipantsConverter._normalize_participant_id
         )
         source_df["_session_value"] = source_df[session_column].map(
-            _normalize_session_value
+            session_label
         )
 
         available_sessions = _sorted_session_values(
@@ -1370,7 +1356,7 @@ def _build_participants_merge_input(
             )
             normalized_decisions[standard_column] = {
                 "action": decision_entry["action"],
-                "session": _normalize_session_value(decision_entry["session"]),
+                "session": session_label(decision_entry["session"]),
             }
 
             candidate: dict[str, Any] = {
@@ -1384,7 +1370,7 @@ def _build_participants_merge_input(
                 ],
                 "available_sessions": available_sessions,
                 "selected_action": decision_entry["action"],
-                "selected_session": _normalize_session_value(decision_entry["session"]),
+                "selected_session": session_label(decision_entry["session"]),
                 "generated_columns": [],
             }
 
@@ -1426,7 +1412,7 @@ def _build_participants_merge_input(
                     ] = sorted(values_set)[0]
 
             action = decision_entry["action"]
-            selected_session = _normalize_session_value(decision_entry["session"])
+            selected_session = session_label(decision_entry["session"])
             if action == "pick_session":
                 if not selected_session or selected_session not in available_sessions:
                     unresolved_columns.append(standard_column)
