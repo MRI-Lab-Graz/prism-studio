@@ -37,7 +37,7 @@ from src.participants_backend import (
     find_identical_value_rows,
     format_identical_rows_warning,
 )
-from src.participants_sessions import filter_rows_to_session, find_session_candidates
+from src.participants_sessions import scope_to_session
 
 
 from .conversion_participants_io import (
@@ -317,16 +317,14 @@ def api_participants_preview():
             except ImportError:
                 return jsonify({"error": "LimeSurvey support not available"}), 500
 
-            session_candidates = find_session_candidates(df)
-            chosen_session_column = request.form.get("session_column", "").strip()
-            chosen_session_value = request.form.get("session_value", "").strip()
-            if chosen_session_column and chosen_session_value:
-                try:
-                    df = filter_rows_to_session(
-                        df, chosen_session_column, chosen_session_value
-                    )
-                except ValueError as session_error:
-                    return jsonify({"error": str(session_error)}), 400
+            try:
+                session_candidates, df = scope_to_session(
+                    df,
+                    request.form.get("session_column", "").strip(),
+                    request.form.get("session_value", "").strip(),
+                )
+            except ValueError as session_error:
+                return jsonify({"error": str(session_error)}), 400
 
             from src.converters.id_detection import (
                 detect_id_column as _detect_id,

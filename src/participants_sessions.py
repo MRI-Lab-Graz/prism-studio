@@ -60,3 +60,17 @@ def filter_rows_to_session(df: pd.DataFrame, column: str, value: str) -> pd.Data
     if not mask.any():
         raise ValueError(f"Session '{value}' not found in column '{column}'")
     return df[mask].copy()
+
+
+def scope_to_session(
+    df: pd.DataFrame, column: str = "", value: str = ""
+) -> tuple[list[dict[str, Any]], pd.DataFrame]:
+    """Session candidates of the whole file plus the rows of the chosen session.
+
+    Without both ``column`` and ``value`` every row is kept. Used by the GUI
+    preview and the CLI so both apply the same rule.
+    """
+    candidates = find_session_candidates(df)
+    if column and value:
+        df = filter_rows_to_session(df, column, value)
+    return candidates, df

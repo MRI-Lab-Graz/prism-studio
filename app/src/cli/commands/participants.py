@@ -24,7 +24,7 @@ from src.participants_backend import (
     save_participant_mapping,
 )
 from src.participants_converter import ParticipantsConverter
-from src.participants_sessions import filter_rows_to_session, find_session_candidates
+from src.participants_sessions import scope_to_session
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 from src.participant_columns import (
@@ -287,15 +287,15 @@ def cmd_participants_preview(args) -> None:
         separator_option=separator_option,
     )
 
-    session_candidates = find_session_candidates(df)
-    session_column = getattr(args, "session_column", None)
-    session_value = getattr(args, "session", None)
-    if session_column and session_value:
-        try:
-            df = filter_rows_to_session(df, session_column, session_value)
-        except ValueError as exc:
-            print(f"Error: {exc}")
-            sys.exit(2)
+    try:
+        session_candidates, df = scope_to_session(
+            df,
+            getattr(args, "session_column", None) or "",
+            getattr(args, "session", None) or "",
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
 
     id_column = _auto_detect_id_column(
         df,

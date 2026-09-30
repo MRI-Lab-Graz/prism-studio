@@ -4,7 +4,11 @@ import pandas as pd
 
 import pytest
 
-from src.participants_sessions import filter_rows_to_session, find_session_candidates
+from src.participants_sessions import (
+    filter_rows_to_session,
+    find_session_candidates,
+    scope_to_session,
+)
 
 
 def test_session_column_with_several_labels_is_a_candidate():
@@ -99,3 +103,21 @@ def test_filter_rejects_an_unknown_column():
 def test_filter_rejects_a_session_that_is_not_in_the_column():
     with pytest.raises(ValueError, match="Session 'month6' not found"):
         filter_rows_to_session(_longitudinal(), "session", "month6")
+
+
+def test_scope_to_session_reports_all_sessions_but_returns_only_the_chosen_rows():
+    candidates, scoped = scope_to_session(_longitudinal(), "session", "followup")
+
+    assert candidates == [{"column": "session", "values": ["baseline", "followup"]}]
+    assert list(scoped["age"]) == [31, 41]
+
+
+def test_scope_to_session_without_a_choice_keeps_every_row():
+    _candidates, scoped = scope_to_session(_longitudinal(), "", "")
+
+    assert len(scoped) == 4
+
+
+def test_scope_to_session_rejects_a_session_that_is_not_in_the_file():
+    with pytest.raises(ValueError, match="Session 'month6' not found"):
+        scope_to_session(_longitudinal(), "session", "month6")
