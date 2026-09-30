@@ -104,5 +104,38 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("modalityPicker && modalityPicker.addEventListener('change', () => {", content)
 
 
+    def test_run_summary_box_explains_what_happens_when_the_recipe_runs(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('id="rbRunSummary"', template)
+        self.assertIn("What happens when this recipe runs", template)
+
+        self.assertIn("./modules/recipe-builder/missing-data.js", script)
+        # The box is redrawn whenever scales or inversion change.
+        for renderer in ("function renderScaleCanvas()", "function renderInversionBox()"):
+            body = script[script.index(renderer) :]
+            body = body[: body.index("\n    }\n")]
+            self.assertIn("renderRunSummary()", body, renderer)
+
+    def test_missing_answers_are_one_plain_choice_per_scale(self):
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        # The choice is read from and written back to the recipe fields ...
+        self.assertIn("policyFromScore(rawScore)", script)
+        self.assertIn("applyPolicyToScore(score,", script)
+        # ... and offered in plain words.
+        for label in ("Use the answered items", "Require at least", "Require all items"):
+            self.assertIn(label, script)
+
+    def test_save_message_says_what_was_saved_and_what_to_do_next(self):
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("Recipe saved", script)
+        self.assertIn("Analysis Outputs", script)
+        # The technical path stays available, but as a detail.
+        self.assertIn("_escHtml(data.path", script)
+
+
 if __name__ == "__main__":
     unittest.main()

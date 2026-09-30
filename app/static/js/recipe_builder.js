@@ -43,6 +43,20 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(() => {});
 
+    // Plain-language missing-data rules (see modules/recipe-builder/missing-data.js).
+    // Awaited before a recipe is imported, so a saved Missing/MinValid can never
+    // be read with the wrong (default) rules and then dropped on save.
+    let POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
+        describeMissingHandling, describeReverseCoding;
+    const missingDataReady = import(
+        new URL('./modules/recipe-builder/missing-data.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({
+            POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
+            describeMissingHandling, describeReverseCoding,
+        } = mod);
+    });
+
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
             sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
@@ -235,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showStatus(msg, type = 'success') {
         statusEl.innerHTML = `<div class="alert alert-${type} py-1 px-2 small">${msg}</div>`;
-        if (type === 'success') setTimeout(() => { statusEl.innerHTML = ''; }, 4000);
+        if (type === 'success') setTimeout(() => { statusEl.innerHTML = ''; }, 10000);
     }
 
     function normalizeLang(value) {
@@ -349,6 +363,40 @@ document.addEventListener('DOMContentLoaded', function () {
             `use advanced recipe fields that are read-only in Recipe Builder. ` +
             `They will be preserved unchanged when you save.`;
         compatibilityNotice.style.display = '';
+    }
+
+    // ── "What happens when this recipe runs" ───────────────────────────────
+    function renderRunSummary() {
+        const box = document.getElementById('rbRunSummary');
+        if (!box || !describeMissingHandling) return;   // module not loaded yet
+
+        const inverted = [...state.inverted];
+        const { itemsWithoutRange } = buildInvertTransform(inverted, getItemRange);
+        const scales = currentScales();
+
+        const scaleRows = scales.length === 0
+            ? '<li class="text-muted">No scores yet: add a scale to see how it treats missing answers.</li>'
+            : scales.map(scale =>
+                '<li><code>' + _escHtml(scale.name || 'unnamed scale') + '</code> (' +
+                _escHtml(scale.method) + ' of ' + scale.items.length + ' item' +
+                (scale.items.length === 1 ? '' : 's') + '): ' +
+                _escHtml(describeMissingHandling({
+                    method: scale.method,
+                    itemCount: scale.items.length,
+                    policy: scale.policy,
+                    minValid: scale.minValid,
+                })) + '</li>'
+            ).join('');
+
+        box.innerHTML =
+            '<ul class="ps-3 mb-0">' +
+            '<li><strong>Your data:</strong> the raw responses are never changed. ' +
+            'Scores are written to a separate <em>derivatives</em> folder each time you create outputs.</li>' +
+            '<li><strong>Reverse coding:</strong> ' +
+            _escHtml(describeReverseCoding(inverted, itemsWithoutRange)) + '</li>' +
+            '<li><strong>Missing answers:</strong> ' + _escHtml(MISSING_MEANING) + '<ul class="ps-3">' +
+            scaleRows + '</ul></li>' +
+            '</ul>';
     }
 
     /** Items assigned to any scale in the current variation. */
@@ -493,6 +541,7 @@ document.addEventListener('DOMContentLoaded', function () {
         compatibilityNotice.innerHTML = '';
 
         try {
+            await missingDataReady;
             const [itemsResponse, recipeResponse] = await Promise.all([
                 fetchWithApiFallback(
                     '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
@@ -591,8 +640,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function scoreToScale(score) {
         const rawScore = cloneJson(score);
         const method = String(rawScore.Method || 'mean').trim().toLowerCase() || 'mean';
-        const minValidRaw = rawScore.MinValid;
-        const minValid = Number.isInteger(minValidRaw) && minValidRaw > 0 ? minValidRaw : null;
+        const { policy, minValid } = policyFromScore(rawScore);
         const unsupportedKeys = Object.keys(rawScore).filter(key => !SAFE_SCORE_KEYS.has(key));
         const lockReasons = [];
 
@@ -609,6 +657,7 @@ document.addEventListener('DOMContentLoaded', function () {
             method:      method,
             description: rawScore.Description || '',
             items:       Array.isArray(rawScore.Items) ? [...rawScore.Items] : [],
+            policy:      policy,
             minValid:    minValid,
             isLocked:    lockReasons.length > 0,
             lockReason:  lockReasons.join(' '),
@@ -627,13 +676,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function scaleToScore(scale) {
+        // Read-only scores are saved exactly as they were loaded.
+        if (scale.isLocked && scale.originalScore) return cloneJson(scale.originalScore);
         clampScaleMinValid(scale);
-        const score = scale.originalScore ? cloneJson(scale.originalScore) : {};
+        let score = scale.originalScore ? cloneJson(scale.originalScore) : {};
         score.Name = scale.name;
         score.Method = scale.method;
         score.Items = [...scale.items];
-        if (Number.isInteger(scale.minValid) && scale.minValid > 0) score.MinValid = scale.minValid;
-        else delete score.MinValid;
+        score = applyPolicyToScore(score, { policy: scale.policy, minValid: scale.minValid });
         if (scale.description) score.Description = scale.description;
         else delete score.Description;
         return score;
@@ -735,6 +785,7 @@ document.addEventListener('DOMContentLoaded', function () {
             invertItemList.appendChild(label);
         });
         updateInvertedBadge();
+        renderRunSummary();
     }
 
     // Tooltip for any item: shows range; if inverted, shows the mapping.
@@ -928,6 +979,7 @@ document.addEventListener('DOMContentLoaded', function () {
         currentScales().forEach(scale => renderScaleCard(scale));
         initSortable();
         renderCompatibilityNotice();
+        renderRunSummary();
     }
 
     function isScaleExpanded(scaleId) {
@@ -1075,64 +1127,80 @@ document.addEventListener('DOMContentLoaded', function () {
         methodSelect.disabled = scale.isLocked;
         methodSelect.addEventListener('change', () => { scale.method = methodSelect.value; });
 
-        const minValidWrap = document.createElement('div');
-        minValidWrap.className = 'd-flex align-items-center gap-1 ms-auto';
+        // ── "If answers are missing" (one plain choice for Missing/MinValid) ──
+        const policyWrap = document.createElement('div');
+        policyWrap.className = 'd-flex align-items-center gap-1 ms-auto flex-wrap';
 
-        const minValidLabel = document.createElement('span');
-        minValidLabel.className = 'text-muted small';
-        minValidLabel.textContent = 'Min valid:';
+        const policyLabel = document.createElement('span');
+        policyLabel.className = 'text-muted small';
+        policyLabel.textContent = 'If answers are missing:';
+
+        const policySelect = document.createElement('select');
+        policySelect.className = 'form-select form-select-sm rb-scale-policy';
+        policySelect.style.width = 'auto';
+        [
+            [POLICY.USE_ANSWERED, 'Use the answered items'],
+            [POLICY.REQUIRE_N, 'Require at least…'],
+            [POLICY.REQUIRE_ALL, 'Require all items'],
+        ].forEach(([value, label]) => {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = label;
+            if (value === scale.policy) opt.selected = true;
+            policySelect.appendChild(opt);
+        });
+        policySelect.disabled = scale.isLocked;
 
         const minValidInput = document.createElement('input');
         minValidInput.type = 'number';
         minValidInput.className = 'form-control form-control-sm';
-        minValidInput.style.width = '82px';
+        minValidInput.style.width = '70px';
         minValidInput.min = '1';
         minValidInput.step = '1';
-        minValidInput.placeholder = 'off';
         minValidInput.disabled = scale.isLocked;
+        minValidInput.title = 'Minimum number of answered items required before this score is computed.';
 
-        function syncMinValidInput() {
+        const missingNote = document.createElement('div');
+        missingNote.className = 'rb-scale-missing-note text-muted small mt-1';
+
+        function syncMissingUi() {
+            clampScaleMinValid(scale);
             minValidInput.max = String(Math.max(scale.items.length, 1));
-            if (Number.isInteger(scale.minValid) && scale.minValid > 0) {
-                minValidInput.value = String(scale.minValid);
-            } else {
-                minValidInput.value = '';
-            }
+            minValidInput.style.display = scale.policy === POLICY.REQUIRE_N ? '' : 'none';
+            minValidInput.value = scale.minValid ? String(scale.minValid) : '';
+            missingNote.textContent = describeMissingHandling({
+                method: scale.method,
+                itemCount: scale.items.length,
+                policy: scale.policy,
+                minValid: scale.minValid,
+            });
+            renderRunSummary();
         }
 
-        clampScaleMinValid(scale);
-        syncMinValidInput();
-
-        minValidInput.title = 'Minimum number of non-missing item values required before this score is computed.';
-        minValidInput.addEventListener('input', () => {
-            const raw = String(minValidInput.value || '').trim();
-            if (!raw) {
-                scale.minValid = null;
-                return;
+        policySelect.addEventListener('change', () => {
+            scale.policy = policySelect.value;
+            if (scale.policy === POLICY.REQUIRE_N && !scale.minValid) {
+                scale.minValid = scale.items.length > 1 ? scale.items.length - 1 : 1;
             }
-            const parsed = Number.parseInt(raw, 10);
-            if (!Number.isInteger(parsed) || parsed < 1) {
-                scale.minValid = null;
-                return;
-            }
-            let clamped = parsed;
-            if (scale.items.length > 0 && clamped > scale.items.length) {
-                clamped = scale.items.length;
-                minValidInput.value = String(clamped);
-            }
-            scale.minValid = clamped;
-            syncMinValidInput();
+            syncMissingUi();
         });
-        minValidWrap.append(minValidLabel, minValidInput);
+        minValidInput.addEventListener('input', () => {
+            const parsed = Number.parseInt(String(minValidInput.value || '').trim(), 10);
+            scale.minValid = Number.isInteger(parsed) && parsed >= 1 ? parsed : 1;
+            syncMissingUi();
+        });
+        methodSelect.addEventListener('change', syncMissingUi);
+        syncMissingUi();
+        policyWrap.append(policyLabel, policySelect, minValidInput);
 
-        methodRow.append(methodLabel, methodSelect, minValidWrap);
+        methodRow.append(methodLabel, methodSelect, policyWrap);
 
         const dropZone  = document.createElement('div');
         dropZone.className = 'rb-scale-drop-zone';
         if (scale.isLocked) dropZone.classList.add('rb-scale-drop-zone--locked');
         scale.items.forEach(item => appendChip(dropZone, scale, item, () => {
             clampScaleMinValid(scale);
-            syncMinValidInput();
+            syncMissingUi();
         }));
 
         if (!scale.isLocked) {
@@ -1153,12 +1221,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         scale.items.push(item);
                         appendChip(dropZone, scale, item, () => {
                             clampScaleMinValid(scale);
-                            syncMinValidInput();
+                            syncMissingUi();
                         });
                     }
                 });
                 clampScaleMinValid(scale);
-                syncMinValidInput();
+                syncMissingUi();
                 state.selectedItems.clear();
                 renderItemList();
             });
@@ -1177,11 +1245,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 scale.items.push(item);
                 appendChip(dropZone, scale, item, () => {
                     clampScaleMinValid(scale);
-                    syncMinValidInput();
+                    syncMissingUi();
                 });
             });
             clampScaleMinValid(scale);
-            syncMinValidInput();
+            syncMissingUi();
             state.selectedItems.clear();
             renderItemList();
         });
@@ -1194,7 +1262,7 @@ document.addEventListener('DOMContentLoaded', function () {
         descInput.disabled  = scale.isLocked;
         descInput.addEventListener('input', () => { scale.description = descInput.value; });
 
-        body.append(nameRow, methodRow, dropZone, addSelBtn, descInput);
+        body.append(nameRow, methodRow, missingNote, dropZone, addSelBtn, descInput);
         if (scale.isLocked && scale.lockReason) {
             const lockNote = document.createElement('div');
             lockNote.className = 'rb-scale-lock-note';
@@ -1248,6 +1316,7 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'mean',
             description: '',
             items: [],
+            policy: 'use_answered',
             minValid: null,
             isLocked: false,
             lockReason: '',
@@ -1353,7 +1422,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? '<div class="small mt-1">' + warnings.map(_escHtml).join('<br>') + '</div>'
                 : '';
             showStatus(
-                'Saved to <code>' + _escHtml(data.path || '') + '</code>' + warningHtml,
+                '<strong>Recipe saved.</strong> It is stored in your project. To score your data with it, ' +
+                'open <em>Analysis Outputs</em> and click <em>Create Output</em>.' +
+                '<div class="text-muted mt-1">File: <code>' + _escHtml(data.path || '') + '</code></div>' +
+                warningHtml,
                 warnings.length ? 'warning' : 'success'
             );
         } catch (error) {
