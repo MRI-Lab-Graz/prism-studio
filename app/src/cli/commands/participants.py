@@ -51,6 +51,19 @@ def _emit_json(payload: dict[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
+def _parse_session_resolution(raw_value: str | None) -> dict:
+    value = str(raw_value or "").strip()
+    if not value:
+        return {}
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON for --session-resolution") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("--session-resolution must decode to a JSON object")
+    return payload
+
+
 def _parse_neurobagel_schema(raw_value: str | None) -> dict:
     value = str(raw_value or "").strip()
     if not value:
@@ -567,6 +580,13 @@ def cmd_participants_merge(args) -> None:
     neurobagel_schema = _parse_neurobagel_schema(
         getattr(args, "neurobagel_schema", None)
     )
+    try:
+        session_resolution = _parse_session_resolution(
+            getattr(args, "session_resolution", None)
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
 
     if export_conflicts_csv:
         try:
@@ -578,6 +598,7 @@ def cmd_participants_merge(args) -> None:
                 sheet=sheet,
                 preview_limit=preview_limit,
                 neurobagel_schema=neurobagel_schema,
+                session_resolution_decisions=session_resolution,
             )
         except ValueError as exc:
             print(f"Error: {exc}")
@@ -595,6 +616,7 @@ def cmd_participants_merge(args) -> None:
             sheet=sheet,
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
+            session_resolution_decisions=session_resolution,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})
@@ -673,6 +695,7 @@ def cmd_participants_merge(args) -> None:
             sheet=sheet,
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
+            session_resolution_decisions=session_resolution,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})

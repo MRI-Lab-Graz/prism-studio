@@ -323,6 +323,15 @@ def build_prism_tools_parsers(
         help="Optional NeuroBagel schema JSON string to merge into participants.json",
     )
     parser_participants_merge.add_argument(
+        "--session-resolution",
+        help=(
+            "Longitudinal file: JSON object answering the merge 'Session Resolution' "
+            "per column, e.g. '{\"age\": {\"action\": \"pick_session\", \"session\": "
+            "\"baseline\", \"session_column\": \"session\"}}'. Actions: pick_session, "
+            "pick_latest_session, split_sessions. The merge preview lists the candidates."
+        ),
+    )
+    parser_participants_merge.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
