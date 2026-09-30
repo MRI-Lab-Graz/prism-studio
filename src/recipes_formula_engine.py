@@ -468,11 +468,15 @@ def _calculate_scores(
                         invert_max,
                         item_scales,
                     )
-                    expr = expr.replace(
-                        f"{{{item_id}}}",
-                        token if token is not None else "0.0",
-                    )
-                result = _safe_eval_formula_expression(expr)
+                    if token is None:
+                        # A missing item leaves the score empty. It used to be
+                        # substituted with 0.0, so an unanswered item (or a whole
+                        # unanswered questionnaire) scored like a real zero.
+                        expr = None
+                        break
+                    expr = expr.replace(f"{{{item_id}}}", token)
+                if expr is not None:
+                    result = _safe_eval_formula_expression(expr)
         elif method == "map":
             source = score.get("Source")
             mapping = score.get("Mapping")
