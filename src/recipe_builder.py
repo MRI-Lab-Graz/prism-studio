@@ -263,13 +263,14 @@ def _pick_item_description(value) -> str:
 
 
 def extract_template_study_metadata(json_path: str, *, modality: str) -> dict[str, str]:
-    """Name/description/citation/DOI of a template, to pre-fill a new recipe.
+    """Name/description/citation of a template, to pre-fill a new recipe.
 
-    Read from the template's own ``Study`` block (survey: OriginalName, Citation,
-    DOI; biometrics: OriginalName, Description). A localized name is reduced to
-    one readable string. Anything missing is an empty string.
+    Read from the template's own ``Study`` block (survey: OriginalName, Citation;
+    biometrics: OriginalName, Description). A localized name is reduced to one
+    readable string. Anything missing is an empty string. (A recipe has no DOI of
+    its own: no recipe output ever read one.)
     """
-    empty = {"name": "", "description": "", "citation": "", "doi": ""}
+    empty = {"name": "", "description": "", "citation": ""}
     path = Path(json_path)
     if not path.is_file():
         return empty
@@ -289,7 +290,6 @@ def extract_template_study_metadata(json_path: str, *, modality: str) -> dict[st
         "name": text("OriginalName"),
         "description": text("Description") if modality == "biometrics" else "",
         "citation": text("Citation"),
-        "doi": text("DOI"),
     }
 
 

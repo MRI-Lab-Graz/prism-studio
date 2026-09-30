@@ -240,7 +240,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rbMetaName').value = '';
         document.getElementById('rbMetaDesc').value = '';
         document.getElementById('rbMetaCitation').value = '';
-        document.getElementById('rbMetaDoi').value = '';
         const metaNote = document.getElementById('rbMetaFromTemplate');
         if (metaNote) metaNote.classList.add('d-none');
         resetVariationSelect();
@@ -582,7 +581,6 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('rbMetaName').value     = '';
             document.getElementById('rbMetaDesc').value     = '';
             document.getElementById('rbMetaCitation').value = '';
-            document.getElementById('rbMetaDoi').value      = '';
             const metaFromTemplateNote = document.getElementById('rbMetaFromTemplate');
             if (metaFromTemplateNote) metaFromTemplateNote.classList.add('d-none');
 
@@ -631,7 +629,6 @@ document.addEventListener('DOMContentLoaded', function () {
             ['rbMetaName', 'name'],
             ['rbMetaDesc', 'description'],
             ['rbMetaCitation', 'citation'],
-            ['rbMetaDoi', 'doi'],
         ].forEach(([fieldId, key]) => {
             const value = String(values[key] || '').trim();
             if (!value) return;
@@ -648,7 +645,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rbMetaName').value     = s.Name        || '';
         document.getElementById('rbMetaDesc').value     = s.Description || '';
         document.getElementById('rbMetaCitation').value = s.Citation    || '';
-        document.getElementById('rbMetaDoi').value      = s.DOI         || '';
 
         const inv = (recipe.Transforms || {}).Invert || {};
         // Scale range is auto-detected from the template — ignore recipe's stored Scale
@@ -1363,7 +1359,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const name = document.getElementById('rbMetaName').value.trim();
         const desc = document.getElementById('rbMetaDesc').value.trim();
         const cite = document.getElementById('rbMetaCitation').value.trim();
-        const doi  = document.getElementById('rbMetaDoi').value.trim();
         const modality = selectedModality();
         const infoKey = selectedInfoKey();
         const taskKey = selectedTaskKey();
@@ -1376,7 +1371,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (name) recipe[infoKey].Name        = name;
         if (desc) recipe[infoKey].Description = desc;
         if (cite) recipe[infoKey].Citation    = cite;
-        if (doi)  recipe[infoKey].DOI         = doi;
 
         if (state.inverted.size > 0) {
             const invertedArr = [...state.inverted];

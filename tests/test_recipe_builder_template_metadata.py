@@ -18,7 +18,7 @@ def _write(tmp_path: Path, payload: dict, name: str = "t.json") -> str:
     return str(path)
 
 
-def test_survey_template_supplies_name_citation_and_doi(tmp_path):
+def test_survey_template_supplies_name_and_citation(tmp_path):
     path = _write(
         tmp_path,
         {
@@ -35,7 +35,6 @@ def test_survey_template_supplies_name_citation_and_doi(tmp_path):
         "name": "The WHO-5 Well-Being Index",
         "description": "",
         "citation": "Topp et al. (2015)",
-        "doi": "10.1159/000376585",
     }
 
 
@@ -61,12 +60,12 @@ def test_biometrics_template_supplies_name_and_description(tmp_path):
 
     assert result["name"] == "Fitness battery"
     assert result["description"] == "Resting HR and grip."
-    assert result["citation"] == "" and result["doi"] == ""
+    assert result["citation"] == ""
 
 
 def test_a_template_without_study_metadata_gives_empty_fields(tmp_path):
     path = _write(tmp_path, {"Q1": {"Description": "x"}})
-    empty = {"name": "", "description": "", "citation": "", "doi": ""}
+    empty = {"name": "", "description": "", "citation": ""}
 
     assert extract_template_study_metadata(path, modality="survey") == empty
     assert extract_template_study_metadata(str(tmp_path / "missing.json"), modality="survey") == empty
@@ -98,5 +97,4 @@ def test_items_endpoint_returns_the_template_metadata(tmp_path):
         "name": "Wellbeing",
         "description": "",
         "citation": "Cite",
-        "doi": "",
     }

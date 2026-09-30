@@ -58,11 +58,11 @@ which items are reverse-coded, and reminds you that raw data is never changed.
 
 **Recipe Metadata** describes the recipe as a whole (not single items or scales) and
 feeds the output metadata and the generated Methods text. For a *new* recipe it is
-pre-filled from the template's own `Study` block (name, citation, DOI; for biometrics also
+pre-filled from the template's own `Study` block (name and citation; for biometrics also
 the description) and marked "Pre-filled from the template" — edit as needed. An existing
 recipe keeps its own values.
 
-Fill in or adjust Recipe Metadata (Name, Description, Citation, DOI), then **Save**. The server
+Fill in or adjust Recipe Metadata (Name, Description, Citation), then **Save**. The server
 re-validates the task/biometric name, confirms the referenced template still exists,
 and checks item references before writing. Recipes save to:
 

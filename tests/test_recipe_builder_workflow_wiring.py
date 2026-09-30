@@ -154,5 +154,15 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("prefillMetadataFromTemplate(itemsData.template_metadata)", branch_new)
 
 
+    def test_recipes_have_no_doi_field(self):
+        """A recipe's DOI was never read by any output, so the builder does not offer it."""
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("rbMetaDoi", template)
+        self.assertNotIn("rbMetaDoi", script)
+        self.assertNotIn("DOI", script)
+
+
 if __name__ == "__main__":
     unittest.main()
