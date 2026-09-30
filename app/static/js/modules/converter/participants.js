@@ -2570,8 +2570,11 @@ export function initParticipants() {
 
         const yesBtn = document.getElementById('participantsSessionLongitudinalYes');
         const noBtn = document.getElementById('participantsSessionLongitudinalNo');
-        yesBtn?.classList.toggle('active', participantsSessionChoice.longitudinal === true);
-        noBtn?.classList.toggle('active', participantsSessionChoice.longitudinal === false);
+        [[yesBtn, true], [noBtn, false]].forEach(([button, answer]) => {
+            const chosen = participantsSessionChoice.longitudinal === answer;
+            button?.classList.toggle('btn-primary', chosen);
+            button?.classList.toggle('btn-outline-secondary', !chosen);
+        });
         document.getElementById('participantsSessionNoHint')
             ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== false);
         document.getElementById('participantsSessionPickers')

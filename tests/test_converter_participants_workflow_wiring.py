@@ -343,6 +343,25 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         ]
         self.assertIn("participantsExplicitCase = {", card_click)
 
+    def test_longitudinal_buttons_look_unanswered_until_one_is_clicked(self):
+        """Yes and No must be styled identically before an answer: an outline-primary
+        Yes next to a grey No reads as "Yes is preselected"."""
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        def button_tag(element_id):
+            start = template.index(f'id="{element_id}"')
+            return template[template.rindex("<button", 0, start) : template.index(">", start)]
+
+        yes = button_tag("participantsSessionLongitudinalYes")
+        no = button_tag("participantsSessionLongitudinalNo")
+        self.assertIn("btn-outline-secondary", yes)
+        self.assertIn("btn-outline-secondary", no)
+        self.assertNotIn("btn-outline-primary", yes)
+
+        # Only the clicked answer is filled.
+        self.assertIn("toggle('btn-primary'", module)
+
 
 if __name__ == "__main__":
     unittest.main()
