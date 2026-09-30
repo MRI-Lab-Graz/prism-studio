@@ -51,16 +51,16 @@ def _emit_json(payload: dict[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
-def _parse_session_resolution(raw_value: str | None) -> dict:
+def _parse_json_object_option(raw_value: str | None, flag: str) -> dict:
     value = str(raw_value or "").strip()
     if not value:
         return {}
     try:
         payload = json.loads(value)
     except json.JSONDecodeError as exc:
-        raise ValueError("Invalid JSON for --session-resolution") from exc
+        raise ValueError(f"Invalid JSON for {flag}") from exc
     if not isinstance(payload, dict):
-        raise ValueError("--session-resolution must decode to a JSON object")
+        raise ValueError(f"{flag} must decode to a JSON object")
     return payload
 
 
@@ -581,8 +581,11 @@ def cmd_participants_merge(args) -> None:
         getattr(args, "neurobagel_schema", None)
     )
     try:
-        session_resolution = _parse_session_resolution(
-            getattr(args, "session_resolution", None)
+        session_resolution = _parse_json_object_option(
+            getattr(args, "session_resolution", None), "--session-resolution"
+        )
+        harmonization = _parse_json_object_option(
+            getattr(args, "harmonization", None), "--harmonization"
         )
     except ValueError as exc:
         print(f"Error: {exc}")
@@ -599,6 +602,7 @@ def cmd_participants_merge(args) -> None:
                 preview_limit=preview_limit,
                 neurobagel_schema=neurobagel_schema,
                 session_resolution_decisions=session_resolution,
+                harmonization_decisions=harmonization,
             )
         except ValueError as exc:
             print(f"Error: {exc}")
@@ -617,6 +621,7 @@ def cmd_participants_merge(args) -> None:
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             session_resolution_decisions=session_resolution,
+            harmonization_decisions=harmonization,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})
@@ -696,6 +701,7 @@ def cmd_participants_merge(args) -> None:
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             session_resolution_decisions=session_resolution,
+            harmonization_decisions=harmonization,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})

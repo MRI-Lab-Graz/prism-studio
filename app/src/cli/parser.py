@@ -332,6 +332,16 @@ def build_prism_tools_parsers(
         ),
     )
     parser_participants_merge.add_argument(
+        "--harmonization",
+        help=(
+            "JSON object answering the merge 'Harmonization Decisions' per column, e.g. "
+            "'{\"sex\": {\"action\": \"use_incoming\"}}' or "
+            "'{\"sex\": {\"action\": \"keep_both\", \"new_column\": \"sex_v2\"}}'. "
+            "Actions: keep_existing (default), use_incoming, keep_both. "
+            "The merge preview lists the columns that need a decision."
+        ),
+    )
+    parser_participants_merge.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
