@@ -18,3 +18,4 @@ types-requests
 types-PyYAML
 types-waitress
 colorama
+playwright  # GUI click-through tests in tests/e2e

@@ -47,6 +47,12 @@ export async function refreshTemplateList(context, { silent = false } = {}) {
     context.templateMetadata[template.filename] = template;
   }
 
+  // Rebuilding the options dropped the selection; keep the open project template selected.
+  const openFilename = context.currentTemplateFilename;
+  if (context.loadedFromProjectLibrary && Array.from(context.projectTemplateSelectEl.options).some((o) => o.value === openFilename)) {
+    context.projectTemplateSelectEl.value = openFilename;
+  }
+
   context.globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
   for (const template of globalTemplates) {
     const expectedPrefix = `${modality}-`;
@@ -144,7 +150,7 @@ export async function loadSelectedTemplate(context) {
   }
   context.renderAll();
   context.renderJsonDiff();
-  await validateCurrent(context);
+  await validateCurrent(context, { initial: true });
 }
 
 export async function loadNewTemplate(context) {
@@ -181,7 +187,7 @@ export async function loadNewTemplate(context) {
   context.renderJsonDiff();
 }
 
-export async function validateCurrent(context) {
+export async function validateCurrent(context, { initial = false } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -254,7 +260,12 @@ export async function validateCurrent(context) {
     })
     .join('');
   const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
-  context.showAlert('danger', `❌ Validation failed.<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml);
+  // ponytail: message match on jsonschema's wording; move to a backend error code if it ever changes
+  const onlyMissing = initial && errs.length > 0 && errs.every((error) => /is a required property$/.test(error.message));
+  context.showAlert(
+    onlyMissing ? 'warning' : 'danger',
+    `${onlyMissing ? 'ℹ️ Please fill in these details first, then click Validate.' : '❌ Validation failed.'}<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml
+  );
   context.alertAreaEl.querySelectorAll('.error-link').forEach((linkEl) => {
     linkEl.addEventListener('click', (event) => {
       event.preventDefault();
