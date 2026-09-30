@@ -46,10 +46,16 @@ try:
 except ImportError:
     from cross_platform import CrossPlatformFile
 
-try:
-    from src.participants_sessions import filter_rows_to_session
-except ImportError:
-    from participants_sessions import filter_rows_to_session
+
+def _import_filter_rows_to_session():
+    try:
+        from src.participants_sessions import filter_rows_to_session
+    except ImportError:
+        from participants_sessions import filter_rows_to_session
+    return filter_rows_to_session
+
+
+filter_rows_to_session = _import_filter_rows_to_session()
 
 
 def _import_read_tabular_file():
