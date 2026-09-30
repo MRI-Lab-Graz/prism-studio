@@ -77,13 +77,13 @@
               </button>
             </div>
             <div class="form-text mt-2 d-flex align-items-center gap-2">
-              <span>Imports structure directly into the editor for review, validation, and save.</span>
-              <span class="text-muted" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>LimeSurvey XML</strong>: .lsq, .lsg, .lss<br><strong>LimeSurvey archive</strong>: .lsa<br><strong>Tabular dictionary</strong>: .xlsx, .csv, .tsv">
+              <span>Imports a PRISM template (.json) or a source (LimeSurvey, Excel/CSV/TSV) into the editor for review, validation, and save.</span>
+              <span class="text-muted" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>PRISM template</strong>: .json<br><strong>LimeSurvey XML</strong>: .lsq, .lsg, .lss<br><strong>LimeSurvey archive</strong>: .lsa<br><strong>Tabular dictionary</strong>: .xlsx, .csv, .tsv">
                 <i class="fas fa-circle-question"></i>
               </span>
             </div>
             <div id="projectLibraryStatus" class="form-text text-muted mt-1"></div>
-            <input type="file" id="templateImportInput" accept=".lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
+            <input type="file" id="templateImportInput" accept=".json,.lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
             <div class="mt-2 d-none" id="excelGroupPickerRow">
               <label class="form-label small mb-1" for="excelGroupPickerSelect">Multiple instrument groups detected &mdash; choose one to load:</label>
               <div class="input-group input-group-sm">

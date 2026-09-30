@@ -66,9 +66,16 @@ to get one; do whichever suits you, then move on to Part B either way.
 ### Fast path: use the ready-made template
 
 Download {download}`survey-wellbeing.json <../examples/workshop/chapter_3_survey_import/survey-wellbeing.json>`
-(or find `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` in a checkout) and copy it into
-your project at `code/library/survey/survey-wellbeing.json` (create the
-`survey/` subfolder if it doesn't exist yet). That's it — this file already
+(or find `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` in a checkout), then bring
+it into your project from Studio:
+
+1. Open **Template Editor** → Modality `survey` → **Create or Import** → **Import Template Source**.
+2. Choose `survey-wellbeing.json`. The template opens in the editor and is validated.
+3. Click **Save to Project**. (If a project template with that name already exists, Studio asks
+   before overwriting it.)
+
+Prefer the file system? Copying the file to `code/library/survey/survey-wellbeing.json` in your
+project (create the `survey/` subfolder if needed) does the same. This file already
 defines everything the import needs:
 
 - `Study.TaskName`: `wellbeing`
@@ -77,7 +84,7 @@ defines everything the import needs:
 - Citation and license info for the underlying instrument (a WHO-5 adaptation)
 
 Open **Template Editor** → Modality `survey` → Project Templates and confirm
-`wellbeing` now shows up there, to check the copy landed correctly.
+`wellbeing` shows up there, to check the template landed correctly.
 
 ### Alternative: build your own template from a spreadsheet
 

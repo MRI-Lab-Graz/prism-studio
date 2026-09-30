@@ -15,9 +15,13 @@ template from one of two dropdowns:
 - **Global Templates** — the official/bundled library plus any external library your
   project points at (`project.template_library_path`). These are loaded **read-only**.
 
-You can also **Create** a blank template from the schema, or **Import** from
-LimeSurvey XML (`.lsq`/`.lsg`/`.lsa`) or a tabular codebook (`.xlsx`/`.csv`/`.tsv`,
-with a group picker for multi-instrument Excel files). For a guided, step-by-step walk
+You can also **Create** a blank template from the schema, or **Import** a finished PRISM
+template (`.json`, for example one you downloaded or received from a colleague), LimeSurvey
+XML (`.lsq`/`.lsg`/`.lsa`) or a tabular codebook (`.xlsx`/`.csv`/`.tsv`, with a group
+picker for multi-instrument Excel files). An imported template opens in the editor and
+is validated; **Save to Project** writes it to `code/library/<modality>/` and asks
+before overwriting a project template of the same name. From the command line,
+`prism_tools library template-save` does the same. For a guided, step-by-step walk
 through the Excel codebook import path, see
 [Excel Survey Template — Basics](../EXCEL_TEMPLATE_BASICS.md) and
 [— Multiple Versions](../EXCEL_TEMPLATE_ADVANCED.md).

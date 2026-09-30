@@ -1,4 +1,5 @@
 import { isSameProjectPath } from '../shared/project-state.js';
+import { parsePrismTemplateJson } from './json-import.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
@@ -501,6 +502,21 @@ export async function importTemplateSource(context) {
     await context.refreshSchema();
 
     const lowerName = (file.name || '').toLowerCase();
+
+    if (lowerName.endsWith('.json')) {
+      // A finished PRISM template: read it here, no converter involved. The
+      // normal import finish validates it, and Save to Project asks before
+      // overwriting a project template of the same name.
+      const template = parsePrismTemplateJson(await file.text(), context.modalityEl.value);
+      const summary = applyImportedTemplate(
+        context,
+        { template, suggested_filename: file.name },
+        file
+      );
+      await finishImport(context, summary);
+      return;
+    }
+
     const isLsqOrLsg = lowerName.endsWith('.lsq') || lowerName.endsWith('.lsg');
     const isExcelCodebook = lowerName.endsWith('.xlsx') || lowerName.endsWith('.csv') || lowerName.endsWith('.tsv');
 

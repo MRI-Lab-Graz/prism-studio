@@ -387,5 +387,40 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("deleteTemplateItems();", content)
 
 
+    def test_import_accepts_a_prism_template_json(self):
+        template = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+        start = template.index('id="templateImportInput"')
+        picker = template[template.rindex("<input", 0, start) : template.index(">", start)]
+
+        self.assertIn(".json", picker)
+        # The "?" tooltip lists it too.
+        self.assertIn("PRISM template</strong>: .json", template)
+
+    def test_json_import_is_read_in_the_browser_not_sent_to_a_converter(self):
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("./json-import.js", source)
+        importer = source[source.index("export async function importTemplateSource") :]
+        importer = importer[: importer.index("export async function deleteCurrentTemplate")]
+
+        json_branch = importer.index("parsePrismTemplateJson(await file.text()")
+        # The .json branch comes before the codebook and generator paths ...
+        self.assertLess(json_branch, importer.index("isExcelCodebook)"))
+        self.assertLess(json_branch, importer.index("/api/survey-generate-templates"))
+        # ... and reuses the normal import finish (validation) so Save works as usual.
+        self.assertIn("applyImportedTemplate(", importer[json_branch:])
+
+    def test_an_imported_template_still_asks_before_overwriting_a_project_template(self):
+        """getSaveDecision confirms an overwrite unless the template was loaded from the
+        project library; an import must never count as loaded from it."""
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        applied = source[source.index("function applyImportedTemplate") :]
+        applied = applied[: applied.index("async function finishImport")]
+
+        self.assertIn("context.loadedFromProjectLibrary = false", applied)
+        editor = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("Overwrite it?", editor)
+
+
 if __name__ == "__main__":
     unittest.main()
