@@ -1,5 +1,7 @@
 # LimeSurvey Version Differences (.lss XML Format)
 
+> PRISM Studio now exports only the LimeSurvey 5.x/6.x format; the 3.x/4.x rows below are kept as historical reference.
+
 This document describes the structural differences in the `.lss` XML export format between LimeSurvey versions, relevant for PRISM Studio's export compatibility.
 
 ## DBVersion Mapping

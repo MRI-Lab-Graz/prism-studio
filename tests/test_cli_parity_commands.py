@@ -362,7 +362,6 @@ def test_customizer_groups_feeds_export_lss_customized(tmp_path):
             language="en",
             languages=None,
             base_language=None,
-            ls_version="6",
             survey_title="Mini",
             no_matrix=False,
             no_matrix_global=False,

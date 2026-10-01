@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   converter tabs show a "Session mapping" panel (empty inputs) and keep
   Preview/Convert disabled until the session name is saved.
 
+### Removed
+- **LimeSurvey 3.x / 4.x export.** The "LimeSurvey version" choice is gone from the
+  Survey Generator and Customizer, and `--ls-version` from `survey export-lss` and
+  `survey export-lss-customized`. Exports are always the 5.x/6.x format (the CLI
+  previously defaulted to 3.x).
+
 ### Fixed
 - **Survey generator: Quick Export ignored which questions you had ticked.** Un-ticking
   a question (or changing a template's matrix setting) had no effect on the LimeSurvey

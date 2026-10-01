@@ -45,7 +45,6 @@ def _args(**overrides) -> SimpleNamespace:
         language="en",
         languages=None,
         base_language=None,
-        ls_version="3",
     )
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
@@ -154,7 +153,6 @@ class TestExportLssCustomized:
             _args(
                 customization_json=str(customization_path),
                 output=str(output),
-                ls_version="6",
                 no_matrix=True,
                 no_matrix_global=True,
                 survey_title=None,

@@ -218,4 +218,4 @@ def test_get_survey_customizer_formats_payload_lists_limesurvey_format() -> None
     assert payload["formats"][0]["id"] == "limesurvey"
     assert payload["formats"][0]["extension"] == ".lss"
     option_ids = {opt["id"] for opt in payload["formats"][0]["options"]}
-    assert option_ids == {"ls_version", "matrix", "matrix_global"}
+    assert option_ids == {"matrix", "matrix_global"}

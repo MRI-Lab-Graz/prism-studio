@@ -1590,12 +1590,6 @@ def build_prism_tools_parsers(
         help="Base language code (default: --language)",
     )
     parser_survey_export_lss.add_argument(
-        "--ls-version",
-        default="3",
-        choices=["3", "6"],
-        help="Target LimeSurvey version (default: 3)",
-    )
-    parser_survey_export_lss.add_argument(
         "--no-matrix",
         dest="matrix",
         action="store_false",
@@ -1699,12 +1693,6 @@ def build_prism_tools_parsers(
         "--base-language",
         default=None,
         help="Base language code (default: --language)",
-    )
-    parser_survey_export_lss_customized.add_argument(
-        "--ls-version",
-        default="6",
-        choices=["3", "6"],
-        help="Target LimeSurvey version (default: 6)",
     )
     parser_survey_export_lss_customized.add_argument(
         "--survey-title",

@@ -275,7 +275,6 @@ def test_quick_export_honours_the_ticked_questions_per_file() -> None:
         json={
             "files": [{"path": str(brs), "include": ["BRS01", "BRS03"], "matrix": False}],
             "language": "en",
-            "ls_version": "6",
         },
     ):
         response = handlers.handle_generate_lss_endpoint()

@@ -16,8 +16,8 @@ Export.
 ## Export Settings
 
 - **Survey Name** (required), **Target Tool** (LimeSurvey only today), **Languages**
-  (read-only, set back on Survey Export), **Export Format** (`.lss`), **LimeSurvey
-  Version** (5.x/6.x or 3.x/4.x), **Base Language**.
+  (read-only, set back on Survey Export), **Export Format** (`.lss`, for LimeSurvey 5.x/6.x),
+  **Base Language**.
 - **Group questions with identical options into matrices** / **Global matrix
   grouping** checkboxes.
 - **Save templates to project library** — optional, only shown with an active
