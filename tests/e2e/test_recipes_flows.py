@@ -144,7 +144,10 @@ def test_anonymizing_replaces_the_ids_consistently_and_keeps_the_scores(app_page
     assert not any("P00" in identifier for identifier in ids), ids  # no original ID survives
     assert ids[0] == ids[1] != ids[2]  # same person -> same new ID, different person -> different
     assert [row[2] for row in rows] == ["9", "11", "3"]  # scores untouched
-    mapping = json.loads((out / "participants_mapping.json").read_text())["mapping"]
+    # The re-identification key stays in the project's code/, never in the shareable folder.
+    assert not list(out.rglob("participants_mapping.json"))
+    key_file = scored_project / "code/anonymization/participants_mapping.json"
+    mapping = json.loads(key_file.read_text())["mapping"]
     assert set(mapping) == {"sub-P001", "sub-P002"}
     assert mapping["sub-P001"] == ids[0] and mapping["sub-P002"] == ids[2]
 

@@ -26,6 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Preview/Convert disabled until the session name is saved.
 
 ### Fixed
+- **Validate: the "missing survey recipes" warning had the catch-all code PRISM999**
+  ("General validation error - check the error message"). It is now `PRISM708` with a
+  hint pointing at the Recipe builder.
+- **Recipes: the anonymization key no longer sits in the folder you share.**
+  `participants_mapping.json` (original ID -> pseudonym, plus the secret key) was
+  written into the output folder (`derivatives/survey/<...>_anon/`) next to the
+  anonymized scores. It now lives in `code/anonymization/` of the project, which
+  Share exports never include. All recipe runs of a project reuse that one key, so
+  a participant keeps the same pseudonym across recipes. A key left in an output
+  folder by an older version is moved there on the next anonymized run.
 - **File Management > Organizer: uploading a folder never worked in Chrome/Edge.**
   Browsers send folder-picked files under their relative path (`flat/sub-01_...`),
   which the server turned into `flat_sub-01_...` and rejected ("No valid files to

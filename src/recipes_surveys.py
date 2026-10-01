@@ -22,6 +22,7 @@ import csv
 import hashlib
 import os
 import re
+import shutil
 import json
 from typing import Any, Dict, Optional, cast
 
@@ -3207,7 +3208,16 @@ def anonymize_recipe_output(
         participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
         if "participant_id" not in participants_df.columns:
             raise ValueError("participants.tsv must have a 'participant_id' column")
-        mapping_file_path = out_root / "participants_mapping.json"
+        # The key re-identifies every participant, so it lives in the project's
+        # code/ folder (never exported) and not in the shareable output folder.
+        # Same filename: the export code already excludes it by name.
+        mapping_file_path = (
+            Path(dataset_path) / "code" / "anonymization" / "participants_mapping.json"
+        )
+        legacy_key = out_root / "participants_mapping.json"
+        if legacy_key.exists() and not mapping_file_path.exists():
+            mapping_file_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(legacy_key), str(mapping_file_path))
         if mapping_file_path.exists():
             with open(mapping_file_path, "r", encoding="utf-8") as f:
                 mapping_data = json.load(f)

@@ -106,8 +106,12 @@ class TestAnonymizeRecipeOutputTsv:
         out_root_b = tmp_path / "run_b"
         out_root_b.mkdir()
         _write_scores_tsv(out_root_b, "scores.tsv", ["sub-01"])
+        # A second project has its own key, so its random IDs differ.
+        dataset_b = tmp_path / "dataset_b"
+        dataset_b.mkdir()
+        _write_participants_tsv(dataset_b, ["sub-01"])
         _, mapping_file_b = anonymize_recipe_output(
-            dataset_path=dataset_path,
+            dataset_path=dataset_b,
             out_root=out_root_b,
             out_format="flat",
             random_ids=True,
@@ -444,3 +448,76 @@ class TestAnonymizeRecipeOutputPrivacyMatrix:
             assert set(data["question"]) == {
                 "[MASKED]" if mask_questions else question_text
             }
+
+
+class TestAnonymizationKeyStaysOutOfTheShareableFolder:
+    """The re-identification key must not sit next to the data people share."""
+
+    def _run(self, tmp_path, out_name="out"):
+        dataset_path = tmp_path / "dataset"
+        dataset_path.mkdir(exist_ok=True)
+        _write_participants_tsv(dataset_path, ["sub-01", "sub-02"])
+        out_root = tmp_path / out_name
+        out_root.mkdir()
+        _write_scores_tsv(out_root, "scores.tsv", ["sub-01", "sub-02"])
+        _, mapping_file = anonymize_recipe_output(
+            dataset_path=dataset_path, out_root=out_root, out_format="flat"
+        )
+        return dataset_path, out_root, mapping_file
+
+    def test_key_is_written_under_project_code_not_the_output_folder(self, tmp_path):
+        dataset_path, out_root, mapping_file = self._run(tmp_path)
+
+        assert mapping_file == (
+            dataset_path / "code" / "anonymization" / "participants_mapping.json"
+        )
+        assert mapping_file.exists()
+        leaked = [
+            p.name
+            for p in out_root.rglob("*")
+            if p.is_file() and "_secret_key" in p.read_text(errors="ignore")
+        ]
+        assert leaked == []
+        assert not (out_root / "participants_mapping.json").exists()
+
+    def test_second_output_folder_reuses_the_same_pseudonyms(self, tmp_path):
+        _, _, mapping_file = self._run(tmp_path, "out_a")
+        first = json.loads(mapping_file.read_text())["mapping"]
+        _, _, mapping_file = self._run_again(tmp_path)
+        assert json.loads(mapping_file.read_text())["mapping"] == first
+
+    def _run_again(self, tmp_path):
+        out_root = tmp_path / "out_b"
+        out_root.mkdir()
+        _write_scores_tsv(out_root, "scores.tsv", ["sub-01", "sub-02"])
+        _, mapping_file = anonymize_recipe_output(
+            dataset_path=tmp_path / "dataset", out_root=out_root, out_format="flat"
+        )
+        return None, out_root, mapping_file
+
+    def test_legacy_key_in_output_folder_is_moved_and_reused(self, tmp_path):
+        dataset_path = tmp_path / "dataset"
+        dataset_path.mkdir()
+        _write_participants_tsv(dataset_path, ["sub-01"])
+        out_root = tmp_path / "out"
+        out_root.mkdir()
+        _write_scores_tsv(out_root, "scores.tsv", ["sub-01"])
+        legacy = out_root / "participants_mapping.json"
+        legacy.write_text(
+            json.dumps(
+                {
+                    "mapping": {"sub-01": "sub-LEGACY1"},
+                    "reverse_mapping": {"sub-LEGACY1": "sub-01"},
+                    "_secret_key": "00" * 32,
+                }
+            )
+        )
+
+        _, mapping_file = anonymize_recipe_output(
+            dataset_path=dataset_path, out_root=out_root, out_format="flat"
+        )
+
+        assert not legacy.exists()
+        assert json.loads(mapping_file.read_text())["mapping"]["sub-01"] == "sub-LEGACY1"
+        df = pd.read_csv(out_root / "scores.tsv", sep="\t", dtype=str)
+        assert list(df["participant_id"]) == ["sub-LEGACY1"]
