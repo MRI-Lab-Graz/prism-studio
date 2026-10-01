@@ -192,7 +192,14 @@ create_virtualenv() {
         exit 1
     fi
 
-    "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"
+    local allow_symlink=0
+    if ! "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"; then
+        # Copied interpreters can crash on some macOS setups (e.g. uv-managed Python aborting in ensurepip).
+        echo_info "Venv with copied interpreter failed; retrying with a symlinked interpreter..."
+        rm -rf "$VENV_DIR"
+        allow_symlink=1
+        "$VENV_CREATOR_PYTHON" -m venv "$VENV_DIR"
+    fi
     if [ $? -ne 0 ]; then
         echo_error "Failed to create virtual environment."
         if ! "$VENV_CREATOR_PYTHON" -c "import ensurepip" >/dev/null 2>&1; then
@@ -203,7 +210,7 @@ create_virtualenv() {
         exit 1
     fi
 
-    if [ -L "$VENV_PYTHON_UNIX" ]; then
+    if [ "$allow_symlink" -eq 0 ] && [ -L "$VENV_PYTHON_UNIX" ]; then
         echo_error "Virtual environment creation produced a symlinked Python ($VENV_PYTHON_UNIX)."
         echo_info "This setup requires a local venv Python binary."
         exit 1
