@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import ssl
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
@@ -71,6 +72,16 @@ def _validate_orcid_api_url(url: str) -> str:
     return normalized_url
 
 
+def _ssl_context() -> ssl.SSLContext:
+    # Frozen macOS builds ship no system CA bundle, so stdlib urlopen fails TLS verification.
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:  # certifi missing/unreadable: fall back to system trust store
+        return ssl.create_default_context()
+
+
 def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> dict[str, Any]:
     validated_url = _validate_orcid_api_url(url)
     request = Request(  # noqa: S310 - URL restricted to validated public ORCID HTTPS API
@@ -84,13 +95,13 @@ def _fetch_json(url: str, timeout_seconds: float = _DEFAULT_TIMEOUT_SECONDS) -> 
     try:
         # URL is restricted to the validated public ORCID HTTPS API.
         with urlopen(  # noqa: S310 - URL restricted to validated public ORCID HTTPS API
-            request, timeout=timeout_seconds
+            request, timeout=timeout_seconds, context=_ssl_context()
         ) as response:  # nosec B310
             payload = response.read().decode("utf-8")
     except HTTPError as exc:
         raise OrcidLookupError(f"ORCID request failed with HTTP {exc.code}") from exc
     except URLError as exc:
-        raise OrcidLookupError("ORCID request failed") from exc
+        raise OrcidLookupError(f"ORCID request failed: {exc.reason}") from exc
 
     try:
         data = json.loads(payload)
