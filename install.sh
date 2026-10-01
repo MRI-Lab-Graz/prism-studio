@@ -193,8 +193,8 @@ create_virtualenv() {
     fi
 
     local allow_symlink=0
-    if ! "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"; then
-        # Copied interpreters can crash on some macOS setups (e.g. uv-managed Python aborting in ensurepip).
+    if ! "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR" 2>/dev/null; then
+        # Copied interpreters can crash on some macOS setups (uv-managed Python aborts in ensurepip; confirmed on a user machine).
         echo_info "Venv with copied interpreter failed; retrying with a symlinked interpreter..."
         rm -rf "$VENV_DIR"
         allow_symlink=1
@@ -301,7 +301,9 @@ fi
 
 # 2b. Check for tkinter (required for folder picker on Linux)
 echo_info "Checking for tkinter (required for folder picker)..."
-if python3 -c "import tkinter" 2>/dev/null; then
+if [ "$(uname)" = "Darwin" ]; then
+    echo_info "macOS uses the native folder picker; tkinter not needed."
+elif python3 -c "import tkinter" 2>/dev/null; then
     echo_success "tkinter is available"
 else
     echo "⚠️  WARNING: tkinter is NOT available"
