@@ -151,7 +151,7 @@ def test_handle_generate_pavlovia_endpoint_returns_zip(monkeypatch, tmp_path) ->
         encoding="utf-8",
     )
 
-    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None):
+    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None, include=None):
         output_dir.mkdir(parents=True, exist_ok=True)
         psyexp_path = output_dir / "demo.psyexp"
         psyexp_path.write_text("<PsychoPy2experiment/>", encoding="utf-8")
@@ -193,7 +193,7 @@ def test_handle_generate_pavlovia_endpoint_passes_base_language(monkeypatch, tmp
 
     received = {}
 
-    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None):
+    def fake_export_to_pavlovia(json_path, output_dir, experiment_name=None, language=None, include=None):
         received["language"] = language
         output_dir.mkdir(parents=True, exist_ok=True)
         psyexp_path = output_dir / "demo.psyexp"
@@ -261,3 +261,26 @@ def test_handle_generate_pavlovia_endpoint_base_language_reaches_zip_content(
 
     assert "Stimmung heute".encode("utf-8") in psyexp_bytes
     assert "Mood today".encode("utf-8") not in psyexp_bytes
+
+
+def test_quick_export_honours_the_ticked_questions_per_file() -> None:
+    """The page sends {path, include, ...} per file; unticked questions must not be exported."""
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
+    brs = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
+
+    with app.test_request_context(
+        "/api/generate-lss",
+        method="POST",
+        json={
+            "files": [{"path": str(brs), "include": ["BRS01", "BRS03"], "matrix": False}],
+            "language": "en",
+            "ls_version": "6",
+        },
+    ):
+        response = handlers.handle_generate_lss_endpoint()
+        response.direct_passthrough = False
+        body = response.get_data(as_text=True)
+
+    assert "BRS01" in body and "BRS03" in body
+    assert "BRS02" not in body

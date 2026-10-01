@@ -190,6 +190,9 @@ then pass it to `export-lss-customized`.
 
 ```bash
 python prism_tools.py survey export-lss library/survey/survey-gad7.json --output gad7.lss
+# keep only some questions (one template; same as un-ticking questions in the GUI)
+python prism_tools.py survey export-lss library/survey/survey-gad7.json \
+  --include GAD701,GAD702 --output gad7_short.lss
 python prism_tools.py survey customizer-groups \
   --template library/survey/survey-gad7.json --output my_customization.json
 python prism_tools.py survey export-lss-customized \
@@ -205,7 +208,8 @@ Tool" selector:
 
 ```bash
 python prism_tools.py survey export-pavlovia library/survey/survey-gad7.json \
-  --output ./pavlovia_export --experiment-name gad7_study --language en
+  --output ./pavlovia_export --experiment-name gad7_study --language en \
+  --include GAD701,GAD702   # optional: keep only these questions
 ```
 
 Pavlovia export is single-language scoped: `--language`/`-l` picks which

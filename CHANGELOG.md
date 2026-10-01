@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Preview/Convert disabled until the session name is saved.
 
 ### Fixed
+- **Survey generator: Quick Export ignored which questions you had ticked.** Un-ticking
+  a question (or changing a template's matrix setting) had no effect on the LimeSurvey
+  file, and the Pavlovia export always contained every question. Both now export exactly
+  the ticked questions; the toolbar's "Group into matrices" box is a master switch.
+  New `--include CODE,CODE` option on `survey export-lss` and `survey export-pavlovia`.
+- **Validate: filename errors (PRISM101-104) now say where to fix them**
+  (File Management > Filename Renamer).
 - **Validate: the "missing survey recipes" warning had the catch-all code PRISM999**
   ("General validation error - check the error message"). It is now `PRISM708` with a
   hint pointing at the Recipe builder.

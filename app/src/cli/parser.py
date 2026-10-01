@@ -1614,6 +1614,13 @@ def build_prism_tools_parsers(
         "file (default: all matching questions)",
     )
 
+    parser_survey_export_lss.add_argument(
+        "--include",
+        default=None,
+        help="Comma-separated question codes to keep (single template only; "
+        "default: all questions). Matches un-ticking questions in the GUI.",
+    )
+
     parser_survey_export_pavlovia = survey_subparsers.add_parser(
         "export-pavlovia",
         help="Export a PRISM survey template to a Pavlovia/PsychoPy experiment",
@@ -1633,6 +1640,12 @@ def build_prism_tools_parsers(
         default=None,
         help="Language code to export (default: template's own default language). "
         "Pavlovia export is single-language scoped.",
+    )
+
+    parser_survey_export_pavlovia.add_argument(
+        "--include",
+        default=None,
+        help="Comma-separated question codes to keep (default: all questions)",
     )
 
     parser_survey_customizer_groups = survey_subparsers.add_parser(

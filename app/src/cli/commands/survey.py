@@ -799,6 +799,13 @@ def cmd_survey_i18n_autotranslate(args):
     print(f"   Unique texts:    {stats.unique_source_texts}")
 
 
+def _parse_include(raw) -> list[str] | None:
+    """`--include A,B` -> ["A", "B"]; None when not given."""
+    if not raw:
+        return None
+    return [code.strip() for code in str(raw).split(",") if code.strip()]
+
+
 def cmd_survey_export_lss(args) -> None:
     """Export PRISM survey template JSON files to a LimeSurvey .lss file —
     the CLI equivalent of the Studio GUI's Survey Generator "Quick Export"
@@ -822,6 +829,13 @@ def cmd_survey_export_lss(args) -> None:
     matrix_mode = bool(getattr(args, "matrix", True))
     matrix_global = bool(getattr(args, "matrix_global", True))
     output_path = Path(args.output).resolve()
+
+    include = _parse_include(getattr(args, "include", None))
+    if include is not None:
+        if len(files) != 1:
+            print("Error: --include applies to one template; pass exactly one file")
+            sys.exit(1)
+        files = [{"path": files[0], "include": include, "matrix": matrix_mode, "matrix_global": matrix_global}]
 
     try:
         generate_lss(
@@ -856,7 +870,11 @@ def cmd_survey_export_pavlovia(args) -> None:
 
     try:
         psyexp_path = export_to_pavlovia(
-            json_path, output_dir, getattr(args, "experiment_name", None), language=language
+            json_path,
+            output_dir,
+            getattr(args, "experiment_name", None),
+            language=language,
+            include=_parse_include(getattr(args, "include", None)),
         )
     except Exception as exc:
         print(f"Error: {exc}")

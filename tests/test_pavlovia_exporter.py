@@ -622,3 +622,24 @@ def test_generate_pavlovia_from_customization_group_named_welcome_does_not_colli
     # routine for the group -- NOT two routines both named "welcome".
     assert routine_names.count("welcome") == 1
     assert routine_names == ["welcome", "welcome_2", "thanks"]
+
+
+def test_export_to_pavlovia_include_keeps_only_the_listed_questions(tmp_path):
+    source = tmp_path / "survey-x.json"
+    source.write_text(
+        json.dumps(
+            {
+                "Study": {"TaskName": "x"},
+                "Q1": {"Description": "one", "DataType": "string"},
+                "Q2": {"Description": "two", "DataType": "string"},
+                "Q3": {"Description": "three", "DataType": "string"},
+            }
+        )
+    )
+
+    out = tmp_path / "out"
+    export_to_pavlovia(source, out, include=["Q1", "Q3"])
+
+    text = " ".join(p.read_text() for p in out.iterdir() if p.suffix in (".psyexp", ".csv"))
+    assert "Q1" in text and "Q3" in text
+    assert "Q2" not in text
