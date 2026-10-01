@@ -222,8 +222,9 @@ function applyMappedFields(mapped, deps) {
     }
 
     if (mapped.studyDesignType) {
-        const sdType = document.getElementById('smSDType');
-        if (sdType) sdType.value = mapped.studyDesignType;
+        // Cross-sectional/longitudinal live in the Timepoints select, not the design type
+        const sdTimepoints = document.getElementById('smSDTimepoints');
+        if (sdTimepoints) sdTimepoints.value = mapped.studyDesignType === 'longitudinal' ? 'multiple' : 'single';
     }
 
     if (mapped.recruitmentStart) {
