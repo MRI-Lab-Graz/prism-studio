@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   previously defaulted to 3.x).
 
 ### Fixed
+- **JSON editor: saving `participants.json` always warned "must have 'columns' key".**
+  BIDS `participants.json` has no `columns` wrapper (one entry per column); the check
+  now matches that and names any column without a `Description`.
+- **JSON editor: `dataset_description.json` saved as fine while Validate flagged it.**
+  The post-save check now also applies the PRISM schema (Authors, Keywords,
+  DatasetType, ...), so both agree. Same check in `json-editor save` on the CLI.
 - **Survey generator: Quick Export ignored which questions you had ticked.** Un-ticking
   a question (or changing a template's matrix setting) had no effect on the LimeSurvey
   file, and the Pavlovia export always contained every question. Both now export exactly
