@@ -31,10 +31,11 @@ def open_datalad_card(page, studio_url, project):
 def enable_datalad(page):
     messages = []
     page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.accept()))
-    page.click("#projectBoxDataladEnableBtn")
+    # Wait for the request itself: a status poll flips the badge to "Tracked" while the enable
+    # request is still running, and its final commit would sweep up files written in that window.
+    with page.expect_response("**/api/projects/datalad/enable", timeout=120000):
+        page.click("#projectBoxDataladEnableBtn")
     expect(page.locator("#projectBoxDataladStateBadge")).to_have_text("Tracked", timeout=120000)
-    # The badge flips first; the structure repair (subdatasets) finishes in the background and
-    # commits whatever is on disk, so wait for the page's own "complete" signal.
     expect(page.locator("#projectBoxDataladHint")).to_contain_text("structure is complete", timeout=120000)
     return messages
 

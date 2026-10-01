@@ -185,6 +185,7 @@ in the repository root for the full citation, including all authors.
 
    MORE_RESOURCES
    WORKSHOP
+   COURSE
    EXAMPLES
    EXCEL_TEMPLATE_BASICS
    EXCEL_TEMPLATE_ADVANCED

@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Delete Files says how much it is about to delete.** The confirmation names the
   number of files, and warns explicitly when every subject is selected with no filter
   (which deletes every file in the project).
+- **Recipe Builder: the "what happens when this recipe runs" panel now explains the
+  optional IRV column** (sample standard deviation of the raw answers, reverse coding
+  ignored, empty with fewer than 2 answered items) as soon as it is ticked. It used to
+  describe everything except IRV.
 - **A new project's `.prismrc.json` is written in its final form**, so a later
   settings save no longer shows up as a pending change in a fresh DataLad project.
 - **Init PRISM on BIDS** no longer logs a 404 in the browser console on every run

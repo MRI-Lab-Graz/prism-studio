@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Awaited before a recipe is imported, so a saved Missing/MinValid can never
     // be read with the wrong (default) rules and then dropped on save.
     let POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
-        describeMissingHandling, describeReverseCoding;
+        describeMissingHandling, describeReverseCoding, describeIrv;
     const missingDataReady = import(
         new URL('./modules/recipe-builder/missing-data.js', recipeBuilderScriptUrl).href
     ).then(mod => {
         ({
             POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
-            describeMissingHandling, describeReverseCoding,
+            describeMissingHandling, describeReverseCoding, describeIrv,
         } = mod);
     });
 
@@ -401,6 +401,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 })) + '</li>'
             ).join('');
 
+        const irvOn = document.getElementById('rbIncludeIrv')?.checked;
+        const irvRow = irvOn
+            ? '<li><strong>Response variability (IRV):</strong> ' + _escHtml(describeIrv(state.allItems.length)) + '</li>'
+            : '';
+
         box.innerHTML =
             '<ul class="ps-3 mb-0">' +
             '<li><strong>Your data:</strong> the raw responses are never changed. ' +
@@ -409,6 +414,7 @@ document.addEventListener('DOMContentLoaded', function () {
             _escHtml(describeReverseCoding(inverted, itemsWithoutRange)) + '</li>' +
             '<li><strong>Missing answers:</strong> ' + _escHtml(MISSING_MEANING) + '<ul class="ps-3">' +
             scaleRows + '</ul></li>' +
+            irvRow +
             '</ul>';
     }
 
@@ -666,6 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const { scores: ownScores, hasIrv } = splitIrvScore(recipe.Scores);
         document.getElementById('rbIncludeIrv').checked = hasIrv;
+        renderRunSummary();
         state.scales[''] = ownScores.map(scoreToScale);
 
         const vs = recipe.VersionedScores || {};
@@ -1428,6 +1435,9 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(() => {});
     });
+
+    // The summary describes the IRV column only while it is switched on.
+    document.getElementById('rbIncludeIrv').addEventListener('change', renderRunSummary);
 
     // ── Save ──────────────────────────────────────────────────────────────
     saveBtn.addEventListener('click', async () => {
