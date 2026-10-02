@@ -53,6 +53,16 @@
                 <a href="{{ url_for('validation.download_report', result_id=result_id) }}" class="btn btn-outline-primary" data-result-action>
                     <i class="fas fa-download me-2"></i>Download Report
                 </a>
+                {% if publish_path %}
+                <button type="button" class="btn btn-warning" id="publishBtn" data-result-action
+                        data-project-path="{{ publish_path }}" title="Push this dataset to the server (validated again first)">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Publish to server
+                </button>
+                {% elif results.get('summary', {}).get('total_errors', 0) > 0 and results.get('run_prism') %}
+                <button type="button" class="btn btn-outline-secondary" disabled title="Fix the errors first">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Fix {{ results.summary.total_errors }} error(s) before publishing
+                </button>
+                {% endif %}
                 <form method="post" action="{{ url_for('validation.cleanup', result_id=result_id) }}" class="d-inline">
                     <button type="submit" class="btn btn-outline-secondary" data-result-action>
                         <i class="fas fa-trash me-2"></i>Cleanup
@@ -692,4 +702,22 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/results.js', v=prism_static_asset_token) }}"></script>
+<script src="{{ url_for('static', filename='js/publish.js', v=prism_static_asset_token) }}"></script>
+<script>
+document.getElementById('publishBtn')?.addEventListener('click', async (ev) => {
+  const btn = ev.currentTarget;
+  let identity = null;
+  let res = await window.prismPublish(btn.dataset.projectPath);
+  if (res.reason === 'no_identity') {
+    const name = prompt('Your name for the audit log:');
+    const email = name && prompt('Your email:');
+    if (!name || !email) return;
+    identity = { name, email };
+    res = await window.prismPublish(btn.dataset.projectPath, identity);
+  }
+  if (res.success) { alert(res.message); return; }
+  alert((res.message || res.error) + (res.errors?.length ? '\n\n' + res.errors.join('\n') : ''));
+  if (res.reason === 'validation_errors') location.reload();  // stale result: re-run validation view
+});
+</script>
 {% endblock %}
