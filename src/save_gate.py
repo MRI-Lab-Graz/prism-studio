@@ -9,13 +9,32 @@ docs/superpowers/specs/2026-10-02-save-gate-design.md.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+import stat
 import subprocess
 from pathlib import Path
 
 from src.datalad_execution import SAVE_GATE_MARKER
-from src.share_publish import _core_validation, _describe, validate_for_publish
+from src.share_publish import (
+    HookExistsError,
+    NotAGitRepoError,
+    _core_validation,
+    _dataset_roots,
+    _describe,
+    _hooks_dir,
+    validate_for_publish,
+)
 
-__all__ = ["SAVE_GATE_MARKER", "SaveCheck", "check_save", "validate_subject_for_save"]
+__all__ = [
+    "SAVE_GATE_MARKER",
+    "SAVE_HOOK_MARKER",
+    "SaveCheck",
+    "check_save",
+    "has_save_hook",
+    "install_save_hook",
+    "install_save_hooks",
+    "validate_subject_for_save",
+]
 
 
 @dataclass(frozen=True)
@@ -87,3 +106,55 @@ def check_save(project_root) -> SaveCheck:
     except (Exception, SystemExit) as exc:  # fail closed
         return SaveCheck(False, [f"Validation could not run: {exc}"], "validator_crash")
     return SaveCheck(not errors, errors, "valid" if not errors else "validation_errors")
+
+
+SAVE_HOOK_MARKER = "# prism-save-gate-hook"
+
+
+def _save_hook_script() -> str:
+    return f"""#!/bin/sh
+{SAVE_HOOK_MARKER}
+# Refuses a commit unless the dataset validates (PRISM save gate).
+TOOLS="${{PRISM_TOOLS:-prism_tools}}"
+if ! command -v "$TOOLS" >/dev/null 2>&1; then
+  echo "{SAVE_GATE_MARKER}: '$TOOLS' not found. Set PRISM_TOOLS to the prism_tools executable. Commit blocked." >&2
+  exit 1
+fi
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+"$TOOLS" save-gate --check --project "$ROOT" >&2 || exit 1
+"""
+
+
+def has_save_hook(root) -> bool:
+    try:
+        hook = _hooks_dir(Path(root)) / "pre-commit"
+    except NotAGitRepoError:
+        return False
+    return hook.is_file() and SAVE_HOOK_MARKER in hook.read_text(encoding="utf-8", errors="replace")
+
+
+def install_save_hook(root) -> Path:
+    hooks = _hooks_dir(Path(root))  # raises NotAGitRepoError before anything is written
+    hooks.mkdir(parents=True, exist_ok=True)
+    hook = hooks / "pre-commit"
+    if os.path.lexists(hook) and (
+        hook.is_symlink() or SAVE_HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace")
+    ):
+        raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
+    hook.write_text(_save_hook_script(), encoding="utf-8")
+    hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return hook
+
+
+def install_save_hooks(project_root) -> dict:
+    """Install the hook in the project and every nested dataset root (hooks are per repository)."""
+    result: dict = {"installed": [], "foreign": [], "errors": []}
+    for dataset_root in _dataset_roots(Path(project_root)):
+        try:
+            install_save_hook(dataset_root)
+            result["installed"].append(str(dataset_root))
+        except HookExistsError:
+            result["foreign"].append(str(dataset_root))
+        except NotAGitRepoError as exc:
+            result["errors"].append(f"{dataset_root}: {exc}")
+    return result
