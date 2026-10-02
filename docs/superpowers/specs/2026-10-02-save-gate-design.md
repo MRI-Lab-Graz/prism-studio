@@ -49,6 +49,13 @@ is off (same as publish). Exemptions, exhaustive:
 2. PRISM's project-creation scaffold save (called with an explicit internal
    flag from the create-project flow only).
 
+Exemption 1 exists because an empty scaffold does not validate: the validator
+reports `No subjects found in dataset (no sub-* folders)` as an ERROR (kept on
+purpose: it catches a wrong folder). From the first real commit on, every save
+must leave the dataset valid; datasets that predate this gate are expected to
+be valid, and `save-gate --status/--check` shows their errors before a save is
+attempted.
+
 Everything else is gated, including PRISM's emergency save for partial
 mutations (recommendation: gated; revisit in review, see Open items).
 
@@ -60,6 +67,13 @@ mutations (recommendation: gated; revisit in review, see Open items).
   before touching git. Refusal returns `success: False`, `reason:
   "validation_errors"`, the errors, and the message "Not saved: N validation
   error(s). Fix them, then save." Changes stay in the working tree.
+- **Fixing after a refusal must work through PRISM.** A refused save leaves the
+  tree dirty, and plain `datalad run` refuses a dirty dataset, so PRISM's own
+  edit operations (rename, convert, fix) would be unusable exactly when the user
+  is trying to make the dataset valid. Requirement: PRISM operations run on a
+  tree that is dirty only because of a refused save (e.g. `datalad run
+  --explicit` with declared outputs, or edit-then-single-save), and the save at
+  the end is gated as usual. Mechanism to be settled when planning Phase 1.
 - Callers of `datalad run` check cleanliness first and report "dataset has
   unsaved changes from a refused save" instead of DataLad's generic message.
 
