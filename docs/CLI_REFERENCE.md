@@ -365,6 +365,27 @@ The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a diff
 older per-import rename of LimeSurvey archives. It is refused when the output folder is a
 project with several timepoints (use `survey convert`, which enforces the session map).
 
+### Publish
+
+Pushes a DataLad dataset on a department share to its server sibling, but only if the
+dataset validates. Refusals are exit code `1` (validation errors) or `2` (anything else:
+no identity, no sibling, not a dataset, bad `--as`, existing hook). Success is `0`.
+
+```bash
+# Validate and push (identity: --as, else PRISM_USER_NAME/PRISM_USER_EMAIL, else git config)
+python prism_tools.py publish --project /absolute/path/to/share/my-project --as "Ada Lovelace <ada@example.org>" --json
+
+# Validate only; exit 1 on errors (this is what the pre-push hook runs)
+python prism_tools.py publish --check --project /absolute/path/to/share/my-project
+
+# Install the git pre-push hook that enforces the same rule on plain `git push`
+python prism_tools.py publish --install-hook --project /absolute/path/to/share/my-project
+```
+
+Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
+`--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
+for the hook's requirements and limits.
+
 ### Environment
 
 **`environment preview`** / **`convert`**:

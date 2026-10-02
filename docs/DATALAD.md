@@ -72,6 +72,24 @@ Studio manage project-aware workflows instead of manually editing the layout. Tr
 responsibilities. Validate after structural changes so DataLad-aware edits don't
 silently drift from PRISM expectations.
 
+## Publishing from a department share
+
+The rule: a dataset on the department share reaches the DataLad server only if it
+validates. `prism_tools.py publish --project <root>` validates and then pushes to the
+server sibling; if validation has errors, nothing is pushed.
+
+- **Who is publishing**: pass `--as "Name <email>"`, or set `PRISM_USER_NAME` and
+  `PRISM_USER_EMAIL`; otherwise git config is used. The publish is recorded in an audit log.
+- **Hook**: `prism_tools.py publish --install-hook --project <root>` installs a git
+  pre-push hook so a plain `git push` to the server is gated by the same check
+  (`publish --check`). It refuses to overwrite an existing hook.
+- **`PRISM_TOOLS`**: the hook finds the tool through the `PRISM_TOOLS` environment variable,
+  which must point to an executable file. A wrapper script that runs
+  `python /path/to/prism_tools.py "$@"` works. If the hook cannot find the tool it fails
+  closed: the push is blocked.
+- **Caveats**: `git push --no-verify` bypasses the hook. Nested `sub-*` datasets are not
+  covered by the superdataset's hook yet.
+
 ## What's next
 
 - [What is PRISM](WHAT_IS_PRISM.md)

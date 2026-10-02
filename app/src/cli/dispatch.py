@@ -56,6 +56,8 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "publish":
+        handlers["publish"](args)
     elif args.command == "environment":
         if args.action == "preview":
             handlers["environment_preview"](args)
