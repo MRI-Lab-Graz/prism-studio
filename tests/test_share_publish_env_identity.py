@@ -70,3 +70,9 @@ def test_projects_page_has_publish_button_and_helper():
     page = (REPO_ROOT / "app/templates/projects.html").read_text()
     assert 'id="publishProjectBtn"' in section
     assert "js/publish.js" in page and "prismPublish" in page
+
+    # path must come from the live project-state store, like the sync button
+    start = page.index("publishProjectBtn")
+    handler = page[start:page.index("</script>", start)]
+    assert "resolveCurrentProjectPath" in handler
+    assert "const projectPath = window.currentProjectPath;" not in handler

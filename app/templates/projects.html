@@ -105,8 +105,10 @@
 <script>
     document.getElementById('publishProjectBtn')?.addEventListener('click', async (ev) => {
         const btn = ev.currentTarget;
-        const projectPath = window.currentProjectPath;
-        if (!projectPath) { alert('Open a project first.'); return; }
+        const projectPath = window.resolveCurrentProjectPath
+            ? window.resolveCurrentProjectPath(window.currentProjectPath)
+            : window.currentProjectPath;
+        if (!projectPath) { alert('No project selected.'); return; }
         btn.disabled = true;
         try {
             let res = await window.prismPublish(projectPath);
