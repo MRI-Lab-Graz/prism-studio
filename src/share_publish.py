@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
+import stat
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -200,3 +202,60 @@ def publish_to_server(
             return finish("pushed", "Published to the server.", audit_result="pushed")
         return finish("push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed")
     return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed")
+
+
+HOOK_MARKER = "# prism-publish-hook"
+
+
+class HookExistsError(Exception):
+    pass
+
+
+def _hook_script(sibling_name: str) -> str:
+    return f"""#!/bin/sh
+{HOOK_MARKER}
+# Blocks pushes to "{sibling_name}" unless the dataset validates.
+[ "$1" = {shlex.quote(sibling_name)} ] || exit 0
+TOOLS="${{PRISM_TOOLS:-prism_tools}}"
+if ! command -v "$TOOLS" >/dev/null 2>&1; then
+  echo "PRISM publish gate: '$TOOLS' not found. Set PRISM_TOOLS to the prism_tools executable. Push blocked." >&2
+  exit 1
+fi
+exec "$TOOLS" publish --check --project "$(git rev-parse --show-toplevel)"
+"""
+
+
+def _hooks_dir(root: Path) -> Path:
+    out = _git(root, "rev-parse", "--path-format=absolute", "--git-path", "hooks")
+    if out:
+        return Path(out)
+    # git < 2.31 does not know --path-format
+    path = Path(_git(root, "rev-parse", "--git-path", "hooks"))
+    return path if path.is_absolute() else root / path
+
+
+def install_hook(project_root, sibling_name: str | None = None) -> Path:
+    root = Path(project_root)
+    sibling = _sibling_for(root, sibling_name)
+    hooks = _hooks_dir(root)
+    hooks.mkdir(parents=True, exist_ok=True)
+    hook = hooks / "pre-push"
+    if hook.exists() and HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace"):
+        raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
+    hook.write_text(_hook_script(sibling), encoding="utf-8")
+    hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return hook
+
+
+def check_for_hook(project_root, sibling_name: str | None = None) -> list[str]:
+    """Validate only (no identity needed); used by the pre-push hook."""
+    root = Path(project_root)
+    errors = validate_for_publish(root)
+    _audit(
+        root,
+        identity=resolve_identity(),
+        sibling=_sibling_for(root, sibling_name),
+        result="hook_refused" if errors else "hook_allowed",
+        error_count=len(errors),
+    )
+    return errors
