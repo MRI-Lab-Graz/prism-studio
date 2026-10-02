@@ -9,6 +9,7 @@ import shutil
 import sys
 from pathlib import Path
 
+from src.share_publish import apply_env_identity
 from src.cli.commands.anonymize import cmd_anonymize
 from src.cli.commands.biometrics import (
     cmd_biometrics_convert,
@@ -113,6 +114,7 @@ def cmd_demo_create(args) -> None:
 
 
 def main() -> None:
+    apply_env_identity()
     parser, parsers = build_prism_tools_parsers(APP_ROOT)
     args = parser.parse_args()
     dispatch_prism_tools(

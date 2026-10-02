@@ -6,7 +6,15 @@ window.prismPublish = async function (projectPath, identity) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ project_path: projectPath, ...(identity || {}) }),
   });
-  const body = await resp.json();
+  let body;
+  try {
+    body = await resp.json();
+  } catch (e) {
+    return {
+      success: false, reason: 'bad_response', errors: [], http_status: resp.status,
+      message: 'Server returned an unexpected response (HTTP ' + resp.status + ').',
+    };
+  }
   body.http_status = resp.status;
   return body;
 };

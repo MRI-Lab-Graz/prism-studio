@@ -75,6 +75,17 @@ def apply_identity(identity: Identity) -> None:
     os.environ.update(identity_env(identity))
 
 
+def apply_env_identity() -> Identity | None:
+    """Apply PRISM_USER_NAME/PRISM_USER_EMAIL if both are set (git's own config is untouched)."""
+    name = os.environ.get("PRISM_USER_NAME", "").strip()
+    email = os.environ.get("PRISM_USER_EMAIL", "").strip()
+    if not (name and email):
+        return None
+    identity = Identity(name, email)
+    apply_identity(identity)
+    return identity
+
+
 def _git(root: Path, *args: str) -> str:
     out = subprocess.run(
         ["git", "-C", str(root), *args], capture_output=True, text=True, check=False
