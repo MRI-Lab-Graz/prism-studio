@@ -131,7 +131,15 @@ def validate_for_publish(project_root) -> list[str]:
 
     ponytail: PRISM checks only, no BIDS validator (needs deno on every share).
     """
-    from src.core.validation import determine_exit_code, validate_dataset
+    try:
+        from src.core.validation import determine_exit_code, validate_dataset
+    except ImportError:
+        # Source checkout started without app/ on sys.path; frozen builds never get here.
+        import sys
+
+        repo = Path(__file__).resolve().parents[1]
+        sys.path[:0] = [str(repo / "app"), str(repo / "app" / "src")]
+        from src.core.validation import determine_exit_code, validate_dataset
 
     issues, _stats = validate_dataset(str(project_root), run_bids=False, run_prism=True)
     return [_describe(i) for i in issues if determine_exit_code([i])]
@@ -166,7 +174,10 @@ def publish_to_server(
         )
     if not has_sibling(root, sibling):
         return finish("no_sibling", f'No sibling named "{sibling}" in this dataset.', audit_result="refused")
-    errors = validate_for_publish(root)
+    try:
+        errors = validate_for_publish(root)
+    except Exception as exc:  # a crashed validator must refuse, not escape unaudited
+        errors = [f"Validation could not run: {exc}"]
     if errors:
         return finish(
             "validation_errors",

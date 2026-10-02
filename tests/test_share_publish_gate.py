@@ -1,6 +1,9 @@
 import json
 import os
 import subprocess
+import sys
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -117,3 +120,38 @@ def test_non_git_folder_writes_no_audit_and_does_not_raise(tmp_path, monkeypatch
     assert result["reason"] == "not_a_dataset"
     assert not (cwd / "prism").exists()
     assert not (folder / "prism").exists()
+
+
+def test_real_validator_reports_errors_for_an_empty_folder(tmp_path):
+    assert sp.validate_for_publish(tmp_path)
+
+
+def test_real_validator_import_works_with_only_repo_root_importable(tmp_path):
+    repo = Path(sp.__file__).resolve().parents[1]
+    code = (
+        "import sys; sys.path[:] = [p for p in sys.path if 'app' not in p.split('/')];"
+        f"sys.path.insert(0, {str(repo)!r});"
+        "import src.share_publish as sp;"
+        f"errs = sp.validate_for_publish({str(tmp_path)!r});"
+        "assert errs, errs"
+    )
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
+    subprocess.run([sys.executable, "-c", code], cwd=tmp_path, env=env, check=True)
+
+
+def test_validator_crash_is_refused_audited_and_not_pushed(share, pushes, monkeypatch):
+    def boom(p):
+        raise RuntimeError("kaput")
+
+    monkeypatch.setattr(sp, "validate_for_publish", boom)
+    result = sp.publish_to_server(share, identity=ADA)
+    assert result["reason"] == "validation_errors" and not result["success"]
+    assert result["errors"] == ["Validation could not run: kaput"]
+    assert pushes == []
+    assert audit_lines(share)[0]["result"] == "refused"
+
+
+def test_describe_keeps_message_for_tuples_and_code_for_objects():
+    assert sp._describe(("ERROR", "PRISM101 bad", "/x")) == "PRISM101 bad"
+    obj = SimpleNamespace(code="PRISM102", message="worse")
+    assert sp._describe(obj) == "PRISM102 worse"
