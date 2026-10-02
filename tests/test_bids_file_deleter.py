@@ -167,3 +167,9 @@ def test_bids_file_deleter_apply_runs_once_per_subject_group(tmp_path, monkeypat
     assert datalad.get("run_count") == 2
     run_commands = [command for command in observed_commands if command[1] == "run"]
     assert len(run_commands) == 2
+
+
+@pytest.fixture(autouse=True)
+def _no_save_gate_hook(monkeypatch):
+    # these tests fake `subprocess.run`; the hook probe would need a real git repo
+    monkeypatch.setattr("src.datalad_mutation_policy.has_save_hook", lambda root: False)

@@ -523,3 +523,78 @@ def test_run_commit_refused_by_the_gate_skips_the_emergency_save(tmp_path, monke
     with pytest.raises(SaveGateRefusedError):
         run_tracked_mutation(root, get_paths=["a.tsv"], run_message="m", command=["echo"])
     assert not any("emergency" in m for m in saves)
+
+
+# --- save gate: dirty elsewhere / refused unlock autosave -------------------
+
+def _ok(**extra):
+    return {"attempted": True, "success": True, "no_changes": True, "message": "ok", **extra}
+
+
+def _scope_run_project(tmp_path, monkeypatch, *, dirty, hook, save=None):
+    runs = []
+    root = _gate_project(
+        tmp_path, monkeypatch,
+        save=save or (lambda root, **kw: _ok()),
+        run=lambda root, **kw: runs.append(kw) or _ok(command="x"),
+    )
+    monkeypatch.setattr(pol, "paths_have_uncommitted_changes",
+                        lambda root, paths=None, **k: dirty if not paths else False)
+    monkeypatch.setattr(pol, "has_save_hook", lambda root: hook)
+    monkeypatch.setattr(pol, "run_datalad_unlock", lambda *a, **k: _ok())
+    return root, runs
+
+
+def test_dirty_elsewhere_with_hook_runs_explicit(tmp_path, monkeypatch):
+    root, runs = _scope_run_project(tmp_path, monkeypatch, dirty=True, hook=True)
+    run_tracked_mutation(root, get_paths=["y.tsv"], run_message="m", command=["echo"])
+    assert runs[0]["explicit"] is True and runs[0]["outputs"] == ["y.tsv"]
+
+
+def test_dirty_elsewhere_without_hook_is_unchanged(tmp_path, monkeypatch):
+    root, runs = _scope_run_project(tmp_path, monkeypatch, dirty=True, hook=False)
+    run_tracked_mutation(root, get_paths=["y.tsv"], run_message="m", command=["echo"])
+    assert not runs[0]["explicit"] and not runs[0]["outputs"]
+
+
+def test_refused_unlock_autosave_continues_with_explicit_run(tmp_path, monkeypatch):
+    def save(root, **kw):
+        if "unlock state" in kw["message"]:
+            return {"attempted": True, "success": False, "message": GATE}
+        return _ok()
+
+    root, runs = _scope_run_project(tmp_path, monkeypatch, dirty=False, hook=False, save=save)
+    monkeypatch.setattr(pol.os, "access", lambda *a, **k: True)
+    run_tracked_mutation(root, get_paths=["y.tsv"], content_paths=["c.json"],
+                         run_message="m", command=["echo"])
+    assert runs[0]["explicit"] is True and runs[0]["outputs"] == ["y.tsv", "c.json"]
+
+
+def test_unlock_autosave_failure_without_marker_still_raises(tmp_path, monkeypatch):
+    def save(root, **kw):
+        if "unlock state" in kw["message"]:
+            return {"attempted": True, "success": False, "message": "disk full"}
+        return _ok()
+
+    root, runs = _scope_run_project(tmp_path, monkeypatch, dirty=False, hook=False, save=save)
+    monkeypatch.setattr(pol.os, "access", lambda *a, **k: True)
+    with pytest.raises(ValueError, match="disk full"):
+        run_tracked_mutation(root, get_paths=["y.tsv"], content_paths=["c.json"],
+                             run_message="m", command=["echo"])
+    assert runs == []
+
+
+def test_refused_error_does_not_repeat_the_instruction(tmp_path, monkeypatch):
+    root = _gate_project(
+        tmp_path, monkeypatch, save=lambda root, **kw: _ok(),
+        run=lambda root, **kw: {"attempted": True, "success": False, "message": GATE},
+    )
+    with pytest.raises(SaveGateRefusedError) as info:
+        run_tracked_mutation(root, get_paths=["a.tsv"], run_message="m", command=["echo"])
+    assert str(info.value).count("Fix them") == 1
+
+
+@pytest.fixture(autouse=True)
+def _no_save_gate_hook(monkeypatch):
+    # these tests fake `subprocess.run`; the hook probe would need a real git repo
+    monkeypatch.setattr("src.datalad_mutation_policy.has_save_hook", lambda root: False)

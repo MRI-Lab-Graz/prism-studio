@@ -17,6 +17,8 @@ from src.datalad_execution import (
     run_datalad_unlock,
 )
 
+from src.save_gate import has_save_hook
+
 
 class MutationNotFullySavedError(ValueError):
     """Raised when the wrapped command errored partway through but may have
@@ -176,7 +178,7 @@ def run_tracked_mutation(
         "message": "",
         "command": "",
     }
-    if normalized_content_paths and not gate_refused:
+    if normalized_content_paths:
         pre_run_autosave_result = run_datalad_save(
             root,
             message=f'PRISM: autosave unlock state before "{run_message}"',
@@ -185,12 +187,21 @@ def run_tracked_mutation(
             paths=normalized_content_paths,
         )
         if not pre_run_autosave_result.get("success"):
-            raise ValueError(
-                str(
-                    pre_run_autosave_result.get("message")
-                    or "DataLad autosave (post-unlock) failed before mutation."
+            if SAVE_GATE_MARKER in str(pre_run_autosave_result.get("message") or ""):
+                gate_refused = True
+            else:
+                raise ValueError(
+                    str(
+                        pre_run_autosave_result.get("message")
+                        or "DataLad autosave (post-unlock) failed before mutation."
+                    )
                 )
-            )
+
+    # A tree left dirty elsewhere (an earlier refused save) would make plain
+    # `datalad run` refuse; with the gate hook installed use --explicit instead.
+    explicit = gate_refused or (
+        paths_have_uncommitted_changes(root) and has_save_hook(root)
+    )
 
     run_result = run_datalad_run(
         root,
@@ -199,15 +210,16 @@ def run_tracked_mutation(
         datalad_executable=datalad_executable,
         timeout_seconds=max(1, int(run_timeout_seconds)),
         env=env,
-        explicit=gate_refused,
-        outputs=autosave_scope_paths if gate_refused else (),
+        explicit=explicit,
+        outputs=autosave_scope_paths if explicit else (),
     )
     if not run_result.get("success"):
         run_message_detail = str(run_result.get("message") or "DataLad run failed for mutation.")
         if SAVE_GATE_MARKER in run_message_detail:
+            fix = "" if "Fix them, then save." in run_message_detail else "Fix them, then run `datalad save`. "
             raise SaveGateRefusedError(
                 f'"{run_message}" was applied but not saved: the dataset has validation errors. '
-                f"Fix them, then run `datalad save`. {run_message_detail}"
+                f"{fix}{run_message_detail}"
             )
         # The wrapped command may have partially deleted/copied/renamed files
         # before erroring; `datalad run` itself won't have saved any of that
