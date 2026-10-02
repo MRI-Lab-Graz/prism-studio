@@ -479,6 +479,16 @@ def build_prism_tools_parsers(
     parser_publish.add_argument("--install-hook", action="store_true", help="Install the git pre-push hook that enforces the same rule")
     parser_publish.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_save_gate = subparsers.add_parser(
+        "save-gate",
+        help="Save gate: commits are allowed only on valid datasets (git pre-commit hook)",
+    )
+    parser_save_gate.add_argument("--project", required=True, help="Dataset root")
+    parser_save_gate.add_argument("--check", action="store_true", help="Validate; exit 1 if the commit must be refused (used by the hook)")
+    parser_save_gate.add_argument("--install-hooks", action="store_true", help="Install the pre-commit hook in the project and every nested dataset")
+    parser_save_gate.add_argument("--status", action="store_true", help="Show which datasets have the hook")
+    parser_save_gate.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_environment = subparsers.add_parser(
         "environment",
         help="Environment conversion utilities (preview)",
@@ -2150,6 +2160,7 @@ def build_prism_tools_parsers(
         "participants": parser_participants,
         "session-map": parser_session_map,
         "publish": parser_publish,
+        "save-gate": parser_save_gate,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
         "physio": parser_physio,

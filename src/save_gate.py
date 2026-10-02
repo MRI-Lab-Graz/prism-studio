@@ -21,7 +21,9 @@ from src.share_publish import (
     _core_validation,
     _dataset_roots,
     _describe,
+    _audit,
     _hooks_dir,
+    resolve_identity,
     validate_for_publish,
 )
 
@@ -29,6 +31,7 @@ __all__ = [
     "SAVE_GATE_MARKER",
     "SAVE_HOOK_MARKER",
     "SaveCheck",
+    "audit_save",
     "check_save",
     "has_save_hook",
     "install_save_hook",
@@ -169,3 +172,17 @@ def install_save_hooks(project_root) -> dict:
         except NotAGitRepoError as exc:
             result["errors"].append(f"{dataset_root}: {exc}")
     return result
+
+
+def audit_save(project_root, check: SaveCheck) -> None:
+    """One audit line per checked commit (same file as publish). Never raises: an audit problem must not change the decision."""
+    try:
+        _audit(
+            Path(project_root),
+            identity=resolve_identity(),
+            sibling="",
+            result="save_allowed" if check.allowed else "save_refused",
+            error_count=len(check.errors),
+        )
+    except Exception:
+        pass
