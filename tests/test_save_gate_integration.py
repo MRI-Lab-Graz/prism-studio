@@ -43,6 +43,7 @@ def test_cli_main_exports_prism_tools(monkeypatch):
 
 def _ordered_manager(monkeypatch, order):
     """ProjectManager whose DataLad steps are fakes that record call order."""
+    monkeypatch.setenv("PRISM_TOOLS", "/x/tool")
     pm = ProjectManager()
     monkeypatch.setattr(
         pm,
@@ -85,6 +86,7 @@ def test_creation_continues_when_hook_install_fails(monkeypatch, tmp_path):
 
 
 def test_no_hooks_without_datalad(monkeypatch, tmp_path):
+    monkeypatch.setenv("PRISM_TOOLS", "/x/tool")
     called = []
     monkeypatch.setattr(sg, "install_save_hooks", lambda root: called.append(root))
     result = ProjectManager().create_project(str(tmp_path / "p"), {"name": "p", "use_datalad": False})
@@ -155,19 +157,41 @@ def _real_project(monkeypatch, tmp_path):
 
 
 @_NEEDS_DATALAD
-def test_real_create_flow_reports_hook_outcome_and_still_succeeds(monkeypatch, tmp_path):
-    project, result = _real_project(monkeypatch, tmp_path)
-    assert (project / "derivatives" / ".git").exists()
-    assert result["save_gate_hook"]["errors"] == []
-
-
-@_NEEDS_DATALAD
-@pytest.mark.xfail(
-    strict=True,
-    reason="git-annex writes its own pre-commit hook ('git annex pre-commit .') into every "
-    "DataLad dataset; install_save_hook treats it as foreign and refuses (Task 3 design gap).",
-)
 def test_real_create_flow_installs_hooks_in_project_and_nested_datasets(monkeypatch, tmp_path):
-    project, _ = _real_project(monkeypatch, tmp_path)
+    project, result = _real_project(monkeypatch, tmp_path)
+    hook = result["save_gate_hook"]
+    assert hook["foreign"] == [] and hook["errors"] == []
+    assert str(project) in hook["installed"]
     assert sg.has_save_hook(project)
     assert sg.has_save_hook(project / "derivatives")
+
+
+def test_hooks_skipped_without_prism_tools(monkeypatch, tmp_path):
+    pm = _ordered_manager(monkeypatch, [])
+    monkeypatch.delenv("PRISM_TOOLS", raising=False)
+    called = []
+    monkeypatch.setattr(sg, "install_save_hooks", lambda r: called.append(r))
+    monkeypatch.setattr(sg, "install_save_hook", lambda r: called.append(r))
+    result = pm.create_project(str(tmp_path / "p"), {"name": "p", "use_datalad": True})
+    assert result["success"] and called == []
+    assert "PRISM_TOOLS" in result["save_gate_hook"]["skipped"]
+    assert "skipped" in pm._install_save_gate_hook_for_nested(tmp_path)
+
+
+def test_nested_helper_reports_what_really_happened(monkeypatch, tmp_path):
+    pm = ProjectManager()
+    monkeypatch.setenv("PRISM_TOOLS", "/x/tool")
+
+    def foreign(root):
+        raise HookExistsError("foreign")
+
+    monkeypatch.setattr(sg, "install_save_hook", foreign)
+    r = pm._install_save_gate_hook_for_nested(tmp_path)
+    assert r["installed"] == [] and r["foreign"] == [str(tmp_path)] and r["errors"] == []
+
+    def boom(root):
+        raise RuntimeError("odd")
+
+    monkeypatch.setattr(sg, "install_save_hook", boom)
+    r = pm._install_save_gate_hook_for_nested(tmp_path)
+    assert r["installed"] == [] and r["errors"] == ["odd"]

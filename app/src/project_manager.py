@@ -3930,13 +3930,24 @@ git push -u origin main
         result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
         return result
 
+    _SAVE_GATE_SKIPPED = (
+        "PRISM_TOOLS is not available (frozen build or no launcher); run "
+        "`prism_tools save-gate --install-hooks` after setting PRISM_TOOLS"
+    )
+
     def _install_save_gate_hooks(self, project_path: Path, result: Dict[str, Any]) -> None:
         """Install the save-gate pre-commit hooks once a dataset's creation saves are done.
 
         Must run AFTER the last creation-time save: a new project is invalid until it
         has subjects, so a hook installed earlier would refuse PRISM's own scaffold
         save. Never aborts creation; the outcome is recorded under ``save_gate_hook``.
+        Skipped without PRISM_TOOLS: the hook fails closed when it cannot find the tool.
         """
+        if not os.environ.get("PRISM_TOOLS"):
+            result["save_gate_hook"] = {
+                "installed": [], "foreign": [], "errors": [], "skipped": self._SAVE_GATE_SKIPPED,
+            }
+            return
         try:
             from src.save_gate import install_save_hooks
 
@@ -3946,13 +3957,21 @@ git push -u origin main
 
     def _install_save_gate_hook_for_nested(self, dataset_path: Path) -> Dict[str, Any]:
         """Single-dataset variant for a nested dataset whose creation save succeeded."""
+        outcome: Dict[str, Any] = {"installed": [], "foreign": [], "errors": []}
+        if not os.environ.get("PRISM_TOOLS"):
+            outcome["skipped"] = self._SAVE_GATE_SKIPPED
+            return outcome
         try:
             from src.save_gate import install_save_hook
+            from src.share_publish import HookExistsError
 
             install_save_hook(dataset_path)
-            return {"installed": [str(dataset_path)], "foreign": [], "errors": []}
+            outcome["installed"].append(str(dataset_path))
+        except HookExistsError:
+            outcome["foreign"].append(str(dataset_path))
         except Exception as exc:
-            return {"installed": [], "foreign": [], "errors": [str(exc)]}
+            outcome["errors"].append(str(exc))
+        return outcome
 
     def _create_datalad_dataset(
         self,

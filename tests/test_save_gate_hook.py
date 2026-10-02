@@ -187,3 +187,71 @@ def test_hook_works_in_a_real_submodule(tmp_path):
     (nested / "g").write_text("z")
     run("git", "add", "g", cwd=nested)
     assert commit(nested, fake_tool(tmp_path, 1)).returncode != 0
+
+
+ANNEX_HOOK = "#!/bin/sh\n# automatically configured by git-annex\ngit annex pre-commit .\n"
+
+
+def _put_hook(repo, text):
+    hook = repo / ".git" / "hooks" / "pre-commit"
+    hook.parent.mkdir(exist_ok=True)
+    hook.write_text(text)
+    hook.chmod(0o755)
+    return hook
+
+
+def test_standard_annex_hook_is_adopted_and_chained(repo):
+    hook = _put_hook(repo, "#!/bin/sh\r\ngit annex pre-commit .\r\n")
+    sg.install_save_hook(repo)
+    text = hook.read_text()
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    assert sg.SAVE_HOOK_MARKER in text and sg.has_save_hook(repo)
+    assert lines[-1] == "git annex pre-commit ."
+    assert text.index("save-gate --check") < text.index("git annex pre-commit .")
+
+
+def test_install_save_hooks_reports_annex_hook_as_installed(repo, monkeypatch):
+    _put_hook(repo, ANNEX_HOOK.replace("# automatically configured by git-annex\n", ""))
+    monkeypatch.setattr(sg, "_dataset_roots", lambda p: [repo])
+    result = sg.install_save_hooks(repo)
+    assert result["installed"] == [str(repo)] and result["foreign"] == []
+
+
+def test_annex_hook_with_extra_commands_stays_foreign(repo):
+    text = "#!/bin/sh\ngit annex pre-commit .\necho extra\n"
+    hook = _put_hook(repo, text)
+    with pytest.raises(HookExistsError):
+        sg.install_save_hook(repo)
+    assert hook.read_text() == text
+
+
+def test_reinstall_keeps_the_annex_chain_and_is_idempotent(repo):
+    hook = _put_hook(repo, "#!/bin/sh\ngit annex pre-commit .\n")
+    sg.install_save_hook(repo)
+    first = hook.read_text()
+    sg.install_save_hook(repo)
+    assert hook.read_text() == first and "git annex pre-commit ." in first
+
+
+def test_unchained_hook_has_no_annex_line(repo):
+    sg.install_save_hook(repo)
+    assert "git annex" not in (repo / ".git" / "hooks" / "pre-commit").read_text()
+
+
+@pytest.mark.skipif(not (shutil.which("datalad") and shutil.which("git-annex")), reason="datalad/git-annex required")
+def test_real_datalad_dataset_hook_blocks_allows_and_partial_commit_works(tmp_path):
+    ds = tmp_path / "ds"
+    run("datalad", "create", str(ds), cwd=tmp_path)
+    sg.install_save_hook(ds)
+    assert sg.has_save_hook(ds)
+    (ds / "f.txt").write_text("x")
+    run("git", "add", "f.txt", cwd=ds)
+    assert commit(ds, fake_tool(tmp_path, 1)).returncode != 0
+    assert commit(ds, fake_tool(tmp_path, 0)).returncode == 0
+    (ds / "f.txt").write_text("y")
+    (ds / "g.txt").write_text("z")
+    run("git", "add", "g.txt", cwd=ds)
+    env = {**os.environ, "PRISM_TOOLS": str(fake_tool(tmp_path, 0))}
+    r = run("git", "-c", "user.name=t", "-c", "user.email=t@t.t", "commit", "-q", "-m", "p", "-o", "f.txt",
+            cwd=ds, env=env, check=False)
+    assert r.returncode == 0, r.stderr

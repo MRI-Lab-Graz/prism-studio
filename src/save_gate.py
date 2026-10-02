@@ -114,8 +114,11 @@ def check_save(project_root) -> SaveCheck:
 SAVE_HOOK_MARKER = "# prism-save-gate-hook"
 
 
-def _save_hook_script() -> str:
-    return f"""#!/bin/sh
+ANNEX_CHAIN_LINE = "git annex pre-commit ."
+
+
+def _save_hook_script(chain_annex: bool = False) -> str:
+    script = f"""#!/bin/sh
 {SAVE_HOOK_MARKER}
 # Refuses a commit unless the dataset validates (PRISM save gate).
 TOOLS="${{PRISM_TOOLS:-prism_tools}}"
@@ -124,9 +127,30 @@ if ! command -v "$TOOLS" >/dev/null 2>&1; then
   exit 1
 fi
 ROOT="$(git rev-parse --show-toplevel)" || exit 1
-unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE
-"$TOOLS" save-gate --check --project "$ROOT" >&2 || exit 1
+( unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; "$TOOLS" save-gate --check --project "$ROOT" ) >&2 || exit 1
 """
+    if chain_annex:
+        # git-annex's own hook, run last in the original environment (it needs the commit's index)
+        script += ANNEX_CHAIN_LINE + "\n"
+    return script
+
+
+def _read_hook(hook: Path) -> str | None:
+    try:
+        if hook.is_file() and not hook.is_symlink():
+            return hook.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        pass
+    return None
+
+
+def _is_standard_annex_hook(text: str | None) -> bool:
+    """Exactly git-annex's generated hook (shebang, optional annex comment, the one command)."""
+    if text is None:
+        return False
+    lines = [ln.strip() for ln in text.replace("\r\n", "\n").strip().split("\n")]
+    lines = [ln for ln in lines if ln != "# automatically configured by git-annex"]
+    return lines == ["#!/bin/sh", ANNEX_CHAIN_LINE]
 
 
 def _is_own_hook(hook: Path) -> bool:
@@ -153,9 +177,13 @@ def install_save_hook(root) -> Path:
     hooks = _hooks_dir(Path(root))  # raises NotAGitRepoError before anything is written
     hooks.mkdir(parents=True, exist_ok=True)
     hook = hooks / "pre-commit"
-    if os.path.lexists(hook) and not _is_own_hook(hook):
+    existing = _read_hook(hook)
+    chain = _is_standard_annex_hook(existing) or (
+        _is_own_hook(hook) and ANNEX_CHAIN_LINE[:-2] in (existing or "")
+    )
+    if os.path.lexists(hook) and not _is_own_hook(hook) and not chain:
         raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
-    hook.write_text(_save_hook_script(), encoding="utf-8")
+    hook.write_text(_save_hook_script(chain), encoding="utf-8")
     hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     return hook
 
