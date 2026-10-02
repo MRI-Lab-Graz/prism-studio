@@ -89,6 +89,20 @@ server sibling; if validation has errors, nothing is pushed.
   closed: the push is blocked.
 - **Caveats**: `git push --no-verify` bypasses the hook. Nested `sub-*` datasets are not
   covered by the superdataset's hook yet.
+- **Save first**: the push sends committed state only, so publishing (and the hook) is
+  refused while the dataset has uncommitted or untracked changes (including inside
+  subdatasets). Run `datalad save`, then publish.
+- **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, refused,
+  hook allowed/refused). It lives in the git dir, so it never dirties the dataset.
+- **Studio**: only the "Publish" button is gated. The existing "Sync now" flow is NOT validated.
+- **More caveats**:
+  - The gate validates with the stable schema and no library path, so the Studio validator
+    page can disagree if the project uses another schema or library. The backend is the authority.
+  - The hook only gates the sibling name it was installed with; a push by URL or after
+    renaming the sibling passes.
+  - `datalad push` copies annexed files to the server before `git push` runs the hook, so a
+    blocked push can still leave annexed content (no branch points to it) on the server.
+  - Pushing an arbitrary older commit by hand is not covered.
 
 ## What's next
 

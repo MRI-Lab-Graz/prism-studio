@@ -369,7 +369,7 @@ project with several timepoints (use `survey convert`, which enforces the sessio
 
 Pushes a DataLad dataset on a department share to its server sibling, but only if the
 dataset validates. Refusals are exit code `1` (validation errors) or `2` (anything else:
-no identity, no sibling, not a dataset, bad `--as`, existing hook). Success is `0`.
+no identity, no sibling, not a dataset, uncommitted changes (run `datalad save` first), bad `--as`, existing hook). Success is `0`.
 
 ```bash
 # Validate and push (identity: --as, else PRISM_USER_NAME/PRISM_USER_EMAIL, else git config)
