@@ -432,6 +432,8 @@ class ProjectManager:
             }
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+                if datalad_result.get("initialized"):
+                    self._install_save_gate_hooks(project_path, result)
             return result
 
         except Exception as e:
@@ -704,6 +706,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+                if datalad_result.get("initialized"):
+                    self._install_save_gate_hooks(project_path, result)
             if phenotype_import_result is not None:
                 result["phenotype_import"] = phenotype_import_result
             return result
@@ -3919,11 +3923,36 @@ git push -u origin main
         )
 
         if result["success"]:
+            self._install_save_gate_hooks(project_path, result)
             result["message"] = datalad_result.get("message") or "DataLad enabled for the current project."
             return result
 
         result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
         return result
+
+    def _install_save_gate_hooks(self, project_path: Path, result: Dict[str, Any]) -> None:
+        """Install the save-gate pre-commit hooks once a dataset's creation saves are done.
+
+        Must run AFTER the last creation-time save: a new project is invalid until it
+        has subjects, so a hook installed earlier would refuse PRISM's own scaffold
+        save. Never aborts creation; the outcome is recorded under ``save_gate_hook``.
+        """
+        try:
+            from src.save_gate import install_save_hooks
+
+            result["save_gate_hook"] = install_save_hooks(project_path)
+        except Exception as exc:  # a foreign hook or odd git state must never abort creation
+            result["save_gate_hook"] = {"installed": [], "foreign": [], "errors": [str(exc)]}
+
+    def _install_save_gate_hook_for_nested(self, dataset_path: Path) -> Dict[str, Any]:
+        """Single-dataset variant for a nested dataset whose creation save succeeded."""
+        try:
+            from src.save_gate import install_save_hook
+
+            install_save_hook(dataset_path)
+            return {"installed": [str(dataset_path)], "foreign": [], "errors": []}
+        except Exception as exc:
+            return {"installed": [], "foreign": [], "errors": [str(exc)]}
 
     def _create_datalad_dataset(
         self,
@@ -5161,6 +5190,7 @@ git push -u origin main
         return {
             "success": True,
             "message": "Created nested DataLad dataset.",
+            "save_gate_hook": self._install_save_gate_hook_for_nested(dataset_path),
         }
 
     def _register_existing_nested_dataset(
@@ -5238,6 +5268,7 @@ git push -u origin main
         return {
             "success": True,
             "message": "Registered existing nested DataLad dataset.",
+            "save_gate_hook": self._install_save_gate_hook_for_nested(dataset_path),
         }
 
     def _build_nested_dataset_staging_path(

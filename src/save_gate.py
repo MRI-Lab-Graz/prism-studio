@@ -186,3 +186,19 @@ def audit_save(project_root, check: SaveCheck) -> None:
         )
     except Exception:
         pass
+
+
+def ensure_prism_tools_env() -> str | None:
+    """Point PRISM_TOOLS at this checkout's prism_tools.py for child git/datalad processes.
+
+    The hook blocks when it cannot find the tool, so without this PRISM's own saves would be
+    refused. An existing value is never replaced. ponytail: source checkout only; a frozen
+    build needs its own launcher path here.
+    """
+    if os.environ.get("PRISM_TOOLS"):
+        return None
+    script = Path(__file__).resolve().parents[1] / "prism_tools.py"
+    if not os.access(script, os.X_OK):
+        return None
+    os.environ["PRISM_TOOLS"] = str(script)
+    return str(script)
