@@ -314,6 +314,8 @@ def run_datalad_run(
     datalad_executable: str = "",
     timeout_seconds: int = 1800,
     env: Mapping[str, str] | None = None,
+    explicit: bool = False,
+    outputs: Sequence[str] = (),
 ) -> dict[str, Any]:
     root = Path(project_root)
     resolved = str(datalad_executable or resolve_datalad_executable()).strip()
@@ -348,7 +350,12 @@ def run_datalad_run(
     ]
 
     run_message = str(message or "").strip() or "PRISM: tracked edit"
-    datalad_command = [resolved, "run", "-m", run_message, "--", *escaped_command]
+    run_flags: list[str] = []
+    if explicit:
+        run_flags.append("--explicit")
+        for path in outputs:
+            run_flags.extend(["-o", str(path)])
+    datalad_command = [resolved, "run", *run_flags, "-m", run_message, "--", *escaped_command]
     result["attempted"] = True
     result["command"] = shlex.join(datalad_command)
 

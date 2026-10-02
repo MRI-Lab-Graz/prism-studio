@@ -448,3 +448,78 @@ def test_copy_files_into_project_runs_per_subject_group(
     assert datalad_info.get("run_count") == 2
     assert any("sub-001" in message for message in seen_messages)
     assert any("sub-002" in message for message in seen_messages)
+
+
+# --- save gate: fixing a dataset after a refused save -----------------------
+
+import src.datalad_mutation_policy as pol  # noqa: E402
+from src.datalad_mutation_policy import SaveGateRefusedError  # noqa: E402
+
+GATE = "PRISM save gate: 2 validation error(s). Fix them, then save."
+
+
+def _gate_project(tmp_path, monkeypatch, save, run):
+    root = tmp_path / "project"
+    (root / ".datalad").mkdir(parents=True)
+    monkeypatch.setattr(pol, "resolve_datalad_executable", lambda: "datalad")
+    monkeypatch.setattr(pol, "run_datalad_save", save)
+    monkeypatch.setattr(pol, "run_datalad_run", run)
+    monkeypatch.setattr(pol, "run_datalad_get_paths", lambda *a, **k: {"attempted": True, "success": True})
+    monkeypatch.setattr(pol, "paths_have_uncommitted_changes", lambda *a, **k: True)
+    return root
+
+
+def test_gate_refused_autosave_falls_back_to_explicit_run(tmp_path, monkeypatch):
+    saves, runs = [], []
+
+    def save(root, **kw):
+        saves.append(kw["message"])
+        return {"attempted": True, "success": False, "message": f"save failed: {GATE}"}
+
+    def run(root, **kw):
+        runs.append(kw)
+        return {"attempted": True, "success": False, "message": GATE}
+
+    root = _gate_project(tmp_path, monkeypatch, save, run)
+    with pytest.raises(SaveGateRefusedError, match="not saved"):
+        run_tracked_mutation(root, get_paths=["a.tsv"], run_message="PRISM: rename", command=["echo"])
+    assert runs[0]["explicit"] is True and runs[0]["outputs"] == ["a.tsv"]
+    assert len(saves) == 1  # the autosave only: no post-unlock autosave, no emergency save
+
+
+def test_other_autosave_failures_still_raise_as_before(tmp_path, monkeypatch):
+    runs = []
+    root = _gate_project(
+        tmp_path, monkeypatch,
+        save=lambda root, **kw: {"attempted": True, "success": False, "message": "disk full"},
+        run=lambda root, **kw: runs.append(kw) or {"success": True},
+    )
+    with pytest.raises(ValueError, match="disk full"):
+        run_tracked_mutation(root, get_paths=["a.tsv"], run_message="m", command=["echo"])
+    assert runs == []
+
+
+def test_explicit_run_that_succeeds_returns_normally(tmp_path, monkeypatch):
+    root = _gate_project(
+        tmp_path, monkeypatch,
+        save=lambda root, **kw: {"attempted": True, "success": False, "message": GATE},
+        run=lambda root, **kw: {"attempted": True, "success": True, "message": "ok", "command": "x"},
+    )
+    result = run_tracked_mutation(root, get_paths=["a.tsv"], run_message="m", command=["echo"])
+    assert result["used_run"] is True and result["run"]["success"] is True
+
+
+def test_run_commit_refused_by_the_gate_skips_the_emergency_save(tmp_path, monkeypatch):
+    saves = []
+
+    def save(root, **kw):
+        saves.append(kw["message"])
+        return {"attempted": True, "success": True, "no_changes": True, "message": "ok"}
+
+    root = _gate_project(
+        tmp_path, monkeypatch, save,
+        run=lambda root, **kw: {"attempted": True, "success": False, "message": GATE},
+    )
+    with pytest.raises(SaveGateRefusedError):
+        run_tracked_mutation(root, get_paths=["a.tsv"], run_message="m", command=["echo"])
+    assert not any("emergency" in m for m in saves)
