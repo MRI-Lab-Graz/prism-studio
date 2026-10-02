@@ -58,7 +58,7 @@
                         data-project-path="{{ publish_path }}" title="Push this dataset to the server (validated again first)">
                     <i class="fas fa-cloud-upload-alt me-2"></i>Publish to server
                 </button>
-                {% elif results.get('summary', {}).get('total_errors', 0) > 0 and results.get('run_prism') %}
+                {% elif results.get('publish_capable') and results.get('summary', {}).get('total_errors', 0) > 0 %}
                 <button type="button" class="btn btn-outline-secondary" disabled title="Fix the errors first">
                     <i class="fas fa-cloud-upload-alt me-2"></i>Fix {{ results.summary.total_errors }} error(s) before publishing
                 </button>
@@ -717,7 +717,6 @@ document.getElementById('publishBtn')?.addEventListener('click', async (ev) => {
     }
     if (res.success) { alert(res.message); return; }
     alert((res.message || res.error) + (res.errors?.length ? '\n\n' + res.errors.join('\n') : ''));
-    if (res.reason === 'validation_errors') location.reload();  // stale result: re-run validation view
   } finally {
     btn.disabled = false;
   }

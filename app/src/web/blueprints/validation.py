@@ -368,10 +368,9 @@ def _build_validation_results_payload(
     )
     results = _apply_bids_warning_display_filter(results, show_bids_warnings)
     # BIDS-only runs hide PRISM errors, so only a PRISM run can vouch for validity.
+    results["publish_capable"] = bool(run_prism and can_publish(dataset_path))
     results["publishable"] = bool(
-        run_prism
-        and int(results.get("summary", {}).get("total_errors", 0)) == 0
-        and can_publish(dataset_path)
+        results["publish_capable"] and int(results.get("summary", {}).get("total_errors", 0)) == 0
     )
     results["timestamp"] = datetime.now().isoformat()
     results["schema_version"] = schema_version

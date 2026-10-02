@@ -7,6 +7,7 @@ import sys
 
 from src.share_publish import (
     HookExistsError,
+    NotAGitRepoError,
     check_for_hook,
     install_hook,
     parse_identity,
@@ -28,6 +29,8 @@ def cmd_publish(args) -> None:
     if args.install_hook:
         try:
             hook = install_hook(args.project, args.sibling)
+        except NotAGitRepoError as exc:
+            _emit(args, {"success": False, "reason": "not_a_dataset", "errors": [], "message": str(exc)}, 2)
         except HookExistsError as exc:
             _emit(args, {"success": False, "reason": "hook_exists", "errors": [], "message": str(exc)}, 2)
         _emit(args, {"success": True, "reason": "hook_installed", "errors": [], "message": f"Installed {hook}"}, 0)

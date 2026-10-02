@@ -87,3 +87,24 @@ def test_check_for_hook_audits_and_returns_errors(repos, monkeypatch):
     monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["PRISM1 bad"])
     assert sp.check_for_hook(repos, "ria-store") == ["PRISM1 bad"]
     assert "hook_refused" in sp.audit_path(repos).read_text()
+
+
+def test_install_hook_on_plain_folder_raises_and_writes_nothing(tmp_path):
+    plain = tmp_path / "plain"
+    plain.mkdir()
+    with pytest.raises(sp.NotAGitRepoError):
+        sp.install_hook(plain, "ria-store")
+    assert list(plain.iterdir()) == []
+
+
+def test_install_hook_does_not_write_through_a_dangling_symlink(repos, tmp_path):
+    hook = sp._hooks_dir(repos) / "pre-push"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.symlink_to(tmp_path / "nowhere")
+    with pytest.raises(sp.HookExistsError):
+        sp.install_hook(repos, "ria-store")
+    assert not (tmp_path / "nowhere").exists()
+
+
+def test_hook_script_exits_when_toplevel_lookup_fails():
+    assert 'ROOT="$(git rev-parse --show-toplevel)" || exit 1' in sp._hook_script("ria-store")

@@ -12,6 +12,7 @@ import re
 import shlex
 import stat
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -75,6 +76,10 @@ def apply_identity(identity: Identity) -> None:
     os.environ.update(identity_env(identity))
 
 
+def _git_identity_env_keys() -> tuple[str, ...]:
+    return tuple(identity_env(Identity("", "")))
+
+
 def apply_env_identity() -> Identity | None:
     """Apply PRISM_USER_NAME/PRISM_USER_EMAIL if both are set (git's own config is untouched)."""
     name = os.environ.get("PRISM_USER_NAME", "").strip()
@@ -120,7 +125,6 @@ def _audit(root: Path, *, identity: Identity | None, sibling: str, result: str, 
     path = audit_path(root)
     if path is None:
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
     entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "identity": f"{identity.name} <{identity.email}>" if identity else None,
@@ -128,8 +132,31 @@ def _audit(root: Path, *, identity: Identity | None, sibling: str, result: str, 
         "result": result,
         "error_count": error_count,
     }
+    try:
+        _write_audit(path, entry)
+    except OSError as exc:  # never turn a finished push (or a hook check) into a crash
+        print(f"PRISM: could not write audit log: {exc}", file=sys.stderr)
+
+
+def _share_mode(path: Path, extra: int) -> None:
+    """Give the audit dir/file the git dir's group/other access (shared share); best effort."""
+    try:
+        mode = path.parent.parent.stat().st_mode if path.name == "prism" else path.parent.stat().st_mode
+        os.chmod(path, ((mode & 0o7777) | extra) & ~(0o111 if path.is_file() else 0))
+    except OSError:
+        pass
+
+
+def _write_audit(path: Path, entry: dict) -> None:
+    new_dir = not path.parent.exists()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if new_dir:
+        _share_mode(path.parent, 0o070)
+    new_file = not path.exists()
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    if new_file:
+        _share_mode(path, 0o060)
 
 
 def _describe(issue) -> str:
@@ -156,6 +183,21 @@ def validate_for_publish(project_root) -> list[str]:
 
     issues, _stats = validate_dataset(str(project_root), run_bids=False, run_prism=True)
     return [_describe(i) for i in issues if determine_exit_code([i])]
+
+
+def uncommitted_changes(root: Path) -> list[str]:
+    """Paths git sees as modified/untracked (incl. inside submodules); the push only sends commits."""
+    out = subprocess.run(
+        ["git", "-C", str(root), "status", "--porcelain", "--ignore-submodules=none"],
+        capture_output=True, text=True, check=False,
+    ).stdout
+    return [line for line in out.splitlines() if line.strip()]
+
+
+def _uncommitted_message(paths: list[str]) -> str:
+    return (
+        f"{len(paths)} uncommitted change(s). Save the dataset first (`datalad save`), then publish."
+    )
 
 
 def _dataset_roots(root: Path) -> list[Path]:
@@ -187,6 +229,11 @@ def publish_to_server(
         )
     if not has_sibling(root, sibling):
         return finish("no_sibling", f'No sibling named "{sibling}" in this dataset.', audit_result="refused")
+    dirty = uncommitted_changes(root)
+    if dirty:
+        return finish(
+            "uncommitted_changes", _uncommitted_message(dirty), audit_result="refused", errors=dirty[:20]
+        )
     try:
         errors = validate_for_publish(root)
     except Exception as exc:  # a crashed validator must refuse, not escape unaudited
@@ -199,26 +246,39 @@ def publish_to_server(
             errors=errors,
         )
 
+    # identity applies for this call only (spec section 4): restore whatever was there before
+    saved = {k: os.environ.get(k) for k in _git_identity_env_keys()}
     apply_identity(identity)
-    push = run_datalad_push(root, sibling_name=sibling, line_callback=line_callback)
-    outcome["push"] = push
-    if push.get("success"):
-        # ponytail: plain (non-RIA) share sibling assumed; RIA would need is_ria=True.
-        verify = run_datalad_push_verify(
-            root, sibling_name=sibling, dataset_roots=_dataset_roots(root), is_ria=False
-        )
-        outcome["verify"] = verify
-        if verify.get("verified"):
-            outcome["success"] = True
-            return finish("pushed", "Published to the server.", audit_result="pushed")
-        return finish("push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed")
-    return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed")
+    try:
+        push = run_datalad_push(root, sibling_name=sibling, line_callback=line_callback)
+        outcome["push"] = push
+        if push.get("success"):
+            # ponytail: plain (non-RIA) share sibling assumed; RIA would need is_ria=True.
+            verify = run_datalad_push_verify(
+                root, sibling_name=sibling, dataset_roots=_dataset_roots(root), is_ria=False
+            )
+            outcome["verify"] = verify
+            if verify.get("verified"):
+                outcome["success"] = True
+                return finish("pushed", "Published to the server.", audit_result="pushed")
+            return finish("push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed")
+        return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed")
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 HOOK_MARKER = "# prism-publish-hook"
 
 
 class HookExistsError(Exception):
+    pass
+
+
+class NotAGitRepoError(Exception):
     pass
 
 
@@ -232,7 +292,8 @@ if ! command -v "$TOOLS" >/dev/null 2>&1; then
   echo "PRISM publish gate: '$TOOLS' not found. Set PRISM_TOOLS to the prism_tools executable. Push blocked." >&2
   exit 1
 fi
-exec "$TOOLS" publish --check --project "$(git rev-parse --show-toplevel)"
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+exec "$TOOLS" publish --check --project "$ROOT"
 """
 
 
@@ -241,7 +302,10 @@ def _hooks_dir(root: Path) -> Path:
     if out:
         return Path(out)
     # git < 2.31 does not know --path-format
-    path = Path(_git(root, "rev-parse", "--git-path", "hooks"))
+    rel = _git(root, "rev-parse", "--git-path", "hooks")
+    if not rel:
+        raise NotAGitRepoError(f"{root} is not a git repository; nothing installed.")
+    path = Path(rel)
     return path if path.is_absolute() else root / path
 
 
@@ -251,7 +315,9 @@ def install_hook(project_root, sibling_name: str | None = None) -> Path:
     hooks = _hooks_dir(root)
     hooks.mkdir(parents=True, exist_ok=True)
     hook = hooks / "pre-push"
-    if hook.exists() and HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace"):
+    if os.path.lexists(hook) and (
+        hook.is_symlink() or HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace")
+    ):
         raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
     hook.write_text(_hook_script(sibling), encoding="utf-8")
     hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -261,7 +327,13 @@ def install_hook(project_root, sibling_name: str | None = None) -> Path:
 def check_for_hook(project_root, sibling_name: str | None = None) -> list[str]:
     """Validate only (no identity needed); used by the pre-push hook."""
     root = Path(project_root)
-    errors = validate_for_publish(root)
+    errors = uncommitted_changes(root)
+    errors = [_uncommitted_message(errors), *errors[:20]] if errors else []
+    if not errors:
+        try:
+            errors = validate_for_publish(root)
+        except Exception as exc:  # fail closed, no traceback
+            errors = [f"Validation could not run: {exc}"]
     _audit(
         root,
         identity=resolve_identity(),

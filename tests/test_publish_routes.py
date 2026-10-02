@@ -132,8 +132,40 @@ def test_results_page_shows_publish_button_when_publishable(client):
 
 
 def test_results_page_disables_publish_when_errors(client):
-    _store({"publishable": False})
+    _store({"publishable": False, "publish_capable": True})
     val._validation_results["rid"]["results"]["summary"]["total_errors"] = 3
     html = client.get("/results/rid").get_data(as_text=True)
     assert 'id="publishBtn"' not in html
     assert "Fix 3 error(s) before publishing" in html
+
+
+def test_publish_route_uncommitted_changes_is_400(client, monkeypatch):
+    monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
+    monkeypatch.setattr(
+        srv, "publish_to_server",
+        lambda *a, **k: {"success": False, "reason": "uncommitted_changes", "errors": ["M f"], "message": "m"},
+    )
+    assert client.post("/api/projects/datalad-server/publish", json={"project_path": "/p"}).status_code == 400
+
+
+@pytest.mark.parametrize("body", [[1], "x", 3])
+def test_publish_route_non_object_body_is_400(client, body):
+    assert client.post("/api/projects/datalad-server/publish", json=body).status_code == 400
+
+
+def test_payload_exposes_publish_capable_separately(monkeypatch):
+    assert build(monkeypatch, errors=2)["publish_capable"] is True
+    assert build(monkeypatch, errors=2, publishable_dataset=False)["publish_capable"] is False
+
+
+def test_disabled_button_only_for_capable_datasets(client):
+    _store({"publishable": False, "publish_capable": False})
+    val._validation_results["rid"]["results"]["summary"]["total_errors"] = 3
+    assert "before publishing" not in client.get("/results/rid").get_data(as_text=True)
+    val._validation_results["rid"]["results"]["publish_capable"] = True
+    assert "Fix 3 error(s) before publishing" in client.get("/results/rid").get_data(as_text=True)
+
+
+def test_results_page_does_not_reload_after_validation_errors(client):
+    _store({"publishable": True})
+    assert "location.reload" not in client.get("/results/rid").get_data(as_text=True)

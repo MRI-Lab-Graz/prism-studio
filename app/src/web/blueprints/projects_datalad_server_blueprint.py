@@ -358,7 +358,9 @@ def datalad_server_publish():
 
     ponytail: synchronous; move onto the _ria_jobs machinery if share pushes get slow.
     """
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON object body required"}), 400
     resolved = _resolve_project_root_path(str(data.get("project_path") or ""))
     if resolved is None:
         return jsonify({"error": "Invalid project path"}), 400

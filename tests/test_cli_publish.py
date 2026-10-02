@@ -71,3 +71,13 @@ def test_hook_argument_contract():
     parser, _ = build_prism_tools_parsers(APP_ROOT)
     ns = parser.parse_args(["publish", "--check", "--project", "/p"])
     assert ns.check is True and ns.project == "/p" and ns.install_hook is False
+
+
+def test_uncommitted_changes_is_exit_2(monkeypatch, capsys):
+    monkeypatch.setattr(pub, "publish_to_server", lambda *a, **k: {"success": False, "reason": "uncommitted_changes", "errors": ["M f"], "message": "m"})
+    assert run(monkeypatch, capsys)[0] == 2
+
+
+def test_install_hook_on_non_repo_reports_not_a_dataset_exit_2(monkeypatch, capsys, tmp_path):
+    code, out = run(monkeypatch, capsys, install_hook=True, project=str(tmp_path))
+    assert code == 2 and out["reason"] == "not_a_dataset"
