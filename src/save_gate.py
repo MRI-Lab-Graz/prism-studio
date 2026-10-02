@@ -121,8 +121,21 @@ if ! command -v "$TOOLS" >/dev/null 2>&1; then
   exit 1
 fi
 ROOT="$(git rev-parse --show-toplevel)" || exit 1
+unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE
 "$TOOLS" save-gate --check --project "$ROOT" >&2 || exit 1
 """
+
+
+def _is_own_hook(hook: Path) -> bool:
+    """True only for a regular, readable file carrying our marker (anything else is foreign)."""
+    try:
+        return (
+            hook.is_file()
+            and not hook.is_symlink()
+            and SAVE_HOOK_MARKER in hook.read_text(encoding="utf-8", errors="replace")
+        )
+    except OSError:
+        return False
 
 
 def has_save_hook(root) -> bool:
@@ -130,16 +143,14 @@ def has_save_hook(root) -> bool:
         hook = _hooks_dir(Path(root)) / "pre-commit"
     except NotAGitRepoError:
         return False
-    return hook.is_file() and SAVE_HOOK_MARKER in hook.read_text(encoding="utf-8", errors="replace")
+    return _is_own_hook(hook)
 
 
 def install_save_hook(root) -> Path:
     hooks = _hooks_dir(Path(root))  # raises NotAGitRepoError before anything is written
     hooks.mkdir(parents=True, exist_ok=True)
     hook = hooks / "pre-commit"
-    if os.path.lexists(hook) and (
-        hook.is_symlink() or SAVE_HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace")
-    ):
+    if os.path.lexists(hook) and not _is_own_hook(hook):
         raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
     hook.write_text(_save_hook_script(), encoding="utf-8")
     hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
