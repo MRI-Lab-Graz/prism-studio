@@ -59,11 +59,18 @@ pass a trusted "is valid" flag.
   config would be shared by all users).
 - The same env is applied in `run_datalad_save` / `run_datalad_run` so edits
   made through PRISM are attributed, not only pushes.
-- Audit log: one JSON line per publish attempt appended to `.prism/publish.log`
-  in the dataset: timestamp, identity, sibling, result (pushed/refused),
+- Audit log: one JSON line per publish attempt appended to
+  `<git-dir>/prism/publish.jsonl` (inside `.git`, so it never dirties the
+  dataset, is never annexed, and is shared by every user of the share):
+  timestamp, identity, sibling, result (pushed/refused),
   validator error count. Covers refused attempts, which git history cannot show.
-- Text-policy invariant (CLAUDE.md): `.prism/publish.log` is a text file and
-  must not be annexed; the `.gitattributes` text rules must cover it (test).
+- Because the log lives in `.git`, it is not versioned and not pushed to the
+  server; it is the share-side record. (Changed from `.prism/publish.log`,
+  which would have dirtied the tree after every publish.)
+- Edits made through PRISM are attributed by exporting the `GIT_AUTHOR_*` /
+  `GIT_COMMITTER_*` vars into the PRISM process environment at CLI/GUI start
+  (child `datalad`/`git` processes inherit it), instead of threading an
+  identity parameter through every caller.
 
 ### 4. Surfaces (one implementation)
 
@@ -101,12 +108,15 @@ Fixtures: temp dataset = "share"; local bare repo = "server" sibling.
   unchanged; missing identity refused; resolution order honored.
 - Validator payload exposes `publishable` (true only for zero errors + sibling).
 - GUI route re-validates (stale-valid request on a now-invalid dataset refused).
-- `.prism/publish.log` not annexed.
+- Audit log lives under the git dir; publishing does not dirty the working tree.
 - CLI/GUI parity: same options reachable from both.
 
 ## Open items / risks
 
 - Concurrent in-place editing on the shared tree is unsolved.
 - `--no-verify` bypass is accepted.
-- Unverified: exact validator entry point to call for a full-dataset error count;
-  to be confirmed when writing the plan.
+- Validator entry point resolved: `src.core.validation.validate_dataset` +
+  `determine_exit_code` (PRISM checks; BIDS validator off by default).
+- `datalad push -r` pushes nested `sub-*` datasets before the superdataset; the
+  hook is installed on the superdataset only, so subdataset content can reach the
+  server even when the superdataset push is blocked. Known gap.
