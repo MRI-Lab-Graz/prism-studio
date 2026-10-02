@@ -166,23 +166,28 @@ def _describe(issue) -> str:
     return f"{code} {getattr(issue, 'message', issue)}".strip()
 
 
-def validate_for_publish(project_root) -> list[str]:
-    """Error messages from a full PRISM validation; empty list means valid.
-
-    ponytail: PRISM checks only, no BIDS validator (needs deno on every share).
-    """
+def _core_validation():
+    """`src.core.validation`, adding app/ and app/src to sys.path only if the import fails."""
     try:
-        from src.core.validation import determine_exit_code, validate_dataset
+        import src.core.validation as mod
     except ImportError:
         # Source checkout started without app/ on sys.path; frozen builds never get here.
         import sys
 
         repo = Path(__file__).resolve().parents[1]
         sys.path[:0] = [str(repo / "app"), str(repo / "app" / "src")]
-        from src.core.validation import determine_exit_code, validate_dataset
+        import src.core.validation as mod
+    return mod
 
-    issues, _stats = validate_dataset(str(project_root), run_bids=False, run_prism=True)
-    return [_describe(i) for i in issues if determine_exit_code([i])]
+
+def validate_for_publish(project_root) -> list[str]:
+    """Error messages from a full PRISM validation; empty list means valid.
+
+    ponytail: PRISM checks only, no BIDS validator (needs deno on every share).
+    """
+    core = _core_validation()
+    issues, _stats = core.validate_dataset(str(project_root), run_bids=False, run_prism=True)
+    return [_describe(i) for i in issues if core.determine_exit_code([i])]
 
 
 def uncommitted_changes(root: Path) -> list[str]:

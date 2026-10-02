@@ -19,6 +19,7 @@ def _extract_get_error_paths(detail: str) -> list[str]:
     return _GET_ERROR_PATH_RE.findall(detail)
 
 DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
+SAVE_GATE_MARKER = "PRISM save gate"
 DATALAD_DOCS_URL = "https://www.datalad.org/"
 
 
