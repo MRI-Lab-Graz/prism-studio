@@ -1014,6 +1014,11 @@ def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
         return False
 
 
+from src.web.request_guard import install_cross_site_guard
+
+install_cross_site_guard(app)
+
+
 @app.before_request
 def guard_against_remote_requests():
     """Reject DNS-rebinding requests and keep filesystem browsing local-only.
