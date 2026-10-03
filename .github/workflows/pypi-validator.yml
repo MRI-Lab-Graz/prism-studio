@@ -1,0 +1,73 @@
+name: Publish prism-validator to PyPI
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+    paths: &validator_paths
+      - 'scripts/build_validator_wheel.py'
+      - 'scripts/validator_manifest.txt'
+      - 'requirements-validator.txt'
+      - 'src/**'
+      - 'app/prism.py'
+      - 'app/src/**'
+      - 'app/schemas/**'
+  pull_request:
+    paths: *validator_paths
+  workflow_dispatch: {}
+
+concurrency:
+  group: pypi-validator-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test the wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install test tools
+        run: pip install pytest setuptools wheel
+
+      - name: Build wheel and test it in a clean venv
+        run: python -m pytest tests/test_validator_wheel.py -q
+
+      - name: Tag must match the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(python -c "import re;print(re.search(r'__version__ = \"([^\"]+)\"', open('src/__init__.py').read()).group(1))")
+          test "v$version" = "${GITHUB_REF_NAME}"
+
+      - name: Build wheel for upload
+        run: python scripts/build_validator_wheel.py --out dist
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: prism-validator-wheel
+          path: dist/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # PyPI Trusted Publishing, no API token stored
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: prism-validator-wheel
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1

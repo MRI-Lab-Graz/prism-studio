@@ -1,0 +1,78 @@
+"""The prism-validator wheel (PyPI): CLI-only, no Studio code, shares the repo version."""
+
+import re
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+BUILD = ROOT / "scripts" / "build_validator_wheel.py"
+
+# Anything Studio-only: GUI, converters, project/file management, the Studio CLI.
+STUDIO_ONLY = (
+    "/web/",
+    "/cli/",
+    "/templates/",
+    "/static/",
+    "project_manager",
+    "participants_backend",
+    "batch_convert",
+    "converters/survey.py",
+    "converters/excel_to_survey",
+)
+
+
+@pytest.fixture(scope="module")
+def wheel(tmp_path_factory):
+    out = tmp_path_factory.mktemp("wheel")
+    subprocess.run([sys.executable, str(BUILD), "--out", str(out)], check=True)
+    return next(out.glob("prism_validator-*.whl"))
+
+
+def test_wheel_has_validator_entry_and_schemas(wheel):
+    names = zipfile.ZipFile(wheel).namelist()
+    assert "prism_validator/app/prism.py" in names
+    assert any(n.startswith("prism_validator/app/schemas/stable/") for n in names)
+    assert any(n.endswith("entry_points.txt") for n in names)
+
+
+def test_wheel_contains_no_studio_only_files(wheel):
+    names = zipfile.ZipFile(wheel).namelist()
+    leaked = [n for n in names if any(s in n for s in STUDIO_ONLY)]
+    assert not leaked, leaked
+
+
+def test_wheel_version_is_the_repo_version(wheel):
+    src = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
+    version = re.search(r'__version__ = "([^"]+)"', src).group(1)
+    assert wheel.name.startswith(f"prism_validator-{version}-")
+
+
+def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
+    venv = tmp_path / "venv"
+    subprocess.run([sys.executable, "-m", "venv", str(venv)], check=True)
+    bindir = venv / ("Scripts" if sys.platform == "win32" else "bin")
+    subprocess.run(
+        [str(bindir / "python"), "-m", "pip", "install", "-q", str(wheel)], check=True
+    )
+    exe = str(bindir / "prism-validator")
+    version = subprocess.run([exe, "--version"], capture_output=True, text=True)
+    assert version.returncode == 0, version.stderr
+    # Real validation of an (empty) dataset: exercises the lazy imports too.
+    (tmp_path / "ds").mkdir()
+    run = subprocess.run([exe, str(tmp_path / "ds")], capture_output=True, text=True)
+    assert "Import error" not in run.stdout + run.stderr
+    assert "ModuleNotFoundError" not in run.stdout + run.stderr
+    assert run.returncode == 1  # validation errors, not a crash
+
+
+def test_wheel_metadata_has_pypi_page_fields(wheel):
+    zf = zipfile.ZipFile(wheel)
+    meta = zf.read(next(n for n in zf.namelist() if n.endswith("/METADATA"))).decode()
+    assert "Project-URL: Homepage" in meta
+    assert "Project-URL: Issues" in meta
+    assert "Classifier: Programming Language :: Python :: 3" in meta
+    assert "Classifier: License :: OSI Approved :: GNU Affero" in meta
