@@ -90,6 +90,16 @@ def test_install_on_a_plain_folder_writes_nothing(tmp_path):
     assert list(plain.iterdir()) == []
 
 
+def test_install_in_a_folder_inside_another_repo_leaves_that_repo_alone(repo):
+    """A project folder that is not its own repo must not get the enclosing repo's hook
+    (this is how the gate ended up in the prism-studio source checkout)."""
+    inner = repo / "project"
+    inner.mkdir()
+    with pytest.raises(NotAGitRepoError):
+        sg.install_save_hook(inner)
+    assert not (repo / ".git" / "hooks" / "pre-commit").exists()
+
+
 def test_install_save_hooks_covers_every_dataset_root_and_reports_foreign(tmp_path, monkeypatch):
     roots = []
     for name in ("a", "b", "c"):
