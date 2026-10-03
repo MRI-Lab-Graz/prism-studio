@@ -24,6 +24,9 @@ _SAFE_FORMULA_BINOPS: dict[type[ast.operator], Any] = {
 # (multi-second hang on a single call, multiplied by every row scored),
 # even though the AST whitelist already blocks code-injection escapes.
 _MAX_FORMULA_POW_EXPONENT_MAGNITUDE = 1000
+# ...but each exponent can be small while the *base* is itself a huge power
+# (`((9**999)**999)**999`), so also cap the size an integer power may reach.
+_MAX_FORMULA_INT_BITS = 10_000
 
 
 def _check_safe_power_operands(exponent: Any) -> None:
@@ -96,8 +99,15 @@ def _evaluate_formula_ast(node: ast.AST) -> Any:
             raise ValueError("Unsafe binary operator")
         left = _evaluate_formula_ast(node.left)
         right = _evaluate_formula_ast(node.right)
+        if (isinstance(left, str) or isinstance(right, str)) and not isinstance(
+            node.op, ast.Add
+        ):
+            raise ValueError("Strings only support +")  # no 'a' * 10**10
         if isinstance(node.op, ast.Pow):
             _check_safe_power_operands(right)
+            if isinstance(left, int) and isinstance(right, int):
+                if left.bit_length() * abs(right) > _MAX_FORMULA_INT_BITS:
+                    raise ValueError("Power result exceeds the safe size")
         return op(left, right)
 
     if isinstance(node, ast.UnaryOp):
