@@ -56,6 +56,10 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "publish":
+        handlers["publish"](args)
+    elif args.command == "save-gate":
+        handlers["save_gate"](args)
     elif args.command == "datalad":
         if args.action == "doctor":
             handlers["datalad_doctor"](args)

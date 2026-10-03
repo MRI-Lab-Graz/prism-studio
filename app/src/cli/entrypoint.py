@@ -9,6 +9,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from src.save_gate import ensure_prism_tools_env
+from src.share_publish import apply_env_identity
 from src.cli.commands.anonymize import cmd_anonymize
 from src.cli.commands.biometrics import (
     cmd_biometrics_convert,
@@ -59,6 +61,8 @@ from src.cli.commands.participants import (
     cmd_participants_save_mapping,
     cmd_participants_save_schema,
 )
+from src.cli.commands.publish import cmd_publish
+from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
     cmd_datalad_doctor,
     cmd_datalad_finalize,
@@ -117,6 +121,8 @@ def cmd_demo_create(args) -> None:
 
 
 def main() -> None:
+    apply_env_identity()
+    ensure_prism_tools_env()
     parser, parsers = build_prism_tools_parsers(APP_ROOT)
     args = parser.parse_args()
     dispatch_prism_tools(
@@ -155,6 +161,8 @@ def main() -> None:
             "session_map_show": cmd_session_map_show,
             "session_map_set": cmd_session_map_set,
             "session_map_unset": cmd_session_map_unset,
+            "publish": cmd_publish,
+            "save_gate": cmd_save_gate,
             "survey_import_lsq": cmd_survey_import_lsq,
             "dataset_rename_sessions": cmd_dataset_rename_sessions,
             "dataset_renumber_runs": cmd_dataset_renumber_runs,

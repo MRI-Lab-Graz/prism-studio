@@ -1675,6 +1675,11 @@ def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
 def main():
     """Run the web application"""
     import argparse
+    from src.save_gate import ensure_prism_tools_env
+    from src.share_publish import apply_env_identity
+
+    apply_env_identity()  # attribute all PRISM edits before any git/datalad call
+    ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
 
     def configure_debug_logging() -> None:
         logging.basicConfig(

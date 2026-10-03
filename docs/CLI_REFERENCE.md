@@ -369,6 +369,57 @@ The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a diff
 older per-import rename of LimeSurvey archives. It is refused when the output folder is a
 project with several timepoints (use `survey convert`, which enforces the session map).
 
+### Publish
+
+Pushes a DataLad dataset on a department share to its server sibling, but only if the
+dataset validates. Refusals are exit code `1` (validation errors) or `2` (anything else:
+no identity, no sibling, not a dataset, uncommitted changes (run `datalad save` first), bad `--as`, existing hook). Success is `0`.
+
+```bash
+# Validate and push (identity: --as, else PRISM_USER_NAME/PRISM_USER_EMAIL, else git config)
+python prism_tools.py publish --project /absolute/path/to/share/my-project --as "Ada Lovelace <ada@example.org>" --json
+
+# Validate only; exit 1 on errors (this is what the pre-push hook runs)
+python prism_tools.py publish --check --project /absolute/path/to/share/my-project
+
+# Install the git pre-push hook that enforces the same rule on plain `git push`
+python prism_tools.py publish --install-hook --project /absolute/path/to/share/my-project
+```
+
+Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
+`--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
+for the hook's requirements and limits.
+
+### Save gate
+
+Refuses a `git commit` in a PRISM dataset unless the dataset validates (a git pre-commit
+hook in every dataset root, including nested `sub-*` datasets, calls `save-gate --check`).
+The very first commit of a dataset is exempt. Exit codes: `0` allowed/ok, `1` refused because of
+validation errors, `2` any other problem (cannot read git state, validator crashed, bad path, foreign hook, no action chosen).
+The hook blocks on any non-zero exit. Each `--check` appends a line to the audit log.
+
+```bash
+# Validate; exit 1 if the commit must be refused (this is what the hook runs)
+python prism_tools.py save-gate --check --project /absolute/path/to/my-project
+
+# Install the pre-commit hook in the project and every nested dataset
+python prism_tools.py save-gate --install-hooks --project /absolute/path/to/my-project
+
+# Show which datasets have the hook
+python prism_tools.py save-gate --status --project /absolute/path/to/my-project --json
+```
+
+Options: `--project` (required), `--check`, `--install-hooks`, `--status`, `--json`.
+
+Hook requirements and limits:
+
+- The hook runs `$PRISM_TOOLS save-gate --check ...` (default `prism_tools`). `PRISM_TOOLS` must be
+  an **executable file**; if the hook cannot find it, the commit is blocked.
+- `git commit --no-verify` bypasses the hook.
+- The hook lives in each repository's `.git/hooks`: it is per clone and per dataset. A fresh
+  clone is ungated until `--install-hooks` runs there.
+- A pre-existing foreign `pre-commit` hook is never overwritten (reported, exit `2`).
+
 ### Environment
 
 **`environment preview`** / **`convert`**:

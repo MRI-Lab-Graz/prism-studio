@@ -101,6 +101,30 @@
 <!-- Shared legacy scripts (non-modular) -->
 <script src="{{ url_for('static', filename='js/neurobagel.js', v=prism_static_asset_token) }}"></script>
 
+<script src="{{ url_for('static', filename='js/publish.js', v=prism_static_asset_token) }}"></script>
+<script>
+    document.getElementById('publishProjectBtn')?.addEventListener('click', async (ev) => {
+        const btn = ev.currentTarget;
+        const projectPath = window.resolveCurrentProjectPath
+            ? window.resolveCurrentProjectPath(window.currentProjectPath)
+            : window.currentProjectPath;
+        if (!projectPath) { alert('No project selected.'); return; }
+        btn.disabled = true;
+        try {
+            let res = await window.prismPublish(projectPath);
+            if (res.reason === 'no_identity') {
+                const name = prompt('Your name for the audit log:');
+                const email = name && prompt('Your email:');
+                if (!name || !email) return;
+                res = await window.prismPublish(projectPath, { name, email });
+            }
+            if (res.success) { alert(res.message); return; }
+            alert((res.message || res.error) + (res.errors?.length ? '\n\n' + res.errors.join('\n') : ''));
+        } finally {
+            btn.disabled = false;
+        }
+    });
+</script>
 <script>
     // Template variables - must be rendered server-side
     window.currentProjectPath = "{{ current_project.path or '' }}";

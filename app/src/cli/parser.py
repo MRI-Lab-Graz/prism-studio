@@ -466,6 +466,28 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_publish = subparsers.add_parser(
+        "publish",
+        help="Push a department-share dataset to the DataLad server (only if it validates)",
+    )
+    parser_publish.add_argument("--project", required=True, help="Dataset root on the share")
+    parser_publish.add_argument("--sibling", help="Server sibling name (default: project's configured sibling)")
+    parser_publish.add_argument(
+        "--as", dest="as_identity", help='Who is publishing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
+    )
+    parser_publish.add_argument("--check", action="store_true", help="Validate only; exit 1 on errors (used by the pre-push hook)")
+    parser_publish.add_argument("--install-hook", action="store_true", help="Install the git pre-push hook that enforces the same rule")
+    parser_publish.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    parser_save_gate = subparsers.add_parser(
+        "save-gate",
+        help="Save gate: commits are allowed only on valid datasets (git pre-commit hook)",
+    )
+    parser_save_gate.add_argument("--project", required=True, help="Dataset root")
+    parser_save_gate.add_argument("--check", action="store_true", help="Validate; exit 1 if the commit must be refused (used by the hook)")
+    parser_save_gate.add_argument("--install-hooks", action="store_true", help="Install the pre-commit hook in the project and every nested dataset")
+    parser_save_gate.add_argument("--status", action="store_true", help="Show which datasets have the hook")
+    parser_save_gate.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad = subparsers.add_parser(
         "datalad", help="Check and set up DataLad, git-annex and SSH access to a server"
     )
@@ -2191,6 +2213,8 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "session-map": parser_session_map,
+        "publish": parser_publish,
+        "save-gate": parser_save_gate,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
         "physio": parser_physio,

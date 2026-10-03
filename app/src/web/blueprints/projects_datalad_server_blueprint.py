@@ -25,6 +25,8 @@ from typing import Dict
 
 from flask import Blueprint, jsonify, request
 
+from src.share_publish import parse_identity, publish_to_server
+
 from .projects_helpers import _resolve_project_root_path
 
 projects_datalad_server_bp = Blueprint("projects_datalad_server", __name__)
@@ -348,3 +350,28 @@ def datalad_server_finalize_cancel(job_id: str):
     if cancel_event:
         cancel_event.set()
     return jsonify({"cancelled": True})
+
+
+@projects_datalad_server_bp.route("/api/projects/datalad-server/publish", methods=["POST"])
+def datalad_server_publish():
+    """Validity-gated push of a share dataset (same code path as `prism_tools publish`).
+
+    ponytail: synchronous; move onto the _ria_jobs machinery if share pushes get slow.
+    """
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON object body required"}), 400
+    resolved = _resolve_project_root_path(str(data.get("project_path") or ""))
+    if resolved is None:
+        return jsonify({"error": "Invalid project path"}), 400
+    identity = None
+    if data.get("name") or data.get("email"):
+        try:
+            identity = parse_identity(f'{data.get("name", "")} <{data.get("email", "")}>')
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+    result = publish_to_server(
+        resolved, sibling_name=data.get("sibling_name") or None, identity=identity
+    )
+    status = 200 if result["success"] else 409 if result["reason"] == "validation_errors" else 400
+    return jsonify(result), status

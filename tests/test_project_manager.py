@@ -1090,7 +1090,8 @@ class TestProjectManager(unittest.TestCase):
             (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
             (project_path / "sub-002").mkdir(parents=True, exist_ok=True)
 
-            with patch(
+            # the save-gate hook install also shells out to git; this test counts subprocess calls
+            with patch("src.save_gate.install_save_hook"), patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths"
             ) as mock_registered_paths:
                 mock_registered_paths.side_effect = _registered_nested_path_sequence(

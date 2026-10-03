@@ -72,6 +72,38 @@ Studio manage project-aware workflows instead of manually editing the layout. Tr
 responsibilities. Validate after structural changes so DataLad-aware edits don't
 silently drift from PRISM expectations.
 
+## Publishing from a department share
+
+The rule: a dataset on the department share reaches the DataLad server only if it
+validates. `prism_tools.py publish --project <root>` validates and then pushes to the
+server sibling; if validation has errors, nothing is pushed.
+
+- **Who is publishing**: pass `--as "Name <email>"`, or set `PRISM_USER_NAME` and
+  `PRISM_USER_EMAIL`; otherwise git config is used. The publish is recorded in an audit log.
+- **Hook**: `prism_tools.py publish --install-hook --project <root>` installs a git
+  pre-push hook so a plain `git push` to the server is gated by the same check
+  (`publish --check`). It refuses to overwrite an existing hook.
+- **`PRISM_TOOLS`**: the hook finds the tool through the `PRISM_TOOLS` environment variable,
+  which must point to an executable file. A wrapper script that runs
+  `python /path/to/prism_tools.py "$@"` works. If the hook cannot find the tool it fails
+  closed: the push is blocked.
+- **Caveats**: `git push --no-verify` bypasses the hook. Nested `sub-*` datasets are not
+  covered by the superdataset's hook yet.
+- **Save first**: the push sends committed state only, so publishing (and the hook) is
+  refused while the dataset has uncommitted or untracked changes (including inside
+  subdatasets). Run `datalad save`, then publish.
+- **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, refused,
+  hook allowed/refused). It lives in the git dir, so it never dirties the dataset.
+- **Studio**: only the "Publish" button is gated. The existing "Sync now" flow is NOT validated.
+- **More caveats**:
+  - The gate validates with the stable schema and no library path, so the Studio validator
+    page can disagree if the project uses another schema or library. The backend is the authority.
+  - The hook only gates the sibling name it was installed with; a push by URL or after
+    renaming the sibling passes.
+  - `datalad push` copies annexed files to the server before `git push` runs the hook, so a
+    blocked push can still leave annexed content (no branch points to it) on the server.
+  - Pushing an arbitrary older commit by hand is not covered.
+
 ## What's next
 
 - [What is PRISM](WHAT_IS_PRISM.md)

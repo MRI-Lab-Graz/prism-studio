@@ -27,6 +27,7 @@ from src.validation_library_resolution import (
     default_global_validation_library_path,
     default_validation_library_path,
 )
+from src.share_publish import can_publish
 from src.web.utils import format_validation_results
 from src.web.validation import (
     run_validation,
@@ -366,6 +367,11 @@ def _build_validation_results_payload(
         run_prism=run_prism,
     )
     results = _apply_bids_warning_display_filter(results, show_bids_warnings)
+    # BIDS-only runs hide PRISM errors, so only a PRISM run can vouch for validity.
+    results["publish_capable"] = bool(run_prism and can_publish(dataset_path))
+    results["publishable"] = bool(
+        results["publish_capable"] and int(results.get("summary", {}).get("total_errors", 0)) == 0
+    )
     results["timestamp"] = datetime.now().isoformat()
     results["schema_version"] = schema_version
     results["job_id"] = job_id
@@ -857,6 +863,7 @@ def show_results(result_id):
         dataset_stats=dataset_stats,
         result_id=result_id,
         filename=data.get("filename", "dataset"),
+        publish_path=data.get("dataset_path") if results.get("publishable") else "",
     )
 
 

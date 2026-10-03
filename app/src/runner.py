@@ -783,6 +783,37 @@ def _validate_subject(
     return issues
 
 
+def validate_subject_only(
+    root_dir,
+    subject_id,
+    *,
+    schema_version=None,
+    library_path=None,
+):
+    """Validate one sub-* folder in isolation (what a nested-dataset commit changes).
+
+    Same per-subject checks as `validate_dataset`'s subject loop; the cross-subject
+    checks (consistency, participants alignment, procedure) need every subject and
+    stay with the full validation. Returns (issues, stats).
+    """
+    root_dir = os.path.abspath(root_dir)
+    schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
+    schemas = load_all_schemas(schema_dir, version=schema_version)
+    validator = DatasetValidator(schemas, library_path=library_path)
+    stats = DatasetStats()
+    issues = _validate_subject(
+        os.path.join(root_dir, subject_id),
+        subject_id,
+        validator,
+        stats,
+        root_dir,
+        run_prism=True,
+        run_bids=False,
+        need_procedure_tasks=_project_declares_sessions(root_dir),
+    )
+    return issues, stats
+
+
 def _extract_task_from_filename(fname):
     """Extract the BIDS task- entity from a filename, if present."""
     if "_task-" in fname:

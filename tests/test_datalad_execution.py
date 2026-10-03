@@ -894,3 +894,34 @@ def test_upload_to_sibling_still_fails_when_push_fails_and_content_is_actually_m
     assert result["success"] is False
     assert result["disconnected"] is False
     assert "connection refused" in result["message"]
+
+
+def _capture_run_command(monkeypatch):
+    captured = {}
+
+    def _fake_run(command, cwd=None, capture_output=True, text=True, timeout=None, check=False, env=None):
+        captured["command"] = command
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
+    return captured
+
+
+def test_run_datalad_run_explicit_builds_outputs_flags(monkeypatch, tmp_path):
+    from src.datalad_execution import run_datalad_run
+
+    captured = _capture_run_command(monkeypatch)
+    run_datalad_run(tmp_path, message="m", command=["echo", "x"], datalad_executable="datalad",
+                    explicit=True, outputs=["a.tsv", "b/c.json"])
+    cmd = captured["command"]
+    assert cmd[:3] == ["datalad", "run", "--explicit"]
+    assert cmd.count("-o") == 2 and "a.tsv" in cmd and "b/c.json" in cmd
+    assert cmd[-3:] == ["--", "echo", "x"]
+
+
+def test_run_datalad_run_default_is_unchanged(monkeypatch, tmp_path):
+    from src.datalad_execution import run_datalad_run
+
+    captured = _capture_run_command(monkeypatch)
+    run_datalad_run(tmp_path, message="m", command=["echo", "x"], datalad_executable="datalad")
+    assert captured["command"] == ["datalad", "run", "-m", "m", "--", "echo", "x"]

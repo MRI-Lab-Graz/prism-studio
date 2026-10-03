@@ -433,6 +433,8 @@ class ProjectManager:
             }
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+                if datalad_result.get("initialized"):
+                    self._install_save_gate_hooks(project_path, result)
             return result
 
         except Exception as e:
@@ -705,6 +707,8 @@ class ProjectManager:
                 result["source"] = source_result
             if datalad_result is not None:
                 result["datalad"] = datalad_result
+                if datalad_result.get("initialized"):
+                    self._install_save_gate_hooks(project_path, result)
             if phenotype_import_result is not None:
                 result["phenotype_import"] = phenotype_import_result
             return result
@@ -3922,11 +3926,55 @@ git push -u origin main
         )
 
         if result["success"]:
+            self._install_save_gate_hooks(project_path, result)
             result["message"] = datalad_result.get("message") or "DataLad enabled for the current project."
             return result
 
         result["error"] = datalad_result.get("message") or "Could not enable DataLad for this project."
         return result
+
+    _SAVE_GATE_SKIPPED = (
+        "PRISM_TOOLS is not available (frozen build or no launcher); run "
+        "`prism_tools save-gate --install-hooks` after setting PRISM_TOOLS"
+    )
+
+    def _install_save_gate_hooks(self, project_path: Path, result: Dict[str, Any]) -> None:
+        """Install the save-gate pre-commit hooks once a dataset's creation saves are done.
+
+        Must run AFTER the last creation-time save: a new project is invalid until it
+        has subjects, so a hook installed earlier would refuse PRISM's own scaffold
+        save. Never aborts creation; the outcome is recorded under ``save_gate_hook``.
+        Skipped without PRISM_TOOLS: the hook fails closed when it cannot find the tool.
+        """
+        if not os.environ.get("PRISM_TOOLS"):
+            result["save_gate_hook"] = {
+                "installed": [], "foreign": [], "errors": [], "skipped": self._SAVE_GATE_SKIPPED,
+            }
+            return
+        try:
+            from src.save_gate import install_save_hooks
+
+            result["save_gate_hook"] = install_save_hooks(project_path)
+        except Exception as exc:  # a foreign hook or odd git state must never abort creation
+            result["save_gate_hook"] = {"installed": [], "foreign": [], "errors": [str(exc)]}
+
+    def _install_save_gate_hook_for_nested(self, dataset_path: Path) -> Dict[str, Any]:
+        """Single-dataset variant for a nested dataset whose creation save succeeded."""
+        outcome: Dict[str, Any] = {"installed": [], "foreign": [], "errors": []}
+        if not os.environ.get("PRISM_TOOLS"):
+            outcome["skipped"] = self._SAVE_GATE_SKIPPED
+            return outcome
+        try:
+            from src.save_gate import install_save_hook
+            from src.share_publish import HookExistsError
+
+            install_save_hook(dataset_path)
+            outcome["installed"].append(str(dataset_path))
+        except HookExistsError:
+            outcome["foreign"].append(str(dataset_path))
+        except Exception as exc:
+            outcome["errors"].append(str(exc))
+        return outcome
 
     def _create_datalad_dataset(
         self,
@@ -5164,6 +5212,7 @@ git push -u origin main
         return {
             "success": True,
             "message": "Created nested DataLad dataset.",
+            "save_gate_hook": self._install_save_gate_hook_for_nested(dataset_path),
         }
 
     def _register_existing_nested_dataset(
@@ -5241,6 +5290,7 @@ git push -u origin main
         return {
             "success": True,
             "message": "Registered existing nested DataLad dataset.",
+            "save_gate_hook": self._install_save_gate_hook_for_nested(dataset_path),
         }
 
     def _build_nested_dataset_staging_path(
