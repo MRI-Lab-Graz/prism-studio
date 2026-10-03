@@ -39,6 +39,7 @@ app/src/utils/__init__.py
 app/src/utils/io.py
 app/src/utils/naming.py
 app/src/validator.py
+src/datalad_doctor.py
 src/datalad_execution.py
 src/entity_rules.py
 src/environment_temporal.py
