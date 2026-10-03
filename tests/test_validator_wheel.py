@@ -76,3 +76,10 @@ def test_wheel_metadata_has_pypi_page_fields(wheel):
     assert "Project-URL: Issues" in meta
     assert "Classifier: Programming Language :: Python :: 3" in meta
     assert "Classifier: License :: OSI Approved :: GNU Affero" in meta
+
+
+def test_publish_workflow_tolerates_a_rerun_of_the_same_tag():
+    """Re-pushing a tag (to re-run the Studio release) must not turn PyPI's
+    'File already exists' into a red failure."""
+    wf = (ROOT / ".github" / "workflows" / "pypi-validator.yml").read_text(encoding="utf-8")
+    assert "skip-existing: true" in wf
