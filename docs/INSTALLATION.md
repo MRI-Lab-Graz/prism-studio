@@ -17,12 +17,11 @@ folder — no Python or repository setup needed.
 
 <div class="prism-os-body">
 
-Choose your Mac chip and download the matching ZIP:
-- Apple Silicon (M1/M2/M3/M4): `prism-studio-macOS-AppleSilicon.zip`
-- Intel: `prism-studio-macOS-AppleIntel.zip`
+Download `prism-studio-macOS-AppleSilicon.zip` (Apple Silicon: M1/M2/M3/M4).
 
-Not sure which Mac you have? Apple menu → **About This Mac** → check the chip:
-anything with "Apple M..." is Apple Silicon, "Intel" is Intel.
+Intel Macs: there is no pre-built app any more (Homebrew and GitHub have dropped
+Intel macOS). Run PRISM Studio from source instead (`bash install.sh`), or use the
+`prism-validator` package for validation only.
 
 </div>
 </details>

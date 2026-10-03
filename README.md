@@ -65,7 +65,6 @@ Download the latest release for your platform from the
 | Platform | Binary |
 |----------|--------|
 | macOS (Apple Silicon) | `prism-studio-macOS-AppleSilicon.zip` |
-| macOS (Intel) | `prism-studio-macOS-AppleIntel.zip` |
 | Windows | `prism-studio-Windows.zip` |
 | Linux | `prism-studio-Linux.zip` |
 
