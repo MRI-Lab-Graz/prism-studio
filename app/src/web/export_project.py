@@ -15,6 +15,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
+from src.anonymizer import replace_participant_ids_in_text
+from src.git_exclude import ensure_git_excluded
 from src.cross_platform import describe_case_insensitive_id_collisions, remove_tree
 from src.project_export_helpers import (
     _extract_export_task_label,
@@ -78,6 +80,12 @@ def _masked_like(value: Any, masked_text: str) -> Any:
         masked = {str(key): masked_text for key in value.keys() if isinstance(key, str)}
         return masked or {"en": masked_text}
     return masked_text
+
+
+# Per-participant tabular files PRISM cannot rewrite: with anonymisation on they
+# are left out of the ZIP (and reported) instead of shipping real IDs.
+_UNANONYMIZABLE_EXTS = (".xlsx", ".xls", ".ods", ".sav", ".zsav", ".rds", ".rdata", ".parquet", ".feather")
+_TEXT_EXTS = (".csv", ".txt", ".log", ".r", ".md", ".jsonl", ".yaml", ".yml")
 
 
 def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
@@ -309,6 +317,8 @@ def export_project(
             # Save mapping to project's code/ directory (protected — not in ZIP).
             # create_participant_mapping() creates the parent directory automatically.
             _saved_mapping_file = project_path / "code" / "anonymization_map.json"
+            # It holds the secret key and reverse mapping: never commit/push it.
+            ensure_git_excluded(project_path, "code/anonymization_map.json")
             participant_mapping = create_participant_mapping(
                 list(participant_ids),
                 _saved_mapping_file,
@@ -459,6 +469,7 @@ def export_project(
         "files_anonymized": 0,
         "files_skipped_unfetched": 0,
         "unfetched_files": [],
+        "unanonymizable_files_skipped": [],
         "participant_count": len(participant_mapping),
         "mapping_file": str(_saved_mapping_file) if _saved_mapping_file else None,
     }
@@ -537,6 +548,10 @@ def export_project(
                     row[id_field] = participant_mapping.get(
                         row[id_field], row[id_field]
                     )
+            # IDs also hide in other cells (e.g. scans.tsv `filename`).
+            for key, value in row.items():
+                if isinstance(value, str) and value:
+                    row[key] = replace_participant_ids_in_text(value, participant_mapping)
         buf = io.StringIO()
         writer = csv.DictWriter(
             buf, fieldnames=header, delimiter="\t", lineterminator="\n"
@@ -544,6 +559,18 @@ def export_project(
         writer.writeheader()
         writer.writerows(rows)
         return buf.getvalue().encode("utf-8")
+
+    def _text_bytes(source_file: Path) -> bytes:
+        """Return a text file with participant IDs replaced (utf-8, else latin-1)."""
+        raw = source_file.read_bytes()
+        try:
+            return replace_participant_ids_in_text(
+                raw.decode("utf-8"), participant_mapping
+            ).encode("utf-8")
+        except UnicodeDecodeError:
+            return replace_participant_ids_in_text(
+                raw.decode("latin-1"), participant_mapping
+            ).encode("latin-1")
 
     def _fmt_size(path: Path) -> str:
         """Return human-readable size of a file, or empty string if unavailable."""
@@ -625,6 +652,9 @@ def export_project(
                 # Keep participants mapping and anonymization map out of share ZIPs.
                 if filename in ("participants_mapping.json", "anonymization_map.json"):
                     continue
+                # Session logs record absolute paths and usernames.
+                if arc_prefix == "code" and tuple(rel_parts[:1]) == ("logs",):
+                    continue
                 _file_subject, _file_session, _cur_modality = _resolve_export_subject_scope(
                     rel_parts + (filename,),
                     subject_name=subject_name,
@@ -660,6 +690,13 @@ def export_project(
                         )
                     continue
 
+                anonymizing = bool(anonymize and participant_mapping)
+                if anonymizing and filename.lower().endswith(_UNANONYMIZABLE_EXTS):
+                    stats["unanonymizable_files_skipped"].append(
+                        str((Path(rel_root) / filename).as_posix())
+                    )
+                    continue
+
                 stats["files_processed"] += 1
 
                 # Build archive path with optional anonymisation
@@ -693,6 +730,9 @@ def export_project(
                         stats["files_anonymized"] += 1
                 elif filename.endswith(".tsv") and anonymize and participant_mapping:
                     zipf.writestr(arcname, _tsv_bytes(resolved_source_file))
+                    stats["files_anonymized"] += 1
+                elif anonymizing and filename.lower().endswith(_TEXT_EXTS):
+                    zipf.writestr(arcname, _text_bytes(resolved_source_file))
                     stats["files_anonymized"] += 1
                 elif (
                     filename.lower().endswith(".nii.gz")
@@ -834,6 +874,12 @@ def export_project(
         _report(100, f"Export complete{size_part}")
         print(f"✓ Export complete: {output_zip}")
         print(f"  Processed {stats['files_processed']} files")
+        if stats["unanonymizable_files_skipped"]:
+            print(
+                f"  [WARN]  Left out {len(stats['unanonymizable_files_skipped'])} file(s) "
+                "that cannot be anonymized (.xlsx/.sav/...); export with anonymization "
+                "off, or convert them to .csv/.tsv first."
+            )
         if anonymize:
             print(f"  Anonymized {stats['files_anonymized']} files/folders")
             if stats["mapping_file"]:

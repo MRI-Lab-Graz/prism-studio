@@ -30,9 +30,9 @@ jobs:
     name: Build and test the wheel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
 
@@ -51,7 +51,7 @@ jobs:
       - name: Build wheel for upload
         run: python scripts/build_validator_wheel.py --out dist
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: prism-validator-wheel
           path: dist/*.whl
@@ -65,12 +65,12 @@ jobs:
     permissions:
       id-token: write # PyPI Trusted Publishing, no API token stored
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: prism-validator-wheel
           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
         with:
           # a re-pushed tag re-runs this job; PyPI never accepts the same file twice
           skip-existing: true

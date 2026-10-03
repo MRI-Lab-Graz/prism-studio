@@ -34,6 +34,7 @@ from src.datalad_execution import (
     run_datalad_unlock,
 )
 from src.recipe_validation import validate_recipe
+from src.safe_excel import to_excel_safe
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.survey_scale_inference import get_survey_item_map
 from src.recipes_formula_engine import (
@@ -1718,7 +1719,7 @@ def _export_recipe_aggregated(
         _unlock_for_overwrite(out_fname, output_prism_root)
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
-                df_for_write.to_excel(writer, sheet_name="Data", index=False)
+                to_excel_safe(df_for_write, writer, sheet_name="Data", index=False)
                 # Codebook sheet
                 cb_rows = []
                 for var in df_for_write.columns:
@@ -1755,18 +1756,18 @@ def _export_recipe_aggregated(
                             "score_details": det_str,
                         }
                     )
-                pd.DataFrame(cb_rows).to_excel(
-                    writer, sheet_name="Codebook", index=False
+                to_excel_safe(
+                    pd.DataFrame(cb_rows), writer, sheet_name="Codebook", index=False
                 )
                 if survey_meta:
                     s_rows = [
                         {"property": k, "value": str(v)} for k, v in survey_meta.items()
                     ]
-                    pd.DataFrame(s_rows).to_excel(
-                        writer, sheet_name="Survey Info", index=False
+                    to_excel_safe(
+                        pd.DataFrame(s_rows), writer, sheet_name="Survey Info", index=False
                     )
         except Exception:
-            df_for_write.to_excel(out_fname, index=False)
+            to_excel_safe(df_for_write, out_fname, index=False)
     elif out_format == "sav":
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
         codebook_json_path = out_root / f"{prefix}{recipe_id}_codebook.json"
@@ -2695,7 +2696,7 @@ def compute_survey_recipes(
                 missing_numeric_value=missing_numeric_value,
             )
             _unlock_for_overwrite(out_path, output_prism_root)
-            combined_for_write.to_excel(out_path, index=False)
+            to_excel_safe(combined_for_write, out_path, index=False)
         elif out_format == "sav":
             _unlock_for_overwrite(out_path, output_prism_root)
             try:
@@ -3346,8 +3347,8 @@ def anonymize_recipe_output(
             _unlock_for_overwrite(file_path, dataset_path)
             with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
                 for sheet_name in sheet_names:
-                    sheet_frames[sheet_name].to_excel(
-                        writer, sheet_name=sheet_name, index=False
+                    to_excel_safe(
+                        sheet_frames[sheet_name], writer, sheet_name=sheet_name, index=False
                     )
 
             if file_had_participant_ids:
@@ -3375,6 +3376,18 @@ def anonymize_recipe_output(
     return anonymized_count, mapping_file_path
 
 
+def _r_str(value: object) -> str:
+    """R single-quoted string literal for `value` (escapes backslash, quote, newlines)."""
+    text = (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
+    return f"'{text}'"
+
+
 def _write_jamovi_r_helper(
     path: Path,
     data_filename: str,
@@ -3396,7 +3409,7 @@ def _write_jamovi_r_helper(
         "# -------------------------------------------------------------------------",
         "",
         "# 1. Load the data",
-        f"df <- read.csv('{data_filename}', check.names=FALSE, stringsAsFactors=FALSE)",
+        f"df <- read.csv({_r_str(data_filename)}, check.names=FALSE, stringsAsFactors=FALSE)",
         "# df <- data  # Uncomment this to use the Jamovi spreadsheet directly",
         "",
         "# 2. Apply Value Labels (Factors)",
@@ -3409,15 +3422,13 @@ def _write_jamovi_r_helper(
 
         # Prepare levels: if they look like numbers, we'll try to keep them flexible
         # but in R c('0','1') is safest for CSV-imported data.
-        r_levels = ", ".join([f"'{k}'" for k in levels.keys()])
+        r_levels = ", ".join(_r_str(k) for k in levels.keys())
+        r_labels = ", ".join(_r_str(v) for v in levels.values())
+        r_var = _r_str(var)
 
-        # Avoid backslashes inside f-string expressions (Python < 3.12 compatibility)
-        processed_labels = [str(v).replace("'", "\\'") for v in levels.values()]
-        r_labels = ", ".join([f"'{v}'" for v in processed_labels])
-
-        lines.append(f"if ('{var}' %in% colnames(df)) {{")
+        lines.append(f"if ({r_var} %in% colnames(df)) {{")
         lines.append(
-            f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))"
+            f"  df[[{r_var}]] <- factor(df[[{r_var}]], levels=c({r_levels}), labels=c({r_labels}))"
         )
         lines.append("}")
 
@@ -3425,8 +3436,9 @@ def _write_jamovi_r_helper(
     lines.append("# 3. Variable Descriptions (Reference)")
     for var, label in sorted(variable_labels.items()):
         if label:
-            clean_label = label.replace("\n", " ").strip()
-            lines.append(f"# {var}: {clean_label}")
+            # split() collapses every line-break char (\r,  , ...), so a label
+            # can never end the '#' comment and start a new R statement.
+            lines.append(f"# {' '.join(str(var).split())}: {' '.join(label.split())}")
 
     lines.append("")
     lines.append("# Display structure")

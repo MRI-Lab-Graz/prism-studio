@@ -326,14 +326,20 @@ echo_info "'uv' is installed."
 
 # 2. Check for Deno (Required for BIDS validation)
 if ! command -v deno &> /dev/null; then
-    echo_info "Deno not found (required for BIDS validation). Installing..."
-    curl -fsSL https://deno.land/install.sh | sh
-    
-    # Add to path for current session
-    export DENO_INSTALL="$HOME/.deno"
-    export PATH="$DENO_INSTALL/bin:$PATH"
-    
-    echo_success "Deno installed."
+    echo_info "Deno not found (required for BIDS validation)."
+    # Downloads and runs Deno's own installer script: ask first, never silently.
+    read -r -p "Install Deno now using its official installer (https://deno.land/install.sh)? [y/N] " install_deno || install_deno=""
+    if [[ "$install_deno" =~ ^[Yy]$ ]]; then
+        curl -fsSL https://deno.land/install.sh | sh
+
+        # Add to path for current session
+        export DENO_INSTALL="$HOME/.deno"
+        export PATH="$DENO_INSTALL/bin:$PATH"
+
+        echo_success "Deno installed."
+    else
+        echo_info "Skipped. BIDS validation will not work until Deno is installed: https://deno.land"
+    fi
 else
     echo_info "Deno is already installed."
 fi

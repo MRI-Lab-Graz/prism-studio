@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
 
+from src.ssh_safety import ssh_target_ok
+
 _DOCS = "https://handbook.datalad.org/en/latest/intro/installation.html"
 _GIT_WINDOWS = "https://git-scm.com/download/win"
 
@@ -110,13 +112,15 @@ def _check_server(url: str, ssh_path: Optional[str], pubkey: str, run: Run) -> d
         return _result("server", False, "No SSH client.", _tool_fix("ssh"))
     user, host, port = target
     login = f"{user}@{host}" if user else host
+    if not ssh_target_ok(login):
+        return _result("server", False, "Invalid server host.", "Check the server URL.")
     # accept-new trusts an unseen host on first contact (same as answering "yes" to
     # ssh's prompt) but still refuses a *changed* host key.
     cmd = [ssh_path, "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
            "-o", "StrictHostKeyChecking=accept-new"]
     if port:
         cmd += ["-p", str(port)]
-    code, output = run(cmd + [login, "true"])
+    code, output = run(cmd + ["--", login, "true"])
     if code == 0:
         return _result("server", True, f"Logged in to {login} with your SSH key.")
     kind, message = classify_ssh_error(output)

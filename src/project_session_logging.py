@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 import threading
 
+from src.git_exclude import ensure_git_excluded
+
 
 def _now_local() -> datetime:
     """Return the current local time with timezone information."""
@@ -78,6 +80,8 @@ class ProjectSessionLogger:
             log_path = self._build_log_path(project_root, started_at)
             try:
                 log_path.parent.mkdir(parents=True, exist_ok=True)
+                # Logs hold absolute paths and usernames: keep them out of git/pushes.
+                ensure_git_excluded(project_root, "code/logs/")
                 with log_path.open("w", encoding="utf-8") as handle:
                     handle.write("# PRISM project session log\n")
                     handle.write("# format: date<TAB>time<TAB>event<TAB>details\n")

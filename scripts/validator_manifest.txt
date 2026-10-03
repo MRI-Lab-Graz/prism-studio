@@ -50,6 +50,8 @@ src/recipes_export_helpers.py
 src/recipes_formula_engine.py
 src/recipes_path_utils.py
 src/recipes_surveys.py
+src/safe_excel.py
 src/session_map.py
+src/ssh_safety.py
 src/subject_id_matching.py
 src/validation_library_resolution.py

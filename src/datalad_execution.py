@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 import shlex
 import shutil
 import subprocess
@@ -308,7 +309,29 @@ def run_datalad_unlock(
     return result
 
 
-def run_datalad_run(
+def run_datalad_run(project_root: Path, *, command: Sequence[str], **kwargs: Any) -> dict[str, Any]:
+    """`datalad run`, with `python -c <script>` turned into `python <script file>`.
+
+    DataLad joins the command into one shell command line (cmd.exe on Windows,
+    where & | % ^ are live) and callers embed project paths and filter values in
+    the -c script. In a file those values never touch a shell. The file lives in
+    `.git/` (untracked, so the run's change set stays clean) and is removed after.
+    """
+    root = Path(project_root)
+    parts = [str(part) for part in command]
+    script_file = None
+    if len(parts) >= 3 and parts[1] == "-c" and (root / ".git").is_dir():
+        script_file = root / ".git" / f"prism_run_{secrets.token_hex(8)}.py"
+        script_file.write_text(parts[2], encoding="utf-8")
+        parts = [parts[0], script_file.relative_to(root).as_posix(), *parts[3:]]
+    try:
+        return _run_datalad_run(root, command=parts, **kwargs)
+    finally:
+        if script_file is not None:
+            script_file.unlink(missing_ok=True)
+
+
+def _run_datalad_run(
     project_root: Path,
     *,
     message: str,
@@ -669,6 +692,9 @@ def run_datalad_create_sibling_plain(
     if not url:
         result["message"] = "No remote sibling URL was provided."
         return result
+    if url.startswith("-"):
+        result["message"] = "Refusing a URL that starts with '-'."
+        return result
 
     name = str(sibling_name or "").strip() or "server"
     command = [
@@ -748,6 +774,9 @@ def run_datalad_create_sibling_ria(
     url = str(ria_url or "").strip()
     if not url:
         result["message"] = "No RIA store URL was provided."
+        return result
+    if url.startswith("-"):
+        result["message"] = "Refusing a URL that starts with '-'."
         return result
 
     name = str(sibling_name or "").strip() or "ria-store"

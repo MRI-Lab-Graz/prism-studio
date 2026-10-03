@@ -13,6 +13,11 @@
         </div>
         <div class="collapse" id="pushServerSection">
             <div class="card-body">
+                <div class="alert alert-warning mb-4">
+                    <i class="fas fa-user-shield me-2"></i>
+                    Pushing includes <code>sourcedata/</code> (raw data, possibly with names or emails).
+                    Use the <strong>internal lab server only</strong> &mdash; never a public host such as GitHub.
+                </div>
                 <div class="btn-group w-100 mb-4" role="group" aria-label="Push destination">
                     <input type="radio" class="btn-check" name="pushServerTarget" id="pushTargetDatalad" autocomplete="off" checked>
                     <label class="btn btn-outline-info" for="pushTargetDatalad">

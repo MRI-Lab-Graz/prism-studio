@@ -265,12 +265,16 @@ Examples:
     parser.add_argument(
         "--list-plugins",
         action="store_true",
-        help="List loaded plugins for the dataset",
+        help="List the dataset's plugins (needs --plugins; runs the dataset's Python code)",
     )
     parser.add_argument(
-        "--no-plugins",
+        "--plugins",
         action="store_true",
-        help="Disable plugin loading",
+        help=(
+            "Load validator plugins from the dataset (<dataset>/validators/*.py and "
+            "'plugins' in .prismrc.json). They are arbitrary Python code: only use on "
+            "datasets you trust. Off by default."
+        ),
     )
     parser.add_argument(
         "--validate-templates",
@@ -430,6 +434,8 @@ Examples:
     if args.list_plugins:
         if not args.dataset:
             parser.error("Dataset path required with --list-plugins")
+        if not args.plugins:
+            parser.error("--list-plugins runs the dataset's plugin code; add --plugins to confirm")
 
         config = load_config(args.dataset)
         manager = PluginManager(args.dataset)
@@ -495,9 +501,9 @@ Examples:
     if config_path and not machine_output:
         print(f"📄 Using config: {os.path.basename(config_path)}")
 
-    # Load plugins (unless disabled)
+    # Plugins are arbitrary code shipped inside the dataset: opt-in only.
     plugin_manager = None
-    if not args.no_plugins:
+    if args.plugins:
         plugin_manager = PluginManager(args.dataset)
         plugin_manager.load_from_config(config.__dict__)
         plugin_manager.discover_local_plugins()

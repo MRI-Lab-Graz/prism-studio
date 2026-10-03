@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from src.ssh_safety import ssh_target_ok
+
 RSYNC_INSTALL_HINT = "Install rsync via your OS package manager (e.g. `brew install rsync`, `apt install rsync`)."
 
 _PROGRESS_PERCENT_RE = re.compile(r"(\d{1,3})%")
@@ -34,6 +36,17 @@ def split_remote_target(target: str) -> tuple[str, str]:
     return host_part, remote_path
 
 
+def _unsafe_target(target: str) -> bool:
+    """True for a target rsync/ssh would read as an option (`-oProxyCommand=...`)."""
+    target = str(target or "")
+    if target.startswith("-"):
+        return True
+    return is_remote_target(target) and not ssh_target_ok(split_remote_target(target)[0])
+
+
+_UNSAFE_MESSAGE = "Refusing remote target that starts with '-' or contains whitespace."
+
+
 def ensure_remote_directory(target: str, *, timeout_seconds: int = 30) -> dict[str, Any]:
     """Best-effort `ssh host mkdir -p <path>` so rsync has somewhere to land.
 
@@ -43,6 +56,11 @@ def ensure_remote_directory(target: str, *, timeout_seconds: int = 30) -> dict[s
     result: dict[str, Any] = {"attempted": False, "success": True, "message": ""}
     if not is_remote_target(target):
         Path(target).mkdir(parents=True, exist_ok=True)
+        return result
+
+    if _unsafe_target(target):
+        result["success"] = False
+        result["message"] = _UNSAFE_MESSAGE
         return result
 
     ssh_executable = str(shutil.which("ssh") or "").strip()
@@ -55,7 +73,7 @@ def ensure_remote_directory(target: str, *, timeout_seconds: int = 30) -> dict[s
     if not remote_path:
         return result
 
-    command = [ssh_executable, host, "mkdir", "-p", remote_path]
+    command = [ssh_executable, "--", host, f"mkdir -p -- {shlex.quote(remote_path)}"]
     result["attempted"] = True
     try:
         process = subprocess.run(
@@ -118,6 +136,9 @@ def run_rsync_push(
     if not target:
         result["message"] = "No remote target was provided."
         return result
+    if _unsafe_target(target):
+        result["message"] = _UNSAFE_MESSAGE
+        return result
 
     def _report(percent: int, message: str) -> None:
         if callable(progress_callback):
@@ -137,7 +158,7 @@ def run_rsync_push(
     command = [resolved, "-a", "--progress"]
     for pattern in exclude_patterns or []:
         command.extend(["--exclude", pattern])
-    command.extend([source, target.rstrip("/") + "/"])
+    command.extend(["--", source, target.rstrip("/") + "/"])
 
     result["attempted"] = True
     result["command"] = shlex.join(command)
@@ -233,6 +254,9 @@ def run_rsync_verify(
     if not target:
         result["message"] = "No remote target was provided."
         return result
+    if _unsafe_target(target):
+        result["message"] = _UNSAFE_MESSAGE
+        return result
 
     source = str(root).rstrip("/") + "/"
     # `-c` (checksum) and `-n` (dry-run) as short flags for compatibility with
@@ -240,7 +264,7 @@ def run_rsync_verify(
     command = [resolved, "-acn", "--itemize-changes"]
     for pattern in exclude_patterns or []:
         command.extend(["--exclude", pattern])
-    command.extend([source, target.rstrip("/") + "/"])
+    command.extend(["--", source, target.rstrip("/") + "/"])
 
     try:
         process = subprocess.run(

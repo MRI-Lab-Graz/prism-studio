@@ -45,6 +45,12 @@ def test_formula_engine_blocks_code_execution_escapes(expression: str) -> None:
         "2**99999999",
         "99999**999999999",
         "(-1)**99999999999",
+        # each exponent is small, but the *base* grows without bound
+        "((9**999)**999)**999",
+        "(((9**999)**999)**999)**999",
+        # string repetition: 10 GB of memory from a tiny expression
+        "'a' * 10**10",
+        "10**10 * 'a'",
     ],
 )
 def test_formula_engine_rejects_oversized_exponents_quickly(expression: str) -> None:

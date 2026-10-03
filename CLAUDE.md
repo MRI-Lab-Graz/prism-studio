@@ -193,6 +193,12 @@ preserve this invariant. If you ever find a text-format file that ended up as
 an annex symlink, that's a bug to flag/fix, not expected behavior — for any
 extension, anywhere in the project, including `sourcedata/`.
 
+Consequence to keep in mind: because `sourcedata/` (raw, possibly identifiable
+participant data) is plain git, it travels with every push and stays in history.
+It is for the **internal lab server only**; `src/share_publish.publish_to_server`
+refuses http(s)/public-host targets while `sourcedata/` is tracked. Any new push
+or publish path must go through that guard or repeat it.
+
 ## Session IDs are free-form strings — never normalize them
 
 BIDS session labels (`ses-<label>`) are arbitrary strings, not numbers.

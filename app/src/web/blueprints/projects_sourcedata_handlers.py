@@ -165,7 +165,7 @@ def handle_get_sourcedata_file(get_current_project):
     file_path = (project_path / "sourcedata" / filename).resolve()
 
     sourcedata_dir = (project_path / "sourcedata").resolve()
-    if not str(file_path).startswith(str(sourcedata_dir)):
+    if not file_path.is_relative_to(sourcedata_dir):
         return jsonify({"error": "Invalid filename"}), 400
 
     if not file_path.exists() or not file_path.is_file():

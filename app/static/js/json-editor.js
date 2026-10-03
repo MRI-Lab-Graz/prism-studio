@@ -541,7 +541,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show`;
         alert.role = 'alert';
-        alert.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'} me-2"></i>${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        // message may echo file content (e.g. a JSON parse error): text only, never HTML.
+        alert.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'} me-2"></i><span class="alert-message"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+        alert.querySelector('.alert-message').textContent = message;
         alertContainer.appendChild(alert);
         if (type !== 'danger') setTimeout(() => { if (alert.parentNode) alert.remove(); }, 5000);
     }

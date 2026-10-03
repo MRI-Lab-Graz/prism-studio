@@ -8,6 +8,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { buildVariantDefinitionBadges, buildVersionOptions } from './survey-version-markup.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
 import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
 import { createSurveyWorkflowConvertController } from './survey-workflow-convert.js';
@@ -874,27 +875,6 @@ export function initSurveyConvert(elements) {
         updateVersionWizardActionState();
     }
 
-    function buildVariantDefinitionBadges(variantDefinitions, selectedVersion) {
-        if (!Array.isArray(variantDefinitions) || variantDefinitions.length === 0) {
-            return '';
-        }
-
-        return variantDefinitions
-            .map((entry) => {
-                if (!entry || typeof entry !== 'object') return '';
-                const variantId = String(entry.VariantID || '').trim();
-                if (!variantId) return '';
-                const itemCount = entry.ItemCount ? `, ${entry.ItemCount} items` : '';
-                const scaleType = entry.ScaleType ? `, ${entry.ScaleType}` : '';
-                const badgeClass = variantId === selectedVersion
-                    ? 'survey-version-variant-badge survey-version-variant-badge-active'
-                    : 'survey-version-variant-badge';
-                return `<span class="badge ${badgeClass}">${variantId}${itemCount}${scaleType}</span>`;
-            })
-            .filter(Boolean)
-            .join(' ');
-    }
-
     function formatVersionWizardRunLabel(run) {
         const normalizedRun = normalizeVersionSelectionRun(run);
         if (!normalizedRun) return 'Single run';
@@ -998,7 +978,7 @@ export function initSurveyConvert(elements) {
                     <div class="survey-version-group-header">
                         <div>
                             <div class="survey-version-group-label">Questionnaire</div>
-                            <div class="survey-version-group-title">${task}</div>
+                            <div class="survey-version-group-title">${escapeHtml(task)}</div>
                         </div>
                         <div class="survey-version-group-meta">
                             <span class="badge survey-version-meta-badge">${contexts.length} context${contexts.length === 1 ? '' : 's'}</span>
@@ -1013,7 +993,7 @@ export function initSurveyConvert(elements) {
                         <div class="survey-version-bulk-row">
                             <label class="form-label small" for="${bulkSelectId}">All sessions/runs</label>
                             <select class="form-select form-select-sm survey-version-bulk-select" id="${bulkSelectId}">
-                                ${versions.map((version) => `<option value="${version}"${version === sharedSelection ? ' selected' : ''}>${version}</option>`).join('')}
+                                ${buildVersionOptions(versions, sharedSelection)}
                             </select>
                         </div>
                     </div>
@@ -1037,15 +1017,15 @@ export function initSurveyConvert(elements) {
                     <div class="row g-2 align-items-center">
                         <div class="col-12 col-lg-6">
                             <div class="small text-uppercase text-muted fw-semibold mb-1">Step ${timelineStep}</div>
-                            <div class="survey-version-context-line" aria-label="${contextSessionLabel}, ${runLabel}">
-                                <span class="survey-version-context-chip survey-version-context-chip-session">${contextSessionLabel}</span>
-                                <span class="survey-version-context-chip survey-version-context-chip-run">${runLabel}</span>
+                            <div class="survey-version-context-line" aria-label="${escapeHtml(contextSessionLabel)}, ${escapeHtml(runLabel)}">
+                                <span class="survey-version-context-chip survey-version-context-chip-session">${escapeHtml(contextSessionLabel)}</span>
+                                <span class="survey-version-context-chip survey-version-context-chip-run">${escapeHtml(runLabel)}</span>
                             </div>
                         </div>
                         <div class="col-12 col-lg-6">
-                            <label class="form-label small mb-1" for="${selectorId}">Version</label>
-                            <select class="form-select form-select-sm survey-version-select" id="${selectorId}" data-task="${task}" data-session="${context.session || ''}" data-run="${context.run === null ? '' : context.run}">
-                                ${versions.map((version) => `<option value="${version}"${version === preferredSelection ? ' selected' : ''}>${version}</option>`).join('')}
+                            <label class="form-label small mb-1" for="${escapeHtml(selectorId)}">Version</label>
+                            <select class="form-select form-select-sm survey-version-select" id="${escapeHtml(selectorId)}" data-task="${escapeHtml(task)}" data-session="${escapeHtml(context.session || '')}" data-run="${escapeHtml(context.run === null ? '' : context.run)}">
+                                ${buildVersionOptions(versions, preferredSelection)}
                             </select>
                             <div class="small mt-2 survey-version-variant-badges">${buildVariantDefinitionBadges(info.variant_definitions, preferredSelection)}</div>
                         </div>

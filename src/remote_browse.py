@@ -16,6 +16,8 @@ import shutil
 import subprocess
 from typing import Any
 
+from src.ssh_safety import ssh_target_ok
+
 
 def resolve_ssh_executable() -> str:
     return str(shutil.which("ssh") or "").strip()
@@ -51,6 +53,9 @@ def list_remote_directory(
     if not host:
         result["message"] = "No host was provided."
         return result
+    if not ssh_target_ok(host):
+        result["message"] = "Invalid host."
+        return result
 
     target_path = str(path or "").strip() or "."
     # `cd` both validates the path exists/is accessible and resolves it to
@@ -58,7 +63,7 @@ def list_remote_directory(
     # trailing "/" on directories (POSIX-specified, so this works the same
     # on GNU and BSD/macOS remotes).
     remote_command = f"cd -- {shlex.quote(target_path)} && pwd && ls -1p"
-    command = [resolved, host, remote_command]
+    command = [resolved, "--", host, remote_command]
 
     try:
         process = subprocess.run(
@@ -122,6 +127,9 @@ def create_remote_directory(
     if not host:
         result["message"] = "No host was provided."
         return result
+    if not ssh_target_ok(host):
+        result["message"] = "Invalid host."
+        return result
 
     target_path = str(path or "").strip()
     if not target_path:
@@ -131,7 +139,7 @@ def create_remote_directory(
     remote_command = (
         f"mkdir -p -- {shlex.quote(target_path)} && cd -- {shlex.quote(target_path)} && pwd"
     )
-    command = [resolved, host, remote_command]
+    command = [resolved, "--", host, remote_command]
 
     try:
         process = subprocess.run(

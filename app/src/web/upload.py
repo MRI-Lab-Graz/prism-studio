@@ -5,6 +5,7 @@ Handles folder uploads, ZIP extraction, and placeholder creation.
 
 import os
 import json
+import shutil
 import zipfile
 from datetime import datetime
 from typing import List, Optional, Tuple, Set, Dict, Any
@@ -361,6 +362,23 @@ def process_folder_upload(
     return find_dataset_root(dataset_root)
 
 
+MAX_ZIP_UNCOMPRESSED_BYTES = 2 * 1024**3  # what we actually extract; big data files become placeholders
+
+
+def _extracted_size(zip_ref: zipfile.ZipFile) -> int:
+    """Declared uncompressed bytes of the entries process_zip_upload extracts
+    (zipfile never reads past a member's declared size)."""
+    total = 0
+    for info in zip_ref.infolist():
+        if info.is_dir():
+            continue
+        name = info.filename.lower()
+        ext = ".nii.gz" if name.endswith(".nii.gz") else os.path.splitext(name)[1]
+        if ext not in SKIP_EXTENSIONS:
+            total += info.file_size
+    return total
+
+
 def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     """Process uploaded ZIP file.
 
@@ -390,6 +408,8 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     placeholder_full_paths: List[str] = []
 
     with zipfile.ZipFile(file_path, "r") as zip_ref:
+        if _extracted_size(zip_ref) > MAX_ZIP_UNCOMPRESSED_BYTES:
+            raise ValueError("ZIP is too large when extracted (possible zip bomb).")
         all_files = zip_ref.namelist()
         if not all_files:
             print(f"⚠️  [UPLOAD] ZIP file {filename} is empty!")
@@ -418,7 +438,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 # Extract safely: we already verified the target is in temp_dir
                 os.makedirs(os.path.dirname(safe_target), exist_ok=True)
                 with zip_ref.open(zip_info) as src, open(safe_target, "wb") as dst:
-                    dst.write(src.read())
+                    shutil.copyfileobj(src, dst)
                 processed_count += 1
 
                 manifest["uploaded_files"].append(
@@ -448,7 +468,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 # Unknown extension — extract safely
                 os.makedirs(os.path.dirname(safe_target), exist_ok=True)
                 with zip_ref.open(zip_info) as src, open(safe_target, "wb") as dst:
-                    dst.write(src.read())
+                    shutil.copyfileobj(src, dst)
                 processed_count += 1
 
                 manifest["uploaded_files"].append(
