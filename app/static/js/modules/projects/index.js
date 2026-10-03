@@ -35,6 +35,7 @@ import * as validation from './validation.js';
 import * as core from './core.js';
 import * as exportModule from './export.js';
 import * as dataladServerModule from './datalad_server.js';
+import { initDataladSetupCheck } from './datalad_setup_check.js';
 import * as rsyncServerModule from './rsync_server.js';
 import * as pushServerToggleModule from './push_server_toggle.js';
 import * as metadata from './metadata.js?v=20260515-4';
@@ -85,6 +86,7 @@ export const {
 export function initializeProjectsPage() {
     initProjectsPage();
     initProjectValidation();
+    initDataladSetupCheck();
 }
 
 // Share & Archive is its own page (export, DataLad server push, rsync

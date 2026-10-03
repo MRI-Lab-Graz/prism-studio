@@ -76,7 +76,6 @@ def handle_survey_customizer_export(data, project_path):
     base_language = (
         survey_info.get("base_language") or data.get("base_language") or language
     )
-    ls_version = export_options.get("ls_version", "3")
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
     ls_settings = data.get("lsSettings") or {}
@@ -137,7 +136,6 @@ def handle_survey_customizer_export(data, project_path):
                     language=language,
                     languages=languages,
                     base_language=base_language,
-                    ls_version=ls_version,
                     matrix_mode=matrix_mode,
                     matrix_global=matrix_global,
                     survey_title=survey_title,
@@ -210,19 +208,6 @@ def get_survey_customizer_formats_payload():
                 "extension": ".lss",
                 "description": "LimeSurvey Survey Structure file",
                 "options": [
-                    {
-                        "id": "ls_version",
-                        "name": "LimeSurvey Version",
-                        "type": "select",
-                        "default": "6",
-                        "choices": [
-                            {
-                                "value": "6",
-                                "label": "LimeSurvey 5.x / 6.x (Modern)",
-                            },
-                            {"value": "3", "label": "LimeSurvey 3.x (Legacy)"},
-                        ],
-                    },
                     {
                         "id": "matrix",
                         "name": "Group as matrices",

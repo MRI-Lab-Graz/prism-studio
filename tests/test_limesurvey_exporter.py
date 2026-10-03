@@ -87,7 +87,6 @@ def test_generate_lss_from_customization_builds_xml_with_defusedxml_installed(
         language="en",
         languages=["en"],
         base_language="en",
-        ls_version="6",
         matrix_mode=False,
         matrix_global=False,
         survey_title="Customized Survey",
@@ -122,7 +121,7 @@ def test_generate_lss_single_question_respects_mandatory_false(tmp_path):
     )
 
     xml_text = generate_lss(
-        [str(template_path)], language="en", languages=["en"], ls_version="6"
+        [str(template_path)], language="en", languages=["en"]
     )
 
     mandatory = _mandatory_by_title(xml_text)
@@ -143,7 +142,7 @@ def test_generate_lss_single_question_defaults_mandatory_true(tmp_path):
     )
 
     xml_text = generate_lss(
-        [str(template_path)], language="en", languages=["en"], ls_version="6"
+        [str(template_path)], language="en", languages=["en"]
     )
 
     mandatory = _mandatory_by_title(xml_text)
@@ -180,7 +179,6 @@ def test_generate_lss_matrix_question_mandatory_reflects_any_true(tmp_path):
         [{"path": str(template_path), "matrix": True, "matrix_global": True}],
         language="en",
         languages=["en"],
-        ls_version="6",
     )
 
     mandatory = _mandatory_by_title(xml_text)
@@ -214,7 +212,6 @@ def test_generate_lss_matrix_question_mandatory_false_when_all_false(tmp_path):
         [{"path": str(template_path), "matrix": True, "matrix_global": True}],
         language="en",
         languages=["en"],
-        ls_version="6",
     )
 
     mandatory = _mandatory_by_title(xml_text)
@@ -245,7 +242,7 @@ def test_generate_lss_default_groups_same_levels_questions_into_matrix(tmp_path)
     )
 
     xml_text = generate_lss(
-        [str(template_path)], language="en", languages=["en"], ls_version="6"
+        [str(template_path)], language="en", languages=["en"]
     )
 
     root = ET.fromstring(xml_text)
@@ -275,7 +272,6 @@ def test_generate_lss_matrix_mode_false_keeps_questions_standalone(tmp_path):
         [str(template_path)],
         language="en",
         languages=["en"],
-        ls_version="6",
         matrix_mode=False,
     )
 

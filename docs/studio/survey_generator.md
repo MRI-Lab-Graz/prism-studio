@@ -12,8 +12,8 @@ Export.")
 ## Step 1 — Toolbar
 
 - **Target Tool** — only `LimeSurvey` is currently available.
-- **Base Language**, **Export Languages** (checkboxes), **LS Version** (5.x/6.x
-  default, or 3.x/4.x).
+- **Base Language**, **Export Languages** (checkboxes). LimeSurvey exports target
+  5.x/6.x.
 
 ## Step 2 — Select templates
 

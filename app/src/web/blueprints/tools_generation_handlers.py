@@ -58,7 +58,24 @@ def handle_generate_lss_endpoint():
         if not file_paths:
             return jsonify({"error": "No files selected"}), 400
 
-        valid_files = [file_path for file_path in file_paths if os.path.exists(file_path)]
+        # Entries carry the ticked questions (include), matrix and run settings;
+        # generate_lss honours them, so hand it the whole entry, not just the path.
+        entries = {
+            e["path"].strip(): e for e in data.get("files", []) if isinstance(e, dict) and isinstance(e.get("path"), str)
+        }
+        # The toolbar's matrix switch is a master switch: off means off for every file.
+        master_matrix = bool(data.get("matrix", True))
+        valid_files = [
+            {
+                **entries[p],
+                "path": p,
+                "matrix": bool(entries[p].get("matrix", True)) and master_matrix,
+            }
+            if p in entries
+            else p
+            for p in file_paths
+            if os.path.exists(p)
+        ]
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
 
@@ -68,7 +85,6 @@ def handle_generate_lss_endpoint():
         language = data.get("language", "en")
         languages = data.get("languages") or [language]
         base_language = data.get("base_language") or language
-        ls_version = data.get("ls_version", "3")
         survey_title = data.get("survey_title", "")
         matrix_mode = bool(data.get("matrix", True))
         matrix_global = bool(data.get("matrix_global", True))
@@ -79,7 +95,6 @@ def handle_generate_lss_endpoint():
                 language=language,
                 languages=languages,
                 base_language=base_language,
-                ls_version=ls_version,
                 matrix_mode=matrix_mode,
                 matrix_global=matrix_global,
             )
@@ -140,10 +155,14 @@ def handle_generate_pavlovia_endpoint():
 
         experiment_name = data.get("experiment_name") or None
         language = data.get("base_language") or data.get("language")
+        first = data["files"][0] if isinstance(data.get("files"), list) else None
+        include = first.get("include") if isinstance(first, dict) else None
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_dir = Path(tmp_dir) / "export"
-            export_to_pavlovia(json_path, output_dir, experiment_name, language=language)
+            export_to_pavlovia(
+                json_path, output_dir, experiment_name, language=language, include=include
+            )
 
             zip_fd, zip_path = tempfile.mkstemp(suffix=".zip")
             os.close(zip_fd)

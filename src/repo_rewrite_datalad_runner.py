@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from src.bids_entity_parser import BidsEntityParser
 from src.bids_entity_rewriter import BidsEntityRewriter
+from src.datalad_doctor import install_hint
 from src.datalad_execution import (
     is_datalad_dataset,
     paths_have_uncommitted_changes,
@@ -162,7 +163,7 @@ def _apply_mutation_locally_with_datalad_save(
     if not datalad_executable:
         raise ValueError(
             "This project is tracked by DataLad and mutation changes require "
-            "DataLad. Install with: uv tool install datalad git-annex."
+            f"DataLad. {install_hint()}."
         )
 
     get_result: dict[str, Any] = {"attempted": False, "success": True, "message": "", "command": ""}

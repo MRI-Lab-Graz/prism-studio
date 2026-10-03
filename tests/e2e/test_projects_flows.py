@@ -211,3 +211,15 @@ def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
     saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
     assert saved["StudyDesign"]["Timepoints"] == "multiple"
+
+
+def test_datalad_setup_check_works_before_any_project_exists(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-create")
+
+    bare_page.click("#createDataladCheckBtn")
+
+    result = bare_page.locator("#createDataladCheckResult")
+    expect(result).to_contain_text("git-annex")
+    expect(result).to_contain_text("ssh-key")
+    expect(bare_page.locator("#createDataladCheckBtn")).to_be_enabled()

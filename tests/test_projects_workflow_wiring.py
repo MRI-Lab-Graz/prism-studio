@@ -223,6 +223,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const DATALAD_PREFERENCES_NAMESPACE = 'datalad';", content)
         self.assertIn("const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
         self.assertIn("const DATALAD_INSTALL_COMMAND = 'uv tool install datalad git-annex';", content)
+        # The backend knows the platform; the JS only shows what the status says.
+        self.assertIn("dataladState.install_command", content)
+        self.assertIn("Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}", content)
         self.assertIn("Enable DataLad conversion/tracking for this project?", content)
         self.assertIn("Are you absolutely sure that you want a DataLad conversion/tracking setup for this project?", content)
         self.assertIn("Suggested install command", content)
@@ -328,11 +331,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         share_template_content = SHARE_PAGE_TEMPLATE.read_text(encoding="utf-8")
         page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
 
-        # initializeProjectsPage() no longer touches the archival modules.
+        # initializeProjectsPage() no longer touches the archival modules (only the
+        # DataLad setup check, which also serves the create form).
         self.assertIn(
             "export function initializeProjectsPage() {\n"
             "    initProjectsPage();\n"
             "    initProjectValidation();\n"
+            "    initDataladSetupCheck();\n"
             "}",
             index_content,
         )

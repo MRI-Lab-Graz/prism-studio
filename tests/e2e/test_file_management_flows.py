@@ -28,13 +28,28 @@ def project_files(project):
     )
 
 
+_PAGE = {"current": None}
+
+
+@pytest.fixture(autouse=True)
+def _remember_page(request):
+    """Lets eventually() wait through the page, so Playwright keeps answering dialogs."""
+    _PAGE["current"] = request.getfixturevalue("app_page") if "app_page" in request.fixturenames else None
+    yield
+    _PAGE["current"] = None
+
+
 def eventually(condition, timeout=30.0):
-    """Poll the disk: the page disables its button at click time, long before the work is done."""
+    """Poll the disk: the page disables its button at click time, long before the work is done.
+
+    Waits via page.wait_for_timeout when a page exists: time.sleep would block Playwright's
+    event loop, and a confirm() that opens after the click would never be answered."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if condition():
             return True
-        time.sleep(0.2)
+        page = _PAGE["current"]
+        page.wait_for_timeout(200) if page is not None else time.sleep(0.2)
     return False
 
 
@@ -127,10 +142,18 @@ def add_second_task(project, ids=("1291003", "1291004")):
 
 
 def open_delete_tab(page, studio_url, answer="accept"):
-    page.on("dialog", lambda dialog: dialog.accept() if answer == "accept" else dialog.dismiss())
+    """Open the Delete tab; returns the list that collects every confirmation message."""
+    messages = []
+
+    def respond(dialog):
+        messages.append(dialog.message)
+        dialog.accept() if answer == "accept" else dialog.dismiss()
+
+    page.on("dialog", respond)
     page.goto(f"{studio_url}/file-management")
     page.click("#fm-delete-tab")
     expect(page.locator("#fileDeleteSubj_sub-1291003")).to_be_attached(timeout=30000)
+    return messages
 
 
 def tick_subject(page, subject):
@@ -350,3 +373,144 @@ def test_wide_to_long_keeps_typed_session_labels_exactly(app_page, studio_url, p
     assert eventually(out.exists)
     sessions = [line.split(",")[-1] for line in out.read_text().splitlines()[1:]]
     assert sessions == ["1", "1", "01", "01"]
+
+
+def test_wide_to_long_refuses_duplicate_ids_and_writes_nothing(app_page, studio_url, project, tmp_path):
+    app_page.allowed_http[400] = "/api/"  # the refusal is the point of this test
+    open_wide_to_long(
+        app_page, studio_url, tmp_path,
+        content="participant_id,T1_ADS01,T2_ADS01\nP1,1,2\nP1,3,4\nP2,5,6\n",
+    )
+    app_page.select_option("#wideLongIdColumn", "participant_id")
+
+    app_page.click("#wideLongConvertBtn")
+
+    expect(app_page.locator("#fm-wide-to-long-panel")).to_contain_text("non-unique values", timeout=30000)
+    expect(app_page.locator("#fm-wide-to-long-panel")).to_contain_text("P1")
+    assert not (project / "sourcedata").exists()
+
+
+def build_runs_project(project):
+    build_two_subjects(project, ids=("01",))
+    folder = project / "sub-01" / "ses-1" / "survey"
+    for run in ("01", "03"):
+        (folder / f"sub-01_ses-1_task-wb_run-{run}_survey.tsv").write_text(f"WB01\n{run}\n")
+
+
+def apply_after_preview(page, preview_btn, apply_btn):
+    page.click(preview_btn)
+    expect(page.locator(apply_btn)).to_be_enabled(timeout=30000)
+    page.click(apply_btn)
+
+
+def test_session_rewrite_adds_exactly_the_text_asked_for(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+    app_page.select_option("#repoSessionRewriteExample", "ses-1")
+    app_page.fill("#repoSessionRewriteAddText", "T")
+
+    apply_after_preview(app_page, "#repoSessionRewritePreviewBtn", "#repoSessionRewriteBtn")
+
+    assert eventually(lambda: (project / "sub-01/ses-T1").exists()), project_files(project)
+    assert not (project / "sub-01/ses-1").exists()
+    survey = sorted(p.name for p in (project / "sub-01/ses-T1/survey").iterdir())
+    assert all(name.startswith("sub-01_ses-T1_") for name in survey), survey
+
+
+def test_run_renumbering_closes_the_gap_and_only_the_gap(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+
+    apply_after_preview(app_page, "#runRenumberPreviewBtn", "#runRenumberApplyBtn")
+
+    survey = project / "sub-01/ses-1/survey"
+    assert eventually(lambda: (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").exists()), project_files(project)
+    assert not (survey / "sub-01_ses-1_task-wb_run-03_survey.tsv").exists()
+    assert (survey / "sub-01_ses-1_task-wb_run-02_survey.tsv").read_text() == "WB01\n03\n"  # run 03's data
+    assert (survey / "sub-01_ses-1_task-wb_run-01_survey.tsv").read_text() == "WB01\n01\n"
+
+
+def test_filename_part_rename_changes_the_task_in_every_matching_file(app_page, studio_url, project):
+    build_runs_project(project)
+    open_ids_tab(app_page, studio_url)
+    app_page.select_option("#repoEntityRewriteModality", "survey")
+    app_page.select_option("#repoEntityRewritePart", "_task")
+    app_page.fill("#repoEntityRewriteValue", "wellbeing")
+
+    apply_after_preview(app_page, "#repoEntityRewritePreviewBtn", "#repoEntityRewriteBtn")
+
+    survey = project / "sub-01/ses-1/survey"
+    assert eventually(lambda: any("task-wellbeing" in n for n in project_files(project))), project_files(project)
+    names = sorted(p.name for p in survey.iterdir())
+    assert not [n for n in names if "task-wb_" in n or "task-wb." in n], names
+    sidecar = json.loads((survey / "sub-01_ses-1_task-wellbeing_survey.json").read_text())
+    assert sidecar["Study"]["TaskName"] == "wellbeing"  # the sidecar follows the filename
+
+
+def test_delete_scans_tsv_removes_only_scans_files(app_page, studio_url, project):
+    build_two_subjects(project)
+    for sid in ("1291003", "1291004"):
+        (project / f"sub-{sid}/ses-1/sub-{sid}_ses-1_scans.tsv").write_text("filename\tacq_time\n")
+    open_delete_tab(app_page, studio_url)
+
+    app_page.click("#fileDeleteScansTsvBtn")
+
+    assert eventually(lambda: not [f for f in project_files(project) if f.endswith("_scans.tsv")]), project_files(project)
+    assert len([f for f in project_files(project) if f.endswith("_survey.tsv")]) == 2  # data files untouched
+
+
+def test_delete_confirmation_says_how_many_files_are_about_to_go(app_page, studio_url, project):
+    build_two_subjects(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    tick_subject(app_page, "sub-1291003")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages)), "no confirmation was asked"
+    assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]
+
+
+def test_delete_without_any_filter_is_refused_and_nothing_is_listed(app_page, studio_url, project):
+    app_page.allowed_http[400] = "/api/file-management/delete"  # the refusal is the point
+    build_two_subjects(project)
+    before = snapshot(project)
+    open_delete_tab(app_page, studio_url)
+
+    app_page.click("#fileDeletePreviewBtn")
+
+    expect(app_page.locator("#fm-delete-panel")).to_contain_text("Specify at least one filter", timeout=30000)
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_disabled()
+    assert snapshot(project) == before
+
+
+def test_selecting_every_subject_warns_that_every_file_goes(app_page, studio_url, project):
+    build_two_subjects(project)
+    before = snapshot(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    app_page.click("#fileDeleteSelectAllSubjectsBtn")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages)), "no confirmation was asked"
+    assert "EVERY file" in messages[0] and "4 files" in messages[0], messages[0]
+    assert snapshot(project) == before  # dismissed: nothing deleted
+
+
+def test_a_filter_only_delete_is_not_described_as_deleting_everything(app_page, studio_url, project):
+    build_two_subjects(project)
+    add_second_task(project)
+    messages = open_delete_tab(app_page, studio_url, answer="dismiss")
+    app_page.click("#fileDeleteAddFilterBtn")
+    app_page.select_option(".file-delete-key-select", "task")
+    app_page.select_option(".file-delete-value-select", "other")
+    app_page.click("#fileDeletePreviewBtn")
+    expect(app_page.locator("#fileDeleteApplyBtn")).to_be_enabled(timeout=30000)
+
+    app_page.click("#fileDeleteApplyBtn")
+
+    assert eventually(lambda: bool(messages))
+    assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]

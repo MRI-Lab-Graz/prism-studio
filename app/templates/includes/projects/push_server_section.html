@@ -77,6 +77,15 @@
                         </div>
                     </form>
 
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="dataladServerCheckBtn"
+                                data-datalad-check data-result="dataladServerCheckResult" data-url-input="dataladServerUrl">
+                            <i class="fas fa-stethoscope me-1"></i>Check this computer
+                        </button>
+                        <span class="form-text ms-2">Tests Git, git-annex, DataLad, your SSH key and (if a URL is entered) the server login.</span>
+                        <div class="mt-2" id="dataladServerCheckResult" aria-live="polite"></div>
+                    </div>
+
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <button type="button" class="btn btn-info" id="dataladServerSyncBtn">
                             <i class="fas fa-sync me-2"></i>Sync now

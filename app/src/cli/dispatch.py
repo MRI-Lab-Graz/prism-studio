@@ -56,6 +56,15 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "datalad":
+        if args.action == "doctor":
+            handlers["datalad_doctor"](args)
+        elif args.action == "sync":
+            handlers["datalad_sync"](args)
+        elif args.action == "finalize":
+            handlers["datalad_finalize"](args)
+        else:
+            parsers["datalad"].print_help()
     elif args.command == "environment":
         if args.action == "preview":
             handlers["environment_preview"](args)

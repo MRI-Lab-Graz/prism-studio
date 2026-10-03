@@ -270,6 +270,7 @@ export function initOpenProjectController({
                 enabled: false,
                 available: false,
                 annexAvailable: false,
+                installCommand: '',
                 canSave: false,
                 canEnable: false,
                 message: defaultMessage,
@@ -293,6 +294,7 @@ export function initOpenProjectController({
             enabled: normalizeDataladBoolean(dataladState.enabled),
             available: normalizeDataladBoolean(dataladState.available),
             annexAvailable: normalizeDataladBoolean(dataladState.annex_available ?? dataladState.annexAvailable),
+            installCommand: String(dataladState.install_command ?? '').trim(),
             canSave: normalizeDataladBoolean(dataladState.can_save ?? dataladState.canSave),
             canEnable: normalizeDataladBoolean(dataladState.can_enable ?? dataladState.canEnable),
             message,
@@ -624,7 +626,7 @@ export function initOpenProjectController({
             `${missingToolsLabel} ${singularTool ? 'is' : 'are'} not available in this environment.`,
             '',
             'Install the missing tools before enabling DataLad tracking for this project.',
-            `Suggested install command: ${DATALAD_INSTALL_COMMAND}`,
+            `Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}`,
             `Learn more: ${DATALAD_DOCS_URL}`,
         ].join('\n');
     }
@@ -891,8 +893,8 @@ export function initOpenProjectController({
             window.alert(unavailableToolsMessage);
 
             const shortUnavailableMessage = latestDataladState.available && !latestDataladState.annexAvailable
-                ? `DataLad setup blocked: git-annex is missing. Install tools with "${DATALAD_INSTALL_COMMAND}" and try again.`
-                : `DataLad setup blocked: DataLad and git-annex are missing. Install tools with "${DATALAD_INSTALL_COMMAND}" and try again.`;
+                ? `DataLad setup blocked: git-annex is missing. Install tools with "${latestDataladState.installCommand || DATALAD_INSTALL_COMMAND}" and try again.`
+                : `DataLad setup blocked: DataLad and git-annex are missing. Install tools with "${latestDataladState.installCommand || DATALAD_INSTALL_COMMAND}" and try again.`;
             setProjectBoxDataladFeedback(shortUnavailableMessage, 'danger');
             window.setNavbarDataladFeedback?.(shortUnavailableMessage, 'danger', 'Missing tools');
             await persistDeclinedChoice(

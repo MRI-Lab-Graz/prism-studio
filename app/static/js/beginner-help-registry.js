@@ -52,7 +52,6 @@
         derivIdLength: 'Longer codes make accidental collisions between participants less likely. The default of 8 is plenty for most studies.',
         rbMetaName: 'The full instrument name as cited in papers, e.g. Patient Health Questionnaire-9.',
         rbMetaDesc: 'One sentence on what the scale measures, e.g. "Depressive symptoms over the last two weeks."',
-        lsVersionSelect: 'Not sure? LimeSurvey shows its version in the admin area footer.',
         lsWelcomeText: 'Shown on the first page. It usually covers the study purpose, duration, and that participation is voluntary. The templates above are a good starting point.',
         lsEndText: 'Shown after submitting. Thank participants and give a contact for questions.',
         openmindsEnableExport: 'Only needed if a repository or collaborator asks for openMINDS metadata (e.g. EBRAINS). Otherwise leave it off.'

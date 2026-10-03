@@ -151,6 +151,24 @@ class TestIssues:
         assert infer_code_from_message(message) == "PRISM707"
         assert "Sociodemographics" in get_fix_hint("PRISM707", message)
 
+    def test_filename_errors_point_to_the_tool_that_renames_files(self):
+        for code, message in [
+            ("PRISM101", "Invalid BIDS filename format: sub-01_x.tsv"),
+            ("PRISM102", "Filename doesn't match expected pattern for modality 'survey': a.tsv"),
+            ("PRISM103", "File does not start with subject ID"),
+            ("PRISM104", "File does not match session directory"),
+        ]:
+            assert "File Management" in get_fix_hint(code, message), code
+
+    def test_missing_survey_recipe_warning_has_its_own_code(self):
+        message = (
+            "Missing survey recipes for dataset-used surveys. "
+            "Used surveys: brs. Missing: brs."
+        )
+
+        assert infer_code_from_message(message) == "PRISM708"
+        assert "Recipe builder" in get_fix_hint("PRISM708", message)
+
 
 class TestConfig:
     """Test configuration file support"""

@@ -726,7 +726,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         // Tool-specific payload fields
         if (getSelectedTool() === 'limesurvey') {
-            payload.ls_version = document.getElementById('lsVersionSelect').value;
             payload.matrix = document.getElementById('lsMatrixGroupCheckbox').checked;
             payload.matrix_global = payload.matrix;
         }
@@ -762,10 +761,6 @@ document.addEventListener('DOMContentLoaded', function() {
             savedAt: Date.now(),
             appAssetVersion: String(window.PRISM_STATIC_ASSET_VERSION || '').trim(),
         };
-        // Tool-specific session data
-        if (getSelectedTool() === 'limesurvey') {
-            payload.ls_version = document.getElementById('lsVersionSelect').value;
-        }
 
         sessionStorage.setItem(CUSTOMIZER_STATE_KEY, JSON.stringify(payload));
         sessionStorage.removeItem('surveyCustomizerData');

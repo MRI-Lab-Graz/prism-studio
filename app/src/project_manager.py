@@ -50,6 +50,7 @@ from src.project_export_helpers import (
 )
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
+from src.datalad_doctor import explain_ssh_failures, install_command, install_hint
 from src.entity_rules import load_entity_rules
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
@@ -121,7 +122,7 @@ UNLOCKED_ANNEX_QUERY_TIMEOUT_SECONDS = 60
 ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS = 5
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 DATALAD_DOCS_URL = "https://www.datalad.org/"
-DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
+DATALAD_INSTALL_HINT = install_hint()
 DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "*.cfg annex.largefiles=nothing",
     "*.csv annex.largefiles=nothing",
@@ -1656,6 +1657,7 @@ class ProjectManager:
             "enabled": (project_path / ".datalad").exists() if project_path else False,
             "available": bool(shutil.which("datalad")),
             "annex_available": bool(shutil.which("git-annex")),
+            "install_command": install_command(),
             "can_save": False,
             "can_enable": False,
             "mutation_in_progress": True,
@@ -1691,6 +1693,7 @@ class ProjectManager:
             "enabled": False,
             "available": available,
             "annex_available": annex_available,
+            "install_command": install_command(),
             "can_save": False,
             "can_enable": False,
             "message": "",
@@ -6374,6 +6377,7 @@ git push -u origin main
         result["connected"] = bool(exists_result.get("exists"))
         return result
 
+    @explain_ssh_failures
     def sync_project_to_ria(
         self,
         project_path: Path,
@@ -6655,6 +6659,7 @@ git push -u origin main
 
         return {"success": True, "message": "RIA clone retrieved and validated successfully."}
 
+    @explain_ssh_failures
     def finalize_project_upload(
         self,
         project_path: Path,

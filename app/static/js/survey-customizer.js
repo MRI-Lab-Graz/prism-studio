@@ -126,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
         groups: [],
         exportFormat: 'limesurvey',
         exportOptions: {
-            ls_version: '3',
             matrix: true,
             matrix_global: true
         },
@@ -423,16 +422,14 @@ document.addEventListener('DOMContentLoaded', function() {
             sourceProjectPath = String(data.projectPath || getCurrentProjectPath()).trim();
             updateSaveToProjectAvailability();
 
-            // Set language, version, and target tool
+            // Set language and target tool
             customizationState.survey.language = data.language || 'en';
             customizationState.survey.languages = data.languages || [data.language || 'en'];
             customizationState.survey.base_language = data.base_language || data.language || 'en';
-            customizationState.exportOptions.ls_version = data.ls_version || '3';
             customizationState.exportOptions.target_tool = data.target_tool || 'limesurvey';
 
             // Update UI
             document.getElementById('languageSelect').value = customizationState.survey.language;
-            document.getElementById('lsVersionSelect').value = customizationState.exportOptions.ls_version;
             if (data.target_tool) syncExportFormat(data.target_tool);
 
             // Display language tags
@@ -1261,7 +1258,6 @@ document.addEventListener('DOMContentLoaded', function() {
         customizationState.survey.title = surveyName;
         customizationState.exportFormat = document.getElementById('exportFormat').value;
         customizationState.survey.language = document.getElementById('languageSelect').value;
-        customizationState.exportOptions.ls_version = document.getElementById('lsVersionSelect').value;
         customizationState.exportOptions.matrix = document.getElementById('matrixMode').checked;
         customizationState.exportOptions.matrix_global = document.getElementById('globalMatrix').checked;
 

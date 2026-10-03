@@ -201,7 +201,7 @@ def api_survey_customizer_export():
         "survey": {"title": "...", "language": "en"},
         "groups": [...],
         "exportFormat": "limesurvey",
-        "exportOptions": {"ls_version": "3", "matrix": true, "matrix_global": false}
+        "exportOptions": {"matrix": true, "matrix_global": false}
     }
     """
     data = request.get_json(silent=True) or {}
