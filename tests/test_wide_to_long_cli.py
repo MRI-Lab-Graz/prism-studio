@@ -95,28 +95,13 @@ def test_wide_to_long_cli_writes_output_file(tmp_path: Path) -> None:
     assert set(long_df["session"].tolist()) == {"T1_", "T2_"}
 
 
-def test_prism_wrapper_delegates_wide_to_long_command(tmp_path: Path) -> None:
-    input_path = tmp_path / "wide.csv"
-    pd.DataFrame(
-        {
-            "participant_id": ["sub-01"],
-            "T1_score": ["1"],
-            "T2_score": ["2"],
-        }
-    ).to_csv(input_path, index=False)
-
-    result = _run_prism(
-        "wide-to-long",
-        "--input",
-        str(input_path),
-        "--session-indicators",
-        "T1_,T2_",
-        "--inspect-only",
-    )
+def test_validator_cli_points_wide_to_long_to_prism_tools() -> None:
+    result = _run_prism("wide-to-long", "--input", "x.csv")
 
     output = (result.stdout or "") + (result.stderr or "")
-    assert result.returncode == 0, output
-    assert "Wide-to-long inspection" in output
+    assert result.returncode == 2, output
+    assert "not part of the validator" in output
+    assert "prism_tools.py wide-to-long" in output
 
 
 def test_wide_to_long_cli_json_inspect_output(tmp_path: Path) -> None:

@@ -467,10 +467,10 @@ session indicators in column names:
 
 ```bash
 # Inspect matches without writing output
-python prism.py wide-to-long --input build/Limesurvey_gesamt.xlsx --session-indicators T1_,T2_,T3_ --inspect-only
+python prism_tools.py wide-to-long --input build/Limesurvey_gesamt.xlsx --session-indicators T1_,T2_,T3_ --inspect-only
 
 # Convert and write
-python prism.py wide-to-long --input survey_export.xlsx --output survey_export_long.csv --session-indicators T1_,T2_,T3_
+python prism_tools.py wide-to-long --input survey_export.xlsx --output survey_export_long.csv --session-indicators T1_,T2_,T3_
 ```
 
 Key options: `--session-indicators` (comma-separated tokens, e.g. `T1_,T2_,T3_` or

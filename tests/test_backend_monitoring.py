@@ -456,7 +456,7 @@ def test_wide_to_long_preview_command_uses_prism_cli():
         cmd = _build_terminal_command(request)
 
     assert cmd == (
-        "python prism.py wide-to-long --input survey.xlsx --session-column session "
+        "python prism_tools.py wide-to-long --input survey.xlsx --session-column session "
         "--session-indicators T1_,T2_,T3_ --session-map T1_:pre,T2_:post --inspect-only"
     )
 
@@ -487,7 +487,7 @@ def test_wide_to_long_convert_command_uses_prism_cli():
         cmd = _build_terminal_command(request)
 
     assert cmd == (
-        "python prism.py wide-to-long --input survey.xlsx --session-column session "
+        "python prism_tools.py wide-to-long --input survey.xlsx --session-column session "
         "--session-indicators T1_,T2_,T3_ --output '<output-file>'"
     )
 
@@ -520,7 +520,7 @@ def test_file_delete_apply_command_uses_prism_cli():
 
     expected_project = str(Path("/tmp/study").resolve(strict=False))
     assert cmd == (
-        f"python prism.py file-management delete-files --project {expected_project} "
+        f"python prism_tools.py file-management delete-files --project {expected_project} "
         "--modality dwi --entity-filter acq=1k20 --entity-filter ses=2 "
         "--subjects sub-170 --apply"
     )
@@ -554,7 +554,7 @@ def test_emit_backend_request_action_includes_file_delete_command(capsys):
     expected_project = str(Path("/tmp/study").resolve(strict=False))
     assert "POST /api/file-management/delete -> delete files" in captured
     assert (
-        f"cmd=python prism.py file-management delete-files --project {expected_project} "
+        f"cmd=python prism_tools.py file-management delete-files --project {expected_project} "
         "--entity-filter acq=1k20 --apply"
     ) in captured
 
