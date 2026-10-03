@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+Findings of a full security review; each fix has a regression test.
+- **Remote command execution via ssh options.** A host or URL starting with `-` (for example
+  `-oProxyCommand=...`) reached `ssh`/`rsync`/`datalad` as an option. It was reachable from any web
+  page through the DataLad doctor GET route, and from a shared project's `.prismrc.json` through
+  rsync backup. Such targets are now rejected and every ssh/rsync call puts `--` before the host.
+- **Cross-site requests are rejected.** A page you visit can no longer post forms or fire requests
+  at the local server (`Sec-Fetch-Site` / `Origin` guard); responses also carry `nosniff`,
+  `frame-ancestors 'none'`, `X-Frame-Options` and `Referrer-Policy`.
+- **Validator plugins are opt-in.** `<dataset>/validators/*.py` and `plugins` in `.prismrc.json` run
+  only with `--plugins` (replaces `--no-plugins`); `--list-plugins` requires it too.
+- **`--public` needs a token.** Every request must carry the token in the printed startup URL.
+- **Anonymised export.** Real IDs are also replaced in every TSV cell (e.g. `scans.tsv` `filename`)
+  and in `.csv`/`.txt`/`.R` files; `.xlsx`/`.sav` and similar files that cannot be rewritten are
+  left out and reported. The pseudonym map (with its key) and `code/logs/` are git-excluded, the
+  map is written `0600`, and logs are no longer in ZIP exports. Files already tracked by git are not
+  affected: remove them from history before publishing.
+- **Generated R helper** escapes every template-derived value (a shared template could inject R code).
+- **XSS** from template/data values in the survey version wizard, physio page and JSON editor alerts.
+- **`.xlsx` exports** keep free text such as `=HYPERLINK(...)` as text, not a live formula.
+- Zip-upload size cap, sibling-folder path escape in sourcedata download, the filesystem-root delete
+  guard, formula-engine size limits, `git annex unannex --`.
+- CI/distribution: least-privilege workflow tokens, no shell injection through the composite action's
+  inputs, validator image runs as non-root, installers ask before running Deno's install script.
+
 ### Removed
 - **Intel macOS build.** Homebrew no longer builds Intel macOS packages (the CI build compiled openssl
   and cmake from source and hung) and GitHub is dropping Intel runners in 2027. Intel Macs run PRISM
