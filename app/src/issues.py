@@ -228,6 +228,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "participants.tsv does not cover all subject folders on disk",
         "fix_hint": "Open Sociodemographics and import or add the missing participants so participants.tsv lists every subject already saved in the dataset",
     },
+    "PRISM708": {
+        "message": "A survey in the dataset has no recipe in the project",
+        "fix_hint": "Create or copy the recipe with the Recipe builder so the project carries its own copy in code/recipes/survey",
+    },
     # Internal/System (9xx)
     "PRISM901": {
         "message": "Internal validation error",
@@ -318,8 +322,22 @@ def get_error_description(code: str) -> str:
     return defaults.get("message", "Validation error")
 
 
+_RENAME_FILES_HINT = (
+    " To rename the files, open File Management > Filename Renamer"
+    " (or Rename IDs & Parts for subject/session labels)."
+)
+
+
 def get_fix_hint(code: str, message: str = "") -> str:
     """Get fix hint for an error code, optionally using the message for context."""
+    hint = _base_fix_hint(code, message)
+    if code in ("PRISM101", "PRISM102", "PRISM103", "PRISM104"):
+        hint += _RENAME_FILES_HINT
+    return hint
+
+
+def _base_fix_hint(code: str, message: str = "") -> str:
+    """Code-specific hint text, without the pointer to the tool that fixes it."""
     import re
 
     # Handle specific cases with regex if message is provided
@@ -469,6 +487,8 @@ def infer_code_from_message(message: str) -> str:
         )
     ):
         return "PRISM707"
+    elif "missing survey recipes" in msg_lower:
+        return "PRISM708"
     elif (
         "consistency" in msg_lower
         or "mislabeled" in msg_lower

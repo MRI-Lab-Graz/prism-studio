@@ -16,6 +16,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { openRemoteFolderPicker } from './remote_folder_picker.js';
 import { isRiaUrl } from '../../shared/ssh-target.js';
+import { initDataladSetupCheck } from './datalad_setup_check.js';
 
 const PROGRESS_PREFIX = 'dataladServer';
 
@@ -192,7 +193,7 @@ async function runRiaJob({ startEndpoint, statusEndpointBase, button, originalTe
             setHtml(resultDiv, `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Failed</h5>
-                    <p class="mb-0">${escapeHtml(error.message || 'Operation failed.')}</p>
+                    <p class="mb-0" style="white-space: pre-wrap;">${escapeHtml(error.message || 'Operation failed.')}</p>
                 </div>
             `);
         }
@@ -313,6 +314,8 @@ export function initDataladServerSection() {
 
     const configForm = getById('dataladServerConfigForm');
     if (configForm) configForm.addEventListener('submit', onSaveConfigSubmit);
+
+    initDataladSetupCheck();
 
     showDataladServerCard();
 }

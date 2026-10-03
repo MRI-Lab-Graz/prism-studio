@@ -15,6 +15,7 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
+from src.datalad_doctor import install_command
 from src.project_icons import get_project_icon_classes
 
 
@@ -409,7 +410,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["datalad_preflight"]["annex_available"])
         self.assertFalse(body["datalad_preflight"]["can_enable"])
         self.assertIn("git-annex", body["datalad_preflight"]["message"])
-        self.assertIn("uv tool install datalad git-annex", body["datalad_preflight"]["message"])
+        self.assertIn(install_command(), body["datalad_preflight"]["message"])
 
     def test_datalad_preflight_status_reports_machine_availability(self):
         with patch.object(

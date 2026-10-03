@@ -488,6 +488,59 @@ def build_prism_tools_parsers(
     parser_save_gate.add_argument("--install-hooks", action="store_true", help="Install the pre-commit hook in the project and every nested dataset")
     parser_save_gate.add_argument("--status", action="store_true", help="Show which datasets have the hook")
     parser_save_gate.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_datalad = subparsers.add_parser(
+        "datalad", help="Check and set up DataLad, git-annex and SSH access to a server"
+    )
+    datalad_subparsers = parser_datalad.add_subparsers(dest="action", help="Action")
+    parser_datalad_doctor = datalad_subparsers.add_parser(
+        "doctor", help="Check tools, SSH key and (optionally) server login"
+    )
+    parser_datalad_doctor.add_argument(
+        "--url", help="Server URL to test (ria+ssh://user@host/path, user@host:path)"
+    )
+    parser_datalad_doctor.add_argument(
+        "--project", help="Project root; uses its configured DataLad server URL"
+    )
+    parser_datalad_doctor.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    def _add_push_options(sub):
+        sub.add_argument("--project", required=True, help="Project root")
+        sub.add_argument(
+            "--url",
+            help="Server URL (ria+ssh://user@host/path, user@host:path); default: the project's saved setting",
+        )
+        sub.add_argument("--sibling-name", help="Sibling name (default: saved setting, else ria-store)")
+        sub.add_argument("--alias", help="Store alias (RIA stores only)")
+        sub.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    parser_datalad_sync = datalad_subparsers.add_parser(
+        "sync", help="Connect to the DataLad server (if needed) and push; safe to repeat"
+    )
+    _add_push_options(parser_datalad_sync)
+    parser_datalad_sync.add_argument(
+        "--verify",
+        action="store_true",
+        help="Also confirm every annexed file reached the server (slower)",
+    )
+    parser_datalad_finalize = datalad_subparsers.add_parser(
+        "finalize",
+        help="Last push, verification, then disconnect this computer from the server (files kept)",
+    )
+    _add_push_options(parser_datalad_finalize)
+    parser_datalad_finalize.add_argument(
+        "--verify-mode",
+        choices=["fast", "full"],
+        default="fast",
+        help="full = also clone the server copy and validate it before disconnecting (slower)",
+    )
+    parser_datalad_finalize.add_argument(
+        "--mark-annex-dead", action="store_true", help="Mark the local annex copy dead after disconnecting"
+    )
+    parser_datalad_finalize.add_argument(
+        "--yes", action="store_true", help="Confirm the disconnect (required)"
+    )
 
     parser_environment = subparsers.add_parser(
         "environment",
@@ -1559,12 +1612,6 @@ def build_prism_tools_parsers(
         help="Base language code (default: --language)",
     )
     parser_survey_export_lss.add_argument(
-        "--ls-version",
-        default="3",
-        choices=["3", "6"],
-        help="Target LimeSurvey version (default: 3)",
-    )
-    parser_survey_export_lss.add_argument(
         "--no-matrix",
         dest="matrix",
         action="store_false",
@@ -1581,6 +1628,13 @@ def build_prism_tools_parsers(
         help="When grouping into matrices, only group consecutive questions "
         "with identical options rather than all matching questions in the "
         "file (default: all matching questions)",
+    )
+
+    parser_survey_export_lss.add_argument(
+        "--include",
+        default=None,
+        help="Comma-separated question codes to keep (single template only; "
+        "default: all questions). Matches un-ticking questions in the GUI.",
     )
 
     parser_survey_export_pavlovia = survey_subparsers.add_parser(
@@ -1602,6 +1656,12 @@ def build_prism_tools_parsers(
         default=None,
         help="Language code to export (default: template's own default language). "
         "Pavlovia export is single-language scoped.",
+    )
+
+    parser_survey_export_pavlovia.add_argument(
+        "--include",
+        default=None,
+        help="Comma-separated question codes to keep (default: all questions)",
     )
 
     parser_survey_customizer_groups = survey_subparsers.add_parser(
@@ -1655,12 +1715,6 @@ def build_prism_tools_parsers(
         "--base-language",
         default=None,
         help="Base language code (default: --language)",
-    )
-    parser_survey_export_lss_customized.add_argument(
-        "--ls-version",
-        default="6",
-        choices=["3", "6"],
-        help="Target LimeSurvey version (default: 6)",
     )
     parser_survey_export_lss_customized.add_argument(
         "--survey-title",

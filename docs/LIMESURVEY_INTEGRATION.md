@@ -4,16 +4,17 @@ PRISM Studio provides a complete, bidirectional integration with [LimeSurvey](ht
 
 ## Supported LimeSurvey Versions
 
-PRISM Studio supports LimeSurvey versions **3.x**, **5.x**, and **6.x**. The integration handles version-specific differences automatically:
+PRISM Studio supports LimeSurvey **5.x** and **6.x**. Surveys are always exported in
+that format (there is no version setting). LimeSurvey 3.x/4.x is no longer supported.
 
-| Feature | LS 3.x | LS 5.x | LS 6.x |
-|---------|--------|--------|--------|
-| Basic import/export | Yes | Yes | Yes |
-| Multi-language support | Yes | Yes | Yes (localization tables) |
-| Question attributes | Yes | Yes | Yes |
-| Timing data extraction | Yes | Yes | Yes |
-| Per-question timing | No | Yes | Yes |
-| Metadata preservation | Yes | Yes | Yes |
+| Feature | LS 5.x | LS 6.x |
+|---------|--------|--------|
+| Basic import/export | Yes | Yes |
+| Multi-language support | Yes (localization tables) | Yes (localization tables) |
+| Question attributes | Yes | Yes |
+| Timing data extraction | Yes | Yes |
+| Per-question timing | Yes | Yes |
+| Metadata preservation | Yes | Yes |
 
 ## End-to-End Workflow
 
@@ -52,7 +53,6 @@ Navigate to **Derivatives > Survey Export** to select questionnaires from the PR
 - **Target Tool**: LimeSurvey (default)
 - **Base Language**: The primary survey language (EN or DE)
 - **Export Languages**: Check additional languages for multilingual surveys
-- **LS Version**: Match this to your LimeSurvey server version (5.x/6.x recommended)
 
 **Select templates** by checking one or more questionnaires from the list. For each selected template, you can set the **Run** number (for repeated administrations, e.g., pre/post design):
 

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **DataLad server setup and CLI.** `prism_tools.py datalad doctor` checks Git, git-annex,
+  DataLad, the SSH client, an SSH key and (with a server URL) a real key-based login, and
+  says what to fix; the same check is the "Check this computer" button on the Share page and
+  the project-creation form. `datalad sync` / `datalad finalize` give the Push to Server
+  actions a command line. Failed pushes now explain SSH problems (key rejected, host key,
+  unreachable server) in plain words, and the install hint is platform-aware (Windows:
+  Git for Windows + `py -m pip install datalad git-annex`).
 - **Session map for longitudinal projects.** New required study-metadata field
   `StudyDesign.Timepoints` (one or several). In a project with several timepoints,
   every session label of an import must be mapped by the user in
@@ -17,6 +24,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   refused instead of defaulting to `ses-1`. The Survey and Sociodemographics
   converter tabs show a "Session mapping" panel (empty inputs) and keep
   Preview/Convert disabled until the session name is saved.
+
+### Removed
+- **LimeSurvey 3.x / 4.x export.** The "LimeSurvey version" choice is gone from the
+  Survey Generator and Customizer, and `--ls-version` from `survey export-lss` and
+  `survey export-lss-customized`. Exports are always the 5.x/6.x format (the CLI
+  previously defaulted to 3.x).
+
+### Fixed
+- **JSON editor: saving `participants.json` always warned "must have 'columns' key".**
+  BIDS `participants.json` has no `columns` wrapper (one entry per column); the check
+  now matches that and names any column without a `Description`.
+- **JSON editor: `dataset_description.json` saved as fine while Validate flagged it.**
+  The post-save check now also applies the PRISM schema (Authors, Keywords,
+  DatasetType, ...), so both agree. Same check in `json-editor save` on the CLI.
+- **Survey generator: Quick Export ignored which questions you had ticked.** Un-ticking
+  a question (or changing a template's matrix setting) had no effect on the LimeSurvey
+  file, and the Pavlovia export always contained every question. Both now export exactly
+  the ticked questions; the toolbar's "Group into matrices" box is a master switch.
+  New `--include CODE,CODE` option on `survey export-lss` and `survey export-pavlovia`.
+- **Validate: filename errors (PRISM101-104) now say where to fix them**
+  (File Management > Filename Renamer).
+- **Validate: the "missing survey recipes" warning had the catch-all code PRISM999**
+  ("General validation error - check the error message"). It is now `PRISM708` with a
+  hint pointing at the Recipe builder.
+- **Recipes: the anonymization key no longer sits in the folder you share.**
+  `participants_mapping.json` (original ID -> pseudonym, plus the secret key) was
+  written into the output folder (`derivatives/survey/<...>_anon/`) next to the
+  anonymized scores. It now lives in `code/anonymization/` of the project, which
+  Share exports never include. All recipe runs of a project reuse that one key, so
+  a participant keeps the same pseudonym across recipes. A key left in an output
+  folder by an older version is moved there on the next anonymized run.
+- **File Management > Organizer: uploading a folder never worked in Chrome/Edge.**
+  Browsers send folder-picked files under their relative path (`flat/sub-01_...`),
+  which the server turned into `flat_sub-01_...` and rejected ("No valid files to
+  convert"). Only the file name is used now (Organizer and the physio batch upload).
+- **DataLad "Save DataLad Snapshot" now says what it did.** It always showed the
+  generic "Current project is tracked by DataLad." (even for errors) and reported
+  "saved" on a clean tree. It now shows the commit message used, "No DataLad changes
+  were pending", or the real failure reason.
+- **Renaming a task in File Management keeps the sidecar in step.** Renaming the
+  `_task` part of filenames now also updates `TaskName` (and `Study.TaskName`) in the
+  renamed sidecars, only where it equals the old label (a written description such as
+  "Wellbeing check" is left alone). The preview lists the sidecars it will update.
+- **Delete Files says how much it is about to delete.** The confirmation names the
+  number of files, and warns explicitly when every subject is selected with no filter
+  (which deletes every file in the project).
+- **Recipe Builder: the "what happens when this recipe runs" panel now explains the
+  optional IRV column** (sample standard deviation of the raw answers, reverse coding
+  ignored, empty with fewer than 2 answered items) as soon as it is ticked. It used to
+  describe everything except IRV.
+- **A new project's `.prismrc.json` is written in its final form**, so a later
+  settings save no longer shows up as a pending change in a fresh DataLad project.
+- **Init PRISM on BIDS** no longer logs a 404 in the browser console on every run
+  (the progress poll started before the server had registered the job).
 
 ### Changed
 - **Setup scripts renamed to `install.cmd` / `install.sh`** at the repo root,

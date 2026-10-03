@@ -57,6 +57,7 @@ from .projects_sessions_handlers import (
 from .projects_methods_handlers import handle_generate_methods_section
 from .projects_lifecycle_handlers import (
     handle_create_project,
+    handle_datalad_doctor,
     handle_datalad_preflight_status,
     handle_delete_project,
     handle_fix_project,
@@ -550,6 +551,12 @@ def delete_project():
 def datalad_preflight_status():
     """Return machine availability info for DataLad project setup."""
     return handle_datalad_preflight_status()
+
+
+@projects_bp.route("/api/projects/datalad/doctor", methods=["GET"])
+def datalad_doctor():
+    """Check DataLad tools, SSH key and (with ?url=) server login."""
+    return handle_datalad_doctor()
 
 
 @projects_bp.route("/api/projects/datalad/clean-status", methods=["GET"])

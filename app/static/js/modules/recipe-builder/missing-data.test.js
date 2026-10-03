@@ -4,6 +4,7 @@ import {
     MISSING_MEANING,
     POLICY,
     applyPolicyToScore,
+    describeIrv,
     describeMissingHandling,
     describeReverseCoding,
     policyFromScore,
@@ -143,3 +144,26 @@ describe('MISSING_MEANING', () => {
         expect(MISSING_MEANING).toMatch(/not a number/);
     });
 });
+
+describe('describeIrv', () => {
+    it('says what IRV measures, in the engine\'s terms (sample SD of the RAW answers)', () => {
+        const text = describeIrv(10);
+        expect(text).toContain('10 items');
+        expect(text).toMatch(/sample standard deviation/i);
+        expect(text).toMatch(/raw answers/i);
+        expect(text).toMatch(/same answer to every question/i);
+    });
+
+    it('states that reverse coding is ignored and when the value stays empty', () => {
+        const text = describeIrv(10);
+        expect(text).toMatch(/reverse coding is ignored/i);
+        expect(text).toMatch(/fewer than 2/i);
+    });
+
+    it('admits that one item can never give a spread', () => {
+        const text = describeIrv(1);
+        expect(text).toMatch(/at least 2 items/i);
+        expect(text).toContain('1');
+    });
+});
+

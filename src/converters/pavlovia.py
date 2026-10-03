@@ -574,6 +574,7 @@ def export_to_pavlovia(
     output_dir: Optional[Path] = None,
     experiment_name: Optional[str] = None,
     language: Optional[str] = None,
+    include: Optional[List[str]] = None,
 ) -> Path:
     """Main export function.
 
@@ -585,6 +586,7 @@ def export_to_pavlovia(
             I18n.DefaultLanguage, falling back to "en"). Pavlovia export is
             single-language scoped -- this selects which language's text is
             used, it does not export multiple languages.
+        include: Question codes to keep (default: all questions).
 
     Returns:
         Path to created .psyexp file
@@ -611,6 +613,8 @@ def export_to_pavlovia(
 
     # Extract questions
     questions = extract_questions(prism_json, language=language)
+    if include is not None:
+        questions = [q for q in questions if q["code"] in include]
     print(f"📋 Found {len(questions)} questions")
 
     # Create conditions CSV if needed

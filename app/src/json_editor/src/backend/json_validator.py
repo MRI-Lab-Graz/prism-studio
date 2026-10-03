@@ -60,23 +60,44 @@ class JSONValidator:
             if not data["License"]:
                 errors.append("License cannot be empty")
 
+        errors.extend(self._prism_schema_errors(data, already_reported=errors))
         return errors
+
+    @staticmethod
+    def _prism_schema_errors(data, already_reported):
+        """Same PRISM schema the Validate page applies (Authors, Keywords, ...)."""
+        import json
+        from pathlib import Path
+
+        from jsonschema import Draft7Validator
+
+        schema_path = (
+            Path(__file__).resolve().parents[4]
+            / "schemas"
+            / "stable"
+            / "dataset_description.schema.json"
+        )
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return []  # ponytail: no schema bundled -> keep the basic checks only
+
+        messages = []
+        for error in sorted(Draft7Validator(schema).iter_errors(data), key=lambda e: list(e.path)):
+            field = " -> ".join(str(part) for part in error.path)
+            message = f"{field}: {error.message}" if field else error.message
+            if any(name in message for name in ("'Name'", "'BIDSVersion'")) and already_reported:
+                continue  # already reported as "Required field missing"
+            messages.append(message)
+        return messages
 
     def _validate_participants(self, data, schema):
         """Validate participants.json"""
         errors = []
 
-        # participants.json should have columns key with list of column descriptors
-        if "columns" not in data:
-            errors.append("participants.json must have 'columns' key")
-            return errors
-
-        if not isinstance(data["columns"], dict):
-            errors.append("'columns' must be a dictionary")
-            return errors
-
-        # Each column should have Description
-        for col_name, col_def in data["columns"].items():
+        # BIDS participants.json is flat: one entry per participants.tsv column,
+        # each describing that column.
+        for col_name, col_def in data.items():
             if not isinstance(col_def, dict):
                 errors.append(f"Column '{col_name}' definition must be a dictionary")
                 continue

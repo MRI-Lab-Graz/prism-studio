@@ -93,3 +93,19 @@ export function describeReverseCoding(invertedItems, itemsWithoutRange) {
     }
     return parts.length > 0 ? parts.join(' ') : 'No items are reverse-coded.';
 }
+
+/**
+ * What the optional IRV (response variability) column does. Matches the engine
+ * (src/recipes_formula_engine.py, method "irv"): the SAMPLE standard deviation of the
+ * RAW answers (reverse coding is not applied), empty with fewer than 2 answered items.
+ */
+export function describeIrv(itemCount) {
+    if (itemCount < 2) {
+        return `IRV needs at least 2 items; this survey has ${itemCount}, so the column would stay empty.`;
+    }
+    return (
+        `A column "IRV" is added: the sample standard deviation of one person's raw answers across all `
+        + `${itemCount} items. 0 = the same answer to every question (possible straight-lining). `
+        + `Reverse coding is ignored. The value is left empty when fewer than 2 items were answered.`
+    );
+}

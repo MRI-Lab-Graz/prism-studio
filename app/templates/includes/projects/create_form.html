@@ -39,6 +39,14 @@
                             <span>Checking whether DataLad and git-annex are available on this machine...</span>
                         </div>
                     </div>
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="createDataladCheckBtn"
+                                data-datalad-check data-result="createDataladCheckResult">
+                            <i class="fas fa-stethoscope me-1"></i>Check DataLad setup
+                        </button>
+                        <span class="form-text ms-2">Git, git-annex, DataLad and your SSH key. To also test a server login, use the Push to Server card once a project is open.</span>
+                        <div class="mt-2" id="createDataladCheckResult" aria-live="polite"></div>
+                    </div>
                 </form>
 
                 <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap mt-3" id="createProjectActionsTop">

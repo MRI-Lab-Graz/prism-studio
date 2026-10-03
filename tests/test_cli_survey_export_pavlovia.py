@@ -79,3 +79,15 @@ class TestExportPavlovia:
         psyexp_text = (output_dir / "demo.psyexp").read_text(encoding="utf-8")
         assert "Stimmung heute" in psyexp_text
         assert "Mood today" not in psyexp_text
+
+
+@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+def test_include_keeps_only_the_listed_questions(tmp_path):
+    output_dir = tmp_path / "out"
+    cmd_survey_export_pavlovia(
+        _args(json_path=str(GAD7_PATH), output=str(output_dir), include="GAD701,GAD702")
+    )
+
+    text = " ".join(p.read_text() for p in output_dir.iterdir() if p.suffix in (".psyexp", ".csv"))
+    assert "GAD701" in text and "GAD702" in text
+    assert "GAD703" not in text

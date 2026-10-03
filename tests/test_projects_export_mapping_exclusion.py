@@ -1268,3 +1268,37 @@ def test_export_anonymized_export_unaffected_by_case_colliding_real_ids(tmp_path
         anonymize=True,
     )
     assert output_zip.exists()
+
+
+def test_export_with_code_folder_never_ships_the_recipe_anonymization_key(tmp_path):
+    project_dir = tmp_path / "study"
+    (project_dir / "sub-001").mkdir(parents=True)
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n", encoding="utf-8"
+    )
+    (project_dir / "sub-001" / "sub-001_task-test_survey.tsv").write_text(
+        "participant_id\tvalue\nsub-001\t1\n", encoding="utf-8"
+    )
+    key_dir = project_dir / "code" / "anonymization"
+    key_dir.mkdir(parents=True)
+    (key_dir / "participants_mapping.json").write_text(
+        json.dumps({"_secret_key": "ab" * 32, "mapping": {"sub-001": "sub-XYZ"}}),
+        encoding="utf-8",
+    )
+    (project_dir / "code" / "analysis.py").write_text("print(1)\n", encoding="utf-8")
+
+    output_zip = tmp_path / "export.zip"
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        include_derivatives=False,
+        include_code=True,
+        include_analysis=False,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = archive.namelist()
+        leaked = [n for n in names if b"_secret_key" in archive.read(n)]
+
+    assert any(n.endswith("code/analysis.py") for n in names)  # code really included
+    assert leaked == []

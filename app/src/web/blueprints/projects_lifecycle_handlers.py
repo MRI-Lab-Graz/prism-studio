@@ -13,11 +13,12 @@ from .projects_citation_helpers import _validate_recruitment_payload
 from .conversion_job_store import ConversionJobStore
 from src.project_icons import normalize_project_icon, resolve_project_icon, stable_project_icon
 from src.system_files import filter_system_files
+from src.datalad_doctor import install_command, install_hint, run_doctor
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
 _DATALAD_DOCS_URL = "https://www.datalad.org/"
-_DATALAD_INSTALL_HINT = "Install with: uv tool install datalad git-annex"
+_DATALAD_INSTALL_HINT = install_hint()
 
 # init-on-bids can take a very long time for real remote datasets (multi-GB
 # content fetches). This job store only backs a live log-tailing endpoint -
@@ -126,6 +127,7 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
         "available": bool(datalad_executable),
         "annex_available": bool(git_annex_executable),
         "can_enable": bool(datalad_executable and git_annex_executable),
+        "install_command": install_command(),
         "message": message,
     }
 
@@ -133,6 +135,11 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
 def handle_datalad_preflight_status():
     """Return lightweight DataLad/git-annex availability for project setup UI."""
     return jsonify({"success": True, "datalad_preflight": _get_datalad_preflight_status()})
+
+
+def handle_datalad_doctor():
+    """Run the same checks as `prism_tools.py datalad doctor` (tools, SSH key, server login)."""
+    return jsonify({"success": True, "checks": run_doctor(request.args.get("url") or None)})
 
 
 def handle_remote_source_status(project_manager):

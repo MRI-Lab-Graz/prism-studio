@@ -45,7 +45,6 @@ def _args(**overrides) -> SimpleNamespace:
         language="en",
         languages=None,
         base_language=None,
-        ls_version="3",
     )
     defaults.update(overrides)
     return SimpleNamespace(**defaults)
@@ -154,7 +153,6 @@ class TestExportLssCustomized:
             _args(
                 customization_json=str(customization_path),
                 output=str(output),
-                ls_version="6",
                 no_matrix=True,
                 no_matrix_global=True,
                 survey_title=None,
@@ -299,3 +297,24 @@ class TestExportQuestionnaireDocx:
                 )
             )
         assert exc_info.value.code == 1
+
+
+@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+class TestExportLssInclude:
+    def test_include_keeps_only_the_listed_questions(self, tmp_path):
+        output = tmp_path / "export.lss"
+        cmd_survey_export_lss(
+            _args(files=[str(GAD7_PATH)], output=str(output), include="GAD701,GAD702", matrix=False)
+        )
+
+        text = output.read_text()
+        assert "GAD701" in text and "GAD702" in text
+        assert "GAD703" not in text
+
+    def test_include_with_several_files_is_refused(self, tmp_path, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_survey_export_lss(
+                _args(files=[str(GAD7_PATH), str(GAD7_PATH)], output=str(tmp_path / "x.lss"), include="GAD701")
+            )
+        assert exc_info.value.code == 1
+        assert "--include" in capsys.readouterr().out

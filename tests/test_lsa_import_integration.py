@@ -658,7 +658,7 @@ class TestTemplateMatching:
 
         lss_path = tmp_path / "with_participants.lss"
         generate_lss(
-            [str(participants_path)], str(lss_path), language="en", ls_version="6"
+            [str(participants_path)], str(lss_path), language="en"
         )
 
         from src.converters.limesurvey import parse_lss_xml_by_groups
@@ -715,7 +715,7 @@ class TestTemplateMatching:
 
         lss_path = tmp_path / "part_test.lss"
         generate_lss(
-            [str(participants_path)], str(lss_path), language="en", ls_version="6"
+            [str(participants_path)], str(lss_path), language="en"
         )
 
         with open(lss_path, "rb") as f:
@@ -807,7 +807,6 @@ class TestPrismExportRoundTrip:
             [str(gad7_path)],
             str(lss_path),
             language="en",
-            ls_version="6",
             matrix_mode=False,
         )
 
@@ -850,7 +849,7 @@ class TestPrismExportRoundTrip:
 
         lss_path = tmp_path / "multi_export.lss"
         # matrix_mode=False: see test_roundtrip_single_template.
-        generate_lss(paths, str(lss_path), language="en", ls_version="6", matrix_mode=False)
+        generate_lss(paths, str(lss_path), language="en", matrix_mode=False)
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
@@ -884,7 +883,7 @@ class TestPrismExportRoundTrip:
         lss_path = tmp_path / "bfis.lss"
         # matrix_mode=False: see test_roundtrip_single_template.
         generate_lss(
-            [str(bfis_path)], str(lss_path), language="en", ls_version="6",
+            [str(bfis_path)], str(lss_path), language="en",
             matrix_mode=False,
         )
 
@@ -926,7 +925,7 @@ class TestPrismExportRoundTrip:
             pytest.skip("GAD-7 template not available")
 
         lss_path = tmp_path / "meta_test.lss"
-        generate_lss([str(gad7_path)], str(lss_path), language="en", ls_version="6")
+        generate_lss([str(gad7_path)], str(lss_path), language="en")
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())

@@ -19,6 +19,7 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
+from src.datalad_doctor import install_command
 from src.project_manager import (
     DATALAD_TEXT_POLICY_REQUIRED_LINES,
     GIT_LFS_EXPORT_GITATTRIBUTES_LINES,
@@ -1385,7 +1386,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("annex_available"))
         self.assertFalse(result.get("can_enable"))
         self.assertIn("git-annex", result.get("message", ""))
-        self.assertIn("uv tool install datalad git-annex", result.get("message", ""))
+        self.assertIn(install_command(), result.get("message", ""))
 
     @patch("src.project_manager.shutil.which")
     def test_get_datalad_status_reports_missing_text_policy(self, mock_which):

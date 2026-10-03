@@ -4562,6 +4562,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return filters;
     }
 
+    function allFileDeleteSubjectsSelected() {
+        if (!fileDeleteSubjectsContainer) return false;
+        const boxes = fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]');
+        return boxes.length > 0 && Array.from(boxes).every((cb) => cb.checked);
+    }
+
     function getFileDeleteSelectedSubjects() {
         if (!fileDeleteSubjectsContainer) return [];
         return Array.from(
@@ -4700,6 +4706,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = Array.isArray(payload.files) ? payload.files : [];
         const emptyDirs = Array.isArray(payload.empty_dirs_to_remove) ? payload.empty_dirs_to_remove : [];
         const orphanedSidecars = Array.isArray(payload.orphaned_root_sidecars) ? payload.orphaned_root_sidecars : [];
+        fileDeletePreviewCounts = { count: fileCount, sidecars: orphanedSidecars.length };
         const previewLimit = 50;
 
         if (fileCount === 0 && orphanedSidecars.length === 0) {
@@ -4761,6 +4768,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    let fileDeletePreviewCounts = { count: 0, sidecars: 0 };
+
     async function runFileDelete(action) {
         const currentProjectPath = getCurrentProjectPath();
         if (!currentProjectPath) {
@@ -4789,8 +4798,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return;
             }
+            const { deleteConfirmMessage } = await import('./modules/file-management/delete-confirm.js');
             const confirmed = window.confirm(
-                'Permanently delete the previewed files from this project? This action cannot be undone.'
+                deleteConfirmMessage({
+                    ...fileDeletePreviewCounts,
+                    everything: !modality
+                        && Object.keys(entityFilters).length === 0
+                        && allFileDeleteSubjectsSelected(),
+                })
             );
             if (!confirmed) return;
             if (fileDeleteResult) {

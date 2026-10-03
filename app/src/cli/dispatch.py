@@ -60,6 +60,15 @@ def dispatch_prism_tools(
         handlers["publish"](args)
     elif args.command == "save-gate":
         handlers["save_gate"](args)
+    elif args.command == "datalad":
+        if args.action == "doctor":
+            handlers["datalad_doctor"](args)
+        elif args.action == "sync":
+            handlers["datalad_sync"](args)
+        elif args.action == "finalize":
+            handlers["datalad_finalize"](args)
+        else:
+            parsers["datalad"].print_help()
     elif args.command == "environment":
         if args.action == "preview":
             handlers["environment_preview"](args)
