@@ -6,14 +6,6 @@ import sys
 from pathlib import Path
 
 
-def _maybe_rm_tree(path: Path) -> None:
-    try:
-        if path.exists():
-            shutil.rmtree(path)
-    except Exception:
-        pass
-
-
 def _get_version() -> str:
     """Extract version from app/src/__init__.py"""
     try:
@@ -110,7 +102,7 @@ def _generate_icon(name: str) -> str | None:
         print("[ICON] Generating macOS icon (.icns)...")
         iconset_dir = Path(f"{name}.iconset")
         try:
-            _maybe_rm_tree(iconset_dir)
+            shutil.rmtree(iconset_dir, ignore_errors=True)
             iconset_dir.mkdir(parents=True, exist_ok=True)
 
             sizes = [16, 32, 64, 128, 256, 512, 1024]
@@ -146,14 +138,14 @@ def _generate_icon(name: str) -> str | None:
             if icns_path.exists():
                 icns_path.unlink()
             subprocess.run(["iconutil", "-c", "icns", str(iconset_dir)], check=True)
-            _maybe_rm_tree(iconset_dir)
+            shutil.rmtree(iconset_dir, ignore_errors=True)
             if icns_path.exists():
                 print(f"[OK] Generated {icns_path}")
                 return str(icns_path)
         except Exception as e:
             print(f"[WARN] Failed to generate icon: {e}")
         finally:
-            _maybe_rm_tree(iconset_dir)
+            shutil.rmtree(iconset_dir, ignore_errors=True)
 
         return None
 
@@ -242,40 +234,9 @@ def main() -> int:
         description="Build Prism Studio using PyInstaller"
     )
     parser.add_argument(
-        "--entry",
-        default="app/prism-studio.py",
-        help="Entry script to package (default: app/prism-studio.py)",
-    )
-    parser.add_argument(
         "--name",
         default="PrismStudio",
         help="App name (default: PrismStudio)",
-    )
-    parser.add_argument(
-        "--mode",
-        choices=["onefile", "onedir"],
-        default="onedir",
-        help="Distribution mode (default: onedir)",
-    )
-    parser.add_argument(
-        "--console",
-        action="store_true",
-        help="Keep a console window (default: windowed)",
-    )
-    parser.add_argument(
-        "--no-icon",
-        action="store_true",
-        help="Skip icon generation",
-    )
-    parser.add_argument(
-        "--no-sign",
-        action="store_true",
-        help="Skip macOS post-build codesign/xattr fixes",
-    )
-    parser.add_argument(
-        "--clean-output",
-        action="store_true",
-        help="Delete build/ and dist/ before building",
     )
     parser.add_argument(
         "--target-arch",
@@ -288,20 +249,13 @@ def main() -> int:
     project_root = Path(__file__).resolve().parents[2]
     os.chdir(project_root)
 
-    # Clean previous builds (optional)
-    if args.clean_output:
-        _maybe_rm_tree(project_root / "build")
-        _maybe_rm_tree(project_root / "dist")
-
     # Ensure optional runtime dirs exist so they can be bundled.
     (project_root / "survey_library").mkdir(parents=True, exist_ok=True)
 
     version = _get_version()
     print(f"[BUILD] Building {args.name} version {version}")
 
-    icon_file = None
-    if not args.no_icon:
-        icon_file = _generate_icon(args.name)
+    icon_file = _generate_icon(args.name)
 
     version_file = None
     if sys.platform == "win32":
@@ -344,12 +298,7 @@ def main() -> int:
 
     pyinstaller_args = _build_pyinstaller_args(args.name, Path(__file__).parent)
 
-    if not args.console:
-        pyinstaller_args.append("--windowed")
-    if args.mode == "onefile":
-        pyinstaller_args.append("--onefile")
-    else:
-        pyinstaller_args.append("--onedir")
+    pyinstaller_args += ["--windowed", "--onedir"]
 
     if sys.platform == "darwin":
         pyinstaller_args.append(
@@ -374,7 +323,7 @@ def main() -> int:
         pyinstaller_args.append(f"--add-data={data}")
 
     # The entry script must be the last positional argument
-    pyinstaller_args.append(args.entry)
+    pyinstaller_args.append("app/prism-studio.py")
 
     print("Building with args:", pyinstaller_args)
     import PyInstaller.__main__
@@ -432,23 +381,22 @@ def main() -> int:
         if compiled_any:
             print("[OK] Pre-compilation done")
 
-        if not args.no_sign:
-            # 3) Force ad-hoc code signing (after pre-compilation so .pyc files are sealed)
-            try:
-                print("[SIGN] Signing app bundle...")
-                subprocess.run(
-                    ["codesign", "--force", "--deep", "--sign", "-", app_path],
-                    check=True,
-                )
-            except Exception as e:
-                print(f"[WARN] Signing failed: {e}")
+        # 3) Force ad-hoc code signing (after pre-compilation so .pyc files are sealed)
+        try:
+            print("[SIGN] Signing app bundle...")
+            subprocess.run(
+                ["codesign", "--force", "--deep", "--sign", "-", app_path],
+                check=True,
+            )
+        except Exception as e:
+            print(f"[WARN] Signing failed: {e}")
 
-            # 4) Remove quarantine attribute (helps avoid 'App is damaged' in some cases)
-            try:
-                print("[XATTR] Removing quarantine attribute...")
-                subprocess.run(["xattr", "-cr", app_path], check=True)
-            except Exception as e:
-                print(f"[WARN] Removing quarantine failed: {e}")
+        # 4) Remove quarantine attribute (helps avoid 'App is damaged' in some cases)
+        try:
+            print("[XATTR] Removing quarantine attribute...")
+            subprocess.run(["xattr", "-cr", app_path], check=True)
+        except Exception as e:
+            print(f"[WARN] Removing quarantine failed: {e}")
 
         print(f"\n[OK] Build complete! Check dist/{args.name}.app")
         print(f"   To run: open dist/{args.name}.app")

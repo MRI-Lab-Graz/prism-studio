@@ -29,25 +29,22 @@ timestamp_utc="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 # Broken symlinks indicate unresolved annex object targets in nested datasets.
 broken_symlink_count="$(find "$DATASET_PATH" -type l ! -exec test -e {} \; -print | wc -l | tr -d ' ')"
 
-missing_recursive_total="$(
-  git -C "$DATASET_PATH" submodule foreach --quiet --recursive '
-    c=$(git annex find --not --in=here 2>/dev/null | wc -l | tr -d " ")
-    if [[ "$c" != "0" ]]; then
-      echo "$c"
-    fi
-  ' | awk '{s+=$1} END {print s+0}'
-)"
-
-echo "[$timestamp_utc] dataset=$DATASET_PATH broken_symlinks=$broken_symlink_count recursive_missing=$missing_recursive_total"
-
-if [[ "$broken_symlink_count" != "0" || "$missing_recursive_total" != "0" ]]; then
-  echo "[$timestamp_utc] ALERT: Annex availability issues detected"
+# One "<missing-count> <path>" line per nested dataset that lacks annexed content.
+missing_per_dataset="$(
   git -C "$DATASET_PATH" submodule foreach --quiet --recursive '
     c=$(git annex find --not --in=here 2>/dev/null | wc -l | tr -d " ")
     if [[ "$c" != "0" ]]; then
       echo "$c $displaypath"
     fi
-  ' | sort -nr | head -n 25
+  '
+)"
+missing_recursive_total="$(awk '{s+=$1} END {print s+0}' <<<"$missing_per_dataset")"
+
+echo "[$timestamp_utc] dataset=$DATASET_PATH broken_symlinks=$broken_symlink_count recursive_missing=$missing_recursive_total"
+
+if [[ "$broken_symlink_count" != "0" || "$missing_recursive_total" != "0" ]]; then
+  echo "[$timestamp_utc] ALERT: Annex availability issues detected"
+  sort -nr <<<"$missing_per_dataset" | head -n 25
   exit 1
 fi
 

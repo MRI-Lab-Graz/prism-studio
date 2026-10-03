@@ -15,8 +15,7 @@ for scoring-definition details [Recipes](RECIPES.md).
 | Run repo-local tests | `rtk test -q` |
 | Run coverage in this repo | `rtk coverage` |
 
-Daily repo checks: `bash scripts/ci/run_local_smoke.sh` (fast sanity),
-`bash scripts/ci/run_runtime_gate.sh` (full required gate).
+Daily repo check (full required gate): `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`.
 
 Both `prism.py` and `prism_tools.py` **enforce** running from the repo-local virtual
 environment at `./.venv` — activate it first
