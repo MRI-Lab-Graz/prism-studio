@@ -1,9 +1,7 @@
-"""Tests that `prism.py file-management ...` delegates to the prism_tools
-CLI tree, mirroring the existing `prism.py wide-to-long` alias.
+"""The validator CLI (`prism.py`) does not carry Studio commands.
 
-docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2: BidsFileDeleter already
-generated a "python prism.py file-management delete-files ..." command
-string for display before this command existed at all.
+`file-management` and `wide-to-long` live in prism_tools; prism.py only points
+there instead of importing the Studio CLI tree (the PyPI validator has none).
 """
 
 from __future__ import annotations
@@ -13,6 +11,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 
 os.environ.setdefault("PRISM_SKIP_VENV_CHECK", "1")
@@ -20,7 +20,7 @@ os.environ.setdefault("PRISM_SKIP_VENV_CHECK", "1")
 
 def _load_prism_module():
     spec = importlib.util.spec_from_file_location(
-        "prism_cli_file_management_under_test", APP_ROOT / "prism.py"
+        "prism_cli_pointer_under_test", APP_ROOT / "prism.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -30,27 +30,14 @@ def _load_prism_module():
 prism = _load_prism_module()
 
 
-def test_file_management_argv_delegates_to_prism_tools_entrypoint(monkeypatch):
-    called = {}
+@pytest.mark.parametrize("command", ["file-management", "wide-to-long"])
+def test_studio_command_points_to_prism_tools(monkeypatch, capsys, command):
+    monkeypatch.setattr(sys, "argv", ["prism.py", command, "--project", "/x"])
 
-    def _fake_prism_tools_main():
-        called["invoked"] = True
+    with pytest.raises(SystemExit) as exc:
+        prism.main()
 
-    import src.cli.entrypoint as entrypoint_module
-
-    monkeypatch.setattr(entrypoint_module, "main", _fake_prism_tools_main)
-    monkeypatch.setattr(
-        sys, "argv", ["prism.py", "file-management", "delete-files", "--project", "/x"]
-    )
-
-    prism.main()
-
-    assert called.get("invoked") is True
-
-
-def test_non_file_management_argv_does_not_short_circuit(monkeypatch, tmp_path):
-    # Sanity check the branch condition itself: a dataset path as the first
-    # positional argument must NOT be mistaken for the file-management
-    # delegate trigger.
-    monkeypatch.setattr(sys, "argv", ["prism.py", str(tmp_path)])
-    assert not (len(sys.argv) > 1 and sys.argv[1] == "file-management")
+    assert exc.value.code == 2
+    out = capsys.readouterr().out
+    assert "not part of the validator" in out
+    assert f"prism_tools.py {command}" in out

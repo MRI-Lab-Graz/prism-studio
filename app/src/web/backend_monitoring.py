@@ -823,7 +823,7 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
 
     cmd_parts: list[str] = [
         "python",
-        "prism.py",
+        "prism_tools.py",
         "wide-to-long",
         "--input",
         filename,
@@ -901,7 +901,7 @@ def _build_file_management_delete_terminal_command(req) -> str:
 
     cmd_parts: list[str] = [
         "python",
-        "prism.py",
+        "prism_tools.py",
         "file-management",
         "delete-files",
         "--project",
@@ -960,7 +960,7 @@ def _build_file_management_entity_rewrite_terminal_command(req, *, start_async: 
 
     cmd_parts: list[str] = [
         "python",
-        "prism.py",
+        "prism_tools.py",
         "file-management",
         "entity-rewrite",
         "--project",
@@ -1002,7 +1002,7 @@ def _build_file_management_subject_rewrite_terminal_command(req, *, start_async:
 
     cmd_parts: list[str] = [
         "python",
-        "prism.py",
+        "prism_tools.py",
         "file-management",
         "subject-rewrite",
         "--project",

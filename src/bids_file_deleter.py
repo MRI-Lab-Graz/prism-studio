@@ -494,7 +494,7 @@ class BidsFileDeleter:
         """Return a CLI-style backend command preview for file deletion."""
         cmd_parts = [
             "python",
-            "prism.py",
+            "prism_tools.py",
             "file-management",
             "delete-files",
             "--project",

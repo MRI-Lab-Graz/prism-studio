@@ -305,17 +305,12 @@ def resolve_effective_library_path(
 
 def main():  # noqa: C901
     """Main CLI entry point"""
-    if len(sys.argv) > 1 and sys.argv[1] == "wide-to-long":
-        from src.cli.entrypoint import main as prism_tools_main
-
-        prism_tools_main()
-        return
-
-    if len(sys.argv) > 1 and sys.argv[1] == "file-management":
-        from src.cli.entrypoint import main as prism_tools_main
-
-        prism_tools_main()
-        return
+    if len(sys.argv) > 1 and sys.argv[1] in ("wide-to-long", "file-management"):
+        print(
+            f"'{sys.argv[1]}' is not part of the validator. "
+            f"Use: prism_tools.py {sys.argv[1]} ..."
+        )
+        sys.exit(2)
 
     if len(sys.argv) > 1 and sys.argv[1] == "merge-versions":
         _cli_merge_versions(sys.argv[2:])
@@ -331,7 +326,6 @@ Examples:
   %(prog)s /path/to/dataset --schema-version 0.1
   %(prog)s /path/to/dataset --fix
   %(prog)s /path/to/dataset --fix --dry-run
-    %(prog)s wide-to-long --input survey.xlsx --session-indicators T1_,T2_,T3_ --inspect-only
   %(prog)s --schema-info image
   %(prog)s --validate-templates /path/to/library/survey
     %(prog)s --build-environment --scans-tsv /path/sub-01_scans.tsv --environment-tsv /path/sub-01_environment.tsv --lat 47.07 --lon 15.44

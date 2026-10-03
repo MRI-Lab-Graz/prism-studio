@@ -25,7 +25,7 @@ def test_bids_file_deleter_apply_for_plain_project(tmp_path):
     assert result["deleted_count"] == 1
     assert result["removed_empty_dirs"] >= 1
     assert "datalad" not in result
-    assert "python prism.py file-management delete-files" in str(
+    assert "python prism_tools.py file-management delete-files" in str(
         result.get("backend_command", "")
     )
     assert not target.exists()
@@ -59,7 +59,7 @@ def test_bids_file_deleter_apply_uses_datalad_run_dataset(tmp_path, monkeypatch)
                 "deleted_count": 1,
                 "deleted_sidecars": 0,
                 "removed_empty_dirs": 1,
-                "backend_command": "python prism.py file-management delete-files --apply",
+                "backend_command": "python prism_tools.py file-management delete-files --apply",
             }
             return SimpleNamespace(
                 returncode=0,
@@ -85,7 +85,7 @@ def test_bids_file_deleter_apply_uses_datalad_run_dataset(tmp_path, monkeypatch)
     assert datalad.get("available") is True
     assert datalad.get("used_run") is True
     assert "datalad run" in str(datalad.get("command", ""))
-    assert "python prism.py file-management delete-files" in str(
+    assert "python prism_tools.py file-management delete-files" in str(
         result.get("backend_command", "")
     )
 
@@ -143,7 +143,7 @@ def test_bids_file_deleter_apply_runs_once_per_subject_group(tmp_path, monkeypat
                 "files": [f"{subject}/func/{subject}_task-rest_bold.nii.gz"],
                 "empty_dirs_to_remove": [f"{subject}/func"],
                 "orphaned_root_sidecars": [],
-                "backend_command": "python prism.py file-management delete-files --apply",
+                "backend_command": "python prism_tools.py file-management delete-files --apply",
             }
             return SimpleNamespace(
                 returncode=0,
