@@ -51,3 +51,23 @@ def test_release_publishes_checksums_and_provenance():
 def test_readme_explains_how_to_verify_a_download():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "SHA256SUMS" in readme and "gh attestation verify" in readme
+
+
+def test_release_build_installs_only_hash_locked_requirements():
+    wf = (ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    assert "--require-hashes" in wf and "requirements-release.lock" in wf
+    assert "-r requirements-runtime.txt" not in wf and "-r requirements-build.txt" not in wf
+    lock = (ROOT / "requirements-release.lock").read_text(encoding="utf-8")
+    assert "--hash=sha256:" in lock
+
+
+def test_lock_covers_every_direct_runtime_and_build_dependency():
+    import re
+
+    lock = (ROOT / "requirements-release.lock").read_text(encoding="utf-8").lower().replace("_", "-")
+    pinned = set(re.findall(r"^([a-z0-9][a-z0-9.-]*)==", lock, flags=re.M))
+    for name in ("requirements-runtime.txt", "requirements-build.txt"):
+        for line in (ROOT / name).read_text(encoding="utf-8").splitlines():
+            m = re.match(r"([A-Za-z0-9][A-Za-z0-9._-]*)", line.strip())
+            if m and not line.strip().startswith("#"):
+                assert m.group(1).lower().replace("_", "-") in pinned, (name, m.group(1))

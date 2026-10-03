@@ -76,6 +76,17 @@ We maintain comprehensive test coverage. When adding new features:
 - Add web tests in `tests/test_web_*.py` for web interface features
 - Ensure cross-platform compatibility (test on Windows if possible)
 
+## Release dependencies
+
+Release builds install only `requirements-release.lock` (exact versions plus hashes,
+`pip install --require-hashes`). Dependabot does not update it, so before tagging a
+release refresh it, run the tests, and commit the result as a reviewed change:
+
+```bash
+uv pip compile requirements-runtime.txt requirements-build.txt --universal \
+  --python-version 3.10 --generate-hashes -o requirements-release.lock
+```
+
 ## Documentation
 
 Documentation is in the `docs/` folder and built with Sphinx:
