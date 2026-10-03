@@ -1014,8 +1014,13 @@ def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
         return False
 
 
-from src.web.request_guard import install_cross_site_guard, install_public_token_guard
+from src.web.request_guard import (
+    install_cross_site_guard,
+    install_public_token_guard,
+    install_security_headers,
+)
 
+install_security_headers(app)
 install_public_token_guard(app)
 install_cross_site_guard(app)
 

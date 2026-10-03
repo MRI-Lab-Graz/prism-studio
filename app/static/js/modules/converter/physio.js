@@ -6,6 +6,7 @@
  */
 
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { escapeHtml } from '../../shared/dom.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
@@ -450,7 +451,7 @@ export function initPhysio(elements) {
                 physioServerFolderPath = '';
             } catch (_error) {
                 if (physioBatchError) {
-                    physioBatchError.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Failed to load ${filename} from sourcedata.`;
+                    physioBatchError.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Failed to load ${escapeHtml(filename)} from sourcedata.`;
                     physioBatchError.classList.remove('d-none');
                 }
             } finally {

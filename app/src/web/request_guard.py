@@ -65,6 +65,21 @@ def install_public_token_guard(app: Flask) -> None:
         return response
 
 
+def install_security_headers(app: Flask) -> None:
+    """No framing (clickjacking), no MIME sniffing, no referrer leakage.
+
+    A full script-src CSP needs the templates' inline scripts cleaned up first.
+    """
+
+    @app.after_request
+    def _add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Content-Security-Policy", "frame-ancestors 'none'")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        return response
+
+
 def install_cross_site_guard(app: Flask) -> None:
     @app.before_request
     def _reject_cross_site():
