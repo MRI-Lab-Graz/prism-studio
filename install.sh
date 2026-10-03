@@ -104,7 +104,7 @@ PY
     local status=$?
 
     # Prefer an installed 3.10-3.12 over a uv-managed one: uv's Python can abort in
-    # ensurepip with --copies on macOS, and prism-studio.py rejects symlinked venvs.
+    # ensurepip with --copies on macOS, forcing the symlinked-venv fallback.
     if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ]; then
         local minor found
         for minor in 12 11 10; do
@@ -156,6 +156,21 @@ is_python_executable_usable() {
     fi
 
     "$candidate" -c "import sys" >/dev/null 2>&1
+}
+
+# A symlinked venv python is fine (it is the fallback when --copies fails);
+# a dangling link fails the usability check and the venv is recreated.
+reset_unusable_venv() {
+    [ -d "$VENV_DIR" ] || return 0
+    if [ ! -f "$VENV_DIR/bin/activate" ]; then
+        echo_info "Existing '$VENV_DIR' is missing activation files; recreating it."
+        rm -rf "$VENV_DIR"
+    elif ! is_python_executable_usable "$VENV_PYTHON_UNIX"; then
+        echo_info "Existing '$VENV_DIR' has an unusable Python interpreter; recreating it."
+        rm -rf "$VENV_DIR"
+    else
+        echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
+    fi
 }
 
 detect_package_manager() {
@@ -352,20 +367,7 @@ VENV_CREATOR_PYTHON=""
 select_venv_creator_python
 ensure_min_python_version "$VENV_CREATOR_PYTHON"
 VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
-if [ -d "$VENV_DIR" ]; then
-    if [ -L "$VENV_PYTHON_UNIX" ]; then
-        echo_info "Existing '$VENV_DIR' uses a symlinked Python interpreter; recreating strict local venv."
-        rm -rf "$VENV_DIR"
-    elif [ ! -f "$VENV_DIR/bin/activate" ]; then
-        echo_info "Existing '$VENV_DIR' is missing activation files; recreating strict local venv."
-        rm -rf "$VENV_DIR"
-    elif ! is_python_executable_usable "$VENV_PYTHON_UNIX"; then
-        echo_info "Existing '$VENV_DIR' has an unusable Python interpreter; recreating strict local venv."
-        rm -rf "$VENV_DIR"
-    else
-        echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
-    fi
-fi
+reset_unusable_venv
 
 if [ ! -d "$VENV_DIR" ]; then
     create_virtualenv

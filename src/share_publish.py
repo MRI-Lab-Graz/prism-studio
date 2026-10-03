@@ -303,6 +303,10 @@ exec "$TOOLS" publish --check --project "$ROOT"
 
 
 def _hooks_dir(root: Path) -> Path:
+    # A folder inside some other repo must not borrow that repo's hooks dir.
+    top = _git(root, "rev-parse", "--show-toplevel")
+    if not top or Path(top).resolve() != root.resolve():
+        raise NotAGitRepoError(f"{root} is not a git repository; nothing installed.")
     out = _git(root, "rev-parse", "--path-format=absolute", "--git-path", "hooks")
     if out:
         return Path(out)

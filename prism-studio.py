@@ -48,18 +48,6 @@ def check_and_activate_venv():
         print("Please run 'bash install.sh' to recreate the virtual environment.")
         sys.exit(3)
 
-    # Strict mode: reject symlinked interpreters to avoid external runtimes.
-    if venv_python.is_symlink():
-        resolved = venv_python.resolve()
-        print(
-            "Error: Virtual environment Python must be a local binary, "
-            f"but {venv_python} points to {resolved}."
-        )
-        print(
-            "Please run 'bash install.sh' to recreate a strict local virtual environment."
-        )
-        sys.exit(5)
-
     # Check if we're already running from the venv.
     try:
         if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):

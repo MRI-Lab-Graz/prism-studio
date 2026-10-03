@@ -1,7 +1,7 @@
 """install.sh must prefer an installed Python 3.10-3.12 over a uv-managed one.
 
 uv-managed Python cannot build a copied venv on some macOS setups (ensurepip
-aborts), and the symlinked fallback is rejected by prism-studio.py.
+aborts), so install.sh falls back to a symlinked venv.
 """
 import subprocess
 from pathlib import Path
@@ -36,6 +36,49 @@ echo "$VENV_CREATOR_PYTHON"
         capture_output=True, text=True,
     )
     assert out.stdout.strip() == str(bin_dir / "python3.12"), out.stderr
+
+
+def _run_reset_existing_venv(venv_dir):
+    funcs = subprocess.run(
+        ["sed", "-n", "/^is_python_executable_usable()/,/^}/p;/^reset_unusable_venv()/,/^}/p", "install.sh"],
+        cwd=ROOT, capture_output=True, text=True,
+    ).stdout
+    script = f"""
+echo_info() {{ :; }}
+{funcs}
+VENV_DIR="{venv_dir}"
+VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
+reset_unusable_venv
+"""
+    return subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+
+
+def test_working_symlinked_venv_is_reused(tmp_path):
+    """The symlinked fallback venv is valid; rerunning install.sh must keep it."""
+    venv = tmp_path / ".venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "activate").write_text("")
+    real = tmp_path / "real-python"
+    _fake(real, "exit 0\n")
+    (venv / "bin" / "python").symlink_to(real)
+
+    out = _run_reset_existing_venv(venv)
+
+    assert out.returncode == 0, out.stderr
+    assert venv.is_dir()
+
+
+def test_broken_symlinked_venv_is_removed(tmp_path):
+    """A venv whose interpreter link points nowhere (e.g. uv removed that Python)."""
+    venv = tmp_path / ".venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "activate").write_text("")
+    (venv / "bin" / "python").symlink_to(tmp_path / "gone")
+
+    out = _run_reset_existing_venv(venv)
+
+    assert out.returncode == 0, out.stderr
+    assert not venv.exists()
 
 
 def test_symlinked_python_is_resolved_to_its_real_path(tmp_path):
