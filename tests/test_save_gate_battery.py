@@ -237,8 +237,9 @@ def test_every_decision_is_audited(green):
 
 
 @needs_datalad
-def test_a_real_prism_project_gets_the_gate_and_refuses_a_red_save(tmp_path):
-    """The project-creation flow itself installs the hook (not just the test fixture)."""
+def test_a_real_prism_project_gets_the_gate(tmp_path):
+    """The project-creation flow itself installs the hook (not just the test fixture):
+    a fresh metadata-only project saves, but participants.tsv without subject data is refused."""
     sys.path.insert(0, str(REPO / "app"))
     from src.project_manager import ProjectManager
 
@@ -246,9 +247,14 @@ def test_a_real_prism_project_gets_the_gate_and_refuses_a_red_save(tmp_path):
     result = ProjectManager().create_project(str(project), {"name": "proj", "use_datalad": True})
     assert result["success"], result
     assert sg.has_save_hook(project)
+
+    (project / "README.md").write_text("metadata only: no participants, no subjects")
     before = head(project)
-    (project / "README.md").write_text("a fresh project has no subjects yet, so it is red")
-    r = commit_all(project)
+    assert commit_all(project).returncode == 0 and head(project) != before
+
+    (project / "participants.tsv").write_text("participant_id\nsub-01\n")
+    before = head(project)
+    r = commit_all(project, "participants but no subject data")
     assert r.returncode != 0 and head(project) == before
 
 
