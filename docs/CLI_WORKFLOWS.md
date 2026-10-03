@@ -78,8 +78,7 @@ python prism_tools.py participants merge \
 ## Daily repo quality commands
 
 ```bash
-bash scripts/ci/run_local_smoke.sh     # fast smoke check
-bash scripts/ci/run_runtime_gate.sh    # full runtime gate
+python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix  # runtime gate
 pytest                                 # tests
 ```
 

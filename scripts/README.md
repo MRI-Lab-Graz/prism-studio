@@ -14,23 +14,15 @@ Build and packaging automation.
 
 Active files:
 - `scripts/build/build_app.py`
-- `scripts/build/build_macos_app.sh`
-- `scripts/build/build_windows.bat`
-- `scripts/build/build_windows.ps1`
+- `scripts/build/build_windows_local.ps1` (local Windows build, same steps as CI)
 
 ### `scripts/ci/`
 CI and local smoke-check utilities.
 
 Active files:
-- `scripts/ci/assemble_portable_windows.ps1`
-- `scripts/ci/run_local_smoke.bat`
-- `scripts/ci/run_local_smoke.sh`
-- `scripts/ci/run_runtime_gate.bat`
-- `scripts/ci/run_runtime_gate.sh`
-- `scripts/ci/test_bids_compliance.py`
+- `scripts/ci/smoke_bundle_imports.py`
+- `scripts/ci/smoke_packaged_web_app.py`
 - `scripts/ci/test_fresh_install.bat`
-- `scripts/ci/test_pyedflib.bat`
-- `scripts/ci/test_pyedflib.sh`
 
 ### `scripts/setup/`
 Environment setup and global library configuration.
@@ -45,12 +37,12 @@ replaced.
 Active files:
 - `scripts/setup/configure_global_library.py`
 - `scripts/setup/create_desktop_shortcut.ps1`
-- `scripts/setup/show_global_config.py`
 - `scripts/setup/verify_global_library.py`
 - `scripts/setup/windows.ps1` (setup logic invoked by `install.cmd` at the repo root; not meant to be run directly)
 - `scripts/setup/windows_workshop_preflight.ps1`
 
 ## Notes
 
-- `scripts/data/`, `scripts/dev/`, `scripts/maintenance/`, and `scripts/release/` are intentionally empty in active use after cleanup.
+- `scripts/release/` holds the macOS first-run files that `.github/workflows/build.yml` packages.
+- Repo gate: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`.
 - `__pycache__/` folders may appear locally during execution and are not part of the curated script inventory.

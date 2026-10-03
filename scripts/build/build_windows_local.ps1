@@ -4,9 +4,9 @@
     Local Windows build — produces the same prism-studio-Windows.zip as the GitHub CI.
 
 .USAGE
-    .\build_local.ps1                    # standard build
-    .\build_local.ps1 -SkipInstall       # skip pip install (if deps already installed)
-    .\build_local.ps1 -OutputZip my.zip  # custom output filename
+    .\scripts\build\build_windows_local.ps1                    # standard build
+    .\scripts\build\build_windows_local.ps1 -SkipInstall       # skip pip install (if deps already installed)
+    .\scripts\build\build_windows_local.ps1 -OutputZip my.zip  # custom output filename
 #>
 param(
     [switch]$SkipInstall,
@@ -16,11 +16,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$root = Split-Path $PSScriptRoot -Parent
-if (-not (Test-Path (Join-Path $root 'app\prism-studio.py'))) {
-    # Script is IN the repo root (not a subdirectory)
-    $root = $PSScriptRoot
-}
+$root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
 Set-Location $root
 Write-Host ""

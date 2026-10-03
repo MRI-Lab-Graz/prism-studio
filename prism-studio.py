@@ -1,77 +1,16 @@
 #!/usr/bin/env python3
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from launcher_exec import exec_python  # noqa: E402
-
-
-def find_project_root():
-    """Find the project root directory (contains app/ and .venv/)."""
-    # Start from script location
-    current = Path(__file__).resolve().parent
-
-    # If we're in .venv/bin/, go up two levels
-    if current.name == "bin" and current.parent.name == ".venv":
-        return current.parent.parent
-
-    # Otherwise, current directory should be the project root
-    return current
-
-
-# Check if we're in the correct virtual environment
-def check_and_activate_venv():
-    """Check if the correct venv is activated, if not try to re-execute with it."""
-    # Skip check only when explicitly requested by a verification harness.
-    if os.environ.get("PRISM_SKIP_VENV_CHECK"):
-        return
-
-    project_root = find_project_root()
-    venv_dir = project_root / ".venv"
-
-    # Check if venv exists
-    if not venv_dir.exists():
-        print(f"Error: Virtual environment not found at {venv_dir}")
-        print("Please run 'bash install.sh' or 'install.cmd' to create it.")
-        sys.exit(2)
-
-    # Determine venv python path
-    if sys.platform == "win32":
-        venv_python = venv_dir / "Scripts" / "python.exe"
-    else:
-        venv_python = venv_dir / "bin" / "python"
-
-    # Check if venv python exists
-    if not venv_python.exists():
-        print(f"Error: Virtual environment Python not found at {venv_python}")
-        print("Please run 'bash install.sh' to recreate the virtual environment.")
-        sys.exit(3)
-
-    # Check if we're already running from the venv.
-    try:
-        if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):
-            return
-    except Exception:
-        # Defensive: continue to activation logic if sys checks fail.
-        pass
-
-    # Re-execute with venv python
-    print(f"⚠️  Activating virtual environment: {venv_dir}")
-    try:
-        exec_python(venv_python, sys.argv)
-    except OSError as e:
-        print(f"Error: Failed to exec into virtualenv python: {e}")
-        sys.exit(4)
-
+from launcher_exec import ensure_venv, exec_python, find_project_root  # noqa: E402
 
 # Check venv before doing anything else
-check_and_activate_venv()
+ensure_venv(find_project_root(__file__), strict=True)
 
 # Redirect to the consolidated app folder
 if __name__ == "__main__":
-    project_root = find_project_root()
-    app_script = project_root / "app" / "prism-studio.py"
+    app_script = find_project_root(__file__) / "app" / "prism-studio.py"
     if app_script.exists():
         exec_python(sys.executable, [app_script] + sys.argv[1:])
     else:
