@@ -51,7 +51,7 @@ jobs:
       - name: Build wheel for upload
         run: python scripts/build_validator_wheel.py --out dist
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: prism-validator-wheel
           path: dist/*.whl
