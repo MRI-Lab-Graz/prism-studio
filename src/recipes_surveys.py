@@ -3375,6 +3375,18 @@ def anonymize_recipe_output(
     return anonymized_count, mapping_file_path
 
 
+def _r_str(value: object) -> str:
+    """R single-quoted string literal for `value` (escapes backslash, quote, newlines)."""
+    text = (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace("'", "\\'")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
+    return f"'{text}'"
+
+
 def _write_jamovi_r_helper(
     path: Path,
     data_filename: str,
@@ -3396,7 +3408,7 @@ def _write_jamovi_r_helper(
         "# -------------------------------------------------------------------------",
         "",
         "# 1. Load the data",
-        f"df <- read.csv('{data_filename}', check.names=FALSE, stringsAsFactors=FALSE)",
+        f"df <- read.csv({_r_str(data_filename)}, check.names=FALSE, stringsAsFactors=FALSE)",
         "# df <- data  # Uncomment this to use the Jamovi spreadsheet directly",
         "",
         "# 2. Apply Value Labels (Factors)",
@@ -3409,15 +3421,13 @@ def _write_jamovi_r_helper(
 
         # Prepare levels: if they look like numbers, we'll try to keep them flexible
         # but in R c('0','1') is safest for CSV-imported data.
-        r_levels = ", ".join([f"'{k}'" for k in levels.keys()])
+        r_levels = ", ".join(_r_str(k) for k in levels.keys())
+        r_labels = ", ".join(_r_str(v) for v in levels.values())
+        r_var = _r_str(var)
 
-        # Avoid backslashes inside f-string expressions (Python < 3.12 compatibility)
-        processed_labels = [str(v).replace("'", "\\'") for v in levels.values()]
-        r_labels = ", ".join([f"'{v}'" for v in processed_labels])
-
-        lines.append(f"if ('{var}' %in% colnames(df)) {{")
+        lines.append(f"if ({r_var} %in% colnames(df)) {{")
         lines.append(
-            f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))"
+            f"  df[[{r_var}]] <- factor(df[[{r_var}]], levels=c({r_levels}), labels=c({r_labels}))"
         )
         lines.append("}")
 
@@ -3425,8 +3435,9 @@ def _write_jamovi_r_helper(
     lines.append("# 3. Variable Descriptions (Reference)")
     for var, label in sorted(variable_labels.items()):
         if label:
-            clean_label = label.replace("\n", " ").strip()
-            lines.append(f"# {var}: {clean_label}")
+            # split() collapses every line-break char (\r,  , ...), so a label
+            # can never end the '#' comment and start a new R statement.
+            lines.append(f"# {' '.join(str(var).split())}: {' '.join(label.split())}")
 
     lines.append("")
     lines.append("# Display structure")
