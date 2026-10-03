@@ -106,6 +106,21 @@ def _sibling_for(root: Path, sibling_name: str | None) -> str:
     return str(load_config(str(root)).datalad_sibling_name or "").strip() or "ria-store"
 
 
+_PUBLIC_HOSTS = ("github.com", "gitlab.com", "gin.g-node.org", "bitbucket.org", "codeberg.org", "openneuro.org")
+
+
+def _is_public_target(url: str) -> bool:
+    """True for web URLs and well-known public code hosts (the lab server is neither)."""
+    from src.datalad_doctor import parse_ssh_target
+
+    url = str(url or "").strip()
+    url = url[4:] if url.startswith("ria+") else url
+    if url.lower().startswith(("http://", "https://", "git://")):
+        return True
+    target = parse_ssh_target(url)
+    return bool(target) and target[1].lower().endswith(_PUBLIC_HOSTS)
+
+
 def has_sibling(project_root, sibling_name: str) -> bool:
     return sibling_name in _git(Path(project_root), "remote").split()
 
@@ -234,6 +249,17 @@ def publish_to_server(
         )
     if not has_sibling(root, sibling):
         return finish("no_sibling", f'No sibling named "{sibling}" in this dataset.', audit_result="refused")
+    # sourcedata/ (raw, identifiable data) is tracked in plain git by design and is for
+    # the internal lab server only: never send it to a public host.
+    if _git(root, "ls-files", "--", "sourcedata") and _is_public_target(
+        _git(root, "remote", "get-url", sibling)
+    ):
+        return finish(
+            "public_target_with_sourcedata",
+            f'"{sibling}" is a public host and this project tracks sourcedata/ (raw data). '
+            "Publish only to the internal lab server.",
+            audit_result="refused",
+        )
     dirty = uncommitted_changes(root)
     if dirty:
         return finish(
