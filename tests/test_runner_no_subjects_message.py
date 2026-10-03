@@ -41,3 +41,42 @@ def test_real_mismatch_is_still_reported(tmp_path):
 
     assert len(issues) == 1
     assert "mismatch" in issues[0][1]
+
+
+# --- metadata-only projects are green; participants without subjects are red ---
+
+import json  # noqa: E402
+
+import pytest  # noqa: E402
+
+from src.runner import validate_dataset  # noqa: E402
+
+
+def _dataset(root: Path, *, description=True, participants=()):
+    if description:
+        (root / "dataset_description.json").write_text(
+            json.dumps({"Name": "Metadata only", "BIDSVersion": "1.10.0", "DatasetType": "raw"})
+        )
+    for name in participants:
+        (root / name).write_text("participant_id\nsub-01\n" if name.endswith(".tsv") else "{}")
+    return root
+
+
+def _no_subject_errors(root: Path) -> list[str]:
+    issues, _stats = validate_dataset(str(root), verbose=False, run_bids=False, run_prism=True)
+    return [i[1] for i in issues if i[0] == "ERROR" and "No subjects found" in i[1]]
+
+
+def test_metadata_only_project_has_no_missing_subjects_error(tmp_path):
+    assert _no_subject_errors(_dataset(tmp_path)) == []
+
+
+@pytest.mark.parametrize("name", ["participants.tsv", "participants.json"])
+def test_participants_file_without_subject_folders_is_an_error(tmp_path, name):
+    errors = _no_subject_errors(_dataset(tmp_path, participants=[name]))
+    assert len(errors) == 1
+
+
+def test_folder_without_dataset_description_still_says_point_at_the_root(tmp_path):
+    errors = _no_subject_errors(_dataset(tmp_path, description=False))
+    assert len(errors) == 1 and "dataset root" in errors[0]
