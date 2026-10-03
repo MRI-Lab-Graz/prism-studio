@@ -47,10 +47,10 @@ jobs:
             bundle_executable: dist/PrismStudio/PrismStudio
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
       with:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
@@ -102,7 +102,7 @@ jobs:
       id: upload-unsigned-exe
       env:
         SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: unsigned-prism-studio-exe
         path: dist/PrismStudio/PrismStudio.exe
@@ -113,7 +113,7 @@ jobs:
       if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
       env:
         SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      uses: signpath/github-action-submit-signing-request@v3.0
+      uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
         organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -192,28 +192,28 @@ jobs:
 
     - name: Upload Workflow Artifact (Windows)
       if: runner.os == 'Windows' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/PrismStudio
 
     - name: Upload Workflow Artifact (macOS)
       if: runner.os == 'macOS' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/${{ matrix.artifact_name }}
 
     - name: Upload Workflow Artifact (Linux)
       if: runner.os == 'Linux' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/PrismStudio
 
     - name: Upload Release Artifact
       if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
@@ -229,20 +229,20 @@ jobs:
       attestations: write
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
     - name: Download Windows Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: prism-studio-Windows
 
     - name: Download macOS Apple Silicon Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: prism-studio-macOS-AppleSilicon
 
     - name: Download Linux Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: prism-studio-Linux
 
@@ -266,12 +266,12 @@ jobs:
       run: sha256sum prism-studio-*.zip > SHA256SUMS
 
     - name: Attest build provenance
-      uses: actions/attest-build-provenance@v3
+      uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
       with:
         subject-path: prism-studio-*.zip
 
     - name: Create Release
-      uses: softprops/action-gh-release@v3
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
       with:
         draft: false
         prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
