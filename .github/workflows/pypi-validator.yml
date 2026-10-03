@@ -71,3 +71,6 @@ jobs:
           path: dist
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # a re-pushed tag re-runs this job; PyPI never accepts the same file twice
+          skip-existing: true
