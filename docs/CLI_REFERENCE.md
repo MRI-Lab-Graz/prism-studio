@@ -70,7 +70,7 @@ prism-validator /path/to/dataset
 | `--format {json,sarif,junit,markdown,csv}` | Explicit output format |
 | `-o FILE`, `--output FILE` | Write report to a file |
 | `--fix` / `--dry-run` / `--list-fixes` | Apply/preview auto-fixes, or list fixable issue types |
-| `--init-plugin NAME` / `--list-plugins` / `--no-plugins` | Validator plugin management |
+| `--init-plugin NAME` / `--list-plugins` / `--plugins` | Validator plugin management. Plugins are Python code from the dataset, so they load only with `--plugins` (use on datasets you trust) |
 | `--version` | Print PRISM version and exit |
 
 ```bash

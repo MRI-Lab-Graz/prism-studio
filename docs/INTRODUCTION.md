@@ -42,7 +42,8 @@ The mechanisms that make this practical, not just possible:
   migration.
 - **Validator plugins**: a project can add its own checks — a Python
   module returning a list of issues — via `.prismrc.json` or a
-  `validators/` folder, for lab-specific rules PRISM will never ship.
+  `validators/` folder, for lab-specific rules PRISM will never ship. They
+  are code, so they only run when you pass `--plugins`.
 
 ## A validator, not a linter
 
