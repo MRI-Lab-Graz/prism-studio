@@ -51,6 +51,7 @@ from src.project_export_helpers import (
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
 from src.datalad_doctor import explain_ssh_failures, install_command, install_hint
+from src.git_exclude import sensitive_files_warning, tracked_sensitive_files
 from src.entity_rules import load_entity_rules
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
@@ -2001,6 +2002,13 @@ class ProjectManager:
                 (save_result.get("message") or "DataLad save completed.")
                 + f" Un-annexed {annexed_text_fix['fixed_count']} text-format file(s) that "
                 "were incorrectly tracked as git-annex symlinks."
+            )
+        tracked_sensitive = tracked_sensitive_files(project_path)
+        if tracked_sensitive:
+            save_result["tracked_sensitive_files"] = tracked_sensitive
+            save_result["message"] = (
+                (save_result.get("message") or "DataLad save completed.")
+                + sensitive_files_warning(tracked_sensitive)
             )
         result["datalad"] = save_result
         if save_result.get("saved") or save_result.get("no_changes"):
