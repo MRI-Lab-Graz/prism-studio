@@ -61,8 +61,8 @@ def test_list_remote_directory_parses_resolved_path_and_directories_only(
     # one argv element -- never split into separate local argv tokens.
     command = seen_commands[0]
     assert command[0] == "/usr/bin/ssh"
-    assert command[1] == "user@host"
-    assert "study1" in command[2]
+    assert command[1:3] == ["--", "user@host"]
+    assert "study1" in command[3]
 
 
 def test_list_remote_directory_reports_root_as_having_no_parent(
@@ -136,7 +136,7 @@ def test_create_remote_directory_builds_mkdir_p_and_returns_resolved_path(
 
     assert result["success"] is True
     assert result["path"] == "/srv/backups/study1/new-folder"
-    command = seen_commands[0][2]
+    command = seen_commands[0][3]
     assert "mkdir -p" in command
 
 

@@ -86,10 +86,9 @@ def test_ensure_remote_directory_runs_ssh_mkdir_for_remote_target(
     assert result["success"] is True
     assert seen_commands[0] == [
         "/usr/bin/ssh",
+        "--",
         "researcher@host",
-        "mkdir",
-        "-p",
-        "/srv/backups/study1",
+        "mkdir -p -- /srv/backups/study1",
     ]
 
 

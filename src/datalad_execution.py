@@ -669,6 +669,9 @@ def run_datalad_create_sibling_plain(
     if not url:
         result["message"] = "No remote sibling URL was provided."
         return result
+    if url.startswith("-"):
+        result["message"] = "Refusing a URL that starts with '-'."
+        return result
 
     name = str(sibling_name or "").strip() or "server"
     command = [
@@ -748,6 +751,9 @@ def run_datalad_create_sibling_ria(
     url = str(ria_url or "").strip()
     if not url:
         result["message"] = "No RIA store URL was provided."
+        return result
+    if url.startswith("-"):
+        result["message"] = "Refusing a URL that starts with '-'."
         return result
 
     name = str(sibling_name or "").strip() or "ria-store"
