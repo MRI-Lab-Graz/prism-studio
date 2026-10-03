@@ -34,6 +34,7 @@ from src.datalad_execution import (
     run_datalad_unlock,
 )
 from src.recipe_validation import validate_recipe
+from src.safe_excel import to_excel_safe
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.survey_scale_inference import get_survey_item_map
 from src.recipes_formula_engine import (
@@ -1718,7 +1719,7 @@ def _export_recipe_aggregated(
         _unlock_for_overwrite(out_fname, output_prism_root)
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
-                df_for_write.to_excel(writer, sheet_name="Data", index=False)
+                to_excel_safe(df_for_write, writer, sheet_name="Data", index=False)
                 # Codebook sheet
                 cb_rows = []
                 for var in df_for_write.columns:
@@ -1755,18 +1756,18 @@ def _export_recipe_aggregated(
                             "score_details": det_str,
                         }
                     )
-                pd.DataFrame(cb_rows).to_excel(
-                    writer, sheet_name="Codebook", index=False
+                to_excel_safe(
+                    pd.DataFrame(cb_rows), writer, sheet_name="Codebook", index=False
                 )
                 if survey_meta:
                     s_rows = [
                         {"property": k, "value": str(v)} for k, v in survey_meta.items()
                     ]
-                    pd.DataFrame(s_rows).to_excel(
-                        writer, sheet_name="Survey Info", index=False
+                    to_excel_safe(
+                        pd.DataFrame(s_rows), writer, sheet_name="Survey Info", index=False
                     )
         except Exception:
-            df_for_write.to_excel(out_fname, index=False)
+            to_excel_safe(df_for_write, out_fname, index=False)
     elif out_format == "sav":
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
         codebook_json_path = out_root / f"{prefix}{recipe_id}_codebook.json"
@@ -2695,7 +2696,7 @@ def compute_survey_recipes(
                 missing_numeric_value=missing_numeric_value,
             )
             _unlock_for_overwrite(out_path, output_prism_root)
-            combined_for_write.to_excel(out_path, index=False)
+            to_excel_safe(combined_for_write, out_path, index=False)
         elif out_format == "sav":
             _unlock_for_overwrite(out_path, output_prism_root)
             try:
@@ -3346,8 +3347,8 @@ def anonymize_recipe_output(
             _unlock_for_overwrite(file_path, dataset_path)
             with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
                 for sheet_name in sheet_names:
-                    sheet_frames[sheet_name].to_excel(
-                        writer, sheet_name=sheet_name, index=False
+                    to_excel_safe(
+                        sheet_frames[sheet_name], writer, sheet_name=sheet_name, index=False
                     )
 
             if file_had_participant_ids:

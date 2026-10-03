@@ -20,6 +20,7 @@ from src.converters.wide_to_long import (
     resolve_wide_to_long_id_uniqueness,
 )
 from src.cross_platform import normalize_path
+from src.safe_excel import to_excel_safe
 from src.entity_rules import load_entity_rules
 from src.utils.naming import sanitize_id
 
@@ -320,7 +321,7 @@ def _write_wide_to_long_output(long_df: pd.DataFrame, output_path: Path) -> None
         long_df.to_csv(output_path, sep="\t", index=False)
         return
     if suffix == ".xlsx":
-        long_df.to_excel(output_path, index=False)
+        to_excel_safe(long_df, output_path, index=False)
         return
     raise ValueError("Output format must be .csv, .tsv, or .xlsx")
 
