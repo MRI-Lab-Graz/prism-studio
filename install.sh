@@ -110,6 +110,16 @@ PY
         for minor in 12 11 10; do
             found="$(PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" command -v "python3.$minor" || true)"
             if [ -n "$found" ] && [ -x "$found" ]; then
+                # A venv built through a symlink (uv's ~/.local/bin/python3.12 shim)
+                # records the symlink's dir as `home` and cannot find its stdlib.
+                while [ -L "$found" ]; do
+                    local link
+                    link="$(readlink "$found")"
+                    case "$link" in
+                        /*) found="$link" ;;
+                        *) found="$(dirname "$found")/$link" ;;
+                    esac
+                done
                 echo_success "Using installed Python 3.$minor: $found"
                 VENV_CREATOR_PYTHON="$found"
                 return 0
