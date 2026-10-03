@@ -482,9 +482,9 @@ as ambiguous and refused until made more specific.
 a single multi-variant template:
 
 ```bash
-python prism.py merge-versions survey-bdi.json bdi_long.xlsx                      # auto-detects version names
-python prism.py merge-versions survey-bdi.json bdi_long.json --new-version long --existing-version short
-python prism.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run            # preview only
+python prism_tools.py merge-versions survey-bdi.json bdi_long.xlsx                      # auto-detects version names
+python prism_tools.py merge-versions survey-bdi.json bdi_long.json --new-version long --existing-version short
+python prism_tools.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run            # preview only
 ```
 
 ### Dataset utilities, anonymize, and export
