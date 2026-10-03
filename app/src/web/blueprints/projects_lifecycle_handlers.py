@@ -547,6 +547,10 @@ def _make_writable_and_retry(func, path, exc_info):
         raise exc_info[1]
 
 
+def _is_filesystem_root_or_home(path: Path) -> bool:
+    return str(path) == path.anchor or path == Path.home()
+
+
 def handle_delete_project(project_manager, get_current_project, clear_current_project):
     """Permanently delete a project directory from disk.
 
@@ -592,7 +596,7 @@ def handle_delete_project(project_manager, get_current_project, clear_current_pr
                 400,
             )
 
-        if root_path_obj == root_path_obj.anchor or root_path_obj == Path.home():
+        if _is_filesystem_root_or_home(root_path_obj):
             return (
                 jsonify(
                     {
