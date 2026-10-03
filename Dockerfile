@@ -24,5 +24,9 @@ ENV PRISM_SKIP_VENV_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+# Do not run as root by default; `--user "$(id -u):$(id -g)"` still overrides this.
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin prism
+USER prism
+
 ENTRYPOINT ["python", "app/prism.py"]
 CMD ["--help"]

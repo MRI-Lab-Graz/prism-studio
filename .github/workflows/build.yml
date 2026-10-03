@@ -9,6 +9,12 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
+# Least privilege by default; the release job below opts into contents: write.
+# actions: read lets the SignPath step fetch the unsigned artifact.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   build:
     name: Build for ${{ matrix.platform_name }}

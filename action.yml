@@ -37,12 +37,19 @@ runs:
     - name: Run PRISM validator
       id: validate
       shell: bash
+      # Inputs go through env, never straight into the script: a consumer passing
+      # e.g. a branch name as dataset-path must not be able to inject shell.
+      env:
+        IN_IMAGE_TAG: ${{ inputs.image-tag }}
+        IN_DATASET_PATH: ${{ inputs.dataset-path }}
+        IN_FORMAT: ${{ inputs.format }}
+        IN_FAIL_ON_INVALID: ${{ inputs.fail-on-invalid }}
       run: |
         set -uo pipefail
 
-        image="ghcr.io/mri-lab-graz/prism-validator:${{ inputs.image-tag }}"
-        dataset_path="$(cd "${{ inputs.dataset-path }}" && pwd)"
-        format="${{ inputs.format }}"
+        image="ghcr.io/mri-lab-graz/prism-validator:${IN_IMAGE_TAG}"
+        dataset_path="$(cd "${IN_DATASET_PATH}" && pwd)"
+        format="${IN_FORMAT}"
 
         args=("/data")
         report_path=""
@@ -71,7 +78,7 @@ runs:
           echo "valid=false" >> "$GITHUB_OUTPUT"
         fi
 
-        if [ "$exit_code" -ne 0 ] && [ "${{ inputs.fail-on-invalid }}" = "true" ]; then
+        if [ "$exit_code" -ne 0 ] && [ "${IN_FAIL_ON_INVALID}" = "true" ]; then
           exit "$exit_code"
         fi
         exit 0
