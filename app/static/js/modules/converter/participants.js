@@ -1176,7 +1176,7 @@ export function initParticipants() {
 
         if (idLabel) {
             idLabel.innerHTML = isRequired
-                ? 'ID Column <span class="text-danger">*</span>'
+                ? 'ID Column <span class="badge bg-danger ms-1">REQUIRED</span>'
                 : 'ID Column';
         }
 

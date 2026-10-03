@@ -103,6 +103,20 @@ print(f"{current[0]}.{current[1]}.{current[2]}")
 PY
     local status=$?
 
+    # Prefer an installed 3.10-3.12 over a uv-managed one: uv's Python can abort in
+    # ensurepip with --copies on macOS, and prism-studio.py rejects symlinked venvs.
+    if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ]; then
+        local minor found
+        for minor in 12 11 10; do
+            found="$(PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" command -v "python3.$minor" || true)"
+            if [ -n "$found" ] && [ -x "$found" ]; then
+                echo_success "Using installed Python 3.$minor: $found"
+                VENV_CREATOR_PYTHON="$found"
+                return 0
+            fi
+        done
+    fi
+
     if [ $status -ne 0 ] && [ -z "${PRISM_PYTHON:-}" ] && command -v uv >/dev/null 2>&1; then
         echo_info "System Python ($candidate) is not 3.10-3.12; asking uv to provide one..."
         local uv_python
@@ -192,7 +206,14 @@ create_virtualenv() {
         exit 1
     fi
 
-    "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"
+    local allow_symlink=0
+    if ! "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR" 2>/dev/null; then
+        # Copied interpreters can crash on some macOS setups (uv-managed Python aborts in ensurepip; confirmed on a user machine).
+        echo_info "Venv with copied interpreter failed; retrying with a symlinked interpreter..."
+        rm -rf "$VENV_DIR"
+        allow_symlink=1
+        "$VENV_CREATOR_PYTHON" -m venv "$VENV_DIR"
+    fi
     if [ $? -ne 0 ]; then
         echo_error "Failed to create virtual environment."
         if ! "$VENV_CREATOR_PYTHON" -c "import ensurepip" >/dev/null 2>&1; then
@@ -203,7 +224,7 @@ create_virtualenv() {
         exit 1
     fi
 
-    if [ -L "$VENV_PYTHON_UNIX" ]; then
+    if [ "$allow_symlink" -eq 0 ] && [ -L "$VENV_PYTHON_UNIX" ]; then
         echo_error "Virtual environment creation produced a symlinked Python ($VENV_PYTHON_UNIX)."
         echo_info "This setup requires a local venv Python binary."
         exit 1
@@ -294,7 +315,9 @@ fi
 
 # 2b. Check for tkinter (required for folder picker on Linux)
 echo_info "Checking for tkinter (required for folder picker)..."
-if python3 -c "import tkinter" 2>/dev/null; then
+if [ "$(uname)" = "Darwin" ]; then
+    echo_info "macOS uses the native folder picker; tkinter not needed."
+elif python3 -c "import tkinter" 2>/dev/null; then
     echo_success "tkinter is available"
 else
     echo "⚠️  WARNING: tkinter is NOT available"
