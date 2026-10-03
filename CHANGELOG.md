@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Intel macOS build.** Homebrew no longer builds Intel macOS packages (the CI build compiled openssl
+  and cmake from source and hung) and GitHub is dropping Intel runners in 2027. Intel Macs run PRISM
+  Studio from source (`bash install.sh`).
+
 ### Added
 - **DataLad server setup and CLI.** `prism_tools.py datalad doctor` checks Git, git-annex,
   DataLad, the SSH client, an SSH key and (with a server URL) a real key-based login, and

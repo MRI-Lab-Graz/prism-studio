@@ -25,12 +25,11 @@ and download the ZIP for your operating system:
 | Your computer | Download |
 |---|---|
 | Mac with Apple Silicon (M1/M2/M3/M4) | `prism-studio-macOS-AppleSilicon.zip` |
-| Mac with an Intel chip | `prism-studio-macOS-AppleIntel.zip` |
 | Windows | `prism-studio-Windows.zip` |
 | Linux | `prism-studio-Linux.zip` |
 
-Not sure which Mac chip you have? Apple menu → **About This Mac** — anything
-saying "Apple M..." is Apple Silicon, "Intel" is Intel.
+Intel Macs have no pre-built app any more; run PRISM Studio from source with
+`bash install.sh` (Apple menu → **About This Mac** shows your chip).
 
 ```{note}
 Windows users who'd rather run from source (for local code changes or CLI

@@ -25,14 +25,6 @@ jobs:
             python_arch: arm64
             python_version: '3.10'
             bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
-          - os: macos-15
-            platform_name: MacOS Intel
-            artifact_name: prism-studio-macOS-AppleIntel
-            asset_name: prism-studio-macOS-AppleIntel.zip
-            target_arch: x86_64
-            python_arch: x64
-            python_version: '3.10.19'
-            bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
           - os: windows-latest
             platform_name: Windows
             artifact_name: prism-studio-Windows
@@ -51,53 +43,13 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - name: Prepare Intel macOS runtime dependencies
-      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
-      run: |
-        sudo softwareupdate --install-rosetta --agree-to-license || true
-        if [ ! -x /usr/local/bin/brew ]; then
-          # Homebrew's install.sh now hard-aborts unless `/usr/bin/uname -m` == arm64,
-          # which is also true under `arch -x86_64` Rosetta emulation on this Apple
-          # Silicon runner, and it no longer has an `/usr/local` (classic Intel) prefix
-          # branch at all. Bootstrap it the same way install.sh does internally (a git
-          # checkout into the prefix) instead -- this is the "unsupported"/custom-prefix
-          # install install.sh's own comments point to (https://github.com/Homebrew/brew/tarball/main).
-          sudo mkdir -p /usr/local/Homebrew /usr/local/bin
-          sudo chown -R "$(whoami)":admin /usr/local
-          git -C /usr/local/Homebrew init --quiet
-          git -C /usr/local/Homebrew config remote.origin.url https://github.com/Homebrew/brew
-          git -C /usr/local/Homebrew config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-          git -C /usr/local/Homebrew fetch --quiet --force --tags origin
-          LATEST_TAG="$(git -C /usr/local/Homebrew tag --list --sort=-version:refname | head -n1)"
-          git -C /usr/local/Homebrew checkout --quiet --force -B stable "${LATEST_TAG}"
-          ln -sf ../Homebrew/bin/brew /usr/local/bin/brew
-        fi
-        arch -x86_64 /usr/local/bin/brew update
-        # Homebrew has downgraded Intel macOS to Tier 3 support and no longer
-        # bottles every formula for it (e.g. openssl@3), so a plain bottled
-        # install can fail outright. Fall back to building from source rather
-        # than retrying, since a missing bottle isn't transient.
-        arch -x86_64 /usr/local/bin/brew install gettext openssl@3 || \
-          arch -x86_64 /usr/local/bin/brew install --build-from-source gettext openssl@3
-        test -f /usr/local/opt/gettext/lib/libintl.8.dylib
-        test -f /usr/local/opt/openssl@3/lib/libssl.3.dylib
-        echo "DYLD_FALLBACK_LIBRARY_PATH=/usr/local/opt/openssl@3/lib:/usr/local/opt/gettext/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
-
     - name: Set up Python
       uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
 
-    - name: Install dependencies (Intel macOS)
-      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
-      run: |
-        arch -x86_64 python -m pip install --upgrade pip
-        arch -x86_64 python -m pip install -r requirements-runtime.txt
-        arch -x86_64 python -m pip install -r requirements-build.txt
-
     - name: Install dependencies
-      if: runner.os != 'macOS' || matrix.target_arch != 'x86_64'
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r requirements-runtime.txt
@@ -108,13 +60,7 @@ jobs:
         mkdir -p survey_library || mkdir survey_library
       shell: bash
 
-    - name: Build with PyInstaller (Intel macOS)
-      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
-      run: |
-        arch -x86_64 python scripts/build/build_app.py --name PrismStudio --target-arch x86_64
-
     - name: Build with PyInstaller
-      if: runner.os != 'macOS' || matrix.target_arch != 'x86_64'
       run: |
         python scripts/build/build_app.py --name PrismStudio ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
 
@@ -285,11 +231,6 @@ jobs:
       with:
         name: prism-studio-macOS-AppleSilicon
 
-    - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v7
-      with:
-        name: prism-studio-macOS-AppleIntel
-
     - name: Download Linux Artifact
       uses: actions/download-artifact@v7
       with:
@@ -321,5 +262,4 @@ jobs:
         files: |
           prism-studio-Windows.zip
           prism-studio-macOS-AppleSilicon.zip
-          prism-studio-macOS-AppleIntel.zip
           prism-studio-Linux.zip
