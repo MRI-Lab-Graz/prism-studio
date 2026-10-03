@@ -466,6 +466,27 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_merge_versions = subparsers.add_parser(
+        "merge-versions",
+        help="Merge a new version of a survey instrument (JSON or Excel) into an existing template",
+    )
+    parser_merge_versions.add_argument("template", help="Path to the existing survey template JSON file")
+    parser_merge_versions.add_argument(
+        "new_items", help="Path to the new version: a survey template JSON or an Excel (.xlsx) file"
+    )
+    parser_merge_versions.add_argument(
+        "--new-version", metavar="NAME", help="Version name for the items being merged in (auto-detected if omitted)"
+    )
+    parser_merge_versions.add_argument(
+        "--existing-version", metavar="NAME", help="Version name for the existing template items (auto-detected if omitted)"
+    )
+    parser_merge_versions.add_argument(
+        "--dry-run", action="store_true", help="Preview the merge result without writing changes to disk"
+    )
+    parser_merge_versions.add_argument(
+        "--output", metavar="PATH", help="Write the merged template to this path instead of overwriting the original"
+    )
+
     parser_publish = subparsers.add_parser(
         "publish",
         help="Push a department-share dataset to the DataLad server (only if it validates)",
@@ -2215,6 +2236,7 @@ def build_prism_tools_parsers(
         "session-map": parser_session_map,
         "publish": parser_publish,
         "save-gate": parser_save_gate,
+        "merge-versions": parser_merge_versions,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
         "physio": parser_physio,
