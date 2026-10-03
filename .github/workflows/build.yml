@@ -223,7 +223,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
-    
+      id-token: write       # build provenance attestation (keyless signing)
+      attestations: write
+
     steps:
     - uses: actions/checkout@v5
 
@@ -258,6 +260,14 @@ jobs:
             > release_body.md
         fi
         
+    - name: Write checksums
+      run: sha256sum prism-studio-*.zip > SHA256SUMS
+
+    - name: Attest build provenance
+      uses: actions/attest-build-provenance@v3
+      with:
+        subject-path: prism-studio-*.zip
+
     - name: Create Release
       uses: softprops/action-gh-release@v3
       with:
@@ -269,3 +279,4 @@ jobs:
           prism-studio-Windows.zip
           prism-studio-macOS-AppleSilicon.zip
           prism-studio-Linux.zip
+          SHA256SUMS

@@ -68,6 +68,14 @@ Download the latest release for your platform from the
 | Windows | `prism-studio-Windows.zip` |
 | Linux | `prism-studio-Linux.zip` |
 
+The binaries are not code-signed yet, so your OS may warn on first launch. Check that a
+download is the one our build produced:
+
+```bash
+shasum -a 256 -c SHA256SUMS --ignore-missing      # Linux/macOS (Windows: Get-FileHash)
+gh attestation verify prism-studio-Linux.zip --repo MRI-Lab-Graz/prism-studio
+```
+
 macOS: if Gatekeeper blocks the first launch, run `Prism Studio Installer.app`
 from the extracted folder (fallback: `Open Prism Studio.command`).
 

@@ -30,3 +30,24 @@ def test_composite_action_does_not_interpolate_inputs_into_shell():
 def test_validator_image_runs_as_non_root():
     users = [l for l in (ROOT / "Dockerfile").read_text().splitlines() if l.startswith("USER ")]
     assert users and users[-1].split()[1] not in ("root", "0")
+
+
+def _release_job():
+    wf = yaml.safe_load((ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8"))
+    return wf["jobs"]["release"]
+
+
+def test_release_publishes_checksums_and_provenance():
+    job = _release_job()
+    steps = job["steps"]
+    assert any("sha256sum" in s.get("run", "") and "SHA256SUMS" in s.get("run", "") for s in steps)
+    release = next(s for s in steps if "action-gh-release" in s.get("uses", ""))
+    assert "SHA256SUMS" in release["with"]["files"]
+    attest = [s for s in steps if "attest-build-provenance" in s.get("uses", "")]
+    assert attest, "no build provenance attestation step"
+    assert job["permissions"]["attestations"] == "write" and job["permissions"]["id-token"] == "write"
+
+
+def test_readme_explains_how_to_verify_a_download():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "SHA256SUMS" in readme and "gh attestation verify" in readme
