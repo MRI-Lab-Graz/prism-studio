@@ -36,3 +36,32 @@ echo "$VENV_CREATOR_PYTHON"
         capture_output=True, text=True,
     )
     assert out.stdout.strip() == str(bin_dir / "python3.12"), out.stderr
+
+
+def test_symlinked_python_is_resolved_to_its_real_path(tmp_path):
+    """A venv made through a symlink (e.g. uv's ~/.local/bin/python3.12 shim)
+    records the symlink's directory as `home` and cannot find its stdlib."""
+    bin_dir = tmp_path / "bin"
+    real_dir = tmp_path / "uv" / "bin"
+    bin_dir.mkdir()
+    real_dir.mkdir(parents=True)
+    too_new = tmp_path / "python3"
+    _fake(too_new, "exit 1\n")
+    real = real_dir / "python3.12"
+    _fake(real, 'echo 3.12.0\n')
+    (bin_dir / "python3.12").symlink_to(real)
+
+    script = f"""
+echo_info() {{ :; }}; echo_success() {{ :; }}; echo_error() {{ :; }}
+{subprocess.run(["sed", "-n", "/^ensure_min_python_version()/,/^}/p", "install.sh"],
+                cwd=ROOT, capture_output=True, text=True).stdout}
+VENV_CREATOR_PYTHON=""
+ensure_min_python_version "{too_new}" >/dev/null
+echo "$VENV_CREATOR_PYTHON"
+"""
+    out = subprocess.run(
+        ["bash", "-c", script],
+        env={"PATH": f"{bin_dir}:/usr/bin:/bin"},
+        capture_output=True, text=True,
+    )
+    assert out.stdout.strip() == str(real), out.stderr
