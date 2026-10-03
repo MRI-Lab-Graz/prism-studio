@@ -9,9 +9,10 @@ and tests send neither and pass through.
 
 from __future__ import annotations
 
+import hmac
 from urllib.parse import urlsplit
 
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 
 _API_PREFIXES = ("/api/", "/editor/api/")
 
@@ -30,6 +31,38 @@ def is_cross_site_request(method: str, path: str, headers, host: str) -> bool:
         and not path.startswith(_API_PREFIXES)
     )
     return not is_page_navigation
+
+
+def install_public_token_guard(app: Flask) -> None:
+    """With `--public` the UI is reachable on the network without a login, so
+    every request must carry the per-launch token printed at startup
+    (`?token=` once, then a cookie; `X-Prism-Token` for scripts). A no-op while
+    `app.config["PRISM_ACCESS_TOKEN"]` is unset (default localhost-only mode)."""
+
+    def _matches(supplied, token) -> bool:
+        return bool(supplied) and hmac.compare_digest(supplied, token)
+
+    @app.before_request
+    def _require_token():
+        token = app.config.get("PRISM_ACCESS_TOKEN")
+        if not token or request.path == "/health":
+            return None
+        if _matches(request.args.get("token"), token):
+            g.prism_token_from_query = True
+            return None
+        if _matches(request.headers.get("X-Prism-Token"), token) or _matches(
+            request.cookies.get("prism_token"), token
+        ):
+            return None
+        return jsonify({"error": "Access token required"}), 401
+
+    @app.after_request
+    def _remember_token(response):
+        if g.get("prism_token_from_query"):
+            response.set_cookie(
+                "prism_token", app.config["PRISM_ACCESS_TOKEN"], httponly=True, samesite="Strict"
+            )
+        return response
 
 
 def install_cross_site_guard(app: Flask) -> None:

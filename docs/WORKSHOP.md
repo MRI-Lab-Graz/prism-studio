@@ -51,7 +51,9 @@ pace, so it does the presenting and you do the helping.
 
 For a demonstration without a projector, run
 `python prism-studio.py --public` and have participants open
-`http://<your-ip>:5001` in a second browser tab. It is a single shared
+`http://<your-ip>:5001/?token=<token>` in a second browser tab (the token is
+in the URL printed at startup; without it the server answers 401, so share it
+only with people in the room). It is a single shared
 session, so tell them explicitly to watch rather than click — their clicks
 edit your project.
 

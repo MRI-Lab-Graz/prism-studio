@@ -1014,8 +1014,9 @@ def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
         return False
 
 
-from src.web.request_guard import install_cross_site_guard
+from src.web.request_guard import install_cross_site_guard, install_public_token_guard
 
+install_public_token_guard(app)
 install_cross_site_guard(app)
 
 
@@ -1712,7 +1713,10 @@ def main():
     parser.add_argument(
         "--public",
         action="store_true",
-        help="Allow external connections (sets host to 0.0.0.0)",
+        help=(
+            "Allow external connections (sets host to 0.0.0.0). There is no login: "
+            "access needs the one-time token in the printed URL."
+        ),
     )
     parser.add_argument(
         "--no-browser",
@@ -1810,6 +1814,11 @@ def main():
     display_host = host
     scheme = "http"
     url = f"{scheme}://{display_host}:{port}"
+    if args.public:
+        # No login exists: share this token-bearing URL only with people you trust.
+        token = secrets.token_urlsafe(24)
+        app.config["PRISM_ACCESS_TOKEN"] = token
+        url += f"/?token={token}"
 
     startup_log_file = Path.home() / "prism_studio.log" if getattr(sys, "frozen", False) else None
     _print_startup_welcome(url, public=bool(args.public), log_file=startup_log_file)
