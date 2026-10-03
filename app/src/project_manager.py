@@ -6327,7 +6327,7 @@ git push -u origin main
 
             try:
                 unannex_process = subprocess.run(
-                    [git_executable, "-C", str(dataset_root), "annex", "unannex", *matched_paths],
+                    [git_executable, "-C", str(dataset_root), "annex", "unannex", "--", *matched_paths],
                     capture_output=True,
                     text=True,
                     check=False,
