@@ -397,7 +397,8 @@ def validate_dataset(
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.
-    if run_prism and len(stats.subjects) == 0:
+    # A metadata-only project (dataset_description.json, no participants.*) is valid.
+    if run_prism and len(stats.subjects) == 0 and _subjects_expected(root_dir):
         issues.append(("ERROR", _no_subjects_message(root_dir), root_dir))
 
     # Run standard BIDS validator if requested
@@ -535,6 +536,16 @@ def _has_subject_dirs(root_dir: str) -> bool:
         child.is_dir() and child.name.startswith("sub-")
         for child in Path(root_dir).iterdir()
     )
+
+
+def _subjects_expected(root_dir: str) -> bool:
+    """False only for a metadata-only project: dataset_description.json and no participants.*.
+
+    A participants file promises subject data; a folder with no dataset_description.json is
+    probably the wrong directory, so both keep the "No subjects found" error.
+    """
+    root = Path(root_dir)
+    return not (root / "dataset_description.json").is_file() or any(root.glob("participants.*"))
 
 
 def _no_subjects_message(root_dir: str) -> str:
