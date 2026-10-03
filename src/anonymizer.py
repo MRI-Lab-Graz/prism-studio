@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hmac
 import json
+import os
 import random
 import secrets
 import string
@@ -148,8 +149,11 @@ def create_participant_mapping(
         }
         if secret_key is not None:
             payload["_secret_key"] = secret_key.hex()
-        with open(output_file, "w", encoding="utf-8") as f:
+        # Owner-only from creation: it holds the secret key and reverse mapping.
+        fd = os.open(output_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
+        os.chmod(output_file, 0o600)  # an existing file keeps its old mode otherwise
 
     return mapping
 

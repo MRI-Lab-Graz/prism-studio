@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from src.anonymizer import replace_participant_ids_in_text
+from src.git_exclude import ensure_git_excluded
 from src.cross_platform import describe_case_insensitive_id_collisions, remove_tree
 from src.project_export_helpers import (
     _extract_export_task_label,
@@ -316,6 +317,8 @@ def export_project(
             # Save mapping to project's code/ directory (protected — not in ZIP).
             # create_participant_mapping() creates the parent directory automatically.
             _saved_mapping_file = project_path / "code" / "anonymization_map.json"
+            # It holds the secret key and reverse mapping: never commit/push it.
+            ensure_git_excluded(project_path, "code/anonymization_map.json")
             participant_mapping = create_participant_mapping(
                 list(participant_ids),
                 _saved_mapping_file,
@@ -648,6 +651,9 @@ def export_project(
             for filename in files:
                 # Keep participants mapping and anonymization map out of share ZIPs.
                 if filename in ("participants_mapping.json", "anonymization_map.json"):
+                    continue
+                # Session logs record absolute paths and usernames.
+                if arc_prefix == "code" and tuple(rel_parts[:1]) == ("logs",):
                     continue
                 _file_subject, _file_session, _cur_modality = _resolve_export_subject_scope(
                     rel_parts + (filename,),
