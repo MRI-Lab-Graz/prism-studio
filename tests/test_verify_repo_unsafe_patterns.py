@@ -48,3 +48,20 @@ def test_unsafe_patterns_still_flags_external_http(tmp_path: Path, capsys) -> No
 
     assert "Potential unsafe pattern" in output
     assert "src/insecure_url.py" in output
+
+
+def test_unsafe_patterns_allows_startswith_scheme_check(tmp_path: Path, capsys) -> None:
+    """A prefix test that refuses plain http (src/share_publish.py) is not an insecure connection."""
+    verify_repo = _load_verify_repo_module()
+
+    src_file = tmp_path / "src" / "guard.py"
+    src_file.parent.mkdir(parents=True, exist_ok=True)
+    src_file.write_text(
+        'if url.lower().startswith(("http://", "https://", "git://")):\n    refuse()\n',
+        encoding="utf-8",
+    )
+
+    verify_repo.check_unsafe_patterns(str(tmp_path))
+    output = capsys.readouterr().out
+
+    assert "Potential unsafe pattern" not in output

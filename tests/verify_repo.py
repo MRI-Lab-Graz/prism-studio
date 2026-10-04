@@ -966,6 +966,7 @@ def check_unsafe_patterns(repo_path, fix=False):
                                         and (
                                             "must start with" in lower_line
                                             or "starts with" in lower_line
+                                            or "startswith(" in lower_line
                                             or "begin with" in lower_line
                                         )
                                     ):
