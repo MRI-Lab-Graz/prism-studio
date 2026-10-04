@@ -1,11 +1,6 @@
 """The JSON editor's post-save check must agree with the Validate page on dataset_description."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app" / "src" / "json_editor" / "src"))
-
-from backend.json_validator import JSONValidator  # noqa: E402
+from src.json_editor.json_validator import JSONValidator
 
 
 def test_dataset_description_missing_prism_required_fields_is_reported():

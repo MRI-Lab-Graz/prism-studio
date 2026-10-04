@@ -6,41 +6,10 @@ that can be integrated into the main prism web interface.
 
 from flask import Blueprint, render_template, request, jsonify
 from pathlib import Path
-import os
-import sys
+from src.json_editor.file_manager import FileManager
+from src.json_editor.json_validator import JSONValidator
+from src.json_editor.schema_loader import BIDSSchemaLoader
 from src.web.blueprints.conversion_utils import resolve_existing_project_root
-
-
-def _startup_detail_print(message: str) -> None:
-    if os.environ.get("PRISM_STARTUP_HIDE_DETAILS") == "1":
-        return
-    print(message)
-
-# Import JSON editor components
-try:
-    # Add json_editor src to path for imports
-    # Use absolute path from the repo root
-    json_editor_src = Path(__file__).parent / "json_editor" / "src"
-    abs_path = json_editor_src.resolve()
-    if str(abs_path) not in sys.path:
-        sys.path.insert(0, str(abs_path))
-
-    _startup_detail_print(f"INFO JSON Editor path: {abs_path}")
-
-    # Now import from the json_editor src
-    from backend.file_manager import FileManager
-    from backend.json_validator import JSONValidator
-    from schema_loader import BIDSSchemaLoader
-
-    _startup_detail_print("OK JSON Editor components imported successfully")
-except ImportError as e:
-    print(f"WARN Could not import JSON editor components: {e}")
-    import traceback
-
-    traceback.print_exc()
-    FileManager = None
-    JSONValidator = None
-    BIDSSchemaLoader = None
 
 
 def create_json_editor_blueprint(bids_folder=None):
@@ -62,25 +31,15 @@ def create_json_editor_blueprint(bids_folder=None):
 
     default_bids_folder = Path(bids_folder).resolve() if bids_folder else None
 
-    # Initialize managers if available
-    if FileManager and JSONValidator and BIDSSchemaLoader:
-        file_manager = FileManager(bids_folder)
-        validator = JSONValidator()
-        schema_loader = BIDSSchemaLoader()
-
-        # Load schema on startup
-        try:
-            schema_loader.load_schema()
-        except Exception as e:
-            print(f"[WARN] Could not load BIDS schema: {e}")
-    else:
-        file_manager = None
-        validator = None
-        schema_loader = None
+    file_manager = FileManager(bids_folder)
+    validator = JSONValidator()
+    schema_loader = BIDSSchemaLoader()
+    try:
+        schema_loader.load_schema()
+    except Exception as e:
+        print(f"[WARN] Could not load BIDS schema: {e}")
 
     def _set_editor_bids_folder(folder_path: Path | None) -> None:
-        if not file_manager:
-            return
         if folder_path is None:
             file_manager.bids_folder = None
             return
@@ -92,9 +51,6 @@ def create_json_editor_blueprint(bids_folder=None):
     def sync_with_session_project():
         """Ensure JSON editor is using the currently selected project from session"""
         from flask import session
-
-        if not file_manager:
-            return
 
         project_root = resolve_existing_project_root(
             session.get("current_project_path")
@@ -119,9 +75,7 @@ def create_json_editor_blueprint(bids_folder=None):
         """Serve JSON editor main page with unified layout"""
         try:
             project_root = (
-                str(file_manager.bids_folder)
-                if file_manager and file_manager.bids_folder
-                else ""
+                str(file_manager.bids_folder) if file_manager.bids_folder else ""
             )
             # Use the new unified template that inherits from base.html
             return render_template("json_editor.html", project_root=project_root)
@@ -150,12 +104,6 @@ def create_json_editor_blueprint(bids_folder=None):
     @bp.route("/api/schema/<json_type>", methods=["GET"])
     def get_schema(json_type):
         """Get schema for specific BIDS JSON type"""
-        if not schema_loader:
-            return (
-                jsonify({"success": False, "error": "Schema loader not available"}),
-                503,
-            )
-
         try:
             schema_def = schema_loader.get_schema_for_type(json_type)
             return jsonify({"success": True, "schema": schema_def})
@@ -165,12 +113,6 @@ def create_json_editor_blueprint(bids_folder=None):
     @bp.route("/api/files", methods=["GET"])
     def list_files():
         """List available BIDS JSON files"""
-        if not file_manager:
-            return (
-                jsonify({"success": False, "error": "File manager not available"}),
-                503,
-            )
-
         try:
             files = file_manager.list_available_files()
             return jsonify({"success": True, "files": files})
@@ -239,12 +181,6 @@ def create_json_editor_blueprint(bids_folder=None):
     @bp.route("/api/file/<json_type>", methods=["GET"])
     def load_file(json_type):
         """Load a BIDS JSON file"""
-        if not file_manager:
-            return (
-                jsonify({"success": False, "error": "File manager not available"}),
-                503,
-            )
-
         try:
             data = file_manager.load_file(json_type)
             return jsonify({"success": True, "data": data})
@@ -256,12 +192,6 @@ def create_json_editor_blueprint(bids_folder=None):
     @bp.route("/api/file/<json_type>", methods=["POST"])
     def save_file(json_type):
         """Save a BIDS JSON file"""
-        if not file_manager:
-            return (
-                jsonify({"success": False, "error": "File manager not available"}),
-                503,
-            )
-
         try:
             data = request.get_json()
             if not data:
@@ -273,27 +203,21 @@ def create_json_editor_blueprint(bids_folder=None):
             file_manager.save_file(json_type, data)
 
             # Validate after save
-            if validator:
-                schema = schema_loader.get_schema_for_type(json_type) if schema_loader else None
-                _is_valid, errors = validator.validate(json_type, data, schema)
-                return jsonify(
-                    {
-                        "success": True,
-                        "message": "File saved successfully",
-                        "validation_errors": errors if errors else None,
-                    }
-                )
-            else:
-                return jsonify({"success": True, "message": "File saved successfully"})
+            schema = schema_loader.get_schema_for_type(json_type)
+            _is_valid, errors = validator.validate(json_type, data, schema)
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "File saved successfully",
+                    "validation_errors": errors if errors else None,
+                }
+            )
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 400
 
     @bp.route("/api/validate", methods=["POST"])
     def validate_json():
         """Validate BIDS JSON data against schema"""
-        if not validator:
-            return jsonify({"success": False, "error": "Validator not available"}), 503
-
         try:
             data = request.get_json()
             json_type = request.args.get("type", "dataset_description")
@@ -304,7 +228,7 @@ def create_json_editor_blueprint(bids_folder=None):
                     400,
                 )
 
-            schema = schema_loader.get_schema_for_type(json_type) if schema_loader else None
+            schema = schema_loader.get_schema_for_type(json_type)
             is_valid, errors = validator.validate(json_type, data, schema)
             return jsonify(
                 {

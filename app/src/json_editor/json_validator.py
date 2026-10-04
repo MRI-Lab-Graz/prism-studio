@@ -72,7 +72,7 @@ class JSONValidator:
         from jsonschema import Draft7Validator
 
         schema_path = (
-            Path(__file__).resolve().parents[4]
+            Path(__file__).resolve().parents[2]
             / "schemas"
             / "stable"
             / "dataset_description.schema.json"
