@@ -9,11 +9,11 @@ for scoring-definition details [Recipes](RECIPES.md).
 
 | Task | Preferred entry point |
 |---|---|
-| Start Studio from the terminal | `rtk studio` or `python prism-studio.py` |
-| Validate a dataset | `rtk validator ...` or `prism-validator ...` |
-| Run tools subcommands | `rtk tools ...` or `python prism_tools.py ...` |
-| Run repo-local tests | `rtk test -q` |
-| Run coverage in this repo | `rtk coverage` |
+| Start Studio from the terminal | `python prism-studio.py` |
+| Validate a dataset | `python prism.py ...` |
+| Run tools subcommands | `python prism_tools.py ...` |
+| Run repo-local tests | `pytest -q` |
+| Run coverage in this repo | `pytest --cov=src --cov-report=term-missing` |
 
 Daily repo check (full required gate): `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`.
 
@@ -21,23 +21,6 @@ Both `prism.py` and `prism_tools.py` **enforce** running from the repo-local vir
 environment at `./.venv` — activate it first
 (`source .venv/bin/activate` / `.venv\Scripts\activate`) or you'll see
 `Error: You are not running inside the prism virtual environment!`.
-
-**`rtk`** is a lightweight wrapper for common workflows — use it first for normal
-repo-local work, drop to direct Python entry points when you need the explicit
-underlying command. Subcommands: `setup`, `studio`, `validator` (aliases `validate`,
-`prism`), `tools` (alias `prism-tools`), `test`, `coverage`, `codecov`, `git`, `gh`.
-
-```bash
-rtk setup --dev
-rtk studio
-rtk validator /data/study-01 --bids
-rtk tools survey convert --help
-rtk test -q
-rtk coverage
-rtk codecov upload-process       # requires CODECOV_TOKEN
-rtk git status
-rtk gh pr list
-```
 
 ## `prism.py` — the dataset validator
 
