@@ -33,6 +33,16 @@
                         <label class="form-check-label fw-semibold" for="projectUseDatalad">Use DataLad version control for this new project</label>
                         <small class="d-block text-muted">Optional. Turn this on only when you want built-in dataset version control. If DataLad or git-annex is unavailable, PRISM still creates the project without DataLad.</small>
                     </div>
+                    <details class="small mt-2" id="createDataladBenefits">
+                        <summary class="text-primary">What does DataLad give me?</summary>
+                        <ul class="mt-2 mb-1">
+                            <li><strong>Undo:</strong> every saved state of your data and results can be restored, so a wrong conversion or deletion is never final.</li>
+                            <li><strong>History:</strong> see who changed what and when, which helps with audits and reproducible methods sections.</li>
+                            <li><strong>Backup &amp; sharing:</strong> push the project to your lab server and keep a collaborator's copy in sync.</li>
+                            <li><strong>Large files:</strong> big recordings (MRI, EEG) are stored efficiently instead of bloating the project.</li>
+                        </ul>
+                        <div class="text-muted">Not needed to use PRISM. If a check below fails, it shows what to install or set up for your operating system.</div>
+                    </details>
                     <div id="createDataladAvailability" class="alert alert-secondary py-2 px-3 mt-2 mb-0 small" role="status" aria-live="polite">
                         <div class="d-flex align-items-start gap-2">
                             <i class="fas fa-spinner fa-spin mt-1 text-muted" aria-hidden="true"></i>

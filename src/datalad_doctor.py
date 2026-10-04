@@ -38,9 +38,37 @@ def install_hint(platform: Optional[str] = None) -> str:
     return f"Install with: {install_command(platform)}"
 
 
+def git_install_hint(platform: Optional[str] = None) -> str:
+    """How to install git on this OS, in words a non-programmer can follow."""
+    platform = platform or sys.platform
+    if platform.startswith("win"):
+        return f"Download and run the Git for Windows installer: {_GIT_WINDOWS} (keep the defaults), then restart PRISM Studio."
+    if platform == "darwin":
+        return "Open the Terminal app and run: xcode-select --install   (a window opens; click Install), then restart PRISM Studio."
+    return "Open a terminal and run: sudo apt install git   (Fedora: sudo dnf install git), then restart PRISM Studio."
+
+
+_IDENTITY_FIX = (
+    "Git signs every saved change with your name and email. Open a terminal "
+    "(Windows: Git Bash or PowerShell) and run:\n"
+    'git config --global user.name "Your Name"\n'
+    'git config --global user.email "you@example.org"'
+)
+
+
+def _check_git_identity(git_path: str, run: Run) -> dict:
+    values = {}
+    for key in ("user.name", "user.email"):
+        code, out = run([git_path, "config", "--global", key])
+        values[key] = out.strip() if code == 0 else ""
+    if all(values.values()):
+        return _result("git-identity", True, f"{values['user.name']} <{values['user.email']}>")
+    return _result("git-identity", False, "Git does not know your name and email yet.", _IDENTITY_FIX)
+
+
 def _tool_fix(tool: str) -> str:
     if tool == "git":
-        return f"Install Git: {_GIT_WINDOWS if sys.platform.startswith('win') else 'https://git-scm.com/downloads'}"
+        return git_install_hint()
     if tool == "ssh":
         return "Install/enable the OpenSSH client (Windows: Settings > Optional features > OpenSSH Client)"
     return f"{install_hint()}. See {_DOCS}"  # git-annex, datalad
@@ -150,6 +178,9 @@ def run_doctor(
             continue
         _, out = run([path, _VERSION_ARGS[tool]])
         results.append(_result(tool, True, (out.strip().splitlines() or [path])[0]))
+
+    if results[0]["ok"]:  # git found
+        results.append(_check_git_identity(which("git"), run))
 
     key_path, pubkey = _find_key(ssh_dir)
     if key_path:

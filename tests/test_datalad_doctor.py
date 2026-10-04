@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.datalad_doctor import (  # noqa: E402
     classify_ssh_error,
+    git_install_hint,
     install_command,
     install_hint,
     parse_ssh_target,
@@ -156,3 +157,46 @@ def test_doctor_shows_the_windows_install_steps_on_windows(tmp_path, monkeypatch
     res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert "py -m pip install datalad git-annex" in res["datalad"]["fix"]
     assert "py -m pip install datalad git-annex" in res["git-annex"]["fix"]
+
+
+def _git_config_run(name="Kalle", email="kalle@uni.at"):
+    def run(cmd):
+        if cmd[1:3] == ["config", "--global"]:
+            value = {"user.name": name, "user.email": email}[cmd[3]]
+            return (0, value + "\n") if value else (1, "")
+        return 0, "v1"
+
+    return run
+
+
+def test_git_identity_ok_shows_name_and_email(tmp_path):
+    which, ssh_dir = _env(tmp_path)
+    res = _by_name(run_doctor(None, which=which, run=_git_config_run(), ssh_dir=ssh_dir))
+    assert res["git-identity"]["ok"] is True
+    assert "Kalle <kalle@uni.at>" in res["git-identity"]["detail"]
+
+
+def test_git_identity_missing_gives_copy_paste_commands(tmp_path):
+    which, ssh_dir = _env(tmp_path)
+    res = _by_name(run_doctor(None, which=which, run=_git_config_run(email=""), ssh_dir=ssh_dir))
+    assert res["git-identity"]["ok"] is False
+    assert 'git config --global user.name "' in res["git-identity"]["fix"]
+    assert 'git config --global user.email "' in res["git-identity"]["fix"]
+
+
+def test_git_identity_skipped_when_git_is_missing(tmp_path):
+    which, ssh_dir = _env(tmp_path, tools=("ssh",))
+    res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
+    assert "git-identity" not in res
+
+
+@pytest.mark.parametrize(
+    "platform, expected",
+    [
+        ("darwin", "xcode-select --install"),
+        ("win32", "git-scm.com/download/win"),
+        ("linux", "sudo apt install git"),
+    ],
+)
+def test_git_install_hint_is_os_specific(platform, expected):
+    assert expected in git_install_hint(platform)
