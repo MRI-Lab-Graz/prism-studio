@@ -35,7 +35,7 @@ def ensure_venv(project_root, strict):
     """Re-exec the running script under ``<project_root>/.venv`` if not already in it.
 
     strict: a missing venv exits (prism-studio). Otherwise it only warns and
-    carries on, and CI skips the check entirely (prism).
+    carries on, and CI skips the check entirely (prism, prism_tools).
     """
     if os.environ.get("PRISM_SKIP_VENV_CHECK"):
         return
