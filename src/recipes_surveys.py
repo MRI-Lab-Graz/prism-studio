@@ -487,24 +487,6 @@ def _distinct_export_context_values(values: Any) -> list[str]:
     return cleaned
 
 
-def _build_export_context_key(
-    *, session: Any = None, run: Any = None, include_session: bool, include_run: bool
-) -> str:
-    parts: list[str] = []
-
-    if include_session:
-        session_text = _clean_export_context_value(session)
-        if session_text:
-            parts.append(session_text)
-
-    if include_run:
-        run_text = _clean_export_context_value(run)
-        if run_text:
-            parts.append(run_text)
-
-    return "_".join(parts)
-
-
 def _prefixed_recipe_column_name(recipe_id: str, column: str) -> str:
     column_text = str(column)
     if column_text.lower().startswith(recipe_id.lower()):

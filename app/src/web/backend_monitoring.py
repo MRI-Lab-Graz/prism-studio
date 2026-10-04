@@ -15,7 +15,6 @@ from pathlib import PureWindowsPath
 from flask import session
 
 from src.config import load_app_settings
-from src.cross_platform import normalize_path
 from src.project_manager import ProjectManager
 from src.project_session_logging import record_project_session_command
 
@@ -165,21 +164,6 @@ def _format_template_version_run(run_value: object) -> str | None:
     if not normalized:
         return None
     return normalized[4:]
-
-
-def _compact_path(path_value: str | None) -> str:
-    """Return a short, human-friendly path preview for terminal logs."""
-    path_text = str(path_value or "").strip()
-    if not path_text:
-        return ""
-
-    backslash = chr(92)
-    normalized_text = normalize_path(path_text)
-    normalized = str(normalized_text or path_text).replace(backslash, "/")
-    parts = [part for part in normalized.split("/") if part]
-    if len(parts) <= 3:
-        return normalized
-    return f".../{'/'.join(parts[-3:])}"
 
 
 def _absolute_path_value(path_value: str | None) -> str:
@@ -1931,12 +1915,6 @@ def is_backend_monitoring_enabled(app_root: str) -> bool:
     return enabled
 
 
-def is_backend_monitoring_verbose_enabled(app_root: str) -> bool:
-    """Return whether verbose backend monitoring is enabled."""
-    _enabled, verbose_enabled = _get_backend_monitoring_state(app_root)
-    return verbose_enabled
-
-
 def _is_backend_terminal_command(command: str) -> bool:
     """Return True for CLI commands that execute backend-owned workflows."""
     command_text = str(command or "").strip()
@@ -2085,8 +2063,3 @@ def emit_backend_request_action(req, app_root: str) -> None:
         return
 
     emit_backend_action(action, app_root=app_root, prefix=prefix, force_emit=True)
-
-
-def get_app_root_from_current_app(current_app_obj) -> str:
-    """Resolve absolute app root path as string from current_app."""
-    return str(Path(current_app_obj.root_path))

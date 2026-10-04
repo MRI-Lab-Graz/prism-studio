@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from flask import jsonify, request
 from src.participants_backend import (
@@ -9,14 +8,8 @@ from src.participants_backend import (
 )
 from .projects_helpers import (
     _read_tabular_dataframe,
-    _resolve_project_root_path,
     _resolve_requested_or_current_project_root,
 )
-
-
-def _resolve_current_project_root(current_project: dict) -> Path | None:
-    """Resolve current project path to dataset root (accept dir or project.json path)."""
-    return _resolve_project_root_path(str(current_project.get("path") or ""))
 
 
 def handle_get_participants_schema(get_current_project, get_bids_file_path):

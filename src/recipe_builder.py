@@ -362,19 +362,6 @@ def extract_item_description_metadata_from_template(
     return descriptions, descriptions_i18n, sorted(languages), template_language
 
 
-def _extract_item_descriptions_from_template(
-    json_path: str, *, modality: str
-) -> dict[str, str]:
-    """Return item descriptions keyed by item ID from a survey template JSON."""
-    descriptions, _i18n, _languages, _template_language = (
-        extract_item_description_metadata_from_template(
-            json_path,
-            modality=modality,
-        )
-    )
-    return descriptions
-
-
 def detect_scale_ranges(json_path: str, *, modality: str) -> dict:
     """Return per-variant scale ranges detected from template items.
 

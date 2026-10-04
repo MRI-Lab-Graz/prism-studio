@@ -135,18 +135,3 @@ class FileManager:
             return str(file_path)
         except IOError as e:
             raise RuntimeError(f"Failed to write file {file_path}: {str(e)}")
-
-    def create_new_file(self, json_type, initial_data=None):
-        """
-        Create a new BIDS JSON file with optional initial data
-        Args:
-            json_type: 'dataset_description', 'participants', etc.
-            initial_data: Initial JSON data (dict)
-        Returns:
-            Path to created file
-        """
-        if not self.bids_folder:
-            raise RuntimeError("No BIDS folder set")
-
-        data = initial_data or {}
-        return self.save_file(json_type, data)

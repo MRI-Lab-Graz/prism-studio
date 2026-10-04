@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -59,39 +58,6 @@ def get_json_hash(json_path):
         # Fallback: raw bytes hash
         with open(json_path, "rb") as f:
             return hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
-
-
-def consolidate_sidecars(output_dir, task, suffix):
-    """Consolidate identical JSON sidecars into a single file in the root directory."""
-    print("\nConsolidating JSON sidecars...")
-    pattern = f"sub-*/ses-*/physio/*_task-{task}_{suffix}.json"
-    json_files = list(output_dir.glob(pattern))
-
-    if not json_files:
-        print("No sidecars found to consolidate.")
-        return
-
-    first_json = json_files[0]
-    first_hash = get_json_hash(first_json)
-
-    all_identical = True
-    for jf in json_files[1:]:
-        if get_json_hash(jf) != first_hash:
-            all_identical = False
-            break
-
-    if all_identical:
-        print(f"All {len(json_files)} sidecars are identical. Consolidating to root.")
-        root_json_name = f"task-{task}_{suffix}.json"
-        root_json_path = output_dir / root_json_name
-        shutil.copy(first_json, root_json_path)
-        print(f"Created root sidecar: {root_json_path}")
-
-        for jf in json_files:
-            jf.unlink()
-        print("Deleted individual sidecars.")
-    else:
-        print("Sidecars differ. Keeping individual files.")
 
 
 def _run_varioport_conversion(

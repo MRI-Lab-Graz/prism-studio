@@ -65,7 +65,6 @@ from .conversion_survey_official_template_helpers import (
     copy_official_templates_to_project,
     infer_project_template_technical_defaults,
     infer_tasks_against_official_templates,
-    prepare_project_survey_template_from_official,
     resolve_official_survey_dir,
 )
 from .conversion_survey_template_check_handlers import (
@@ -324,21 +323,6 @@ def _infer_project_template_technical_defaults(
     *, input_path: str | Path | None = None
 ) -> dict[str, str]:
     return infer_project_template_technical_defaults(input_path=input_path)
-
-
-def _prepare_project_survey_template_from_official(
-    payload: Any,
-    *,
-    task: str,
-    technical_defaults: dict[str, str] | None = None,
-    selected_version: str | None = None,
-) -> Any:
-    return prepare_project_survey_template_from_official(
-        payload,
-        task=task,
-        technical_defaults=technical_defaults,
-        selected_version=selected_version,
-    )
 
 
 def _copy_official_templates_to_project(

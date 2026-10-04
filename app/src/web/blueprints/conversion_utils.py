@@ -528,19 +528,6 @@ def should_retry_with_official_library(err: Exception) -> bool:
     )
 
 
-def is_project_code_library(library_dir: str | Path, project_path: str | None) -> bool:
-    """Check if selected library path points to current project's code/library."""
-    if not project_path:
-        return False
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
-
-    library_dir = Path(library_dir).expanduser().resolve()
-    code_library = project_root / "code" / "library"
-    return library_dir in {code_library, code_library / "survey"}
-
-
 def extract_tasks_from_output(output_root: Path) -> list[str]:
     """Extract unique task names from BIDS-style filenames in output directory."""
     tasks = set()

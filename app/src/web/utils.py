@@ -49,11 +49,6 @@ def is_system_file(filename: str) -> bool:
     return _is_system_file(filename)
 
 
-def get_error_code_from_message(message: str) -> str:
-    """Extract error code from validation message."""
-    return _get_error_code_from_message(message)
-
-
 def get_error_description(error_code: str) -> str:
     """Get user-friendly descriptions for error codes."""
     return _get_error_description(error_code)

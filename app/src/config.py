@@ -297,21 +297,6 @@ def save_config(
     return config_path
 
 
-def create_default_config(dataset_path: str, filename: str = ".prismrc.json") -> str:
-    """
-    Create a default configuration file in the dataset.
-
-    Args:
-        dataset_path: Path to dataset root
-        filename: Config filename (default: .prismrc.json)
-
-    Returns:
-        Path to created config file
-    """
-    config = PrismConfig()
-    return save_config(config, dataset_path, filename)
-
-
 def merge_cli_args(config: PrismConfig, args: Any) -> PrismConfig:
     """
     Merge CLI arguments with config file settings.

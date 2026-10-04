@@ -83,14 +83,6 @@ def _persist_project_json_payload(
     )
 
 
-def read_project_icon(project_root: Path | str) -> str | None:
-    """Read and normalize the icon from project.json when present."""
-    payload = _load_project_json_payload(project_root)
-    if not payload:
-        return None
-    return normalize_project_icon(payload.get("icon"))
-
-
 def resolve_project_icon(
     project_root: Path | str,
     fallback_icon: Any = None,

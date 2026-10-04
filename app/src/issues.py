@@ -303,16 +303,6 @@ FIX_TOOLS: Dict[str, Dict[str, str]] = {
 }
 
 
-def get_fix_tool(code: str) -> Dict[str, str] | None:
-    """
-    Get the fix tool info for an error code.
-
-    Returns:
-        Dict with 'tool', 'label', and optionally 'target' keys, or None if no fix tool.
-    """
-    return FIX_TOOLS.get(code)
-
-
 def get_error_description(code: str) -> str:
     """Get user-friendly description for an error code."""
     if code.startswith("BIDS_"):
@@ -587,11 +577,6 @@ def issues_to_dict(issues: List[Issue]) -> List[Dict[str, Any]]:
     return [issue.to_dict() for issue in issues]
 
 
-def issues_to_tuples(issues: List[Issue]) -> List[tuple]:
-    """Convert list of Issues to legacy tuple format"""
-    return [issue.to_tuple() for issue in issues]
-
-
 def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
     """
     Convert a legacy (severity, message[, path]) tuple to an Issue.
@@ -621,12 +606,6 @@ def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
         message=message,
         file_path=file_path,
     )
-
-
-def _infer_code_from_message(message: str) -> Optional[str]:
-    """Legacy internal helper, now points to infer_code_from_message"""
-    code = infer_code_from_message(message)
-    return code if code != "PRISM999" else None
 
 
 # =============================================================================
