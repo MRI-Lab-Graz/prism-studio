@@ -4,10 +4,35 @@ Schema management for prism
 
 import os
 import json
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 # Default schema version to use when not specified
 DEFAULT_SCHEMA_VERSION = "stable"
+
+
+def _resolve_default_schema_dir() -> str:
+    """Find `app/schemas` across dev and PyInstaller-frozen layouts.
+
+    In dev (and the validator wheel) this file is `app/src/schema_manager.py`,
+    so the schemas sit at `../schemas`. The frozen onedir build bundles them
+    at `<_MEIPASS>/schemas` (`--add-data=app/schemas:schemas` in
+    scripts/build/build_app.py). Never fall back to a cwd-relative "schemas":
+    that only worked when run from inside app/.
+    """
+    candidates = [Path(__file__).resolve().parent.parent / "schemas"]
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(Path(meipass).resolve() / "schemas")
+    for candidate in candidates:
+        if candidate.is_dir():
+            return str(candidate)
+    return str(candidates[0])
+
+
+DEFAULT_SCHEMA_DIR = _resolve_default_schema_dir()
 
 
 def parse_version(version_string):
@@ -35,7 +60,7 @@ def is_compatible_version(required_version, provided_version):
     return True
 
 
-def load_schema(name, schema_dir="schemas", version=None):
+def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     """Load schema with version information
 
     Args:
@@ -72,7 +97,7 @@ def load_schema(name, schema_dir="schemas", version=None):
     return None
 
 
-def load_all_schemas(schema_dir="schemas", version=None):
+def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     """Load all available schemas for a specific version
 
     Args:
@@ -113,7 +138,7 @@ def load_all_schemas(schema_dir="schemas", version=None):
     return schemas
 
 
-def get_available_schema_versions(schema_dir="schemas"):
+def get_available_schema_versions(schema_dir=DEFAULT_SCHEMA_DIR):
     """Get list of available schema versions
 
     Returns:
