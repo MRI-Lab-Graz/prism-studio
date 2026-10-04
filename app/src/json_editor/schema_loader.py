@@ -210,49 +210,6 @@ class BIDSSchemaLoader:
             print(f"! Error extracting dataset_description schema: {e}")
             return None
 
-    def get_required_fields(self) -> list:
-        """
-        Get list of required fields for dataset_description.
-
-        :return: List of required field names
-        """
-        ds_schema = self.get_dataset_description_schema()
-        if ds_schema is None:
-            # Fallback to known BIDS requirements
-            return ["Name", "BIDSVersion"]
-
-        try:
-            # Check if schema has a 'required' field
-            if isinstance(ds_schema, dict):
-                required = ds_schema.get("required", [])
-                if isinstance(required, list):
-                    return required
-        except Exception:
-            pass
-
-        return ["Name", "BIDSVersion"]
-
-    def get_field_properties(self, field_name: str) -> Dict[str, Any]:
-        """
-        Get properties for a specific dataset_description field.
-
-        :param field_name: Name of the field
-        :return: Dictionary with field properties (type, description, enum, etc.)
-        """
-        ds_schema = self.get_dataset_description_schema()
-        if ds_schema is None:
-            return {}
-
-        try:
-            if isinstance(ds_schema, dict) and "properties" in ds_schema:
-                properties = ds_schema["properties"]
-                if field_name in properties:
-                    return properties[field_name]
-        except Exception:
-            pass
-
-        return {}
-
     def get_schema_for_type(self, json_type: str) -> Optional[Dict[str, Any]]:
         """
         Get schema for a specific BIDS JSON file type.
@@ -314,8 +271,3 @@ class BIDSSchemaLoader:
         except Exception as e:
             print(f"! Error getting schema for {json_type}: {e}")
             return None
-
-
-def get_default_schema_loader() -> BIDSSchemaLoader:
-    """Get or create a default schema loader instance"""
-    return BIDSSchemaLoader()

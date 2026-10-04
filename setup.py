@@ -44,8 +44,6 @@ setup(
         "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)
     },
     scripts=[
-        "rtk",
-        "prism-validator",
         "prism.py",
         "prism-studio.py",
     ],

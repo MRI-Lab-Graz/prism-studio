@@ -1,95 +1,11 @@
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 import sys
 import uuid
 from pathlib import Path
 from typing import Any
-
-
-def handle_run_environment_detached_job(
-    *,
-    config_path: str,
-    perform_environment_conversion,
-    environment_conversion_cancelled_error_cls,
-    logger,
-):
-    config_file = Path(config_path)
-    payload = json.loads(config_file.read_text(encoding="utf-8"))
-
-    log_path = Path(payload["log_path"])
-    result_path = Path(payload["result_path"])
-    cancel_path = Path(payload["cancel_path"])
-    config = payload["config"]
-
-    def log_callback(message: str, level: str = "info") -> None:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(log_path, "a", encoding="utf-8") as fh:
-            fh.write(f"{level}\t{message}\n")
-
-    config["input_path"] = Path(config["input_path"])
-    log_callback("🌍 Environment conversion job started", "info")
-
-    result_payload: dict[str, Any]
-    try:
-        result = perform_environment_conversion(
-            input_path=config["input_path"],
-            filename=config["filename"],
-            suffix=config["suffix"],
-            separator_option=config["separator_option"],
-            timestamp_col=config["timestamp_col"],
-            participant_col=config["participant_col"],
-            participant_override=config["participant_override"],
-            session_col=config["session_col"],
-            session_override=config["session_override"],
-            location_col=config["location_col"],
-            lat_col=config["lat_col"],
-            lon_col=config["lon_col"],
-            location_label_override=config["location_label_override"],
-            lat_manual=config["lat_manual"],
-            lon_manual=config["lon_manual"],
-            project_path=config["project_path"],
-            pilot_random_subject=bool(config.get("pilot_random_subject", False)),
-            log_callback=log_callback,
-            cancel_check=lambda: cancel_path.exists(),
-        )
-        result_payload = {
-            "done": True,
-            "success": True,
-            "result": result,
-            "error": None,
-        }
-    except environment_conversion_cancelled_error_cls as exc:
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    except ValueError as exc:
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    except Exception as exc:
-        logger.exception("Detached environment conversion failed")
-        result_payload = {
-            "done": True,
-            "success": False,
-            "result": None,
-            "error": str(exc),
-        }
-    finally:
-        tmp_dir = config.get("tmp_dir")
-        if tmp_dir:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(result_payload), encoding="utf-8")
 
 
 def handle_start_environment_detached_job(

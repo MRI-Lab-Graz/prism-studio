@@ -71,6 +71,25 @@ def test_accepts_delegation_shim_pair(tmp_path: Path, capsys) -> None:
         tmp_path,
         "converters/widget.py",
         "def build():\n    return 'canonical'\n",
+        "from importlib.util import spec_from_file_location\n"
+        "spec = spec_from_file_location('widget', 'src/converters/widget.py')\n",
+    )
+
+    verify_repo.check_dual_tree_drift(str(tmp_path))
+    output = capsys.readouterr().out
+
+    assert "widget.py" not in output
+    assert "passed" in output
+
+
+def test_flags_removed_load_canonical_module_shim(tmp_path: Path, capsys) -> None:
+    # src/_compat.py is gone (2026-10-04); an app/src copy belongs nowhere.
+    verify_repo = _load_verify_repo_module()
+
+    _make_pair(
+        tmp_path,
+        "converters/widget.py",
+        "def build():\n    return 'canonical'\n",
         "from src._compat import load_canonical_module\n"
         "load_canonical_module(current_file=__file__, "
         "canonical_rel_path='converters/widget.py', alias='converters.widget')\n",
@@ -79,8 +98,7 @@ def test_accepts_delegation_shim_pair(tmp_path: Path, capsys) -> None:
     verify_repo.check_dual_tree_drift(str(tmp_path))
     output = capsys.readouterr().out
 
-    assert "widget.py" not in output
-    assert "passed" in output
+    assert "widget.py" in output
 
 
 def test_ignores_init_py_duplicates(tmp_path: Path, capsys) -> None:

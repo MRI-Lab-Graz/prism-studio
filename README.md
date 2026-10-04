@@ -98,7 +98,7 @@ and run:
 
 ```bash
 python prism-studio.py                    # Studio web app -> http://127.0.0.1:5001
-python prism-validator /path/to/dataset   # Validator (CLI)
+python prism.py /path/to/dataset          # Validator (CLI)
 python prism_tools.py --help              # Other tools (CLI)
 ```
 

@@ -1598,10 +1598,6 @@ class ProjectManager:
         """Force DatasetType to "raw" - derivative datasets are not supported."""
         return "raw"
 
-    def _create_participants_tsv(self) -> str:
-        """Create participants.tsv header (no sample rows)."""
-        return "participant_id\tage\tsex\n"
-
     def _normalize_feature_toggle(self, value: Any, default: bool = True) -> bool:
         """Normalize optional boolean-style configuration values."""
         if value is None:
@@ -7098,58 +7094,6 @@ participants/sociodemographics import step, not at project creation.
 """
         return content
 
-    def _create_yoda_folders(self, project_path: Path) -> List[str]:
-        """Create standard YODA folder structure."""
-        created = []
-
-        # List of folders to create in the project root
-        folders = ["sourcedata", "derivatives", "analysis", "paper", "code"]
-        for folder in folders:
-            path = project_path / folder
-            path.mkdir(exist_ok=True)
-            created.append(f"{folder}/")
-
-            # Add README to each
-            readme_path = path / "README"
-            content = ""
-            if folder == "sourcedata":
-                content = "Place original/raw data files here before converting to BIDS/PRISM format.\n"
-            elif folder == "derivatives":
-                content = "Processed and derived data outputs (e.g. scored surveys) go here.\n"
-            elif folder == "analysis":
-                content = "Code and results for statistical analysis.\n"
-            elif folder == "paper":
-                content = "Manuscripts, figures, and publication-related files.\n"
-            elif folder == "code":
-                content = """Project-specific scripts, templates, and recipes (YODA-compliant).
-
-Subfolders:
-  • library/{modality}/  - Custom templates (survey/biometrics JSON definitions)
-  • recipes/{modality}/  - Custom scoring recipes (transformation logic)
-  • scripts/             - Analysis and processing scripts
-"""
-
-            CrossPlatformFile.write_text(str(readme_path), content)
-            created.append(f"{folder}/README")
-
-            if folder == "derivatives":
-                qc_path = path / "qc"
-                qc_path.mkdir(exist_ok=True)
-                created.append("derivatives/qc/")
-                qc_readme_path = qc_path / "README"
-                qc_content = (
-                    "Quality control reports, validator outputs, and data snapshots.\n"
-                )
-                CrossPlatformFile.write_text(str(qc_readme_path), qc_content)
-                created.append("derivatives/qc/README")
-
-        # stimuli/ - optional, for stimulus files
-        stimuli_path = project_path / "stimuli"
-        stimuli_path.mkdir(exist_ok=True)
-        created.append("stimuli/")
-
-        return created
-
     def _create_library_structure(self, project_path: Path) -> List[str]:
         """Create library & recipe folder roots under code/ (YODA-compliant).
 
@@ -7214,36 +7158,6 @@ Subfolders:
             "References": config.get("References", ""),
             "Conditions": config.get("Conditions", {}),
             "TaskDefinitions": {},
-        }
-
-    def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Create contributors template with CRediT roles."""
-        authors = config.get("authors", []) or []
-        contributors: List[Any] = []
-        for author in authors:
-            display_name = self._author_display_name(author)
-            if not display_name:
-                continue
-
-            orcid_value = ""
-            email_value = ""
-            if isinstance(author, dict):
-                orcid_value = str(author.get("orcid") or "").strip()
-                email_value = str(author.get("email") or "").strip()
-
-            contributors.append(
-                {
-                    "name": display_name,
-                    "roles": ["Conceptualization"],
-                    "orcid": orcid_value,
-                    "email": email_value,
-                }
-            )
-        if not contributors:
-            contributors.append({"name": "", "roles": [], "orcid": "", "email": ""})
-        return {
-            "contributors": contributors,
-            "roles_reference": "https://credit.niso.org/",
         }
 
     @staticmethod
@@ -9250,10 +9164,6 @@ Subfolders:
             "consistent": len(consistency_issues) == 0,
             "consistency_issues": consistency_issues,
         }
-
-    def _create_data_dictionary(self) -> str:
-        """Create a minimal data dictionary template for sourcedata."""
-        return "file\tcolumn\tname\tunit\tlevels\tdescription\n\t\t\t\t\t\n"
 
 
 def get_available_modalities() -> List[str]:

@@ -72,7 +72,7 @@ class JSONValidator:
         from jsonschema import Draft7Validator
 
         schema_path = (
-            Path(__file__).resolve().parents[4]
+            Path(__file__).resolve().parents[2]
             / "schemas"
             / "stable"
             / "dataset_description.schema.json"
@@ -116,33 +116,3 @@ class JSONValidator:
                 errors.append("RepetitionTime must be a number")
 
         return errors
-
-    def get_validation_rules(self, json_type, schema):
-        """
-        Get validation rules for a JSON type from schema
-        Args:
-            json_type: 'dataset_description', etc.
-            schema: BIDS schema
-        Returns:
-            Dict with field names and their validation rules
-        """
-        rules = {}
-
-        if json_type == "dataset_description":
-            # Extract from schema if available
-            if schema and "objects" in schema:
-                schema_def = (
-                    schema.get("objects", {})
-                    .get("metadata", {})
-                    .get("dataset_description", {})
-                )
-                if schema_def:
-                    for field_name, field_def in schema_def.items():
-                        rules[field_name] = {
-                            "required": field_def.get("required", False),
-                            "type": field_def.get("type"),
-                            "description": field_def.get("description"),
-                            "enum": field_def.get("enum"),
-                        }
-
-        return rules

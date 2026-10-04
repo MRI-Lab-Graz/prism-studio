@@ -1,4 +1,4 @@
-"""Tests for the shared tabular file reader (app/src/converters/file_reader.py).
+"""Tests for the shared tabular file reader (src/converters/file_reader.py).
 
 Covers:
 - Basic CSV / TSV / XLSX / SAV / RData / RDS reading
@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app.src.converters.file_reader import (
+from src.converters.file_reader import (
     ReadResult,
     list_excel_sheets,
     read_tabular_file,

@@ -1,13 +1,4 @@
 """Tests for the shared src.environment_temporal formulas.
-
-This module was extracted to end a documented case of duplicated business
-logic silently diverging: app/src/environment/builder.py (the legacy,
-privacy-safe `prism.py --build-environment` CLI path) and
-app/src/web/blueprints/conversion_environment_handlers.py (the Studio GUI /
-`environment preview|convert` CLI path) each carried their own copy of
-season/sun-phase/daylight/pollen-risk math, and had already drifted (see
-docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-1). Both now import these
-functions from here instead.
 """
 
 from src.environment_temporal import (

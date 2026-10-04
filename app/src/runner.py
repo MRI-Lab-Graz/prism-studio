@@ -435,7 +435,7 @@ def _check_survey_recipe_coverage(
     survey_task_ids: Optional[set[str]] = None,
 ) -> list:
     """Warn when survey data exists but project recipe coverage is incomplete."""
-    from recipes_surveys import (
+    from src.recipes_surveys import (
         RECIPE_FILENAME_GLOB,
         _extract_task_from_survey_filename,
         _normalize_survey_key,

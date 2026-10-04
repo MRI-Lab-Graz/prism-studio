@@ -368,7 +368,6 @@ run_validation: Any = None
 
 from src.cross_platform import safe_path_join
 from src.dedicated_terminal import (
-    build_dedicated_terminal_relaunch_args,
     build_unix_dedicated_terminal_command,
     build_windows_dedicated_terminal_command,
     should_relaunch_in_dedicated_terminal,
@@ -634,10 +633,6 @@ _latest_release_cache: Dict[str, Any] = {
 DEDICATED_TERMINAL_ATTACHED_ENV = "PRISM_DEDICATED_TERMINAL_ATTACHED"
 DEDICATED_TERMINAL_DISABLED_ENV = "PRISM_DISABLE_DEDICATED_TERMINAL"
 DEDICATED_TERMINAL_FORCE_ENV = "PRISM_FORCE_DEDICATED_TERMINAL"
-
-
-def _dedicated_terminal_relaunch_args() -> list[str]:
-    return build_dedicated_terminal_relaunch_args(sys.argv[1:])
 
 
 def _build_dedicated_terminal_command() -> str:

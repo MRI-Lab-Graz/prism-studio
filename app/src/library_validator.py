@@ -243,34 +243,3 @@ class LibraryValidator:
                 print(f"Error reading {file_path.name}: {e}")
 
         return var_map
-
-    def validate_draft(self, draft_content, filename):
-        """
-        Checks if the draft content introduces any duplicates against the existing library.
-        Returns a list of error messages. Empty list means valid.
-        """
-        errors = []
-
-        # 1. Extract variables from draft
-        draft_vars = []
-        if "Questions" in draft_content and isinstance(
-            draft_content["Questions"], dict
-        ):
-            draft_vars = list(draft_content["Questions"].keys())
-        else:
-            draft_vars = [k for k in draft_content.keys() if k not in self.IGNORE_KEYS]
-
-        # 2. Check for internal duplicates (if list? keys are unique in dict, but maybe case sensitivity?)
-        # JSON keys are unique by definition in Python dicts, so we are good there.
-
-        # 3. Check against other files
-        existing_vars = self.get_all_library_variables(exclude_file=filename)
-
-        for var in draft_vars:
-            if var in existing_vars:
-                conflicting_files = ", ".join(existing_vars[var])
-                errors.append(
-                    f"Variable '{var}' is already defined in: {conflicting_files}"
-                )
-
-        return errors

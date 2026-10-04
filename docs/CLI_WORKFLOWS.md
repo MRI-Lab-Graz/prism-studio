@@ -16,18 +16,7 @@ running any commands (`source .venv/bin/activate` / `.venv\Scripts\activate`). I
 see an error about not running inside the PRISM virtual environment, activate
 `.venv` and retry.
 
-If the repository is available locally, **RTK** is the cleanest entry point for
-common workflows:
-
-```bash
-rtk studio
-rtk validator /path/to/dataset --bids
-rtk tools --help
-rtk test -q
-```
-
-Use direct Python entry points when you need a scriptable/explicit command surface;
-prefer RTK for day-to-day use in this repo. Launching the web interface directly:
+Launching the web interface directly:
 `python prism-studio.py` (starts a local server at `http://localhost:5001`).
 
 ## Validate a dataset
