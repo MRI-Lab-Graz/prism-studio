@@ -9,6 +9,7 @@ import shlex
 import sys
 import time
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from pathlib import PureWindowsPath
 
@@ -1733,107 +1734,96 @@ def _build_environment_convert_terminal_command(req) -> str:
     return " ".join(_quote(part) for part in cmd_parts)
 
 
-def _build_terminal_command(req) -> str:
-    """Return an exact terminal command preview for supported actions."""
-    endpoint = _resolve_request_endpoint(req)
-    if endpoint == "validation.validate_folder":
-        return _build_validate_folder_terminal_command(req)
-    if endpoint == "conversion.api_biometrics_detect":
-        return _build_biometrics_detect_terminal_command(req)
-    if endpoint == "conversion.api_biometrics_convert":
-        return _build_biometrics_convert_terminal_command(req)
-    if endpoint == "conversion.api_physio_convert":
-        return _build_physio_convert_terminal_command(req)
-    if endpoint == "conversion.api_batch_convert":
-        return _build_batch_convert_terminal_command(req, start_async=False)
-    if endpoint == "conversion.api_batch_convert_start":
-        return _build_batch_convert_terminal_command(req, start_async=True)
-    if endpoint == "conversion.api_physio_rename":
-        return _build_physio_rename_terminal_command(req)
-    if endpoint == "conversion_survey.api_survey_convert":
-        return _build_survey_convert_terminal_command(req, dry_run=False)
-    if endpoint == "conversion_survey.api_survey_workflow_command":
-        workflow_command = str(
+def _survey_workflow_terminal_command(req) -> str:
+    workflow_command = (
+        str(
             req.form.get("workflow_command")
             or req.form.get("command")
             or req.form.get("mode")
             or ""
-        ).strip().lower()
-        return _build_survey_convert_terminal_command(
-            req,
-            dry_run=workflow_command != "convert",
         )
-    if endpoint in {
-        "conversion_survey.api_survey_convert_preview",
-        "conversion_survey.api_survey_convert_validate",
-    }:
-        return _build_survey_convert_terminal_command(req, dry_run=True)
-    if endpoint in {
-        "conversion_survey.api_survey_prepare_workflow",
-        "conversion_survey.api_survey_detect_version_context",
-    }:
-        return _build_survey_convert_terminal_command(req, dry_run=True)
-    if endpoint == "conversion_survey.api_survey_check_project_templates":
-        return _build_survey_check_templates_terminal_command(req)
-    if endpoint == "tools.detect_columns":
-        return _build_detect_columns_terminal_command(req)
-    if endpoint == "tools.api_recipes_surveys":
-        return _build_tools_recipes_surveys_terminal_command(req)
-    if endpoint == "tools.api_file_management_wide_to_long_preview":
-        return _build_wide_to_long_terminal_command(req, inspect_only=True)
-    if endpoint == "tools.api_file_management_wide_to_long":
-        return _build_wide_to_long_terminal_command(req, inspect_only=False)
-    if endpoint == "tools.api_file_management_delete":
-        return _build_file_management_delete_terminal_command(req)
-    if endpoint == "tools.api_file_management_entity_rewrite":
-        return _build_file_management_entity_rewrite_terminal_command(req)
-    if endpoint == "tools.api_file_management_entity_rewrite_start":
-        return _build_file_management_entity_rewrite_terminal_command(req, start_async=True)
-    if endpoint == "tools.api_file_management_subject_rewrite":
-        return _build_file_management_subject_rewrite_terminal_command(req)
-    if endpoint == "tools.api_file_management_subject_rewrite_start":
-        return _build_file_management_subject_rewrite_terminal_command(req, start_async=True)
-    if endpoint == "conversion.api_environment_preview":
-        return _build_environment_preview_terminal_command(req)
-    if endpoint == "conversion.api_environment_convert":
-        return _build_environment_convert_terminal_command(req)
-    if endpoint == "conversion.api_environment_convert_start":
-        return _build_environment_convert_terminal_command(req)
-    if endpoint == "conversion.api_environment_scan_mri_acquisition":
-        return _build_environment_scan_mri_terminal_command(req)
-    if endpoint == "conversion.api_environment_rescan_mri":
-        return _build_environment_scan_mri_terminal_command(req, rescan=True)
-    if endpoint == "conversion_participants.api_participants_detect_id":
-        return _build_participants_detect_id_terminal_command(req)
-    if endpoint == "conversion_participants.api_participants_preview":
-        return _build_participants_preview_terminal_command(req)
-    if endpoint == "conversion_participants.api_participants_convert_start":
-        return _build_participants_convert_terminal_command(req)
-    if endpoint == "conversion_participants.api_participants_merge":
-        return _build_participants_merge_terminal_command(req)
-    if endpoint == "conversion_participants.api_participants_merge_conflicts":
-        return _build_participants_merge_terminal_command(req, conflicts_csv=True)
-    if endpoint == "conversion_participants.save_participant_mapping":
-        return _build_save_participant_mapping_terminal_command(req)
-    if endpoint == "projects.set_current":
-        return _build_projects_set_current_terminal_command(req)
-    if endpoint == "projects.save_datalad_snapshot":
-        return _build_projects_datalad_save_terminal_command(req)
-    if endpoint == "projects.enable_datalad_for_project":
-        return _build_projects_datalad_enable_terminal_command(req)
-    if endpoint == "projects_export.export_project_structure":
-        return _build_projects_export_structure_terminal_command(req)
-    if endpoint == "projects_export.export_project_folder":
-        return _build_projects_folder_export_terminal_command(req)
-    if endpoint == "projects_export.export_defacing_report":
-        return _build_projects_defacing_terminal_command(req, run_defacing=False)
-    if endpoint == "projects_export.project_deface_anatomical_scans":
-        return _build_projects_defacing_terminal_command(req, run_defacing=True)
-    if endpoint == "projects_export.export_deface_anatomical_scans":
-        return _build_projects_defacing_terminal_command(req, run_defacing=True)
-    if endpoint == "projects_export.template_export_project":
-        return _build_projects_template_export_terminal_command(req)
-    return ""
+        .strip()
+        .lower()
+    )
+    return _build_survey_convert_terminal_command(
+        req, dry_run=workflow_command != "convert"
+    )
+
+
+_survey_dry_run = partial(_build_survey_convert_terminal_command, dry_run=True)
+_deface = partial(_build_projects_defacing_terminal_command, run_defacing=True)
+
+_TERMINAL_COMMAND_BUILDERS = {
+    "validation.validate_folder": _build_validate_folder_terminal_command,
+    "conversion.api_biometrics_detect": _build_biometrics_detect_terminal_command,
+    "conversion.api_biometrics_convert": _build_biometrics_convert_terminal_command,
+    "conversion.api_physio_convert": _build_physio_convert_terminal_command,
+    "conversion.api_batch_convert": partial(
+        _build_batch_convert_terminal_command, start_async=False
+    ),
+    "conversion.api_batch_convert_start": partial(
+        _build_batch_convert_terminal_command, start_async=True
+    ),
+    "conversion.api_physio_rename": _build_physio_rename_terminal_command,
+    "conversion_survey.api_survey_convert": partial(
+        _build_survey_convert_terminal_command, dry_run=False
+    ),
+    "conversion_survey.api_survey_workflow_command": _survey_workflow_terminal_command,
+    "conversion_survey.api_survey_convert_preview": _survey_dry_run,
+    "conversion_survey.api_survey_convert_validate": _survey_dry_run,
+    "conversion_survey.api_survey_prepare_workflow": _survey_dry_run,
+    "conversion_survey.api_survey_detect_version_context": _survey_dry_run,
+    "conversion_survey.api_survey_check_project_templates": _build_survey_check_templates_terminal_command,
+    "tools.detect_columns": _build_detect_columns_terminal_command,
+    "tools.api_recipes_surveys": _build_tools_recipes_surveys_terminal_command,
+    "tools.api_file_management_wide_to_long_preview": partial(
+        _build_wide_to_long_terminal_command, inspect_only=True
+    ),
+    "tools.api_file_management_wide_to_long": partial(
+        _build_wide_to_long_terminal_command, inspect_only=False
+    ),
+    "tools.api_file_management_delete": _build_file_management_delete_terminal_command,
+    "tools.api_file_management_entity_rewrite": _build_file_management_entity_rewrite_terminal_command,
+    "tools.api_file_management_entity_rewrite_start": partial(
+        _build_file_management_entity_rewrite_terminal_command, start_async=True
+    ),
+    "tools.api_file_management_subject_rewrite": _build_file_management_subject_rewrite_terminal_command,
+    "tools.api_file_management_subject_rewrite_start": partial(
+        _build_file_management_subject_rewrite_terminal_command, start_async=True
+    ),
+    "conversion.api_environment_preview": _build_environment_preview_terminal_command,
+    "conversion.api_environment_convert": _build_environment_convert_terminal_command,
+    "conversion.api_environment_convert_start": _build_environment_convert_terminal_command,
+    "conversion.api_environment_scan_mri_acquisition": _build_environment_scan_mri_terminal_command,
+    "conversion.api_environment_rescan_mri": partial(
+        _build_environment_scan_mri_terminal_command, rescan=True
+    ),
+    "conversion_participants.api_participants_detect_id": _build_participants_detect_id_terminal_command,
+    "conversion_participants.api_participants_preview": _build_participants_preview_terminal_command,
+    "conversion_participants.api_participants_convert_start": _build_participants_convert_terminal_command,
+    "conversion_participants.api_participants_merge": _build_participants_merge_terminal_command,
+    "conversion_participants.api_participants_merge_conflicts": partial(
+        _build_participants_merge_terminal_command, conflicts_csv=True
+    ),
+    "conversion_participants.save_participant_mapping": _build_save_participant_mapping_terminal_command,
+    "projects.set_current": _build_projects_set_current_terminal_command,
+    "projects.save_datalad_snapshot": _build_projects_datalad_save_terminal_command,
+    "projects.enable_datalad_for_project": _build_projects_datalad_enable_terminal_command,
+    "projects_export.export_project_structure": _build_projects_export_structure_terminal_command,
+    "projects_export.export_project_folder": _build_projects_folder_export_terminal_command,
+    "projects_export.export_defacing_report": partial(
+        _build_projects_defacing_terminal_command, run_defacing=False
+    ),
+    "projects_export.project_deface_anatomical_scans": _deface,
+    "projects_export.export_deface_anatomical_scans": _deface,
+    "projects_export.template_export_project": _build_projects_template_export_terminal_command,
+}
+
+
+def _build_terminal_command(req) -> str:
+    """Return an exact terminal command preview for supported actions."""
+    builder = _TERMINAL_COMMAND_BUILDERS.get(_resolve_request_endpoint(req))
+    return builder(req) if builder else ""
 
 
 def _build_generic_request_terminal_command(req) -> str:
