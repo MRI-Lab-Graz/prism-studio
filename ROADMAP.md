@@ -228,7 +228,7 @@ still pending, same as the JOSS paper's software DOI).
 All six strategic phases (0-5) and all tactical priorities are DONE — there
 is no open roadmap item as of 2026-07-18. Focus is on sustaining the
 standing regression gates accumulated across those phases (frontend
-structural-assessment guardrails, `./rtk coverage`, grouped-run DataLad
+structural-assessment guardrails, coverage (`pytest --cov=src`), grouped-run DataLad
 tests, export anonymization/privacy/defacing suites) rather than new
 feature work, until a new strategic initiative is picked.
 
@@ -275,7 +275,7 @@ landed 2026-05-27) — this roadmap just hadn't been updated to reflect it.
 
 Completed priorities (1.26, 1.35, 1.36, 1.37, 2, 3) are archived in
 [docs/ROADMAP_HISTORY_2026.md](docs/ROADMAP_HISTORY_2026.md); their standing
-maintenance gates (shared help-panel coverage, `./rtk coverage`, grouped-run
+maintenance gates (shared help-panel coverage, coverage (`pytest --cov=src`), grouped-run
 rewrite tests, export anonymization checks, export privacy/defacing
 regression suites) stay part of standard release validation.
 

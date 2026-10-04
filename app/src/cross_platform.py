@@ -103,28 +103,6 @@ def get_executable_extension():
     return ".exe" if sys.platform.startswith("win") else ""
 
 
-def case_insensitive_glob(pattern, path="."):
-    """Case-insensitive file globbing for Windows compatibility"""
-    from pathlib import Path
-    import fnmatch
-
-    path_obj = Path(path)
-    if not path_obj.exists():
-        return []
-
-    # On Windows, filesystem is case-insensitive anyway
-    # On Unix, we need to do case-insensitive matching manually
-    if sys.platform.startswith("win"):
-        return list(path_obj.glob(pattern))
-    else:
-        # Manual case-insensitive matching for Unix systems
-        results = []
-        for item in path_obj.rglob("*"):
-            if fnmatch.fnmatch(item.name.lower(), pattern.lower()):
-                results.append(item)
-        return results
-
-
 class CrossPlatformFile:
     """File operations that work consistently across platforms"""
 
@@ -166,13 +144,6 @@ class CrossPlatformFile:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
             raise
-
-
-def get_temp_dir():
-    """Get platform-appropriate temporary directory"""
-    import tempfile
-
-    return tempfile.gettempdir()
 
 
 def is_case_sensitive_filesystem(path="."):

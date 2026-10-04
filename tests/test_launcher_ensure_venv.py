@@ -1,4 +1,4 @@
-"""launcher_exec.ensure_venv: the venv check shared by prism.py and prism-studio.py.
+"""launcher_exec.ensure_venv: the venv check shared by the root launchers.
 
 prism-studio.py is strict (no venv -> exit); prism.py only warns, and also
 skips the check in CI.

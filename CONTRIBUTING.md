@@ -41,8 +41,6 @@ Feature requests are welcome! Please open an issue with:
 5. **Run tests** to ensure nothing breaks:
    ```bash
    source .venv/bin/activate  # macOS/Linux
-   rtk test -q
-   # OR
    pytest -q
    ```
 6. **Commit your changes** with clear, descriptive commit messages

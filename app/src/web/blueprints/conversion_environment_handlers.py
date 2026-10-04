@@ -41,7 +41,6 @@ from .conversion_environment_route_handlers import (
     handle_api_environment_preview,
 )
 from .conversion_environment_job_handlers import (
-    handle_run_environment_detached_job,
     handle_run_environment_job,
     handle_start_environment_detached_job,
 )
@@ -117,15 +116,6 @@ def _is_environment_job_cancelled(job_id: str) -> bool:
 def _mark_environment_job_cancelled(job_id: str) -> bool:
     """Mark job as cancelled. Returns True if job existed."""
     return _environment_job_store.cancel(job_id)
-
-
-def _run_environment_detached_job(config_path: str) -> None:
-    handle_run_environment_detached_job(
-        config_path=config_path,
-        perform_environment_conversion=_perform_environment_conversion,
-        environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
-        logger=logger,
-    )
 
 
 def _start_environment_detached_job(

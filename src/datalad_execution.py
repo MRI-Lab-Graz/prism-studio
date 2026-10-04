@@ -77,22 +77,6 @@ def paths_have_uncommitted_changes(
     return bool((process.stdout or "").strip())
 
 
-def run_datalad_get_recursive(
-    project_root: Path,
-    *,
-    datalad_executable: str = "",
-    timeout_seconds: int = 900,
-) -> dict[str, Any]:
-    return run_datalad_get_paths(
-        project_root,
-        paths=["."],
-        datalad_executable=datalad_executable,
-        timeout_seconds=timeout_seconds,
-        recursive=True,
-        no_data=False,
-    )
-
-
 def run_datalad_get_paths(
     project_root: Path,
     *,

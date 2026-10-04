@@ -966,7 +966,7 @@ class TestAPI:
     @pytest.fixture
     def api_blueprint(self):
         """Create API blueprint for testing"""
-        from api import create_api_blueprint
+        from src.api import create_api_blueprint
         from flask import Flask
 
         app = Flask(__name__)

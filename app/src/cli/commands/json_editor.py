@@ -2,13 +2,12 @@
 
 The Studio GUI's JSON Editor page (app/src/json_editor_blueprint.py) is a
 largely self-contained sub-app with its own backend package
-(app/src/json_editor/src/backend/), but its "Save to Project" action —
+(app/src/json_editor/), but its "Save to Project" action —
 which writes dataset_description.json/participants.json/samples.json/
 task-*.json sidecars with real post-save validation — had no CLI
 equivalent (audit item P2, docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md).
 This reuses the exact same FileManager/JSONValidator/BIDSSchemaLoader
-classes the GUI does, via the same sys.path bootstrap the blueprint
-itself uses to reach its bundled backend package.
+classes the GUI does.
 """
 
 from __future__ import annotations
@@ -17,16 +16,11 @@ import json
 import sys
 from pathlib import Path
 
-_JSON_EDITOR_SRC = Path(__file__).resolve().parents[2] / "json_editor" / "src"
-
 
 def _load_json_editor_backend():
-    if str(_JSON_EDITOR_SRC) not in sys.path:
-        sys.path.insert(0, str(_JSON_EDITOR_SRC))
-
-    from backend.file_manager import FileManager
-    from backend.json_validator import JSONValidator
-    from schema_loader import BIDSSchemaLoader
+    from src.json_editor.file_manager import FileManager
+    from src.json_editor.json_validator import JSONValidator
+    from src.json_editor.schema_loader import BIDSSchemaLoader
 
     return FileManager, JSONValidator, BIDSSchemaLoader
 

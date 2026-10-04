@@ -2293,7 +2293,7 @@ def check_import_boundaries(repo_path, fix=False):
         print_success("Import boundary check passed (no app.src.* runtime imports).")
 
 
-_DUAL_TREE_SHIM_MARKERS = ("load_canonical_module(", "spec_from_file_location(")
+_DUAL_TREE_SHIM_MARKERS = ("spec_from_file_location(",)
 
 
 def _is_symlink_pair(path_a: Path, path_b: Path) -> bool:
@@ -2367,8 +2367,8 @@ def check_dual_tree_drift(repo_path, fix=False):
             print_error(
                 f"Unresolved dual-tree duplicate: src/{rel_path} and app/src/{rel_path} "
                 "both exist as independent files. Collapse into one real file with a "
-                "symlink for the other side, or use a load_canonical_module/"
-                "spec_from_file_location delegation shim (see CLAUDE.md)."
+                "symlink for the other side, or delete the app/src copy if the "
+                "module lives in src/ (see CLAUDE.md)."
             )
     else:
         print_success(
