@@ -62,10 +62,6 @@ prism-validator /path/to/dataset
 | `--library PATH` | Override the template library path for schema/template lookups |
 | `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set) |
 | `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory ([details](TEMPLATES.md)) |
-| `--build-environment` | Build a privacy-safe `*_environment.tsv` from `scans.tsv` anchors (no dataset validation run) |
-| `--scans-tsv` / `--environment-tsv` / `--lat` / `--lon` | Required with `--build-environment` |
-| `--environment-providers ...` | Provider list for enrichment (default: `weather pollen air_quality`) |
-| `--environment-cache PATH` | Cache file for provider responses (default `.prism/environment_cache.json`) |
 | `--json` / `--json-pretty` | Output a JSON report to stdout |
 | `--format {json,sarif,junit,markdown,csv}` | Explicit output format |
 | `-o FILE`, `--output FILE` | Write report to a file |
@@ -81,17 +77,9 @@ prism-validator --validate-templates /code/library/survey      # validate templa
 prism-validator /data/study-01 --fix --dry-run            # preview auto-fix
 prism-validator /data/study-01 --fix                      # apply auto-fix
 
-# Build privacy-safe environment table from scans anchors (independent of normal validation)
-prism-validator --build-environment \
-  --scans-tsv /data/study-01/sub-01/ses-01/sub-01_ses-01_scans.tsv \
-  --environment-tsv /data/study-01/sub-01/ses-01/environment/sub-01_ses-01_environment.tsv \
-  --lat 47.07 --lon 15.44
 ```
 
-`--build-environment` uses privacy-safe temporal anchors (`prism_time_anchor`) from
-`scans.tsv` and rejects raw time keys (`date`, `datetime`, `timestamp`,
-`acquisition_time`) in input rows. Bundled providers: `weather`, `pollen`,
-`air_quality`.
+Environment enrichment (weather, air quality, pollen) is `prism_tools.py environment convert`.
 
 ## `prism_tools.py` — conversions, libraries, and helpers
 

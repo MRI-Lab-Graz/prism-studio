@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Metadata-only projects validate.** A project with `dataset_description.json` but no `participants.*` and no `sub-*` folders no longer fails with "No subjects found" (so the save gate lets a fresh project be saved). A `participants.tsv`/`participants.json` without any subject data, or a folder without `dataset_description.json`, is still an error.
 
 ### Removed
+- **`prism.py --build-environment`.** Its weather, pollen and air-quality "providers" never fetched
+  data: they derived placeholder numbers from a hash of the coordinates and time, so any
+  `*_environment.tsv` it wrote contains made-up values and should be regenerated. Use
+  `prism_tools.py environment convert` (real Open-Meteo data, same as the Studio Environment tab).
 - **Intel macOS build.** Homebrew no longer builds Intel macOS packages (the CI build compiled openssl
   and cmake from source and hung) and GitHub is dropping Intel runners in 2027. Intel Macs run PRISM
   Studio from source (`bash install.sh`).

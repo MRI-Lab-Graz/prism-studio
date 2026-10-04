@@ -1,33 +1,9 @@
 """Shared temporal/astronomy math for environment enrichment.
 
-This module holds the pure, side-effect-free formulas that turn a clock
-hour + day-of-year (+ latitude) into season/sun-phase/daylight/pollen-risk
-context. It exists because two independent code paths need these exact
-formulas and previously each carried its own copy, which had already
-silently diverged (see docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-1):
-
-- `app/src/environment/builder.py` backs the legacy, privacy-safe
-  `prism.py --build-environment` CLI path. It only ever sees de-identified
-  temporal anchors (`prism_time_anchor`, e.g. "2026-DOY123-H14") already
-  written into `scans.tsv` — never a real calendar date. This is a
-  deliberate privacy boundary: raw `date`/`datetime`/`timestamp` keys are
-  rejected on input.
-- `app/src/web/blueprints/conversion_environment_handlers.py` backs the
-  Studio GUI's Converter -> Environment/MRI tab and the `environment
-  preview`/`environment convert` CLI commands. It works from a raw
-  timestamp column a researcher provides, so it can additionally compute
-  things a bare day-of-year can't support (e.g. moon phase, which needs an
-  absolute date, not just a day-of-year) and enrich with live weather/air
-  quality/pollen API data.
-
-Because the two paths intentionally see different inputs (anchors vs. real
-timestamps), they cannot be fully collapsed into one pipeline without
-breaking the privacy guarantee of the anchor-only path — the CORE_COLUMNS
-outputs are expected to differ (moon phase, elevation, and richer live
-weather fields are only available in the raw-timestamp path). What *should*
-never differ is the pure math shared by both: season classification, sun
-phase/daylight estimation, and pollen risk binning. Both callers import
-those functions from here instead of maintaining their own copies.
+Pure, side-effect-free formulas that turn a clock hour + day-of-year
+(+ latitude) into season/sun-phase/daylight/pollen-risk context, used by
+src/environment_conversion.py (`prism_tools.py environment convert` and the
+Studio Environment tab).
 """
 
 from __future__ import annotations

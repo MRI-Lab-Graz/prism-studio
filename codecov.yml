@@ -25,7 +25,7 @@ coverage:
 
 # Per-directory coverage, tracked separately because the blended project
 # number above hides how unevenly coverage is distributed (as of
-# 2026-08-10: src/converters ~89%, app/src/environment ~29%,
+# 2026-08-10: src/converters ~89%,
 # app/src/derivatives ~19%). Goal is >80% in each one; `informational: true`
 # means these post to PRs for visibility without failing CI. As a component
 # is actually brought above 80%, flip that one entry to
@@ -75,10 +75,6 @@ component_management:
       name: app/src/json_editor
       paths:
         - app/src/json_editor/**
-    - component_id: app_environment
-      name: app/src/environment
-      paths:
-        - app/src/environment/**
     - component_id: app_maintenance
       name: app/src/maintenance
       paths:

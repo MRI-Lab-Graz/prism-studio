@@ -12,15 +12,6 @@ app/src/core/validation.py
 app/src/cross_platform.py
 app/src/derivatives/__init__.py
 app/src/derivatives/participants_mapping.py
-app/src/environment/__init__.py
-app/src/environment/aggregator.py
-app/src/environment/builder.py
-app/src/environment/cache.py
-app/src/environment/dicom_bridge.py
-app/src/environment/providers/__init__.py
-app/src/environment/providers/air_quality.py
-app/src/environment/providers/pollen.py
-app/src/environment/providers/weather.py
 app/src/fixer.py
 app/src/formatters.py
 app/src/issues.py
@@ -42,7 +33,6 @@ app/src/validator.py
 src/datalad_doctor.py
 src/datalad_execution.py
 src/entity_rules.py
-src/environment_temporal.py
 src/formatters.py
 src/participants_sessions.py
 src/recipe_validation.py
