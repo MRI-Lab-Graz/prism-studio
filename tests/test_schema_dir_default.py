@@ -26,8 +26,16 @@ def test_library_fill_works_outside_app_dir(tmp_path):
     template = tmp_path / "survey-demo.json"
     template.write_text(json.dumps({"Study": {"TaskName": "demo"}}))
     r = subprocess.run(
-        [sys.executable, str(ROOT / "prism_tools.py"), "library", "fill",
-         "--modality", "survey", "--path", str(template)],
+        [
+            sys.executable,
+            str(ROOT / "prism_tools.py"),
+            "library",
+            "fill",
+            "--modality",
+            "survey",
+            "--path",
+            str(template),
+        ],
         capture_output=True,
         text=True,
         cwd=tmp_path,
@@ -38,3 +46,30 @@ def test_library_fill_works_outside_app_dir(tmp_path):
     assert r.returncode == 0, r.stdout + r.stderr
     filled = json.loads(template.read_text())
     assert "Technical" in filled  # a top-level key the survey schema defines
+
+
+def _library_fill(tmp_path, *args):
+    return subprocess.run(
+        [sys.executable, str(ROOT / "prism_tools.py"), "library", "fill", *args],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        env={**os.environ, "PRISM_SKIP_VENV_CHECK": "1"},
+        timeout=60,
+    )
+
+
+def test_library_fill_exits_nonzero_when_schema_missing(tmp_path):
+    r = _library_fill(
+        tmp_path, "--modality", "survey", "--path", str(tmp_path), "--version", "9.9"
+    )
+    assert "Could not load schema" in r.stdout
+    assert r.returncode == 1
+
+
+def test_library_fill_exits_nonzero_when_path_missing(tmp_path):
+    r = _library_fill(
+        tmp_path, "--modality", "survey", "--path", str(tmp_path / "nope")
+    )
+    assert "Path not found" in r.stdout
+    assert r.returncode == 1

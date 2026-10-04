@@ -54,7 +54,7 @@ def cmd_library_fill(args) -> None:
     schema = load_schema(args.modality, version=args.version)
     if not schema:
         print(f"Error: Could not load schema for {args.modality}")
-        return
+        sys.exit(1)
 
     p = Path(args.path)
     if p.is_file():
@@ -64,6 +64,7 @@ def cmd_library_fill(args) -> None:
             process_file(f, schema)
     else:
         print(f"Error: Path not found: {args.path}")
+        sys.exit(1)
 
 
 _APP_ROOT_FOR_SCHEMAS = Path(__file__).resolve().parents[3]
