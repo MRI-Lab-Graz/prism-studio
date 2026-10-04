@@ -22,18 +22,9 @@ import pandas as pd
 
 from src.participants_converter import ParticipantsConverter
 from src.participants_sessions import session_label, sort_session_labels
+from src.converters.file_reader import read_tabular_file as _read_tabular_file
 from src.subject_id_matching import build_subject_id_matcher
 
-
-def _import_read_tabular_file():
-    try:
-        from src.converters.file_reader import read_tabular_file
-    except ImportError:
-        from converters.file_reader import read_tabular_file
-    return read_tabular_file
-
-
-_read_tabular_file = _import_read_tabular_file()
 
 ParticipantLogCallback = Callable[[str, str], None]
 

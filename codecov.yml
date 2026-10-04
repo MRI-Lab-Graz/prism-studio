@@ -75,10 +75,6 @@ component_management:
       name: app/src/json_editor
       paths:
         - app/src/json_editor/**
-    - component_id: app_maintenance
-      name: app/src/maintenance
-      paths:
-        - app/src/maintenance/**
     - component_id: app_utils
       name: app/src/utils
       paths:

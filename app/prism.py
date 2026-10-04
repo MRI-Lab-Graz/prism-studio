@@ -84,7 +84,7 @@ try:
     from src.validation_library_resolution import default_validation_library_path
     from derivatives.participants_mapping import apply_participants_mapping
     from fixer import DatasetFixer, get_fixable_issues
-    from formatters import format_output
+    from src.formatters import format_output
     from plugins import (
         PluginManager,
         create_context,

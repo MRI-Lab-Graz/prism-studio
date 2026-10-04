@@ -98,9 +98,14 @@ now a symlink to `app/src/converters/excel_base.py`, matching the
 `excel_to_survey.py`/`excel_template_import.py` only exist in `app/src/`)
 already do. A real symlink makes the drift class structurally impossible
 for that file, rather than relying on anyone remembering to edit both sides.
-If a proper delegation shim already exists instead (e.g.
-`load_canonical_module`/`_compat.py`, or a hand-rolled
-`spec_from_file_location` bridge like `src/converters/csv.py` uses to load
+Simpler still, when the module lives only in top-level `src/`: keep no
+`app/src/` copy at all. In the app runtime `src` is `app/src`, whose
+`__path__` falls through to the repo `src/` (and `backend_bundle/src` when
+frozen), so `import src.<name>` finds it — import it as `src.<name>`, never
+as a bare top-level name. (The `load_canonical_module`/`_compat.py` shims
+that used to sit in `app/src/` were removed on 2026-10-04 for this reason;
+`tests/test_no_compat_shims.py`.) If a hand-rolled `spec_from_file_location`
+bridge exists instead (like `src/converters/csv.py` uses to load
 `app/src/converters/csv.py`), editing the implementation side is enough —
 just confirm which side that is before assuming.
 
@@ -142,18 +147,6 @@ Regression tests: `tests/test_web_utils_fallback.py` (forces the dormant
 fallback branches directly via monkeypatch, since normal test runs never
 reach them — the only way to give a safety net real coverage).
 
-`converters/limesurvey.py` (checked 2026-09-01, during a survey-module
-assessment) was flagged as an *unverified* risk going in — both
-`src/converters/limesurvey.py` and `app/src/converters/limesurvey.py` exist
-as physically distinct files, matching the shape of the bugs above, and it
-wasn't on the "already fixed" list. Checked and found already safe: the
-`app/src/` copy is a 34-line `load_canonical_module`/`_compat.py` delegation
-shim (per the pattern this note already documents above) that forwards to
-`src/converters/limesurvey.py` (2100 lines, canonical) by file path, and
-namespace-package resolution independently picks the `src/` copy first
-regardless. No divergence, no action needed — noted here only so the next
-person doesn't re-spend time re-verifying it from scratch.
-
 Don't treat the absence of a file
 from this note as proof it's safe; the check above is the source of truth,
 this paragraph is not a checklist.
@@ -161,9 +154,8 @@ this paragraph is not a checklist.
 An automated `dual-tree-drift` check now runs in CI
 (`python tests/verify_repo.py --check dual-tree-drift --no-fix`) and catches
 any *new* same-relative-path file that exists on both sides without being
-resolved via a symlink or a `load_canonical_module`/`spec_from_file_location`
-shim — but it only catches same-relative-path duplicates (like the
-`limesurvey.py` case above), not cross-name shadowing or the "dead file with
+resolved via a symlink or a `spec_from_file_location`
+shim — but it only catches same-relative-path duplicates, not cross-name shadowing or the "dead file with
 a different name" pattern documented in the `web/utils.py` paragraph above,
 so the manual check above is still the source of truth for anything the
 automated one can't see.

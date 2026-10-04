@@ -16,10 +16,23 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_validator_rejects_build_environment(tmp_path):
     out = tmp_path / "sub-01_environment.tsv"
     r = subprocess.run(
-        [sys.executable, str(ROOT / "app" / "prism.py"), "--build-environment",
-         "--scans-tsv", str(tmp_path / "scans.tsv"), "--environment-tsv", str(out),
-         "--lat", "47", "--lon", "15"],
-        capture_output=True, text=True, cwd=ROOT, timeout=60,
+        [
+            sys.executable,
+            str(ROOT / "app" / "prism.py"),
+            "--build-environment",
+            "--scans-tsv",
+            str(tmp_path / "scans.tsv"),
+            "--environment-tsv",
+            str(out),
+            "--lat",
+            "47",
+            "--lon",
+            "15",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        timeout=60,
         env={**os.environ, "PRISM_SKIP_VENV_CHECK": "1"},
     )
     assert r.returncode == 2, r.stdout + r.stderr  # argparse: unknown option

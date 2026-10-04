@@ -1,6 +1,5 @@
 app/prism.py
 app/src/__init__.py
-app/src/_compat.py
 app/src/bids_integration.py
 app/src/bids_validator.py
 app/src/config.py
@@ -13,11 +12,8 @@ app/src/cross_platform.py
 app/src/derivatives/__init__.py
 app/src/derivatives/participants_mapping.py
 app/src/fixer.py
-app/src/formatters.py
 app/src/issues.py
 app/src/plugins.py
-app/src/recipe_validation.py
-app/src/recipes_surveys.py
 app/src/reporting.py
 app/src/runner.py
 app/src/schema_manager.py

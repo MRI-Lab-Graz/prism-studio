@@ -190,12 +190,8 @@ class TestRecipeVersionedScores:
 
     @pytest.fixture()
     def apply_fn(self):
-        # Try canonical first, fall back to app mirror
-        try:
-            from recipes_surveys import _apply_survey_derivative_recipe_to_rows
-        except ImportError:
-            sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-            from recipes_surveys import _apply_survey_derivative_recipe_to_rows
+        from src.recipes_surveys import _apply_survey_derivative_recipe_to_rows
+
         return _apply_survey_derivative_recipe_to_rows
 
     def _base_recipe(self, scores: list) -> dict:

@@ -41,6 +41,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
 
+from src.converters.file_reader import read_tabular_file as _read_tabular_file
+
 try:
     from src.cross_platform import CrossPlatformFile
 except ImportError:
@@ -56,17 +58,6 @@ def _import_filter_rows_to_session():
 
 
 filter_rows_to_session = _import_filter_rows_to_session()
-
-
-def _import_read_tabular_file():
-    try:
-        from src.converters.file_reader import read_tabular_file
-    except ImportError:
-        from converters.file_reader import read_tabular_file
-    return read_tabular_file
-
-
-_read_tabular_file = _import_read_tabular_file()
 
 
 def _import_session_map():
