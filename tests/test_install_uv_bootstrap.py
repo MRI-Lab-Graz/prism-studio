@@ -71,3 +71,76 @@ def test_uv_in_local_bin_but_not_on_path_is_found_without_asking(tmp_path):
     out = _run_ensure_uv(tmp_path, "")
     assert out.returncode == 0, out.stdout + out.stderr
     assert "Install uv" not in out.stdout
+
+
+# windows.ps1: no PowerShell in CI on macOS/Linux, so check the script text.
+PS1 = (ROOT / "scripts" / "setup" / "windows.ps1").read_text(encoding="utf-8")
+
+
+def test_windows_finds_previously_installed_uv_before_asking():
+    assert PS1.index(r"$env:USERPROFILE\.local\bin") < PS1.index('Get-Command "uv"')
+
+
+def test_windows_uv_prompt_defaults_to_yes():
+    # Enter alone must install uv; the no-uv fallback needs a system Python bare machines lack.
+    prompt = next(l for l in PS1.splitlines() if "$InstallUv = Read-Host" in l)
+    assert "[Y/n]" in prompt
+    assert '$InstallUv -notmatch "^[Nn]"' in PS1
+
+
+def test_windows_explains_manual_uv_install():
+    assert "docs.astral.sh/uv" in PS1
+    assert "winget install" in PS1
+
+
+# --- DataLad + git-annex: offered (default yes) at the end of setup ---
+
+def _run_offer_datalad(tmp_path, answer, tools=()):
+    import sys
+    bin_dir = tmp_path / "dbin"
+    bin_dir.mkdir()
+    _fake(bin_dir / "uv", f'echo "uv $@" >> {tmp_path}/ran\n')
+    _fake(bin_dir / "git", "echo git version 2.45\n")
+    for tool in tools:
+        _fake(bin_dir / tool, "")
+    funcs = subprocess.run(
+        ["sed", "-n", "/^offer_datalad()/,/^}/p", "install.sh"],
+        cwd=ROOT, capture_output=True, text=True,
+    ).stdout
+    script = f"""
+echo_info() {{ echo "$1"; }}; echo_success() {{ echo "$1"; }}; echo_error() {{ echo "$1"; }}
+VENV_PYTHON_UNIX="{sys.executable}"
+{funcs}
+offer_datalad
+"""
+    return subprocess.run(
+        ["bash", "-c", script], input=answer, cwd=ROOT,
+        env={"PATH": f"{bin_dir}:/bin", "HOME": str(tmp_path)},
+        capture_output=True, text=True,
+    )
+
+
+def test_datalad_installed_with_the_apps_own_command_by_default(tmp_path):
+    from src.datalad_doctor import install_command
+    out = _run_offer_datalad(tmp_path, "\n")
+    assert out.returncode == 0, out.stdout + out.stderr
+    assert f"{install_command('darwin')}\n" in (tmp_path / "ran").read_text()
+
+
+def test_datalad_declined_shows_command_for_later(tmp_path):
+    out = _run_offer_datalad(tmp_path, "n\n")
+    assert out.returncode == 0
+    assert not (tmp_path / "ran").exists()
+    assert "uv tool install datalad" in out.stdout
+
+
+def test_datalad_already_installed_is_not_offered(tmp_path):
+    out = _run_offer_datalad(tmp_path, "", tools=("datalad", "git-annex"))
+    assert out.returncode == 0
+    assert not (tmp_path / "ran").exists()
+
+
+def test_windows_offers_datalad_with_the_apps_own_command():
+    assert "from src.datalad_doctor import install_command" in PS1
+    prompt = next(l for l in PS1.splitlines() if "$InstallDatalad = Read-Host" in l)
+    assert "[Y/n]" in prompt

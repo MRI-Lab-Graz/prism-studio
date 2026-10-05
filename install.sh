@@ -77,6 +77,32 @@ ensure_uv() {
     return 1
 }
 
+offer_datalad() {
+    if command -v datalad >/dev/null 2>&1 && command -v git-annex >/dev/null 2>&1; then
+        echo_info "DataLad and git-annex are already installed."
+        return 0
+    fi
+    # Same command the app suggests, so installer and app never disagree.
+    local cmd
+    cmd="$("$VENV_PYTHON_UNIX" -c 'from src.datalad_doctor import install_command; print(install_command())')" || return 0
+    echo_info "DataLad and git-annex (version control and backup for your project data) are highly recommended."
+    local answer=""
+    read -r -p "Install them now with '$cmd'? [Y/n] " answer || answer="n"
+    if [[ "$answer" =~ ^[Nn] ]]; then
+        echo_info "Skipped. You can install them later with: $cmd"
+        return 0
+    fi
+    if $cmd; then
+        uv tool update-shell >/dev/null 2>&1  # puts uv's tool folder on PATH for new terminals
+        echo_success "DataLad and git-annex installed."
+    else
+        echo_error "Installing DataLad failed. You can retry later with: $cmd"
+    fi
+    if ! git --version >/dev/null 2>&1; then
+        echo_info "DataLad also needs git: $("$VENV_PYTHON_UNIX" -c 'from src.datalad_doctor import git_install_hint; print(git_install_hint())')"
+    fi
+}
+
 resolve_path() {
     local target="$1"
     if [ -z "$target" ]; then
@@ -471,6 +497,9 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
     deactivate
 fi
 echo_success "Dependencies installed successfully."
+
+# DataLad + git-annex (optional, highly recommended)
+offer_datalad
 
 # Desktop shortcut (optional; setup still succeeds without it)
 bash scripts/setup/create_desktop_shortcut.sh || echo_info "Skipped Desktop shortcut."

@@ -222,7 +222,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("window.setNavbarDataladFeedback?.(", content)
         self.assertIn("const DATALAD_PREFERENCES_NAMESPACE = 'datalad';", content)
         self.assertIn("const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
-        self.assertIn("const DATALAD_INSTALL_COMMAND = 'uv tool install datalad git-annex';", content)
+        self.assertIn("const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';", content)
         # The backend knows the platform; the JS only shows what the status says.
         self.assertIn("dataladState.install_command", content)
         self.assertIn("Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}", content)

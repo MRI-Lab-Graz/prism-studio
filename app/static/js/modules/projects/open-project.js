@@ -18,7 +18,7 @@ export function initOpenProjectController({
     const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
     const DATALAD_DEFAULT_COMMIT_MESSAGE = 'Checkpoint PRISM project changes';
     const DATALAD_DOCS_URL = 'https://www.datalad.org/';
-    const DATALAD_INSTALL_COMMAND = 'uv tool install datalad git-annex';
+    const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';
     const DATALAD_SAVE_PROGRESS_STEPS = [
         { afterSeconds: 0, percent: 8, label: 'Starting DataLad snapshot...' },
         { afterSeconds: 8, percent: 22, label: 'Applying text-file tracking policy...' },
