@@ -3,7 +3,7 @@
 # Setup script for prism on UNIX-like systems (Linux, macOS)
 #
 # This script will:
-# 1. Check if 'uv' is installed.
+# 1. Check if 'uv' is installed (offers to install it if missing).
 # 2. Create a virtual environment in ./.venv
 # 3. Install dependencies from requirements.txt into the virtual environment.
 
@@ -45,6 +45,36 @@ echo_error() {
 
 echo_success() {
     echo "✅ $1"
+}
+
+fetch_url() {
+    if command -v curl >/dev/null 2>&1; then
+        curl -LsSf "$1"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO- "$1"
+    else
+        echo_error "Neither curl nor wget is available to download $1."
+        return 1
+    fi
+}
+
+ensure_uv() {
+    # uv's installer puts it in ~/.local/bin, which a fresh shell may not have on PATH yet.
+    export PATH="$PATH:$HOME/.local/bin:$HOME/.cargo/bin"
+    command -v uv >/dev/null 2>&1 && return 0
+
+    echo_info "'uv' (the tool this setup uses to install Python packages) is not installed."
+    local answer=""
+    read -r -p "Install uv now using its official installer (https://astral.sh/uv/install.sh)? [Y/n] " answer || answer="n"
+    if [[ ! "$answer" =~ ^[Nn] ]]; then
+        fetch_url https://astral.sh/uv/install.sh | sh
+        command -v uv >/dev/null 2>&1 && return 0
+        echo_error "Installing uv did not succeed."
+    fi
+    echo_info "Install uv by hand, then run 'bash install.sh' again."
+    echo_info "Instructions (open in a web browser): https://docs.astral.sh/uv/getting-started/installation/"
+    echo_info "With Homebrew on macOS you can also run: brew install uv"
+    return 1
 }
 
 resolve_path() {
@@ -316,12 +346,7 @@ find . -path './.venv' -prune -o -type d -name '__pycache__' -print | xargs -r r
 echo_success "__pycache__ cleared."
 
 # 1. Check for uv
-if ! command -v uv &> /dev/null; then
-    echo_error "'uv' command not found."
-    echo_info "Please install uv first. See: https://github.com/astral-sh/uv"
-    echo_info "Example installation: curl -LsSf https://astral.sh/uv/install.sh | sh"
-    exit 1
-fi
+ensure_uv || exit 1
 echo_info "'uv' is installed."
 
 # 2. Check for Deno (Required for BIDS validation)
@@ -330,7 +355,7 @@ if ! command -v deno &> /dev/null; then
     # Downloads and runs Deno's own installer script: ask first, never silently.
     read -r -p "Install Deno now using its official installer (https://deno.land/install.sh)? [y/N] " install_deno || install_deno=""
     if [[ "$install_deno" =~ ^[Yy]$ ]]; then
-        curl -fsSL https://deno.land/install.sh | sh
+        fetch_url https://deno.land/install.sh | sh
 
         # Add to path for current session
         export DENO_INSTALL="$HOME/.deno"
