@@ -1,13 +1,14 @@
-"""Guards the symlinks that collapse the src/ vs app/src/ mirror pairs.
+"""The repo must not track symlinks.
 
-CLAUDE.md's fix for dual-tree drift is a real symlink on the ``src/`` side.
-Git for Windows checks symlinks out as plain text files containing the target
-path unless ``core.symlinks`` is enabled, which turns
-``import src.converters.excel_base`` into a bare ``SyntaxError`` pointing at a
-file that looks fine in an editor. This turns that into one readable failure.
+Git for Windows (without Developer Mode / ``core.symlinks``) and GitHub's ZIP
+download both check a symlink out as a plain text file containing the target
+path. For the old ``src/`` -> ``app/src/`` mirror symlinks that turned
+``import src.converters.excel_base`` into a bare ``SyntaxError``, so
+install.cmd on a fresh Windows machine produced a Studio that would not start.
 
-Deliberately generic: it guards every symlink git tracks, so a future mirror
-collapse is covered without touching this file.
+A module that lives in ``app/src/`` needs no ``src/`` stand-in: ``src``'s
+``__path__`` falls through to ``app/src`` (see src/__init__.py), so
+``src.<name>`` finds it either way.
 """
 
 import subprocess
@@ -32,18 +33,19 @@ def _tracked_symlinks():
     ]
 
 
-def test_tracked_symlinks_are_usable_on_this_checkout():
-    broken = {}
-    for relative_path in _tracked_symlinks():
-        path = REPO_ROOT / relative_path
-        if not path.is_symlink():
-            broken[relative_path] = (
-                "checked out as a regular file (Windows without core.symlinks): "
-                "Python will fail to parse the target path as source"
-            )
-        elif not path.resolve().is_file():
-            broken[relative_path] = f"dangling, points at {path.resolve()}"
+def test_repo_tracks_no_symlinks():
+    assert _tracked_symlinks() == []
 
-    assert not broken, "Unusable symlinks in this checkout: " + "; ".join(
-        f"{name} - {reason}" for name, reason in sorted(broken.items())
+
+def test_former_mirror_modules_import_from_app_src():
+    code = (
+        "import src.converters.excel_base, src.converters.survey, "
+        "src.converters.survey_base; print('ok')"
     )
+    result = subprocess.run(
+        [__import__("sys").executable, "-c", code],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
