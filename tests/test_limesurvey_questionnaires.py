@@ -153,6 +153,7 @@ def test_prism_template_survives_limesurvey_round_trip(tmp_path):
                       "Respondent": "self", "AdministrationMethod": "online"},
         "Study": {"TaskName": "rts", "OriginalName": "Round Trip Scale", "ShortName": "RTS",
                   "Citation": "Doe 2020", "Authors": ["Doe J"], "LicenseID": "CC-BY-4.0",
+                  "License": "Creative Commons Attribution 4.0",
                   "Category": "other", "Description": "A test scale",
                   "Instructions": "Bitte antworten Sie."},
         "RTS01": {"Description": "erstes Item", "Levels": {"1": "nie", "2": "oft"}},
@@ -175,6 +176,8 @@ def test_prism_template_survives_limesurvey_round_trip(tmp_path):
     assert study["ShortName"] == "RTS"
     assert study["Citation"] == "Doe 2020"
     assert study["Authors"] == ["Doe J"]
+    assert study["License"] == "Creative Commons Attribution 4.0"
+    assert "LicenseID" not in study  # user must pick the ID that matches the restored text
     assert study["Description"] == "A test scale"
     assert study["Instructions"] == {"de": "Bitte antworten Sie."}
 
