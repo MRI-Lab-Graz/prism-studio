@@ -193,10 +193,17 @@ Examples:
     parser.add_argument(
         "--list-versions", action="store_true", help="List available schema versions"
     )
-    parser.add_argument(
+    bids_group = parser.add_mutually_exclusive_group()
+    bids_group.add_argument(
         "--bids",
         action="store_true",
-        help="Run the standard BIDS validator in addition to PRISM validation",
+        help="Run the BIDS validator (this is the default; use it to override "
+        '"runBids": false in .prismrc.json)',
+    )
+    bids_group.add_argument(
+        "--no-bids",
+        action="store_true",
+        help="Skip the BIDS validator and run only the PRISM checks",
     )
     parser.add_argument(
         "--bids-warnings",
@@ -216,7 +223,7 @@ Examples:
     parser.add_argument(
         "--no-prism",
         action="store_true",
-        help="Skip PRISM-specific validation (only run BIDS validator if --bids is set)",
+        help="Skip PRISM-specific validation (only the BIDS validator runs)",
     )
     parser.add_argument(
         "--json",
@@ -445,6 +452,13 @@ Examples:
     schema_version = config.schema_version
     run_bids = config.run_bids
     run_prism = not args.no_prism
+    if not run_bids and not run_prism:
+        print(
+            "❌ No checks to run: --no-prism skips PRISM and BIDS is switched off "
+            "(--no-bids or runBids=false)",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     if not machine_output:
         print(f"🔍 Validating dataset: {args.dataset}")

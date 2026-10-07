@@ -78,7 +78,7 @@ class PrismConfig:
 
     # Validation behavior
     strict_mode: bool = False  # Treat warnings as errors
-    run_bids: bool = False  # Run BIDS validator by default
+    run_bids: bool = True  # The BIDS check is part of every run; --no-bids / "runBids": false skips it
     show_bids_warnings: bool = False  # Show BIDS validator warnings
 
     # Custom modality patterns (modality_name -> regex pattern)
@@ -201,7 +201,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             schema_version=data.get("schemaVersion", "stable"),
             ignore_paths=data.get("ignorePaths", DEFAULT_IGNORE_PATTERNS.copy()),
             strict_mode=data.get("strictMode", False),
-            run_bids=data.get("runBids", False),
+            run_bids=data.get("runBids", True),
             show_bids_warnings=data.get("showBidsWarnings", False),
             custom_modalities=data.get("customModalities", {}),
             default_output_format=data.get("defaultOutputFormat", "text"),
@@ -313,8 +313,10 @@ def merge_cli_args(config: PrismConfig, args: Any) -> PrismConfig:
     if hasattr(args, "schema_version") and args.schema_version:
         config.schema_version = args.schema_version
 
-    if hasattr(args, "bids") and args.bids:
+    if getattr(args, "bids", False):
         config.run_bids = True
+    if getattr(args, "no_bids", False):
+        config.run_bids = False
 
     if hasattr(args, "bids_warnings") and args.bids_warnings:
         config.show_bids_warnings = True

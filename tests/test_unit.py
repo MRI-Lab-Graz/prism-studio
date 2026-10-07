@@ -178,7 +178,7 @@ class TestConfig:
         config = PrismConfig()
         assert config.schema_version == "stable"
         assert config.strict_mode is False
-        assert config.run_bids is False
+        assert config.run_bids is True
         assert len(config.ignore_paths) > 0
 
     def test_should_ignore(self):
