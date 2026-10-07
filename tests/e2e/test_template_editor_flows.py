@@ -48,7 +48,7 @@ def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
 
-    expect(page.locator("#alertArea")).to_contain_text("2 item(s) extracted")
+    expect(page.locator("#alertArea .alert-warning")).to_contain_text("Not found in your file")
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)  # the item select lists the loaded items
 
     page.select_option("#sourceSplitSelect", "survey")
