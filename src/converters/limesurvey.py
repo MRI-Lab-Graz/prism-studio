@@ -1186,6 +1186,16 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
             },
             template,
         ))
+    used = set()
+    for _info, template in results:  # groups whose names sanitize alike get base-2, base-3, ...
+        study = template["Study"]
+        base = name = study["TaskName"]
+        n = 1
+        while name in used:
+            n += 1
+            name = f"{base}-{n}"
+        used.add(name)
+        study["TaskName"] = name
     return parsed, results
 
 
@@ -1546,13 +1556,7 @@ def parse_lss_xml_by_groups(xml_content):
         return None
     out = {}
     for _info, template in results:
-        base = key = template["Study"]["TaskName"]
-        n = 1
-        while key in out:  # groups whose names sanitize alike must not overwrite each other
-            n += 1
-            key = f"{base}_{n}"
-        template["Study"]["TaskName"] = key
-        out[key] = template
+        out[template["Study"]["TaskName"]] = template
     return out
 
 

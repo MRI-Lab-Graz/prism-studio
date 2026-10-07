@@ -223,3 +223,22 @@ def test_ls3_multilanguage_rows_are_not_duplicated():
     assert template["WHO1"]["Description"] == {"de": "Frage eins"}
     assert template["WHO1"]["Levels"] == {"1": {"de": "nie"}}
     assert found["name"] == "Wohl"
+
+
+def test_colliding_task_names_are_deduped_in_listing_and_templates():
+    import json
+    import re
+
+    schema = json.loads(Path("app/schemas/stable/survey.schema.json").read_text())
+    pattern = schema["properties"]["Study"]["properties"]["TaskName"]["pattern"]
+    text = FIXTURE.read_text(encoding="utf-8")
+    text = text.replace("<group_name>WHO-5</group_name>", "<group_name>Stress 1</group_name>")
+    text = text.replace("<group_name>ADS</group_name>", "<group_name>Stress-1</group_name>")
+    xml = text.encode()
+
+    keys = [q["key"] for q in list_limesurvey_questionnaires(xml)]
+    names = [limesurvey_questionnaire_template(xml, k)["Study"]["TaskName"] for k in keys]
+
+    assert names[1:3] == ["stress1", "stress1-2"]
+    assert len(set(names)) == len(names)
+    assert all(re.fullmatch(pattern, n) for n in names)
