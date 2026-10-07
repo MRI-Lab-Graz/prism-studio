@@ -709,6 +709,17 @@ def _parse_lss_structure(root, get_text):
     return questions_map, groups_map
 
 
+_ITEM_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+
+
+def _array_item_id(parent_code, row_code, taken):
+    """Row code as item ID when it is a usable, unused identifier; otherwise
+    prefixed with its array's code (ADS1 + "1" -> "ADS1_1")."""
+    if _ITEM_ID_RE.match(row_code) and row_code not in taken:
+        return row_code
+    return f"{parent_code}_{row_code}"
+
+
 def _build_prism_template_from_parsed(
     questions_map, groups_map, languages, default_language="en", source_type="lsq"
 ):
@@ -826,7 +837,8 @@ def _build_prism_template_from_parsed(
                 if multilingual_levels:
                     entry["Levels"] = multilingual_levels
 
-                prism_questions[sq_code] = entry
+                entry["LimeSurvey"]["columnName"] = f"{title}[{sq_code}]"
+                prism_questions[_array_item_id(title, sq_code, prism_questions)] = entry
         else:
             # Non-matrix question: single entry
             entry = {

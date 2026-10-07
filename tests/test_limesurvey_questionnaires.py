@@ -31,3 +31,20 @@ def test_ls6_answer_labels_come_from_answer_l10ns():
     _parse_answers_into_questions(root, questions_map, _get_text)
 
     assert questions_map["1"]["levels"] == {"A1": {"de": "selten", "en": "rarely"}}
+
+
+from src.converters.limesurvey import parse_lsg_xml
+
+
+def test_numeric_row_codes_are_prefixed_with_the_array_code():
+    template = parse_lsg_xml(FIXTURE.read_bytes())
+
+    assert "ADS1_1" in template and "ADS1_2" in template
+    assert "1" not in template
+    assert template["ADS1_1"]["LimeSurvey"]["columnName"] == "ADS1[1]"
+
+
+def test_identifier_row_codes_are_kept():
+    template = parse_lsg_xml(FIXTURE.read_bytes())
+
+    assert "WHO1" in template and "WHO2" in template
