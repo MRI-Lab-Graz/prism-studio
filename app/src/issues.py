@@ -626,9 +626,12 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     by_code: Dict[str, int] = {}
 
     for issue in issues:
-        if issue.severity == Severity.ERROR:
+        # Compare by value: `issues` and `src.issues` are two module copies with
+        # distinct Severity enums, so `==` on members silently counts all as info.
+        severity = getattr(issue.severity, "value", issue.severity)
+        if severity == Severity.ERROR.value:
             errors += 1
-        elif issue.severity == Severity.WARNING:
+        elif severity == Severity.WARNING.value:
             warnings += 1
         else:
             info_count += 1

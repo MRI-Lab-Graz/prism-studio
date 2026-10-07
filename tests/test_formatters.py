@@ -235,3 +235,17 @@ class TestFormatOutput:
         import pytest
         with pytest.raises(ValueError, match="Unknown format"):
             format_output([], str(tmp_path), "xml")
+
+
+class TestJsonVerdict:
+    def test_valid_false_with_error(self):
+        out = json.loads(format_output([_error(), _warning()], "/x", "json"))
+        assert out["valid"] is False
+        assert {"issues", "summary"} <= set(out)
+
+    def test_valid_true_with_only_warnings(self):
+        out = json.loads(format_output([_warning()], "/x", "json"))
+        assert out["valid"] is True
+
+    def test_valid_true_without_issues(self):
+        assert json.loads(format_output([], "/x", "json"))["valid"] is True

@@ -409,18 +409,25 @@ def to_csv(issues: List[Issue]) -> str:
     return output.getvalue()
 
 
+def to_json(issues, path, stats) -> str:
+    """JSON report; `valid` is True iff no ERROR-severity issue (as the exit code)."""
+    summary = summarize_issues(issues)
+    return json.dumps(
+        {
+            "valid": summary["errors"] == 0,
+            "issues": [i.to_dict() for i in issues],
+            "summary": summary,
+        },
+        indent=2,
+    )
+
+
 # =============================================================================
 # FORMAT REGISTRY
 # =============================================================================
 
 FORMATTERS: Dict[str, Callable[..., str]] = {
-    "json": lambda issues, path, stats: json.dumps(
-        {
-            "issues": [i.to_dict() for i in issues],
-            "summary": summarize_issues(issues),
-        },
-        indent=2,
-    ),
+    "json": to_json,
     "sarif": lambda issues, path, stats: json.dumps(to_sarif(issues, path), indent=2),
     "junit": to_junit_xml,
     "markdown": to_markdown,
