@@ -26,6 +26,6 @@ def test_user_docs_do_not_offer_an_intel_download():
 
 
 def test_current_release_notes_exist_and_name_only_shipped_downloads():
-    notes = _text("docs", "RELEASE_NOTES_v1.19.2.md")
+    notes = _text("docs", "RELEASE_NOTES_v1.20.0.md")
     assert "AppleIntel" not in notes
     assert "prism-studio-macOS-AppleSilicon.zip" in notes

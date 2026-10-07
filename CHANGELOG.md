@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-10-07
+
+### Added
+- **`--no-bids` and the `bids_validator` JSON key.** `--no-bids` (or `"runBids": false` in `.prismrc.json`)
+  skips the BIDS part; `--bids` is still accepted. `--json` and `--format json` carry a `bids_validator`
+  object (engine, version) when the BIDS check ran.
+- **`PRISM902` hardening.** The BIDS check fails closed when it cannot run, produces nothing readable, exits
+  unexpectedly, or takes longer than 30 minutes.
+
+### Changed
+- **The BIDS check is part of `prism-validator` and on by default.** One engine, `bids-validator-deno` (a new
+  dependency that brings the Deno runtime as a pip wheel, about 80 MB installed). `valid` means valid PRISM
+  and valid BIDS. BIDS validator 2.4.1 to 3.0.2 (check codes may differ). Projects created before 1.20 carry
+  `"runBids": false` in `.prismrc.json` (a notice is printed on stderr): delete the line or pass `--bids`.
+  New projects and the demo write `true`; the demo `examples/wellbeing_multi_demo` now reports its real BIDS
+  findings.
+- **`pip install prism-validator` fails on Alpine/musl and on glibc older than 2.27** (no engine wheel; use the
+  Docker image). On other architectures (for example Windows ARM64) the install works and a run reports
+  `PRISM902` with the `--no-bids` hint. Supported: macOS, Linux x86_64/aarch64, Windows x64.
+
+### Removed
+- **System Deno, the Node BIDS validator fallback and the deno.land installer steps.** No separate Deno is
+  needed anywhere. Consumers (DataLad Desktop, the Austrian neurocloud) only pin `prism-validator`.
+
+### Fixed
+- **The PyPI page shows the logo and working links.** The README's relative image and link paths are made
+  absolute (pinned to the release tag) in the wheel's long description; the README in the repo is unchanged.
+
 ## [1.19.2] - 2026-10-07
 
 _Includes everything since 1.19.0 that was not listed under a 1.19.1 heading._
