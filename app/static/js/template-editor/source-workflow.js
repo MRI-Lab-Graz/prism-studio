@@ -1,5 +1,6 @@
 import { isSameProjectPath } from '../shared/project-state.js';
 import { parsePrismTemplateJson } from './json-import.js';
+import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
@@ -424,6 +425,12 @@ function hideExcelGroupPicker(context) {
   }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
+    // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
+    context.excelGroupPickerSelectEl.onchange = null;
+  }
+  if (context.libraryMatchCardEl) {
+    context.libraryMatchCardEl.classList.add('d-none');
+    context.libraryMatchCardEl.innerHTML = '';
   }
 }
 
@@ -513,9 +520,14 @@ async function fetchLimeSurvey(context, file, fields) {
   return data;
 }
 
-async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState) {
+async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState, useLibrary = false) {
   try {
-    const data = await fetchLimeSurvey(context, file, { split: context.sourceSplitSelectEl.value, key });
+    const data = await fetchLimeSurvey(context, file, {
+      split: context.sourceSplitSelectEl.value,
+      key,
+      project_path: context.getCurrentProjectPath() || '',
+      ...(useLibrary ? { use_library: '1' } : {}),
+    });
     await finishImport(context, applyImportedTemplate(context, data, file));
   } catch (error) {
     context.restoreEditorState(previousEditorState);
@@ -525,18 +537,40 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
 
 // The backend splits the survey and logs it to the terminal; this only shows the list.
 async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
-  const { questionnaires } = await fetchLimeSurvey(context, file, { split: context.sourceSplitSelectEl.value });
+  const { questionnaires } = await fetchLimeSurvey(context, file, {
+    split: context.sourceSplitSelectEl.value,
+    project_path: context.getCurrentProjectPath() || '',
+  });
   if (questionnaires.length === 0) {
     throw new Error('No questionnaires found in the file.');
   }
 
   context.excelGroupPickerSelectEl.innerHTML = questionnaires
-    .map((q) => `<option value="${context.escapeHtml(q.key)}">${context.escapeHtml(q.name)} (${q.item_count} item${q.item_count === 1 ? '' : 's'})${q.helper ? ' (helper)' : ''}</option>`)
+    .map((q) => `<option value="${context.escapeHtml(q.key)}">${context.escapeHtml(q.name)} (${q.item_count} item${q.item_count === 1 ? '' : 's'})${q.helper ? ' (helper)' : ''}${q.library_match ? ` · ${libraryMatchSummary(q.library_match)}` : ''}</option>`)
     .join('');
   const firstQuestionnaire = questionnaires.find((q) => !q.helper) || questionnaires[0];
   context.excelGroupPickerSelectEl.value = firstQuestionnaire.key;
   context.sourceSplitSelectEl.classList.remove('d-none');
   context.excelGroupPickerRowEl.classList.remove('d-none');
+
+  const showCard = () => {
+    const entry = questionnaires.find((q) => q.key === context.excelGroupPickerSelectEl.value);
+    const html = renderLibraryMatchCard(entry && entry.library_match, context.escapeHtml);
+    context.libraryMatchCardEl.innerHTML = html;
+    context.libraryMatchCardEl.classList.toggle('d-none', !html);
+  };
+  context.excelGroupPickerSelectEl.onchange = showCard;
+  context.libraryMatchCardEl.onclick = (event) => {
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    if (!action) {
+      return;
+    }
+    if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Loading this questionnaire will discard them. Continue?')) {
+      return;
+    }
+    loadLimeSurveyQuestionnaire(context, file, context.excelGroupPickerSelectEl.value, context.captureEditorState(), action === 'use-library');
+  };
+  showCard();
 
   context.sourceSplitSelectEl.onchange = () => {
     importLimeSurvey(context, file, null, true)

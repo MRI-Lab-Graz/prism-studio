@@ -126,3 +126,57 @@ def test_split_by_select_shows_its_whole_label(page):
       return select.getBoundingClientRect().width - chrome - text;
     }""")
     assert room >= 0  # padding already includes the dropdown arrow
+
+
+import json
+
+
+def put_ads_in_project_library(project):
+    template = {
+        "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "SoftwarePlatform": "LimeSurvey",
+                      "Language": "de", "Respondent": "self", "AdministrationMethod": "online"},
+        "Study": {"TaskName": "ads", "OriginalName": "ADS", "Citation": "c", "LicenseID": "CC-BY-4.0", "Category": "other"},
+        "ads_01": {"Description": "war ich bedrückt", "Levels": {"0": "selten", "1": "meistens"}},
+        "ads_02": {"Description": "war ich müde", "Levels": {"0": "selten", "1": "meistens"}},
+    }
+    (project / "code" / "library" / "survey" / "survey-ads.json").write_text(json.dumps(template, ensure_ascii=False), encoding="utf-8")
+
+
+def pick_ads(page):
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    page.select_option("#excelGroupPickerSelect", "g30")
+
+
+def test_library_match_is_shown_and_the_library_template_can_be_used(page, project):
+    put_ads_in_project_library(project)
+    pick_ads(page)
+
+    expect(page.locator('#excelGroupPickerSelect option[value="g30"]')).to_contain_text("match: ads (project, exact)")
+    card = page.locator("#libraryMatchCard")
+    expect(card).to_be_visible()
+    expect(card).to_contain_text("item IDs differ")
+    assert page.evaluate(CONTRAST_JS.replace("#alertArea .error-link code", "#libraryMatchCard .lib-match-title")) >= 4.5
+
+    page.click('#libraryMatchCard [data-action="use-library"]')
+
+    expect(page.locator('option[value="ads_01"]')).to_have_count(1)
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(0)
+
+
+def test_import_as_new_keeps_the_survey_items(page, project):
+    put_ads_in_project_library(project)
+    pick_ads(page)
+
+    page.click('#libraryMatchCard [data-action="import-new"]')
+
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
+
+
+def test_questionnaire_without_a_match_shows_no_card(page, project):
+    put_ads_in_project_library(project)
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    page.select_option("#excelGroupPickerSelect", "g20")
+
+    expect(page.locator("#libraryMatchCard")).to_be_hidden()
