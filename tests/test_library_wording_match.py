@@ -173,3 +173,62 @@ def test_missing_folders_and_alias_only_items_do_not_crash(libs):
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
     assert lwm.best_library_match(imported())["confidence"] == "exact"
+
+
+def _tree(directory):
+    return {p.name: p.read_bytes() for p in sorted(directory.iterdir())}
+
+
+def test_adopting_adds_the_survey_codes_as_aliases_and_keeps_library_ids(libs):
+    path = library_file(libs["global"])
+    match = lwm.best_library_match(imported())
+
+    adopted = lwm.apply_library_template(match)
+
+    assert [k for k in adopted if k.startswith("ads_")] == ["ads_01", "ads_02", "ads_03", "ads_04"]
+    assert adopted["ads_01"]["Aliases"] == ["ADS1_1"]
+    assert adopted["ads_04"]["Aliases"] == ["ADS1_4"]
+    assert "Aliases" not in json.loads(path.read_text(encoding="utf-8"))["ads_01"]  # file untouched
+
+
+def test_aliases_are_deduplicated_and_identical_codes_get_none(libs):
+    path = library_file(libs["global"], codes=["ADS1_1", "ads_02", "ads_03", "ads_04"])
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["ads_02"]["Aliases"] = ["ADS1_2"]
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+    adopted = lwm.apply_library_template(lwm.best_library_match(imported()))
+
+    assert "Aliases" not in adopted["ADS1_1"]
+    assert adopted["ads_02"]["Aliases"] == ["ADS1_2"]
+
+
+def test_a_match_that_is_not_one_to_one_cannot_be_adopted(libs):
+    library_file(libs["global"], texts=TEXTS[:3])
+
+    with pytest.raises(ValueError, match="one-to-one"):
+        lwm.apply_library_template(lwm.best_library_match(imported()))
+    with pytest.raises(ValueError, match="one-to-one"):
+        lwm.apply_library_template(None)
+
+
+def test_the_global_library_is_never_written(libs):
+    library_file(libs["global"])
+    library_file(libs["global"], name="other", texts=["etwas ganz anderes hier", "noch etwas anderes dort"])
+    before = _tree(libs["global"])
+
+    match = lwm.best_library_match(imported(), libs["project"])
+    lwm.apply_library_template(match)
+
+    assert _tree(libs["global"]) == before
+
+
+def test_public_view_never_exposes_the_local_path(libs):
+    library_file(libs["global"])
+    match = lwm.best_library_match(imported())
+
+    public = lwm.public_library_match(match)
+
+    assert "template_path" not in public and public["template_file"] == "survey-ads.json"
+    assert public["id_map"] == match["id_map"]
+    assert lwm.public_library_match(None) is None

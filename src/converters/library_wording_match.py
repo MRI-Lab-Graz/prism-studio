@@ -167,3 +167,30 @@ def best_library_match(template: dict, project_path=None) -> dict | None:
         if best is None or rank > best_rank:
             best, best_rank = found, rank
     return best
+
+
+def public_library_match(match: dict | None) -> dict | None:
+    """The match as sent to the browser: everything but the local file path."""
+    if match is None:
+        return None
+    return {key: value for key, value in match.items() if key != "template_path"}
+
+
+def apply_library_template(match: dict | None) -> dict:
+    """The matched library template (a copy) with the survey's codes added as ``Aliases``.
+
+    Library IDs stay authoritative. Reads the library file; never writes it.
+    """
+    if not match or not match.get("adoptable"):
+        raise ValueError(
+            "The library template does not match every item one-to-one; import the questionnaire as new"
+        )
+    template = st._read_json(Path(match["template_path"]))
+    for imported_code, library_code in match["id_map"].items():
+        item = template.get(library_code)
+        if imported_code == library_code or not isinstance(item, dict):
+            continue
+        aliases = item.setdefault("Aliases", [])
+        if imported_code not in aliases:
+            aliases.append(imported_code)
+    return template
