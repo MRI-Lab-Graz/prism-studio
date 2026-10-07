@@ -70,3 +70,59 @@ def test_changing_split_keeps_the_loaded_questionnaire_when_the_confirm_is_decli
     assert any("unsaved changes" in m for m in messages)
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
     expect(page.locator('option[value="WHO1"]')).to_have_count(0)
+
+
+def load_ads_from_limesurvey(page):
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    page.select_option("#excelGroupPickerSelect", "g30")
+    page.click("#btnLoadExcelGroup")
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
+
+
+def test_import_with_missing_details_is_a_hint_not_a_failure(page):
+    load_ads_from_limesurvey(page)
+
+    expect(page.locator("#alertArea .alert-warning")).to_contain_text("Not found in your file")
+    expect(page.locator("#alertArea .alert-danger")).to_have_count(0)
+    expect(page.locator("#alertArea")).not_to_contain_text("Validation failed")
+    expect(page.locator("#alertArea")).to_contain_text("SoftwareVersion")
+
+    page.click("#btnValidate")  # an explicit Validate is still a real check
+    expect(page.locator("#alertArea .alert-danger")).to_contain_text("Validation failed")
+
+
+CONTRAST_JS = """() => {
+  const rgb = (c) => c.match(/[\\d.]+/g).slice(0, 3).map(Number);
+  const lum = (c) => { const [r, g, b] = rgb(c).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const link = document.querySelector('#alertArea .error-link code');
+  const box = link.closest('.alert');
+  const [a, b] = [lum(getComputedStyle(link).color), lum(getComputedStyle(box).backgroundColor)].sort((x, y) => y - x);
+  return (a + 0.05) / (b + 0.05);
+}"""
+
+
+def test_error_links_are_readable_in_the_hint_and_in_a_real_failure(page):
+    load_ads_from_limesurvey(page)
+    assert page.evaluate(CONTRAST_JS) >= 4.5  # the "fill these in" hint
+
+    page.click("#btnValidate")
+    expect(page.locator("#alertArea .alert-danger")).to_be_visible()
+    assert page.evaluate(CONTRAST_JS) >= 4.5  # the red failure box
+
+
+def test_split_by_select_shows_its_whole_label(page):
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    expect(page.locator("#sourceSplitSelect")).to_be_visible()
+
+    room = page.evaluate("""() => {
+      const select = document.querySelector('#sourceSplitSelect');
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = getComputedStyle(select).font;
+      const text = Math.max(...[...select.options].map((o) => ctx.measureText(o.text).width));
+      const style = getComputedStyle(select);
+      const chrome = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      return select.getBoundingClientRect().width - chrome - text;
+    }""")
+    assert room >= 0  # padding already includes the dropdown arrow
