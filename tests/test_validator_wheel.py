@@ -1,6 +1,7 @@
 """The prism-validator wheel (PyPI): CLI-only, no Studio code, shares the repo version."""
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -24,6 +25,23 @@ STUDIO_ONLY = (
     "converters/survey.py",
     "converters/excel_to_survey",
 )
+
+
+def _sanitized_path():
+    """PATH without any dir holding another copy of the BIDS engine, so only the wheel's own dependency can supply it."""
+    engine = "bids-validator-deno.exe" if sys.platform == "win32" else "bids-validator-deno"
+    parts = os.environ.get("PATH", "").split(os.pathsep)
+    return os.pathsep.join(p for p in parts if p and not (Path(p) / engine).exists())
+
+
+def test_sanitized_path_hides_the_dev_engine(tmp_path, monkeypatch):
+    engine = "bids-validator-deno.exe" if sys.platform == "win32" else "bids-validator-deno"
+    dev, other = tmp_path / "dev", tmp_path / "other"
+    dev.mkdir()
+    other.mkdir()
+    (dev / engine).write_text("")
+    monkeypatch.setenv("PATH", os.pathsep.join([str(dev), str(other)]))
+    assert _sanitized_path().split(os.pathsep) == [str(other)]
 
 
 @pytest.fixture(scope="module")
@@ -62,11 +80,12 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         [str(bindir / "python"), "-m", "pip", "install", "-q", str(wheel)], check=True
     )
     exe = str(bindir / "prism-validator")
-    version = subprocess.run([exe, "--version"], capture_output=True, text=True)
+    env = {**os.environ, "PATH": os.pathsep.join([str(bindir), _sanitized_path()])}
+    version = subprocess.run([exe, "--version"], capture_output=True, text=True, env=env)
     assert version.returncode == 0, version.stderr
     # Real validation of an (empty) dataset: exercises the lazy imports too.
     (tmp_path / "ds").mkdir()
-    run = subprocess.run([exe, str(tmp_path / "ds")], capture_output=True, text=True)
+    run = subprocess.run([exe, str(tmp_path / "ds")], capture_output=True, text=True, env=env)
     assert "Import error" not in run.stdout + run.stderr
     assert "ModuleNotFoundError" not in run.stdout + run.stderr
     assert run.returncode == 1  # validation errors, not a crash
@@ -80,7 +99,7 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         '{"name":"Test","Basics":{"DatasetName":"Test"},'
         '"Sessions":[{"id":"ses-1","label":"Session 1","tasks":[]}],"TaskDefinitions":{}}'
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
     out = run.stdout + run.stderr
     assert "No module named" not in out, out
     assert "Validation failed with error" not in out, out
@@ -91,12 +110,12 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         "authors:\n  - family-names: Doe\n    given-names: J\n"
         "version: 1.0.0\ndate-released: 2026-01-01\n"
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
     out = run.stdout + run.stderr
     assert "PRISM303" not in out, out
     assert "No module named" not in out, out
     # The BIDS engine ships with the wheel and runs by default.
-    run = subprocess.run([exe, str(ds), "--format", "json"], capture_output=True, text=True)
+    run = subprocess.run([exe, str(ds), "--format", "json"], capture_output=True, text=True, env=env)
     report = json.loads(run.stdout)
     assert report["bids_validator"]["engine"] == "bids-validator-deno", run.stdout
     assert not any(i["code"] == "PRISM902" for i in report["issues"]), run.stdout
@@ -104,7 +123,7 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         "cff-version: 1.2.0\nmessage: m\n"
         "authors:\n  - family-names: Doe\n    given-names: J\n"
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
     out = run.stdout + run.stderr
     assert "PRISM303" in out and "'title' is a required property" in out, out
     assert "No module named" not in out, out
