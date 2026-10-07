@@ -35,6 +35,10 @@ offers the same.
   is simply no match).
 - Changing the Survey Generator's existing code-based matching.
 - Automatic adoption: nothing is ever swapped silently.
+- Writing to the global library. **This feature never writes to the global
+  template folder** (a PR-based workflow for new global templates is a later,
+  separate piece of work). Matching only reads it; adopting a global template
+  yields an alias-annotated copy that is saved to the project library.
 
 ## Matching (new module `src/converters/library_wording_match.py`)
 
@@ -73,9 +77,9 @@ For each pair where both items have `Levels`: keys must be equal
 | none | anything else — no match is returned |
 
 ### ID conflict
-If an imported item code equals the key of a library item that is paired to a
-*different* imported item (crossed pairing), the match is capped at `medium`
-(`ids_conflict = true`).
+If an imported item code equals the key of any library item but is paired to a
+*different* library item (including crossed pairings), writing it as an alias
+would be ambiguous, so the match is capped at `medium` (`ids_conflict = true`).
 
 ### Result
 `best_library_match(template, project_path=None) -> dict | None`, the template
@@ -121,9 +125,10 @@ already reads `Aliases`. Raises `ValueError` when `adoptable` is false.
    and `[PRISM] Library match for 'Händigkeit': none`.
 2. **API** (`POST /api/template-editor/import-limesurvey`, same route): new
    optional form field `project_path` (as other editor routes send it).
-   - list call: each questionnaire gains `library_match`: `null` or the result
-     without `id_map`/`reworded` lists (summary only).
-   - key call: the response gains the full `library_match`.
+   - list call: each questionnaire gains `library_match`: `null` or the full
+     result (the editor card shows the ID table before the user loads
+     anything). The local file path is never sent to the browser.
+   - key call: the response gains the same `library_match`.
    - key call with `use_library=1`: returns the library template with aliases
      (`template`, `suggested_filename`, `item_count`, `languages`,
      `library_match`); 400 `{"error"}` when not adoptable.
