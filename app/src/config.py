@@ -201,7 +201,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             schema_version=data.get("schemaVersion", "stable"),
             ignore_paths=data.get("ignorePaths", DEFAULT_IGNORE_PATTERNS.copy()),
             strict_mode=data.get("strictMode", False),
-            run_bids=data.get("runBids", True),
+            run_bids=data.get("runBids", True) is not False,
             show_bids_warnings=data.get("showBidsWarnings", False),
             custom_modalities=data.get("customModalities", {}),
             default_output_format=data.get("defaultOutputFormat", "text"),

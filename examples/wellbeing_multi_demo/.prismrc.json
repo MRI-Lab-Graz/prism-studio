@@ -14,7 +14,7 @@
     "*.pyc"
   ],
   "strictMode": false,
-  "runBids": false,
+  "runBids": true,
   "showBidsWarnings": false,
   "customModalities": {},
   "defaultOutputFormat": "text",

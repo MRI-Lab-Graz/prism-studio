@@ -396,7 +396,7 @@ class DatasetFixer:
                     "code/**",
                 ],
                 "strictMode": False,
-                "runBids": False,
+                "runBids": True,
             }
 
             # This is a low-priority fix, so we add it but mark it optional

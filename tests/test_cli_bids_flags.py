@@ -75,3 +75,33 @@ def test_library_default_and_studio_callers_are_untouched():
     from runner import validate_dataset
 
     assert inspect.signature(validate_dataset).parameters["run_bids"].default is False
+
+
+NOTICE = '"runBids": false in .prismrc.json'
+
+
+def test_notice_when_only_the_config_file_switches_bids_off(monkeypatch, tmp_path, seen, capsys):
+    run(monkeypatch, tmp_path, config={"runBids": False})
+    assert NOTICE in capsys.readouterr().err
+
+
+def test_no_notice_with_no_bids_flag_or_by_default(monkeypatch, tmp_path, seen, capsys):
+    run(monkeypatch, tmp_path, "--no-bids", config={"runBids": False})
+    assert NOTICE not in capsys.readouterr().err
+    run(monkeypatch, tmp_path, config={"runBids": True})
+    assert NOTICE not in capsys.readouterr().err
+
+
+def test_notice_is_gone_when_the_bids_flag_overrides_the_config(monkeypatch, tmp_path, seen, capsys):
+    run(monkeypatch, tmp_path, "--bids", config={"runBids": False})
+    assert NOTICE not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("value", [None, "false", 0])
+def test_only_a_literal_false_turns_bids_off(tmp_path, value):
+    from config import load_config
+
+    (tmp_path / ".prismrc.json").write_text(json.dumps({"runBids": value}), encoding="utf-8")
+    assert load_config(str(tmp_path)).run_bids is True
+    (tmp_path / ".prismrc.json").write_text('{"runBids": false}', encoding="utf-8")
+    assert load_config(str(tmp_path)).run_bids is False

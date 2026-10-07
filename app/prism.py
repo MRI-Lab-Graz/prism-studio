@@ -452,6 +452,12 @@ Examples:
     schema_version = config.schema_version
     run_bids = config.run_bids
     run_prism = not args.no_prism
+    if not run_bids and not args.no_bids:
+        print(
+            "ℹ️  BIDS check is switched off by \"runBids\": false in .prismrc.json "
+            "(pass --bids to run it)",
+            file=sys.stderr,
+        )
     if not run_bids and not run_prism:
         print(
             "❌ No checks to run: --no-prism skips PRISM and BIDS is switched off "
