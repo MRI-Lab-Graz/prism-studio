@@ -16,3 +16,8 @@ updates:
       # relaxes/updates its own pin. Remove this once semgrep supports it.
       - dependency-name: "PyJWT"
         versions: [">=2.14.0"]
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"

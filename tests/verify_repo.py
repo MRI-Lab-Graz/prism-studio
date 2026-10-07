@@ -2575,6 +2575,20 @@ def run_check(check_name, check_fn, repo_path, fix):
     return passed
 
 
+def write_step_summary(failed_checks):
+    """Put the failed check names at the top of the GitHub run page.
+
+    The full log is ~2000 lines (mypy notes alone are hundreds), so the one
+    blocking line is otherwise hard to find.
+    """
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path or not failed_checks:
+        return
+    with open(path, "a", encoding="utf-8") as fh:
+        fh.write("## Failed checks\n\n")
+        fh.writelines(f"- `{name}`\n" for name in failed_checks)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AI Code Safety & Pre-Upload Checklist"
@@ -2748,6 +2762,7 @@ def main():
                 print("  ☐ Run the code once to ensure it works")
                 print("\nDone.")
 
+                write_step_summary(failed_checks)
                 if failed_checks:
                     sys.exit(1)
             finally:
