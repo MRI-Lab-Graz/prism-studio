@@ -519,7 +519,7 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
 }
 
 // The backend splits the survey and logs it to the terminal; this only shows the list.
-async function importLimeSurvey(context, file, previousEditorState) {
+async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
   const { questionnaires } = await fetchLimeSurvey(context, file, { split: context.sourceSplitSelectEl.value });
   if (questionnaires.length === 0) {
     throw new Error('No questionnaires found in the file.');
@@ -534,7 +534,7 @@ async function importLimeSurvey(context, file, previousEditorState) {
   context.excelGroupPickerRowEl.classList.remove('d-none');
 
   context.sourceSplitSelectEl.onchange = () => {
-    importLimeSurvey(context, file, context.captureEditorState())
+    importLimeSurvey(context, file, null, true)
       .catch((error) => context.showAlert('danger', context.escapeHtml(error.message)));
   };
   context.btnLoadExcelGroup.onclick = () => {
@@ -545,8 +545,13 @@ async function importLimeSurvey(context, file, previousEditorState) {
   };
 
   if (questionnaires.length === 1) {
-    await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState);
-    return;
+    // A split change must not silently replace what the user has open; leave the entry to Load.
+    const discardsWork = fromSplitChange && context.hasUnsavedChanges()
+      && !confirm('You have unsaved changes. Loading this questionnaire will discard them. Continue?');
+    if (!discardsWork) {
+      await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState || context.captureEditorState());
+      return;
+    }
   }
   context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
 }

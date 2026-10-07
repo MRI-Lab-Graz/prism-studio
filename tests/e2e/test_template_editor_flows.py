@@ -53,3 +53,20 @@ def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
 
     page.select_option("#sourceSplitSelect", "survey")
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
+
+
+def test_changing_split_keeps_the_loaded_questionnaire_when_the_confirm_is_declined(page):
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    page.select_option("#excelGroupPickerSelect", "g30")
+    page.click("#btnLoadExcelGroup")
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)  # loaded, never saved: unsaved work
+
+    messages = []
+    page.on("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+    page.select_option("#sourceSplitSelect", "survey")  # Whole survey lists one entry: used to auto-load it
+
+    expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
+    assert any("unsaved changes" in m for m in messages)
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
+    expect(page.locator('option[value="WHO1"]')).to_have_count(0)
