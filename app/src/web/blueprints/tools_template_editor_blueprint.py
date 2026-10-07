@@ -624,12 +624,16 @@ def api_template_editor_import_limesurvey():
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": f"Import failed: {e}"}), 500
 
+    if use_library:  # library templates carry no Study.TaskName; the file name is the library's
+        suggested_filename = match["template_file"]
+    else:
+        suggested_filename = f"survey-{template['Study']['TaskName']}.json"
     i18n = template.get("I18n") or {}
-    languages = i18n.get("Languages") or [template.get("Technical", {}).get("Language", "en")]
+    languages = i18n.get("Languages") or [(template.get("Technical") or {}).get("Language", "en")]
     reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
     return jsonify({
         "template": template,
-        "suggested_filename": f"survey-{template['Study']['TaskName']}.json",
+        "suggested_filename": suggested_filename,
         "item_count": len([k for k in template if k not in reserved]),
         "languages": languages,
         "library_match": public_library_match(match),

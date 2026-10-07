@@ -303,6 +303,47 @@ class TestCmdSurveyImportLimesurvey:
         assert written["ads_01"]["Aliases"] == ["ADS1_1"]
         assert {p.name: p.read_bytes() for p in library["global"].iterdir()} == before
 
+    def test_use_library_names_the_file_after_the_library_file_when_task_name_is_missing(self, library, tmp_path):
+        from test_library_wording_match import drop_task_name
+
+        drop_task_name(library["global"] / "survey-ads.json")
+        out_dir = tmp_path / "out"
+
+        cmd_survey_import_limesurvey(_limesurvey_args(select=["g30"], use_library=True, output=str(out_dir)))
+
+        assert [p.name for p in out_dir.iterdir()] == ["survey-ads.json"]
+
+    @pytest.mark.parametrize("select", [["all"], ["g30", "g20"]])
+    def test_select_all_use_library_writes_nothing_when_one_questionnaire_does_not_match(
+        self, library, tmp_path, capsys, select
+    ):
+        out_dir = tmp_path / "out"
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_survey_import_limesurvey(_limesurvey_args(select=select, use_library=True, output=str(out_dir)))
+
+        assert exc_info.value.code == 1
+        assert "one-to-one" in capsys.readouterr().out
+        assert not out_dir.exists() or list(out_dir.iterdir()) == []
+
+    def test_use_library_refuses_two_keys_writing_the_same_file(self, library, tmp_path, capsys):
+        out_dir = tmp_path / "out"
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_survey_import_limesurvey(_limesurvey_args(select=["g30", "g30"], use_library=True, output=str(out_dir)))
+
+        assert exc_info.value.code == 1
+        assert "same file" in capsys.readouterr().out
+        assert not out_dir.exists() or list(out_dir.iterdir()) == []
+
+    def test_use_library_refuses_before_writing_when_a_target_exists(self, library, tmp_path, capsys):
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
+        (out_dir / "survey-ads.json").write_text("{}", encoding="utf-8")
+        with pytest.raises(SystemExit):
+            cmd_survey_import_limesurvey(_limesurvey_args(select=["g30"], use_library=True, output=str(out_dir)))
+
+        assert "already exists" in capsys.readouterr().out
+        assert (out_dir / "survey-ads.json").read_text(encoding="utf-8") == "{}"
+
     def test_use_library_refuses_a_questionnaire_without_an_exact_or_high_match(self, library, tmp_path, capsys):
         with pytest.raises(SystemExit) as exc_info:
             cmd_survey_import_limesurvey(

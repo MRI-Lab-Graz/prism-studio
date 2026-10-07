@@ -11,7 +11,7 @@ import pytest
 from flask import Flask
 
 from src.converters import survey_templates as st
-from test_library_wording_match import library_file
+from test_library_wording_match import drop_task_name, library_file
 
 FIXTURE = Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss"
 
@@ -123,3 +123,17 @@ def test_use_library_without_a_one_to_one_match_is_a_400(library):
 
     assert response.status_code == 400
     assert "one-to-one" in response.get_json()["error"]
+
+
+def test_use_library_works_for_a_library_template_without_task_name(tmp_path, monkeypatch):
+    global_dir = tmp_path / "global"
+    global_dir.mkdir()
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: global_dir)
+    drop_task_name(library_file(global_dir, name="gad", texts=ADS, levels=ADS_LEVELS))
+    before = {p.name: p.read_bytes() for p in global_dir.iterdir()}
+
+    response = _post(_client(), {"key": "g30", "use_library": "1"})
+
+    assert response.status_code == 200
+    assert response.get_json()["suggested_filename"] == "survey-gad.json"
+    assert {p.name: p.read_bytes() for p in global_dir.iterdir()} == before

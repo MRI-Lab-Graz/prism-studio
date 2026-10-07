@@ -40,6 +40,13 @@ def library_file(directory, name="ads", texts=TEXTS, codes=None, levels=LEVELS, 
     return path
 
 
+def drop_task_name(path):
+    """Rewrite a library file the way the real global library is: no Study.TaskName."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data.pop("Study", None)
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
 @pytest.fixture
 def libs(tmp_path, monkeypatch):
     global_dir = tmp_path / "global"

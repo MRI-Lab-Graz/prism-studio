@@ -596,15 +596,25 @@ def cmd_survey_import_limesurvey(args):
             raise ValueError("--output DIR is required with --select")
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
         out_dir = Path(args.output).resolve()
-        out_dir.mkdir(parents=True, exist_ok=True)
+        # Resolve every key first so a failure leaves nothing half written.
+        planned = []  # (target, template)
         for key in keys:
             if use_library:
-                template, _match = limesurvey_library_template(xml, key, args.split, project_path)
+                template, match = limesurvey_library_template(xml, key, args.split, project_path)
+                name = match["template_file"]  # library templates have no Study.TaskName
             else:
                 template = limesurvey_questionnaire_template(xml, key, args.split)
-            target = out_dir / f"survey-{template['Study']['TaskName']}.json"
-            if target.exists():
-                raise ValueError(f"{target} already exists; choose another --output directory")
+                name = f"survey-{template['Study']['TaskName']}.json"
+            planned.append((out_dir / name, template))
+        targets = [target for target, _template in planned]
+        duplicates = sorted({str(t) for t in targets if targets.count(t) > 1})
+        if duplicates:
+            raise ValueError("several questionnaires would write the same file: " + ", ".join(duplicates))
+        existing = [str(t) for t in targets if t.exists()]
+        if existing:
+            raise ValueError(f"{', '.join(existing)} already exists; choose another --output directory")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for target, template in planned:
             target.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(f"[PRISM] Wrote {target}")
     except (OSError, ValueError) as e:
