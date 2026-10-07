@@ -577,8 +577,12 @@ def cmd_survey_import_limesurvey(args):
 
     input_path = Path(args.input).resolve()
     try:
+        if args.output and not args.select:
+            raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
         xml = read_lss_xml(input_path.read_bytes(), input_path.name)
         found = list_limesurvey_questionnaires(xml, args.split, source_name=input_path.name)
+        if args.list and args.select:
+            print("[PRISM] --list given: not writing")
         if args.list or not args.select:
             return
         if not args.output:

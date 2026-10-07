@@ -262,10 +262,25 @@ def _limesurvey_args(**overrides):
 
 
 class TestCmdSurveyImportLimesurvey:
-    def test_without_select_only_lists(self, tmp_path, capsys):
-        cmd_survey_import_limesurvey(_limesurvey_args(output=str(tmp_path)))
+    def test_without_select_only_lists(self, capsys):
+        cmd_survey_import_limesurvey(_limesurvey_args())
 
         assert "Split by group -> 4 questionnaire(s)" in capsys.readouterr().out
+
+    def test_output_without_select_is_an_error(self, tmp_path, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_survey_import_limesurvey(_limesurvey_args(output=str(tmp_path)))
+
+        assert exc_info.value.code == 1
+        assert "--output needs --select KEY|all (use --list to see the keys)" in capsys.readouterr().out
+        assert list(tmp_path.iterdir()) == []
+
+    def test_list_with_select_says_nothing_is_written(self, tmp_path, capsys):
+        cmd_survey_import_limesurvey(
+            _limesurvey_args(list=True, select=["all"], output=str(tmp_path))
+        )
+
+        assert "[PRISM] --list given: not writing" in capsys.readouterr().out
         assert list(tmp_path.iterdir()) == []
 
     def test_select_all_writes_one_json_per_questionnaire(self, tmp_path):
