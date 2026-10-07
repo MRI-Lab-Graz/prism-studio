@@ -1211,8 +1211,14 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
     return parsed, results
 
 
-def list_limesurvey_questionnaires(xml_content, split="group", source_name="LimeSurvey file"):
-    """List the questionnaires in a LimeSurvey survey, split by group, question or whole survey."""
+def list_limesurvey_questionnaires(
+    xml_content, split="group", source_name="LimeSurvey file", project_path=None, match_library=False
+):
+    """List the questionnaires in a LimeSurvey survey, split by group, question or whole survey.
+
+    With ``match_library`` each entry also gets ``library_match`` (the best global/project
+    library template by wording, or None) and the terminal shows one line per questionnaire.
+    """
     parsed, results = _build_questionnaires(xml_content, split)
     print(
         f"[PRISM] LimeSurvey import: {source_name} (DBVersion {parsed['db_version'] or '?'}, "
@@ -1226,7 +1232,15 @@ def list_limesurvey_questionnaires(xml_content, split="group", source_name="Lime
         if info["helper"]:
             line += "  [helper: no answer options]"
         print(line)
-    return [{k: info[k] for k in ("key", "name", "item_count", "helper")} for info, _ in results]
+    listing = [{k: info[k] for k in ("key", "name", "item_count", "helper")} for info, _ in results]
+    if match_library:
+        from src.converters.library_wording_match import public_library_match
+
+        for entry, (info, template) in zip(listing, results):
+            entry["library_match"] = public_library_match(
+                match_questionnaire_to_library(template, info["name"], project_path)
+            )
+    return listing
 
 
 def limesurvey_questionnaire_template(xml_content, key, split="group"):
@@ -1244,6 +1258,48 @@ def limesurvey_questionnaire_template(xml_content, key, split="group"):
             return template
     valid = ", ".join(info["key"] for info, _ in results) or "none"
     raise ValueError(f"No questionnaire '{key}' (split by {split}). Valid keys: {valid}")
+
+
+def _describe_library_match(name, match):
+    if not match:
+        return f"[PRISM] Library match for '{name}': none"
+    changed = [f"{a}->{b}" for a, b in match["id_map"].items() if a != b]
+    ids = "IDs identical" if not changed else f"IDs differ ({', '.join(changed[:3])}{', ...' if len(changed) > 3 else ''})"
+    levels = "levels equal" if match["levels_ok"] else "levels DIFFER"
+    return (
+        f"[PRISM] Library match for '{name}': {match['template_key']} ({match['source']}) "
+        f"{match['confidence']} — {match['paired']}/{match['imported_items']} items paired, {levels}, {ids}"
+    )
+
+
+def match_questionnaire_to_library(template, name, project_path=None):
+    """Best library match for one imported questionnaire; logs, never raises."""
+    try:
+        from src.converters.library_wording_match import best_library_match
+
+        match = best_library_match(template, project_path)
+    except Exception as exc:  # a library problem must not block a plain import
+        print(f"[PRISM] Library match skipped: {exc}")
+        return None
+    print(_describe_library_match(name, match))
+    return match
+
+
+def limesurvey_questionnaire_match(xml_content, key, split="group", project_path=None):
+    """(template, library match) for one questionnaire."""
+    template = limesurvey_questionnaire_template(xml_content, key, split)
+    return template, match_questionnaire_to_library(template, template["Study"]["OriginalName"], project_path)
+
+
+def limesurvey_library_template(xml_content, key, split="group", project_path=None):
+    """(adopted library template with the survey codes as Aliases, match). ValueError if not adoptable."""
+    from src.converters.library_wording_match import apply_library_template
+
+    _template, match = limesurvey_questionnaire_match(xml_content, key, split, project_path)
+    adopted = apply_library_template(match)
+    print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
+          f"{len(match['id_map'])} item code(s) kept as aliases")
+    return adopted, match
 
 
 def parse_lss_xml(
