@@ -14,6 +14,7 @@ app/src/derivatives/participants_mapping.py
 app/src/fixer.py
 app/src/issues.py
 app/src/plugins.py
+app/src/procedure_validator.py
 app/src/reporting.py
 app/src/runner.py
 app/src/schema_manager.py
