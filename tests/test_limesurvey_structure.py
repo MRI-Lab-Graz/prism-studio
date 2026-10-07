@@ -527,6 +527,20 @@ class TestParseLssXmlByGroups:
         assert any(k.startswith("PRISMMETA") for k in template)
         assert _extract_prismmeta(template).get("abbrev") == "RTS"
 
+    def test_groups_with_same_task_name_do_not_overwrite(self):
+        from pathlib import Path
+
+        text = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_text(encoding="utf-8")
+        text = text.replace("<group_name>WHO-5</group_name>", "<group_name>Stress 1</group_name>")
+        text = text.replace("<group_name>ADS</group_name>", "<group_name>Stress-1</group_name>")
+        result = parse_lss_xml_by_groups(text.encode("utf-8"))
+
+        keys = [k for k in result if k.startswith("stress")]
+        assert len(keys) == 2
+        assert all(result[k]["Study"]["TaskName"] == k for k in keys)
+        items = [{i for i in result[k] if i.startswith(("WHO", "ADS"))} for k in keys]
+        assert items[0] and items[1] and items[0].isdisjoint(items[1])
+
 
 # ---------------------------------------------------------------------------
 # parse_lss_xml_by_questions

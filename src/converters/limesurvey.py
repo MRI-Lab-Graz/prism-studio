@@ -1525,7 +1525,16 @@ def parse_lss_xml_by_groups(xml_content):
     except ValueError as e:
         print(f"Error parsing XML: {e}")
         return None
-    return {template["Study"]["TaskName"]: template for _info, template in results}
+    out = {}
+    for _info, template in results:
+        base = key = template["Study"]["TaskName"]
+        n = 1
+        while key in out:  # groups whose names sanitize alike must not overwrite each other
+            n += 1
+            key = f"{base}_{n}"
+        template["Study"]["TaskName"] = key
+        out[key] = template
+    return out
 
 
 def parse_lss_xml_by_questions(xml_content):
