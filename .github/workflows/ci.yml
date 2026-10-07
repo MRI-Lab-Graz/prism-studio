@@ -48,7 +48,7 @@ jobs:
 
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,library-uniqueness,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
   nightly-deep-checks:
     name: Nightly Deep Checks
