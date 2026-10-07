@@ -85,14 +85,20 @@
             <div id="projectLibraryStatus" class="form-text text-muted mt-1"></div>
             <input type="file" id="templateImportInput" accept=".json,.lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
             <div class="mt-2 d-none" id="excelGroupPickerRow">
-              <label class="form-label small mb-1" for="excelGroupPickerSelect">Multiple instrument groups detected &mdash; choose one to load:</label>
+              <label class="form-label small mb-1" for="excelGroupPickerSelect">Several questionnaires found &mdash; choose one to load:</label>
               <div class="input-group input-group-sm">
+                <select class="form-select form-select-sm d-none" id="sourceSplitSelect" title="Split the LimeSurvey file by" style="flex: 0 0 auto; width: auto; min-width: 13rem;">
+                  <option value="group" selected>Split by group</option>
+                  <option value="question">Split by question</option>
+                  <option value="survey">Whole survey</option>
+                </select>
                 <select class="form-select form-select-sm" id="excelGroupPickerSelect"></select>
                 <button class="btn btn-outline-primary btn-sm" type="button" id="btnLoadExcelGroup">
-                  <i class="fas fa-arrow-right me-1"></i>Load selected group
+                  <i class="fas fa-arrow-right me-1"></i>Load selected
                 </button>
               </div>
-              <div class="form-text">Re-import the file afterward to load a different group.</div>
+              <div class="form-text">Load one, check and save it, then load the next from this list.</div>
+              <div class="alert alert-success mt-2 mb-0 py-2 d-none" id="libraryMatchCard"></div>
             </div>
             </div>
           </div>

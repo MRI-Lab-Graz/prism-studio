@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic LimeSurvey 6 (DBVersion 636) survey: four groups, text lives in the *_l10ns tables.
+     Shape copied from a real export; contains no participant data. -->
+<document>
+ <LimeSurveyDocType>Survey</LimeSurveyDocType>
+ <DBVersion>636</DBVersion>
+ <surveys><rows><row><sid>1</sid><language>de</language><additional_languages></additional_languages></row></rows></surveys>
+ <surveys_languagesettings><rows><row><surveyls_language>de</surveyls_language><surveyls_title>Laufstudie</surveyls_title></row></rows></surveys_languagesettings>
+ <groups><rows>
+  <row><gid>10</gid><group_order>1</group_order></row>
+  <row><gid>20</gid><group_order>2</group_order></row>
+  <row><gid>30</gid><group_order>3</group_order></row>
+  <row><gid>40</gid><group_order>4</group_order></row>
+ </rows></groups>
+ <group_l10ns><rows>
+  <row><gid>10</gid><group_name>catch the submitted ID</group_name><description></description><language>de</language></row>
+  <row><gid>20</gid><group_name>WHO-5</group_name><description>Wohlbefinden</description><language>de</language></row>
+  <row><gid>30</gid><group_name>ADS</group_name><description></description><language>de</language></row>
+  <row><gid>40</gid><group_name>Händigkeit</group_name><description></description><language>de</language></row>
+ </rows></group_l10ns>
+ <questions><rows>
+  <row><qid>100</qid><parent_qid>0</parent_qid><gid>10</gid><type>S</type><title>catchsubmittedID</title><question_order>1</question_order><mandatory>N</mandatory></row>
+  <row><qid>200</qid><parent_qid>0</parent_qid><gid>20</gid><type>F</type><title>WHO5</title><question_order>1</question_order><mandatory>Y</mandatory></row>
+  <row><qid>300</qid><parent_qid>0</parent_qid><gid>30</gid><type>F</type><title>ADS1</title><question_order>1</question_order><mandatory>Y</mandatory></row>
+  <row><qid>400</qid><parent_qid>0</parent_qid><gid>40</gid><type>!</type><title>Hand</title><question_order>1</question_order><mandatory>Y</mandatory></row>
+ </rows></questions>
+ <subquestions><rows>
+  <row><qid>201</qid><parent_qid>200</parent_qid><gid>20</gid><type>T</type><title>WHO1</title><question_order>1</question_order><scale_id>0</scale_id></row>
+  <row><qid>202</qid><parent_qid>200</parent_qid><gid>20</gid><type>T</type><title>WHO2</title><question_order>2</question_order><scale_id>0</scale_id></row>
+  <row><qid>301</qid><parent_qid>300</parent_qid><gid>30</gid><type>T</type><title>1</title><question_order>1</question_order><scale_id>0</scale_id></row>
+  <row><qid>302</qid><parent_qid>300</parent_qid><gid>30</gid><type>T</type><title>2</title><question_order>2</question_order><scale_id>0</scale_id></row>
+ </rows></subquestions>
+ <question_l10ns><rows>
+  <row><qid>100</qid><question>ID</question><help></help><language>de</language></row>
+  <row><qid>200</qid><question>&lt;p&gt;Die folgenden Aussagen betreffen Ihr Wohlbefinden.&lt;/p&gt;</question><help></help><language>de</language></row>
+  <row><qid>201</qid><question>… war ich froh und guter Laune</question><help></help><language>de</language></row>
+  <row><qid>202</qid><question>… habe ich mich ruhig gefühlt</question><help></help><language>de</language></row>
+  <row><qid>300</qid><question>&lt;p&gt;Während der letzten Woche...&lt;/p&gt;</question><help></help><language>de</language></row>
+  <row><qid>301</qid><question>war ich bedrückt</question><help></help><language>de</language></row>
+  <row><qid>302</qid><question>war ich müde</question><help></help><language>de</language></row>
+  <row><qid>400</qid><question>Welche Hand ist dominant?</question><help></help><language>de</language></row>
+ </rows></question_l10ns>
+ <answers><rows>
+  <row><aid>1</aid><qid>200</qid><code>0</code><sortorder>1</sortorder><scale_id>0</scale_id></row>
+  <row><aid>2</aid><qid>200</qid><code>1</code><sortorder>2</sortorder><scale_id>0</scale_id></row>
+  <row><aid>3</aid><qid>300</qid><code>0</code><sortorder>1</sortorder><scale_id>0</scale_id></row>
+  <row><aid>4</aid><qid>300</qid><code>1</code><sortorder>2</sortorder><scale_id>0</scale_id></row>
+  <row><aid>5</aid><qid>400</qid><code>L</code><sortorder>1</sortorder><scale_id>0</scale_id></row>
+  <row><aid>6</aid><qid>400</qid><code>R</code><sortorder>2</sortorder><scale_id>0</scale_id></row>
+ </rows></answers>
+ <answer_l10ns><rows>
+  <row><aid>1</aid><answer>zu keinem Zeitpunkt</answer><language>de</language></row>
+  <row><aid>2</aid><answer>die ganze Zeit</answer><language>de</language></row>
+  <row><aid>3</aid><answer>selten</answer><language>de</language></row>
+  <row><aid>4</aid><answer>meistens</answer><language>de</language></row>
+  <row><aid>5</aid><answer>links</answer><language>de</language></row>
+  <row><aid>6</aid><answer>rechts</answer><language>de</language></row>
+ </rows></answer_l10ns>
+</document>

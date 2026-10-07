@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { refreshTemplateList, validateCurrent } from './source-workflow.js';
+import { finishImport, refreshTemplateList, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -36,6 +36,59 @@ describe('validateCurrent right after loading a template', () => {
 
     it('stays red when there is a real error too', async () => {
         expect((await alertFor(REAL_ERROR, { initial: true })).type).toBe('danger');
+    });
+});
+
+const LIMESURVEY_IMPORT_ERRORS = [
+    { path: 'Study', message: "'Citation' is a required property" },
+    { path: 'Study', message: "'Category' is a required property" },
+    { path: 'Technical', message: "'SoftwareVersion' is a required property" },
+    { path: 'Technical/SoftwareVersion', message: "SoftwareVersion is required when SoftwarePlatform is 'LimeSurvey'" },
+];
+
+describe('validateCurrent right after an import', () => {
+    it('says the fields were not found in the file, instead of reporting a failure', async () => {
+        const alert = await alertFor(LIMESURVEY_IMPORT_ERRORS, { initial: true, imported: true });
+        expect(alert.type).toBe('warning');
+        expect(alert.html).toContain('Not found in your file');
+        expect(alert.html).not.toContain('Validation failed');
+        expect(alert.html).toContain('Citation');
+        expect(alert.html).toContain('SoftwareVersion is required when');
+    });
+
+    it('treats "is required when ..." as a missing field, not an error, after a load too', async () => {
+        const alert = await alertFor(LIMESURVEY_IMPORT_ERRORS, { initial: true });
+        expect(alert.type).toBe('warning');
+    });
+
+    it('stays red when the import also has a real error', async () => {
+        const alert = await alertFor([...LIMESURVEY_IMPORT_ERRORS, ...REAL_ERROR.slice(1)], { initial: true, imported: true });
+        expect(alert.type).toBe('danger');
+        expect(alert.html).toContain('Validation failed');
+    });
+
+    it('still fails loudly when the user clicks Validate', async () => {
+        expect((await alertFor(LIMESURVEY_IMPORT_ERRORS)).type).toBe('danger');
+    });
+});
+
+describe('finishImport', () => {
+    it('validates as an import, so missing details are a hint and not a failure', async () => {
+        const alerts = [];
+        const el = { disabled: false, classList: { toggle() {}, add() {} } };
+        const context = {
+            modalityEl: { value: 'survey' }, schemaEl: { value: 'stable' },
+            getCurrentProjectPath: () => '/p', projectContextRequestToken: 1,
+            getExportWordButton: () => null, currentTemplate: {}, hasExplicitTemplate: true,
+            apiPost: async () => ({ ok: false, errors: LIMESURVEY_IMPORT_ERRORS }),
+            isProjectContextCurrent: () => true,
+            btnDownload: el, btnSave: el, alertAreaEl: { querySelectorAll: () => [] },
+            deriveFocusPath: (p) => p, escapeHtml: (s) => s, renderMissingSummary() {},
+            showAlert: (type, html) => alerts.push({ type, html }),
+        };
+        await finishImport(context, 'Imported x');
+        expect(alerts.at(-1).type).toBe('warning');
+        expect(alerts.at(-1).html).toContain('Not found in your file');
     });
 });
 

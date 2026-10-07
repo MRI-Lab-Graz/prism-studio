@@ -1780,14 +1780,30 @@ def build_prism_tools_parsers(
     )
 
     parser_survey_limesurvey = survey_subparsers.add_parser(
-        "import-limesurvey", help="Import LimeSurvey structure"
+        "import-limesurvey",
+        help="Import the questionnaires of a LimeSurvey .lss/.lsa as PRISM templates. "
+        "Matches the Studio Template Editor's 'Import Template Source' for .lss/.lsa.",
+    )
+    parser_survey_limesurvey.add_argument("--input", required=True, help="Path to .lsa/.lss file")
+    parser_survey_limesurvey.add_argument(
+        "--split", choices=["group", "question", "survey"], default="group",
+        help="One template per question group (default), per question, or for the whole survey",
     )
     parser_survey_limesurvey.add_argument(
-        "--input", required=True, help="Path to .lsa/.lss file"
+        "--list", action="store_true", help="Only list the questionnaires found (default without --select)"
     )
-    parser_survey_limesurvey.add_argument("--output", help="Path to output .json file")
     parser_survey_limesurvey.add_argument(
-        "--task", help="Optional task name override (defaults from file name)"
+        "--select", nargs="+", metavar="KEY",
+        help="Questionnaire key(s) from the listing (e.g. g30), or 'all'",
+    )
+    parser_survey_limesurvey.add_argument("--output", help="Directory for the template JSON files")
+    parser_survey_limesurvey.add_argument(
+        "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
+    )
+    parser_survey_limesurvey.add_argument(
+        "--use-library", action="store_true",
+        help="With --select: write the matching library template (survey codes kept as Aliases) "
+        "instead of the imported questionnaire; only for exact/high matches",
     )
 
     parser_survey_import_lsq = survey_subparsers.add_parser(

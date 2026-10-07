@@ -1817,7 +1817,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const {\n        displayTemplateSingle,\n        displayTemplateGroups,\n        displayTemplateQuestions,\n        displayParticipantMetadataSection,\n    } = surveyTemplateRenderAdapter;",
+            "const {\n        displayTemplateSingle,\n        displayTemplateGroups,\n        displayParticipantMetadataSection,\n    } = surveyTemplateRenderAdapter;",
             content,
         )
         self.assertNotIn("async function handleTemplateGeneration(file) {", content)
@@ -2566,7 +2566,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        displayTemplateSingle,\n        displayTemplateGroups,\n        displayTemplateQuestions,\n        displayParticipantMetadataSection,\n    } = surveyTemplateRenderAdapter;",
+            "const {\n        displayTemplateSingle,\n        displayTemplateGroups,\n        displayParticipantMetadataSection,\n    } = surveyTemplateRenderAdapter;",
             survey_content,
         )
         self.assertIn(
@@ -2700,10 +2700,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         )
         self.assertIn(
             "return getSurveyTemplateResultsController()?.displayTemplateGroups(data);",
-            template_render_adapter_content,
-        )
-        self.assertIn(
-            "return getSurveyTemplateResultsController()?.displayTemplateQuestions(data);",
             template_render_adapter_content,
         )
         self.assertIn(

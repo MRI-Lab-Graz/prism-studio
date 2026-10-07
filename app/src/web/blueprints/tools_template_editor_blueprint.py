@@ -580,6 +580,66 @@ def api_template_editor_import_lsq_lsg():
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/import-limesurvey", methods=["POST"])
+def api_template_editor_import_limesurvey():
+    """List the questionnaires in a .lss/.lsa (no 'key') or return one as a
+    PRISM template ('key'). Same backend as `survey import-limesurvey`."""
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "No file uploaded"}), 400
+    split = (request.form.get("split") or "group").strip()
+    key = (request.form.get("key") or "").strip()
+
+    project_path = (request.form.get("project_path") or "").strip() or None
+    use_library = (request.form.get("use_library") or "").strip().lower() in ("1", "true")
+
+    from src.converters.library_wording_match import public_library_match
+    from src.converters.limesurvey import (
+        limesurvey_library_template,
+        limesurvey_questionnaire_match,
+        list_limesurvey_questionnaires,
+        read_lss_xml,
+    )
+
+    command = f"python prism_tools.py survey import-limesurvey --input {file.filename} --split {split}"
+    if project_path:
+        command += " --project <project>"
+    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key}{' --use-library' if use_library else ''} --output <dir>" if key else ""))
+    try:
+        xml = read_lss_xml(file.read(), file.filename)
+        if not key:
+            questionnaires = list_limesurvey_questionnaires(
+                xml, split, source_name=file.filename, project_path=project_path, match_library=True
+            )
+            return jsonify({"questionnaires": questionnaires, "split": split}), 200
+        if use_library:
+            template, match = limesurvey_library_template(xml, key, split, project_path)
+        else:
+            template, match = limesurvey_questionnaire_match(xml, key, split, project_path)
+        template = _strip_template_editor_internal_keys(template)
+    except ValueError as e:
+        print(f"[PRISM] LimeSurvey import failed: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"[PRISM] LimeSurvey import failed: {e}")
+        return jsonify({"error": f"Import failed: {e}"}), 500
+
+    if use_library:  # library templates carry no Study.TaskName; the file name is the library's
+        suggested_filename = match["template_file"]
+    else:
+        suggested_filename = f"survey-{template['Study']['TaskName']}.json"
+    i18n = template.get("I18n") or {}
+    languages = i18n.get("Languages") or [(template.get("Technical") or {}).get("Language", "en")]
+    reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+    return jsonify({
+        "template": template,
+        "suggested_filename": suggested_filename,
+        "item_count": len([k for k in template if k not in reserved]),
+        "languages": languages,
+        "library_match": public_library_match(match),
+    }), 200
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-excel", methods=["POST"])
 def api_template_editor_import_excel():
     """Import an Excel/CSV/TSV codebook and return a PRISM template for the editor.

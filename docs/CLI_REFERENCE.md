@@ -208,10 +208,29 @@ template); `--output` defaults to alongside the input file.
 **`survey import-limesurvey`** / **`survey import-limesurvey-batch`**:
 
 ```bash
-python prism_tools.py survey import-limesurvey --input instrument.lsa --output survey-ads.json
+python prism_tools.py survey import-limesurvey --input instrument.lsa            # list questionnaires
+python prism_tools.py survey import-limesurvey --input instrument.lsa --select g30 --output ./templates
 python prism_tools.py survey import-limesurvey-batch \
   --input-dir ./limesurvey_exports --output-dir ./my_dataset \
   --session-map t1:ses-1,t2:ses-2,t3:ses-3
+```
+
+`import-limesurvey` matches the Template Editor's "Import Template Source" for
+`.lss`/`.lsa`. `--split group|question|survey` (default `group`) chooses one
+template per question group, per question, or for the whole survey. Without
+`--select` (or with `--list`) it only lists the questionnaires; `--select KEY ...`
+takes keys from that listing (e.g. `g30`) or `all`, and `--output DIR` receives one
+`survey-<taskname>.json` per questionnaire (an existing file is never overwritten).
+
+Listing prints a `[PRISM] Library match for '<name>': ...` line per questionnaire,
+compared by wording against the global library (plus the project's library with
+`--project DIR`). `--use-library` writes the matched library template instead of
+the imported one (the survey's codes are kept as item `Aliases`); it only works
+for an exact/high match and otherwise fails with a "one-to-one" message. The
+global library is only read, never written.
+
+```bash
+python prism_tools.py survey import-limesurvey --input instrument.lsa --select g30 --use-library --output ./templates
 ```
 
 **`survey import-lsq`** — turn a single LimeSurvey question (`.lsq`) or question group
