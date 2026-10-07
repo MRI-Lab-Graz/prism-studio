@@ -245,3 +245,25 @@ def test_colliding_task_names_are_deduped_in_listing_and_templates():
     assert names[1:3] == ["stress1", "stress1-2"]
     assert len(set(names)) == len(names)
     assert all(re.fullmatch(pattern, n) for n in names)
+
+
+def test_checkbox_question_with_subquestions_warns(capsys):
+    rows = lambda *r: "<rows>" + "".join(r) + "</rows>"
+    xml = (
+        "<document><DBVersion>636</DBVersion>"
+        "<groups>" + rows(_row(gid=1, group_name="Boxes", group_order=1)) + "</groups>"
+        "<questions>" + rows(_row(qid=1, parent_qid=0, gid=1, type="M", title="CB",
+                                  question="Pick", question_order=1)) + "</questions>"
+        "<subquestions>" + rows(_row(qid=2, parent_qid=1, gid=1, type="T", title="A", question="a",
+                                     question_order=1, scale_id=0),
+                                _row(qid=3, parent_qid=1, gid=1, type="T", title="B", question="b",
+                                     question_order=2, scale_id=0)) + "</subquestions>"
+        "</document>"
+    ).encode()
+
+    limesurvey_questionnaire_template(xml, "g1")
+
+    out = capsys.readouterr().out
+    assert "[PRISM] WARNING Boxes / CB: type M (" in out
+    assert "with subquestions is imported as a plain single item/array; check the items by hand" in out
+    assert out.count("WARNING") == 1

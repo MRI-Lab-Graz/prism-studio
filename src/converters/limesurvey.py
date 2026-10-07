@@ -1155,6 +1155,9 @@ def _questionnaire_template(parsed, part):
     return template, _apply_prismmeta(template, part["prismmeta"])
 
 
+_LOSSY_SUBQUESTION_TYPES = ("M", "P", ";", ":", "R")  # checkboxes, dual-axis arrays, ranking
+
+
 def _build_questionnaires(xml_content, split, keep_prismmeta=False):
     """keep_prismmeta: leave the hidden PRISMMETA question in each template as a
     pseudo-item (Survey Generator readers parse it) instead of restoring it into Study."""
@@ -1174,6 +1177,13 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
                         "Attributes": {"equation": str(q["attributes"].get("equation", ""))},
                     }
         questions = [parsed["questions"][qid] for qid in part["qids"]]
+        for q in questions:
+            if q["type"] in _LOSSY_SUBQUESTION_TYPES and q["subquestions"]:
+                print(
+                    f"[PRISM] WARNING {part['name']} / {q['title']}: type {q['type']} "
+                    f"({q['type_name']}) with subquestions is imported as a plain single "
+                    "item/array; check the items by hand"
+                )
         results.append((
             {
                 "key": part["key"],
