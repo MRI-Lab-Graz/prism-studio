@@ -80,8 +80,7 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
   and `src/share_publish.py` pass explicit values and are unchanged. Only the standalone
   command line changes its default.
 - One verdict: `valid: true` means no ERROR from PRISM and no ERROR from BIDS. The machine
-  output tells which checks ran and which BIDS engine/version produced the result (the
-  existing `bids_validator` key keeps its place):
+  output tells which checks ran and which BIDS engine/version produced the result (a new top-level `bids_validator` key in `--json` and `--format json`, absent with `--no-bids`):
   `{"engine": "bids-validator-deno", "version": "3.0.2"}` (version from package metadata,
   no subprocess). With `--no-bids` the key is absent.
 - **Fail closed, unchanged in spirit:** if the BIDS check is on and cannot run (engine not

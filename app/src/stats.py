@@ -380,3 +380,9 @@ class DatasetStats:
                 warnings.append(("WARNING", f"Missing task {task}", subject_id))
 
         return warnings
+
+
+def bids_validator_info(stats) -> dict:
+    """{"engine", "version", "spec"} of the BIDS engine that ran, or {} when BIDS did not run."""
+    info = (getattr(stats, "validator_info", None) or {}).get("bids_validator")
+    return dict(info) if info else {}

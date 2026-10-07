@@ -74,3 +74,14 @@ def test_broken_config_file_keeps_stdout_json_only(tmp_path, flags):
     (ds / ".prismrc.json").write_text("{bad")
     proc = _run(ds, *flags)
     assert "valid" in json.loads(proc.stdout)
+
+
+def test_json_report_carries_the_bids_engine_only_when_it_ran():
+    from types import SimpleNamespace
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
+    from src.core.validation import build_validation_report
+
+    ran = SimpleNamespace(validator_info={"bids_validator": {"engine": "bids-validator-deno", "version": "3.0.2", "spec": "x"}})
+    assert build_validation_report("/d", "stable", [], ran)["bids_validator"]["version"] == "3.0.2"
+    assert "bids_validator" not in build_validation_report("/d", "stable", [], SimpleNamespace())
