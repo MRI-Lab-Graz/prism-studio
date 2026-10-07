@@ -104,7 +104,6 @@ def _make_unfetched_annex_symlink(path):
     path.symlink_to(path.parent / ".git" / "annex" / "objects" / "does-not-exist")
 
 
-
 def test_deno_parser_downgrades_unfetched_annex_content_to_warning(
     monkeypatch, tmp_path
 ):

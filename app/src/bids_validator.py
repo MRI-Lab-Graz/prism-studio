@@ -55,14 +55,10 @@ def _is_citation_precedence_warning(
     if _is_citation_precedence_conflict(token):
         return True
 
-    if (
-        token == "SINGLE_SOURCE_CITATION_FIELDS"
-    ):  # noqa: S105 - validation-code string, not a credential
+    if token == "SINGLE_SOURCE_CITATION_FIELDS":  # noqa: S105 - validation-code string, not a credential
         return True
 
-    if (
-        token == "TOO_FEW_AUTHORS"
-    ):  # noqa: S105 - validation-code string, not a credential
+    if token == "TOO_FEW_AUTHORS":  # noqa: S105 - validation-code string, not a credential
         loc = str(location or "").replace("\\", "/").strip().lower()
         if loc.startswith("/"):
             loc = loc[1:]
@@ -275,11 +271,17 @@ def run_bids_validator(
     if not process.stdout:
         stderr_msg = (process.stderr or "").strip()
         detail = f" Stderr: {stderr_msg}" if stderr_msg else ""
-        return _fail(f"produced no output (exit code {process.returncode}).{detail}")
+        return _fail(
+            f"produced no output (exit code {process.returncode}).{detail} "
+            "Reinstall prism-validator or run with --no-bids"
+        )
     try:
         bids_report = json.loads(process.stdout)
     except json.JSONDecodeError:
-        return _fail(f"its output could not be parsed (exit code {process.returncode})")
+        return _fail(
+            f"its output could not be parsed (exit code {process.returncode}). "
+            "Reinstall prism-validator or run with --no-bids"
+        )
 
     # Handle the engine report structure
     issue_list = []
