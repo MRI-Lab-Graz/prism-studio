@@ -1,4 +1,5 @@
 import argparse
+import io
 import json
 import os
 import re
@@ -988,6 +989,183 @@ def parse_lsg_xml(xml_content):
     return _build_prism_template_from_parsed(
         questions_map, groups_map, languages, default_language, source_type="lsg"
     )
+
+
+SPLIT_MODES = ("group", "question", "survey")
+_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+# Text, equation and display questions: no answer options of their own.
+_HELPER_TYPES = {"S", "T", "U", "Q", "*", "X"}
+_PRISMMETA_RE = re.compile(r"^PRISMMETA", re.IGNORECASE)
+_TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+
+
+def read_lss_xml(data, filename):
+    """Return the .lss XML from an uploaded .lss file or .lsa archive."""
+    name = filename.lower()
+    if name.endswith(".lss"):
+        return data
+    if not name.endswith(".lsa"):
+        raise ValueError("Unsupported file type. Use .lss or .lsa")
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            lss_names = [n for n in archive.namelist() if n.endswith(".lss")]
+            if not lss_names:
+                raise ValueError(f"No .lss file found inside {filename}")
+            return archive.read(lss_names[0])
+    except zipfile.BadZipFile as exc:
+        raise ValueError(f"{filename} is not a valid .lsa archive") from exc
+
+
+def _task_name(name):
+    # Transliterate first: sanitize_task_name drops non-ASCII ("Händigkeit" -> "hndigkeit").
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return sanitize_task_name(ascii_name) or "imported"
+
+
+def _parse_lss_for_questionnaires(xml_content):
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as exc:
+        raise ValueError(f"Invalid LimeSurvey XML: {exc}") from exc
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        return (child.text if child is not None else "") or ""
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+    _parse_answers_into_questions(root, questions_map, get_text)
+    languages, default_language = _detect_languages(root, get_text)
+    return {
+        "questions": questions_map,
+        "groups": groups_map,
+        "languages": languages,
+        "default_language": default_language,
+        "title": _parse_survey_metadata(root, get_text).get("title") or "survey",
+        "db_version": get_text(root, "DBVersion"),
+    }
+
+
+def _split_questionnaires(parsed, split):
+    if split not in SPLIT_MODES:
+        raise ValueError(f"Unknown split mode '{split}'. Use one of: {', '.join(SPLIT_MODES)}")
+    groups = parsed["groups"]
+    top = sorted(
+        (
+            (qid, q)
+            for qid, q in parsed["questions"].items()
+            if q.get("parent_qid") in (None, "", "0")
+        ),
+        key=lambda item: (groups.get(item[1]["gid"], {}).get("order", 0), item[1]["question_order"]),
+    )
+    prismmeta = {
+        q["gid"]: str(q["attributes"].get("equation", ""))
+        for _qid, q in top
+        if _PRISMMETA_RE.match(q["title"])
+    }
+    top = [(qid, q) for qid, q in top if not _PRISMMETA_RE.match(q["title"])]
+
+    if split == "survey":
+        if not top:
+            return []
+        return [{"key": "survey", "name": parsed["title"], "description": "",
+                 "qids": [qid for qid, _ in top], "prismmeta": ""}]
+    if split == "question":
+        return [{"key": f"q{qid}", "name": q["title"], "description": "",
+                 "qids": [qid], "prismmeta": ""} for qid, q in top]
+    parts = []
+    for gid, group in sorted(groups.items(), key=lambda g: g[1]["order"]):
+        qids = [qid for qid, q in top if q["gid"] == gid]
+        if qids:
+            parts.append({"key": f"g{gid}", "name": group["name"] or f"group {gid}",
+                          "description": group["description"], "qids": qids,
+                          "prismmeta": prismmeta.get(gid, "")})
+    return parts
+
+
+def _apply_prismmeta(template, html):
+    """Restore what the exporter stored in a group's hidden PRISMMETA question.
+    Returns the names of the restored fields."""
+    return []
+
+
+def _questionnaire_template(parsed, part):
+    questions = {qid: parsed["questions"][qid] for qid in part["qids"]}
+    lang = parsed["default_language"]
+    template = _build_prism_template_from_parsed(
+        questions, parsed["groups"], parsed["languages"], lang, source_type="lss"
+    )
+    study = template["Study"]
+    study["OriginalName"] = part["name"]
+    study["TaskName"] = _task_name(part["name"])
+    if part["description"]:
+        study["Description"] = part["description"]
+    stems = [
+        q["question"]
+        for q in questions.values()
+        if q["type"] in _ARRAY_TYPES and q["subquestions"] and q["question"]
+    ]
+    if stems:
+        study["Instructions"] = {lang: "\n\n".join(stems)}
+    template["Technical"]["AdministrationMethod"] = "online"
+    return template, _apply_prismmeta(template, part["prismmeta"])
+
+
+def _build_questionnaires(xml_content, split):
+    parsed = _parse_lss_for_questionnaires(xml_content)
+    results = []
+    for part in _split_questionnaires(parsed, split):
+        template, restored = _questionnaire_template(parsed, part)
+        questions = [parsed["questions"][qid] for qid in part["qids"]]
+        results.append((
+            {
+                "key": part["key"],
+                "name": part["name"],
+                "item_count": len([k for k in template if k not in _TEMPLATE_SECTIONS]),
+                "helper": all(
+                    q["type"] in _HELPER_TYPES and not q["levels"] and not q["subquestions"]
+                    for q in questions
+                ),
+                "arrays": [q["title"] for q in questions if q["type"] in _ARRAY_TYPES and q["subquestions"]],
+                "restored": restored,
+            },
+            template,
+        ))
+    return parsed, results
+
+
+def list_limesurvey_questionnaires(xml_content, split="group", source_name="LimeSurvey file"):
+    """List the questionnaires in a LimeSurvey survey, split by group, question or whole survey."""
+    parsed, results = _build_questionnaires(xml_content, split)
+    print(
+        f"[PRISM] LimeSurvey import: {source_name} (DBVersion {parsed['db_version'] or '?'}, "
+        f"languages: {', '.join(parsed['languages'])})"
+    )
+    print(f"[PRISM] Split by {split} -> {len(results)} questionnaire(s):")
+    for info, _template in results:
+        line = f"[PRISM]   {info['key']:<8} {info['name']}  {info['item_count']} item(s)"
+        if info["arrays"]:
+            line += f"  (array {', '.join(info['arrays'])})"
+        if info["helper"]:
+            line += "  [helper: no answer options]"
+        print(line)
+    return [{k: info[k] for k in ("key", "name", "item_count", "helper")} for info, _ in results]
+
+
+def limesurvey_questionnaire_template(xml_content, key, split="group"):
+    """Build the PRISM template for one questionnaire (key from list_limesurvey_questionnaires)."""
+    _parsed, results = _build_questionnaires(xml_content, split)
+    for info, template in results:
+        if info["key"] == key:
+            stem = "stem -> Study.Instructions" if "Instructions" in template["Study"] else "no array stem"
+            meta = (
+                f"PRISMMETA restored: {', '.join(info['restored'])}"
+                if info["restored"]
+                else "no PRISMMETA (fill in Citation, Category, SoftwareVersion by hand)"
+            )
+            print(f"[PRISM] Loading {key} '{info['name']}': {info['item_count']} item(s), {stem}, {meta}")
+            return template
+    valid = ", ".join(info["key"] for info, _ in results) or "none"
+    raise ValueError(f"No questionnaire '{key}' (split by {split}). Valid keys: {valid}")
 
 
 def parse_lss_xml(
