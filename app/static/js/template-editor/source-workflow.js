@@ -414,6 +414,9 @@ function hideExcelGroupPicker(context) {
   if (context.excelGroupPickerRowEl) {
     context.excelGroupPickerRowEl.classList.add('d-none');
   }
+  if (context.sourceSplitSelectEl) {
+    context.sourceSplitSelectEl.classList.add('d-none');
+  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
   }
@@ -490,6 +493,64 @@ async function importExcelCodebook(context, file, previousEditorState) {
   context.showAlert('info', `Detected ${groups.length} instrument groups in ${context.escapeHtml(file.name)}. Choose one above to load it into the editor.`);
 }
 
+async function fetchLimeSurvey(context, file, fields) {
+  const formData = new FormData();
+  formData.append('file', file);
+  Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
+  const res = await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Import failed (${res.status})`);
+  }
+  return data;
+}
+
+async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState) {
+  try {
+    const data = await fetchLimeSurvey(context, file, { split: context.sourceSplitSelectEl.value, key });
+    await finishImport(context, applyImportedTemplate(context, data, file));
+  } catch (error) {
+    context.restoreEditorState(previousEditorState);
+    context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
+  }
+}
+
+// The backend splits the survey and logs it to the terminal; this only shows the list.
+async function importLimeSurvey(context, file, previousEditorState) {
+  const { questionnaires } = await fetchLimeSurvey(context, file, { split: context.sourceSplitSelectEl.value });
+  if (questionnaires.length === 0) {
+    throw new Error('No questionnaires found in the file.');
+  }
+
+  context.excelGroupPickerSelectEl.innerHTML = questionnaires
+    .map((q) => `<option value="${context.escapeHtml(q.key)}">${context.escapeHtml(q.name)} (${q.item_count} item${q.item_count === 1 ? '' : 's'})${q.helper ? ' (helper)' : ''}</option>`)
+    .join('');
+  const firstQuestionnaire = questionnaires.find((q) => !q.helper) || questionnaires[0];
+  context.excelGroupPickerSelectEl.value = firstQuestionnaire.key;
+  context.sourceSplitSelectEl.classList.remove('d-none');
+  context.excelGroupPickerRowEl.classList.remove('d-none');
+
+  context.sourceSplitSelectEl.onchange = () => {
+    importLimeSurvey(context, file, context.captureEditorState())
+      .catch((error) => context.showAlert('danger', context.escapeHtml(error.message)));
+  };
+  context.btnLoadExcelGroup.onclick = () => {
+    if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Loading another questionnaire will discard them. Continue?')) {
+      return;
+    }
+    loadLimeSurveyQuestionnaire(context, file, context.excelGroupPickerSelectEl.value, context.captureEditorState());
+  };
+
+  if (questionnaires.length === 1) {
+    await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState);
+    return;
+  }
+  context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
+}
+
 export async function importTemplateSource(context) {
   const file = context.templateImportInput.files[0];
   if (!file) {
@@ -538,6 +599,11 @@ export async function importTemplateSource(context) {
       return;
     }
 
+    if (lowerName.endsWith('.lss') || lowerName.endsWith('.lsa')) {
+      await importLimeSurvey(context, file, previousEditorState);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -552,26 +618,6 @@ export async function importTemplateSource(context) {
         throw new Error(data.error || `Import failed (${res.status})`);
       }
       importSummaryMessage = applyImportedTemplate(context, data, file);
-    } else {
-      const nameWithoutExt = (file.name || 'imported').replace(/\.[^.]+$/, '').trim();
-      formData.append('mode', 'combined');
-      if (nameWithoutExt) {
-        formData.append('task_name', context.sanitizeTaskNameForFilename(nameWithoutExt));
-      }
-
-      const res = await context.fetchWithApiFallback('/api/survey-generate-templates', {
-        method: 'POST',
-        body: formData,
-      });
-      data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Template import failed (${res.status})`);
-      }
-
-      if (!data.prism_json || typeof data.prism_json !== 'object') {
-        throw new Error('No PRISM template returned by generator.');
-      }
-      importSummaryMessage = applyImportedTemplate(context, { ...data, template: data.prism_json }, file);
     }
   } catch (error) {
     context.restoreEditorState(previousEditorState);

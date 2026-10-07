@@ -92,7 +92,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
             workflow_content,
         )
         self.assertIn(
-            "await context.fetchWithApiFallback('/api/survey-generate-templates', {",
+            "await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {",
             workflow_content,
         )
         self.assertIn(
@@ -406,7 +406,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         json_branch = importer.index("parsePrismTemplateJson(await file.text()")
         # The .json branch comes before the codebook and generator paths ...
         self.assertLess(json_branch, importer.index("isExcelCodebook)"))
-        self.assertLess(json_branch, importer.index("/api/survey-generate-templates"))
+        self.assertLess(json_branch, importer.index("importLimeSurvey("))
         # ... and reuses the normal import finish (validation) so Save works as usual.
         self.assertIn("applyImportedTemplate(", importer[json_branch:])
 

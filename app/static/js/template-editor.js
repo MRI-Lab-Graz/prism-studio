@@ -16,6 +16,7 @@
   const excelGroupPickerRowEl = document.getElementById('excelGroupPickerRow');
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
   const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
+  const sourceSplitSelectEl = document.getElementById('sourceSplitSelect');
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
   const newItemIdEl = document.getElementById('newItemId');
@@ -4706,6 +4707,7 @@
         excelGroupPickerRowEl,
         excelGroupPickerSelectEl,
         btnLoadExcelGroup,
+        sourceSplitSelectEl,
         btnDownload,
         btnSave,
         btnDelete,
