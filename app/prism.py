@@ -411,15 +411,22 @@ Examples:
 
         sys.exit(0)
 
+    json_output = args.json or args.json_pretty
+    format_output_mode = args.format is not None
+    machine_output = json_output or format_output_mode
+
+    # Machine output: everything but the final report goes to stderr (config
+    # warnings, progress, plugin output), keeping stdout JSON-only.
+    real_stdout = sys.stdout
+    if machine_output:
+        sys.stdout = sys.stderr
+
     # Load config file from dataset (if exists)
     config = load_config(args.dataset)
     config = merge_cli_args(config, args)
 
     # Check if config file was found
     config_path = find_config_file(args.dataset)
-    json_output = args.json or args.json_pretty
-    format_output_mode = args.format is not None
-    machine_output = json_output or format_output_mode
 
     if config_path and not machine_output:
         print(f"📄 Using config: {os.path.basename(config_path)}")
@@ -495,7 +502,7 @@ Examples:
                 if not machine_output:
                     print(f"📄 Output written to: {args.output}")
             else:
-                print(content)
+                print(content, file=real_stdout)
 
         # Format-specific output modes
         if args.format:
@@ -525,12 +532,17 @@ Examples:
         sys.exit(determine_exit_code(structured_issues))
 
     except Exception as e:
-        print(f"❌ Validation failed with error: {e}")
+        print(
+            f"❌ Validation failed with error: {e}",
+            file=sys.stderr if machine_output else sys.stdout,
+        )
         if args.verbose:
             import traceback
 
             traceback.print_exc()
         sys.exit(2)
+    finally:
+        sys.stdout = real_stdout
 
 
 if __name__ == "__main__":

@@ -8,3 +8,4 @@
 jsonschema
 bids-validator
 defusedxml
+PyYAML>=6.0.3

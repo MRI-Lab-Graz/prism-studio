@@ -61,6 +61,10 @@ prism-validator /path/to/project --fix --dry-run
 prism-validator /path/to/project --fix
 ```
 
+For scripts and CI, `--json` or `--format json` prints only JSON with a boolean `valid`
+(true iff no ERROR issue). Exit codes: 0 = no errors, 1 = validation errors, 2 = the
+validator could not run. See the [CLI reference](../CLI_REFERENCE.md).
+
 ## What's next
 
 - [Error Codes](../ERROR_CODES.md) for the full code reference

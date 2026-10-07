@@ -120,6 +120,7 @@ sub-01/survey/sub-01_task-demo_survey.json
 | Code | Meaning | Fix |
 |---|---|---|
 | `PRISM901` | Internal validation error | Unexpected error during validation |
+| `PRISM902` | BIDS validator requested but not available | Install Deno or the legacy `bids-validator` CLI, or run without `--bids` |
 | `PRISM999` | General validation error | Catch-all — check the error message for details |
 
 ## Auto-fix and troubleshooting

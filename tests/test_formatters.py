@@ -235,3 +235,48 @@ class TestFormatOutput:
         import pytest
         with pytest.raises(ValueError, match="Unknown format"):
             format_output([], str(tmp_path), "xml")
+
+
+class TestJsonVerdict:
+    def test_valid_false_with_error(self):
+        out = json.loads(format_output([_error(), _warning()], "/x", "json"))
+        assert out["valid"] is False
+        assert {"issues", "summary"} <= set(out)
+
+    def test_valid_true_with_only_warnings(self):
+        out = json.loads(format_output([_warning()], "/x", "json"))
+        assert out["valid"] is True
+
+    def test_valid_true_without_issues(self):
+        assert json.loads(format_output([], "/x", "json"))["valid"] is True
+
+
+class TestForeignSeverityCopy:
+    """Issues built from the `src.issues` copy have a distinct Severity enum from the
+    bare `issues` copy formatters uses; severity must be compared by value."""
+
+    def _issues(self):
+        from src.issues import Issue as SIssue, Severity as SSev
+
+        assert SSev is not Severity
+        return [SIssue(code="PRISM001", severity=SSev.ERROR, message="boom", file_path="/x/f")]
+
+    def test_junit_counts_error(self):
+        out = format_output(self._issues(), "/x", "junit")
+        assert 'errors="1"' in out and "<error" in out
+
+    def test_sarif_level_error(self):
+        out = json.loads(format_output(self._issues(), "/x", "sarif"))
+        assert out["runs"][0]["results"][0]["level"] == "error"
+
+    def test_markdown_lists_issue(self):
+        assert "boom" in format_output(self._issues(), "/x", "markdown")
+
+    def test_lowercase_string_severity_is_error(self):
+        from types import SimpleNamespace
+        from src.core.validation import determine_exit_code
+
+        i = SimpleNamespace(code="PRISM001", severity="error", message="m", file_path=None, fix_hint=None)
+        assert determine_exit_code([i]) == 1
+        from issues import summarize_issues
+        assert summarize_issues([i])["errors"] == 1

@@ -17,7 +17,7 @@ from typing import List, Dict, Any, Callable
 
 from issues import (
     Issue,
-    Severity,
+    severity_value,
     summarize_issues,
     get_error_documentation_url,
 )
@@ -56,9 +56,9 @@ def to_sarif(
     """
     # Map our severity to SARIF levels
     severity_map = {
-        Severity.ERROR: "error",
-        Severity.WARNING: "warning",
-        Severity.INFO: "note",
+        "ERROR": "error",
+        "WARNING": "warning",
+        "INFO": "note",
     }
 
     # Build unique rule definitions from issues
@@ -86,7 +86,7 @@ def to_sarif(
     for issue in issues:
         result = {
             "ruleId": issue.code,
-            "level": severity_map.get(issue.severity, "warning"),
+            "level": severity_map.get(severity_value(issue.severity), "warning"),
             "message": {"text": issue.message},
         }
 
@@ -200,8 +200,8 @@ def to_junit_xml(
     testsuites.set("name", "prism")
     testsuites.set("tests", str(len(issues) + 1))  # +1 for the overall test
 
-    error_count = sum(1 for i in issues if i.severity == Severity.ERROR)
-    warning_count = sum(1 for i in issues if i.severity == Severity.WARNING)
+    error_count = sum(1 for i in issues if severity_value(i.severity) == "ERROR")
+    warning_count = sum(1 for i in issues if severity_value(i.severity) == "WARNING")
 
     testsuites.set("errors", str(error_count))
     testsuites.set("failures", "0")  # We use errors, not failures
@@ -252,13 +252,13 @@ def to_junit_xml(
         testcase.set("classname", f"prism.{_get_issue_category(issue.code)}")
         testcase.set("time", "0")
 
-        if issue.severity == Severity.ERROR:
+        if severity_value(issue.severity) == "ERROR":
             error_elem = ET.SubElement(testcase, "error")
             error_elem.set("message", issue.message)
             error_elem.set("type", issue.code)
             if issue.file_path:
                 error_elem.text = f"File: {issue.file_path}"
-        elif issue.severity == Severity.WARNING:
+        elif severity_value(issue.severity) == "WARNING":
             # JUnit doesn't have warnings, we can use system-out
             system_out = ET.SubElement(testcase, "system-out")
             system_out.text = f"WARNING: {issue.message}"
@@ -337,8 +337,8 @@ def to_markdown(
         lines.append("")
 
         # Group by severity
-        errors = [i for i in issues if i.severity == Severity.ERROR]
-        warnings = [i for i in issues if i.severity == Severity.WARNING]
+        errors = [i for i in issues if severity_value(i.severity) == "ERROR"]
+        warnings = [i for i in issues if severity_value(i.severity) == "WARNING"]
 
         if errors:
             lines.append("### Errors")
@@ -409,18 +409,25 @@ def to_csv(issues: List[Issue]) -> str:
     return output.getvalue()
 
 
+def to_json(issues, path, stats) -> str:
+    """JSON report; `valid` is True iff no ERROR-severity issue (as the exit code)."""
+    summary = summarize_issues(issues)
+    return json.dumps(
+        {
+            "valid": summary["errors"] == 0,
+            "issues": [i.to_dict() for i in issues],
+            "summary": summary,
+        },
+        indent=2,
+    )
+
+
 # =============================================================================
 # FORMAT REGISTRY
 # =============================================================================
 
 FORMATTERS: Dict[str, Callable[..., str]] = {
-    "json": lambda issues, path, stats: json.dumps(
-        {
-            "issues": [i.to_dict() for i in issues],
-            "summary": summarize_issues(issues),
-        },
-        indent=2,
-    ),
+    "json": to_json,
     "sarif": lambda issues, path, stats: json.dumps(to_sarif(issues, path), indent=2),
     "junit": to_junit_xml,
     "markdown": to_markdown,
