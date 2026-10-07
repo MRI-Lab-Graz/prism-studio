@@ -21,6 +21,11 @@ class Severity(Enum):
     INFO = "INFO"
 
 
+def severity_value(severity: Any) -> str:
+    """Severity as an upper-case string; works across module copies of Severity."""
+    return str(getattr(severity, "value", severity)).upper()
+
+
 @dataclass
 class Issue:
     """
@@ -236,6 +241,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM901": {
         "message": "Internal validation error",
         "fix_hint": "An unexpected error occurred during validation",
+    },
+    "PRISM902": {
+        "message": "BIDS validator requested but not available",
+        "fix_hint": "Install Deno or the legacy 'bids-validator' CLI, or run without --bids",
     },
     "PRISM999": {
         "message": "General validation error",
@@ -626,9 +635,12 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     by_code: Dict[str, int] = {}
 
     for issue in issues:
-        if issue.severity == Severity.ERROR:
+        # Compare by value: `issues` and `src.issues` are two module copies with
+        # distinct Severity enums, so `==` on members silently counts all as info.
+        severity = severity_value(issue.severity)
+        if severity == "ERROR":
             errors += 1
-        elif issue.severity == Severity.WARNING:
+        elif severity == "WARNING":
             warnings += 1
         else:
             info_count += 1

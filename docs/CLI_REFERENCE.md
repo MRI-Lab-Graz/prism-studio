@@ -62,6 +62,24 @@ prism-validator /data/study-01 --fix                      # apply auto-fix
 
 ```
 
+### Machine-readable output and exit codes
+
+Two JSON shapes, both with a boolean `valid` that is `true` if and only if there
+is no ERROR-severity issue (warnings and info do not invalidate):
+
+- `--json` / `--json-pretty`: `dataset`, `schema_version`, `valid`, `summary`, `issues`, `statistics`
+- `--format json`: `valid`, `summary`, `issues`
+
+In these modes stdout carries only the JSON (progress goes to stderr).
+
+| Exit code | Meaning |
+|---|---|
+| `0` | Validated, no errors |
+| `1` | Validation errors (also: dataset path not found) |
+| `2` | The validator could not run (crash or bad arguments); stdout has no JSON |
+
+`1` also covers a broken installation or an unexpected error before validation starts; a caller treating only `0` as success fails closed.
+
 Environment enrichment (weather, air quality, pollen) is `prism_tools.py environment convert`.
 
 ## `prism_tools.py` — conversions, libraries, and helpers

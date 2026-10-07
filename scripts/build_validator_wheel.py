@@ -8,6 +8,8 @@ Version and dependencies come from src/__init__.py and requirements-validator.tx
 
 Refresh the manifest after changing what the validator imports: run
 app/prism.py on a dataset and list the loaded app/ and src/ files.
+tests/test_validator_manifest_closure.py enforces that every local import of a
+manifest file (lazy, function-level imports included) is itself listed.
 """
 
 import argparse

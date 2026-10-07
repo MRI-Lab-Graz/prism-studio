@@ -565,13 +565,24 @@ def run_bids_validator(
             except json.JSONDecodeError:
                 if verbose:
                     print("Warning: Could not parse BIDS validator JSON output.")
-                issues.append(
-                    (
-                        "INFO",
-                        "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
-                        root_dir,
+                if process.returncode != 0:
+                    # Fail closed: the validator failed and its result is unreadable.
+                    issues.append(
+                        (
+                            "ERROR",
+                            "PRISM902 BIDS validator requested but its output could not "
+                            f"be parsed (exit code {process.returncode})",
+                            root_dir,
+                        )
                     )
-                )
+                else:
+                    issues.append(
+                        (
+                            "INFO",
+                            "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
+                            root_dir,
+                        )
+                    )
 
         if process.returncode != 0 and not issues:
             issues.append(
@@ -579,18 +590,17 @@ def run_bids_validator(
             )
 
     except (subprocess.CalledProcessError, FileNotFoundError):
-        if deno_failure_message:
-            issues.append(
-                (
-                    "WARNING",
-                    f"BIDS Validator (Deno) failed: {deno_failure_message}",
-                    root_dir,
-                )
-            )
+        # Fail closed: BIDS validation was requested but no validator could run.
+        detail = (
+            f" (Deno validator failed: {deno_failure_message})"
+            if deno_failure_message
+            else ""
+        )
         issues.append(
             (
-                "WARNING",
-                "bids-validator not found or failed to run. Is it installed?",
+                "ERROR",
+                "PRISM902 BIDS validator requested but not available: install Deno "
+                "or the legacy 'bids-validator' CLI" + detail,
                 root_dir,
             )
         )

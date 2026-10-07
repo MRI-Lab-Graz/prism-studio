@@ -18,9 +18,9 @@ except ImportError:
     from src.runner import validate_dataset, validate_subject_only
 
 try:
-    from src.issues import tuple_to_issue, issues_to_dict, summarize_issues
+    from src.issues import tuple_to_issue, issues_to_dict, summarize_issues, severity_value
 except ImportError:
-    from issues import tuple_to_issue, issues_to_dict, summarize_issues
+    from issues import tuple_to_issue, issues_to_dict, summarize_issues, severity_value
 
 
 def _issue_is_error(issue: Any) -> bool:
@@ -32,8 +32,7 @@ def _issue_is_error(issue: Any) -> bool:
     if severity is None:
         return False
 
-    severity_value = getattr(severity, "value", severity)
-    return str(severity_value).upper() == "ERROR"
+    return severity_value(severity) == "ERROR"
 
 
 def determine_exit_code(issues: Iterable[Any]) -> int:

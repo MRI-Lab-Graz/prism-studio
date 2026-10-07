@@ -2,6 +2,7 @@ app/prism.py
 app/src/__init__.py
 app/src/bids_integration.py
 app/src/bids_validator.py
+app/src/citation_cff.py
 app/src/config.py
 app/src/constants.py
 app/src/converters/survey_core.py
@@ -14,6 +15,7 @@ app/src/derivatives/participants_mapping.py
 app/src/fixer.py
 app/src/issues.py
 app/src/plugins.py
+app/src/procedure_validator.py
 app/src/reporting.py
 app/src/runner.py
 app/src/schema_manager.py
