@@ -140,3 +140,40 @@ def test_read_lss_xml_unpacks_lsa_and_rejects_garbage():
         read_lss_xml(XML, "x.txt")
     with pytest.raises(ValueError, match="Invalid LimeSurvey XML"):
         list_limesurvey_questionnaires(b"<not xml")
+
+
+def test_prism_template_survives_limesurvey_round_trip(tmp_path):
+    import json
+
+    from src.limesurvey_exporter import generate_lss
+
+    original = {
+        "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv",
+                      "SoftwarePlatform": "LimeSurvey", "Language": "de",
+                      "Respondent": "self", "AdministrationMethod": "online"},
+        "Study": {"TaskName": "rts", "OriginalName": "Round Trip Scale", "ShortName": "RTS",
+                  "Citation": "Doe 2020", "Authors": ["Doe J"], "LicenseID": "CC-BY-4.0",
+                  "Category": "other", "Description": "A test scale",
+                  "Instructions": "Bitte antworten Sie."},
+        "RTS01": {"Description": "erstes Item", "Levels": {"1": "nie", "2": "oft"}},
+        "RTS02": {"Description": "zweites Item", "Levels": {"1": "nie", "2": "oft"}},
+    }
+    source = tmp_path / "survey-rts.json"
+    source.write_text(json.dumps(original), encoding="utf-8")
+    lss = tmp_path / "rts.lss"
+    generate_lss([str(source)], output_path=str(lss), language="de")
+    xml = lss.read_bytes()
+
+    [found] = list_limesurvey_questionnaires(xml)
+    template = limesurvey_questionnaire_template(xml, found["key"])
+
+    assert [k for k in template if k.startswith("RTS")] == ["RTS01", "RTS02"]
+    assert not [k for k in template if k.upper().startswith("PRISMMETA")]
+    assert template["RTS01"]["Levels"] == {"1": {"de": "nie"}, "2": {"de": "oft"}}
+    study = template["Study"]
+    assert study["OriginalName"] == "Round Trip Scale"
+    assert study["ShortName"] == "RTS"
+    assert study["Citation"] == "Doe 2020"
+    assert study["Authors"] == ["Doe J"]
+    assert study["Description"] == "A test scale"
+    assert study["Instructions"] == {"de": "Bitte antworten Sie."}

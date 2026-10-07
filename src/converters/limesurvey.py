@@ -1085,7 +1085,30 @@ def _split_questionnaires(parsed, split):
 def _apply_prismmeta(template, html):
     """Restore what the exporter stored in a group's hidden PRISMMETA question.
     Returns the names of the restored fields."""
-    return []
+    if not html:
+        return []
+    from src.converters.survey_templates import _extract_prismmeta, parse_prismmeta_codemap
+
+    fields = _extract_prismmeta({"PRISMMETA": {"Attributes": {"equation": html}}})
+    study = template["Study"]
+    restored = []
+    for field, target in (("name", "OriginalName"), ("abbrev", "ShortName"),
+                          ("doi", "DOI"), ("citation", "Citation"), ("license", "License")):
+        if fields.get(field):
+            study[target] = fields[field]
+            restored.append(target)
+    if fields.get("authors"):
+        # ponytail: the exporter joins authors with ", ", which also appears inside
+        # "Doe, J." names; kept as one entry rather than guessing the split.
+        study["Authors"] = [fields["authors"]]
+        restored.append("Authors")
+    codemap = parse_prismmeta_codemap(fields)
+    if any(code in template for code in codemap):
+        renamed = {codemap.get(k, k): v for k, v in template.items()}
+        template.clear()
+        template.update(renamed)
+        restored.append("CodeMap")
+    return restored
 
 
 def _questionnaire_template(parsed, part):
