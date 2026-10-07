@@ -579,18 +579,17 @@ def run_bids_validator(
             )
 
     except (subprocess.CalledProcessError, FileNotFoundError):
-        if deno_failure_message:
-            issues.append(
-                (
-                    "WARNING",
-                    f"BIDS Validator (Deno) failed: {deno_failure_message}",
-                    root_dir,
-                )
-            )
+        # Fail closed: BIDS validation was requested but no validator could run.
+        detail = (
+            f" (Deno validator failed: {deno_failure_message})"
+            if deno_failure_message
+            else ""
+        )
         issues.append(
             (
-                "WARNING",
-                "bids-validator not found or failed to run. Is it installed?",
+                "ERROR",
+                "PRISM902 BIDS validator requested but not available: install Deno "
+                "or the legacy 'bids-validator' CLI" + detail,
                 root_dir,
             )
         )

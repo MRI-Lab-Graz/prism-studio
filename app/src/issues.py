@@ -237,6 +237,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Internal validation error",
         "fix_hint": "An unexpected error occurred during validation",
     },
+    "PRISM902": {
+        "message": "BIDS validator requested but not available",
+        "fix_hint": "Install Deno or the legacy 'bids-validator' CLI, or run without --bids",
+    },
     "PRISM999": {
         "message": "General validation error",
         "fix_hint": "Check the error message for details",
