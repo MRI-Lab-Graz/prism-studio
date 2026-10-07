@@ -346,6 +346,13 @@ def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales
     if rows is None:
         return
 
+    # LS 6.x: answer text lives in <answer_l10ns> (one row per language), keyed by aid.
+    answer_l10ns = {}
+    for l10n in root.findall("answer_l10ns/rows/row"):
+        answer_l10ns.setdefault(get_text(l10n, "aid"), []).append(
+            (get_text(l10n, "language"), get_text(l10n, "answer"))
+        )
+
     for row in rows.findall("row"):
         qid = get_text(row, "qid")
         code = get_text(row, "code")
@@ -355,56 +362,61 @@ def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales
         if qid not in questions_map:
             continue
 
-        if track_scales:
-            scale_id = get_text(row, "scale_id") or "0"
+        pairs = [(lang, answer)]
+        if not answer and get_text(row, "aid") in answer_l10ns:
+            pairs = answer_l10ns[get_text(row, "aid")]
 
-            # Handle "None" text from LimeSurvey (unlabeled scale points)
-            if answer and answer.lower() == "none":
-                answer = ""
+        for lang, answer in pairs:
+            if track_scales:
+                scale_id = get_text(row, "scale_id") or "0"
 
-            # Support multiple scales (for dual-scale arrays)
-            if "levels" not in questions_map[qid]:
-                questions_map[qid]["levels"] = {}
-            if "levels_by_scale" not in questions_map[qid]:
-                questions_map[qid]["levels_by_scale"] = {}
-            if scale_id not in questions_map[qid]["levels_by_scale"]:
-                questions_map[qid]["levels_by_scale"][scale_id] = {}
+                # Handle "None" text from LimeSurvey (unlabeled scale points)
+                if answer and answer.lower() == "none":
+                    answer = ""
 
-            # Store as multilingual dict if language is present
-            if lang and lang.strip():
-                if code not in questions_map[qid]["levels"]:
-                    questions_map[qid]["levels"][code] = {}
-                if isinstance(questions_map[qid]["levels"][code], dict):
-                    questions_map[qid]["levels"][code][lang] = answer
+                # Support multiple scales (for dual-scale arrays)
+                if "levels" not in questions_map[qid]:
+                    questions_map[qid]["levels"] = {}
+                if "levels_by_scale" not in questions_map[qid]:
+                    questions_map[qid]["levels_by_scale"] = {}
+                if scale_id not in questions_map[qid]["levels_by_scale"]:
+                    questions_map[qid]["levels_by_scale"][scale_id] = {}
+
+                # Store as multilingual dict if language is present
+                if lang and lang.strip():
+                    if code not in questions_map[qid]["levels"]:
+                        questions_map[qid]["levels"][code] = {}
+                    if isinstance(questions_map[qid]["levels"][code], dict):
+                        questions_map[qid]["levels"][code][lang] = answer
+                    else:
+                        questions_map[qid]["levels"][code] = {lang: answer}
+
+                    if code not in questions_map[qid]["levels_by_scale"][scale_id]:
+                        questions_map[qid]["levels_by_scale"][scale_id][code] = {}
+                    if isinstance(
+                        questions_map[qid]["levels_by_scale"][scale_id][code], dict
+                    ):
+                        questions_map[qid]["levels_by_scale"][scale_id][code][
+                            lang
+                        ] = answer
+                    else:
+                        questions_map[qid]["levels_by_scale"][scale_id][code] = {
+                            lang: answer
+                        }
                 else:
-                    questions_map[qid]["levels"][code] = {lang: answer}
-
-                if code not in questions_map[qid]["levels_by_scale"][scale_id]:
-                    questions_map[qid]["levels_by_scale"][scale_id][code] = {}
-                if isinstance(
-                    questions_map[qid]["levels_by_scale"][scale_id][code], dict
-                ):
-                    questions_map[qid]["levels_by_scale"][scale_id][code][
-                        lang
-                    ] = answer
-                else:
-                    questions_map[qid]["levels_by_scale"][scale_id][code] = {
-                        lang: answer
-                    }
+                    questions_map[qid]["levels"][code] = answer
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = answer
             else:
-                questions_map[qid]["levels"][code] = answer
-                questions_map[qid]["levels_by_scale"][scale_id][code] = answer
-        else:
-            # Simple mode: just map code -> answer text (possibly multilingual)
-            if lang and lang.strip():
-                if code not in questions_map[qid]["levels"]:
-                    questions_map[qid]["levels"][code] = {}
-                if isinstance(questions_map[qid]["levels"][code], dict):
-                    questions_map[qid]["levels"][code][lang] = answer
+                # Simple mode: just map code -> answer text (possibly multilingual)
+                if lang and lang.strip():
+                    if code not in questions_map[qid]["levels"]:
+                        questions_map[qid]["levels"][code] = {}
+                    if isinstance(questions_map[qid]["levels"][code], dict):
+                        questions_map[qid]["levels"][code][lang] = answer
+                    else:
+                        questions_map[qid]["levels"][code] = {lang: answer}
                 else:
-                    questions_map[qid]["levels"][code] = {lang: answer}
-            else:
-                questions_map[qid]["levels"][code] = answer
+                    questions_map[qid]["levels"][code] = answer
 
 
 def _detect_languages(root, get_text):
