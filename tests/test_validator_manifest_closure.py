@@ -10,10 +10,14 @@ ALLOWLIST = {
     "app/src/project_manager.py": "Studio-only; runner._validate_citation_cff imports it in try/except "
     "(known gap: wheel emits a bogus PRISM303 warning for datasets with CITATION.cff)",
     "src/anonymizer.py": "export path, never reached by the validator",
-    "src/participants_converter.py": "import is guarded by try/except in subject_id_matching",
+    "src/participants_converter.py": "needs pandas; the import in subject_id_matching is guarded by try/except, and it is also "
+    "loaded by importlib.import_module STRING imports (runner._check_participants_subject_alignment, "
+    "participants_mapping) that this AST test cannot see, so in the wheel the strict --bids "
+    "participants alignment check and auto-applied mapping silently do nothing (known gap)",
 }
 
 
+# Note: __init__.py files are not checked (packages are staged via the manifest's own entries).
 def _candidates(mod, level, importer):
     parts = mod.split(".") if mod else []
     roots = []

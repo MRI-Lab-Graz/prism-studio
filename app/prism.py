@@ -6,7 +6,6 @@ A modular validation tool for BIDS-compatible research datasets built on the
 PRISM data-and-sidecar model.
 """
 
-import contextlib
 import os
 import sys
 import json
@@ -412,15 +411,22 @@ Examples:
 
         sys.exit(0)
 
+    json_output = args.json or args.json_pretty
+    format_output_mode = args.format is not None
+    machine_output = json_output or format_output_mode
+
+    # Machine output: everything but the final report goes to stderr (config
+    # warnings, progress, plugin output), keeping stdout JSON-only.
+    real_stdout = sys.stdout
+    if machine_output:
+        sys.stdout = sys.stderr
+
     # Load config file from dataset (if exists)
     config = load_config(args.dataset)
     config = merge_cli_args(config, args)
 
     # Check if config file was found
     config_path = find_config_file(args.dataset)
-    json_output = args.json or args.json_pretty
-    format_output_mode = args.format is not None
-    machine_output = json_output or format_output_mode
 
     if config_path and not machine_output:
         print(f"📄 Using config: {os.path.basename(config_path)}")
@@ -455,18 +461,16 @@ Examples:
     )
 
     try:
-        # Machine output: validation progress prints go to stderr, keeping stdout JSON-only.
-        with contextlib.redirect_stdout(sys.stderr) if machine_output else contextlib.nullcontext():
-            issues, stats = validate_dataset(
-                args.dataset,
-                verbose=args.verbose and not machine_output,
-                schema_version=schema_version,
-                run_bids=run_bids,
-                run_prism=run_prism,
-                library_path=library_path,
-                check_nifti_headers=args.check_nifti_headers,
-                progress_callback=make_cli_progress_reporter(machine_output),
-            )
+        issues, stats = validate_dataset(
+            args.dataset,
+            verbose=args.verbose and not machine_output,
+            schema_version=schema_version,
+            run_bids=run_bids,
+            run_prism=run_prism,
+            library_path=library_path,
+            check_nifti_headers=args.check_nifti_headers,
+            progress_callback=make_cli_progress_reporter(machine_output),
+        )
 
         # Convert legacy tuples to Issue objects for structured output
         structured_issues = normalize_issues(issues)
@@ -498,7 +502,7 @@ Examples:
                 if not machine_output:
                     print(f"📄 Output written to: {args.output}")
             else:
-                print(content)
+                print(content, file=real_stdout)
 
         # Format-specific output modes
         if args.format:
@@ -537,6 +541,8 @@ Examples:
 
             traceback.print_exc()
         sys.exit(2)
+    finally:
+        sys.stdout = real_stdout
 
 
 if __name__ == "__main__":

@@ -262,7 +262,7 @@ def _apply_validation_mode_issue_filter(
     bids_only = run_bids and not run_prism
 
     def _code_allowed(code: str) -> bool:
-        is_bids = str(code).startswith("BIDS")
+        is_bids = str(code).startswith("BIDS") or str(code) == "PRISM902"
         return is_bids if bids_only else not is_bids
 
     filtered_error_groups = {

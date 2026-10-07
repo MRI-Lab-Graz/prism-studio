@@ -37,3 +37,13 @@ def test_deno_without_output_and_no_legacy_cli_is_an_error(monkeypatch, tmp_path
     issues = bids_validator.run_bids_validator(str(tmp_path))
     _assert_fails_closed(issues)
     assert any("boom" in i[1] for i in issues)  # Deno failure detail kept
+
+
+def test_legacy_unparseable_output_with_nonzero_exit_is_an_error(monkeypatch, tmp_path):
+    def fake_run(cmd, **kw):
+        if cmd[0] == "deno":
+            return SimpleNamespace(stdout="", stderr="boom", returncode=1)
+        return SimpleNamespace(stdout="not json", stderr="bad", returncode=1)
+
+    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+    _assert_fails_closed(bids_validator.run_bids_validator(str(tmp_path)))

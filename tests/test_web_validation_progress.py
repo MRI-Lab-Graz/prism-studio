@@ -690,3 +690,17 @@ def test_build_validation_results_payload_filters_to_prism_only(monkeypatch, tmp
     assert payload["summary"]["prism_errors"] == 3
     assert payload["summary"]["bids_warnings"] == 0
     assert payload["summary"]["prism_warnings"] == 4
+
+
+def test_bids_only_filter_keeps_prism902_and_drops_prism_codes():
+    results = {
+        "errors": [{"code": "PRISM902"}, {"code": "PRISM301"}],
+        "warnings": [],
+        "error_groups": {"PRISM902": {}, "PRISM301": {}},
+        "warning_groups": {},
+    }
+    out = validation_blueprint_module._apply_validation_mode_issue_filter(
+        results, run_bids=True, run_prism=False
+    )
+    assert [e["code"] for e in out["errors"]] == ["PRISM902"]
+    assert list(out["error_groups"]) == ["PRISM902"]

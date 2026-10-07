@@ -78,6 +78,8 @@ In these modes stdout carries only the JSON (progress goes to stderr).
 | `1` | Validation errors (also: dataset path not found) |
 | `2` | The validator could not run (crash or bad arguments); stdout has no JSON |
 
+`1` also covers a broken installation or an unexpected error before validation starts; a caller treating only `0` as success fails closed.
+
 Environment enrichment (weather, air quality, pollen) is `prism_tools.py environment convert`.
 
 ## `prism_tools.py` — conversions, libraries, and helpers

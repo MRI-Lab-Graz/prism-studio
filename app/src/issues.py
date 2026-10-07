@@ -21,6 +21,11 @@ class Severity(Enum):
     INFO = "INFO"
 
 
+def severity_value(severity: Any) -> str:
+    """Severity as an upper-case string; works across module copies of Severity."""
+    return str(getattr(severity, "value", severity)).upper()
+
+
 @dataclass
 class Issue:
     """
@@ -632,10 +637,10 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     for issue in issues:
         # Compare by value: `issues` and `src.issues` are two module copies with
         # distinct Severity enums, so `==` on members silently counts all as info.
-        severity = getattr(issue.severity, "value", issue.severity)
-        if severity == Severity.ERROR.value:
+        severity = severity_value(issue.severity)
+        if severity == "ERROR":
             errors += 1
-        elif severity == Severity.WARNING.value:
+        elif severity == "WARNING":
             warnings += 1
         else:
             info_count += 1

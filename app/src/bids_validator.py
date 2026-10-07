@@ -565,13 +565,24 @@ def run_bids_validator(
             except json.JSONDecodeError:
                 if verbose:
                     print("Warning: Could not parse BIDS validator JSON output.")
-                issues.append(
-                    (
-                        "INFO",
-                        "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
-                        root_dir,
+                if process.returncode != 0:
+                    # Fail closed: the validator failed and its result is unreadable.
+                    issues.append(
+                        (
+                            "ERROR",
+                            "PRISM902 BIDS validator requested but its output could not "
+                            f"be parsed (exit code {process.returncode})",
+                            root_dir,
+                        )
                     )
-                )
+                else:
+                    issues.append(
+                        (
+                            "INFO",
+                            "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
+                            root_dir,
+                        )
+                    )
 
         if process.returncode != 0 and not issues:
             issues.append(
