@@ -1,5 +1,5 @@
 name: 'PRISM Validator'
-description: 'Validate a PRISM/BIDS dataset with the ghcr.io/mri-lab-graz/prism-validator Docker image.'
+description: 'Validate a PRISM/BIDS dataset with the ghcr.io/mri-lab-graz/prism-validator Docker image. The BIDS check runs by default (from 1.20.0), so results can differ from earlier versions.'
 author: 'MRI-Lab-Graz'
 branding:
   icon: 'check-circle'

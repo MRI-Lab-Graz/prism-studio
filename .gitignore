@@ -136,6 +136,4 @@ examples/hostile_demo/
 # packages) - not part of the codebase, see superpowers:subagent-driven-development
 .superpowers/
 
-# Deno lockfile regenerated locally by bids-validator tooling (app/src/bids_validator.py)
-deno.lock
 uv.lock

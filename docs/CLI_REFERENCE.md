@@ -40,10 +40,11 @@ prism-validator /path/to/dataset
 | `--schema-version VERSION` | Choose schema version (e.g. `stable`, `0.1`). Default `stable` |
 | `--schema-info MODALITY` | Show schema details for a modality (minimal stub) |
 | `--list-versions` | List schema versions available in `app/schemas/` |
-| `--bids` | Run the standard BIDS validator in addition to PRISM validation |
+| `--bids` | Run the BIDS validator. This is the default; the flag only overrides `"runBids": false` in `.prismrc.json` |
+| `--no-bids` | Skip the BIDS validator and run only the PRISM checks (cannot be combined with `--bids`) |
 | `--bids-warnings` | Include BIDS validator warnings (default hidden) |
 | `--library PATH` | Override the template library path for schema/template lookups |
-| `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set) |
+| `--no-prism` | Skip PRISM-specific checks (only the BIDS check runs). Cannot be combined with `--no-bids` or `"runBids": false`: nothing would be left to run (exit 2) |
 | `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory ([details](TEMPLATES.md)) |
 | `--json` / `--json-pretty` | Output a JSON report to stdout |
 | `--format {json,sarif,junit,markdown,csv}` | Explicit output format |
@@ -53,8 +54,8 @@ prism-validator /path/to/dataset
 | `--version` | Print PRISM version and exit |
 
 ```bash
-prism-validator /data/study-01                          # validate
-prism-validator /data/study-01 --bids                    # + BIDS
+prism-validator /data/study-01                          # PRISM + BIDS (default)
+prism-validator /data/study-01 --no-bids                 # PRISM checks only
 prism-validator /data/study-01 --format sarif -o prism.sarif   # SARIF for GitHub Code Scanning
 prism-validator --validate-templates /code/library/survey      # validate templates
 prism-validator /data/study-01 --fix --dry-run            # preview auto-fix
@@ -69,6 +70,10 @@ is no ERROR-severity issue (warnings and info do not invalidate):
 
 - `--json` / `--json-pretty`: `dataset`, `schema_version`, `valid`, `summary`, `issues`, `statistics`
 - `--format json`: `valid`, `summary`, `issues`
+
+Both JSON outputs add a `bids_validator` object (`engine`, `version`, `spec`) naming the BIDS engine that ran; the key is absent when BIDS did not run (`--no-bids`).
+
+`PRISM902` (BIDS validator not available) is reported when the BIDS engine `bids-validator-deno` cannot be found or fails to start, for example on a platform without a Deno wheel. Reinstall `prism-validator` or run with `--no-bids`.
 
 In these modes stdout carries only the JSON (progress goes to stderr).
 

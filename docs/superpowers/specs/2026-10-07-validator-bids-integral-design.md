@@ -1,5 +1,7 @@
 # prism-validator: the BIDS check is part of the package and on by default
 
+Status: approved, implemented on branch `validator-bids-default`
+
 Date: 2026-10-07 · Branch: `validator-bids-default` · Release: 1.20.0 (proposed)
 
 ## Problem

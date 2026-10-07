@@ -244,7 +244,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     },
     "PRISM902": {
         "message": "BIDS validator requested but not available",
-        "fix_hint": "Install Deno or the legacy 'bids-validator' CLI, or run without --bids",
+        "fix_hint": "Reinstall prism-validator (it includes the BIDS engine bids-validator-deno) or run with --no-bids",
     },
     "PRISM999": {
         "message": "General validation error",

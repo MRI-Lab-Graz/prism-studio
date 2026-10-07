@@ -198,7 +198,7 @@ def _core_validation():
 def validate_for_publish(project_root) -> list[str]:
     """Error messages from a full PRISM validation; empty list means valid.
 
-    ponytail: PRISM checks only, no BIDS validator (needs deno on every share).
+    ponytail: PRISM checks only (run_bids=False stays explicit; the share check does not run the BIDS engine).
     """
     core = _core_validation()
     issues, _stats = core.validate_dataset(str(project_root), run_bids=False, run_prism=True)

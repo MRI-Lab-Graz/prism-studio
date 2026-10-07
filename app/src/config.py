@@ -10,7 +10,7 @@ Configuration Options:
     schemaVersion: Schema version to use (e.g., "stable", "v0.1")
     ignorePaths: Glob patterns for paths to ignore during validation
     strictMode: Enable strict validation (treat warnings as errors)
-    runBids: Automatically run BIDS validator
+    runBids: Run the BIDS validator (default true; false skips it, same as --no-bids)
     customModalities: Additional modality patterns to recognize
     templateLibraryPath: Path to external template library (overrides global default)
     neurobagelParticipantFilter: Optional project-level NeuroBagel participant variable filter overrides
@@ -20,7 +20,7 @@ Example .prismrc.json:
     "schemaVersion": "stable",
     "ignorePaths": ["recipes/**", "derivatives/**", "sourcedata/**"],
     "strictMode": false,
-    "runBids": false,
+    "runBids": true,
     "customModalities": {},
     file_descriptor, temporary_path = tempfile.mkstemp(
         prefix=f".{APP_SETTINGS_FILENAME}.", suffix=".tmp", dir=settings_dir
@@ -78,7 +78,7 @@ class PrismConfig:
 
     # Validation behavior
     strict_mode: bool = False  # Treat warnings as errors
-    run_bids: bool = True  # The BIDS check is part of every run; --no-bids / "runBids": false skips it
+    run_bids: bool = True  # on by default; --no-bids skips
     show_bids_warnings: bool = False  # Show BIDS validator warnings
 
     # Custom modality patterns (modality_name -> regex pattern)

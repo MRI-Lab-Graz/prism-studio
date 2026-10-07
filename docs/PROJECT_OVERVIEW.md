@@ -53,7 +53,7 @@ Most users can stay in Studio. The following options support specific advanced
 or automated workflows:
 
 - **Validator CLI** is useful for reproducible checks and continuous integration:
-  `prism-validator /path/to/dataset --bids`.
+  `prism-validator /path/to/dataset` (PRISM + BIDS checks; `--no-bids` skips BIDS).
 - **Tools CLI** supports import and transformation in scripted workflows:
   `python prism_tools.py --help`. See [CLI Reference](CLI_REFERENCE.md).
 - **DataLad** is optional for large datasets that need provenance and large-file

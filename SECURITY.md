@@ -13,3 +13,7 @@ Do not report suspected vulnerabilities in public issues or discussions. Email
 the issue, affected PRISM version, reproducible steps, and its potential
 impact. The maintainer will acknowledge the report and coordinate disclosure
 and remediation with the reporter.
+
+## BIDS check
+
+The BIDS check starts the bundled Deno through the `bids-validator-deno` launcher with read, env, net and write access and permission to run `git` only; network access is allowed, no other program may be started.

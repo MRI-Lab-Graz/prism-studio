@@ -140,6 +140,8 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 
 **Updating**: `git pull` then re-run `./install.sh` (or `install.cmd` on Windows).
 
+`pip install prism-validator` includes the BIDS engine (bids-validator-deno and the Deno runtime, about 80 MB installed). Platforms without a Deno wheel (Windows on ARM, Alpine/musl, glibc older than 2.27) install but need `--no-bids`.
+
 ## Troubleshooting
 
 - **App starts but no browser page appears** — open `http://localhost:5001` manually
