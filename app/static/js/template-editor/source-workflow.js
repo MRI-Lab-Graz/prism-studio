@@ -187,7 +187,7 @@ export async function loadNewTemplate(context) {
   context.renderJsonDiff();
 }
 
-export async function validateCurrent(context, { initial = false } = {}) {
+export async function validateCurrent(context, { initial = false, imported = false } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -251,20 +251,25 @@ export async function validateCurrent(context, { initial = false } = {}) {
   }
   context.btnSave.disabled = true;
   const errs = (data.errors || []).slice(0, 50);
+  // ponytail: message match on jsonschema's wording; move to a backend error code if it ever changes
+  const onlyMissing = initial && errs.length > 0 && errs.every((error) => /is a required property$|is required when /.test(error.message));
   const list = errs
     .map((error) => {
       const path = error.path || '(root)';
       const focusPath = context.deriveFocusPath(error.path, error.message);
       const link = `<a href="#" class="error-link" data-path="${context.escapeHtml(focusPath)}"><code>${context.escapeHtml(path)}</code></a>`;
-      return `<li>${link}: ${context.escapeHtml(error.message)}</li>`;
+      // A missing field reads better as its name than as "'X' is a required property".
+      const message = onlyMissing ? error.message.replace(/^'(.+)' is a required property$/, '$1') : error.message;
+      return `<li>${link}: ${context.escapeHtml(message)}</li>`;
     })
     .join('');
   const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
-  // ponytail: message match on jsonschema's wording; move to a backend error code if it ever changes
-  const onlyMissing = initial && errs.length > 0 && errs.every((error) => /is a required property$/.test(error.message));
+  const missingHint = imported
+    ? 'ℹ️ <strong>Not found in your file</strong> &mdash; please fill these in, then click Validate.'
+    : 'ℹ️ Please fill in these details first, then click Validate.';
   context.showAlert(
     onlyMissing ? 'warning' : 'danger',
-    `${onlyMissing ? 'ℹ️ Please fill in these details first, then click Validate.' : '❌ Validation failed.'}<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml
+    `${onlyMissing ? missingHint : '❌ Validation failed.'}<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml
   );
   context.alertAreaEl.querySelectorAll('.error-link').forEach((linkEl) => {
     linkEl.addEventListener('click', (event) => {
@@ -399,10 +404,10 @@ function applyImportedTemplate(context, data, file) {
   return `<strong>Imported ${context.escapeHtml(file.name)}</strong> (${context.escapeHtml(source)})<br>${context.escapeHtml(String(itemCount))} item(s) extracted.`;
 }
 
-async function finishImport(context, importSummaryMessage) {
+export async function finishImport(context, importSummaryMessage) {
   context.showAlert('success', importSummaryMessage);
   try {
-    await validateCurrent(context);
+    await validateCurrent(context, { initial: true, imported: true });
   } catch (error) {
     context.btnDownload.disabled = false;
     context.btnSave.disabled = true;
