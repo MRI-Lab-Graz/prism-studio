@@ -37,25 +37,34 @@ def test_both_json_modes_agree_on_valid_and_exit_code(tmp_path, make_valid):
     assert a.returncode == b.returncode == (0 if make_valid else 1)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="needs a POSIX shell stub")
+@pytest.mark.parametrize("engine", ["broken", "missing"])
 @pytest.mark.parametrize("flags", [["--json"], ["--format", "json"]])
-def test_bids_machine_output_is_pure_json_and_fails_closed(tmp_path, flags):
+def test_bids_machine_output_is_pure_json_and_fails_closed(
+    tmp_path, monkeypatch, capsys, flags, engine
+):
+    if engine == "broken" and sys.platform == "win32":
+        pytest.skip("needs a POSIX shell stub")
+    app = str(PRISM.parent)
+    for p in (os.path.join(app, "src"), app):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+    import bids_validator
+    import prism
+
     ds = tmp_path / "ds"
     ds.mkdir()
-    bindir = tmp_path / "bin"
-    bindir.mkdir()
-    deno = bindir / "deno"
-    deno.write_text("#!/bin/sh\nexit 1\n")
-    deno.chmod(0o755)
-    env = {**_ENV, "PATH": str(bindir)}
-    proc = subprocess.run(
-        [sys.executable, str(PRISM), str(ds), "--bids", *flags],
-        capture_output=True, text=True, env=env,
-    )
-    out = json.loads(proc.stdout)  # stdout must be JSON only
+    script = tmp_path / "bids-validator-deno"
+    script.write_text("#!/bin/sh\necho engine exploded >&2\nexit 1\n")
+    script.chmod(0o755)
+    found = str(script) if engine == "broken" else None
+    monkeypatch.setattr(bids_validator, "find_bids_engine", lambda: found)
+    monkeypatch.setattr(sys, "argv", ["prism", str(ds), "--bids", *flags])
+    with pytest.raises(SystemExit) as exc:
+        prism.main()
+    out = json.loads(capsys.readouterr().out)  # stdout must be JSON only
     assert out["valid"] is False
     assert any(i["code"] == "PRISM902" for i in out["issues"])
-    assert proc.returncode == 1
+    assert exc.value.code == 1
 
 
 @pytest.mark.parametrize("flags", [["--json"], ["--format", "json"]])
