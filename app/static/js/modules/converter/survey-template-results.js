@@ -98,10 +98,8 @@ export function createSurveyTemplateResultsController({
         }
     }
 
-    function setupTemplateSaveToProject(data, mode) {
-        const saveBtn = mode === 'groups'
-            ? document.getElementById('templateSaveToProjectBtn')
-            : document.getElementById('templateSaveQuestionsToProjectBtn');
+    function setupTemplateSaveToProject(data) {
+        const saveBtn = document.getElementById('templateSaveToProjectBtn');
 
         if (!saveBtn) return;
 
@@ -109,38 +107,27 @@ export function createSurveyTemplateResultsController({
             const templates = [];
             const savedKeys = new Set();  // Deduplicate runs of same template
 
-            if (mode === 'groups') {
-                for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    const m = info.template_match;
+            for (const [name, info] of Object.entries(data.questionnaires || {})) {
+                const m = info.template_match;
 
-                    // Skip participants templates (handled separately)
-                    if (m && m.is_participants) continue;
+                // Skip participants templates (handled separately)
+                if (m && m.is_participants) continue;
 
-                    // Deduplicate: if multiple groups matched the same library
-                    // template (e.g. run1/run2/run3 of BRS), save only once
-                    // using the library filename
-                    if (m && m.template_key) {
-                        if (savedKeys.has(m.template_key)) continue;
-                        savedKeys.add(m.template_key);
-                        templates.push({
-                            filename: m.template_path || info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    } else {
-                        templates.push({
-                            filename: info.suggested_filename || `survey-${name}.json`,
-                            content: info.prism_json
-                        });
-                    }
-                }
-            } else {
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        templates.push({
-                            filename: qData.suggested_filename || `survey-${code}.json`,
-                            content: qData.prism_json
-                        });
-                    }
+                // Deduplicate: if multiple groups matched the same library
+                // template (e.g. run1/run2/run3 of BRS), save only once
+                // using the library filename
+                if (m && m.template_key) {
+                    if (savedKeys.has(m.template_key)) continue;
+                    savedKeys.add(m.template_key);
+                    templates.push({
+                        filename: m.template_path || info.suggested_filename || `survey-${name}.json`,
+                        content: info.prism_json
+                    });
+                } else {
+                    templates.push({
+                        filename: info.suggested_filename || `survey-${name}.json`,
+                        content: info.prism_json
+                    });
                 }
             }
 
@@ -366,117 +353,11 @@ export function createSurveyTemplateResultsController({
         }
 
         // Save to project button
-        setupTemplateSaveToProject(data, 'groups');
-    }
-
-    function displayTemplateQuestions(data) {
-        const container = document.getElementById('templateResultQuestions');
-        if (!container) return;
-
-        container.classList.remove('d-none');
-        document.getElementById('templateIndividualCount').textContent = `${data.question_count} templates`;
-
-        const listEl = document.getElementById('templateQuestionsList');
-        if (listEl) {
-            listEl.innerHTML = '';
-            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'col-12 mb-2';
-                const heading = document.createElement('h6');
-                heading.className = 'text-muted';
-                heading.textContent = groupName;
-                groupDiv.appendChild(heading);
-                listEl.appendChild(groupDiv);
-
-                for (const q of groupInfo.questions || []) {
-                    const qData = data.questions[q.code];
-                    if (!qData) continue;
-
-                    const card = document.createElement('div');
-                    card.className = 'col-md-3';
-
-                    const cardInner = document.createElement('div');
-                    cardInner.className = 'card h-100';
-                    const cardBody = document.createElement('div');
-                    cardBody.className = 'card-body py-2';
-                    const row = document.createElement('div');
-                    row.className = 'd-flex justify-content-between align-items-center';
-
-                    const textWrap = document.createElement('div');
-                    const strong = document.createElement('strong');
-                    strong.textContent = q.code || '';
-                    textWrap.appendChild(strong);
-                    const small = document.createElement('small');
-                    small.className = 'd-block text-muted';
-                    small.textContent = `${q.type || ''} (${String(q.item_count ?? '')} items)`;
-                    textWrap.appendChild(small);
-
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-sm btn-outline-success download-q-btn';
-                    button.dataset.code = q.code || '';
-                    const buttonIcon = document.createElement('i');
-                    buttonIcon.className = 'fas fa-download';
-                    button.appendChild(buttonIcon);
-
-                    row.appendChild(textWrap);
-                    row.appendChild(button);
-                    cardBody.appendChild(row);
-                    cardInner.appendChild(cardBody);
-                    card.appendChild(cardInner);
-                    listEl.appendChild(card);
-                }
-            }
-
-            // Add download handlers
-            listEl.querySelectorAll('.download-q-btn').forEach(btn => {
-                btn.onclick = () => {
-                    const code = btn.dataset.code;
-                    const qData = data.questions[code];
-                    if (qData && qData.prism_json) {
-                        const blob = new Blob([JSON.stringify(qData.prism_json, null, 2)], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = qData.suggested_filename || `survey-${code}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                    }
-                };
-            });
-        }
-
-        // Download all as ZIP
-        const downloadBtn = document.getElementById('templateDownloadQuestionsBtn');
-        if (downloadBtn) {
-            downloadBtn.onclick = async () => {
-                const JSZip = window.JSZip;
-                if (!JSZip) {
-                    alert('JSZip not loaded');
-                    return;
-                }
-                const zip = new JSZip();
-                for (const [code, qData] of Object.entries(data.questions || {})) {
-                    if (qData.prism_json) {
-                        zip.file(qData.suggested_filename || `survey-${code}.json`, JSON.stringify(qData.prism_json, null, 2));
-                    }
-                }
-                const blob = await zip.generateAsync({ type: 'blob' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'survey-question-templates.zip';
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-        }
-
-        // Save to project button
-        setupTemplateSaveToProject(data, 'questions');
+        setupTemplateSaveToProject(data);
     }
 
     return {
         displayTemplateSingle,
         displayTemplateGroups,
-        displayTemplateQuestions,
     };
 }

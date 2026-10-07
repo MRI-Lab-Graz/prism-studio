@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from src.converters.excel_to_survey import process_excel
-from src.converters.limesurvey import batch_convert_lsa, convert_lsa_to_prism
+from src.converters.limesurvey import batch_convert_lsa
 from src.converters.pavlovia import export_to_pavlovia
 from src.library_autotranslate import (
     TranslationError,
@@ -567,16 +567,57 @@ def cmd_survey_validate(args):
 
 
 def cmd_survey_import_limesurvey(args):
-    """Import LimeSurvey structure."""
-    input_path = str(Path(args.input).resolve())
-    output_path = str(Path(args.output).resolve())
-    print(f"Importing LimeSurvey structure from {input_path}...")
-    try:
-        convert_lsa_to_prism(input_path, output_path, task_name=args.task)
+    """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
+    Editor's 'Import Template Source' for .lss/.lsa."""
+    from src.converters.limesurvey import (
+        limesurvey_library_template,
+        limesurvey_questionnaire_template,
+        list_limesurvey_questionnaires,
+        read_lss_xml,
+    )
 
-        print("\nValidating imported files...")
-        check_uniqueness(output_path)
-    except Exception as e:
+    input_path = Path(args.input).resolve()
+    project_path = getattr(args, "project", None)
+    use_library = bool(getattr(args, "use_library", False))
+    try:
+        if args.output and not args.select:
+            raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
+        if use_library and not args.select:
+            raise ValueError("--use-library needs --select KEY|all")
+        xml = read_lss_xml(input_path.read_bytes(), input_path.name)
+        found = list_limesurvey_questionnaires(
+            xml, args.split, source_name=input_path.name, project_path=project_path, match_library=True
+        )
+        if args.list and args.select:
+            print("[PRISM] --list given: not writing")
+        if args.list or not args.select:
+            return
+        if not args.output:
+            raise ValueError("--output DIR is required with --select")
+        keys = [q["key"] for q in found] if args.select == ["all"] else args.select
+        out_dir = Path(args.output).resolve()
+        # Resolve every key first so a failure leaves nothing half written.
+        planned = []  # (target, template)
+        for key in keys:
+            if use_library:
+                template, match = limesurvey_library_template(xml, key, args.split, project_path)
+                name = match["template_file"]  # library templates have no Study.TaskName
+            else:
+                template = limesurvey_questionnaire_template(xml, key, args.split)
+                name = f"survey-{template['Study']['TaskName']}.json"
+            planned.append((out_dir / name, template))
+        targets = [target for target, _template in planned]
+        duplicates = sorted({str(t) for t in targets if targets.count(t) > 1})
+        if duplicates:
+            raise ValueError("several questionnaires would write the same file: " + ", ".join(duplicates))
+        existing = [str(t) for t in targets if t.exists()]
+        if existing:
+            raise ValueError(f"{', '.join(existing)} already exists; choose another --output directory")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for target, template in planned:
+            target.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"[PRISM] Wrote {target}")
+    except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
 

@@ -601,6 +601,14 @@
     color: #8f2e39;
 }
 
+/* Field links in validation boxes: take the box's own text colour so they stay readable. */
+.studio-theme .alert .error-link,
+.studio-theme .alert .error-link code {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
 .studio-theme .form-check-input:checked {
     background-color: var(--studio-semantic-primary);
     border-color: var(--studio-semantic-primary);

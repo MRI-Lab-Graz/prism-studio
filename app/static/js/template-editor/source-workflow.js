@@ -1,5 +1,6 @@
 import { isSameProjectPath } from '../shared/project-state.js';
 import { parsePrismTemplateJson } from './json-import.js';
+import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
@@ -187,7 +188,7 @@ export async function loadNewTemplate(context) {
   context.renderJsonDiff();
 }
 
-export async function validateCurrent(context, { initial = false } = {}) {
+export async function validateCurrent(context, { initial = false, imported = false } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -251,20 +252,25 @@ export async function validateCurrent(context, { initial = false } = {}) {
   }
   context.btnSave.disabled = true;
   const errs = (data.errors || []).slice(0, 50);
+  // ponytail: message match on jsonschema's wording; move to a backend error code if it ever changes
+  const onlyMissing = initial && errs.length > 0 && errs.every((error) => /is a required property$|is required when /.test(error.message));
   const list = errs
     .map((error) => {
       const path = error.path || '(root)';
       const focusPath = context.deriveFocusPath(error.path, error.message);
       const link = `<a href="#" class="error-link" data-path="${context.escapeHtml(focusPath)}"><code>${context.escapeHtml(path)}</code></a>`;
-      return `<li>${link}: ${context.escapeHtml(error.message)}</li>`;
+      // A missing field reads better as its name than as "'X' is a required property".
+      const message = onlyMissing ? error.message.replace(/^'(.+)' is a required property$/, '$1') : error.message;
+      return `<li>${link}: ${context.escapeHtml(message)}</li>`;
     })
     .join('');
   const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
-  // ponytail: message match on jsonschema's wording; move to a backend error code if it ever changes
-  const onlyMissing = initial && errs.length > 0 && errs.every((error) => /is a required property$/.test(error.message));
+  const missingHint = imported
+    ? 'ℹ️ <strong>Not found in your file</strong> &mdash; please fill these in, then click Validate.'
+    : 'ℹ️ Please fill in these details first, then click Validate.';
   context.showAlert(
     onlyMissing ? 'warning' : 'danger',
-    `${onlyMissing ? 'ℹ️ Please fill in these details first, then click Validate.' : '❌ Validation failed.'}<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml
+    `${onlyMissing ? missingHint : '❌ Validation failed.'}<ul class="mb-0">${list}</ul>${extra}` + langWarnHtml
   );
   context.alertAreaEl.querySelectorAll('.error-link').forEach((linkEl) => {
     linkEl.addEventListener('click', (event) => {
@@ -399,10 +405,10 @@ function applyImportedTemplate(context, data, file) {
   return `<strong>Imported ${context.escapeHtml(file.name)}</strong> (${context.escapeHtml(source)})<br>${context.escapeHtml(String(itemCount))} item(s) extracted.`;
 }
 
-async function finishImport(context, importSummaryMessage) {
+export async function finishImport(context, importSummaryMessage) {
   context.showAlert('success', importSummaryMessage);
   try {
-    await validateCurrent(context);
+    await validateCurrent(context, { initial: true, imported: true });
   } catch (error) {
     context.btnDownload.disabled = false;
     context.btnSave.disabled = true;
@@ -414,8 +420,17 @@ function hideExcelGroupPicker(context) {
   if (context.excelGroupPickerRowEl) {
     context.excelGroupPickerRowEl.classList.add('d-none');
   }
+  if (context.sourceSplitSelectEl) {
+    context.sourceSplitSelectEl.classList.add('d-none');
+  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
+    // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
+    context.excelGroupPickerSelectEl.onchange = null;
+  }
+  if (context.libraryMatchCardEl) {
+    context.libraryMatchCardEl.classList.add('d-none');
+    context.libraryMatchCardEl.innerHTML = '';
   }
 }
 
@@ -490,6 +505,96 @@ async function importExcelCodebook(context, file, previousEditorState) {
   context.showAlert('info', `Detected ${groups.length} instrument groups in ${context.escapeHtml(file.name)}. Choose one above to load it into the editor.`);
 }
 
+async function fetchLimeSurvey(context, file, fields) {
+  const formData = new FormData();
+  formData.append('file', file);
+  Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
+  const res = await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || `Import failed (${res.status})`);
+  }
+  return data;
+}
+
+async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState, useLibrary = false) {
+  try {
+    const data = await fetchLimeSurvey(context, file, {
+      split: context.sourceSplitSelectEl.value,
+      key,
+      project_path: context.getCurrentProjectPath() || '',
+      ...(useLibrary ? { use_library: '1' } : {}),
+    });
+    await finishImport(context, applyImportedTemplate(context, data, file));
+  } catch (error) {
+    context.restoreEditorState(previousEditorState);
+    context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
+  }
+}
+
+// The backend splits the survey and logs it to the terminal; this only shows the list.
+async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
+  const { questionnaires } = await fetchLimeSurvey(context, file, {
+    split: context.sourceSplitSelectEl.value,
+    project_path: context.getCurrentProjectPath() || '',
+  });
+  if (questionnaires.length === 0) {
+    throw new Error('No questionnaires found in the file.');
+  }
+
+  context.excelGroupPickerSelectEl.innerHTML = questionnaires
+    .map((q) => `<option value="${context.escapeHtml(q.key)}">${context.escapeHtml(q.name)} (${q.item_count} item${q.item_count === 1 ? '' : 's'})${q.helper ? ' (helper)' : ''}${q.library_match ? ` · ${libraryMatchSummary(q.library_match)}` : ''}</option>`)
+    .join('');
+  const firstQuestionnaire = questionnaires.find((q) => !q.helper) || questionnaires[0];
+  context.excelGroupPickerSelectEl.value = firstQuestionnaire.key;
+  context.sourceSplitSelectEl.classList.remove('d-none');
+  context.excelGroupPickerRowEl.classList.remove('d-none');
+
+  const showCard = () => {
+    const entry = questionnaires.find((q) => q.key === context.excelGroupPickerSelectEl.value);
+    const html = renderLibraryMatchCard(entry && entry.library_match, context.escapeHtml);
+    context.libraryMatchCardEl.innerHTML = html;
+    context.libraryMatchCardEl.classList.toggle('d-none', !html);
+  };
+  context.excelGroupPickerSelectEl.onchange = showCard;
+  context.libraryMatchCardEl.onclick = (event) => {
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    if (!action) {
+      return;
+    }
+    if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Loading this questionnaire will discard them. Continue?')) {
+      return;
+    }
+    loadLimeSurveyQuestionnaire(context, file, context.excelGroupPickerSelectEl.value, context.captureEditorState(), action === 'use-library');
+  };
+  showCard();
+
+  context.sourceSplitSelectEl.onchange = () => {
+    importLimeSurvey(context, file, null, true)
+      .catch((error) => context.showAlert('danger', context.escapeHtml(error.message)));
+  };
+  context.btnLoadExcelGroup.onclick = () => {
+    if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Loading another questionnaire will discard them. Continue?')) {
+      return;
+    }
+    loadLimeSurveyQuestionnaire(context, file, context.excelGroupPickerSelectEl.value, context.captureEditorState());
+  };
+
+  if (questionnaires.length === 1) {
+    // A split change must not silently replace what the user has open; leave the entry to Load.
+    const discardsWork = fromSplitChange && context.hasUnsavedChanges()
+      && !confirm('You have unsaved changes. Loading this questionnaire will discard them. Continue?');
+    if (!discardsWork) {
+      await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState || context.captureEditorState());
+      return;
+    }
+  }
+  context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
+}
+
 export async function importTemplateSource(context) {
   const file = context.templateImportInput.files[0];
   if (!file) {
@@ -538,6 +643,11 @@ export async function importTemplateSource(context) {
       return;
     }
 
+    if (lowerName.endsWith('.lss') || lowerName.endsWith('.lsa')) {
+      await importLimeSurvey(context, file, previousEditorState);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
@@ -552,26 +662,6 @@ export async function importTemplateSource(context) {
         throw new Error(data.error || `Import failed (${res.status})`);
       }
       importSummaryMessage = applyImportedTemplate(context, data, file);
-    } else {
-      const nameWithoutExt = (file.name || 'imported').replace(/\.[^.]+$/, '').trim();
-      formData.append('mode', 'combined');
-      if (nameWithoutExt) {
-        formData.append('task_name', context.sanitizeTaskNameForFilename(nameWithoutExt));
-      }
-
-      const res = await context.fetchWithApiFallback('/api/survey-generate-templates', {
-        method: 'POST',
-        body: formData,
-      });
-      data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Template import failed (${res.status})`);
-      }
-
-      if (!data.prism_json || typeof data.prism_json !== 'object') {
-        throw new Error('No PRISM template returned by generator.');
-      }
-      importSummaryMessage = applyImportedTemplate(context, { ...data, template: data.prism_json }, file);
     }
   } catch (error) {
     context.restoreEditorState(previousEditorState);

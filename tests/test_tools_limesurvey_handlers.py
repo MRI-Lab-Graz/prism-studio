@@ -55,3 +55,27 @@ def test_handle_limesurvey_to_prism_rejects_unsupported_extension() -> None:
     assert response.status_code == 400
     payload = response.get_json()
     assert "error" in payload
+
+
+def test_handle_limesurvey_to_prism_no_longer_offers_one_template_per_question() -> None:
+    handlers = importlib.import_module("src.web.blueprints.tools_limesurvey_handlers")
+
+    app = Flask(__name__)
+    app.add_url_rule(
+        "/api/limesurvey-to-prism",
+        view_func=handlers.handle_limesurvey_to_prism,
+        methods=["POST"],
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/api/limesurvey-to-prism",
+            data={
+                "file": (io.BytesIO(LSS_XML.encode("utf-8")), "e2e_test_survey.lss"),
+                "mode": "questions",
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "Invalid mode 'questions'. Use: combined or groups"

@@ -16,7 +16,6 @@ from src.converters.limesurvey import (
     _parse_lss_structure,
     parse_lss_xml,
     parse_lss_xml_by_groups,
-    parse_lss_xml_by_questions,
 )
 
 
@@ -495,38 +494,60 @@ class TestParseLssXmlByGroups:
         )
         assert "AGE" in demographics
 
+    def test_array_rows_are_items_not_nested(self):
+        from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# parse_lss_xml_by_questions
-# ---------------------------------------------------------------------------
+        xml = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_bytes()
+        result = parse_lss_xml_by_groups(xml)
 
-class TestParseLssXmlByQuestions:
-    def test_returns_none_on_invalid_xml(self):
-        result = parse_lss_xml_by_questions(b"NOT XML")
-        assert result is None
+        assert "ADS1_1" in result["ads"]
+        assert "Items" not in result["ads"].get("ADS1", {})
 
-    def test_returns_dict(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert isinstance(result, dict)
+    def test_description_names_own_group(self):
+        from pathlib import Path
 
-    def test_has_expected_question_keys(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        assert "AGE" in result or "COMMENTS" in result
+        xml = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_bytes()
+        result = parse_lss_xml_by_groups(xml)
 
-    def test_question_entry_has_group_name(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        for key, val in result.items():
-            assert "group_name" in val
-            break
+        assert "ADS" in result["ads"]["Study"]["Description"]
+        assert "catch the submitted ID" not in result["ads"]["Study"]["Description"]
 
-    def test_question_entry_has_prism_json(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        for key, val in result.items():
-            assert "prism_json" in val
-            break
+    def test_prismmeta_pseudo_item_is_kept(self, tmp_path):
+        import json
+
+        from src.converters.survey_templates import _extract_prismmeta
+        from src.limesurvey_exporter import generate_lss
+
+        source = tmp_path / "survey-rts.json"
+        source.write_text(json.dumps({
+            "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv",
+                          "SoftwarePlatform": "LimeSurvey", "Language": "en",
+                          "Respondent": "self"},
+            "Study": {"TaskName": "rts", "OriginalName": "Round Trip Scale",
+                      "ShortName": "RTS", "Authors": ["Doe J"]},
+            "RTS01": {"Description": "item", "Levels": {"1": "no", "2": "yes"}},
+        }), encoding="utf-8")
+        lss = tmp_path / "rts.lss"
+        generate_lss([str(source)], output_path=str(lss), language="en")
+
+        [template] = parse_lss_xml_by_groups(lss.read_bytes()).values()
+
+        assert any(k.startswith("PRISMMETA") for k in template)
+        assert _extract_prismmeta(template).get("abbrev") == "RTS"
+
+    def test_groups_with_same_task_name_do_not_overwrite(self):
+        from pathlib import Path
+
+        text = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_text(encoding="utf-8")
+        text = text.replace("<group_name>WHO-5</group_name>", "<group_name>Stress 1</group_name>")
+        text = text.replace("<group_name>ADS</group_name>", "<group_name>Stress-1</group_name>")
+        result = parse_lss_xml_by_groups(text.encode("utf-8"))
+
+        keys = [k for k in result if k.startswith("stress")]
+        assert keys == ["stress1", "stress1-2"]
+        assert all(result[k]["Study"]["TaskName"] == k for k in keys)
+        items = [{i for i in result[k] if i.startswith(("WHO", "ADS"))} for k in keys]
+        assert items[0] and items[1] and items[0].isdisjoint(items[1])
 
 
 # ---------------------------------------------------------------------------
@@ -666,11 +687,6 @@ class TestParseLssXmlArrays:
         # SQ002 has scale_id=1 which should be stored
         if "SQ002" in items:
             assert items["SQ002"].get("ScaleId") == 1
-
-    def test_by_questions_with_arrays(self):
-        result = parse_lss_xml_by_questions(_LSS_WITH_ARRAYS.encode("utf-8"))
-        assert result is not None
-        assert "RATING" in result or "SCORE" in result
 
     def test_by_groups_with_arrays(self):
         result = parse_lss_xml_by_groups(_LSS_WITH_ARRAYS.encode("utf-8"))

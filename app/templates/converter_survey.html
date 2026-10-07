@@ -102,7 +102,6 @@
                                     <label class="form-label">Template Export</label>
                                     <select class="form-select" id="convertTemplateExport">
                                         <option value="groups" selected>By questionnaire group</option>
-                                        <option value="questions">Individual questions</option>
                                         <option value="combined">Combined (single file)</option>
                                     </select>
                                 </div>
@@ -387,30 +386,6 @@
                                         </div>
                                     </div>
                                     <div id="templateGroupList" class="row g-2"></div>
-                                </div>
-
-                                <!-- Individual questions result -->
-                                <div id="templateResultQuestions" class="d-none">
-                                    <div class="alert alert-success mb-3">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                <strong>Question templates extracted!</strong>
-                                                <span id="templateIndividualCount" class="ms-2 badge bg-info"></span>
-                                            </div>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-success" id="templateDownloadQuestionsBtn">
-                                                    <i class="fas fa-download me-1"></i>Download ZIP
-                                                </button>
-                                                {% if current_project.path %}
-                                                <button class="btn btn-sm btn-primary" id="templateSaveQuestionsToProjectBtn">
-                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div id="templateQuestionsList" class="row g-2"></div>
                                 </div>
 
                                 <!-- Save to Project Success -->

@@ -36,10 +36,10 @@ def handle_limesurvey_to_prism():
         split_by_groups = request.form.get("split_by_groups", "false").lower() == "true"
         mode = "groups" if split_by_groups else "combined"
 
-    if mode not in ("combined", "groups", "questions"):
+    if mode not in ("combined", "groups"):
         return (
             jsonify(
-                {"error": f"Invalid mode '{mode}'. Use: combined, groups, or questions"}
+                {"error": f"Invalid mode '{mode}'. Use: combined or groups"}
             ),
             400,
         )
@@ -109,83 +109,7 @@ def handle_limesurvey_to_prism():
 
             log(f"Extracted {len(extracted)} potential survey(s)", "info")
 
-            if mode == "questions":
-                log("Splitting by individual questions...", "step")
-                all_questions = {}
-                by_group = {}
-
-                for prefix, sidecar in extracted.items():
-                    shared_technical = sidecar.get("Technical", {})
-                    shared_study = sidecar.get("Study", {})
-                    shared_metadata = sidecar.get("Metadata", {})
-                    shared_i18n = sidecar.get("I18n", {})
-
-                    for key, q_entry in sidecar.items():
-                        if key in [
-                            "Technical",
-                            "Study",
-                            "Metadata",
-                            "I18n",
-                            "Scoring",
-                            "Normative",
-                        ]:
-                            continue
-
-                        question_prism = {
-                            "Technical": shared_technical,
-                            "Study": {
-                                **shared_study,
-                                "TaskName": sanitize_task_name(key),
-                                "OriginalName": key,
-                            },
-                            "Metadata": shared_metadata,
-                            "I18n": shared_i18n,
-                            key: q_entry,
-                        }
-
-                        validate_template(question_prism, f"Item {key}")
-
-                        all_questions[key] = {
-                            "prism_json": question_prism,
-                            "question_code": key,
-                            "question_type": "string",
-                            "limesurvey_type": "N/A",
-                            "item_count": 1,
-                            "mandatory": False,
-                            "group_name": prefix,
-                            "group_order": 0,
-                            "question_order": 0,
-                            "suggested_filename": f"question-{sanitize_task_name(key)}.json",
-                        }
-
-                        if prefix not in by_group:
-                            by_group[prefix] = {"group_order": 0, "questions": []}
-
-                        by_group[prefix]["questions"].append(
-                            {
-                                "code": key,
-                                "type": "string",
-                                "limesurvey_type": "N/A",
-                                "item_count": 1,
-                                "mandatory": False,
-                                "order": 0,
-                            }
-                        )
-
-                log("Individual template generation complete.", "success")
-                return jsonify(
-                    {
-                        "success": True,
-                        "mode": "questions",
-                        "questions": all_questions,
-                        "by_group": by_group,
-                        "question_count": len(all_questions),
-                        "group_count": len(by_group),
-                        "log": logs,
-                    }
-                )
-
-            elif mode == "groups":
+            if mode == "groups":
                 log("Splitting by questionnaire prefixes...", "step")
                 result = {
                     "success": True,
@@ -305,14 +229,12 @@ def handle_limesurvey_to_prism():
             from src.converters.limesurvey import (
                 parse_lss_xml,
                 parse_lss_xml_by_groups,
-                parse_lss_xml_by_questions,
             )
         except ImportError:
             sys.path.insert(0, str(Path(current_app.root_path)))
             from src.converters.limesurvey import (
                 parse_lss_xml,
                 parse_lss_xml_by_groups,
-                parse_lss_xml_by_questions,
             )
 
         xml_content = None
@@ -344,58 +266,7 @@ def handle_limesurvey_to_prism():
         if not xml_content:
             return jsonify({"error": "Could not read file content", "log": logs}), 400
 
-        if mode == "questions":
-            log("Splitting LimeSurvey into individual question templates...", "step")
-            questions = parse_lss_xml_by_questions(xml_content)
-
-            if not questions:
-                return (
-                    jsonify(
-                        {
-                            "error": "Failed to parse LimeSurvey structure or no questions found",
-                            "log": logs,
-                        }
-                    ),
-                    400,
-                )
-
-            by_group = {}
-            for code, q_data in questions.items():
-                validate_template(q_data["prism_json"], f"Item {code}")
-                g = q_data["group_name"]
-                if g not in by_group:
-                    by_group[g] = {
-                        "group_order": q_data["group_order"],
-                        "questions": [],
-                    }
-                by_group[g]["questions"].append(
-                    {
-                        "code": code,
-                        "type": q_data["question_type"],
-                        "limesurvey_type": q_data["limesurvey_type"],
-                        "item_count": q_data["item_count"],
-                        "mandatory": q_data["mandatory"],
-                        "order": q_data["question_order"],
-                    }
-                )
-
-            for group in by_group.values():
-                group["questions"].sort(key=lambda x: x["order"])
-
-            log("Individual template generation complete.", "success")
-            return jsonify(
-                {
-                    "success": True,
-                    "mode": "questions",
-                    "questions": questions,
-                    "by_group": by_group,
-                    "question_count": len(questions),
-                    "group_count": len(by_group),
-                    "log": logs,
-                }
-            )
-
-        elif mode == "groups":
+        if mode == "groups":
             log("Splitting LimeSurvey into separate questionnaires by group...", "step")
             questionnaires = parse_lss_xml_by_groups(xml_content)
 

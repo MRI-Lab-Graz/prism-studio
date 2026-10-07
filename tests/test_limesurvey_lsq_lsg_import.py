@@ -184,25 +184,6 @@ class TestParseAnswersIntoQuestions:
         _parse_answers_into_questions(root, questions_map, _get_text)
         assert questions_map["10"]["levels"]["1"] == {"en": "Good"}
 
-    def test_track_scales_populates_levels_by_scale(self):
-        xml = """<root>
-          <questions><rows>
-            <row><qid>1</qid><gid>1</gid><type>1</type><title>Q1</title>
-              <question>Q</question><question_order>1</question_order>
-              <mandatory>N</mandatory><parent_qid>0</parent_qid><other>N</other>
-            </row>
-          </rows></questions>
-          <answers><rows>
-            <row><qid>1</qid><code>A</code><answer>Alpha</answer><scale_id>0</scale_id></row>
-            <row><qid>1</qid><code>B</code><answer>Beta</answer><scale_id>1</scale_id></row>
-          </rows></answers>
-        </root>"""
-        root = ET.fromstring(xml)
-        questions_map, _ = _parse_lss_structure(root, _get_text)
-        _parse_answers_into_questions(root, questions_map, _get_text, track_scales=True)
-        assert questions_map["1"]["levels_by_scale"]["0"]["A"] == "Alpha"
-        assert questions_map["1"]["levels_by_scale"]["1"]["B"] == "Beta"
-
     def test_unknown_qid_is_skipped_without_error(self):
         root = ET.fromstring(_MINIMAL_LSQ)
         questions_map, _ = _parse_lss_structure(root, _get_text)
