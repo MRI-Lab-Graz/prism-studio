@@ -252,42 +252,44 @@ class TestCmdSurveyValidate:
 # ---------------------------------------------------------------------------
 
 
+FOUR_QUESTIONNAIRES = Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss"
+
+
+def _limesurvey_args(**overrides):
+    values = dict(input=str(FOUR_QUESTIONNAIRES), split="group", list=False, select=None, output=None)
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
 class TestCmdSurveyImportLimesurvey:
-    def test_success(self, tmp_path, monkeypatch):
-        calls = {}
-        monkeypatch.setattr(
-            survey_cli,
-            "convert_lsa_to_prism",
-            lambda inp, out, task_name: calls.setdefault(
-                "convert", (inp, out, task_name)
-            ),
-        )
-        monkeypatch.setattr(survey_cli, "check_uniqueness", lambda out: True)
+    def test_without_select_only_lists(self, tmp_path, capsys):
+        cmd_survey_import_limesurvey(_limesurvey_args(output=str(tmp_path)))
 
-        cmd_survey_import_limesurvey(
-            SimpleNamespace(
-                input=str(tmp_path / "archive.lsa"),
-                output=str(tmp_path / "out"),
-                task="task1",
-            )
-        )
-        assert calls["convert"][2] == "task1"
+        assert "Split by group -> 4 questionnaire(s)" in capsys.readouterr().out
+        assert list(tmp_path.iterdir()) == []
 
-    def test_error_exits(self, tmp_path, monkeypatch, capsys):
-        def _boom(inp, out, task_name):
-            raise RuntimeError("bad lsa")
+    def test_select_all_writes_one_json_per_questionnaire(self, tmp_path):
+        cmd_survey_import_limesurvey(_limesurvey_args(select=["all"], output=str(tmp_path)))
 
-        monkeypatch.setattr(survey_cli, "convert_lsa_to_prism", _boom)
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            "survey-ads.json", "survey-catchthesubmittedid.json",
+            "survey-handigkeit.json", "survey-who5.json",
+        ]
+
+    def test_refuses_to_overwrite_an_existing_template(self, tmp_path, capsys):
+        (tmp_path / "survey-ads.json").write_text("{}", encoding="utf-8")
+
         with pytest.raises(SystemExit) as exc_info:
-            cmd_survey_import_limesurvey(
-                SimpleNamespace(
-                    input=str(tmp_path / "archive.lsa"),
-                    output=str(tmp_path / "out"),
-                    task="task1",
-                )
-            )
+            cmd_survey_import_limesurvey(_limesurvey_args(select=["g30"], output=str(tmp_path)))
+
         assert exc_info.value.code == 1
-        assert "Error importing LimeSurvey" in capsys.readouterr().out
+        assert "already exists" in capsys.readouterr().out
+        assert (tmp_path / "survey-ads.json").read_text(encoding="utf-8") == "{}"
+
+    def test_select_without_output_fails(self, capsys):
+        with pytest.raises(SystemExit):
+            cmd_survey_import_limesurvey(_limesurvey_args(select=["g30"]))
+        assert "--output DIR is required" in capsys.readouterr().out
 
 
 class TestCmdSurveyImportLimesurveyBatch:

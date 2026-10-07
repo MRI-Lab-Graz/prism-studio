@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from src.converters.excel_to_survey import process_excel
-from src.converters.limesurvey import batch_convert_lsa, convert_lsa_to_prism
+from src.converters.limesurvey import batch_convert_lsa
 from src.converters.pavlovia import export_to_pavlovia
 from src.library_autotranslate import (
     TranslationError,
@@ -567,16 +567,33 @@ def cmd_survey_validate(args):
 
 
 def cmd_survey_import_limesurvey(args):
-    """Import LimeSurvey structure."""
-    input_path = str(Path(args.input).resolve())
-    output_path = str(Path(args.output).resolve())
-    print(f"Importing LimeSurvey structure from {input_path}...")
-    try:
-        convert_lsa_to_prism(input_path, output_path, task_name=args.task)
+    """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
+    Editor's 'Import Template Source' for .lss/.lsa."""
+    from src.converters.limesurvey import (
+        limesurvey_questionnaire_template,
+        list_limesurvey_questionnaires,
+        read_lss_xml,
+    )
 
-        print("\nValidating imported files...")
-        check_uniqueness(output_path)
-    except Exception as e:
+    input_path = Path(args.input).resolve()
+    try:
+        xml = read_lss_xml(input_path.read_bytes(), input_path.name)
+        found = list_limesurvey_questionnaires(xml, args.split, source_name=input_path.name)
+        if args.list or not args.select:
+            return
+        if not args.output:
+            raise ValueError("--output DIR is required with --select")
+        keys = [q["key"] for q in found] if args.select == ["all"] else args.select
+        out_dir = Path(args.output).resolve()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for key in keys:
+            template = limesurvey_questionnaire_template(xml, key, args.split)
+            target = out_dir / f"survey-{template['Study']['TaskName']}.json"
+            if target.exists():
+                raise ValueError(f"{target} already exists; choose another --output directory")
+            target.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print(f"[PRISM] Wrote {target}")
+    except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
 
