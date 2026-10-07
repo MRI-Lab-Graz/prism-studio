@@ -128,7 +128,6 @@ export function createSurveyWorkflowConvertController({
             templateResultsContainer.classList.add('d-none');
             document.getElementById('templateResultSingle')?.classList.add('d-none');
             document.getElementById('templateResultGroups')?.classList.add('d-none');
-            document.getElementById('templateResultQuestions')?.classList.add('d-none');
             document.getElementById('participantMetadataSection')?.classList.add('d-none');
         }
 

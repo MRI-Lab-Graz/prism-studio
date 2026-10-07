@@ -17,7 +17,8 @@ multi-questionnaire survey (WHO-5, PSS, ADS, ...):
 - the terminal shows only the item-registry line, nothing about what was found.
 
 `parse_lss_xml_by_groups` / `parse_lss_xml_by_questions` (Survey Generator)
-share the nesting bug. `_build_prism_template_from_parsed` (used by the
+shared the nesting bug (the per-question mode was removed on 2026-10-07: no
+templates of a single question). `_build_prism_template_from_parsed` (used by the
 `.lsq`/`.lsg` import) already flattens rows correctly.
 
 ## Goal
@@ -82,8 +83,9 @@ PRISMMETA questions are never items.
      languages, split mode, every questionnaire with item count / array code /
      helper reason, and on load: item count, where the stem went, whether
      PRISMMETA was found and what it restored.
-   - `parse_lss_xml_by_groups` / `parse_lss_xml_by_questions` reuse the same
-     builder (fixes the Survey Generator). `parse_lss_xml` (combined) stays as
+   - `parse_lss_xml_by_groups` reuses the same builder (fixes the Survey
+     Generator). The Survey Generator's per-question mode (and
+     `parse_lss_xml_by_questions`) is removed, not fixed. `parse_lss_xml` (combined) stays as
      is: data conversion depends on it.
 2. **API**: `POST /api/template-editor/import-limesurvey` — thin route.
    `file` + `split` → list; `file` + `split` + `key` → template.

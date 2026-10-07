@@ -2277,7 +2277,6 @@ export function initSurveyConvert(elements) {
     const {
         displayTemplateSingle,
         displayTemplateGroups,
-        displayTemplateQuestions,
         displayParticipantMetadataSection,
     } = surveyTemplateRenderAdapter;
 
@@ -2299,7 +2298,6 @@ export function initSurveyConvert(elements) {
         },
         displayTemplateSingle,
         displayTemplateGroups,
-        displayTemplateQuestions,
         displayParticipantMetadataSection,
         updateConvertBtn,
     });

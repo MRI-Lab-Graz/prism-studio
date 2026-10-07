@@ -12,7 +12,6 @@ export function createSurveyTemplateGenerationController({
     showTemplateResultsContainer,
     displayTemplateSingle,
     displayTemplateGroups,
-    displayTemplateQuestions,
     displayParticipantMetadataSection,
     updateConvertBtn,
 }) {
@@ -63,8 +62,6 @@ export function createSurveyTemplateGenerationController({
                 displayTemplateSingle(data);
             } else if (data.mode === 'groups') {
                 displayTemplateGroups(data);
-            } else if (data.mode === 'questions') {
-                displayTemplateQuestions(data);
             }
 
             displayParticipantMetadataSection(data);

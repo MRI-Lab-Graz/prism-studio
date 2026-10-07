@@ -128,18 +128,6 @@ export function createSurveyParticipantsMetadataController({ escapeHtml }) {
                     }
                 }
             }
-        } else if (data.mode === 'questions') {
-            // Extract from by_group structure
-            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
-                for (const q of groupInfo.questions || []) {
-                    fields.push({
-                        code: q.code,
-                        description: q.title || '',
-                        type: q.type || 'text',
-                        group: groupName
-                    });
-                }
-            }
         }
 
         return fields;

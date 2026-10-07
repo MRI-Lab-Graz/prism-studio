@@ -10,10 +10,6 @@ export function createSurveyTemplateRenderAdapter({
         return getSurveyTemplateResultsController()?.displayTemplateGroups(data);
     }
 
-    function displayTemplateQuestions(data) {
-        return getSurveyTemplateResultsController()?.displayTemplateQuestions(data);
-    }
-
     function displayParticipantMetadataSection(data) {
         return getParticipantsMetadataController()?.displayParticipantMetadataSection(data);
     }
@@ -21,7 +17,6 @@ export function createSurveyTemplateRenderAdapter({
     return {
         displayTemplateSingle,
         displayTemplateGroups,
-        displayTemplateQuestions,
         displayParticipantMetadataSection,
     };
 }

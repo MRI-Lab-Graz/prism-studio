@@ -16,7 +16,6 @@ from src.converters.limesurvey import (
     _parse_lss_structure,
     parse_lss_xml,
     parse_lss_xml_by_groups,
-    parse_lss_xml_by_questions,
 )
 
 
@@ -552,39 +551,6 @@ class TestParseLssXmlByGroups:
 
 
 # ---------------------------------------------------------------------------
-# parse_lss_xml_by_questions
-# ---------------------------------------------------------------------------
-
-class TestParseLssXmlByQuestions:
-    def test_returns_none_on_invalid_xml(self):
-        result = parse_lss_xml_by_questions(b"NOT XML")
-        assert result is None
-
-    def test_returns_dict(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert isinstance(result, dict)
-
-    def test_has_expected_question_keys(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        assert "AGE" in result or "COMMENTS" in result
-
-    def test_question_entry_has_group_name(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        for key, val in result.items():
-            assert "group_name" in val
-            break
-
-    def test_question_entry_has_prism_json(self):
-        result = parse_lss_xml_by_questions(_MINIMAL_LSS.encode("utf-8"))
-        assert result is not None
-        for key, val in result.items():
-            assert "prism_json" in val
-            break
-
-
-# ---------------------------------------------------------------------------
 # _get_question_type_name
 # ---------------------------------------------------------------------------
 
@@ -721,11 +687,6 @@ class TestParseLssXmlArrays:
         # SQ002 has scale_id=1 which should be stored
         if "SQ002" in items:
             assert items["SQ002"].get("ScaleId") == 1
-
-    def test_by_questions_with_arrays(self):
-        result = parse_lss_xml_by_questions(_LSS_WITH_ARRAYS.encode("utf-8"))
-        assert result is not None
-        assert "RATING" in result or "SCORE" in result
 
     def test_by_groups_with_arrays(self):
         result = parse_lss_xml_by_groups(_LSS_WITH_ARRAYS.encode("utf-8"))

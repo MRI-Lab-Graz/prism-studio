@@ -531,7 +531,6 @@ If you already have a survey running in LimeSurvey and want to bring it into PRI
 4. Choose import mode:
    - **Combined**: All questions merged into one template — useful for single-questionnaire surveys
    - **Per Group**: One template per question group — **recommended** for multi-questionnaire surveys
-   - **Per Question**: Individual template per question — for maximum granularity
 5. Review the generated template(s) in the Editor
 6. Click **Save to Project** to add them to your project library
 

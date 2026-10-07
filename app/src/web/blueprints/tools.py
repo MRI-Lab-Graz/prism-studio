@@ -2006,10 +2006,9 @@ def detect_columns():
 def limesurvey_to_prism():
     """Convert LimeSurvey (.lss/.lsa) or Excel/CSV/TSV file to PRISM JSON sidecar(s).
 
-    Supports three modes (via 'mode' parameter or legacy 'split_by_groups'):
+    Supports two modes (via 'mode' parameter or legacy 'split_by_groups'):
     - mode=combined (default): Single combined JSON with all questions
     - mode=groups: Separate JSON per questionnaire group
-    - mode=questions: Separate JSON per individual question (for template library)
     """
     return api_survey_generate_templates()
 
