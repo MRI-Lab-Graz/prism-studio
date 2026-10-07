@@ -1797,6 +1797,14 @@ def build_prism_tools_parsers(
         help="Questionnaire key(s) from the listing (e.g. g30), or 'all'",
     )
     parser_survey_limesurvey.add_argument("--output", help="Directory for the template JSON files")
+    parser_survey_limesurvey.add_argument(
+        "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
+    )
+    parser_survey_limesurvey.add_argument(
+        "--use-library", action="store_true",
+        help="With --select: write the matching library template (survey codes kept as Aliases) "
+        "instead of the imported questionnaire; only for exact/high matches",
+    )
 
     parser_survey_import_lsq = survey_subparsers.add_parser(
         "import-lsq",

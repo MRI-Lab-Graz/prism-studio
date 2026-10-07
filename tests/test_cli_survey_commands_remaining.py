@@ -256,12 +256,79 @@ FOUR_QUESTIONNAIRES = Path(__file__).parent / "data" / "limesurvey_four_question
 
 
 def _limesurvey_args(**overrides):
-    values = dict(input=str(FOUR_QUESTIONNAIRES), split="group", list=False, select=None, output=None)
+    values = dict(
+        input=str(FOUR_QUESTIONNAIRES), split="group", list=False, select=None, output=None,
+        project=None, use_library=False,
+    )
     values.update(overrides)
     return SimpleNamespace(**values)
 
 
 class TestCmdSurveyImportLimesurvey:
+    @pytest.fixture(autouse=True)
+    def _no_real_global_library(self, monkeypatch):
+        from src.converters import survey_templates as st
+
+        monkeypatch.setattr(st, "_load_global_library_path", lambda: None)
+
+    @pytest.fixture
+    def library(self, tmp_path, monkeypatch):
+        from src.converters import survey_templates as st
+        from test_library_wording_match import library_file
+
+        global_dir = tmp_path / "global"
+        global_dir.mkdir()
+        project = tmp_path / "project"
+        (project / "code" / "library" / "survey").mkdir(parents=True)
+        monkeypatch.setattr(st, "_load_global_library_path", lambda: global_dir)
+        library_file(global_dir, texts=["war ich bedrückt", "war ich müde"], levels={"0": "selten", "1": "meistens"})
+        return {"global": global_dir, "project": project}
+
+    def test_list_shows_the_library_match_lines(self, library, capsys):
+        cmd_survey_import_limesurvey(_limesurvey_args())
+
+        out = capsys.readouterr().out
+        assert "Library match for 'ADS': ads (global) exact" in out
+        assert "Library match for 'WHO-5': none" in out
+
+    def test_use_library_writes_the_library_template_with_aliases_and_leaves_the_global_folder_alone(
+        self, library, tmp_path
+    ):
+        before = {p.name: p.read_bytes() for p in library["global"].iterdir()}
+        out_dir = tmp_path / "out"
+
+        cmd_survey_import_limesurvey(_limesurvey_args(select=["g30"], use_library=True, output=str(out_dir)))
+
+        written = json.loads((out_dir / "survey-ads.json").read_text(encoding="utf-8"))
+        assert written["ads_01"]["Aliases"] == ["ADS1_1"]
+        assert {p.name: p.read_bytes() for p in library["global"].iterdir()} == before
+
+    def test_use_library_refuses_a_questionnaire_without_an_exact_or_high_match(self, library, tmp_path, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            cmd_survey_import_limesurvey(
+                _limesurvey_args(select=["g20"], use_library=True, output=str(tmp_path / "out"))
+            )
+
+        assert exc_info.value.code == 1
+        assert "one-to-one" in capsys.readouterr().out
+
+    def test_use_library_needs_select(self, library, capsys):
+        with pytest.raises(SystemExit):
+            cmd_survey_import_limesurvey(_limesurvey_args(use_library=True))
+        assert "--use-library needs --select" in capsys.readouterr().out
+
+    def test_project_library_is_included_with_project(self, library, tmp_path, capsys):
+        from test_library_wording_match import library_file
+
+        for p in library["global"].iterdir():
+            p.unlink()
+        library_file(library["project"] / "code" / "library" / "survey", texts=["war ich bedrückt", "war ich müde"],
+                     levels={"0": "selten", "1": "meistens"})
+
+        cmd_survey_import_limesurvey(_limesurvey_args(project=str(library["project"])))
+
+        assert "ads (project) exact" in capsys.readouterr().out
+
     def test_without_select_only_lists(self, capsys):
         cmd_survey_import_limesurvey(_limesurvey_args())
 

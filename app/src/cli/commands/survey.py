@@ -570,17 +570,24 @@ def cmd_survey_import_limesurvey(args):
     """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
     Editor's 'Import Template Source' for .lss/.lsa."""
     from src.converters.limesurvey import (
+        limesurvey_library_template,
         limesurvey_questionnaire_template,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
 
     input_path = Path(args.input).resolve()
+    project_path = getattr(args, "project", None)
+    use_library = bool(getattr(args, "use_library", False))
     try:
         if args.output and not args.select:
             raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
+        if use_library and not args.select:
+            raise ValueError("--use-library needs --select KEY|all")
         xml = read_lss_xml(input_path.read_bytes(), input_path.name)
-        found = list_limesurvey_questionnaires(xml, args.split, source_name=input_path.name)
+        found = list_limesurvey_questionnaires(
+            xml, args.split, source_name=input_path.name, project_path=project_path, match_library=True
+        )
         if args.list and args.select:
             print("[PRISM] --list given: not writing")
         if args.list or not args.select:
@@ -591,7 +598,10 @@ def cmd_survey_import_limesurvey(args):
         out_dir = Path(args.output).resolve()
         out_dir.mkdir(parents=True, exist_ok=True)
         for key in keys:
-            template = limesurvey_questionnaire_template(xml, key, args.split)
+            if use_library:
+                template, _match = limesurvey_library_template(xml, key, args.split, project_path)
+            else:
+                template = limesurvey_questionnaire_template(xml, key, args.split)
             target = out_dir / f"survey-{template['Study']['TaskName']}.json"
             if target.exists():
                 raise ValueError(f"{target} already exists; choose another --output directory")
