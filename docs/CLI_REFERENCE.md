@@ -581,6 +581,6 @@ python prism_tools.py datalad sync --project /absolute/path/to/my-project \
 python prism_tools.py datalad finalize --project /absolute/path/to/my-project --yes
 ```
 
-On Windows the install hint is: install Git for Windows, then
+On Windows the install hint is: install Git for Windows, then (without uv)
 `py -m pip install datalad git-annex` and restart PRISM Studio (macOS/Linux:
-`uv tool install datalad git-annex`).
+`uv tool install datalad --with-executables-from git-annex`).

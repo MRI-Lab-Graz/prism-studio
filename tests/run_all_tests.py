@@ -172,7 +172,7 @@ else:
 print_header("5. Converters")
 
 converter_modules = [
-    "src/converters/survey.py",
+    "app/src/converters/survey.py",
     "src/converters/limesurvey.py",
     "src/converters/excel_to_biometrics.py",
 ]

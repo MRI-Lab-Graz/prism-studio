@@ -137,18 +137,35 @@ def test_non_ssh_url_is_reported_not_crashed(tmp_path):
     assert "local" in res["server"]["detail"].lower()
 
 
+UV_CMD = "uv tool install datalad --with-executables-from git-annex"
+NO_UV = lambda tool: None  # noqa: E731
+HAS_UV = lambda tool: "/bin/uv" if tool == "uv" else None  # noqa: E731
+
+
 def test_install_command_is_pip_on_windows_where_uv_is_not_installed():
-    assert install_command("win32") == "py -m pip install datalad git-annex"
-    assert install_command("darwin") == "uv tool install datalad git-annex"
-    assert install_command("linux") == "uv tool install datalad git-annex"
+    assert install_command("win32", which=NO_UV) == "py -m pip install datalad git-annex"
+    assert install_command("darwin") == UV_CMD
+    assert install_command("linux") == UV_CMD
+
+
+def test_install_command_uses_uv_on_windows_when_uv_is_installed():
+    # install.cmd installs uv; a uv-provided Python has no `py` launcher.
+    assert install_command("win32", which=HAS_UV) == UV_CMD
+
+
+def test_uv_command_is_valid_for_uv_tool_install():
+    # `uv tool install` takes one package; extra packages need --with/--with-executables-from.
+    args = install_command("darwin").split()[3:]
+    assert args[0] == "datalad" and args[1:] == ["--with-executables-from", "git-annex"]
 
 
 def test_windows_hint_also_asks_for_git_for_windows_and_a_restart():
-    hint = install_hint("win32")
+    hint = install_hint("win32", which=NO_UV)
     assert "Git for Windows" in hint and "py -m pip install datalad git-annex" in hint
     assert "uv" not in hint
     assert "restart" in hint.lower()
-    assert install_hint("darwin") == "Install with: uv tool install datalad git-annex"
+    assert "Git for Windows" in install_hint("win32", which=HAS_UV)
+    assert install_hint("darwin") == f"Install with: {UV_CMD}"
 
 
 def test_doctor_shows_the_windows_install_steps_on_windows(tmp_path, monkeypatch):

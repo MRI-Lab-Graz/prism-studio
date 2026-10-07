@@ -2296,25 +2296,13 @@ def check_import_boundaries(repo_path, fix=False):
 _DUAL_TREE_SHIM_MARKERS = ("spec_from_file_location(",)
 
 
-def _is_symlink_pair(path_a: Path, path_b: Path) -> bool:
-    for link_path, other_path in ((path_a, path_b), (path_b, path_a)):
-        if not link_path.is_symlink():
-            continue
-        try:
-            if link_path.resolve() == other_path.resolve():
-                return True
-        except OSError:
-            continue
-    return False
-
-
 def _has_delegation_shim_marker(content: str) -> bool:
     return any(marker in content for marker in _DUAL_TREE_SHIM_MARKERS)
 
 
 def check_dual_tree_drift(repo_path, fix=False):
     """Flag .py files duplicated between src/ and app/src/ that aren't
-    resolved via a symlink or a recognized delegation shim (see CLAUDE.md's
+    resolved via a recognized delegation shim (see CLAUDE.md's
     src/ vs app/src/ dual-tree drift note)."""
     print_header("Checking src/ vs app/src/ Dual-Tree Drift")
 
@@ -2343,9 +2331,6 @@ def check_dual_tree_drift(repo_path, fix=False):
         src_file = src_files[rel_path]
         app_file = app_files[rel_path]
 
-        if _is_symlink_pair(src_file, app_file):
-            continue
-
         try:
             src_content = src_file.read_text(encoding="utf-8", errors="ignore")
         except OSError:
@@ -2366,9 +2351,9 @@ def check_dual_tree_drift(repo_path, fix=False):
         for rel_path in unresolved:
             print_error(
                 f"Unresolved dual-tree duplicate: src/{rel_path} and app/src/{rel_path} "
-                "both exist as independent files. Collapse into one real file with a "
-                "symlink for the other side, or delete the app/src copy if the "
-                "module lives in src/ (see CLAUDE.md)."
+                "both exist as independent files. Keep one real file and delete the "
+                "other - src.* imports fall through to app/src, and symlinks break "
+                "on Windows checkouts (see CLAUDE.md)."
             )
     else:
         print_success(

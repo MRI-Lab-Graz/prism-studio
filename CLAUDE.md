@@ -90,16 +90,17 @@ If that resolves to a *different* file than the one you edited, your change
 is not in effect for anything importing through `src.*` (the CLI: `prism.py`,
 `prism_tools.py`, `python -m src.cli.entrypoint`). Do not just duplicate the
 edit into both files as a workaround — that only adds more surface for the
-next person to drift. Prefer collapsing the pair into one real file with a
-symlink for the other, the way `converters/survey.py` (`src/` side is the
-symlink) and, as of 2026-08-04, `converters/excel_base.py` (`src/` side is
-now a symlink to `app/src/converters/excel_base.py`, matching the
-`survey.py` precedent since its sibling files
-`excel_to_survey.py`/`excel_template_import.py` only exist in `app/src/`)
-already do. A real symlink makes the drift class structurally impossible
-for that file, rather than relying on anyone remembering to edit both sides.
-Simpler still, when the module lives only in top-level `src/`: keep no
-`app/src/` copy at all. In the app runtime `src` is `app/src`, whose
+next person to drift. Collapse the pair into one real file and **delete**
+the other side — never a symlink. Git for Windows (no Developer Mode) and
+GitHub ZIP downloads check symlinks out as text files holding the target
+path, so `import src.converters.excel_base` became a `SyntaxError` and
+install.cmd produced a Studio that would not start on fresh Windows machines
+(2026-10-06; the `converters/excel_base.py`, `survey.py`, `survey_base.py` and
+`web/utils.py` symlinks were deleted, `tests/test_repo_symlinks.py` now fails
+on any tracked symlink). Deleting is enough because the `src.converters`
+namespace merge falls through to `app/src/converters/`, and `src.web` is
+`app/src/web/` anyway. Likewise, when the module lives only in top-level
+`src/`: keep no `app/src/` copy at all. In the app runtime `src` is `app/src`, whose
 `__path__` falls through to the repo `src/` (and `backend_bundle/src` when
 frozen), so `import src.<name>` finds it — import it as `src.<name>`, never
 as a bare top-level name. (The `load_canonical_module`/`_compat.py` shims
@@ -125,8 +126,8 @@ for a `Levels` column with non-numeric keys, which made
 `_check_allowed_values` skip validation for that column entirely). Fixed by
 making `survey_core.get_allowed_values` the one canonical implementation
 (merging in the validator's stronger behavior), having `validator.py` import
-it instead of keeping a private copy, and collapsing `src/converters/
-survey_base.py` into a symlink like `excel_base.py`. Regression tests:
+it instead of keeping a private copy, and deleting `src/converters/
+survey_base.py`. Regression tests:
 `tests/test_survey_base.py` (function-level) and
 `tests/test_validator_allowed_values.py` (validator integration).
 
@@ -142,7 +143,7 @@ Still worth reconciling before deleting: the dead file's fallback bodies
 rare, concern for the PyInstaller-frozen build) had two correctness fixes
 the live file was missing — `os.sep` instead of a hardcoded `/`, and an
 empty-path guard on `get_filename_from_path`. Ported those into
-`app/src/web/utils.py`, then collapsed `src/web/utils.py` into a symlink.
+`app/src/web/utils.py`, then deleted `src/web/utils.py`.
 Regression tests: `tests/test_web_utils_fallback.py` (forces the dormant
 fallback branches directly via monkeypatch, since normal test runs never
 reach them — the only way to give a safety net real coverage).
@@ -154,7 +155,7 @@ this paragraph is not a checklist.
 An automated `dual-tree-drift` check now runs in CI
 (`python tests/verify_repo.py --check dual-tree-drift --no-fix`) and catches
 any *new* same-relative-path file that exists on both sides without being
-resolved via a symlink or a `spec_from_file_location`
+resolved via a `spec_from_file_location`
 shim — but it only catches same-relative-path duplicates, not cross-name shadowing or the "dead file with
 a different name" pattern documented in the `web/utils.py` paragraph above,
 so the manual check above is still the source of truth for anything the

@@ -9,7 +9,7 @@
     blocks it (that's exactly why install.cmd exists).
 
     This script will:
-    1. Check if 'uv' is installed.
+    1. Check if 'uv' is installed (offers to install it if missing).
     2. Check if tkinter is available (required for folder picker).
     3. Create a virtual environment in .\.venv
     4. Install dependencies from requirements-runtime.txt (no optional/docs/dev extras) into the virtual environment.
@@ -73,20 +73,23 @@ Get-ChildItem -Path "." -Recurse -Directory -Filter "__pycache__" |
 Write-Success "__pycache__ cleared."
 
 # 1. Check for uv
+# The uv installer updates the user's future shells, not this process, so a uv
+# installed by an earlier run may not be on PATH yet. Current uv installs use
+# .local\bin; retain .cargo\bin for older installs.
+$env:Path = "$env:Path;$env:USERPROFILE\.local\bin;$env:USERPROFILE\.cargo\bin"
 if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
-    Write-Info "'uv' command not found."
-    $InstallUv = Read-Host "Would you like to install 'uv' now? (Highly recommended for speed) [Y/N]"
-    if ($InstallUv -match "^[Yy]$") {
+    Write-Info "'uv' (the tool this setup uses to install Python and packages) is not installed."
+    # Default yes: without uv we fall back to a system Python, which a bare machine doesn't have.
+    $InstallUv = Read-Host "Install uv now using its official installer (https://astral.sh/uv/install.ps1)? [Y/n]"
+    if ($InstallUv -notmatch "^[Nn]") {
         Write-Info "Installing uv..."
         powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-        
-        # The installer updates the user's future shells, not this process.
-        # Current uv installs use .local\bin; retain .cargo\bin for older installs.
-        $env:Path = "$env:USERPROFILE\.local\bin;$env:USERPROFILE\.cargo\bin;$env:Path"
-        
+
         if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
             Write-Error "Failed to install uv or it's not in the path."
-            Write-Info "Falling back to standard python/pip..." $true
+            Write-Info "To install uv by hand: winget install --id=astral-sh.uv -e"
+            Write-Info "or see https://docs.astral.sh/uv/getting-started/installation/ , then run install.cmd again."
+            Write-Info "Falling back to standard python/pip..."
             $UseUv = $false
         } else {
             Write-Success "uv installed successfully."
@@ -261,6 +264,30 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Success "Dependencies installed successfully."
+
+# 7. DataLad + git-annex (optional, highly recommended)
+if ((Get-Command "datalad" -ErrorAction SilentlyContinue) -and (Get-Command "git-annex" -ErrorAction SilentlyContinue)) {
+    Write-Info "DataLad and git-annex are already installed."
+} else {
+    # Same command the app suggests, so installer and app never disagree.
+    $DataladCmd = & "$VenvDir\Scripts\python.exe" -c "from src.datalad_doctor import install_command; print(install_command())"
+    Write-Info "DataLad and git-annex (version control and backup for your project data) are highly recommended."
+    $InstallDatalad = Read-Host "Install them now with '$DataladCmd'? [Y/n]"
+    if ($InstallDatalad -notmatch "^[Nn]") {
+        cmd /c $DataladCmd
+        if ($LASTEXITCODE -eq 0) {
+            if ($UseUv) { & uv tool update-shell *> $null }
+            Write-Success "DataLad and git-annex installed."
+        } else {
+            Write-Warning "Installing DataLad failed. You can retry later with: $DataladCmd"
+        }
+    } else {
+        Write-Info "Skipped. You can install them later with: $DataladCmd"
+    }
+    if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
+        Write-Warning "DataLad also needs Git: $(& "$VenvDir\Scripts\python.exe" -c "from src.datalad_doctor import git_install_hint; print(git_install_hint())")"
+    }
+}
 
 # --- Final Instructions ---
 Write-Host ""

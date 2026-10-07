@@ -21,21 +21,24 @@ _DOCS = "https://handbook.datalad.org/en/latest/intro/installation.html"
 _GIT_WINDOWS = "https://git-scm.com/download/win"
 
 
-def install_command(platform: Optional[str] = None) -> str:
-    """Shell command that installs DataLad + git-annex. Windows has Python but not uv."""
-    if (platform or sys.platform).startswith("win"):
+def install_command(platform: Optional[str] = None, which: Callable[[str], Optional[str]] = shutil.which) -> str:
+    """Shell command that installs DataLad + git-annex (git-annex's own commands go on PATH too).
+
+    Windows without uv (the user declined it in install.cmd) falls back to pip.
+    """
+    if (platform or sys.platform).startswith("win") and not which("uv"):
         return "py -m pip install datalad git-annex"
-    return "uv tool install datalad git-annex"
+    return "uv tool install datalad --with-executables-from git-annex"
 
 
-def install_hint(platform: Optional[str] = None) -> str:
+def install_hint(platform: Optional[str] = None, which: Callable[[str], Optional[str]] = shutil.which) -> str:
     """One sentence for error messages (callers append '. Learn more: ...')."""
     if (platform or sys.platform).startswith("win"):
         return (
-            f"Install Git for Windows ({_GIT_WINDOWS}), then run: {install_command('win32')} "
+            f"Install Git for Windows ({_GIT_WINDOWS}), then run: {install_command('win32', which)} "
             "and restart PRISM Studio"
         )
-    return f"Install with: {install_command(platform)}"
+    return f"Install with: {install_command(platform, which)}"
 
 
 def git_install_hint(platform: Optional[str] = None) -> str:
@@ -66,12 +69,12 @@ def _check_git_identity(git_path: str, run: Run) -> dict:
     return _result("git-identity", False, "Git does not know your name and email yet.", _IDENTITY_FIX)
 
 
-def _tool_fix(tool: str) -> str:
+def _tool_fix(tool: str, which: Callable[[str], Optional[str]] = shutil.which) -> str:
     if tool == "git":
         return git_install_hint()
     if tool == "ssh":
         return "Install/enable the OpenSSH client (Windows: Settings > Optional features > OpenSSH Client)"
-    return f"{install_hint()}. See {_DOCS}"  # git-annex, datalad
+    return f"{install_hint(which=which)}. See {_DOCS}"  # git-annex, datalad
 _VERSION_ARGS = {"git": "--version", "git-annex": "version", "datalad": "--version", "ssh": "-V"}
 _KEY_NAMES = ("id_ed25519", "id_ecdsa", "id_rsa")
 _SCP_LIKE = re.compile(r"^([^@/\s:]+)@([^:/\s]+):(?!//)")
@@ -174,7 +177,7 @@ def run_doctor(
     for tool in ("git", "git-annex", "datalad", "ssh"):
         path = which(tool)
         if not path:
-            results.append(_result(tool, False, "Not found on PATH.", _tool_fix(tool)))
+            results.append(_result(tool, False, "Not found on PATH.", _tool_fix(tool, which)))
             continue
         _, out = run([path, _VERSION_ARGS[tool]])
         results.append(_result(tool, True, (out.strip().splitlines() or [path])[0]))
