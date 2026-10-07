@@ -6,6 +6,7 @@ A modular validation tool for BIDS-compatible research datasets built on the
 PRISM data-and-sidecar model.
 """
 
+import contextlib
 import os
 import sys
 import json
@@ -454,16 +455,18 @@ Examples:
     )
 
     try:
-        issues, stats = validate_dataset(
-            args.dataset,
-            verbose=args.verbose and not machine_output,
-            schema_version=schema_version,
-            run_bids=run_bids,
-            run_prism=run_prism,
-            library_path=library_path,
-            check_nifti_headers=args.check_nifti_headers,
-            progress_callback=make_cli_progress_reporter(machine_output),
-        )
+        # Machine output: validation progress prints go to stderr, keeping stdout JSON-only.
+        with contextlib.redirect_stdout(sys.stderr) if machine_output else contextlib.nullcontext():
+            issues, stats = validate_dataset(
+                args.dataset,
+                verbose=args.verbose and not machine_output,
+                schema_version=schema_version,
+                run_bids=run_bids,
+                run_prism=run_prism,
+                library_path=library_path,
+                check_nifti_headers=args.check_nifti_headers,
+                progress_callback=make_cli_progress_reporter(machine_output),
+            )
 
         # Convert legacy tuples to Issue objects for structured output
         structured_issues = normalize_issues(issues)
@@ -525,7 +528,10 @@ Examples:
         sys.exit(determine_exit_code(structured_issues))
 
     except Exception as e:
-        print(f"❌ Validation failed with error: {e}")
+        print(
+            f"❌ Validation failed with error: {e}",
+            file=sys.stderr if machine_output else sys.stdout,
+        )
         if args.verbose:
             import traceback
 
