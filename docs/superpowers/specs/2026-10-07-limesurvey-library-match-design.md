@@ -98,7 +98,7 @@ with the best `(confidence rank, mean similarity, project before global)`:
 }
 ```
 
-`apply_library_template(match, project_path) -> dict` loads the library
+`apply_library_template(match) -> dict` loads the library
 template (deep copy) and, for every paired item whose codes are not
 string-identical, appends the imported code to that item's existing `Aliases`
 list (deduplicated). The library IDs stay authoritative; response conversion
@@ -108,6 +108,9 @@ already reads `Aliases`. Raises `ValueError` when `adoptable` is false.
 
 - A library template is only offered for adoption at `exact` or `high` with no
   ID conflict, i.e. every imported item maps 1:1.
+- Existing `Aliases` lists and alias-only (`AliasOf`) entries of the library
+  template count as owners of a code for the conflict check: an imported code
+  owned by a different item than the one it was paired with is a conflict.
 - `medium` shows the differences and offers nothing but "Import as new".
 - A global template is read-only: the alias-annotated copy is saved to the
   project, as the editor already does for global templates.
@@ -117,7 +120,7 @@ already reads `Aliases`. Raises `ValueError` when `adoptable` is false.
 
 1. **Backend**: the module above; `list_limesurvey_questionnaires` and
    `limesurvey_questionnaire_template` stay as they are, a thin function
-   `match_questionnaire(xml, key, split, project_path)` in
+   `limesurvey_questionnaire_match(xml, key, split, project_path)` in
    `src/converters/limesurvey.py` builds the template (already available) and
    calls `best_library_match`. Every comparison is logged with the `[PRISM]`
    prefix, e.g.

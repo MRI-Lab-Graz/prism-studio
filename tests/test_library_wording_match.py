@@ -239,3 +239,43 @@ def test_public_view_never_exposes_the_local_path(libs):
     assert "template_path" not in public and public["template_file"] == "survey-ads.json"
     assert public["id_map"] == match["id_map"]
     assert lwm.public_library_match(None) is None
+
+
+def _edit_library(path, edit):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    edit(data)
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def test_existing_alias_pointing_at_another_item_is_an_id_conflict(libs):
+    path = library_file(libs["global"])
+    _edit_library(path, lambda d: d["ads_01"].update(Aliases=["ADS1_1"]))
+    texts = [TEXTS[1], TEXTS[0]] + TEXTS[2:]  # ADS1_1 carries ads_02's wording
+
+    match = lwm.best_library_match(imported(texts=texts))
+
+    assert match["ids_conflict"] is True and match["adoptable"] is False
+    assert match["confidence"] == "medium"
+
+
+def test_existing_alias_pointing_at_the_paired_item_is_no_conflict(libs):
+    path = library_file(libs["global"])
+    _edit_library(path, lambda d: d["ads_01"].update(Aliases=["ADS1_1"]))
+
+    match = lwm.best_library_match(imported())
+
+    assert match["ids_conflict"] is False
+    assert match["confidence"] == "exact" and match["adoptable"] is True
+
+
+def test_alias_only_entry_owned_by_another_item_is_an_id_conflict(libs):
+    path = library_file(libs["global"])
+    _edit_library(path, lambda d: d.update(ADS1_1={"AliasOf": "ads_03"}))
+
+    match = lwm.best_library_match(imported())
+
+    assert match["ids_conflict"] is True and match["adoptable"] is False
+
+
+def test_length_bound_keeps_very_different_lengths_below_the_pair_threshold():
+    assert lwm.similarity("ab", "ab" * 50) < lwm.PAIR_THRESHOLD

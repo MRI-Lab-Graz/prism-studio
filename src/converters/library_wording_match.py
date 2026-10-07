@@ -34,6 +34,9 @@ def similarity(a: str, b: str) -> float:
         return 0.0
     if a == b:
         return 1.0
+    bound = 2 * min(len(a), len(b)) / (len(a) + len(b))
+    if bound < PAIR_THRESHOLD:
+        return bound
     matcher = SequenceMatcher(None, a, b, autojunk=False)
     upper = matcher.quick_ratio()
     return upper if upper < PAIR_THRESHOLD else matcher.ratio()
@@ -92,6 +95,22 @@ def _levels_ok(imp_item: dict, lib_item: dict, language: str):
     return True
 
 
+def _code_owners(template: dict) -> dict[str, str]:
+    """code -> library item key that owns it: item keys, existing Aliases, alias-only entries."""
+    owners = {}
+    for key, value in template.items():
+        if key in st._NON_ITEM_TOPLEVEL_KEYS or st._METADATA_CODE_RE.match(key) or not isinstance(value, dict):
+            continue
+        if "Description" in value:
+            owners[key] = key
+            aliases = value.get("Aliases")
+            for alias in aliases if isinstance(aliases, list) else []:
+                owners.setdefault(str(alias), key)
+        elif isinstance(value.get("AliasOf"), str):
+            owners.setdefault(key, value["AliasOf"])
+    return owners
+
+
 def _match_one(imp_items, lib_template: dict, language: str) -> dict | None:
     lib_items = _items(lib_template)
     n, m = len(imp_items), len(lib_items)
@@ -103,8 +122,8 @@ def _match_one(imp_items, lib_template: dict, language: str) -> dict | None:
         return None
 
     id_map = {imp_items[i][0]: lib_items[j][0] for i, (j, _score) in pairs.items()}
-    lib_keys = {code for code, _item in lib_items}
-    ids_conflict = any(imp in lib_keys and imp != lib for imp, lib in id_map.items())
+    owners = _code_owners(lib_template)
+    ids_conflict = any(owners.get(imp, lib) != lib for imp, lib in id_map.items())
     levels = [_levels_ok(imp_items[i][1], lib_items[j][1], language) for i, (j, _s) in pairs.items()]
     levels_ok = all(result is not False for result in levels)
     scores = [score for _j, score in pairs.values()]
