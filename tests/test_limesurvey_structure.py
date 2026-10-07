@@ -504,6 +504,15 @@ class TestParseLssXmlByGroups:
         assert "ADS1_1" in result["ads"]
         assert "Items" not in result["ads"].get("ADS1", {})
 
+    def test_description_names_own_group(self):
+        from pathlib import Path
+
+        xml = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_bytes()
+        result = parse_lss_xml_by_groups(xml)
+
+        assert "ADS" in result["ads"]["Study"]["Description"]
+        assert "catch the submitted ID" not in result["ads"]["Study"]["Description"]
+
     def test_prismmeta_pseudo_item_is_kept(self, tmp_path):
         import json
 

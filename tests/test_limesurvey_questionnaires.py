@@ -177,3 +177,10 @@ def test_prism_template_survives_limesurvey_round_trip(tmp_path):
     assert study["Authors"] == ["Doe J"]
     assert study["Description"] == "A test scale"
     assert study["Instructions"] == {"de": "Bitte antworten Sie."}
+
+
+def test_description_without_group_description_names_own_group():
+    for key, name in (("g30", "ADS"), ("g40", "Händigkeit")):
+        desc = limesurvey_questionnaire_template(XML, key)["Study"]["Description"]
+        assert name in desc
+        assert "catch the submitted ID" not in desc

@@ -1121,8 +1121,7 @@ def _questionnaire_template(parsed, part):
     study = template["Study"]
     study["OriginalName"] = part["name"]
     study["TaskName"] = _task_name(part["name"])
-    if part["description"]:
-        study["Description"] = part["description"]
+    study["Description"] = part["description"] or f"Imported from LimeSurvey: {part['name']}"
     stems = [
         q["question"]
         for q in questions.values()
