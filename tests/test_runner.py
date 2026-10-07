@@ -698,7 +698,9 @@ class TestValidateDataset:
             root_dir, verbose=False, check_nifti_headers=False, backend_info=None
         ):
             if backend_info is not None:
-                backend_info.update({"engine": "deno", "spec": "jsr:@bids/validator@2.4.1"})
+                backend_info.update(
+                    {"engine": "bids-validator-deno", "version": "3.0.2", "spec": "bids-validator-deno@3.0.2"}
+                )
             return []
 
         monkeypatch.setattr(runner, "_run_bids_validator", fake_bids_validator)
@@ -709,8 +711,9 @@ class TestValidateDataset:
 
         assert stats.validator_info["prism_schema_versions"]
         assert stats.validator_info["bids_validator"] == {
-            "engine": "deno",
-            "spec": "jsr:@bids/validator@2.4.1",
+            "engine": "bids-validator-deno",
+            "version": "3.0.2",
+            "spec": "bids-validator-deno@3.0.2",
         }
 
     def test_validate_dataset_skips_schema_info_when_prism_disabled(

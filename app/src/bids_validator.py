@@ -1,15 +1,34 @@
-"""
-BIDS validator integration for PRISM.
-Handles running both modern (Deno) and legacy (Node/Python) BIDS validators.
-"""
+"""BIDS validator integration for PRISM: runs the bids-validator-deno engine and filters its report."""
 
-import os
-from functools import lru_cache
+import importlib.metadata
 import json
+import os
+import shutil
 import subprocess
-from typing import List, Tuple, Set, Optional
+import sys
+from functools import lru_cache
+from pathlib import Path
+from typing import List, Optional, Set, Tuple
 
-DENO_BIDS_VALIDATOR_SPEC = "jsr:@bids/validator@2.4.1"
+BIDS_ENGINE_COMMAND = "bids-validator-deno"
+BIDS_ENGINE_PACKAGE = "bids-validator-deno"
+
+
+def find_bids_engine() -> Optional[str]:
+    """The bids-validator-deno program: next to the running Python first, then on PATH."""
+    name = BIDS_ENGINE_COMMAND + (".exe" if sys.platform == "win32" else "")
+    local = Path(sys.executable).parent / name
+    if local.is_file():
+        return str(local)
+    return shutil.which(BIDS_ENGINE_COMMAND)
+
+
+def bids_engine_version() -> str:
+    try:
+        return importlib.metadata.version(BIDS_ENGINE_PACKAGE)
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown"
+
 
 # Recommended-key warnings are often produced by upstream converters
 # (for example BIDScoin) and are not required for BIDS validity.
@@ -36,10 +55,14 @@ def _is_citation_precedence_warning(
     if _is_citation_precedence_conflict(token):
         return True
 
-    if token == "SINGLE_SOURCE_CITATION_FIELDS":  # noqa: S105 - validation-code string, not a credential
+    if (
+        token == "SINGLE_SOURCE_CITATION_FIELDS"
+    ):  # noqa: S105 - validation-code string, not a credential
         return True
 
-    if token == "TOO_FEW_AUTHORS":  # noqa: S105 - validation-code string, not a credential
+    if (
+        token == "TOO_FEW_AUTHORS"
+    ):  # noqa: S105 - validation-code string, not a credential
         loc = str(location or "").replace("\\", "/").strip().lower()
         if loc.startswith("/"):
             loc = loc[1:]
@@ -67,7 +90,7 @@ def run_bids_validator(
         check_nifti_headers: Whether to validate NIfTI headers (off by default to
             avoid remote-storage content reads)
         backend_info: Optional dict to fill in with which backend actually ran
-            ({"engine": "deno"|"legacy", "spec": <version string>}), so callers
+            ({"engine": "bids-validator-deno", "version": ..., "spec": ...}), so callers
             can report the BIDS validator version alongside PRISM's own.
 
     Returns:
@@ -151,7 +174,7 @@ def run_bids_validator(
         loc = location.replace("\\", "/").lstrip("/")
         if loc in placeholders:
             return True
-        # Deno validator sometimes reports only the filename.
+        # The engine sometimes reports only the filename.
         if os.path.basename(loc) in placeholder_basenames:
             return True
         # And sometimes reports a path prefix/suffix; handle partial match.
@@ -197,8 +220,6 @@ def run_bids_validator(
             f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress content errors for these."
         )
 
-    deno_failure_message = None
-
     participants_tsv = os.path.join(root_dir, "participants.tsv")
     if os.path.exists(participants_tsv):
         try:
@@ -216,393 +237,176 @@ def run_bids_validator(
         except Exception:
             pass
 
-    # 1. Try Deno-based validator (modern)
-    try:
-        # Check if deno is installed
-        subprocess.run(
-            ["deno", "--version"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        print(f"   Using Deno-based validator ({DENO_BIDS_VALIDATOR_SPEC})")
-        if backend_info is not None:
-            backend_info.update({"engine": "deno", "spec": DENO_BIDS_VALIDATOR_SPEC})
-
-        # Run Deno validator
-        command = [
-            "deno",
-            "run",
-            "--node-modules-dir=auto",
-            "-ERWN",
-            "--allow-sys",
-            DENO_BIDS_VALIDATOR_SPEC,
-            root_dir,
-            "--json",
-        ]
-        if not check_nifti_headers:
-            command.append("--ignoreNiftiHeaders")
-        process = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        if process.stdout:
-            try:
-                bids_report = json.loads(process.stdout)
-
-                # Handle Deno validator structure
-                issue_list = []
-                if "issues" in bids_report:
-                    if (
-                        isinstance(bids_report["issues"], dict)
-                        and "issues" in bids_report["issues"]
-                    ):
-                        issue_list = bids_report["issues"]["issues"]
-                    elif isinstance(bids_report["issues"], list):
-                        issue_list = bids_report["issues"]
-
-                for issue in issue_list:
-                    code = issue.get("code", "UNKNOWN_CODE")
-                    location = issue.get("location", "")
-
-                    # PRISM citation-precedence: when CITATION.cff exists, suppress
-                    # BIDS citation overlap guidance and dataset_description-only
-                    # author-count warnings.
-                    if citation_cff_exists and _is_citation_precedence_warning(
-                        code, location
-                    ):
-                        silenced_citation_precedence_count += 1
-                        continue
-
-                    # These are non-required recommendation hints and can dominate
-                    # warning output for externally converted datasets.
-                    if code in SUPPRESSED_RECOMMENDED_WARNING_CODES:
-                        silenced_recommended_count += 1
-                        continue
-
-                    # Try to extract a specific file path from the location
-                    issue_file: Optional[str] = None
-                    if location:
-                        # Deno location starts with /
-                        if location.startswith("/"):
-                            issue_file = os.path.join(root_dir, location.lstrip("/"))
-                        else:
-                            issue_file = os.path.join(root_dir, location)
-
-                    annex_unfetched = code in content_error_codes and (
-                        _is_unfetched_annex_content(issue_file)
-                    )
-
-                    # Suppress content-related errors for placeholders (and for structure-only uploads).
-                    if code in content_error_codes and not annex_unfetched:
-                        if _is_placeholder_location(location):
-                            continue
-                        if structure_only and _looks_like_content_file(location):
-                            continue
-
-                    # Filter out NOT_INCLUDED for known PRISM modalities
-                    if code == "NOT_INCLUDED":
-                        is_prism_modality = False
-                        loc_lower = location.lower()
-                        for folder in prism_ignore_folders:
-                            if f"/{folder}/" in loc_lower or loc_lower.endswith(
-                                f"/{folder}/"
-                            ):
-                                is_prism_modality = True
-                                break
-                        if is_prism_modality:
-                            silenced_not_included_count += 1
-                            if location and len(silenced_not_included_examples) < 3:
-                                silenced_not_included_examples.append(location)
-                            continue
-                        if _is_prism_only_container_location(location):
-                            silenced_not_included_count += 1
-                            if location and len(silenced_not_included_examples) < 3:
-                                silenced_not_included_examples.append(location)
-                            continue
-
-                    severity = issue.get("severity", "warning").upper()
-                    level = "ERROR" if severity == "ERROR" else "WARNING"
-
-                    sub_code = issue.get("subCode", "")
-                    issue_msg = issue.get("issueMessage", "")
-
-                    msg = f"[BIDS] {code}"
-                    if sub_code:
-                        msg += f".{sub_code}"
-
-                    if issue_msg:
-                        msg += f": {issue_msg}"
-
-                    if location:
-                        msg += f"\n    Location: {location}"
-
-                    if annex_unfetched:
-                        level = "WARNING"
-                        msg += (
-                            "\n    Note: file content not yet fetched from "
-                            "git-annex/DataLad. Run `datalad get -r .` in the "
-                            "dataset root to download the actual data."
-                        )
-
-                    if issue_file:
-                        issues.append((level, msg, issue_file))
-                    else:
-                        issues.append((level, msg, root_dir))
-
-                if verbose and silenced_not_included_count:
-                    sample = ", ".join(silenced_not_included_examples)
-                    if silenced_not_included_count > len(
-                        silenced_not_included_examples
-                    ):
-                        remaining = silenced_not_included_count - len(
-                            silenced_not_included_examples
-                        )
-                        sample = (
-                            f"{sample}, +{remaining} more"
-                            if sample
-                            else f"+{remaining} more"
-                        )
-                    if sample:
-                        print(
-                            "   ℹ️  Silenced "
-                            f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths: {sample}"
-                        )
-                    else:
-                        print(
-                            "   ℹ️  Silenced "
-                            f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths"
-                        )
-
-                if verbose and silenced_recommended_count:
-                    print(
-                        "   ℹ️  Silenced "
-                        f"{silenced_recommended_count} recommended-key warning(s) "
-                        "(SIDECAR/JSON_KEY_RECOMMENDED)"
-                    )
-
-                if verbose and silenced_citation_precedence_count:
-                    print(
-                        "   ℹ️  Silenced "
-                        f"{silenced_citation_precedence_count} citation-precedence issue(s) "
-                        "(AUTHORS/CITATION overlap and dataset_description-only author hints)"
-                    )
-
-                return issues
-
-            except json.JSONDecodeError:
-                deno_failure_message = (
-                    "Deno validator output could not be parsed as JSON"
-                )
-        else:
-            stderr_msg = (process.stderr or "").strip()
-            if stderr_msg:
-                deno_failure_message = (
-                    f"Deno validator produced no output. Stderr: {stderr_msg}"
-                )
-            else:
-                deno_failure_message = f"Deno validator produced no output (exit code {process.returncode})"
-
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        # Deno not found, fall back to legacy
-        pass
-
-    # 2. Try legacy Python/Node CLI validator
-    if deno_failure_message:
-        print(f"   ⚠️  Deno validator failed: {deno_failure_message}")
-    print("   ⚠️  Falling back to legacy 'bids-validator' CLI...")
-    try:
-        # Check if bids-validator is installed
-        version_check = subprocess.run(
-            ["bids-validator", "--version"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if backend_info is not None:
-            legacy_version = (version_check.stdout or "").strip() or "unknown"
-            backend_info.update(
-                {"engine": "legacy", "spec": f"bids-validator@{legacy_version}"}
-            )
-
-        # Run validation
-        command = ["bids-validator", root_dir, "--json"]
-        if not check_nifti_headers:
-            command.append("--ignoreNiftiHeaders")
-        process = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        if process.stdout:
-            try:
-                bids_report = json.loads(process.stdout)
-
-                # Map BIDS issues to our format ("LEVEL", "Message")
-                for issue_type in ["errors", "warnings"]:
-                    base_level = "ERROR" if issue_type == "errors" else "WARNING"
-                    for issue in bids_report.get("issues", {}).get(issue_type, []):
-                        level = base_level
-                        key = issue.get("key", "")
-                        issue_locations: list[str] = []
-                        for file in issue.get("files", []):
-                            file_obj = file.get("file")
-                            if file_obj:
-                                issue_locations.append(
-                                    str(file_obj.get("relativePath", "") or "")
-                                )
-
-                        if citation_cff_exists and (
-                            _is_citation_precedence_warning(key)
-                            or any(
-                                _is_citation_precedence_warning(key, location)
-                                for location in issue_locations
-                            )
-                        ):
-                            silenced_citation_precedence_count += 1
-                            continue
-
-                        if key in SUPPRESSED_RECOMMENDED_WARNING_CODES:
-                            silenced_recommended_count += 1
-                            continue
-
-                        # Filter files for this issue
-                        filtered_files = []
-                        any_annex_unfetched = False
-                        for file in issue.get("files", []):
-                            file_obj = file.get("file")
-                            if file_obj:
-                                file_path = file_obj.get("relativePath", "")
-                                abs_file_path = os.path.join(
-                                    root_dir, file_path.lstrip("/")
-                                )
-                                file_annex_unfetched = (
-                                    key in content_error_codes
-                                    and _is_unfetched_annex_content(abs_file_path)
-                                )
-                                if file_annex_unfetched:
-                                    any_annex_unfetched = True
-                                # Suppress content-related errors for placeholders
-                                if (
-                                    key in content_error_codes
-                                    and not file_annex_unfetched
-                                    and file_path.lstrip("/") in placeholders
-                                ):
-                                    continue
-                                if (
-                                    structure_only
-                                    and not file_annex_unfetched
-                                    and key == "EMPTY_FILE"
-                                    and file_path.lower().endswith(
-                                        (".nii", ".nii.gz", ".tsv.gz")
-                                    )
-                                ):
-                                    continue
-                                filtered_files.append(file_path)
-
-                        if not filtered_files and issue.get("files"):
-                            continue
-
-                        if any_annex_unfetched:
-                            level = "WARNING"
-
-                        # Filter out NOT_INCLUDED for known PRISM modalities
-                        if key == "NOT_INCLUDED":
-                            is_prism_folder = False
-                            for f_path in filtered_files:
-                                for prism_folder in prism_ignore_folders:
-                                    if (
-                                        f"/{prism_folder}/" in f_path.lower()
-                                        or f_path.lower().endswith(f"/{prism_folder}/")
-                                    ):
-                                        is_prism_folder = True
-                                        break
-                                if _is_prism_only_container_location(f_path):
-                                    is_prism_folder = True
-                                    break
-                            if is_prism_folder:
-                                continue
-
-                        msg = f"[BIDS] {issue.get('reason')} ({key})"
-                        first_file = None
-                        for f_path in filtered_files:
-                            msg += f"\n    File: {f_path}"
-                            if not first_file:
-                                first_file = os.path.join(root_dir, f_path.lstrip("/"))
-
-                        if any_annex_unfetched:
-                            msg += (
-                                "\n    Note: file content not yet fetched from "
-                                "git-annex/DataLad. Run `datalad get -r .` in the "
-                                "dataset root to download the actual data."
-                            )
-
-                        if first_file:
-                            issues.append((level, msg, first_file))
-                        else:
-                            issues.append((level, msg, root_dir))
-
-                if verbose and silenced_recommended_count:
-                    print(
-                        "   ℹ️  Silenced "
-                        f"{silenced_recommended_count} recommended-key warning(s) "
-                        "(SIDECAR/JSON_KEY_RECOMMENDED)"
-                    )
-
-                if verbose and silenced_citation_precedence_count:
-                    print(
-                        "   ℹ️  Silenced "
-                        f"{silenced_citation_precedence_count} citation-precedence issue(s) "
-                        "(AUTHORS/CITATION overlap and dataset_description-only author hints)"
-                    )
-
-            except json.JSONDecodeError:
-                if verbose:
-                    print("Warning: Could not parse BIDS validator JSON output.")
-                if process.returncode != 0:
-                    # Fail closed: the validator failed and its result is unreadable.
-                    issues.append(
-                        (
-                            "ERROR",
-                            "PRISM902 BIDS validator requested but its output could not "
-                            f"be parsed (exit code {process.returncode})",
-                            root_dir,
-                        )
-                    )
-                else:
-                    issues.append(
-                        (
-                            "INFO",
-                            "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
-                            root_dir,
-                        )
-                    )
-
-        if process.returncode != 0 and not issues:
-            issues.append(
-                ("ERROR", f"BIDS Validator failed to run: {process.stderr}", root_dir)
-            )
-
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        # Fail closed: BIDS validation was requested but no validator could run.
-        detail = (
-            f" (Deno validator failed: {deno_failure_message})"
-            if deno_failure_message
-            else ""
-        )
+    def _fail(reason: str) -> List[Tuple[str, str, str]]:
         issues.append(
-            (
-                "ERROR",
-                "PRISM902 BIDS validator requested but not available: install Deno "
-                "or the legacy 'bids-validator' CLI" + detail,
-                root_dir,
+            ("ERROR", f"PRISM902 BIDS validator requested but {reason}", root_dir)
+        )
+        return issues
+
+    engine = find_bids_engine()
+    if engine is None:
+        return _fail(
+            "not available: the bids-validator-deno program was not found next to "
+            "Python or on PATH. Reinstall prism-validator (it depends on "
+            "bids-validator-deno) or run with --no-bids"
+        )
+
+    version = bids_engine_version()
+    print(f"   Using bids-validator-deno {version}")
+    if backend_info is not None:
+        backend_info.update(
+            {
+                "engine": "bids-validator-deno",
+                "version": version,
+                "spec": f"bids-validator-deno@{version}",
+            }
+        )
+
+    command = [engine, root_dir, "--json"]
+    if not check_nifti_headers:
+        command.append("--ignoreNiftiHeaders")
+    try:
+        process = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+    except OSError as exc:
+        return _fail(f"could not be started: {exc}")
+
+    if not process.stdout:
+        stderr_msg = (process.stderr or "").strip()
+        detail = f" Stderr: {stderr_msg}" if stderr_msg else ""
+        return _fail(f"produced no output (exit code {process.returncode}).{detail}")
+    try:
+        bids_report = json.loads(process.stdout)
+    except json.JSONDecodeError:
+        return _fail(f"its output could not be parsed (exit code {process.returncode})")
+
+    # Handle the engine report structure
+    issue_list = []
+    if "issues" in bids_report:
+        if (
+            isinstance(bids_report["issues"], dict)
+            and "issues" in bids_report["issues"]
+        ):
+            issue_list = bids_report["issues"]["issues"]
+        elif isinstance(bids_report["issues"], list):
+            issue_list = bids_report["issues"]
+
+    for issue in issue_list:
+        code = issue.get("code", "UNKNOWN_CODE")
+        location = issue.get("location", "")
+
+        # PRISM citation-precedence: when CITATION.cff exists, suppress
+        # BIDS citation overlap guidance and dataset_description-only
+        # author-count warnings.
+        if citation_cff_exists and _is_citation_precedence_warning(code, location):
+            silenced_citation_precedence_count += 1
+            continue
+
+        # These are non-required recommendation hints and can dominate
+        # warning output for externally converted datasets.
+        if code in SUPPRESSED_RECOMMENDED_WARNING_CODES:
+            silenced_recommended_count += 1
+            continue
+
+        # Try to extract a specific file path from the location
+        issue_file: Optional[str] = None
+        if location:
+            # Engine location starts with /
+            if location.startswith("/"):
+                issue_file = os.path.join(root_dir, location.lstrip("/"))
+            else:
+                issue_file = os.path.join(root_dir, location)
+
+        annex_unfetched = code in content_error_codes and (
+            _is_unfetched_annex_content(issue_file)
+        )
+
+        # Suppress content-related errors for placeholders (and for structure-only uploads).
+        if code in content_error_codes and not annex_unfetched:
+            if _is_placeholder_location(location):
+                continue
+            if structure_only and _looks_like_content_file(location):
+                continue
+
+        # Filter out NOT_INCLUDED for known PRISM modalities
+        if code == "NOT_INCLUDED":
+            is_prism_modality = False
+            loc_lower = location.lower()
+            for folder in prism_ignore_folders:
+                if f"/{folder}/" in loc_lower or loc_lower.endswith(f"/{folder}/"):
+                    is_prism_modality = True
+                    break
+            if is_prism_modality:
+                silenced_not_included_count += 1
+                if location and len(silenced_not_included_examples) < 3:
+                    silenced_not_included_examples.append(location)
+                continue
+            if _is_prism_only_container_location(location):
+                silenced_not_included_count += 1
+                if location and len(silenced_not_included_examples) < 3:
+                    silenced_not_included_examples.append(location)
+                continue
+
+        severity = issue.get("severity", "warning").upper()
+        level = "ERROR" if severity == "ERROR" else "WARNING"
+
+        sub_code = issue.get("subCode", "")
+        issue_msg = issue.get("issueMessage", "")
+
+        msg = f"[BIDS] {code}"
+        if sub_code:
+            msg += f".{sub_code}"
+
+        if issue_msg:
+            msg += f": {issue_msg}"
+
+        if location:
+            msg += f"\n    Location: {location}"
+
+        if annex_unfetched:
+            level = "WARNING"
+            msg += (
+                "\n    Note: file content not yet fetched from "
+                "git-annex/DataLad. Run `datalad get -r .` in the "
+                "dataset root to download the actual data."
             )
+
+        if issue_file:
+            issues.append((level, msg, issue_file))
+        else:
+            issues.append((level, msg, root_dir))
+
+    if verbose and silenced_not_included_count:
+        sample = ", ".join(silenced_not_included_examples)
+        if silenced_not_included_count > len(silenced_not_included_examples):
+            remaining = silenced_not_included_count - len(
+                silenced_not_included_examples
+            )
+            sample = f"{sample}, +{remaining} more" if sample else f"+{remaining} more"
+        if sample:
+            print(
+                "   ℹ️  Silenced "
+                f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths: {sample}"
+            )
+        else:
+            print(
+                "   ℹ️  Silenced "
+                f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths"
+            )
+
+    if verbose and silenced_recommended_count:
+        print(
+            "   ℹ️  Silenced "
+            f"{silenced_recommended_count} recommended-key warning(s) "
+            "(SIDECAR/JSON_KEY_RECOMMENDED)"
+        )
+
+    if verbose and silenced_citation_precedence_count:
+        print(
+            "   ℹ️  Silenced "
+            f"{silenced_citation_precedence_count} citation-precedence issue(s) "
+            "(AUTHORS/CITATION overlap and dataset_description-only author hints)"
         )
 
     return issues
