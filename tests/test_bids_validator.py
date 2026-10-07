@@ -169,21 +169,57 @@ def test_deno_parser_keeps_genuinely_broken_file_as_error(monkeypatch, tmp_path)
     assert "datalad get" not in message
 
 
-def test_engine_is_found_next_to_python_before_path(monkeypatch, tmp_path):
-    name = "bids-validator-deno.exe" if sys.platform == "win32" else "bids-validator-deno"
-    local = tmp_path / name
-    local.write_text("")
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+def _no_other_scripts_dirs(monkeypatch, tmp_path, scripts="scripts", user="user_scripts"):
+    """Point sys.executable and both sysconfig scripts dirs into tmp_path (nothing real is looked at)."""
+    dirs = {"python": tmp_path / "py", "scripts": tmp_path / scripts, "user": tmp_path / user}
+    for d in dirs.values():
+        d.mkdir(exist_ok=True)
+    monkeypatch.setattr(sys, "executable", str(dirs["python"] / "python"))
+    monkeypatch.setattr(
+        bids_validator.sysconfig,
+        "get_path",
+        lambda name, scheme=None: str(dirs["user"] if scheme else dirs["scripts"]),
+    )
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: None)
+    return dirs
+
+
+def _engine_name():
+    return "bids-validator-deno.exe" if sys.platform == "win32" else "bids-validator-deno"
+
+
+def test_engine_is_found_next_to_python_before_anything_else(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    for d in dirs.values():
+        (d / _engine_name()).write_text("")
     monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/elsewhere/" + n)
-    assert bids_validator.find_bids_engine() == str(local)
+    assert bids_validator.find_bids_engine() == str(dirs["python"] / _engine_name())
+
+
+def test_engine_lookup_order_is_scripts_then_user_scripts_then_path(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    (dirs["user"] / _engine_name()).write_text("")
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/usr/bin/" + n)
+    assert bids_validator.find_bids_engine() == str(dirs["user"] / _engine_name())
+    (dirs["scripts"] / _engine_name()).write_text("")
+    assert bids_validator.find_bids_engine() == str(dirs["scripts"] / _engine_name())
 
 
 def test_engine_falls_back_to_path_then_none(monkeypatch, tmp_path):
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    _no_other_scripts_dirs(monkeypatch, tmp_path)
     monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/usr/bin/" + n)
     assert bids_validator.find_bids_engine() == "/usr/bin/bids-validator-deno"
     monkeypatch.setattr(bids_validator.shutil, "which", lambda n: None)
     assert bids_validator.find_bids_engine() is None
+
+
+def test_on_windows_the_exe_name_is_what_is_looked_for(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, "platform", "win32")
+    (dirs["python"] / "bids-validator-deno").write_text("")  # the bare name must not match
+    assert bids_validator.find_bids_engine() is None
+    (dirs["scripts"] / "bids-validator-deno.exe").write_text("")
+    assert bids_validator.find_bids_engine() == str(dirs["scripts"] / "bids-validator-deno.exe")
 
 
 def test_command_line_is_the_engine_and_ignores_nifti_headers_by_default(monkeypatch, tmp_path):

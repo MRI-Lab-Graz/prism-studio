@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
@@ -17,11 +18,22 @@ BIDS_ENGINE_TIMEOUT_SECONDS = 1800
 
 
 def find_bids_engine() -> Optional[str]:
-    """The bids-validator-deno program: next to the running Python first, then on PATH."""
+    """The bids-validator-deno program: next to the running Python, in the
+    interpreter's and the user's scripts folders (non-venv installs), then on PATH."""
     name = BIDS_ENGINE_COMMAND + (".exe" if sys.platform == "win32" else "")
-    local = Path(sys.executable).parent / name
-    if local.is_file():
-        return str(local)
+    user_scheme = (
+        sysconfig.get_preferred_scheme("user")
+        if hasattr(sysconfig, "get_preferred_scheme")
+        else ("nt_user" if os.name == "nt" else "posix_user")
+    )
+    for folder in (
+        Path(sys.executable).parent,
+        sysconfig.get_path("scripts"),
+        sysconfig.get_path("scripts", scheme=user_scheme),
+    ):
+        candidate = Path(folder) / name
+        if candidate.is_file():
+            return str(candidate)
     return shutil.which(BIDS_ENGINE_COMMAND)
 
 
