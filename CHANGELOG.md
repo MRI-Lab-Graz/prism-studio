@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.2] - 2026-10-07
+
+_Includes everything since 1.19.0 that was not listed under a 1.19.1 heading._
+
 ### Fixed
 - **`prism-validator` on PyPI works on real projects (issue #162).** (1) It no longer crashes with
   `No module named 'procedure_validator'` on a dataset that has a `project.json`: the module was missing
