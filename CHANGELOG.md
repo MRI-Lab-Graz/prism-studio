@@ -8,14 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **LimeSurvey import turns each questionnaire into its own clean template.** The Template Editor import
+  put the whole survey into one template and each array question (WHO-5, PSS, ADS, ...) into a single
+  "item" whose question text was the array's instructions. Now the rows become real items (`WHO1`...; rows
+  coded `1`..`20` become `ADS1_1`...), the array stem goes to `Study.Instructions`, answer labels of
+  LimeSurvey 6 exports (`answer_l10ns`) come through, only the base language of LimeSurvey 3 exports is
+  imported (no duplicated items), and the Survey Generator's group split returns the same flattened items.
+- **Import hints instead of a "Validation failed" box.** After an import, fields LimeSurvey cannot contain
+  (Citation, Category, SoftwareVersion) are listed as "Not found in your file - please fill these in"
+  instead of a red failure. The field links in validation boxes are readable (they were white on pale).
 - **`prism_tools.py library fill` works from any folder.** It failed with "Could not load schema" unless run
   from inside `app/`, because the schema directory defaulted to a path relative to the current folder. The
   same default also affected library validation and the LimeSurvey tools.
 
 ### Changed
+- **`survey import-limesurvey` takes the questionnaire choice on the command line.** `--output` is now a
+  directory (one `survey-<task>.json` per questionnaire; existing files are never overwritten) and `--task`
+  is gone. Without `--select` it only lists what it finds. New: `--split group|question|survey`, `--list`,
+  `--select KEY...|all`, `--project DIR`, `--use-library`. Old scripts using `--output file.json` now stop
+  with a clear message.
 - **Metadata-only projects validate.** A project with `dataset_description.json` but no `participants.*` and no `sub-*` folders no longer fails with "No subjects found" (so the save gate lets a fresh project be saved). A `participants.tsv`/`participants.json` without any subject data, or a folder without `dataset_description.json`, is still an error.
 
 ### Removed
+- **The Survey Generator's "Individual questions" export** (one template per single question), its route
+  mode (`mode=questions` now returns 400) and `parse_lss_xml_by_questions`. Use "By questionnaire group", or
+  the Template Editor import with "Split by question" when several questionnaires share one LimeSurvey group.
 - **`prism.py --build-environment`.** Its weather, pollen and air-quality "providers" never fetched
   data: they derived placeholder numbers from a hash of the coordinates and time, so any
   `*_environment.tsv` it wrote contains made-up values and should be regenerated. Use
@@ -25,6 +42,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Studio from source (`bash install.sh`).
 
 ### Added
+- **Pick a questionnaire when importing a LimeSurvey file.** Template Editor > Import Template Source lists
+  the questionnaires found in a `.lss`/`.lsa` (split by question group, by question, or the whole survey),
+  marks helper groups, and loads one at a time; the terminal shows every step with `[PRISM]` lines. The same
+  choices exist on the CLI (`survey import-limesurvey`). A PRISM template exported to LimeSurvey and
+  imported again keeps its metadata (hidden `PRISMMETA` question).
+- **Library match for imported questionnaires.** Each imported questionnaire is compared by question
+  wording with the templates in the global and the project library. A match (exact / high / medium) shows an
+  item-ID mapping and a card with "Use library template" (only when every item maps one-to-one) or "Import
+  as new". Using a library template keeps the library's item IDs and stores your survey's codes in each
+  item's `Aliases`, so response data still lines up. The global library is only ever read, never written.
+  CLI: `survey import-limesurvey ... --project DIR --select KEY --use-library`.
 - **DataLad server setup and CLI.** `prism_tools.py datalad doctor` checks Git, git-annex,
   DataLad, the SSH client, an SSH key and (with a server URL) a real key-based login, and
   says what to fix; the same check is the "Check this computer" button on the Share page and
