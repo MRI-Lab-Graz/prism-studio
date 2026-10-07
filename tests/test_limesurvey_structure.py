@@ -495,6 +495,38 @@ class TestParseLssXmlByGroups:
         )
         assert "AGE" in demographics
 
+    def test_array_rows_are_items_not_nested(self):
+        from pathlib import Path
+
+        xml = (Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss").read_bytes()
+        result = parse_lss_xml_by_groups(xml)
+
+        assert "ADS1_1" in result["ads"]
+        assert "Items" not in result["ads"].get("ADS1", {})
+
+    def test_prismmeta_pseudo_item_is_kept(self, tmp_path):
+        import json
+
+        from src.converters.survey_templates import _extract_prismmeta
+        from src.limesurvey_exporter import generate_lss
+
+        source = tmp_path / "survey-rts.json"
+        source.write_text(json.dumps({
+            "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv",
+                          "SoftwarePlatform": "LimeSurvey", "Language": "en",
+                          "Respondent": "self"},
+            "Study": {"TaskName": "rts", "OriginalName": "Round Trip Scale",
+                      "ShortName": "RTS", "Authors": ["Doe J"]},
+            "RTS01": {"Description": "item", "Levels": {"1": "no", "2": "yes"}},
+        }), encoding="utf-8")
+        lss = tmp_path / "rts.lss"
+        generate_lss([str(source)], output_path=str(lss), language="en")
+
+        [template] = parse_lss_xml_by_groups(lss.read_bytes()).values()
+
+        assert any(k.startswith("PRISMMETA") for k in template)
+        assert _extract_prismmeta(template).get("abbrev") == "RTS"
+
 
 # ---------------------------------------------------------------------------
 # parse_lss_xml_by_questions

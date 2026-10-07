@@ -1045,7 +1045,7 @@ def _parse_lss_for_questionnaires(xml_content):
     }
 
 
-def _split_questionnaires(parsed, split):
+def _split_questionnaires(parsed, split, keep_prismmeta=False):
     if split not in SPLIT_MODES:
         raise ValueError(f"Unknown split mode '{split}'. Use one of: {', '.join(SPLIT_MODES)}")
     groups = parsed["groups"]
@@ -1062,7 +1062,8 @@ def _split_questionnaires(parsed, split):
         for _qid, q in top
         if _PRISMMETA_RE.match(q["title"])
     }
-    top = [(qid, q) for qid, q in top if not _PRISMMETA_RE.match(q["title"])]
+    if not keep_prismmeta:
+        top = [(qid, q) for qid, q in top if not _PRISMMETA_RE.match(q["title"])]
 
     if split == "survey":
         if not top:
@@ -1133,11 +1134,24 @@ def _questionnaire_template(parsed, part):
     return template, _apply_prismmeta(template, part["prismmeta"])
 
 
-def _build_questionnaires(xml_content, split):
+def _build_questionnaires(xml_content, split, keep_prismmeta=False):
+    """keep_prismmeta: leave the hidden PRISMMETA question in each template as a
+    pseudo-item (Survey Generator readers parse it) instead of restoring it into Study."""
     parsed = _parse_lss_for_questionnaires(xml_content)
     results = []
-    for part in _split_questionnaires(parsed, split):
+    for part in _split_questionnaires(parsed, split, keep_prismmeta):
+        if keep_prismmeta:
+            part["prismmeta"] = ""
         template, restored = _questionnaire_template(parsed, part)
+        if keep_prismmeta:
+            # old by-groups shape: string Description + Attributes.equation (what _extract_prismmeta reads)
+            for qid in part["qids"]:
+                q = parsed["questions"][qid]
+                if _PRISMMETA_RE.match(q["title"]) and q["title"] in template:
+                    template[q["title"]] = {
+                        "Description": q["question"],
+                        "Attributes": {"equation": str(q["attributes"].get("equation", ""))},
+                    }
         questions = [parsed["questions"][qid] for qid in part["qids"]]
         results.append((
             {
@@ -1503,189 +1517,15 @@ def parse_lss_xml(
 def parse_lss_xml_by_groups(xml_content):
     """Parse a LimeSurvey .lss XML blob and split into separate questionnaires by group.
 
-    Returns:
-        dict: {group_name: prism_json_dict, ...} or None on error
+    Same builder as the Template Editor import: one flattened PRISM template
+    per question group, keyed by its task name.
     """
     try:
-        root = ET.fromstring(xml_content)
-    except ET.ParseError as e:
+        _parsed, results = _build_questionnaires(xml_content, "group", keep_prismmeta=True)
+    except ValueError as e:
         print(f"Error parsing XML: {e}")
         return None
-
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
-
-    # Get survey-level metadata
-    survey_meta = _parse_survey_metadata(root, get_text)
-
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-
-    # Parse Answers (with LS 6.x answer_l10ns fallback)
-    _answer_l10ns_by_aid = {}  # aid -> answer text
-    for row in root.findall(".//answer_l10ns/rows/row"):
-        aid = get_text(row, "aid")
-        if aid and aid not in _answer_l10ns_by_aid:
-            _answer_l10ns_by_aid[aid] = get_text(row, "answer")
-
-    answers_section = root.find("answers")
-    if answers_section is not None:
-        rows = answers_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
-                # LS 6.x fallback: answer text in answer_l10ns, linked by aid
-                if not answer:
-                    aid = get_text(row, "aid")
-                    if aid and aid in _answer_l10ns_by_aid:
-                        answer = _answer_l10ns_by_aid[aid]
-                if qid in questions_map:
-                    questions_map[qid]["levels"][code] = answer
-
-    # Group questions by their group ID, preserving full question data
-    grouped_questions = {}  # gid -> list of (qid, q_data)
-    for qid, q_data in questions_map.items():
-        gid = q_data.get("gid", "")
-        if gid not in grouped_questions:
-            grouped_questions[gid] = []
-        grouped_questions[gid].append((qid, q_data))
-
-    # Sort groups by group order, then sort questions within each group
-    sorted_groups = sorted(
-        grouped_questions.items(),
-        key=lambda x: groups_map.get(x[0], {}).get("order", 0),
-    )
-
-    # Build separate PRISM JSONs for each group
-    result = {}
-    for gid, questions_list in sorted_groups:
-        if not questions_list:
-            continue
-
-        # Get group info
-        group_info = groups_map.get(
-            gid, {"name": f"group_{gid}", "order": 0, "description": ""}
-        )
-        group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
-        group_order = group_info["order"]
-        group_description = group_info.get("description", "")
-
-        # Sort questions by question_order within the group
-        sorted_questions = sorted(questions_list, key=lambda x: x[1]["question_order"])
-
-        # Build question entries
-        questions_dict = {}
-        for qid, q_data in sorted_questions:
-            key = q_data["title"]
-            entry = {
-                "Description": q_data["question"],
-                "QuestionType": q_data["type_name"],
-                "Mandatory": q_data["mandatory"],
-                "Position": {
-                    "Group": group_name,
-                    "GroupOrder": group_order,
-                    "QuestionOrder": q_data["question_order"],
-                },
-            }
-
-            # Add answer levels if present
-            if q_data["levels"]:
-                entry["Levels"] = q_data["levels"]
-
-            # Add subquestions/items for array-type questions
-            if q_data["subquestions"]:
-                items = {}
-                for sq in q_data["subquestions"]:
-                    item_entry = {
-                        "Description": sq["text"],
-                        "Order": sq["order"],
-                    }
-                    if sq["scale_id"] != 0:
-                        item_entry["ScaleId"] = sq["scale_id"]
-                    if sq.get("media_urls"):
-                        item_entry["MediaUrls"] = sq["media_urls"]
-                    items[sq["code"]] = item_entry
-                entry["Items"] = items
-
-            # Add "Other" option flag
-            if q_data["other"]:
-                entry["HasOtherOption"] = True
-
-            # Add help text if present
-            if q_data["help"]:
-                entry["HelpText"] = q_data["help"]
-
-            # Add validation regex if present
-            if q_data["validation_regex"]:
-                entry["ValidationRegex"] = q_data["validation_regex"]
-
-            # Add relevance/condition if present
-            if q_data["relevance"]:
-                entry["Condition"] = q_data["relevance"]
-
-            # Add question attributes (design options, etc.)
-            if q_data["attributes"]:
-                attrs = {
-                    k: v
-                    for k, v in q_data["attributes"].items()
-                    if v not in (None, "", 0)
-                }
-                if attrs:
-                    entry["Attributes"] = attrs
-
-            questions_dict[key] = entry
-
-        normalized_name = sanitize_task_name(group_name)
-
-        # Use group description if available, otherwise generate one
-        study_description = (
-            group_description
-            if group_description
-            else f"Imported from LimeSurvey group: {group_name}"
-        )
-
-        prism_json = {
-            "Technical": {
-                "StimulusType": "Questionnaire",
-                "FileFormat": "tsv",
-                "SoftwarePlatform": "LimeSurvey",
-                "Language": survey_meta.get("language", "en"),
-                "Respondent": "self",
-                "ResponseType": ["online"],
-            },
-            "Study": {
-                "TaskName": normalized_name,
-                "OriginalName": group_name,
-                "SurveyTitle": survey_meta.get("title", ""),
-                "Version": "1.0",
-                "Description": study_description,
-                "GroupOrder": group_order,
-                "ItemCount": len(questions_dict),
-                "LicenseID": "Proprietary",
-                "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
-            },
-            "Metadata": {
-                "SchemaVersion": "1.1.1",
-                "CreationDate": _utc_creation_date(),
-                "Creator": "limesurvey_to_prism.py",
-            },
-        }
-
-        # Add survey-level settings if present
-        if survey_meta.get("admin"):
-            prism_json["Study"]["Author"] = survey_meta["admin"]
-        if survey_meta.get("admin_email"):
-            prism_json["Study"]["ContactEmail"] = survey_meta["admin_email"]
-        if survey_meta.get("anonymized"):
-            prism_json["Technical"]["Anonymized"] = survey_meta["anonymized"]
-
-        prism_json.update(questions_dict)
-        result[normalized_name] = prism_json
-
-    return result
+    return {template["Study"]["TaskName"]: template for _info, template in results}
 
 
 def parse_lss_xml_by_questions(xml_content):
