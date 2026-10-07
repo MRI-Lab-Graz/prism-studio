@@ -12,6 +12,8 @@ from typing import List, Optional, Set, Tuple
 
 BIDS_ENGINE_COMMAND = "bids-validator-deno"
 BIDS_ENGINE_PACKAGE = "bids-validator-deno"
+# ponytail: fixed 30 min ceiling, make it configurable if a real dataset needs more
+BIDS_ENGINE_TIMEOUT_SECONDS = 1800
 
 
 def find_bids_engine() -> Optional[str]:
@@ -258,12 +260,22 @@ def run_bids_validator(
             }
         )
 
-    command = [engine, root_dir, "--json"]
+    command = [engine, root_dir, "--format", "json"]
     if not check_nifti_headers:
         command.append("--ignoreNiftiHeaders")
     try:
         process = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            encoding="utf-8",
+            errors="replace",
+            env={**os.environ, "NO_COLOR": "1"},
+            timeout=BIDS_ENGINE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        return _fail(
+            "did not finish within 30 minutes. Reinstall prism-validator or run with --no-bids"
         )
     except OSError as exc:
         return _fail(f"could not be started: {exc}")
@@ -275,24 +287,33 @@ def run_bids_validator(
             f"produced no output (exit code {process.returncode}).{detail} "
             "Reinstall prism-validator or run with --no-bids"
         )
+    hint = "Reinstall prism-validator or run with --no-bids"
     try:
         bids_report = json.loads(process.stdout)
     except json.JSONDecodeError:
         return _fail(
-            f"its output could not be parsed (exit code {process.returncode}). "
-            "Reinstall prism-validator or run with --no-bids"
+            f"its output could not be parsed (exit code {process.returncode}). {hint}"
         )
 
-    # Handle the engine report structure
-    issue_list = []
-    if "issues" in bids_report:
-        if (
-            isinstance(bids_report["issues"], dict)
-            and "issues" in bids_report["issues"]
-        ):
-            issue_list = bids_report["issues"]["issues"]
-        elif isinstance(bids_report["issues"], list):
-            issue_list = bids_report["issues"]
+    # The engine exits 0 (no errors) or 16 (errors found) and always prints a
+    # report; anything else means the report cannot be trusted.
+    issue_list = (
+        bids_report.get("issues", {}).get("issues")
+        if isinstance(bids_report, dict) and isinstance(bids_report.get("issues"), dict)
+        else None
+    )
+    if not isinstance(issue_list, list):
+        return _fail(f"its output is not a BIDS report (exit code {process.returncode}). {hint}")
+    if process.returncode not in (0, 16):
+        return _fail(f"exited with unexpected code {process.returncode}. {hint}")
+    has_raw_error = any(
+        isinstance(i, dict) and str(i.get("severity", "")).lower() == "error"
+        for i in issue_list
+    )
+    if process.returncode == 16 and not has_raw_error:
+        return _fail(f"exited with code 16 (errors found) but its report lists no error. {hint}")
+    if process.returncode == 0 and has_raw_error:
+        return _fail(f"exited with code 0 (no errors) but its report lists an error. {hint}")
 
     for issue in issue_list:
         code = issue.get("code", "UNKNOWN_CODE")

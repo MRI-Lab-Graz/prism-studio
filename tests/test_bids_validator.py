@@ -12,9 +12,12 @@ ENGINE = "/fake/bin/bids-validator-deno"
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def use_engine(monkeypatch, report=None, stdout=None, returncode=0):
+def use_engine(monkeypatch, report=None, stdout=None, returncode=None):
     """Pretend bids-validator-deno is installed and prints `report`; return the recorded commands."""
     calls = []
+    if returncode is None:  # the engine exits 16 when its report holds an error, else 0
+        issues = ((report or {}).get("issues") or {}).get("issues", [])
+        returncode = 16 if any(i.get("severity") == "error" for i in issues) else 0
     monkeypatch.setattr(bids_validator, "find_bids_engine", lambda: ENGINE)
     monkeypatch.setattr(bids_validator, "bids_engine_version", lambda: "3.0.2")
 
@@ -188,8 +191,8 @@ def test_command_line_is_the_engine_and_ignores_nifti_headers_by_default(monkeyp
     bids_validator.run_bids_validator(str(tmp_path))
     bids_validator.run_bids_validator(str(tmp_path), check_nifti_headers=True)
     assert calls == [
-        [ENGINE, str(tmp_path), "--json", "--ignoreNiftiHeaders"],
-        [ENGINE, str(tmp_path), "--json"],
+        [ENGINE, str(tmp_path), "--format", "json", "--ignoreNiftiHeaders"],
+        [ENGINE, str(tmp_path), "--format", "json"],
     ]
 
 
