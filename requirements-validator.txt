@@ -4,8 +4,11 @@
 # validator.py, schema_manager.py, runner.py, template_validator.py, fixer.py,
 # plugins.py, formatters.py, reporting.py, environment/builder.py).
 # No Flask, pandas, datalad, or other Studio app/converter dependencies
-# are required to validate a dataset.
+# are required to validate a dataset. The BIDS engine is part of the validator.
 jsonschema
-bids-validator
 defusedxml
 PyYAML>=6.0.3
+# The BIDS check runs by default and needs this engine; the PyPI package `deno` it depends on
+# ships the Deno runtime as a wheel for these platforms only, so the requirement is skipped elsewhere
+# (a run then reports PRISM902 and the hint to use --no-bids).
+bids-validator-deno>=3.0.2,<4; sys_platform == "darwin" or (sys_platform == "linux" and platform_machine in "x86_64 aarch64") or (sys_platform == "win32" and platform_machine == "AMD64")

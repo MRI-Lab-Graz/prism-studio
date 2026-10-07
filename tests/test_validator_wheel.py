@@ -1,5 +1,6 @@
 """The prism-validator wheel (PyPI): CLI-only, no Studio code, shares the repo version."""
 
+import json
 import re
 import subprocess
 import sys
@@ -94,6 +95,11 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     out = run.stdout + run.stderr
     assert "PRISM303" not in out, out
     assert "No module named" not in out, out
+    # The BIDS engine ships with the wheel and runs by default.
+    run = subprocess.run([exe, str(ds), "--format", "json"], capture_output=True, text=True)
+    report = json.loads(run.stdout)
+    assert report["bids_validator"]["engine"] == "bids-validator-deno", run.stdout
+    assert not any(i["code"] == "PRISM902" for i in report["issues"]), run.stdout
     (ds / "CITATION.cff").write_text(
         "cff-version: 1.2.0\nmessage: m\n"
         "authors:\n  - family-names: Doe\n    given-names: J\n"
@@ -102,6 +108,14 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     out = run.stdout + run.stderr
     assert "PRISM303" in out and "'title' is a required property" in out, out
     assert "No module named" not in out, out
+
+
+def test_wheel_depends_on_bids_validator_deno_not_on_the_pypi_bids_validator(wheel):
+    zf = zipfile.ZipFile(wheel)
+    meta = zf.read(next(n for n in zf.namelist() if n.endswith("/METADATA"))).decode()
+    assert re.search(r"^Requires-Dist: bids-validator-deno", meta, re.M)
+    assert "sys_platform" in re.search(r"^Requires-Dist: bids-validator-deno.*$", meta, re.M).group(0)
+    assert not re.search(r"^Requires-Dist: bids-validator(?!-deno)", meta, re.M)
 
 
 def test_wheel_metadata_has_pypi_page_fields(wheel):

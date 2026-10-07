@@ -13,6 +13,7 @@ manifest file (lazy, function-level imports included) is itself listed.
 """
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -94,7 +95,7 @@ def stage(dest: Path) -> None:
         if line.strip() and not line.startswith("#")
     ]
     (dest / "pyproject.toml").write_text(
-        PYPROJECT.format(version=version, deps=repr(deps).replace("'", '"'))
+        PYPROJECT.format(version=version, deps=json.dumps(deps))
     )
     shutil.copy2(ROOT / "README.md", dest / "README.md")
 
