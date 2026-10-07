@@ -22,6 +22,17 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+RAW_BASE = "https://raw.githubusercontent.com/MRI-Lab-Graz/prism-studio/v{version}/"
+SITE_BASE = "https://github.com/MRI-Lab-Graz/prism-studio/{kind}/v{version}/"
+
+# One left-to-right pass: code is matched (and kept) before it can be rewritten,
+# while a link whose text holds a code span still matches as a link.
+_REF = re.compile(
+    r'(?P<code>```.*?```|`[^`\n]*`)|(?P<img>!)?\[(?P<alt>[^\]]*)\]\((?P<md>[^)\s]+)\)'
+    r'|(?P<attr>\b(?:src|href))="(?P<html>[^"]*)"',
+    re.S,
+)
+_ABSOLUTE = re.compile(r"([a-z][a-z0-9+.-]*:|//|#|/)", re.I)
 
 CLI = '''import os
 import runpy
@@ -77,6 +88,28 @@ include = ["prism_validator*"]
 """
 
 
+def pypi_readme(text: str, version: str) -> str:
+    """README with relative image/link targets made absolute (PyPI has no repo)."""
+
+    def absolute(m):
+        url = m["md"] or m["html"] or ""
+        if m["code"] or _ABSOLUTE.match(url):
+            return m[0]
+        url = url.removeprefix("./")
+        path = re.split(r"[#?]", url, maxsplit=1)[0]
+        is_image = m["img"] or m["attr"] == "src"
+        if is_image:
+            new = RAW_BASE.format(version=version) + url
+        else:
+            kind = "tree" if path.endswith("/") else "blob"
+            new = SITE_BASE.format(kind=kind, version=version) + url
+        if m["md"]:
+            return f"{m['img'] or ''}[{m['alt']}]({new})"
+        return f'{m["attr"]}="{new}"'
+
+    return _REF.sub(absolute, text)
+
+
 def stage(dest: Path) -> None:
     pkg = dest / "prism_validator"
     files = (ROOT / "scripts" / "validator_manifest.txt").read_text().split()
@@ -97,7 +130,8 @@ def stage(dest: Path) -> None:
     (dest / "pyproject.toml").write_text(
         PYPROJECT.format(version=version, deps=json.dumps(deps))
     )
-    shutil.copy2(ROOT / "README.md", dest / "README.md")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    (dest / "README.md").write_text(pypi_readme(readme, version), encoding="utf-8")
 
 
 def main() -> None:

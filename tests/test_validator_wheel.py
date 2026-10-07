@@ -151,3 +151,64 @@ def test_publish_workflow_tolerates_a_rerun_of_the_same_tag():
     'File already exists' into a red failure."""
     wf = (ROOT / ".github" / "workflows" / "pypi-validator.yml").read_text(encoding="utf-8")
     assert "skip-existing: true" in wf
+
+
+# --- PyPI long description: README paths must be absolute (no repo on PyPI) ---
+
+RAW = "https://raw.githubusercontent.com/MRI-Lab-Graz/prism-studio/v1.2.3/"
+BLOB = "https://github.com/MRI-Lab-Graz/prism-studio/blob/v1.2.3/"
+TREE = "https://github.com/MRI-Lab-Graz/prism-studio/tree/v1.2.3/"
+
+
+def _pypi_readme(text):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("build_validator_wheel", BUILD)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.pypi_readme(text, "1.2.3")
+
+
+@pytest.mark.parametrize(
+    "src, want",
+    [
+        ('<img src="docs/img/prism_logo.png" width="5">', f'<img src="{RAW}docs/img/prism_logo.png" width="5">'),
+        ("![x](docs/img/a.png)", f"![x]({RAW}docs/img/a.png)"),
+        ("[t](docs/specs/entities.md)", f"[t]({BLOB}docs/specs/entities.md)"),
+        ('<a href="ROADMAP.md">r</a>', f'<a href="{BLOB}ROADMAP.md">r</a>'),
+        ("[t](docs/specs/)", f"[t]({TREE}docs/specs/)"),
+        ("[t](./ROADMAP.md)", f"[t]({BLOB}ROADMAP.md)"),
+        ("[t](ROADMAP.md#phase-1)", f"[t]({BLOB}ROADMAP.md#phase-1)"),
+        ("[t](a.md?plain=1)", f"[t]({BLOB}a.md?plain=1)"),
+    ],
+)
+def test_pypi_readme_makes_relative_paths_absolute(src, want):
+    assert _pypi_readme(src) == want
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        "[t](http://x.org/a)",
+        "[t](https://x.org/a.md)",
+        '<img src="//cdn.x.org/a.png">',
+        "[t](mailto:a@b.org)",
+        "[t](#anchor)",
+        "[t](/abs/path)",
+        "use `![x](docs/a.png)` here",
+        "```\n![x](docs/a.png)\n[t](ROADMAP.md)\n```",
+    ],
+)
+def test_pypi_readme_leaves_these_alone(src):
+    assert _pypi_readme(src) == src
+
+
+def test_wheel_long_description_has_absolute_urls(wheel):
+    src = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
+    version = re.search(r'__version__ = "([^"]+)"', src).group(1)
+    z = zipfile.ZipFile(wheel)
+    meta = z.read(next(n for n in z.namelist() if n.endswith("METADATA"))).decode()
+    assert f"raw.githubusercontent.com/MRI-Lab-Graz/prism-studio/v{version}/docs/img/prism_logo.png" in meta
+    assert 'src="docs/' not in meta
+    assert "](docs/" not in meta
+    assert "](ROADMAP.md)" not in meta
