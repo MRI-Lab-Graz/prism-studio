@@ -58,6 +58,10 @@ from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
 from src.project_icons import choose_random_project_icon, normalize_project_icon
 from src.system_files import filter_system_files
+from src.citation_cff import (
+    load_citation_cff_schema as _load_citation_cff_schema,
+    validate_citation_cff_file,
+)
 from jsonschema import Draft7Validator
 
 # Available PRISM modalities. Sourced from app/schemas/stable/entities.schema.json
@@ -67,23 +71,6 @@ PRISM_MODALITIES = load_entity_rules().project_modalities
 # Modalities that remain available in PRISM tooling but are validated as BIDS
 # pass-through instead of PRISM-specific extensions.
 BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
-
-@functools.lru_cache(maxsize=1)
-def _load_citation_cff_schema() -> Optional[Dict[str, Any]]:
-    """Load the vendored official Citation File Format JSON Schema.
-
-    Sourced from https://github.com/citation-file-format/citation-file-format
-    (schema.json, CFF 1.2.0, draft-07). Update
-    app/schemas/citation_cff/schema.json from that upstream file when a newer
-    CFF version needs to be supported.
-    """
-    schema_path = Path(__file__).parent.parent / "schemas" / "citation_cff" / "schema.json"
-    try:
-        with open(schema_path, "r", encoding="utf-8") as handle:
-            return json.load(handle)
-    except Exception:
-        return None
-
 
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -9089,52 +9076,18 @@ participants/sociodemographics import step, not at project creation.
                 "consistency_issues": [],
             }
 
-        try:
-            content = citation_path.read_text(encoding="utf-8")
-        except Exception as exc:
+        result = validate_citation_cff_file(citation_path)
+        issues: List[str] = result["issues"]
+        content_unreadable = result["parsed"] is None
+        if content_unreadable:
             return {
                 "exists": True,
                 "valid": False,
-                "issues": [f"CITATION.cff could not be read: {exc}"],
+                "issues": issues,
                 "consistent": False,
                 "consistency_issues": [],
             }
-
-        issues: List[str] = []
-
-        try:
-            parsed = yaml.safe_load(content)
-        except yaml.YAMLError as exc:
-            return {
-                "exists": True,
-                "valid": False,
-                "issues": [f"CITATION.cff is not valid YAML: {exc}"],
-                "consistent": False,
-                "consistency_issues": [],
-            }
-
-        if not isinstance(parsed, dict):
-            return {
-                "exists": True,
-                "valid": False,
-                "issues": ["CITATION.cff must contain a YAML mapping at its root."],
-                "consistent": False,
-                "consistency_issues": [],
-            }
-
-        schema = _load_citation_cff_schema()
-        if schema is None:
-            issues.append(
-                "Could not load the Citation File Format schema for validation."
-            )
-        else:
-            validator = Draft7Validator(schema)
-            errors = sorted(validator.iter_errors(parsed), key=lambda e: e.path)
-            for error in errors:
-                field_path = " -> ".join(str(part) for part in error.path)
-                issues.append(
-                    f"{field_path}: {error.message}" if field_path else error.message
-                )
+        content = citation_path.read_text(encoding="utf-8")
 
         consistency_issues: List[str] = []
         has_canonical_metadata = any(

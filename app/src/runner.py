@@ -23,6 +23,7 @@ from validator import (
     MODALITY_PATTERNS,
     BIDS_MODALITIES,
 )
+from citation_cff import validate_citation_cff_file
 from cross_platform import normalize_path
 from stats import DatasetStats
 from system_files import filter_system_files
@@ -83,21 +84,7 @@ def _validate_citation_cff(root_dir: str) -> list[tuple[str, str, str]]:
     if not os.path.exists(citation_path):
         return []
 
-    try:
-        try:
-            from src.project_manager import ProjectManager
-        except ImportError:
-            from project_manager import ProjectManager
-
-        status = ProjectManager().get_citation_cff_status(Path(root_dir))
-    except Exception as exc:
-        return [
-            (
-                "ERROR",
-                f"PRISM303 CITATION.cff validation failed: {exc}",
-                citation_path,
-            )
-        ]
+    status = validate_citation_cff_file(Path(citation_path))
 
     if status.get("valid"):
         return []
