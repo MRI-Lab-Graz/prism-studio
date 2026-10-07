@@ -56,3 +56,16 @@ def test_bad_input_is_a_400_with_message():
     assert _post(client, {"key": "g99"}).status_code == 400
     assert _post(client, name="x.lsa", content=b"junk").status_code == 400
     assert client.post("/api/template-editor/import-limesurvey", data={}).status_code == 400
+
+
+def test_unexpected_failure_is_a_json_500(monkeypatch):
+    import src.converters.limesurvey as limesurvey
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("kaputt")
+
+    monkeypatch.setattr(limesurvey, "list_limesurvey_questionnaires", boom)
+    response = _post(_client())
+
+    assert response.status_code == 500
+    assert "kaputt" in response.get_json()["error"]

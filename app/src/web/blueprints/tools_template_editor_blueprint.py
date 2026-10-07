@@ -609,6 +609,9 @@ def api_template_editor_import_limesurvey():
     except ValueError as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"[PRISM] LimeSurvey import failed: {e}")
+        return jsonify({"error": f"Import failed: {e}"}), 500
 
     i18n = template.get("I18n") or {}
     languages = i18n.get("Languages") or [template.get("Technical", {}).get("Language", "en")]
