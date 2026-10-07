@@ -184,3 +184,42 @@ def test_description_without_group_description_names_own_group():
         desc = limesurvey_questionnaire_template(XML, key)["Study"]["Description"]
         assert name in desc
         assert "catch the submitted ID" not in desc
+
+
+def _row(**fields):
+    return "<row>" + "".join(f"<{k}>{v}</{k}>" for k, v in fields.items()) + "</row>"
+
+
+def _ls3_bilingual_xml(base="de"):
+    rows = lambda *r: "<rows>" + "".join(r) + "</rows>"
+    q = lambda lang, text: _row(qid=1, parent_qid=0, gid=1, type="F", title="WHO",
+                                question=text, question_order=1, language=lang)
+    sq = lambda qid, code, lang, text: _row(qid=qid, parent_qid=1, gid=1, type="T", title=code,
+                                            question=text, question_order=qid, scale_id=0,
+                                            language=lang)
+    ans = lambda lang, text: _row(qid=1, code="1", answer=text, sortorder=1, scale_id=0,
+                                  language=lang)
+    return (
+        "<document><DBVersion>260</DBVersion>"
+        f"<surveys>{rows(_row(sid=1, language=base))}</surveys>"
+        "<groups>" + rows(_row(gid=1, group_name="Wohl", group_order=1, language="de"),
+                          _row(gid=1, group_name="Well", group_order=1, language="en")) + "</groups>"
+        "<questions>" + rows(q("de", "Stamm"), q("en", "Stem")) + "</questions>"
+        "<subquestions>" + rows(sq(2, "WHO1", "de", "Frage eins"), sq(2, "WHO1", "en", "Question one"),
+                                sq(3, "WHO2", "de", "Frage zwei"), sq(3, "WHO2", "en", "Question two"))
+        + "</subquestions>"
+        "<answers>" + rows(ans("de", "nie"), ans("en", "never")) + "</answers>"
+        "</document>"
+    ).encode()
+
+
+def test_ls3_multilanguage_rows_are_not_duplicated():
+    xml = _ls3_bilingual_xml()
+    [found] = list_limesurvey_questionnaires(xml)
+    template = limesurvey_questionnaire_template(xml, found["key"])
+
+    items = [k for k in template if k not in ("Technical", "Study", "Metadata", "I18n")]
+    assert items == ["WHO1", "WHO2"]
+    assert template["WHO1"]["Description"] == {"de": "Frage eins"}
+    assert template["WHO1"]["Levels"] == {"1": {"de": "nie"}}
+    assert found["name"] == "Wohl"

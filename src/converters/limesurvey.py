@@ -1022,6 +1022,25 @@ def _task_name(name):
     return sanitize_task_name(ascii_name) or "imported"
 
 
+def _drop_other_language_rows(root, get_text):
+    """LS 3.x repeats group/question/subquestion/answer rows once per language; keep the
+    base language's rows only (rows without a <language> child, LS 4-6, are kept)."""
+    base = ""
+    surveys = root.find("surveys/rows/row")
+    if surveys is not None:
+        base = get_text(surveys, "language").strip()
+    for section in ("groups", "questions", "subquestions", "answers"):
+        rows = root.find(f"{section}/rows")
+        if rows is None:
+            continue
+        for row in list(rows):
+            lang = get_text(row, "language").strip()
+            if lang and not base:
+                base = lang  # no survey base language: first language seen wins
+            if lang and lang != base:
+                rows.remove(row)
+
+
 def _parse_lss_for_questionnaires(xml_content):
     try:
         root = ET.fromstring(xml_content)
@@ -1032,9 +1051,10 @@ def _parse_lss_for_questionnaires(xml_content):
         child = element.find(tag)
         return (child.text if child is not None else "") or ""
 
+    languages, default_language = _detect_languages(root, get_text)
+    _drop_other_language_rows(root, get_text)
     questions_map, groups_map = _parse_lss_structure(root, get_text)
     _parse_answers_into_questions(root, questions_map, get_text)
-    languages, default_language = _detect_languages(root, get_text)
     return {
         "questions": questions_map,
         "groups": groups_map,
