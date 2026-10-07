@@ -580,6 +580,47 @@ def api_template_editor_import_lsq_lsg():
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/import-limesurvey", methods=["POST"])
+def api_template_editor_import_limesurvey():
+    """List the questionnaires in a .lss/.lsa (no 'key') or return one as a
+    PRISM template ('key'). Same backend as `survey import-limesurvey`."""
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "No file uploaded"}), 400
+    split = (request.form.get("split") or "group").strip()
+    key = (request.form.get("key") or "").strip()
+
+    from src.converters.limesurvey import (
+        limesurvey_questionnaire_template,
+        list_limesurvey_questionnaires,
+        read_lss_xml,
+    )
+
+    command = f"python prism_tools.py survey import-limesurvey --input {file.filename} --split {split}"
+    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key} --output <dir>" if key else ""))
+    try:
+        xml = read_lss_xml(file.read(), file.filename)
+        if not key:
+            questionnaires = list_limesurvey_questionnaires(xml, split, source_name=file.filename)
+            return jsonify({"questionnaires": questionnaires, "split": split}), 200
+        template = _strip_template_editor_internal_keys(
+            limesurvey_questionnaire_template(xml, key, split)
+        )
+    except ValueError as e:
+        print(f"[PRISM] LimeSurvey import failed: {e}")
+        return jsonify({"error": str(e)}), 400
+
+    i18n = template.get("I18n") or {}
+    languages = i18n.get("Languages") or [template.get("Technical", {}).get("Language", "en")]
+    reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+    return jsonify({
+        "template": template,
+        "suggested_filename": f"survey-{template['Study']['TaskName']}.json",
+        "item_count": len([k for k in template if k not in reserved]),
+        "languages": languages,
+    }), 200
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-excel", methods=["POST"])
 def api_template_editor_import_excel():
     """Import an Excel/CSV/TSV codebook and return a PRISM template for the editor.
