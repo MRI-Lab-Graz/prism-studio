@@ -9,6 +9,8 @@ jsonschema
 defusedxml
 PyYAML>=6.0.3
 # The BIDS check runs by default and needs this engine; the PyPI package `deno` it depends on
-# ships the Deno runtime as a wheel for these platforms only, so the requirement is skipped elsewhere
-# (a run then reports PRISM902 and the hint to use --no-bids).
+# ships the Deno runtime as a wheel for these platforms only, so the requirement is skipped on other
+# architectures (e.g. Windows ARM64: install succeeds, a run reports PRISM902 and the --no-bids hint).
+# On musl and glibc < 2.27 the marker matches but no wheel exists and the sdist build fails: the
+# install fails there (use the Docker image or a glibc >= 2.27 system).
 bids-validator-deno>=3.0.2,<4; sys_platform == "darwin" or (sys_platform == "linux" and platform_machine in "x86_64 aarch64") or (sys_platform == "win32" and platform_machine == "AMD64")

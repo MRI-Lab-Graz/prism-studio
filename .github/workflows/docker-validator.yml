@@ -79,7 +79,13 @@ jobs:
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker run --rm "$IMAGE_TAG" --version
           docker run --rm "$IMAGE_TAG" --help
-          docker run --rm "$IMAGE_TAG" /tmp --json | python3 -c "import json,sys; json.load(sys.stdin)"
+          docker run --rm "$IMAGE_TAG" /tmp --json | python3 -c "
+          import json, sys
+          report = json.load(sys.stdin)
+          assert isinstance(report.get('bids_validator'), dict), 'no bids_validator in report'
+          bad = [i for i in report.get('issues', []) if 'PRISM902' in json.dumps(i)]
+          assert not bad, bad
+          "
 
       - name: Push image
         if: github.event_name != 'pull_request'

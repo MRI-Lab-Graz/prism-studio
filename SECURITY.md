@@ -16,4 +16,4 @@ and remediation with the reporter.
 
 ## BIDS check
 
-The BIDS check starts the bundled Deno through the `bids-validator-deno` launcher with read, env, net and write access and permission to run `git` only; network access is allowed, no other program may be started.
+The BIDS check starts the bundled Deno through the `bids-validator-deno` launcher with exactly `--allow-read --allow-env --allow-net --allow-write --allow-run=git` (plus `--allow-sys=osRelease` on Windows); network access is allowed, no other program may be started.

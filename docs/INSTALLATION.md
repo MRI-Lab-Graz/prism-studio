@@ -140,7 +140,7 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 
 **Updating**: `git pull` then re-run `./install.sh` (or `install.cmd` on Windows).
 
-`pip install prism-validator` includes the BIDS engine (bids-validator-deno and the Deno runtime, about 80 MB installed). Platforms without a Deno wheel (Windows on ARM, Alpine/musl, glibc older than 2.27) install but need `--no-bids`.
+`pip install prism-validator` includes the BIDS engine (bids-validator-deno and the Deno runtime, about 80 MB installed). Supported: macOS, Linux x86_64/aarch64 with glibc >= 2.27, and Windows AMD64. On Alpine/musl and glibc older than 2.27 there is no Deno wheel and its source build fails, so `pip install prism-validator` fails there: use the Docker image or a glibc >= 2.27 system. On other architectures such as Windows ARM64 the dependency is skipped, the install succeeds, and a run reports `PRISM902` with the hint to use `--no-bids`.
 
 ## Troubleshooting
 

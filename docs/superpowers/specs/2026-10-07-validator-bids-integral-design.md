@@ -64,8 +64,10 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
 - Changing Studio's own validation modes, save gate, export gate or share-publish
   settings (they call the library function with explicit flags and keep doing so).
 - Reading NIfTI headers by default (stays opt-in with `--check-nifti-headers`).
-- Platforms without a `deno` wheel (Windows on ARM, Alpine/musl, glibc older than 2.27):
-  covered by a clear error, not by a workaround.
+- Platforms without a `deno` wheel: Alpine/musl and glibc older than 2.27 cannot install
+  `prism-validator` at all (use the Docker image or a glibc >= 2.27 system); on other
+  architectures such as Windows ARM64 the marker skips the dependency and a run reports
+  `PRISM902`. No workaround.
 
 ## Behaviour
 
@@ -93,7 +95,7 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
 
 ### The BIDS engine (`app/src/bids_validator.py`)
 
-- Runs only `bids-validator-deno <dataset> --json` (plus `--ignoreNiftiHeaders` unless
+- Runs only `bids-validator-deno <dataset> --format json` (plus `--ignoreNiftiHeaders` unless
   `--check-nifti-headers`). The program is looked up next to the running Python
   (`Path(sys.executable).parent`, also `Scripts/` on Windows), then on `PATH`.
 - Removed: the `deno run jsr:@bids/validator@2.4.1` path (and `DENO_BIDS_VALIDATOR_SPEC`),
@@ -113,9 +115,11 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
   keep it in `requirements-runtime.txt` only if Studio code imports it.
 - The dependency carries environment markers for the platforms that have a `deno` wheel
   (`platform_system` / `platform_machine`, Linux glibc cannot be expressed in a marker,
-  so pip simply finds no wheel on musl). On a platform without it the install of
-  `prism-validator` still succeeds and the first run reports `PRISM902` with the hint to use
-  `--no-bids`.
+  so on musl and glibc < 2.27 pip finds no wheel and the `deno` sdist build fails: the install
+  fails there; use the Docker image or a glibc >= 2.27 system). Supported: macOS, Linux
+  x86_64/aarch64 glibc and Windows AMD64. On other architectures such as Windows ARM64 the
+  marker skips the dependency, the install succeeds and the first run reports `PRISM902` with
+  the hint to use `--no-bids`.
 - `requirements-runtime.txt` (Studio) gets the same dependency. `install.sh` and
   `scripts/setup/windows.ps1` stop downloading and running the `deno.land` installer script;
   they no longer check for a system Deno.
@@ -136,8 +140,8 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
   lock file, `DENO_DIR`, neutral working folder and `PATH` change are no longer needed.
   (Their repository is theirs to change; the release notes say what became unnecessary.)
 - `SECURITY.md`: the validator starts the bundled Deno with read, env, net, write and
-  `run=git` only (no `--allow-run` for everything, no `--allow-sys`); network access is
-  still allowed.
+  `run=git` only (no `--allow-run` for everything; `--allow-sys=osRelease` on Windows only);
+  network access is still allowed.
 
 ## Testing (TDD, tests first)
 
@@ -177,6 +181,7 @@ reports 15 false `NOT_INCLUDED` errors for the PRISM folders (even with the data
 - **BIDS validator 3.x** may report issues 2.4.1 did not; our filtering must be re-verified
   (hence the integration test on the PRISM demo dataset).
 - **Install size** grows by about 80 MB. Accepted: BIDS is integral.
-- **Unsupported platforms** get a working install and a clear `PRISM902`, not a crash.
+- **Unsupported platforms**: musl and glibc < 2.27 fail at install time (documented, Docker image
+  as the way out); unsupported architectures get a working install and a clear `PRISM902`.
 - The `deno` PyPI package is third-party-maintained (it ships the official Deno binary);
   consumers that lock hashes pin it through `prism-validator`.
