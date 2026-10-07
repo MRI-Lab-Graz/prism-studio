@@ -21,15 +21,10 @@ def find_bids_engine() -> Optional[str]:
     """The bids-validator-deno program: next to the running Python, in the
     interpreter's and the user's scripts folders (non-venv installs), then on PATH."""
     name = BIDS_ENGINE_COMMAND + (".exe" if sys.platform == "win32" else "")
-    user_scheme = (
-        sysconfig.get_preferred_scheme("user")
-        if hasattr(sysconfig, "get_preferred_scheme")
-        else ("nt_user" if os.name == "nt" else "posix_user")
-    )
     for folder in (
         Path(sys.executable).parent,
         sysconfig.get_path("scripts"),
-        sysconfig.get_path("scripts", scheme=user_scheme),
+        sysconfig.get_path("scripts", scheme=sysconfig.get_preferred_scheme("user")),
     ):
         candidate = Path(folder) / name
         if candidate.is_file():
@@ -247,10 +242,11 @@ def run_bids_validator(
         except Exception:
             pass
 
-    def _fail(reason: str) -> List[Tuple[str, str, str]]:
-        issues.append(
-            ("ERROR", f"PRISM902 BIDS validator requested but {reason}", root_dir)
-        )
+    def _fail(reason: str, hint: bool = True) -> List[Tuple[str, str, str]]:
+        text = f"PRISM902 BIDS validator requested but {reason}"
+        if hint:
+            text += ". Reinstall prism-validator or run with --no-bids"
+        issues.append(("ERROR", text, root_dir))
         return issues
 
     engine = find_bids_engine()
@@ -258,7 +254,8 @@ def run_bids_validator(
         return _fail(
             "not available: the bids-validator-deno program was not found next to "
             "Python or on PATH. Reinstall prism-validator (it depends on "
-            "bids-validator-deno) or run with --no-bids"
+            "bids-validator-deno) or run with --no-bids",
+            hint=False,
         )
 
     version = bids_engine_version()
@@ -287,7 +284,7 @@ def run_bids_validator(
         )
     except subprocess.TimeoutExpired:
         return _fail(
-            "did not finish within 30 minutes. Reinstall prism-validator or run with --no-bids"
+            f"did not finish within {BIDS_ENGINE_TIMEOUT_SECONDS // 60} minutes"
         )
     except OSError as exc:
         return _fail(f"could not be started: {exc}")
@@ -295,17 +292,11 @@ def run_bids_validator(
     if not process.stdout:
         stderr_msg = (process.stderr or "").strip()
         detail = f" Stderr: {stderr_msg}" if stderr_msg else ""
-        return _fail(
-            f"produced no output (exit code {process.returncode}).{detail} "
-            "Reinstall prism-validator or run with --no-bids"
-        )
-    hint = "Reinstall prism-validator or run with --no-bids"
+        return _fail(f"produced no output (exit code {process.returncode}).{detail}")
     try:
         bids_report = json.loads(process.stdout)
     except json.JSONDecodeError:
-        return _fail(
-            f"its output could not be parsed (exit code {process.returncode}). {hint}"
-        )
+        return _fail(f"its output could not be parsed (exit code {process.returncode})")
 
     # The engine exits 0 (no errors) or 16 (errors found) and always prints a
     # report; anything else means the report cannot be trusted.
@@ -315,17 +306,17 @@ def run_bids_validator(
         else None
     )
     if not isinstance(issue_list, list):
-        return _fail(f"its output is not a BIDS report (exit code {process.returncode}). {hint}")
+        return _fail(f"its output is not a BIDS report (exit code {process.returncode})")
     if process.returncode not in (0, 16):
-        return _fail(f"exited with unexpected code {process.returncode}. {hint}")
+        return _fail(f"exited with unexpected code {process.returncode}")
     has_raw_error = any(
         isinstance(i, dict) and str(i.get("severity", "")).lower() == "error"
         for i in issue_list
     )
     if process.returncode == 16 and not has_raw_error:
-        return _fail(f"exited with code 16 (errors found) but its report lists no error. {hint}")
+        return _fail("exited with code 16 (errors found) but its report lists no error")
     if process.returncode == 0 and has_raw_error:
-        return _fail(f"exited with code 0 (no errors) but its report lists an error. {hint}")
+        return _fail("exited with code 0 (no errors) but its report lists an error")
 
     for issue in issue_list:
         code = issue.get("code", "UNKNOWN_CODE")

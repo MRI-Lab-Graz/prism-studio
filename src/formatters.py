@@ -418,8 +418,9 @@ def to_json(issues, path, stats) -> str:
         "issues": [i.to_dict() for i in issues],
         "summary": summary,
     }
-    if bids_validator_info(stats):
-        report["bids_validator"] = bids_validator_info(stats)
+    bids = bids_validator_info(stats)
+    if bids:
+        report["bids_validator"] = bids
     return json.dumps(report, indent=2)
 
 

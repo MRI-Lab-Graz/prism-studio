@@ -75,8 +75,9 @@ def build_validation_report(
             "biometrics": list(getattr(stats, "biometrics", set())),
         },
     }
-    if bids_validator_info(stats):
-        report["bids_validator"] = bids_validator_info(stats)
+    bids = bids_validator_info(stats)
+    if bids:
+        report["bids_validator"] = bids
     return report
 
 
