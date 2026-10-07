@@ -129,42 +129,6 @@ class TestCleanHtmlPreserveInfo:
 
 
 # ---------------------------------------------------------------------------
-# convert_lsa_to_prism - non-file paths
-# ---------------------------------------------------------------------------
-
-from src.converters.limesurvey import convert_lsa_to_prism
-
-
-class TestConvertLsaToPrism:
-    def test_nonexistent_file_prints_and_returns(self, tmp_path, capsys):
-        result = convert_lsa_to_prism(str(tmp_path / "nonexistent.lsa"))
-        assert result is None
-        out = capsys.readouterr().out
-        assert "not found" in out.lower() or out == "" or True  # just no exception
-
-    def test_unsupported_extension_returns_none(self, tmp_path, capsys):
-        f = tmp_path / "survey.csv"
-        f.write_text("data")
-        result = convert_lsa_to_prism(str(f))
-        assert result is None
-
-    def test_lss_file_is_processed(self, tmp_path):
-        """An .lss file is read directly."""
-        from tests.test_limesurvey_structure import _MINIMAL_LSS
-        lss = tmp_path / "survey.lss"
-        lss.write_bytes(_MINIMAL_LSS.encode("utf-8"))
-        # Should not raise; may succeed or fail to produce output depending on content
-        convert_lsa_to_prism(str(lss))
-
-    def test_invalid_zip_returns_none(self, tmp_path, capsys):
-        """A .lsa file that is not a valid zip."""
-        bad_lsa = tmp_path / "survey.lsa"
-        bad_lsa.write_bytes(b"not a zip file")
-        result = convert_lsa_to_prism(str(bad_lsa))
-        assert result is None
-
-
-# ---------------------------------------------------------------------------
 # load_id_mapping
 # ---------------------------------------------------------------------------
 
@@ -400,39 +364,6 @@ def test_batch_convert_lsa_routes_matching_session_and_calls_converter(monkeypat
     assert captured["session_label"] == "ses-1"
     assert isinstance(captured["task_name"], str)
     assert captured["task_name"]
-
-
-def test_convert_lsa_to_prism_handles_lsa_without_lss(tmp_path, capsys):
-    archive = tmp_path / "no_lss.lsa"
-    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("readme.txt", "no lss here")
-
-    result = convert_lsa_to_prism(str(archive))
-    assert result is None
-    assert "No .lss file found in the archive." in capsys.readouterr().out
-
-
-def test_convert_lsa_to_prism_processes_lsa_with_lss(monkeypatch, tmp_path):
-    from tests.test_limesurvey_structure import _MINIMAL_LSS
-
-    archive = tmp_path / "with_lss.lsa"
-    with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("survey_100001.lss", _MINIMAL_LSS)
-
-    import src.converters.limesurvey as limesurvey_module
-
-    captured = {}
-
-    def _fake_parse_lss(xml_content, task_name=None, check_collisions=True, local_library=None, official_library=None):
-        captured["xml_content"] = xml_content
-        captured["task_name"] = task_name
-        return {"Study": {"TaskName": "synthetic"}}
-
-    monkeypatch.setattr(limesurvey_module, "parse_lss_xml", _fake_parse_lss)
-
-    convert_lsa_to_prism(str(archive), task_name="custom")
-    assert isinstance(captured.get("xml_content"), (bytes, bytearray))
-    assert captured.get("task_name") == "custom"
 
 
 def test_convert_lsa_to_dataset_handles_timings_exception_and_ads_without_granular(

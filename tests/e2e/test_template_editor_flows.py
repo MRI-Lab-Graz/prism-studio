@@ -104,6 +104,7 @@ CONTRAST_JS = """() => {
 
 def test_error_links_are_readable_in_the_hint_and_in_a_real_failure(page):
     load_ads_from_limesurvey(page)
+    expect(page.locator("#alertArea .alert-warning .error-link").first).to_be_visible()  # validation answered
     assert page.evaluate(CONTRAST_JS) >= 4.5  # the "fill these in" hint
 
     page.click("#btnValidate")

@@ -1,6 +1,4 @@
-import argparse
 import io
-import json
 import os
 import re
 import sys
@@ -13,6 +11,7 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
+from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 
 
 def _utc_creation_date() -> str:
@@ -329,15 +328,13 @@ def _parse_survey_metadata(root, get_text):
     return metadata
 
 
-def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales=False):
+def _parse_answers_into_questions(root, questions_map, get_text):
     """Parse <answers> section and attach levels to questions_map entries.
 
     Args:
         root: XML root element containing <answers> section
         questions_map: Dict mapping qid -> question data (modified in place)
         get_text: Helper to extract text from XML elements
-        track_scales: If True, also populate levels_by_scale for dual-scale
-                      array questions
     """
     answers_section = root.find("answers")
     if answers_section is None:
@@ -368,56 +365,16 @@ def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales
             pairs = answer_l10ns[get_text(row, "aid")]
 
         for lang, answer in pairs:
-            if track_scales:
-                scale_id = get_text(row, "scale_id") or "0"
-
-                # Handle "None" text from LimeSurvey (unlabeled scale points)
-                if answer and answer.lower() == "none":
-                    answer = ""
-
-                # Support multiple scales (for dual-scale arrays)
-                if "levels" not in questions_map[qid]:
-                    questions_map[qid]["levels"] = {}
-                if "levels_by_scale" not in questions_map[qid]:
-                    questions_map[qid]["levels_by_scale"] = {}
-                if scale_id not in questions_map[qid]["levels_by_scale"]:
-                    questions_map[qid]["levels_by_scale"][scale_id] = {}
-
-                # Store as multilingual dict if language is present
-                if lang and lang.strip():
-                    if code not in questions_map[qid]["levels"]:
-                        questions_map[qid]["levels"][code] = {}
-                    if isinstance(questions_map[qid]["levels"][code], dict):
-                        questions_map[qid]["levels"][code][lang] = answer
-                    else:
-                        questions_map[qid]["levels"][code] = {lang: answer}
-
-                    if code not in questions_map[qid]["levels_by_scale"][scale_id]:
-                        questions_map[qid]["levels_by_scale"][scale_id][code] = {}
-                    if isinstance(
-                        questions_map[qid]["levels_by_scale"][scale_id][code], dict
-                    ):
-                        questions_map[qid]["levels_by_scale"][scale_id][code][
-                            lang
-                        ] = answer
-                    else:
-                        questions_map[qid]["levels_by_scale"][scale_id][code] = {
-                            lang: answer
-                        }
+            # code -> answer text (possibly multilingual)
+            if lang and lang.strip():
+                if code not in questions_map[qid]["levels"]:
+                    questions_map[qid]["levels"][code] = {}
+                if isinstance(questions_map[qid]["levels"][code], dict):
+                    questions_map[qid]["levels"][code][lang] = answer
                 else:
-                    questions_map[qid]["levels"][code] = answer
-                    questions_map[qid]["levels_by_scale"][scale_id][code] = answer
+                    questions_map[qid]["levels"][code] = {lang: answer}
             else:
-                # Simple mode: just map code -> answer text (possibly multilingual)
-                if lang and lang.strip():
-                    if code not in questions_map[qid]["levels"]:
-                        questions_map[qid]["levels"][code] = {}
-                    if isinstance(questions_map[qid]["levels"][code], dict):
-                        questions_map[qid]["levels"][code][lang] = answer
-                    else:
-                        questions_map[qid]["levels"][code] = {lang: answer}
-                else:
-                    questions_map[qid]["levels"][code] = answer
+                questions_map[qid]["levels"][code] = answer
 
 
 def _detect_languages(root, get_text):
@@ -750,8 +707,6 @@ def _build_prism_template_from_parsed(
         ),
     )
 
-    array_types = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
-
     for qid, q_data in sorted_questions:
         q_type = q_data.get("type", "")
         title = q_data.get("title", "")
@@ -811,7 +766,7 @@ def _build_prism_template_from_parsed(
                 except (ValueError, TypeError):
                     ls_props["validation"][vk] = None
 
-        if q_type in array_types and subquestions:
+        if q_type in _ARRAY_TYPES and subquestions:
             # Matrix question: flatten subquestions to individual items
             multilingual_levels = {}
             for code, answer_text in levels.items():
@@ -995,7 +950,6 @@ SPLIT_MODES = ("group", "question", "survey")
 _ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 # Text, equation and display questions: no answer options of their own.
 _HELPER_TYPES = {"S", "T", "U", "Q", "*", "X"}
-_PRISMMETA_RE = re.compile(r"^PRISMMETA", re.IGNORECASE)
 _TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
 
 
@@ -1628,48 +1582,6 @@ def parse_lss_xml_by_groups(xml_content):
     return out
 
 
-def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
-    """Extract .lss from .lsa/.lss and convert to a Prism JSON sidecar."""
-    if not os.path.exists(lsa_path):
-        print(f"File not found: {lsa_path}")
-        return
-
-    xml_content = None
-
-    if lsa_path.endswith(".lsa"):
-        try:
-            with zipfile.ZipFile(lsa_path, "r") as zip_ref:
-                lss_files = [f for f in zip_ref.namelist() if f.endswith(".lss")]
-                if not lss_files:
-                    print("No .lss file found in the archive.")
-                    return
-
-                target_file = lss_files[0]
-                print(f"Processing {target_file} from archive...")
-                with zip_ref.open(target_file) as f:
-                    xml_content = f.read()
-        except zipfile.BadZipFile:
-            print("Invalid zip file.")
-            return
-    elif lsa_path.endswith(".lss"):
-        with open(lsa_path, "rb") as f:
-            xml_content = f.read()
-    else:
-        print("Unsupported file extension. Please provide .lsa or .lss")
-        return
-
-    if xml_content:
-        prism_data = parse_lss_xml(xml_content, task_name)
-
-        if prism_data:
-            if output_path:
-                with open(output_path, "w", encoding="utf-8") as f:
-                    json.dump(prism_data, f, indent=4, ensure_ascii=False)
-                print(f"Successfully wrote Prism JSON to {output_path}")
-            else:
-                print(json.dumps(prism_data, indent=4, ensure_ascii=False))
-
-
 def convert_lsa_to_dataset(
     lsa_path,
     output_root,
@@ -2071,15 +1983,3 @@ def batch_convert_lsa(
             id_column=id_column,
             id_map=id_map,
         )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Convert LimeSurvey .lsa/.lss to Prism JSON sidecar."
-    )
-    parser.add_argument("input_file", help="Path to .lsa or .lss file")
-    parser.add_argument("-o", "--output", help="Path to output .json file")
-
-    args = parser.parse_args()
-
-    convert_lsa_to_prism(args.input_file, args.output)
