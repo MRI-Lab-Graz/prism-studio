@@ -37,6 +37,8 @@ def test_wheel_has_validator_entry_and_schemas(wheel):
     assert "prism_validator/app/prism.py" in names
     assert any(n.startswith("prism_validator/app/schemas/stable/") for n in names)
     assert any(n.endswith("entry_points.txt") for n in names)
+    assert "prism_validator/app/src/citation_cff.py" in names
+    assert "prism_validator/app/schemas/citation_cff/schema.json" in names
 
 
 def test_wheel_contains_no_studio_only_files(wheel):
@@ -82,6 +84,24 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     assert "No module named" not in out, out
     assert "Validation failed with error" not in out, out
     assert run.returncode in (0, 1), out
+    # CITATION.cff is validated without Studio code (no bogus PRISM303).
+    (ds / "CITATION.cff").write_text(
+        "cff-version: 1.2.0\nmessage: m\ntitle: T\n"
+        "authors:\n  - family-names: Doe\n    given-names: J\n"
+        "version: 1.0.0\ndate-released: 2026-01-01\n"
+    )
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True)
+    out = run.stdout + run.stderr
+    assert "PRISM303" not in out, out
+    assert "No module named" not in out, out
+    (ds / "CITATION.cff").write_text(
+        "cff-version: 1.2.0\nmessage: m\n"
+        "authors:\n  - family-names: Doe\n    given-names: J\n"
+    )
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True)
+    out = run.stdout + run.stderr
+    assert "PRISM303" in out and "'title' is a required property" in out, out
+    assert "No module named" not in out, out
 
 
 def test_wheel_metadata_has_pypi_page_fields(wheel):
