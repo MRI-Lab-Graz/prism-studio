@@ -280,3 +280,14 @@ class TestForeignSeverityCopy:
         assert determine_exit_code([i]) == 1
         from issues import summarize_issues
         assert summarize_issues([i])["errors"] == 1
+
+
+def test_json_format_reports_the_bids_engine_only_when_it_ran():
+    from types import SimpleNamespace
+
+    info = {"engine": "bids-validator-deno", "version": "3.0.2", "spec": "bids-validator-deno@3.0.2"}
+    ran = SimpleNamespace(validator_info={"bids_validator": info})
+    assert json.loads(format_output([], "/d", "json", stats=ran))["bids_validator"] == info
+    skipped = SimpleNamespace(validator_info={"prism_schema_versions": {}})
+    assert "bids_validator" not in json.loads(format_output([], "/d", "json", stats=skipped))
+    assert "bids_validator" not in json.loads(format_output([], "/d", "json", stats=None))

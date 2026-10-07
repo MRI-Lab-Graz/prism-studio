@@ -95,7 +95,7 @@ sub-01/survey/sub-01_task-demo_survey.json
 | Code | Meaning | Fix |
 |---|---|---|
 | `PRISM501` | `.bidsignore` needs update | Add PRISM-specific modalities to avoid standard BIDS validator errors. **Auto-fixable.** |
-| `PRISM502` | BIDS validator warning | Only surfaces when `--bids` (or the equivalent Studio option) is enabled |
+| `PRISM502` | BIDS validator warning | Surfaces when the BIDS check runs (the default; not with `--no-bids`) and `--bids-warnings` is set |
 | `PRISM503` | BIDS validator error | Standard BIDS validator reported an error |
 
 ## `PRISM6xx` / `PRISM7xx` — Consistency and procedure
@@ -120,7 +120,7 @@ sub-01/survey/sub-01_task-demo_survey.json
 | Code | Meaning | Fix |
 |---|---|---|
 | `PRISM901` | Internal validation error | Unexpected error during validation |
-| `PRISM902` | BIDS validator requested but not available | Install Deno or the legacy `bids-validator` CLI, or run without `--bids` |
+| `PRISM902` | BIDS validator requested but not available | The bids-validator-deno program was not found or failed to run: reinstall prism-validator, or run with `--no-bids` |
 | `PRISM999` | General validation error | Catch-all — check the error message for details |
 
 ## Auto-fix and troubleshooting

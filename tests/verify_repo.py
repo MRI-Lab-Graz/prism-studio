@@ -7,7 +7,6 @@ import fnmatch
 import ast
 import tempfile
 import json
-import importlib.util
 from pathlib import Path
 from datetime import datetime
 from colorama import init, Fore, Style
@@ -1697,21 +1696,18 @@ def check_bids_compat_smoke(repo_path, fix=False):
             + ", ".join(missing_symbols)
         )
 
-    python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
-    finder_cmd = "where bids-validator" if os.name == "nt" else "which bids-validator"
+    finder_cmd = "where bids-validator-deno" if os.name == "nt" else "which bids-validator-deno"
     cli_probe = run_command(finder_cmd, cwd=repo_path)
     has_cli = bool(cli_probe and cli_probe.returncode == 0)
 
-    has_python_pkg = importlib.util.find_spec("bids_validator") is not None
-
     if has_cli:
-        version_result = run_command("bids-validator --version", cwd=repo_path)
+        version_result = run_command("bids-validator-deno --version", cwd=repo_path)
         if version_result and version_result.returncode == 0:
             ver = (version_result.stdout or "").strip().splitlines()[:1]
             if ver:
-                print_success(f"bids-validator available: {ver[0]}")
+                print_success(f"bids-validator-deno available: {ver[0]}")
             else:
-                print_success("bids-validator available.")
+                print_success("bids-validator-deno available.")
 
         with tempfile.TemporaryDirectory(prefix="prism_bids_smoke_") as tmpdir:
             dataset_description = {
@@ -1733,7 +1729,7 @@ def check_bids_compat_smoke(repo_path, fix=False):
             )
 
             smoke_result = run_command(
-                f'bids-validator "{tmpdir}" --ignoreNiftiHeaders', cwd=repo_path
+                f'bids-validator-deno "{tmpdir}" --ignoreNiftiHeaders', cwd=repo_path
             )
             if smoke_result and smoke_result.returncode == 0:
                 print_success("BIDS validator smoke run succeeded on minimal dataset.")
@@ -1745,34 +1741,11 @@ def check_bids_compat_smoke(repo_path, fix=False):
                     snippet = "\n".join((smoke_result.stdout or "").splitlines()[:20])
                     if snippet:
                         print(snippet)
-    elif has_python_pkg:
-        fallback_result = run_command(
-            (
-                f'"{python_cmd}" -c "'
-                "from bids_validator import BIDSValidator;"
-                "v=BIDSValidator();"
-                "assert v.is_bids('/sub-01/anat/sub-01_T1w.nii.gz');"
-                "assert not v.is_bids('/sub_01/anat/sub_01_T1w.nii.gz');"
-                "print('python bids_validator fallback smoke passed')"
-                '"'
-            ),
-            cwd=repo_path,
-        )
-        if fallback_result and fallback_result.returncode == 0:
-            print_success(
-                "Python bids_validator fallback smoke succeeded (CLI not required)."
-            )
-        else:
-            print_warning("Python bids_validator fallback smoke did not pass.")
-            if fallback_result and fallback_result.stdout:
-                print("\n".join(fallback_result.stdout.splitlines()[:20]))
     else:
         print_warning(
-            "Neither bids-validator CLI nor Python bids_validator package is available."
+            "bids-validator-deno is not available (pip install prism-validator)."
         )
-        MISSING_TOOLS["bids-validator"] = (
-            "Install bids-validator (npm i -g bids-validator)"
-        )
+        MISSING_TOOLS["bids-validator-deno"] = "pip install prism-validator"
 
     if CURRENT_CHECK_ERRORS == 0 and CURRENT_CHECK_WARNINGS == 0:
         print_success("BIDS compatibility smoke checks passed.")

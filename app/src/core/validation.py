@@ -22,6 +22,11 @@ try:
 except ImportError:
     from issues import tuple_to_issue, issues_to_dict, summarize_issues, severity_value
 
+try:
+    from src.stats import bids_validator_info
+except ImportError:
+    from stats import bids_validator_info
+
 
 def _issue_is_error(issue: Any) -> bool:
     """Return True when an issue represents an error severity."""
@@ -53,7 +58,7 @@ def build_validation_report(
 ) -> Dict[str, Any]:
     """Create a stable machine-readable validation report."""
     normalized_issues = normalize_issues(structured_issues)
-    return {
+    report = {
         "dataset": os.path.abspath(dataset_path),
         "schema_version": schema_version,
         "valid": determine_exit_code(normalized_issues) == 0,
@@ -70,6 +75,10 @@ def build_validation_report(
             "biometrics": list(getattr(stats, "biometrics", set())),
         },
     }
+    bids = bids_validator_info(stats)
+    if bids:
+        report["bids_validator"] = bids
+    return report
 
 
 def normalize_issues(issues: Iterable[Any]) -> List[Any]:

@@ -21,6 +21,7 @@ from issues import (
     summarize_issues,
     get_error_documentation_url,
 )
+from stats import bids_validator_info
 
 
 def _utc_isoformat_z() -> str:
@@ -412,14 +413,15 @@ def to_csv(issues: List[Issue]) -> str:
 def to_json(issues, path, stats) -> str:
     """JSON report; `valid` is True iff no ERROR-severity issue (as the exit code)."""
     summary = summarize_issues(issues)
-    return json.dumps(
-        {
-            "valid": summary["errors"] == 0,
-            "issues": [i.to_dict() for i in issues],
-            "summary": summary,
-        },
-        indent=2,
-    )
+    report = {
+        "valid": summary["errors"] == 0,
+        "issues": [i.to_dict() for i in issues],
+        "summary": summary,
+    }
+    bids = bids_validator_info(stats)
+    if bids:
+        report["bids_validator"] = bids
+    return json.dumps(report, indent=2)
 
 
 # =============================================================================

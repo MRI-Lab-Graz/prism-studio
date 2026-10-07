@@ -16,16 +16,14 @@ attrs==26.1.0 \
     # via
     #   jsonschema
     #   referencing
-bids-validator==1.14.7.post0 \
-    --hash=sha256:a1ee196eae8e5cf3b3fe9fd1985e03997e3e21a40ea3bcb494ff1e0dcec86a89 \
-    --hash=sha256:e6005a500b75f8a961593fb67d46085107dadb116f59a5c3b524aa0697945b66
+bids-validator-deno==3.0.2 ; (platform_machine in 'x86_64 aarch64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or sys_platform == 'darwin' \
+    --hash=sha256:2607e11f18c7da5d788771e474a9cf0c95ed044cb6c3824e57faf45a02eeb5cd \
+    --hash=sha256:a1580cfa6f3320eff3551cb5af10916f4962a9365e76d39b9155a75470c8a45b
     # via -r requirements-runtime.txt
 bidsschematools==2.0.0 \
     --hash=sha256:5071f86a8e2d1446bda96a99a553c95bfec6baf84390cdb02333d9e0a94b1871 \
     --hash=sha256:9b53bd8b65146316b6b7cb0d507bcab1091ce81e509eaaf84e3cd1b2f5d41729
-    # via
-    #   -r requirements-runtime.txt
-    #   bids-validator
+    # via -r requirements-runtime.txt
 blinker==1.9.0 \
     --hash=sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf \
     --hash=sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc
@@ -436,6 +434,14 @@ defusedxml==0.7.1 \
     --hash=sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69 \
     --hash=sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61
     # via -r requirements-runtime.txt
+deno==2.9.7 ; (platform_machine in 'x86_64 aarch64' and sys_platform == 'linux') or (platform_machine == 'AMD64' and sys_platform == 'win32') or sys_platform == 'darwin' \
+    --hash=sha256:79f4b7acdd9a37e98a4d1e0ca08d71c4e55f6c0cb13bd1e0946fa9b5497be2d9 \
+    --hash=sha256:80b90a0aad3f167ffbfefe55830b7b14e9d49865eed741c013bb48f1c5996681 \
+    --hash=sha256:826634a6719f0183d85ef33f702de4388adb47d1f097b0732f70e033599a43c2 \
+    --hash=sha256:836f2ab5918723b47b638a05bc4fdac99fc35e69b49a6771c24e32b19dff5d8a \
+    --hash=sha256:adc015b5630572c06d04d28741e6ac9eed8b053c501d0ae776bfb155f5b7204b \
+    --hash=sha256:d8f4622774a5bed3a6b6305340495abe699f09c99b70d2882f52abc1ff23321a
+    # via bids-validator-deno
 et-xmlfile==2.0.0 \
     --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa \
     --hash=sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54

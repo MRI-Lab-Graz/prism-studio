@@ -124,30 +124,6 @@ if (-not $UseUv) {
     }
 }
 
-# 2. Check for Deno (Required for BIDS validation)
-if (-not (Get-Command "deno" -ErrorAction SilentlyContinue)) {
-    Write-Info "Deno not found (required for BIDS validation)."
-    # Downloads and runs Deno's own installer script: ask first, never silently.
-    $InstallDeno = Read-Host "Install Deno now using its official installer (https://deno.land/install.ps1)? [Y/N]"
-    if ($InstallDeno -match "^[Yy]$") {
-        try {
-            irm https://deno.land/install.ps1 | iex
-
-            # Add to path for current session
-            $env:DENO_INSTALL = "$HOME\.deno"
-            $env:Path = "$env:DENO_INSTALL\bin;$env:Path"
-
-            Write-Success "Deno installed."
-        } catch {
-            Write-Host "WARNING: Failed to install Deno. BIDS validation may not work." -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "Skipped. BIDS validation will not work until Deno is installed: https://deno.land" -ForegroundColor Yellow
-    }
-} else {
-    Write-Info "Deno is already installed."
-}
-
 # 3. Check for the requirements file
 if (-not (Test-Path "$RequirementsFile")) {
     Write-Error "'$RequirementsFile' not found."

@@ -15,6 +15,15 @@ following skills before doing any other work:
 
 This applies regardless of how trivial the request looks.
 
+### Before merging: always run `ponytail:ponytail-audit`
+
+Before merging **any** branch or pull request into `main` (features, small
+fixes, validator/release changes, release-prep PRs - no exceptions), run
+`/ponytail:ponytail-audit` on the branch, apply the findings that are worth it
+(or say why not), re-run the tests, and only then merge. This is a standing
+rule for every merge, not something to be asked for each time; the audit is
+part of finishing a branch, right before the "merge / open a PR / keep" step.
+
 ## Always use TDD
 
 For every feature or bug fix, invoke `superpowers:test-driven-development`

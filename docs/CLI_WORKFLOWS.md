@@ -24,13 +24,13 @@ Launching the web interface directly:
 The validator is the most important CLI entry point:
 
 ```bash
-prism-validator /path/to/dataset              # basic validation
-prism-validator /path/to/dataset --bids       # PRISM + BIDS
+prism-validator /path/to/dataset              # PRISM + BIDS (BIDS runs by default)
+prism-validator /path/to/dataset --no-bids    # PRISM checks only
 prism-validator /path/to/dataset --fix --dry-run   # preview automatic fixes
 prism-validator /path/to/dataset --format sarif -o prism.sarif   # machine-readable report
 ```
 
-Common loop: run `--bids` → inspect findings → preview fixes with `--fix --dry-run`
+Common loop: run the validator → inspect findings → preview fixes with `--fix --dry-run`
 when appropriate → re-run until blocking errors are gone.
 
 ## Conversion and scoring with `prism_tools.py`
@@ -50,7 +50,7 @@ python prism_tools.py participants detect-id --input /absolute/path/to/T1.xlsx -
 
 ```bash
 source .venv/bin/activate
-prism-validator /path/to/dataset --bids
+prism-validator /path/to/dataset
 python prism_tools.py recipes surveys --prism /path/to/dataset
 ```
 

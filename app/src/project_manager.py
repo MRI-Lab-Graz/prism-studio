@@ -7010,7 +7010,7 @@ git push -u origin main
             PrismConfig(
                 schema_version="stable",
                 strict_mode=False,
-                run_bids=False,
+                run_bids=True,
                 ignore_paths=[
                     "library/**",
                     "recipe/**",

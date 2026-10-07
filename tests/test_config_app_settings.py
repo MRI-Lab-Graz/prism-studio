@@ -58,7 +58,7 @@ def test_load_config_invalid_json_returns_defaults(tmp_path):
     config = load_config(str(dataset))
 
     assert config.schema_version == "stable"
-    assert config.run_bids is False
+    assert config.run_bids is True
     assert config.template_library_path is None
 
 

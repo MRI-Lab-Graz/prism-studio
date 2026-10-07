@@ -1,85 +1,33 @@
 import json
 import os
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
-
-sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src")
-)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 import bids_validator
 
-
-def test_deno_validator_uses_node_modules_directory(monkeypatch, tmp_path):
-    dataset = tmp_path / "dataset"
-    dataset.mkdir()
-    commands = []
-
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        commands.append(cmd)
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(stdout='{"issues": {"issues": []}}', stderr="", returncode=0)
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    assert bids_validator.run_bids_validator(str(dataset), verbose=False) == []
-    assert "--node-modules-dir=auto" in commands[1]
-    assert "--ignoreNiftiHeaders" in commands[1]
+ENGINE = "/fake/bin/bids-validator-deno"
+ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_backend_info_reports_deno_engine_and_pinned_spec(monkeypatch, tmp_path):
-    dataset = tmp_path / "dataset"
-    dataset.mkdir()
+def use_engine(monkeypatch, report=None, stdout=None, returncode=None):
+    """Pretend bids-validator-deno is installed and prints `report`; return the recorded commands."""
+    calls = []
+    if returncode is None:  # the engine exits 16 when its report holds an error, else 0
+        issues = ((report or {}).get("issues") or {}).get("issues", [])
+        returncode = 16 if any(i.get("severity") == "error" for i in issues) else 0
+    monkeypatch.setattr(bids_validator, "find_bids_engine", lambda: ENGINE)
+    monkeypatch.setattr(bids_validator, "bids_engine_version", lambda: "3.0.2")
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(stdout='{"issues": {"issues": []}}', stderr="", returncode=0)
-        raise AssertionError(f"Unexpected command: {cmd}")
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        out = stdout if stdout is not None else json.dumps(report or {"issues": {"issues": []}})
+        return SimpleNamespace(stdout=out, stderr="", returncode=returncode)
 
     monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    backend_info = {}
-    bids_validator.run_bids_validator(
-        str(dataset), verbose=False, backend_info=backend_info
-    )
-
-    assert backend_info == {
-        "engine": "deno",
-        "spec": bids_validator.DENO_BIDS_VALIDATOR_SPEC,
-    }
-
-
-def test_backend_info_reports_legacy_engine_and_reported_version(monkeypatch, tmp_path):
-    dataset = tmp_path / "dataset"
-    dataset.mkdir()
-
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            raise FileNotFoundError("deno not installed")
-        if cmd[:2] == ["bids-validator", "--version"]:
-            return SimpleNamespace(stdout="1.14.0\n", stderr="", returncode=0)
-        if cmd and cmd[0] == "bids-validator":
-            return SimpleNamespace(
-                stdout='{"issues": {"errors": [], "warnings": []}}',
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    backend_info = {}
-    bids_validator.run_bids_validator(
-        str(dataset), verbose=False, backend_info=backend_info
-    )
-
-    assert backend_info == {"engine": "legacy", "spec": "bids-validator@1.14.0"}
+    return calls
 
 
 def test_deno_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
@@ -106,81 +54,13 @@ def test_deno_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
         }
     }
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(
-                stdout=json.dumps(deno_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+    use_engine(monkeypatch, deno_report)
 
     issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
 
     assert len(issues) == 1
     _level, message, _path = issues[0]
     assert "EVENTS_TSV_MISSING" in message
-    assert "SIDECAR_KEY_RECOMMENDED" not in message
-
-
-def test_legacy_parser_suppresses_recommended_key_warnings(monkeypatch, tmp_path):
-    dataset = tmp_path / "dataset"
-    dataset.mkdir()
-
-    legacy_report = {
-        "issues": {
-            "errors": [],
-            "warnings": [
-                {
-                    "key": "SIDECAR_KEY_RECOMMENDED",
-                    "reason": "Recommended sidecar key missing",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "sub-01/ses-1/anat/sub-01_ses-1_T1w.nii.gz"
-                            }
-                        }
-                    ],
-                },
-                {
-                    "key": "PARTICIPANT_ID_MISMATCH",
-                    "reason": "Participant mismatch",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "participants.tsv"
-                            }
-                        }
-                    ],
-                },
-            ],
-        }
-    }
-
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            raise FileNotFoundError("deno not installed")
-        if cmd[:2] == ["bids-validator", "--version"]:
-            return SimpleNamespace(stdout="1.14.0", stderr="", returncode=0)
-        if cmd and cmd[0] == "bids-validator":
-            return SimpleNamespace(
-                stdout=json.dumps(legacy_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
-
-    assert len(issues) == 1
-    _level, message, _path = issues[0]
-    assert "PARTICIPANT_ID_MISMATCH" in message
     assert "SIDECAR_KEY_RECOMMENDED" not in message
 
 
@@ -211,86 +91,13 @@ def test_deno_parser_suppresses_citation_precedence_conflict(monkeypatch, tmp_pa
         }
     }
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(
-                stdout=json.dumps(deno_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+    use_engine(monkeypatch, deno_report)
 
     issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
 
     assert len(issues) == 1
     _level, message, _path = issues[0]
     assert "EVENTS_TSV_MISSING" in message
-    assert "AUTHORS_AND_CITATION_FILE_MUTUALLY_EXCLUSIVE" not in message
-
-
-def test_legacy_parser_suppresses_citation_precedence_conflict(monkeypatch, tmp_path):
-    dataset = tmp_path / "dataset"
-    dataset.mkdir()
-    (dataset / "CITATION.cff").write_text(
-        "cff-version: 1.2.0\ntitle: Demo\nmessage: cite\nauthors:\n  - family-names: Doe\n",
-        encoding="utf-8",
-    )
-
-    legacy_report = {
-        "issues": {
-            "errors": [
-                {
-                    "key": "AUTHORS_AND_CITATION_FILE_MUTUALLY_EXCLUSIVE",
-                    "reason": "Authors and citation file are mutually exclusive",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "CITATION.cff"
-                            }
-                        }
-                    ],
-                }
-            ],
-            "warnings": [
-                {
-                    "key": "PARTICIPANT_ID_MISMATCH",
-                    "reason": "Participant mismatch",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "participants.tsv"
-                            }
-                        }
-                    ],
-                }
-            ],
-        }
-    }
-
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            raise FileNotFoundError("deno not installed")
-        if cmd[:2] == ["bids-validator", "--version"]:
-            return SimpleNamespace(stdout="1.14.0", stderr="", returncode=0)
-        if cmd and cmd[0] == "bids-validator":
-            return SimpleNamespace(
-                stdout=json.dumps(legacy_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
-
-    assert len(issues) == 1
-    _level, message, _path = issues[0]
-    assert "PARTICIPANT_ID_MISMATCH" in message
     assert "AUTHORS_AND_CITATION_FILE_MUTUALLY_EXCLUSIVE" not in message
 
 
@@ -320,18 +127,7 @@ def test_deno_parser_downgrades_unfetched_annex_content_to_warning(
         }
     }
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(
-                stdout=json.dumps(deno_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+    use_engine(monkeypatch, deno_report)
 
     issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
 
@@ -363,18 +159,7 @@ def test_deno_parser_keeps_genuinely_broken_file_as_error(monkeypatch, tmp_path)
         }
     }
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            return SimpleNamespace(stdout="deno 2.0.0", stderr="", returncode=0)
-        if cmd[:2] == ["deno", "run"]:
-            return SimpleNamespace(
-                stdout=json.dumps(deno_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
+    use_engine(monkeypatch, deno_report)
 
     issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
 
@@ -384,114 +169,95 @@ def test_deno_parser_keeps_genuinely_broken_file_as_error(monkeypatch, tmp_path)
     assert "datalad get" not in message
 
 
-def test_legacy_parser_downgrades_unfetched_annex_content_to_warning(
-    monkeypatch, tmp_path
-):
-    dataset = tmp_path / "dataset"
-    nifti = dataset / "sub-01" / "ses-1" / "anat" / "sub-01_ses-1_T1w.nii.gz"
-    _make_unfetched_annex_symlink(nifti)
+def _no_other_scripts_dirs(monkeypatch, tmp_path, scripts="scripts", user="user_scripts"):
+    """Point sys.executable and both sysconfig scripts dirs into tmp_path (nothing real is looked at)."""
+    dirs = {"python": tmp_path / "py", "scripts": tmp_path / scripts, "user": tmp_path / user}
+    for d in dirs.values():
+        d.mkdir(exist_ok=True)
+    monkeypatch.setattr(sys, "executable", str(dirs["python"] / "python"))
+    monkeypatch.setattr(
+        bids_validator.sysconfig,
+        "get_path",
+        lambda name, scheme=None: str(dirs["user"] if scheme else dirs["scripts"]),
+    )
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: None)
+    return dirs
 
-    legacy_report = {
-        "issues": {
-            "errors": [
-                {
-                    "key": "NIFTI_HEADER_UNREADABLE",
-                    "reason": "Could not read NIfTI header",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "sub-01/ses-1/anat/sub-01_ses-1_T1w.nii.gz"
-                            }
-                        }
-                    ],
-                }
-            ],
-            "warnings": [],
-        }
+
+def _engine_name():
+    return "bids-validator-deno.exe" if sys.platform == "win32" else "bids-validator-deno"
+
+
+def test_engine_is_found_next_to_python_before_anything_else(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    for d in dirs.values():
+        (d / _engine_name()).write_text("")
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/elsewhere/" + n)
+    assert bids_validator.find_bids_engine() == str(dirs["python"] / _engine_name())
+
+
+def test_engine_lookup_order_is_scripts_then_user_scripts_then_path(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    (dirs["user"] / _engine_name()).write_text("")
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/usr/bin/" + n)
+    assert bids_validator.find_bids_engine() == str(dirs["user"] / _engine_name())
+    (dirs["scripts"] / _engine_name()).write_text("")
+    assert bids_validator.find_bids_engine() == str(dirs["scripts"] / _engine_name())
+
+
+def test_engine_falls_back_to_path_then_none(monkeypatch, tmp_path):
+    _no_other_scripts_dirs(monkeypatch, tmp_path)
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: "/usr/bin/" + n)
+    assert bids_validator.find_bids_engine() == "/usr/bin/bids-validator-deno"
+    monkeypatch.setattr(bids_validator.shutil, "which", lambda n: None)
+    assert bids_validator.find_bids_engine() is None
+
+
+def test_on_windows_the_exe_name_is_what_is_looked_for(monkeypatch, tmp_path):
+    dirs = _no_other_scripts_dirs(monkeypatch, tmp_path)
+    monkeypatch.setattr(sys, "platform", "win32")
+    (dirs["python"] / "bids-validator-deno").write_text("")  # the bare name must not match
+    assert bids_validator.find_bids_engine() is None
+    (dirs["scripts"] / "bids-validator-deno.exe").write_text("")
+    assert bids_validator.find_bids_engine() == str(dirs["scripts"] / "bids-validator-deno.exe")
+
+
+def test_command_line_is_the_engine_and_ignores_nifti_headers_by_default(monkeypatch, tmp_path):
+    calls = use_engine(monkeypatch)
+    bids_validator.run_bids_validator(str(tmp_path))
+    bids_validator.run_bids_validator(str(tmp_path), check_nifti_headers=True)
+    assert calls == [
+        [ENGINE, str(tmp_path), "--format", "json", "--ignoreNiftiHeaders"],
+        [ENGINE, str(tmp_path), "--format", "json"],
+    ]
+
+
+def test_backend_info_names_the_engine_and_its_version(monkeypatch, tmp_path):
+    use_engine(monkeypatch)
+    info = {}
+    bids_validator.run_bids_validator(str(tmp_path), backend_info=info)
+    assert info == {
+        "engine": "bids-validator-deno",
+        "version": "3.0.2",
+        "spec": "bids-validator-deno@3.0.2",
     }
 
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            raise FileNotFoundError("deno not installed")
-        if cmd[:2] == ["bids-validator", "--version"]:
-            return SimpleNamespace(stdout="1.14.0", stderr="", returncode=0)
-        if cmd and cmd[0] == "bids-validator":
-            return SimpleNamespace(
-                stdout=json.dumps(legacy_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
 
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
-
-    assert len(issues) == 1
-    level, message, _path = issues[0]
-    assert level == "WARNING"
-    assert "datalad get -r ." in message
+def test_a_report_with_errors_and_exit_code_16_keeps_its_issues(monkeypatch, tmp_path):
+    report = {"issues": {"issues": [{"code": "JSON_KEY_REQUIRED", "severity": "error", "location": "/dataset_description.json"}]}}
+    use_engine(monkeypatch, report, returncode=16)
+    issues = bids_validator.run_bids_validator(str(tmp_path))
+    assert [i[0] for i in issues] == ["ERROR"]
+    assert not any(i[1].startswith("PRISM902") for i in issues)
 
 
-def test_legacy_parser_level_does_not_leak_across_issues(monkeypatch, tmp_path):
-    """An annex-unfetched downgrade on one error must not leak its WARNING
-    level onto the next genuine error processed in the same batch."""
-    dataset = tmp_path / "dataset"
-    unfetched = dataset / "sub-01" / "ses-1" / "anat" / "sub-01_ses-1_T1w.nii.gz"
-    _make_unfetched_annex_symlink(unfetched)
-
-    legacy_report = {
-        "issues": {
-            "errors": [
-                {
-                    "key": "NIFTI_HEADER_UNREADABLE",
-                    "reason": "Could not read NIfTI header",
-                    "files": [
-                        {
-                            "file": {
-                                "relativePath": "sub-01/ses-1/anat/sub-01_ses-1_T1w.nii.gz"
-                            }
-                        }
-                    ],
-                },
-                {
-                    "key": "PARTICIPANT_ID_MISMATCH",
-                    "reason": "Participant mismatch",
-                    "files": [
-                        {"file": {"relativePath": "participants.tsv"}}
-                    ],
-                },
-            ],
-            "warnings": [],
-        }
-    }
-
-    def fake_run(cmd, check=False, stdout=None, stderr=None, text=False):
-        if cmd[:2] == ["deno", "--version"]:
-            raise FileNotFoundError("deno not installed")
-        if cmd[:2] == ["bids-validator", "--version"]:
-            return SimpleNamespace(stdout="1.14.0", stderr="", returncode=0)
-        if cmd and cmd[0] == "bids-validator":
-            return SimpleNamespace(
-                stdout=json.dumps(legacy_report),
-                stderr="",
-                returncode=0,
-            )
-        raise AssertionError(f"Unexpected command: {cmd}")
-
-    monkeypatch.setattr(bids_validator.subprocess, "run", fake_run)
-
-    issues = bids_validator.run_bids_validator(str(dataset), verbose=False)
-
-    assert len(issues) == 2
-    levels_by_message = {message: level for level, message, _path in issues}
-    nifti_level = next(
-        level for msg, level in levels_by_message.items() if "NIFTI_HEADER" in msg
-    )
-    participant_level = next(
-        level
-        for msg, level in levels_by_message.items()
-        if "PARTICIPANT_ID_MISMATCH" in msg
-    )
-    assert nifti_level == "WARNING"
-    assert participant_level == "ERROR"
+def test_real_3_0_2_output_keeps_real_problems_and_silences_prism_folders(monkeypatch):
+    dataset = ROOT / "examples" / "wellbeing_multi_demo"
+    fixture = ROOT / "tests" / "data" / "bids_validator_3_0_2_wellbeing_report.json"
+    use_engine(monkeypatch, stdout=fixture.read_text(encoding="utf-8"), returncode=16)
+    messages = [i[1] for i in bids_validator.run_bids_validator(str(dataset))]
+    not_included = [m for m in messages if m.startswith("[BIDS] NOT_INCLUDED")]
+    assert not_included, "the real DEMO_GUIDE.md problem must stay"
+    assert all("/survey/" not in m for m in not_included)
+    assert any("PARTICIPANT_ID_MISMATCH" in m for m in messages)
+    assert not any("JSON_KEY_RECOMMENDED" in m for m in messages)
