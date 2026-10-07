@@ -590,22 +590,33 @@ def api_template_editor_import_limesurvey():
     split = (request.form.get("split") or "group").strip()
     key = (request.form.get("key") or "").strip()
 
+    project_path = (request.form.get("project_path") or "").strip() or None
+    use_library = (request.form.get("use_library") or "").strip().lower() in ("1", "true")
+
+    from src.converters.library_wording_match import public_library_match
     from src.converters.limesurvey import (
-        limesurvey_questionnaire_template,
+        limesurvey_library_template,
+        limesurvey_questionnaire_match,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
 
     command = f"python prism_tools.py survey import-limesurvey --input {file.filename} --split {split}"
-    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key} --output <dir>" if key else ""))
+    if project_path:
+        command += " --project <project>"
+    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key}{' --use-library' if use_library else ''} --output <dir>" if key else ""))
     try:
         xml = read_lss_xml(file.read(), file.filename)
         if not key:
-            questionnaires = list_limesurvey_questionnaires(xml, split, source_name=file.filename)
+            questionnaires = list_limesurvey_questionnaires(
+                xml, split, source_name=file.filename, project_path=project_path, match_library=True
+            )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = _strip_template_editor_internal_keys(
-            limesurvey_questionnaire_template(xml, key, split)
-        )
+        if use_library:
+            template, match = limesurvey_library_template(xml, key, split, project_path)
+        else:
+            template, match = limesurvey_questionnaire_match(xml, key, split, project_path)
+        template = _strip_template_editor_internal_keys(template)
     except ValueError as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": str(e)}), 400
@@ -621,6 +632,7 @@ def api_template_editor_import_limesurvey():
         "suggested_filename": f"survey-{template['Study']['TaskName']}.json",
         "item_count": len([k for k in template if k not in reserved]),
         "languages": languages,
+        "library_match": public_library_match(match),
     }), 200
 
 

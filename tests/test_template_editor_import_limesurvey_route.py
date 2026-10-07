@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 from pathlib import Path
 
+import pytest
 from flask import Flask
+
+from src.converters import survey_templates as st
+from test_library_wording_match import library_file
 
 FIXTURE = Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss"
 
@@ -69,3 +74,52 @@ def test_unexpected_failure_is_a_json_500(monkeypatch):
 
     assert response.status_code == 500
     assert "kaputt" in response.get_json()["error"]
+
+
+ADS = ["war ich bedrückt", "war ich müde"]
+ADS_LEVELS = {"0": "selten", "1": "meistens"}
+
+
+@pytest.fixture
+def library(tmp_path, monkeypatch):
+    global_dir = tmp_path / "global"
+    global_dir.mkdir()
+    project = tmp_path / "project"
+    (project / "code" / "library" / "survey").mkdir(parents=True)
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: global_dir)
+    library_file(project / "code" / "library" / "survey", texts=ADS, levels=ADS_LEVELS)
+    return str(project)
+
+
+def test_list_carries_the_library_match_without_the_local_path(library):
+    body = _post(_client(), {"project_path": library}).get_json()
+
+    entries = {q["key"]: q for q in body["questionnaires"]}
+    match = entries["g30"]["library_match"]
+    assert match["confidence"] == "exact" and match["source"] == "project"
+    assert match["id_map"] == {"ADS1_1": "ads_01", "ADS1_2": "ads_02"}
+    assert "template_path" not in match and library not in json.dumps(body)
+    assert entries["g20"]["library_match"] is None
+
+
+def test_key_call_returns_the_match_next_to_the_imported_template(library):
+    body = _post(_client(), {"project_path": library, "key": "g30"}).get_json()
+
+    assert "ADS1_1" in body["template"]
+    assert body["library_match"]["adoptable"] is True
+
+
+def test_use_library_returns_the_library_template_with_aliases(library):
+    body = _post(_client(), {"project_path": library, "key": "g30", "use_library": "1"}).get_json()
+
+    assert body["template"]["ads_01"]["Aliases"] == ["ADS1_1"]
+    assert "ADS1_1" not in body["template"]
+    assert body["suggested_filename"] == "survey-ads.json"
+    assert body["item_count"] == 2
+
+
+def test_use_library_without_a_one_to_one_match_is_a_400(library):
+    response = _post(_client(), {"project_path": library, "key": "g20", "use_library": "1"})
+
+    assert response.status_code == 400
+    assert "one-to-one" in response.get_json()["error"]
