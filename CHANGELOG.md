@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`prism-validator` on PyPI works on real projects (issue #162).** (1) It no longer crashes with
+  `No module named 'procedure_validator'` on a dataset that has a `project.json`: the module was missing
+  from the wheel, and a new test checks that every file the validator imports (lazy imports included) ships
+  in it. (2) `--format json` now has a `valid` verdict like `--json`; the two JSON shapes and the exit codes
+  (0 valid, 1 errors, 2 could not run) are documented in `docs/CLI_REFERENCE.md`. (3) `--bids` fails closed:
+  when no BIDS validator can run it reports the new error `PRISM902` and the dataset is invalid, instead of
+  a warning on a "valid" dataset. In `--json`/`--format` modes stdout is JSON only (progress and warnings go
+  to stderr). The Studio Validate page and the pre-export check also keep `PRISM902` in BIDS-only mode.
+- **Error counts in the JUnit, SARIF, markdown and CSV outputs.** Severities were compared across two copies
+  of the issues module, so errors were counted as info (JUnit `errors="0"`, SARIF `warning`, empty markdown
+  issue list). One shared comparison fixes all of them.
+- **CITATION.cff is checked in the standalone validator.** The wheel reported a false
+  `PRISM303 ... No module named 'project_manager'` for every dataset with a `CITATION.cff`. The check now
+  lives in a small module (`app/src/citation_cff.py`) shared by the validator and Studio. An unquoted
+  `date-released: 2026-01-01` (the usual form) is no longer reported as invalid.
 - **`prism_tools.py library fill` works from any folder.** It failed with "Could not load schema" unless run
   from inside `app/`, because the schema directory defaulted to a path relative to the current folder. The
   same default also affected library validation and the LimeSurvey tools.
