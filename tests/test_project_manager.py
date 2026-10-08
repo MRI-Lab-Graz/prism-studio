@@ -1069,6 +1069,8 @@ class TestProjectManager(unittest.TestCase):
         manager = ProjectManager()
 
         def _fake_run(command, **_kwargs):
+            if list(command[:2]) != ["git", "clone"]:
+                return subprocess.CompletedProcess(command, 0, "", "")
             destination_path = Path(str(command[3]))
             destination_path.mkdir(parents=True, exist_ok=True)
             (destination_path / ".git").mkdir(parents=True, exist_ok=True)
@@ -1092,6 +1094,8 @@ class TestProjectManager(unittest.TestCase):
         manager = ProjectManager()
 
         def _fake_run(command, **_kwargs):
+            if list(command[:2]) != ["git", "clone"]:
+                return subprocess.CompletedProcess(command, 0, "", "")
             destination_path = Path(str(command[3]))
             (destination_path / ".git").mkdir(parents=True, exist_ok=True)
             return subprocess.CompletedProcess(command, 0, "", "")
