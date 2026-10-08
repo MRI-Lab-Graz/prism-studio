@@ -166,3 +166,17 @@ def cmd_library_template_delete(args) -> None:
 
     target.unlink()
     print(f"✅ Deleted {target}")
+
+
+def cmd_library_share_template(args) -> None:
+    """Print the prefilled share mail for a template file - the CLI equivalent of
+    the Studio Template Editor's share offer after saving a new template."""
+    from src.template_share import share_mail
+
+    path = Path(args.input)
+    mail = share_mail(json.loads(path.read_text(encoding="utf-8")), path.name)
+    print(f"To:      {mail['to']}")
+    print(f"Subject: {mail['subject']}")
+    print(f"\n{mail['body']}\n")
+    print(f"Mail link: {mail['mailto']}")
+    print(f"Attach {path} and send it.")
