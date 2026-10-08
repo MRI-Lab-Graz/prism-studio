@@ -607,13 +607,12 @@ def api_template_editor_import_limesurvey():
     project_path = (request.form.get("project_path") or "").strip() or None
     use_library = (request.form.get("use_library") or "").strip().lower() in ("1", "true")
 
-    from src.converters.library_wording_match import public_library_match
     from src.converters.limesurvey import (
-        limesurvey_library_template,
-        limesurvey_questionnaire_match,
+        limesurvey_questionnaire_template,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
+    from src.converters.template_import import finish_import
 
     command = f"python prism_tools.py survey import-limesurvey --input {file.filename} --split {split}"
     if project_path:
@@ -626,32 +625,15 @@ def api_template_editor_import_limesurvey():
                 xml, split, source_name=file.filename, project_path=project_path, match_library=True
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        if use_library:
-            template, match = limesurvey_library_template(xml, key, split, project_path)
-        else:
-            template, match = limesurvey_questionnaire_match(xml, key, split, project_path)
-        template = _strip_template_editor_internal_keys(template)
+        template = limesurvey_questionnaire_template(xml, key, split)
+        payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library)
     except ValueError as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": f"Import failed: {e}"}), 500
-
-    if use_library:  # library templates carry no Study.TaskName; the file name is the library's
-        suggested_filename = match["template_file"]
-    else:
-        suggested_filename = f"survey-{template['Study']['TaskName']}.json"
-    i18n = template.get("I18n") or {}
-    languages = i18n.get("Languages") or [(template.get("Technical") or {}).get("Language", "en")]
-    reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
-    return jsonify({
-        "template": template,
-        "suggested_filename": suggested_filename,
-        "item_count": len([k for k in template if k not in reserved]),
-        "languages": languages,
-        "library_match": public_library_match(match),
-    }), 200
+    return jsonify(payload), 200
 
 
 @tools_template_editor_bp.route("/api/template-editor/import-pavlovia", methods=["POST"])
@@ -666,9 +648,8 @@ def api_template_editor_import_pavlovia():
     project_path = (request.form.get("project_path") or "").strip() or None
     language = (request.form.get("language") or "").strip() or None
 
-    from src.converters.library_wording_match import public_library_match
-    from src.converters.limesurvey import match_questionnaire_to_library
     from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire_template
+    from src.converters.template_import import finish_import
 
     command = f"python prism_tools.py survey import-pavlovia --input {file.filename} --split {split}"
     print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key} --output <dir>" if key else ""))
@@ -680,8 +661,8 @@ def api_template_editor_import_pavlovia():
                 match_library=True, language=language,
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = _strip_template_editor_internal_keys(pavlovia_questionnaire_template(survey, key, split, language))
-        match = match_questionnaire_to_library(template, template["Study"]["OriginalName"], project_path)
+        template = pavlovia_questionnaire_template(survey, key, split, language)
+        payload = finish_import(template, template["Study"]["OriginalName"], project_path)
     except ValueError as e:  # includes JSON and unicode decode errors
         print(f"[PRISM] Pavlovia import failed: {e}")
         return jsonify({"error": str(e)}), 400
@@ -689,14 +670,7 @@ def api_template_editor_import_pavlovia():
         print(f"[PRISM] Pavlovia import failed: {e}")
         return jsonify({"error": f"Import failed: {e}"}), 500
 
-    reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
-    return jsonify({
-        "template": template,
-        "suggested_filename": f"survey-{template['Study']['TaskName']}.json",
-        "item_count": len([k for k in template if k not in reserved]),
-        "languages": [template["Technical"]["Language"]],
-        "library_match": public_library_match(match),
-    }), 200
+    return jsonify(payload), 200
 
 
 @tools_template_editor_bp.route("/api/template-editor/import-excel", methods=["POST"])
@@ -720,14 +694,11 @@ def api_template_editor_import_excel():
         return jsonify({"error": "Unsupported file type. Use .xlsx, .csv, or .tsv"}), 400
 
     group = (request.form.get("group") or "").strip()
+    project_path = (request.form.get("project_path") or "").strip() or None
 
     try:
-        from src.converters.excel_template_import import (
-            RESERVED_TOPLEVEL,
-            parse_excel_groups,
-            summarize_groups,
-        )
-        from src.utils.naming import sanitize_task_name
+        from src.converters.excel_template_import import parse_excel_groups, summarize_groups
+        from src.converters.template_import import finish_import
 
         file_bytes = file.read()
         groups = parse_excel_groups(file_bytes, file.filename)
@@ -749,29 +720,7 @@ def api_template_editor_import_excel():
         if template is None:
             return jsonify({"error": f"Group '{group}' not found in file"}), 400
 
-        template = _strip_template_editor_internal_keys(template)
-        item_keys = [k for k in template if k not in RESERVED_TOPLEVEL]
-
-        languages = []
-        i18n = template.get("I18n")
-        if isinstance(i18n, dict):
-            languages = i18n.get("Languages", [])
-        if not languages:
-            languages = [template.get("Technical", {}).get("Language", "en")]
-
-        safe_name = sanitize_task_name(group)
-        suggested_filename = f"survey-{safe_name}.json"
-        return (
-            jsonify(
-                {
-                    "template": template,
-                    "suggested_filename": suggested_filename,
-                    "item_count": len(item_keys),
-                    "languages": languages,
-                }
-            ),
-            200,
-        )
+        return jsonify(finish_import(template, group, project_path)), 200
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

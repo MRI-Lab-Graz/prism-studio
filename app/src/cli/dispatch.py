@@ -101,6 +101,8 @@ def dispatch_prism_tools(
             handlers["survey_export_questionnaire_docx"](args)
         elif args.action == "import-limesurvey":
             handlers["survey_import_limesurvey"](args)
+        elif args.action == "import-codebook":
+            handlers["survey_import_codebook"](args)
         elif args.action == "import-pavlovia":
             handlers["survey_import_pavlovia"](args)
         elif args.action == "import-limesurvey-batch":

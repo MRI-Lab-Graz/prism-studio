@@ -585,11 +585,11 @@ def cmd_survey_import_limesurvey(args):
     """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
     Editor's 'Import Template Source' for .lss/.lsa."""
     from src.converters.limesurvey import (
-        limesurvey_library_template,
         limesurvey_questionnaire_template,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
+    from src.converters.template_import import finish_import
 
     input_path = Path(args.input).resolve()
     project_path = getattr(args, "project", None)
@@ -614,16 +614,51 @@ def cmd_survey_import_limesurvey(args):
         # Resolve every key first so a failure leaves nothing half written.
         planned = []  # (target, template)
         for key in keys:
-            if use_library:
-                template, match = limesurvey_library_template(xml, key, args.split, project_path)
-                name = match["template_file"]  # library templates have no Study.TaskName
-            else:
-                template = limesurvey_questionnaire_template(xml, key, args.split)
-                name = f"survey-{template['Study']['TaskName']}.json"
-            planned.append((out_dir / name, template))
+            template = limesurvey_questionnaire_template(xml, key, args.split)
+            payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library)
+            planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
     except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
+        sys.exit(1)
+
+
+def cmd_survey_import_codebook(args):
+    """Import the instrument groups of an Excel/CSV/TSV codebook as PRISM templates. Matches the
+    Template Editor's 'Import Template Source' for .xlsx/.csv/.tsv."""
+    from src.converters.excel_template_import import parse_excel_groups, summarize_groups
+    from src.converters.limesurvey import match_questionnaire_to_library
+    from src.converters.template_import import finish_import
+
+    input_path = Path(args.input).resolve()
+    project_path = getattr(args, "project", None)
+    try:
+        if args.output and not args.select:
+            raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
+        groups = parse_excel_groups(input_path.read_bytes(), input_path.name)
+        if not groups:
+            raise ValueError("No variables found in the file")
+        print(f"[PRISM] Codebook import: {input_path.name} -> {len(groups)} group(s):")
+        for group in summarize_groups(groups):
+            print(f"[PRISM]   {group['prefix']:<8} {group['item_count']} item(s)")
+        if args.list or not args.select:
+            for key, template in sorted(groups.items()):
+                match_questionnaire_to_library(template, key, project_path)
+            return
+        if not args.output:
+            raise ValueError("--output DIR is required with --select")
+        keys = list(groups) if args.select == ["all"] else args.select
+        unknown = [key for key in keys if key not in groups]
+        if unknown:
+            raise ValueError(f"No group {', '.join(unknown)}. Valid keys: {', '.join(groups)}")
+        out_dir = Path(args.output).resolve()
+        planned = []
+        for key in keys:
+            payload = finish_import(groups[key], key, project_path)
+            planned.append((out_dir / payload["suggested_filename"], payload["template"]))
+        _write_planned_templates(planned, out_dir)
+    except (OSError, ValueError) as e:
+        print(f"Error importing codebook: {e}")
         sys.exit(1)
 
 
@@ -634,6 +669,7 @@ def cmd_survey_import_pavlovia(args):
         list_pavlovia_questionnaires,
         pavlovia_questionnaire_template,
     )
+    from src.converters.template_import import finish_import
 
     input_path = Path(args.input).resolve()
     try:
@@ -654,7 +690,8 @@ def cmd_survey_import_pavlovia(args):
             template = pavlovia_questionnaire_template(survey, key, args.split, getattr(args, "language", None))
             if getattr(args, "software_version", None):
                 template["Technical"]["SoftwareVersion"] = args.software_version
-            planned.append((Path(args.output).resolve() / f"survey-{template['Study']['TaskName']}.json", template))
+            payload = finish_import(template, template["Study"]["OriginalName"], getattr(args, "project", None))
+            planned.append((Path(args.output).resolve() / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, Path(args.output).resolve())
     except (OSError, ValueError) as e:  # json.JSONDecodeError is a ValueError
         print(f"Error importing Pavlovia survey: {e}")
