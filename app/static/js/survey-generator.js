@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const sharedApiModuleUrl = new URL('./shared/api.js', surveyGeneratorScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
+    const languageHintModuleUrl = new URL('./survey-generator/language-hint.js', surveyGeneratorScriptUrl).href;
+    let languageHint = () => '';
 
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
@@ -238,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${hasPotentialMatrix ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-th me-1"></i>Matrix</span>' : ''}
                         ${!hasLang ? `<span class="badge bg-danger tpl-missing-badge" style="font-size:0.6rem;">Missing: ${selectedExportLanguages.filter(l => !fileLangs.includes(l)).map(l => l.toUpperCase()).join(', ')}</span>` : ''}
                     </div>
+                    <div class="tpl-no-lang-hint small ${hasLang ? 'd-none' : ''}">${escapeHtml(languageHint(fileLangs, selectedExportLanguages, currentLanguage))}</div>
                     ${desc ? `<div class="tpl-desc">${escapeHtml(desc)}</div>` : ''}
                 </div>
                 <button class="btn btn-sm btn-link text-muted p-0 ms-2 flex-shrink-0 tpl-expand-btn" data-target="${detailsId}" title="Show details & questions">
@@ -470,6 +473,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const cb = row.querySelector('.file-checkbox');
             const missingBadge = row.querySelector('.tpl-missing-badge');
 
+            const hint = row.querySelector('.tpl-no-lang-hint');
+            if (hint) {
+                hint.textContent = languageHint(fileLangs, selectedExportLanguages, currentLanguage);
+                hint.classList.toggle('d-none', hasAll);
+            }
+
             if (hasAll) {
                 row.classList.remove('tpl-no-lang');
                 if (cb) cb.disabled = false;
@@ -589,6 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     (file.detected_languages || []).forEach(l => langSet.add(l));
                 });
             });
+            ({ languageHint } = await import(languageHintModuleUrl));
             buildLanguageUI(Array.from(langSet).sort());
             renderLibrary();
         } catch (err) {
