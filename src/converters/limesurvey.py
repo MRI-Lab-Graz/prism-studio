@@ -12,6 +12,7 @@ import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
+from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
 
 
 def _utc_creation_date() -> str:
@@ -950,7 +951,6 @@ SPLIT_MODES = ("group", "question", "survey")
 _ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 # Text, equation and display questions: no answer options of their own.
 _HELPER_TYPES = {"S", "T", "U", "Q", "*", "X"}
-_TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
 
 
 def read_lss_xml(data, filename):
@@ -1151,7 +1151,7 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
             {
                 "key": part["key"],
                 "name": part["name"],
-                "item_count": len([k for k in template if k not in _TEMPLATE_SECTIONS]),
+                "item_count": len([k for k in template if k not in TEMPLATE_SECTIONS]),
                 "helper": all(
                     q["type"] in _HELPER_TYPES and not q["levels"] and not q["subquestions"]
                     for q in questions
@@ -1221,48 +1221,6 @@ def limesurvey_questionnaire_template(xml_content, key, split="group"):
             return template
     valid = ", ".join(info["key"] for info, _ in results) or "none"
     raise ValueError(f"No questionnaire '{key}' (split by {split}). Valid keys: {valid}")
-
-
-def _describe_library_match(name, match):
-    if not match:
-        return f"[PRISM] Library match for '{name}': none"
-    changed = [f"{a}->{b}" for a, b in match["id_map"].items() if a != b]
-    ids = "IDs identical" if not changed else f"IDs differ ({', '.join(changed[:3])}{', ...' if len(changed) > 3 else ''})"
-    levels = "levels equal" if match["levels_ok"] else "levels DIFFER"
-    return (
-        f"[PRISM] Library match for '{name}': {match['template_key']} ({match['source']}) "
-        f"{match['confidence']} — {match['paired']}/{match['imported_items']} items paired, {levels}, {ids}"
-    )
-
-
-def match_questionnaire_to_library(template, name, project_path=None):
-    """Best library match for one imported questionnaire; logs, never raises."""
-    try:
-        from src.converters.library_wording_match import best_library_match
-
-        match = best_library_match(template, project_path)
-    except Exception as exc:  # a library problem must not block a plain import
-        print(f"[PRISM] Library match skipped: {exc}")
-        return None
-    print(_describe_library_match(name, match))
-    return match
-
-
-def limesurvey_questionnaire_match(xml_content, key, split="group", project_path=None):
-    """(template, library match) for one questionnaire."""
-    template = limesurvey_questionnaire_template(xml_content, key, split)
-    return template, match_questionnaire_to_library(template, template["Study"]["OriginalName"], project_path)
-
-
-def limesurvey_library_template(xml_content, key, split="group", project_path=None):
-    """(adopted library template with the survey codes as Aliases, match). ValueError if not adoptable."""
-    from src.converters.library_wording_match import apply_library_template
-
-    _template, match = limesurvey_questionnaire_match(xml_content, key, split, project_path)
-    adopted = apply_library_template(match)
-    print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
-          f"{len(match['id_map'])} item code(s) kept as aliases")
-    return adopted, match
 
 
 def parse_lss_xml(

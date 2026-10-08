@@ -238,6 +238,18 @@ global library is only read, never written.
 python prism_tools.py survey import-limesurvey --input instrument.lsa --select g30 --use-library --output ./templates
 ```
 
+**`survey import-codebook`** — turn the instrument groups of an Excel/CSV/TSV codebook into PRISM
+templates (one per variable prefix), like Studio's Template Editor "Import Template Source". Every import
+(codebook, LimeSurvey, Pavlovia) goes through the same step: it is matched against the template library and
+the result is printed, `--project` adds that project's library:
+
+```bash
+python prism_tools.py survey import-codebook --input codebook.xlsx                         # list groups + library match
+python prism_tools.py survey import-codebook --input codebook.xlsx --select ads pss --output ./templates --project ./myproject
+```
+
+(`survey import-excel` is the older importer that writes a whole library at once.)
+
 **`survey import-pavlovia`** — turn a Pavlovia survey (SurveyJS `.json`) into one PRISM template per
 page (`--split survey` for a single template), like Studio's Template Editor "Import Template Source":
 

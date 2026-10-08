@@ -423,6 +423,13 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("setSplitOptions(context, 'pavlovia')", source)
         self.assertIn("sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia')", source)
 
+    def test_excel_group_load_sends_the_project_so_the_library_match_sees_its_templates(self):
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        loader = source[source.index("async function loadExcelGroup") :]
+        loader = loader[: loader.index("\n}\n")]
+
+        self.assertIn("formData.append('project_path', context.getCurrentProjectPath() || '');", loader)
+
     def test_changing_the_limesurvey_split_never_loads_a_template_unasked(self):
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
         importer = source[source.index("async function importLimeSurvey") :]

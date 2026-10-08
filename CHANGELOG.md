@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **One import pipeline for every template source.** Excel/CSV/TSV, LimeSurvey and Pavlovia imports all go through
+  the same step (library match, optional library template, editor payload), so an Excel import now also reports the
+  library match and offers to share a new template. New CLI: `prism_tools.py survey import-codebook` (with `--project`).
 - **Import a Pavlovia survey as templates.** Template Editor > Import Template Source accepts a Pavlovia
   (SurveyJS) survey `.json` and offers one template per page (or the whole survey), with the library match.
   `visibleIf` becomes `Relevance`; hidden items are flagged. CLI:

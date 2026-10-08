@@ -627,8 +627,7 @@ def cmd_survey_import_codebook(args):
     """Import the instrument groups of an Excel/CSV/TSV codebook as PRISM templates. Matches the
     Template Editor's 'Import Template Source' for .xlsx/.csv/.tsv."""
     from src.converters.excel_template_import import parse_excel_groups, summarize_groups
-    from src.converters.limesurvey import match_questionnaire_to_library
-    from src.converters.template_import import finish_import
+    from src.converters.template_import import finish_import, match_questionnaire_to_library
 
     input_path = Path(args.input).resolve()
     project_path = getattr(args, "project", None)

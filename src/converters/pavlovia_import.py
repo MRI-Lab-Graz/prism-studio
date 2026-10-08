@@ -136,7 +136,7 @@ def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia fil
     listing = [dict(info) for info, _t in results]
     if match_library:
         from src.converters.library_wording_match import public_library_match
-        from src.converters.limesurvey import match_questionnaire_to_library
+        from src.converters.template_import import match_questionnaire_to_library
 
         for entry, (info, template) in zip(listing, results):
             entry["library_match"] = public_library_match(match_questionnaire_to_library(template, info["name"], project_path))

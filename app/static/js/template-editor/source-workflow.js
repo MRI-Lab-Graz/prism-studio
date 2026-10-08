@@ -467,6 +467,7 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
     formData.append('modality', context.modalityEl.value);
     formData.append('schema_version', context.schemaEl.value || 'stable');
     formData.append('group', group);
+    formData.append('project_path', context.getCurrentProjectPath() || '');
 
     const res = await context.fetchWithApiFallback('/api/template-editor/import-excel', {
       method: 'POST',
