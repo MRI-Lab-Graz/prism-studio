@@ -75,3 +75,14 @@ class TestExportLanguagesLiveInTheCustomizer(unittest.TestCase):
         self.assertNotIn("Set from Survey Generator", html)
         self.assertIn("survey-customizer/language-choices.js", script)
 
+    def test_customizer_export_languages_are_a_dropdown_of_whatever_the_templates_offer(self):
+        html = (REPO_ROOT / "app" / "templates" / "survey_customizer.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "app" / "static" / "js" / "survey-customizer.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="exportLanguageButton"', html)
+        self.assertIn('data-bs-toggle="dropdown"', html)
+        self.assertIn("resolveLanguages(", script)
+        self.assertIn("languageLabel(", script)
+        # no hardcoded language list
+        self.assertNotIn('<option value="de">', html)
+
