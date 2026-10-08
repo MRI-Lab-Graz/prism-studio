@@ -347,6 +347,20 @@ def api_template_editor_download():
     )
 
 
+@tools_template_editor_bp.route("/api/template-editor/share-mail", methods=["POST"])
+def api_template_editor_share_mail():
+    """Prefilled mail for sharing a new template. Same backend as `library share-template`."""
+    from src.template_share import share_mail
+
+    payload = request.get_json(silent=True) or {}
+    filename = (payload.get("filename") or "").strip()
+    template = payload.get("template")
+    if not filename or not isinstance(template, dict):
+        return jsonify({"error": "filename and a template object are required"}), 400
+    print(f"[PRISM] CLI equivalent: python prism_tools.py library share-template --input {filename}")
+    return jsonify(share_mail(_strip_template_editor_internal_keys(template), filename)), 200
+
+
 @tools_template_editor_bp.route(
     "/api/template-editor/export-questionnaire", methods=["POST"]
 )
