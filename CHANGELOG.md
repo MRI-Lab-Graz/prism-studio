@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Share a new template with the PRISM team.** After saving a template imported from LimeSurvey that has no
+  library match, Studio offers to download it and open a prefilled mail to mri-lab@uni-graz.at. CLI:
+  `prism_tools.py library share-template --input <file>`.
+
 ## [1.20.0] - 2026-10-07
 
 ### Added

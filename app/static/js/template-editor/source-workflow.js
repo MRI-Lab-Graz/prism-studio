@@ -345,9 +345,29 @@ export async function saveCurrent(context) {
       : '';
     context.showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
     await refreshTemplateList(context, { silent: true });
+    await offerShare(context, filename).catch((error) => context.showAlert('warning', `Saved, but sharing failed: ${context.escapeHtml(error.message)}`));
   } catch (error) {
     context.showAlert('danger', `Save failed: ${context.escapeHtml(error.message)}`);
   }
+}
+
+// Offer to mail a freshly imported, unmatched template to the PRISM team (asked once).
+export async function offerShare(context, filename) {
+  if (context.shareCandidate !== filename) {
+    return;
+  }
+  context.shareCandidate = null;
+  if (!confirm('Share this template with the PRISM team (mri-lab@uni-graz.at)? It will be checked, including its copyright status, before it is added to the library.')) {
+    return;
+  }
+  await downloadCurrent(context);
+  const mail = await context.apiPost('/api/template-editor/share-mail', { filename, template: context.currentTemplate });
+  const link = document.createElement('a');
+  link.href = mail.mailto;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  context.showAlert('info', 'Your mail program opened with a prefilled message. Attach the downloaded file and send it.');
 }
 
 export async function downloadCurrent(context) {
@@ -387,6 +407,8 @@ function applyImportedTemplate(context, data, file) {
   context.stripScoreAnnotationsInTemplate(context.currentTemplate);
   context.originalTemplate = null;
   context.currentTemplateFilename = context.normalizeTemplateFilename(data.suggested_filename, context.modalityEl.value, context.currentTemplate);
+  // Only a LimeSurvey import reports library_match; null there means nothing like it is in the library.
+  context.shareCandidate = 'library_match' in data && !data.library_match ? context.currentTemplateFilename : null;
   context.loadedFromReadonly = false;
   context.loadedFromProjectLibrary = false;
   context.loadedTemplateProjectPath = '';

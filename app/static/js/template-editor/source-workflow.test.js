@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, refreshTemplateList, validateCurrent } from './source-workflow.js';
+import { finishImport, offerShare, refreshTemplateList, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -126,5 +126,33 @@ describe('refreshTemplateList', () => {
 
     it('selects nothing when the open file is gone from the project', async () => {
         expect(await selectedAfterRefresh(true, 'survey-deleted.json')).toBe('');
+    });
+});
+
+
+describe('offerShare', () => {
+    const ask = (answer) => { globalThis.confirm = vi.fn(() => answer); return globalThis.confirm; };
+
+    it('asks nothing for a template that was not an unmatched import', async () => {
+        const confirm = ask(true);
+        await offerShare({ shareCandidate: null, apiPost: vi.fn() }, 'survey-x.json');
+        expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it('asks nothing when a different template was saved', async () => {
+        const confirm = ask(true);
+        await offerShare({ shareCandidate: 'survey-x.json', apiPost: vi.fn() }, 'survey-y.json');
+        expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it('asks once; No sends nothing and is not asked again', async () => {
+        const confirm = ask(false);
+        const context = { shareCandidate: 'survey-x.json', apiPost: vi.fn() };
+        await offerShare(context, 'survey-x.json');
+        await offerShare(context, 'survey-x.json');
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(confirm.mock.calls[0][0]).toContain('mri-lab@uni-graz.at');
+        expect(context.apiPost).not.toHaveBeenCalled();
+        expect(context.shareCandidate).toBeNull();
     });
 });
