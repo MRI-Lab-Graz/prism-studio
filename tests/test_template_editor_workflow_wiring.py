@@ -92,7 +92,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
             workflow_content,
         )
         self.assertIn(
-            "await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {",
+            "await context.fetchWithApiFallback(SOURCES[context.sourceSplitSelectEl.dataset.source || 'limesurvey'].endpoint, {",
             workflow_content,
         )
         self.assertIn(
@@ -403,12 +403,25 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         importer = source[source.index("export async function importTemplateSource") :]
         importer = importer[: importer.index("export async function deleteCurrentTemplate")]
 
-        json_branch = importer.index("parsePrismTemplateJson(await file.text()")
+        json_branch = importer.index("parsePrismTemplateJson(text,")
         # The .json branch comes before the codebook and generator paths ...
         self.assertLess(json_branch, importer.index("isExcelCodebook)"))
-        self.assertLess(json_branch, importer.index("importLimeSurvey("))
+        self.assertLess(json_branch, importer.rindex("importLimeSurvey("))  # the .lss/.lsa call
         # ... and reuses the normal import finish (validation) so Save works as usual.
         self.assertIn("applyImportedTemplate(", importer[json_branch:])
+
+    def test_pavlovia_import_asks_for_the_survey_language(self):
+        """A SurveyJS file carries no language, so the import row has a field for it and sends it."""
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        html = (REPO_ROOT / "app" / "templates" / "template_editor.html").read_text(encoding="utf-8")
+        editor = (REPO_ROOT / "app" / "static" / "js" / "template-editor.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="sourceLanguageInput"', html)
+        self.assertIn("sourceLanguageInputEl", editor)
+        self.assertIn("language: context.sourceLanguageInputEl.value", source)
+        # only the Pavlovia flow shows and sends it
+        self.assertIn("setSplitOptions(context, 'pavlovia')", source)
+        self.assertIn("sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia')", source)
 
     def test_changing_the_limesurvey_split_never_loads_a_template_unasked(self):
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")

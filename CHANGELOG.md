@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Import a Pavlovia survey as templates.** Template Editor > Import Template Source accepts a Pavlovia
+  (SurveyJS) survey `.json` and offers one template per page (or the whole survey), with the library match.
+  `visibleIf` becomes `Relevance`; hidden items are flagged. CLI:
+  `prism_tools.py survey import-pavlovia --input survey.json [--list | --select p1 p2|all --output DIR] [--language de] [--software-version V]`.
+  The editor asks for the survey language (the file has none).
+- **Export languages are chosen in Customize & Export.** The Survey Generator only picks a Base Language; the
+  customizer offers a language only when every selected questionnaire has it and names the ones that lack it.
 - **Share a new template with the PRISM team.** After saving a template imported from LimeSurvey that has no
   library match, Studio offers to download it and open a prefilled mail to mri-lab@uni-graz.at. CLI:
   `prism_tools.py library share-template --input <file>`.

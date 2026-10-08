@@ -1,0 +1,39 @@
+{
+  "title": "Resting - State Questionnaire",
+  "description": "Fragebogen zum Erleben während der Ruhemessung.",
+  "pages": [
+    {
+      "name": "Basics",
+      "title": "Fragebogen zur Ruhemessung",
+      "elements": [
+        {"type": "text", "name": "studyID", "visible": false, "title": "MR-Code - ERSTEN 3 Stellen",
+         "defaultValue": 144, "inputType": "number", "min": 130, "max": 200},
+        {"type": "text", "name": "subID", "title": "MR-Code - LETZTEN 3 Stellen", "inputType": "number"},
+        {"type": "dropdown", "name": "sesID", "title": "Das wievielte Mal sind Sie im MRI-Lab?",
+         "choices": [{"value": "Item 1", "text": "1"}, {"value": "Item 2", "text": "2"}]},
+        {"type": "rating", "name": "Kaffee", "title": "Haben Sie heute einen Kaffee getrunken?",
+         "autoGenerate": false, "rateCount": 2,
+         "rateValues": [{"value": "viel weniger", "text": "Ja"}, {"value": "weniger", "text": "Nein"}]},
+        {"type": "rating", "name": "KaffeeHeute", "visibleIf": "{Kaffee} = 'viel weniger'",
+         "title": "Wie viel Kaffee haben Sie heute getrunken?", "description": "Im Vergleich zu einem durchschnittlichen Tag",
+         "autoGenerate": false, "rateValues": ["viel weniger", "weniger", "gleich", "mehr", "viel mehr"]}
+      ]
+    },
+    {
+      "name": "ARSQ",
+      "title": "Resting State",
+      "elements": [
+        {"type": "rating", "name": "ARSQ1", "title": "Ich hatte schnell wechselnde Gedanken",
+         "description": "1... überhaupt nicht  5...extrem stark"},
+        {"type": "rating", "name": "ARSQ2", "title": "Ich fühlte mich unruhig"}
+      ]
+    },
+    {
+      "name": "Danke",
+      "elements": [
+        {"type": "boolean", "name": "question1", "title": "Vielen herzlichen Dank!",
+         "labelTrue": "Ja", "labelFalse": "Nein"}
+      ]
+    }
+  ]
+}

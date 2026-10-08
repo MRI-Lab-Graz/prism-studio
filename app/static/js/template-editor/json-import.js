@@ -30,3 +30,13 @@ export function parsePrismTemplateJson(text, modality) {
 
     return data;
 }
+
+// A Pavlovia survey is SurveyJS JSON (pages/elements), not a PRISM template.
+export function isPavloviaSurvey(text) {
+    try {
+        const data = JSON.parse(String(text).replace(/^\ufeff/, ''));
+        return !!data && !Array.isArray(data) && (Array.isArray(data.pages) || Array.isArray(data.elements));
+    } catch (_error) {
+        return false;
+    }
+}

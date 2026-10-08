@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parsePrismTemplateJson } from './json-import.js';
+import { isPavloviaSurvey, parsePrismTemplateJson } from './json-import.js';
 
 const SURVEY = {
     Technical: { StimulusType: 'Questionnaire' },
@@ -55,5 +55,18 @@ describe('parsePrismTemplateJson', () => {
     it('leaves anything else to the editor validation', () => {
         const odd = { Study: { Name: 'no task name yet' } };
         expect(parsePrismTemplateJson(text(odd), 'survey')).toEqual(odd);
+    });
+});
+
+describe('isPavloviaSurvey', () => {
+    it('recognises a SurveyJS survey by its pages', () => {
+        expect(isPavloviaSurvey(text({ title: 'x', pages: [{ name: 'p', elements: [] }] }))).toBe(true);
+        expect(isPavloviaSurvey(text({ elements: [{ type: 'text', name: 'a' }] }))).toBe(true);
+    });
+
+    it('leaves PRISM templates, other JSON and broken JSON to the normal path', () => {
+        expect(isPavloviaSurvey(text(SURVEY))).toBe(false);
+        expect(isPavloviaSurvey(text([1, 2]))).toBe(false);
+        expect(isPavloviaSurvey('not json')).toBe(false);
     });
 });

@@ -9,9 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const customizeExportBtn = document.getElementById('customizeExportBtn');
     const toolbarCard = document.getElementById('toolbarCard');
     const baseLanguageSelect = document.getElementById('baseLanguageSelect');
-    const exportLanguageCheckboxes = document.getElementById('exportLanguageCheckboxes');
-    const languageWarnings = document.getElementById('languageWarnings');
-    const languageWarningList = document.getElementById('languageWarningList');
     const sourceInfoText = document.getElementById('sourceInfoText');
     const reloadLibraryBtn = document.getElementById('reloadLibraryBtn');
     const templateSearch = document.getElementById('templateSearch');
@@ -19,14 +16,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentLibraryData = null;
     let currentLanguage = 'en';
-    let selectedExportLanguages = ['en'];
-    let allDetectedLanguages = [];
     let libraryLoadToken = 0;
     const CUSTOMIZER_STATE_KEY = 'prism_survey_customizer_state_v2';
     const CUSTOMIZER_LS_SETTINGS_KEY = 'prism_survey_customizer_ls_settings_v2';
 
     const sharedApiModuleUrl = new URL('./shared/api.js', surveyGeneratorScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
+    const languageHintModuleUrl = new URL('./survey-generator/language-hint.js', surveyGeneratorScriptUrl).href;
+    let languageHint = () => '';
 
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
@@ -181,9 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return '<span class="badge source-badge-global">Global</span>';
     }
 
-    function hasAllExportLanguages(fileLangs) {
-        // Template must have ALL selected export languages
-        return selectedExportLanguages.every(lang => fileLangs.includes(lang));
+    function hasBaseLanguage(fileLangs) {
+        return fileLangs.includes(currentLanguage);
     }
 
     // --- Build a compact template row ---
@@ -191,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fileId = `tpl-${sectionKey}-${index}`;
         const detailsId = `details-${sectionKey}-${index}`;
         const fileLangs = file.detected_languages || ['en'];
-        const hasLang = hasAllExportLanguages(fileLangs);
+        const hasLang = hasBaseLanguage(fileLangs);
 
         const div = document.createElement('div');
         div.className = `tpl-row ${hasLang ? '' : 'tpl-no-lang'}`;
@@ -236,8 +232,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-secondary" style="font-size:0.65rem;">${itemCount} items</span>
                         ${fileLangs.map(l => `<span class="lang-badge ${l === currentLanguage ? 'lang-badge-available' : ''}" style="font-size:0.6rem;">${l.toUpperCase()}</span>`).join('')}
                         ${hasPotentialMatrix ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-th me-1"></i>Matrix</span>' : ''}
-                        ${!hasLang ? `<span class="badge bg-danger tpl-missing-badge" style="font-size:0.6rem;">Missing: ${selectedExportLanguages.filter(l => !fileLangs.includes(l)).map(l => l.toUpperCase()).join(', ')}</span>` : ''}
+                        ${!hasLang ? `<span class="badge bg-danger tpl-missing-badge" style="font-size:0.6rem;">Missing: ${currentLanguage.toUpperCase()}</span>` : ''}
                     </div>
+                    <div class="tpl-no-lang-hint small ${hasLang ? 'd-none' : ''}">${escapeHtml(languageHint(fileLangs, currentLanguage))}</div>
                     ${desc ? `<div class="tpl-desc">${escapeHtml(desc)}</div>` : ''}
                 </div>
                 <button class="btn btn-sm btn-link text-muted p-0 ms-2 flex-shrink-0 tpl-expand-btn" data-target="${detailsId}" title="Show details & questions">
@@ -307,7 +304,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 settingsRow.classList.add('d-none');
             }
             updateGenerateBtn();
-            validateLanguageCoverage();
         });
 
         return div;
@@ -333,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (files && files.length > 0) {
                 hasAnyFiles = true;
                 // Count files that have all export languages
-                const visibleFiles = files.filter(f => hasAllExportLanguages(f.detected_languages || ['en']));
+                const visibleFiles = files.filter(f => hasBaseLanguage(f.detected_languages || ['en']));
                 const totalFiles = files.length;
 
                 container.classList.remove('d-none');
@@ -359,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         group.files.forEach(file => {
                             const row = createTemplateRow(file, rowIndex++, key);
                             groupEl.appendChild(row);
-                            if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
+                            if (hasBaseLanguage(file.detected_languages || ['en'])) hasAnyVisible = true;
                         });
                         listEl.appendChild(groupEl);
                     });
@@ -367,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     files.forEach(file => {
                         const row = createTemplateRow(file, rowIndex++, key);
                         listEl.appendChild(row);
-                        if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
+                        if (hasBaseLanguage(file.detected_languages || ['en'])) hasAnyVisible = true;
                     });
                 }
             } else {
@@ -413,11 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Language Management ---
     function buildLanguageUI(detectedLangs) {
-        allDetectedLanguages = detectedLangs;
         if (detectedLangs.length === 0) {
             toolbarCard.classList.add('d-none');
             currentLanguage = 'en';
-            selectedExportLanguages = ['en'];
             return;
         }
 
@@ -431,118 +425,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         currentLanguage = baseLanguageSelect.value || detectedLangs[0];
 
-        exportLanguageCheckboxes.innerHTML = '';
-        selectedExportLanguages = [currentLanguage];
-        detectedLangs.forEach(lang => {
-            const isBase = lang === currentLanguage;
-            const wrapper = document.createElement('div');
-            wrapper.className = 'form-check form-check-inline mb-0';
-            wrapper.innerHTML = `
-                <input class="form-check-input export-lang-cb" type="checkbox" value="${lang}"
-                       id="export-lang-${lang}" ${isBase ? 'checked' : ''}>
-                <label class="form-check-label small" for="export-lang-${lang}">${lang.toUpperCase()}</label>
-            `;
-            exportLanguageCheckboxes.appendChild(wrapper);
-            wrapper.querySelector('input').addEventListener('change', function() {
-                updateSelectedExportLanguages();
-                updateLanguageFiltering();
-                validateLanguageCoverage();
-            });
-        });
         toolbarCard.classList.remove('d-none');
     }
 
-    function updateSelectedExportLanguages() {
-        selectedExportLanguages = [];
-        document.querySelectorAll('.export-lang-cb:checked').forEach(cb => selectedExportLanguages.push(cb.value));
-        if (!selectedExportLanguages.includes(currentLanguage)) {
-            selectedExportLanguages.unshift(currentLanguage);
-            const baseCb = document.getElementById(`export-lang-${currentLanguage}`);
-            if (baseCb) baseCb.checked = true;
-        }
-    }
-
-    // Re-apply language filtering to existing rows without full re-render
-    function updateLanguageFiltering() {
-        document.querySelectorAll('.tpl-row').forEach(row => {
-            const fileLangs = (row.dataset.detectedLanguages || 'en').split(',');
-            const hasAll = hasAllExportLanguages(fileLangs);
-            const cb = row.querySelector('.file-checkbox');
-            const missingBadge = row.querySelector('.tpl-missing-badge');
-
-            if (hasAll) {
-                row.classList.remove('tpl-no-lang');
-                if (cb) cb.disabled = false;
-                if (missingBadge) missingBadge.remove();
-            } else {
-                row.classList.add('tpl-no-lang');
-                if (cb) {
-                    // Uncheck and deselect if it was checked
-                    if (cb.checked) {
-                        cb.checked = false;
-                        row.classList.remove('tpl-selected');
-                        const settingsRow = row.querySelector('[id^="settings-"]');
-                        if (settingsRow) settingsRow.classList.add('d-none');
-                    }
-                    cb.disabled = true;
-                }
-                // Update or add missing badge
-                const missingLangs = selectedExportLanguages.filter(l => !fileLangs.includes(l)).map(l => l.toUpperCase()).join(', ');
-                if (missingBadge) {
-                    missingBadge.textContent = `Missing: ${missingLangs}`;
-                } else {
-                    const badgeRow = row.querySelector('.d-flex.align-items-center.flex-wrap');
-                    if (badgeRow) {
-                        const badge = document.createElement('span');
-                        badge.className = 'badge bg-danger tpl-missing-badge';
-                        badge.style.fontSize = '0.6rem';
-                        badge.textContent = `Missing: ${missingLangs}`;
-                        badgeRow.appendChild(badge);
-                    }
-                }
-            }
-        });
-        // Update section counts
-        Object.keys(sectionConfig).forEach(key => {
-            const cfg = sectionConfig[key];
-            const listEl = document.getElementById(cfg.list);
-            const countEl = document.getElementById(cfg.count);
-            if (!listEl || !countEl) return;
-            const allRows = listEl.querySelectorAll('.tpl-row');
-            const visibleRows = listEl.querySelectorAll('.tpl-row:not(.tpl-no-lang)');
-            if (allRows.length === 0) return;
-            countEl.textContent = visibleRows.length < allRows.length
-                ? `(${visibleRows.length}/${allRows.length})`
-                : `(${allRows.length})`;
-        });
-        updateGenerateBtn();
-    }
-
-    function validateLanguageCoverage() {
-        const warnings = [];
-        document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
-            const fileLangs = (cb.dataset.detectedLanguages || 'en').split(',');
-            const filename = cb.dataset.filename || 'unknown';
-            selectedExportLanguages.forEach(lang => {
-                if (!fileLangs.includes(lang)) {
-                    warnings.push(`<li class="lang-warning-item"><code>${filename}</code> may not have <strong>${lang.toUpperCase()}</strong> translations</li>`);
-                }
-            });
-        });
-        if (warnings.length > 0) {
-            languageWarningList.innerHTML = warnings.join('');
-            languageWarnings.classList.remove('d-none');
-        } else {
-            languageWarnings.classList.add('d-none');
-        }
-    }
-
-    baseLanguageSelect.addEventListener('change', function() {
+        // Re-apply language filtering to existing rows without full re-render
+            baseLanguageSelect.addEventListener('change', function() {
         currentLanguage = this.value;
-        const baseCb = document.getElementById(`export-lang-${currentLanguage}`);
-        if (baseCb && !baseCb.checked) baseCb.checked = true;
-        updateSelectedExportLanguages();
-        validateLanguageCoverage();
         renderLibrary();
     });
 
@@ -555,8 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
         libraryEmpty.classList.add('d-none');
         libraryError.classList.add('d-none');
         toolbarCard.classList.add('d-none');
-        languageWarnings.classList.add('d-none');
-        languageWarningList.innerHTML = '';
         sourceInfoText.textContent = 'Loading...';
 
         try {
@@ -589,6 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     (file.detected_languages || []).forEach(l => langSet.add(l));
                 });
             });
+            ({ languageHint } = await import(languageHintModuleUrl));
             buildLanguageUI(Array.from(langSet).sort());
             renderLibrary();
         } catch (err) {
@@ -623,7 +510,6 @@ document.addEventListener('DOMContentLoaded', function() {
             else { row.classList.remove('tpl-selected'); settingsRow?.classList.add('d-none'); }
         });
         updateGenerateBtn();
-        validateLanguageCoverage();
     });
 
     // Question select/deselect all
@@ -640,7 +526,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('file-checkbox')) {
             updateGenerateBtn();
-            validateLanguageCoverage();
         }
     });
 
@@ -721,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const originalText = setButtonLoading(generateLssBtn, true, '...');
 
         const payload = {
-            files, languages: selectedExportLanguages, base_language: currentLanguage,
+            files, languages: [currentLanguage], base_language: currentLanguage,
             language: currentLanguage, target_tool: getSelectedTool(),
         };
         // Tool-specific payload fields
@@ -737,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(r => { if (r.ok) return r.blob(); return r.json().then(e => { throw new Error(e.error); }); })
         .then(blob => {
-            const langSuffix = selectedExportLanguages.length > 1 ? selectedExportLanguages.join('_') : currentLanguage;
+            const langSuffix = currentLanguage;
             downloadBlobObj(blob, `survey_export_${langSuffix}${cfg.fileExt}`);
         })
         .catch(err => alert(err.message))
@@ -753,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const payload = {
             selectedFiles: files,
-            languages: selectedExportLanguages,
+            languages: [currentLanguage],
             base_language: currentLanguage,
             language: currentLanguage,
             projectPath: getCurrentProjectPath(),

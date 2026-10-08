@@ -654,6 +654,51 @@ def api_template_editor_import_limesurvey():
     }), 200
 
 
+@tools_template_editor_bp.route("/api/template-editor/import-pavlovia", methods=["POST"])
+def api_template_editor_import_pavlovia():
+    """List the pages of a Pavlovia (SurveyJS) survey .json (no 'key') or return one as a
+    PRISM template ('key'). Same backend as `survey import-pavlovia`."""
+    file = request.files.get("file")
+    if file is None or not file.filename:
+        return jsonify({"error": "No file uploaded"}), 400
+    split = (request.form.get("split") or "page").strip()
+    key = (request.form.get("key") or "").strip()
+    project_path = (request.form.get("project_path") or "").strip() or None
+    language = (request.form.get("language") or "").strip() or None
+
+    from src.converters.library_wording_match import public_library_match
+    from src.converters.limesurvey import match_questionnaire_to_library
+    from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire_template
+
+    command = f"python prism_tools.py survey import-pavlovia --input {file.filename} --split {split}"
+    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key} --output <dir>" if key else ""))
+    try:
+        survey = json.loads(file.read().decode("utf-8-sig"))
+        if not key:
+            questionnaires = list_pavlovia_questionnaires(
+                survey, split, source_name=file.filename, project_path=project_path,
+                match_library=True, language=language,
+            )
+            return jsonify({"questionnaires": questionnaires, "split": split}), 200
+        template = _strip_template_editor_internal_keys(pavlovia_questionnaire_template(survey, key, split, language))
+        match = match_questionnaire_to_library(template, template["Study"]["OriginalName"], project_path)
+    except ValueError as e:  # includes JSON and unicode decode errors
+        print(f"[PRISM] Pavlovia import failed: {e}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(f"[PRISM] Pavlovia import failed: {e}")
+        return jsonify({"error": f"Import failed: {e}"}), 500
+
+    reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
+    return jsonify({
+        "template": template,
+        "suggested_filename": f"survey-{template['Study']['TaskName']}.json",
+        "item_count": len([k for k in template if k not in reserved]),
+        "languages": [template["Technical"]["Language"]],
+        "library_match": public_library_match(match),
+    }), 200
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-excel", methods=["POST"])
 def api_template_editor_import_excel():
     """Import an Excel/CSV/TSV codebook and return a PRISM template for the editor.

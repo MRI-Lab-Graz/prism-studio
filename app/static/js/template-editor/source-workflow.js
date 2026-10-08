@@ -1,5 +1,5 @@
 import { isSameProjectPath } from '../shared/project-state.js';
-import { parsePrismTemplateJson } from './json-import.js';
+import { isPavloviaSurvey, parsePrismTemplateJson } from './json-import.js';
 import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
@@ -446,6 +446,9 @@ function hideExcelGroupPicker(context) {
   if (context.sourceSplitSelectEl) {
     context.sourceSplitSelectEl.classList.add('d-none');
   }
+  if (context.sourceLanguageInputEl) {
+    context.sourceLanguageInputEl.classList.add('d-none');
+  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
     // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
@@ -469,10 +472,7 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
       method: 'POST',
       body: formData,
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || `Import failed (${res.status})`);
-    }
+    const data = await readImportJson(res, 'Import failed');
 
     hideExcelGroupPicker(context);
     const importSummaryMessage = applyImportedTemplate(context, data, file);
@@ -481,6 +481,21 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
     context.restoreEditorState(previousEditorState);
     context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
   }
+}
+
+// The body of an import response. A server that answers with a page instead of JSON (an old
+// process without the route, a crash) would otherwise surface as the browser's own parse error.
+export async function readImportJson(res, failureLabel) {
+  let data;
+  try {
+    data = await res.json();
+  } catch (_error) {
+    throw new Error(res.ok ? `${failureLabel}: the server reply was not JSON` : `${failureLabel} (${res.status})`);
+  }
+  if (!res.ok) {
+    throw new Error(data.error || `${failureLabel} (${res.status})`);
+  }
+  return data;
 }
 
 async function importExcelCodebook(context, file, previousEditorState) {
@@ -493,10 +508,7 @@ async function importExcelCodebook(context, file, previousEditorState) {
     method: 'POST',
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || `Template import failed (${res.status})`);
-  }
+  const data = await readImportJson(res, 'Template import failed');
 
   const groups = data.groups || [];
   if (groups.length === 0) {
@@ -528,25 +540,48 @@ async function importExcelCodebook(context, file, previousEditorState) {
   context.showAlert('info', `Detected ${groups.length} instrument groups in ${context.escapeHtml(file.name)}. Choose one above to load it into the editor.`);
 }
 
+const SOURCES = {
+  limesurvey: {
+    endpoint: '/api/template-editor/import-limesurvey',
+    splits: [['group', 'Split by group'], ['question', 'Split by question'], ['survey', 'Whole survey']],
+  },
+  pavlovia: {
+    endpoint: '/api/template-editor/import-pavlovia',
+    splits: [['page', 'Split by page'], ['survey', 'Whole survey']],
+  },
+};
+
+function setSplitOptions(context, source) {
+  context.sourceSplitSelectEl.innerHTML = SOURCES[source].splits
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join('');
+  context.sourceSplitSelectEl.dataset.source = source;
+  // The Pavlovia file has no language, so the user says which one the texts are in.
+  context.sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia');
+}
+
+function sourceLanguageField(context) {
+  return context.sourceSplitSelectEl.dataset.source === 'pavlovia'
+    ? { language: context.sourceLanguageInputEl.value.trim() }
+    : {};
+}
+
 async function fetchLimeSurvey(context, file, fields) {
   const formData = new FormData();
   formData.append('file', file);
   Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-  const res = await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {
+  const res = await context.fetchWithApiFallback(SOURCES[context.sourceSplitSelectEl.dataset.source || 'limesurvey'].endpoint, {
     method: 'POST',
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || `Import failed (${res.status})`);
-  }
-  return data;
+  return readImportJson(res, 'Import failed');
 }
 
 async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState, useLibrary = false) {
   try {
     const data = await fetchLimeSurvey(context, file, {
       split: context.sourceSplitSelectEl.value,
+      ...sourceLanguageField(context),
       key,
       project_path: context.getCurrentProjectPath() || '',
       ...(useLibrary ? { use_library: '1' } : {}),
@@ -562,6 +597,7 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
 async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
   const { questionnaires } = await fetchLimeSurvey(context, file, {
     split: context.sourceSplitSelectEl.value,
+    ...sourceLanguageField(context),
     project_path: context.getCurrentProjectPath() || '',
   });
   if (questionnaires.length === 0) {
@@ -639,10 +675,16 @@ export async function importTemplateSource(context) {
     const lowerName = (file.name || '').toLowerCase();
 
     if (lowerName.endsWith('.json')) {
+      const text = await file.text();
+      if (isPavloviaSurvey(text)) {
+        setSplitOptions(context, 'pavlovia');
+        await importLimeSurvey(context, file, previousEditorState);
+        return;
+      }
       // A finished PRISM template: read it here, no converter involved. The
       // normal import finish validates it, and Save to Project asks before
       // overwriting a project template of the same name.
-      const template = parsePrismTemplateJson(await file.text(), context.modalityEl.value);
+      const template = parsePrismTemplateJson(text, context.modalityEl.value);
       const summary = applyImportedTemplate(
         context,
         { template, suggested_filename: file.name },
@@ -663,6 +705,7 @@ export async function importTemplateSource(context) {
     }
 
     if (lowerName.endsWith('.lss') || lowerName.endsWith('.lsa')) {
+      setSplitOptions(context, 'limesurvey');
       await importLimeSurvey(context, file, previousEditorState);
       return;
     }
@@ -676,10 +719,7 @@ export async function importTemplateSource(context) {
         method: 'POST',
         body: formData,
       });
-      data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Import failed (${res.status})`);
-      }
+      data = await readImportJson(res, 'Import failed');
       importSummaryMessage = applyImportedTemplate(context, data, file);
     }
   } catch (error) {

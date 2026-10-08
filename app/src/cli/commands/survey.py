@@ -566,6 +566,21 @@ def cmd_survey_validate(args):
         sys.exit(1)
 
 
+def _write_planned_templates(planned, out_dir):
+    """Write [(target path, template)] atomically-ish: refuse duplicates and existing files first."""
+    targets = [target for target, _template in planned]
+    duplicates = sorted({str(t) for t in targets if targets.count(t) > 1})
+    if duplicates:
+        raise ValueError("several questionnaires would write the same file: " + ", ".join(duplicates))
+    existing = [str(t) for t in targets if t.exists()]
+    if existing:
+        raise ValueError(f"{', '.join(existing)} already exists; choose another --output directory")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for target, template in planned:
+        target.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"[PRISM] Wrote {target}")
+
+
 def cmd_survey_import_limesurvey(args):
     """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
     Editor's 'Import Template Source' for .lss/.lsa."""
@@ -606,19 +621,43 @@ def cmd_survey_import_limesurvey(args):
                 template = limesurvey_questionnaire_template(xml, key, args.split)
                 name = f"survey-{template['Study']['TaskName']}.json"
             planned.append((out_dir / name, template))
-        targets = [target for target, _template in planned]
-        duplicates = sorted({str(t) for t in targets if targets.count(t) > 1})
-        if duplicates:
-            raise ValueError("several questionnaires would write the same file: " + ", ".join(duplicates))
-        existing = [str(t) for t in targets if t.exists()]
-        if existing:
-            raise ValueError(f"{', '.join(existing)} already exists; choose another --output directory")
-        out_dir.mkdir(parents=True, exist_ok=True)
-        for target, template in planned:
-            target.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-            print(f"[PRISM] Wrote {target}")
+        _write_planned_templates(planned, out_dir)
     except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
+        sys.exit(1)
+
+
+def cmd_survey_import_pavlovia(args):
+    """Import the pages of a Pavlovia (SurveyJS) survey .json as PRISM templates. Matches
+    the Template Editor's 'Import Template Source' for a Pavlovia survey."""
+    from src.converters.pavlovia_import import (
+        list_pavlovia_questionnaires,
+        pavlovia_questionnaire_template,
+    )
+
+    input_path = Path(args.input).resolve()
+    try:
+        if args.output and not args.select:
+            raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
+        survey = json.loads(input_path.read_text(encoding="utf-8"))
+        found = list_pavlovia_questionnaires(
+            survey, args.split, source_name=input_path.name, project_path=getattr(args, "project", None),
+            match_library=True, language=getattr(args, "language", None),
+        )
+        if args.list or not args.select:
+            return
+        if not args.output:
+            raise ValueError("--output DIR is required with --select")
+        keys = [q["key"] for q in found] if args.select == ["all"] else args.select
+        planned = []
+        for key in keys:
+            template = pavlovia_questionnaire_template(survey, key, args.split, getattr(args, "language", None))
+            if getattr(args, "software_version", None):
+                template["Technical"]["SoftwareVersion"] = args.software_version
+            planned.append((Path(args.output).resolve() / f"survey-{template['Study']['TaskName']}.json", template))
+        _write_planned_templates(planned, Path(args.output).resolve())
+    except (OSError, ValueError) as e:  # json.JSONDecodeError is a ValueError
+        print(f"Error importing Pavlovia survey: {e}")
         sys.exit(1)
 
 

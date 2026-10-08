@@ -238,6 +238,20 @@ global library is only read, never written.
 python prism_tools.py survey import-limesurvey --input instrument.lsa --select g30 --use-library --output ./templates
 ```
 
+**`survey import-pavlovia`** — turn a Pavlovia survey (SurveyJS `.json`) into one PRISM template per
+page (`--split survey` for a single template), like Studio's Template Editor "Import Template Source":
+
+```bash
+python prism_tools.py survey import-pavlovia --input survey.json                                  # list pages
+python prism_tools.py survey import-pavlovia --input survey.json --select p1 p2 --output ./templates
+python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --software-version 2025.1
+python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --language de
+```
+
+Choices and rating scales keep the stored value as the level key and the shown text as its label;
+`visibleIf` becomes `Relevance`; page and question descriptions go to `Study.Instructions`. The file has no
+language, so `--language` (e.g. `de`) labels all texts and levels; without it the survey's `locale`, else `en`.
+
 **`survey import-lsq`** — turn a single LimeSurvey question (`.lsq`) or question group
 (`.lsg`) export into a PRISM template JSON, like Studio's Template Editor
 "Import .lsq/.lsg" button:

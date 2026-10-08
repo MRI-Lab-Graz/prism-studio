@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, offerShare, refreshTemplateList, validateCurrent } from './source-workflow.js';
+import { finishImport, offerShare, readImportJson, refreshTemplateList, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -169,5 +169,34 @@ describe('offerShare', () => {
         expect(html).toContain('href="mailto:mri-lab@uni-graz.at?subject=A%26B"');
         expect(html).toContain('id="shareNo"');
         expect(context.shareCandidate).toBeNull();
+    });
+});
+
+describe('readImportJson', () => {
+    const response = (status, body) => ({
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => {
+            if (typeof body === 'string') {
+                throw new SyntaxError('The string did not match the expected pattern.');
+            }
+            return body;
+        },
+    });
+
+    it('returns the parsed body of a successful response', async () => {
+        expect(await readImportJson(response(200, { template: {} }), 'Import failed')).toEqual({ template: {} });
+    });
+
+    it('throws the server message of a failed response', async () => {
+        await expect(readImportJson(response(400, { error: 'No questionnaire' }), 'Import failed')).rejects.toThrow('No questionnaire');
+    });
+
+    it('names the status when the server sent a page instead of JSON (stale or crashed server)', async () => {
+        await expect(readImportJson(response(404, '<html>Not Found</html>'), 'Import failed')).rejects.toThrow('Import failed (404)');
+    });
+
+    it('says the reply was not JSON when a successful response is not JSON', async () => {
+        await expect(readImportJson(response(200, 'oops'), 'Import failed')).rejects.toThrow(/not JSON/);
     });
 });

@@ -3,6 +3,8 @@ const surveyCustomizerScriptUrl = document.currentScript?.src || window.location
 document.addEventListener('DOMContentLoaded', function() {
     const sharedApiModuleUrl = new URL('./shared/api.js', surveyCustomizerScriptUrl).href;
     let sharedFetchWithApiFallbackPromise = null;
+    const languageChoicesModuleUrl = new URL('./survey-customizer/language-choices.js', surveyCustomizerScriptUrl).href;
+    let languageChoices = null; // loaded with the groups, see loadQuestionsFromFiles
 
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
@@ -429,11 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
             customizationState.exportOptions.target_tool = data.target_tool || 'limesurvey';
 
             // Update UI
-            document.getElementById('languageSelect').value = customizationState.survey.language;
             if (data.target_tool) syncExportFormat(data.target_tool);
-
-            // Display language tags
-            updateLanguageTags();
 
             // Set preview language to base language
             previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
@@ -494,8 +492,9 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 detectedLanguages = customizationState.survey.languages || ['en'];
             }
+            ({ languageChoices } = await import(languageChoicesModuleUrl));
+            updateLanguageChoices();
             previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
-            updateLanguageTags();
             updatePreviewLangSwitcher();
 
             renderGroups();
@@ -1257,7 +1256,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update export options from UI
         customizationState.survey.title = surveyName;
         customizationState.exportFormat = document.getElementById('exportFormat').value;
-        customizationState.survey.language = document.getElementById('languageSelect').value;
+        applyLanguageChoices();
         customizationState.exportOptions.matrix = document.getElementById('matrixMode').checked;
         customizationState.exportOptions.matrix_global = document.getElementById('globalMatrix').checked;
 
@@ -1372,16 +1371,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Display language tags in export settings
-    function updateLanguageTags() {
-        const container = document.getElementById('exportLanguageTags');
-        if (!container) return;
-        const langs = customizationState.survey.languages || ['en'];
-        const baseLang = customizationState.survey.base_language || 'en';
-        container.innerHTML = langs.map(l =>
-            `<span class="lang-tag ${l === baseLang ? 'base' : ''}" title="${l === baseLang ? 'Base language' : 'Additional language'}">${l.toUpperCase()}</span>`
-        ).join('');
+    // Base Language and Export Languages, built from what the selected templates actually have.
+    // A language is only offered when every selected template has it (no empty texts at export).
+    function updateLanguageChoices() {
+        const container = document.getElementById('exportLanguageChoices');
+        const select = document.getElementById('languageSelect');
+        if (!container || !select || !languageChoices) return;
+        const state = customizationState.survey;
+        const { languages, shared, missing } = languageChoices(customizationState.groups);
+        const baseOptions = shared.length ? shared : [state.base_language];
+        const base = baseOptions.includes(state.base_language) ? state.base_language : baseOptions[0];
+        const chosen = new Set((state.languages || []).filter(l => shared.includes(l)));
+        chosen.add(base);
+
+        select.innerHTML = baseOptions.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l.toUpperCase())}</option>`).join('');
+        select.value = base;
+        container.innerHTML = (languages.length ? languages : [base]).map(lang => {
+            const lacking = missing[lang];
+            const note = lacking ? ` <small class="text-muted">(not in ${escapeHtml(lacking.join(', '))})</small>` : '';
+            return `<div class="form-check form-check-inline mb-0">
+                <input class="form-check-input export-lang-cb" type="checkbox" value="${escapeHtml(lang)}" id="export-lang-${escapeHtml(lang)}"
+                       ${chosen.has(lang) ? 'checked' : ''} ${lang === base || lacking ? 'disabled' : ''}>
+                <label class="form-check-label small" for="export-lang-${escapeHtml(lang)}">${escapeHtml(lang.toUpperCase())}${note}</label>
+            </div>`;
+        }).join('');
+        applyLanguageChoices();
     }
+
+    // Copy the Base Language select and ticked checkboxes into the state
+    function applyLanguageChoices() {
+        const state = customizationState.survey;
+        const base = document.getElementById('languageSelect').value || state.base_language;
+        const extras = [...document.querySelectorAll('#exportLanguageChoices .export-lang-cb:checked')]
+            .map(cb => cb.value).filter(l => l !== base);
+        state.language = state.base_language = base;
+        state.languages = [base, ...extras];
+        previewLanguage = base;
+        updatePreviewLangSwitcher();
+    }
+
+    document.getElementById('exportLanguageChoices')?.addEventListener('change', applyLanguageChoices);
+    document.getElementById('languageSelect')?.addEventListener('change', () => {
+        applyLanguageChoices();
+        updateLanguageChoices();
+    });
 
     // Show/hide LimeSurvey-only export options based on the selected format
     function updateExportFormatVisibility(format) {

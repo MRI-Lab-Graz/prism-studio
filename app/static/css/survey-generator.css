@@ -27,8 +27,16 @@
         background: #f0fff4;
     }
     .tpl-row.tpl-no-lang {
-        opacity: 0.4;
         pointer-events: none;
+    }
+    /* fade the row, but keep the hint that says how to use it readable */
+    .tpl-row.tpl-no-lang > :not(.d-flex),
+    .tpl-row.tpl-no-lang > .d-flex > :not(.flex-grow-1),
+    .tpl-row.tpl-no-lang > .d-flex > .flex-grow-1 > :not(.tpl-no-lang-hint) {
+        opacity: 0.4;
+    }
+    .tpl-no-lang-hint {
+        color: #842029;
     }
     .tpl-row.tpl-hidden-search {
         display: none !important;
