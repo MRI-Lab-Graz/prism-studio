@@ -651,6 +651,8 @@ def cmd_survey_import_pavlovia(args):
         planned = []
         for key in keys:
             template = pavlovia_questionnaire_template(survey, key, args.split)
+            if getattr(args, "software_version", None):
+                template["Technical"]["SoftwareVersion"] = args.software_version
             planned.append((Path(args.output).resolve() / f"survey-{template['Study']['TaskName']}.json", template))
         _write_planned_templates(planned, Path(args.output).resolve())
     except (OSError, ValueError) as e:  # json.JSONDecodeError is a ValueError

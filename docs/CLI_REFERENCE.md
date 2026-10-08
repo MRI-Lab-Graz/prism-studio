@@ -244,6 +244,7 @@ page (`--split survey` for a single template), like Studio's Template Editor "Im
 ```bash
 python prism_tools.py survey import-pavlovia --input survey.json                                  # list pages
 python prism_tools.py survey import-pavlovia --input survey.json --select p1 p2 --output ./templates
+python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --software-version 2025.1
 ```
 
 Choices and rating scales keep the stored value as the level key and the shown text as its label;

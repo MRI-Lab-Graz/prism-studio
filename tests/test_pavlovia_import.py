@@ -109,7 +109,8 @@ from src.cli.commands.survey import cmd_survey_import_pavlovia  # noqa: E402
 
 
 def _args(**kw):
-    values = dict(input=str(FIXTURE), split="page", list=False, select=None, output=None, project=None)
+    values = dict(input=str(FIXTURE), split="page", list=False, select=None, output=None, project=None,
+                  software_version=None)
     values.update(kw)
     return SimpleNamespace(**values)
 
@@ -125,6 +126,16 @@ def test_cli_writes_selected_pages(tmp_path):
     assert sorted(p.name for p in tmp_path.iterdir()) == ["survey-arsq.json", "survey-basics.json"]
     written = json.loads((tmp_path / "survey-arsq.json").read_text(encoding="utf-8"))
     assert written["Technical"]["SoftwarePlatform"] == "Pavlovia"
+
+
+def test_cli_software_version_is_written_to_every_template(tmp_path):
+    cmd_survey_import_pavlovia(_args(select=["all"], output=str(tmp_path), software_version="2025.1"))
+    versions = {json.loads(p.read_text(encoding="utf-8"))["Technical"]["SoftwareVersion"] for p in tmp_path.iterdir()}
+    assert versions == {"2025.1"}
+
+
+def test_template_without_software_version_has_none(survey):
+    assert "SoftwareVersion" not in pavlovia_questionnaire_template(survey, "p1")["Technical"]
 
 
 def test_cli_select_all_and_no_overwrite(tmp_path):
