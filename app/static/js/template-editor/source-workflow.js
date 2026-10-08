@@ -583,14 +583,10 @@ async function importLimeSurvey(context, file, previousEditorState, fromSplitCha
     loadLimeSurveyQuestionnaire(context, file, context.excelGroupPickerSelectEl.value, context.captureEditorState());
   };
 
-  if (questionnaires.length === 1) {
-    // A split change must not silently replace what the user has open; leave the entry to Load.
-    const discardsWork = fromSplitChange && context.hasUnsavedChanges()
-      && !confirm('You have unsaved changes. Loading this questionnaire will discard them. Continue?');
-    if (!discardsWork) {
-      await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState || context.captureEditorState());
-      return;
-    }
+  // A split change only re-lists; it never loads (or replaces) a template on its own.
+  if (questionnaires.length === 1 && !fromSplitChange) {
+    await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState || context.captureEditorState());
+    return;
   }
   context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
 }
