@@ -585,7 +585,7 @@ async function importLimeSurvey(context, file, previousEditorState, fromSplitCha
 
   // A split change only re-lists; it never loads (or replaces) a template on its own.
   if (questionnaires.length === 1 && !fromSplitChange) {
-    await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState || context.captureEditorState());
+    await loadLimeSurveyQuestionnaire(context, file, firstQuestionnaire.key, previousEditorState);
     return;
   }
   context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
