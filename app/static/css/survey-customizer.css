@@ -181,11 +181,6 @@
         margin-right: 0.25rem;
     }
 
-    .lang-tag.base {
-        background: #1f8b5c;
-        color: #fff;
-    }
-
     .lang-tag.clickable {
         cursor: pointer;
         opacity: 0.6;

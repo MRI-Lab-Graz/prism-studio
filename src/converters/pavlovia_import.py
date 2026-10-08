@@ -8,9 +8,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.converters.limesurvey import SPLIT_MODES, _task_name, _utc_creation_date
+from src.converters.limesurvey import _task_name, _utc_creation_date
 
-_SPLITS = tuple(m for m in SPLIT_MODES if m != "question")  # no one-item templates
+_SPLITS = ("page", "survey")
 _DEFAULT_RATING = [1, 2, 3, 4, 5]  # SurveyJS rating without rateValues/rateCount
 _LANGUAGE_RE = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")  # the survey schema's Technical.Language
 
@@ -60,13 +60,11 @@ def _item(el: dict, lang: str) -> dict:
         item["Levels"] = levels
     elif el.get("type") == "text":
         numeric = el.get("inputType") == "number"
-        item["DataType"] = "float" if numeric else "string"
-        if numeric and isinstance(el.get("min"), (int, float)):
-            item["MinValue"] = el["min"]
-        if numeric and isinstance(el.get("max"), (int, float)):
-            item["MaxValue"] = el["max"]
-        if numeric and all(isinstance(el.get(k, 0), int) for k in ("min", "max", "step")):
-            item["DataType"] = "integer"
+        whole = all(isinstance(el.get(k, 0), int) for k in ("min", "max", "step"))
+        item["DataType"] = ("integer" if whole else "float") if numeric else "string"
+        for key, bound in (("min", "MinValue"), ("max", "MaxValue")):
+            if numeric and isinstance(el.get(key), (int, float)):
+                item[bound] = el[key]
     if el.get("visibleIf"):
         item["Relevance"] = el["visibleIf"]
     item["Mandatory"] = bool(el.get("isRequired"))
@@ -125,12 +123,12 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
             if el.get("visible") is False:
                 print(f"[PRISM] WARNING {name} / {el['name']}: hidden in Pavlovia (visible:false), imported as a normal item")
             template[el["name"]] = _item(el, lang)
-        results.append(({"key": key, "name": name, "item_count": len(els), "helper": False}, template))
+        results.append(({"key": key, "name": name, "item_count": len(els)}, template))
     return results
 
 
 def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia file", project_path=None, match_library=False, language=None):
-    results = _build(survey, "survey" if split == "survey" else "group", language)
+    results = _build(survey, split, language)
     print(f"[PRISM] Pavlovia import: {source_name}")
     print(f"[PRISM] Split by {split} -> {len(results)} questionnaire(s):")
     for info, _t in results:
@@ -146,7 +144,7 @@ def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia fil
 
 
 def pavlovia_questionnaire_template(survey, key, split="page", language=None):
-    results = _build(survey, "survey" if split == "survey" else "group", language)
+    results = _build(survey, split, language)
     for info, template in results:
         if info["key"] == key:
             print(f"[PRISM] Loading {key} '{info['name']}': {info['item_count']} item(s)")
