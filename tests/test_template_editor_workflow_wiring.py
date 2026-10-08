@@ -410,18 +410,23 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         # ... and reuses the normal import finish (validation) so Save works as usual.
         self.assertIn("applyImportedTemplate(", importer[json_branch:])
 
-    def test_pavlovia_import_asks_for_the_survey_language(self):
-        """A SurveyJS file carries no language, so the import row has a field for it and sends it."""
+    def test_a_template_without_a_language_asks_for_it_in_the_language_bar(self):
+        """A Pavlovia file has no language: the import row has no language field; the language bar asks."""
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
         html = (REPO_ROOT / "app" / "templates" / "template_editor.html").read_text(encoding="utf-8")
         editor = (REPO_ROOT / "app" / "static" / "js" / "template-editor.js").read_text(encoding="utf-8")
 
-        self.assertIn('id="sourceLanguageInput"', html)
-        self.assertIn("sourceLanguageInputEl", editor)
-        self.assertIn("language: context.sourceLanguageInputEl.value", source)
-        # only the Pavlovia flow shows and sends it
-        self.assertIn("setSplitOptions(context, 'pavlovia')", source)
-        self.assertIn("sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia')", source)
+        self.assertNotIn("sourceLanguageInput", html + editor + source)
+        self.assertNotIn("language: context", source)
+        self.assertIn('id="primaryLanguageForm"', html)
+        self.assertIn('id="primaryLanguageInput"', html)
+        self.assertIn("applyPrimaryLanguage(", editor)
+        self.assertIn("needsPrimaryLanguage(", editor)
+        self.assertIn("needsPrimaryLanguage(", source)  # Validate refuses without a language
+        # only for a template imported with no language known, never for a loaded library template
+        self.assertIn("languageRequiredFor", source)
+        self.assertIn("languageRequiredFor", editor)
+        self.assertIn("data.languages.length === 0", source)
 
     def test_excel_group_load_sends_the_project_so_the_library_match_sees_its_templates(self):
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")

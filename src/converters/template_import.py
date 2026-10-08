@@ -59,6 +59,6 @@ def finish_import(template, name, project_path=None, use_library=False):
         "template": template,
         "suggested_filename": filename,
         "item_count": len([key for key in template if key not in TEMPLATE_SECTIONS]),
-        "languages": i18n.get("Languages") or [(template.get("Technical") or {}).get("Language", "en")],
+        "languages": i18n.get("Languages") or [lang for lang in [(template.get("Technical") or {}).get("Language")] if lang],
         "library_match": public_library_match(match),
     }
