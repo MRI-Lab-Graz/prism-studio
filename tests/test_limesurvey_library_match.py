@@ -112,3 +112,13 @@ def test_a_prism_template_round_trips_to_its_own_library_entry(libs, tmp_path):
     assert entry["library_match"]["template_key"] == "rts"
     assert entry["library_match"]["confidence"] == "exact"
     assert entry["library_match"]["ids_identical"] is True
+
+
+def test_software_version_is_the_major_release_derived_from_the_db_version():
+    template = ls.limesurvey_questionnaire_template(XML, "g30")
+    assert template["Technical"]["SoftwareVersion"] == "6"  # fixture is DBVersion 636
+
+
+def test_unknown_db_version_leaves_the_software_version_to_the_user():
+    old = XML.replace(b"<DBVersion>636</DBVersion>", b"<DBVersion>350</DBVersion>")
+    assert "SoftwareVersion" not in ls.limesurvey_questionnaire_template(old, "g30")["Technical"]
