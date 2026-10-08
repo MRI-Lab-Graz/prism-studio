@@ -17,3 +17,28 @@ export function languageChoices(groups) {
     }
     return { languages, shared, missing };
 }
+
+// The languages to export, resolved against what the templates offer: only shared languages can be
+// chosen, the base language is always one of the chosen ones, and the base comes first.
+export function resolveLanguages(groups, { base_language: wantedBase, languages: wanted }) {
+    const choices = languageChoices(groups);
+    let selected = (wanted || []).filter((lang) => choices.shared.includes(lang));
+    if (!selected.length) {
+        selected = choices.shared.includes(wantedBase) ? [wantedBase] : choices.shared.slice(0, 1);
+    }
+    if (!selected.length) {
+        selected = [wantedBase];
+    }
+    const base = selected.includes(wantedBase) ? wantedBase : selected[0];
+    return { ...choices, selected: [base, ...selected.filter((lang) => lang !== base)], base };
+}
+
+// "German (DE)" for any language code the browser knows, the bare code otherwise.
+export function languageLabel(code) {
+    try {
+        const name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code);
+        return name && name.toLowerCase() !== code.toLowerCase() ? `${name} (${code.toUpperCase()})` : code.toUpperCase();
+    } catch (_error) {
+        return code.toUpperCase();
+    }
+}

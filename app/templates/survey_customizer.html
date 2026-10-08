@@ -101,7 +101,11 @@
                 <div class="col-md-3">
                     <div class="export-option">
                         <label class="form-label fw-bold">Export Languages</label>
-                        <div id="exportLanguageChoices" class="mt-1"></div>
+                        <div class="dropdown" id="exportLanguageChoices">
+                            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="exportLanguageButton"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">&hellip;</button>
+                            <div class="dropdown-menu p-2" id="exportLanguageMenu"></div>
+                        </div>
                         <small class="text-muted">Only languages every selected questionnaire has can be ticked.</small>
                         <small class="text-muted d-none" id="pavloviaLanguageNote">Pavlovia export uses the base language only.</small>
                     </div>
