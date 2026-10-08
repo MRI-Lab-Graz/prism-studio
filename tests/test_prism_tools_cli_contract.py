@@ -258,3 +258,7 @@ def test_physio_batch_convert_help_exposes_key_options() -> None:
 
 def test_root_help_lists_physio_command_group() -> None:
     _assert_help_contains(["--help"], ["physio"])
+
+
+def test_library_help_lists_share_template() -> None:
+    _assert_help_contains(["library", "--help"], ["share-template"])

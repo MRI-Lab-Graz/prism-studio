@@ -83,7 +83,8 @@ def test_import_with_missing_details_is_a_hint_not_a_failure(page):
     expect(page.locator("#alertArea .alert-warning")).to_contain_text("Not found in your file")
     expect(page.locator("#alertArea .alert-danger")).to_have_count(0)
     expect(page.locator("#alertArea")).not_to_contain_text("Validation failed")
-    expect(page.locator("#alertArea")).to_contain_text("SoftwareVersion")
+    expect(page.locator("#alertArea")).to_contain_text("Citation")
+    expect(page.locator("#alertArea")).not_to_contain_text("SoftwareVersion")  # filled from the DBVersion
 
     page.click("#btnValidate")  # an explicit Validate is still a real check
     expect(page.locator("#alertArea .alert-danger")).to_contain_text("Validation failed")
@@ -193,3 +194,11 @@ def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
 
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
     assert messages == []
+
+
+def test_opening_create_or_import_does_not_scroll_the_page(page):
+    page.evaluate("window.scrollTo(0, 0)")
+    page.click("#btnCreateOpen")
+    expect(page.locator("#excelGroupPickerRow, #templateImportInput")).to_have_count(2)  # panel opened
+    page.wait_for_timeout(700)  # the old smooth scroll started after 120 ms
+    assert page.evaluate("window.scrollY") == 0

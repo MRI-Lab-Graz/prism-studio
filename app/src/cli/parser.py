@@ -2059,6 +2059,13 @@ def build_prism_tools_parsers(
         help="Delete without an interactive confirmation prompt",
     )
 
+    parser_lib_share_template = subparsers_library.add_parser(
+        "share-template",
+        help="Print the prefilled mail for sharing a new template with the PRISM team. "
+        "Matches the Studio Template Editor's share offer.",
+    )
+    parser_lib_share_template.add_argument("--input", required=True, help="Template JSON file to share")
+
     parser_file_management = subparsers.add_parser(
         "file-management",
         help="Studio File Management page actions (delete files, etc.)",

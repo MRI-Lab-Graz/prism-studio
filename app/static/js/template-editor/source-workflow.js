@@ -345,9 +345,30 @@ export async function saveCurrent(context) {
       : '';
     context.showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
     await refreshTemplateList(context, { silent: true });
+    await offerShare(context, filename).catch((error) => context.showAlert('warning', `Saved, but sharing failed: ${context.escapeHtml(error.message)}`));
   } catch (error) {
     context.showAlert('danger', `Save failed: ${context.escapeHtml(error.message)}`);
   }
+}
+
+// Offer to mail a freshly imported, unmatched template to the PRISM team (asked once).
+// "Yes" is a real mail link: browsers only open a mail program from the user's own click.
+export async function offerShare(context, filename) {
+  if (context.shareCandidate !== filename) {
+    return;
+  }
+  context.shareCandidate = null;
+  const mail = await context.apiPost('/api/template-editor/share-mail', { filename, template: context.currentTemplate });
+  context.showAlert('info',
+    '✅ Saved. <strong>Share this template with the PRISM team (mri-lab@uni-graz.at)?</strong> '
+    + 'It will be checked, including its copyright status, before it is added to the library. '
+    + 'Yes downloads the file and opens a mail: attach the file and send it.<br>'
+    + `<a id="shareYes" class="btn btn-sm btn-primary mt-2 me-2" href="${context.escapeHtml(mail.mailto)}">Yes, share by mail</a>`
+    + '<button type="button" id="shareNo" class="btn btn-sm btn-outline-secondary mt-2">No thanks</button>');
+  context.alertAreaEl.querySelector('#shareYes').addEventListener('click', () => {
+    downloadCurrent(context).catch((error) => context.showAlert('warning', `Sharing failed: ${context.escapeHtml(error.message)}`));
+  });
+  context.alertAreaEl.querySelector('#shareNo').addEventListener('click', () => context.clearAlert());
 }
 
 export async function downloadCurrent(context) {
@@ -387,6 +408,8 @@ function applyImportedTemplate(context, data, file) {
   context.stripScoreAnnotationsInTemplate(context.currentTemplate);
   context.originalTemplate = null;
   context.currentTemplateFilename = context.normalizeTemplateFilename(data.suggested_filename, context.modalityEl.value, context.currentTemplate);
+  // Only a LimeSurvey import reports library_match; null there means nothing like it is in the library.
+  context.shareCandidate = 'library_match' in data && !data.library_match ? context.currentTemplateFilename : null;
   context.loadedFromReadonly = false;
   context.loadedFromProjectLibrary = false;
   context.loadedTemplateProjectPath = '';

@@ -4680,7 +4680,6 @@
     } catch {}
     if (!templateSourceCardEl) return;
     setTimeout(() => {
-      templateSourceCardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       templateSourceCardEl.classList.add('border-primary');
       setTimeout(() => templateSourceCardEl.classList.remove('border-primary'), 1200);
     }, 120);

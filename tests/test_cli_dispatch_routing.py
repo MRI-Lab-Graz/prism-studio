@@ -74,6 +74,7 @@ DISPATCH_CASES = [
     (dict(command="library", action="fill"), "library_fill"),
     (dict(command="library", action="template-save"), "library_template_save"),
     (dict(command="library", action="template-delete"), "library_template_delete"),
+    (dict(command="library", action="share-template"), "library_share_template"),
     (
         dict(command="dataset", action="build-biometrics-smoketest"),
         "dataset_build_biometrics_smoketest",
