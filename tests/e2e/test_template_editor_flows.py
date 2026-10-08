@@ -55,19 +55,16 @@ def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
 
 
-def test_changing_split_keeps_the_loaded_questionnaire_when_the_confirm_is_declined(page):
+def test_changing_split_keeps_the_loaded_questionnaire(page):
     page.click("#btnCreateOpen")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
-    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)  # loaded, never saved: unsaved work
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
 
-    messages = []
-    page.on("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
     page.select_option("#sourceSplitSelect", "survey")  # Whole survey lists one entry: used to auto-load it
 
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
-    assert any("unsaved changes" in m for m in messages)
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
     expect(page.locator('option[value="WHO1"]')).to_have_count(0)
 
@@ -181,3 +178,18 @@ def test_questionnaire_without_a_match_shows_no_card(page, project):
     page.select_option("#excelGroupPickerSelect", "g20")
 
     expect(page.locator("#libraryMatchCard")).to_be_hidden()
+
+
+def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
+    messages = []
+    page.on("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+    page.click("#btnCreateOpen")
+    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    page.select_option("#sourceSplitSelect", "survey")  # one entry: used to be loaded silently
+    expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
+    page.select_option("#sourceSplitSelect", "group")
+    page.select_option("#excelGroupPickerSelect", "g30")
+    page.click("#btnLoadExcelGroup")
+
+    expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
+    assert messages == []

@@ -410,7 +410,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         # ... and reuses the normal import finish (validation) so Save works as usual.
         self.assertIn("applyImportedTemplate(", importer[json_branch:])
 
-    def test_changing_the_limesurvey_split_cannot_discard_edits_unasked(self):
+    def test_changing_the_limesurvey_split_never_loads_a_template_unasked(self):
         source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
         importer = source[source.index("async function importLimeSurvey") :]
         importer = importer[: importer.index("export async function importTemplateSource")]
@@ -419,10 +419,8 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
 
         self.assertIn("importLimeSurvey(context, file, null, true)", onchange)
         self.assertNotIn("captureEditorState", onchange)
-        # The single-entry auto-load asks first when it came from a split change.
-        auto_load = importer[importer.index("questionnaires.length === 1") :]
-        self.assertIn("fromSplitChange && context.hasUnsavedChanges()", auto_load)
-        self.assertIn("confirm(", auto_load)
+        # A split change never auto-loads the single entry it may list.
+        self.assertIn("questionnaires.length === 1 && !fromSplitChange", importer)
 
     def test_an_imported_template_still_asks_before_overwriting_a_project_template(self):
         """getSaveDecision confirms an overwrite unless the template was loaded from the
