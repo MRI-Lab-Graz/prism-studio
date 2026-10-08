@@ -611,7 +611,7 @@ class TestProjectManager(unittest.TestCase):
             mock_popen.side_effect = _fake_popen
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
                     "use_datalad": False,
@@ -713,7 +713,7 @@ class TestProjectManager(unittest.TestCase):
             mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
                     "use_datalad": False,
@@ -816,7 +816,7 @@ class TestProjectManager(unittest.TestCase):
             mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
                     "use_datalad": False,
@@ -908,7 +908,7 @@ class TestProjectManager(unittest.TestCase):
             mock_popen.side_effect = lambda command, **_kwargs: _FakePopen(returncode=0)
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/OpenNeuroDatasets/ds007677.git",
                     "use_datalad": False,
@@ -1008,7 +1008,7 @@ class TestProjectManager(unittest.TestCase):
             mock_popen.side_effect = _fake_popen
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/OpenNeuroDatasets/ds003612.git",
                     "use_datalad": False,
@@ -1028,7 +1028,7 @@ class TestProjectManager(unittest.TestCase):
         manager = ProjectManager()
 
         with tempfile.TemporaryDirectory() as tmp:
-            project_path = Path(tmp) / "demo-remote"
+            project_path = Path(tmp) / "dataset"
 
             def _fake_run(command, **_kwargs):
                 normalized = [str(part) for part in command]
@@ -1047,7 +1047,7 @@ class TestProjectManager(unittest.TestCase):
             mock_run.side_effect = _fake_run
 
             result = manager.init_on_existing_bids(
-                str(project_path),
+                str(project_path.parent),
                 {
                     "remote_url": "https://github.com/example/dataset.git",
                     "use_datalad": False,
@@ -1061,8 +1061,52 @@ class TestProjectManager(unittest.TestCase):
         log_messages = [entry["message"] for entry in result["log"]]
         self.assertIn("Backend command:", log_messages)
         self.assertIn("  ProjectManager.init_on_existing_bids(", log_messages)
-        self.assertIn(f"    path={str(project_path)!r},", log_messages)
+        self.assertIn(f"    path={str(project_path.parent)!r},", log_messages)
         self.assertIn("    use_datalad=False", log_messages)
+
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_remote_goes_into_dataset_named_subfolder(self, mock_run):
+        manager = ProjectManager()
+
+        def _fake_run(command, **_kwargs):
+            destination_path = Path(str(command[3]))
+            destination_path.mkdir(parents=True, exist_ok=True)
+            (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+            (destination_path / "dataset_description.json").write_text("{}\n", encoding="utf-8")
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        mock_run.side_effect = _fake_run
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = manager.init_on_existing_bids(
+                tmp,
+                {"remote_url": "https://example.org/mirror/ds008830.git"},
+            )
+
+            self.assertTrue(result.get("success"), result)
+            self.assertEqual(Path(result["path"]), Path(tmp) / "ds008830")
+            self.assertTrue((Path(tmp) / "ds008830" / "project.json").exists())
+
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_empty_remote_explains_and_cleans_up(self, mock_run):
+        manager = ProjectManager()
+
+        def _fake_run(command, **_kwargs):
+            destination_path = Path(str(command[3]))
+            (destination_path / ".git").mkdir(parents=True, exist_ok=True)
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        mock_run.side_effect = _fake_run
+
+        with tempfile.TemporaryDirectory() as tmp:
+            result = manager.init_on_existing_bids(
+                tmp,
+                {"remote_url": "https://example.org/mirror/ds008830.git"},
+            )
+
+            self.assertFalse(result.get("success"))
+            self.assertIn("remote repository", result["error"])
+            self.assertFalse((Path(tmp) / "ds008830").exists())
 
     @patch("src.project_manager.subprocess.run")
     @patch(

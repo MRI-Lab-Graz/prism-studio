@@ -476,6 +476,12 @@ class ProjectManager:
 
         remote_url = self._normalize_remote_dataset_url(config.get("remote_url"))
         if remote_url:
+            # The chosen folder is the *parent*: the dataset (e.g. OpenNeuro
+            # ds008830) lands in its own subfolder named after the repository.
+            repo_name = Path(urlparse(remote_url).path).name.removesuffix(".git")
+            if repo_name:
+                project_path = project_path / repo_name
+                add_log(f"Dataset folder: {project_path}", "info")
             add_log(f"Acquiring remote dataset from {remote_url}...", "step")
             source_result = self._acquire_remote_bids_dataset(
                 project_path,
@@ -500,14 +506,21 @@ class ProjectManager:
             }
 
         if not (project_path / "dataset_description.json").exists():
-            return {
-                "success": False,
-                "error": (
+            if remote_url:
+                # Fresh clone of ours (destination had to be empty) - remove it
+                # so a retry is not blocked by "destination is not empty".
+                shutil.rmtree(project_path, ignore_errors=True)
+                error = (
+                    "The remote repository has no dataset_description.json "
+                    "(the repository is empty - e.g. an OpenNeuro dataset whose GitHub "
+                    f"mirror was never synced): {remote_url}"
+                )
+            else:
+                error = (
                     "No dataset_description.json found.  "
                     "The selected folder does not look like a BIDS root."
-                ),
-                "log": log,
-            }
+                )
+            return {"success": False, "error": error, "log": log}
         add_log("Validated existing BIDS dataset root.", "step")
 
         name = config.get("name") or project_path.name

@@ -19,16 +19,9 @@ import pandas as pd
 
 from .excel_base import detect_language, read_excel_sheets
 from .excel_to_survey import extract_excel_templates
+from src.converters.template_import import TEMPLATE_SECTIONS
 
-RESERVED_TOPLEVEL = {
-    "Technical",
-    "Study",
-    "Metadata",
-    "I18n",
-    "LimeSurvey",
-    "Scoring",
-    "Normative",
-}
+RESERVED_TOPLEVEL = TEMPLATE_SECTIONS
 DESCRIPTION_ALIASES = {"description", "question", "item", "item text", "text", "label", "questiontext"}
 
 

@@ -1806,6 +1806,23 @@ def build_prism_tools_parsers(
         "instead of the imported questionnaire; only for exact/high matches",
     )
 
+    parser_survey_codebook = survey_subparsers.add_parser(
+        "import-codebook",
+        help="Import the instrument groups of an Excel/CSV/TSV codebook as PRISM templates. "
+        "Matches the Studio Template Editor's 'Import Template Source' for .xlsx/.csv/.tsv.",
+    )
+    parser_survey_codebook.add_argument("--input", required=True, help="Path to the .xlsx/.csv/.tsv codebook")
+    parser_survey_codebook.add_argument(
+        "--list", action="store_true", help="Only list the groups found (default without --select)"
+    )
+    parser_survey_codebook.add_argument(
+        "--select", nargs="+", metavar="KEY", help="Group key(s) from the listing (the variable prefix), or 'all'"
+    )
+    parser_survey_codebook.add_argument("--output", help="Directory for the template JSON files")
+    parser_survey_codebook.add_argument(
+        "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
+    )
+
     parser_survey_pavlovia = survey_subparsers.add_parser(
         "import-pavlovia",
         help="Import the pages of a Pavlovia (SurveyJS) survey .json as PRISM templates. "

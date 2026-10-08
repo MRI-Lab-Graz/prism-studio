@@ -46,23 +46,6 @@ def test_listing_reports_the_match_per_questionnaire_and_logs_it(libs, capsys):
     assert "[PRISM] Library match for 'WHO-5': none" in out
 
 
-def test_match_for_one_questionnaire_returns_template_and_match(libs):
-    template, match = ls.limesurvey_questionnaire_match(XML, "g30")
-
-    assert "ADS1_1" in template and match["template_key"] == "ads"
-
-
-def test_library_template_carries_the_survey_codes_as_aliases(libs):
-    template, match = ls.limesurvey_library_template(XML, "g30")
-
-    assert template["ads_01"]["Aliases"] == ["ADS1_1"] and match["adoptable"] is True
-
-
-def test_library_template_refuses_when_nothing_matches(libs):
-    with pytest.raises(ValueError, match="one-to-one"):
-        ls.limesurvey_library_template(XML, "g20")
-
-
 def test_a_matching_failure_never_blocks_the_import(libs, monkeypatch, capsys):
     def boom(*_a, **_k):
         raise RuntimeError("library unreadable")

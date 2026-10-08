@@ -55,6 +55,7 @@ DISPATCH_CASES = [
     ),
     (dict(command="survey", action="import-limesurvey"), "survey_import_limesurvey"),
     (dict(command="survey", action="import-pavlovia"), "survey_import_pavlovia"),
+    (dict(command="survey", action="import-codebook"), "survey_import_codebook"),
     (
         dict(command="survey", action="import-limesurvey-batch"),
         "survey_import_limesurvey_batch",
