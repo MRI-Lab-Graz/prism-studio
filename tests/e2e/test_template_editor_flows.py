@@ -194,3 +194,11 @@ def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
 
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
     assert messages == []
+
+
+def test_opening_create_or_import_does_not_scroll_the_page(page):
+    page.evaluate("window.scrollTo(0, 0)")
+    page.click("#btnCreateOpen")
+    expect(page.locator("#excelGroupPickerRow, #templateImportInput")).to_have_count(2)  # panel opened
+    page.wait_for_timeout(700)  # the old smooth scroll started after 120 ms
+    assert page.evaluate("window.scrollY") == 0
