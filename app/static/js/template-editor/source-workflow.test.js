@@ -131,28 +131,43 @@ describe('refreshTemplateList', () => {
 
 
 describe('offerShare', () => {
-    const ask = (answer) => { globalThis.confirm = vi.fn(() => answer); return globalThis.confirm; };
+    const MAIL = { mailto: 'mailto:mri-lab@uni-graz.at?subject=A%26B' };
+    const make = (shareCandidate) => {
+        const buttons = {};
+        const alerts = [];
+        return {
+            alerts, buttons, shareCandidate,
+            apiPost: vi.fn(async () => MAIL),
+            escapeHtml: (s) => s.replace(/&/g, '&amp;'),
+            showAlert: (type, html) => alerts.push({ type, html }),
+            clearAlert: vi.fn(),
+            alertAreaEl: { querySelector: (sel) => (buttons[sel] = { addEventListener: vi.fn() }) },
+        };
+    };
 
     it('asks nothing for a template that was not an unmatched import', async () => {
-        const confirm = ask(true);
-        await offerShare({ shareCandidate: null, apiPost: vi.fn() }, 'survey-x.json');
-        expect(confirm).not.toHaveBeenCalled();
+        const context = make(null);
+        await offerShare(context, 'survey-x.json');
+        expect(context.alerts).toEqual([]);
+        expect(context.apiPost).not.toHaveBeenCalled();
     });
 
     it('asks nothing when a different template was saved', async () => {
-        const confirm = ask(true);
-        await offerShare({ shareCandidate: 'survey-x.json', apiPost: vi.fn() }, 'survey-y.json');
-        expect(confirm).not.toHaveBeenCalled();
+        const context = make('survey-x.json');
+        await offerShare(context, 'survey-y.json');
+        expect(context.alerts).toEqual([]);
     });
 
-    it('asks once; No sends nothing and is not asked again', async () => {
-        const confirm = ask(false);
-        const context = { shareCandidate: 'survey-x.json', apiPost: vi.fn() };
+    it('shows Yes as a real mail link and No as a button, and asks only once', async () => {
+        const context = make('survey-x.json');
         await offerShare(context, 'survey-x.json');
         await offerShare(context, 'survey-x.json');
-        expect(confirm).toHaveBeenCalledTimes(1);
-        expect(confirm.mock.calls[0][0]).toContain('mri-lab@uni-graz.at');
-        expect(context.apiPost).not.toHaveBeenCalled();
+        expect(context.alerts).toHaveLength(1);
+        const html = context.alerts[0].html;
+        expect(html).toContain('mri-lab@uni-graz.at');
+        expect(html).toContain('<a id="shareYes"');
+        expect(html).toContain('href="mailto:mri-lab@uni-graz.at?subject=A%26B"');
+        expect(html).toContain('id="shareNo"');
         expect(context.shareCandidate).toBeNull();
     });
 });

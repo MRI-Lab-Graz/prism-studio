@@ -352,22 +352,23 @@ export async function saveCurrent(context) {
 }
 
 // Offer to mail a freshly imported, unmatched template to the PRISM team (asked once).
+// "Yes" is a real mail link: browsers only open a mail program from the user's own click.
 export async function offerShare(context, filename) {
   if (context.shareCandidate !== filename) {
     return;
   }
   context.shareCandidate = null;
-  if (!confirm('Share this template with the PRISM team (mri-lab@uni-graz.at)? It will be checked, including its copyright status, before it is added to the library.')) {
-    return;
-  }
-  await downloadCurrent(context);
   const mail = await context.apiPost('/api/template-editor/share-mail', { filename, template: context.currentTemplate });
-  const link = document.createElement('a');
-  link.href = mail.mailto;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  context.showAlert('info', 'Your mail program opened with a prefilled message. Attach the downloaded file and send it.');
+  context.showAlert('info',
+    '✅ Saved. <strong>Share this template with the PRISM team (mri-lab@uni-graz.at)?</strong> '
+    + 'It will be checked, including its copyright status, before it is added to the library. '
+    + 'Yes downloads the file and opens a mail: attach the file and send it.<br>'
+    + `<a id="shareYes" class="btn btn-sm btn-primary mt-2 me-2" href="${context.escapeHtml(mail.mailto)}">Yes, share by mail</a>`
+    + '<button type="button" id="shareNo" class="btn btn-sm btn-outline-secondary mt-2">No thanks</button>');
+  context.alertAreaEl.querySelector('#shareYes').addEventListener('click', () => {
+    downloadCurrent(context).catch((error) => context.showAlert('warning', `Sharing failed: ${context.escapeHtml(error.message)}`));
+  });
+  context.alertAreaEl.querySelector('#shareNo').addEventListener('click', () => context.clearAlert());
 }
 
 export async function downloadCurrent(context) {

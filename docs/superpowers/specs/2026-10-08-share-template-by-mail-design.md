@@ -8,12 +8,14 @@ the library by hand.
 
 ## Flow
 1. Import -> fill the missing fields (Citation, Category) -> Validate -> Save to Project.
-2. If the import had no library match and the save succeeded, ask once:
+2. If the import had no library match and the save succeeded, an in-page message asks once:
    "Share this template with the PRISM team (mri-lab@uni-graz.at)? It will be checked,
    including its copyright status, before it is added to the library."
-3. Yes: the browser downloads the template JSON and opens a prefilled mail
-   (To, Subject with the template name, Body with title, citation, source and a request
-   to attach the downloaded file). No: nothing happens; not asked again for that template.
+   with two buttons. (Not a native confirm: its buttons cannot be relabelled, and browsers
+   block a mail program that is opened outside the user's own click.)
+3. "Yes, share by mail" is a real `mailto:` link (To, Subject with the template name, Body with
+   title, citation, source and a request to attach the file); its click also downloads the
+   template JSON. "No thanks" clears the message; not asked again for that template.
 
 The share file is the template JSON itself. A maintainer opens it with the existing
 "Import Template Source", reviews it and saves it to the library. No new format.
