@@ -100,11 +100,9 @@
                 </div>
                 <div class="col-md-3">
                     <div class="export-option">
-                        <label class="form-label fw-bold">Languages</label>
-                        <div id="exportLanguageTags" class="mt-1">
-                            <span class="lang-tag base">EN</span>
-                        </div>
-                        <small class="text-muted">Set from Survey Generator</small>
+                        <label class="form-label fw-bold">Export Languages</label>
+                        <div id="exportLanguageChoices" class="mt-1"></div>
+                        <small class="text-muted">Only languages every selected questionnaire has can be ticked.</small>
                         <small class="text-muted d-none" id="pavloviaLanguageNote">Pavlovia export uses the base language only.</small>
                     </div>
                 </div>
@@ -122,10 +120,7 @@
                 <div class="col-md-4">
                     <div class="export-option">
                         <label class="form-label">Base Language</label>
-                        <select class="form-select" id="languageSelect">
-                            <option value="en" selected>English</option>
-                            <option value="de">German</option>
-                        </select>
+                        <select class="form-select" id="languageSelect"></select>
                     </div>
                 </div>
             </div>

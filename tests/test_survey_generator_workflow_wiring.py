@@ -46,3 +46,32 @@ class TestSurveyGeneratorWorkflowWiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestExportLanguagesLiveInTheCustomizer(unittest.TestCase):
+    """The generator picks a Base Language only; export languages are chosen in Customize & Export."""
+
+    def test_generator_has_no_export_language_checkboxes(self):
+        html = (REPO_ROOT / "app" / "templates" / "survey_generator.html").read_text(encoding="utf-8")
+        script = SURVEY_GENERATOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("exportLanguageCheckboxes", html)
+        self.assertNotIn("Export Languages", html)
+        self.assertNotIn("exportLanguageCheckboxes", script)
+        self.assertNotIn("export-lang-cb", script)
+
+    def test_generator_passes_only_the_base_language_on(self):
+        script = SURVEY_GENERATOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("languages: [currentLanguage],", script)
+        self.assertIn("languageHint(fileLangs, currentLanguage)", script)
+        self.assertNotIn("selectedExportLanguages", script)
+
+    def test_customizer_chooses_export_languages_from_the_groups(self):
+        html = (REPO_ROOT / "app" / "templates" / "survey_customizer.html").read_text(encoding="utf-8")
+        script = (REPO_ROOT / "app" / "static" / "js" / "survey-customizer.js").read_text(encoding="utf-8")
+
+        self.assertIn('id="exportLanguageChoices"', html)
+        self.assertNotIn("Set from Survey Generator", html)
+        self.assertIn("survey-customizer/language-choices.js", script)
+
