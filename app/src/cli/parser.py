@@ -1806,6 +1806,27 @@ def build_prism_tools_parsers(
         "instead of the imported questionnaire; only for exact/high matches",
     )
 
+    parser_survey_pavlovia = survey_subparsers.add_parser(
+        "import-pavlovia",
+        help="Import the pages of a Pavlovia (SurveyJS) survey .json as PRISM templates. "
+        "Matches the Studio Template Editor's 'Import Template Source' for a Pavlovia survey.",
+    )
+    parser_survey_pavlovia.add_argument("--input", required=True, help="Path to the Pavlovia survey .json")
+    parser_survey_pavlovia.add_argument(
+        "--split", choices=["page", "survey"], default="page",
+        help="One template per survey page (default) or for the whole survey",
+    )
+    parser_survey_pavlovia.add_argument(
+        "--list", action="store_true", help="Only list the questionnaires found (default without --select)"
+    )
+    parser_survey_pavlovia.add_argument(
+        "--select", nargs="+", metavar="KEY", help="Questionnaire key(s) from the listing (e.g. p1), or 'all'"
+    )
+    parser_survey_pavlovia.add_argument("--output", help="Directory for the template JSON files")
+    parser_survey_pavlovia.add_argument(
+        "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
+    )
+
     parser_survey_import_lsq = survey_subparsers.add_parser(
         "import-lsq",
         help="Import a LimeSurvey question (.lsq) or group (.lsg) export as a PRISM "

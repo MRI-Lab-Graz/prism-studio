@@ -77,8 +77,8 @@
               </button>
             </div>
             <div class="form-text mt-2 d-flex align-items-center gap-2">
-              <span>Imports a PRISM template (.json) or a source (LimeSurvey, Excel/CSV/TSV) into the editor for review, validation, and save.</span>
-              <span class="text-muted" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>PRISM template</strong>: .json<br><strong>LimeSurvey XML</strong>: .lsq, .lsg, .lss<br><strong>LimeSurvey archive</strong>: .lsa<br><strong>Tabular dictionary</strong>: .xlsx, .csv, .tsv">
+              <span>Imports a PRISM template (.json) or a source (LimeSurvey, Pavlovia, Excel/CSV/TSV) into the editor for review, validation, and save.</span>
+              <span class="text-muted" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>PRISM template</strong>: .json<br><strong>LimeSurvey XML</strong>: .lsq, .lsg, .lss<br><strong>LimeSurvey archive</strong>: .lsa<br><strong>Pavlovia survey</strong>: .json (SurveyJS)<br><strong>Tabular dictionary</strong>: .xlsx, .csv, .tsv">
                 <i class="fas fa-circle-question"></i>
               </span>
             </div>
@@ -87,7 +87,7 @@
             <div class="mt-2 d-none" id="excelGroupPickerRow">
               <label class="form-label small mb-1" for="excelGroupPickerSelect">Several questionnaires found &mdash; choose one to load:</label>
               <div class="input-group input-group-sm">
-                <select class="form-select form-select-sm d-none" id="sourceSplitSelect" title="Split the LimeSurvey file by" style="flex: 0 0 auto; width: auto; min-width: 13rem;">
+                <select class="form-select form-select-sm d-none" id="sourceSplitSelect" title="Split the imported file by" style="flex: 0 0 auto; width: auto; min-width: 13rem;">
                   <option value="group" selected>Split by group</option>
                   <option value="question">Split by question</option>
                   <option value="survey">Whole survey</option>

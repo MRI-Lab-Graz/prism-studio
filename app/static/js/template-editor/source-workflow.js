@@ -1,5 +1,5 @@
 import { isSameProjectPath } from '../shared/project-state.js';
-import { parsePrismTemplateJson } from './json-import.js';
+import { isPavloviaSurvey, parsePrismTemplateJson } from './json-import.js';
 import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
@@ -528,11 +528,29 @@ async function importExcelCodebook(context, file, previousEditorState) {
   context.showAlert('info', `Detected ${groups.length} instrument groups in ${context.escapeHtml(file.name)}. Choose one above to load it into the editor.`);
 }
 
+const SOURCES = {
+  limesurvey: {
+    endpoint: '/api/template-editor/import-limesurvey',
+    splits: [['group', 'Split by group'], ['question', 'Split by question'], ['survey', 'Whole survey']],
+  },
+  pavlovia: {
+    endpoint: '/api/template-editor/import-pavlovia',
+    splits: [['page', 'Split by page'], ['survey', 'Whole survey']],
+  },
+};
+
+function setSplitOptions(context, source) {
+  context.sourceSplitSelectEl.innerHTML = SOURCES[source].splits
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join('');
+  context.sourceSplitSelectEl.dataset.source = source;
+}
+
 async function fetchLimeSurvey(context, file, fields) {
   const formData = new FormData();
   formData.append('file', file);
   Object.entries(fields).forEach(([name, value]) => formData.append(name, value));
-  const res = await context.fetchWithApiFallback('/api/template-editor/import-limesurvey', {
+  const res = await context.fetchWithApiFallback(SOURCES[context.sourceSplitSelectEl.dataset.source || 'limesurvey'].endpoint, {
     method: 'POST',
     body: formData,
   });
@@ -639,10 +657,16 @@ export async function importTemplateSource(context) {
     const lowerName = (file.name || '').toLowerCase();
 
     if (lowerName.endsWith('.json')) {
+      const text = await file.text();
+      if (isPavloviaSurvey(text)) {
+        setSplitOptions(context, 'pavlovia');
+        await importLimeSurvey(context, file, previousEditorState);
+        return;
+      }
       // A finished PRISM template: read it here, no converter involved. The
       // normal import finish validates it, and Save to Project asks before
       // overwriting a project template of the same name.
-      const template = parsePrismTemplateJson(await file.text(), context.modalityEl.value);
+      const template = parsePrismTemplateJson(text, context.modalityEl.value);
       const summary = applyImportedTemplate(
         context,
         { template, suggested_filename: file.name },
@@ -663,6 +687,7 @@ export async function importTemplateSource(context) {
     }
 
     if (lowerName.endsWith('.lss') || lowerName.endsWith('.lsa')) {
+      setSplitOptions(context, 'limesurvey');
       await importLimeSurvey(context, file, previousEditorState);
       return;
     }
