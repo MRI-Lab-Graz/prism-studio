@@ -200,3 +200,48 @@ describe('readImportJson', () => {
         await expect(readImportJson(response(200, 'oops'), 'Import failed')).rejects.toThrow(/not JSON/);
     });
 });
+
+describe('validateCurrent without a language', () => {
+    // asked: the template was just imported with no language known (a Pavlovia survey)
+    const run = async (language, options, { asked = true } = {}) => {
+        const alerts = [];
+        let posted = false;
+        const el = { disabled: false, classList: { toggle() {}, add() {} } };
+        const template = { Technical: { Language: language }, Study: { TaskName: 'x' }, A1: { Description: 'Frage' } };
+        const context = {
+            modalityEl: { value: 'survey' }, schemaEl: { value: 'stable' },
+            getCurrentProjectPath: () => '/p', projectContextRequestToken: 1,
+            getExportWordButton: () => null, hasExplicitTemplate: true,
+            currentTemplate: template, languageRequiredFor: asked ? template : null,
+            apiPost: async () => { posted = true; return { ok: true }; },
+            isProjectContextCurrent: () => true,
+            btnDownload: el, btnSave: { ...el }, alertAreaEl: { querySelectorAll: () => [] },
+            deriveFocusPath: (p) => p, escapeHtml: (s) => s, renderMissingSummary() {},
+            showAlert: (type, html) => alerts.push({ type, html }),
+        };
+        const result = await validateCurrent(context, options);
+        return { result, alerts, posted, context };
+    };
+
+    it('asks for the language instead of validating, and keeps Save and Download off', async () => {
+        const { result, alerts, posted, context } = await run('', { initial: true, imported: true });
+        expect(result).toBe(false);
+        expect(posted).toBe(false);
+        expect(alerts[0].html).toContain('Choose the language of the texts');
+        expect(context.btnSave.disabled).toBe(true);
+        expect(context.btnDownload.disabled).toBe(true);
+    });
+
+    it('is a warning right after an import and an error on an explicit Validate', async () => {
+        expect((await run('', { initial: true, imported: true })).alerts[0].type).toBe('warning');
+        expect((await run('')).alerts[0].type).toBe('danger');
+    });
+
+    it('validates normally once a language is set', async () => {
+        expect((await run('de')).posted).toBe(true);
+    });
+
+    it('does not ask for a template that was loaded, not imported (most library templates have no language)', async () => {
+        expect((await run('', {}, { asked: false })).posted).toBe(true);
+    });
+});

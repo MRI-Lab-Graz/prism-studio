@@ -255,14 +255,15 @@ page (`--split survey` for a single template), like Studio's Template Editor "Im
 
 ```bash
 python prism_tools.py survey import-pavlovia --input survey.json                                  # list pages
-python prism_tools.py survey import-pavlovia --input survey.json --select p1 p2 --output ./templates
-python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --software-version 2025.1
-python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --language de
+python prism_tools.py survey import-pavlovia --input survey.json --select p1 p2 --output ./templates --language de
+python prism_tools.py survey import-pavlovia --input survey.json --select all --output ./templates --language de --software-version 2025.1
 ```
 
 Choices and rating scales keep the stored value as the level key and the shown text as its label;
 `visibleIf` becomes `Relevance`; page and question descriptions go to `Study.Instructions`. The file has no
-language, so `--language` (e.g. `de`) labels all texts and levels; without it the survey's `locale`, else `en`.
+language, so writing needs `--language` (e.g. `de`), which labels all texts and levels (a survey `locale`
+is used when present). In Studio's Template Editor you choose it in the language bar after the import,
+before the template can be validated.
 
 **`survey import-lsq`** — turn a single LimeSurvey question (`.lsq`) or question group
 (`.lsg`) export into a PRISM template JSON, like Studio's Template Editor

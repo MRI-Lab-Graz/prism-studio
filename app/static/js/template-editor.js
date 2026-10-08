@@ -17,7 +17,6 @@
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
   const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
   const sourceSplitSelectEl = document.getElementById('sourceSplitSelect');
-  const sourceLanguageInputEl = document.getElementById('sourceLanguageInput');
   const libraryMatchCardEl = document.getElementById('libraryMatchCard');
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
@@ -44,6 +43,9 @@
   const langWarningEl = document.getElementById('langWarningIndicator');
   const languageBarInnerEl = document.getElementById('languageBarInner');
   const btnAddLang = document.getElementById('btnAddLang');
+  const primaryLanguageFormEl = document.getElementById('primaryLanguageForm');
+  const primaryLanguageInputEl = document.getElementById('primaryLanguageInput');
+  const btnSetPrimaryLang = document.getElementById('btnSetPrimaryLang');
   const btnRemoveLang = document.getElementById('btnRemoveLang');
   const editorViewEl = document.getElementById('editorView');
   const previewViewEl = document.getElementById('previewView');
@@ -325,6 +327,12 @@
     const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
     return sharedFetchWithApiFallback(url, options, fallbackMessage);
   }
+
+  // A template with no language yet (a Pavlovia import) asks for it in the language bar.
+  let primaryLanguage = null;
+  let languageRequiredFor = null; // the imported template that still needs its language
+  import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
   const templateEditorSourceWorkflowModuleUrl = new URL('./template-editor/source-workflow.js', document.currentScript?.src || window.location.href).href;
   let templateEditorSourceWorkflowPromise = null;
@@ -3752,7 +3760,24 @@
     }
     langWarningEl.style.display = showWarning ? '' : 'none';
     languageBarInnerEl.classList.toggle('lang-bar-warn', showWarning);
+
+    const needsLanguage = !!primaryLanguage && languageRequiredFor === currentTemplate && primaryLanguage.needsPrimaryLanguage(currentTemplate);
+    primaryLanguageFormEl.classList.toggle('d-none', !needsLanguage);
+    primaryLanguageFormEl.classList.toggle('d-flex', needsLanguage);
   }
+
+  btnSetPrimaryLang.addEventListener('click', () => {
+    if (!currentTemplate || !primaryLanguage) return;
+    try {
+      primaryLanguage.applyPrimaryLanguage(currentTemplate, primaryLanguageInputEl.value.trim());
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+    primaryLanguageInputEl.value = '';
+    renderAll();
+    btnValidate.click();
+  });
 
   // Add Language: adds a language key to ALL question Descriptions and Levels
   btnAddLang.addEventListener('click', () => {
@@ -4709,7 +4734,6 @@
         excelGroupPickerSelectEl,
         btnLoadExcelGroup,
         sourceSplitSelectEl,
-        sourceLanguageInputEl,
         libraryMatchCardEl,
         btnDownload,
         btnSave,
@@ -4763,6 +4787,12 @@
         },
         set previewVariantOverride(value) {
           previewVariantOverride = value;
+        },
+        get languageRequiredFor() {
+          return languageRequiredFor;
+        },
+        set languageRequiredFor(value) {
+          languageRequiredFor = value;
         },
         get loadedFromReadonly() {
           return loadedFromReadonly;

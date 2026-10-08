@@ -92,8 +92,6 @@
                   <option value="question">Split by question</option>
                   <option value="survey">Whole survey</option>
                 </select>
-                <input type="text" class="form-control form-control-sm d-none" id="sourceLanguageInput" value="en" maxlength="5"
-                       title="Language of the survey texts (the Pavlovia file has none), e.g. de or de-AT" style="flex: 0 0 auto; width: 5rem;" aria-label="Survey language">
                 <select class="form-select form-select-sm" id="excelGroupPickerSelect"></select>
                 <button class="btn btn-outline-primary btn-sm" type="button" id="btnLoadExcelGroup">
                   <i class="fas fa-arrow-right me-1"></i>Load selected
@@ -152,6 +150,12 @@
             <span id="langBadges"></span>
             <span id="langPrimaryBadge"></span>
             <span id="langWarningIndicator" class="text-warning small" style="display:none;" title="Language configuration mismatch"><i class="fas fa-exclamation-triangle"></i></span>
+            <span id="primaryLanguageForm" class="d-none align-items-center gap-1">
+              <label class="small fw-bold mb-0" for="primaryLanguageInput">Language of the texts <span class="text-danger" title="Required before the template can be validated">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="primaryLanguageInput" list="primaryLanguageChoices" maxlength="5" placeholder="de" autocomplete="off" style="width: 5.5rem;" aria-label="Language of the texts">
+              <datalist id="primaryLanguageChoices"><option value="de"><option value="en"><option value="es"><option value="fr"><option value="it"></datalist>
+              <button class="btn btn-sm btn-primary" id="btnSetPrimaryLang" type="button">Set language</button>
+            </span>
             <div class="ms-auto d-flex gap-1">
               <button class="btn btn-sm btn-outline-primary" id="btnAddLang" type="button" title="Add a language to all questions"><i class="fas fa-plus me-1"></i>Add Language</button>
               <button class="btn btn-sm btn-outline-danger" id="btnRemoveLang" type="button" title="Remove a language from all questions"><i class="fas fa-minus me-1"></i>Remove Language</button>

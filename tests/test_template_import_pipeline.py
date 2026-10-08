@@ -64,6 +64,13 @@ def test_payload_has_what_the_editor_reads(no_library):
     assert payload["library_match"] is None
 
 
+def test_a_template_without_a_language_reports_none(no_library):
+    template = _template()
+    template["Technical"]["Language"] = ""
+
+    assert finish_import(template, "ADS")["languages"] == []
+
+
 def test_languages_come_from_i18n_when_it_lists_several(no_library):
     template = _template(I18n={"Languages": ["de", "en"], "DefaultLanguage": "de"})
 

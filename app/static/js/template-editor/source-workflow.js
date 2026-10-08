@@ -1,6 +1,7 @@
 import { isSameProjectPath } from '../shared/project-state.js';
 import { isPavloviaSurvey, parsePrismTemplateJson } from './json-import.js';
 import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
+import { needsPrimaryLanguage } from './primary-language.js';
 
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
@@ -132,6 +133,8 @@ export async function loadSelectedTemplate(context) {
   }
 
   context.currentTemplate = context.stripInternalTemplateKeys(data.template);
+  // An import that reports no language (a Pavlovia survey) must get one before it can be validated.
+  context.languageRequiredFor = Array.isArray(data.languages) && data.languages.length === 0 ? context.currentTemplate : null;
   context.stripScoreAnnotationsInTemplate(context.currentTemplate);
   context.originalTemplate = context.cloneDeep(context.currentTemplate);
   context.currentTemplateFilename = data.filename || filename;
@@ -208,6 +211,16 @@ export async function validateCurrent(context, { initial = false, imported = fal
   }
 
   context.hasUserInteracted = true;
+  if (context.languageRequiredFor === obj && needsPrimaryLanguage(obj)) {
+    // The texts have no language yet (a Pavlovia import): choosing it comes first.
+    context.btnSave.disabled = true;
+    context.btnDownload.disabled = true;
+    context.showAlert(
+      imported || initial ? 'warning' : 'danger',
+      '🌐 <strong>Choose the language of the texts</strong> in the language bar below, then click Validate.'
+    );
+    return false;
+  }
   const data = await context.apiPost('/api/template-editor/validate', {
     modality,
     schema_version: schemaVersion,
@@ -446,9 +459,6 @@ function hideExcelGroupPicker(context) {
   if (context.sourceSplitSelectEl) {
     context.sourceSplitSelectEl.classList.add('d-none');
   }
-  if (context.sourceLanguageInputEl) {
-    context.sourceLanguageInputEl.classList.add('d-none');
-  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
     // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
@@ -557,14 +567,6 @@ function setSplitOptions(context, source) {
     .map(([value, label]) => `<option value="${value}">${label}</option>`)
     .join('');
   context.sourceSplitSelectEl.dataset.source = source;
-  // The Pavlovia file has no language, so the user says which one the texts are in.
-  context.sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia');
-}
-
-function sourceLanguageField(context) {
-  return context.sourceSplitSelectEl.dataset.source === 'pavlovia'
-    ? { language: context.sourceLanguageInputEl.value.trim() }
-    : {};
 }
 
 async function fetchLimeSurvey(context, file, fields) {
@@ -582,7 +584,6 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
   try {
     const data = await fetchLimeSurvey(context, file, {
       split: context.sourceSplitSelectEl.value,
-      ...sourceLanguageField(context),
       key,
       project_path: context.getCurrentProjectPath() || '',
       ...(useLibrary ? { use_library: '1' } : {}),
@@ -598,7 +599,6 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
 async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
   const { questionnaires } = await fetchLimeSurvey(context, file, {
     split: context.sourceSplitSelectEl.value,
-    ...sourceLanguageField(context),
     project_path: context.getCurrentProjectPath() || '',
   });
   if (questionnaires.length === 0) {

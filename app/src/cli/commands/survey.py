@@ -683,6 +683,8 @@ def cmd_survey_import_pavlovia(args):
             return
         if not args.output:
             raise ValueError("--output DIR is required with --select")
+        if not getattr(args, "language", None):
+            raise ValueError("--language is required with --select (the file has none), e.g. --language de")
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
         planned = []
         for key in keys:

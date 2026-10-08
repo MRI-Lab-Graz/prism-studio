@@ -41,20 +41,25 @@ def _label(raw: Any) -> tuple[str, str]:
     return str(raw), str(raw)
 
 
+def _text(lang: str, value: str) -> Any:
+    """A text under its language, or the plain string while the language is not chosen yet."""
+    return {lang: value} if lang else value
+
+
 def _levels(el: dict, lang: str) -> dict | None:
     kind = el.get("type")
     if kind == "boolean":
-        return {"true": {lang: el.get("labelTrue") or "true"}, "false": {lang: el.get("labelFalse") or "false"}}
+        return {"true": _text(lang, el.get("labelTrue") or "true"), "false": _text(lang, el.get("labelFalse") or "false")}
     raw = el.get("rateValues") if kind == "rating" else el.get("choices")
     if kind == "rating" and not raw:
         raw = list(range(1, int(el.get("rateCount") or 0) + 1)) if el.get("rateCount") else _DEFAULT_RATING
     if not raw:
         return None
-    return {value: {lang: text} for value, text in map(_label, raw)}
+    return {value: _text(lang, text) for value, text in map(_label, raw)}
 
 
 def _item(el: dict, lang: str) -> dict:
-    item: dict[str, Any] = {"Description": {lang: el.get("title") or el["name"]}}
+    item: dict[str, Any] = {"Description": _text(lang, el.get("title") or el["name"])}
     levels = _levels(el, lang)
     if levels:
         item["Levels"] = levels
@@ -74,13 +79,14 @@ def _item(el: dict, lang: str) -> dict:
 def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[dict, dict]]:
     """[(listing entry, template)] for every questionnaire of the survey.
 
-    The file carries no language, so ``language`` (else its ``locale``, else en) labels every text."""
+    The file carries no language: ``language`` (else its ``locale``) labels every text; without either the
+    texts stay plain strings and ``Technical.Language`` is empty, and the editor asks for the language."""
     if split not in _SPLITS:
         raise ValueError(f"Unknown split mode '{split}'. Use one of: {', '.join(_SPLITS)}")
     if language is not None and not _LANGUAGE_RE.match(language):
         raise ValueError(f"Invalid language '{language}': use a code like de or de-AT")
     locale = survey.get("locale")
-    lang = language or (locale if isinstance(locale, str) and len(locale) == 2 else "en")
+    lang = language or (locale if isinstance(locale, str) and len(locale) == 2 else "")
     survey_name = survey.get("title") or "survey"
     parts = [
         (page.get("name") or f"page {n}", page, _flatten(page.get("elements", [])))
@@ -113,11 +119,11 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
         used.add(task)
         template["Study"] = {
             "TaskName": task, "OriginalName": name, "Version": "1.0",
-            "Description": f"Imported from Pavlovia survey: {name}",
+            "Description": _text(lang, f"Imported from Pavlovia survey: {name}"),
             "LicenseID": "Proprietary",
             "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
             "ItemCount": len(els),
-            **({"Instructions": {lang: "\n\n".join(notes)}} if notes else {}),
+            **({"Instructions": _text(lang, "\n\n".join(notes))} if notes else {}),
         }
         for el in els:
             if el.get("visible") is False:

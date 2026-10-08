@@ -53,13 +53,13 @@ def test_template_metadata(survey):
 
 
 def test_rating_without_rate_values_is_one_to_five(survey):
-    item = pavlovia_questionnaire_template(survey, "p2")["ARSQ1"]
-    assert item["Description"] == {"en": "Ich hatte schnell wechselnde Gedanken"}  # no locale in file -> en
+    item = pavlovia_questionnaire_template(survey, "p2", language="en")["ARSQ1"]
+    assert item["Description"] == {"en": "Ich hatte schnell wechselnde Gedanken"}
     assert list(item["Levels"]) == ["1", "2", "3", "4", "5"]
 
 
 def test_levels_keyed_by_stored_value_labelled_by_text(survey):
-    t = pavlovia_questionnaire_template(survey, "p1")
+    t = pavlovia_questionnaire_template(survey, "p1", language="en")
     lang = t["Technical"]["Language"]
     assert t["Kaffee"]["Levels"] == {"viel weniger": {lang: "Ja"}, "weniger": {lang: "Nein"}}
     assert list(t["KaffeeHeute"]["Levels"]) == ["viel weniger", "weniger", "gleich", "mehr", "viel mehr"]
@@ -73,7 +73,7 @@ def test_numeric_text_item_gets_datatype_and_range(survey):
 
 
 def test_boolean_has_two_levels(survey):
-    t = pavlovia_questionnaire_template(survey, "p3")
+    t = pavlovia_questionnaire_template(survey, "p3", language="en")
     assert t["question1"]["Levels"] == {"true": {t["Technical"]["Language"]: "Ja"},
                                         "false": {t["Technical"]["Language"]: "Nein"}}
 
@@ -86,7 +86,7 @@ def test_visible_if_becomes_relevance_and_required_becomes_mandatory(survey):
 
 
 def test_descriptions_go_to_instructions(survey):
-    study = pavlovia_questionnaire_template(survey, "p1")["Study"]
+    study = pavlovia_questionnaire_template(survey, "p1", language="en")["Study"]
     assert "Im Vergleich zu einem durchschnittlichen Tag" in study["Instructions"]["en"]
 
 
@@ -94,6 +94,15 @@ def test_hidden_item_is_warned(survey, capsys):
     pavlovia_questionnaire_template(survey, "p1")
     out = capsys.readouterr().out
     assert "WARNING" in out and "studyID" in out and "visible" in out
+
+
+def test_without_a_language_the_texts_are_plain_strings_and_the_language_is_empty(survey):
+    """The file has no language; the editor asks for it before the template can be validated."""
+    t = pavlovia_questionnaire_template(survey, "p1")
+    assert t["Technical"]["Language"] == ""
+    assert t["Kaffee"]["Description"] == "Haben Sie heute einen Kaffee getrunken?"
+    assert t["Kaffee"]["Levels"] == {"viel weniger": "Ja", "weniger": "Nein"}
+    assert t["Study"]["Instructions"] == "Im Vergleich zu einem durchschnittlichen Tag"
 
 
 def test_language_option_keys_every_text_by_that_language(survey):
@@ -131,7 +140,7 @@ from src.cli.commands.survey import cmd_survey_import_pavlovia  # noqa: E402
 
 def _args(**kw):
     values = dict(input=str(FIXTURE), split="page", list=False, select=None, output=None, project=None,
-                  software_version=None, language=None)
+                  software_version=None, language="en")
     values.update(kw)
     return SimpleNamespace(**values)
 
@@ -164,6 +173,15 @@ def test_cli_language_is_written_to_the_templates(tmp_path):
 
 def test_template_without_software_version_has_none(survey):
     assert "SoftwareVersion" not in pavlovia_questionnaire_template(survey, "p1")["Technical"]
+
+
+def test_cli_writing_needs_a_language_but_listing_does_not(tmp_path, capsys):
+    cmd_survey_import_pavlovia(_args(language=None))  # listing: fine
+    assert "Basics" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        cmd_survey_import_pavlovia(_args(language=None, select=["p1"], output=str(tmp_path)))
+    assert not list(tmp_path.iterdir())
+    assert "--language" in capsys.readouterr().out
 
 
 def test_cli_select_all_and_no_overwrite(tmp_path):
@@ -222,11 +240,11 @@ def test_route_loads_one_page():
     assert "ARSQ1" in body["template"] and "library_match" in body
 
 
-def test_route_language_field_reaches_the_template():
-    body = _post({"key": "p2", "language": "de"}).get_json()
-    assert body["languages"] == ["de"]
-    assert body["template"]["ARSQ1"]["Description"] == {"de": "Ich hatte schnell wechselnde Gedanken"}
-    assert _post({"key": "p2", "language": "german"}).status_code == 400
+def test_route_returns_plain_texts_and_no_language_for_the_editor_to_ask():
+    body = _post({"key": "p2"}).get_json()
+    assert body["languages"] == []
+    assert body["template"]["Technical"]["Language"] == ""
+    assert body["template"]["ARSQ1"]["Description"] == "Ich hatte schnell wechselnde Gedanken"
 
 
 def test_route_bad_input_is_400():
