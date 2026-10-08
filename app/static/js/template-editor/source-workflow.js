@@ -469,10 +469,7 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
       method: 'POST',
       body: formData,
     });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || `Import failed (${res.status})`);
-    }
+    const data = await readImportJson(res, 'Import failed');
 
     hideExcelGroupPicker(context);
     const importSummaryMessage = applyImportedTemplate(context, data, file);
@@ -481,6 +478,21 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
     context.restoreEditorState(previousEditorState);
     context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
   }
+}
+
+// The body of an import response. A server that answers with a page instead of JSON (an old
+// process without the route, a crash) would otherwise surface as the browser's own parse error.
+export async function readImportJson(res, failureLabel) {
+  let data;
+  try {
+    data = await res.json();
+  } catch (_error) {
+    throw new Error(res.ok ? `${failureLabel}: the server reply was not JSON` : `${failureLabel} (${res.status})`);
+  }
+  if (!res.ok) {
+    throw new Error(data.error || `${failureLabel} (${res.status})`);
+  }
+  return data;
 }
 
 async function importExcelCodebook(context, file, previousEditorState) {
@@ -493,10 +505,7 @@ async function importExcelCodebook(context, file, previousEditorState) {
     method: 'POST',
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || `Template import failed (${res.status})`);
-  }
+  const data = await readImportJson(res, 'Template import failed');
 
   const groups = data.groups || [];
   if (groups.length === 0) {
@@ -554,11 +563,7 @@ async function fetchLimeSurvey(context, file, fields) {
     method: 'POST',
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error || `Import failed (${res.status})`);
-  }
-  return data;
+  return readImportJson(res, 'Import failed');
 }
 
 async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorState, useLibrary = false) {
@@ -701,10 +706,7 @@ export async function importTemplateSource(context) {
         method: 'POST',
         body: formData,
       });
-      data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Import failed (${res.status})`);
-      }
+      data = await readImportJson(res, 'Import failed');
       importSummaryMessage = applyImportedTemplate(context, data, file);
     }
   } catch (error) {
