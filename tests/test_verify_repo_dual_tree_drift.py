@@ -42,7 +42,8 @@ def test_flags_unresolved_independent_duplicate(tmp_path: Path, capsys) -> None:
     assert "Unresolved dual-tree duplicate" in output
 
 
-def test_accepts_symlinked_pair(tmp_path: Path, capsys) -> None:
+def test_flags_symlinked_pair(tmp_path: Path, capsys) -> None:
+    """Symlinks are no longer a way to resolve a pair: they break on Windows checkouts (CLAUDE.md)."""
     verify_repo = _load_verify_repo_module()
 
     src_file, app_file = _make_pair(
@@ -60,8 +61,8 @@ def test_accepts_symlinked_pair(tmp_path: Path, capsys) -> None:
     verify_repo.check_dual_tree_drift(str(tmp_path))
     output = capsys.readouterr().out
 
-    assert "widget.py" not in output
-    assert "passed" in output
+    assert "converters/widget.py" in output
+    assert "symlinks break on Windows checkouts" in output
 
 
 def test_accepts_delegation_shim_pair(tmp_path: Path, capsys) -> None:

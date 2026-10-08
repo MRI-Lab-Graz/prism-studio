@@ -12,6 +12,16 @@ _ENV = {**os.environ, "PRISM_SKIP_VENV_CHECK": "1"}
 PRISM = Path(__file__).resolve().parents[1] / "app" / "prism.py"
 
 
+def _load_prism_cli():
+    """app/prism.py by path: `import prism` would find the root launcher (pytest.ini puts `.` first)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("prism_cli_under_test", PRISM)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _run(ds, *flags):
     return subprocess.run(
         [sys.executable, str(PRISM), str(ds), *flags],
@@ -30,7 +40,8 @@ def test_both_json_modes_agree_on_valid_and_exit_code(tmp_path, make_valid):
         )
         (ds / "sub-01" / "beh").mkdir(parents=True)
         (ds / "sub-01" / "beh" / "sub-01_task-demo_beh.tsv").write_text("a\n1\n")
-    a, b = _run(ds, "--format", "json"), _run(ds, "--json")
+    # --no-bids: this is about the JSON contract, not the BIDS engine (not installed everywhere)
+    a, b = _run(ds, "--format", "json", "--no-bids"), _run(ds, "--json", "--no-bids")
     ja, jb = json.loads(a.stdout), json.loads(b.stdout)
     assert isinstance(ja["valid"], bool) and ja["valid"] == jb["valid"]
     assert ja["valid"] is make_valid
@@ -49,8 +60,8 @@ def test_bids_machine_output_is_pure_json_and_fails_closed(
         if p not in sys.path:
             sys.path.insert(0, p)
     import bids_validator
-    import prism
 
+    prism = _load_prism_cli()
     ds = tmp_path / "ds"
     ds.mkdir()
     script = tmp_path / "bids-validator-deno"
