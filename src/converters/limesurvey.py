@@ -1112,6 +1112,12 @@ def _questionnaire_template(parsed, part):
 _LOSSY_SUBQUESTION_TYPES = ("M", "P", ";", ":", "R")  # checkboxes, dual-axis arrays, ranking
 
 
+def _major_release(db_version):
+    """Major LimeSurvey release for a DBVersion ('' if unknown); the file stores no release number."""
+    # ponytail: only 6.x (DBVersion 600+) is known for sure; extend when older ranges are confirmed
+    return "6" if str(db_version).isdigit() and int(db_version) >= 600 else ""
+
+
 def _build_questionnaires(xml_content, split, keep_prismmeta=False):
     """keep_prismmeta: leave the hidden PRISMMETA question in each template as a
     pseudo-item (Survey Generator readers parse it) instead of restoring it into Study."""
@@ -1121,6 +1127,9 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
         if keep_prismmeta:
             part["prismmeta"] = ""
         template, restored = _questionnaire_template(parsed, part)
+        major = _major_release(parsed["db_version"])
+        if major:
+            template["Technical"].setdefault("SoftwareVersion", major)
         if keep_prismmeta:
             # old by-groups shape: string Description + Attributes.equation (what _extract_prismmeta reads)
             for qid in part["qids"]:
