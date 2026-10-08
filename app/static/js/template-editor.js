@@ -17,6 +17,7 @@
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
   const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
   const sourceSplitSelectEl = document.getElementById('sourceSplitSelect');
+  const sourceLanguageInputEl = document.getElementById('sourceLanguageInput');
   const libraryMatchCardEl = document.getElementById('libraryMatchCard');
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
@@ -4708,6 +4709,7 @@
         excelGroupPickerSelectEl,
         btnLoadExcelGroup,
         sourceSplitSelectEl,
+        sourceLanguageInputEl,
         libraryMatchCardEl,
         btnDownload,
         btnSave,

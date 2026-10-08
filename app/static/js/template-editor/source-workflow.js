@@ -446,6 +446,9 @@ function hideExcelGroupPicker(context) {
   if (context.sourceSplitSelectEl) {
     context.sourceSplitSelectEl.classList.add('d-none');
   }
+  if (context.sourceLanguageInputEl) {
+    context.sourceLanguageInputEl.classList.add('d-none');
+  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
     // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
@@ -553,6 +556,14 @@ function setSplitOptions(context, source) {
     .map(([value, label]) => `<option value="${value}">${label}</option>`)
     .join('');
   context.sourceSplitSelectEl.dataset.source = source;
+  // The Pavlovia file has no language, so the user says which one the texts are in.
+  context.sourceLanguageInputEl.classList.toggle('d-none', source !== 'pavlovia');
+}
+
+function sourceLanguageField(context) {
+  return context.sourceSplitSelectEl.dataset.source === 'pavlovia'
+    ? { language: context.sourceLanguageInputEl.value.trim() }
+    : {};
 }
 
 async function fetchLimeSurvey(context, file, fields) {
@@ -570,6 +581,7 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
   try {
     const data = await fetchLimeSurvey(context, file, {
       split: context.sourceSplitSelectEl.value,
+      ...sourceLanguageField(context),
       key,
       project_path: context.getCurrentProjectPath() || '',
       ...(useLibrary ? { use_library: '1' } : {}),
@@ -585,6 +597,7 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
 async function importLimeSurvey(context, file, previousEditorState, fromSplitChange = false) {
   const { questionnaires } = await fetchLimeSurvey(context, file, {
     split: context.sourceSplitSelectEl.value,
+    ...sourceLanguageField(context),
     project_path: context.getCurrentProjectPath() || '',
   });
   if (questionnaires.length === 0) {

@@ -5,12 +5,14 @@ The reverse direction (PRISM -> Pavlovia) lives in ``pavlovia.py``.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from src.converters.limesurvey import SPLIT_MODES, _task_name, _utc_creation_date
 
 _SPLITS = tuple(m for m in SPLIT_MODES if m != "question")  # no one-item templates
 _DEFAULT_RATING = [1, 2, 3, 4, 5]  # SurveyJS rating without rateValues/rateCount
+_LANGUAGE_RE = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")  # the survey schema's Technical.Language
 
 
 def is_pavlovia_survey(data: Any) -> bool:
@@ -71,11 +73,16 @@ def _item(el: dict, lang: str) -> dict:
     return item
 
 
-def _build(survey: dict, split: str) -> list[tuple[dict, dict]]:
-    """[(listing entry, template)] for every questionnaire of the survey."""
+def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[dict, dict]]:
+    """[(listing entry, template)] for every questionnaire of the survey.
+
+    The file carries no language, so ``language`` (else its ``locale``, else en) labels every text."""
     if split not in _SPLITS:
         raise ValueError(f"Unknown split mode '{split}'. Use one of: {', '.join(_SPLITS)}")
-    lang = survey.get("locale") if isinstance(survey.get("locale"), str) and len(survey["locale"]) == 2 else "en"
+    if language is not None and not _LANGUAGE_RE.match(language):
+        raise ValueError(f"Invalid language '{language}': use a code like de or de-AT")
+    locale = survey.get("locale")
+    lang = language or (locale if isinstance(locale, str) and len(locale) == 2 else "en")
     survey_name = survey.get("title") or "survey"
     parts = [
         (page.get("name") or f"page {n}", page, _flatten(page.get("elements", [])))
@@ -122,8 +129,8 @@ def _build(survey: dict, split: str) -> list[tuple[dict, dict]]:
     return results
 
 
-def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia file", project_path=None, match_library=False):
-    results = _build(survey, "survey" if split == "survey" else "group")
+def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia file", project_path=None, match_library=False, language=None):
+    results = _build(survey, "survey" if split == "survey" else "group", language)
     print(f"[PRISM] Pavlovia import: {source_name}")
     print(f"[PRISM] Split by {split} -> {len(results)} questionnaire(s):")
     for info, _t in results:
@@ -138,8 +145,8 @@ def list_pavlovia_questionnaires(survey, split="page", source_name="Pavlovia fil
     return listing
 
 
-def pavlovia_questionnaire_template(survey, key, split="page"):
-    results = _build(survey, "survey" if split == "survey" else "group")
+def pavlovia_questionnaire_template(survey, key, split="page", language=None):
+    results = _build(survey, "survey" if split == "survey" else "group", language)
     for info, template in results:
         if info["key"] == key:
             print(f"[PRISM] Loading {key} '{info['name']}': {info['item_count']} item(s)")

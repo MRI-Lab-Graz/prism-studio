@@ -664,6 +664,7 @@ def api_template_editor_import_pavlovia():
     split = (request.form.get("split") or "page").strip()
     key = (request.form.get("key") or "").strip()
     project_path = (request.form.get("project_path") or "").strip() or None
+    language = (request.form.get("language") or "").strip() or None
 
     from src.converters.library_wording_match import public_library_match
     from src.converters.limesurvey import match_questionnaire_to_library
@@ -675,10 +676,11 @@ def api_template_editor_import_pavlovia():
         survey = json.loads(file.read().decode("utf-8-sig"))
         if not key:
             questionnaires = list_pavlovia_questionnaires(
-                survey, split, source_name=file.filename, project_path=project_path, match_library=True
+                survey, split, source_name=file.filename, project_path=project_path,
+                match_library=True, language=language,
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = _strip_template_editor_internal_keys(pavlovia_questionnaire_template(survey, key, split))
+        template = _strip_template_editor_internal_keys(pavlovia_questionnaire_template(survey, key, split, language))
         match = match_questionnaire_to_library(template, template["Study"]["OriginalName"], project_path)
     except ValueError as e:  # includes JSON and unicode decode errors
         print(f"[PRISM] Pavlovia import failed: {e}")

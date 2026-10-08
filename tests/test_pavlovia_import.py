@@ -96,6 +96,27 @@ def test_hidden_item_is_warned(survey, capsys):
     assert "WARNING" in out and "studyID" in out and "visible" in out
 
 
+def test_language_option_keys_every_text_by_that_language(survey):
+    t = pavlovia_questionnaire_template(survey, "p1", language="de")
+    assert t["Technical"]["Language"] == "de"
+    assert t["Kaffee"]["Description"] == {"de": "Haben Sie heute einen Kaffee getrunken?"}
+    assert t["Kaffee"]["Levels"]["viel weniger"] == {"de": "Ja"}
+    assert "de" in t["Study"]["Instructions"]
+
+
+def test_language_option_accepts_a_region_and_rejects_nonsense(survey):
+    assert pavlovia_questionnaire_template(survey, "p2", language="de-AT")["Technical"]["Language"] == "de-AT"
+    with pytest.raises(ValueError, match="language"):
+        pavlovia_questionnaire_template(survey, "p2", language="german")
+    with pytest.raises(ValueError, match="language"):
+        list_pavlovia_questionnaires(survey, language="DE")
+
+
+def test_survey_locale_is_the_default_when_no_language_is_given(survey):
+    survey["locale"] = "de"
+    assert pavlovia_questionnaire_template(survey, "p2")["Technical"]["Language"] == "de"
+
+
 def test_non_surveyjs_input_is_rejected():
     with pytest.raises(ValueError, match="SurveyJS"):
         list_pavlovia_questionnaires({"Technical": {}})
@@ -110,7 +131,7 @@ from src.cli.commands.survey import cmd_survey_import_pavlovia  # noqa: E402
 
 def _args(**kw):
     values = dict(input=str(FIXTURE), split="page", list=False, select=None, output=None, project=None,
-                  software_version=None)
+                  software_version=None, language=None)
     values.update(kw)
     return SimpleNamespace(**values)
 
@@ -132,6 +153,13 @@ def test_cli_software_version_is_written_to_every_template(tmp_path):
     cmd_survey_import_pavlovia(_args(select=["all"], output=str(tmp_path), software_version="2025.1"))
     versions = {json.loads(p.read_text(encoding="utf-8"))["Technical"]["SoftwareVersion"] for p in tmp_path.iterdir()}
     assert versions == {"2025.1"}
+
+
+def test_cli_language_is_written_to_the_templates(tmp_path):
+    cmd_survey_import_pavlovia(_args(select=["p2"], output=str(tmp_path), language="de"))
+    written = json.loads((tmp_path / "survey-arsq.json").read_text(encoding="utf-8"))
+    assert written["Technical"]["Language"] == "de"
+    assert written["ARSQ1"]["Description"] == {"de": "Ich hatte schnell wechselnde Gedanken"}
 
 
 def test_template_without_software_version_has_none(survey):
@@ -192,6 +220,13 @@ def test_route_loads_one_page():
     assert body["suggested_filename"] == "survey-arsq.json"
     assert body["item_count"] == 2
     assert "ARSQ1" in body["template"] and "library_match" in body
+
+
+def test_route_language_field_reaches_the_template():
+    body = _post({"key": "p2", "language": "de"}).get_json()
+    assert body["languages"] == ["de"]
+    assert body["template"]["ARSQ1"]["Description"] == {"de": "Ich hatte schnell wechselnde Gedanken"}
+    assert _post({"key": "p2", "language": "german"}).status_code == 400
 
 
 def test_route_bad_input_is_400():

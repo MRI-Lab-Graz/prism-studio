@@ -641,7 +641,8 @@ def cmd_survey_import_pavlovia(args):
             raise ValueError("--output needs --select KEY|all (use --list to see the keys)")
         survey = json.loads(input_path.read_text(encoding="utf-8"))
         found = list_pavlovia_questionnaires(
-            survey, args.split, source_name=input_path.name, project_path=getattr(args, "project", None), match_library=True
+            survey, args.split, source_name=input_path.name, project_path=getattr(args, "project", None),
+            match_library=True, language=getattr(args, "language", None),
         )
         if args.list or not args.select:
             return
@@ -650,7 +651,7 @@ def cmd_survey_import_pavlovia(args):
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
         planned = []
         for key in keys:
-            template = pavlovia_questionnaire_template(survey, key, args.split)
+            template = pavlovia_questionnaire_template(survey, key, args.split, getattr(args, "language", None))
             if getattr(args, "software_version", None):
                 template["Technical"]["SoftwareVersion"] = args.software_version
             planned.append((Path(args.output).resolve() / f"survey-{template['Study']['TaskName']}.json", template))

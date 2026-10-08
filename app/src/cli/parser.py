@@ -1824,6 +1824,9 @@ def build_prism_tools_parsers(
     )
     parser_survey_pavlovia.add_argument("--output", help="Directory for the template JSON files")
     parser_survey_pavlovia.add_argument(
+        "--language", help="Language of the survey texts, e.g. de or de-AT (the file has none; default: its locale, else en)"
+    )
+    parser_survey_pavlovia.add_argument(
         "--software-version", help="Pavlovia release/date to write as Technical.SoftwareVersion (the file has none)"
     )
     parser_survey_pavlovia.add_argument(
