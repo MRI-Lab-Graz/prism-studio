@@ -5,7 +5,6 @@
   const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
   const loadTemplateHintEl = document.getElementById('loadTemplateHint');
   const templateSourceSectionEl = document.getElementById('templateSourceSection');
-  const templateSourceCardEl = document.getElementById('templateSourceCard');
   const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
@@ -4700,29 +4699,13 @@
   }
 
   // First choice on the page: edit an existing template, or create/import a new one.
-  function setEditorMode(mode) {
-    const create = mode === 'create';
-    modeCreateEl.checked = create;
-    modeEditEl.checked = !create;
-    editModeSectionEl.classList.toggle('d-none', create);
-    templateSourceSectionEl.classList.toggle('d-none', !create);
+  function syncEditorMode() {
+    editModeSectionEl.classList.toggle('d-none', modeCreateEl.checked);
+    templateSourceSectionEl.classList.toggle('d-none', !modeCreateEl.checked);
   }
 
-  modeEditEl.addEventListener('change', () => setEditorMode('edit'));
-  modeCreateEl.addEventListener('change', () => setEditorMode('create'));
-
-  function focusCreateSourcePanel() {
-    setEditorMode('create');
-    if (!templateSourceCardEl) return;
-    setTimeout(() => {
-      templateSourceCardEl.classList.add('border-primary');
-      setTimeout(() => templateSourceCardEl.classList.remove('border-primary'), 1200);
-    }, 120);
-    // Note: deliberately not calling modalityEl.focus() here — programmatically
-    // focusing a <select> causes the very next click anywhere on the page to be
-    // silently swallowed in Chromium, which broke the first click on the
-    // "Import Template Source" button right after opening this panel.
-  }
+  modeEditEl.addEventListener('change', syncEditorMode);
+  modeCreateEl.addEventListener('change', syncEditorMode);
 
     function buildTemplateEditorSourceWorkflowContext() {
       return {
@@ -4731,8 +4714,6 @@
         projectTemplateSelectEl,
         globalTemplateSelectEl,
         loadTemplateHintEl,
-        templateSourceSectionEl,
-        templateSourceCardEl,
         projectLibraryStatusEl,
         btnImportTemplateSource,
         btnNew,
@@ -4883,7 +4864,6 @@
         restoreEditorState,
         templateStatusTitle,
         updateLoadButtonState,
-        focusCreateSourcePanel,
         updateProjectLibraryStatus,
         refreshSchema,
         hasUnsavedChanges,

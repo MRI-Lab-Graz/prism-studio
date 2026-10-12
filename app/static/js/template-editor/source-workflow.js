@@ -862,7 +862,6 @@ export function bindTemplateEditorSourceWorkflowEvents(context) {
     try {
       await loadNewTemplate(context);
       context.hasExplicitTemplate = true;
-      context.focusCreateSourcePanel();
     } catch (error) {
       context.restoreEditorState(previousEditorState);
       context.showAlert('danger', context.escapeHtml(error.message));
