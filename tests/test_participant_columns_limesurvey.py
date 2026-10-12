@@ -5,8 +5,15 @@ import pandas as pd
 from src.participant_columns import _filter_participant_relevant_columns
 
 LS_COLUMNS = [
-    "id", "submitdate", "lastpage", "startlanguage", "startdate", "datestamp",
-    "token", "Hand", "age",
+    "id",
+    "submitdate",
+    "lastpage",
+    "startlanguage",
+    "startdate",
+    "datestamp",
+    "token",
+    "Hand",
+    "age",
 ]
 
 
