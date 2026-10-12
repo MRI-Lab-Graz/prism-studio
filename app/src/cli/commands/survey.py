@@ -132,7 +132,10 @@ def cmd_survey_import_excel(args):
 def cmd_survey_convert(args):
     """Convert a wide survey table (currently .xlsx) into a PRISM/BIDS survey dataset."""
     try:
-        from src.converters.survey import convert_survey_file_to_prism_dataset
+        from src.converters.survey import (
+            convert_survey_file_to_prism_dataset,
+            convert_survey_lsa_to_prism_dataset,
+        )
     except Exception as e:
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
@@ -250,7 +253,14 @@ def cmd_survey_convert(args):
             # Writing into a PRISM project: the project's own rules (session map) apply.
             project_path = output_root
 
-        result = convert_survey_file_to_prism_dataset(
+        # An .lsa goes through the LimeSurvey reader (structure + responses), like the GUI.
+        is_lsa = input_path.suffix.lower() == ".lsa"
+        convert = (
+            convert_survey_lsa_to_prism_dataset
+            if is_lsa
+            else convert_survey_file_to_prism_dataset
+        )
+        result = convert(
             input_path=str(input_path),
             library_dir=str(lib_dir),
             output_root=str(output_root),
@@ -259,13 +269,14 @@ def cmd_survey_convert(args):
             session_column=args.session_column,
             session=getattr(args, "session", None),
             run_column=getattr(args, "run_column", None),
-            sheet=args.sheet,
+            **({} if is_lsa else {"sheet": args.sheet}),
             unknown=args.unknown,
             dry_run=bool(args.dry_run),
             force=bool(args.force),
             name=args.name,
             authors=args.authors,
             alias_file=getattr(args, "alias", None),
+            duplicate_handling=getattr(args, "duplicate_handling", "error"),
             skip_participants=True,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
@@ -345,6 +356,9 @@ def cmd_survey_convert(args):
             f"\nWARNING: Normalized {total_missing} missing cells to '{result.missing_value_token}' "
             f"across {len(result.missing_cells_by_subject)} subjects. Top: {worst}"
         )
+
+    for warning in result.conversion_warnings:
+        print(f"\nWARNING: {warning}")
 
     if result.unknown_columns and args.unknown != "ignore":
         msg = "WARNING" if args.unknown == "warn" else "ERROR"

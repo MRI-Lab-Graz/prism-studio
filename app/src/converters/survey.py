@@ -1455,7 +1455,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_analysis=lsa_analysis,
             survey_filter=survey,
             add_matched_template_fn=_add_matched_template,
-            unmatched_groups_error_cls=UnmatchedGroupsError,
         )
     )
 

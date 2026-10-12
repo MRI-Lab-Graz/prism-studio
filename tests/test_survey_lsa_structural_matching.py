@@ -1,5 +1,3 @@
-import pytest
-
 from src.converters.survey_lsa import _apply_lsa_structural_matching
 
 
@@ -19,12 +17,6 @@ class _FakeMatch:
         self.template_items = template_items
 
 
-class _FakeUnmatchedGroupsError(ValueError):
-    def __init__(self, unmatched, message):
-        super().__init__(message)
-        self.unmatched = unmatched
-
-
 def test_no_lsa_analysis_is_a_no_op():
     templates = {}
     item_to_task = {}
@@ -35,7 +27,6 @@ def test_no_lsa_analysis_is_a_no_op():
         lsa_analysis=None,
         survey_filter=None,
         add_matched_template_fn=lambda *a: None,
-        unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
     )
     assert warnings == []
     assert templates == {}
@@ -52,7 +43,6 @@ def test_survey_filter_set_skips_structural_matching_entirely():
         lsa_analysis=lsa_analysis,
         survey_filter="panas",
         add_matched_template_fn=lambda *a: add_matched_calls.append(a),
-        unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
     )
     assert add_matched_calls == []
 
@@ -68,7 +58,6 @@ def test_exact_confidence_match_calls_add_matched_template_with_no_warning():
         lsa_analysis=lsa_analysis,
         survey_filter=None,
         add_matched_template_fn=lambda *a: add_matched_calls.append(a),
-        unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
     )
     assert len(add_matched_calls) == 1
     assert warnings == []
@@ -88,35 +77,37 @@ def test_medium_confidence_match_calls_add_matched_template_and_warns():
         lsa_analysis=lsa_analysis,
         survey_filter=None,
         add_matched_template_fn=lambda *a: None,
-        unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
     )
     assert len(warnings) == 1
     assert "medium confidence" in warnings[0]
     assert "phq9" in warnings[0]
 
 
-def test_unmatched_group_raises_the_injected_error_class():
+def test_unmatched_group_is_a_warning_and_the_matched_groups_still_convert():
+    add_matched_calls = []
     lsa_analysis = {
         "groups": {
-            "g1": {
+            "g1": {"match": _FakeMatch(confidence="exact")},
+            "handedness": {
                 "match": None,
                 "item_codes": {"q1", "q2"},
                 "prism_json": {"q1": {}, "q2": {}},
-            }
+            },
         }
     }
 
-    with pytest.raises(_FakeUnmatchedGroupsError) as exc_info:
-        _apply_lsa_structural_matching(
-            templates={},
-            item_to_task={},
-            participant_columns_lower=set(),
-            lsa_analysis=lsa_analysis,
-            survey_filter=None,
-            add_matched_template_fn=lambda *a: None,
-            unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
-        )
-    assert len(exc_info.value.unmatched) == 1
+    warnings = _apply_lsa_structural_matching(
+        templates={},
+        item_to_task={},
+        participant_columns_lower=set(),
+        lsa_analysis=lsa_analysis,
+        survey_filter=None,
+        add_matched_template_fn=lambda *a: add_matched_calls.append(a),
+    )
+
+    assert len(add_matched_calls) == 1
+    assert len(warnings) == 1
+    assert "handedness" in warnings[0] and "not converted" in warnings[0]
 
 
 def test_is_participants_group_registers_participant_columns_not_a_template():
@@ -137,6 +128,5 @@ def test_is_participants_group_registers_participant_columns_not_a_template():
         lsa_analysis=lsa_analysis,
         survey_filter=None,
         add_matched_template_fn=lambda *a: add_matched_calls.append(a),
-        unmatched_groups_error_cls=_FakeUnmatchedGroupsError,
     )
     assert add_matched_calls == []

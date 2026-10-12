@@ -367,15 +367,14 @@ def _apply_lsa_structural_matching(
     lsa_analysis,
     survey_filter,
     add_matched_template_fn,
-    unmatched_groups_error_cls,
 ) -> list:
     """Classify each LSA structural-match group (participants / high-confidence
     match / medium-confidence match / unmatched) and register templates or
     participant columns accordingly.
 
     Mutates templates and item_to_task in place. Returns the warnings
-    collected along the way. Raises unmatched_groups_error_cls if any group
-    ends up with no usable match.
+    collected along the way. Groups with no usable match are reported as a
+    warning, not an error.
     """
     unmatched_groups: list = []
     warnings: list = []
@@ -412,14 +411,11 @@ def _apply_lsa_structural_matching(
                     )
 
     if unmatched_groups:
-        names = [g["group_name"] for g in unmatched_groups]
-        raise unmatched_groups_error_cls(
-            unmatched=unmatched_groups,
-            message=(
-                f"No library template found for {len(unmatched_groups)} group(s): "
-                f"{', '.join(names)}. Save templates to project library first, "
-                f"then re-run conversion."
-            ),
+        # Templates are optional: the matched groups convert, these are left out.
+        names = ", ".join(g["group_name"] for g in unmatched_groups)
+        warnings.append(
+            f"No library template for {len(unmatched_groups)} group(s): {names}. "
+            "Their items are not converted; save a template for them to include them."
         )
 
     return warnings

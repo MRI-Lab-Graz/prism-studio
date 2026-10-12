@@ -712,6 +712,7 @@ class _FakeResult:
         self.missing_value_token = "n/a"
         self.missing_cells_by_subject = {}
         self.unknown_columns = []
+        self.conversion_warnings = []
         self.dry_run_preview = None
         for key, value in overrides.items():
             setattr(self, key, value)
