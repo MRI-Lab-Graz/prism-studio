@@ -18,6 +18,30 @@ TEMPLATE_EDITOR_BLUEPRINT = (
 
 
 class TestTemplateEditorWorkflowWiring(unittest.TestCase):
+    def test_edit_or_create_is_the_first_choice(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="modeEdit"', content)
+        self.assertIn('id="modeCreate"', content)
+        self.assertNotIn('id="btnCreateOpen"', content)
+        self.assertLess(content.index('id="modeEdit"'), content.index('id="modality"'))
+
+    def test_schema_version_sits_in_a_closed_advanced_fold_out(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        details = content.index('<details id="advancedOptions"')
+        self.assertLess(details, content.index('id="schemaVersion"'))
+        self.assertLess(content.index('id="schemaVersion"'), content.index("</details>", details))
+
+    def test_items_are_a_tab_next_to_editor_and_preview(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="tabItems"', content)
+        self.assertIn('id="itemCountBadge"', content)
+        self.assertNotIn('id="btnToggleItemsPanel"', content)
+        self.assertLess(content.index('id="tabEditor"'), content.index('id="tabItems"'))
+        self.assertLess(content.index('id="tabItems"'), content.index('id="tabPreview"'))
+
     def test_template_editor_uses_shared_header_and_help_panel_macros(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 
@@ -35,7 +59,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn('<option value="survey" selected>survey</option>', content)
         self.assertIn('<option value="biometrics">biometrics</option>', content)
         self.assertIn(
-            'Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create or Import to start a new one.',
+            'Choose modality first (default: survey), then select a template from the dropdown to load it.',
             content,
         )
 

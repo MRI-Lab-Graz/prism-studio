@@ -176,7 +176,7 @@ silently disappears on import.
 ## Import into the Template Editor
 
 1. Open **Template Editor** and set **Modality** to `survey`.
-2. Click **Create or Import**.
+2. At the top, choose **Create or import new**.
 3. Click **Import Template Source**.
 4. Select your `recovery_survey_template.xlsx` file.
 

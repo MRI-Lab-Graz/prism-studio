@@ -5,7 +5,6 @@
   const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
   const loadTemplateHintEl = document.getElementById('loadTemplateHint');
   const templateSourceSectionEl = document.getElementById('templateSourceSection');
-  const templateSourceCardEl = document.getElementById('templateSourceCard');
   const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
@@ -31,7 +30,9 @@
   const missingSummaryEl = document.getElementById('missingSummaryArea');
   const btnToggleDiff = document.getElementById('btnToggleDiff');
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
-  const btnCreateOpen = document.getElementById('btnCreateOpen');
+  const modeEditEl = document.getElementById('modeEdit');
+  const modeCreateEl = document.getElementById('modeCreate');
+  const editModeSectionEl = document.getElementById('editModeSection');
   const btnNew = document.getElementById('btnNew');
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
@@ -58,7 +59,8 @@
   const btnPrintPreview = document.getElementById('btnPrintPreview');
   const btnExportWord = document.getElementById('btnExportWord');
   const btnDoExportWord = document.getElementById('btnDoExportWord');
-  const btnToggleItemsPanel = document.getElementById('btnToggleItemsPanel');
+  const tabItemsEl = document.getElementById('tabItems');
+  const itemCountBadgeEl = document.getElementById('itemCountBadge');
   const itemsPanelColEl = document.getElementById('itemsPanelCol');
   const editorMainColEl = document.getElementById('editorMainCol');
   const topLevelPanelEl = document.getElementById('topLevelPanel');
@@ -115,6 +117,7 @@
   let projectLibraryRoot = null;
   let projectLibraryExists = false;
   let itemsPanelVisible = false;
+  let currentView = 'editor';
   // Preview variant override — set by the variant switcher; null falls back to Study.Version
   let previewVariantOverride = null;
   // Whether the currently loaded template came from a read-only source (global/external library)
@@ -198,7 +201,7 @@
 
   function setItemsPanelVisible(visible) {
     itemsPanelVisible = Boolean(visible);
-    if (!itemsPanelColEl || !editorMainColEl || !btnToggleItemsPanel) return;
+    if (!itemsPanelColEl || !editorMainColEl) return;
 
     itemsPanelColEl.classList.toggle('d-none', !itemsPanelVisible);
     editorMainColEl.classList.toggle('col-lg-12', !itemsPanelVisible);
@@ -206,10 +209,7 @@
     if (topLevelPanelEl) {
       topLevelPanelEl.classList.toggle('d-none', itemsPanelVisible);
     }
-    btnToggleItemsPanel.setAttribute('aria-expanded', itemsPanelVisible ? 'true' : 'false');
-    btnToggleItemsPanel.innerHTML = itemsPanelVisible
-      ? '<i class="fas fa-times me-1"></i>Hide Items'
-      : '<i class="fas fa-list-check me-1"></i>Edit Items';
+    syncViewTabs();
 
     // In item-editing mode, keep item-related chapters open and hide top-level chapter.
     try {
@@ -2802,6 +2802,7 @@
   function renderItemList() {
     itemListEl.innerHTML = '';
     const keys = itemKeysFromTemplate(currentTemplate);
+    itemCountBadgeEl.textContent = String(keys.length);
     updateCopyStyleSourceOptions();
     if (!keys.length) {
       const p = document.createElement('div');
@@ -3937,19 +3938,25 @@
   });
 
   // ── View tab switching (Editor / Preview) ───────────────────────────
-  let currentView = 'editor';
+
+  // "General info" and "Items" are both the editor view; the Items tab shows the item panel.
+  function syncViewTabs() {
+    tabEditorEl.classList.toggle('active', currentView === 'editor' && !itemsPanelVisible);
+    tabItemsEl.classList.toggle('active', currentView === 'editor' && itemsPanelVisible);
+    tabPreviewEl.classList.toggle('active', currentView === 'preview');
+  }
 
   function switchView(view) {
     currentView = view;
-    tabEditorEl.classList.toggle('active', view === 'editor');
-    tabPreviewEl.classList.toggle('active', view === 'preview');
+    syncViewTabs();
     editorViewEl.style.display = view === 'editor' ? '' : 'none';
     previewViewEl.style.display = view === 'preview' ? '' : 'none';
     editorHintEl.style.display = view === 'editor' ? '' : 'none';
     if (view === 'preview') renderPreview();
   }
 
-  tabEditorEl.addEventListener('click', (e) => { e.preventDefault(); switchView('editor'); });
+  tabEditorEl.addEventListener('click', (e) => { e.preventDefault(); switchView('editor'); setItemsPanelVisible(false); });
+  tabItemsEl.addEventListener('click', (e) => { e.preventDefault(); switchView('editor'); setItemsPanelVisible(true); });
   tabPreviewEl.addEventListener('click', (e) => { e.preventDefault(); switchView('preview'); });
 
   // ── Preview rendering ───────────────────────────────────────────────
@@ -4671,13 +4678,6 @@
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
   let hasExplicitTemplate = false; // True only when user explicitly loads/creates (not init blank)
 
-  function templateStatusPrefix(templateMeta) {
-    if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
-      return '[FILE ?]';
-    }
-    return templateMeta.template_valid ? '[FILE OK]' : '[FILE !]';
-  }
-
   function templateStatusTitle(templateMeta) {
     if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
       return 'Saved-file validation status is unavailable for this schema version.';
@@ -4695,25 +4695,17 @@
     if (!loadTemplateHintEl) return;
     loadTemplateHintEl.textContent = hasSelection
       ? 'Ready to load selected template.'
-      : 'Select a project or global template first. Click Create or Import to open template creation tools.';
+      : 'Select a project or global template to load it.';
   }
 
-  function focusCreateSourcePanel() {
-    try {
-      if (templateSourceSectionEl && window.bootstrap?.Collapse) {
-        window.bootstrap.Collapse.getOrCreateInstance(templateSourceSectionEl, { toggle: false }).show();
-      }
-    } catch {}
-    if (!templateSourceCardEl) return;
-    setTimeout(() => {
-      templateSourceCardEl.classList.add('border-primary');
-      setTimeout(() => templateSourceCardEl.classList.remove('border-primary'), 1200);
-    }, 120);
-    // Note: deliberately not calling modalityEl.focus() here — programmatically
-    // focusing a <select> causes the very next click anywhere on the page to be
-    // silently swallowed in Chromium, which broke the first click on the
-    // "Import Template Source" button right after opening this panel.
+  // First choice on the page: edit an existing template, or create/import a new one.
+  function syncEditorMode() {
+    editModeSectionEl.classList.toggle('d-none', modeCreateEl.checked);
+    templateSourceSectionEl.classList.toggle('d-none', !modeCreateEl.checked);
   }
+
+  modeEditEl.addEventListener('change', syncEditorMode);
+  modeCreateEl.addEventListener('change', syncEditorMode);
 
     function buildTemplateEditorSourceWorkflowContext() {
       return {
@@ -4722,11 +4714,8 @@
         projectTemplateSelectEl,
         globalTemplateSelectEl,
         loadTemplateHintEl,
-        templateSourceSectionEl,
-        templateSourceCardEl,
         projectLibraryStatusEl,
         btnImportTemplateSource,
-        btnCreateOpen,
         btnNew,
         btnValidate,
         templateImportInput,
@@ -4873,10 +4862,8 @@
         itemKeysFromTemplate,
         captureEditorState,
         restoreEditorState,
-        templateStatusPrefix,
         templateStatusTitle,
         updateLoadButtonState,
-        focusCreateSourcePanel,
         updateProjectLibraryStatus,
         refreshSchema,
         hasUnsavedChanges,
@@ -5008,10 +4995,6 @@
       }
     });
   }
-
-  btnToggleItemsPanel.addEventListener('click', () => {
-    setItemsPanelVisible(!itemsPanelVisible);
-  });
 
   if (newItemModeEl) {
     newItemModeEl.addEventListener('change', () => {

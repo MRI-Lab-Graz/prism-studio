@@ -3,6 +3,13 @@ import { isPavloviaSurvey, parsePrismTemplateJson } from './json-import.js';
 import { libraryMatchSummary, renderLibraryMatchCard } from './library-match-card.js';
 import { needsPrimaryLanguage } from './primary-language.js';
 
+// Saved-file status shown in front of each template in the dropdowns (native <option>s can't hold icons).
+export function templateStatusPrefix(templateMeta) {
+  if (templateMeta?.template_valid === true) return '\u2705';
+  if (templateMeta?.template_valid === false) return '\u274C';
+  return '\u2754';
+}
+
 export async function refreshTemplateList(context, { silent = false } = {}) {
   const modality = context.modalityEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -39,7 +46,7 @@ export async function refreshTemplateList(context, { silent = false } = {}) {
     }
     const option = document.createElement('option');
     option.value = template.filename;
-    option.textContent = `${context.templateStatusPrefix(template)} ${template.filename}`;
+    option.textContent = `${templateStatusPrefix(template)} ${template.filename}`;
     option.dataset.source = template.source;
     option.dataset.path = template.path;
     option.dataset.readonly = template.readonly;
@@ -63,7 +70,7 @@ export async function refreshTemplateList(context, { silent = false } = {}) {
     }
     const option = document.createElement('option');
     option.value = template.filename;
-    option.textContent = `${context.templateStatusPrefix(template)} ${template.filename}`;
+    option.textContent = `${templateStatusPrefix(template)} ${template.filename}`;
     option.dataset.source = template.source;
     option.dataset.path = template.path;
     option.dataset.readonly = template.readonly;
@@ -846,19 +853,6 @@ export function bindTemplateEditorSourceWorkflowEvents(context) {
     }
   });
 
-  context.btnCreateOpen.addEventListener('click', () => {
-    context.focusCreateSourcePanel();
-  });
-
-  if (context.templateSourceSectionEl) {
-    context.templateSourceSectionEl.addEventListener('shown.bs.collapse', () => {
-      context.btnCreateOpen?.setAttribute('aria-expanded', 'true');
-    });
-    context.templateSourceSectionEl.addEventListener('hidden.bs.collapse', () => {
-      context.btnCreateOpen?.setAttribute('aria-expanded', 'false');
-    });
-  }
-
   context.btnNew.addEventListener('click', async () => {
     if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Create a new blank template and discard them?')) {
       return;
@@ -868,7 +862,6 @@ export function bindTemplateEditorSourceWorkflowEvents(context) {
     try {
       await loadNewTemplate(context);
       context.hasExplicitTemplate = true;
-      context.focusCreateSourcePanel();
     } catch (error) {
       context.restoreEditorState(previousEditorState);
       context.showAlert('danger', context.escapeHtml(error.message));

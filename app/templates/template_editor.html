@@ -23,6 +23,13 @@
 
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
+        <div class="btn-group w-100 mb-4" role="group" aria-label="Edit or create a template">
+          <input type="radio" class="btn-check" name="editorMode" id="modeEdit" value="edit" autocomplete="off" checked>
+          <label class="btn btn-outline-success py-2" for="modeEdit"><i class="fas fa-pen-to-square me-1"></i>Edit existing template</label>
+          <input type="radio" class="btn-check" name="editorMode" id="modeCreate" value="create" autocomplete="off">
+          <label class="btn btn-outline-success py-2" for="modeCreate"><i class="fas fa-plus me-1"></i>Create or import new</label>
+        </div>
+
         <div class="row g-3 mb-4">
           <div class="col-md-6 col-lg-4">
             <label class="form-label fw-bold">Modality</label>
@@ -31,17 +38,22 @@
               <option value="biometrics">biometrics</option>
             </select>
           </div>
-          <div class="col-md-6 col-lg-4">
-            <label class="form-label fw-bold">Schema version</label>
-            <select id="schemaVersion" class="form-select">
-              {% for v in schema_versions %}
-              <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
-              {% endfor %}
-            </select>
+          <div class="col-md-6 col-lg-8">
+            <details id="advancedOptions" class="small">
+              <summary class="text-muted mt-md-4">Advanced</summary>
+              <label class="form-label fw-bold mt-2" for="schemaVersion">Schema version</label>
+              <select id="schemaVersion" class="form-select" style="max-width: 20rem;">
+                {% for v in schema_versions %}
+                <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Only change this if you know you need an older schema.</div>
+            </details>
           </div>
         </div>
 
-        <div class="row g-3 mb-4">
+        <div id="editModeSection">
+        <div class="row g-3 mb-2">
           <div class="col-md-6">
             <label class="form-label fw-bold"><i class="fas fa-folder text-success me-1"></i>Project Templates</label>
             <select id="projectTemplateSelect" class="form-select">
@@ -55,16 +67,11 @@
             </select>
           </div>
         </div>
-
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-          <button class="btn btn-outline-primary" id="btnCreateOpen" type="button" aria-expanded="false" aria-controls="templateSourceSection">
-            <i class="fas fa-plus me-1"></i>Create or Import
-          </button>
+        <div class="form-text mb-1 text-muted">&#x2705; saved file is valid &middot; &#x274C; saved file has issues (hover for details). Use Validate to check your current editor state.</div>
+        <div class="form-text mb-4" id="loadTemplateHint">Choose modality first (default: survey), then select a template from the dropdown to load it.</div>
         </div>
-        <div class="form-text mb-1 text-muted">Status badges in the dropdown reflect the saved file on disk. Use Validate to check your current editor state.</div>
-        <div class="form-text mb-4" id="loadTemplateHint">Choose modality first (default: survey), then select a template from the dropdown to load it, or click Create or Import to start a new one.</div>
 
-        <div class="collapse mb-4" id="templateSourceSection">
+        <div class="d-none mb-4" id="templateSourceSection">
           <div class="card border-success-subtle bg-light" id="templateSourceCard">
             <div class="card-body py-3">
             <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Create or Import Template Source</h6>
@@ -167,18 +174,16 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <ul class="nav nav-tabs mb-0" id="editorViewTabs">
               <li class="nav-item">
-                <a class="nav-link active" href="#" data-view="editor" id="tabEditor"><i class="fas fa-edit me-1"></i>Editor</a>
+                <a class="nav-link active" href="#" data-view="editor" id="tabEditor"><i class="fas fa-circle-info me-1"></i>General info</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" data-view="items" id="tabItems"><i class="fas fa-list-check me-1"></i>Items <span class="badge rounded-pill bg-success" id="itemCountBadge">0</span></a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="#" data-view="preview" id="tabPreview"><i class="fas fa-eye me-1"></i>Preview</a>
               </li>
             </ul>
-            <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-outline-secondary" id="btnToggleItemsPanel" type="button" aria-expanded="false" aria-controls="itemsPanelCol">
-                <i class="fas fa-list-check me-1"></i>Edit Items
-              </button>
-              <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
-            </div>
+            <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
           </div>
 
           <!-- Completion Progress Bar -->

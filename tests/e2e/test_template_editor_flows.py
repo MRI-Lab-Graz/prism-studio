@@ -39,7 +39,7 @@ FOUR_QUESTIONNAIRES = Path(__file__).parents[1] / "data" / "limesurvey_four_ques
 
 
 def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
-    page.click("#btnCreateOpen")  # the import card is collapsed until opened
+    page.click("label[for=modeCreate]")  # the import card is hidden until "Create or import new" is chosen
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
 
     expect(page.locator("#excelGroupPickerRow")).to_be_visible()
@@ -56,7 +56,7 @@ def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
 
 
 def test_changing_split_keeps_the_loaded_questionnaire(page):
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
@@ -70,7 +70,7 @@ def test_changing_split_keeps_the_loaded_questionnaire(page):
 
 
 def load_ads_from_limesurvey(page):
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
@@ -111,7 +111,7 @@ def test_error_links_are_readable_in_the_hint_and_in_a_real_failure(page):
 
 
 def test_split_by_select_shows_its_whole_label(page):
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     expect(page.locator("#sourceSplitSelect")).to_be_visible()
 
@@ -142,7 +142,7 @@ def put_ads_in_project_library(project):
 
 
 def pick_ads(page):
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#excelGroupPickerSelect", "g30")
 
@@ -174,7 +174,7 @@ def test_import_as_new_keeps_the_survey_items(page, project):
 
 def test_questionnaire_without_a_match_shows_no_card(page, project):
     put_ads_in_project_library(project)
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#excelGroupPickerSelect", "g20")
 
@@ -184,7 +184,7 @@ def test_questionnaire_without_a_match_shows_no_card(page, project):
 def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
     messages = []
     page.on("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
     page.select_option("#sourceSplitSelect", "survey")  # one entry: used to be loaded silently
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
@@ -198,7 +198,22 @@ def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
 
 def test_opening_create_or_import_does_not_scroll_the_page(page):
     page.evaluate("window.scrollTo(0, 0)")
-    page.click("#btnCreateOpen")
+    page.click("label[for=modeCreate]")
     expect(page.locator("#excelGroupPickerRow, #templateImportInput")).to_have_count(2)  # panel opened
     page.wait_for_timeout(700)  # the old smooth scroll started after 120 ms
     assert page.evaluate("window.scrollY") == 0
+
+
+def test_items_tab_shows_the_item_panel_with_its_count(page):
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+    expect(page.locator("#itemCountBadge")).not_to_have_text("0")
+    expect(page.locator("#itemsPanelCol")).to_be_hidden()
+
+    page.click("#tabItems")
+    expect(page.locator("#itemsPanelCol")).to_be_visible()
+    expect(page.locator("#tabItems")).to_have_class("nav-link active")
+
+    page.click("#tabEditor")
+    expect(page.locator("#itemsPanelCol")).to_be_hidden()
+    expect(page.locator("#topLevelPanel")).to_be_visible()
