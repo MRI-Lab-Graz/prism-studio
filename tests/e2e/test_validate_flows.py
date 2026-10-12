@@ -146,6 +146,8 @@ def test_an_empty_project_says_there_is_no_data_instead_of_passing(bare_page, st
 
     empty = tmp_path / "empty"
     assert ProjectManager().create_project(str(empty), {"name": "empty", "sessions": 0})["success"]
+    # participants.tsv promises data; without it a metadata-only project is valid by design (#156)
+    (empty / "participants.tsv").write_text("participant_id\nsub-001\n")
     bare_page.request.post(f"{studio_url}/api/projects/current", data={"path": str(empty), "name": "empty"})
 
     validate_current(bare_page, studio_url)
