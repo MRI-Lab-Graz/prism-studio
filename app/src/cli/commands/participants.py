@@ -9,7 +9,6 @@ from typing import cast
 
 import pandas as pd
 
-from src.converters.file_reader import read_tabular_file
 from src.participants_backend import (
     apply_participants_merge,
     canonicalize_participants_schema_keys,
@@ -23,7 +22,7 @@ from src.participants_backend import (
     preview_participants_merge,
     save_participant_mapping,
 )
-from src.participants_converter import ParticipantsConverter
+from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.participants_sessions import scope_to_session
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
@@ -87,22 +86,19 @@ def _load_participant_table(
     *,
     sheet,
     separator_option: str,
-) -> pd.DataFrame:
+    sessions_from_date: str | None = None,
+    id_column: str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
     suffix = input_path.suffix.lower()
-    if suffix in {".xlsx", ".csv", ".tsv"}:
-        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
-        result = read_tabular_file(
-            input_path,
-            kind=kind,
-            sheet=sheet,
-            separator=expected_delimiter_for_suffix(suffix, separator_option),
-        )
-        return result.df
-    if suffix == ".lsa":
-        from src.converters.survey import _read_lsa_as_dataframe
-
-        return _read_lsa_as_dataframe(input_path)
-    raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
+    if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
+        raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
+    return load_participant_source(
+        input_path,
+        separator=expected_delimiter_for_suffix(suffix, separator_option),
+        sheet=sheet,
+        sessions_from_date=sessions_from_date,
+        id_column=id_column,
+    )
 
 
 def _auto_detect_id_column(
@@ -178,7 +174,7 @@ def _resolve_participant_mapping(
     if mapping:
         return mapping
 
-    df = _load_participant_table(
+    df, _ = _load_participant_table(
         input_path,
         sheet=sheet,
         separator_option=separator_option,
@@ -202,7 +198,7 @@ def cmd_participants_detect_id(args) -> None:
         sys.exit(1)
 
     separator_option = normalize_separator_option(getattr(args, "separator", None))
-    df = _load_participant_table(
+    df, _ = _load_participant_table(
         input_path,
         sheet=_parse_sheet(getattr(args, "sheet", 0)),
         separator_option=separator_option,
@@ -281,13 +277,15 @@ def cmd_participants_preview(args) -> None:
     project_root = _resolve_project_root(getattr(args, "project", None))
     separator_option = normalize_separator_option(getattr(args, "separator", None))
     sheet = _parse_sheet(getattr(args, "sheet", 0))
-    df = _load_participant_table(
-        input_path,
-        sheet=sheet,
-        separator_option=separator_option,
-    )
-
+    sessions_from_date = getattr(args, "sessions_from_date", None)
     try:
+        df, load_warnings = _load_participant_table(
+            input_path,
+            sheet=sheet,
+            separator_option=separator_option,
+            sessions_from_date=sessions_from_date,
+            id_column=getattr(args, "id_column", None),
+        )
         session_candidates, df = scope_to_session(
             df,
             getattr(args, "session_column", None) or "",
@@ -348,7 +346,9 @@ def cmd_participants_preview(args) -> None:
     identical_warning = format_identical_rows_warning(
         find_identical_value_rows(df[output_columns], id_column)
     )
-    payload["data_warnings"] = [identical_warning] if identical_warning else []
+    payload["data_warnings"] = load_warnings + (
+        [identical_warning] if identical_warning else []
+    )
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
     else:
@@ -484,6 +484,7 @@ def cmd_participants_convert(args) -> None:
         reject_conflicting_repeats=True,
         session_column=getattr(args, "session_column", None),
         session_value=getattr(args, "session", None),
+        sessions_from_date=getattr(args, "sessions_from_date", None),
     )
 
     neurobagel_schema = _parse_neurobagel_schema(
@@ -602,6 +603,7 @@ def cmd_participants_merge(args) -> None:
                 preview_limit=preview_limit,
                 neurobagel_schema=neurobagel_schema,
                 session_resolution_decisions=session_resolution,
+                sessions_from_date=getattr(args, "sessions_from_date", None),
                 harmonization_decisions=harmonization,
             )
         except ValueError as exc:
@@ -621,6 +623,7 @@ def cmd_participants_merge(args) -> None:
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             session_resolution_decisions=session_resolution,
+            sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
         )
     except ValueError as exc:
@@ -701,6 +704,7 @@ def cmd_participants_merge(args) -> None:
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             session_resolution_decisions=session_resolution,
+            sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
         )
     except ValueError as exc:

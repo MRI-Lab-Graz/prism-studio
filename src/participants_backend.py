@@ -20,9 +20,8 @@ from typing import Any, Callable, cast
 
 import pandas as pd
 
-from src.participants_converter import ParticipantsConverter
+from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.participants_sessions import session_label, sort_session_labels
-from src.converters.file_reader import read_tabular_file as _read_tabular_file
 from src.subject_id_matching import build_subject_id_matcher
 
 
@@ -974,6 +973,7 @@ def _build_participants_merge_input(
     separator: str | None = None,
     sheet: str | int = 0,
     session_resolution_decisions: dict[str, Any] | None = None,
+    sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> tuple[pd.DataFrame, list[str], dict[str, Any]]:
     source_path = Path(source_file).expanduser().resolve()
@@ -988,6 +988,7 @@ def _build_participants_merge_input(
             output_file=Path(tmp_dir) / "participants.tsv",
             separator=separator or "auto",
             sheet=sheet,
+            sessions_from_date=sessions_from_date,
         )
 
     if not success or output_df is None:
@@ -1068,33 +1069,21 @@ def _build_participants_merge_input(
                 _repeated_row_conflict_error_text(source_id_column, conflict_columns)
             )
 
-        file_ext = source_path.suffix.lower()
-        kind_map = {
-            ".xlsx": "xlsx",
-            ".xls": "xlsx",
-            ".csv": "csv",
-            ".tsv": "tsv",
-            ".txt": "tsv",
-            ".sav": "sav",
-            ".rds": "rds",
-            ".rdata": "rdata",
-            ".rda": "rdata",
-        }
-        kind = kind_map.get(file_ext, "csv")
         separator_value = None if (separator or "auto") == "auto" else separator
         try:
-            source_result = _read_tabular_file(
+            source_df, _ = load_participant_source(
                 source_path,
-                kind=kind,
                 separator=separator_value,
                 sheet=sheet,
+                sessions_from_date=sessions_from_date,
+                id_column=source_id_column,
             )
         except Exception:
             raise ValueError(
                 _repeated_row_conflict_error_text(source_id_column, conflict_columns)
             )
 
-        source_df = source_result.df.copy()
+        source_df = source_df.copy()
         source_columns = [str(column) for column in source_df.columns]
         if source_id_column not in source_columns:
             raise ValueError(
@@ -1426,6 +1415,7 @@ def _plan_participants_merge(
     neurobagel_schema: dict | None = None,
     harmonization_decisions: dict[str, Any] | None = None,
     session_resolution_decisions: dict[str, Any] | None = None,
+    sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
     include_all_conflicts: bool = False,
 ) -> tuple[dict[str, Any], pd.DataFrame, dict[str, Any]]:
@@ -1440,6 +1430,7 @@ def _plan_participants_merge(
         separator=separator,
         sheet=sheet,
         session_resolution_decisions=session_resolution_decisions,
+        sessions_from_date=sessions_from_date,
         log_callback=log_callback,
     )
 
@@ -1954,6 +1945,7 @@ def preview_participants_merge(
     neurobagel_schema: dict | None = None,
     harmonization_decisions: dict[str, Any] | None = None,
     session_resolution_decisions: dict[str, Any] | None = None,
+    sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> dict[str, Any]:
     """Preview a safe merge from a source table into an existing participants.tsv."""
@@ -1967,6 +1959,7 @@ def preview_participants_merge(
         neurobagel_schema=neurobagel_schema,
         harmonization_decisions=harmonization_decisions,
         session_resolution_decisions=session_resolution_decisions,
+        sessions_from_date=sessions_from_date,
         log_callback=log_callback,
     )
     payload["action"] = "preview"
@@ -1984,6 +1977,7 @@ def apply_participants_merge(
     neurobagel_schema: dict | None = None,
     harmonization_decisions: dict[str, Any] | None = None,
     session_resolution_decisions: dict[str, Any] | None = None,
+    sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
     create_backups: bool = True,
 ) -> dict[str, Any]:
@@ -1998,6 +1992,7 @@ def apply_participants_merge(
         neurobagel_schema=neurobagel_schema,
         harmonization_decisions=harmonization_decisions,
         session_resolution_decisions=session_resolution_decisions,
+        sessions_from_date=sessions_from_date,
         log_callback=log_callback,
     )
 
@@ -2044,6 +2039,7 @@ def export_participants_merge_conflicts_csv(
     neurobagel_schema: dict | None = None,
     harmonization_decisions: dict[str, Any] | None = None,
     session_resolution_decisions: dict[str, Any] | None = None,
+    sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> str:
     """Return a CSV report with every blocking merge conflict."""
@@ -2057,6 +2053,7 @@ def export_participants_merge_conflicts_csv(
         neurobagel_schema=neurobagel_schema,
         harmonization_decisions=harmonization_decisions,
         session_resolution_decisions=session_resolution_decisions,
+        sessions_from_date=sessions_from_date,
         log_callback=log_callback,
         include_all_conflicts=True,
     )
