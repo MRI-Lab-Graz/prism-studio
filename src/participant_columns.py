@@ -331,6 +331,10 @@ def _filter_participant_relevant_columns(
         for key in (neurobagel_keys or _DEFAULT_NEUROBAGEL_KEYS)
     }
 
+    from src.converters.survey_processing import (
+        _is_limesurvey_system_column as _is_ls_system_column,
+    )
+
     selected: list[str] = []
     for col in df.columns:
         col_str = str(col)
@@ -340,7 +344,7 @@ def _filter_participant_relevant_columns(
             selected.append(col_str)
             continue
 
-        if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS:
+        if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS or _is_ls_system_column(col_str):
             continue
 
         in_template = normalized in template_columns
@@ -374,7 +378,7 @@ def _filter_participant_relevant_columns(
             if col_str == id_column:
                 continue
             normalized = _normalize_column_name(col_str)
-            if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS:
+            if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS or _is_ls_system_column(col_str):
                 continue
             if _is_likely_questionnaire_column(
                 col_str, normalized, survey_item_ids, repeated_prefixes
