@@ -32,7 +32,7 @@ from src.subject_id_matching import (
     build_subject_id_matcher,
     load_existing_participant_ids,
 )
-from src.participants_sessions import session_label
+from src.participants_sessions import number_sessions_by_date, session_label
 from src.session_map import SessionsNotMappedError, apply_session_map
 from src.utils.naming import sanitize_id
 
@@ -754,8 +754,21 @@ def _handle_duplicate_ids(
                 f"Duplicate entries found ({dup_count}). Kept last occurrence for: {dup_label}"
             )
         elif duplicate_handling == "sessions":
-            df = df.copy()
-            df["_dup_session_num"] = df.groupby(composite_key.values).cumcount() + 1
+            date_column = next(
+                (c for c in ("startdate", "datestamp") if c in df.columns), None
+            )
+            if date_column:
+                df, numbering_warnings = number_sessions_by_date(
+                    df.assign(_dup_norm_id=normalized_ids),
+                    "_dup_norm_id",
+                    date_column,
+                    session_column="_dup_session_num",
+                )
+                df = df.drop(columns=["_dup_norm_id"])
+                warnings.extend(numbering_warnings)
+            else:
+                df = df.copy()
+                df["_dup_session_num"] = df.groupby(composite_key.values).cumcount() + 1
             res_ses_col_override = "_dup_session_num"
             warnings.append(
                 f"Duplicate entries found ({dup_count}). Created multiple sessions for: {dup_label}"
