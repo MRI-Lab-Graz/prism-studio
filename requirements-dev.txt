@@ -2,7 +2,7 @@ pytest
 pytest-cov
 codecov-cli
 matplotlib
-black>=26.5.1
+black>=26.10.0
 flake8
 ruff
 detect-secrets
