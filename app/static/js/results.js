@@ -407,6 +407,9 @@ document.addEventListener('DOMContentLoaded', () => {
             phaseStartedAt: 0,
         };
 
+        // Read the form before disabling it: disabled controls are not submitted.
+        const formData = new FormData(revalidateForm);
+
         hideRevalidationError();
         setActionsDisabled(true);
         setSubmitLoading(true);
@@ -415,8 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setRevalidationProgress(1, `Starting ${modeLabelFromValue(selectedMode)} re-validation...`, {
             animated: true,
         });
-
-        const formData = new FormData(revalidateForm);
 
         try {
             const response = await fetchWithApiFallback(revalidateForm.action, {
