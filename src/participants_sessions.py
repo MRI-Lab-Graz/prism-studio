@@ -14,7 +14,9 @@ from typing import Any
 
 try:
     import pandas as pd
-except ImportError:  # the standalone validator image has no pandas; session_label needs none
+except (
+    ImportError
+):  # the standalone validator image has no pandas; session_label needs none
     pd = None  # type: ignore[assignment]
 
 _SESSION_COLUMN_ALIASES = {"ses", "session", "sessionid", "visit", "timepoint", "wave"}
@@ -117,6 +119,12 @@ def number_sessions_by_date(
         raise ValueError(
             f"The file already has a '{session_column}' column; use it as the session column instead."
         )
+    if (
+        date_column == "startdate"
+        and date_column not in df.columns
+        and "datestamp" in df.columns
+    ):
+        date_column = "datestamp"  # LimeSurvey exports without "Save start time"
     for column in (id_column, date_column):
         if column not in df.columns:
             raise ValueError(f"Column '{column}' not found in the file")
@@ -126,7 +134,9 @@ def number_sessions_by_date(
     def _parse(column: str) -> pd.Series:
         # format="mixed": otherwise pandas infers one format from the first value
         # and silently turns "2026-03-01 10:00:00" after "2026-03-01" into NaT.
-        return pd.to_datetime(df[column].replace("", None), errors="coerce", format="mixed")
+        return pd.to_datetime(
+            df[column].replace("", None), errors="coerce", format="mixed"
+        )
 
     dates = _parse(date_column)
     if date_column == "startdate" and "datestamp" in df.columns:
