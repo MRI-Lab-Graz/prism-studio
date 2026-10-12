@@ -75,3 +75,23 @@ def test_version_detection_falls_back_to_the_global_library_like_convert_does(ap
         select_survey_file(app_page, tmp_path)
 
     assert detect.value.status == 200, detect.value.text()
+
+
+def _session_label_is_green(page):
+    """The Session ID label is green once a session is chosen, red while it is still missing."""
+    r, g, _ = page.evaluate(
+        "() => getComputedStyle(document.querySelector('#convertSessionGroup label'))"
+        ".color.match(/\\d+/g).map(Number)"
+    )
+    return g > r
+
+
+def test_session_id_label_turns_green_once_a_session_is_chosen(app_page, studio_url):
+    open_survey_tab(app_page, studio_url)
+    assert not _session_label_is_green(app_page)
+
+    app_page.fill("#convertSessionCustom", "1")
+    assert _session_label_is_green(app_page)
+
+    app_page.fill("#convertSessionCustom", "")
+    assert not _session_label_is_green(app_page)

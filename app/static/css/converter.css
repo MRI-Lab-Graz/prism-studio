@@ -486,3 +486,9 @@ td.prism-diff-conflict,
     margin-right: 6px;
     border-radius: 4px;
 }
+
+/* Session ID is red while no session is chosen (dropdown or custom box), green once one is. */
+#convertSessionGroup .session-required-label { color: var(--bs-danger); }
+#convertSessionGroup .session-required-badge { background-color: var(--bs-danger); }
+#convertSessionGroup:has(#convertSessionSelect:valid, #convertSessionCustom:not(:placeholder-shown)) .session-required-label { color: var(--bs-success); }
+#convertSessionGroup:has(#convertSessionSelect:valid, #convertSessionCustom:not(:placeholder-shown)) .session-required-badge { background-color: var(--bs-success); }
