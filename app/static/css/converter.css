@@ -486,3 +486,9 @@ td.prism-diff-conflict,
     margin-right: 6px;
     border-radius: 4px;
 }
+
+/* Session ID is red while no session is chosen (dropdown or custom box), green once one is. */
+#convertSessionGroup { --session-required: var(--bs-danger); }
+#convertSessionGroup:has(#convertSessionSelect:valid, #convertSessionCustom:not(:placeholder-shown)) { --session-required: var(--bs-success); }
+#convertSessionGroup .session-required-label { color: var(--session-required); }
+#convertSessionGroup .session-required-badge { background-color: var(--session-required); }
