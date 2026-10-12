@@ -129,13 +129,6 @@ def test_chosen_session_must_be_mapped_and_imports_only_its_rows(tmp_path, libra
     assert sessions(out, "sub-P001") == ["ses-1"]
 
 
-def test_duplicate_handling_sessions_is_refused_because_it_invents_names(tmp_path, library):
-    proj = project(tmp_path)
-    save_session_map(proj, {"pre": "1"})
-    with pytest.raises(SessionMapError, match="invents"):
-        convert(tmp_path, library, LONG, proj, duplicate_handling="sessions")
-
-
 def test_undeclared_project_is_refused_with_the_declare_message(tmp_path, library):
     with pytest.raises(TimepointsNotDeclaredError):
         convert(tmp_path, library, LONG, project(tmp_path, timepoints=None))

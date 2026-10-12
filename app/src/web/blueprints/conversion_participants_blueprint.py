@@ -50,6 +50,7 @@ from .conversion_participants_io import (
     _get_excel_sheet_metadata,
     _normalize_separator_option,
     _read_participants_input_table,
+    _sessions_from_date_option,
     _resolve_participants_sheet_arg,
     _save_participants_upload_to_temp,
 )
@@ -309,15 +310,23 @@ def api_participants_preview():
             )
 
             preview_stage = "reading input file"
+            sessions_warnings: list[str] = []
             try:
                 df = _read_participants_input_table(
                     input_path=input_path,
                     suffix=suffix,
                     sheet_arg=sheet_arg,
                     separator_option=separator_option,
+                    sessions_from_date=_sessions_from_date_option(),
+                    id_column=request.form.get("id_column", "").strip() or None,
+                    warnings_out=sessions_warnings,
                 )
             except ImportError:
                 return jsonify({"error": "LimeSurvey support not available"}), 500
+            except ValueError as read_error:
+                if not _sessions_from_date_option():
+                    raise  # unchanged: the generic preview error handler answers
+                return jsonify({"error": str(read_error)}), 400
 
             try:
                 session_candidates, df = scope_to_session(
@@ -507,7 +516,8 @@ def api_participants_preview():
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []
                     ),
-                    "data_warnings": _identical_rows_warnings(
+                    "data_warnings": sessions_warnings
+                    + _identical_rows_warnings(
                         find_identical_value_rows(output_df, preview_id_column)
                     ),
                     "problem_columns": mixed_time_style_columns,
@@ -600,6 +610,7 @@ def api_participants_merge():
         neurobagel_schema = merge_request["neurobagel_schema"]
         harmonization_decisions = merge_request["harmonization_decisions"]
         session_resolution_decisions = merge_request["session_resolution_decisions"]
+        sessions_from_date = merge_request["sessions_from_date"]
         mapping = merge_request["mapping"]
 
         validated_context, error_response = (
@@ -623,6 +634,7 @@ def api_participants_merge():
             neurobagel_schema=neurobagel_schema,
             harmonization_decisions=harmonization_decisions,
             session_resolution_decisions=session_resolution_decisions,
+            sessions_from_date=sessions_from_date,
             log_callback=log_msg,
         )
 
@@ -682,6 +694,7 @@ def api_participants_merge():
             neurobagel_schema=neurobagel_schema,
             harmonization_decisions=harmonization_decisions,
             session_resolution_decisions=session_resolution_decisions,
+            sessions_from_date=sessions_from_date,
             log_callback=log_msg,
         )
         apply_payload.update(
@@ -744,6 +757,7 @@ def api_participants_merge_conflicts():
             neurobagel_schema=merge_request["neurobagel_schema"],
             harmonization_decisions=merge_request["harmonization_decisions"],
             session_resolution_decisions=merge_request["session_resolution_decisions"],
+            sessions_from_date=merge_request["sessions_from_date"],
             log_callback=log_msg,
         )
         response = Response(csv_text, mimetype="text/csv")
@@ -896,6 +910,7 @@ def api_participants_convert_start():
                     "mapping": mapping,
                     "session_column": request.form.get("session_column", "").strip(),
                     "session_value": request.form.get("session_value", "").strip(),
+                    "sessions_from_date": _sessions_from_date_option(),
                 }
             )
         except Exception:

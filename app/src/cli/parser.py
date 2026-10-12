@@ -192,6 +192,15 @@ def build_prism_tools_parsers(
         help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_preview.add_argument(
+        "--sessions-from-date",
+        nargs="?",
+        const="startdate",
+        default=None,
+        metavar="COLUMN",
+        help="Repeated IDs without a session column (LimeSurvey): number each ID's rows "
+        "1, 2, ... by this date column (default: startdate)",
+    )
+    parser_participants_preview.add_argument(
         "--separator",
         default="auto",
         choices=["auto", "comma", "semicolon", "tab", "pipe"],
@@ -248,6 +257,15 @@ def build_prism_tools_parsers(
         help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_convert.add_argument(
+        "--sessions-from-date",
+        nargs="?",
+        const="startdate",
+        default=None,
+        metavar="COLUMN",
+        help="Repeated IDs without a session column (LimeSurvey): number each ID's rows "
+        "1, 2, ... by this date column (default: startdate)",
+    )
+    parser_participants_convert.add_argument(
         "--separator",
         default="auto",
         choices=["auto", "comma", "semicolon", "tab", "pipe"],
@@ -295,6 +313,15 @@ def build_prism_tools_parsers(
     )
     parser_participants_merge.add_argument(
         "--id-column", help="Explicit participant ID column for auto-mapping"
+    )
+    parser_participants_merge.add_argument(
+        "--sessions-from-date",
+        nargs="?",
+        const="startdate",
+        default=None,
+        metavar="COLUMN",
+        help="Repeated IDs without a session column (LimeSurvey): number each ID's rows "
+        "1, 2, ... by this date column (default: startdate)",
     )
     parser_participants_merge.add_argument(
         "--separator",

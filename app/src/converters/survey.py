@@ -142,6 +142,11 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
 )
 
 
+_NEEDS_SESSION_MESSAGE = (
+    "This project has several timepoints: the file needs a session "
+    "column, or a session must be chosen."
+)
+
 def _load_global_library_path() -> Path | None:
     """Find the global library path from config."""
     return _survey_templates._load_global_library_path()
@@ -1418,11 +1423,6 @@ def _convert_survey_dataframe_to_prism_dataset(
         if project_path and timepoints == "multiple"
         else None
     )
-    if session_map is not None and duplicate_handling == "sessions":
-        raise SessionMapError(
-            "Duplicate handling 'sessions' invents session names (1, 2, ...), which "
-            "longitudinal projects do not allow. Add a real session column instead."
-        )
     id_normalizers = _survey_core.build_survey_id_normalizers(
         project_path, session_map=session_map
     )
@@ -1564,12 +1564,12 @@ def _convert_survey_dataframe_to_prism_dataset(
             session_labels = df[res_ses_col].tolist()
         elif session and session != "all":
             session_labels = [session]
+        elif duplicate_handling == "sessions":
+            session_labels = None  # numbered by date below, then mapped there
         else:
-            raise SessionMapError(
-                "This project has several timepoints: the file needs a session "
-                "column, or a session must be chosen."
-            )
-        require_sessions_mapped(session_map, session_labels)
+            raise SessionMapError(_NEEDS_SESSION_MESSAGE)
+        if session_labels is not None:
+            require_sessions_mapped(session_map, session_labels)
 
     # --- Extract LimeSurvey System Columns ---
     # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
@@ -1603,6 +1603,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override
+        if session_map is not None and not (session and session != "all"):
+            require_sessions_mapped(session_map, df[res_ses_col].astype(str).tolist())
+    elif (
+        session_map is not None
+        and duplicate_handling == "sessions"
+        and not (res_ses_col and res_ses_col in df.columns)
+        and not (session and session != "all")
+    ):
+        raise SessionMapError(_NEEDS_SESSION_MESSAGE)  # no repeats, so nothing was numbered
     conversion_warnings.extend(duplicate_warnings)
 
     # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')

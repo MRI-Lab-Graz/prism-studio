@@ -7,6 +7,7 @@ from flask import Response, jsonify, request
 from werkzeug.utils import secure_filename
 
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
+from src.participants_converter import load_participant_source
 
 from .conversion_utils import (
     expected_delimiter_for_suffix as _shared_expected_delimiter_for_suffix,
@@ -75,13 +76,33 @@ def _expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | 
     return _shared_expected_delimiter_for_suffix(suffix, separator_option)
 
 
+def _sessions_from_date_option() -> str | None:
+    """The checkbox value ("startdate") or None; the backend does the numbering."""
+    return request.form.get("sessions_from_date", "").strip() or None
+
+
 def _read_participants_input_table(
     *,
     input_path: Path,
     suffix: str,
     sheet_arg: str | int,
     separator_option: str,
+    sessions_from_date: str | None = None,
+    id_column: str | None = None,
+    warnings_out: list[str] | None = None,
 ):
+    if sessions_from_date:
+        df, warnings = load_participant_source(
+            input_path,
+            separator=_expected_delimiter_for_suffix(suffix, separator_option),
+            sheet=sheet_arg,
+            sessions_from_date=sessions_from_date,
+            id_column=id_column,
+        )
+        if warnings_out is not None:
+            warnings_out.extend(warnings)
+        return df
+
     if suffix == ".lsa":
         from src.converters.survey import _read_lsa_as_dataframe
 

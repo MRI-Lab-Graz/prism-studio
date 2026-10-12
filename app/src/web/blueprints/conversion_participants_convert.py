@@ -65,6 +65,7 @@ def _write_participants_outputs(
     log_msg,
     session_column: str = "",
     session_value: str = "",
+    sessions_from_date: str | None = None,
 ) -> dict[str, Any]:
     """Run ParticipantsConverter, write participants.tsv/json, return the
     success result payload (no "log" key -- callers merge that in)."""
@@ -80,6 +81,7 @@ def _write_participants_outputs(
         reject_conflicting_repeats=True,
         session_column=session_column or None,
         session_value=session_value or None,
+        sessions_from_date=sessions_from_date,
     )
 
     for msg in messages:
@@ -177,6 +179,7 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                         log_msg=log_msg,
                         session_column=config.get("session_column", ""),
                         session_value=config.get("session_value", ""),
+                        sessions_from_date=config.get("sessions_from_date"),
                     )
                 except ValueError as e:
                     _participants_job_store.failure(job_id, str(e) or "Conversion failed")

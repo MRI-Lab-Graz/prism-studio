@@ -49,15 +49,58 @@ except ImportError:
     from cross_platform import CrossPlatformFile
 
 
-def _import_filter_rows_to_session():
+def _import_session_helpers():
     try:
-        from src.participants_sessions import filter_rows_to_session
+        from src.participants_sessions import filter_rows_to_session, number_sessions_by_date
     except ImportError:
-        from participants_sessions import filter_rows_to_session
-    return filter_rows_to_session
+        from participants_sessions import filter_rows_to_session, number_sessions_by_date
+    return filter_rows_to_session, number_sessions_by_date
 
 
-filter_rows_to_session = _import_filter_rows_to_session()
+filter_rows_to_session, number_sessions_by_date = _import_session_helpers()
+
+_SOURCE_KINDS = {
+    ".xlsx": "xlsx",
+    ".xls": "xlsx",
+    ".csv": "csv",
+    ".tsv": "tsv",
+    ".txt": "tsv",
+    ".sav": "sav",
+    ".rds": "rds",
+    ".rdata": "rdata",
+    ".rda": "rdata",
+}
+
+
+def load_participant_source(
+    source_path: Path,
+    *,
+    separator: str | None = None,
+    sheet: str | int = 0,
+    sessions_from_date: str | None = None,
+    id_column: str | None = None,
+) -> Tuple[pd.DataFrame, List[str]]:
+    """Read a participants source table; optionally number sessions by date."""
+    source_path = Path(source_path)
+    if sessions_from_date and not id_column:
+        raise ValueError("Select the ID column before numbering sessions by date.")
+    suffix = source_path.suffix.lower()
+    if suffix == ".lsa":
+        from src.converters.survey import _read_lsa_as_dataframe
+
+        df, warnings = _read_lsa_as_dataframe(source_path), []
+    else:
+        result = _read_tabular_file(
+            source_path,
+            kind=_SOURCE_KINDS.get(suffix, "csv"),  # unknown: file_reader sniffs
+            separator=separator,
+            sheet=sheet,
+        )
+        df, warnings = result.df, list(result.warnings)
+    if sessions_from_date:
+        df, numbering_warnings = number_sessions_by_date(df, id_column, sessions_from_date)
+        warnings += numbering_warnings
+    return df, warnings
 
 
 def _import_session_map():
@@ -336,6 +379,7 @@ class ParticipantsConverter:
         reject_conflicting_repeats: bool = False,
         session_column: Optional[str] = None,
         session_value: Optional[str] = None,
+        sessions_from_date: Optional[str] = None,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -348,6 +392,8 @@ class ParticipantsConverter:
             sheet: Excel sheet name or 0-based index (Excel files only)
             session_column / session_value: For a longitudinal source file, keep only
                 the rows of this one session (exact label match) before converting.
+            sessions_from_date: Date column (e.g. "startdate") to number each ID's
+                rows "1", "2", ... by, for sources without a session column.
             reject_conflicting_repeats: Fail (and write nothing) when a participant
                 appears in several rows with different values, instead of keeping
                 the first non-empty value with a warning. Merge leaves this off:
@@ -361,37 +407,25 @@ class ParticipantsConverter:
 
         # Load source data - handle multiple file formats
         try:
-            file_ext = source_path.suffix.lower()
-            kind_map = {
-                ".xlsx": "xlsx",
-                ".xls": "xlsx",
-                ".csv": "csv",
-                ".tsv": "tsv",
-                ".txt": "tsv",
-                ".sav": "sav",
-                ".rds": "rds",
-                ".rdata": "rdata",
-                ".rda": "rdata",
-            }
-            kind = kind_map.get(file_ext)
-            if kind is None:
-                # Unknown extension — let file_reader sniff via auto-detect
-                kind = "csv"
-            separator_value = None if separator == "auto" else separator
-            result = _read_tabular_file(
+            id_source = next(
+                (
+                    spec.get("source_column")
+                    for spec in mapping.get("mappings", {}).values()
+                    if isinstance(spec, dict) and spec.get("standard_variable") == "participant_id"
+                ),
+                None,
+            )
+            df, load_warnings = load_participant_source(
                 source_path,
-                kind=kind,
-                separator=separator_value,
+                separator=None if separator == "auto" else separator,
                 sheet=sheet,
+                sessions_from_date=sessions_from_date,
+                id_column=id_source,
             )
-            df = result.df
-            for w in result.warnings:
+            for w in load_warnings:
                 self._log("WARNING", w)
-            self._log(
-                "INFO",
-                f"Loaded {len(df)} rows from {source_path.name} "
-                f"(encoding: {result.encoding_used})",
-            )
+                messages.append(f"⚠ {w}")
+            self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
             messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
 
         except Exception as e:

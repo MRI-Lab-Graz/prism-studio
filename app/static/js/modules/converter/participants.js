@@ -1535,6 +1535,11 @@ export function initParticipants() {
         });
     }
     
+    document.getElementById('participantsSessionsFromDate')?.addEventListener('change', function() {
+        resetParticipantsPanelState({ preserveImportConfig: true });
+        updateParticipantsButtonState({ skipIdAutoDetect: true });
+    });
+
     const sheetInput = document.getElementById('participantsSheet');
     if (sheetInput) {
         sheetInput.addEventListener('change', function() {
@@ -2750,6 +2755,9 @@ export function initParticipants() {
             formData.append('id_column', idColumn);
         }
         formData.append('separator', separator);
+        if (document.getElementById('participantsSessionsFromDate')?.checked) {
+            formData.append('sessions_from_date', 'startdate');
+        }
         Object.entries(sessionChoiceFormFields(participantsSessionChoice)).forEach(([key, value]) => {
             formData.append(key, value);
         });
