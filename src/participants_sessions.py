@@ -98,3 +98,64 @@ def scope_to_session(
     if column and value:
         df = filter_rows_to_session(df, column, value)
     return candidates, df
+
+
+def number_sessions_by_date(
+    df: pd.DataFrame,
+    id_column: str,
+    date_column: str = "startdate",
+    session_column: str = "session",
+) -> tuple[pd.DataFrame, list[str]]:
+    """Number each ID's rows "1", "2", ... by acquisition date (earliest first).
+
+    For repeated-measures exports without a session indicator (LimeSurvey).
+    Order only: rows are never dropped or merged. An empty ``startdate`` falls
+    back to the row's ``datestamp``; a row still without a date is an error.
+    Warnings flag incomplete runs (empty ``submitdate``) and uneven session counts.
+    """
+    if session_column in df.columns:
+        raise ValueError(
+            f"The file already has a '{session_column}' column; use it as the session column instead."
+        )
+    for column in (id_column, date_column):
+        if column not in df.columns:
+            raise ValueError(f"Column '{column}' not found in the file")
+
+    ids = df[id_column].map(session_label)  # same string form for 1.0 and "1"
+
+    def _parse(column: str) -> pd.Series:
+        # format="mixed": otherwise pandas infers one format from the first value
+        # and silently turns "2026-03-01 10:00:00" after "2026-03-01" into NaT.
+        return pd.to_datetime(df[column].replace("", None), errors="coerce", format="mixed")
+
+    dates = _parse(date_column)
+    if date_column == "startdate" and "datestamp" in df.columns:
+        dates = dates.fillna(_parse("datestamp"))
+    undated = sorted(set(ids[dates.isna()]))
+    if undated:
+        raise ValueError(
+            f"No usable '{date_column}' for ID(s): {', '.join(undated[:10])}. "
+            "Fix these responses in LimeSurvey before numbering sessions."
+        )
+
+    out = df.assign(_id=ids, _date=dates).sort_values(["_id", "_date"], kind="stable")
+    out[session_column] = (out.groupby("_id").cumcount() + 1).astype(str)
+
+    warnings: list[str] = []
+    if "submitdate" in out.columns:
+        incomplete = out[out["submitdate"].map(session_label) == ""]
+        for _, row in incomplete.iterrows():  # not itertuples: it renames "_id"
+            lastpage = session_label(row.get("lastpage", ""))
+            warnings.append(
+                f"Incomplete run: ID {row['_id']}, session {row[session_column]}"
+                + (f", lastpage {lastpage}" if lastpage else "")
+            )
+    counts = out.groupby("_id").size().value_counts().sort_index(ascending=False)
+    if len(counts) > 1:
+        parts = [
+            f"{n} IDs x {k} sessions" if i == 0 else f"{n} x {k}"
+            for i, (k, n) in enumerate(counts.items())
+        ]
+        warnings.append("Uneven session counts: " + ", ".join(parts))
+
+    return out.drop(columns=["_id", "_date"]).reset_index(drop=True), warnings
