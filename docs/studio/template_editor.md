@@ -7,15 +7,17 @@ biometrics instruments.
 
 ## Choosing a template
 
-Pick a **Modality** (`survey` or `biometrics`) and **Schema version**, then choose a
-template from one of two dropdowns:
+First choose at the top: **Edit existing template** or **Create or import new**. Pick a
+**Modality** (`survey` or `biometrics`); the schema version sits under **Advanced** and
+rarely needs changing. To edit, choose a template from one of two dropdowns (✅ the saved
+file is valid, ❌ it has issues — hover for details):
 
 - **Project Templates** — templates saved inside your current project
   (`code/library/<modality>/`).
 - **Global Templates** — the official/bundled library plus any external library your
   project points at (`project.template_library_path`). These are loaded **read-only**.
 
-You can also **Create** a blank template from the schema, or **Import** a finished PRISM
+Under **Create or import new** you can **Create** a blank template from the schema, or **Import** a finished PRISM
 template (`.json`, for example one you downloaded or received from a colleague), LimeSurvey
 XML (`.lsq`/`.lsg`/`.lsa`) or a tabular codebook (`.xlsx`/`.csv`/`.tsv`, with a group
 picker for multi-instrument Excel files). An imported template opens in the editor and
@@ -28,8 +30,9 @@ through the Excel codebook import path, see
 
 ## Editing
 
-The generated form has: a Top-level panel (`Study`/`Technical` metadata), a Selected
-Item panel, a Tool Properties panel, a Bulk Edit Items panel, an Items panel (add/
+The editor has three tabs: **General info** (the `Study`/`Technical` metadata),
+**Items** (with the item count; add, delete and edit the questions) and **Preview**. The
+form has: a Top-level panel, a Selected Item panel, a Tool Properties panel, a Bulk Edit Items panel, an Items panel (add/
 delete items, copy style from another item), a language bar, and — for multi-version
 instruments — a variant selector.
 

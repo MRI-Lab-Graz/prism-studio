@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, offerShare, readImportJson, refreshTemplateList, validateCurrent } from './source-workflow.js';
+import { finishImport, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -107,7 +107,7 @@ describe('refreshTemplateList', () => {
             getCurrentProjectPath: () => '/p', projectContextRequestToken: 1,
             withProjectPathQuery: (u) => u, apiGet: async () => ({ templates }),
             isProjectContextCurrent: () => true,
-            templateStatusPrefix: () => '[FILE OK]', templateStatusTitle: () => '',
+            templateStatusTitle: () => '',
             templateMetadata: {}, projectTemplateSelectEl: select(), globalTemplateSelectEl: select(),
             updateProjectLibraryStatus() {}, updateLoadButtonState() {},
             loadedFromProjectLibrary, currentTemplateFilename,
@@ -243,5 +243,14 @@ describe('validateCurrent without a language', () => {
 
     it('does not ask for a template that was loaded, not imported (most library templates have no language)', async () => {
         expect((await run('', {}, { asked: false })).posted).toBe(true);
+    });
+});
+
+describe('templateStatusPrefix', () => {
+    it('marks a valid saved file with a check, an invalid one with a cross, an unknown one with a question mark', () => {
+        expect(templateStatusPrefix({ template_valid: true })).toBe('\u2705');
+        expect(templateStatusPrefix({ template_valid: false })).toBe('\u274C');
+        expect(templateStatusPrefix({ template_valid: null })).toBe('\u2754');
+        expect(templateStatusPrefix(undefined)).toBe('\u2754');
     });
 });

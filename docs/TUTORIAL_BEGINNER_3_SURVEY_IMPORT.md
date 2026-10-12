@@ -69,7 +69,7 @@ Download {download}`survey-wellbeing.json <../examples/workshop/chapter_3_survey
 (or find `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` in a checkout), then bring
 it into your project from Studio:
 
-1. Open **Template Editor** → Modality `survey` → **Create or Import** → **Import Template Source**.
+1. Open **Template Editor** → **Create or import new** → Modality `survey` → **Import Template Source**.
 2. Choose `survey-wellbeing.json`. The template opens in the editor and is validated.
 3. Click **Save to Project**. (If a project template with that name already exists, Studio asks
    before overwriting it.)
