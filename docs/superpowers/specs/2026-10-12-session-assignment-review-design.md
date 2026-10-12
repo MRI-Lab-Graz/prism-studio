@@ -46,8 +46,8 @@ response: participant, response id, date, completed, lastpage, assigned session 
 Decisions file: `code/session_assignments.json`,
 `{"version": 1, "responses": {"501": {"skip": true}, "502": {"session": "pre"}}}`.
 Helpers `load_session_assignments(project)`, `save_session_assignments(project, data)`,
-`set_assignment(...)`, `unset_assignment(...)`. A decision for a response id no longer in
-the file is ignored (reported once as a warning).
+`set_assignment(...)`, `unset_assignment(...)`. A decision for a response id that is no longer in
+the export is ignored (reported once as a warning).
 
 ## Command line
 
