@@ -31,7 +31,8 @@ def test_open_existing_project_makes_it_current_and_remembers_it(bare_page, stud
 
     bare_page.click("#loadProjectBtn")
 
-    expect(bare_page.locator("#loadProjectBtn")).to_be_disabled()  # "already loaded"
+    # disabled alone also matches the spinner while loading; the title marks "already loaded"
+    expect(bare_page.locator("#loadProjectBtn")).to_have_attribute("title", "This project is already loaded")
     current = bare_page.request.get(f"{studio_url}/api/projects/current").json()
     assert current["path"] == str(project)
 

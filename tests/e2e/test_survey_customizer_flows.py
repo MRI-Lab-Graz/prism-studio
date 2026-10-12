@@ -189,3 +189,13 @@ def test_save_to_project_copies_the_templates_into_the_project_library(app_page,
 
     assert (project / "code" / "library" / "survey" / "survey-brs.json").exists()
 
+
+def test_export_languages_decide_which_languages_the_survey_carries(app_page, studio_url, tmp_path):
+    open_customizer(app_page, studio_url, "brs")
+    english_only = export(app_page, tmp_path, "en.lss")
+    assert sorted(el.text for el in lss_root(english_only).find("languages")) == ["en"]
+
+    app_page.click("#exportLanguageButton")
+    app_page.locator("#export-lang-de").check()
+    both = export(app_page, tmp_path, "both.lss")
+    assert sorted(el.text for el in lss_root(both).find("languages")) == ["de", "en"]

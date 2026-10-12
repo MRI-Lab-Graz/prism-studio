@@ -141,7 +141,8 @@ def test_anonymizing_replaces_the_ids_consistently_and_keeps_the_scores(app_page
 
     rows = read_rows(out / "e2e_brs.csv")[1:]
     ids = [row[0] for row in rows]
-    assert not any("P00" in identifier for identifier in ids), ids  # no original ID survives
+    # no original ID survives (exact match: a random new ID may contain "P00" by chance)
+    assert not {"sub-P001", "sub-P002"} & set(ids), ids
     assert ids[0] == ids[1] != ids[2]  # same person -> same new ID, different person -> different
     assert [row[2] for row in rows] == ["9", "11", "3"]  # scores untouched
     # The re-identification key stays in the project's code/, never in the shareable folder.

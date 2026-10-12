@@ -44,10 +44,6 @@ def lss_question_codes(path):
     )
 
 
-def lss_languages(path):
-    return sorted(el.text for el in ET.parse(path).getroot().find("languages"))
-
-
 def test_nothing_can_be_exported_until_a_template_is_ticked(app_page, studio_url):
     open_generator(app_page, studio_url)
     for button in ("#generateLssBtn", "#generateBoilerplateBtn", "#customizeExportBtn"):
@@ -84,17 +80,6 @@ def test_an_unticked_question_is_left_out_of_the_export(app_page, studio_url, tm
     codes = lss_question_codes(lss)
     assert "BRS01" in codes and "BRS03" in codes
     assert "BRS02" not in codes
-
-
-def test_export_languages_decide_which_languages_the_survey_carries(app_page, studio_url, tmp_path):
-    open_generator(app_page, studio_url)
-    pick(app_page, "brs")
-    english_only = download(app_page, "#generateLssBtn", tmp_path, "en.lss")
-    assert lss_languages(english_only) == ["en"]
-
-    app_page.locator("#export-lang-de").check()
-    both = download(app_page, "#generateLssBtn", tmp_path, "both.lss")
-    assert lss_languages(both) == ["de", "en"]
 
 
 def test_the_matrix_checkbox_decides_between_one_matrix_and_single_questions(app_page, studio_url, tmp_path):
