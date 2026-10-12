@@ -7,18 +7,14 @@ export function createSurveyUnmatchedTemplatesController({
 }) {
     let unmatchedGroupsData = [];
 
-    function displayUnmatchedGroupsError(data) {
+    function unmatchedTableHtml(unmatched) {
         let html = `
-            <div class="alert alert-warning mb-3">
-                <h6 class="mb-1"><i class="fas fa-exclamation-triangle me-1"></i>Templates Required</h6>
-                <p class="mb-0">${data.message}</p>
-            </div>
             <table class="table table-sm table-bordered">
                 <thead><tr>
                     <th>Group</th><th>Task Key</th><th>Items</th><th>Action</th>
                 </tr></thead><tbody>`;
 
-        data.unmatched.forEach((g, i) => {
+        unmatched.forEach((g, i) => {
             html += `<tr id="unmatched-row-${i}">
                 <td>${g.group_name}</td>
                 <td><code>survey-${g.task_key}</code></td>
@@ -39,8 +35,28 @@ export function createSurveyUnmatchedTemplatesController({
                 </button>
             </div>`;
 
-        unmatchedGroupsData = Array.isArray(data.unmatched) ? data.unmatched : [];
+        unmatchedGroupsData = Array.isArray(unmatched) ? unmatched : [];
         window._unmatchedGroupsData = unmatchedGroupsData;
+        return html;
+    }
+
+    // data.optional: templates are optional, so the card is appended to the
+    // conversion summary and does not block; otherwise it replaces the summary.
+    function displayUnmatchedGroupsError(data) {
+        if (data.optional) {
+            conversionSummaryBody.insertAdjacentHTML('beforeend', `
+                <div class="alert alert-info mt-3 mb-3">
+                    <h6 class="mb-1"><i class="fas fa-circle-info me-1"></i>Optional: templates for skipped questionnaires</h6>
+                    <p class="mb-0">These questionnaires have no library template and are not converted. Save a template to include them.</p>
+                </div>${unmatchedTableHtml(data.unmatched)}`);
+            conversionSummaryContainer.classList.remove('d-none');
+            return;
+        }
+        const html = `
+            <div class="alert alert-warning mb-3">
+                <h6 class="mb-1"><i class="fas fa-exclamation-triangle me-1"></i>Templates Required</h6>
+                <p class="mb-0">${data.message}</p>
+            </div>${unmatchedTableHtml(data.unmatched)}`;
 
         appendLog('Templates required for unmatched groups \u2014 see below', 'error');
         conversionSummaryBody.innerHTML = html;

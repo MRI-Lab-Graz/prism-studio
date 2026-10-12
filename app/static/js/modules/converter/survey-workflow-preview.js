@@ -391,6 +391,12 @@ export function createSurveyWorkflowPreviewController({
                 if (data.conversion_summary) {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                     displayConversionSummary(data.conversion_summary);
+                    if (Array.isArray(data.conversion_summary.unmatched_groups)) {
+                        displayUnmatchedGroupsError({
+                            optional: true,
+                            unmatched: data.conversion_summary.unmatched_groups,
+                        });
+                    }
                 } else {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                 }

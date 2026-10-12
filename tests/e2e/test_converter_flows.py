@@ -112,3 +112,21 @@ def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, 
     convert_survey(app_page, tmp_path, session="1", content=REPEATED_CSV)
 
     assert sorted(p.name for p in (project / "sub-P001").glob("ses-*")) == ["ses-1", "ses-2"]
+
+
+def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block(app_page, studio_url, tmp_path, project):
+    import shutil
+
+    from tests.test_survey_cli_lsa import _library
+    from tests.test_survey_lsa_unmatched_groups import _lsa_with_two_questionnaires
+
+    shutil.copy(_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(_lsa_with_two_questionnaires(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.fill("#convertSessionCustom", "1")
+
+    app_page.click("#previewBtn")
+
+    expect(app_page.get_by_role("button", name="Save Template").first).to_be_visible(timeout=30000)
+    expect(app_page.locator("#convertBtn")).to_be_enabled()  # the matched questionnaire still converts

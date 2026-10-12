@@ -43,10 +43,12 @@ def _library(tmp_path: Path) -> Path:
     lib = tmp_path / "lib"
     lib.mkdir()
     template = {
-        "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "Language": "en", "Respondent": "self"},
+        "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "Language": "en", "Respondent": "self",
+                      "SoftwarePlatform": "LimeSurvey", "SoftwareVersion": "6", "AdministrationMethod": "online"},
         "Study": {
             "TaskName": "wellbeing", "OriginalName": "Wellbeing", "Authors": ["x"], "Year": 2026,
             "Citation": "x", "Version": "1", "Instructions": "x", "LicenseID": "CC0-1.0",
+            "Category": "Well-being & Life Satisfaction",
         },
         "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-01-01"},
     }

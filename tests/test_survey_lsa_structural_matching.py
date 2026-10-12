@@ -20,7 +20,7 @@ class _FakeMatch:
 def test_no_lsa_analysis_is_a_no_op():
     templates = {}
     item_to_task = {}
-    warnings = _apply_lsa_structural_matching(
+    warnings, unmatched = _apply_lsa_structural_matching(
         templates=templates,
         item_to_task=item_to_task,
         participant_columns_lower=set(),
@@ -51,7 +51,7 @@ def test_exact_confidence_match_calls_add_matched_template_with_no_warning():
     add_matched_calls = []
     lsa_analysis = {"groups": {"g1": {"match": _FakeMatch(confidence="exact")}}}
 
-    warnings = _apply_lsa_structural_matching(
+    warnings, unmatched = _apply_lsa_structural_matching(
         templates={},
         item_to_task={},
         participant_columns_lower=set(),
@@ -70,7 +70,7 @@ def test_medium_confidence_match_calls_add_matched_template_and_warns():
         }
     }
 
-    warnings = _apply_lsa_structural_matching(
+    warnings, unmatched = _apply_lsa_structural_matching(
         templates={},
         item_to_task={},
         participant_columns_lower=set(),
@@ -96,7 +96,7 @@ def test_unmatched_group_is_a_warning_and_the_matched_groups_still_convert():
         }
     }
 
-    warnings = _apply_lsa_structural_matching(
+    warnings, unmatched = _apply_lsa_structural_matching(
         templates={},
         item_to_task={},
         participant_columns_lower=set(),
@@ -106,8 +106,8 @@ def test_unmatched_group_is_a_warning_and_the_matched_groups_still_convert():
     )
 
     assert len(add_matched_calls) == 1
-    assert len(warnings) == 1
-    assert "handedness" in warnings[0] and "not converted" in warnings[0]
+    assert warnings == []
+    assert [g["group_name"] for g in unmatched] == ["handedness"]
 
 
 def test_is_participants_group_registers_participant_columns_not_a_template():
