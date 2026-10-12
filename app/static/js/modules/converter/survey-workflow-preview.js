@@ -198,6 +198,10 @@ export function createSurveyWorkflowPreviewController({
         if (previewRunColVal) {
             formData.append('run_column', previewRunColVal);
         }
+        const duplicateHandling = document.getElementById('convertDuplicateHandling')?.value;
+        if (duplicateHandling) {
+            formData.append('duplicate_handling', duplicateHandling);
+        }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filenameRaw.toLowerCase()));

@@ -1602,7 +1602,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override
-        if session_map is not None and not (session and session != "all"):
+        session = "all"  # the generated sessions win over a typed Session ID
+        if session_map is not None:
             require_sessions_mapped(session_map, df[res_ses_col].astype(str).tolist())
     elif (
         session_map is not None

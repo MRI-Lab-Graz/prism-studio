@@ -144,6 +144,16 @@
                                            title="This is the output session label, not a source column. If Session Column above is set, this picks which session's rows to extract from it; otherwise every row in this file is labeled with this one session.&#10;&#10;If your file contains multiple sessions, each Convert run only imports the ONE session selected here — pick a session, convert, then repeat this step for each remaining session."></i>
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="convertDuplicateHandling" class="form-label small text-muted">Repeated participant IDs</label>
+                                    <select class="form-select form-select-sm" id="convertDuplicateHandling">
+                                        <option value="error">Stop with an error</option>
+                                        <option value="sessions">Number as sessions by date (startdate / datestamp)</option>
+                                        <option value="keep_first">Keep the first row</option>
+                                        <option value="keep_last">Keep the last row</option>
+                                    </select>
+                                    <div class="form-text">For files with one row per participant and wave but no session column (e.g. LimeSurvey).</div>
+                                </div>
                             </div>
 
                             <div id="sessionMapPanel" class="alert alert-warning d-none mb-3" role="region" aria-labelledby="sessionMapPanelTitle">
