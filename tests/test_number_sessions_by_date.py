@@ -92,3 +92,13 @@ def test_even_counts_complete_runs_give_no_warnings():
     df = _df([["a", "2026-03-01", "", "x", "1"], ["b", "2026-03-01", "", "x", "1"]])
     _, warnings = number_sessions_by_date(df, "token")
     assert warnings == []
+
+
+def test_datestamp_only_file_orders_by_datestamp():
+    df = pd.DataFrame({
+        "token": ["a", "a"],
+        "datestamp": ["2026-09-01 10:00:00", "2026-03-01 10:00:00"],
+        "age": [31, 30],
+    })
+    out, _ = number_sessions_by_date(df, "token")
+    assert dict(zip(out["age"], out["session"])) == {30: "1", 31: "2"}
