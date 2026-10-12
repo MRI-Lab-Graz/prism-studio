@@ -378,20 +378,26 @@ class ParticipantsConverter:
                 # Unknown extension — let file_reader sniff via auto-detect
                 kind = "csv"
             separator_value = None if separator == "auto" else separator
-            result = _read_tabular_file(
-                source_path,
-                kind=kind,
-                separator=separator_value,
-                sheet=sheet,
-            )
-            df = result.df
-            for w in result.warnings:
-                self._log("WARNING", w)
-            self._log(
-                "INFO",
-                f"Loaded {len(df)} rows from {source_path.name} "
-                f"(encoding: {result.encoding_used})",
-            )
+            if file_ext == ".lsa":
+                from src.converters.survey import _read_lsa_as_dataframe
+
+                df = _read_lsa_as_dataframe(source_path)
+                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
+            else:
+                result = _read_tabular_file(
+                    source_path,
+                    kind=kind,
+                    separator=separator_value,
+                    sheet=sheet,
+                )
+                df = result.df
+                for w in result.warnings:
+                    self._log("WARNING", w)
+                self._log(
+                    "INFO",
+                    f"Loaded {len(df)} rows from {source_path.name} "
+                    f"(encoding: {result.encoding_used})",
+                )
             messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
 
         except Exception as e:
