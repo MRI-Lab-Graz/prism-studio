@@ -168,7 +168,12 @@ python prism_tools.py survey convert --input survey_export.xlsx --output /tmp/my
 
 `survey convert` key options: `--library` (template folder), `--lang` (i18n
 language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
-(unmapped columns), `--dry-run`, `--force`.
+(unmapped columns), `--dry-run`, `--force`,
+`--duplicate-handling {error,keep_first,keep_last,sessions}` (repeated IDs; `sessions`
+numbers each ID's rows 1, 2, … by `startdate`/`datestamp`).
+
+Templates are optional for `.lsa` files: questionnaires without a library template are
+left out of the conversion and listed as a warning; the matched ones convert.
 
 **`survey export-lss`** / **`export-lss-customized`** / **`export-questionnaire-docx`**
 — export template(s) to a LimeSurvey `.lss` file, export a Survey Customizer-style
@@ -360,6 +365,10 @@ python prism_tools.py participants convert --input /absolute/path/to/T1.xlsx --i
 python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-column ID --project /absolute/path/to/my-project/project.json --json
 python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-column ID --project /absolute/path/to/my-project/project.json --apply --json
 python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-column ID --project /absolute/path/to/my-project/project.json --conflicts-csv
+
+# Repeated IDs without a session column (LimeSurvey): number each ID's rows 1, 2, ... by date
+# (default column startdate, falling back to datestamp); works on preview, convert and merge
+python prism_tools.py participants merge --input /absolute/path/to/survey_archive.lsa --id-column token --sessions-from-date --project /absolute/path/to/my-project/project.json --json
 
 # Save a reusable mapping (preferred target: <project>/code/library)
 python prism_tools.py participants save-mapping --mapping-json '{"participant_id": {"source_column": "ID"}}' --project /absolute/path/to/my-project/project.json

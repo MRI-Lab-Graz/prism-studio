@@ -780,6 +780,15 @@ def build_prism_tools_parsers(
         help="How to handle unmapped columns not found in any survey template (default: warn)",
     )
     parser_survey_convert.add_argument(
+        "--duplicate-handling",
+        choices=["error", "keep_first", "keep_last", "sessions"],
+        default="error",
+        help=(
+            "Repeated participant IDs: error (default), keep the first/last row, or "
+            "'sessions' = number each ID's rows 1, 2, ... by startdate/datestamp"
+        ),
+    )
+    parser_survey_convert.add_argument(
         "--dry-run",
         action="store_true",
         help="Only print mapping report; do not write files",
