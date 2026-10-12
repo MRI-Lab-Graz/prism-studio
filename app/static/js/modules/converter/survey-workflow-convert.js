@@ -249,6 +249,10 @@ export function createSurveyWorkflowConvertController({
         if (runColVal) {
             formData.append('run_column', runColVal);
         }
+        const duplicateHandling = document.getElementById('convertDuplicateHandling')?.value;
+        if (duplicateHandling) {
+            formData.append('duplicate_handling', duplicateHandling);
+        }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename));

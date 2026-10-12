@@ -352,6 +352,7 @@ class SurveyConvertResult:
     participant_registry_warning: dict | None = None
     near_match_candidates: list[dict[str, object]] = field(default_factory=list)
     near_match_applied: bool = False
+    unmatched_groups: list[dict] = field(default_factory=list)  # LSA groups left out (no template)
     applied_value_offsets: dict[str, float] = field(default_factory=dict)
     value_offset_application_counts: dict[str, int] = field(default_factory=dict)
 
@@ -1447,16 +1448,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     template_warnings_by_task = loaded.template_warnings_by_task
     conversion_warnings: list[str] = list(loaded.warnings)
 
-    conversion_warnings.extend(
-        _survey_lsa._apply_lsa_structural_matching(
-            templates=templates,
-            item_to_task=item_to_task,
-            participant_columns_lower=participant_columns_lower,
-            lsa_analysis=lsa_analysis,
-            survey_filter=survey,
-            add_matched_template_fn=_add_matched_template,
-        )
+    matching_warnings, unmatched_lsa_groups = _survey_lsa._apply_lsa_structural_matching(
+        templates=templates,
+        item_to_task=item_to_task,
+        participant_columns_lower=participant_columns_lower,
+        lsa_analysis=lsa_analysis,
+        survey_filter=survey,
+        add_matched_template_fn=_add_matched_template,
     )
+    conversion_warnings.extend(matching_warnings)
 
     # --- LSA Participant Column Renames ---
     # When converting .lsa files, LimeSurvey mangles question codes (strips
@@ -1602,7 +1602,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override
-        if session_map is not None and not (session and session != "all"):
+        session = "all"  # the generated sessions win over a typed Session ID
+        if session_map is not None:
             require_sessions_mapped(session_map, df[res_ses_col].astype(str).tolist())
     elif (
         session_map is not None
@@ -1663,6 +1664,12 @@ def _convert_survey_dataframe_to_prism_dataset(
         near_match_tasks=near_match_tasks,
     )
     conversion_warnings.extend(map_warnings)
+
+    # Templates are optional: report the groups without a structural match, never fail.
+    if unmatched_lsa_groups:
+        conversion_warnings.append(
+            _survey_lsa.format_unconverted_groups_warning(unmatched_lsa_groups)
+        )
 
     tasks_with_data, task_template_warnings = _survey_core._resolve_tasks_with_warnings(
         col_to_mapping=col_to_mapping,
@@ -1766,6 +1773,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             participant_registry_warning=participant_registry_warning,
             near_match_candidates=near_match_candidates,
             near_match_applied=near_match_applied,
+            unmatched_groups=unmatched_lsa_groups,
         )
 
     # --- Write Output ---
@@ -1900,6 +1908,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         participant_registry_warning=participant_registry_warning,
         near_match_candidates=near_match_candidates,
         near_match_applied=near_match_applied,
+        unmatched_groups=unmatched_lsa_groups,
         applied_value_offsets=applied_value_offsets,
         value_offset_application_counts=value_offset_application_counts,
     )

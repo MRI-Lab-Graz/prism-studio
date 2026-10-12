@@ -69,3 +69,12 @@ def test_sessions_mode_without_repeats_still_needs_a_session_source(tmp_path, li
             tmp_path, library, single_wave, proj,
             session_column=None, session=None, duplicate_handling="sessions",
         )
+
+
+def test_dated_sessions_win_over_a_typed_session_id(tmp_path, library):
+    """The GUI always sends a Session ID; it must not flatten the date-numbered sessions."""
+    out = convert(
+        tmp_path, library, REPEATED, None,
+        session_column=None, session="1", duplicate_handling="sessions",
+    )
+    assert sessions(out, "sub-P001") == ["ses-1", "ses-2"]

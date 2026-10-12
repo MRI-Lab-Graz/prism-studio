@@ -198,6 +198,10 @@ export function createSurveyWorkflowPreviewController({
         if (previewRunColVal) {
             formData.append('run_column', previewRunColVal);
         }
+        const duplicateHandling = document.getElementById('convertDuplicateHandling')?.value;
+        if (duplicateHandling) {
+            formData.append('duplicate_handling', duplicateHandling);
+        }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filenameRaw.toLowerCase()));
@@ -387,6 +391,12 @@ export function createSurveyWorkflowPreviewController({
                 if (data.conversion_summary) {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                     displayConversionSummary(data.conversion_summary);
+                    if (Array.isArray(data.conversion_summary.unmatched_groups)) {
+                        displayUnmatchedGroupsError({
+                            optional: true,
+                            unmatched: data.conversion_summary.unmatched_groups,
+                        });
+                    }
                 } else {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                 }

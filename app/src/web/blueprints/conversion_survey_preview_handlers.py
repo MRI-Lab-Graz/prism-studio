@@ -938,6 +938,16 @@ def handle_api_survey_convert_preview(
             conv_summary["tool_columns"] = result.tool_columns
         if result.conversion_warnings:
             conv_summary["conversion_warnings"] = result.conversion_warnings
+        if getattr(result, "unmatched_groups", None):
+            conv_summary["unmatched_groups"] = [
+                {
+                    "group_name": group["group_name"],
+                    "task_key": group["task_key"],
+                    "item_count": len(group["item_codes"]),
+                    "prism_json": group["prism_json"],
+                }
+                for group in result.unmatched_groups
+            ]
         if getattr(result, "participant_registry_warning", None):
             conv_summary["participant_registry_warning"] = (
                 result.participant_registry_warning

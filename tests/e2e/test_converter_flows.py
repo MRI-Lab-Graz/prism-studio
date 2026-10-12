@@ -28,9 +28,9 @@ def test_survey_file_selection_unlocks_preview_but_not_convert(app_page, studio_
     expect(app_page.locator("#convertBtn")).to_be_disabled()  # preview comes first
 
 
-def convert_survey(page, tmp_path, session):
+def convert_survey(page, tmp_path, session, content=BRS_CSV):
     """Preview, then convert; returns once the run has finished."""
-    select_survey_file(page, tmp_path)
+    select_survey_file(page, tmp_path, content)
     if session:
         page.fill("#convertSessionCustom", session)
     page.click("#previewBtn")
@@ -95,3 +95,38 @@ def test_session_id_label_turns_green_once_a_session_is_chosen(app_page, studio_
 
     app_page.fill("#convertSessionCustom", "")
     assert not _session_label_is_green(app_page)
+
+
+REPEATED_CSV = (
+    "participant_id,startdate,BRS01,BRS02,BRS03\n"
+    "P001,2026-09-01 10:00:00,4,4,3\n"
+    "P001,2026-03-01 10:00:00,3,4,2\n"
+    "P002,2026-03-02 10:00:00,1,0,2\n"
+)
+
+
+def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, studio_url, tmp_path, project):
+    open_survey_tab(app_page, studio_url)
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    convert_survey(app_page, tmp_path, session="1", content=REPEATED_CSV)
+
+    assert sorted(p.name for p in (project / "sub-P001").glob("ses-*")) == ["ses-1", "ses-2"]
+
+
+def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block(app_page, studio_url, tmp_path, project):
+    import shutil
+
+    from tests.test_survey_cli_lsa import _library
+    from tests.test_survey_lsa_unmatched_groups import _lsa_with_two_questionnaires
+
+    shutil.copy(_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(_lsa_with_two_questionnaires(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.fill("#convertSessionCustom", "1")
+
+    app_page.click("#previewBtn")
+
+    expect(app_page.get_by_role("button", name="Save Template").first).to_be_visible(timeout=30000)
+    expect(app_page.locator("#convertBtn")).to_be_enabled()  # the matched questionnaire still converts

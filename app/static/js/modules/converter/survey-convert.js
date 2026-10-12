@@ -1173,6 +1173,10 @@ export function initSurveyConvert(elements) {
         if (runColVal) {
             formData.append('run_column', runColVal);
         }
+        const duplicateHandling = document.getElementById('convertDuplicateHandling')?.value;
+        if (duplicateHandling) {
+            formData.append('duplicate_handling', duplicateHandling);
+        }
 
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
