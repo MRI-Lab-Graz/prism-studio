@@ -102,7 +102,7 @@ jobs:
       id: upload-unsigned-exe
       env:
         SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: unsigned-prism-studio-exe
         path: dist/PrismStudio/PrismStudio.exe
@@ -192,28 +192,28 @@ jobs:
 
     - name: Upload Workflow Artifact (Windows)
       if: runner.os == 'Windows' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/PrismStudio
 
     - name: Upload Workflow Artifact (macOS)
       if: runner.os == 'macOS' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/${{ matrix.artifact_name }}
 
     - name: Upload Workflow Artifact (Linux)
       if: runner.os == 'Linux' && !startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: dist/PrismStudio
 
     - name: Upload Release Artifact
       if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
