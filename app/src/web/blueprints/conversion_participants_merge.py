@@ -17,6 +17,7 @@ from .conversion_participants_io import (
     _normalize_separator_option,
     _resolve_participants_sheet_arg,
     _save_participants_upload_to_temp,
+    _sessions_from_date_option,
 )
 from .conversion_participants_mapping import (
     _canonicalize_preview_id_column,
@@ -180,6 +181,7 @@ def _parse_participants_merge_request(
         "neurobagel_schema": neurobagel_schema,
         "harmonization_decisions": harmonization_decisions,
         "session_resolution_decisions": session_resolution_decisions,
+        "sessions_from_date": _sessions_from_date_option(),
         "context": context,
         "mapping": mapping,
         "logs": logs,
