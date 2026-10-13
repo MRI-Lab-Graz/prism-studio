@@ -24,6 +24,7 @@ from src.participants_backend import (
 )
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.participants_sessions import scope_to_session
+from src.session_assignments import load_session_assignments
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 from src.participant_columns import (
@@ -88,6 +89,7 @@ def _load_participant_table(
     separator_option: str,
     sessions_from_date: str | None = None,
     id_column: str | None = None,
+    decisions: dict | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     suffix = input_path.suffix.lower()
     if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
@@ -98,6 +100,7 @@ def _load_participant_table(
         sheet=sheet,
         sessions_from_date=sessions_from_date,
         id_column=id_column,
+        decisions=decisions,
     )
 
 
@@ -285,6 +288,9 @@ def cmd_participants_preview(args) -> None:
             separator_option=separator_option,
             sessions_from_date=sessions_from_date,
             id_column=getattr(args, "id_column", None),
+            decisions=(
+                load_session_assignments(project_root) if sessions_from_date else None
+            ),
         )
         session_candidates, df = scope_to_session(
             df,

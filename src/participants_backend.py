@@ -1071,12 +1071,17 @@ def _build_participants_merge_input(
 
         separator_value = None if (separator or "auto") == "auto" else separator
         try:
+            from src.session_assignments import load_session_assignments
+
             source_df, _ = load_participant_source(
                 source_path,
                 separator=separator_value,
                 sheet=sheet,
                 sessions_from_date=sessions_from_date,
                 id_column=source_id_column,
+                decisions=(
+                    load_session_assignments(project_root) if sessions_from_date else None
+                ),
             )
         except Exception:
             raise ValueError(
