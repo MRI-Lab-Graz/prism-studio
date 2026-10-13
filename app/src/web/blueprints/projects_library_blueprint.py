@@ -221,6 +221,8 @@ def set_dedicated_terminal_setting():
 def set_global_library_settings():
     """Update the global template library settings."""
     from src.config import (
+        library_folder_error,
+        recipes_folder_error,
         load_app_settings,
         normalize_export_defacing_confirmation_mode,
         save_app_settings,
@@ -245,6 +247,9 @@ def set_global_library_settings():
                     ),
                     400,
                 )
+            problem = library_folder_error(path)
+            if problem:
+                return jsonify({"success": False, "error": problem}), 400
             settings.global_template_library_path = path
         else:
             settings.global_template_library_path = None
@@ -259,6 +264,9 @@ def set_global_library_settings():
                     ),
                     400,
                 )
+            problem = recipes_folder_error(path)
+            if problem:
+                return jsonify({"success": False, "error": problem}), 400
             settings.global_recipes_path = path
         else:
             settings.global_recipes_path = None

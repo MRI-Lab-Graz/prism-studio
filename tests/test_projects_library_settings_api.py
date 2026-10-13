@@ -168,6 +168,40 @@ def test_global_library_setting_rejects_nonexistent_paths(tmp_path, monkeypatch)
     assert "Path does not exist" in payload["error"]
 
 
+def test_global_library_setting_rejects_library_without_survey_folder(
+    tmp_path, monkeypatch
+):
+    app = _build_app_for_blueprint()
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+    (tmp_path / "lib").mkdir()
+
+    response = app.test_client().post(
+        "/api/settings/global-library",
+        json={"global_template_library_path": str(tmp_path / "lib")},
+    )
+    assert response.status_code == 400
+    assert "survey/" in response.get_json()["error"]
+
+
+def test_global_library_setting_rejects_recipes_without_modality_folder(
+    tmp_path, monkeypatch
+):
+    app = _build_app_for_blueprint()
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path)
+    (tmp_path / "rec").mkdir()
+
+    response = app.test_client().post(
+        "/api/settings/global-library",
+        json={"global_recipes_path": str(tmp_path / "rec")},
+    )
+    assert response.status_code == 400
+    assert "survey/" in response.get_json()["error"]
+
+
 def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monkeypatch):
     app = _build_app_for_blueprint()
     from src import config as config_module
@@ -176,8 +210,8 @@ def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monke
 
     library_dir = tmp_path / "official" / "library"
     recipe_dir = tmp_path / "official" / "recipe"
-    library_dir.mkdir(parents=True)
-    recipe_dir.mkdir(parents=True)
+    (library_dir / "survey").mkdir(parents=True)
+    (recipe_dir / "survey").mkdir(parents=True)
 
     client = app.test_client()
     response = client.post(

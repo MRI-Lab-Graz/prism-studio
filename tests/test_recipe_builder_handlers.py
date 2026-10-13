@@ -582,9 +582,15 @@ def test_recipe_builder_save_surfaces_min_valid_warning(tmp_path):
     assert "wb_total" in data["warnings"][0]
 
 
-def test_recipe_builder_surveys_include_official_library_from_app_root(tmp_path):
+def test_recipe_builder_surveys_include_official_library_from_app_root(
+    tmp_path, monkeypatch
+):
     """The GUI resolves the official library from the Flask app root and must
     hand it to src.recipe_builder explicitly (the backend has no Flask)."""
+    import src.config as config
+
+    # isolate from the developer's own configured global library
+    monkeypatch.setattr(config, "_get_user_app_settings_dir", lambda: tmp_path)
     _app, handlers = _build_app_and_handlers()
     app_root = tmp_path / "app"
     official_dir = app_root / "official" / "library" / "survey"
@@ -603,3 +609,21 @@ def test_recipe_builder_surveys_include_official_library_from_app_root(tmp_path)
 
     assert status_code == 200
     assert [s["task"] for s in response.get_json()["surveys"]] == ["offtask"]
+
+
+def test_recipe_builder_global_root_prefers_configured_library(tmp_path, monkeypatch):
+    import src.config as config
+
+    app, handlers = _build_app_and_handlers()
+    custom = tmp_path / "custom_library"
+    (custom / "survey").mkdir(parents=True)
+    monkeypatch.setattr(
+        config,
+        "load_app_settings",
+        lambda app_root=None: config.AppSettings(
+            global_template_library_path=str(custom)
+        ),
+    )
+
+    with app.test_request_context():
+        assert handlers._global_library_root() == custom.resolve()

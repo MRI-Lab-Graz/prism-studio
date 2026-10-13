@@ -180,3 +180,16 @@ def cmd_library_share_template(args) -> None:
     print(f"\n{mail['body']}\n")
     print(f"Mail link: {mail['mailto']}")
     print(f"Attach {path} and send it.")
+
+
+def cmd_library_check_path(args) -> None:
+    """Check a folder is a usable global template library (or recipes folder with
+    --recipes) - the same check the Studio settings page runs before saving."""
+    from src.config import library_folder_error, recipes_folder_error
+
+    check = recipes_folder_error if args.recipes else library_folder_error
+    problem = check(args.path)
+    if problem:
+        print(f"❌ {problem}", file=sys.stderr)
+        sys.exit(1)
+    print(f"✅ {args.path} is valid")

@@ -417,3 +417,25 @@ def test_template_editor_list_merged_can_target_explicit_project_path(
         target_project / "code" / "library"
     )
     assert payload["has_project"] is True
+
+
+def test_global_survey_library_root_prefers_configured_path_over_builtin(
+    tmp_path, monkeypatch
+):
+    import src.config as config
+
+    app, _ = _build_app_and_handlers()
+    helpers = importlib.import_module("src.web.blueprints.tools_helpers")
+
+    custom = tmp_path / "custom_library"
+    (custom / "survey").mkdir(parents=True)
+    monkeypatch.setattr(
+        config,
+        "load_app_settings",
+        lambda app_root=None: config.AppSettings(
+            global_template_library_path=str(custom)
+        ),
+    )
+
+    with app.test_request_context():
+        assert helpers._global_survey_library_root() == custom.resolve()

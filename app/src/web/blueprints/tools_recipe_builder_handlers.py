@@ -24,25 +24,14 @@ from src.recipe_builder import (  # noqa: F401 - RecipeSaveError re-exported
     find_templates,
     save_recipe_to_project,
 )
+from .tools_helpers import _global_survey_library_root
 
 
 def _global_library_root() -> Path | None:
-    """Return the global template library root (mirrors tools_helpers logic)."""
+    """Return the global template library root (same resolution as the Template Editor)."""
     try:
-        base_dir = Path(current_app.root_path)
-        for candidate in [
-            base_dir / "official" / "library",
-            base_dir.parent / "official" / "library",
-        ]:
-            try:
-                resolved = candidate.resolve()
-                if resolved.exists() and resolved.is_dir():
-                    return resolved
-            except (OSError, ValueError):
-                if candidate.exists() and candidate.is_dir():
-                    return candidate
-        return None
-    except RuntimeError:
+        return _global_survey_library_root()
+    except RuntimeError:  # no app context
         return None
 
 

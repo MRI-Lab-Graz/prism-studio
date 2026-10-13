@@ -151,6 +151,8 @@ def dispatch_prism_tools(
             handlers["library_template_delete"](args)
         elif args.action == "share-template":
             handlers["library_share_template"](args)
+        elif args.action == "check-path":
+            handlers["library_check_path"](args)
         else:
             parsers["library"].print_help()
     elif args.command == "dataset":

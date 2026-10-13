@@ -553,6 +553,26 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
     return settings_path
 
 
+def _folder_error(path: str, subfolders: tuple, what: str) -> Optional[str]:
+    root = os.path.expanduser(path)
+    if not os.path.isdir(root):
+        return f"Not a folder: {path}"
+    if not any(os.path.isdir(os.path.join(root, d)) for d in subfolders):
+        names = " or ".join(f"{d}/" for d in subfolders)
+        return f"{what} folder must contain a {names} subfolder: {path}"
+    return None
+
+
+def library_folder_error(path: str) -> Optional[str]:
+    """Return why `path` is not a usable global template library root, or None."""
+    return _folder_error(path, ("survey",), "Library")
+
+
+def recipes_folder_error(path: str) -> Optional[str]:
+    """Return why `path` is not a usable global recipes folder, or None."""
+    return _folder_error(path, ("survey", "biometrics"), "Recipes")
+
+
 def get_effective_library_paths(
     app_root: Optional[str] = None, app_settings: Optional[AppSettings] = None
 ) -> Dict[str, Optional[str]]:

@@ -53,6 +53,11 @@ Findings of a full security review; each fix has a regression test.
   `prism_tools.py library share-template --input <file>`.
 
 ### Fixed
+- **A configured global template library is now used by the Template Editor and Recipe Builder.**
+  The built-in `official/library` used to win over the folder set in settings.
+- **Global library/recipes paths are checked when saved:** the template library needs a `survey/`
+  subfolder, the recipes folder a `survey/` or `biometrics/` one. Same check from the command line:
+  `prism_tools.py library check-path --path <folder> [--recipes]`.
 - **git-annex adjusted-unlocked branches are no longer reported as a backlog.** When symlinks are
   unavailable git-annex switches to an "adjusted unlocked" branch; this was misread as a stalled
   batch of unsaved files.

@@ -32,19 +32,6 @@ def _global_survey_library_root() -> Path | None:
     """Get the global survey library path from configuration."""
     base_dir = Path(current_app.root_path)
 
-    official_candidates = [
-        base_dir / "official" / "library",
-        base_dir.parent / "official" / "library",
-    ]
-    for candidate in official_candidates:
-        try:
-            candidate = candidate.resolve()
-            if candidate.exists() and candidate.is_dir():
-                return candidate
-        except (OSError, ValueError):
-            if candidate.exists() and candidate.is_dir():
-                return candidate
-
     from src.config import get_effective_library_paths
 
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
@@ -58,6 +45,19 @@ def _global_survey_library_root() -> Path | None:
                 candidate = base_dir / candidate
         if candidate.exists() and candidate.is_dir():
             return candidate
+
+    official_candidates = [
+        base_dir / "official" / "library",
+        base_dir.parent / "official" / "library",
+    ]
+    for candidate in official_candidates:
+        try:
+            candidate = candidate.resolve()
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+        except (OSError, ValueError):
+            if candidate.exists() and candidate.is_dir():
+                return candidate
 
     preferred = base_dir / "library" / "survey_i18n"
     try:

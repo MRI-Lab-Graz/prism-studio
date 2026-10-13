@@ -2178,6 +2178,18 @@ def build_prism_tools_parsers(
     )
     parser_lib_share_template.add_argument("--input", required=True, help="Template JSON file to share")
 
+    parser_lib_check_path = subparsers_library.add_parser(
+        "check-path",
+        help="Check a folder is a valid global template library root (has a survey/ "
+        "subfolder). Matches the Studio settings page check.",
+    )
+    parser_lib_check_path.add_argument("--path", required=True, help="Folder to check")
+    parser_lib_check_path.add_argument(
+        "--recipes",
+        action="store_true",
+        help="Check a global recipes folder (needs a survey/ or biometrics/ subfolder)",
+    )
+
     parser_file_management = subparsers.add_parser(
         "file-management",
         help="Studio File Management page actions (delete files, etc.)",
