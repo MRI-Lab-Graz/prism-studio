@@ -1592,6 +1592,11 @@ def _convert_survey_dataframe_to_prism_dataset(
         ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
+    decisions = None
+    if duplicate_handling == "sessions" and project_path:
+        from src.session_assignments import load_session_assignments
+
+        decisions = load_session_assignments(project_path)
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
@@ -1599,6 +1604,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         normalize_sub_fn=_normalize_sub_id,
         res_ses_col=res_ses_col,
         res_run_col=res_run_col,
+        decisions=decisions,
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override

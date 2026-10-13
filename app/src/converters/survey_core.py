@@ -697,6 +697,7 @@ def _handle_duplicate_ids(
     normalize_sub_fn,
     res_ses_col: str | None = None,
     res_run_col: str | None = None,
+    decisions: dict | None = None,
 ) -> tuple[object, str | None, list[str]]:
     """Handle duplicate participant IDs according to duplicate_handling policy.
 
@@ -725,6 +726,24 @@ def _handle_duplicate_ids(
     composite_key = _pd.Series(
         list(zip(*[col for col in grouping_cols])), index=df.index
     )
+
+    if duplicate_handling == "sessions" and not (res_ses_col and res_ses_col in df.columns):
+        # Numbered for the whole file, not only when IDs repeat: a single
+        # abandoned start must be left out too.
+        date_column = next(
+            (c for c in ("startdate", "datestamp") if c in df.columns), None
+        )
+        if date_column:
+            df, numbering_warnings = number_sessions_by_date(
+                df.assign(_dup_norm_id=normalized_ids),
+                "_dup_norm_id",
+                date_column,
+                session_column="_dup_session_num",
+                decisions=decisions,
+            )
+            df = df.drop(columns=["_dup_norm_id"])
+            return df, "_dup_session_num", numbering_warnings
+        # No date column: keep the old file-order numbering below.
 
     if composite_key.duplicated().any():
         dup_mask = composite_key.duplicated(keep=False)
