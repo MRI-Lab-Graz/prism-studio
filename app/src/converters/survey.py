@@ -1619,6 +1619,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     ):
         raise SessionMapError(_NEEDS_SESSION_MESSAGE)  # no repeats, so nothing was numbered
     conversion_warnings.extend(duplicate_warnings)
+    # A generated session column is not a source column: report none to callers.
+    reported_ses_col = (
+        None if res_ses_col == _survey_core.GENERATED_SESSION_COLUMN else res_ses_col
+    )
 
     # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
     # resolve to the identical on-disk directory on a case-insensitive
@@ -1763,12 +1767,13 @@ def _convert_survey_dataframe_to_prism_dataset(
                 participant_registry_warning
             )
 
+        dry_run_preview["summary"]["session_column"] = reported_ses_col
         return SurveyConvertResult(
             tasks_included=sorted(tasks_with_data),
             unknown_columns=unknown_cols,
             missing_items_by_task=missing_items_by_task,
             id_column=res_id_col,
-            session_column=res_ses_col,
+            session_column=reported_ses_col,
             run_column=res_run_col,
             detected_sessions=detected_sessions,
             conversion_warnings=conversion_warnings,
@@ -1902,7 +1907,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         unknown_columns=unknown_cols,
         missing_items_by_task=missing_items_by_task,
         id_column=res_id_col,
-        session_column=res_ses_col,
+        session_column=reported_ses_col,
         run_column=res_run_col,
         detected_sessions=detected_sessions,
         missing_cells_by_subject=missing_cells_by_subject,

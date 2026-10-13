@@ -689,6 +689,10 @@ def _filter_rows_by_selected_session(
     return df
 
 
+# Internal column holding generated session numbers; never a source column.
+GENERATED_SESSION_COLUMN = "_dup_session_num"
+
+
 def _handle_duplicate_ids(
     *,
     df,
@@ -738,11 +742,11 @@ def _handle_duplicate_ids(
                 df.assign(_dup_norm_id=normalized_ids),
                 "_dup_norm_id",
                 date_column,
-                session_column="_dup_session_num",
+                session_column=GENERATED_SESSION_COLUMN,
                 decisions=decisions,
             )
             df = df.drop(columns=["_dup_norm_id"])
-            return df, "_dup_session_num", numbering_warnings
+            return df, GENERATED_SESSION_COLUMN, numbering_warnings
         # No date column: keep the old file-order numbering below.
 
     if composite_key.duplicated().any():
@@ -781,14 +785,15 @@ def _handle_duplicate_ids(
                     df.assign(_dup_norm_id=normalized_ids),
                     "_dup_norm_id",
                     date_column,
-                    session_column="_dup_session_num",
+                    session_column=GENERATED_SESSION_COLUMN,
+                    decisions=decisions,
                 )
                 df = df.drop(columns=["_dup_norm_id"])
                 warnings.extend(numbering_warnings)
             else:
                 df = df.copy()
-                df["_dup_session_num"] = df.groupby(composite_key.values).cumcount() + 1
-            res_ses_col_override = "_dup_session_num"
+                df[GENERATED_SESSION_COLUMN] = df.groupby(composite_key.values).cumcount() + 1
+            res_ses_col_override = GENERATED_SESSION_COLUMN
             warnings.append(
                 f"Duplicate entries found ({dup_count}). Created multiple sessions for: {dup_label}"
             )

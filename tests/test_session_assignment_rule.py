@@ -47,12 +47,12 @@ def test_participant_without_a_completed_response_is_named():
 
 def test_identical_dates_keep_file_order():
     rows = [
-        ["1", "a", "2026-03-01 10:00:00", "x", "5"],
         ["2", "a", "2026-03-01 10:00:00", "x", "5"],
+        ["1", "a", "2026-03-01 10:00:00", "x", "5"],
     ]
     out, _ = number_sessions_by_date(_df(rows), "token")
 
-    assert _by_id(out) == {"1": "1", "2": "2"}
+    assert _by_id(out) == {"2": "1", "1": "2"}
 
 
 def test_a_file_without_submitdate_treats_every_response_as_completed():
@@ -115,3 +115,32 @@ def test_table_lists_every_response_with_reason_and_session():
     assert (by_id["2"]["session"], by_id["2"]["reason"]) == ("1", "auto")
     assert (by_id["3"]["session"], by_id["3"]["reason"]) == (None, "skipped")
     assert by_id["2"]["date"].startswith("2026-03-01")
+
+
+def test_saved_decisions_are_listed_in_the_warnings():
+    decisions = {
+        "2": {"skip": True},
+        "3": {"session": "pre"},
+        "999": {"skip": True},  # not in this file: has its own warning
+    }
+    _, warnings = number_sessions_by_date(_df(), "token", decisions=decisions)
+
+    assert warnings[1] == "Saved decisions applied: skipped 2; session 'pre' for 3."
+    assert "999" not in warnings[1]
+    assert any(w.startswith("Ignored decisions") and "999" in w for w in warnings)
+
+
+def test_no_decisions_means_no_decisions_line():
+    _, warnings = number_sessions_by_date(_df(), "token")
+
+    assert not any("Saved decisions" in w for w in warnings)
+
+
+def test_a_file_where_no_response_gets_a_session_is_an_error():
+    rows = [["1", "a", "2026-03-01 09:00:00", "", "2"], ["2", "b", "2026-03-02 09:00:00", "", "1"]]
+
+    with pytest.raises(ValueError, match=r"No response gets a session \(2 response\(s\)"):
+        number_sessions_by_date(_df(rows), "token")
+
+    table, _ = session_assignment_table(_df(rows), "token")  # the review still shows why
+    assert len(table) == 2

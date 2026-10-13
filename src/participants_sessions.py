@@ -108,10 +108,10 @@ def _outcomes(
     date_column: str,
     response_id_column: str,
     decisions: dict | None,
-) -> tuple[pd.DataFrame, list[str], str]:
+) -> tuple[pd.DataFrame, list[str]]:
     """Per-response outcome shared by numbering and the review table.
 
-    Returns (res, warnings, date_column_used). ``res`` is indexed like ``df`` with
+    Returns (res, warnings). ``res`` is indexed like ``df`` with
     participant, response_id, when, completed, lastpage, session (str | None), reason.
     """
     if (
@@ -196,6 +196,17 @@ def _outcomes(
         f"Sessions numbered by {date_column} (completed responses only): "
         f"{len(assigned)} of {len(res)} responses kept."
     ]
+    applied = res[res["reason"].isin(["skipped", "override"])]
+    if len(applied):
+        def _ids(frame):
+            return ", ".join(sorted(frame["response_id"], key=_natural_key))
+        parts = []
+        skipped = applied[applied["reason"] == "skipped"]
+        if len(skipped):
+            parts.append(f"skipped {_ids(skipped)}")
+        for label, group in applied[applied["reason"] == "override"].groupby("session", sort=True):
+            parts.append(f"session {label!r} for {_ids(group)}")
+        warnings.append("Saved decisions applied: " + "; ".join(parts) + ".")
     left_out = res[res["session"].isna()]
     incomplete = left_out[left_out["reason"] == "incomplete"]
     if len(incomplete):
@@ -216,7 +227,7 @@ def _outcomes(
             for i, (k, n) in enumerate(counts.items())
         ]
         warnings.append("Uneven session counts: " + ", ".join(parts))
-    return res, warnings, date_column
+    return res, warnings
 
 
 def number_sessions_by_date(
@@ -239,7 +250,12 @@ def number_sessions_by_date(
         raise ValueError(
             f"The file already has a '{session_column}' column; use it as the session column instead."
         )
-    res, warnings, _ = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    if len(res) and res["session"].isna().all():
+        raise ValueError(
+            f"No response gets a session ({len(res)} response(s): all incomplete or skipped). "
+            "Run `sessions review` to see why."
+        )
     kept = res[res["session"].notna()].sort_values(["participant", "when"], kind="stable")
     out = df.loc[kept.index].copy()
     out[session_column] = kept["session"]
@@ -254,7 +270,7 @@ def session_assignment_table(
     response_id_column: str = "id",
 ) -> tuple[list[dict], list[str]]:
     """One row per response for review: what session it gets and why."""
-    res, warnings, _ = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
     rows = [
         {
             "participant": r["participant"],
