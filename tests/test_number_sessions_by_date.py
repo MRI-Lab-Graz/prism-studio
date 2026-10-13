@@ -57,7 +57,7 @@ def test_mixed_date_formats_parse():
 
 
 def test_missing_date_is_an_error():
-    df = _df([["a", "", "", "", "1"]])
+    df = _df([["a", "", "", "x", "1"]])
     with pytest.raises(ValueError, match="a"):
         number_sessions_by_date(df, "token")
 
@@ -68,14 +68,14 @@ def test_existing_session_column_is_an_error():
         number_sessions_by_date(df, "token")
 
 
-def test_incomplete_runs_are_flagged():
+def test_incomplete_runs_are_left_out_and_flagged():
     df = _df([
         ["a", "2026-03-01", "", "", "3"],
         ["a", "2026-03-02", "", "2026-03-02", "9"],
     ])
-    _, warnings = number_sessions_by_date(df, "token")
-    text = "\n".join(warnings)
-    assert "a" in text and "session 1" in text and "lastpage 3" in text
+    out, warnings = number_sessions_by_date(df, "token")
+    assert list(out["session"]) == ["1"]  # only the completed response
+    assert any("incomplete response(s) left out" in w for w in warnings)
 
 
 def test_uneven_session_counts_are_reported():
@@ -91,7 +91,7 @@ def test_uneven_session_counts_are_reported():
 def test_even_counts_complete_runs_give_no_warnings():
     df = _df([["a", "2026-03-01", "", "x", "1"], ["b", "2026-03-01", "", "x", "1"]])
     _, warnings = number_sessions_by_date(df, "token")
-    assert warnings == []
+    assert warnings == [w for w in warnings if w.startswith("Sessions numbered by")]
 
 
 def test_datestamp_only_file_orders_by_datestamp():
