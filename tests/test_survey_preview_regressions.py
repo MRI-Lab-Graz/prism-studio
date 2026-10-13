@@ -1091,3 +1091,56 @@ def test_survey_preview_error_names_the_selected_library_when_it_fell_back(
     error = (response[0] if isinstance(response, tuple) else response).get_json()["error"]
     assert str(selected) in error
     assert "no survey templates" in error.lower()
+
+
+def test_survey_preview_tells_the_user_when_it_fell_back_to_the_official_library(
+    monkeypatch, tmp_path
+):
+    from src.web.blueprints import conversion_survey_handlers
+
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+    selected = tmp_path / "my_library" / "survey"
+    selected.mkdir(parents=True)
+    official = tmp_path / "official"
+    official.mkdir()
+    (official / "survey-ads.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        conversion_survey_handlers, "_resolve_official_survey_dir", lambda _p: official
+    )
+    result = SimpleNamespace(
+        dry_run_preview={"summary": {}, "participants": [], "files_to_create": []},
+        tasks_included=["ads"],
+        unknown_columns=[],
+        missing_items_by_task={},
+        id_column="ID",
+        session_column=None,
+        run_column=None,
+        detected_sessions=[],
+        conversion_warnings=["an existing warning"],
+        task_runs={},
+        template_matches=None,
+        tool_columns=[],
+        near_match_candidates=[],
+        near_match_applied=False,
+    )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={"file": (io.BytesIO(b"stub"), "demo.sav"), "id_column": "ID", "validate": "false"},
+        content_type="multipart/form-data",
+    ):
+        response = handle_api_survey_convert_preview(
+            convert_survey_file_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: selected.parent,
+            run_survey_with_official_fallback=lambda _c, **_k: result,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            id_column_not_detected_error_cls=ValueError,
+        )
+
+    payload = response.get_json()
+    for warnings in (payload["conversion_warnings"], payload["conversion_summary"]["conversion_warnings"]):
+        assert str(selected) in warnings[0] and "official library" in warnings[0]
+        assert "an existing warning" in warnings

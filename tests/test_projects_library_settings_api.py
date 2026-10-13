@@ -211,7 +211,9 @@ def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monke
     library_dir = tmp_path / "official" / "library"
     recipe_dir = tmp_path / "official" / "recipe"
     (library_dir / "survey").mkdir(parents=True)
+    (library_dir / "survey" / "survey-ads.json").write_text("{}")
     (recipe_dir / "survey").mkdir(parents=True)
+    (recipe_dir / "survey" / "recipe-ads.json").write_text("{}")
 
     client = app.test_client()
     response = client.post(

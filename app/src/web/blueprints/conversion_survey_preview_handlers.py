@@ -887,6 +887,9 @@ def handle_api_survey_convert_preview(
             manual_review_payloads=task_manual_review_payloads,
         )
 
+        conversion_warnings = (
+            [library_fallback_note] if library_fallback_note else []
+        ) + list(result.conversion_warnings or [])
         response_data = {
             "preview": result.dry_run_preview,
             "tasks_included": result.tasks_included,
@@ -897,7 +900,7 @@ def handle_api_survey_convert_preview(
             "session_column": result.session_column,
             "run_column": result.run_column,
             "detected_sessions": result.detected_sessions,
-            "conversion_warnings": result.conversion_warnings,
+            "conversion_warnings": conversion_warnings,
             "task_runs": result.task_runs,
             "multivariant_tasks": collect_multivariant_tasks_from_library(
                 library_dir=effective_survey_dir,
@@ -940,8 +943,8 @@ def handle_api_survey_convert_preview(
             conv_summary["unknown_columns"] = result.unknown_columns
         if getattr(result, "tool_columns", None):
             conv_summary["tool_columns"] = result.tool_columns
-        if result.conversion_warnings:
-            conv_summary["conversion_warnings"] = result.conversion_warnings
+        if conversion_warnings:
+            conv_summary["conversion_warnings"] = conversion_warnings
         if getattr(result, "unmatched_groups", None):
             conv_summary["unmatched_groups"] = [
                 {
