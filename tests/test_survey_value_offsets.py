@@ -533,9 +533,7 @@ def test_survey_preview_returns_value_offset_confirmation_payload(tmp_path):
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
             build_template_completion_gate=lambda _issues: None,
-            format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
-            unmatched_groups_error_cls=RuntimeError,
             survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
             format_value_offset_confirmation_response=lambda error: {
                 "error": "value_offset_manual_review_required",
@@ -628,9 +626,7 @@ def test_survey_preview_passes_value_offsets_to_converter(tmp_path):
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
             build_template_completion_gate=lambda _issues: None,
-            format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
-            unmatched_groups_error_cls=RuntimeError,
         )
 
     payload = response.get_json()
@@ -709,9 +705,7 @@ def test_survey_preview_merges_selected_tasks_filter(tmp_path):
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
             build_template_completion_gate=lambda _issues: None,
-            format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
-            unmatched_groups_error_cls=RuntimeError,
         )
 
     payload = response.get_json()
@@ -800,9 +794,7 @@ def test_survey_preview_validate_path_returns_task_review_summary(tmp_path):
             run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=lambda **_kwargs: [],
             build_template_completion_gate=lambda _issues: None,
-            format_unmatched_groups_response=lambda _error: {},
             id_column_not_detected_error_cls=ValueError,
-            unmatched_groups_error_cls=RuntimeError,
             survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
             format_value_offset_confirmation_response=lambda error: {
                 "error": "value_offset_manual_review_required",

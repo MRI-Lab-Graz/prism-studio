@@ -48,8 +48,6 @@ def handle_api_survey_convert(
     sync_project_survey_recipe_offsets,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
-    unmatched_groups_error_cls,
-    format_unmatched_groups_response,
 ):
     """Run full survey conversion and return ZIP output."""
     if (
@@ -261,8 +259,6 @@ def handle_api_survey_convert(
                 ),
                 409,
             )
-        except unmatched_groups_error_cls as error:
-            return jsonify(format_unmatched_groups_response(error)), 409
         except Exception as error:
             if is_value_offset_confirmation_error(error):
                 return (
@@ -383,8 +379,6 @@ def handle_api_survey_convert(
                 ),
                 409,
             )
-        except unmatched_groups_error_cls as error:
-            return jsonify(format_unmatched_groups_response(error)), 409
         except Exception as error:
             if is_value_offset_confirmation_error(error):
                 return (
