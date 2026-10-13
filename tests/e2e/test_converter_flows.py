@@ -244,3 +244,24 @@ def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_
     expect(row1.locator("input[data-role=skip]")).not_to_be_checked()
     saved = json.loads((project / "code" / "session_assignments.json").read_text())
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"1": {"include": True}}}}}
+
+
+def test_review_session_assignment_button_folds_the_table_back_in(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+    rows = app_page.locator("#sessionAssignmentsBody tbody tr")
+
+    app_page.click("#sessionAssignmentsBtn")
+    expect(rows).to_have_count(6, timeout=15000)
+
+    app_page.click("#sessionAssignmentsBtn")  # second click folds it back in
+    expect(app_page.locator("#sessionAssignmentsBody")).to_be_empty()
+
+    app_page.click("#sessionAssignmentsBtn")  # and a third shows it again
+    expect(rows).to_have_count(6, timeout=15000)
