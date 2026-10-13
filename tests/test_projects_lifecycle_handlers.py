@@ -490,6 +490,35 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertFalse(body["datalad_preflight"]["windows_long_paths_enabled"])
         self.assertIn("MAX_PATH", body["datalad_preflight"]["message"])
 
+    def test_datalad_preflight_status_unchanged_off_windows(self):
+        with patch.object(
+            self.module.shutil,
+            "which",
+            side_effect=lambda executable: {
+                "datalad": "/usr/bin/datalad",
+                "git-annex": "/usr/bin/git-annex",
+            }.get(executable),
+        ), patch.object(
+            self.module, "windows_symlinks_supported", return_value=None
+        ), patch.object(
+            self.module, "windows_long_paths_enabled", return_value=None
+        ):
+            with self.app.test_request_context(
+                "/api/projects/datalad/preflight",
+                method="GET",
+            ):
+                response = self.handle_datalad_preflight_status()
+
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        preflight = resp_obj.get_json()["datalad_preflight"]
+
+        self.assertIsNone(preflight["windows_symlinks_supported"])
+        self.assertIsNone(preflight["windows_long_paths_enabled"])
+        self.assertEqual(
+            preflight["message"],
+            "DataLad and git-annex are available for project setup.",
+        )
+
     def test_remote_source_status_marks_openneuro_remote_disabled_without_datalad(self):
         manager = _ProjectManagerStub()
 

@@ -67,6 +67,7 @@ def test_rename_file_retries_through_transient_permission_error(tmp_path, monkey
             raise PermissionError("[WinError 32] file in use")
         real_replace(src, dst)
 
+    monkeypatch.setattr(fixer_module.sys, "platform", "win32")
     monkeypatch.setattr(fixer_module.os, "replace", _flaky_replace)
     monkeypatch.setattr(fixer_module.time, "sleep", lambda seconds: None)
 
@@ -94,6 +95,7 @@ def test_rename_file_raises_after_exhausting_retries(tmp_path, monkeypatch):
     def _always_locked(src, dst):
         raise PermissionError("[WinError 32] file in use")
 
+    monkeypatch.setattr(fixer_module.sys, "platform", "win32")
     monkeypatch.setattr(fixer_module.os, "replace", _always_locked)
     monkeypatch.setattr(fixer_module.time, "sleep", lambda seconds: None)
 
@@ -108,3 +110,37 @@ def test_rename_file_raises_after_exhausting_retries(tmp_path, monkeypatch):
 
     with pytest.raises(PermissionError):
         fixer._rename_file(fix)
+
+
+def test_rename_file_does_not_retry_permission_error_off_windows(tmp_path, monkeypatch):
+    """A real permission denial on macOS/Linux must surface immediately."""
+    source = tmp_path / "sub-01_bad-name.tsv"
+    source.write_text("source content", encoding="utf-8")
+
+    import app.src.fixer as fixer_module
+
+    calls = {"count": 0, "sleep": 0}
+
+    def _denied(src, dst):
+        calls["count"] += 1
+        raise PermissionError("permission denied")
+
+    def _sleep(seconds):
+        calls["sleep"] += 1
+
+    monkeypatch.setattr(fixer_module.sys, "platform", "linux")
+    monkeypatch.setattr(fixer_module.os, "replace", _denied)
+    monkeypatch.setattr(fixer_module.time, "sleep", _sleep)
+
+    fixer = fixer_module.DatasetFixer(str(tmp_path))
+    fix = fixer_module.FixAction(
+        issue_code="TEST",
+        description="rename",
+        file_path=str(source),
+        action_type="rename",
+        details={"new_path": str(tmp_path / "target.tsv")},
+    )
+
+    with pytest.raises(PermissionError):
+        fixer._rename_file(fix)
+    assert calls == {"count": 1, "sleep": 0}

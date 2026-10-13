@@ -108,8 +108,6 @@ def windows_symlinks_supported():
     if not sys.platform.startswith("win"):
         return None
 
-    import tempfile
-
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
             target = os.path.join(tmp_dir, "target")

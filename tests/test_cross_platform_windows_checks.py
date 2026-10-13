@@ -53,7 +53,10 @@ def test_windows_symlinks_supported_none_off_windows(monkeypatch):
 
 def test_windows_symlinks_supported_true_when_symlink_creation_succeeds(monkeypatch):
     monkeypatch.setattr(sys, "platform", "win32")
+    created = []
+    monkeypatch.setattr(os, "symlink", lambda target, link: created.append(link))
     assert cross_platform.windows_symlinks_supported() is True
+    assert len(created) == 1
 
 
 def test_windows_symlinks_supported_false_when_symlink_creation_denied(monkeypatch):

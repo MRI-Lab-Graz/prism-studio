@@ -15,6 +15,7 @@ Usage:
 """
 
 import os
+import sys
 import json
 import time
 from datetime import date
@@ -72,9 +73,8 @@ def _replace_with_retry(source: str, destination: str) -> None:
     Antivirus/Windows Defender frequently holds a brief exclusive lock on
     a just-written file, which surfaces as PermissionError (WinError 32)
     on os.replace() even though nothing in PRISM itself still has the
-    file open. POSIX platforms don't exhibit this, so the retry only
-    ever loops when the first attempt actually raises -- no added cost
-    on the common path.
+    file open. POSIX platforms don't exhibit this, so a PermissionError there
+    is a real denial and is re-raised immediately.
     """
     last_error: Optional[OSError] = None
     for attempt in range(_RENAME_RETRY_ATTEMPTS):
@@ -82,6 +82,8 @@ def _replace_with_retry(source: str, destination: str) -> None:
             os.replace(source, destination)
             return
         except PermissionError as exc:
+            if not sys.platform.startswith("win"):
+                raise
             last_error = exc
             if attempt < _RENAME_RETRY_ATTEMPTS - 1:
                 time.sleep(_RENAME_RETRY_DELAY_SECONDS)
