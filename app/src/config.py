@@ -553,24 +553,30 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
     return settings_path
 
 
-def _folder_error(path: str, subfolders: tuple, what: str) -> Optional[str]:
-    root = os.path.expanduser(path)
-    if not os.path.isdir(root):
+def _folder_error(path: str, subfolders: tuple, what: str, pattern: str) -> Optional[str]:
+    root = Path(os.path.expanduser(path))
+    if not root.is_dir():
         return f"Not a folder: {path}"
-    if not any(os.path.isdir(os.path.join(root, d)) for d in subfolders):
-        names = " or ".join(f"{d}/" for d in subfolders)
+    names = " or ".join(f"{d}/" for d in subfolders)
+    found = [root / d for d in subfolders if (root / d).is_dir()]
+    if not found:
         return f"{what} folder must contain a {names} subfolder: {path}"
+    if not any(next(d.glob(pattern), None) for d in found):
+        return (
+            f"{what} folder has no {pattern} files in its {names} subfolder - "
+            f"nothing in {path} would be recognised."
+        )
     return None
 
 
 def library_folder_error(path: str) -> Optional[str]:
     """Return why `path` is not a usable global template library root, or None."""
-    return _folder_error(path, ("survey",), "Library")
+    return _folder_error(path, ("survey",), "Library", "survey-*.json")
 
 
 def recipes_folder_error(path: str) -> Optional[str]:
     """Return why `path` is not a usable global recipes folder, or None."""
-    return _folder_error(path, ("survey", "biometrics"), "Recipes")
+    return _folder_error(path, ("survey", "biometrics"), "Recipes", "recipe-*.json")
 
 
 def get_effective_library_paths(
