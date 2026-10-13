@@ -24,8 +24,6 @@ def handle_api_survey_detect_version_context(
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
     sessions_not_mapped_error_cls,
-    unmatched_groups_error_cls,
-    format_unmatched_groups_response,
 ):
     uploaded_file, upload_error = resolve_uploaded_or_source_file(
         field_names=("excel", "file")
@@ -167,8 +165,6 @@ def handle_api_survey_detect_version_context(
             ),
             409,
         )
-    except unmatched_groups_error_cls as error:
-        return jsonify(format_unmatched_groups_response(error)), 409
     except Exception as error:
         return jsonify({"error": str(error)}), 400
 

@@ -16,8 +16,8 @@ export function createSurveyConversionResultsAdapter({
         return getSurveyConversionSummaryController()?.displayConversionSummary(summary);
     }
 
-    function displayUnmatchedGroupsError(data) {
-        return getSurveyUnmatchedTemplatesController()?.displayUnmatchedGroupsError(data);
+    function displayUnmatchedTemplatesCard(unmatched) {
+        return getSurveyUnmatchedTemplatesController()?.displayUnmatchedTemplatesCard(unmatched);
     }
 
     function displayValidationResults(validation, prefix = '') {
@@ -28,7 +28,7 @@ export function createSurveyConversionResultsAdapter({
         appendLog,
         resetConversionUI,
         displayConversionSummary,
-        displayUnmatchedGroupsError,
+        displayUnmatchedTemplatesCard,
         displayValidationResults,
     };
 }

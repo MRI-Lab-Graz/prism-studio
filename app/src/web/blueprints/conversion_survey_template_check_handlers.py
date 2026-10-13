@@ -18,8 +18,6 @@ def handle_api_survey_check_project_templates(
     infer_tasks_against_official_templates,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
-    unmatched_groups_error_cls,
-    format_unmatched_groups_response,
     validate_project_templates_for_tasks,
     collect_project_template_warnings_for_tasks,
     collect_multivariant_tasks_from_library,
@@ -122,8 +120,6 @@ def handle_api_survey_check_project_templates(
                 ),
                 409,
             )
-        except unmatched_groups_error_cls as error:
-            return jsonify(format_unmatched_groups_response(error)), 409
         except Exception as error:
             matching_summary["match_error"] = str(error)
     elif upload_error and upload_error != "Missing input file":

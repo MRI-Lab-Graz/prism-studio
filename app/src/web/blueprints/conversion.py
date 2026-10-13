@@ -8,7 +8,6 @@ from flask import Blueprint
 
 from .conversion_survey_handlers import (  # noqa: F401
     _copy_official_templates_to_project,
-    _format_unmatched_groups_response,
     _resolve_official_survey_dir,
     _run_survey_with_official_fallback,
     api_save_unmatched_template,

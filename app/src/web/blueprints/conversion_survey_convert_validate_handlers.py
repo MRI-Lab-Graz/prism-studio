@@ -43,8 +43,6 @@ def handle_api_survey_convert_validate(
     is_value_offset_confirmation_error,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
-    unmatched_groups_error_cls,
-    format_unmatched_groups_response,
     participants_mapping_candidates,
     log_file_head,
     resolve_validation_library_path,
@@ -278,9 +276,6 @@ def handle_api_survey_convert_validate(
                 ),
                 409,
             )
-        except unmatched_groups_error_cls as error:
-            add_log(f"Unmatched groups: {str(error)}", "error")
-            return jsonify(format_unmatched_groups_response(error, log_messages)), 409
         except Exception as error:
             if is_value_offset_confirmation_error(error):
                 add_log(
@@ -444,9 +439,6 @@ def handle_api_survey_convert_validate(
                 ),
                 409,
             )
-        except unmatched_groups_error_cls as error:
-            add_log(f"Unmatched groups: {str(error)}", "error")
-            return jsonify(format_unmatched_groups_response(error, log_messages)), 409
         except Exception as conversion_error:
             if is_value_offset_confirmation_error(conversion_error):
                 add_log(
@@ -836,8 +828,6 @@ def handle_api_survey_convert_validate_start(
     is_value_offset_confirmation_error,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
-    unmatched_groups_error_cls,
-    format_unmatched_groups_response,
     participants_mapping_candidates,
     log_file_head,
     resolve_validation_library_path,
@@ -1065,8 +1055,6 @@ def handle_api_survey_convert_validate_start(
         "is_value_offset_confirmation_error": is_value_offset_confirmation_error,
         "id_column_not_detected_error_cls": id_column_not_detected_error_cls,
         "missing_id_mapping_error_cls": missing_id_mapping_error_cls,
-        "unmatched_groups_error_cls": unmatched_groups_error_cls,
-        "format_unmatched_groups_response": format_unmatched_groups_response,
         "participants_mapping_candidates": participants_mapping_candidates,
         "log_file_head": log_file_head,
         "resolve_validation_library_path": resolve_validation_library_path,
@@ -1159,8 +1147,6 @@ def _run_survey_convert_validate_job(
     is_value_offset_confirmation_error = deps["is_value_offset_confirmation_error"]
     id_column_not_detected_error_cls = deps["id_column_not_detected_error_cls"]
     missing_id_mapping_error_cls = deps["missing_id_mapping_error_cls"]
-    unmatched_groups_error_cls = deps["unmatched_groups_error_cls"]
-    format_unmatched_groups_response = deps["format_unmatched_groups_response"]
     participants_mapping_candidates = deps["participants_mapping_candidates"]
     log_file_head = deps["log_file_head"]
     resolve_validation_library_path = deps["resolve_validation_library_path"]
@@ -1264,12 +1250,6 @@ def _run_survey_convert_validate_job(
                     "suggestions": error.suggestions,
                     "log": log_messages,
                 },
-            )
-            return
-        except unmatched_groups_error_cls as error:
-            add_log(f"Unmatched groups: {str(error)}", "error")
-            fail_with_payload(
-                format_unmatched_groups_response(error, log_messages),
             )
             return
         except Exception as error:
@@ -1423,12 +1403,6 @@ def _run_survey_convert_validate_job(
                     "suggestions": error.suggestions,
                     "log": log_messages,
                 },
-            )
-            return
-        except unmatched_groups_error_cls as error:
-            add_log(f"Unmatched groups: {str(error)}", "error")
-            fail_with_payload(
-                format_unmatched_groups_response(error, log_messages),
             )
             return
         except Exception as conversion_error:

@@ -347,9 +347,7 @@ def handle_api_survey_convert_preview(
     resolve_effective_library_path,
     run_survey_with_official_fallback,
     validate_project_templates_for_tasks,
-    format_unmatched_groups_response,
     id_column_not_detected_error_cls,
-    unmatched_groups_error_cls,
     build_template_completion_gate=None,
     survey_value_out_of_bounds_error_cls=None,
     format_value_offset_confirmation_response=None,
@@ -1012,13 +1010,6 @@ def handle_api_survey_convert_preview(
                 ),
                 409,
             )
-
-        if (
-            isinstance(unmatched_groups_error_cls, type)
-            and issubclass(unmatched_groups_error_cls, BaseException)
-            and isinstance(error, unmatched_groups_error_cls)
-        ):
-            return jsonify(format_unmatched_groups_response(error)), 409
 
         if isinstance(error, zipfile.BadZipFile):
             return (

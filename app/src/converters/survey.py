@@ -1052,15 +1052,6 @@ class MissingIdMappingError(ValueError):
         self.suggestions = suggestions
 
 
-class UnmatchedGroupsError(ValueError):
-    """Raised when LSA groups have no matching library template."""
-
-    def __init__(self, unmatched: list[dict], message: str):
-        super().__init__(message)
-        self.unmatched = unmatched
-        # Each dict: {"group_name": str, "task_key": str, "item_codes": [...], "prism_json": {...}}
-
-
 def _damerau_levenshtein(a: str, b: str, limit: int = 2) -> int | None:
     """Compute Damerau-Levenshtein distance with an optional early-exit limit."""
 

@@ -73,7 +73,6 @@ from .conversion_survey_template_check_handlers import (
 from .conversion_survey_response_helpers import (
     build_prepare_workflow_payload,
     coerce_flask_response,
-    format_unmatched_groups_response,
     format_value_offset_confirmation_response,
 )
 from .conversion_survey_template_helpers import (
@@ -89,7 +88,6 @@ from .conversion_survey_version_context_handlers import (
     handle_api_survey_detect_version_context,
 )
 MissingIdMappingError: Any = None
-UnmatchedGroupsError: Any = None
 SurveyValueOutOfBoundsError: Any = None
 _resolve_effective_template_version_overrides: Any = None
 _normalize_template_version_overrides_for_requests: Any = None
@@ -106,7 +104,6 @@ _survey_workflow_stage_service = SurveyWorkflowStageService(
 try:
     from src.converters.survey import (
         MissingIdMappingError,
-        UnmatchedGroupsError,
         _NON_ITEM_TOPLEVEL_KEYS,
         convert_survey_lsa_to_prism_dataset,
         convert_survey_file_to_prism_dataset,
@@ -637,9 +634,7 @@ def api_survey_prepare_workflow():
             run_survey_with_official_fallback=_run_survey_with_official_fallback,
             validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
             build_template_completion_gate=_build_template_completion_gate,
-            format_unmatched_groups_response=_format_unmatched_groups_response,
             id_column_not_detected_error_cls=IdColumnNotDetectedError,
-            unmatched_groups_error_cls=UnmatchedGroupsError,
             survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
             format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
         )
@@ -735,14 +730,6 @@ def _build_template_completion_gate(
     return build_template_completion_gate(tasks=tasks, issues=issues)
 
 
-def _format_unmatched_groups_response(uge, log_messages=None):
-    return format_unmatched_groups_response(
-        uge,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
-        log_messages=log_messages,
-    )
-
-
 def api_survey_languages():
     return handle_api_survey_languages(
         participant_json_candidates=_participant_json_candidates,
@@ -775,8 +762,6 @@ def api_survey_check_project_templates():
         infer_tasks_against_official_templates=_infer_tasks_against_official_templates,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
         validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
         collect_project_template_warnings_for_tasks=_collect_project_template_warnings_for_tasks,
         collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
@@ -804,8 +789,6 @@ def api_survey_detect_version_context():
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
         sessions_not_mapped_error_cls=SessionsNotMappedError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
     )
 
 
@@ -817,9 +800,7 @@ def api_survey_convert_preview():
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
         validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
         build_template_completion_gate=_build_template_completion_gate,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
         survey_value_out_of_bounds_error_cls=SurveyValueOutOfBoundsError,
         format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
     )
@@ -858,8 +839,6 @@ def api_survey_convert():
         sync_project_survey_recipe_offsets=sync_project_survey_recipe_offsets,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
     )
 
 
@@ -891,8 +870,6 @@ def api_survey_convert_validate():
         is_value_offset_confirmation_error=_is_value_offset_confirmation_error,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
         participants_mapping_candidates=participants_mapping_candidates,
         log_file_head=_log_file_head,
         resolve_validation_library_path=_resolve_validation_library_path,
@@ -936,8 +913,6 @@ def api_survey_convert_validate_start():
         is_value_offset_confirmation_error=_is_value_offset_confirmation_error,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
-        unmatched_groups_error_cls=UnmatchedGroupsError,
-        format_unmatched_groups_response=_format_unmatched_groups_response,
         participants_mapping_candidates=participants_mapping_candidates,
         log_file_head=_log_file_head,
         resolve_validation_library_path=_resolve_validation_library_path,
