@@ -493,6 +493,35 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_sessions = subparsers.add_parser(
+        "sessions",
+        help="Review how repeated survey responses map to sessions (code/session_assignments.json)",
+    )
+    sessions_subparsers = parser_sessions.add_subparsers(dest="action", help="Action")
+
+    parser_sessions_review = sessions_subparsers.add_parser(
+        "review", help="List every response with the session it gets (completed responses only)"
+    )
+    parser_sessions_review.add_argument("--input", required=True, help="Survey data file (.lsa/.csv/.tsv/.xlsx)")
+    parser_sessions_review.add_argument("--id-column", required=True, help="Participant ID column (e.g. token)")
+    parser_sessions_review.add_argument("--date-column", default="startdate", help="Date column (default: startdate, falls back to datestamp)")
+    parser_sessions_review.add_argument("--project", help="Project root or project.json path (applies its saved decisions)")
+    parser_sessions_review.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    parser_sessions_set = sessions_subparsers.add_parser(
+        "set", help="Skip a response, or give it an exact session label"
+    )
+    parser_sessions_set.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_sessions_set.add_argument("--response", required=True, help="LimeSurvey response id (the 'id' column)")
+    parser_sessions_set.add_argument("--skip", action="store_true", help="Leave this response out")
+    parser_sessions_set.add_argument("--session", help="Session label to use for this response (exact string)")
+
+    parser_sessions_unset = sessions_subparsers.add_parser(
+        "unset", help="Remove the saved decision for one response"
+    )
+    parser_sessions_unset.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_sessions_unset.add_argument("--response", required=True, help="LimeSurvey response id")
+
     parser_merge_versions = subparsers.add_parser(
         "merge-versions",
         help="Merge a new version of a survey instrument (JSON or Excel) into an existing template",
@@ -2337,6 +2366,7 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "session-map": parser_session_map,
+        "sessions": parser_sessions,
         "publish": parser_publish,
         "save-gate": parser_save_gate,
         "merge-versions": parser_merge_versions,

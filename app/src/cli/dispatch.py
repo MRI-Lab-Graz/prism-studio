@@ -56,6 +56,11 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "sessions":
+        if args.action in ("review", "set", "unset"):
+            handlers[f"sessions_{args.action}"](args)
+        else:
+            parsers["sessions"].print_help()
     elif args.command == "merge-versions":
         handlers["merge_versions"](args)
     elif args.command == "publish":
