@@ -419,6 +419,7 @@ def handle_api_survey_convert_preview(
         f"[PRISM DEBUG] Available templates: {list(effective_survey_dir.glob('survey-*.json'))}"
     )
 
+    library_fallback_note = ""
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
         # Project library is empty — fall back to official/global library
@@ -429,6 +430,11 @@ def handle_api_survey_convert_preview(
             project_path_text
         )
         if official_fallback:
+            library_fallback_note = (
+                f"The selected library {effective_survey_dir} has no survey templates "
+                "(files must be named survey-<task>.json), so the official library was "
+                "used instead."
+            )
             effective_survey_dir = official_fallback
             survey_templates = list(effective_survey_dir.glob("survey-*.json"))
 
@@ -1054,6 +1060,8 @@ def handle_api_survey_convert_preview(
                 500,
             )
 
+        if library_fallback_note:
+            error_msg = f"{library_fallback_note}\n\n{error_msg}"
         return jsonify({"error": error_msg}), 500
 
     finally:
