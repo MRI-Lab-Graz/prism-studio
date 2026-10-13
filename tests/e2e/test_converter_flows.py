@@ -134,6 +134,7 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
 
 def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studio_url):
     open_survey_tab(app_page, studio_url)
+    app_page.fill("#convertSessionCustom", "pre")
     app_page.select_option("#convertDuplicateHandling", "sessions")
 
     expect(app_page.locator("#convertSessionSelect")).to_be_disabled()
@@ -144,6 +145,7 @@ def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studi
     app_page.select_option("#convertDuplicateHandling", "error")
     expect(app_page.locator("#convertSessionCustom")).to_be_enabled()
     expect(app_page.locator("#convertSessionBadge")).to_have_text("REQUIRED")
+    expect(app_page.locator("#convertSessionCustom")).to_have_value("")
 
 
 def test_dates_mode_converts_without_a_typed_session_id(app_page, studio_url, tmp_path, project):
@@ -176,13 +178,18 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
     import shutil
 
     app_page.allowed_http[409] = "/api/survey-detect-version-contexts"  # unmapped labels are the point
+    app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # error mode has no session yet
     (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
     shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
     open_survey_tab(app_page, studio_url)
     app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
-    app_page.select_option("#convertIdColumn", "token")
+    # Let the debounced sync for the ID column settle first, so only the dropdown change can refresh the panel.
+    with app_page.expect_response(lambda r: "/api/survey-detect-version-contexts" in r.url, timeout=30000):
+        app_page.select_option("#convertIdColumn", "token")
+    app_page.wait_for_timeout(500)
 
     app_page.select_option("#convertDuplicateHandling", "sessions")
 
     # a has two completed responses, c one: the generated labels are 1 and 2 (not a typed one).
-    expect(app_page.locator("#sessionMapRows input")).to_have_count(2, timeout=30000)
+    expect(app_page.locator("#sessionMapRows .input-group-text")).to_have_text(["1", "2"], timeout=30000)
+    expect(app_page.locator("#sessionMapRows input")).to_have_count(2)
