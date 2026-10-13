@@ -54,3 +54,87 @@ def test_convert_reads_the_project_decisions_file(tmp_path):
 
     assert ok, messages
     assert dict(zip(df["participant_id"], df["age"].astype(str))) == {"sub-a": "31", "sub-b": "40"}
+
+
+# --- GUI preview, CLI preview, corrupt decisions file ---------------------------------
+
+import io
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+CSV = (
+    "id,token,startdate,submitdate,age\n"
+    "1,a,2026-03-01 10:00:00,x,30\n"
+    "2,a,2026-09-01 10:00:00,x,31\n"
+    "3,b,2026-03-02 10:00:00,x,40\n"
+)
+REPO = Path(__file__).resolve().parent.parent
+
+
+def _project_with_skip(tmp_path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}', encoding="utf-8")
+    set_assignment(project, "2", skip=True)
+    return project
+
+
+def test_gui_preview_applies_the_project_decisions(tmp_path):
+    from flask import Flask
+
+    from src.web.blueprints import conversion_participants_blueprint as module
+
+    project = _project_with_skip(tmp_path)
+    app = Flask(__name__)
+    app.secret_key = "test"  # pragma: allowlist secret
+    app.register_blueprint(module.conversion_participants_bp)
+    client = app.test_client()
+    with client.session_transaction() as s:
+        s["current_project_path"] = str(project)
+
+    payload = client.post(
+        "/api/participants-preview",
+        data={"mode": "file", "file": (io.BytesIO(CSV.encode()), "d.csv"),
+              "id_column": "token", "sessions_from_date": "startdate"},
+        content_type="multipart/form-data",
+    ).get_json()
+
+    assert payload["participant_count"] == 2
+    assert all("2" not in c["values"] for c in payload["session_candidates"])
+
+
+def test_cli_preview_applies_the_project_decisions(tmp_path):
+    project = _project_with_skip(tmp_path)
+    source = tmp_path / "in.csv"
+    source.write_text(CSV, encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(REPO / "app" / "prism_tools.py"), "participants", "preview",
+         "--input", str(source), "--project", str(project), "--id-column", "token",
+         "--sessions-from-date", "startdate", "--json"],
+        capture_output=True, text=True, encoding="utf-8", cwd=str(REPO), timeout=60,
+    )
+
+    payload = json.loads(result.stdout)
+    assert payload["participant_count"] == 2
+    assert all("2" not in c["values"] for c in payload["session_candidates"])
+
+
+def test_corrupt_decisions_file_is_not_reported_as_a_repeated_row_conflict(tmp_path):
+    from src.participants_backend import preview_participants_merge
+
+    project = tmp_path / "proj"
+    (project / "code").mkdir(parents=True)
+    (project / "code" / "session_assignments.json").write_text(
+        '{"version": 1, "responses": {"1": {"skip": "yes"}}}', encoding="utf-8"
+    )
+    (project / "participants.tsv").write_text("participant_id\tage\nsub-b\t40\n", encoding="utf-8")
+    source = tmp_path / "in.csv"
+    source.write_text(CSV, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="session_assignments.json"):
+        preview_participants_merge(project, source, MAPPING, sessions_from_date="startdate")

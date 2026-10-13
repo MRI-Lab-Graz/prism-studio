@@ -1070,18 +1070,18 @@ def _build_participants_merge_input(
             )
 
         separator_value = None if (separator or "auto") == "auto" else separator
-        try:
-            from src.session_assignments import load_session_assignments
+        from src.session_assignments import load_session_assignments
 
+        # Outside the try: a corrupt decisions file must keep its own message.
+        decisions = load_session_assignments(project_root) if sessions_from_date else None
+        try:
             source_df, _ = load_participant_source(
                 source_path,
                 separator=separator_value,
                 sheet=sheet,
                 sessions_from_date=sessions_from_date,
                 id_column=source_id_column,
-                decisions=(
-                    load_session_assignments(project_root) if sessions_from_date else None
-                ),
+                decisions=decisions,
             )
         except Exception:
             raise ValueError(
