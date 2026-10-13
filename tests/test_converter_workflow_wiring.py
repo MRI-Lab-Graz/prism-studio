@@ -2582,7 +2582,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             survey_content,
         )
         self.assertIn(
-            "const {\n        appendLog,\n        resetConversionUI,\n        displayConversionSummary,\n        displayUnmatchedGroupsError,\n        displayValidationResults,\n    } = surveyConversionResultsAdapter;",
+            "const {\n        appendLog,\n        resetConversionUI,\n        displayConversionSummary,\n        displayUnmatchedTemplatesCard,\n        displayValidationResults,\n    } = surveyConversionResultsAdapter;",
             survey_content,
         )
         self.assertIn(
@@ -2683,7 +2683,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             conversion_results_adapter_content,
         )
         self.assertIn(
-            "return getSurveyUnmatchedTemplatesController()?.displayUnmatchedGroupsError(data);",
+            "return getSurveyUnmatchedTemplatesController()?.displayUnmatchedTemplatesCard(unmatched);",
             conversion_results_adapter_content,
         )
         self.assertIn(
@@ -3168,7 +3168,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             unmatched_templates_content,
         )
         self.assertIn(
-            "function displayUnmatchedGroupsError(data)",
+            "function displayUnmatchedTemplatesCard(unmatched)",
             unmatched_templates_content,
         )
         self.assertIn(

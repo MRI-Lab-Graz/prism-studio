@@ -1412,7 +1412,7 @@ export function initSurveyConvert(elements) {
         appendLog,
         resetConversionUI,
         displayConversionSummary,
-        displayUnmatchedGroupsError,
+        displayUnmatchedTemplatesCard,
         displayValidationResults,
     } = surveyConversionResultsAdapter;
 
@@ -2157,7 +2157,7 @@ export function initSurveyConvert(elements) {
         getConvertServerFilePath: () => convertServerFilePath,
         advanceSurveyRunProgress,
         parseJsonResponse,
-        displayUnmatchedGroupsError,
+        displayUnmatchedTemplatesCard,
         populateSurveySessionPickerFromDetected,
         getParticipantRegistryWarning,
         setSurveyPreviewSelectionState: (taskSummaries, previewKey = getSurveyPreviewContextKey()) => {
@@ -2255,7 +2255,6 @@ export function initSurveyConvert(elements) {
         appendTemplateVersionSelections,
         formatSignedOffset,
         advanceSurveyRunProgress,
-        displayUnmatchedGroupsError,
         isAbortError,
         enrichSurveyRunErrorMessage,
         clearActiveSurveyRun,

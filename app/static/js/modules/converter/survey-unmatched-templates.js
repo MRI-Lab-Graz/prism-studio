@@ -40,26 +40,14 @@ export function createSurveyUnmatchedTemplatesController({
         return html;
     }
 
-    // data.optional: templates are optional, so the card is appended to the
-    // conversion summary and does not block; otherwise it replaces the summary.
-    function displayUnmatchedGroupsError(data) {
-        if (data.optional) {
-            conversionSummaryBody.insertAdjacentHTML('beforeend', `
-                <div class="alert alert-info mt-3 mb-3">
-                    <h6 class="mb-1"><i class="fas fa-circle-info me-1"></i>Optional: templates for skipped questionnaires</h6>
-                    <p class="mb-0">These questionnaires have no library template and are not converted. Save a template to include them.</p>
-                </div>${unmatchedTableHtml(data.unmatched)}`);
-            conversionSummaryContainer.classList.remove('d-none');
-            return;
-        }
-        const html = `
-            <div class="alert alert-warning mb-3">
-                <h6 class="mb-1"><i class="fas fa-exclamation-triangle me-1"></i>Templates Required</h6>
-                <p class="mb-0">${data.message}</p>
-            </div>${unmatchedTableHtml(data.unmatched)}`;
-
-        appendLog('Templates required for unmatched groups \u2014 see below', 'error');
-        conversionSummaryBody.innerHTML = html;
+    // Templates are optional: the card is appended to the conversion summary
+    // and does not block.
+    function displayUnmatchedTemplatesCard(unmatched) {
+        conversionSummaryBody.insertAdjacentHTML('beforeend', `
+            <div class="alert alert-info mt-3 mb-3">
+                <h6 class="mb-1"><i class="fas fa-circle-info me-1"></i>Optional: templates for skipped questionnaires</h6>
+                <p class="mb-0">These questionnaires have no library template and are not converted. Save a template to include them.</p>
+            </div>${unmatchedTableHtml(unmatched)}`);
         conversionSummaryContainer.classList.remove('d-none');
     }
 
@@ -134,6 +122,6 @@ export function createSurveyUnmatchedTemplatesController({
 
     return {
         initialize,
-        displayUnmatchedGroupsError,
+        displayUnmatchedTemplatesCard,
     };
 }

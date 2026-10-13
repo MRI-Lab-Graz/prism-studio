@@ -52,7 +52,6 @@ export function createSurveyWorkflowConvertController({
     appendTemplateVersionSelections,
     formatSignedOffset,
     advanceSurveyRunProgress,
-    displayUnmatchedGroupsError,
     isAbortError,
     enrichSurveyRunErrorMessage,
     clearActiveSurveyRun,
@@ -366,11 +365,6 @@ export function createSurveyWorkflowConvertController({
             if (failurePayload && failurePayload.error === 'workflow_preparation_stale') {
                 convertRunOutcome = 'action_required';
                 surveyWorkflowPrepareController.handleLateSetupBlocker('convert', failurePayload, selectedValueOffsets);
-                return;
-            }
-            if (failurePayload && failurePayload.error === 'unmatched_groups') {
-                convertRunOutcome = 'action_required';
-                displayUnmatchedGroupsError(failurePayload);
                 return;
             }
 

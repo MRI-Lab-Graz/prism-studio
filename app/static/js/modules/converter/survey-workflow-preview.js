@@ -49,7 +49,7 @@ export function createSurveyWorkflowPreviewController({
     getConvertServerFilePath,
     advanceSurveyRunProgress,
     parseJsonResponse,
-    displayUnmatchedGroupsError,
+    displayUnmatchedTemplatesCard,
     populateSurveySessionPickerFromDetected,
     getParticipantRegistryWarning,
     setSurveyPreviewSelectionState,
@@ -296,11 +296,6 @@ export function createSurveyWorkflowPreviewController({
                         }
                         throw new Error('Please select the participant ID column.');
                     }
-                    if (data.error === 'unmatched_groups') {
-                        previewRunOutcome = 'action_required';
-                        displayUnmatchedGroupsError(data);
-                        return null;
-                    }
                     templateWorkflowGate = null;
                     setTemplateWorkflowGate(null);
                     setTemplateEditorErrorCtaVisible(false);
@@ -392,10 +387,7 @@ export function createSurveyWorkflowPreviewController({
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                     displayConversionSummary(data.conversion_summary);
                     if (Array.isArray(data.conversion_summary.unmatched_groups)) {
-                        displayUnmatchedGroupsError({
-                            optional: true,
-                            unmatched: data.conversion_summary.unmatched_groups,
-                        });
+                        displayUnmatchedTemplatesCard(data.conversion_summary.unmatched_groups);
                     }
                 } else {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
