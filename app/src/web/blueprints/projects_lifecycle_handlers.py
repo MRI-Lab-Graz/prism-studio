@@ -14,6 +14,7 @@ from .conversion_job_store import ConversionJobStore
 from src.project_icons import normalize_project_icon, resolve_project_icon, stable_project_icon
 from src.system_files import filter_system_files
 from src.datalad_doctor import install_command, install_hint, run_doctor
+from src.cross_platform import windows_long_paths_enabled, windows_symlinks_supported
 
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
@@ -107,9 +108,26 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
     """Return lightweight DataLad/git-annex availability for project creation."""
     datalad_executable = shutil.which("datalad")
     git_annex_executable = shutil.which("git-annex")
+    symlinks_supported = windows_symlinks_supported()
+    long_paths_enabled = windows_long_paths_enabled()
 
     if datalad_executable and git_annex_executable:
         message = "DataLad and git-annex are available for project setup."
+        if symlinks_supported is False:
+            message += (
+                " Note: this Windows machine can't create symlinks (enable "
+                "Developer Mode, or run as administrator), so git-annex will "
+                "track files on an \"adjusted unlocked\" branch -- files "
+                "appear as regular files instead of symlinks. This is a "
+                "supported git-annex fallback, not an error."
+            )
+        if long_paths_enabled is False:
+            message += (
+                " Note: Windows long path support isn't confirmed enabled -- "
+                "deeply nested DataLad datasets can hit the 260-character "
+                "MAX_PATH limit. Consider enabling it: "
+                "https://learn.microsoft.com/windows/win32/fileio/maximum-file-path-limitation"
+            )
     elif datalad_executable:
         message = (
             "git-annex is not installed, so PRISM will create the project without "
@@ -129,6 +147,8 @@ def _get_datalad_preflight_status() -> dict[str, Any]:
         "can_enable": bool(datalad_executable and git_annex_executable),
         "install_command": install_command(),
         "message": message,
+        "windows_symlinks_supported": symlinks_supported,
+        "windows_long_paths_enabled": long_paths_enabled,
     }
 
 

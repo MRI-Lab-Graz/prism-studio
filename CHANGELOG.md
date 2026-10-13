@@ -33,6 +33,10 @@ Findings of a full security review; each fix has a regression test.
   inputs, validator image runs as non-root.
 
 ### Added
+- **Windows symlink and long-path detection**: `cross_platform.windows_symlinks_supported()` and
+  `windows_long_paths_enabled()` report whether this Windows machine can create symlinks (Developer
+  Mode / admin rights) and whether `LongPathsEnabled` is set; the DataLad/git-annex preflight status
+  shown during project setup now includes both.
 - **One import pipeline for every template source.** Excel/CSV/TSV, LimeSurvey and Pavlovia imports all go through
   the same step (library match, optional library template, editor payload), so an Excel import now also reports the
   library match and offers to share a new template. New CLI: `prism_tools.py survey import-codebook` (with `--project`).
@@ -47,6 +51,13 @@ Findings of a full security review; each fix has a regression test.
 - **Share a new template with the PRISM team.** After saving a template imported from LimeSurvey that has no
   library match, Studio offers to download it and open a prefilled mail to mri-lab@uni-graz.at. CLI:
   `prism_tools.py library share-template --input <file>`.
+
+### Fixed
+- **git-annex adjusted-unlocked branches are no longer reported as a backlog.** When symlinks are
+  unavailable git-annex switches to an "adjusted unlocked" branch; this was misread as a stalled
+  batch of unsaved files.
+- **Dataset fixer renames retry through transient antivirus file locks** on Windows instead of
+  failing on the first `PermissionError`.
 
 ## [1.20.0] - 2026-10-07
 
