@@ -156,6 +156,10 @@ def get_current_project() -> dict:
     the on-demand full scan.
     """
     project_path = session.get("current_project_path")
+    if project_path and not Path(str(project_path)).exists():
+        # Folder deleted/moved since last time: every load of it would fail.
+        clear_current_project()
+        project_path = None
     datalad_status = _project_manager.get_datalad_status(project_path, fast=True)
     datalad_status = datalad_status if isinstance(datalad_status, dict) else {}
     datalad_status = {
