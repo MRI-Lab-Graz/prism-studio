@@ -140,8 +140,9 @@ export function createSurveyWorkflowConvertController({
         const filename = filenameRaw.toLowerCase();
         const isLssFile = filename.endsWith('.lss');
 
+        const sessionsFromDates = document.getElementById('convertDuplicateHandling')?.value === 'sessions';
         const sessionVal = getSurveySessionValue();
-        if (!sessionVal) {
+        if (!sessionVal && !sessionsFromDates) {
             convertError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
             convertError.classList.remove('d-none');
             (convertSessionCustom || convertSessionSelect)?.focus();
@@ -238,8 +239,10 @@ export function createSurveyWorkflowConvertController({
             appendLog(`Using ID column: ${idColumnVal}`, 'step');
         }
 
-        formData.append('session', sessionVal);
-        appendLog(`Forcing session ID: ${sessionVal}`, 'step');
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+            appendLog(`Forcing session ID: ${sessionVal}`, 'step');
+        }
 
         const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
         const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';

@@ -333,6 +333,8 @@ def cmd_survey_convert(args):
     print(f"ID col:  {result.id_column}")
     if result.session_column:
         print(f"Session: {result.session_column}")
+    elif getattr(args, "duplicate_handling", "error") == "sessions":
+        print("Session: numbered by date (completed responses only)")
     else:
         print("Session: (default ses-1)")
     if result.run_column:

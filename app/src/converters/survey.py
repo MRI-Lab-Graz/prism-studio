@@ -613,6 +613,7 @@ def _convert_survey_file_to_prism_dataset_impl(
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
+        input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
         survey=survey,
@@ -755,6 +756,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
+        input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
         survey=survey,
@@ -1347,6 +1349,7 @@ def _read_table_as_dataframe(
 def _convert_survey_dataframe_to_prism_dataset(
     *,
     df,
+    input_path: Path | None = None,
     library_dir: str | Path,
     output_root: str | Path,
     survey: str | None,
@@ -1592,6 +1595,11 @@ def _convert_survey_dataframe_to_prism_dataset(
         ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
+    decisions = None
+    if duplicate_handling == "sessions" and project_path:
+        from src.session_assignments import load_session_assignments, survey_id_of
+
+        decisions = load_session_assignments(project_path, survey_id_of(input_path) if input_path else "default")
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
@@ -1599,6 +1607,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         normalize_sub_fn=_normalize_sub_id,
         res_ses_col=res_ses_col,
         res_run_col=res_run_col,
+        decisions=decisions,
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override
@@ -1613,6 +1622,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     ):
         raise SessionMapError(_NEEDS_SESSION_MESSAGE)  # no repeats, so nothing was numbered
     conversion_warnings.extend(duplicate_warnings)
+    # A generated session column is not a source column: report none to callers.
+    reported_ses_col = (
+        None if res_ses_col == _survey_core.GENERATED_SESSION_COLUMN else res_ses_col
+    )
 
     # Two participant ids differing only by case (e.g. 'sub-Ab'/'sub-ab')
     # resolve to the identical on-disk directory on a case-insensitive
@@ -1757,12 +1770,13 @@ def _convert_survey_dataframe_to_prism_dataset(
                 participant_registry_warning
             )
 
+        dry_run_preview["summary"]["session_column"] = reported_ses_col
         return SurveyConvertResult(
             tasks_included=sorted(tasks_with_data),
             unknown_columns=unknown_cols,
             missing_items_by_task=missing_items_by_task,
             id_column=res_id_col,
-            session_column=res_ses_col,
+            session_column=reported_ses_col,
             run_column=res_run_col,
             detected_sessions=detected_sessions,
             conversion_warnings=conversion_warnings,
@@ -1896,7 +1910,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         unknown_columns=unknown_cols,
         missing_items_by_task=missing_items_by_task,
         id_column=res_id_col,
-        session_column=res_ses_col,
+        session_column=reported_ses_col,
         run_column=res_run_col,
         detected_sessions=detected_sessions,
         missing_cells_by_subject=missing_cells_by_subject,

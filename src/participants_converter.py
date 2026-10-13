@@ -79,6 +79,7 @@ def load_participant_source(
     sheet: str | int = 0,
     sessions_from_date: str | None = None,
     id_column: str | None = None,
+    decisions: dict | None = None,
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Read a participants source table; optionally number sessions by date."""
     source_path = Path(source_path)
@@ -98,7 +99,9 @@ def load_participant_source(
         )
         df, warnings = result.df, list(result.warnings)
     if sessions_from_date:
-        df, numbering_warnings = number_sessions_by_date(df, id_column, sessions_from_date)
+        df, numbering_warnings = number_sessions_by_date(
+            df, id_column, sessions_from_date, decisions=decisions
+        )
         warnings += numbering_warnings
     return df, warnings
 
@@ -415,12 +418,18 @@ class ParticipantsConverter:
                 ),
                 None,
             )
+            decisions = None
+            if sessions_from_date:
+                from src.session_assignments import load_session_assignments, survey_id_of
+
+                decisions = load_session_assignments(self.dataset_path, survey_id_of(source_path))
             df, load_warnings = load_participant_source(
                 source_path,
                 separator=None if separator == "auto" else separator,
                 sheet=sheet,
                 sessions_from_date=sessions_from_date,
                 id_column=id_source,
+                decisions=decisions,
             )
             for w in load_warnings:
                 self._log("WARNING", w)

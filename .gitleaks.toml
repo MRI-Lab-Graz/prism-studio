@@ -7,3 +7,10 @@ description = "Fake BIDS labels used as test fixtures, not real credentials"
 paths = [
   '''tests/test_token_rewrite_rules\.py''',
 ]
+
+[[allowlists]]
+description = "LimeSurvey 'token' column name passed as res_id_col, not a credential"
+regexTarget = "line"
+regexes = [
+  '''res_id_col="token"''',
+]

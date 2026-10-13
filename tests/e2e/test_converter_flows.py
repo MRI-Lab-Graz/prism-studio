@@ -109,7 +109,7 @@ def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, 
     open_survey_tab(app_page, studio_url)
     app_page.select_option("#convertDuplicateHandling", "sessions")
 
-    convert_survey(app_page, tmp_path, session="1", content=REPEATED_CSV)
+    convert_survey(app_page, tmp_path, session=None, content=REPEATED_CSV)
 
     assert sorted(p.name for p in (project / "sub-P001").glob("ses-*")) == ["ses-1", "ses-2"]
 
@@ -130,3 +130,117 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
 
     expect(app_page.get_by_role("button", name="Save Template").first).to_be_visible(timeout=30000)
     expect(app_page.locator("#convertBtn")).to_be_enabled()  # the matched questionnaire still converts
+
+
+def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studio_url):
+    open_survey_tab(app_page, studio_url)
+    app_page.fill("#convertSessionCustom", "pre")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    expect(app_page.locator("#convertSessionSelect")).to_be_disabled()
+    expect(app_page.locator("#convertSessionCustom")).to_be_disabled()
+    expect(app_page.locator("#convertSessionHint")).to_contain_text("completed responses only")
+    expect(app_page.locator("#convertSessionBadge")).to_have_text("FROM DATES")
+
+    app_page.select_option("#convertDuplicateHandling", "error")
+    expect(app_page.locator("#convertSessionCustom")).to_be_enabled()
+    expect(app_page.locator("#convertSessionBadge")).to_have_text("REQUIRED")
+    expect(app_page.locator("#convertSessionCustom")).to_have_value("")
+
+
+def test_dates_mode_converts_without_a_typed_session_id(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    app_page.click("#previewBtn")
+    expect(app_page.locator("#convertBtn")).to_be_enabled(timeout=30000)
+    expect(app_page.locator("#conversionSummaryBody")).to_contain_text("incomplete response(s) left out")
+    app_page.click("#convertBtn")
+    app_page.wait_for_function(
+        "() => !document.getElementById('surveyRunProgressContainer') "
+        "|| getComputedStyle(document.getElementById('surveyRunProgressContainer')).display === 'none'",
+        timeout=60000,
+    )
+
+    assert sorted(p.name for p in (project / "sub-a").glob("ses-*")) == ["ses-1", "ses-2"]
+
+
+def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_page, studio_url, tmp_path, project):
+    import json
+
+    from tests.lsa_fixtures import make_library, make_lsa
+    import shutil
+
+    app_page.allowed_http[409] = "/api/survey-detect-version-contexts"  # unmapped labels are the point
+    app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # error mode has no session yet
+    (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    # Let the debounced sync for the ID column settle first, so only the dropdown change can refresh the panel.
+    with app_page.expect_response(lambda r: "/api/survey-detect-version-contexts" in r.url, timeout=30000):
+        app_page.select_option("#convertIdColumn", "token")
+    app_page.wait_for_timeout(500)
+
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    # a has two completed responses, c one: the generated labels are 1 and 2 (not a typed one).
+    expect(app_page.locator("#sessionMapRows .input-group-text")).to_have_text(["1", "2"], timeout=30000)
+    expect(app_page.locator("#sessionMapRows input")).to_have_count(2)
+
+
+def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    app_page.click("#sessionAssignmentsBtn")
+
+    rows = app_page.locator("#sessionAssignmentsBody tbody tr")
+    expect(rows).to_have_count(6, timeout=15000)
+    expect(app_page.locator("#sessionAssignmentsBody")).to_contain_text("left out")
+    row2 = app_page.locator("#sessionAssignmentsBody tr[data-response-id='2']")
+    expect(row2.locator(".session-cell")).to_have_text("1")
+
+    row2.locator("input[type=checkbox][data-role=skip]").check()   # skip a's first completed response
+    expect(app_page.locator("#sessionAssignmentsBody tr[data-response-id='3'] .session-cell")).to_have_text("1")
+    import json
+    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    assert saved == {"version": 2, "surveys": {"999999": {"responses": {"2": {"skip": True}}}}}
+
+
+def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import json
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+    app_page.click("#sessionAssignmentsBtn")
+
+    body = app_page.locator("#sessionAssignmentsBody")
+    row1 = body.locator("tr[data-response-id='1']")
+    skip1 = row1.locator("input[data-role=skip]")
+    expect(skip1).to_be_checked(timeout=15000)
+    expect(body.locator("tr[data-response-id='2'] input[data-role=skip]")).not_to_be_checked()
+
+    skip1.uncheck()
+
+    expect(row1.locator(".session-cell")).to_have_text("1", timeout=15000)
+    expect(row1.locator("input[data-role=skip]")).not_to_be_checked()
+    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    assert saved == {"version": 2, "surveys": {"999999": {"responses": {"1": {"include": True}}}}}

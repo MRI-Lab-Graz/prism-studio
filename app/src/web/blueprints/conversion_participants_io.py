@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import Response, jsonify, request
+from flask import Response, jsonify, request, session
 from werkzeug.utils import secure_filename
 
 from src.converters.file_reader import infer_tabular_kind, read_tabular_file
@@ -92,12 +92,20 @@ def _read_participants_input_table(
     warnings_out: list[str] | None = None,
 ):
     if sessions_from_date:
+        from src.session_assignments import load_session_assignments, survey_id_of
+
+        project_path = session.get("current_project_path")
         df, warnings = load_participant_source(
             input_path,
             separator=_expected_delimiter_for_suffix(suffix, separator_option),
             sheet=sheet_arg,
             sessions_from_date=sessions_from_date,
             id_column=id_column,
+            decisions=(
+                load_session_assignments(project_path, survey_id_of(input_path))
+                if project_path
+                else None
+            ),
         )
         if warnings_out is not None:
             warnings_out.extend(warnings)

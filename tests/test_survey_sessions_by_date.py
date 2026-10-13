@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from src.converters.survey_core import _handle_duplicate_ids
-from src.session_map import SessionMapError, SessionsNotMappedError, save_session_map
+from src.session_map import SessionsNotMappedError, save_session_map
 from test_survey_session_map import convert, library, project, sessions  # noqa: F401
 
 
@@ -62,13 +62,14 @@ def test_sessions_mode_in_longitudinal_project_requires_mapping(tmp_path, librar
 
 def test_sessions_mode_without_repeats_still_needs_a_session_source(tmp_path, library):
     proj = project(tmp_path)
-    save_session_map(proj, {"1": "pre"})
+    save_session_map(proj, {"x": "pre"})  # the generated label "1" is not mapped
     single_wave = "participant_id,startdate,BRS01,BRS02,BRS03\nP001,2026-03-01,3,4,2\n"
-    with pytest.raises(SessionMapError, match="session"):
+    with pytest.raises(SessionsNotMappedError) as info:
         convert(
             tmp_path, library, single_wave, proj,
             session_column=None, session=None, duplicate_handling="sessions",
         )
+    assert info.value.labels == ["1"]
 
 
 def test_dated_sessions_win_over_a_typed_session_id(tmp_path, library):

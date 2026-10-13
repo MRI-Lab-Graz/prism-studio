@@ -130,7 +130,7 @@
                             <!-- Row 4: Session (required conversion setting) -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6" id="convertSessionGroup">
-                                    <label for="convertSessionSelect" class="form-label fw-bold session-required-label">Session ID <span class="badge ms-1 session-required-badge">REQUIRED</span></label>
+                                    <label for="convertSessionSelect" class="form-label fw-bold session-required-label">Session ID <span class="badge ms-1 session-required-badge" id="convertSessionBadge">REQUIRED</span></label>
                                     <div class="input-group">
                                         <select class="form-select" id="convertSessionSelect" required>
                                             <option value="">Select session...</option>
@@ -154,6 +154,13 @@
                                     </select>
                                     <div class="form-text">For files with one row per participant and wave but no session column (e.g. LimeSurvey).</div>
                                 </div>
+                            </div>
+
+                            <div id="sessionAssignmentsCard" class="mb-3 d-none">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="sessionAssignmentsBtn">
+                                    <i class="fas fa-table-list me-1"></i>Review session assignment
+                                </button>
+                                <div id="sessionAssignmentsBody" class="mt-2 small"></div>
                             </div>
 
                             <div id="sessionMapPanel" class="alert alert-warning d-none mb-3" role="region" aria-labelledby="sessionMapPanelTitle">

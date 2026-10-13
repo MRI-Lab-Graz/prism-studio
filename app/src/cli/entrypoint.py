@@ -70,6 +70,11 @@ from src.cli.commands.datalad import (
     cmd_datalad_finalize,
     cmd_datalad_sync,
 )
+from src.cli.commands.sessions import (
+    cmd_sessions_review,
+    cmd_sessions_set,
+    cmd_sessions_unset,
+)
 from src.cli.commands.session_map import (
     cmd_session_map_set,
     cmd_session_map_show,
@@ -167,6 +172,9 @@ def main() -> None:
             "session_map_show": cmd_session_map_show,
             "session_map_set": cmd_session_map_set,
             "session_map_unset": cmd_session_map_unset,
+            "sessions_review": cmd_sessions_review,
+            "sessions_set": cmd_sessions_set,
+            "sessions_unset": cmd_sessions_unset,
             "publish": cmd_publish,
             "save_gate": cmd_save_gate,
             "merge_versions": cmd_merge_versions,

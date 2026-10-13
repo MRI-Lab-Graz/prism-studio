@@ -102,23 +102,18 @@ def scope_to_session(
     return candidates, df
 
 
-def number_sessions_by_date(
+def _outcomes(
     df: pd.DataFrame,
     id_column: str,
-    date_column: str = "startdate",
-    session_column: str = "session",
+    date_column: str,
+    response_id_column: str,
+    decisions: dict | None,
 ) -> tuple[pd.DataFrame, list[str]]:
-    """Number each ID's rows "1", "2", ... by acquisition date (earliest first).
+    """Per-response outcome shared by numbering and the review table.
 
-    For repeated-measures exports without a session indicator (LimeSurvey).
-    Order only: rows are never dropped or merged. An empty ``startdate`` falls
-    back to the row's ``datestamp``; a row still without a date is an error.
-    Warnings flag incomplete runs (empty ``submitdate``) and uneven session counts.
+    Returns (res, warnings). ``res`` is indexed like ``df`` with
+    participant, response_id, when, completed, lastpage, session (str | None), reason.
     """
-    if session_column in df.columns:
-        raise ValueError(
-            f"The file already has a '{session_column}' column; use it as the session column instead."
-        )
     if (
         date_column == "startdate"
         and date_column not in df.columns
@@ -128,8 +123,7 @@ def number_sessions_by_date(
     for column in (id_column, date_column):
         if column not in df.columns:
             raise ValueError(f"Column '{column}' not found in the file")
-
-    ids = df[id_column].map(session_label)  # same string form for 1.0 and "1"
+    decisions = decisions or {}
 
     def _parse(column: str) -> pd.Series:
         # format="mixed": otherwise pandas infers one format from the first value
@@ -138,34 +132,166 @@ def number_sessions_by_date(
             df[column].replace("", None), errors="coerce", format="mixed"
         )
 
-    dates = _parse(date_column)
+    when = _parse(date_column)
     if date_column == "startdate" and "datestamp" in df.columns:
-        dates = dates.fillna(_parse("datestamp"))
-    undated = sorted(set(ids[dates.isna()]))
+        when = when.fillna(_parse("datestamp"))
+
+    blank = pd.Series("", index=df.index)
+    res = pd.DataFrame(
+        {
+            "participant": df[id_column].map(session_label),  # same form for 1.0 and "1"
+            "response_id": df[response_id_column].map(session_label)
+            if response_id_column in df.columns
+            else blank,
+            "when": when,
+            "completed": df["submitdate"].map(session_label) != ""
+            if "submitdate" in df.columns
+            else pd.Series(True, index=df.index),
+            "lastpage": df["lastpage"].map(session_label)
+            if "lastpage" in df.columns
+            else blank,
+        },
+        index=df.index,
+    )
+    res["session"] = None
+    res["reason"] = ""
+
+    for i, row in res.iterrows():
+        decision = decisions.get(row["response_id"]) if row["response_id"] else None
+        if decision and decision.get("skip"):
+            res.at[i, "reason"] = "skipped"
+        elif decision and decision.get("session"):
+            res.at[i, "session"] = session_label(decision["session"])
+            res.at[i, "reason"] = "override"
+        elif row["completed"]:
+            res.at[i, "reason"] = "auto"
+        elif decision and decision.get("include"):
+            res.at[i, "reason"] = "included"
+        else:
+            res.at[i, "reason"] = "incomplete"
+
+    auto = res[res["reason"].isin(["auto", "included"])]
+    no_date = auto[auto["when"].isna()]
+    undated = sorted(set(no_date["participant"]))
     if undated:
+        inc = no_date[no_date["reason"] == "included"]
+        extra = (
+            f" Undated: response(s) {', '.join(sorted(inc['response_id'], key=_natural_key))} (included)."
+            if len(inc) else ""
+        )
         raise ValueError(
-            f"No usable '{date_column}' for ID(s): {', '.join(undated[:10])}. "
+            f"No usable '{date_column}' for ID(s): {', '.join(undated[:10])}.{extra} "
             "Fix these responses in LimeSurvey before numbering sessions."
         )
+    ordered = auto.sort_values(["participant", "when"], kind="stable")
+    res.loc[ordered.index, "session"] = (
+        ordered.groupby("participant").cumcount() + 1
+    ).astype(str)
 
-    out = df.assign(_id=ids, _date=dates).sort_values(["_id", "_date"], kind="stable")
-    out[session_column] = (out.groupby("_id").cumcount() + 1).astype(str)
+    assigned = res[res["session"].notna()]
+    clash = assigned[assigned.duplicated(["participant", "session"], keep=False)]
+    if not clash.empty:
+        lines = [
+            f"ID {pid}: session {label!r} on responses {', '.join(group['response_id'])}"
+            for (pid, label), group in clash.groupby(["participant", "session"])
+        ]
+        raise ValueError(
+            "One participant would get the same session label twice; fix it with "
+            "`sessions set`/`sessions unset`: " + "; ".join(lines)
+        )
 
-    warnings: list[str] = []
-    if "submitdate" in out.columns:
-        incomplete = out[out["submitdate"].map(session_label) == ""]
-        for _, row in incomplete.iterrows():  # not itertuples: it renames "_id"
-            lastpage = session_label(row.get("lastpage", ""))
-            warnings.append(
-                f"Incomplete run: ID {row['_id']}, session {row[session_column]}"
-                + (f", lastpage {lastpage}" if lastpage else "")
-            )
-    counts = out.groupby("_id").size().value_counts().sort_index(ascending=False)
+    warnings = [
+        f"Sessions numbered by {date_column} (completed responses only): "
+        f"{len(assigned)} of {len(res)} responses kept."
+    ]
+    applied = res[res["reason"].isin(["skipped", "override", "included"])]
+    if len(applied):
+        def _ids(frame):
+            return ", ".join(sorted(frame["response_id"], key=_natural_key))
+        parts = []
+        skipped = applied[applied["reason"] == "skipped"]
+        if len(skipped):
+            parts.append(f"skipped {_ids(skipped)}")
+        for label, group in applied[applied["reason"] == "override"].groupby("session", sort=True):
+            parts.append(f"session {label!r} for {_ids(group)}")
+        included = applied[applied["reason"] == "included"]
+        if len(included):
+            parts.append(f"included {_ids(included)}")
+        warnings.append("Saved decisions applied: " + "; ".join(parts) + ".")
+    left_out = res[res["session"].isna()]
+    incomplete = left_out[left_out["reason"] == "incomplete"]
+    if len(incomplete):
+        warnings.append(f"{len(incomplete)} incomplete response(s) left out (no submitdate).")
+    without = sorted(set(res["participant"]) - set(assigned["participant"]))
+    if without:
+        warnings.append("No completed response for: " + ", ".join(without[:10]))
+    known = set(res["response_id"])
+    stale = sorted(str(k) for k in decisions if str(k) not in known)
+    if stale:
+        warnings.append(
+            "Ignored decisions for responses not in this file: " + ", ".join(stale)
+        )
+    counts = assigned.groupby("participant").size().value_counts().sort_index(ascending=False)
     if len(counts) > 1:
         parts = [
             f"{n} IDs x {k} sessions" if i == 0 else f"{n} x {k}"
             for i, (k, n) in enumerate(counts.items())
         ]
         warnings.append("Uneven session counts: " + ", ".join(parts))
+    return res, warnings
 
-    return out.drop(columns=["_id", "_date"]).reset_index(drop=True), warnings
+
+def number_sessions_by_date(
+    df: pd.DataFrame,
+    id_column: str,
+    date_column: str = "startdate",
+    session_column: str = "session",
+    decisions: dict | None = None,
+    response_id_column: str = "id",
+) -> tuple[pd.DataFrame, list[str]]:
+    """Give each participant's *completed* responses sessions "1", "2", ... by date.
+
+    For repeated-measures exports without a session indicator (LimeSurvey).
+    Incomplete responses (empty ``submitdate``) are left out, and listed in the
+    warnings; ``decisions`` (``{response_id: {"skip": True} | {"session": label}}``)
+    override the automatic rule. Rows are never merged. The returned frame holds
+    only the responses that got a session.
+    """
+    if session_column in df.columns:
+        raise ValueError(
+            f"The file already has a '{session_column}' column; use it as the session column instead."
+        )
+    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    if len(res) and res["session"].isna().all():
+        raise ValueError(
+            f"No response gets a session ({len(res)} response(s): all incomplete or skipped). "
+            "Run `sessions review` to see why."
+        )
+    kept = res[res["session"].notna()].sort_values(["participant", "when"], kind="stable")
+    out = df.loc[kept.index].copy()
+    out[session_column] = kept["session"]
+    return out.reset_index(drop=True), warnings
+
+
+def session_assignment_table(
+    df: pd.DataFrame,
+    id_column: str,
+    date_column: str = "startdate",
+    decisions: dict | None = None,
+    response_id_column: str = "id",
+) -> tuple[list[dict], list[str]]:
+    """One row per response for review: what session it gets and why."""
+    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    rows = [
+        {
+            "participant": r["participant"],
+            "response_id": r["response_id"],
+            "date": "" if pd.isna(r["when"]) else str(r["when"]),
+            "completed": bool(r["completed"]),
+            "lastpage": r["lastpage"],
+            "session": r["session"],
+            "reason": r["reason"],
+        }
+        for _, r in res.sort_values(["participant", "when"], kind="stable").iterrows()
+    ]
+    return rows, warnings
