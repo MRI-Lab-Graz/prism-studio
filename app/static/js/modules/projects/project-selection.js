@@ -224,7 +224,7 @@ export function initProjectSelectionController({
             }
         }
 
-        showStudyMetadataCard();
+        showStudyMetadataCard({ reload: false });
     }
 
     function bindProjectTypeCard(cardId, type) {

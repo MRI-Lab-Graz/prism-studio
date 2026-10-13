@@ -183,7 +183,15 @@ def _load_recent_projects() -> list[dict]:
         data = json.loads(file_path.read_text(encoding="utf-8"))
         if not isinstance(data, list):
             return []
-        return _normalize_recent_projects(data)
+        # Hidden, not deleted from the file: an unmounted drive comes back when remounted.
+        return _normalize_recent_projects(
+            [
+                item
+                for item in data
+                if isinstance(item, dict)
+                and Path(str(item.get("path") or "")).expanduser().exists()
+            ]
+        )
     except Exception:
         return []
 
