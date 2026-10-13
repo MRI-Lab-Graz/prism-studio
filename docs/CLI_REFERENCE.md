@@ -421,8 +421,12 @@ by `startdate`/`datestamp`; incomplete ones are left out. Review, then override:
 python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 502 --session pre
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 501 --skip
+python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 503 --include
 python prism_tools.py sessions unset --project /abs/path/my-project --survey 999999 --response 502
 ```
+
+`set` takes exactly one of `--skip` (leave a response out), `--include` (take an incomplete
+response anyway; it is numbered by date like a completed one) or `--session <label>`.
 
 `review` also takes `--date-column` (default `startdate`, falls back to `datestamp`) and `--json`
 (adds `survey_id`); the text output starts with `Survey: <id>`. LimeSurvey numbers responses
@@ -432,7 +436,7 @@ python prism_tools.py sessions unset --project /abs/path/my-project --survey 999
 
 Decisions are saved in `code/session_assignments.json`, per survey and keyed by response id, so
 they survive re-exports:
-`{"version": 2, "surveys": {"999999": {"responses": {"502": {"session": "pre"}, "501": {"skip": true}}}}}`.
+`{"version": 2, "surveys": {"999999": {"responses": {"502": {"session": "pre"}, "501": {"skip": true}, "503": {"include": true}}}}}`.
 `survey convert --duplicate-handling sessions` and `participants … --sessions-from-date` apply
 them automatically.
 
