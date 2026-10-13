@@ -213,6 +213,12 @@ export function createSurveyConversionSummaryController({
         if (!conversionSummaryContainer || !conversionSummaryBody || !summary) return;
 
         let html = '';
+        const notes = Array.isArray(summary.conversion_warnings) ? summary.conversion_warnings : [];
+        if (notes.length > 0) {
+            html += `<h6 class="mb-2"><i class="fas fa-circle-info me-1"></i>Notes</h6><ul class="small mb-3">`
+                + notes.map((note) => `<li>${escapeHtml(String(note))}</li>`).join('')
+                + `</ul>`;
+        }
 
         const surveyTasks = Array.isArray(summary.survey_tasks) ? summary.survey_tasks : [];
         if (surveyTasks.length > 0) {

@@ -27,6 +27,7 @@ import { createSurveyConvertFeedbackAdapter } from './survey-convert-feedback-ad
 import { createSurveyConvertFeedbackController } from './survey-convert-feedback.js';
 import { createSurveyFileSeparatorController } from './survey-file-separator-controller.js';
 import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-templates.js';
+import { createSurveySessionAssignmentsController } from './survey-session-assignments.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
 import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
 import { createSessionMapPanel } from './session-map-panel.js';
@@ -2341,6 +2342,8 @@ export function initSurveyConvert(elements) {
         hideSurveyRunProgress,
     });
 
+    const surveySessionAssignmentsController = createSurveySessionAssignmentsController();
+
     const surveyUnmatchedTemplatesController = createSurveyUnmatchedTemplatesController({
         conversionSummaryBody,
         conversionSummaryContainer,
@@ -2411,6 +2414,8 @@ export function initSurveyConvert(elements) {
 
     surveyConversionLogController.initialize();
     surveyUnmatchedTemplatesController.initialize();
+    surveySessionAssignmentsController.initialize();
+    document.getElementById('convertDuplicateHandling')?.addEventListener('change', () => syncVersionWizardContext());
 
     // ===== PARTICIPANT METADATA MARKING =====
 
