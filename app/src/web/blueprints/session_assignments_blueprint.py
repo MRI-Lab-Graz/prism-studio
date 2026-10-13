@@ -89,6 +89,7 @@ def api_set_session_assignment():
                 response_id,
                 survey_id=survey_id,
                 skip=bool(payload.get("skip")),
+                include=bool(payload.get("include")),
                 session=session,
             )
     except SessionAssignmentError as exc:

@@ -113,3 +113,28 @@ def test_survey_id_of_archive_csv_and_plain_zip(tmp_path):
         z.writestr("readme.txt", "x")
     assert survey_id_of(odd) == "default"
     assert survey_id_of(tmp_path / "missing.lsa") == "default"
+
+
+def test_include_round_trip_in_the_v2_file(tmp_path):
+    set_assignment(tmp_path, "25", survey_id="999999", include=True)
+
+    assert load_session_assignments(tmp_path, "999999") == {"25": {"include": True}}
+    raw = json.loads((tmp_path / "code" / "session_assignments.json").read_text())
+    assert raw["surveys"]["999999"]["responses"]["25"] == {"include": True}
+
+
+def test_include_needs_to_be_the_only_decision(tmp_path):
+    with pytest.raises(SessionAssignmentError, match="(?i)exactly one"):
+        set_assignment(tmp_path, "1", include=True, skip=True)
+    with pytest.raises(SessionAssignmentError, match="(?i)exactly one"):
+        set_assignment(tmp_path, "1", include=True, session="pre")
+
+
+@pytest.mark.parametrize("bad", [{"include": False}, {"include": "yes"}, {"include": True, "skip": True}])
+def test_a_malformed_include_entry_in_the_file_is_rejected(tmp_path, bad):
+    (tmp_path / "code").mkdir()
+    (tmp_path / "code" / "session_assignments.json").write_text(
+        json.dumps({"version": 2, "surveys": {"d": {"responses": {"1": bad}}}})
+    )
+    with pytest.raises(SessionAssignmentError):
+        load_session_assignments(tmp_path, "d")

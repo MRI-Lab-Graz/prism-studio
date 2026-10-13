@@ -509,12 +509,13 @@ def build_prism_tools_parsers(
     parser_sessions_review.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_sessions_set = sessions_subparsers.add_parser(
-        "set", help="Skip a response, or give it an exact session label"
+        "set", help="Skip a response, include an incomplete one, or give it an exact session label"
     )
     parser_sessions_set.add_argument("--project", required=True, help="Project root or project.json path")
     parser_sessions_set.add_argument("--response", required=True, help="LimeSurvey response id (the 'id' column)")
     parser_sessions_set.add_argument("--survey", default="default", help="Survey id the response belongs to (shown by 'sessions review'; default: default)")
     parser_sessions_set.add_argument("--skip", action="store_true", help="Leave this response out")
+    parser_sessions_set.add_argument("--include", action="store_true", help="Take this incomplete response anyway (numbered by date like a completed one)")
     parser_sessions_set.add_argument("--session", help="Session label to use for this response (exact string)")
 
     parser_sessions_unset = sessions_subparsers.add_parser(

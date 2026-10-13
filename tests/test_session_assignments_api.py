@@ -104,3 +104,11 @@ def test_review_with_an_invalid_project_path_is_a_400(client, tmp_path):
 
     assert resp.status_code == 400
     assert "error" in resp.get_json()
+
+
+def test_post_saves_an_include_decision(client):
+    resp = client.post("/api/session-assignments",
+                       json={"response_id": "1", "include": True, "survey_id": "999999"})
+
+    assert resp.status_code == 200
+    assert load_session_assignments(client.project, "999999") == {"1": {"include": True}}

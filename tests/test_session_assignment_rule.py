@@ -144,3 +144,43 @@ def test_a_file_where_no_response_gets_a_session_is_an_error():
 
     table, _ = session_assignment_table(_df(rows), "token")  # the review still shows why
     assert len(table) == 2
+
+
+def test_include_takes_an_incomplete_response_into_the_numbering_by_date():
+    out, _ = number_sessions_by_date(_df(), "token", decisions={"1": {"include": True}})
+
+    assert _by_id(out) == {"1": "1", "2": "2", "3": "3", "6": "1"}
+
+
+def test_include_on_a_completed_response_does_nothing():
+    decisions = {"2": {"include": True}}
+    rows, warnings = session_assignment_table(_df(), "token", decisions=decisions)
+
+    assert {r["response_id"]: r["reason"] for r in rows}["2"] == "auto"
+    assert not any("Saved decisions" in w for w in warnings)
+
+
+def test_included_responses_are_listed_after_skips_and_labels():
+    decisions = {"2": {"skip": True}, "3": {"session": "post"}, "4": {"include": True}, "1": {"include": True}}
+    rows, warnings = session_assignment_table(_df(), "token", decisions=decisions)
+
+    assert {r["response_id"]: r["reason"] for r in rows}["1"] == "included"
+    assert "Saved decisions applied: skipped 2; session 'post' for 3; included 1, 4." in warnings
+
+
+def test_included_responses_are_not_counted_as_left_out_and_fix_the_missing_participant():
+    _, warnings = number_sessions_by_date(_df(), "token", decisions={"4": {"include": True}})
+
+    text = "\n".join(warnings)
+    assert "2 incomplete response(s) left out" in text
+    assert "No completed response for:" not in text
+
+    _, warnings = number_sessions_by_date(_df(), "token")
+    assert "No completed response for: b" in "\n".join(warnings)
+
+
+def test_an_included_response_without_a_date_names_its_response_id():
+    rows = [["25", "a", "", "", "2"], ["26", "a", "2026-03-01", "x", "5"]]
+
+    with pytest.raises(ValueError, match=r"a.*response\(s\) 25 \(included\)"):
+        number_sessions_by_date(_df(rows), "token", decisions={"25": {"include": True}})

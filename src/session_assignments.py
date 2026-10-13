@@ -3,7 +3,8 @@
 Spec: docs/superpowers/specs/2026-10-12-session-assignment-review-design.md
 
 ``code/session_assignments.json`` maps, per survey, a LimeSurvey response ``id``
-to ``{"skip": true}`` or ``{"session": "<label>"}``:
+to ``{"skip": true}``, ``{"session": "<label>"}`` or ``{"include": true}``
+(take an incomplete response into the automatic numbering):
 ``{"version": 2, "surveys": {"<survey id>": {"responses": {"2": {"skip": true}}}}}``.
 LimeSurvey numbers responses 1..N per survey, so decisions are scoped by the
 survey id of the ``.lsa`` (``"default"`` for every other file). Keyed by
@@ -61,11 +62,13 @@ def _clean(responses: object, where: str) -> dict[str, dict]:
             raise SessionAssignmentError(f"{where}: bad entry for {response_id!r}")
         if decision == {"skip": True}:
             clean[key] = {"skip": True}
+        elif decision == {"include": True}:
+            clean[key] = {"include": True}
         elif set(decision) == {"session"} and isinstance(decision["session"], str) and decision["session"].strip():
             clean[key] = {"session": decision["session"].strip()}
         else:
             raise SessionAssignmentError(
-                f"{where}: entry for {key!r} must be {{'skip': true}} or {{'session': '<label>'}}"
+                f"{where}: entry for {key!r} must be {{'skip': true}}, {{'include': true}} or {{'session': '<label>'}}"
             )
     return clean
 
@@ -117,16 +120,21 @@ def set_assignment(
     survey_id: str = DEFAULT_SURVEY,
     skip: bool = False,
     session: str | None = None,
+    include: bool = False,
 ) -> dict[str, dict]:
     label = (session or "").strip()
-    if skip == bool(label):  # neither, or both
-        raise SessionAssignmentError("Give exactly one of --skip or a non-empty --session label")
+    if [bool(skip), bool(include), bool(label)].count(True) != 1:
+        raise SessionAssignmentError(
+            "Give exactly one of --skip, --include or a non-empty --session label"
+        )
     key = str(response_id).strip()
     if not key:
         raise SessionAssignmentError("The response id must not be empty")
     surveys = _read_all(project_path)
     responses = surveys.setdefault(str(survey_id), {})
-    responses[key] = {"skip": True} if skip else {"session": label}
+    responses[key] = (
+        {"skip": True} if skip else {"include": True} if include else {"session": label}
+    )
     _save(project_path, surveys)
     return responses
 

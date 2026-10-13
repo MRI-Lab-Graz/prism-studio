@@ -218,3 +218,29 @@ def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_pag
     import json
     saved = json.loads((project / "code" / "session_assignments.json").read_text())
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"2": {"skip": True}}}}}
+
+
+def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import json
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+    app_page.click("#sessionAssignmentsBtn")
+
+    body = app_page.locator("#sessionAssignmentsBody")
+    row1 = body.locator("tr[data-response-id='1']")
+    skip1 = row1.locator("input[data-role=skip]")
+    expect(skip1).to_be_checked(timeout=15000)
+    expect(body.locator("tr[data-response-id='2'] input[data-role=skip]")).not_to_be_checked()
+
+    skip1.uncheck()
+
+    expect(row1.locator(".session-cell")).to_have_text("1", timeout=15000)
+    expect(row1.locator("input[data-role=skip]")).not_to_be_checked()
+    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    assert saved == {"version": 2, "surveys": {"999999": {"responses": {"1": {"include": True}}}}}

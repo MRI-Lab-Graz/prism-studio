@@ -95,3 +95,15 @@ def test_a_missing_project_for_unset_is_an_error_not_a_traceback(tmp_path):
 
     assert result.returncode == 2
     assert "Traceback" not in result.stderr
+
+
+def test_set_include_takes_an_incomplete_response_into_the_numbering(tmp_path):
+    project = _project(tmp_path)
+
+    done = _run("set", "--project", str(project), "--survey", "999999", "--response", "1", "--include")
+    assert done.returncode == 0
+    assert "Response 1" in done.stdout and "included" in done.stdout
+    payload = json.loads(_run("review", "--input", str(make_lsa(tmp_path)), "--id-column", "token",
+                              "--project", str(project), "--json").stdout)
+    row = {r["response_id"]: r for r in payload["rows"]}["1"]
+    assert (row["session"], row["reason"]) == ("1", "included")

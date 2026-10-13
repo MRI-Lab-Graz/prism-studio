@@ -165,14 +165,22 @@ def _outcomes(
             res.at[i, "reason"] = "override"
         elif row["completed"]:
             res.at[i, "reason"] = "auto"
+        elif decision and decision.get("include"):
+            res.at[i, "reason"] = "included"
         else:
             res.at[i, "reason"] = "incomplete"
 
-    auto = res[res["reason"] == "auto"]
-    undated = sorted(set(auto.loc[auto["when"].isna(), "participant"]))
+    auto = res[res["reason"].isin(["auto", "included"])]
+    no_date = auto[auto["when"].isna()]
+    undated = sorted(set(no_date["participant"]))
     if undated:
+        inc = no_date[no_date["reason"] == "included"]
+        extra = (
+            f" Undated: response(s) {', '.join(sorted(inc['response_id'], key=_natural_key))} (included)."
+            if len(inc) else ""
+        )
         raise ValueError(
-            f"No usable '{date_column}' for ID(s): {', '.join(undated[:10])}. "
+            f"No usable '{date_column}' for ID(s): {', '.join(undated[:10])}.{extra} "
             "Fix these responses in LimeSurvey before numbering sessions."
         )
     ordered = auto.sort_values(["participant", "when"], kind="stable")
@@ -196,7 +204,7 @@ def _outcomes(
         f"Sessions numbered by {date_column} (completed responses only): "
         f"{len(assigned)} of {len(res)} responses kept."
     ]
-    applied = res[res["reason"].isin(["skipped", "override"])]
+    applied = res[res["reason"].isin(["skipped", "override", "included"])]
     if len(applied):
         def _ids(frame):
             return ", ".join(sorted(frame["response_id"], key=_natural_key))
@@ -206,6 +214,9 @@ def _outcomes(
             parts.append(f"skipped {_ids(skipped)}")
         for label, group in applied[applied["reason"] == "override"].groupby("session", sort=True):
             parts.append(f"session {label!r} for {_ids(group)}")
+        included = applied[applied["reason"] == "included"]
+        if len(included):
+            parts.append(f"included {_ids(included)}")
         warnings.append("Saved decisions applied: " + "; ".join(parts) + ".")
     left_out = res[res["session"].isna()]
     incomplete = left_out[left_out["reason"] == "incomplete"]

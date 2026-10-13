@@ -59,11 +59,11 @@ def cmd_sessions_set(args) -> None:
     try:
         set_assignment(
             args.project, args.response, survey_id=args.survey,
-            skip=bool(args.skip), session=args.session,
+            skip=bool(args.skip), session=args.session, include=bool(args.include),
         )
     except (ValueError, OSError) as exc:
         _fail(exc)
-    what = "skipped" if args.skip else f"session {args.session!r}"
+    what = "skipped" if args.skip else "included" if args.include else f"session {args.session!r}"
     print(f"Response {args.response} (survey {args.survey}): {what}")
 
 

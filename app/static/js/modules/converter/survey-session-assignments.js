@@ -35,12 +35,12 @@ export function createSurveySessionAssignmentsController() {
             + '<th>Session</th><th>Skip</th><th>Set label</th></tr></thead><tbody>';
         rows.forEach((r) => {
             const left = r.session === null;
-            html += `<tr data-response-id="${esc(r.response_id)}" data-reason="${esc(r.reason)}" class="${left ? 'text-muted' : ''}">`
+            html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${left ? 'text-muted' : ''}">`
                 + `<td>${esc(r.participant)}</td><td>${esc(r.response_id)}</td>`
                 + `<td>${esc(String(r.date).slice(0, 16))}</td><td>${r.completed ? 'yes' : 'no'}</td>`
                 + `<td>${esc(r.lastpage)}</td>`
                 + `<td class="session-cell">${left ? `left out (${esc(r.reason)})` : esc(r.session)}</td>`
-                + `<td><input type="checkbox" data-role="skip" ${r.reason === 'skipped' ? 'checked' : ''}></td>`
+                + `<td><input type="checkbox" data-role="skip" ${left ? 'checked' : ''}></td>`
                 + `<td><input type="text" data-role="label" class="form-control form-control-sm" size="8"`
                 + ` value="${r.reason === 'override' ? esc(r.session) : ''}" placeholder="auto"></td></tr>`;
         });
@@ -107,10 +107,13 @@ export function createSurveySessionAssignmentsController() {
             if (!row) return;
             const responseId = row.dataset.responseId;
             const role = event.target.dataset.role;
-            const hasDecision = ['override', 'skipped'].includes(row.dataset.reason);
+            const hasDecision = ['override', 'skipped', 'included'].includes(row.dataset.reason);
             let payload = null;
             if (role === 'skip') {
-                payload = event.target.checked ? { skip: true } : { clear: true };
+                // checked = the row gets no session (incomplete rows start that way)
+                const completed = row.dataset.completed === 'true';
+                if (completed) payload = event.target.checked ? { skip: true } : { clear: true };
+                else payload = event.target.checked ? { clear: true } : { include: true };
             } else if (role === 'label') {
                 const label = event.target.value.trim();
                 payload = label ? { session: label } : { clear: true };
