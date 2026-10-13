@@ -193,3 +193,28 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
     # a has two completed responses, c one: the generated labels are 1 and 2 (not a typed one).
     expect(app_page.locator("#sessionMapRows .input-group-text")).to_have_text(["1", "2"], timeout=30000)
     expect(app_page.locator("#sessionMapRows input")).to_have_count(2)
+
+
+def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_page, studio_url, tmp_path, project):
+    from tests.lsa_fixtures import make_library, make_lsa
+    import shutil
+
+    shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
+    open_survey_tab(app_page, studio_url)
+    app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
+    app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "sessions")
+
+    app_page.click("#sessionAssignmentsBtn")
+
+    rows = app_page.locator("#sessionAssignmentsBody tbody tr")
+    expect(rows).to_have_count(6, timeout=15000)
+    expect(app_page.locator("#sessionAssignmentsBody")).to_contain_text("left out")
+    row2 = app_page.locator("#sessionAssignmentsBody tr[data-response-id='2']")
+    expect(row2.locator(".session-cell")).to_have_text("1")
+
+    row2.locator("input[type=checkbox][data-role=skip]").check()   # skip a's first completed response
+    expect(app_page.locator("#sessionAssignmentsBody tr[data-response-id='3'] .session-cell")).to_have_text("1")
+    import json
+    saved = json.loads((project / "code" / "session_assignments.json").read_text())
+    assert saved["responses"] == {"2": {"skip": True}}
