@@ -420,9 +420,9 @@ class ParticipantsConverter:
             )
             decisions = None
             if sessions_from_date:
-                from src.session_assignments import load_session_assignments
+                from src.session_assignments import load_session_assignments, survey_id_of
 
-                decisions = load_session_assignments(self.dataset_path)
+                decisions = load_session_assignments(self.dataset_path, survey_id_of(source_path))
             df, load_warnings = load_participant_source(
                 source_path,
                 separator=None if separator == "auto" else separator,

@@ -8,8 +8,10 @@ from src.session_assignments import (
     SessionAssignmentError,
     load_session_assignments,
     set_assignment,
+    survey_id_of,
     unset_assignment,
 )
+from tests.lsa_fixtures import make_lsa
 
 
 def test_missing_file_means_no_decisions(tmp_path):
@@ -25,7 +27,8 @@ def test_set_skip_and_session_round_trip(tmp_path):
         "502": {"session": "pre"},
     }
     raw = json.loads((tmp_path / "code" / "session_assignments.json").read_text())
-    assert raw["version"] == 1
+    assert raw["version"] == 2
+    assert raw["surveys"]["default"]["responses"]["501"] == {"skip": True}
 
 
 def test_labels_are_kept_exactly_as_given(tmp_path):
@@ -67,7 +70,46 @@ def test_unset_removes_one_and_rejects_unknown(tmp_path):
 def test_malformed_file_is_reported(tmp_path):
     path = tmp_path / "code" / "session_assignments.json"
     path.parent.mkdir()
-    path.write_text('{"version": 1, "responses": {"1": {"skip": "yes"}}}')
+    path.write_text('{"version": 2, "surveys": {"default": {"responses": {"1": {"skip": "yes"}}}}}')
 
     with pytest.raises(SessionAssignmentError, match="session_assignments.json"):
         load_session_assignments(tmp_path)
+
+
+def test_same_response_id_in_two_surveys_is_independent(tmp_path):
+    set_assignment(tmp_path, "5", survey_id="111", skip=True)
+
+    assert load_session_assignments(tmp_path, "111") == {"5": {"skip": True}}
+    assert load_session_assignments(tmp_path, "222") == {}
+    assert load_session_assignments(tmp_path) == {}
+
+
+def test_unset_removes_an_empty_survey_entry(tmp_path):
+    set_assignment(tmp_path, "5", survey_id="111", skip=True)
+    unset_assignment(tmp_path, "5", survey_id="111")
+
+    raw = json.loads((tmp_path / "code" / "session_assignments.json").read_text())
+    assert raw == {"version": 2, "surveys": {}}
+    with pytest.raises(SessionAssignmentError):
+        unset_assignment(tmp_path, "5", survey_id="111")
+
+
+def test_old_format_file_is_reported(tmp_path):
+    path = tmp_path / "code" / "session_assignments.json"
+    path.parent.mkdir()
+    path.write_text('{"version": 1, "responses": {"1": {"skip": true}}}')
+
+    with pytest.raises(SessionAssignmentError, match="old format"):
+        load_session_assignments(tmp_path)
+
+
+def test_survey_id_of_archive_csv_and_plain_zip(tmp_path):
+    import zipfile
+
+    assert survey_id_of(make_lsa(tmp_path)) == "999999"
+    assert survey_id_of(tmp_path / "data.csv") == "default"
+    odd = tmp_path / "odd.lsa"
+    with zipfile.ZipFile(odd, "w") as z:
+        z.writestr("readme.txt", "x")
+    assert survey_id_of(odd) == "default"
+    assert survey_id_of(tmp_path / "missing.lsa") == "default"

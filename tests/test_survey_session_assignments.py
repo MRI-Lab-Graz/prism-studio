@@ -47,11 +47,22 @@ def test_project_decisions_are_applied(tmp_path):
     project = tmp_path / "proj"
     project.mkdir()
     (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
-    set_assignment(project, "2", skip=True)
+    set_assignment(project, "2", survey_id="999999", skip=True)
 
     _convert(tmp_path, project=project)
 
     assert _sessions(tmp_path, "sub-a") == ["ses-1"]  # response 3 is now its first completed one
+
+
+def test_decisions_saved_for_another_survey_drop_nothing(tmp_path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
+    set_assignment(project, "2", survey_id="123", skip=True)
+
+    _convert(tmp_path, project=project)
+
+    assert _sessions(tmp_path, "sub-a") == ["ses-1", "ses-2"]
 
 
 def test_sessions_mode_never_reports_the_internal_session_column(tmp_path):

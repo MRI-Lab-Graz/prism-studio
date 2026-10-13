@@ -24,7 +24,7 @@ from src.participants_backend import (
 )
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.participants_sessions import scope_to_session
-from src.session_assignments import load_session_assignments
+from src.session_assignments import load_session_assignments, survey_id_of
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 from src.participant_columns import (
@@ -289,7 +289,9 @@ def cmd_participants_preview(args) -> None:
             sessions_from_date=sessions_from_date,
             id_column=getattr(args, "id_column", None),
             decisions=(
-                load_session_assignments(project_root) if sessions_from_date else None
+                load_session_assignments(project_root, survey_id_of(input_path))
+                if sessions_from_date
+                else None
             ),
         )
         session_candidates, df = scope_to_session(

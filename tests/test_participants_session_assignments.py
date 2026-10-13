@@ -56,6 +56,21 @@ def test_convert_reads_the_project_decisions_file(tmp_path):
     assert dict(zip(df["participant_id"], df["age"].astype(str))) == {"sub-a": "31", "sub-b": "40"}
 
 
+def test_convert_ignores_decisions_saved_for_another_survey(tmp_path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    set_assignment(project, "2", survey_id="999999", skip=True)  # a CSV is "default", not that survey
+
+    ok, df, messages = ParticipantsConverter(project).convert_participant_data(
+        _csv(tmp_path), MAPPING, output_file=project / "participants.tsv",
+        sessions_from_date="startdate", session_column="session", session_value="1",
+        reject_conflicting_repeats=True,
+    )
+
+    assert ok, messages
+    assert dict(zip(df["participant_id"], df["age"].astype(str))) == {"sub-a": "30", "sub-b": "40"}
+
+
 # --- GUI preview, CLI preview, corrupt decisions file ---------------------------------
 
 import io
@@ -107,6 +122,33 @@ def test_gui_preview_applies_the_project_decisions(tmp_path):
     assert all("2" not in c["values"] for c in payload["session_candidates"])
 
 
+def test_gui_preview_ignores_decisions_saved_for_another_survey(tmp_path):
+    from flask import Flask
+
+    from src.web.blueprints import conversion_participants_blueprint as module
+
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}', encoding="utf-8")
+    set_assignment(project, "2", survey_id="999999", skip=True)
+    app = Flask(__name__)
+    app.secret_key = "test"  # pragma: allowlist secret
+    app.register_blueprint(module.conversion_participants_bp)
+    client = app.test_client()
+    with client.session_transaction() as s:
+        s["current_project_path"] = str(project)
+
+    payload = client.post(
+        "/api/participants-preview",
+        data={"mode": "file", "file": (io.BytesIO(CSV.encode()), "d.csv"),
+              "id_column": "token", "sessions_from_date": "startdate"},
+        content_type="multipart/form-data",
+    ).get_json()
+
+    assert payload["participant_count"] == 2
+    assert any("2" in c["values"] for c in payload["session_candidates"])
+
+
 def test_cli_preview_applies_the_project_decisions(tmp_path):
     project = _project_with_skip(tmp_path)
     source = tmp_path / "in.csv"
@@ -130,7 +172,7 @@ def test_corrupt_decisions_file_is_not_reported_as_a_repeated_row_conflict(tmp_p
     project = tmp_path / "proj"
     (project / "code").mkdir(parents=True)
     (project / "code" / "session_assignments.json").write_text(
-        '{"version": 1, "responses": {"1": {"skip": "yes"}}}', encoding="utf-8"
+        '{"version": 2, "surveys": {"default": {"responses": {"1": {"skip": "yes"}}}}}', encoding="utf-8"
     )
     (project / "participants.tsv").write_text("participant_id\tage\nsub-b\t40\n", encoding="utf-8")
     source = tmp_path / "in.csv"

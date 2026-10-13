@@ -92,7 +92,7 @@ def _read_participants_input_table(
     warnings_out: list[str] | None = None,
 ):
     if sessions_from_date:
-        from src.session_assignments import load_session_assignments
+        from src.session_assignments import load_session_assignments, survey_id_of
 
         project_path = session.get("current_project_path")
         df, warnings = load_participant_source(
@@ -101,7 +101,11 @@ def _read_participants_input_table(
             sheet=sheet_arg,
             sessions_from_date=sessions_from_date,
             id_column=id_column,
-            decisions=load_session_assignments(project_path) if project_path else None,
+            decisions=(
+                load_session_assignments(project_path, survey_id_of(input_path))
+                if project_path
+                else None
+            ),
         )
         if warnings_out is not None:
             warnings_out.extend(warnings)

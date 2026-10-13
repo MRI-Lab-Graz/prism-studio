@@ -613,6 +613,7 @@ def _convert_survey_file_to_prism_dataset_impl(
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
+        input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
         survey=survey,
@@ -755,6 +756,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
+        input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
         survey=survey,
@@ -1347,6 +1349,7 @@ def _read_table_as_dataframe(
 def _convert_survey_dataframe_to_prism_dataset(
     *,
     df,
+    input_path: Path | None = None,
     library_dir: str | Path,
     output_root: str | Path,
     survey: str | None,
@@ -1594,9 +1597,9 @@ def _convert_survey_dataframe_to_prism_dataset(
     # Handle duplicate IDs based on duplicate_handling parameter
     decisions = None
     if duplicate_handling == "sessions" and project_path:
-        from src.session_assignments import load_session_assignments
+        from src.session_assignments import load_session_assignments, survey_id_of
 
-        decisions = load_session_assignments(project_path)
+        decisions = load_session_assignments(project_path, survey_id_of(input_path) if input_path else "default")
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
