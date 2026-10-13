@@ -100,8 +100,15 @@ export function createSurveySessionAssignmentsController() {
 
     function initialize() {
         document.getElementById('convertDuplicateHandling')?.addEventListener('change', applyMode);
-        document.getElementById('sessionAssignmentsBtn')?.addEventListener('click', () => load());
         const body = document.getElementById('sessionAssignmentsBody');
+        const toggleBtn = document.getElementById('sessionAssignmentsBtn');
+        toggleBtn?.addEventListener('click', () => {
+            const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+            toggleBtn.setAttribute('aria-expanded', String(!expanded));
+            if (!expanded) return load();
+            loadSeq += 1; // drop a load still in flight so it cannot re-open the table
+            body.replaceChildren();
+        });
         body?.addEventListener('change', async (event) => {
             const row = event.target.closest('tr[data-response-id]');
             if (!row) return;
