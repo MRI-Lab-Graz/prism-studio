@@ -559,6 +559,11 @@ modular_blueprints = [
         "session_map_bp",
         "session_map",
     ),
+    (
+        "src.web.blueprints.session_assignments_blueprint",
+        "session_assignments_bp",
+        "session_assignments",
+    ),
     ("src.web.blueprints.validation", "validation_bp", "validation"),
     ("src.web.blueprints.tools", "tools_bp", "tools"),
     (

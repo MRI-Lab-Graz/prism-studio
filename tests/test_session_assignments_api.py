@@ -1,0 +1,71 @@
+"""GUI endpoints for the session review table."""
+
+import io
+
+import pytest
+from flask import Flask
+
+from src.web.blueprints.session_assignments_blueprint import session_assignments_bp
+from src.session_assignments import load_session_assignments
+from tests.lsa_fixtures import make_lsa
+
+
+@pytest.fixture
+def client(tmp_path):
+    app = Flask(__name__)
+    app.secret_key = "test"  # pragma: allowlist secret
+    app.register_blueprint(session_assignments_bp)
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
+    http = app.test_client()
+    with http.session_transaction() as s:
+        s["current_project_path"] = str(project)
+    http.project = project
+    return http
+
+
+def _upload(tmp_path):
+    return {
+        "file": (io.BytesIO(make_lsa(tmp_path).read_bytes()), "repeated.lsa"),
+        "id_column": "token",
+    }
+
+
+def test_review_returns_the_rows_and_warnings(client, tmp_path):
+    body = client.post(
+        "/api/session-assignments/review", data=_upload(tmp_path),
+        content_type="multipart/form-data",
+    ).get_json()
+
+    by_id = {r["response_id"]: r for r in body["rows"]}
+    assert (by_id["2"]["session"], by_id["1"]["reason"]) == ("1", "incomplete")
+    assert any("No completed response for: b" in w for w in body["warnings"])
+
+
+def test_review_applies_the_projects_saved_decisions(client, tmp_path):
+    client.post("/api/session-assignments", json={"response_id": "4", "session": "pre"})
+
+    body = client.post(
+        "/api/session-assignments/review", data=_upload(tmp_path),
+        content_type="multipart/form-data",
+    ).get_json()
+
+    assert {r["response_id"]: r for r in body["rows"]}["4"]["session"] == "pre"
+
+
+def test_post_saves_and_clears_a_decision(client):
+    saved = client.post("/api/session-assignments", json={"response_id": "7", "skip": True})
+    assert saved.get_json() == {"ok": True, "responses": {"7": {"skip": True}}}
+    assert load_session_assignments(client.project) == {"7": {"skip": True}}
+
+    cleared = client.post("/api/session-assignments", json={"response_id": "7", "clear": True})
+    assert cleared.get_json() == {"ok": True, "responses": {}}
+
+
+def test_post_rejects_an_empty_decision(client):
+    resp = client.post("/api/session-assignments", json={"response_id": "7"})
+
+    assert resp.status_code == 400
+    assert "exactly one" in resp.get_json()["error"].lower()
+    assert load_session_assignments(client.project) == {}
