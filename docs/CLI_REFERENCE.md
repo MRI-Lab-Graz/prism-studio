@@ -419,14 +419,22 @@ by `startdate`/`datestamp`; incomplete ones are left out. Review, then override:
 
 ```bash
 python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project
-python prism_tools.py sessions set --project /abs/path/my-project --response 502 --session pre
-python prism_tools.py sessions set --project /abs/path/my-project --response 501 --skip
-python prism_tools.py sessions unset --project /abs/path/my-project --response 502
+python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 502 --session pre
+python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 501 --skip
+python prism_tools.py sessions unset --project /abs/path/my-project --survey 999999 --response 502
 ```
 
-Decisions are saved in `code/session_assignments.json` keyed by response id, so they survive
-re-exports; `survey convert --duplicate-handling sessions` and
-`participants … --sessions-from-date` apply them automatically.
+`review` also takes `--date-column` (default `startdate`, falls back to `datestamp`) and `--json`
+(adds `survey_id`); the text output starts with `Survey: <id>`. LimeSurvey numbers responses
+1..N per survey, so decisions are scoped by survey: the id is the number in the `.lsa`
+(`survey_<id>.lss`), shown by `review`, and passed as `--survey` to `set`/`unset` (default
+`default`, which is what every non-`.lsa` file uses).
+
+Decisions are saved in `code/session_assignments.json`, per survey and keyed by response id, so
+they survive re-exports:
+`{"version": 2, "surveys": {"999999": {"responses": {"502": {"session": "pre"}, "501": {"skip": true}}}}}`.
+`survey convert --duplicate-handling sessions` and `participants … --sessions-from-date` apply
+them automatically.
 
 The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a different,
 older per-import rename of LimeSurvey archives. It is refused when the output folder is a

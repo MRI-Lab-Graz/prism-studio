@@ -44,7 +44,8 @@ def test_review_returns_the_rows_and_warnings(client, tmp_path):
 
 
 def test_review_applies_the_projects_saved_decisions(client, tmp_path):
-    client.post("/api/session-assignments", json={"response_id": "4", "session": "pre"})
+    client.post("/api/session-assignments",
+                json={"response_id": "4", "session": "pre", "survey_id": "999999"})
 
     body = client.post(
         "/api/session-assignments/review", data=_upload(tmp_path),
@@ -69,3 +70,37 @@ def test_post_rejects_an_empty_decision(client):
     assert resp.status_code == 400
     assert "exactly one" in resp.get_json()["error"].lower()
     assert load_session_assignments(client.project) == {}
+
+
+def test_review_returns_the_survey_id(client, tmp_path):
+    body = client.post(
+        "/api/session-assignments/review", data=_upload(tmp_path),
+        content_type="multipart/form-data",
+    ).get_json()
+
+    assert body["survey_id"] == "999999"
+
+
+def test_post_scopes_the_decision_to_the_survey(client):
+    client.post("/api/session-assignments", json={"response_id": "7", "skip": True, "survey_id": "111"})
+
+    assert load_session_assignments(client.project, "111") == {"7": {"skip": True}}
+    assert load_session_assignments(client.project) == {}
+
+
+def test_post_rejects_a_non_string_session(client):
+    resp = client.post("/api/session-assignments", json={"response_id": "7", "session": 5})
+
+    assert resp.status_code == 400
+    assert load_session_assignments(client.project) == {}
+
+
+def test_review_with_an_invalid_project_path_is_a_400(client, tmp_path):
+    resp = client.post(
+        "/api/session-assignments/review",
+        data={**_upload(tmp_path), "project_path": str(tmp_path / "does-not-exist")},
+        content_type="multipart/form-data",
+    )
+
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()

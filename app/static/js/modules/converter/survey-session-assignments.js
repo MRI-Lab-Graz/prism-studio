@@ -49,21 +49,27 @@ export function createSurveySessionAssignmentsController() {
         body.innerHTML = html;
     }
 
+    let surveyId = 'default';
+    let loadSeq = 0;
+
     async function save(body, responseId, payload) {
-        const response = await fetchWithApiFallback('/api/session-assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ response_id: responseId, ...payload }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            body.insertAdjacentHTML('afterbegin', `<div class="text-danger">${esc(data.error || 'Save failed')}</div>`);
-            return false;
+        try {
+            const response = await fetchWithApiFallback('/api/session-assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ response_id: responseId, survey_id: surveyId, ...payload }),
+            });
+            const data = await response.json();
+            if (response.ok) return true;
+            await load(data.error || 'Save failed');
+        } catch (error) {
+            await load(`Save failed: ${error.message || error}`);
         }
-        return true;
+        return false;
     }
 
-    async function load() {
+    // `notice` (a failed save) is shown above the freshly loaded table so the controls reflect the saved state.
+    async function load(notice = '') {
         const body = document.getElementById('sessionAssignmentsBody');
         const file = document.getElementById('convertSurveyFile')?.files?.[0];
         const idColumn = document.getElementById('convertIdColumn')?.value || '';
@@ -71,21 +77,30 @@ export function createSurveySessionAssignmentsController() {
             body.textContent = 'Choose the survey file (from your computer) and the participant ID column first.';
             return;
         }
+        const seq = ++loadSeq;
         const formData = new FormData();
         formData.append('file', file);
         formData.append('id_column', idColumn);
-        const response = await fetchWithApiFallback('/api/session-assignments/review', { method: 'POST', body: formData });
-        const data = await response.json();
-        if (!response.ok) {
-            body.textContent = data.error || 'Could not build the review table.';
+        try {
+            const response = await fetchWithApiFallback('/api/session-assignments/review', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (seq !== loadSeq) return; // a newer load is in flight
+            if (!response.ok) {
+                body.textContent = data.error || 'Could not build the review table.';
+                return;
+            }
+            surveyId = data.survey_id || 'default';
+            render(body, data);
+        } catch (error) {
+            if (seq === loadSeq) body.textContent = `Could not build the review table: ${error.message || error}`;
             return;
         }
-        render(body, data);
+        if (notice) body.insertAdjacentHTML('afterbegin', `<div class="text-danger">${esc(notice)}</div>`);
     }
 
     function initialize() {
         document.getElementById('convertDuplicateHandling')?.addEventListener('change', applyMode);
-        document.getElementById('sessionAssignmentsBtn')?.addEventListener('click', load);
+        document.getElementById('sessionAssignmentsBtn')?.addEventListener('click', () => load());
         const body = document.getElementById('sessionAssignmentsBody');
         body?.addEventListener('change', async (event) => {
             const row = event.target.closest('tr[data-response-id]');

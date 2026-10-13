@@ -38,13 +38,13 @@ def test_set_then_review_shows_the_override_and_unset_removes_it(tmp_path):
     project = _project(tmp_path)
     source = str(make_lsa(tmp_path))
 
-    assert _run("set", "--project", str(project), "--response", "4", "--session", "pre").returncode == 0
+    assert _run("set", "--project", str(project), "--survey", "999999", "--response", "4", "--session", "pre").returncode == 0
     payload = json.loads(_run("review", "--input", source, "--id-column", "token",
                               "--project", str(project), "--json").stdout)
     row = {r["response_id"]: r for r in payload["rows"]}["4"]
     assert (row["session"], row["reason"]) == ("pre", "override")
 
-    assert _run("unset", "--project", str(project), "--response", "4").returncode == 0
+    assert _run("unset", "--project", str(project), "--survey", "999999", "--response", "4").returncode == 0
     payload = json.loads(_run("review", "--input", source, "--id-column", "token",
                               "--project", str(project), "--json").stdout)
     assert {r["response_id"]: r for r in payload["rows"]}["4"]["session"] is None
@@ -62,3 +62,36 @@ def test_review_prints_a_readable_table_without_json(tmp_path):
 
     assert result.returncode == 0
     assert "response" in result.stdout and "left out" in result.stdout
+
+
+def test_review_reports_the_survey_id(tmp_path):
+    payload = json.loads(_run("review", "--input", str(make_lsa(tmp_path)),
+                              "--id-column", "token", "--json").stdout)
+    assert payload["survey_id"] == "999999"
+    text = _run("review", "--input", str(make_lsa(tmp_path)), "--id-column", "token").stdout
+    assert "Survey: 999999" in text
+
+
+def test_set_without_survey_does_not_touch_the_archive(tmp_path):
+    project = _project(tmp_path)
+    source = str(make_lsa(tmp_path))
+
+    assert _run("set", "--project", str(project), "--response", "4", "--session", "pre").returncode == 0
+    payload = json.loads(_run("review", "--input", source, "--id-column", "token",
+                              "--project", str(project), "--json").stdout)
+    assert {r["response_id"]: r for r in payload["rows"]}["4"]["session"] is None
+
+
+def test_a_missing_input_file_is_an_error_not_a_traceback(tmp_path):
+    result = _run("review", "--input", str(tmp_path / "nope.lsa"), "--id-column", "token")
+
+    assert result.returncode == 2
+    assert "Error:" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_a_missing_project_for_unset_is_an_error_not_a_traceback(tmp_path):
+    result = _run("unset", "--project", str(tmp_path / "gone"), "--response", "4")
+
+    assert result.returncode == 2
+    assert "Traceback" not in result.stderr

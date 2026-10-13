@@ -513,6 +513,7 @@ def build_prism_tools_parsers(
     )
     parser_sessions_set.add_argument("--project", required=True, help="Project root or project.json path")
     parser_sessions_set.add_argument("--response", required=True, help="LimeSurvey response id (the 'id' column)")
+    parser_sessions_set.add_argument("--survey", default="default", help="Survey id the response belongs to (shown by 'sessions review'; default: default)")
     parser_sessions_set.add_argument("--skip", action="store_true", help="Leave this response out")
     parser_sessions_set.add_argument("--session", help="Session label to use for this response (exact string)")
 
@@ -521,6 +522,7 @@ def build_prism_tools_parsers(
     )
     parser_sessions_unset.add_argument("--project", required=True, help="Project root or project.json path")
     parser_sessions_unset.add_argument("--response", required=True, help="LimeSurvey response id")
+    parser_sessions_unset.add_argument("--survey", default="default", help="Survey id the response belongs to (shown by 'sessions review'; default: default)")
 
     parser_merge_versions = subparsers.add_parser(
         "merge-versions",

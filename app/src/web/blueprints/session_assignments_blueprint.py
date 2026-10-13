@@ -11,6 +11,7 @@ from src.session_assignments import (
     SessionAssignmentError,
     load_session_assignments,
     set_assignment,
+    survey_id_of,
     unset_assignment,
 )
 
@@ -27,7 +28,10 @@ session_assignments_bp = Blueprint("session_assignments", __name__)
 
 @session_assignments_bp.route("/api/session-assignments/review", methods=["POST"])
 def api_review_session_assignments():
-    root = _resolve_requested_or_current_project_root(request.form.get("project_path"))
+    requested = request.form.get("project_path")
+    root = _resolve_requested_or_current_project_root(requested)
+    if str(requested or "").strip() and root is None:
+        return jsonify({"error": "The project folder does not exist."}), 400
     id_column = request.form.get("id_column", "").strip()
     if not id_column:
         return jsonify({"error": "Select the participant ID column first."}), 400
@@ -50,15 +54,16 @@ def api_review_session_assignments():
                 input_path=input_path, suffix=suffix, sheet_value=request.form.get("sheet")
             ),
         )
-        decisions = load_session_assignments(root) if root else {}
+        survey_id = survey_id_of(input_path)
+        decisions = load_session_assignments(root, survey_id) if root else {}
         rows, warnings = session_assignment_table(
             df,
             id_column,
             request.form.get("date_column", "").strip() or "startdate",
             decisions=decisions,
         )
-        return jsonify({"rows": rows, "warnings": warnings})
-    except ValueError as exc:
+        return jsonify({"survey_id": survey_id, "rows": rows, "warnings": warnings})
+    except (ValueError, OSError) as exc:
         return jsonify({"error": str(exc)}), 400
     finally:
         shutil.rmtree(str(upload["tmp_dir"]), ignore_errors=True)
@@ -71,15 +76,20 @@ def api_set_session_assignment():
     if root is None:
         return jsonify({"error": "No project selected"}), 400
     response_id = str(payload.get("response_id") or "").strip()
+    session = payload.get("session")
+    if session is not None and not isinstance(session, str):
+        return jsonify({"error": "The session label must be text."}), 400
+    survey_id = str(payload.get("survey_id") or "default")
     try:
         if payload.get("clear"):
-            responses = unset_assignment(root, response_id)
+            responses = unset_assignment(root, response_id, survey_id=survey_id)
         else:
             responses = set_assignment(
                 root,
                 response_id,
+                survey_id=survey_id,
                 skip=bool(payload.get("skip")),
-                session=payload.get("session"),
+                session=session,
             )
     except SessionAssignmentError as exc:
         return jsonify({"error": str(exc)}), 400

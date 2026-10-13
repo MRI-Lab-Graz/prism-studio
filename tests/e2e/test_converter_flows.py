@@ -217,4 +217,4 @@ def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_pag
     expect(app_page.locator("#sessionAssignmentsBody tr[data-response-id='3'] .session-cell")).to_have_text("1")
     import json
     saved = json.loads((project / "code" / "session_assignments.json").read_text())
-    assert saved["responses"] == {"2": {"skip": True}}
+    assert saved == {"version": 2, "surveys": {"999999": {"responses": {"2": {"skip": True}}}}}
