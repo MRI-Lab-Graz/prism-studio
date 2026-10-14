@@ -9,8 +9,8 @@ paths = [
 ]
 
 [[allowlists]]
-description = "LimeSurvey 'token' column name passed as res_id_col, not a credential"
+description = "LimeSurvey 'token' column name passed as (res_)id_column, not a credential"
 regexTarget = "line"
 regexes = [
-  '''res_id_col="token"''',
+  '''id_col(umn)?="token"''',
 ]
