@@ -381,6 +381,11 @@ def validate_dataset(
             )
         )
 
+    if run_prism:
+        from src.participants_levels import check_participants_levels
+
+        issues.extend(check_participants_levels(root_dir))
+
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.

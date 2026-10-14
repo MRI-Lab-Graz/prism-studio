@@ -237,6 +237,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "A survey in the dataset has no recipe in the project",
         "fix_hint": "Create or copy the recipe with the Recipe builder so the project carries its own copy in code/recipes/survey",
     },
+    "PRISM709": {
+        "message": "A participants column has no (or incomplete) value labels",
+        "fix_hint": "Open participants.json and add every code of the column to Levels (or a Unit if it is a measurement), or label the codes in the Sociodemographics Participant Annotation panel",
+    },
     # Internal/System (9xx)
     "PRISM901": {
         "message": "Internal validation error",
@@ -274,6 +278,11 @@ FIX_TOOLS: Dict[str, Dict[str, str]] = {
     "PRISM004": {
         "tool": "json-editor",
         "label": "Create in Editor",
+        "target": "participants.json",
+    },
+    "PRISM709": {
+        "tool": "json-editor",
+        "label": "Edit participants.json",
         "target": "participants.json",
     },
     "PRISM006": {
@@ -488,6 +497,8 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM707"
     elif "missing survey recipes" in msg_lower:
         return "PRISM708"
+    elif "participants.json" in msg_lower and "value labels" in msg_lower:
+        return "PRISM709"
     elif (
         "consistency" in msg_lower
         or "mislabeled" in msg_lower
