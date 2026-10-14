@@ -1,6 +1,5 @@
 import sys
 import re
-import platform
 import tempfile
 import threading
 import uuid
@@ -48,11 +47,6 @@ from .tools_survey_customizer_handlers import (
     get_survey_customizer_formats_payload,
     handle_survey_customizer_export,
     handle_survey_customizer_load,
-)
-from .tools_file_browser_handlers import (
-    handle_api_browse_file,
-    handle_api_browse_folder,
-    handle_api_browse_save_file,
 )
 from .conversion_utils import require_existing_project_root
 from .conversion_survey_handlers import (
@@ -1721,49 +1715,6 @@ def api_runtime_capabilities():
     return jsonify(payload)
 
 
-@tools_bp.route("/api/filesystem-context", methods=["GET"])
-def api_filesystem_context():
-    """Return lightweight server filesystem context for client picker mode decisions."""
-
-    raw_system = platform.system().strip().lower()
-    if raw_system.startswith("darwin"):
-        server_platform = "macos"
-    elif raw_system.startswith("windows"):
-        server_platform = "windows"
-    elif raw_system.startswith("linux"):
-        server_platform = "linux"
-    else:
-        server_platform = "unknown"
-
-    return jsonify(
-        {
-            "server_platform": server_platform,
-            "server_system": platform.system(),
-            "server_release": platform.release(),
-            "server_hostname": platform.node(),
-            "server_home": str(Path.home()),
-        }
-    )
-
-
-@tools_bp.route("/api/browse-file")
-def api_browse_file():
-    """Open a system dialog to select a file (filtering for project.json)"""
-    return handle_api_browse_file()
-
-
-@tools_bp.route("/api/browse-folder")
-def api_browse_folder():
-    """Open a system dialog to select a folder"""
-    return handle_api_browse_folder()
-
-
-@tools_bp.route("/api/browse-save-file")
-def api_browse_save_file():
-    """Open a system 'Save As' dialog to choose a destination path for a new file"""
-    return handle_api_browse_save_file()
-
-
 @tools_bp.route("/api/fs/browse")
 def api_fs_browse():
     """List directory contents filtered to sub-directories and project.json files only.
@@ -1813,7 +1764,10 @@ def api_fs_browse():
     else:
         current = Path.home()
 
-    # Safety: must be an existing directory
+    # Pickers reopen at the last chosen value, often a file or a path that no
+    # longer exists: climb to the nearest existing directory.
+    while not current.is_dir() and current.parent != current:
+        current = current.parent
     if not current.is_dir():
         return jsonify({"error": "Not a directory"}), 400
 
