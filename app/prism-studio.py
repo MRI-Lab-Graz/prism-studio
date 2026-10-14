@@ -722,110 +722,13 @@ def _should_relaunch_in_dedicated_terminal(args: Any) -> bool:
     )
 
 
-def _discover_git_dir(start_dir: Path) -> Optional[Path]:
-    """Find .git directory from start_dir upwards, including worktree gitdir files."""
-    for directory in [start_dir, *start_dir.parents]:
-        git_path = directory / ".git"
-        if git_path.is_dir():
-            return git_path
-
-        if git_path.is_file():
-            try:
-                first_line = (
-                    git_path.read_text(encoding="utf-8").splitlines()[0].strip()
-                )
-            except (OSError, IndexError):
-                continue
-
-            if first_line.lower().startswith("gitdir:"):
-                resolved = (directory / first_line.split(":", 1)[1].strip()).resolve()
-                if resolved.is_dir():
-                    return resolved
-
-    return None
-
-
-def _collect_git_tags(git_dir: Path) -> set[str]:
-    """Collect tag names from loose refs and packed-refs in a local git repository."""
-    tags: set[str] = set()
-
-    refs_tags_dir = git_dir / "refs" / "tags"
-    if refs_tags_dir.is_dir():
-        for tag_ref in refs_tags_dir.rglob("*"):
-            if tag_ref.is_file():
-                tag_name = tag_ref.relative_to(refs_tags_dir).as_posix().strip()
-                if tag_name:
-                    tags.add(tag_name)
-
-    packed_refs = git_dir / "packed-refs"
-    if packed_refs.is_file():
-        try:
-            for line in packed_refs.read_text(encoding="utf-8").splitlines():
-                stripped = line.strip()
-                if not stripped or stripped.startswith("#") or stripped.startswith("^"):
-                    continue
-
-                parts = stripped.split(" ", 1)
-                if len(parts) != 2:
-                    continue
-
-                ref_name = parts[1].strip()
-                prefix = "refs/tags/"
-                if ref_name.startswith(prefix):
-                    tag_name = ref_name[len(prefix) :].strip()
-                    if tag_name:
-                        tags.add(tag_name)
-        except OSError:
-            pass
-
-    return tags
-
-
-def _tag_sort_key(tag_name: str) -> tuple[int, int, int, int, str]:
-    """Sort semver-like tags above non-semver tags while keeping deterministic fallback order."""
-    normalized = tag_name.strip()
-    if normalized.lower().startswith("v"):
-        normalized = normalized[1:]
-
-    semver_match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", normalized)
-    if semver_match:
-        major, minor, patch = (int(part) for part in semver_match.groups())
-        return (2, major, minor, patch, "")
-
-    partial_match = re.match(r"^(\d+)\.(\d+)$", normalized)
-    if partial_match:
-        major, minor = (int(part) for part in partial_match.groups())
-        return (1, major, minor, 0, "")
-
-    return (0, 0, 0, 0, tag_name.lower())
-
-
-def _fetch_latest_local_git_tag() -> Optional[str]:
-    """Resolve latest tag from local git metadata without network access."""
-    git_dir = _discover_git_dir(BASE_DIR.resolve())
-    if git_dir is None:
-        return None
-
-    tags = _collect_git_tags(git_dir)
-    if not tags:
-        return None
-
-    return max(tags, key=_tag_sort_key)
-
-
 def get_prism_studio_version() -> str:
-    """Return cached PRISM Studio version from local git tag or package version."""
+    """Return cached PRISM Studio version (the shipped package version)."""
     now = time.time()
     cached_value = _github_tag_cache.get("value")
     expires_at = _github_tag_cache.get("expires_at", 0.0)
     if isinstance(cached_value, str) and now < float(expires_at):
         return cached_value
-
-    latest_tag = _fetch_latest_local_git_tag()
-    if latest_tag:
-        _github_tag_cache["value"] = latest_tag
-        _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
-        return latest_tag
 
     try:
         from src import __version__ as prism_version
