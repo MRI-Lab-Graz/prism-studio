@@ -1830,21 +1830,29 @@ def api_fs_browse():
         for entry in sorted(current.iterdir(), key=lambda e: e.name.lower()):
             if not include_hidden and entry.name.startswith("."):
                 continue
-            if entry.is_dir():
-                dirs.append({"name": entry.name, "path": str(entry)})
-                continue
-
-            if include_files and entry.is_file():
-                suffix = entry.suffix.lower()
-                if allowed_extensions is not None and suffix not in allowed_extensions:
+            # One unreadable entry (e.g. Windows junction "Application Data")
+            # must not abort the whole listing.
+            try:
+                if entry.is_dir():
+                    dirs.append({"name": entry.name, "path": str(entry)})
                     continue
-                files.append(
-                    {
-                        "name": entry.name,
-                        "path": str(entry),
-                        "size": entry.stat().st_size,
-                    }
-                )
+
+                if include_files and entry.is_file():
+                    suffix = entry.suffix.lower()
+                    if (
+                        allowed_extensions is not None
+                        and suffix not in allowed_extensions
+                    ):
+                        continue
+                    files.append(
+                        {
+                            "name": entry.name,
+                            "path": str(entry),
+                            "size": entry.stat().st_size,
+                        }
+                    )
+            except OSError:
+                continue
     except PermissionError:
         pass
 

@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from flask import Flask
@@ -45,6 +46,28 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
                 payload["dirs"],
                 [{"name": "study", "path": str(resolved_root / "study")}],
             )
+
+    def test_fs_browse_skips_unreadable_entry_instead_of_truncating(self):
+        # Windows home dirs hold junctions ("Application Data") whose is_dir()
+        # raises PermissionError; that used to abort the whole listing.
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "Application Data").mkdir()
+            (root / "Documents").mkdir()
+            real_is_dir = Path.is_dir
+
+            def flaky_is_dir(self):
+                if self.name == "Application Data":
+                    raise PermissionError("denied")
+                return real_is_dir(self)
+
+            with mock.patch.object(Path, "is_dir", flaky_is_dir):
+                response = self.client.get(
+                    "/api/fs/browse", query_string={"path": str(root)}
+                )
+
+            names = [d["name"] for d in response.get_json()["dirs"]]
+            self.assertEqual(names, ["Documents"])
 
     def test_fs_browse_rejects_non_directories(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
