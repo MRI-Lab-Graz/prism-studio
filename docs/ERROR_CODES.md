@@ -111,6 +111,7 @@ sub-01/survey/sub-01_task-demo_survey.json
 | `PRISM706` | Sessions array is empty | Define your study procedure in `Sessions`, or convert data with save-to-project to auto-register it |
 | `PRISM707` | `participants.tsv` doesn't cover all subject folders | Import or add the missing participants via the participants import step |
 | `PRISM708` | A survey in the dataset has no recipe in the project (`code/recipes/survey/`) | Create or copy it with the Recipe builder |
+| `PRISM709` | A participants column has no value labels, or its `Levels` miss a value in `participants.tsv` (warning if unlabeled and it looks like a code list, error if `Levels` exist but are incomplete) | Add every code to `Levels` in `participants.json`, or add a `Unit` if the column is a measurement |
 
 `PRISM7xx` compares what's actually on disk against `project.json`'s declared
 `Sessions`/`TaskDefinitions`.
