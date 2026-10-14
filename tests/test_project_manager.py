@@ -75,6 +75,12 @@ def _alternating_diff_index_run_side_effect():
     return _side_effect
 
 
+def _assert_no_subprocess_besides_longpaths(mock_run):
+    """Windows sets `git config core.longpaths` on every dataset; nothing else may run."""
+    others = [c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]]
+    assert others == [], others
+
+
 class TestProjectManager(unittest.TestCase):
     def test_create_project_sets_default_author(self):
         manager = ProjectManager()
@@ -279,7 +285,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("success"), result)
         self.assertFalse(result.get("datalad", {}).get("requested"))
         self.assertFalse(result.get("datalad", {}).get("initialized"))
-        mock_run.assert_not_called()
+        _assert_no_subprocess_besides_longpaths(mock_run)
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
@@ -301,7 +307,7 @@ class TestProjectManager(unittest.TestCase):
             )
 
         self.assertTrue(result.get("success"), result)
-        mock_run.assert_not_called()
+        _assert_no_subprocess_besides_longpaths(mock_run)
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
@@ -513,7 +519,7 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("initialized"), result)
         self.assertIn("already tracked by DataLad", result.get("message", ""))
-        mock_run.assert_not_called()
+        _assert_no_subprocess_besides_longpaths(mock_run)
 
     def test_inspect_remote_dataset_source_marks_openneuro_github_as_datalad(self):
         manager = ProjectManager()
@@ -1088,6 +1094,29 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(result.get("success"), result)
             self.assertEqual(Path(result["path"]), Path(tmp) / "ds008830")
             self.assertTrue((Path(tmp) / "ds008830" / "project.json").exists())
+
+    @patch("src.project_manager.subprocess.run")
+    def test_init_on_existing_bids_empty_remote_cleanup_removes_read_only_git_objects(self, mock_run):
+        # Windows refuses to delete read-only files (git packs, annex objects) with a plain rmtree.
+        manager = ProjectManager()
+
+        def _fake_run(command, **_kwargs):
+            if list(command[:2]) != ["git", "clone"]:
+                return subprocess.CompletedProcess(command, 0, "", "")
+            pack = Path(str(command[3])) / ".git" / "objects" / "pack" / "x.pack"
+            pack.parent.mkdir(parents=True, exist_ok=True)
+            pack.write_bytes(b"x")
+            pack.chmod(stat.S_IREAD)
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        mock_run.side_effect = _fake_run
+
+        with tempfile.TemporaryDirectory() as tmp:
+            manager.init_on_existing_bids(
+                tmp, {"remote_url": "https://example.org/mirror/ds008830.git"}
+            )
+
+            self.assertFalse((Path(tmp) / "ds008830").exists())
 
     @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_empty_remote_explains_and_cleans_up(self, mock_run):
@@ -6782,7 +6811,7 @@ class TestDataladStatusConcurrency(unittest.TestCase):
             release.set()
             t.join(timeout=5)
 
-        mock_run.assert_not_called()
+        _assert_no_subprocess_besides_longpaths(mock_run)
         self.assertFalse(result.get("checked"))
         self.assertIn("in progress", result.get("message", ""))
 

@@ -53,48 +53,6 @@
         </div>
     </div>
 
-<!-- Project File Browser Modal -->
-<div class="modal fade" id="projectFileBrowserModal" tabindex="-1" aria-labelledby="projectFileBrowserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="projectFileBrowserModalLabel">
-                    <i class="fas fa-folder-open text-primary me-2"></i>Open Project
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-0">
-                <!-- Breadcrumb / current path -->
-                <div class="px-3 pt-3 pb-2 border-bottom bg-light">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <button class="btn btn-sm btn-outline-secondary" id="fsBrowserUp" title="Go up">
-                            <i class="fas fa-arrow-up"></i>
-                        </button>
-                        <code class="small text-truncate flex-grow-1" id="fsBrowserCurrentPath" style="word-break:break-all;"></code>
-                    </div>
-                </div>
-                <!-- File list -->
-                <div style="min-height:260px; max-height:380px; overflow-y:auto;" id="fsBrowserList" aria-live="polite">
-                    <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
-                        <span><i class="fas fa-spinner fa-spin me-2"></i>Loading…</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <div class="text-success small fw-semibold" id="fsBrowserSelectedHint" style="display:none;" role="status" aria-live="polite">
-                    <i class="fas fa-check-circle me-1"></i><span id="fsBrowserSelectedPath"></span>
-                </div>
-                <div class="ms-auto d-flex gap-2">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="fsBrowserSelectBtn" disabled>
-                        <i class="fas fa-check me-1"></i>Select
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Delete Project Confirmation Modal -->
 <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
     <div class="modal-dialog">

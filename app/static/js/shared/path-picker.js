@@ -34,3 +34,7 @@ export async function browseFileWithFallback(_fetchWithApiFallback, options = {}
 export async function browseSaveFileWithFallback(_fetchWithApiFallback, options = {}) {
     return requirePathPicker('browseSaveFile').browseSaveFile(options);
 }
+
+export function isProjectJsonPath(path) {
+    return /(^|[\\/])project\.json$/.test(String(path || ''));
+}

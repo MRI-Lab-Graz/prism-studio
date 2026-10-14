@@ -45,7 +45,6 @@ def get_global_library_settings():
             "backend_monitoring": bool(settings.backend_monitoring),
             "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
             "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
-            "connected_to_server": bool(settings.connected_to_server),
             "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
                 getattr(settings, "export_defacing_confirmation_mode", "risk")
             ),
@@ -274,9 +273,6 @@ def set_global_library_settings():
     if "default_modalities" in data:
         settings.default_modalities = data["default_modalities"]
 
-    if "connected_to_server" in data:
-        settings.connected_to_server = bool(data.get("connected_to_server"))
-
     if "export_defacing_confirmation_mode" in data:
         raw_mode = data.get("export_defacing_confirmation_mode")
         normalized_mode = normalize_export_defacing_confirmation_mode(raw_mode)
@@ -301,8 +297,7 @@ def set_global_library_settings():
                 "message": f"Settings saved to {settings_path}",
                 "global_template_library_path": settings.global_template_library_path,
                 "global_recipes_path": settings.global_recipes_path,
-                "connected_to_server": bool(settings.connected_to_server),
-                "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
+                    "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
                     getattr(settings, "export_defacing_confirmation_mode", "risk")
                 ),
             }

@@ -406,10 +406,6 @@ class AppSettings:
     # Defaults to False for standard users and can be enabled in user settings.
     show_dedicated_terminal: bool = False
 
-    # If enabled, UI file pickers should always target the server filesystem.
-    # If disabled, browser/native picker flows remain the default.
-    connected_to_server: bool = False
-
     # Default export confirmation behavior when MRI defacing status is checked.
     # 'risk' => ask only when unresolved risk is detected.
     # 'always' => ask before export regardless of risk summary.
@@ -495,7 +491,6 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
                 data.get("backendMonitoringVerbose", False)
             ),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
-            connected_to_server=bool(data.get("connectedToServer", False)),
             export_defacing_confirmation_mode=normalize_export_defacing_confirmation_mode(
                 data.get("exportDefacingConfirmationMode", "risk")
             ),
@@ -536,7 +531,6 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "backendMonitoring": settings.backend_monitoring,
         "backendMonitoringVerbose": settings.backend_monitoring_verbose,
         "showDedicatedTerminal": settings.show_dedicated_terminal,
-        "connectedToServer": settings.connected_to_server,
         "exportDefacingConfirmationMode": normalize_export_defacing_confirmation_mode(
             settings.export_defacing_confirmation_mode
         ),

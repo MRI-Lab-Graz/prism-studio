@@ -49,7 +49,11 @@ from src.project_export_helpers import (
     _matches_excluded_acq_label,
 )
 from src.constants import DEFAULT_BIDS_VERSION
-from src.cross_platform import CrossPlatformFile, describe_case_insensitive_id_collisions
+from src.cross_platform import (
+    CrossPlatformFile,
+    describe_case_insensitive_id_collisions,
+    remove_tree,
+)
 from src.datalad_doctor import explain_ssh_failures, install_command, install_hint
 from src.git_exclude import sensitive_files_warning, tracked_sensitive_files
 from src.entity_rules import load_entity_rules
@@ -509,7 +513,7 @@ class ProjectManager:
             if remote_url:
                 # Fresh clone of ours (destination had to be empty) - remove it
                 # so a retry is not blocked by "destination is not empty".
-                shutil.rmtree(project_path, ignore_errors=True)
+                remove_tree(project_path, ignore_errors=True)
                 error = (
                     "The remote repository has no dataset_description.json "
                     "(the repository is empty - e.g. an OpenNeuro dataset whose GitHub "

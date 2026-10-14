@@ -217,8 +217,8 @@ export function initBiometrics(elements) {
         }
 
         if (biometricsDataFile) {
-            biometricsDataFile.disabled = connectedToServer;
-            biometricsDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
+            biometricsDataFile.disabled = false;
+            biometricsDataFile.title = '';
         }
 
         if (!connectedToServer && biometricsServerFilePath) {

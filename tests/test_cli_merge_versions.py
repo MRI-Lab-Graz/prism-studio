@@ -15,6 +15,7 @@ def _run(script, *args):
         [sys.executable, str(ROOT / "app" / script), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         env=env,
         cwd=ROOT,
         timeout=60,

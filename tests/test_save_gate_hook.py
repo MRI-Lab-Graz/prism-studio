@@ -24,7 +24,7 @@ def repo(tmp_path):
 
 def fake_tool(tmp_path, exit_code):
     tool = tmp_path / f"prism_tools_{exit_code}"
-    tool.write_text(f"#!/bin/sh\necho 'PRISM save gate: fake' \nexit {exit_code}\n")
+    tool.write_text(f"#!/bin/sh\necho 'PRISM save gate: fake' \nexit {exit_code}\n", newline="\n")
     tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
     return tool
 
@@ -60,7 +60,7 @@ def test_hook_fails_closed_when_tool_is_missing(repo):
 
 def test_foreign_hook_is_never_overwritten(repo):
     hook = repo / ".git" / "hooks" / "pre-commit"
-    hook.write_text("#!/bin/sh\necho mine\n")
+    hook.write_text("#!/bin/sh\necho mine\n", newline="\n")
     with pytest.raises(HookExistsError):
         sg.install_save_hook(repo)
     assert "mine" in hook.read_text()
@@ -78,7 +78,7 @@ def test_install_is_idempotent_and_executable(repo):
     sg.install_save_hook(repo)
     hook = sg.install_save_hook(repo)
     assert sg.SAVE_HOOK_MARKER in hook.read_text()
-    assert hook.stat().st_mode & stat.S_IXUSR
+    assert os.name == "nt" or hook.stat().st_mode & stat.S_IXUSR  # Windows has no exec bit
     assert sg.has_save_hook(repo)
 
 
@@ -106,7 +106,7 @@ def test_install_save_hooks_covers_every_dataset_root_and_reports_foreign(tmp_pa
         r = tmp_path / name
         run("git", "init", "-q", str(r), cwd=tmp_path)
         roots.append(r)
-    (roots[2] / ".git" / "hooks" / "pre-commit").write_text("#!/bin/sh\nexit 0\n")
+    (roots[2] / ".git" / "hooks" / "pre-commit").write_text("#!/bin/sh\nexit 0\n", newline="\n")
     monkeypatch.setattr(sg, "_dataset_roots", lambda p: roots)
     result = sg.install_save_hooks(tmp_path)
     assert sorted(result["installed"]) == sorted(str(r) for r in roots[:2])
@@ -134,11 +134,13 @@ def _bad_hook_dir(repo):
 
 
 def _unreadable_hook(repo):
+    if os.name == "nt":
+        pytest.skip("POSIX file modes")
     if os.geteuid() == 0:
         pytest.skip("root can read anything")
     hook = repo / ".git" / "hooks" / "pre-commit"
     hook.parent.mkdir(exist_ok=True)
-    hook.write_text("#!/bin/sh\n")
+    hook.write_text("#!/bin/sh\n", newline="\n")
     hook.chmod(0)
     return hook
 
@@ -169,7 +171,7 @@ def test_has_save_hook_false_for_symlink(repo):
 def test_hook_scrubs_git_index_env_for_the_tool(repo, tmp_path):
     out = tmp_path / "seen"
     tool = tmp_path / "prism_tools_env"
-    tool.write_text(f'#!/bin/sh\necho "${{GIT_INDEX_FILE-unset}}" > {out}\nexit 0\n')
+    tool.write_text(f'#!/bin/sh\necho "${{GIT_INDEX_FILE-unset}}" > {out.as_posix()}\nexit 0\n', newline="\n")
     tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
     sg.install_save_hook(repo)
     run("git", "-c", "user.name=t", "-c", "user.email=t@t.t", "commit", "-q", "-m", "0", cwd=repo,
@@ -205,7 +207,7 @@ ANNEX_HOOK = "#!/bin/sh\n# automatically configured by git-annex\ngit annex pre-
 def _put_hook(repo, text):
     hook = repo / ".git" / "hooks" / "pre-commit"
     hook.parent.mkdir(exist_ok=True)
-    hook.write_text(text)
+    hook.write_bytes(text.encode())  # exact bytes: a CRLF hook must not become CRCRLF
     hook.chmod(0o755)
     return hook
 

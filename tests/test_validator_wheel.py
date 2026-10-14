@@ -81,11 +81,11 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     )
     exe = str(bindir / "prism-validator")
     env = {**os.environ, "PATH": os.pathsep.join([str(bindir), _sanitized_path()])}
-    version = subprocess.run([exe, "--version"], capture_output=True, text=True, env=env)
+    version = subprocess.run([exe, "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     assert version.returncode == 0, version.stderr
     # Real validation of an (empty) dataset: exercises the lazy imports too.
     (tmp_path / "ds").mkdir()
-    run = subprocess.run([exe, str(tmp_path / "ds")], capture_output=True, text=True, env=env)
+    run = subprocess.run([exe, str(tmp_path / "ds")], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     assert "Import error" not in run.stdout + run.stderr
     assert "ModuleNotFoundError" not in run.stdout + run.stderr
     assert run.returncode == 1  # validation errors, not a crash
@@ -99,7 +99,7 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         '{"name":"Test","Basics":{"DatasetName":"Test"},'
         '"Sessions":[{"id":"ses-1","label":"Session 1","tasks":[]}],"TaskDefinitions":{}}'
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     out = run.stdout + run.stderr
     assert "No module named" not in out, out
     assert "Validation failed with error" not in out, out
@@ -110,12 +110,12 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         "authors:\n  - family-names: Doe\n    given-names: J\n"
         "version: 1.0.0\ndate-released: 2026-01-01\n"
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     out = run.stdout + run.stderr
     assert "PRISM303" not in out, out
     assert "No module named" not in out, out
     # The BIDS engine ships with the wheel and runs by default.
-    run = subprocess.run([exe, str(ds), "--format", "json"], capture_output=True, text=True, env=env)
+    run = subprocess.run([exe, str(ds), "--format", "json"], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     report = json.loads(run.stdout)
     assert report["bids_validator"]["engine"] == "bids-validator-deno", run.stdout
     assert not any(i["code"] == "PRISM902" for i in report["issues"]), run.stdout
@@ -123,7 +123,7 @@ def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
         "cff-version: 1.2.0\nmessage: m\n"
         "authors:\n  - family-names: Doe\n    given-names: J\n"
     )
-    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, env=env)
+    run = subprocess.run([exe, str(ds)], capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     out = run.stdout + run.stderr
     assert "PRISM303" in out and "'title' is a required property" in out, out
     assert "No module named" not in out, out

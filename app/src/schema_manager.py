@@ -80,7 +80,7 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
 
     if os.path.exists(schema_path):
         try:
-            with open(schema_path) as f:
+            with open(schema_path, encoding="utf-8") as f:
                 schema = json.load(f)
 
             # Add schema metadata for versioning

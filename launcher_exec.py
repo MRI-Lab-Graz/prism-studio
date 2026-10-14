@@ -65,7 +65,7 @@ def ensure_venv(project_root, strict):
     if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):
         return
 
-    print(f"⚠️  Activating virtual environment: {venv_dir}")
+    print(f"Activating virtual environment: {venv_dir}")
     try:
         exec_python(venv_python, sys.argv)
     except OSError as e:

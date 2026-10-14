@@ -202,7 +202,7 @@ def test_global_library_setting_rejects_recipes_without_modality_folder(
     assert "survey/" in response.get_json()["error"]
 
 
-def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monkeypatch):
+def test_global_library_setting_roundtrip(tmp_path, monkeypatch):
     app = _build_app_for_blueprint()
     from src import config as config_module
 
@@ -222,21 +222,20 @@ def test_global_library_setting_roundtrip_updates_connected_mode(tmp_path, monke
             "global_template_library_path": str(library_dir),
             "global_recipes_path": str(recipe_dir),
             "default_modalities": ["survey"],
-            "connected_to_server": True,
             "export_defacing_confirmation_mode": "always",
         },
     )
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["success"] is True
-    assert payload["connected_to_server"] is True
+    assert "connected_to_server" not in payload
     assert payload["export_defacing_confirmation_mode"] == "always"
 
     get_response = client.get("/api/settings/global-library")
     assert get_response.status_code == 200
     get_payload = get_response.get_json()
     assert get_payload["success"] is True
-    assert get_payload["connected_to_server"] is True
+    assert "connected_to_server" not in get_payload
     assert get_payload["export_defacing_confirmation_mode"] == "always"
     assert get_payload["global_template_library_path"] == str(library_dir)
 

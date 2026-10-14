@@ -2321,7 +2321,7 @@ def check_dual_tree_drift(repo_path, fix=False):
         unresolved.append(rel_path)
 
     if unresolved:
-        for rel_path in unresolved:
+        for rel_path in map(Path.as_posix, unresolved):
             print_error(
                 f"Unresolved dual-tree duplicate: src/{rel_path} and app/src/{rel_path} "
                 "both exist as independent files. Keep one real file and delete the "

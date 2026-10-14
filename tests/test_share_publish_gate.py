@@ -242,7 +242,7 @@ def test_identity_env_restored_when_push_raises_and_unset_stays_unset(share, mon
     assert "GIT_COMMITTER_EMAIL" not in os.environ
 
 
-@pytest.mark.skipif(hasattr(os, "geteuid") and os.geteuid() == 0, reason="root ignores modes")
+@pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0, reason="needs POSIX modes and a non-root user")
 def test_unwritable_audit_dir_does_not_fail_a_successful_publish(share, capsys):
     audit_dir = sp.audit_path(share).parent
     audit_dir.mkdir(parents=True)
