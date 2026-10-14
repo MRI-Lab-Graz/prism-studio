@@ -43,7 +43,6 @@ import uuid
 import atexit
 import logging
 import json
-import re
 import ipaddress
 import http.client
 import requests
