@@ -675,7 +675,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
         self.assertIn("async function fetchAnnexAvailabilitySummary(projectPath) {", content)
         self.assertIn(
-            "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
+            "const folder = await window.PrismPathPicker.browseFolder({",
             content,
         )
         self.assertIn(
