@@ -8,6 +8,13 @@ import ast
 import tempfile
 import json
 from pathlib import Path
+
+# Check marks below are not cp1252: piped output on Windows would crash on them.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
 from datetime import datetime
 from colorama import init, Fore, Style
 
