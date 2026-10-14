@@ -1360,7 +1360,8 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
             "skipping graceful shutdown request."
         )
 
-    if not force:
+    # Our own stuck/old instance is safe to kill; only a stranger needs --force.
+    if not force and not is_prism_studio_instance(host, port):
         print(
             f"[ERROR] Port {port} is occupied by another process."
             f"\n        Re-run with --force-clean-start to force termination,"
