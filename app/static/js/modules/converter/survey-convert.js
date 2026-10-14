@@ -706,9 +706,10 @@ export function initSurveyConvert(elements) {
             browseServerSurveyFileBtn.classList.toggle('d-none', !connectedToServer);
         }
 
+        // Keep the local picker usable (like participants): server mode only adds the Server button.
         if (convertSurveyFile) {
-            convertSurveyFile.disabled = connectedToServer;
-            convertSurveyFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
+            convertSurveyFile.disabled = false;
+            convertSurveyFile.title = '';
         }
     }
 
@@ -1907,6 +1908,9 @@ export function initSurveyConvert(elements) {
 
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
+        if (defaultFileHintHtml !== null) {
+            document.getElementById('convertFileHint').innerHTML = defaultFileHintHtml;
+        }
         resetSurveyRefreshFingerprint();
         convertSurveyFile.value = '';
         convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1980,6 +1984,7 @@ export function initSurveyConvert(elements) {
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
+            showServerFileHint(pickedPath);
             resetSurveyRefreshFingerprint();
             if (convertSurveyFile) {
                 convertSurveyFile.value = '';
