@@ -1669,3 +1669,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_year_month_select_offers_future_years_for_planned_studies():
+    """Recruitment may still be in planning, so the year list must extend past today."""
+    source = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+    body = source.split("export function initYearMonthSelect", 1)[1].split("\n}\n", 1)[0]
+    assert "const endYear = currentYear;" not in body
+    assert "const endYear = currentYear +" in body
