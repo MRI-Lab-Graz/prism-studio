@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 
@@ -250,3 +251,102 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     cols.add_data_validation(dropdown)
     dropdown.add("E2:E200")  # the Scale column
     wb.save(path)
+
+
+_NAME_RE = re.compile(r"^[a-z][a-z0-9]*$")
+_EXT_RE = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)*$")
+_COLUMN_ID_RE = re.compile(r"^[A-Za-z0-9_]+$")
+
+
+@lru_cache(maxsize=None)
+def _bids_names() -> tuple[dict[str, str], dict[str, str]]:
+    from bidsschematools.schema import load_schema
+
+    objects = load_schema().objects
+    suffixes = {
+        v["value"]: f"BIDS suffix '{v['value']}' ({v.get('display_name', '')})"
+        for v in objects.suffixes.values()
+    }
+    datatypes = {
+        v["value"]: f"BIDS datatype '{v['value']}'" for v in objects.datatypes.values()
+    }
+    return suffixes, datatypes
+
+
+def _taken_names(schema_dir: str | None) -> dict[str, str]:
+    """Every name a new modality or suffix may not use, with the reason."""
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
+
+    entities = load_schema("entities", schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+    taken: dict[str, str] = {}
+    for name, rule in entities.get("modalities", {}).items():
+        taken[name] = f"PRISM modality '{name}'"
+        for suffix in rule.get("suffixes", []):
+            taken.setdefault(suffix, f"PRISM suffix '{suffix}' (modality '{name}')")
+    for alias, target in entities.get("aliases", {}).items():
+        taken.setdefault(alias, f"PRISM alias '{alias}' (for '{target}')")
+    bids_suffixes, bids_datatypes = _bids_names()
+    for name, reason in {**bids_datatypes, **bids_suffixes}.items():
+        taken.setdefault(name, reason)
+    return taken
+
+
+def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Problem]:
+    """Check a proposal's names, extensions and column dictionary.
+
+    Returns every problem found rather than stopping at the first.
+    """
+    problems: list[Problem] = []
+
+    def err(where: str, message: str) -> None:
+        problems.append(Problem("error", where, message))
+
+    taken = _taken_names(schema_dir)
+    for key, label in (("modality", "Name"), ("suffix", "Suffix")):
+        value = proposal.get(key) or ""
+        where = f"Modality.{label}"
+        if not _NAME_RE.match(value):
+            err(where, f"'{value}' must be lowercase letters and digits, starting with a letter")
+        elif value in taken:
+            err(where, f"'{value}' is already taken: {taken[value]}. Choose another {label.lower()}.")
+
+    extensions = proposal.get("extensions") or []
+    if not extensions:
+        err("Modality.Extensions", "at least one data file extension is required")
+    for ext in extensions:
+        if not _EXT_RE.match(ext):
+            err("Modality.Extensions", f"'{ext}' is not a valid extension (e.g. tsv, tsv.gz)")
+
+    for key, label in (("description", "Description"), ("rationale", "Rationale")):
+        if not (proposal.get(key) or "").strip():
+            err(f"Modality.{label}", "must not be empty")
+
+    columns = proposal.get("columns") or []
+    if not columns:
+        err("Columns", "at least one column is required")
+    seen: set[str] = set()
+    for n, col in enumerate(columns, start=1):
+        cid = col.get("id") or ""
+        where = f"Columns.{cid}" if cid else f"Columns row {n}"
+        if not cid:
+            err(where, "ID is empty")
+        elif not _COLUMN_ID_RE.match(cid):
+            err(where, f"'{cid}' may only contain letters, digits and underscores")
+        if cid in seen:
+            err(where, f"duplicate column ID '{cid}'")
+        seen.add(cid)
+        if col.get("datatype") not in COLUMN_DATATYPES:
+            err(where, f"datatype must be one of {sorted(COLUMN_DATATYPES)}, got '{col.get('datatype')}'")
+        lo, hi = col.get("min"), col.get("max")
+        if lo is not None and hi is not None and lo > hi:
+            err(where, f"Min ({lo}) is greater than Max ({hi})")
+        scale, allowed = col.get("scale"), col.get("allowed_values")
+        if scale is not None and scale not in COLUMN_SCALES:
+            err(where, f"scale must be one of {list(COLUMN_SCALES)}, got '{scale}'")
+        elif scale == "continuous" and (allowed or col.get("datatype") not in {"integer", "float"}):
+            err(where, "a continuous column needs datatype integer or float and no AllowedValues")
+        elif scale == "categorical" and not allowed:
+            err(where, "a categorical column needs AllowedValues (the categories)")
+        elif scale == "boolean" and len(allowed or []) != 2:
+            err(where, "a boolean column needs exactly two AllowedValues (for example yes; no)")
+    return problems
