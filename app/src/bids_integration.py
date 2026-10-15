@@ -43,11 +43,13 @@ EXTRA_BIDSIGNORE_RULES = {
     "derivatives/",  # Explicitly ignore derivatives if needed
     "*_survey.*",  # Ignore any survey related data/sidecars
     "*_biometrics.*",  # Ignore any biometrics related data/sidecars
+    "*_biosample.*",  # Ignore any biosample related data/sidecars
     "*_physio.*",  # Ignore any custom physio data/sidecars
     "*_environment.*",  # Ignore environment enrichment outputs/sidecars
     "recording-weather_environment.json",  # Inherited root environment sidecar
     "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
+    "biosample-*_biosample.json",  # Root biosample templates
     "task-*_physio.json",
     "task-*_environment.json",
 }

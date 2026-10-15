@@ -33,6 +33,7 @@ Findings of a full security review; each fix has a regression test.
   inputs, validator image runs as non-root.
 
 ### Added
+- **New `biosample` modality** (assay results on blood, serum, plasma, saliva, urine, ...): schema, validator support, `<LOD`/`<LLOQ`/`>ULOQ` codes for censored values, recommended-field warnings and an example template. Phase 1 of 5; converter and GUI follow.
 - **Windows symlink and long-path detection**: `cross_platform.windows_symlinks_supported()` and
   `windows_long_paths_enabled()` report whether this Windows machine can create symlinks (Developer
   Mode / admin rights) and whether `LongPathsEnabled` is set; the DataLad/git-annex preflight status
