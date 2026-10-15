@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Modality proposals.** A new modality can be proposed with a filled-in Excel workbook and a small synthetic
+  sample file: `prism_tools.py modality propose` checks names against PRISM and BIDS, checks the sample against
+  the column dictionary, and generates the schema, an example sidecar, a fixture dataset and maintainer
+  registration steps. A GitHub Issue Form and bot open a draft pull request from the same files.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example

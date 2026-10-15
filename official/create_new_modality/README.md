@@ -2,8 +2,9 @@
 
 Workbook for proposing a new PRISM modality (for example blood samples).
 
-- `modality_proposal_template.xlsx`: fill in both sheets. It ships filled in
-  with an example (`biosample`); replace the example values.
+- `modality_proposal_template.xlsx`: fill in the sheets `Modality` and `Columns`
+  (and optionally `Types`). It ships filled in with an example (`biosample`);
+  replace the example values.
   - `Modality`: name, suffix, data file extension(s), description, rationale.
   - `Columns`: the columns of your **sample file** (ID, Description, Units,
     DataType, Scale, Type, Min, Max, AllowedValues). This is an example, not a
@@ -20,5 +21,8 @@ Workbook for proposing a new PRISM modality (for example blood samples).
 Name and suffix must be lowercase letters and digits and must not already be
 used by PRISM or BIDS (for example `blood` is a BIDS suffix for PET blood
 radioactivity). The tool tells you if a name is taken.
+
+Run `python prism_tools.py modality propose <your-file> --sample <your-sample> --check`
+to see whether the name is taken and whether the sample matches.
 
 See `docs/MODALITY_PROPOSALS.md` for the full workflow.

@@ -34,7 +34,7 @@ spreadsheet, not in a terminal or YAML.
 ### 1. Proposal workbook: `modality_proposal_template.xlsx`
 
 Shipped at `official/create_new_modality/modality_proposal_template.xlsx`,
-next to `official/create_new_survey/`. Two sheets:
+next to `official/create_new_survey/`. Sheets `Modality` and `Columns`, plus the optional `Types`:
 
 **`Modality`** (one data row):
 
@@ -161,7 +161,7 @@ hatch. Harmonisation happens on `Type`, not on the column name.
 
 | File | Content |
 |---|---|
-| `<name>.schema.json` | draft-07, same envelope as `biometrics.schema.json`; passes the existing `modality-schema-conventions` check |
+| `<name>.schema.json` | draft-07, same envelope as `biometrics.schema.json`: the `Technical`/`Study`/`Metadata` blocks plus the shape of a column definition (`additionalProperties`); passes the existing `modality-schema-conventions` check. The column dictionary itself is written into the example sidecar, as in real templates. |
 | `example_sidecar.json` | filled in from the proposal; validates against the generated schema |
 | `fixture/` | minimal dataset via the existing `write_minimal_dataset`, with the **sample file** as the data file, paired with the example sidecar |
 | `REGISTRATION.md` | the exact manual edits for a maintainer: the `entities.schema.json` entry (`kind: prism`, `suffixes`, `extensions`), where the schema file goes (`app/schemas/stable/`), and any other place found to need it during implementation |
@@ -192,8 +192,7 @@ prism_tools.py modality propose <proposal> --sample <file> --check
 `.github/ISSUE_TEMPLATE/propose-modality.yml`, fields:
 
 - Modality name (input), for the issue title.
-- Proposal workbook and sample file: a textarea where the contributor drags
-  both files. GitHub turns them into `github.com/user-attachments/...` links.
+- Two textareas, `Proposal file` and `Sample data file`, each for one dragged-in file. GitHub turns them into `github.com/user-attachments/...` links.
 - Rationale (textarea).
 - Required checkbox: "The sample contains no real participant data:
   synthetic or fully de-identified values only."
@@ -201,31 +200,49 @@ prism_tools.py modality propose <proposal> --sample <file> --check
 
 ### Bot (GitHub Actions)
 
-Triggered on issues labelled `type: new-modality`:
+`.github/workflows/propose-modality.yml`, triggered when an issue labelled
+`type: new-modality` is opened. It has two jobs, split by trust. The bot has
+not yet run on a real issue.
 
-1. Extract attachment links from the issue body. Exactly one proposal
-   (`.xlsx`/`.yml`/`.yaml`/`.json`) and exactly one sample file are expected.
-   Only `https://github.com/user-attachments/` URLs are accepted.
-2. Download each with the Actions token and reject files over 1 MB.
-3. Run `prism_tools.py modality propose ... --out proposals/<name>/`.
-4. On failure: comment the problem list on the issue, add `needs-changes`,
-   stop.
-5. On success: open a **draft** PR with the generated artifacts and both
-   original files, linked to the issue.
+**`check` (untrusted).** Parses attacker-controlled files, so it has a
+read-only token (`contents: read`), a checkout without persisted credentials
+and no secrets. Issue-derived text reaches it only through `env:`. It reads
+the two upload fields of the form (`Proposal file`, `Sample data file`); each
+must contain exactly one `https://github.com/user-attachments/` upload. It
+downloads them and runs `prism_tools.py modality propose ... --out
+bundle/proposals/issue-<n>` in a directory outside the checkout, then uploads
+the `bundle` (the `proposals/issue-<n>` output, `propose.log` and a `status`
+file of `ok` or `failed`) as an artifact.
 
-Security: all issue-derived text reaches steps only through `env:`, never
-interpolated into `run:` (the repo's zizmor `actions-security` check enforces
-this). Actions pinned by version tag, as in `ci.yml`.
+**`report` (privileged).** Has write permissions for contents, pull requests
+and issues, and runs only trusted code: a fresh checkout of the default
+branch. It downloads the bundle, verifies that it contains only plain files
+and directories (no links or special files), and treats it strictly as data.
+The issue number comes from the event, not from the bundle.
 
-The pure parts (attachment-link extraction, PR body) live in a small,
-unit-tested script. The GitHub API calls are thin and untested.
+- On a failed check it comments the log on the issue (backticks stripped from
+  the log), creates the `needs-changes` label if missing and adds it, and
+  stops. The contributor opens a new issue with corrected files.
+- On success it copies `proposals/issue-<n>/` to a branch named
+  `modality/issue-<n>-<run id>` and opens a **draft** PR against `main`, with
+  the generated artifacts and both original files.
+- If the job itself fails, it comments on the issue that the bot could not
+  finish and a maintainer will look.
+
+Actions are pinned by commit SHA. The pure parts (attachment-link extraction,
+PR body) live in `scripts/ci/modality_issue_to_files.py`; the GitHub API calls
+are thin and untested.
+
+PRs created with the workflow token trigger no workflows, so CI does not run
+on the bot's commit. A maintainer's registration push to the PR branch is what
+runs the CI gate (`tests/test_modality_proposal_fixtures.py`).
 
 ## CI: two stages, because registration is manual
 
 | Stage | When | Runs |
 |---|---|---|
 | Before registration | the bot's draft PR | `modality-schema-conventions`; example sidecar vs generated schema; sample check |
-| After registration | the maintainer has added the `REGISTRATION.md` edits to the same PR | the existing flag script labels the core-file change; `prism-validator` on `proposals/<name>/fixture/` must pass |
+| After registration | the maintainer has added the `REGISTRATION.md` edits to the same PR | the existing flag script labels the core-file change; `prism-validator` on `proposals/issue-<n>/fixture/` must pass |
 
 A maintainer signs off before merge. CI cannot judge whether units are
 semantically right or whether a modality duplicates an existing one under
