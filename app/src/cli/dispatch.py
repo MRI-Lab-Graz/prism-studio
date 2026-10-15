@@ -22,7 +22,12 @@ GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo"}
 def project_path_from_args(args: Namespace) -> str | None:
     for name in ("project", "dataset", "output"):
         value = getattr(args, name, None)
-        if value and (Path(str(value)).expanduser() / "project.json").is_file():
+        if not value:
+            continue
+        path = Path(str(value)).expanduser()
+        if path.name == "project.json" and path.is_file():
+            return str(value)
+        if (path / "project.json").is_file():
             return str(value)
     return None
 

@@ -48,3 +48,31 @@ def test_complete_project_runs(tmp_path):
     h = {"survey_convert": MagicMock()}
     _run(Namespace(command="survey", action="convert", project=str(tmp_path)), h)
     h["survey_convert"].assert_called_once()
+
+
+def test_project_json_file_path_is_gated(tmp_path, capsys):
+    _incomplete(tmp_path)
+    h = {"survey_convert": MagicMock()}
+    args = Namespace(command="survey", action="convert", project=str(tmp_path / "project.json"))
+    with pytest.raises(SystemExit) as exc:
+        _run(args, h)
+    assert exc.value.code == 2
+    h["survey_convert"].assert_not_called()
+
+
+def test_project_json_file_path_complete_runs(tmp_path):
+    (tmp_path / "project.json").write_text(json.dumps({
+        "Basics": {"Name": "N", "Authors": ["A"], "Keywords": ["k"]},
+        "StudyDesign": {"Timepoints": "single"}}), encoding="utf-8")
+    h = {"survey_convert": MagicMock()}
+    _run(Namespace(command="survey", action="convert", project=str(tmp_path / "project.json")), h)
+    h["survey_convert"].assert_called_once()
+
+
+def test_environment_and_demo_are_exempt(tmp_path):
+    p = _incomplete(tmp_path)
+    h = {"environment_preview": MagicMock(), "demo_create": MagicMock()}
+    _run(Namespace(command="environment", action="preview", project=p), h)
+    _run(Namespace(command="demo", action="create", project=p), h)
+    h["environment_preview"].assert_called_once()
+    h["demo_create"].assert_called_once()
