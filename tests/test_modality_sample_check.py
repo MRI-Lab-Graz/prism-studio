@@ -125,3 +125,15 @@ def test_identifier_like_column_and_email_value_are_warnings(tmp_path: Path) -> 
     assert errors_only(problems) == []
     text = " | ".join(str(p) for p in problems)
     assert "identifier" in text and "e-mail" in text
+
+
+def test_huge_single_line_is_an_error_not_a_crash(tmp_path: Path) -> None:
+    f = _sample(tmp_path, HEADER + "\n" + "x" * 200_000 + "\n")
+    assert "cannot read file" in _msgs(check_sample(_proposal(), f))
+
+
+def test_gzip_bomb_is_an_error_not_a_crash(tmp_path: Path) -> None:
+    p = _proposal(extensions=["tsv", "tsv.gz"])
+    gz = tmp_path / "bomb.tsv.gz"
+    gz.write_bytes(gzip.compress(b"a" * 5_000_000))
+    assert "larger than" in _msgs(check_sample(p, gz))

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import gzip
+import io
 import itertools
 import json
 import re
@@ -386,11 +387,15 @@ def _allowed(value: str, allowed: list) -> bool:
 
 
 def _read_tabular_rows(path: Path, ext: str) -> list[list[str]]:
-    # utf-8-sig drops an Excel BOM; newline="" lets csv handle CRLF. Reading
-    # is capped so a decompression bomb cannot exhaust memory.
+    # utf-8-sig drops an Excel BOM; newline="" lets csv handle CRLF. The read
+    # is bounded so a decompression bomb cannot exhaust memory.
     opener = gzip.open if ext.endswith(".gz") else open
     with opener(path, "rt", encoding="utf-8-sig", newline="") as fh:
-        return list(itertools.islice(csv.reader(fh, delimiter="\t"), SAMPLE_MAX_ROWS + 2))
+        text = fh.read(SAMPLE_MAX_BYTES + 1)
+    if len(text) > SAMPLE_MAX_BYTES:
+        raise ValueError("content is larger than 1 MB (after decompression)")
+    reader = csv.reader(io.StringIO(text, newline=""), delimiter="\t")
+    return list(itertools.islice(reader, SAMPLE_MAX_ROWS + 2))
 
 
 def check_sample(proposal: dict, sample_path) -> list[Problem]:
@@ -415,7 +420,7 @@ def check_sample(proposal: dict, sample_path) -> list[Problem]:
 
     try:
         rows = _read_tabular_rows(path, ext)
-    except (OSError, UnicodeDecodeError, EOFError, gzip.BadGzipFile) as exc:
+    except (OSError, ValueError, EOFError, gzip.BadGzipFile, csv.Error) as exc:
         return [Problem("error", name, f"cannot read file as tab-separated text: {exc}")]
     if not rows:
         return [Problem("error", name, "file is empty")]
