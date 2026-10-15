@@ -914,6 +914,8 @@ if (typeof window.fetchNeurobagelParticipants !== 'function') {
 
 window.renderNeurobagelWidget = async function() {
   console.log('🧠 renderNeurobagelWidget called');
+  // Capture what is typed in the open editor before the state is rebuilt.
+  window.syncNeurobagelActiveEditorToState?.();
   const data = await window.fetchNeurobagelParticipants();
   console.log('🧠 Fetched data:', data);
   if (!data || !data.properties) {
@@ -1102,25 +1104,19 @@ window.renderNeurobagelWidget = async function() {
     }
   }
   
-  // Preserve in-session enrichments that the user applied via the Map button but
-  // has not yet saved to file.  Without this, any call to renderNeurobagelWidget()
-  // (e.g. triggered by the auto-preview refresh after the mapping modal saves)
-  // silently discards the enrichment and requires the user to click Map twice.
   const prevColumns = window.neurobagelWidgetState.allColumns || {};
-  for (const [colName, newData] of Object.entries(enrichedData)) {
-    const prev = prevColumns[colName];
-    // Only carry forward if the rebuild didn't already restore it from file data.
-    if (prev && prev.standardized_variable && !newData.standardized_variable) {
-      newData.standardized_variable = prev.standardized_variable;
-      newData.term_url = prev.term_url || null;
-      newData.label = prev.label || null;
-    }
-  }
+  // Unsaved edits win over the rebuilt defaults/saved file (no Save Draft needed).
+  window.carryForwardColumnEdits?.(prevColumns, enrichedData);
 
   window.neurobagelWidgetState.allColumns = enrichedData;
   
   // Render the sidebar
   window.renderNeurobagelSidebar();
+
+  // The open editor's handlers still point at the old column objects: re-bind.
+  const openCol = window.neurobagelWidgetState.selectedColumn;
+  const openColData = openCol && window.getNeurobagelColumnState(openCol);
+  if (openColData) window.renderNeurobagelEditor(openCol, openColData);
   
   // Force widget to be visible
   const widgetContent = document.getElementById('neurobagelWidgetContent');
