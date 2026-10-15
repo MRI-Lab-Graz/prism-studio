@@ -150,3 +150,14 @@ def test_a_new_preview_revokes_the_annotation_confirmation(app_page, studio_url,
     app_page.click("#participantsPreviewBtn")
     expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
     expect(app_page.locator("#convertBtnHint")).to_contain_text("Confirm the annotation", timeout=30000)
+
+
+def test_a_failed_preview_scrolls_its_message_into_view(app_page, studio_url, tmp_path, project):
+    app_page.set_viewport_size({"width": 1280, "height": 450})  # the message lives below the fold
+    open_participants_tab(app_page, studio_url)
+    select_people_file(app_page, tmp_path, "name,age\n" + "".join(f"x{i},{i}\n" for i in range(60)))
+    app_page.click("#participantsPreviewBtn")
+
+    message = app_page.locator("#participantsError, #participantsInfo").locator("visible=true").first
+    expect(message).to_be_visible(timeout=30000)
+    expect(message).to_be_in_viewport()

@@ -19,6 +19,12 @@ CONVERTER_STYLES = REPO_ROOT / "app" / "static" / "css" / "converter.css"
 
 
 class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
+    def test_result_messages_sit_below_the_create_button(self):
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        convert = template.index('id="participantsConvertBtn"')
+        for message in ("participantsError", "participantsInfo", "participantsSuccess"):
+            self.assertGreater(template.index(f'id="{message}"'), convert, message)
+
     def test_annotation_is_a_required_stage_before_create_replace(self):
         template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
         module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")

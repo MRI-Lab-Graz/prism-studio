@@ -58,6 +58,18 @@ export function initParticipants() {
     let participantsPreviewCompleted = false;
     // Annotation is a required stage: Create/Replace stays blocked until the user confirms it.
     const participantsAnnotationGate = createAnnotationGate();
+
+    // Result messages live below the Create/Replace button, away from the buttons that raise
+    // them (e.g. step 1): bring any message into view the moment it is shown.
+    const participantsMessageObserver = new MutationObserver((records) => {
+        records.forEach(({ target }) => {
+            if (!target.classList.contains('d-none')) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+    ['participantsError', 'participantsInfo', 'participantsSuccess'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) participantsMessageObserver.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
