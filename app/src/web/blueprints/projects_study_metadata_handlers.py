@@ -14,6 +14,7 @@ from src.project_ready import (
 from src.readme_generator import ReadmeGenerator
 
 from .projects_citation_helpers import _read_citation_cff_fields
+from .projects_metadata_helpers import CREATION_BLOCKING_FIELDS
 from .projects_helpers import _resolve_requested_or_current_project_root
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,9 @@ def handle_get_study_metadata(
             "hints": hints,
             "has_sessions": len(data.get("Sessions", [])) > 0,
             "has_tasks": len(data.get("TaskDefinitions", {})) > 0,
+            "creation_blocking_fields": {
+                k: sorted(v) for k, v in CREATION_BLOCKING_FIELDS.items()
+            },
             **_not_ready_fields(project_path),
         }
     )

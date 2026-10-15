@@ -39,6 +39,12 @@ function _getCurrentProjectState() {
 // frontend/backend" rule. Fallbacks are used if offline.
 let _bidsVersion = '1.10.1';
 let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
+// Creation-blocking fields come only from the study-metadata GET response
+// (creation_blocking_fields, derived from src.project_ready.REQUIRED_FIELDS);
+// {} until it arrives, then computeLocalCompleteness() is re-run.
+let _creationBlockingFields = {};
+const _toFieldSets = (raw) =>
+    Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, new Set(v)]));
 (async () => {
     try {
         const r = await fetchWithApiFallback('/api/config');
@@ -46,6 +52,10 @@ let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
         if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
         if (cfg && cfg.studyMetadataRequiredFields) {
             _requiredFieldsSchema = normalizeRequiredFieldsSchema(cfg.studyMetadataRequiredFields);
+        }
+        if (cfg && cfg.creationBlockingFields) {
+            _creationBlockingFields = _toFieldSets(cfg.creationBlockingFields);
+            updateCompletenessUI(computeLocalCompleteness());
         }
     } catch { /* use fallback */ }
 })();
@@ -203,6 +213,8 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         setOverviewList('smReferencesText', _referencesToDoiLines(sm.References));
 
         _applyHints(data.hints || {});
+
+        _creationBlockingFields = _toFieldSets(data.creation_blocking_fields || {});
 
         // Keep frontend readiness scoring semantics stable by recomputing from the
         // current form state instead of mixing in backend completeness payloads.
@@ -3587,10 +3599,7 @@ export function computeLocalCompleteness() {
     // readiness-only: researchers often cannot know it yet at creation time
     // (e.g. recruitment period, compensation) or should not be forced to
     // decide it immediately (e.g. ethics/funding).
-    const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords']),
-        StudyDesign: new Set(['Timepoints'])
-    };
+    const creationBlockingFields = _creationBlockingFields;
 
     const addField = (section, name, isFilled) => {
         const isRequired = requiredFields[section]?.has(name) || false;

@@ -1096,6 +1096,8 @@ def ensure_project_selected_first():
         return None
     if path == "/api/browse-file":
         return None
+    if path == "/api/config":  # static constants the create flow needs (BIDSVersion, field lists)
+        return None
     if path.startswith("/api/settings/"):
         return None
 
