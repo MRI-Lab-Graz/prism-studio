@@ -257,6 +257,12 @@ def build_prism_tools_parsers(
         help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_convert.add_argument(
+        "--split-sessions",
+        action="store_true",
+        help="Longitudinal file (with --session-column, without --session): values that "
+        "differ between sessions become one column per session (age@ses-1, age@ses-2)",
+    )
+    parser_participants_convert.add_argument(
         "--sessions-from-date",
         nargs="?",
         const="startdate",

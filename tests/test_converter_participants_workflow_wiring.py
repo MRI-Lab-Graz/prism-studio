@@ -292,18 +292,22 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
 
         for element_id in (
             "participantsSessionChoiceCard",
-            "participantsSessionLongitudinalYes",
-            "participantsSessionLongitudinalNo",
+            "participantsSessionModeOne",
+            "participantsSessionModeSplit",
+            "participantsSessionByDateBtn",
             "participantsSessionColumn",
             "participantsSessionValue",
         ):
             self.assertIn(f'id="{element_id}"', template)
 
+        # The always-visible checkbox is gone: numbering by date is offered inside the card.
+        self.assertNotIn('id="participantsSessionsFromDate"', template)
         self.assertIn("./participants-session-choice.js", module)
         # The chosen session travels with every file request ...
         self.assertIn("sessionChoiceFormFields(participantsSessionChoice)", module)
         # ... the card is fed by the preview response ...
         self.assertIn("data.session_candidates", module)
+        self.assertIn("data.repeat_conflicts", module)
         # ... and Convert is disabled (and refused on click) while the question is unanswered.
         self.assertIn("sessionChoiceBlockReasonForRoute(", module)
         can_apply = module[module.index("function canApplyParticipantsConversion") :]
@@ -361,9 +365,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         ]
         self.assertIn("participantsExplicitCase = {", card_click)
 
-    def test_longitudinal_buttons_look_unanswered_until_one_is_clicked(self):
-        """Yes and No must be styled identically before an answer: an outline-primary
-        Yes next to a grey No reads as "Yes is preselected"."""
+    def test_session_mode_buttons_look_unanswered_until_one_is_clicked(self):
+        """Both modes must be styled identically before a choice: one outlined in
+        primary next to a grey one reads as "preselected"."""
         template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
         module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
@@ -371,8 +375,8 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             start = template.index(f'id="{element_id}"')
             return template[template.rindex("<button", 0, start) : template.index(">", start)]
 
-        yes = button_tag("participantsSessionLongitudinalYes")
-        no = button_tag("participantsSessionLongitudinalNo")
+        yes = button_tag("participantsSessionModeOne")
+        no = button_tag("participantsSessionModeSplit")
         self.assertIn("btn-outline-secondary", yes)
         self.assertIn("btn-outline-secondary", no)
         self.assertNotIn("btn-outline-primary", yes)

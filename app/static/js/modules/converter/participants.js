@@ -13,9 +13,10 @@ import { createParticipantsMergeConflictDownloadController } from './participant
 import {
     createSessionChoiceState,
     sessionChoiceBlockReasonForRoute,
+    sessionChoiceCardVisible,
     sessionChoiceFormFields,
     setSessionChoiceColumn,
-    setSessionChoiceLongitudinal,
+    setSessionChoiceMode,
     setSessionChoiceSession,
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
@@ -484,6 +485,7 @@ export function initParticipants() {
         const useMergeRoute = mode === 'file' && !participantsUsesPlainFileRoute();
         const choiceReason = sessionChoiceBlockReasonForRoute(
             { mode, useMergeRoute },
+            participantsRepeatConflicts,
             participantsSessionCandidates,
             participantsSessionChoice
         );
@@ -982,6 +984,7 @@ export function initParticipants() {
         participantsPreviewCompleted = false;
         participantsAnnotationGate.reset();
         if (!preserveImportConfig) {
+            participantsSessionsFromDate = false;
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
@@ -1557,11 +1560,6 @@ export function initParticipants() {
         });
     }
     
-    document.getElementById('participantsSessionsFromDate')?.addEventListener('change', function() {
-        resetParticipantsPanelState({ preserveImportConfig: true });
-        updateParticipantsButtonState({ skipIdAutoDetect: true });
-    });
-
     const sheetInput = document.getElementById('participantsSheet');
     if (sheetInput) {
         sheetInput.addEventListener('change', function() {
@@ -2617,6 +2615,9 @@ export function initParticipants() {
 
     // Longitudinal source file: the user says so and picks ONE session for everybody.
     let participantsSessionCandidates = [];
+    let participantsRepeatConflicts = [];
+    // Set from the card (files without a session column, e.g. LimeSurvey); reset with a new file.
+    let participantsSessionsFromDate = false;
     let participantsSessionChoice = createSessionChoiceState();
 
     // Longitudinal project: the user names the session being imported (nothing is filled in for them).
@@ -2651,19 +2652,34 @@ export function initParticipants() {
     function renderParticipantsSessionChoice() {
         const card = document.getElementById('participantsSessionChoiceCard');
         if (!card) return;
-        card.classList.toggle('d-none', participantsSessionCandidates.length === 0);
+        const state = participantsSessionChoice;
+        const hasSessionColumn = participantsSessionCandidates.length > 0;
+        card.classList.toggle(
+            'd-none',
+            !sessionChoiceCardVisible(participantsRepeatConflicts, participantsSessionCandidates, state)
+        );
+        const conflictText = document.getElementById('participantsSessionConflictText');
+        if (conflictText && participantsRepeatConflicts.length > 0) {
+            conflictText.textContent = `${participantsRepeatConflicts.join(', ')} differ between rows of the same participant, `
+                + 'but participants.tsv has exactly one row per participant.';
+        }
+        document.getElementById('participantsSessionDateOption')
+            ?.classList.toggle('d-none', hasSessionColumn);
+        document.getElementById('participantsSessionModeGroup')
+            ?.classList.toggle('d-none', !hasSessionColumn);
 
-        const yesBtn = document.getElementById('participantsSessionLongitudinalYes');
-        const noBtn = document.getElementById('participantsSessionLongitudinalNo');
-        [[yesBtn, true], [noBtn, false]].forEach(([button, answer]) => {
-            const chosen = participantsSessionChoice.longitudinal === answer;
+        [['participantsSessionModeOne', 'one'], ['participantsSessionModeSplit', 'split']].forEach(([id, mode]) => {
+            const button = document.getElementById(id);
+            const chosen = state.mode === mode;
             button?.classList.toggle('btn-primary', chosen);
             button?.classList.toggle('btn-outline-secondary', !chosen);
         });
-        document.getElementById('participantsSessionNoHint')
-            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== false);
         document.getElementById('participantsSessionPickers')
-            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== true);
+            ?.classList.toggle('d-none', state.mode === '');
+        document.getElementById('participantsSessionValueGroup')
+            ?.classList.toggle('d-none', state.mode !== 'one');
+        document.getElementById('participantsSessionSplitHint')
+            ?.classList.toggle('d-none', state.mode !== 'split');
 
         const columnSelect = document.getElementById('participantsSessionColumn');
         const valueSelect = document.getElementById('participantsSessionValue');
@@ -2676,22 +2692,24 @@ export function initParticipants() {
             return el;
         };
         columnSelect.replaceChildren(
-            option('', 'Select column...', participantsSessionChoice.column === ''),
-            ...participantsSessionCandidates.map((c) => option(c.column, c.column, c.column === participantsSessionChoice.column))
+            option('', 'Select column...', state.column === ''),
+            ...participantsSessionCandidates.map((c) => option(c.column, c.column, c.column === state.column))
         );
-        const chosen = participantsSessionCandidates.find((c) => c.column === participantsSessionChoice.column);
+        const chosen = participantsSessionCandidates.find((c) => c.column === state.column);
         valueSelect.replaceChildren(
-            option('', 'Select session...', participantsSessionChoice.session === ''),
-            ...(chosen ? chosen.values : []).map((v) => option(v, v, v === participantsSessionChoice.session))
+            option('', 'Select session...', state.session === ''),
+            ...(chosen ? chosen.values : []).map((v) => option(v, v, v === state.session))
         );
     }
 
-    function updateParticipantsSessionCandidates(candidates) {
+    function updateParticipantsSessionCandidates(candidates, conflicts = []) {
         const next = Array.isArray(candidates) ? candidates : [];
         if (JSON.stringify(next) !== JSON.stringify(participantsSessionCandidates)) {
             participantsSessionCandidates = next;
             participantsSessionChoice = createSessionChoiceState();
         }
+        // After "keep one session" the preview has no conflicts left; the choice itself keeps the card.
+        participantsRepeatConflicts = Array.isArray(conflicts) ? conflicts : [];
         renderParticipantsSessionChoice();
     }
 
@@ -2725,15 +2743,15 @@ export function initParticipants() {
         }
     }
 
-    document.getElementById('participantsSessionLongitudinalYes')?.addEventListener('click', () => {
-        applyParticipantsSessionChoice(
-            setSessionChoiceLongitudinal(participantsSessionChoice, true, participantsSessionCandidates)
-        );
+    document.getElementById('participantsSessionModeOne')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(setSessionChoiceMode(participantsSessionChoice, 'one', participantsSessionCandidates));
     });
-    document.getElementById('participantsSessionLongitudinalNo')?.addEventListener('click', () => {
-        applyParticipantsSessionChoice(
-            setSessionChoiceLongitudinal(participantsSessionChoice, false, participantsSessionCandidates)
-        );
+    document.getElementById('participantsSessionModeSplit')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(setSessionChoiceMode(participantsSessionChoice, 'split', participantsSessionCandidates));
+    });
+    document.getElementById('participantsSessionByDateBtn')?.addEventListener('click', () => {
+        participantsSessionsFromDate = true;
+        refreshParticipantsPreviewAfterSessionChoice();
     });
     document.getElementById('participantsSessionColumn')?.addEventListener('change', (event) => {
         applyParticipantsSessionChoice(
@@ -2777,7 +2795,7 @@ export function initParticipants() {
             formData.append('id_column', idColumn);
         }
         formData.append('separator', separator);
-        if (document.getElementById('participantsSessionsFromDate')?.checked) {
+        if (participantsSessionsFromDate) {
             formData.append('sessions_from_date', 'startdate');
         }
         Object.entries(sessionChoiceFormFields(participantsSessionChoice)).forEach(([key, value]) => {
@@ -3105,7 +3123,7 @@ export function initParticipants() {
                 previewColumnValues[cleanedName] = [...new Set(values)].slice(0, 50);
             });
             window.participantsTsvData = previewColumnValues;
-            updateParticipantsSessionCandidates(data.session_candidates);
+            updateParticipantsSessionCandidates(data.session_candidates, data.repeat_conflicts);
             updateParticipantsSessionMapPanel(data.unmapped_session_labels);
             if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
                 window.pendingAdditionalParticipantColumns.forEach((columnName) => {

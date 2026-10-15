@@ -70,3 +70,24 @@ def test_convert_without_a_session_choice_stops(tmp_path):
     assert result.returncode != 0
     assert "one row per participant" in result.stdout
     assert not (tmp_path / "participants.tsv").exists()
+
+
+def test_preview_json_names_the_columns_that_change_between_sessions(tmp_path):
+    result = _run(
+        "preview", "--input", str(_source(tmp_path)), "--project", str(tmp_path),
+        "--id-column", "participant_id", "--json",
+    )
+
+    assert json.loads(result.stdout)["repeat_conflicts"] == ["age"]
+
+
+def test_convert_split_sessions_writes_one_column_per_session(tmp_path):
+    result = _run(
+        "convert", "--input", str(_source(tmp_path)), "--project", str(tmp_path),
+        "--id-column", "participant_id",
+        "--session-column", "session", "--split-sessions", "--json",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    header = (tmp_path / "participants.tsv").read_text().splitlines()[0].split("\t")
+    assert header == ["participant_id", "age@ses-baseline", "age@ses-followup", "sex"]

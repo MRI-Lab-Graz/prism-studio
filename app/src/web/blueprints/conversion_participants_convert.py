@@ -66,6 +66,7 @@ def _write_participants_outputs(
     session_column: str = "",
     session_value: str = "",
     sessions_from_date: str | None = None,
+    split_sessions: bool = False,
 ) -> dict[str, Any]:
     """Run ParticipantsConverter, write participants.tsv/json, return the
     success result payload (no "log" key -- callers merge that in)."""
@@ -82,6 +83,7 @@ def _write_participants_outputs(
         session_column=session_column or None,
         session_value=session_value or None,
         sessions_from_date=sessions_from_date,
+        split_sessions=split_sessions,
     )
 
     for msg in messages:
@@ -180,6 +182,7 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                         session_column=config.get("session_column", ""),
                         session_value=config.get("session_value", ""),
                         sessions_from_date=config.get("sessions_from_date"),
+                        split_sessions=bool(config.get("split_sessions")),
                     )
                 except ValueError as e:
                     _participants_job_store.failure(job_id, str(e) or "Conversion failed")
