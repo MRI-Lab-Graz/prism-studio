@@ -4,6 +4,7 @@ import { isSameProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { carryForwardColumnEdits } from './neurobagel-session-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { createAnnotationGate } from './participants-annotation-gate.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
@@ -55,6 +56,8 @@ export function initParticipants() {
     });
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
+    // Annotation is a required stage: Create/Replace stays blocked until the user confirms it.
+    const participantsAnnotationGate = createAnnotationGate();
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
@@ -480,7 +483,7 @@ export function initParticipants() {
     }
 
     function canApplyParticipantsConversion() {
-        if (!participantsPreviewCompleted) {
+        if (!participantsPreviewCompleted || !participantsAnnotationGate.isConfirmed()) {
             return false;
         }
 
@@ -499,6 +502,12 @@ export function initParticipants() {
         }
 
         return true;
+    }
+
+    function participantsConvertReadyHint() {
+        return participantsAnnotationGate.isConfirmed()
+            ? getParticipantsWorkflowUiCopy().convertReadyHint
+            : 'Confirm the annotation (step 3) first';
     }
 
     function updateParticipantsMergeApplyStatusBadge(previewData = window.lastParticipantsPreviewData) {
@@ -615,7 +624,7 @@ export function initParticipants() {
                 previewLabel: '1. Choose Workflow',
                 previewHint: 'Select Replace, Modify, or Merge to continue.',
                 mappingHint: 'Choose a workflow first. Import-based options unlock additional source columns after review.',
-                convertLabel: '3. Save Participant Files',
+                convertLabel: '4. Save Participant Files',
                 convertPendingHint: 'Choose a workflow to continue',
                 convertReadyHint: 'Choose a workflow to continue',
                 workflowSummaryOutput: 'Output: choose a workflow to see how participant files will be updated',
@@ -639,7 +648,7 @@ export function initParticipants() {
                 previewLabel: '1. Preview Merge',
                 previewHint: 'Check matches, fills, new participants, and conflicts before applying the merge.',
                 mappingHint: 'Include non-core fields from the imported source file.',
-                convertLabel: '3. Apply Merge',
+                convertLabel: '4. Apply Merge',
                 convertPendingHint: 'Run step 1 to preview the merge',
                 convertReadyHint: 'Ready to apply conflict-free merge',
                 workflowSummaryOutput: 'Output: apply safe in-place merge to participants.tsv + participants.json',
@@ -651,7 +660,7 @@ export function initParticipants() {
                 previewLabel: '1. Review Replacement File',
                 previewHint: 'Check the imported columns and sample values before replacing the current participant files.',
                 mappingHint: 'Include non-core fields from the imported source file.',
-                convertLabel: '3. Replace Participant Files',
+                convertLabel: '4. Replace Participant Files',
                 convertPendingHint: 'Run step 1 to review the replacement file',
                 convertReadyHint: 'Ready to replace existing files in project',
                 workflowSummaryOutput: 'Output: replace participants.tsv + participants.json in project',
@@ -662,7 +671,7 @@ export function initParticipants() {
             previewLabel: '1. Review Participant Fields',
             previewHint: 'Check detected columns and sample values before creating participant files.',
             mappingHint: 'Include non-core fields from the imported source file.',
-            convertLabel: '3. Create Participant Files',
+            convertLabel: '4. Create Participant Files',
             convertPendingHint: 'Run step 1 first',
             convertReadyHint: 'Ready to create files in project',
             workflowSummaryOutput: 'Output: create participants.tsv + participants.json in project',
@@ -892,7 +901,6 @@ export function initParticipants() {
         const fileSection = document.getElementById('participantsFileInputSection');
         const previewActionCol = document.getElementById('participantsPreviewActionCol');
         const mappingActionCol = document.getElementById('participantsMappingActionCol');
-        const convertActionCol = document.getElementById('participantsConvertActionCol');
         const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
         const previewHint = document.getElementById('participantsPreviewHint');
         const mappingHint = document.getElementById('participantsMappingHint');
@@ -911,7 +919,7 @@ export function initParticipants() {
             mappingActionCol.classList.toggle('d-none', !showMappingAction);
         }
 
-        [previewActionCol, convertActionCol].forEach((column) => {
+        [previewActionCol].forEach((column) => {
             if (!column) {
                 return;
             }
@@ -960,6 +968,7 @@ export function initParticipants() {
     
     function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {
         participantsPreviewCompleted = false;
+        participantsAnnotationGate.reset();
         if (!preserveImportConfig) {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
@@ -981,7 +990,7 @@ export function initParticipants() {
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
         const applyStatusBadge = document.getElementById('participantsMergeApplyStatusBadge');
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
         const previewTableHead = document.querySelector('#participantsPreviewTable thead');
         const previewTableBody = document.querySelector('#participantsPreviewTable tbody');
         const previewCount = document.getElementById('participantsPreviewCount');
@@ -1402,7 +1411,7 @@ export function initParticipants() {
         
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
 
         if (!hasSelectedCase) {
             participantsExcelSheetCount = null;
@@ -2691,7 +2700,7 @@ export function initParticipants() {
         const reason = participantsSessionBlockReason();
         if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
         if (convertHint && reason) convertHint.textContent = reason;
-        else if (convertHint) convertHint.textContent = getParticipantsWorkflowUiCopy().convertReadyHint;
+        else if (convertHint) convertHint.textContent = participantsConvertReadyHint();
     }
 
     function applyParticipantsSessionChoice(nextState) {
@@ -2836,6 +2845,7 @@ export function initParticipants() {
         
         errorDiv.classList.add('d-none');
         previewResults.classList.add('d-none');
+        participantsAnnotationGate.reset();
 
         if (!runController.tryStartRun()) {
             return;
@@ -3167,7 +3177,9 @@ export function initParticipants() {
             convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
             if (previewData && previewData.merge_mode) {
                 const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
-                if (harmonizationState.hasInvalidKeepBoth) {
+                if (!participantsAnnotationGate.isConfirmed()) {
+                    convertHint.textContent = participantsConvertReadyHint();
+                } else if (harmonizationState.hasInvalidKeepBoth) {
                     convertHint.textContent = 'Fix Keep both column names before applying merge';
                 } else if (Boolean(previewData.session_resolution_required) && Number(previewData.conflict_count || 0) === 0) {
                     convertHint.textContent = 'Choose session resolution before applying merge';
@@ -3177,19 +3189,25 @@ export function initParticipants() {
                         : 'Resolve merge conflicts first';
                 }
             } else {
-                convertHint.textContent = participantsSessionBlockReason() || workflowUiCopy.convertReadyHint;
+                convertHint.textContent = participantsSessionBlockReason() || participantsConvertReadyHint();
             }
         }
 
         updateParticipantsMergeApplyStatusBadge(previewData);
     
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
         if (saveAnnotBtn) {
             saveAnnotBtn.disabled = false;
         }
     
         refreshParticipantsWorkflowSummary();
     
+        // Annotation is the next required stage: open it as soon as step 1 completes.
+        const annotationCollapse = document.getElementById('neurobagelCollapse');
+        if (annotationCollapse) bootstrap.Collapse.getOrCreateInstance(annotationCollapse, { toggle: false }).show();
+        const confirmHint = document.getElementById('participantsAnnotationConfirmHint');
+        if (confirmHint) confirmHint.textContent = 'Check every column, then confirm to unlock step 4.';
+
         // Keep annotation view in sync with latest preview/schema as soon as step 1 completes.
         loadNeurobagelWidget();
     }
@@ -3676,77 +3694,43 @@ export function initParticipants() {
     
     // ===== NEUROBAGEL ANNOTATION HANDLERS =====
 
-    document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
-        const saveBtn = this;
-        const originalLabel = saveBtn.innerHTML;
+    // Stage 3 -> 4: the user confirms the annotation; Create/Replace unlocks below.
+    document.getElementById('participantsAnnotationConfirmBtn')?.addEventListener('click', function() {
         const errorDiv = document.getElementById('participantsError');
-    
         if (errorDiv) {
             errorDiv.classList.add('d-none');
             errorDiv.textContent = '';
         }
-    
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-    
-        try {
-            if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
-                window.syncNeurobagelActiveEditorToState();
-            }
-    
-            const annotatedData = buildAnnotatedParticipantsSchemaFromWidgetState();
-            if (!annotatedData || Object.keys(annotatedData).length === 0) {
-                throw new Error('No participant annotation data available. Run Preview Data first.');
-            }
-            const currentProjectPath = resolveCurrentProjectPath();
-            if (!currentProjectPath) {
-                throw new Error('Please select a project first from the top of the page');
-            }
-        
-            // Save to the project
-            const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    schema: annotatedData,
-                    project_path: currentProjectPath,
-                })
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                const savedSchema = (result.schema && typeof result.schema === 'object')
-                    ? result.schema
-                    : annotatedData;
-                const successDiv = document.getElementById('participantsSuccess');
-                successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
-                successDiv.classList.remove('d-none');
-    
-                window.neurobagelSchema = savedSchema;
-                window.existingParticipantsData = savedSchema;
-    
-                if (window.lastParticipantsPreviewData) {
-                    window.lastParticipantsPreviewData.neurobagel_schema = savedSchema;
-                    renderParticipantsPreviewTable(window.lastParticipantsPreviewData, savedSchema);
-                }
-    
-                displayNeurobagelSchema(savedSchema);
-                
-                // Keep the editor open so user can continue annotating
-                // document.getElementById('neurobagelSection').style.display = 'none';
-                // document.getElementById('participantsHelp').style.display = 'block';
-            } else {
-                throw new Error(result.error || 'Failed to save participants schema');
-            }
-        } catch (error) {
+
+        if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
+            window.syncNeurobagelActiveEditorToState();
+        }
+        const annotatedData = buildAnnotatedParticipantsSchemaFromWidgetState();
+        if (!annotatedData || Object.keys(annotatedData).length === 0) {
             if (errorDiv) {
-                errorDiv.textContent = `Error saving participants schema: ${error.message}`;
+                errorDiv.textContent = 'No participant annotation data available. Run step 1 first.';
                 errorDiv.classList.remove('d-none');
             }
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalLabel;
+            return;
         }
+        window.neurobagelSchema = annotatedData;
+        participantsAnnotationGate.confirm();
+
+        const convertBtn = document.getElementById('participantsConvertBtn');
+        const convertHint = document.getElementById('convertBtnHint');
+        const canConvert = canApplyParticipantsConversion();
+        if (convertBtn) {
+            convertBtn.disabled = !canConvert;
+            convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+            convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
+        }
+        if (convertHint) {
+            convertHint.textContent = canConvert
+                ? getParticipantsWorkflowUiCopy().convertReadyHint
+                : (participantsSessionBlockReason() || 'Resolve the items above before continuing');
+        }
+        updateParticipantsMergeApplyStatusBadge();
+        document.getElementById('participantsConvertActionCol')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     
     window.carryForwardColumnEdits = carryForwardColumnEdits;
