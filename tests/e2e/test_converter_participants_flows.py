@@ -24,9 +24,16 @@ def read_participants(project):
         return list(csv.DictReader(f, delimiter="\t"))
 
 
+def confirm_annotation(page):
+    """Annotation is a required stage: Create/Replace unlocks only after this."""
+    expect(page.locator("#participantsConvertBtn")).to_be_disabled()
+    page.click("#participantsAnnotationConfirmBtn", timeout=30000)
+    expect(page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
+
+
 def preview_and_convert(page):
     page.click("#participantsPreviewBtn")
-    expect(page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
+    confirm_annotation(page)
     page.click("#participantsConvertBtn")
     expect(page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
 
@@ -39,6 +46,7 @@ def test_new_participants_file_is_previewed_then_written(app_page, studio_url, t
     expect(app_page.locator("#participantsPreviewTable")).to_contain_text("P001", timeout=30000)
     assert not (project / "participants.tsv").exists(), "preview must not write the file"
 
+    confirm_annotation(app_page)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
 
@@ -78,6 +86,7 @@ def test_merge_without_conflicts_adds_new_people_and_columns_but_keeps_existing_
 
     expect(app_page.locator("#participantsMergeConflictCount")).to_have_text("0 conflicts")
     expect(app_page.locator("#participantsMergeNewParticipantsCount")).to_have_text("1 new participant")
+    confirm_annotation(app_page)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
 
@@ -113,7 +122,7 @@ def test_longitudinal_yes_imports_the_one_chosen_session_for_everybody(app_page,
     app_page.click("#participantsSessionLongitudinalYes")
     app_page.select_option("#participantsSessionColumn", "session")
     app_page.select_option("#participantsSessionValue", "pre")
-    expect(app_page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
+    confirm_annotation(app_page)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)
 
@@ -125,8 +134,19 @@ def test_longitudinal_no_stops_because_participants_repeat_with_different_values
     preview_longitudinal(app_page, studio_url, tmp_path)
 
     app_page.click("#participantsSessionLongitudinalNo")
-    expect(app_page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
+    confirm_annotation(app_page)
     app_page.click("#participantsConvertBtn")
 
     expect(app_page.locator("#participantsError")).to_be_visible(timeout=30000)
     assert not (project / "participants.tsv").exists()
+
+
+def test_a_new_preview_revokes_the_annotation_confirmation(app_page, studio_url, tmp_path, project):
+    open_participants_tab(app_page, studio_url)
+    select_people_file(app_page, tmp_path)
+    app_page.click("#participantsPreviewBtn")
+    confirm_annotation(app_page)
+
+    app_page.click("#participantsPreviewBtn")
+    expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
+    expect(app_page.locator("#convertBtnHint")).to_contain_text("Confirm the annotation", timeout=30000)
