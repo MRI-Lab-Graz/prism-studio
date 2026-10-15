@@ -6,6 +6,10 @@ In a project that declares several timepoints, every session label being
 imported must have an explicit entry in ``code/session_map.json``. Nothing is
 guessed: labels compare by exact string (see ``session_label``), a blank label
 is never defaulted, and PRISM never suggests a target.
+
+A project with a single timepoint writes ``ses-1`` for every label (a declared
+project rule, see ``session_target``). For several timepoints PRISM only
+*pre-fills* defaults in the UI (Task 7); it never applies them unconfirmed.
 """
 
 from __future__ import annotations
@@ -164,6 +168,30 @@ def apply_session_map(label: object, mapping: Mapping[str, str]) -> str:
     if key in mapping:
         return mapping[key]
     raise SessionsNotMappedError([key])
+
+
+SINGLE_SESSION = "1"
+SINGLE_SESSION_WARNING = "Project has one timepoint: session label {label!r} was written as ses-1."
+
+
+def session_target(project_path, label: object) -> str | None:
+    """The session name a source label becomes in this project, or None when the
+    folder is not a PRISM project (callers keep their legacy behaviour)."""
+    state = project_timepoints(project_path)
+    if state is None:
+        return None
+    if state == "undeclared":
+        raise TimepointsNotDeclaredError()
+    if state == "single":
+        return SINGLE_SESSION
+    return apply_session_map(label, load_session_map(project_path))
+
+
+def single_session_warning(label: object) -> str | None:
+    shown = session_label(label)
+    if shown in ("", SINGLE_SESSION):
+        return None
+    return SINGLE_SESSION_WARNING.format(label=shown)
 
 
 def session_map_for_conversion(
