@@ -8,6 +8,9 @@ are held to the exact same dataset shape.
 
 from __future__ import annotations
 
+import csv
+import gzip
+import itertools
 import json
 import re
 from dataclasses import dataclass
@@ -349,4 +352,131 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
             err(where, "a categorical column needs AllowedValues (the categories)")
         elif scale == "boolean" and len(allowed or []) != 2:
             err(where, "a boolean column needs exactly two AllowedValues (for example yes; no)")
+    return problems
+
+
+TABULAR_EXTENSIONS = {"tsv", "tsv.gz"}
+_SUBJECT_COLUMNS = {"participant_id", "subject", "subject_id", "sub", "sub_id"}
+_SUBJECT_OK = {"sub-01", "01"}
+_IDENTIFIER_COLUMN_RE = re.compile(r"(?:^|_)(name|birth|dob|email|phone|address)(?:$|_)")
+_EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+_INTEGER_RE = re.compile(r"[-+]?\d+")
+
+
+def sample_extension(path, extensions: list[str]) -> str | None:
+    """The declared extension the file name ends with (longest first), or None."""
+    name = Path(path).name.lower()
+    for ext in sorted(extensions, key=len, reverse=True):
+        if name.endswith("." + ext):
+            return ext
+    return None
+
+
+def _allowed(value: str, allowed: list) -> bool:
+    for a in allowed:
+        if isinstance(a, (int, float)) and not isinstance(a, bool):
+            try:
+                if float(value) == float(a):
+                    return True
+            except ValueError:
+                pass
+        elif value == str(a):
+            return True
+    return False
+
+
+def _read_tabular_rows(path: Path, ext: str) -> list[list[str]]:
+    # utf-8-sig drops an Excel BOM; newline="" lets csv handle CRLF. Reading
+    # is capped so a decompression bomb cannot exhaust memory.
+    opener = gzip.open if ext.endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8-sig", newline="") as fh:
+        return list(itertools.islice(csv.reader(fh, delimiter="\t"), SAMPLE_MAX_ROWS + 2))
+
+
+def check_sample(proposal: dict, sample_path) -> list[Problem]:
+    """Check the sample data file against the proposal's column dictionary."""
+    path = Path(sample_path)
+    name = path.name
+    if not path.is_file():
+        return [Problem("error", name, "sample file not found")]
+    extensions = proposal.get("extensions") or []
+    ext = sample_extension(path, extensions)
+    if ext is None:
+        return [Problem("error", name, f"extension must be one of: {', '.join(extensions)}")]
+    if path.stat().st_size > SAMPLE_MAX_BYTES:
+        return [Problem("error", name, f"file is too large (max {SAMPLE_MAX_BYTES // 1_000_000} MB)")]
+    if ext not in TABULAR_EXTENSIONS:
+        try:
+            with path.open("rb") as fh:
+                fh.read(1)
+        except OSError as exc:
+            return [Problem("error", name, f"cannot read file: {exc}")]
+        return []
+
+    try:
+        rows = _read_tabular_rows(path, ext)
+    except (OSError, UnicodeDecodeError, EOFError, gzip.BadGzipFile) as exc:
+        return [Problem("error", name, f"cannot read file as tab-separated text: {exc}")]
+    if not rows:
+        return [Problem("error", name, "file is empty")]
+
+    problems: list[Problem] = []
+    header, data = rows[0], rows[1:]
+    columns = {c["id"]: c for c in proposal.get("columns") or []}
+    missing = [c for c in columns if c not in header]
+    extra = [h for h in header if h not in columns]
+    if missing:
+        problems.append(Problem("error", name, f"missing column(s): {', '.join(missing)}"))
+    if extra:
+        problems.append(Problem("error", name, f"unexpected column(s): {', '.join(extra)}"))
+    if len(data) > SAMPLE_MAX_ROWS:
+        problems.append(Problem("error", name, f"more than {SAMPLE_MAX_ROWS} data rows"))
+        data = data[:SAMPLE_MAX_ROWS]
+
+    warned: set[tuple[str, str]] = set()
+
+    def warn(kind: str, column: str, message: str) -> None:
+        if (kind, column) not in warned:
+            warned.add((kind, column))
+            problems.append(Problem("warning", f"{name} column '{column}'", message))
+
+    for column in header:
+        if _IDENTIFIER_COLUMN_RE.search(column.lower()):
+            warn("identifier", column, "looks like an identifier column; make sure it holds no real personal data")
+
+    for r, row in enumerate(data, start=1):
+        if len(row) != len(header):
+            problems.append(Problem("error", f"{name} row {r}", f"has {len(row)} cells, header has {len(header)}"))
+            continue
+        for column, raw in zip(header, row):
+            value = raw.strip()
+            if _EMAIL_RE.search(value):
+                warn("email", column, "contains an e-mail address; sample data must not hold personal data")
+            col = columns.get(column)
+            if col is None or value == "" or value.lower() == "n/a":
+                continue
+            where = f"{name} row {r} column '{column}'"
+            if column.lower() in _SUBJECT_COLUMNS and value not in _SUBJECT_OK:
+                problems.append(Problem("error", where, f"'{value}' must be 'sub-01' in a sample"))
+                continue
+            datatype = col["datatype"]
+            number = None
+            if datatype == "integer":
+                if not _INTEGER_RE.fullmatch(value):
+                    problems.append(Problem("error", where, f"'{value}' is not an integer"))
+                    continue
+                number = float(value)
+            elif datatype == "float":
+                try:
+                    number = float(value)
+                except ValueError:
+                    problems.append(Problem("error", where, f"'{value}' is not a number"))
+                    continue
+            if number is not None:
+                if col["min"] is not None and number < col["min"]:
+                    problems.append(Problem("error", where, f"{value} is below Min ({col['min']})"))
+                if col["max"] is not None and number > col["max"]:
+                    problems.append(Problem("error", where, f"{value} is above Max ({col['max']})"))
+            if col["allowed_values"] and not _allowed(value, col["allowed_values"]):
+                problems.append(Problem("error", where, f"'{value}' is not one of {col['allowed_values']}"))
     return problems
