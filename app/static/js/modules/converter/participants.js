@@ -2,6 +2,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { isSameProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { carryForwardColumnEdits } from './neurobagel-session-state.js';
 import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
@@ -3748,6 +3749,8 @@ export function initParticipants() {
         }
     });
     
+    window.carryForwardColumnEdits = carryForwardColumnEdits;
+
     window.loadNeurobagelWidget = async function() {
         const container = document.getElementById('neurobagelWidgetContainer');
         if (!container) return;
