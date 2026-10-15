@@ -213,7 +213,7 @@ def read_proposal(path) -> dict:
 
         try:
             raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-        except (OSError, yaml.YAMLError) as exc:
+        except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
             raise ProposalError(f"cannot read {path.name}: {exc}") from exc
         if not isinstance(raw, dict):
             raise ProposalError(f"{path.name}: top level must be a mapping")

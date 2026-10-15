@@ -134,3 +134,10 @@ def test_problem_str_and_errors_only() -> None:
     warn = Problem("warning", "x", "hmm")
     assert str(err) == "ERROR: Modality.Name: bad"
     assert errors_only([err, warn]) == [err]
+
+
+def test_non_utf8_yaml_is_a_proposal_error(tmp_path: Path) -> None:
+    f = tmp_path / "bad.yml"
+    f.write_bytes(b"\xff\xfe\x00bad")
+    with pytest.raises(ProposalError, match="cannot read bad.yml"):
+        read_proposal(f)

@@ -61,7 +61,7 @@ def test_invalid_proposal_exits_1_and_lists_every_problem(tmp_path: Path, capsys
     assert not (tmp_path / "o").exists()
 
 
-def test_missing_out_without_check_exits_2(capsys) -> None:
+def test_missing_out_without_check_exits_2() -> None:
     with pytest.raises(SystemExit) as exc:
         modality_cmds.cmd_modality_propose(_args())
     assert exc.value.code == 2
@@ -82,3 +82,44 @@ def test_json_output(tmp_path: Path, capsys) -> None:
     assert payload["success"] is True
     assert payload["modality"] == "biosample"
     assert any(f.endswith("REGISTRATION.md") for f in payload["files"])
+
+
+def _json_exit(capsys, code, **over) -> dict:
+    with pytest.raises(SystemExit) as exc:
+        modality_cmds.cmd_modality_propose(_args(json=True, **over))
+    assert exc.value.code == code
+    return json.loads(capsys.readouterr().out)
+
+
+def test_json_missing_out_is_one_json_object_exit_2(capsys) -> None:
+    payload = _json_exit(capsys, 2)
+    assert payload["success"] is False
+    assert any(p["where"] == "--out" for p in payload["problems"])
+
+
+def test_missing_out_exits_2_even_if_proposal_invalid(tmp_path: Path, capsys) -> None:
+    f = tmp_path / "p.txt"
+    f.write_text("x", encoding="utf-8")
+    _json_exit(capsys, 2, proposal=str(f))
+
+
+def test_json_non_utf8_proposal_exit_1(tmp_path: Path, capsys) -> None:
+    f = tmp_path / "bad.yml"
+    f.write_bytes(b"\xff\xfe\x00bad")
+    payload = _json_exit(capsys, 1, proposal=str(f), check=True)
+    assert payload["success"] is False
+
+
+def test_json_out_is_a_file_exit_1(tmp_path: Path, capsys) -> None:
+    out = tmp_path / "afile"
+    out.write_text("x", encoding="utf-8")
+    payload = _json_exit(capsys, 1, out=str(out))
+    assert payload["success"] is False
+    assert any(p["where"] == "--out" for p in payload["problems"])
+
+
+def test_json_check_success_is_exactly_one_json_object(capsys) -> None:
+    modality_cmds.cmd_modality_propose(_args(json=True, check=True))
+    out = capsys.readouterr().out
+    assert json.loads(out)["success"] is True
+    assert "OK" not in out
