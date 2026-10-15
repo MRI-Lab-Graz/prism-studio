@@ -2162,7 +2162,7 @@ export function initYearMonthSelect(yearSelectId, monthSelectId) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const startYear = currentYear - 20;
-    const endYear = currentYear;
+    const endYear = currentYear + 10; // planned studies may recruit in the future
 
     yearSelect.innerHTML = '<option value="">Year</option>';
     for (let y = endYear; y >= startYear; y -= 1) {
