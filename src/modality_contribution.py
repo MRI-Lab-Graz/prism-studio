@@ -9,11 +9,13 @@ are held to the exact same dataset shape.
 from __future__ import annotations
 
 import csv
+import datetime
 import gzip
 import io
 import itertools
 import json
 import re
+import shutil
 import zlib
 from dataclasses import dataclass
 from functools import lru_cache
@@ -26,12 +28,13 @@ def write_minimal_dataset(
     suffix: str,
     extension: str,
     sidecar: dict,
-    data_content: str,
+    data_content: str | bytes,
     task_name: str = "demo",
+    modality: str | None = None,
 ) -> Path:
     """Write a minimal valid PRISM dataset for one subject/modality.
 
-    Creates dataset_description.json and sub-01/<suffix>/ containing the
+    Creates dataset_description.json and sub-01/<modality>/ (default <suffix>) containing the
     data file plus its matching JSON sidecar. Returns the path to the
     created data file.
     """
@@ -49,12 +52,15 @@ def write_minimal_dataset(
         json.dumps(dataset_description, indent=2), encoding="utf-8"
     )
 
-    modality_dir = dest_dir / "sub-01" / suffix
+    modality_dir = dest_dir / "sub-01" / (modality or suffix)
     modality_dir.mkdir(parents=True, exist_ok=True)
 
     stem = f"sub-01_task-{task_name}_{suffix}"
     data_path = modality_dir / f"{stem}.{extension}"
-    data_path.write_text(data_content, encoding="utf-8")
+    if isinstance(data_content, bytes):
+        data_path.write_bytes(data_content)
+    else:
+        data_path.write_text(data_content, encoding="utf-8")
 
     sidecar_path = modality_dir / f"{stem}.json"
     sidecar_path.write_text(json.dumps(sidecar, indent=2), encoding="utf-8")
@@ -486,3 +492,171 @@ def check_sample(proposal: dict, sample_path) -> list[Problem]:
             if col["allowed_values"] and not _allowed(value, col["allowed_values"]):
                 problems.append(Problem("error", where, f"'{value}' is not one of {col['allowed_values']}"))
     return problems
+
+
+def _column_definition(col: dict) -> dict:
+    out = {"Description": col["description"], "Units": col["units"]}
+    if col["min"] is not None:
+        out["MinValue"] = col["min"]
+    if col["max"] is not None:
+        out["MaxValue"] = col["max"]
+    if col["allowed_values"]:
+        out["AllowedValues"] = col["allowed_values"]
+    out["DataType"] = col["datatype"]
+    if col.get("scale"):
+        out["MeasurementScale"] = col["scale"]
+    return out
+
+
+def build_schema(proposal: dict) -> dict:
+    """The modality schema: PRISM envelope plus the column-definition shape."""
+    name, suffix, exts = proposal["modality"], proposal["suffix"], proposal["extensions"]
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "$id": f"https://prism.org/schemas/{name}/v1.0.0",
+        "version": "1.0.0",
+        "title": f"{name.capitalize()} Metadata",
+        "description": (
+            f"{proposal['description']}. Files should be named: "
+            f"sub-<label>[_ses-<label>]_task-<label>[_run-<index>]_{suffix}.<{'|'.join(exts)}>"
+        ),
+        "type": "object",
+        "properties": {
+            "Technical": {
+                "type": "object",
+                "description": "Technical properties of the data",
+                "properties": {
+                    "FileFormat": {"type": "string", "enum": [*exts, ""]},
+                    "Equipment": {"type": ["string", "object"]},
+                    "Location": {"type": "string"},
+                },
+                "required": ["FileFormat"],
+            },
+            "Study": {
+                "type": "object",
+                "description": "Study-specific parameters",
+                "properties": {
+                    "TaskName": {"type": "string", "pattern": "^[a-zA-Z0-9]*$"},
+                    "OriginalName": {"type": ["string", "object"]},
+                    "Description": {"type": ["string", "object"]},
+                    "Citation": {"type": "string"},
+                },
+                "required": ["TaskName", "OriginalName"],
+            },
+            "Metadata": {
+                "type": "object",
+                "description": "Administrative metadata",
+                "properties": {
+                    "SchemaVersion": {"type": "string", "pattern": r"^\d+\.\d+\.\d+$"},
+                    "CreationDate": {"type": "string", "pattern": r"^(\d{4}-\d{2}-\d{2})?$"},
+                    "Creator": {"type": "string"},
+                },
+                "required": ["SchemaVersion", "CreationDate"],
+            },
+        },
+        "required": ["Technical", "Study", "Metadata"],
+        "additionalProperties": {
+            "type": "object",
+            "description": "Definition of one data-file column",
+            "properties": {
+                "Description": {"type": ["string", "object"]},
+                "Units": {"type": "string"},
+                "MinValue": {"type": ["number", "null"]},
+                "MaxValue": {"type": ["number", "null"]},
+                "AllowedValues": {"type": "array"},
+                "DataType": {"type": "string", "enum": sorted(COLUMN_DATATYPES)},
+                "MeasurementScale": {"type": "string", "enum": list(COLUMN_SCALES)},
+            },
+            "required": ["Description", "Units"],
+        },
+    }
+
+
+def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:
+    name = proposal["modality"]
+    sidecar = {
+        "Technical": {"FileFormat": proposal["extensions"][0]},
+        "Study": {
+            "TaskName": name,
+            "OriginalName": name,
+            "Description": proposal["description"],
+        },
+        "Metadata": {
+            "SchemaVersion": "1.0.0",
+            "CreationDate": today or datetime.date.today().isoformat(),
+        },
+    }
+    for col in proposal["columns"]:
+        sidecar[col["id"]] = _column_definition(col)
+    return sidecar
+
+
+def registration_entry(proposal: dict) -> dict:
+    exts = list(dict.fromkeys([*proposal["extensions"], "json"]))
+    return {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts}
+
+
+def build_registration_md(proposal: dict) -> str:
+    name = proposal["modality"]
+    snippet = json.dumps({name: registration_entry(proposal)}, indent=2)
+    return f"""# Registering the `{name}` modality (maintainer steps)
+
+PRISM does not register modalities automatically. Do these steps by hand in the
+pull request, then let CI validate the fixture in this folder.
+
+1. Copy `{name}.schema.json` to `app/schemas/stable/{name}.schema.json`.
+2. In `app/schemas/stable/entities.schema.json`, add this entry under
+   `"modalities"`:
+
+```json
+{snippet}
+```
+
+3. Add `"{name}"` to `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py`.
+4. Check the registration:
+   `python tests/verify_repo.py --check schema-sync` and
+   `python tests/verify_repo.py --check modality-schema-conventions`.
+5. Validate the generated dataset: `python prism.py fixture` run from this
+   folder. It must pass without errors.
+
+Review by hand what no check can judge: units, a modality that duplicates an
+existing one under another name, and whether the sample holds any real
+participant data.
+"""
+
+
+def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir) -> list[Path]:
+    """Write schema, example sidecar, fixture, REGISTRATION.md and input copies.
+
+    Call check_proposal() and check_sample() first; this does not re-check.
+    """
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    sample, source = Path(sample_path), Path(proposal_path)
+    name = proposal["modality"]
+    ext = sample_extension(sample, proposal["extensions"])
+
+    schema_path = out / f"{name}.schema.json"
+    schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
+    sidecar = build_example_sidecar(proposal)
+    sidecar_path = out / "example_sidecar.json"
+    sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
+    write_minimal_dataset(
+        out / "fixture",
+        modality=name,
+        suffix=proposal["suffix"],
+        extension=ext,
+        sidecar=sidecar,
+        data_content=sample.read_bytes(),
+        task_name=name,
+    )
+    registration_path = out / "REGISTRATION.md"
+    registration_path.write_text(build_registration_md(proposal), encoding="utf-8")
+    proposal_copy = out / f"proposal{source.suffix.lower()}"
+    shutil.copyfile(source, proposal_copy)
+    sample_copy = out / f"sample.{ext}"
+    shutil.copyfile(sample, sample_copy)
+
+    fixture = out / "fixture"
+    fixture_files = [p for p in sorted(fixture.rglob("*")) if p.is_file()]
+    return [schema_path, sidecar_path, registration_path, proposal_copy, sample_copy, *fixture_files]

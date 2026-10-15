@@ -89,3 +89,20 @@ def test_write_minimal_dataset_uses_default_task_name(tmp_path: Path) -> None:
     )
 
     assert data_path.name == "sub-01_task-demo_skintemp.tsv"
+
+
+def test_write_minimal_dataset_modality_folder_and_bytes(tmp_path: Path) -> None:
+    from src.modality_contribution import write_minimal_dataset
+
+    data_path = write_minimal_dataset(
+        tmp_path,
+        modality="biosample",
+        suffix="bloodchem",
+        extension="tsv.gz",
+        sidecar={"Study": {}},
+        data_content=b"\x1f\x8bbytes",
+        task_name="biosample",
+    )
+    assert data_path == tmp_path / "sub-01" / "biosample" / "sub-01_task-biosample_bloodchem.tsv.gz"
+    assert data_path.read_bytes() == b"\x1f\x8bbytes"
+    assert (data_path.parent / "sub-01_task-biosample_bloodchem.json").is_file()
