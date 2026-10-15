@@ -217,6 +217,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
 
     survey_value = _extract_entity_value(stem, "survey")
     biometrics_value = _extract_entity_value(stem, "biometrics")
+    biosample_value = _extract_entity_value(stem, "biosample")
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
 
@@ -225,6 +226,8 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         label_candidates.append(("survey", survey_candidate))
     for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         label_candidates.append(("biometrics", biometrics_candidate))
+    for biosample_candidate in _value_candidates(biosample_value, acq_value):
+        label_candidates.append(("biosample", biosample_candidate))
     if task_value:
         for task_candidate in _value_candidates(task_value, acq_value):
             label_candidates.append(("task", task_candidate))
@@ -237,6 +240,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         root_dir,
         safe_path_join(root_dir, "surveys"),
         safe_path_join(root_dir, "biometrics"),
+        safe_path_join(root_dir, "biosample"),
     ]
 
     # Add library paths if provided
@@ -245,6 +249,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         search_dirs.append(str(library_root))
         search_dirs.append(str(library_root / "survey"))
         search_dirs.append(str(library_root / "biometrics"))
+        search_dirs.append(str(library_root / "biosample"))
 
     for prefix, value in label_candidates:
         base_name = f"{prefix}-{value}"
@@ -298,6 +303,7 @@ def _find_inherited_root_sidecar(
 
     survey_value = _extract_entity_value(stem, "survey")
     biometrics_value = _extract_entity_value(stem, "biometrics")
+    biosample_value = _extract_entity_value(stem, "biosample")
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
     path_parts = set(Path(file_path).parts)
@@ -308,6 +314,8 @@ def _find_inherited_root_sidecar(
         candidate_names.append(f"survey-{survey_candidate}_{suffix}.json")
     for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         candidate_names.append(f"biometrics-{biometrics_candidate}_{suffix}.json")
+    for biosample_candidate in _value_candidates(biosample_value, acq_value):
+        candidate_names.append(f"biosample-{biosample_candidate}_{suffix}.json")
     if task_value:
         for task_candidate in _value_candidates(task_value, acq_value):
             candidate_names.append(f"task-{task_candidate}_{suffix}.json")
