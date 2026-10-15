@@ -82,3 +82,15 @@ def test_fixing_project_unblocks_without_restart(client):
 def test_exempt_list():
     assert is_gate_exempt("/api/session-map", "POST")
     assert not is_gate_exempt("/api/participants-convert-start", "POST")
+
+
+@pytest.mark.parametrize("path", ["/api/config", "/api/filesystem-context"])
+def test_read_only_projects_page_gets_exempt(path):
+    assert is_gate_exempt(path, "GET")
+
+
+def test_guard_installed_after_project_selection_hook():
+    from pathlib import Path
+
+    src = (Path(__file__).parents[1] / "app" / "prism-studio.py").read_text(encoding="utf-8")
+    assert src.index("def ensure_project_selected_first") < src.index("install_project_ready_guard(app)")

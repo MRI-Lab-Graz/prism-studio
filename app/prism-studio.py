@@ -1024,7 +1024,6 @@ from src.web.request_guard import (
 install_security_headers(app)
 install_public_token_guard(app)
 install_cross_site_guard(app)
-install_project_ready_guard(app)
 
 
 @app.before_request
@@ -1159,6 +1158,10 @@ def ensure_project_selected_first():
 
     # For non-GET requests, return a structured error.
     return jsonify({"success": False, "error": "No current project selected"}), 400
+
+
+# After ensure_project_selected_first: a stale session project is cleared first.
+install_project_ready_guard(app)
 
 
 @app.route("/")

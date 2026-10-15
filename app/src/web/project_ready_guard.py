@@ -14,6 +14,7 @@ _EXEMPT_PREFIXES = (
 _EXEMPT_PATHS = {
     "/favicon.ico", "/health", "/shutdown", "/specifications", "/api/browse-folder",
     "/api/browse-file", "/api/runtime-capabilities", "/api/list-library-files",
+    "/api/config", "/api/filesystem-context",
 }
 
 
