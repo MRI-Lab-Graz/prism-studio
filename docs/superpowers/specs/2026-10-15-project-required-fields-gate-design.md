@@ -65,30 +65,27 @@ text with a link back to the Projects page.
 One helper, `project_timepoints()` (already exists), is the only reader.
 Every importer asks it instead of its own heuristics:
 
-- `single`: there is always a session level, and it is `ses-1`. Importers
-  write `ses-1` for every file; no session column, session picker, session map
-  or assignment review is shown or required, and session options on CLI and
-  GUI are hidden / rejected as unnecessary. (Decided: a session indicator is
-  always present, and sessions use ascending numbers, so one session = `ses-1`.)
-  This is a fixed default for a project that declared one timepoint, not a
-  normalization of user labels: data that carries its own session label in a
-  `single` project is an open point (see below).
-- `multiple`: session label required for every import, mapped via the session
-  map (existing behavior), extended to physio, biometrics, eyetracking and
-  environment importers.
-- Importer-by-importer rollout: survey and participants already honor it;
-  physio, biometrics, eyetracking, environment follow. Each gets its own
-  small change and test; the rollout order is decided in the plan.
+- `single`: always `ses-1`, hardcoded, whatever session label the data
+  carries (`pre`, `1`, `01`, empty). There is always a session level. No
+  session column, picker, session map or assignment review is shown or
+  required; session options on CLI and GUI are hidden / rejected as
+  unnecessary. Decided by the owner (2026-10-15): this is a deliberate
+  project-level rule, not label normalization. The original label in the data
+  is ignored for naming; a warning in the conversion report states that it was
+  replaced by `ses-1`. CLAUDE.md's session-ID note must be amended to say
+  "free-form, except in a declared single-timepoint project, where the one
+  session is always `ses-1`".
+- `multiple`: every import needs a session label, mapped via the session map
+  (existing behavior), now extended to physio, biometrics, eyetracking and
+  environment importers. Targets are ascending numbers starting at 1
+  (pre, post, follow-up = 1, 2, 3). The map panel and `session-map` CLI
+  pre-fill 1, 2, 3, ... as editable defaults in order of first appearance;
+  the user confirms or reorders, and nothing is written until they confirm.
+  Order of first appearance is only a starting point, never applied silently.
+  Free-form targets stay allowed when the user edits them.
 
-Open points for the plan:
-- `single` project whose data carries a session label (e.g. `pre`): reject
-  with a message pointing to Timepoints = multiple, or ignore the column?
-  Proposed: reject, never silently relabel.
-- `multiple`: the session map keeps free-form user targets today, and PRISM
-  never suggests one. Does "ascending numbers" also mean the map panel should
-  pre-fill 1, 2, 3 as editable defaults, or does it apply to `single` only?
-- Verify `ses-1` against what physio, biometrics, eyetracking and environment
-  write today before changing them.
+Open point for the plan: verify `ses-1` against what physio, biometrics,
+eyetracking and environment write today before changing them.
 
 ### 5. Tests (TDD, tests first)
 
@@ -97,7 +94,8 @@ Open points for the plan:
 - Flask: 409 and exemptions; save response carries `missing_required`.
 - JS: banner shown after incomplete save.
 - Parity: JS and Python required-field lists cannot drift.
-- Per importer: `single` skips session handling, `multiple` demands a map.
+- Per importer: `single` writes `ses-1` for any input label and warns;
+  `multiple` demands a map; map defaults are 1, 2, 3 in order of appearance.
 
 ## Out of scope
 
