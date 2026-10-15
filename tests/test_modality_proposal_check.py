@@ -116,3 +116,10 @@ def test_scale_must_agree_with_the_column(col, needle) -> None:
 )
 def test_consistent_scales_and_no_scale_are_accepted(col) -> None:
     assert errors_only(check_proposal(_proposal(columns=[col]))) == []
+
+
+@pytest.mark.parametrize("cid", ["Technical", "study", "METADATA"])
+def test_column_id_equal_to_a_sidecar_block_is_rejected(cid) -> None:
+    p = _proposal()
+    p["columns"] = p["columns"] + [dict(p["columns"][0], id=cid)]
+    assert "sidecar" in _messages(check_proposal(p))

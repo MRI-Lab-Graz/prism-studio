@@ -2627,7 +2627,8 @@ CHECKS_SUPPORT_FIX = {
 # (spec: docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md
 # section 1.1). Every other file under app/schemas/stable/ defines app
 # behavior (filename grammar, project/dataset-description structure) and
-# is intentionally excluded here -- see check_community_schema_boundary.
+# is intentionally excluded here (the modality-schema-conventions check only
+# covers the names listed below).
 COMMUNITY_MODALITY_SCHEMAS = {
     "survey",
     "biometrics",

@@ -142,3 +142,42 @@ def test_non_utf8_yaml_is_a_proposal_error(tmp_path: Path) -> None:
     f.write_bytes(b"\xff\xfe\x00bad")
     with pytest.raises(ProposalError, match="cannot read bad.yml"):
         read_proposal(f)
+
+
+def _yaml_with(tmp_path: Path, old: str, new: str) -> Path:
+    f = tmp_path / "p.yml"
+    text = EXAMPLE_YAML.read_text(encoding="utf-8")
+    assert old in text
+    f.write_text(text.replace(old, new, 1), encoding="utf-8")
+    return f
+
+
+@pytest.mark.parametrize("value", ["5", "true"])
+def test_non_list_extensions_are_a_proposal_error(tmp_path: Path, value) -> None:
+    f = _yaml_with(tmp_path, "extensions: [tsv]", f"extensions: {value}")
+    with pytest.raises(ProposalError, match="'extensions' must be a list"):
+        read_proposal(f)
+
+
+@pytest.mark.parametrize("key", ["min", "max"])
+def test_non_numeric_min_and_max_are_proposal_errors(key) -> None:
+    from src.modality_contribution import _normalize_column
+
+    with pytest.raises(ProposalError, match="not a number"):
+        _normalize_column({"id": "x", key: [1]})
+    with pytest.raises(ProposalError, match="not a number"):
+        _normalize_column({"id": "x", key: "high"})
+
+
+def test_workbook_comma_decimal_min_still_reads(tmp_path: Path) -> None:
+    from src.modality_contribution import _normalize_column
+
+    assert _normalize_column({"id": "x", "min": "1,5"})["min"] == 1.5
+
+
+def test_yaml_boolean_type_and_scalar_allowed_values_are_rejected(tmp_path: Path) -> None:
+    from src.modality_contribution import _normalize_column
+
+    for key in ("type", "allowed_values"):
+        with pytest.raises(ProposalError, match="quotes"):
+            _normalize_column({"id": "x", key: True})

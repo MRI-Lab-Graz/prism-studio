@@ -191,7 +191,7 @@ prism_tools.py modality propose <proposal> --sample <file> --check
 
 `.github/ISSUE_TEMPLATE/propose-modality.yml`, fields:
 
-- Modality name (input), for the issue title.
+- No name input: the modality name lives in the workbook (the issue title is the fixed prefix `[Modality]: `).
 - Two textareas, `Proposal file` and `Sample data file`, each for one dragged-in file. GitHub turns them into `github.com/user-attachments/...` links.
 - Rationale (textarea).
 - Required checkbox: "The sample contains no real participant data:
@@ -223,9 +223,12 @@ The issue number comes from the event, not from the bundle.
 - On a failed check it comments the log on the issue (backticks stripped from
   the log), creates the `needs-changes` label if missing and adds it, and
   stops. The contributor opens a new issue with corrected files.
-- On success it copies `proposals/issue-<n>/` to a branch named
-  `modality/issue-<n>-<run id>` and opens a **draft** PR against `main`, with
-  the generated artifacts and both original files.
+- On success, for issues opened by an OWNER, MEMBER or COLLABORATOR it copies
+  `proposals/issue-<n>/` to a branch named `modality/issue-<n>-<run id>` and
+  opens a **draft** PR against `main`, with the generated artifacts and both
+  original files. For every other author it only comments that the automatic
+  check passed and a maintainer will take it from here (anyone on GitHub can
+  open an issue, so they do not get a branch in this repository).
 - If the job itself fails, it comments on the issue that the bot could not
   finish and a maintainer will look.
 
@@ -233,16 +236,16 @@ Actions are pinned by commit SHA. The pure parts (attachment-link extraction,
 PR body) live in `scripts/ci/modality_issue_to_files.py`; the GitHub API calls
 are thin and untested.
 
-PRs created with the workflow token trigger no workflows, so CI does not run
-on the bot's commit. A maintainer's registration push to the PR branch is what
+PRs created with the workflow token trigger no workflows, so automatic checks
+do not run on the bot's commit. A maintainer's registration push to the PR branch is what
 runs the CI gate (`tests/test_modality_proposal_fixtures.py`).
 
 ## CI: two stages, because registration is manual
 
 | Stage | When | Runs |
 |---|---|---|
-| Before registration | the bot's draft PR | `modality-schema-conventions`; example sidecar vs generated schema; sample check |
-| After registration | the maintainer has added the `REGISTRATION.md` edits to the same PR | the existing flag script labels the core-file change; `prism-validator` on `proposals/issue-<n>/fixture/` must pass |
+| Before registration | the bot's draft PR | `modality-schema-conventions` (runs in `ci.yml`); the sample check already ran in the bot |
+| After registration | the maintainer has added the `REGISTRATION.md` edits to the same PR | `scripts/ci/flag_restricted_schema_changes.py` exists but is not wired into a workflow yet; `prism-validator` on `proposals/issue-<n>/fixture/` must pass |
 
 A maintainer signs off before merge. CI cannot judge whether units are
 semantically right or whether a modality duplicates an existing one under

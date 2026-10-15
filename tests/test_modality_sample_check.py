@@ -147,3 +147,32 @@ def test_corrupt_gzip_body_is_an_error_not_a_crash(tmp_path: Path) -> None:
     gz = tmp_path / "bad.tsv.gz"
     gz.write_bytes(bytes(raw))
     assert "cannot read file" in _msgs(check_sample(p, gz))
+
+
+def test_duplicate_header_column_is_an_error(tmp_path: Path) -> None:
+    f = _sample(tmp_path, HEADER + "\tcrp\n" + ROW + "\t1.0\n")
+    msg = _msgs(check_sample(_proposal(), f))
+    assert "duplicate column(s)" in msg and "crp" in msg
+
+
+def test_blank_lines_are_not_rows(tmp_path: Path) -> None:
+    assert check_sample(_proposal(), _sample(tmp_path, HEADER + "\n" + ROW + "\n\n")) == []
+    between = _sample(tmp_path, HEADER + "\n" + ROW + "\n\n  \t \n" + ROW + "\n", name="b.tsv")
+    assert check_sample(_proposal(), between) == []
+
+
+def test_row_limit_counts_only_non_blank_rows(tmp_path: Path) -> None:
+    text = HEADER + "\n" + "\n\n".join([ROW] * 50) + "\n\n"
+    assert errors_only(check_sample(_proposal(), _sample(tmp_path, text))) == []
+
+
+def test_non_finite_numbers_are_errors(tmp_path: Path) -> None:
+    for bad in ("nan", "inf", "-inf"):
+        f = _sample(tmp_path, f"{HEADER}\nS001\t08:15\tyes\t1.2\t{bad}\t310\n", name=f"{bad}.tsv")
+        assert "not a finite number" in _msgs(check_sample(_proposal(), f)), bad
+
+
+def test_header_names_are_quoted_with_repr(tmp_path: Path) -> None:
+    f = _sample(tmp_path, HEADER + " \n" + ROW + "\n")
+    msg = _msgs(check_sample(_proposal(), f))
+    assert "'cortisol '" in msg

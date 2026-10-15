@@ -40,8 +40,9 @@ not already be used by PRISM or BIDS. `blood` for example is a BIDS suffix
 
 **On GitHub:** open a *Propose a New Modality* issue, drag in the workbook and
 the sample file, tick the privacy box. A bot is meant to check both and open a
-draft pull request, or comment what to fix (then open a new issue with the
-corrected files). Note: this bot has not yet run on a real issue.
+draft pull request (automatically only when the issue author is an owner,
+member or collaborator of the repository; otherwise a maintainer takes it from
+here), or comment what to fix (then open a new issue with the corrected files). Note: this bot has not yet run on a real issue.
 
 **From the command line:**
 
@@ -57,6 +58,22 @@ be used instead of the workbook (see `examples/modality_proposal/`).
 A maintainer follows `REGISTRATION.md` (copy the schema, add the modality to
 `entities.schema.json`, run the checks) and reviews units, ranges and the
 sample. After the merge the modality is available in the next PRISM release.
-The bot's pull request is created with the workflow token, so CI does not run
-on it; the maintainer's registration push is what runs the CI checks
+Automatic checks do not run on the bot's pull request until a maintainer pushes
+to it; the maintainer's registration push is what runs the CI checks
 (`tests/test_modality_proposal_fixtures.py`).
+
+## For maintainers
+
+- The label `type: new-modality` must exist in the repository (the issue form
+  applies it; if it is missing the bot never starts).
+- The repository setting "Allow GitHub Actions to create and approve pull
+  requests" must be on for the bot to open PRs; otherwise open the PR by hand
+  from the pushed branch.
+- PRs are opened automatically only for OWNER, MEMBER and COLLABORATOR authors.
+- Do not open a contributor's original `.xlsx` in desktop Excel (formulas or
+  external links); review the generated JSON instead.
+- The bot has not run on a real issue yet. On the first real run check that
+  GitHub accepts `.tsv`/`.yml` attachments, that the artifact handoff between
+  the two jobs works and that the PR is created.
+- Registration also means adding the name to `COMMUNITY_MODALITY_SCHEMAS` in
+  `tests/verify_repo.py` (the generated `REGISTRATION.md` lists this step).

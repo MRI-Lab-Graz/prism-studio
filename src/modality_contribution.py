@@ -1,9 +1,10 @@
-"""Build minimal valid PRISM datasets for a proposed modality or template.
+"""Modality registration and contribution helpers.
 
-Shared by the CI contribution-contract check and the Issue-Form-to-draft-PR
-bot (spec: docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md,
-section 1.2 item 3) so the manual and guided contribution paths produce and
-are held to the exact same dataset shape.
+Reads a modality proposal (workbook, YAML or JSON), checks it and its sample
+data file, and generates the schema, example sidecar and registration files.
+Also builds minimal valid PRISM datasets, shared by the CI contribution-contract
+check and the Issue-Form-to-draft-PR bot. Spec:
+docs/superpowers/specs/2026-10-15-modality-registration-design.md
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import gzip
 import io
 import itertools
 import json
+import math
 import re
 import shutil
 import zlib
@@ -112,9 +114,21 @@ def _normalize_column(raw: dict) -> dict:
             f"column '{cid}': allowed_values contains a YAML boolean "
             "(yes/no/on/off/true/false are read as booleans); put the values in quotes"
         )
+    if isinstance(allowed_raw, bool) or isinstance(raw.get("type"), bool):
+        raise ProposalError(
+            f"column '{cid}': type/allowed_values was read as a YAML boolean "
+            "(yes/no/on/off/true/false); put the values in quotes"
+        )
     units = _clean_key(raw.get("units")) or "n/a"
     allowed = _parse_allowed_values(allowed_raw)
-    lo, hi = _parse_float(raw.get("min")), _parse_float(raw.get("max"))
+    bounds = []
+    for label in ("min", "max"):
+        text = _clean_key(raw.get(label))
+        number = _parse_float(raw.get(label))
+        if text and number is None:
+            raise ProposalError(f"column '{cid}': {label.capitalize()} '{text}' is not a number")
+        bounds.append(number)
+    lo, hi = bounds
     return {
         "id": cid,
         "description": _clean_key(raw.get("description")) or "",
@@ -146,6 +160,8 @@ def _normalize_types(raw) -> list[dict]:
 
 def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
     exts = base.get("extensions")
+    if exts is not None and not isinstance(exts, (list, str)):
+        raise ProposalError("'extensions' must be a list or a comma-separated string")
     if isinstance(exts, str):
         exts = exts.split(",")
     proposal = {
@@ -400,6 +416,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
             err(where, "ID is empty")
         elif not _COLUMN_ID_RE.match(cid):
             err(where, f"'{cid}' may only contain letters, digits and underscores")
+        if cid.lower() in _SIDECAR_BLOCKS:
+            err(where, f"'{cid}' is a reserved sidecar block name; choose another column ID")
         if cid in seen:
             err(where, f"duplicate column ID '{cid}'")
         seen.add(cid)
@@ -426,6 +444,7 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
     return problems
 
 
+_SIDECAR_BLOCKS = {"technical", "study", "metadata"}
 TABULAR_EXTENSIONS = {"tsv", "tsv.gz"}
 _SUBJECT_COLUMNS = {"participant_id", "subject", "subject_id", "sub", "sub_id"}
 _SUBJECT_OK = {"sub-01", "01"}
@@ -496,14 +515,18 @@ def check_sample(proposal: dict, sample_path) -> list[Problem]:
         return [Problem("error", name, "file is empty")]
 
     problems: list[Problem] = []
-    header, data = rows[0], rows[1:]
+    header = rows[0]
+    data = [r for r in rows[1:] if any(c.strip() for c in r)]
     columns = {c["id"]: c for c in proposal.get("columns") or []}
+    duplicated = sorted({h for h in header if header.count(h) > 1})
+    if duplicated:
+        problems.append(Problem("error", name, f"duplicate column(s): {', '.join(map(repr, duplicated))}"))
     missing = [c for c in columns if c not in header]
     extra = [h for h in header if h not in columns]
     if missing:
-        problems.append(Problem("error", name, f"missing column(s): {', '.join(missing)}"))
+        problems.append(Problem("error", name, f"missing column(s): {', '.join(map(repr, missing))}"))
     if extra:
-        problems.append(Problem("error", name, f"unexpected column(s): {', '.join(extra)}"))
+        problems.append(Problem("error", name, f"unexpected column(s): {', '.join(map(repr, extra))}"))
     if len(data) > SAMPLE_MAX_ROWS:
         problems.append(Problem("error", name, f"more than {SAMPLE_MAX_ROWS} data rows"))
         data = data[:SAMPLE_MAX_ROWS]
@@ -546,6 +569,9 @@ def check_sample(proposal: dict, sample_path) -> list[Problem]:
                     number = float(value)
                 except ValueError:
                     problems.append(Problem("error", where, f"'{value}' is not a number"))
+                    continue
+                if not math.isfinite(number):
+                    problems.append(Problem("error", where, f"'{value}' is not a finite number"))
                     continue
             if number is not None:
                 if col["min"] is not None and number < col["min"]:

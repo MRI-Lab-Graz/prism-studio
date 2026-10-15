@@ -108,8 +108,9 @@ jobs:
           gh label create needs-changes --force
           gh issue edit "$ISSUE_NUMBER" --add-label "needs-changes"
 
+      # Only trusted authors get an automatic branch and PR: anyone on GitHub can open an issue.
       - name: Open draft pull request
-        if: steps.bundle.outputs.failed != 'true'
+        if: "steps.bundle.outputs.failed != 'true' && contains(fromJSON('[\"OWNER\",\"MEMBER\",\"COLLABORATOR\"]'), github.event.issue.author_association)"
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -128,6 +129,14 @@ jobs:
           gh pr create --draft --base main --head "$BRANCH" \
             --title "Propose new modality (issue #${ISSUE_NUMBER})" \
             --body-file pr-body.md
+
+      - name: Tell other authors a maintainer will take over
+        if: "steps.bundle.outputs.failed != 'true' && !contains(fromJSON('[\"OWNER\",\"MEMBER\",\"COLLABORATOR\"]'), github.event.issue.author_association)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "The automatic check passed. A maintainer will review this proposal and take it from here."
 
       - name: Tell the contributor the bot failed
         if: failure()

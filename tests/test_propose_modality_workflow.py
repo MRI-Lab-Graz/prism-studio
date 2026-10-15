@@ -76,3 +76,22 @@ def test_privileged_job_is_separate_and_verifies_the_artifact():
 def test_both_jobs_have_timeouts():
     for job in _load()["jobs"].values():
         assert job["timeout-minutes"] == 10
+
+
+TRUSTED = "contains(fromJSON('[\"OWNER\",\"MEMBER\",\"COLLABORATOR\"]'), github.event.issue.author_association)"
+
+
+def test_pr_is_opened_only_for_trusted_authors():
+    steps = {s["name"]: s for s in _steps("report")}
+    pr_if = steps["Open draft pull request"]["if"]
+    assert "steps.bundle.outputs.failed != 'true'" in pr_if
+    assert TRUSTED in pr_if
+
+
+def test_other_authors_get_a_static_handover_comment():
+    step = next(s for s in _steps("report") if s["name"] == "Tell other authors a maintainer will take over")
+    assert "steps.bundle.outputs.failed != 'true'" in step["if"]
+    assert f"!{TRUSTED}" in step["if"] or f"! {TRUSTED}" in step["if"]
+    assert "${{" not in step["run"] and "maintainer" in step["run"]
+    assert step["env"]["ISSUE_NUMBER"] == "${{ github.event.issue.number }}"
+    assert "GH_TOKEN" in step["env"]

@@ -1,6 +1,6 @@
 """Flag pull requests that touch app-internal (non-community) schema files.
 
-Used by .github/workflows/ci.yml on pull_request events. This is advisory,
+Advisory helper, not wired into a workflow yet; run it by hand. It is
 not blocking (exit code is always 0): app-internal schemas (filename
 grammar, project/dataset-description structure) can legitimately need
 changes, they just need a core maintainer's eyes rather than the
