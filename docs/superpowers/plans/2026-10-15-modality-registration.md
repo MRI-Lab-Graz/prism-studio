@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-15-modality-registration-design.md`
 
-Work in the worktree `.claude/worktrees/modality-contribution-workflow` (branch `worktree-modality-contribution-workflow`). Use its `.venv` (`.venv/bin/python -m pytest ...`). CLAUDE.md applies: TDD (write the test, watch it fail, then implement), and run `/ponytail:ponytail-audit` before merging (Task 10).
+Work in the worktree `.claude/worktrees/modality-contribution-workflow` (branch `worktree-modality-contribution-workflow`). Use its `.venv` (`.venv/bin/python -m pytest ...`). CLAUDE.md applies: TDD (write the test, watch it fail, then implement), and run `/ponytail:ponytail-audit` before merging (Task 11).
 
 ## Global Constraints
 
@@ -19,6 +19,7 @@ Work in the worktree `.claude/worktrees/modality-contribution-workflow` (branch 
 - Reuse the biometrics workbook parsing helpers (`ID_ALIASES`, `DESC_ALIASES`, `UNITS_ALIASES`, `DTYPE_ALIASES`, `MIN_ALIASES`, `MAX_ALIASES`, `ALLOWED_ALIASES`, `_clean_key`, `_parse_float`, `_parse_allowed_values`, `_infer_datatype` from `src/converters/excel_to_biometrics.py`; `find_column_idx` from `app/src/converters/excel_base.py`). Import them lazily inside functions (pandas is heavy). Do not copy them.
 - Session IDs and other labels are never normalised (CLAUDE.md). The fixture uses the fixed subject `sub-01` only; no session entity.
 - `entities.schema.json`, `schema_manager.py`, `tests/verify_repo.py` registration edits are **manual** and only described in `REGISTRATION.md`. The generator never writes to core files.
+- The per-column vocabulary property is named `Type` (as in `physio.schema.json`); `other` is the reserved escape value and is never listed in a proposal.
 - Sample limits: at most 50 data rows, at most 1,000,000 bytes (`SAMPLE_MAX_ROWS`, `SAMPLE_MAX_BYTES`).
 - A taken name is any key in `entities.schema.json` `modalities`, any listed `suffixes`, any `aliases` key, any BIDS suffix, any BIDS datatype (read live from `bidsschematools`, never hardcoded).
 - GitHub Actions: pin actions by commit SHA with a version comment, as `ci.yml` does (`actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`, `actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7`). Issue-derived text reaches steps only via `env:`, never interpolated into `run:` (zizmor `actions-security` check).
@@ -26,10 +27,11 @@ Work in the worktree `.claude/worktrees/modality-contribution-workflow` (branch 
 
 ## Notes on the spec (differences found while planning)
 
-1. **Where the column dictionary lives.** In the real schemas (`biometrics.schema.json`) the schema only defines the *shape* of a column definition (`Description`, `Units`, `MinValue`, `MaxValue`, `AllowedValues`, `DataType`); the actual per-column definitions live in each template/sidecar. So the proposal's `Columns` sheet fills the **example sidecar**, and the generated schema is the generic envelope plus that column-definition shape. Task 9 clarifies the spec wording.
+1. **Where the column dictionary lives.** In the real schemas (`biometrics.schema.json`) the schema only defines the *shape* of a column definition (`Description`, `Units`, `MinValue`, `MaxValue`, `AllowedValues`, `DataType`); the actual per-column definitions live in each template/sidecar. So the proposal's `Columns` sheet fills the **example sidecar**, and the generated schema is the generic envelope plus that column-definition shape. Task 10 clarifies the spec wording.
 2. **Bot output folder.** The bot knows the issue number before it knows the modality name, so it writes to `proposals/issue-<n>/`, not `proposals/<name>/`. `REGISTRATION.md` uses paths relative to its own folder.
 3. **Two attachment fields.** A GitHub Issue Form cannot say "attach two typed files" in one textarea unambiguously. The form has one textarea for the proposal file and one for the sample file; the bot requires exactly one upload in each.
 4. **Registration confirmed.** Verified on a copy of the repo (2026-10-15): adding a `modalities` entry to `entities.schema.json` plus `<name>.schema.json` in `app/schemas/stable/` makes `validate_dataset` recognise the new modality and validate its sidecar against the new schema. `schema_manager.load_all_schemas` derives its list from `entities.schema.json`. `check_schema_sync` additionally requires both to exist. `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py` is where the convention check learns about the new schema.
+6. **Controlled vocabulary and example columns (added during execution, after Task 6).** Column names stay free per study, but a modality may carry an optional `Type` vocabulary (the `physio` pattern: enum plus `other`), and the `Columns` sheet is documented as the columns of the *sample file*, an example and not a contract. Task 7 adds it; the spec sections "Controlled vocabulary (`Type`)" and the Inputs wording are written there.
 5. **Column scale (added after plan review).** Each column may carry an optional `Scale` (`categorical`, `continuous`, `boolean`), written as `MeasurementScale` in the sidecar. It is never guessed and is checked for consistency with `DataType` and `AllowedValues`. The spec section "Column scale" describes it.
 
 ## Review Focus
@@ -40,7 +42,7 @@ Inputs the spec implies but that are easy to get wrong, each pinned by a test in
 2. **Excel-saved TSV.** A sample with a UTF-8 BOM and CRLF line endings must not produce a header mismatch (Task 3).
 3. **Missing values.** Empty cells and `n/a` in a numeric column are not type errors (Task 3).
 4. **Compressed and upper-case samples.** `sample.tsv.gz` is read through gzip and a `SAMPLE.TSV` file matches the declared `tsv` (Task 3).
-5. **Bad issue bodies.** Zero or two uploads in a field, a non-`user-attachments` URL, an unchecked privacy checkbox: each produces a clear error, never a crash or a download from another host (Task 8).
+5. **Bad issue bodies.** Zero or two uploads in a field, a non-`user-attachments` URL, an unchecked privacy checkbox: each produces a clear error, never a crash or a download from another host (Task 9).
 
 ---
 
@@ -1741,7 +1743,423 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 7: The downloadable workbook template
+### Task 7: Controlled vocabulary (`Type`) and "example columns" framing
+
+Column names are free (each study names its own columns in its sidecar). To keep columns comparable across studies, a modality can carry a controlled vocabulary, the same pattern `physio.schema.json` uses for channels (`Channels.<name>.Type` with an `enum` ending in `OTHER`): every column definition may have a `Type` from a fixed list plus `other` as the escape hatch. This task adds it to the code from Tasks 1-4 and records the design in the spec. The `Columns` sheet is also reframed as the columns of the **sample file**, an example and not a contract (wording changes land in Tasks 8-10).
+
+**Files:**
+- Modify: `src/modality_contribution.py`
+- Modify: `examples/modality_proposal/biosample.yml`
+- Modify (one expected value each): `tests/test_modality_proposal_reader.py`, `tests/test_modality_build.py`
+- Create: `tests/test_modality_types.py`
+- Modify: `docs/superpowers/specs/2026-10-15-modality-registration-design.md`
+
+**Interfaces:**
+- Consumes: everything from Tasks 1-4 (`read_proposal`, `write_proposal_workbook`, `check_proposal`, `build_schema`, `build_example_sidecar`, `_column_definition`, `_normalize_column`, `_finish_proposal`, `_read_workbook`).
+- Produces:
+  - Proposal dict gains `types`: list of `{"value": str, "description": str}` (default `[]`); each column dict gains `type`: `str | None` (case-sensitive, as written).
+  - Constant `TYPE_OTHER = "other"` (the reserved escape value).
+  - Workbook: optional sheet `Types` with columns `Value`, `Description`; the `Columns` sheet gains an optional `Type` column placed after `Scale`. A workbook without a `Types` sheet reads as `types == []`.
+  - YAML/JSON: optional top-level `types:` (a list of `{value, description}` mappings, or plain strings) and optional `type:` per column.
+  - Generated schema: when `types` is non-empty, the column-definition shape gets `"Type": {"type": "string", "enum": [<values>, "other"], "description": ...}`; with no `types` there is no `Type` property. The example sidecar writes `"Type"` for columns that state one.
+  - `check_proposal` rules: type values non-empty, unique, matching `^[A-Za-z0-9][A-Za-z0-9_-]*$`, not `other`; a column `Type` must be in the list or be `other`; a column `Type` while the proposal lists no types is an error.
+
+- [ ] **Step 1: Extend the example**
+
+In `examples/modality_proposal/biosample.yml`, insert this block directly after the `rationale:` line and before `columns:`:
+
+```yaml
+types:
+  - value: CRP
+    description: C-reactive protein
+  - value: glucose
+    description: Blood glucose
+  - value: cortisol
+    description: Serum cortisol
+```
+
+and add a `type:` line to the three measurement columns (keep every other line as it is):
+
+```yaml
+  - id: crp
+    description: C-reactive protein
+    type: CRP
+    scale: continuous
+    units: mg/L
+    min: 0
+  - id: glucose
+    description: Blood glucose
+    type: glucose
+    scale: continuous
+    units: mmol/L
+    min: 0
+  - id: cortisol
+    description: Serum cortisol
+    type: cortisol
+    scale: continuous
+    units: nmol/L
+    min: 0
+```
+
+- [ ] **Step 2: Write the failing tests**
+
+Update the two existing expectations that now carry the new key:
+
+- `tests/test_modality_proposal_reader.py`, in `test_read_yaml_example_normalizes_columns`: add `"type": "CRP",` to the expected `crp` dict (after `"scale": "continuous",`).
+- `tests/test_modality_build.py`, in `test_example_sidecar_validates_against_generated_schema`: add `"Type": "CRP",` to the expected `sidecar["crp"]` dict (after `"MeasurementScale": "continuous",`).
+
+Create `tests/test_modality_types.py`:
+
+```python
+import os
+import sys
+from pathlib import Path
+
+import jsonschema
+import openpyxl
+import pytest
+import yaml
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
+
+from src.modality_contribution import (  # noqa: E402
+    ProposalError,
+    build_example_sidecar,
+    build_schema,
+    check_proposal,
+    errors_only,
+    read_proposal,
+    write_proposal_workbook,
+)
+
+EXAMPLE_YAML = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "biosample.yml"
+
+
+def _proposal(**over) -> dict:
+    p = read_proposal(EXAMPLE_YAML)
+    p.update(over)
+    return p
+
+
+def _no_vocabulary() -> dict:
+    p = read_proposal(EXAMPLE_YAML)
+    p["types"] = []
+    for c in p["columns"]:
+        c["type"] = None
+    return p
+
+
+def _messages(problems) -> str:
+    return " | ".join(f"{p.where}: {p.message}" for p in errors_only(problems))
+
+
+def test_example_defines_and_uses_a_vocabulary() -> None:
+    p = read_proposal(EXAMPLE_YAML)
+    assert p["types"][0] == {"value": "CRP", "description": "C-reactive protein"}
+    assert [t["value"] for t in p["types"]] == ["CRP", "glucose", "cortisol"]
+    cols = {c["id"]: c for c in p["columns"]}
+    assert cols["crp"]["type"] == "CRP"
+    assert cols["sample_id"]["type"] is None
+    assert errors_only(check_proposal(p)) == []
+
+
+def test_plain_string_types_are_accepted(tmp_path: Path) -> None:
+    data = yaml.safe_load(EXAMPLE_YAML.read_text(encoding="utf-8"))
+    data["types"] = ["CRP", "glucose", "cortisol"]
+    f = tmp_path / "p.yml"
+    f.write_text(yaml.safe_dump(data), encoding="utf-8")
+    assert read_proposal(f)["types"] == [
+        {"value": "CRP", "description": ""},
+        {"value": "glucose", "description": ""},
+        {"value": "cortisol", "description": ""},
+    ]
+
+
+def test_types_must_be_a_list_and_not_yaml_booleans(tmp_path: Path) -> None:
+    data = yaml.safe_load(EXAMPLE_YAML.read_text(encoding="utf-8"))
+    data["types"] = "CRP"
+    f = tmp_path / "p.yml"
+    f.write_text(yaml.safe_dump(data), encoding="utf-8")
+    with pytest.raises(ProposalError, match="list"):
+        read_proposal(f)
+    f.write_text(EXAMPLE_YAML.read_text(encoding="utf-8").replace("value: CRP", "value: yes"), encoding="utf-8")
+    with pytest.raises(ProposalError, match="quotes"):
+        read_proposal(f)
+
+
+def test_workbook_round_trip_keeps_types_and_column_types(tmp_path: Path) -> None:
+    p = read_proposal(EXAMPLE_YAML)
+    path = tmp_path / "p.xlsx"
+    write_proposal_workbook(p, path)
+    assert read_proposal(path) == p
+
+
+def test_workbook_without_types_sheet_reads_as_no_vocabulary(tmp_path: Path) -> None:
+    p = _no_vocabulary()
+    path = tmp_path / "p.xlsx"
+    write_proposal_workbook(p, path)
+    wb = openpyxl.load_workbook(path)
+    del wb["Types"]
+    wb.save(path)
+    assert read_proposal(path) == p
+
+
+def test_type_header_is_not_mistaken_for_datatype(tmp_path: Path) -> None:
+    p = read_proposal(EXAMPLE_YAML)
+    path = tmp_path / "p.xlsx"
+    write_proposal_workbook(p, path)
+    wb = openpyxl.load_workbook(path)
+    ws = wb["Columns"]
+    headers = [c.value for c in ws[1]]
+    a, b = headers.index("DataType"), headers.index("Type")
+    for row in ws.iter_rows(min_row=1, max_row=ws.max_row):
+        row[a].value, row[b].value = row[b].value, row[a].value  # 'Type' now left of 'DataType'
+    wb.save(path)
+    assert read_proposal(path) == p
+
+
+def test_column_type_must_be_in_the_vocabulary_or_other() -> None:
+    p = read_proposal(EXAMPLE_YAML)
+    cols = {c["id"]: c for c in p["columns"]}
+    cols["crp"]["type"] = "CRPP"
+    msg = _messages(check_proposal(p))
+    assert "CRPP" in msg and "other" in msg and "not in the vocabulary" in msg
+    cols["crp"]["type"] = "other"
+    assert errors_only(check_proposal(p)) == []
+
+
+def test_column_type_without_any_listed_types_is_an_error() -> None:
+    p = _no_vocabulary()
+    p["columns"][3]["type"] = "CRP"
+    assert "defines no types" in _messages(check_proposal(p))
+
+
+def test_vocabulary_values_are_checked() -> None:
+    types = [
+        {"value": "CRP", "description": ""},
+        {"value": "CRP", "description": ""},
+        {"value": "Other", "description": ""},
+        {"value": "bad value", "description": ""},
+        {"value": "", "description": ""},
+    ]
+    p = _proposal(types=types)
+    for c in p["columns"]:
+        c["type"] = None
+    msg = _messages(check_proposal(p))
+    assert "duplicate type 'CRP'" in msg
+    assert "'other' is added automatically" in msg
+    assert "letters, digits, underscores and hyphens" in msg
+    assert "Value is empty" in msg
+
+
+def test_schema_restricts_type_to_the_vocabulary_plus_other() -> None:
+    p = read_proposal(EXAMPLE_YAML)
+    schema = build_schema(p)
+    type_prop = schema["additionalProperties"]["properties"]["Type"]
+    assert type_prop["enum"] == ["CRP", "glucose", "cortisol", "other"]
+    assert "C-reactive protein" in type_prop["description"]
+
+    sidecar = build_example_sidecar(p, today="2026-10-15")
+    assert sidecar["crp"]["Type"] == "CRP"
+    assert "Type" not in sidecar["sample_id"]
+    validator = jsonschema.Draft7Validator(schema)
+    validator.validate(sidecar)
+
+    sidecar["crp"]["Type"] = "other"
+    validator.validate(sidecar)
+    sidecar["crp"]["Type"] = "CRPP"
+    assert list(validator.iter_errors(sidecar))
+
+
+def test_schema_has_no_type_property_without_a_vocabulary() -> None:
+    p = _no_vocabulary()
+    assert "Type" not in build_schema(p)["additionalProperties"]["properties"]
+    assert "Type" not in build_example_sidecar(p, today="2026-10-15")["crp"]
+```
+
+- [ ] **Step 3: Run to verify failure**
+
+Run: `.venv/bin/python -m pytest tests/test_modality_types.py tests/test_modality_proposal_reader.py tests/test_modality_build.py -q`
+Expected: FAIL (KeyError `'types'`/`'type'`, the two updated expectations, and the schema has no `Type` property).
+
+- [ ] **Step 4: Implement**
+
+All edits are in `src/modality_contribution.py`.
+
+(a) Constants. After `COLUMN_SCALES = (...)` add:
+
+```python
+TYPE_OTHER = "other"  # reserved escape value, added to every vocabulary
+```
+
+and next to `_COLUMN_ID_RE` add:
+
+```python
+_TYPE_VALUE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+```
+
+(b) Above `_finish_proposal` add:
+
+```python
+def _normalize_types(raw) -> list[dict]:
+    from src.converters.excel_to_biometrics import _clean_key
+
+    types = []
+    for item in raw or []:
+        value, description = (
+            (item.get("value"), item.get("description")) if isinstance(item, dict) else (item, None)
+        )
+        if isinstance(value, bool):
+            raise ProposalError(
+                "types: a value was read as a YAML boolean (yes/no/on/off/true/false); put the values in quotes"
+            )
+        types.append({"value": _clean_key(value) or "", "description": _clean_key(description) or ""})
+    return types
+```
+
+(c) In `_normalize_column`'s returned dict add, directly after the `"scale"` entry:
+
+```python
+        "type": _clean_key(raw.get("type")) or None,
+```
+
+(d) `_finish_proposal(base, rows, types=None)`: add the parameter and, after `proposal["columns"] = ...`, add `proposal["types"] = _normalize_types(types)`.
+
+(e) `_read_workbook`: change the return annotation to `tuple[dict, list[dict], list[dict]]`. In the `idx` mapping change the `datatype` entry to `("datatype", {"datatype", "data_type"})` (the shared `DTYPE_ALIASES` also contains `"type"`, which would now collide with the new column) and add `("type", {"type"}),` after the `scale` entry. After the loop that builds `rows`, replace `return base, rows` with:
+
+```python
+    types: list[dict] = []
+    if "Types" in sheets and len(sheets["Types"]):
+        tsheet = sheets["Types"]
+        theader = [str(v) for v in tsheet.iloc[0].tolist()]
+        value_idx = find_column_idx(theader, {"Value"})
+        desc_idx = find_column_idx(theader, {"Description"})
+        if value_idx is None:
+            raise ProposalError("sheet 'Types' has no 'Value' column")
+        for i in range(1, len(tsheet)):
+            row = tsheet.iloc[i]
+            value = cell(row, value_idx)
+            if value:
+                types.append({"value": value, "description": cell(row, desc_idx)})
+    return base, rows, types
+```
+
+(f) `read_proposal`: the workbook branch becomes `base, rows, types = _read_workbook(path)` / `return _finish_proposal(base, rows, types)`. In the YAML/JSON branch, after the `rows` validation and before the return, add:
+
+```python
+        types = raw.get("types")
+        if types is not None and not isinstance(types, list):
+            raise ProposalError(f"{path.name}: 'types' must be a list")
+        return _finish_proposal(raw, rows, types)
+```
+
+(g) `write_proposal_workbook`: the `Columns` header becomes `["ID", "Description", "Units", "DataType", "Scale", "Type", "Min", "Max", "AllowedValues"]` and each row gets `c["type"],` directly after `c["scale"],`. The Scale drop-down range stays `E2:E200` (Scale is still column E). Before `wb.save(path)` add:
+
+```python
+    types_ws = wb.create_sheet("Types")
+    types_ws.append(["Value", "Description"])
+    for t in proposal["types"]:
+        types_ws.append([t["value"], t["description"] or None])
+```
+
+(h) `check_proposal`: directly before `columns = proposal.get("columns") or []` add:
+
+```python
+    types = proposal.get("types") or []
+    type_values: set[str] = set()
+    for n, t in enumerate(types, start=1):
+        value = t.get("value") or ""
+        where = f"Types.{value}" if value else f"Types row {n}"
+        if not value:
+            err(where, "Value is empty")
+        elif not _TYPE_VALUE_RE.match(value):
+            err(where, f"'{value}' may only contain letters, digits, underscores and hyphens")
+        elif value.lower() == TYPE_OTHER:
+            err(where, f"'{TYPE_OTHER}' is added automatically as the escape hatch; remove it from the list")
+        elif value in type_values:
+            err(where, f"duplicate type '{value}'")
+        type_values.add(value)
+```
+
+and inside the column loop, after the scale checks (before `return problems`), add:
+
+```python
+        ctype = col.get("type")
+        if ctype is not None:
+            if not types:
+                err(where, f"Type '{ctype}' is given but the proposal defines no types")
+            elif ctype != TYPE_OTHER and ctype not in type_values:
+                err(where, f"Type '{ctype}' is not in the vocabulary; use one of {sorted(type_values)} or '{TYPE_OTHER}'")
+```
+
+(i) `_column_definition`: before `return out` add `if col.get("type"): out["Type"] = col["type"]`.
+
+(j) `build_schema`: change `return {` to `schema = {` (closing brace unchanged) and finish the function with:
+
+```python
+    types = proposal.get("types") or []
+    if types:
+        listing = "; ".join(
+            f"{t['value']}: {t['description']}" if t["description"] else t["value"] for t in types
+        )
+        schema["additionalProperties"]["properties"]["Type"] = {
+            "type": "string",
+            "enum": [*(t["value"] for t in types), TYPE_OTHER],
+            "description": f"Controlled vocabulary: {listing}; {TYPE_OTHER}: anything not listed",
+        }
+    return schema
+```
+
+- [ ] **Step 5: Run to verify pass**
+
+Run: `.venv/bin/python -m pytest tests/test_modality_*.py tests/test_cli_modality.py tests/test_verify_repo_modality_schema_conventions.py -q`
+Expected: all PASS (this includes the end-to-end registration test: the generated schema now carries the `Type` enum and the fixture sidecar uses it).
+
+- [ ] **Step 6: Record the design in the spec**
+
+In `docs/superpowers/specs/2026-10-15-modality-registration-design.md`:
+
+1. In the "Inputs" section, directly after the paragraph that describes the `Columns` sheet (before the sentence "The template ships pre-filled"), add:
+
+   > The `Columns` sheet describes the **sample file**. It is an example, not a contract on future studies: two or three columns are enough, and every study defines its own columns in its own sidecar, using the generated example sidecar as the pattern. The optional `Types` sheet (see "Controlled vocabulary") is the part that keeps columns comparable across studies.
+
+2. Directly before the heading "### Column dictionary check", add:
+
+   ```markdown
+   ### Controlled vocabulary (`Type`)
+
+   Column names are free: each study names its own columns. To make columns
+   comparable across studies anyway, a modality can carry a controlled
+   vocabulary, the pattern `physio.schema.json` uses for channels: every column
+   definition may have a `Type` from a fixed list plus `other` as the escape
+   hatch. Harmonisation happens on `Type`, not on the column name.
+
+   - Optional. The proposal lists `types` (value and short description) in the
+     workbook sheet `Types` or the `types:` key of the YAML. `other` is added
+     automatically and must not be listed.
+   - The generated schema restricts `Type` to the list plus `other`; the example
+     sidecar sets `Type` on the example columns that are measurements.
+   - `Type` is not required per column (identifiers and times are not
+     measurements). New values are added later by an upstream pull request that
+     bumps the schema version.
+   - Checks: values unique, matching `[A-Za-z0-9][A-Za-z0-9_-]*`, not `other`;
+     a column `Type` must be in the list or `other`; a column `Type` while the
+     proposal lists no types is an error.
+   - Out of scope: standard codes (for example LOINC) per type.
+   ```
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/modality_contribution.py examples/modality_proposal tests/test_modality_types.py tests/test_modality_proposal_reader.py tests/test_modality_build.py docs/superpowers/specs/2026-10-15-modality-registration-design.md
+git commit -m "feat(modality): optional controlled vocabulary (Type) for columns
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 8: The downloadable workbook template
 
 **Files:**
 - Create: `official/create_new_modality/modality_proposal_template.xlsx`
@@ -1813,9 +2231,15 @@ Workbook for proposing a new PRISM modality (for example blood samples).
 - `modality_proposal_template.xlsx`: fill in both sheets. It ships filled in
   with an example (`biosample`); replace the example values.
   - `Modality`: name, suffix, data file extension(s), description, rationale.
-  - `Columns`: one row per column of your data file (ID, Description, Units,
-    DataType, Scale, Min, Max, AllowedValues). `Scale` is optional: choose
-    categorical, continuous or boolean from the drop-down.
+  - `Columns`: the columns of your **sample file** (ID, Description, Units,
+    DataType, Scale, Type, Min, Max, AllowedValues). This is an example, not a
+    contract: two or three columns are enough, and every study defines its own
+    columns later in its own sidecar. `Scale` is optional: choose categorical,
+    continuous or boolean from the drop-down.
+  - `Types` (optional): a short list of the measurement types your modality
+    knows (for example CRP, glucose, cortisol), each with a description. Columns
+    can then say which `Type` they are, so the same thing gets the same name
+    across studies even when column names differ. `other` is always allowed.
 - A small **synthetic** sample data file in the same format as your real
   data (at most 50 rows, 1 MB). Never use real participant data.
 
@@ -1842,7 +2266,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Issue Form and bot
+### Task 9: Issue Form and bot
 
 **Files:**
 - Modify: `.github/ISSUE_TEMPLATE/propose-modality.yml` (replace the line-per-field form)
@@ -1880,7 +2304,9 @@ body:
 
         1. Download the workbook
            [modality_proposal_template.xlsx](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/official/create_new_modality/modality_proposal_template.xlsx),
-           fill in both sheets (name, suffix, extension, one row per data column).
+           fill in the sheets: `Modality` (name, suffix, extension), `Columns` (the
+           columns of your sample file, as an example) and optionally `Types`
+           (a shared vocabulary for your measurements).
         2. Prepare a small **synthetic** sample data file in your modality's format
            (at most 50 rows and 1 MB).
         3. Attach both files below. A bot checks them and opens a draft pull
@@ -2297,7 +2723,7 @@ Note: `ISSUE_NUMBER` is an integer written by GitHub, passed through `env:` anyw
 
 - [ ] **Step 7: Add the CI gate for generated fixtures**
 
-This is the "after registration" stage from the spec: while a proposal PR is a draft, this test is red because the modality is not registered yet; it turns green once the maintainer has applied `REGISTRATION.md`. With no `proposals/` folder it is skipped.
+This is the "after registration" stage from the spec: while a proposal PR is a draft, this test is red because the modality is not registered yet (the validator skips unknown modality folders without an error, so the test asserts the modality is recognised through `stats.modalities`, not only that there are no errors); it turns green once the maintainer has applied `REGISTRATION.md`. With no `proposals/` folder it is skipped.
 
 `tests/test_modality_proposal_fixtures.py`:
 
@@ -2316,11 +2742,16 @@ def test_proposal_fixture_validates(fixture: Path) -> None:
     sys.path.insert(0, str(REPO / "app" / "src"))
     from runner import validate_dataset
 
-    issues = validate_dataset(str(fixture), run_bids=False)[0]
+    issues, stats = validate_dataset(str(fixture), run_bids=False)
     errors = [i[1] for i in issues if i[0] == "ERROR"]
-    assert errors == [], (
-        f"{fixture.parent.name}: register the modality first (see its REGISTRATION.md), "
-        f"then the fixture must validate"
+    assert errors == [], f"{fixture.parent.name}: the fixture must validate"
+    # The validator silently skips a modality folder it does not know, so
+    # "no errors" alone would pass for an unregistered modality.
+    modalities = [p.name for p in (fixture / "sub-01").iterdir() if p.is_dir()]
+    unregistered = [m for m in modalities if stats.modalities.get(m, 0) < 1]
+    assert not unregistered, (
+        f"{fixture.parent.name}: modality {unregistered} is not registered yet; "
+        f"follow its REGISTRATION.md"
     )
 ```
 
@@ -2346,7 +2777,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 9: Docs, changelog and spec clarifications
+### Task 10: Docs, changelog and spec clarifications
 
 **Files:**
 - Create: `docs/MODALITY_PROPOSALS.md`
@@ -2374,7 +2805,14 @@ registers it, and it ships with the next release.
 1. The workbook `official/create_new_modality/modality_proposal_template.xlsx`
    (it opens in Excel, LibreOffice and Numbers).
    - Sheet `Modality`: `Name`, `Suffix`, `Extensions`, `Description`, `Rationale`.
-   - Sheet `Columns`: one row per column of your data file with `ID`,
+   - Sheet `Types` (optional): a short vocabulary of the measurements your
+     modality knows (for example CRP, glucose, cortisol), each with a
+     description. A column can then carry a `Type` from this list or `other`, so
+     the same measurement gets the same name across studies even when column
+     names differ. New types are added later through an upstream pull request.
+   - Sheet `Columns`: the columns of your **sample file**, as an example (two or
+     three are enough; every study defines its own columns in its own sidecar),
+     with `ID`,
      `Description`, `Units`, `DataType` (string, integer or float; guessed if
      empty), `Scale` (optional drop-down: categorical, continuous or boolean;
      leave empty for identifiers, times and free text), `Min`, `Max`,
@@ -2471,7 +2909,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 10: Full verification and pre-merge audit
+### Task 11: Full verification and pre-merge audit
 
 **Files:** none new.
 
