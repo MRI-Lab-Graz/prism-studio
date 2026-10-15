@@ -24,6 +24,11 @@ def dispatch_prism_tools(
         handlers["anonymize"](args)
     elif args.command == "template-export":
         handlers["template_export"](args)
+    elif args.command == "modality":
+        if args.action == "propose":
+            handlers["modality_propose"](args)
+        else:
+            parsers["modality"].print_help()
     elif args.command == "convert" and args.modality == "physio":
         handlers["convert_physio"](args)
     elif args.command == "wide-to-long":

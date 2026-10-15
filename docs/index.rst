@@ -214,6 +214,7 @@ in the repository root for the full citation, including all authors.
    :caption: Schema Specifications
 
    SCHEMA_SPECIFICATIONS
+   MODALITY_PROPOSALS
    specs/survey
    specs/biometrics
    specs/events

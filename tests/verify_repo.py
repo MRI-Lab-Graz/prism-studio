@@ -2369,6 +2369,167 @@ def check_library_uniqueness(repo_path, fix=False):
         print_success("All item IDs are unique across the official library.")
 
 
+def check_index_json_freshness(repo_path, fix=False):
+    """Fail if official/library/survey/index.json is out of sync with the
+    actual instrument templates -- whether hand-edited or simply not
+    regenerated after a template was added/changed/removed.
+
+    Comparison ignores 'GeneratedOn': it is a timestamp, not content, and a
+    byte-for-byte comparison would always report a diff (see spec section
+    1.4)."""
+    print_header("Checking official/library/survey/index.json Freshness")
+
+    library_dir = Path(repo_path) / "official" / "library" / "survey"
+    if not library_dir.is_dir():
+        print_success(
+            "index.json freshness check skipped (official/library/survey not found)."
+        )
+        return
+
+    index_path = library_dir / "index.json"
+    if not index_path.is_file():
+        print_error(f"{index_path} does not exist. Run scripts/generate_instrument_registry.py.")
+        return
+
+    repo_root = str(Path(repo_path).resolve())
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from src.instrument_registry import build_registry_index
+
+    try:
+        committed = json.loads(index_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print_error(f"index.json: not valid JSON ({e}).")
+        return
+
+    if not isinstance(committed, dict):
+        print_error(
+            f"index.json: top-level JSON must be an object, "
+            f"got {type(committed).__name__}."
+        )
+        return
+
+    expected = build_registry_index(library_dir)
+
+    committed_comparable = {k: v for k, v in committed.items() if k != "GeneratedOn"}
+    expected_comparable = {k: v for k, v in expected.items() if k != "GeneratedOn"}
+
+    if committed_comparable == expected_comparable:
+        print_success("index.json is up to date with official/library/survey/.")
+        return
+
+    committed_instruments = set(committed_comparable.get("Instruments", {}))
+    expected_instruments = set(expected_comparable.get("Instruments", {}))
+    added = expected_instruments - committed_instruments
+    removed = committed_instruments - expected_instruments
+    changed = {
+        name
+        for name in committed_instruments & expected_instruments
+        if committed_comparable["Instruments"][name]
+        != expected_comparable["Instruments"][name]
+    }
+
+    print_error(
+        "index.json is out of date. Run: python scripts/generate_instrument_registry.py"
+    )
+    if added:
+        print_error(f"  Missing from index.json (added to library): {sorted(added)}")
+    if removed:
+        print_error(f"  Stale in index.json (removed from library): {sorted(removed)}")
+    if changed:
+        print_error(f"  Out of date in index.json (library file changed): {sorted(changed)}")
+
+
+def check_modality_schema_conventions(repo_path, fix=False):
+    """Validate community-extensible modality schemas are well-formed.
+
+    Checks only the schemas contributors are expected to touch
+    (COMMUNITY_MODALITY_SCHEMAS) -- app-internal schemas like
+    entities.schema.json have a different, unrelated shape and are
+    deliberately not held to this envelope.
+    """
+    print_header("Checking Modality Schema Conventions")
+
+    schema_dir = Path(repo_path) / "app" / "schemas" / "stable"
+    if not schema_dir.is_dir():
+        print_success(
+            "Modality schema conventions check skipped (app/schemas/stable not found)."
+        )
+        return
+
+    import jsonschema
+
+    checked_any = False
+    for name in sorted(COMMUNITY_MODALITY_SCHEMAS):
+        schema_path = schema_dir / f"{name}.schema.json"
+        if not schema_path.is_file():
+            continue
+        checked_any = True
+
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print_error(f"{schema_path.name}: not valid JSON ({e}).")
+            continue
+
+        if not isinstance(schema, dict):
+            print_error(
+                f"{schema_path.name}: top-level JSON must be an object, "
+                f"got {type(schema).__name__}."
+            )
+            continue
+
+        for required_key in (
+            "$schema",
+            "$id",
+            "version",
+            "title",
+            "description",
+            "type",
+            "properties",
+            "required",
+        ):
+            if required_key not in schema:
+                print_error(f"{schema_path.name}: missing top-level '{required_key}'.")
+
+        if schema.get("type") != "object":
+            print_error(
+                f"{schema_path.name}: top-level 'type' must be 'object', "
+                f"got {schema.get('type')!r}."
+            )
+
+        properties = schema.get("properties")
+        required = schema.get("required")
+        if isinstance(properties, dict) and isinstance(required, list):
+            missing = [key for key in required if key not in properties]
+            if missing:
+                print_error(
+                    f"{schema_path.name}: required field(s) "
+                    f"{missing} not declared in 'properties'."
+                )
+
+        version = schema.get("version")
+        schema_id = schema.get("$id")
+        if isinstance(version, str) and isinstance(schema_id, str):
+            if not schema_id.endswith(f"/v{version}"):
+                print_error(
+                    f"{schema_path.name}: '$id' ({schema_id}) does not match "
+                    f"'version' ({version}); expected it to end with /v{version}."
+                )
+
+        try:
+            jsonschema.Draft7Validator.check_schema(schema)
+        except jsonschema.exceptions.SchemaError as e:
+            print_error(f"{schema_path.name}: not a valid JSON Schema draft-07 ({e.message}).")
+
+    if not checked_any:
+        print_success(
+            "Modality schema conventions check skipped (no community modality schemas found)."
+        )
+    elif CURRENT_CHECK_ERRORS == 0:
+        print_success("All community modality schemas follow PRISM conventions.")
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -2385,6 +2546,8 @@ CHECKS = {
     "import-boundaries": check_import_boundaries,
     "dual-tree-drift": check_dual_tree_drift,
     "library-uniqueness": check_library_uniqueness,
+    "index-json-freshness": check_index_json_freshness,
+    "modality-schema-conventions": check_modality_schema_conventions,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
@@ -2458,6 +2621,21 @@ CHECKS_SUPPORT_FIX = {
     "testing",
     "todos",
     "documentation",
+}
+
+# Modality schemas contributors are expected to add to or extend via PR
+# (spec: docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md
+# section 1.1). Every other file under app/schemas/stable/ defines app
+# behavior (filename grammar, project/dataset-description structure) and
+# is intentionally excluded here (the modality-schema-conventions check only
+# covers the names listed below).
+COMMUNITY_MODALITY_SCHEMAS = {
+    "survey",
+    "biometrics",
+    "environment",
+    "physio",
+    "eyetracking",
+    "events",
 }
 
 

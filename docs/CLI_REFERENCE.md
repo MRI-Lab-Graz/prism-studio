@@ -689,3 +689,18 @@ python prism_tools.py datalad finalize --project /absolute/path/to/my-project --
 On Windows the install hint is: install Git for Windows, then (without uv)
 `py -m pip install datalad git-annex` and restart PRISM Studio (macOS/Linux:
 `uv tool install datalad --with-executables-from git-annex`).
+
+## modality propose
+
+Check a modality proposal and generate its schema, example sidecar, fixture
+dataset and `REGISTRATION.md`.
+
+    python prism_tools.py modality propose <proposal.xlsx|.yml|.json> --sample <file> [--out <dir>] [--check] [--json]
+
+- `--sample`: synthetic sample data file (required).
+- `--out`: output folder (required unless `--check`).
+- `--check`: validate only, write nothing.
+- `--json`: machine-readable output.
+
+Exit code 0 on success, 1 if any problem is an error, 2 if `--out` is missing
+without `--check`. See `MODALITY_PROPOSALS.md`.
