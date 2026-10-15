@@ -21,6 +21,7 @@ import {
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
@@ -462,7 +463,7 @@ function _buildStudyMetadataPayload() {
             MissingFiles: document.getElementById('smMissingFiles').value || undefined,
             KnownIssues: document.getElementById('smKnownIssues').value || undefined,
         },
-        References: _getReferenceDoiLines().map(_normalizeDoi).join('\n') || undefined,
+        References: [...new Set(_getReferenceDoiLines().map(_normalizeDoi))].join('\n') || undefined,
     };
 }
 
@@ -669,14 +670,6 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
     _updateAuthorRowLabels();
     updateCreateProjectButton();
     validateAuthorsBadge();
-}
-
-function _normalizeDoi(value) {
-    let doi = String(value || '').trim();
-    if (!doi) return '';
-    doi = doi.replace(/^https?:\/\/doi\.org\//i, '');
-    doi = doi.replace(/^doi:\s*/i, '');
-    return doi.trim();
 }
 
 function _getReferenceDoiLines() {
@@ -1418,6 +1411,24 @@ function getOverviewList(fieldId) {
     return _parseOverviewListValue(document.getElementById(fieldId)?.value || '');
 }
 
+// Flag every row repeating an earlier DOI.
+function _markDuplicateRows(list, validate) {
+    const rows = Array.from(list.querySelectorAll('.overview-list-row'));
+    const dupes = duplicateIndexes(rows.map(row => row.querySelector('.overview-list-input').value));
+    rows.forEach((row, i) => {
+        let note = row.querySelector('.overview-dup-note');
+        if (!note) {
+            note = document.createElement('div');
+            note.className = 'form-text text-danger w-100 mt-0 overview-dup-note';
+            note.textContent = 'Duplicate DOI: already listed above.';
+            row.appendChild(note);
+        }
+        note.classList.toggle('d-none', !dupes.has(i));
+        const input = row.querySelector('.overview-list-input');
+        input.classList.toggle('is-invalid', dupes.has(i) || !validate(input.value.trim()));
+    });
+}
+
 function _syncOverviewListField(fieldId) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const hiddenField = document.getElementById(fieldId);
@@ -1428,6 +1439,8 @@ function _syncOverviewListField(fieldId) {
         .map(input => input.value.trim())
         .filter(Boolean);
     hiddenField.value = values.join('\n');
+
+    if (config.lookup) _markDuplicateRows(list, config.validate);
 
     // Keep required-badge state in sync for list-backed mandatory fields.
     try {
@@ -1472,6 +1485,20 @@ function addOverviewListRow(fieldId, value = '') {
     const feedback = document.createElement('div');
     feedback.className = 'form-text w-100 mt-0 d-none';
 
+    // Looked-up rows (DOIs): the end button is "search" until the value was
+    // checked, and only then the delete cross.
+    let checked = false;
+    const updateAction = () => {
+        if (!config.lookup) return;
+        const action = rowAction({ value: input.value, checked });
+        removeButton.classList.toggle('d-none', action === 'none');
+        removeButton.classList.toggle('btn-outline-danger', action === 'remove');
+        removeButton.classList.toggle('btn-outline-primary', action === 'search');
+        removeButton.dataset.action = action;
+        removeButton.setAttribute('aria-label', action === 'search' ? 'Check DOI' : 'Remove item');
+        removeButton.innerHTML = `<i class="fas fa-${action === 'search' ? 'search' : 'times'}"></i>`;
+    };
+
     const runLookup = async () => {
         const value = input.value.trim();
         feedback.classList.add('d-none');
@@ -1480,17 +1507,26 @@ function addOverviewListRow(fieldId, value = '') {
         if (input.value.trim() !== value) return; // edited while waiting
         feedback.className = `form-text w-100 mt-0 ${cls}`;
         feedback.textContent = text;
+        checked = true;
+        updateAction();
     };
 
     input.addEventListener('input', () => {
         markValidity();
         feedback.classList.add('d-none');
+        checked = false;
+        updateAction();
         _syncOverviewListField(fieldId);
         updateCreateProjectButton();
     });
     input.addEventListener('change', runLookup);
 
+    removeButton.addEventListener('mousedown', (e) => e.preventDefault());
     removeButton.addEventListener('click', () => {
+        if (removeButton.dataset.action === 'search') {
+            runLookup();
+            return;
+        }
         row.remove();
         if (!list.querySelector('.overview-list-row')) {
             addOverviewListRow(fieldId);
@@ -1529,6 +1565,7 @@ function addOverviewListRow(fieldId, value = '') {
     row.appendChild(removeButton);
     row.appendChild(feedback);
     list.appendChild(row);
+    updateAction();
     _syncOverviewListField(fieldId);
     if (input.value) runLookup();
 }
@@ -2284,6 +2321,9 @@ export function validateAllMandatoryFields() {
         optionalInvalidFields.push(`Citation Links must be http(s) URLs. Invalid: ${badLinks.join(', ')}`);
     }
 
+    if (duplicateIndexes(_getReferenceDoiLines()).size) {
+        optionalInvalidFields.push('Background Literature lists the same DOI more than once.');
+    }
     const badRefs = _getReferenceDoiLines().filter(l => !_isValidDoiFormat(l));
     if (badRefs.length) {
         optionalInvalidFields.push(`Background Literature must be one DOI per line (10.xxxx/... or https://doi.org/10.xxxx/...). Invalid: ${badRefs.join(', ')}`);
