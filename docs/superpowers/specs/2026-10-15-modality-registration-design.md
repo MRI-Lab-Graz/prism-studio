@@ -48,7 +48,7 @@ next to `official/create_new_survey/`. Two sheets:
 
 **`Columns`** (one row per data-file column). The headers are the same as the
 biometrics workbook (`ID`, `Description`, `Units`, `Min`, `Max`,
-`AllowedValues`, `DataType`) so the parsing helpers in
+`AllowedValues`, `DataType`) plus `Scale` (see below), so the parsing helpers in
 `src/converters/excel_to_biometrics.py` / `excel_base.py` are reused, not
 copied.
 
@@ -96,10 +96,27 @@ deliberately reuse BIDS suffixes with the same meaning. Such overlaps are a
 maintainer decision during registration, so the generator rejects them and
 does not offer an override.
 
+### Column scale
+
+`Scale` says what kind of variable a column is, which `DataType` (how it is
+stored: string, integer, float) does not. It is optional, one of
+`categorical`, `continuous`, `boolean`, and never guessed: a blank cell means
+"not stated" (identifiers, times and free text legitimately have none). In the
+workbook the cell is a drop-down. In the generated sidecar it is written as
+`MeasurementScale` (not `Scale`, which survey recipes already use for scoring
+levels). When given, it must agree with the rest of the column:
+
+| Scale | Requires |
+|---|---|
+| `continuous` | `DataType` integer or float, no `AllowedValues` |
+| `categorical` | `AllowedValues` (the categories) |
+| `boolean` | exactly two `AllowedValues` (for example `yes; no`, `0; 1`) |
+
 ### Column dictionary check
 
 - `ID` unique and non-empty; `Min <= Max`; `AllowedValues` parse; `DataType`
-  one of the datatypes the biometrics converter already infers.
+  one of the datatypes the biometrics converter already infers; `Scale` one of
+  the three values and consistent with the column (table above).
 
 ### Sample check
 

@@ -30,6 +30,7 @@ Work in the worktree `.claude/worktrees/modality-contribution-workflow` (branch 
 2. **Bot output folder.** The bot knows the issue number before it knows the modality name, so it writes to `proposals/issue-<n>/`, not `proposals/<name>/`. `REGISTRATION.md` uses paths relative to its own folder.
 3. **Two attachment fields.** A GitHub Issue Form cannot say "attach two typed files" in one textarea unambiguously. The form has one textarea for the proposal file and one for the sample file; the bot requires exactly one upload in each.
 4. **Registration confirmed.** Verified on a copy of the repo (2026-10-15): adding a `modalities` entry to `entities.schema.json` plus `<name>.schema.json` in `app/schemas/stable/` makes `validate_dataset` recognise the new modality and validate its sidecar against the new schema. `schema_manager.load_all_schemas` derives its list from `entities.schema.json`. `check_schema_sync` additionally requires both to exist. `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py` is where the convention check learns about the new schema.
+5. **Column scale (added after plan review).** Each column may carry an optional `Scale` (`categorical`, `continuous`, `boolean`), written as `MeasurementScale` in the sidecar. It is never guessed and is checked for consistency with `DataType` and `AllowedValues`. The spec section "Column scale" describes it.
 
 ## Review Focus
 
@@ -56,7 +57,7 @@ Inputs the spec implies but that are easy to get wrong, each pinned by a test in
   - `ProposalError(ValueError)`: the file itself cannot be read.
   - `Problem(severity: str, where: str, message: str)`: frozen dataclass; `severity` is `"error"` or `"warning"`; `str(p)` is `"ERROR: <where>: <message>"`.
   - `errors_only(problems: list[Problem]) -> list[Problem]`
-  - `read_proposal(path) -> dict` with keys `modality`, `suffix`, `extensions` (list of lowercase strings without dots), `description`, `rationale`, `columns` (list of `{"id", "description", "units", "datatype", "min", "max", "allowed_values"}`; `units` defaults to `"n/a"`, `datatype` is one of `string|integer|float`, `min`/`max` are `float|None`, `allowed_values` is `list|None`).
+  - `read_proposal(path) -> dict` with keys `modality`, `suffix`, `extensions` (list of lowercase strings without dots), `description`, `rationale`, `columns` (list of `{"id", "description", "units", "datatype", "scale", "min", "max", "allowed_values"}`; `units` defaults to `"n/a"`, `datatype` is one of `string|integer|float`, `scale` is `"categorical"|"continuous"|"boolean"|None` (lower-cased as given, never guessed), `min`/`max` are `float|None`, `allowed_values` is `list|None`).
   - `write_proposal_workbook(proposal: dict, path) -> None` writes sheets `Modality` and `Columns` readable by `read_proposal` (round trip).
 
 - [ ] **Step 1: Create the example inputs**
@@ -76,17 +77,21 @@ columns:
     description: Time of the blood draw (HH:MM)
   - id: fasting
     description: Whether the participant had fasted at the time of the draw
+    scale: boolean
     allowed_values: ["yes", "no"]
   - id: crp
     description: C-reactive protein
+    scale: continuous
     units: mg/L
     min: 0
   - id: glucose
     description: Blood glucose
+    scale: continuous
     units: mmol/L
     min: 0
   - id: cortisol
     description: Serum cortisol
+    scale: continuous
     units: nmol/L
     min: 0
 ```
@@ -138,11 +143,14 @@ def test_read_yaml_example_normalizes_columns() -> None:
         "description": "C-reactive protein",
         "units": "mg/L",
         "datatype": "float",
+        "scale": "continuous",
         "min": 0.0,
         "max": None,
         "allowed_values": None,
     }
     fasting = p["columns"][2]
+    assert fasting["scale"] == "boolean"
+    assert p["columns"][0]["scale"] is None  # blank stays 'not stated'
     assert fasting["allowed_values"] == ["yes", "no"]
     assert fasting["datatype"] == "string"
     assert fasting["units"] == "n/a"
@@ -214,6 +222,24 @@ def test_unsupported_file_type_is_a_clear_error(tmp_path: Path) -> None:
         read_proposal(f)
 
 
+def test_scale_is_lowercased_and_never_guessed(tmp_path: Path) -> None:
+    f = tmp_path / "p.yml"
+    f.write_text(
+        EXAMPLE_YAML.read_text(encoding="utf-8").replace("scale: boolean", "scale: Boolean"),
+        encoding="utf-8",
+    )
+    cols = {c["id"]: c for c in read_proposal(f)["columns"]}
+    assert cols["fasting"]["scale"] == "boolean"
+    assert cols["sample_id"]["scale"] is None
+
+
+def test_workbook_scale_cell_is_a_dropdown(tmp_path: Path) -> None:
+    path = tmp_path / "p.xlsx"
+    write_proposal_workbook(read_proposal(EXAMPLE_YAML), path)
+    validations = openpyxl.load_workbook(path)["Columns"].data_validations.dataValidation
+    assert any("continuous" in (v.formula1 or "") for v in validations)
+
+
 def test_problem_str_and_errors_only() -> None:
     err = Problem("error", "Modality.Name", "bad")
     warn = Problem("warning", "x", "hmm")
@@ -234,6 +260,7 @@ In `src/modality_contribution.py`, add to the imports `import re`, `from datacla
 SAMPLE_MAX_ROWS = 50
 SAMPLE_MAX_BYTES = 1_000_000
 COLUMN_DATATYPES = {"string", "integer", "float"}
+COLUMN_SCALES = ("categorical", "continuous", "boolean")
 
 
 class ProposalError(ValueError):
@@ -281,6 +308,7 @@ def _normalize_column(raw: dict) -> dict:
         "description": _clean_key(raw.get("description")) or "",
         "units": units,
         "datatype": _infer_datatype(raw.get("datatype"), units, allowed, lo, hi),
+        "scale": (_clean_key(raw.get("scale")) or "").lower() or None,
         "min": lo,
         "max": hi,
         "allowed_values": allowed,
@@ -345,6 +373,7 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict]]:
             ("description", eb.DESC_ALIASES),
             ("units", eb.UNITS_ALIASES),
             ("datatype", eb.DTYPE_ALIASES),
+            ("scale", {"scale", "measurementscale", "measurement_scale"}),
             ("min", eb.MIN_ALIASES),
             ("max", eb.MAX_ALIASES),
             ("allowed_values", eb.ALLOWED_ALIASES),
@@ -402,17 +431,25 @@ def write_proposal_workbook(proposal: dict, path) -> None:
         proposal["rationale"],
     ])
     cols = wb.create_sheet("Columns")
-    cols.append(["ID", "Description", "Units", "DataType", "Min", "Max", "AllowedValues"])
+    cols.append(["ID", "Description", "Units", "DataType", "Scale", "Min", "Max", "AllowedValues"])
     for c in proposal["columns"]:
         cols.append([
             c["id"],
             c["description"],
             c["units"],
             c["datatype"],
+            c["scale"],
             c["min"],
             c["max"],
             "; ".join(str(v) for v in c["allowed_values"]) if c["allowed_values"] else None,
         ])
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    dropdown = DataValidation(
+        type="list", formula1='"' + ",".join(COLUMN_SCALES) + '"', allow_blank=True
+    )
+    cols.add_data_validation(dropdown)
+    dropdown.add("E2:E200")  # the Scale column
     wb.save(path)
 ```
 
@@ -527,6 +564,40 @@ def test_column_problems_are_all_reported() -> None:
     assert "Min" in msg and "greater than" in msg
     assert "duplicate" in msg
     assert "datatype" in msg
+
+
+def _col(**over) -> dict:
+    base = {"id": "c", "description": "d", "units": "n/a", "datatype": "string",
+            "scale": None, "min": None, "max": None, "allowed_values": None}
+    base.update(over)
+    return base
+
+
+@pytest.mark.parametrize(
+    "col,needle",
+    [
+        (_col(scale="ordinal"), "scale must be one of"),
+        (_col(scale="continuous", datatype="string"), "continuous column"),
+        (_col(scale="continuous", datatype="float", allowed_values=[1, 2]), "continuous column"),
+        (_col(scale="categorical"), "categorical column needs AllowedValues"),
+        (_col(scale="boolean", allowed_values=["a", "b", "c"]), "exactly two"),
+    ],
+)
+def test_scale_must_agree_with_the_column(col, needle) -> None:
+    assert needle in _messages(check_proposal(_proposal(columns=[col])))
+
+
+@pytest.mark.parametrize(
+    "col",
+    [
+        _col(scale="continuous", datatype="float"),
+        _col(scale="categorical", allowed_values=["a", "b", "c"]),
+        _col(scale="boolean", allowed_values=[0, 1]),
+        _col(),  # no scale stated is fine
+    ],
+)
+def test_consistent_scales_and_no_scale_are_accepted(col) -> None:
+    assert errors_only(check_proposal(_proposal(columns=[col]))) == []
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -626,6 +697,15 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         lo, hi = col.get("min"), col.get("max")
         if lo is not None and hi is not None and lo > hi:
             err(where, f"Min ({lo}) is greater than Max ({hi})")
+        scale, allowed = col.get("scale"), col.get("allowed_values")
+        if scale is not None and scale not in COLUMN_SCALES:
+            err(where, f"scale must be one of {list(COLUMN_SCALES)}, got '{scale}'")
+        elif scale == "continuous" and (allowed or col.get("datatype") not in {"integer", "float"}):
+            err(where, "a continuous column needs datatype integer or float and no AllowedValues")
+        elif scale == "categorical" and not allowed:
+            err(where, "a categorical column needs AllowedValues (the categories)")
+        elif scale == "boolean" and len(allowed or []) != 2:
+            err(where, "a boolean column needs exactly two AllowedValues (for example yes; no)")
     return problems
 ```
 
@@ -1045,8 +1125,11 @@ def test_example_sidecar_validates_against_generated_schema() -> None:
         "Units": "mg/L",
         "MinValue": 0.0,
         "DataType": "float",
+        "MeasurementScale": "continuous",
     }
     assert sidecar["fasting"]["AllowedValues"] == ["yes", "no"]
+    assert sidecar["fasting"]["MeasurementScale"] == "boolean"
+    assert "MeasurementScale" not in sidecar["sample_id"]
 
 
 def test_schema_rejects_a_sidecar_column_without_units() -> None:
@@ -1055,6 +1138,13 @@ def test_schema_rejects_a_sidecar_column_without_units() -> None:
     del sidecar["crp"]["Units"]
     errors = list(jsonschema.Draft7Validator(build_schema(p)).iter_errors(sidecar))
     assert errors
+
+
+def test_schema_rejects_an_unknown_measurement_scale() -> None:
+    p = read_proposal(PROPOSAL)
+    sidecar = build_example_sidecar(p, today="2026-10-15")
+    sidecar["crp"]["MeasurementScale"] = "ordinal"
+    assert list(jsonschema.Draft7Validator(build_schema(p)).iter_errors(sidecar))
 
 
 def test_registration_entry_and_markdown() -> None:
@@ -1125,6 +1215,8 @@ def _column_definition(col: dict) -> dict:
     if col["allowed_values"]:
         out["AllowedValues"] = col["allowed_values"]
     out["DataType"] = col["datatype"]
+    if col.get("scale"):
+        out["MeasurementScale"] = col["scale"]
     return out
 
 
@@ -1185,6 +1277,7 @@ def build_schema(proposal: dict) -> dict:
                 "MaxValue": {"type": ["number", "null"]},
                 "AllowedValues": {"type": "array"},
                 "DataType": {"type": "string", "enum": sorted(COLUMN_DATATYPES)},
+                "MeasurementScale": {"type": "string", "enum": list(COLUMN_SCALES)},
             },
             "required": ["Description", "Units"],
         },
@@ -1721,7 +1814,8 @@ Workbook for proposing a new PRISM modality (for example blood samples).
   with an example (`biosample`); replace the example values.
   - `Modality`: name, suffix, data file extension(s), description, rationale.
   - `Columns`: one row per column of your data file (ID, Description, Units,
-    DataType, Min, Max, AllowedValues).
+    DataType, Scale, Min, Max, AllowedValues). `Scale` is optional: choose
+    categorical, continuous or boolean from the drop-down.
 - A small **synthetic** sample data file in the same format as your real
   data (at most 50 rows, 1 MB). Never use real participant data.
 
@@ -2282,7 +2376,11 @@ registers it, and it ships with the next release.
    - Sheet `Modality`: `Name`, `Suffix`, `Extensions`, `Description`, `Rationale`.
    - Sheet `Columns`: one row per column of your data file with `ID`,
      `Description`, `Units`, `DataType` (string, integer or float; guessed if
-     empty), `Min`, `Max`, `AllowedValues` (separated by `;`).
+     empty), `Scale` (optional drop-down: categorical, continuous or boolean;
+     leave empty for identifiers, times and free text), `Min`, `Max`,
+     `AllowedValues` (separated by `;`). A continuous column must be a number
+     without `AllowedValues`, a categorical column needs its categories in
+     `AllowedValues`, a boolean column needs exactly two (for example `yes; no`).
 2. A small **synthetic** sample data file in the same format as your real data:
    at most 50 rows and 1 MB. Its header must match the `Columns` sheet. Never
    use real participant data.
