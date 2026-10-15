@@ -23,6 +23,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { renderNotReadyBanner } from './not-ready-banner.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
@@ -130,6 +131,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
     ),
     applyStudyMetadataPayload: (data) => {
         const sm = data.study_metadata;
+        renderNotReadyBanner(data.missing_required);
 
         const overview = sm.Overview || {};
         document.getElementById('smOverviewMain').value = overview.Main || '';
