@@ -616,8 +616,8 @@ pull request, then let CI validate the fixture in this folder.
 4. Check the registration:
    `python tests/verify_repo.py --check schema-sync` and
    `python tests/verify_repo.py --check modality-schema-conventions`.
-5. Validate the generated dataset: `python prism.py fixture` run from this
-   folder. It must pass without errors.
+5. Validate the generated dataset: from the repository root, run
+   `python prism.py <this folder>/fixture`. It must pass without errors.
 
 Review by hand what no check can judge: units, a modality that duplicates an
 existing one under another name, and whether the sample holds any real
@@ -639,6 +639,7 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
     schema_path = out / f"{name}.schema.json"
     schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
     sidecar = build_example_sidecar(proposal)
+    sidecar["Technical"]["FileFormat"] = ext
     sidecar_path = out / "example_sidecar.json"
     sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
     write_minimal_dataset(

@@ -110,3 +110,29 @@ def test_build_writes_every_artifact(tmp_path: Path) -> None:
     assert (out / "fixture" / "dataset_description.json").is_file()
     assert all(w.is_file() for w in written)
     assert data in written
+
+
+def test_registration_md_step5_runs_prism_from_repository_root(tmp_path: Path) -> None:
+    md = build_registration_md(read_proposal(PROPOSAL))
+    assert "prism.py" in md and "repository root" in md
+    assert "run from this folder" not in md
+
+
+def test_fixture_sidecar_file_format_matches_compound_sample(tmp_path: Path) -> None:
+    import gzip
+
+    p = read_proposal(PROPOSAL)
+    p["extensions"] = ["tsv", "tsv.gz"]
+    sample = tmp_path / "SAMPLE.TSV.GZ"
+    sample.write_bytes(gzip.compress(SAMPLE.read_bytes()))
+    out = tmp_path / "out"
+    build_modality_artifacts(p, sample, PROPOSAL, out)
+
+    data = list((out / "fixture").rglob("*_bloodchem.tsv.gz"))
+    assert len(data) == 1
+    fixture_sidecar = json.loads(next((out / "fixture").rglob("*_bloodchem.json")).read_text())
+    example = json.loads((out / "example_sidecar.json").read_text())
+    assert fixture_sidecar["Technical"]["FileFormat"] == "tsv.gz"
+    assert example["Technical"]["FileFormat"] == "tsv.gz"
+    schema = json.loads((out / "biosample.schema.json").read_text())
+    jsonschema.Draft7Validator(schema).validate(fixture_sidecar)
