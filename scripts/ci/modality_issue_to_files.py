@@ -88,7 +88,7 @@ Maintainer checklist:
 - [ ] Name and suffix are sensible (not a duplicate under another name)
 - [ ] Units and ranges are plausible
 - [ ] Registration steps applied (see `REGISTRATION.md`) and `prism-validator` passes on `fixture`
-- [ ] CI has not run on this bot commit; push the registration commit to run it.
+- [ ] CI has not run on this bot commit; start it (approve the run or push). While the PR only adds `proposals/` files CI runs a reduced set and the fixture test stays red until the registration commit is pushed.
 """
 
 

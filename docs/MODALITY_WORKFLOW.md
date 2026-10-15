@@ -115,14 +115,19 @@ The maintainer follows `REGISTRATION.md`: copy the schema, add the modality to
 `entities.schema.json`, add the name to `COMMUNITY_MODALITY_SCHEMAS` in
 `tests/verify_repo.py`, run the two schema checks and validate `fixture/` with
 `python prism.py <folder>/fixture`. Units, ranges and the sample are reviewed by
-hand. CI does not run on the bot's commit; the maintainer's registration push
-triggers it.
+hand. GitHub does not start CI from the bot's own push, so a maintainer starts
+it. A pull request that only adds `proposals/` files gets a reduced CI run and
+its fixture test stays red until the modality is registered; the registration
+push runs the full CI.
 
 ## Maintainer setup (once)
 
 - The label `type: new-modality` must exist, otherwise the bot never starts.
 - Enable "Allow GitHub Actions to create and approve pull requests" in the
   repository settings, or open the PR by hand from the pushed branch.
+- Make your organization membership **public**. The bot reads the issue author's
+  role from the event; a private member is seen as an outsider and gets no
+  automatic pull request.
 - Do not open a contributor's `.xlsx` in desktop Excel; review the generated
   JSON instead.
 

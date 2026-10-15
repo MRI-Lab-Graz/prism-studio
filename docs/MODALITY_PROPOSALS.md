@@ -58,9 +58,13 @@ be used instead of the workbook (see `examples/modality_proposal/`).
 A maintainer follows `REGISTRATION.md` (copy the schema, add the modality to
 `entities.schema.json`, run the checks) and reviews units, ranges and the
 sample. After the merge the modality is available in the next PRISM release.
-Automatic checks do not run on the bot's pull request until a maintainer pushes
-to it; the maintainer's registration push is what runs the CI checks
-(`tests/test_modality_proposal_fixtures.py`).
+GitHub does not start CI from the bot's own push; a maintainer starts it by
+approving the run or pushing. While the pull request only adds files under
+`proposals/`, CI runs a reduced set (repo checks plus
+`tests/test_modality_proposal_fixtures.py`) and skips the docs build and the
+cross-platform tests. The fixture test stays red until the modality is
+registered; the maintainer's registration push touches other files and runs the
+full CI.
 
 ## For maintainers
 
