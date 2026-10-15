@@ -990,7 +990,7 @@ export function initParticipants() {
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
         const applyStatusBadge = document.getElementById('participantsMergeApplyStatusBadge');
-        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
         const previewTableHead = document.querySelector('#participantsPreviewTable thead');
         const previewTableBody = document.querySelector('#participantsPreviewTable tbody');
         const previewCount = document.getElementById('participantsPreviewCount');
@@ -1032,7 +1032,7 @@ export function initParticipants() {
             applyStatusBadge.className = 'badge d-none';
             applyStatusBadge.textContent = '';
         }
-        if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+        if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
     
         if (previewTableHead) previewTableHead.innerHTML = '';
         if (previewTableBody) previewTableBody.innerHTML = '';
@@ -1411,7 +1411,7 @@ export function initParticipants() {
         
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
-        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
 
         if (!hasSelectedCase) {
             participantsExcelSheetCount = null;
@@ -1420,7 +1420,7 @@ export function initParticipants() {
 
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;
-            if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
             renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
@@ -1435,7 +1435,7 @@ export function initParticipants() {
 
             if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
             renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
@@ -1452,7 +1452,7 @@ export function initParticipants() {
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
             // Re-apply the last requested show/hide state instead of forcing it closed -
             // this runs from the convert button's `finally` block too, which previously
             // clobbered the warning right after it was shown.
@@ -1467,7 +1467,7 @@ export function initParticipants() {
             participantsSheetMetadataPending = false;
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;
-            if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
             participantsPreviewCompleted = false;
             updateParticipantsInputVisibility();
         }
@@ -3195,9 +3195,9 @@ export function initParticipants() {
 
         updateParticipantsMergeApplyStatusBadge(previewData);
     
-        const saveAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
-        if (saveAnnotBtn) {
-            saveAnnotBtn.disabled = false;
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
+        if (confirmAnnotBtn) {
+            confirmAnnotBtn.disabled = false;
         }
     
         refreshParticipantsWorkflowSummary();
