@@ -9,29 +9,70 @@ def _load():
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
 
 
+def _steps(job):
+    return _load()["jobs"][job]["steps"]
+
+
 def test_runs_only_on_new_modality_issues():
     wf = _load()
     assert wf[True]["issues"]["types"] == ["opened"]  # PyYAML reads `on` as True
-    job = wf["jobs"]["propose"]
-    assert "type: new-modality" in job["if"]
+    for name in ("check", "report"):
+        assert "type: new-modality" in wf["jobs"][name]["if"]
 
 
 def test_issue_text_never_reaches_a_run_block():
     text = WORKFLOW.read_text(encoding="utf-8")
-    for step in _load()["jobs"]["propose"]["steps"]:
-        assert "github.event" not in step.get("run", ""), step
+    for job in _load()["jobs"].values():
+        for step in job["steps"]:
+            assert "${{" not in step.get("run", ""), step
     assert "ISSUE_BODY: ${{ github.event.issue.body }}" in text
 
 
 def test_actions_are_pinned_by_sha():
-    for step in _load()["jobs"]["propose"]["steps"]:
-        if "uses" in step:
-            assert "@" in step["uses"] and len(step["uses"].split("@")[1]) == 40, step["uses"]
+    for job in _load()["jobs"].values():
+        for step in job["steps"]:
+            if "uses" in step:
+                assert "@" in step["uses"] and len(step["uses"].split("@")[1]) == 40, step["uses"]
 
 
-def test_permissions_are_explicit_and_minimal():
+def test_top_level_permissions_are_empty():
+    assert _load()["permissions"] == {}
+
+
+def test_untrusted_job_has_no_write_access_or_credentials():
+    job = _load()["jobs"]["check"]
+    assert job["permissions"] == {"contents": "read"}
+    checkout = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["persist-credentials"] is False
+    text = WORKFLOW.read_text(encoding="utf-8")
+    check_text = text.split("\n  report:")[0]
+    assert "GH_TOKEN" not in check_text and "github.token" not in check_text
+    upload = next(s for s in job["steps"] if s.get("uses", "").startswith("actions/upload-artifact@"))
+    assert upload["with"]["retention-days"] == 1
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert "RUNNER_TEMP" in check_text
+
+
+def test_privileged_job_is_separate_and_verifies_the_artifact():
     wf = _load()
-    assert wf["permissions"] == {}
-    assert wf["jobs"]["propose"]["permissions"] == {
+    job = wf["jobs"]["report"]
+    assert job["needs"] == "check"
+    assert job["permissions"] == {
         "contents": "write", "pull-requests": "write", "issues": "write",
     }
+    runs = "\n".join(s.get("run", "") for s in job["steps"])
+    assert "find bundle -type l" in runs
+    assert "find bundle ! -type f ! -type d" in runs
+    assert "core.hooksPath=/dev/null" in runs
+    assert "GITHUB_RUN_ID" in runs
+    assert "gh label create needs-changes --force" in runs
+    # fence breakout: backticks are stripped from the log before it is quoted
+    assert "tr '`'" in runs
+    assert job["steps"][-1]["if"] == "failure()"
+    # the issue number comes from the event, never from the artifact
+    assert "github.event.issue.number" in WORKFLOW.read_text(encoding="utf-8")
+
+
+def test_both_jobs_have_timeouts():
+    for job in _load()["jobs"].values():
+        assert job["timeout-minutes"] == 10

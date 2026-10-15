@@ -45,6 +45,7 @@ def test_compound_sample_extension_is_kept():
         (dict(proposal="[a.xlsx](%s/1/a.xlsx) [b.xlsx](%s/3/b.xlsx)" % (BASE, BASE)), "exactly one"),
         (dict(proposal="[a.xlsx](https://evil.example/a.xlsx)"), "Proposal file"),
         (dict(proposal="[a.exe](%s/1/a.exe)" % BASE), "must be .xlsx"),
+        (dict(proposal="[a.xlsx](%s/../1/a.xlsx)" % BASE), "'..'"),
         (dict(privacy="- [ ] The sample file contains no real participant data."), "privacy"),
     ],
 )
@@ -60,6 +61,13 @@ def test_pr_body_links_the_issue_and_carries_warnings():
     assert "patient_name" in text
     assert "draft" in text.lower()
     assert "REGISTRATION.md" in text
+    assert "CI has not run on this bot commit" in text
+
+
+def test_pr_body_neutralises_warning_text():
+    text = mod.pr_body(7, "WARNING: `x` hi @someone [l](http://e.example)\n")
+    assert "- `WARNING: 'x' hi @someone [l](http://e.example)`" in text
+    assert "``" not in text
 
 
 def test_pr_body_subcommand_reads_issue_number_and_log(tmp_path, monkeypatch, capsys):

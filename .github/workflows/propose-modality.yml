@@ -7,18 +7,18 @@ on:
 permissions: {}
 
 jobs:
-  propose:
+  # Untrusted: parses attacker-controlled files. Read-only token, no credentials.
+  check:
     if: "contains(github.event.issue.labels.*.name, 'type: new-modality')"
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      contents: read
     steps:
       - name: Checkout default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -31,23 +31,66 @@ jobs:
           pip install -r requirements.txt
 
       - name: Fetch attachments and check the proposal
-        id: propose
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          WORK_DIR=work
+          mkdir bundle
+          WORK_DIR="$RUNNER_TEMP/modality"
           export WORK_DIR
-          if ! { python scripts/ci/modality_issue_to_files.py \
-              && python prism_tools.py modality propose work/proposal.* \
-                   --sample work/sample.* --out "proposals/issue-${ISSUE_NUMBER}"; } \
-              > propose.log 2>&1; then
+          if { python scripts/ci/modality_issue_to_files.py \
+              && python prism_tools.py modality propose "$WORK_DIR"/proposal.* \
+                   --sample "$WORK_DIR"/sample.* --out "bundle/proposals/issue-${ISSUE_NUMBER}"; } \
+              > bundle/propose.log 2>&1; then
+            echo ok > bundle/status
+          else
+            echo failed > bundle/status
+          fi
+          cat bundle/propose.log
+
+      - name: Upload result bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: modality-bundle
+          path: bundle
+          retention-days: 1
+          if-no-files-found: error
+
+  # Privileged: only trusted code runs here; the artifact is treated as data.
+  report:
+    needs: check
+    if: "contains(github.event.issue.labels.*.name, 'type: new-modality')"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+
+      - name: Download result bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: modality-bundle
+          path: bundle
+
+      - name: Verify the bundle is plain files
+        id: bundle
+        run: |
+          if [ -n "$(find bundle -type l)" ] || [ -n "$(find bundle ! -type f ! -type d)" ]; then
+            echo "bundle contains links or special files" >&2
+            exit 1
+          fi
+          if [ "$(cat bundle/status)" != ok ]; then
             echo "failed=true" >> "$GITHUB_OUTPUT"
           fi
-          cat propose.log
 
       - name: Report problems on the issue
-        if: steps.propose.outputs.failed == 'true'
+        if: steps.bundle.outputs.failed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -56,28 +99,40 @@ jobs:
             echo "The automatic check found problems with this proposal:"
             echo
             echo '```'
-            cat propose.log
+            tr '`' "'" < bundle/propose.log
             echo '```'
             echo
             echo "Please open a new issue with the corrected files."
           } > comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file comment.md
+          gh label create needs-changes --force
           gh issue edit "$ISSUE_NUMBER" --add-label "needs-changes"
 
       - name: Open draft pull request
-        if: steps.propose.outputs.failed != 'true'
+        if: steps.bundle.outputs.failed != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          LOG_FILE: bundle/propose.log
         run: |
-          BRANCH="modality/issue-${ISSUE_NUMBER}"
-          python scripts/ci/modality_issue_to_files.py pr-body > pr-body.md
+          BRANCH="modality/issue-${ISSUE_NUMBER}-${GITHUB_RUN_ID}"
+          python3 scripts/ci/modality_issue_to_files.py pr-body > pr-body.md
+          mkdir -p proposals
+          cp -R bundle/proposals/. proposals/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add "proposals/issue-${ISSUE_NUMBER}"
-          git commit -m "feat(modality): proposal from issue #${ISSUE_NUMBER}"
+          git -c core.hooksPath=/dev/null commit -m "feat(modality): proposal from issue #${ISSUE_NUMBER}"
           git push origin "$BRANCH"
           gh pr create --draft --base main --head "$BRANCH" \
             --title "Propose new modality (issue #${ISSUE_NUMBER})" \
             --body-file pr-body.md
+
+      - name: Tell the contributor the bot failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "The proposal bot could not finish processing this issue. A maintainer will look at it."
