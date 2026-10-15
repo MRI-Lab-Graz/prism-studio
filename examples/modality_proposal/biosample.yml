@@ -1,0 +1,29 @@
+modality: biosample
+suffix: bloodchem
+extensions: [tsv]
+description: Venous blood samples drawn alongside MRI
+rationale: Blood is drawn at each MRI session; this keeps the analyte values next to the imaging data.
+columns:
+  - id: sample_id
+    description: Laboratory sample identifier
+  - id: draw_time
+    description: Time of the blood draw (HH:MM)
+  - id: fasting
+    description: Whether the participant had fasted at the time of the draw
+    scale: boolean
+    allowed_values: ["yes", "no"]
+  - id: crp
+    description: C-reactive protein
+    scale: continuous
+    units: mg/L
+    min: 0
+  - id: glucose
+    description: Blood glucose
+    scale: continuous
+    units: mmol/L
+    min: 0
+  - id: cortisol
+    description: Serum cortisol
+    scale: continuous
+    units: nmol/L
+    min: 0
