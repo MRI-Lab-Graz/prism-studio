@@ -13,6 +13,7 @@ from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import load_entity_rules
+from src.constants import TABULAR_MODALITIES
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -50,6 +51,10 @@ BIDS_REGEX = re.compile(
     r"(_[a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)*"  # key-value pairs; values may contain hyphens (e.g., task-bfi-s)
     r"(_[a-zA-Z0-9]+)?$"  # generic suffix (e.g., _dwi, _T1w, _bold, _physio, _events)
 )
+
+# Raw-data codes for censored assay results; accepted in biosample columns that
+# are not categorical (see validate_data_content). Exact strings only.
+BIOSAMPLE_CENSORED_CODES = frozenset({"<LOD", "<LLOQ", ">ULOQ"})
 
 MRI_SUFFIX_REGEX = re.compile(
     r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
@@ -914,7 +919,7 @@ class DatasetValidator:
             return self._validate_environment_content(file_path)
 
         # Only validate content for tabular data modalities
-        if modality not in ["survey", "biometrics"]:
+        if modality not in TABULAR_MODALITIES:
             return issues
 
         # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
@@ -1019,6 +1024,18 @@ class DatasetValidator:
                                 value is None
                                 or value.strip() == ""
                                 or value.lower() in ("n/a", "na")
+                            ):
+                                continue
+
+                            # Censored assay results are valid raw data in
+                            # numeric biosample columns; categorical columns
+                            # (Levels/AllowedValues) still reject them.
+                            if (
+                                modality == "biosample"
+                                and value in BIOSAMPLE_CENSORED_CODES
+                                and not (
+                                    col_def.get("Levels") or col_def.get("AllowedValues")
+                                )
                             ):
                                 continue
 
@@ -1283,7 +1300,7 @@ class DatasetValidator:
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
 
         # Check modality pattern (strict for survey/biometrics)
-        if modality in {"survey", "biometrics"}:
+        if modality in TABULAR_MODALITIES:
             if not pattern.match(filename):
                 issues.append(
                     (
