@@ -52,6 +52,8 @@ biometrics workbook (`ID`, `Description`, `Units`, `Min`, `Max`,
 `src/converters/excel_to_biometrics.py` / `excel_base.py` are reused, not
 copied.
 
+The `Columns` sheet describes the **sample file**. It is an example, not a contract on future studies: two or three columns are enough, and every study defines its own columns in its own sidecar, using the generated example sidecar as the pattern. The optional `Types` sheet (see "Controlled vocabulary") is the part that keeps columns comparable across studies.
+
 The template ships pre-filled with the blood example under the placeholder
 name `biosample`/`bloodchem`. The real name is chosen with the colleague once
 the data is known.
@@ -111,6 +113,27 @@ levels). When given, it must agree with the rest of the column:
 | `continuous` | `DataType` integer or float, no `AllowedValues` |
 | `categorical` | `AllowedValues` (the categories) |
 | `boolean` | exactly two `AllowedValues` (for example `yes; no`, `0; 1`) |
+
+### Controlled vocabulary (`Type`)
+
+Column names are free: each study names its own columns. To make columns
+comparable across studies anyway, a modality can carry a controlled
+vocabulary, the pattern `physio.schema.json` uses for channels: every column
+definition may have a `Type` from a fixed list plus `other` as the escape
+hatch. Harmonisation happens on `Type`, not on the column name.
+
+- Optional. The proposal lists `types` (value and short description) in the
+  workbook sheet `Types` or the `types:` key of the YAML. `other` is added
+  automatically and must not be listed.
+- The generated schema restricts `Type` to the list plus `other`; the example
+  sidecar sets `Type` on the example columns that are measurements.
+- `Type` is not required per column (identifiers and times are not
+  measurements). New values are added later by an upstream pull request that
+  bumps the schema version.
+- Checks: values unique, matching `[A-Za-z0-9][A-Za-z0-9_-]*`, not `other`;
+  a column `Type` must be in the list or `other`; a column `Type` while the
+  proposal lists no types is an error.
+- Out of scope: standard codes (for example LOINC) per type.
 
 ### Column dictionary check
 

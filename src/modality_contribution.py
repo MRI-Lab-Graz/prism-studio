@@ -72,6 +72,7 @@ SAMPLE_MAX_ROWS = 50
 SAMPLE_MAX_BYTES = 1_000_000
 COLUMN_DATATYPES = {"string", "integer", "float"}
 COLUMN_SCALES = ("categorical", "continuous", "boolean")
+TYPE_OTHER = "other"  # reserved escape value, added to every vocabulary
 
 
 class ProposalError(ValueError):
@@ -120,13 +121,30 @@ def _normalize_column(raw: dict) -> dict:
         "units": units,
         "datatype": _infer_datatype(raw.get("datatype"), units, allowed, lo, hi),
         "scale": (_clean_key(raw.get("scale")) or "").lower() or None,
+        "type": _clean_key(raw.get("type")) or None,
         "min": lo,
         "max": hi,
         "allowed_values": allowed,
     }
 
 
-def _finish_proposal(base: dict, rows: list[dict]) -> dict:
+def _normalize_types(raw) -> list[dict]:
+    from src.converters.excel_to_biometrics import _clean_key
+
+    types = []
+    for item in raw or []:
+        value, description = (
+            (item.get("value"), item.get("description")) if isinstance(item, dict) else (item, None)
+        )
+        if isinstance(value, bool):
+            raise ProposalError(
+                "types: a value was read as a YAML boolean (yes/no/on/off/true/false); put the values in quotes"
+            )
+        types.append({"value": _clean_key(value) or "", "description": _clean_key(description) or ""})
+    return types
+
+
+def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
     exts = base.get("extensions")
     if isinstance(exts, str):
         exts = exts.split(",")
@@ -138,10 +156,11 @@ def _finish_proposal(base: dict, rows: list[dict]) -> dict:
         str(e).strip().lstrip(".").lower() for e in (exts or []) if str(e).strip()
     ]
     proposal["columns"] = [_normalize_column(r) for r in rows]
+    proposal["types"] = _normalize_types(types)
     return proposal
 
 
-def _read_workbook(path: Path) -> tuple[dict, list[dict]]:
+def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
     import pandas as pd
 
     from src.converters import excel_to_biometrics as eb
@@ -183,8 +202,9 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict]]:
             ("id", eb.ID_ALIASES),
             ("description", eb.DESC_ALIASES),
             ("units", eb.UNITS_ALIASES),
-            ("datatype", eb.DTYPE_ALIASES),
+            ("datatype", {"datatype", "data_type"}),
             ("scale", {"scale", "measurementscale", "measurement_scale"}),
+            ("type", {"type"}),
             ("min", eb.MIN_ALIASES),
             ("max", eb.MAX_ALIASES),
             ("allowed_values", eb.ALLOWED_ALIASES),
@@ -198,7 +218,20 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict]]:
         raw = {key: cell(row, j) for key, j in idx.items()}
         if raw["id"]:
             rows.append(raw)
-    return base, rows
+    types: list[dict] = []
+    if "Types" in sheets and len(sheets["Types"]):
+        tsheet = sheets["Types"]
+        theader = [str(v) for v in tsheet.iloc[0].tolist()]
+        value_idx = find_column_idx(theader, {"Value"})
+        desc_idx = find_column_idx(theader, {"Description"})
+        if value_idx is None:
+            raise ProposalError("sheet 'Types' has no 'Value' column")
+        for i in range(1, len(tsheet)):
+            row = tsheet.iloc[i]
+            value = cell(row, value_idx)
+            if value:
+                types.append({"value": value, "description": cell(row, desc_idx)})
+    return base, rows, types
 
 
 def read_proposal(path) -> dict:
@@ -206,8 +239,8 @@ def read_proposal(path) -> dict:
     path = Path(path)
     kind = path.suffix.lower()
     if kind == ".xlsx":
-        base, rows = _read_workbook(path)
-        return _finish_proposal(base, rows)
+        base, rows, types = _read_workbook(path)
+        return _finish_proposal(base, rows, types)
     if kind in {".yml", ".yaml", ".json"}:
         import yaml  # JSON is a YAML subset, one reader covers both
 
@@ -220,7 +253,10 @@ def read_proposal(path) -> dict:
         rows = raw.get("columns") or []
         if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
             raise ProposalError(f"{path.name}: 'columns' must be a list of mappings")
-        return _finish_proposal(raw, rows)
+        types = raw.get("types")
+        if types is not None and not isinstance(types, list):
+            raise ProposalError(f"{path.name}: 'types' must be a list")
+        return _finish_proposal(raw, rows, types)
     raise ProposalError(
         f"unsupported proposal file type '{path.suffix}' (use .xlsx, .yml, .yaml or .json)"
     )
@@ -242,7 +278,7 @@ def write_proposal_workbook(proposal: dict, path) -> None:
         proposal["rationale"],
     ])
     cols = wb.create_sheet("Columns")
-    cols.append(["ID", "Description", "Units", "DataType", "Scale", "Min", "Max", "AllowedValues"])
+    cols.append(["ID", "Description", "Units", "DataType", "Scale", "Type", "Min", "Max", "AllowedValues"])
     for c in proposal["columns"]:
         cols.append([
             c["id"],
@@ -250,6 +286,7 @@ def write_proposal_workbook(proposal: dict, path) -> None:
             c["units"],
             c["datatype"],
             c["scale"],
+            c["type"],
             c["min"],
             c["max"],
             "; ".join(str(v) for v in c["allowed_values"]) if c["allowed_values"] else None,
@@ -261,12 +298,17 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     )
     cols.add_data_validation(dropdown)
     dropdown.add("E2:E200")  # the Scale column
+    types_ws = wb.create_sheet("Types")
+    types_ws.append(["Value", "Description"])
+    for t in proposal["types"]:
+        types_ws.append([t["value"], t["description"] or None])
     wb.save(path)
 
 
 _NAME_RE = re.compile(r"^[a-z][a-z0-9]*$")
 _EXT_RE = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)*$")
 _COLUMN_ID_RE = re.compile(r"^[A-Za-z0-9_]+$")
+_TYPE_VALUE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 @lru_cache(maxsize=None)
@@ -332,6 +374,21 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         if not (proposal.get(key) or "").strip():
             err(f"Modality.{label}", "must not be empty")
 
+    types = proposal.get("types") or []
+    type_values: set[str] = set()
+    for n, t in enumerate(types, start=1):
+        value = t.get("value") or ""
+        where = f"Types.{value}" if value else f"Types row {n}"
+        if not value:
+            err(where, "Value is empty")
+        elif not _TYPE_VALUE_RE.match(value):
+            err(where, f"'{value}' may only contain letters, digits, underscores and hyphens")
+        elif value.lower() == TYPE_OTHER:
+            err(where, f"'{TYPE_OTHER}' is added automatically as the escape hatch; remove it from the list")
+        elif value in type_values:
+            err(where, f"duplicate type '{value}'")
+        type_values.add(value)
+
     columns = proposal.get("columns") or []
     if not columns:
         err("Columns", "at least one column is required")
@@ -360,6 +417,12 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
             err(where, "a categorical column needs AllowedValues (the categories)")
         elif scale == "boolean" and len(allowed or []) != 2:
             err(where, "a boolean column needs exactly two AllowedValues (for example yes; no)")
+        ctype = col.get("type")
+        if ctype is not None:
+            if not types:
+                err(where, f"Type '{ctype}' is given but the proposal defines no types")
+            elif ctype != TYPE_OTHER and ctype not in type_values:
+                err(where, f"Type '{ctype}' is not in the vocabulary; use one of {sorted(type_values)} or '{TYPE_OTHER}'")
     return problems
 
 
@@ -505,13 +568,15 @@ def _column_definition(col: dict) -> dict:
     out["DataType"] = col["datatype"]
     if col.get("scale"):
         out["MeasurementScale"] = col["scale"]
+    if col.get("type"):
+        out["Type"] = col["type"]
     return out
 
 
 def build_schema(proposal: dict) -> dict:
     """The modality schema: PRISM envelope plus the column-definition shape."""
     name, suffix, exts = proposal["modality"], proposal["suffix"], proposal["extensions"]
-    return {
+    schema = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "$id": f"https://prism.org/schemas/{name}/v1.0.0",
         "version": "1.0.0",
@@ -570,6 +635,17 @@ def build_schema(proposal: dict) -> dict:
             "required": ["Description", "Units"],
         },
     }
+    types = proposal.get("types") or []
+    if types:
+        listing = "; ".join(
+            f"{t['value']}: {t['description']}" if t["description"] else t["value"] for t in types
+        )
+        schema["additionalProperties"]["properties"]["Type"] = {
+            "type": "string",
+            "enum": [*(t["value"] for t in types), TYPE_OTHER],
+            "description": f"Controlled vocabulary: {listing}; {TYPE_OTHER}: anything not listed",
+        }
+    return schema
 
 
 def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:

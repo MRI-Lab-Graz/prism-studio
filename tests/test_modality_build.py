@@ -58,6 +58,7 @@ def test_example_sidecar_validates_against_generated_schema() -> None:
         "MinValue": 0.0,
         "DataType": "float",
         "MeasurementScale": "continuous",
+        "Type": "CRP",
     }
     assert sidecar["fasting"]["AllowedValues"] == ["yes", "no"]
     assert sidecar["fasting"]["MeasurementScale"] == "boolean"

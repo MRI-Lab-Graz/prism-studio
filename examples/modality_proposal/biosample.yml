@@ -3,6 +3,13 @@ suffix: bloodchem
 extensions: [tsv]
 description: Venous blood samples drawn alongside MRI
 rationale: Blood is drawn at each MRI session; this keeps the analyte values next to the imaging data.
+types:
+  - value: CRP
+    description: C-reactive protein
+  - value: glucose
+    description: Blood glucose
+  - value: cortisol
+    description: Serum cortisol
 columns:
   - id: sample_id
     description: Laboratory sample identifier
@@ -14,16 +21,19 @@ columns:
     allowed_values: ["yes", "no"]
   - id: crp
     description: C-reactive protein
+    type: CRP
     scale: continuous
     units: mg/L
     min: 0
   - id: glucose
     description: Blood glucose
+    type: glucose
     scale: continuous
     units: mmol/L
     min: 0
   - id: cortisol
     description: Serum cortisol
+    type: cortisol
     scale: continuous
     units: nmol/L
     min: 0

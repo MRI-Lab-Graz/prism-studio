@@ -33,6 +33,7 @@ def test_read_yaml_example_normalizes_columns() -> None:
         "units": "mg/L",
         "datatype": "float",
         "scale": "continuous",
+        "type": "CRP",
         "min": 0.0,
         "max": None,
         "allowed_values": None,
