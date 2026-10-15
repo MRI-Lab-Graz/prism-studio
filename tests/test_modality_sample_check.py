@@ -137,3 +137,13 @@ def test_gzip_bomb_is_an_error_not_a_crash(tmp_path: Path) -> None:
     gz = tmp_path / "bomb.tsv.gz"
     gz.write_bytes(gzip.compress(b"a" * 5_000_000))
     assert "larger than" in _msgs(check_sample(p, gz))
+
+
+def test_corrupt_gzip_body_is_an_error_not_a_crash(tmp_path: Path) -> None:
+    p = _proposal(extensions=["tsv", "tsv.gz"])
+    raw = bytearray(gzip.compress((HEADER + "\n" + ROW + "\n").encode("utf-8")))
+    for i in range(12, 20):
+        raw[i] = 0xFF
+    gz = tmp_path / "bad.tsv.gz"
+    gz.write_bytes(bytes(raw))
+    assert "cannot read file" in _msgs(check_sample(p, gz))

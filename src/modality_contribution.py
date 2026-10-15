@@ -14,6 +14,7 @@ import io
 import itertools
 import json
 import re
+import zlib
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -420,7 +421,7 @@ def check_sample(proposal: dict, sample_path) -> list[Problem]:
 
     try:
         rows = _read_tabular_rows(path, ext)
-    except (OSError, ValueError, EOFError, gzip.BadGzipFile, csv.Error) as exc:
+    except (OSError, ValueError, EOFError, gzip.BadGzipFile, csv.Error, zlib.error) as exc:
         return [Problem("error", name, f"cannot read file as tab-separated text: {exc}")]
     if not rows:
         return [Problem("error", name, "file is empty")]
