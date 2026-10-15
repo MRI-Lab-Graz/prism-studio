@@ -1322,6 +1322,14 @@ class DatasetValidator:
                         f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
                     )
                 )
+            elif modality == "biosample" and not _extract_entity_value(base, "biosample"):
+                issues.append(
+                    (
+                        "ERROR",
+                        f"Filename must contain biosample-<label> naming the assay panel "
+                        f"(e.g. sub-01_biosample-inflammation_biosample.tsv): {filename}",
+                    )
+                )
         elif modality == "environment":
             if not is_sidecar and not pattern.match(filename):
                 issues.append(

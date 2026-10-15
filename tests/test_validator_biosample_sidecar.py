@@ -96,3 +96,18 @@ def test_other_modalities_get_no_biosample_warnings(tmp_path):
     _write(tmp_path, {f"{base}.tsv": "x\n1\n", f"{base}.json": {"Technical": {}}})
     issues = _validator().validate_sidecar(str(tmp_path / f"{base}.tsv"), "biometrics", str(tmp_path))
     assert not any("CollectionMethod" in m for _, m in issues)
+
+
+def test_filename_without_biosample_label_is_an_error(tmp_path):
+    issues = _validator().validate_filename(
+        "sub-05_biosample.tsv", "biosample", subject_id="sub-05", session_id=None
+    )
+    assert any(lvl == "ERROR" and "biosample-<label>" in msg for lvl, msg in issues)
+
+
+def test_filename_with_biosample_label_and_run_is_clean(tmp_path):
+    issues = _validator().validate_filename(
+        "sub-05_ses-1_biosample-cortisol_run-2_biosample.tsv",
+        "biosample", subject_id="sub-05", session_id="ses-1",
+    )
+    assert issues == []
