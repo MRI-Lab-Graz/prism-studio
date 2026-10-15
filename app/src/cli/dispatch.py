@@ -16,7 +16,7 @@ from src.project_ready import ProjectNotReadyError, require_project_ready
 CommandHandler = Callable[[Namespace], None]
 
 # Commands that must keep working on an unfinished project (they fix or inspect it).
-GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo"}
+GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo", "save-gate"}
 
 
 def project_path_from_args(args: Namespace) -> str | None:

@@ -76,3 +76,9 @@ def test_environment_and_demo_are_exempt(tmp_path):
     _run(Namespace(command="demo", action="create", project=p), h)
     h["environment_preview"].assert_called_once()
     h["demo_create"].assert_called_once()
+
+
+def test_save_gate_is_exempt(tmp_path):
+    h = {"save_gate": MagicMock()}
+    _run(Namespace(command="save-gate", project=_incomplete(tmp_path)), h)
+    h["save_gate"].assert_called_once()

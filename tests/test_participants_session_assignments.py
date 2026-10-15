@@ -93,7 +93,10 @@ REPO = Path(__file__).resolve().parent.parent
 def _project_with_skip(tmp_path):
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}', encoding="utf-8")
+    (project / "project.json").write_text(json.dumps({
+        "Basics": {"Name": "x", "Authors": ["A"], "Keywords": ["k"]},
+        "StudyDesign": {"Timepoints": "single"},
+    }), encoding="utf-8")
     set_assignment(project, "2", skip=True)
     return project
 
@@ -129,7 +132,10 @@ def test_gui_preview_ignores_decisions_saved_for_another_survey(tmp_path):
 
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}', encoding="utf-8")
+    (project / "project.json").write_text(json.dumps({
+        "Basics": {"Name": "x", "Authors": ["A"], "Keywords": ["k"]},
+        "StudyDesign": {"Timepoints": "single"},
+    }), encoding="utf-8")
     set_assignment(project, "2", survey_id="999999", skip=True)
     app = Flask(__name__)
     app.secret_key = "test"  # pragma: allowlist secret
