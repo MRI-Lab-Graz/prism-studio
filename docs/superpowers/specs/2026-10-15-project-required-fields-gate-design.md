@@ -65,10 +65,14 @@ text with a link back to the Projects page.
 One helper, `project_timepoints()` (already exists), is the only reader.
 Every importer asks it instead of its own heuristics:
 
-- `single`: the session is fixed (no `ses-` level or one default session, per
-  BIDS rule already used by the project); no session column, session picker,
-  session map or assignment review is shown or required. Session options on
-  CLI and GUI are hidden / rejected as unnecessary, not guessed.
+- `single`: there is always a session level, and it is `ses-1`. Importers
+  write `ses-1` for every file; no session column, session picker, session map
+  or assignment review is shown or required, and session options on CLI and
+  GUI are hidden / rejected as unnecessary. (Decided: a session indicator is
+  always present, and sessions use ascending numbers, so one session = `ses-1`.)
+  This is a fixed default for a project that declared one timepoint, not a
+  normalization of user labels: data that carries its own session label in a
+  `single` project is an open point (see below).
 - `multiple`: session label required for every import, mapped via the session
   map (existing behavior), extended to physio, biometrics, eyetracking and
   environment importers.
@@ -76,9 +80,15 @@ Every importer asks it instead of its own heuristics:
   physio, biometrics, eyetracking, environment follow. Each gets its own
   small change and test; the rollout order is decided in the plan.
 
-Open point for the plan: exact `single` behavior per importer (default
-session label vs. no session level) must match what those converters write
-today; verify against existing outputs before changing.
+Open points for the plan:
+- `single` project whose data carries a session label (e.g. `pre`): reject
+  with a message pointing to Timepoints = multiple, or ignore the column?
+  Proposed: reject, never silently relabel.
+- `multiple`: the session map keeps free-form user targets today, and PRISM
+  never suggests one. Does "ascending numbers" also mean the map panel should
+  pre-fill 1, 2, 3 as editable defaults, or does it apply to `single` only?
+- Verify `ses-1` against what physio, biometrics, eyetracking and environment
+  write today before changing them.
 
 ### 5. Tests (TDD, tests first)
 
