@@ -39,9 +39,10 @@ function _getCurrentProjectState() {
 // frontend/backend" rule. Fallbacks are used if offline.
 let _bidsVersion = '1.10.1';
 let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
-// Creation-blocking fields come only from the study-metadata GET response
-// (creation_blocking_fields, derived from src.project_ready.REQUIRED_FIELDS);
-// {} until it arrives, then computeLocalCompleteness() is re-run.
+// Creation-blocking fields come only from the backend (derived from
+// src.project_ready.REQUIRED_FIELDS): /api/config (available before any project
+// is loaded, e.g. the create flow) and the study-metadata GET response
+// (creation_blocking_fields). {} until one arrives, then completeness is re-run.
 let _creationBlockingFields = {};
 const _toFieldSets = (raw) =>
     Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, new Set(v)]));
