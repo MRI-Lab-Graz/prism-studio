@@ -1498,7 +1498,6 @@ function addOverviewListRow(fieldId, value = '') {
         removeButton.setAttribute('aria-label', action === 'search' ? 'Check DOI' : 'Remove item');
         removeButton.innerHTML = `<i class="fas fa-${action === 'search' ? 'search' : 'times'}"></i>`;
     };
-    row._updateAction = updateAction;
 
     const runLookup = async () => {
         const value = input.value.trim();
