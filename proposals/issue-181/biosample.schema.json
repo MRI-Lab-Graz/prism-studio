@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/biosample/v1.0.0",
+  "version": "1.0.0",
+  "title": "Biosample Metadata",
+  "description": "Venous blood samples drawn alongside MRI. Files should be named: sub-<label>[_ses-<label>]_task-<label>[_run-<index>]_bloodchem.<tsv>",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical properties of the data",
+      "properties": {
+        "FileFormat": {
+          "type": "string",
+          "enum": [
+            "tsv",
+            ""
+          ]
+        },
+        "Equipment": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "Location": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "FileFormat"
+      ]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific parameters",
+      "properties": {
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]*$"
+        },
+        "OriginalName": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "Description": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "Citation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "TaskName",
+        "OriginalName"
+      ]
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$"
+        },
+        "Creator": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "SchemaVersion",
+        "CreationDate"
+      ]
+    }
+  },
+  "required": [
+    "Technical",
+    "Study",
+    "Metadata"
+  ],
+  "additionalProperties": {
+    "type": "object",
+    "description": "Definition of one data-file column",
+    "properties": {
+      "Description": {
+        "type": [
+          "string",
+          "object"
+        ]
+      },
+      "Units": {
+        "type": "string"
+      },
+      "MinValue": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "MaxValue": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "AllowedValues": {
+        "type": "array"
+      },
+      "DataType": {
+        "type": "string",
+        "enum": [
+          "float",
+          "integer",
+          "string"
+        ]
+      },
+      "MeasurementScale": {
+        "type": "string",
+        "enum": [
+          "categorical",
+          "continuous",
+          "boolean"
+        ]
+      },
+      "Type": {
+        "type": "string",
+        "enum": [
+          "CRP",
+          "glucose",
+          "cortisol",
+          "other"
+        ],
+        "description": "Controlled vocabulary: CRP: C-reactive protein; glucose: Blood glucose; cortisol: Serum cortisol; other: anything not listed"
+      }
+    },
+    "required": [
+      "Description",
+      "Units"
+    ]
+  }
+}

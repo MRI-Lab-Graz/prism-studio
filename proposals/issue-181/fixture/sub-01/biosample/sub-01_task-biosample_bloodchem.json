@@ -1,0 +1,58 @@
+{
+  "Technical": {
+    "FileFormat": "tsv"
+  },
+  "Study": {
+    "TaskName": "biosample",
+    "OriginalName": "biosample",
+    "Description": "Venous blood samples drawn alongside MRI"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2026-10-15"
+  },
+  "sample_id": {
+    "Description": "Laboratory sample identifier",
+    "Units": "n/a",
+    "DataType": "string"
+  },
+  "draw_time": {
+    "Description": "Time of the blood draw (HH:MM)",
+    "Units": "n/a",
+    "DataType": "string"
+  },
+  "fasting": {
+    "Description": "Whether the participant had fasted at the time of the draw",
+    "Units": "n/a",
+    "AllowedValues": [
+      "yes",
+      "no"
+    ],
+    "DataType": "string",
+    "MeasurementScale": "boolean"
+  },
+  "crp": {
+    "Description": "C-reactive protein",
+    "Units": "mg/L",
+    "MinValue": 0.0,
+    "DataType": "float",
+    "MeasurementScale": "continuous",
+    "Type": "CRP"
+  },
+  "glucose": {
+    "Description": "Blood glucose",
+    "Units": "mmol/L",
+    "MinValue": 0.0,
+    "DataType": "float",
+    "MeasurementScale": "continuous",
+    "Type": "glucose"
+  },
+  "cortisol": {
+    "Description": "Serum cortisol",
+    "Units": "nmol/L",
+    "MinValue": 0.0,
+    "DataType": "float",
+    "MeasurementScale": "continuous",
+    "Type": "cortisol"
+  }
+}
