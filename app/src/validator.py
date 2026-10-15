@@ -56,6 +56,19 @@ BIDS_REGEX = re.compile(
 # are not categorical (see validate_data_content). Exact strings only.
 BIOSAMPLE_CENSORED_CODES = frozenset({"<LOD", "<LLOQ", ">ULOQ"})
 
+# Not required by biosample.schema.json, but a template without them hides how
+# the sample was taken and measured; validate_sidecar warns once per sidecar.
+BIOSAMPLE_RECOMMENDED_TECHNICAL = (
+    "CollectionMethod",
+    "Anticoagulant",
+    "FastingRequired",
+    "ProcessingProtocol",
+    "StorageTemperature",
+    "Laboratory",
+    "AssayMethod",
+    "AssayKit",
+)
+
 MRI_SUFFIX_REGEX = re.compile(
     r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
 )
@@ -506,6 +519,7 @@ class DatasetValidator:
         self._sidecar_json_cache = {}
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
+        self._biosample_warned = set()
         # One directory listing per directory for the whole run, replacing tens
         # of thousands of per-candidate stat() calls on network shares.
         self._dir_cache = {}
@@ -1360,6 +1374,39 @@ class DatasetValidator:
 
         return issues
 
+    def _check_biosample_sidecar(self, sidecar_data, sidecar_path, file_path) -> list:
+        """Filename label must equal Study.BiosampleName; warn (once per sidecar) about missing recommended Technical fields."""
+        issues = []
+        study = sidecar_data.get("Study") if isinstance(sidecar_data.get("Study"), dict) else {}
+        technical = sidecar_data.get("Technical") if isinstance(sidecar_data.get("Technical"), dict) else {}
+
+        stem, _ext = split_compound_ext(os.path.basename(file_path))
+        file_label = _extract_entity_value(stem, "biosample")
+        declared = study.get("BiosampleName")
+        if file_label and declared and file_label != declared:
+            issues.append(
+                (
+                    "ERROR",
+                    f"{normalize_path(sidecar_path)}: Study.BiosampleName '{declared}' does not match "
+                    f"the biosample-{file_label} label in {os.path.basename(file_path)}",
+                )
+            )
+
+        key = normalize_path(sidecar_path)
+        if key not in self._biosample_warned:
+            self._biosample_warned.add(key)
+            missing = [
+                f for f in BIOSAMPLE_RECOMMENDED_TECHNICAL if technical.get(f) in (None, "")
+            ]
+            if missing:
+                issues.append(
+                    (
+                        "WARNING",
+                        f"{key}: recommended Technical fields missing: {', '.join(missing)}",
+                    )
+                )
+        return issues
+
     def validate_sidecar(self, file_path, modality, root_dir):
         """Validate JSON sidecar against schema (with BIDS inheritance)"""
 
@@ -1403,6 +1450,10 @@ class DatasetValidator:
                 # Version compatibility checks (only warns when explicitly specified and incompatible)
                 issues.extend(validate_schema_version(sidecar_data, schema))
                 validate(instance=sidecar_data, schema=schema)
+                if modality == "biosample":
+                    issues.extend(
+                        self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path)
+                    )
 
         except ValidationError as e:
             # Format message to be more descriptive (include field path)
