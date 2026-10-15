@@ -63,7 +63,7 @@ def test_save_incomplete_returns_missing_required(root):
     body = r.get_json()
     assert body["success"] is True
     assert set(body["missing_required"]) >= {"Authors", "Keywords", "Timepoints"}
-    assert "blocked" in body["not_ready_message"]
+    assert body["not_ready_message"].startswith("Tools are blocked until these required fields")
 
 
 def test_save_complete_returns_no_missing(root):
@@ -77,7 +77,7 @@ def test_save_complete_returns_no_missing(root):
 def test_get_reports_missing_required(root):
     body = _get(root).get_json()
     assert "Name" in body["missing_required"]
-    assert "blocked" in body["not_ready_message"]
+    assert body["not_ready_message"].startswith("Tools are blocked until these required fields")
 
 
 def test_get_corrupt_project_json_is_not_a_500(root):

@@ -26,9 +26,8 @@ class ProjectNotReadyError(ValueError):
 
 def not_ready_message(missing: list[str]) -> str:
     return (
-        "This project is not finished: " + ", ".join(missing) + " "
-        "still need(s) to be set on the Projects page. PRISM tools are blocked "
-        "until then (saving the page is always allowed)."
+        "Tools are blocked until these required fields are set on the Projects "
+        "page: " + ", ".join(missing) + "."
     )
 
 

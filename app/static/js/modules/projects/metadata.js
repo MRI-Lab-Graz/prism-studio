@@ -131,7 +131,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
     ),
     applyStudyMetadataPayload: (data) => {
         const sm = data.study_metadata;
-        renderNotReadyBanner(data.missing_required);
+        renderNotReadyBanner(data.not_ready_message);
 
         const overview = sm.Overview || {};
         document.getElementById('smOverviewMain').value = overview.Main || '';

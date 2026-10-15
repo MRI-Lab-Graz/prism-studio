@@ -1,13 +1,13 @@
-export function notReadyText(missing) {
-    if (!missing || !missing.length) return '';
-    return `Saved. Tools are blocked until these are filled: ${missing.join(', ')}.`;
+// The wording comes from the backend (not_ready_message); only "Saved." is added here.
+export function bannerText(message, justSaved) {
+    if (!message) return '';
+    return justSaved ? `Saved. ${message}` : message;
 }
 
-// Show/hide the persistent banner; text comes from the backend list.
-export function renderNotReadyBanner(missing) {
+export function renderNotReadyBanner(message, justSaved = false) {
     const el = document.getElementById('smNotReadyBanner');
     if (!el) return;
-    const text = notReadyText(missing);
+    const text = bannerText(message, justSaved);
     el.textContent = text;
     el.classList.toggle('d-none', !text);
 }

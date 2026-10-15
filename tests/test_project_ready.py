@@ -50,3 +50,10 @@ def test_require_raises_with_message(tmp_path):
 def test_accepts_project_json_path(tmp_path):
     _proj(tmp_path, FULL)
     assert missing_required_fields(tmp_path / "project.json") == []
+
+
+def test_not_ready_message_exact_text():
+    assert not_ready_message(["Authors", "Timepoints"]) == (
+        "Tools are blocked until these required fields are set on the Projects page: "
+        "Authors, Timepoints."
+    )
