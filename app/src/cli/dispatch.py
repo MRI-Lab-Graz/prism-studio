@@ -6,10 +6,25 @@ introduced incrementally as handlers are extracted from app/prism_tools.py.
 
 from __future__ import annotations
 
+import sys
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from typing import Callable, Mapping
 
+from src.project_ready import ProjectNotReadyError, require_project_ready
+
 CommandHandler = Callable[[Namespace], None]
+
+# Commands that must keep working on an unfinished project (they fix or inspect it).
+GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo"}
+
+
+def project_path_from_args(args: Namespace) -> str | None:
+    for name in ("project", "dataset", "output"):
+        value = getattr(args, name, None)
+        if value and (Path(str(value)).expanduser() / "project.json").is_file():
+            return str(value)
+    return None
 
 
 def dispatch_prism_tools(
@@ -19,6 +34,15 @@ def dispatch_prism_tools(
 ) -> None:
     """Dispatch prism_tools commands with compatibility-preserving fallback help output."""
     root_parser = parsers["root"]
+
+    if args.command not in GATE_EXEMPT_COMMANDS:
+        project = project_path_from_args(args)
+        if project:
+            try:
+                require_project_ready(project)
+            except ProjectNotReadyError as exc:
+                print(f"Error: {exc}")
+                sys.exit(2)
 
     if args.command == "anonymize":
         handlers["anonymize"](args)
