@@ -49,7 +49,6 @@ EXTRA_BIDSIGNORE_RULES = {
     "recording-weather_environment.json",  # Inherited root environment sidecar
     "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
-    "biosample-*_biosample.json",  # Root biosample templates
     "task-*_physio.json",
     "task-*_environment.json",
 }

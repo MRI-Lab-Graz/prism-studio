@@ -1385,8 +1385,8 @@ class DatasetValidator:
     def _check_biosample_sidecar(self, sidecar_data, sidecar_path, file_path) -> list:
         """Filename label must equal Study.BiosampleName; warn (once per sidecar) about missing recommended Technical fields."""
         issues = []
-        study = sidecar_data.get("Study") if isinstance(sidecar_data.get("Study"), dict) else {}
-        technical = sidecar_data.get("Technical") if isinstance(sidecar_data.get("Technical"), dict) else {}
+        study = sidecar_data.get("Study") or {}
+        technical = sidecar_data.get("Technical") or {}
 
         stem, _ext = split_compound_ext(os.path.basename(file_path))
         file_label = _extract_entity_value(stem, "biosample")

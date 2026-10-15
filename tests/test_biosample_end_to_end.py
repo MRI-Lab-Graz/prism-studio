@@ -58,4 +58,3 @@ def test_bidsignore_covers_biosample_files():
     from bids_integration import EXTRA_BIDSIGNORE_RULES
 
     assert "*_biosample.*" in EXTRA_BIDSIGNORE_RULES
-    assert "biosample-*_biosample.json" in EXTRA_BIDSIGNORE_RULES
