@@ -1,0 +1,83 @@
+name: Propose modality
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  propose:
+    if: "contains(github.event.issue.labels.*.name, 'type: new-modality')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Fetch attachments and check the proposal
+        id: propose
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          WORK_DIR=work
+          export WORK_DIR
+          if ! { python scripts/ci/modality_issue_to_files.py \
+              && python prism_tools.py modality propose work/proposal.* \
+                   --sample work/sample.* --out "proposals/issue-${ISSUE_NUMBER}"; } \
+              > propose.log 2>&1; then
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          fi
+          cat propose.log
+
+      - name: Report problems on the issue
+        if: steps.propose.outputs.failed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          {
+            echo "The automatic check found problems with this proposal:"
+            echo
+            echo '```'
+            cat propose.log
+            echo '```'
+            echo
+            echo "Please open a new issue with the corrected files."
+          } > comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file comment.md
+          gh issue edit "$ISSUE_NUMBER" --add-label "needs-changes"
+
+      - name: Open draft pull request
+        if: steps.propose.outputs.failed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH="modality/issue-${ISSUE_NUMBER}"
+          python scripts/ci/modality_issue_to_files.py pr-body > pr-body.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add "proposals/issue-${ISSUE_NUMBER}"
+          git commit -m "feat(modality): proposal from issue #${ISSUE_NUMBER}"
+          git push origin "$BRANCH"
+          gh pr create --draft --base main --head "$BRANCH" \
+            --title "Propose new modality (issue #${ISSUE_NUMBER})" \
+            --body-file pr-body.md
