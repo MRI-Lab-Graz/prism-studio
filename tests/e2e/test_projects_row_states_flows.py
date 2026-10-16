@@ -15,43 +15,8 @@ def open_sections(page, studio_url, *targets):
             expect(page.locator(target)).to_be_visible()
 
 
-def test_a_new_list_row_is_a_draft_until_accepted(app_page, studio_url):
-    page = app_page
-    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
-    page.click("#smEligInclusionAdd")
-    row = page.locator("#smEligInclusionList .overview-list-row").last
-    badge = page.locator("#smEligCriteriaRequiredBadge")
-
-    expect(row.locator('[data-f="accept"]')).to_be_disabled()  # nothing typed yet
-    expect(row.locator('[data-f="remove"]')).to_have_count(0)
-    row.locator(".overview-list-input").fill("Adults aged 18 to 35")
-    expect(row.locator('[data-f="accept"]')).to_be_enabled()
-    assert page.input_value("#smEligInclusion") == ""  # a draft is not part of the form yet
-    expect(badge).not_to_have_class(re.compile("bg-success"))
-
-    row.locator('[data-f="accept"]').click()
-    expect(row.locator('[data-f="remove"]')).to_have_count(1)
-    expect(row.locator('[data-f="accept"]')).to_have_count(0)
-    assert page.input_value("#smEligInclusion") == "Adults aged 18 to 35"
-    expect(badge).to_have_class(re.compile("bg-success"))
-
-    page.click("#smEligInclusionAdd")
-    second = page.locator("#smEligInclusionList .overview-list-row").last
-    second.locator(".overview-list-input").fill("not wanted")
-    second.locator('[data-f="cancel"]').click()
-    expect(page.locator("#smEligInclusionList .overview-list-row")).to_have_count(2)  # accepted + placeholder
-    assert page.input_value("#smEligInclusion") == "Adults aged 18 to 35"
 
 
-def test_loaded_list_rows_are_defined(app_page, studio_url, project):
-    meta = json.loads((project / "project.json").read_text())
-    meta["Eligibility"] = {"InclusionCriteria": ["Adults", "Healthy"]}
-    (project / "project.json").write_text(json.dumps(meta))
-    open_sections(app_page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
-    rows = app_page.locator("#smEligInclusionList .overview-list-row")
-    expect(rows).to_have_count(2)
-    expect(app_page.locator('#smEligInclusionList [data-f="remove"]')).to_have_count(2)
-    expect(app_page.locator('#smEligInclusionList [data-f="accept"]')).to_have_count(0)
 
 
 def test_two_field_rows_use_the_same_draft_and_accept_rule(app_page, studio_url):
@@ -305,8 +270,7 @@ def test_a_pending_draft_triggers_the_unsaved_changes_warning_when_leaving_the_p
     page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
     open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
     page.wait_for_timeout(1500)  # let the project's metadata finish loading
-    page.click("#smEligInclusionAdd")
-    page.locator("#smEligInclusionList .overview-list-row").last.locator(".overview-list-input").fill("Adults")
+    page.locator("#smEligInclusionList .chip-input").fill("Adults")  # typed, not accepted
     page.click("#card-create")
     page.wait_for_timeout(500)
     assert any("unsaved" in message.lower() for message in dialogs), dialogs
@@ -386,6 +350,78 @@ def test_the_check_is_gray_until_the_row_is_complete_and_then_turns_green(app_pa
 def test_overview_placeholders_state_variables_instead_of_comparing_them(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smOverview")
-    placeholder = page.locator("#smOverviewIVList .overview-list-input").first.get_attribute("placeholder")
+    placeholder = page.locator("#smOverviewIVList .chip-input").get_attribute("placeholder")
     assert placeholder.startswith("e.g.,")
     assert " vs" not in placeholder  # an independent variable is named, not compared
+
+
+# ---- list fields: one input, accepted entries become green chips below (like the CRediT roles) ----
+
+def _open_overview(page, studio_url):
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smOverview")
+
+
+def test_a_list_field_turns_accepted_entries_into_green_chips_below_one_input(app_page, studio_url):
+    page = app_page
+    _open_overview(page, studio_url)
+    field = page.locator("#smOverviewIVList")
+    typed = field.locator(".chip-input")
+    accept = field.locator('[data-f="accept"]')
+    chips = field.locator(".chip-badge")
+
+    expect(accept).to_be_disabled()  # nothing typed
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))
+    typed.fill("stimulus valence")
+    expect(accept).to_have_class(re.compile("btn-success"))
+    assert page.input_value("#smOverviewIV") == ""  # typed, not accepted: not part of the form yet
+
+    accept.click()
+    expect(chips).to_have_count(1)
+    expect(chips.first).to_contain_text("stimulus valence")
+    expect(chips.first).to_have_class(re.compile("btn-outline-primary"))  # the CRediT chip look
+    expect(typed).to_have_value("")  # ready for the next entry
+    expect(accept).to_be_disabled()
+    assert page.input_value("#smOverviewIV") == "stimulus valence"
+
+    typed.fill("task difficulty")
+    typed.press("Enter")  # Enter accepts as well
+    expect(chips).to_have_count(2)
+    assert page.input_value("#smOverviewIV") == "stimulus valence\ntask difficulty"
+
+    chips.first.click()  # clicking a chip removes it
+    expect(chips).to_have_count(1)
+    assert page.input_value("#smOverviewIV") == "task difficulty"
+
+
+def test_a_duplicate_entry_is_not_added_twice(app_page, studio_url):
+    page = app_page
+    _open_overview(page, studio_url)
+    field = page.locator("#smOverviewCVList")
+    for text in ("age", "Age"):
+        field.locator(".chip-input").fill(text)
+        field.locator(".chip-input").press("Enter")
+    expect(field.locator(".chip-badge")).to_have_count(1)
+
+
+def test_loaded_list_values_show_as_chips_and_count_towards_core(app_page, studio_url, project):
+    meta = json.loads((project / "project.json").read_text())
+    meta["Eligibility"] = {"InclusionCriteria": ["Adults", "Healthy"]}
+    (project / "project.json").write_text(json.dumps(meta))
+    open_sections(app_page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    chips = app_page.locator("#smEligInclusionList .chip-badge")
+    expect(chips).to_have_count(2)
+    expect(app_page.locator("#smEligCriteriaRequiredBadge")).to_have_class(re.compile("bg-success"))
+    assert app_page.input_value("#smEligInclusion") == "Adults\nHealthy"
+
+
+def test_text_typed_but_not_accepted_in_a_list_field_blocks_saving(app_page, studio_url, project):
+    page = app_page
+    _open_overview(page, studio_url)
+    before = _project_json_text(project)
+    page.locator("#smOverviewDVList .chip-input").fill("reaction times")
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_be_visible()
+    assert _project_json_text(project) == before
+    page.locator("#smOverviewDVList .chip-input").press("Enter")  # accepted: the chip is part of the form
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()

@@ -22,6 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { mountChipList } from './chip-list.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
@@ -1362,36 +1363,43 @@ export function setAuthorsList(authors) {
 
 const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smOverviewIVList',
         addId: 'smOverviewIVAdd',
         placeholder: 'e.g., stimulus valence, task difficulty',
     },
     smOverviewDV: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smOverviewDVList',
         addId: 'smOverviewDVAdd',
         placeholder: 'e.g., reaction times, BOLD signal',
     },
     smOverviewCV: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smOverviewCVList',
         addId: 'smOverviewCVAdd',
         placeholder: 'e.g., age, sex, reading performance',
     },
     smOverviewQA: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smOverviewQAList',
         addId: 'smOverviewQAAdd',
         placeholder: 'e.g., link to quality report or QC notes',
     },
     smEligInclusion: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smEligInclusionList',
         addId: 'smEligInclusionAdd',
         placeholder: 'Inclusion criterion',
     },
     smEligExclusion: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smEligExclusionList',
         addId: 'smEligExclusionAdd',
         placeholder: 'Exclusion criterion',
     },
     smProcQC: {
+        chips: true, // plain text: one input, accepted entries become chips
         listId: 'smProcQCList',
         addId: 'smProcQCAdd',
         placeholder: 'Quality control measure (e.g. attention check)',
@@ -1450,11 +1458,38 @@ function _markDuplicateRows(list, validate) {
     });
 }
 
+const _chipLists = {};
+
+// The chip list of a plain-text list field, mounted on first use.
+function _chipListFor(fieldId) {
+    const config = OVERVIEW_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config?.chips || !list) return null;
+    if (!_chipLists[fieldId] || !list.contains(list.querySelector('.chip-input'))) {
+        _chipLists[fieldId] = mountChipList(list, {
+            placeholder: config.placeholder || '',
+            onChange: () => _syncOverviewListField(fieldId),
+        });
+    }
+    return _chipLists[fieldId];
+}
+
 function _syncOverviewListField(fieldId) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const hiddenField = document.getElementById(fieldId);
     const list = document.getElementById(config?.listId || '');
     if (!config || !hiddenField || !list) return;
+
+    if (config.chips) {
+        hiddenField.value = (_chipListFor(fieldId)?.getValues() || []).join('\n');
+        try {
+            validateProjectField(fieldId);
+        } catch (_) {
+            // no-op: field may not participate in badge validation in all contexts
+        }
+        updateCreateProjectButton();
+        return;
+    }
 
     const values = Array.from(list.querySelectorAll('.overview-list-row:not([data-row-state="draft"]) .overview-list-input'))
         .map(input => input.value.trim())
@@ -1606,6 +1641,12 @@ export function setOverviewList(fieldId, rawValue) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
 
+    if (config.chips) {
+        _chipListFor(fieldId)?.setValues(_parseOverviewListValue(rawValue));
+        _syncOverviewListField(fieldId);
+        return;
+    }
+
     list.innerHTML = '';
     const values = _parseOverviewListValue(rawValue);
     if (!values.length) {
@@ -1619,6 +1660,10 @@ export function setOverviewList(fieldId, rawValue) {
 
 function initOverviewListFields() {
     Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
+        if (config.chips) {
+            _chipListFor(fieldId);
+            return;
+        }
         const addButton = document.getElementById(config.addId);
         if (addButton && !addButton.dataset.bound) {
             addButton.dataset.bound = '1';
@@ -3213,6 +3258,9 @@ export function resetStudyMetadataForm() {
     setRecLocationList([]);
     _clearRecLocationPicker();
     setEligibilityCriteria([]); // rows have no id: the loop above cannot clear them
+    Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
+        if (config.chips) setOverviewList(fieldId, ''); // chips have no id either
+    });
     setRecMethodList([]);
     setEthicsChoice('');
     setFundingChoice('');

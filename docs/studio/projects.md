@@ -76,6 +76,11 @@ same rule applies, so you always know whether a click is needed:
   it feeds the badges and the readiness score, and it shows the **red cross**, which
   deletes it. A red cross always means "delete something that is already part of the form".
 - A row with a check mark needs a click; a row without one never does.
+- **Plain list fields** (independent, dependent and control variables, quality assessment,
+  inclusion and exclusion criteria, quality control) have one input instead of rows: type
+  an entry, press Enter or click the check, and it becomes a **green chip** below the
+  input, like the CRediT roles. Click a chip to remove it; duplicates are ignored. Text
+  that is typed but not accepted blocks saving.
 - Rows that are already in the project when you open it are accepted.
 - The recruitment-location search works the same way: its green **Add Selected Location**
   button accepts the place you searched for.
