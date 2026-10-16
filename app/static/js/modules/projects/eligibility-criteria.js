@@ -5,7 +5,7 @@
  * plus "Other measure" for anything without a standard (IQ, VO2max, ...).
  */
 import { escapeHtml } from '../../shared/dom.js';
-import { rowActionsHtml, rowActionsModel } from './row-state.js';
+import { rowActionsHtml, rowActionsModel, syncAcceptButton } from './row-state.js';
 
 export const TERMS = [
     { term: 'nb:Age', label: 'Age', type: 'numeric', unit: 'years' },
@@ -165,9 +165,17 @@ export function initEligibilityCriteria({ list, select, addButton, onChange = ()
     if (!list || !select || !addButton) return; // page without the Eligibility form
     listEl = list;
     notify = onChange;
-    select.innerHTML = TERMS.map((t) => `<option value="${t.term ?? ''}">${escapeHtml(t.label)}</option>`).join('');
+    // "other" stands for the term-less "Other measure"; '' is the placeholder.
+    select.innerHTML = '<option value="">Add variable…</option>'
+        + TERMS.map((t) => `<option value="${t.term ?? 'other'}">${escapeHtml(t.label)}</option>`).join('');
+    const syncAddButton = () => { addButton.disabled = !select.value; };
+    select.addEventListener('change', syncAddButton);
+    syncAddButton();
     addButton.addEventListener('click', () => {
-        rows.push(newRow(select.value || null));
+        if (!select.value) return;
+        rows.push(newRow(select.value === 'other' ? null : select.value));
+        select.value = ''; // back to the placeholder: the last choice must not look like a default
+        syncAddButton();
         render();
         onChange();
     });
@@ -185,7 +193,7 @@ export function initEligibilityCriteria({ list, select, addButton, onChange = ()
             hint.textContent = hintText(row);
         }
         const accept = rowEl.querySelector('[data-f="accept"]');
-        if (accept) accept.disabled = !isComplete(row);
+        syncAcceptButton(accept, isComplete(row));
         onChange();
     });
     list.addEventListener('click', (event) => {

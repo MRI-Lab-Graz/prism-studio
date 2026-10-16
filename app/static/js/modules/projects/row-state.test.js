@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
     findPending, guardSave, isPending, pendingMessage, registerStagedControl, rowActionsHtml, rowActionsModel,
+    syncAcceptButton,
 } from './row-state.js';
 
 describe('rowActionsModel', () => {
@@ -56,6 +57,39 @@ describe('rowActionsHtml colours', () => {
         expect(tag).toContain('btn-success');
         expect(tag).not.toContain('btn-outline-secondary');
         expect(tag).not.toContain('disabled');
+    });
+});
+
+describe('syncAcceptButton (rows that update the check in place instead of re-rendering)', () => {
+    const fakeButton = () => {
+        const classes = new Set(['btn', 'btn-sm', 'btn-outline-secondary']);
+        return {
+            disabled: true,
+            classList: {
+                add: (c) => classes.add(c), remove: (c) => classes.delete(c), has: (c) => classes.has(c),
+            },
+        };
+    };
+
+    it('enables the check and turns it green when the row becomes complete', () => {
+        const button = fakeButton();
+        syncAcceptButton(button, true);
+        expect(button.disabled).toBe(false);
+        expect(button.classList.has('btn-success')).toBe(true);
+        expect(button.classList.has('btn-outline-secondary')).toBe(false);
+    });
+
+    it('goes back to gray and disabled when it is incomplete again', () => {
+        const button = fakeButton();
+        syncAcceptButton(button, true);
+        syncAcceptButton(button, false);
+        expect(button.disabled).toBe(true);
+        expect(button.classList.has('btn-success')).toBe(false);
+        expect(button.classList.has('btn-outline-secondary')).toBe(true);
+    });
+
+    it('does nothing for a row without a check (an accepted row)', () => {
+        expect(() => syncAcceptButton(null, true)).not.toThrow();
     });
 });
 

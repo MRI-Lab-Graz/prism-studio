@@ -40,6 +40,14 @@ export function rowActionsHtml(model, noun = '', hint = '') {
     return out.join('');
 }
 
+/** Update an existing check button in place (disabled + gray, or enabled + green). */
+export function syncAcceptButton(button, complete) {
+    if (!button) return;
+    button.disabled = !complete;
+    button.classList.remove(complete ? 'btn-outline-secondary' : 'btn-success');
+    button.classList.add(complete ? 'btn-success' : 'btn-outline-secondary');
+}
+
 export const isPending = ({ state, hasContent }) => state === 'draft' && Boolean(hasContent);
 
 export function pendingMessage(count) {

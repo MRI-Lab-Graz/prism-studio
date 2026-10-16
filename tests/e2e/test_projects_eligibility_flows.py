@@ -92,3 +92,38 @@ def test_accepted_exclude_criterion_turns_the_exclusion_badge_green_and_a_draft_
     expect(row).to_have_count(2)
     row.nth(1).locator('[data-f="cancel"]').click()
     expect(row).to_have_count(1)
+
+
+def test_the_criteria_select_starts_on_a_placeholder_and_returns_to_it_after_adding(app_page, studio_url):
+    page = app_page
+    _open_eligibility(page, studio_url)
+    select = page.locator("#smEligCriteriaSelect")
+    add = page.locator("#smEligCriteriaAdd")
+    expect(select.locator("option:checked")).to_have_text("Add variable…")  # not "Age"
+    expect(add).to_be_disabled()
+    select.select_option(label="Age")
+    expect(add).to_be_enabled()
+    add.click()
+    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(1)
+    expect(select.locator("option:checked")).to_have_text("Add variable…")  # reset, Age is not the default again
+    expect(add).to_be_disabled()
+    select.select_option(label="Other measure")  # still reachable
+    add.click()
+    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(2)
+
+
+def test_the_criterion_check_turns_green_once_every_field_is_filled(app_page, studio_url):
+    page = app_page
+    _open_eligibility(page, studio_url)
+    page.select_option("#smEligCriteriaSelect", label="Age")
+    page.click("#smEligCriteriaAdd")
+    row = page.locator("#smEligCriteriaList [data-i]").first
+    accept = row.locator('[data-f="accept"]')
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # nothing entered yet
+    row.locator('[data-f="min"]').fill("5")
+    row.locator('[data-f="max"]').fill("20")  # unit "years" is pre-filled: everything is there now
+    expect(accept).to_be_enabled()
+    expect(accept).to_have_class(re.compile("btn-success"))
+    row.locator('[data-f="min"]').fill("")
+    row.locator('[data-f="max"]').fill("")
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))
