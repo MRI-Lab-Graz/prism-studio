@@ -174,6 +174,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         kind = "exclusion" if crit.get("mode") == "exclude" else "inclusion"
         where = "inside" if crit.get("mode") == "exclude" else "outside"
         label = crit.get("label") or crit_id
+        shown = str
         if crit.get("type") == "categorical":
             labels = _level_labels(sidecar.get(col))
             if not labels:
@@ -192,7 +193,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
 
             def shown(raw, labels=labels):
                 return f"{raw} ({'/'.join(sorted(labels[raw]))})" if raw in labels else raw
-        elif crit.get("type") == "numeric":
+        else:  # numeric: _usable guarantees a known type
             lo, hi = crit.get("min"), crit.get("max")
             if lo is not None and hi is not None and lo > hi:
                 config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' has min {_num(lo)} greater than max {_num(hi)}; it is skipped.", str(root / "project.json")))
@@ -202,10 +203,6 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             def violates(raw, crit=crit):
                 return _numeric_violation(raw, crit)
 
-            def shown(raw):
-                return raw
-        else:
-            continue
         for row in rows:
             raw = (row.get(col) or "").strip()
             if raw.lower() in _MISSING or not violates(raw):
