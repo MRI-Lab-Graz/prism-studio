@@ -9,10 +9,14 @@ body:
         Thanks for proposing a new PRISM modality!
 
         1. Download the workbook
-           [modality_proposal_template.xlsx](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/official/create_new_modality/modality_proposal_template.xlsx),
-           fill in the sheets: `Modality` (name, suffix, extension), `Columns` (the
-           columns of your sample file, as an example) and optionally `Types`
-           (a shared vocabulary for your measurements).
+           [modality_proposal_template.xlsx](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/official/create_new_modality/modality_proposal_template.xlsx)
+           and fill in the sheets: `Modality`, `Columns` (the columns of your
+           sample file, as an example) and optionally `Types` (a shared
+           vocabulary for your measurements) and `Entities` (suggested `task`
+           or `acq` values). In `Modality`, give the **name**: an existing PRISM
+           modality (e.g. `biometrics`) to add a new filename ending (suffix)
+           to it, or a new name to propose a new modality (its folder). Always
+           give the **suffix** (the ending, e.g. `bloodchem`).
         2. Prepare a small **synthetic** sample data file in your modality's format
            (at most 50 rows and 1 MB).
         3. Attach both files below. A bot checks them and opens a draft pull
@@ -31,14 +35,6 @@ body:
     attributes:
       label: Sample data file
       description: Drag your synthetic sample data file here. Exactly one file.
-    validations:
-      required: true
-
-  - type: textarea
-    id: rationale
-    attributes:
-      label: Why this modality?
-      description: What kind of study or measurement does this support?
     validations:
       required: true
 

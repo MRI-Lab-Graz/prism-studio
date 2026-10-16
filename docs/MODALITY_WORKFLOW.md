@@ -38,9 +38,22 @@ You do not need to install PRISM to submit through GitHub.
 
 ## Step by step
 
+### Existing modality or new one?
+
+Decide this first, in the `Modality` sheet:
+
+- **Existing PRISM modality name** (e.g. `biometrics`): you add a suffix (a new
+  filename ending) to it. No new schema file; `Entities` is not allowed.
+- **New name**: you propose a new modality (its folder). Its filenames follow
+  the fixed pattern described in [Proposing a New Modality](MODALITY_PROPOSALS.md).
+
+The suffix is always required.
+
 ### 1. Fill in the workbook
 
-- **`Modality`**: `Name`, `Suffix`, `Extensions`, `Description`, `Rationale`.
+- **`Modality`**: `Name`, `Suffix`, `Extensions`, `Description`.
+- **`Entities`** (optional, new modalities only): suggested `task` or `acq`
+  values, e.g. `acq | fasting`.
 - **`Types`** (optional): a short vocabulary, e.g. CRP, glucose, cortisol, so the
   same measurement gets the same name across studies.
 - **`Columns`**: the columns of your sample file as an *example* (two or three
@@ -81,7 +94,7 @@ ERROR: my_sample.tsv row 1 column 'crp': 'abc' is not a number
 
 **Via GitHub (no install):** open a
 [Propose a New Modality](https://github.com/MRI-Lab-Graz/prism-studio/issues/new?template=propose-modality.yml)
-issue, drag in the workbook and the sample file, write the rationale, tick the
+issue, drag in the workbook and the sample file, tick the
 privacy box and submit. The bot answers on the issue:
 
 - **Problems found**: a comment says what to fix. Open a *new* issue with the
@@ -103,7 +116,8 @@ The output folder (and the pull request) contains:
 
 | File | Purpose |
 |---|---|
-| `<name>.schema.json` | The PRISM schema for the modality |
+| `<name>.schema.json` | The PRISM schema for the modality (not written when you add a suffix to an existing modality) |
+| `docs/<name>.md`, `docs/snippets.md` | Generated spec page and snippets (for a suffix: `docs/<name>-<suffix>.md`) |
 | `example_sidecar.json` | A sidecar a study can start from |
 | `fixture/` | A tiny dataset that must pass the validator |
 | `proposal.xlsx`, `sample.tsv` | Your original inputs |
@@ -113,12 +127,25 @@ The output folder (and the pull request) contains:
 
 The maintainer follows `REGISTRATION.md`: copy the schema, add the modality to
 `entities.schema.json`, add the name to `COMMUNITY_MODALITY_SCHEMAS` in
-`tests/verify_repo.py`, run the two schema checks and validate `fixture/` with
+`tests/verify_repo.py`, add the generated docs (spec page, toctree entry, card,
+`entities` table row), run the schema checks and `modality-docs`
+(`python tests/verify_repo.py --check modality-docs`, which fails CI when a
+registered modality lacks any of these) and validate `fixture/` with
 `python prism.py <folder>/fixture`. Units, ranges and the sample are reviewed by
 hand. GitHub does not start CI from the bot's own push, so a maintainer starts
 it. A pull request that only adds `proposals/` files gets a reduced CI run and
 its fixture test stays red until the modality is registered; the registration
 push runs the full CI.
+
+### After the pull request
+
+1. Check out the PR branch and follow `REGISTRATION.md`.
+2. Push; the full CI runs.
+3. Review by hand (units, ranges, no real participant data), then run
+   `ponytail:ponytail-audit`.
+4. Mark the PR ready and merge; the issue closes automatically (`Closes #N`).
+5. The modality ships in the next release; project pages pick it up from
+   `entities.schema.json`.
 
 ## Maintainer setup (once)
 
