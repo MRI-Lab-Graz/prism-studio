@@ -2981,9 +2981,9 @@ export function displayMetadataIssues(issues) {
     const renderIssueItems = (list) => list.map(issue => `
         <li class="mb-1">
             <strong>${issueFieldTarget(issue.message)
-        ? `<a href="#" class="issue-link text-reset" data-target="${issueFieldTarget(issue.message)}">${issue.message}</a>`
-        : issue.message}</strong>
-            ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
+        ? `<a href="#" class="issue-link text-reset" data-target="${issueFieldTarget(issue.message)}">${escapeHtml(issue.message)}</a>`
+        : escapeHtml(issue.message)}</strong>
+            ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${escapeHtml(issue.fix_hint)}</div>` : ''}
         </li>
     `).join('');
 
@@ -3127,6 +3127,9 @@ export function resetStudyMetadataForm() {
     setRecLocationList([]);
     _clearRecLocationPicker();
     setEligibilityCriteria([]); // rows have no id: the loop above cannot clear them
+    document.getElementById('smEligCriteriaSelect')?.dispatchEvent(new Event('change')); // the Add button follows the select
+    setTwoFieldList('smKnownIssues', ''); // chips hold their values in memory, not in the form fields
+    setMissingFilesList('');
     Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
         if (config.chips) setOverviewList(fieldId, ''); // chips have no id either
     });

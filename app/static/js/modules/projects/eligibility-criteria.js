@@ -51,7 +51,7 @@ export function rowsFromCriteria(criteria) {
     }));
     // What is in project.json and complete is accepted (a chip); an incomplete one comes back
     // as a draft so it can be fixed instead of being dropped.
-    return rows.map((row) => ({ ...row, accepted: isComplete(row) }));
+    return rows.map((row) => (isComplete(row) ? { ...row, accepted: true } : { ...row, accepted: false, loaded: true }));
 }
 
 const slug = (text) => String(text).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'criterion';
@@ -64,7 +64,8 @@ const parseNumber = (text) => {
 
 /** Something the user typed or chose (defaults such as Age's unit do not count). */
 export function hasContent(row) {
-    return Boolean(String(row.min ?? '').trim() || String(row.max ?? '').trim()
+    return Boolean(row.loaded // an incomplete criterion from project.json: the user has not seen it fixed yet
+        || String(row.min ?? '').trim() || String(row.max ?? '').trim()
         || (row.values || []).some((v) => String(v).trim())
         || (!row.term && String(row.label || '').trim()));
 }
@@ -82,7 +83,7 @@ export function criteriaFromRows(rows) {
     const out = [];
     for (const row of rows) {
         if (!row.accepted || !isComplete(row)) continue;
-        const { id: _id, label: _label, term: _term, type: _type, mode: _mode, min: _min, max: _max, unit: _unit, values: _values, accepted: _accepted, ...extra } = row;
+        const { id: _id, label: _label, term: _term, type: _type, mode: _mode, min: _min, max: _max, unit: _unit, values: _values, accepted: _accepted, loaded: _loaded, ...extra } = row;
         const label = String(row.label).trim();
         const criterion = { ...extra, label, term: row.term ?? null, type: row.type, mode: row.mode };
         if (row.type === 'numeric') {
@@ -157,16 +158,22 @@ function render() {
     listEl.innerHTML = rows.map((row, i) => (row.accepted ? '' : rowHtml(row, i))).join('')
         + '<div class="criteria-chips"></div>';
     const accepted = getEligibilityCriteria(); // also gives every accepted row its stable id
-    const byId = new Map(accepted.map((c) => [c.id, c]));
+    // Chips are keyed by position, not by id: an id may hold spaces, differ only by case, ...
     const area = mountChipArea(listEl.querySelector('.criteria-chips'), {
-        chipText: (id) => criterionSummary(byId.get(id)),
-        onChange: (ids) => {
-            rows = rows.filter((row) => !row.accepted || ids.includes(row.id));
+        chipText: (key) => criterionSummary(accepted[Number(key)]),
+        onChange: (keys) => {
+            const keep = new Set(keys.map(Number));
+            let position = -1;
+            rows = rows.filter((row) => {
+                if (!row.accepted) return true;
+                position += 1;
+                return keep.has(position);
+            });
             render(); // the draft rows are addressed by index
             notify();
         },
     });
-    area.setValues(accepted.map((c) => c.id));
+    area.setValues(accepted.map((_, position) => String(position)));
     // Row contract of row-state.js: the save guard asks each draft whether it holds content.
     listEl.querySelectorAll('[data-i]').forEach((el) => {
         const row = rows[Number(el.dataset.i)];

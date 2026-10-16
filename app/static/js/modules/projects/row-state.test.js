@@ -118,14 +118,15 @@ describe('isPending', () => {
 });
 
 describe('pendingMessage', () => {
-    it('names the count and what to do', () => {
+    it('names the count and what to do, for rows and for chip entry rows alike', () => {
         const message = pendingMessage(3);
-        expect(message).toContain('3');
+        expect(message).toContain('3 entries are');
         expect(message).toContain('green check');
         expect(message).toContain('Cancel');
+        expect(message).toContain('clear');
     });
-    it('uses the singular for one row', () => {
-        expect(pendingMessage(1)).toContain('1 row ');
+    it('uses the singular for one entry', () => {
+        expect(pendingMessage(1)).toContain('1 entry is');
     });
 });
 
@@ -157,7 +158,7 @@ describe('guardSave', () => {
         expect(draft.classList.has('row-pending')).toBe(true);
         expect(calls).toHaveLength(1);
         expect(calls[0][1]).toBe('warning');
-        expect(calls[0][0]).toContain('1 row is');
+        expect(calls[0][0]).toContain('1 entry is');
     });
 
     it('discards an empty draft instead of blocking', () => {
@@ -170,7 +171,7 @@ describe('guardSave', () => {
     it('counts several pending rows in one message', () => {
         const calls = [];
         guardSave(fakeForm([fakeEl(true), fakeEl(true), fakeEl(false)]), (...args) => calls.push(args));
-        expect(calls[0][0]).toContain('2 rows are');
+        expect(calls[0][0]).toContain('2 entries are');
     });
 });
 

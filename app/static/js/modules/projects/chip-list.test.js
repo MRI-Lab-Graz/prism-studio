@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addChip, normalizeChipText, removeChip } from './chip-list.js';
+import { addChip, normalizeChipText, removeChipAt } from './chip-list.js';
 
 describe('normalizeChipText', () => {
     it('trims and collapses whitespace', () => {
@@ -26,11 +26,11 @@ describe('addChip', () => {
     });
 });
 
-describe('removeChip', () => {
-    it('removes exactly that entry', () => {
-        expect(removeChip(['age', 'sex'], 'age')).toEqual(['sex']);
+describe('removeChipAt', () => {
+    it('removes the entry at that position only, even when another one reads the same', () => {
+        expect(removeChipAt(['age', 'sex', 'age'], 0)).toEqual(['sex', 'age']);
     });
-    it('leaves the list alone when the entry is not there', () => {
-        expect(removeChip(['age'], 'iq')).toEqual(['age']);
+    it('leaves the list alone for a position that does not exist', () => {
+        expect(removeChipAt(['age'], 5)).toEqual(['age']);
     });
 });

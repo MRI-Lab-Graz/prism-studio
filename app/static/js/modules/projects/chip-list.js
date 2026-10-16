@@ -17,7 +17,7 @@ export function addChip(values, text) {
     return [...values, entry];
 }
 
-export const removeChip = (values, text) => values.filter((v) => v !== text);
+export const removeChipAt = (values, index) => values.filter((_, i) => i !== index);
 
 /** Just the green chips (no input): `container` becomes the chip area. Returns
  *  { getValues, setValues, addValue }; `setValues` does not call `onChange`. */
@@ -28,7 +28,7 @@ export function mountChipArea(container, { chipText = (value) => value, onChange
 
     const render = () => {
         container.innerHTML = '';
-        values.forEach((value) => {
+        values.forEach((value, index) => {
             const text = chipText(value);
             const chip = document.createElement('button');
             chip.type = 'button';
@@ -37,7 +37,7 @@ export function mountChipArea(container, { chipText = (value) => value, onChange
             chip.setAttribute('aria-label', `Remove ${text}`);
             chip.innerHTML = `${escapeHtml(text)} <span aria-hidden="true">&times;</span>`;
             chip.addEventListener('click', () => {
-                values = removeChip(values, value);
+                values = removeChipAt(values, index);
                 render();
                 onChange(values);
             });
@@ -55,9 +55,9 @@ export function mountChipArea(container, { chipText = (value) => value, onChange
             onChange(values);
             return true;
         },
+        // Loaded data is kept exactly as stored: only what the user types is normalised and de-duplicated.
         setValues(next) {
-            values = [];
-            (next || []).forEach((value) => { values = addChip(values, value); });
+            values = (next || []).map((value) => String(value)).filter((value) => value.trim() !== '');
             render();
         },
     };

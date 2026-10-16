@@ -51,8 +51,8 @@ export function syncAcceptButton(button, complete) {
 export const isPending = ({ state, hasContent }) => state === 'draft' && Boolean(hasContent);
 
 export function pendingMessage(count) {
-    const rows = count === 1 ? '1 row is' : `${count} rows are`;
-    return `${rows} not accepted yet. Click the green check on each (or Cancel to discard it), then save again.`;
+    const entries = count === 1 ? '1 entry is' : `${count} entries are`;
+    return `${entries} not accepted yet. Accept each with its green check, or discard it (Cancel, or clear the text), then save again.`;
 }
 
 /** One delegated click handler for a slot holding rowActionsHtml buttons. */
