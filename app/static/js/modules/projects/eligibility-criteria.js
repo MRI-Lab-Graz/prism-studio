@@ -86,6 +86,7 @@ export function criteriaFromRows(rows) {
             id = base;
             for (let n = 2; used.has(id); n += 1) id = `${base}-${n}`;
             used.add(id);
+            row.id = id; // stays with the row: a later rename must not change the id links point at
         }
         out.push({ id, ...criterion });
     }

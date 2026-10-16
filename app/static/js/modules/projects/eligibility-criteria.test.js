@@ -76,3 +76,14 @@ describe('criteria the form cannot fully show', () => {
         expect(isComplete({ ...newRow('nb:Sex'), values: ['Male'] })).toBe(true);
     });
 });
+
+describe('id stability', () => {
+    it('keeps a generated id when the label is renamed before the next load', () => {
+        const row = { ...newRow(null), label: 'IQ', min: '85' };
+        const [first] = criteriaFromRows([row]);
+        expect(first.id).toBe('iq');
+        row.label = 'IQ (WAIS)';
+        const [second] = criteriaFromRows([row]);
+        expect(second.id).toBe('iq');
+    });
+});
