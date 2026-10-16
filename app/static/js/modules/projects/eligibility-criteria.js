@@ -34,9 +34,10 @@ export function newRow(term) {
 
 export function rowsFromCriteria(criteria) {
     return (criteria || []).map((c) => ({
+        ...c, // keys the form does not know about survive a save
         id: c.id,
         term: c.term ?? null,
-        label: c.label || '',
+        label: c.label || (c.term ? termInfo(c.term).label : '') || c.id || '',
         type: c.type,
         mode: c.mode,
         min: c.min === undefined ? '' : String(c.min),
@@ -54,25 +55,30 @@ const parseNumber = (text) => {
     return Number.isNaN(value) ? undefined : value;
 };
 
+/** A row the validator can use; incomplete rows are not saved. */
+export function isComplete(row) {
+    if (!String(row.label || '').trim()) return false;
+    if (row.type === 'numeric') return parseNumber(row.min) !== undefined || parseNumber(row.max) !== undefined;
+    return (row.values || []).some((v) => String(v).trim());
+}
+
 /** Rows -> Eligibility.Criteria; incomplete rows are dropped, ids stay stable. */
 export function criteriaFromRows(rows) {
     const used = new Set(rows.map((r) => r.id).filter(Boolean));
     const out = [];
     for (const row of rows) {
-        const label = String(row.label || '').trim();
-        const criterion = { label, term: row.term ?? null, type: row.type, mode: row.mode };
-        if (!label) continue;
+        if (!isComplete(row)) continue;
+        const { id: _id, label: _label, term: _term, type: _type, mode: _mode, min: _min, max: _max, unit: _unit, values: _values, ...extra } = row;
+        const label = String(row.label).trim();
+        const criterion = { ...extra, label, term: row.term ?? null, type: row.type, mode: row.mode };
         if (row.type === 'numeric') {
             const min = parseNumber(row.min);
             const max = parseNumber(row.max);
-            if (min === undefined && max === undefined) continue;
             if (min !== undefined) criterion.min = min;
             if (max !== undefined) criterion.max = max;
             if (String(row.unit || '').trim()) criterion.unit = String(row.unit).trim();
         } else {
-            const values = (row.values || []).map((v) => String(v).trim()).filter(Boolean);
-            if (!values.length) continue;
-            criterion.values = values;
+            criterion.values = (row.values || []).map((v) => String(v).trim()).filter(Boolean);
         }
         let id = row.id;
         if (!id) {
@@ -115,6 +121,7 @@ function rowHtml(row, i) {
     }
     return `<div class="d-flex flex-wrap gap-2 align-items-center" data-i="${i}">${name}
         <select class="form-select form-select-sm w-auto" data-f="mode">${mode}</select>${limits}
+        <small class="text-warning" data-f="hint"${isComplete(row) ? ' hidden' : ''}>not saved yet: ${row.type === 'numeric' ? 'enter a min or max' : 'choose at least one value'}${row.label ? '' : ' and a name'}</small>
         <button type="button" class="btn btn-outline-danger btn-sm" data-f="remove" aria-label="Remove criterion"><i class="fas fa-times"></i></button></div>`;
 }
 
@@ -137,6 +144,8 @@ export function initEligibilityCriteria({ list, select, addButton }) {
         if (f === 'value') row.values = [...list.querySelectorAll(`[data-i="${rows.indexOf(row)}"] [data-f="value"]:checked`)].map((c) => c.value);
         else if (f === 'values') row.values = event.target.value.split(',');
         else if (f) row[f] = event.target.value;
+        const hint = event.target.closest('[data-i]').querySelector('[data-f="hint"]');
+        if (hint) hint.hidden = isComplete(row);
     });
     list.addEventListener('click', (event) => {
         const button = event.target.closest('[data-f="remove"]');

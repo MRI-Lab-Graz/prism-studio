@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TERMS, criteriaFromRows, initEligibilityCriteria, newRow, rowsFromCriteria } from './eligibility-criteria.js';
+import { TERMS, criteriaFromRows, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria } from './eligibility-criteria.js';
 
 const AGE = {
     id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric',
@@ -53,5 +53,26 @@ describe('eligibility criteria rows', () => {
 describe('initEligibilityCriteria', () => {
     it('does nothing on a page without the Eligibility form', () => {
         expect(() => initEligibilityCriteria({ list: null, select: null, addButton: null })).not.toThrow();
+    });
+});
+
+describe('criteria the form cannot fully show', () => {
+    it('a hand-written criterion without a label gets one from its term, or its id, instead of vanishing', () => {
+        const noLabel = { id: 'age', term: 'nb:Age', type: 'numeric', mode: 'include', min: 18 };
+        expect(criteriaFromRows(rowsFromCriteria([noLabel]))).toEqual([{ ...noLabel, label: 'Age' }]);
+        const other = { id: 'vo2max', term: null, type: 'numeric', mode: 'include', min: 30 };
+        expect(criteriaFromRows(rowsFromCriteria([other]))[0].label).toBe('vo2max');
+    });
+
+    it('keeps keys the form does not know about', () => {
+        const c = { ...AGE, note: 'from a colleague' };
+        expect(criteriaFromRows(rowsFromCriteria([c]))).toEqual([c]);
+    });
+
+    it('tells an incomplete row apart, so the page can say it is not saved', () => {
+        expect(isComplete(newRow('nb:Age'))).toBe(false);
+        expect(isComplete({ ...newRow('nb:Age'), min: '18' })).toBe(true);
+        expect(isComplete({ ...newRow('nb:Sex') })).toBe(false);
+        expect(isComplete({ ...newRow('nb:Sex'), values: ['Male'] })).toBe(true);
     });
 });
