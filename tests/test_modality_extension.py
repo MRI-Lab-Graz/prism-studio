@@ -148,3 +148,10 @@ def test_new_build_fixture_has_no_task_entity(tmp_path):
     assert any(f.name == "sub-01_bloodchem.tsv" for f in files)
     assert (tmp_path / "o" / "docs" / "biosample.md").is_file()
     assert json.loads((tmp_path / "o" / "example_sidecar.json").read_text())["Study"].get("TaskName") is None
+
+
+def test_extension_docs_section_keeps_the_modality_own_naming_rules(tmp_path):
+    build_modality_artifacts(read_proposal(EXT), EXT_SAMPLE, EXT, tmp_path / "out")
+    section = (tmp_path / "out" / "docs" / "biometrics-bloodpanel.md").read_text(encoding="utf-8")
+    assert "[_acq-<label>]" not in section
+    assert "_bloodpanel" in section

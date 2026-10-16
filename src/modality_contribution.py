@@ -830,10 +830,13 @@ def build_docs_page(proposal: dict) -> str:
 
 
 def _extension_docs_section(proposal: dict) -> str:
-    """The section to add to an existing modality's page: the new page minus its title."""
-    body = "\n".join("#" + line if line.startswith("##") else line
-                     for line in build_docs_page(proposal).splitlines()[2:])
-    return f"## Suffix `_{proposal['suffix']}`\n\n{body}\n"
+    """The section to add to an existing modality's page; that page's own naming rules apply."""
+    suffix = proposal["suffix"]
+    exts = ", ".join(f"`_{suffix}.{e}`" for e in proposal["extensions"])
+    page = build_docs_page(proposal)
+    tail = re.sub(r"(?m)^## ", "### ", page[page.index("## Example Columns"):])
+    return (f"## Suffix `_{suffix}`\n\n{proposal['description']}.\n\n"
+            f"File names follow the naming rules on this page, ending in {exts}.\n\n{tail}")
 
 
 def build_docs_snippets(proposal: dict) -> dict[str, str]:
