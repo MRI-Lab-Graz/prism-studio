@@ -20,6 +20,7 @@ import {
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
+import { applyLinkToSchema, effectiveLink, unitMismatch } from './eligibility-link.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
@@ -2958,6 +2959,12 @@ export function initParticipants() {
     
             // Make participants preview available to shared mapping modal logic
             window.lastParticipantsPreviewData = data;
+            // Project eligibility criteria for the annotation panel's link select
+            window.neurobagelEligibility = {
+                criteria: Array.isArray(data.eligibility_criteria) ? data.eligibility_criteria : [],
+                effectiveLink,
+                unitMismatch,
+            };
             // Keep NeuroBagel editor in sync with the latest preview schema/types
             if (effectiveSchema) {
                 window.existingParticipantsData = effectiveSchema;
@@ -3332,6 +3339,11 @@ export function initParticipants() {
             annotatedData[targetColumnName] = {
                 Description: colData.description || colData.Description || ""
             };
+            applyLinkToSchema(
+                annotatedData,
+                targetColumnName,
+                effectiveLink(colData, window.neurobagelEligibility?.criteria || [])
+            );
     
             if (isCategorical && retainedLevels.length > 0) {
                 annotatedData[targetColumnName].Levels = {};

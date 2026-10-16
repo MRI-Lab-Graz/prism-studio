@@ -7,7 +7,7 @@
 
 export const REPLACE_CONFIRMATION_MESSAGE =
     'Replace discards the existing participants.tsv and participants.json, '
-    + 'including all annotations (NeuroBagel terms, descriptions and value labels). '
+    + 'including all annotations (NeuroBagel terms, descriptions, value labels and eligibility links). '
     + 'Continue?';
 
 export function discardsExistingSchema({ mode, fileAction, hasParticipantsTsv }) {
