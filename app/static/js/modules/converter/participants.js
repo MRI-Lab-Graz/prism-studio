@@ -20,7 +20,7 @@ import {
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
-import { applyLinkToSchema, effectiveLink, unitMismatch } from './eligibility-link.js';
+import { applyLinkToSchema, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
@@ -3342,7 +3342,7 @@ export function initParticipants() {
             applyLinkToSchema(
                 annotatedData,
                 targetColumnName,
-                effectiveLink(colData, window.neurobagelEligibility?.criteria || [])
+                savedLink(colData, window.neurobagelEligibility?.criteria || [])
             );
     
             if (isCategorical && retainedLevels.length > 0) {

@@ -69,3 +69,34 @@ def test_flask_preview_returns_project_criteria(tmp_path):
     (tmp_path / "other").mkdir()
     bare = make_client(tmp_path / "other", {})
     assert preview(bare).get_json()["eligibility_criteria"] == []
+
+
+# ---- final review: a link must be changeable and clearable on Merge ----
+
+def test_schema_merge_changes_and_clears_a_link_but_keeps_other_keys():
+    from src.participants_backend import merge_neurobagel_schema_for_columns as merge
+
+    base = {"age": {"Description": "Age", "EligibilityCriterion": "age"}}
+    merged, _ = merge(base, {"age": {"EligibilityCriterion": "iq", "Description": "ignored"}}, ["age"])
+    assert merged["age"] == {"Description": "Age", "EligibilityCriterion": "iq"}
+    merged, _ = merge(merged, {"age": {"EligibilityCriterion": ""}}, ["age"])
+    assert merged["age"] == {"Description": "Age"}
+    merged, _ = merge({"age": {}}, {"age": {"EligibilityCriterion": ""}}, ["age"])
+    assert "EligibilityCriterion" not in merged["age"]
+
+
+def test_merge_apply_cli_clears_an_existing_link(tmp_path):
+    (tmp_path / "participants.tsv").write_text("participant_id\tage\nsub-001\t21\n", encoding="utf-8")
+    (tmp_path / "participants.json").write_text(json.dumps({
+        "participant_id": {"Description": "id"},
+        "age": {"Description": "Age", "EligibilityCriterion": "age"},
+    }), encoding="utf-8")
+    src = tmp_path / "src.csv"
+    src.write_text("participant_id,age,group\nsub-001,21,c\n", encoding="utf-8")
+    result = _run_prism_tools(
+        "participants", "merge", "--input", str(src), "--project", str(tmp_path), "--apply",
+        "--neurobagel-schema", json.dumps({"age": {"EligibilityCriterion": ""}}), "--json",
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    sidecar = json.loads((tmp_path / "participants.json").read_text(encoding="utf-8"))
+    assert "EligibilityCriterion" not in sidecar["age"]

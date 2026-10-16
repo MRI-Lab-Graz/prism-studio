@@ -20,10 +20,18 @@ export function effectiveLink(colData, criteria) {
     return (criteria || []).some((c) => c.id === choice) ? choice : '';
 }
 
-export function applyLinkToSchema(schema, column, criterionId) {
-    if (!schema[column]) return;
-    if (criterionId) schema[column].EligibilityCriterion = criterionId;
-    else delete schema[column].EligibilityCriterion;
+/** What gets saved: only an explicit choice. A suggestion the user never saw is not
+ *  saved (the CLI would not write it either); "none" is saved as '' so a Merge can
+ *  clear an existing link. undefined = never linked, write nothing. */
+export function savedLink(colData, criteria) {
+    const choice = colData ? colData.eligibility_criterion : undefined;
+    if (choice === undefined) return undefined;
+    return (criteria || []).some((c) => c.id === choice) ? choice : '';
+}
+
+export function applyLinkToSchema(schema, column, link) {
+    if (!schema[column] || link === undefined) return;
+    schema[column].EligibilityCriterion = link;
 }
 
 export function unitMismatch(columnUnit, criterionUnit) {

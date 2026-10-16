@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyLinkToSchema, effectiveLink, suggestCriterion, unitMismatch } from './eligibility-link.js';
+import { applyLinkToSchema, effectiveLink, savedLink, suggestCriterion, unitMismatch } from './eligibility-link.js';
 
 const CRITERIA = [
     { id: 'age', label: 'Age', term: 'nb:Age', unit: 'years' },
@@ -30,13 +30,31 @@ describe('effectiveLink', () => {
     });
 });
 
+describe('savedLink', () => {
+    it('saves only what the user has seen: an unconfirmed suggestion is not saved', () => {
+        expect(savedLink({ term_url: 'nb:Age' }, CRITERIA)).toBeUndefined();
+    });
+    it('saves an explicit choice, and an explicit "none" as an empty string', () => {
+        expect(savedLink({ eligibility_criterion: 'age' }, CRITERIA)).toBe('age');
+        expect(savedLink({ eligibility_criterion: '' }, CRITERIA)).toBe('');
+    });
+    it('turns a link to a deleted criterion into an explicit "none"', () => {
+        expect(savedLink({ eligibility_criterion: 'gone' }, CRITERIA)).toBe('');
+    });
+});
+
 describe('applyLinkToSchema', () => {
-    it('sets and removes only the link, leaving Annotations alone', () => {
+    it('sets the link, sets "" for an explicit none, and leaves Annotations alone', () => {
         const schema = { age: { Description: 'Age', Annotations: { IsAbout: 'x' } } };
         applyLinkToSchema(schema, 'age', 'age');
         expect(schema.age).toEqual({ Description: 'Age', Annotations: { IsAbout: 'x' }, EligibilityCriterion: 'age' });
         applyLinkToSchema(schema, 'age', '');
-        expect(schema.age).toEqual({ Description: 'Age', Annotations: { IsAbout: 'x' } });
+        expect(schema.age.EligibilityCriterion).toBe('');
+    });
+    it('writes nothing for a column that was never linked', () => {
+        const schema = { age: { Description: 'Age' } };
+        applyLinkToSchema(schema, 'age', undefined);
+        expect(schema.age).toEqual({ Description: 'Age' });
     });
 });
 
