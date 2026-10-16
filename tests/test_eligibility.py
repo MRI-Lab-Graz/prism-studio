@@ -236,3 +236,13 @@ def test_levels_given_as_dicts_without_label_fall_back_to_annotations(tmp_path):
     ann = {"Annotations": {"Levels": {"2": {"Label": "Male"}}}}
     root = _sex(tmp_path, "exclude", ["Male"], levels=levels, extra=ann)
     assert _flagged(check_eligibility(root)) == ["sub-P02", "sub-P04"]
+
+
+# ---- deferred minors ----
+
+def test_duplicate_id_warning_is_reported_once_even_with_two_linked_columns(tmp_path):
+    second = dict(AGE, min=0, max=99)
+    root = _make(tmp_path, [AGE, second],
+                 {"age": {"EligibilityCriterion": "age"}, "age2": {"EligibilityCriterion": "age"}},
+                 [("sub-P01", "40", "40")], header=("participant_id", "age", "age2"))
+    assert len([i for i in check_eligibility(root) if "more than once" in i[1]]) == 1

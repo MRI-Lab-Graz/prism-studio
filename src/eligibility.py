@@ -154,6 +154,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         for desc, _ in rejected
     ]
     found: list[tuple[str, str, str]] = []
+    reported: set[str] = set()  # duplicate ids already warned about
     for col, crit_id in links.items():
         crit = by_id.get(crit_id)
         if crit is None and crit_id in {rid for _, rid in rejected}:
@@ -161,7 +162,8 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         if crit is None:
             config.append(("WARNING", f"PRISM603 Column '{col}' is linked to eligibility criterion '{crit_id}', which is not in project.json.", str(root / "participants.json")))
             continue
-        if crit_id in duplicates:
+        if crit_id in duplicates and crit_id not in reported:
+            reported.add(crit_id)
             config.append(("WARNING", f"PRISM603 Eligibility criterion id '{crit_id}' is defined more than once in project.json; the first one is used.", str(root / "project.json")))
         if col not in columns:
             config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' is linked to column '{col}', which is not in participants.tsv.", str(tsv)))
