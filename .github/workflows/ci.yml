@@ -53,6 +53,21 @@ jobs:
             echo content_only=false >> "$GITHUB_OUTPUT"
           fi
 
+  schema-versions:
+    name: Modality schema versions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check frozen modality schema versions
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: python3 scripts/ci/check_schema_versions.py "origin/$BASE_BRANCH" HEAD
+
   fast-pr-checks:
     name: Fast On-Demand Checks
     needs: scope
