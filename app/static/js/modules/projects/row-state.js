@@ -15,10 +15,17 @@ export function rowActionsModel({ state, complete }) {
     };
 }
 
-/** Buttons for a row's action slot; `noun` makes the delete label specific ("author"). */
-export function rowActionsHtml(model, noun = '') {
+const escapeText = (text) => String(text).replace(/[&<>"']/g, (ch) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/** Buttons for a row's action slot; `noun` makes the delete label specific ("author").
+ *  `hint` says why the check is disabled; it is shown only while it is. */
+export function rowActionsHtml(model, noun = '', hint = '') {
     const label = (verb) => `${verb}${noun ? ` ${noun}` : ''}`;
     const out = [];
+    if (hint && model.accept.visible && model.accept.disabled) {
+        out.push(`<small class="text-warning align-self-center mx-2 text-nowrap" data-f="hint">${escapeText(hint)}</small>`);
+    }
     if (model.accept.visible) {
         out.push(`<button type="button" class="btn btn-outline-success btn-sm" data-f="accept" aria-label="${label('Accept')}" title="${label('Accept')}"${model.accept.disabled ? ' disabled' : ''}><i class="fas fa-check"></i></button>`);
     }
@@ -90,13 +97,13 @@ export function guardSave(form, showFeedback) {
 /** Gives a row its action buttons and the row contract. Returns { slot, refresh }:
  *  append `slot` to the row, call `refresh()` whenever completeness may have changed.
  *  `state` is the initial state: 'draft' for rows the user adds, 'defined' for loaded rows. */
-export function mountRowActions(row, { state, noun, isComplete, hasContent, onAccept, onRemove }) {
+export function mountRowActions(row, { state, noun, incompleteHint, isComplete, hasContent, onAccept, onRemove }) {
     const slot = document.createElement('span');
     slot.style.display = 'contents'; // the buttons stay direct layout children of an input-group
     row.dataset.rowState = state;
     const refresh = () => {
         slot.innerHTML = rowActionsHtml(
-            rowActionsModel({ state: row.dataset.rowState, complete: isComplete() }), noun);
+            rowActionsModel({ state: row.dataset.rowState, complete: isComplete() }), noun, incompleteHint);
     };
     row._row = { hasContent, discard: onRemove, refresh }; // refresh: for code that fills fields without an input event
     bindRowActions(slot, {

@@ -1174,6 +1174,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepte
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'author',
+        incompleteHint: 'Enter first and last name',
         isComplete: () => Boolean(nameOf('.author-first') && nameOf('.author-last')),
         hasContent: () => Array.from(row.querySelectorAll('input:not(.author-corresponding)'))
             .some(input => input.value.trim() !== ''),
@@ -1517,6 +1518,7 @@ function addOverviewListRow(fieldId, value = '', accepted = false) {
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'item',
+        incompleteHint: config.lookup ? 'Enter a valid DOI' : 'Enter text',
         isComplete: () => {
             const text = input.value.trim();
             return Boolean(text) && (!config.validate || config.validate(text));
@@ -1715,6 +1717,7 @@ function addTwoFieldRow(fieldId, field1 = '', field2 = '', accepted = false) {
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'entry',
+        incompleteHint: 'Fill in at least one field',
         isComplete: hasText,
         hasContent: hasText,
         onAccept: () => _syncTwoFieldListField(fieldId),
@@ -1903,6 +1906,7 @@ function addMissingFilesRow(fields = {}, accepted = false) {
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'entry',
+        incompleteHint: 'Choose or enter something',
         isComplete: () => isMissingFilesRowComplete(rowFields()),
         hasContent: () => isMissingFilesRowComplete(rowFields()),
         onAccept: () => _syncMissingFilesField(),
@@ -3528,6 +3532,7 @@ export function addFundingRow(agency = '', grant = '', accepted = false) {
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'funding source',
+        incompleteHint: 'Enter the funding agency',
         isComplete: () => agencyInput.value.trim() !== '',
         hasContent: () => agencyInput.value.trim() !== '' || grantInput.value.trim() !== '',
         onAccept: () => {

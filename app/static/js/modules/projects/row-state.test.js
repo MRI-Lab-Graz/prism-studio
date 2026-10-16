@@ -41,6 +41,22 @@ describe('rowActionsHtml', () => {
     });
 });
 
+describe('rowActionsHtml hint', () => {
+    it('says why the check is disabled, only while it is disabled', () => {
+        const draft = rowActionsHtml(rowActionsModel({ state: 'draft', complete: false }), 'author', 'Enter first and last name');
+        expect(draft).toContain('data-f="hint"');
+        expect(draft).toContain('Enter first and last name');
+        const complete = rowActionsHtml(rowActionsModel({ state: 'draft', complete: true }), 'author', 'Enter first and last name');
+        expect(complete).not.toContain('data-f="hint"');
+        const defined = rowActionsHtml(rowActionsModel({ state: 'defined', complete: true }), 'author', 'Enter first and last name');
+        expect(defined).not.toContain('data-f="hint"');
+    });
+    it('escapes the hint', () => {
+        const html = rowActionsHtml(rowActionsModel({ state: 'draft', complete: false }), '', '<b>x</b>');
+        expect(html).not.toContain('<b>');
+    });
+});
+
 describe('isPending', () => {
     it('only a draft with content is pending', () => {
         expect(isPending({ state: 'draft', hasContent: true })).toBe(true);

@@ -355,3 +355,14 @@ def test_new_project_starts_without_the_previous_projects_criteria(app_page, stu
     page.click("#card-create")
     expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(0)
     expect(page.locator("#smEligCriteriaRequiredBadge")).not_to_have_class(re.compile("bg-success"))
+
+
+def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    row = page.locator("#metadataAuthorsList .author-row").first
+    expect(row.locator('[data-f="hint"]')).to_contain_text("first and last name")
+    row.locator(".author-first").fill("Ada")
+    row.locator(".author-last").fill("Lovelace")
+    expect(row.locator('[data-f="hint"]')).to_have_count(0)  # complete: nothing missing
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()
