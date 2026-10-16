@@ -38,3 +38,13 @@ export function unitMismatch(columnUnit, criterionUnit) {
     return Boolean(String(columnUnit || '').trim() && String(criterionUnit || '').trim()
         && !same(columnUnit, criterionUnit));
 }
+
+const esc = (text) => String(text ?? '').replace(/[&<>"']/g, (ch) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+/** <option> list for the panel's select; project.json text is escaped (it can come from a colleague). */
+export function criterionOptionsHtml(criteria, linked) {
+    return ['<option value="">none</option>'].concat((criteria || []).map((c) => (
+        `<option value="${esc(c.id)}"${c.id === linked ? ' selected' : ''}>${esc(c.label || c.id)}${c.unit ? ` (${esc(c.unit)})` : ''}</option>`
+    ))).join('');
+}

@@ -1402,9 +1402,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
     const linked = eligibility.effectiveLink(colData, eligibility.criteria);
     // Showing a suggestion makes it the user's choice (it is what they see and confirm).
     if (colData.eligibility_criterion === undefined && linked) colData.eligibility_criterion = linked;
-    const options = ['<option value="">none</option>'].concat(eligibility.criteria.map(c =>
-      `<option value="${c.id}"${c.id === linked ? ' selected' : ''}>${c.label}${c.unit ? ' (' + c.unit + ')' : ''}</option>`
-    )).join('');
+    const options = eligibility.criterionOptionsHtml(eligibility.criteria, linked);
     html += `
       <div class="nb-field-group">
         <label class="nb-field-label">Eligibility criterion (from project metadata)</label>
@@ -1547,7 +1545,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
     const criteria = window.neurobagelEligibility ? window.neurobagelEligibility.criteria : [];
     const criterion = criteria.find(c => eligibilityFieldValue() === c.id);
     note.textContent = criterion && window.neurobagelEligibility.unitMismatch(colData.unit, criterion.unit)
-      ? `Unit differs: column "${colData.unit}", criterion "${criterion.unit}".` : '';
+      ? `Unit differs: column "${colData.unit}", criterion "${criterion.unit}".` : '';  // textContent: no HTML
   }
   function eligibilityFieldValue() { return eligField ? eligField.value : ''; }
   if (eligField) {

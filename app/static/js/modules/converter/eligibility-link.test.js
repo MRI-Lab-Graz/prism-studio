@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyLinkToSchema, effectiveLink, savedLink, suggestCriterion, unitMismatch } from './eligibility-link.js';
+import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, suggestCriterion, unitMismatch } from './eligibility-link.js';
 
 const CRITERIA = [
     { id: 'age', label: 'Age', term: 'nb:Age', unit: 'years' },
@@ -63,5 +63,21 @@ describe('unitMismatch', () => {
         expect(unitMismatch('years', 'months')).toBe(true);
         expect(unitMismatch('', 'years')).toBe(false);
         expect(unitMismatch('Years', 'years')).toBe(false);
+    });
+});
+
+describe('criterionOptionsHtml', () => {
+    it('escapes ids, labels and units that come from a shared project.json', () => {
+        const html = criterionOptionsHtml(
+            [{ id: 'a"b', label: '<img src=x onerror=alert(1)>', unit: '&' }], 'a"b');
+        expect(html).not.toContain('<img');
+        expect(html).toContain('value="a&quot;b"');
+        expect(html).toContain('selected');
+        expect(html).toContain('&amp;');
+    });
+    it('always offers "none" first, and falls back to the id when a label is missing', () => {
+        const html = criterionOptionsHtml([{ id: 'iq' }], '');
+        expect(html.startsWith('<option value="">none</option>')).toBe(true);
+        expect(html).toContain('>iq<');
     });
 });

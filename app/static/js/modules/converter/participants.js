@@ -20,7 +20,7 @@ import {
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
-import { applyLinkToSchema, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
+import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
@@ -2964,6 +2964,7 @@ export function initParticipants() {
                 criteria: Array.isArray(data.eligibility_criteria) ? data.eligibility_criteria : [],
                 effectiveLink,
                 unitMismatch,
+                criterionOptionsHtml,
             };
             // Keep NeuroBagel editor in sync with the latest preview schema/types
             if (effectiveSchema) {
