@@ -28,7 +28,7 @@ import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
-import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
+import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, isMissingFilesRowComplete, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -1838,7 +1838,7 @@ function _syncMissingFilesField() {
     const list = document.getElementById('smMissingFilesList');
     if (!hiddenField || !list) return;
 
-    const values = Array.from(list.querySelectorAll('.missing-files-row'))
+    const values = Array.from(list.querySelectorAll('.missing-files-row:not([data-row-state="draft"])'))
         .map(row => combineMissingFilesRow({
             subject: row.querySelector('.missing-files-subject')?.value || '',
             session: row.querySelector('.missing-files-session')?.value || '',
@@ -1851,7 +1851,7 @@ function _syncMissingFilesField() {
     updateCreateProjectButton();
 }
 
-function addMissingFilesRow(fields = {}) {
+function addMissingFilesRow(fields = {}, accepted = false) {
     const list = document.getElementById('smMissingFilesList');
     if (!list) return;
 
@@ -1887,30 +1887,41 @@ function addMissingFilesRow(fields = {}) {
     detailInput.placeholder = 'Detail (optional)';
     detailInput.value = fields.detail || '';
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger missing-files-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove entry');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+    const rowFields = () => ({
+        subject: subjectSelect.value,
+        session: sessionSelect.value,
+        modality: modalitySelect.value,
+        reason: reasonSelect.value,
+        detail: detailInput.value,
+    });
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'entry',
+        isComplete: () => isMissingFilesRowComplete(rowFields()),
+        hasContent: () => isMissingFilesRowComplete(rowFields()),
+        onAccept: () => _syncMissingFilesField(),
+        onRemove: () => {
+            row.remove();
+            if (!list.querySelector('.missing-files-row')) {
+                addMissingFilesRow();
+            }
+            _syncMissingFilesField();
+        },
+    });
 
-    const onChange = () => _syncMissingFilesField();
+    const onChange = () => {
+        actions.refresh();
+        _syncMissingFilesField();
+    };
     [subjectSelect, sessionSelect, modalitySelect, reasonSelect].forEach(el => el.addEventListener('change', onChange));
     detailInput.addEventListener('input', onChange);
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.missing-files-row')) {
-            addMissingFilesRow();
-        }
-        _syncMissingFilesField();
-    });
 
     row.appendChild(subjectSelect);
     row.appendChild(sessionSelect);
     row.appendChild(modalitySelect);
     row.appendChild(reasonSelect);
     row.appendChild(detailInput);
-    row.appendChild(removeButton);
+    row.appendChild(actions.slot);
     list.appendChild(row);
     _syncMissingFilesField();
 }
@@ -1926,7 +1937,7 @@ function setMissingFilesList(rawValue) {
         return;
     }
 
-    entries.forEach(entry => addMissingFilesRow(entry));
+    entries.forEach(entry => addMissingFilesRow(entry, true));
     _syncMissingFilesField();
 }
 

@@ -159,3 +159,18 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
     saved = json.loads((project / "dataset_description.json").read_text())
     assert saved["Funding"] == ["FWF, P12345"]
     assert "Lovelace" in (project / "project.json").read_text()  # authors live in project.json
+
+
+def test_missing_files_rows_are_drafts_until_accepted(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smMissingData")
+    page.click("#smMissingFilesAddRow")
+    row = page.locator("#smMissingFilesList .missing-files-row").last
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    row.locator(".missing-files-reason").select_option("motion_artifact")
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()
+    expect(row.locator('[data-f="remove"]')).to_have_count(0)
+    assert page.input_value("#smMissingFiles") == ""
+    row.locator('[data-f="accept"]').click()
+    expect(row.locator('[data-f="remove"]')).to_have_count(1)
+    assert "motion_artifact" in page.input_value("#smMissingFiles")
