@@ -148,8 +148,8 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             reader = csv.DictReader(handle, delimiter="\t")
             columns = reader.fieldnames or []
             rows = list(reader)
-    except OSError:
-        return []  # unreadable files are reported elsewhere
+    except (OSError, ValueError):
+        return []  # unreadable or non-UTF-8 files are reported elsewhere
 
     config: list[tuple[str, str, str]] = [
         ("WARNING", f"PRISM603 Eligibility criterion {desc} in project.json is malformed (needs an id, type numeric or categorical, mode include or exclude, and a numeric min/max or a list of values); it is ignored.", str(root / "project.json"))

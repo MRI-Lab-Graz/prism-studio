@@ -269,3 +269,9 @@ def test_large_bounds_are_not_printed_in_scientific_notation(tmp_path):
     root = _make(tmp_path, [big], {"n": {"EligibilityCriterion": "n"}}, [("sub-P01", "5")],
                  header=("participant_id", "n"))
     assert "1234567-2500000.5" in check_eligibility(root)[1][1]
+
+
+def test_non_utf8_participants_tsv_is_left_to_other_checks(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17")])
+    (tmp_path / "participants.tsv").write_bytes("participant_id\tage\nsub-Müller\t17\n".encode("latin-1"))
+    assert check_eligibility(root) == []
