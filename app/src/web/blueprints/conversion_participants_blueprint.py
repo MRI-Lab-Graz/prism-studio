@@ -301,6 +301,7 @@ def api_participants_preview():
         tmp_dir = str(upload["tmp_dir"])
         try:
             preview_stage = "initializing preview"
+            preview_project_root = _get_session_project_root()
             input_path = Path(str(upload["input_path"]))
             suffix = str(upload["suffix"])
 
@@ -514,8 +515,8 @@ def api_participants_preview():
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
                     "eligibility_criteria": (
-                        load_criteria(str(_get_session_project_root()))
-                        if _get_session_project_root()
+                        load_criteria(str(preview_project_root))
+                        if preview_project_root
                         else []
                     ),
                     "unmapped_session_labels": unmapped_session_labels,
