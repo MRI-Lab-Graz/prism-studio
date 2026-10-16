@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 from src.modality_versions import (
     ModalityVersionError,
@@ -28,7 +29,17 @@ def _fail(args, message: str) -> None:
     sys.exit(1)
 
 
+def _require_project(args) -> None:
+    try:
+        ok = isinstance(json.loads(Path(args.project, "project.json").read_text(encoding="utf-8")), dict)
+    except (OSError, ValueError):
+        ok = False
+    if not ok:
+        _fail(args, f"{args.project} is not a PRISM project (no readable project.json)")
+
+
 def cmd_modality_version_status(args) -> None:
+    _require_project(args)
     pins, _ = read_pins(args.project)
     pending = pending_updates(args.project)
     lines = [f"{n}: pinned {v}" for n, v in sorted(pins.items())] or ["No modality versions pinned."]
@@ -53,6 +64,7 @@ def cmd_modality_version_list(args) -> None:
 
 
 def cmd_modality_version_pin(args) -> None:
+    _require_project(args)
     try:
         new = pin_modalities(args.project, args.names) if args.names else pin_present_modalities(args.project)
     except ModalityVersionError as exc:
@@ -63,6 +75,7 @@ def cmd_modality_version_pin(args) -> None:
 
 
 def _change(args, fn, verb: str) -> None:
+    _require_project(args)
     try:
         version = fn(args.project, args.name)
     except ModalityVersionError as exc:

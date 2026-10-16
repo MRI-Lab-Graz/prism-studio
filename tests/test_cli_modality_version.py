@@ -68,3 +68,20 @@ def test_unknown_modality_in_list_exits_1(capsys):
     with pytest.raises(SystemExit) as exc:
         cmds.cmd_modality_version_list(SimpleNamespace(name="nope", json=True))
     assert exc.value.code == 1
+
+
+@pytest.mark.parametrize("fn,extra", [
+    (cmds.cmd_modality_version_status, {}),
+    (cmds.cmd_modality_version_pin, {}),
+    (cmds.cmd_modality_version_pin, {"names": ["survey"]}),
+    (cmds.cmd_modality_version_update, {"name": "survey"}),
+    (cmds.cmd_modality_version_freeze, {"name": "survey"}),
+])
+@pytest.mark.parametrize("where", ["missing", "no_project_json"])
+def test_non_project_path_exits_1_with_project_json_error(fn, extra, where, tmp_path, capsys):
+    path = tmp_path / "nope" if where == "missing" else tmp_path
+    with pytest.raises(SystemExit) as exc:
+        fn(_args(path, json=True, **extra))
+    assert exc.value.code == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["success"] is False and "project.json" in out["error"]
