@@ -190,12 +190,6 @@ def cmd_environment_convert(args) -> None:
 
     payload, exit_code = _resolve_environment_convert_payload(args)
 
-    if exit_code == 0:
-        # The conversion writes sub-*/ses-*/environment/ straight into --project.
-        from src.modality_versions import pin_after_import
-
-        pin_after_import(Path(args.project).expanduser().resolve())
-
     result_file_text = str(getattr(args, "result_file", "") or "").strip()
     if result_file_text:
         result_file = Path(result_file_text).expanduser().resolve()

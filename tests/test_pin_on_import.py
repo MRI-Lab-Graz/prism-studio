@@ -1,8 +1,6 @@
 """Conversions pin the modality versions they wrote (project.json SchemaVersions)."""
 
 import json
-from types import SimpleNamespace
-
 import pandas as pd
 import pytest
 
@@ -108,26 +106,70 @@ def test_batch_convert_dry_run_does_not_pin(tmp_path, pinned_roots):
     assert pinned_roots == []
 
 
-def _environment_args(tmp_path, project):
+def _run_environment(monkeypatch, tmp_path, *, persist):
+    """perform_environment_conversion with the table/provider work stubbed out."""
+    import src.environment_conversion as ec
+
+    proj = tmp_path / "proj"
+    proj.mkdir()
     data = tmp_path / "env.csv"
     data.write_text("a\n1\n")
-    return SimpleNamespace(input=str(data), project=str(project), json=True, result_file="")
+    monkeypatch.setattr(ec, "_load_environment_dataframe", lambda *a, **k: pd.DataFrame({"t": ["2026-01-01 10:00:00"]}))
+    monkeypatch.setattr(ec, "_fetch_environment_day", lambda *a, **k: ({"weather": {}, "air": {}, "pollen": {}}, []))
+    monkeypatch.setattr(ec, "handle_validate_environment_conversion_inputs", lambda **k: None)
+    monkeypatch.setattr(ec, "handle_persist_environment_outputs", persist)
+    ec.perform_environment_conversion(
+        input_path=data, filename="env.csv", suffix=".csv", separator_option="auto",
+        timestamp_col="t", participant_col=None, participant_override=None,
+        session_col=None, session_override=None, location_col=None, lat_col=None,
+        lon_col=None, location_label_override="", lat_manual=47.0, lon_manual=15.0,
+        project_path=str(proj), pilot_random_subject=False,
+        log_callback=lambda *a, **k: None,
+    )
+    return proj
 
 
-def test_environment_convert_pins_the_project(tmp_path, monkeypatch, pinned_roots, capsys):
-    from app.src.cli.commands import environment as env
-
-    monkeypatch.setattr(env, "_resolve_environment_convert_payload", lambda args: ({}, 0))
-    env.cmd_environment_convert(_environment_args(tmp_path, tmp_path / "proj"))
-    assert pinned_roots == [str((tmp_path / "proj").resolve())]
+def test_environment_conversion_pins_the_project(tmp_path, monkeypatch, pinned_roots):
+    proj = _run_environment(monkeypatch, tmp_path, persist=lambda **k: ([], tmp_path / "x.json"))
+    assert pinned_roots == [str(proj.resolve())]
 
 
-def test_environment_convert_failure_does_not_pin(tmp_path, monkeypatch, pinned_roots, capsys):
-    from app.src.cli.commands import environment as env
+def test_failed_environment_conversion_does_not_pin(tmp_path, monkeypatch, pinned_roots):
+    def boom(**k):
+        raise ValueError("write failed")
 
-    monkeypatch.setattr(env, "_resolve_environment_convert_payload", lambda args: ({"error": "x"}, 1))
-    with pytest.raises(SystemExit):
-        env.cmd_environment_convert(_environment_args(tmp_path, tmp_path / "proj"))
+    with pytest.raises(ValueError):
+        _run_environment(monkeypatch, tmp_path, persist=boom)
+    assert pinned_roots == []
+
+
+def _copy_project(tmp_path):
+    from src.datalad_project_copy import copy_files_into_project
+
+    proj = tmp_path / "proj"
+    (proj).mkdir()
+    (proj / "project.json").write_text("{}")
+    f = tmp_path / "sub-01_task-x_survey.tsv"
+    f.write_text("a\n1\n")
+    return proj, f, copy_files_into_project
+
+
+def test_copy_into_project_pins_copied_modality(tmp_path):
+    proj, f, copy = _copy_project(tmp_path)
+    r = copy(
+        dataset_root=proj,
+        copy_pairs=[(f, proj / "sub-01" / "survey" / f.name)],
+        run_message="m",
+    )
+    assert r["copied_count"] == 1
+    assert mv.read_pins(proj)[0] == {"survey": mv.current_version("survey")}
+
+
+def test_copy_nothing_leaves_project_json_untouched(tmp_path, pinned_roots):
+    proj, _, copy = _copy_project(tmp_path)
+    before = (proj / "project.json").read_text()
+    assert copy(dataset_root=proj, copy_pairs=[], run_message="m")["copied_count"] == 0
+    assert (proj / "project.json").read_text() == before
     assert pinned_roots == []
 
 

@@ -30,6 +30,12 @@ def _extract_subject_from_rel_path(rel_path: str) -> str | None:
     return None
 
 
+def _pin(root: Path) -> None:
+    from src.modality_versions import pin_after_import
+
+    pin_after_import(root)
+
+
 def copy_files_into_project(
     *,
     dataset_root: Path,
@@ -63,6 +69,7 @@ def copy_files_into_project(
             dst_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src_path, dst_path)
             copied_rel.append(rel_path)
+        _pin(root)
         return {
             "copied_count": len(copied_rel),
             "copied_paths": copied_rel,
@@ -148,6 +155,8 @@ def copy_files_into_project(
         finally:
             Path(manifest_path).unlink(missing_ok=True)
 
+    # ponytail: pinned after the datalad runs, so project.json stays uncommitted until the next save.
+    _pin(root)
     return {
         "copied_count": len(all_copied_paths),
         "copied_paths": all_copied_paths,
