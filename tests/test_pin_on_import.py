@@ -182,3 +182,51 @@ def test_real_pin_records_the_current_survey_version(tmp_path):
     mv.pin_after_import(tmp_path)
 
     assert mv.read_pins(tmp_path)[0]["survey"] == mv.current_version("survey")
+
+
+def _datalad_copy(tmp_path, monkeypatch, *, pre_pinned=False, save_raises=False):
+    """DataLad-branch copy of a survey file; returns (result, recorded save calls)."""
+    import src.datalad_project_copy as dpc
+
+    proj = tmp_path / "proj"
+    (proj / ".datalad").mkdir(parents=True)
+    pins = {"SchemaVersions": {"survey": "1.0.0"}} if pre_pinned else {}
+    (proj / "project.json").write_text(json.dumps(pins))
+    src = tmp_path / "sub-01_task-x_survey.tsv"
+    src.write_text("a\n1\n")
+    dst = proj / "sub-01" / "survey" / src.name
+
+    def fake_mutation(root, **kw):
+        dst.parent.mkdir(parents=True)
+        dst.write_text("a\n1\n")
+        return {"run": {"stdout": json.dumps({"copied_count": 1, "copied_paths": [str(dst.relative_to(proj))]})}}
+
+    saves = []
+
+    def fake_save(root, **kw):
+        saves.append(kw)
+        if save_raises:
+            raise RuntimeError("save failed")
+        return {}
+
+    monkeypatch.setattr(dpc, "run_tracked_mutation", fake_mutation)
+    monkeypatch.setattr(dpc, "run_datalad_save", fake_save)
+    result = dpc.copy_files_into_project(dataset_root=proj, copy_pairs=[(src, dst)], run_message="PRISM: copy")
+    return result, saves
+
+
+def test_datalad_copy_commits_project_json_after_pinning(tmp_path, monkeypatch):
+    result, saves = _datalad_copy(tmp_path, monkeypatch)
+    assert result["copied_count"] == 1
+    assert len(saves) == 1 and saves[0]["paths"] == ["project.json"] and saves[0]["recursive"] is False
+
+
+def test_datalad_copy_save_failure_only_warns(tmp_path, monkeypatch, capsys):
+    result, saves = _datalad_copy(tmp_path, monkeypatch, save_raises=True)
+    assert result["copied_count"] == 1
+    assert "project.json" in capsys.readouterr().err
+
+
+def test_datalad_copy_does_not_save_when_nothing_was_pinned(tmp_path, monkeypatch):
+    _, saves = _datalad_copy(tmp_path, monkeypatch, pre_pinned=True)
+    assert saves == []
