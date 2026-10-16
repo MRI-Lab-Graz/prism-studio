@@ -10,6 +10,31 @@ refines it per modality later (schemas will change with usage). The Read the
 Docs documentation must be up to date the moment a modality arrives. "Why this
 modality?" is dropped: the answer is always "PRISM had none for it".
 
+## 0. Two kinds of proposal: new suffix in an existing modality, or a new modality
+
+The contributor fills the same workbook; the `Name` field decides:
+
+- **`Name` is an existing PRISM modality** (kind `prism`, e.g. `physio`,
+  `biometrics`): *extension proposal*. The contributor suggests only the
+  filename ending (`Suffix`, e.g. `blood`) and, if needed, `Extensions`. The
+  suffix joins that modality's `suffixes` list in `entities.schema.json`; its
+  extensions join the modality's `extensions` (the sidecar schema and the
+  extension list belong to the modality, not to a suffix, so added extensions
+  are then allowed for every suffix of it: known limit). No new schema file, no
+  new folder. Entities and the sidecar schema stay the modality's own.
+- **`Name` is new**: *new modality* (the existing flow): the contributor
+  suggests both the modality name (its folder) and its suffix.
+- **`Name` is a BIDS modality** (`anat`, `func`, `eeg`, `beh`, ...): refused with
+  "BIDS owns this folder; propose the suffix to BIDS upstream".
+
+Collision rules stay: a suffix already used by any modality or BIDS is refused,
+and the message says what it belongs to. Example columns and the sample are
+still required in both kinds (they drive the example sidecar and fixture).
+
+Output differs: an extension proposal produces the registration-entry change
+(`suffixes`/`extensions` additions), the example sidecar, a fixture under the
+existing modality folder and a docs snippet; no `<name>.schema.json`.
+
 ## 1. Fixed filename pattern
 
     sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_<suffix>.<ext>
@@ -50,7 +75,8 @@ inputs that still carry `rationale` are accepted and ignored (no breakage).
 
 ## 4. Docs are part of the registration
 
-- The generator also writes `docs/specs/<name>.md` in the style of
+- The generator also writes `docs/specs/<name>.md` (new modality) or a snippet
+  to add to the existing modality's page (extension proposal) in the style of
   `docs/specs/biometrics.md`: purpose (from `Description`), filename pattern,
   entity suggestions, example columns/types, example sidecar, link to the
   contribution guide. `REGISTRATION.md` gains the steps "copy it to
@@ -58,7 +84,8 @@ inputs that still carry `rationale` are accepted and ignored (no breakage).
 - New `verify_repo` check `modality-docs`: every registered `kind: prism`
   modality in `entities.schema.json` (survey, biometrics, environment, events,
   physio and community ones) has `docs/specs/<name>.md` and appears in
-  `docs/index.rst`. CI fails otherwise, so docs cannot fall behind. Modalities
+  `docs/index.rst`, and every registered suffix (`_<suffix>`) appears in that
+  modality's page. CI fails otherwise, so docs cannot fall behind. Modalities
   that have no page today get one in this change, or are listed in an explicit
   exemption set with a comment (decided during planning from what is missing).
 
@@ -71,6 +98,8 @@ inputs that still carry `rationale` are accepted and ignored (no breakage).
 
 ## Out of scope
 
+- Per-suffix extensions or per-suffix sidecar schemas inside one modality.
+
 - Issue-list/form look-and-feel (labels, titles, comment layout): separate,
   after this lands.
 - A `modality register` command: registration stays manual until a few real
@@ -79,7 +108,8 @@ inputs that still carry `rationale` are accepted and ignored (no breakage).
 
 ## Testing
 
-TDD for each piece: entity-rule loader (`allowedEntities`), validator
+TDD for each piece: extension vs new-modality routing (existing name, new
+name, BIDS name, suffix collision), entity-rule loader (`allowedEntities`), validator
 (accepts the fixed pattern incl. no `task`; errors on a foreign entity/order),
 `Entities` reader and checks, generator output (registration entry, docs page,
 fixture filename without `task`), `modality-docs` check (fails on a missing
