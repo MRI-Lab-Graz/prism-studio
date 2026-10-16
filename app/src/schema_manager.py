@@ -60,6 +60,28 @@ def is_compatible_version(required_version, provided_version):
     return True
 
 
+def _read_schema_file(schema_path, name, version_tag):
+    """Load one schema file and attach the _validator_info block (None on failure)."""
+    if not os.path.exists(schema_path):
+        return None
+    try:
+        with open(schema_path) as f:
+            schema = json.load(f)
+
+        # Add schema metadata for versioning
+        schema_version = schema.get("version", "1.0.0")
+        schema["_validator_info"] = {
+            "schema_version": schema_version,
+            "modality": name,
+            "version_tag": version_tag,
+            "loaded_at": json.dumps({"timestamp": "runtime"}),
+        }
+        return schema
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Warning: Could not load schema {schema_path}: {e}")
+    return None
+
+
 def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     """Load schema with version information
 
@@ -78,23 +100,7 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     # Build schema path with version
     schema_path = os.path.join(schema_dir, version, f"{name}.schema.json")
 
-    if os.path.exists(schema_path):
-        try:
-            with open(schema_path) as f:
-                schema = json.load(f)
-
-            # Add schema metadata for versioning
-            schema_version = schema.get("version", "1.0.0")
-            schema["_validator_info"] = {
-                "schema_version": schema_version,
-                "modality": name,
-                "version_tag": version,
-                "loaded_at": json.dumps({"timestamp": "runtime"}),
-            }
-            return schema
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not load schema {schema_path}: {e}")
-    return None
+    return _read_schema_file(schema_path, name, version)
 
 
 def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
