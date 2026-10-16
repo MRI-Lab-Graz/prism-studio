@@ -38,6 +38,26 @@ def _range_text(crit: dict) -> str:
     return f"{text} {crit['unit']}" if crit.get("unit") else text
 
 
+def _level_labels(spec) -> dict[str, str]:
+    """Code -> label from a participants.json column (Levels, else Annotations.Levels)."""
+    if not isinstance(spec, dict):
+        return {}
+    levels = spec.get("Levels")
+    if isinstance(levels, dict) and levels:
+        pairs = levels.items()
+    else:
+        annotations = spec.get("Annotations")
+        annotated = annotations.get("Levels") if isinstance(annotations, dict) else None
+        pairs = annotated.items() if isinstance(annotated, dict) else ()
+    labels = {}
+    for code, value in pairs:
+        if isinstance(value, dict):
+            value = value.get("Label") or value.get("Description")
+        if value:
+            labels[str(code)] = str(value)
+    return labels
+
+
 def _numeric_violation(raw: str, crit: dict) -> bool:
     try:
         value = float(raw.replace(",", "."))
@@ -101,20 +121,42 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         if col not in columns:
             config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' is linked to column '{col}', which is not in participants.tsv.", str(tsv)))
             continue
-        if crit.get("type") != "numeric":
-            continue
-        lo, hi = crit.get("min"), crit.get("max")
-        if lo is not None and hi is not None and lo > hi:
-            config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' has min {_num(lo)} greater than max {_num(hi)}; it is skipped.", str(root / "project.json")))
-            continue
         kind = "exclusion" if crit.get("mode") == "exclude" else "inclusion"
         where = "inside" if crit.get("mode") == "exclude" else "outside"
         label = crit.get("label") or crit_id
+        if crit.get("type") == "categorical":
+            labels = _level_labels(sidecar.get(col))
+            if not labels:
+                config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' cannot be checked: column '{col}' has no Levels (value labels) in participants.json.", str(root / "participants.json")))
+                continue
+            wanted = {str(v) for v in crit.get("values") or []}
+            expected = f"values {', '.join(sorted(wanted))}"
+
+            def violates(raw, labels=labels, wanted=wanted, crit=crit):
+                hit = labels.get(raw) in wanted
+                return hit if crit.get("mode") == "exclude" else not hit
+
+            def shown(raw, labels=labels):
+                return f"{raw} ({labels[raw]})" if raw in labels else raw
+        elif crit.get("type") == "numeric":
+            lo, hi = crit.get("min"), crit.get("max")
+            if lo is not None and hi is not None and lo > hi:
+                config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' has min {_num(lo)} greater than max {_num(hi)}; it is skipped.", str(root / "project.json")))
+                continue
+            expected = f"range {_range_text(crit)}"
+
+            def violates(raw, crit=crit):
+                return _numeric_violation(raw, crit)
+
+            def shown(raw):
+                return raw
+        else:
+            continue
         for row in rows:
             raw = (row.get(col) or "").strip()
-            if raw.lower() in _MISSING or not _numeric_violation(raw, crit):
+            if raw.lower() in _MISSING or not violates(raw):
                 continue
-            found.append(("WARNING", f"PRISM602 {row.get('participant_id', '?')}: {col} {raw} is {where} the {kind} range {_range_text(crit)} (criterion: {label})", str(tsv)))
+            found.append(("WARNING", f"PRISM602 {row.get('participant_id', '?')}: {col} {shown(raw)} is {where} the {kind} {expected} (criterion: {label})", str(tsv)))
 
     if found:
         config.append(("WARNING", f"PRISM602 {len(found)} participant(s) outside eligibility criteria.", str(tsv)))

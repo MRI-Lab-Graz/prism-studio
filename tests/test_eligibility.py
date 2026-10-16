@@ -119,3 +119,54 @@ def test_linked_column_missing_from_tsv_warns_once(tmp_path):
                  [("sub-P01", "x")], header=("participant_id", "years"))
     issues = check_eligibility(root)
     assert len(issues) == 1 and "PRISM603" in issues[0][1] and "age" in issues[0][1]
+
+
+SEX_LINK = {"EligibilityCriterion": "sex"}
+LEVELS = {"1": "Female", "2": "Male", "3": "Other"}
+
+
+def _sex(tmp_path, mode, values, levels=LEVELS, extra=None):
+    crit = {"id": "sex", "label": "Sex", "term": "nb:Sex", "type": "categorical",
+            "mode": mode, "values": values}
+    spec = dict(SEX_LINK, **({"Levels": levels} if levels else {}), **(extra or {}))
+    return _make(tmp_path, [crit], {"sex": spec},
+                 [("sub-P01", "1"), ("sub-P02", "2"), ("sub-P03", "3"), ("sub-P04", "2")],
+                 header=("participant_id", "sex"))
+
+
+def _flagged(issues):
+    return sorted(i[1].split()[1].rstrip(":") for i in issues if "sub-P0" in i[1])
+
+
+def test_exclude_label_flags_every_participant_with_that_code(tmp_path):
+    root = _sex(tmp_path, "exclude", ["Male"])
+    issues = check_eligibility(root)
+    assert _flagged(issues) == ["sub-P02", "sub-P04"]
+    assert "Male" in issues[1][1]
+
+
+def test_include_labels_flag_everyone_else(tmp_path):
+    root = _sex(tmp_path, "include", ["Female", "Male"])
+    assert _flagged(check_eligibility(root)) == ["sub-P03"]
+
+
+def test_label_compare_is_exact(tmp_path):
+    root = _sex(tmp_path, "exclude", ["Male"], levels={"1": "Female", "2": "male", "3": "Other"})
+    assert check_eligibility(root) == []
+
+
+def test_linked_categorical_without_levels_warns_once(tmp_path):
+    root = _sex(tmp_path, "exclude", ["Male"], levels=None)
+    issues = check_eligibility(root)
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "Levels" in issues[0][1]
+
+
+def test_levels_from_annotations_are_used_when_no_plain_levels(tmp_path):
+    ann = {"Annotations": {"Levels": {"2": {"TermURL": "snomed:248153007", "Label": "Male"}}}}
+    root = _sex(tmp_path, "exclude", ["Male"], levels=None, extra=ann)
+    assert _flagged(check_eligibility(root)) == ["sub-P02", "sub-P04"]
+
+
+def test_code_without_label_is_outside_an_include_criterion(tmp_path):
+    root = _sex(tmp_path, "include", ["Female", "Male"], levels={"1": "Female", "2": "Male"})
+    assert _flagged(check_eligibility(root)) == ["sub-P03"]
