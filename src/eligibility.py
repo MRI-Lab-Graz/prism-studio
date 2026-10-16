@@ -69,6 +69,8 @@ def _numeric_violation(raw: str, crit: dict) -> bool:
         value = float(raw.replace(",", "."))
     except ValueError:
         return False  # the data-type checks report non-numeric values
+    if value != value:  # "nan" parses as a float but is no measurement
+        return False
     lo, hi = crit.get("min"), crit.get("max")
     inside = (lo is None or value >= lo) and (hi is None or value <= hi)
     return inside if crit.get("mode") == "exclude" else not inside

@@ -256,3 +256,8 @@ def test_summary_counts_distinct_participants_not_violations(tmp_path):
     issues = check_eligibility(root)
     assert "1 participant(s)" in issues[0][1]
     assert len([i for i in issues if "sub-P01" in i[1]]) == 2
+
+
+def test_nan_is_not_a_number_and_is_skipped(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "nan"), ("sub-P02", "NaN")])
+    assert check_eligibility(root) == []
