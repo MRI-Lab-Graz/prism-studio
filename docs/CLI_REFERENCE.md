@@ -698,7 +698,7 @@ dataset and `REGISTRATION.md`.
     python prism_tools.py modality propose <proposal.xlsx|.yml|.json> --sample <file> [--out <dir>] [--check] [--json]
 
 - `--sample`: synthetic sample data file (required).
-- `--out`: output folder (required unless `--check`).
+- `--out`: output folder (required unless `--check`). The proposal may add a suffix to an existing modality; `--out` then writes no schema file.
 - `--check`: validate only, write nothing.
 - `--json`: machine-readable output.
 

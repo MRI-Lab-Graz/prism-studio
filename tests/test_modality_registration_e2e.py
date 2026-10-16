@@ -64,3 +64,23 @@ def test_following_registration_md_makes_the_fixture_validate(tmp_path: Path) ->
     after = _validate(repo, fixture)
     assert after["errors"] == []
     assert after["modalities"].get("biosample", 0) >= 1
+
+
+def test_extension_registration_makes_the_fixture_validate(tmp_path: Path) -> None:
+    sys.path.insert(0, str(REPO / "app" / "src"))
+    from src.modality_contribution import build_modality_artifacts, read_proposal
+
+    proposal = read_proposal(EXAMPLE_DIR / "bloodpanel.yml")
+    out = tmp_path / "proposal"
+    build_modality_artifacts(proposal, EXAMPLE_DIR / "bloodpanel_sample.tsv", EXAMPLE_DIR / "bloodpanel.yml", out)
+    repo = _copy_repo(tmp_path / "repo")
+    md = (out / "REGISTRATION.md").read_text(encoding="utf-8")
+    snippet = json.loads(re.search(r"```json\n(.*?)\n```", md, re.S).group(1))
+    entities_path = repo / "app" / "schemas" / "stable" / "entities.schema.json"
+    entities = json.loads(entities_path.read_text(encoding="utf-8"))
+    entities["modalities"].update(snippet)
+    entities_path.write_text(json.dumps(entities, indent=2), encoding="utf-8")
+
+    after = _validate(repo, out / "fixture")
+    assert after["errors"] == []
+    assert after["modalities"].get("biometrics", 0) >= 1

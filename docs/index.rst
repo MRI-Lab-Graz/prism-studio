@@ -218,6 +218,7 @@ in the repository root for the full citation, including all authors.
    specs/biometrics
    specs/events
    specs/environment
+   specs/physio
    specs/entities
 
 .. toctree::

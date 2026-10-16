@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import datetime
 import gzip
+import html
 import io
 import itertools
 import json
@@ -31,7 +32,7 @@ def write_minimal_dataset(
     extension: str,
     sidecar: dict,
     data_content: str | bytes,
-    task_name: str = "demo",
+    task_name: str | None = "demo",
     modality: str | None = None,
 ) -> Path:
     """Write a minimal valid PRISM dataset for one subject/modality.
@@ -57,7 +58,7 @@ def write_minimal_dataset(
     modality_dir = dest_dir / "sub-01" / (modality or suffix)
     modality_dir.mkdir(parents=True, exist_ok=True)
 
-    stem = f"sub-01_task-{task_name}_{suffix}"
+    stem = f"sub-01_task-{task_name}_{suffix}" if task_name else f"sub-01_{suffix}"
     data_path = modality_dir / f"{stem}.{extension}"
     if isinstance(data_content, bytes):
         data_path.write_bytes(data_content)
@@ -75,6 +76,14 @@ SAMPLE_MAX_BYTES = 1_000_000
 COLUMN_DATATYPES = {"string", "integer", "float"}
 COLUMN_SCALES = ("categorical", "continuous", "boolean")
 TYPE_OTHER = "other"  # reserved escape value, added to every vocabulary
+ENTITY_SUGGESTIONS = ("task", "acq")
+NOT_EXTENDABLE = {
+    "environment": (
+        "'environment' cannot take a new suffix this way: its rules (a fixed column set, the "
+        "ses-*/environment/ folder, a required recording entity) cannot be met by a generated "
+        "fixture. Propose a new modality instead."
+    ),
+}
 
 
 class ProposalError(ValueError):
@@ -158,7 +167,28 @@ def _normalize_types(raw) -> list[dict]:
     return types
 
 
-def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
+def _normalize_entities(raw) -> list[dict]:
+    from src.converters.excel_to_biometrics import _clean_key
+
+    out = []
+    for item in raw or []:
+        if not isinstance(item, dict):
+            raise ProposalError("entities: every entry must be a mapping with entity, value, description")
+        if item.get("value") is not None and not isinstance(item.get("value"), str):
+            # labels are free-form strings; never coerce (01 would silently become 1)
+            raise ProposalError(
+                f"entities: value {item.get('value')!r} was read as a number or YAML boolean "
+                "(yes/no/on/off/true/false); labels are text, put the values in quotes"
+            )
+        out.append({
+            "entity": (_clean_key(item.get("entity")) or "").lower(),
+            "value": _clean_key(item.get("value")) or "",
+            "description": _clean_key(item.get("description")) or "",
+        })
+    return out
+
+
+def _finish_proposal(base: dict, rows: list[dict], types=None, entities=None) -> dict:
     exts = base.get("extensions")
     if exts is not None and not isinstance(exts, (list, str)):
         raise ProposalError("'extensions' must be a list or a comma-separated string")
@@ -166,17 +196,18 @@ def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
         exts = exts.split(",")
     proposal = {
         key: str(base.get(key) or "").strip()
-        for key in ("modality", "suffix", "description", "rationale")
+        for key in ("modality", "suffix", "description")
     }
     proposal["extensions"] = [
         str(e).strip().lstrip(".").lower() for e in (exts or []) if str(e).strip()
     ]
     proposal["columns"] = [_normalize_column(r) for r in rows]
     proposal["types"] = _normalize_types(types)
+    proposal["entities"] = _normalize_entities(entities)
     return proposal
 
 
-def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
+def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict], list[dict]]:
     import pandas as pd
 
     from src.converters import excel_to_biometrics as eb
@@ -203,7 +234,6 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
         ("suffix", "Suffix"),
         ("extensions", "Extensions"),
         ("description", "Description"),
-        ("rationale", "Rationale"),
     ):
         idx = find_column_idx(header, {title})
         if idx is None:
@@ -247,7 +277,20 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
             value = cell(row, value_idx)
             if value:
                 types.append({"value": value, "description": cell(row, desc_idx)})
-    return base, rows, types
+    entities: list[dict] = []
+    if "Entities" in sheets and len(sheets["Entities"]):
+        esheet = sheets["Entities"]
+        eheader = [str(v) for v in esheet.iloc[0].tolist()]
+        e_idx = find_column_idx(eheader, {"Entity"})
+        v_idx = find_column_idx(eheader, {"Value"})
+        d_idx = find_column_idx(eheader, {"Description"})
+        if e_idx is None or v_idx is None:
+            raise ProposalError("sheet 'Entities' needs 'Entity' and 'Value' columns")
+        for i in range(1, len(esheet)):
+            row = esheet.iloc[i]
+            if cell(row, e_idx) or cell(row, v_idx):
+                entities.append({"entity": cell(row, e_idx), "value": cell(row, v_idx), "description": cell(row, d_idx)})
+    return base, rows, types, entities
 
 
 def read_proposal(path) -> dict:
@@ -255,8 +298,8 @@ def read_proposal(path) -> dict:
     path = Path(path)
     kind = path.suffix.lower()
     if kind == ".xlsx":
-        base, rows, types = _read_workbook(path)
-        return _finish_proposal(base, rows, types)
+        base, rows, types, entities = _read_workbook(path)
+        return _finish_proposal(base, rows, types, entities)
     if kind in {".yml", ".yaml", ".json"}:
         import yaml  # JSON is a YAML subset, one reader covers both
 
@@ -272,7 +315,10 @@ def read_proposal(path) -> dict:
         types = raw.get("types")
         if types is not None and not isinstance(types, list):
             raise ProposalError(f"{path.name}: 'types' must be a list")
-        return _finish_proposal(raw, rows, types)
+        entities = raw.get("entities")
+        if entities is not None and not isinstance(entities, list):
+            raise ProposalError(f"{path.name}: 'entities' must be a list")
+        return _finish_proposal(raw, rows, types, entities)
     raise ProposalError(
         f"unsupported proposal file type '{path.suffix}' (use .xlsx, .yml, .yaml or .json)"
     )
@@ -285,13 +331,12 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     wb = openpyxl.Workbook()
     mod = wb.active
     mod.title = "Modality"
-    mod.append(["Name", "Suffix", "Extensions", "Description", "Rationale"])
+    mod.append(["Name", "Suffix", "Extensions", "Description"])
     mod.append([
         proposal["modality"],
         proposal["suffix"],
         ", ".join(proposal["extensions"]),
         proposal["description"],
-        proposal["rationale"],
     ])
     cols = wb.create_sheet("Columns")
     cols.append(["ID", "Description", "Units", "DataType", "Scale", "Type", "Min", "Max", "AllowedValues"])
@@ -318,6 +363,10 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     types_ws.append(["Value", "Description"])
     for t in proposal["types"]:
         types_ws.append([t["value"], t["description"] or None])
+    ents = wb.create_sheet("Entities")
+    ents.append(["Entity", "Value", "Description"])
+    for e in proposal["entities"]:
+        ents.append([e["entity"], e["value"], e["description"] or None])
     wb.save(path)
 
 
@@ -325,6 +374,7 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9]*$")
 _EXT_RE = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)*$")
 _COLUMN_ID_RE = re.compile(r"^[A-Za-z0-9_]+$")
 _TYPE_VALUE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+_ENTITY_VALUE_RE = re.compile(r"^[A-Za-z0-9]+$")
 
 
 @lru_cache(maxsize=None)
@@ -342,11 +392,21 @@ def _bids_names() -> tuple[dict[str, str], dict[str, str]]:
     return suffixes, datatypes
 
 
-def _taken_names(schema_dir: str | None) -> dict[str, str]:
-    """Every name a new modality or suffix may not use, with the reason."""
+def _entities_schema(schema_dir: str | None) -> dict:
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
 
-    entities = load_schema("entities", schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+    return load_schema("entities", schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+
+
+def proposal_kind(proposal: dict, schema_dir: str | None = None) -> str:
+    """'extension' = add a suffix to an existing PRISM modality, else 'new'."""
+    rule = _entities_schema(schema_dir).get("modalities", {}).get(proposal.get("modality"), {})
+    return "extension" if rule.get("kind") == "prism" else "new"
+
+
+def _taken_names(schema_dir: str | None) -> dict[str, str]:
+    """Every name a new modality or suffix may not use, with the reason."""
+    entities = _entities_schema(schema_dir)
     taken: dict[str, str] = {}
     for name, rule in entities.get("modalities", {}).items():
         taken[name] = f"PRISM modality '{name}'"
@@ -371,13 +431,34 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         problems.append(Problem("error", where, message))
 
     taken = _taken_names(schema_dir)
-    for key, label in (("modality", "Name"), ("suffix", "Suffix")):
-        value = proposal.get(key) or ""
+    entities_schema = _entities_schema(schema_dir)
+    kind = proposal_kind(proposal, schema_dir)
+    name, suffix = proposal.get("modality") or "", proposal.get("suffix") or ""
+    aliases = entities_schema.get("aliases", {})
+    bids_modalities = {
+        n for n, r in entities_schema.get("modalities", {}).items() if r.get("kind") != "prism"
+    }
+    for value, label in ((name, "Name"), (suffix, "Suffix")):
         where = f"Modality.{label}"
         if not _NAME_RE.match(value):
             err(where, f"'{value}' must be lowercase letters and digits, starting with a letter")
-        elif value in taken:
-            err(where, f"'{value}' is already taken: {taken[value]}. Choose another {label.lower()}.")
+    if _NAME_RE.match(name):
+        if name in aliases:
+            err("Modality.Name", f"{taken[name]}. Use '{aliases[name]}' as the name to add a suffix to it.")
+        elif name in bids_modalities or (name in taken and kind == "new" and taken[name].startswith("BIDS")):
+            err(
+                "Modality.Name",
+                f"{taken.get(name, name)}: BIDS owns this folder; propose the suffix to BIDS upstream "
+                "(https://bids.neuroimaging.io), not here.",
+            )
+        elif kind == "new" and name in taken:
+            err("Modality.Name", f"'{name}' is already taken: {taken[name]}. Choose another name.")
+    if _NAME_RE.match(suffix) and suffix in taken:
+        err("Modality.Suffix", f"'{suffix}' is already taken: {taken[suffix]}. Choose another suffix.")
+    if kind == "extension" and name in NOT_EXTENDABLE:
+        err("Modality.Name", NOT_EXTENDABLE[name])
+    if kind == "extension" and proposal.get("entities"):
+        err("Entities", "entity suggestions are not used when adding a suffix to an existing modality; remove them")
 
     extensions = proposal.get("extensions") or []
     if not extensions:
@@ -386,9 +467,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         if not _EXT_RE.match(ext):
             err("Modality.Extensions", f"'{ext}' is not a valid extension (e.g. tsv, tsv.gz)")
 
-    for key, label in (("description", "Description"), ("rationale", "Rationale")):
-        if not (proposal.get(key) or "").strip():
-            err(f"Modality.{label}", "must not be empty")
+    if not (proposal.get("description") or "").strip():
+        err("Modality.Description", "must not be empty")
 
     types = proposal.get("types") or []
     type_values: set[str] = set()
@@ -404,6 +484,17 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         elif value in type_values:
             err(where, f"duplicate type '{value}'")
         type_values.add(value)
+
+    seen_entities: set[tuple[str, str]] = set()
+    for n, e in enumerate(proposal.get("entities") or [], start=1):
+        where = f"Entities.{e['entity']}-{e['value']}" if e["value"] else f"Entities row {n}"
+        if e["entity"] not in ENTITY_SUGGESTIONS:
+            err(where, f"only {list(ENTITY_SUGGESTIONS)} values can be suggested, got '{e['entity']}'")
+        if not _ENTITY_VALUE_RE.match(e["value"]):
+            err(where, f"'{e['value']}' may only contain letters and digits")
+        if (e["entity"], e["value"]) in seen_entities:
+            err(where, f"duplicate suggestion '{e['entity']}-{e['value']}'")
+        seen_entities.add((e["entity"], e["value"]))
 
     columns = proposal.get("columns") or []
     if not columns:
@@ -441,6 +532,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
                 err(where, f"Type '{ctype}' is given but the proposal defines no types")
             elif ctype != TYPE_OTHER and ctype not in type_values:
                 err(where, f"Type '{ctype}' is not in the vocabulary; use one of {sorted(type_values)} or '{TYPE_OTHER}'")
+    if kind == "extension" and not errors_only(problems):  # the fit check needs a well-formed proposal
+        problems += check_extension_fit(proposal, schema_dir)
     return problems
 
 
@@ -608,8 +701,8 @@ def build_schema(proposal: dict) -> dict:
         "version": "1.0.0",
         "title": f"{name.capitalize()} Metadata",
         "description": (
-            f"{proposal['description']}. Files should be named: "
-            f"sub-<label>[_ses-<label>]_task-<label>[_run-<index>]_{suffix}.<{'|'.join(exts)}>"
+            f"{proposal['description'].rstrip('.')}. Files should be named: "
+            f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<{'|'.join(exts)}>"
         ),
         "type": "object",
         "properties": {
@@ -632,7 +725,7 @@ def build_schema(proposal: dict) -> dict:
                     "Description": {"type": ["string", "object"]},
                     "Citation": {"type": "string"},
                 },
-                "required": ["TaskName", "OriginalName"],
+                "required": ["OriginalName"],
             },
             "Metadata": {
                 "type": "object",
@@ -679,7 +772,6 @@ def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:
     sidecar = {
         "Technical": {"FileFormat": proposal["extensions"][0]},
         "Study": {
-            "TaskName": name,
             "OriginalName": name,
             "Description": proposal["description"],
         },
@@ -693,14 +785,192 @@ def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:
     return sidecar
 
 
-def registration_entry(proposal: dict) -> dict:
+FIXED_ENTITIES = ["task", "acq", "run"]
+
+
+def registration_entry(proposal: dict, existing: dict | None = None) -> dict:
+    if existing is not None:  # adding a suffix to an existing modality
+        entry = dict(existing)
+        entry["suffixes"] = [*existing.get("suffixes", []), proposal["suffix"]]
+        entry["extensions"] = list(dict.fromkeys([*existing.get("extensions", []), *proposal["extensions"]]))
+        return entry
     exts = list(dict.fromkeys([*proposal["extensions"], "json"]))
-    return {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts}
+    entry = {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts,
+             "allowedEntities": list(FIXED_ENTITIES)}
+    values: dict[str, list[str]] = {}
+    for e in proposal.get("entities") or []:
+        values.setdefault(e["entity"], []).append(e["value"])
+    if values:
+        entry["optionalEntityValues"] = {
+            k: {"enum": v, "allowOther": True, "otherPattern": "[a-zA-Z0-9]+"} for k, v in values.items()
+        }
+    return entry
 
 
-def build_registration_md(proposal: dict) -> str:
-    name = proposal["modality"]
-    snippet = json.dumps({name: registration_entry(proposal)}, indent=2)
+def _pattern(suffix: str) -> str:
+    return f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<extension>"
+
+
+def _text(value) -> str:
+    """Contributor text for a docs page: HTML-escaped (MyST passes raw HTML through)."""
+    return html.escape(str(value), quote=False)
+
+
+def _cell(value) -> str:
+    return _text(value).replace("|", r"\|")
+
+
+def _purpose(proposal: dict) -> str:
+    return f"{_text(proposal['description']).rstrip('.')}."
+
+
+def _columns_lines(proposal: dict) -> list[str]:
+    return ["## Example Columns", "", "Every study defines its own columns in its own sidecar; these are examples.", "",
+            "| Column | Description | Units |", "| --- | --- | --- |",
+            *(f"| `{c['id']}` | {_cell(c['description'])} | {_cell(c['units'])} |" for c in proposal["columns"]), ""]
+
+
+def _sidecar_lines(suffix: str) -> list[str]:
+    return ["## Sidecar JSON", "",
+            f"Each data file needs a JSON sidecar (`*_{suffix}.json`) with `Technical`, `Study` and `Metadata` blocks "
+            "and one definition per column (Description, Units, optional MinValue/MaxValue/AllowedValues).", ""]
+
+
+def build_docs_page(proposal: dict) -> str:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    exts = ", ".join(f"`.{e}`" for e in proposal["extensions"])
+    lines = [
+        f"# {name.capitalize()}", "", _purpose(proposal), "",
+        "## File Name Structure", "", f"`{_pattern(suffix)}`", "",
+        "| Entity | Description |", "| --- | --- |",
+        "| `sub` | **Required**. The subject identifier. |",
+        "| `ses` | Optional. The session identifier. |",
+        "| `task` | Optional. The task or protocol, when the data belong to one. |",
+        "| `acq` | Optional. A variant of the acquisition. |",
+        "| `run` | Optional. The repeat within a session. |",
+        f"| `{suffix}` | **Required**. The suffix indicating the data. |",
+        f"| extension | **Required**. One of {exts}. |", "",
+    ]
+    if proposal.get("entities"):
+        lines += ["### Suggested values", "", "Other labels are accepted too.", ""]
+        lines += [
+            f"- `{e['entity']}-{e['value']}`" + (f": {_text(e['description'])}" if e["description"] else "")
+            for e in proposal["entities"]
+        ] + [""]
+    lines += _columns_lines(proposal)
+    if proposal.get("types"):
+        lines += ["### Types", "", f"Values for a column's `Type` field (`{TYPE_OTHER}` for anything not listed):", ""]
+        lines += [
+            f"- `{t['value']}`" + (f": {_text(t['description'])}" if t["description"] else "")
+            for t in proposal["types"]
+        ] + [""]
+    lines += _sidecar_lines(suffix)
+    lines += ["Example:", "", "```json", json.dumps(build_example_sidecar(proposal), indent=2), "```", "",
+              "To propose a change or a new modality, see the [contribution guide](../MODALITY_PROPOSALS.md).", ""]
+    return "\n".join(lines)
+
+
+def _extension_docs_section(proposal: dict) -> str:
+    """The section to add to an existing modality's page; that page's own naming rules apply."""
+    suffix = proposal["suffix"]
+    exts = ", ".join(f"`_{suffix}.{e}`" for e in proposal["extensions"])
+    tail = "\n".join(_columns_lines(proposal) + _sidecar_lines(suffix))
+    tail = re.sub(r"(?m)^## ", "### ", tail)
+    return (f"## Suffix `_{suffix}`\n\n{_purpose(proposal)}\n\n"
+            f"File names follow the naming rules on this page, ending in {exts}.\n\n{tail}")
+
+
+def build_docs_snippets(proposal: dict) -> dict[str, str]:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    exts = ", ".join(f"`{e}`" for e in [*proposal["extensions"], "json"])
+    return {
+        "toctree": f"   specs/{name}",
+        "entities_row": f"| `{name}` | prism | `{suffix}` | {exts} | optional `task`, `acq`, `run` |",
+        "card": (
+            '  <a class="prism-chapter-card" href="specs/%s.html">\n'
+            '    <span class="prism-chapter-title">%s</span>\n'
+            '    <span class="prism-chapter-outcome">%s</span>\n'
+            "  </a>" % (name, name.capitalize(), html.escape(proposal["description"]))
+        ),
+    }
+
+
+def _target_schema(proposal: dict, schema_dir: str | None = None) -> dict:
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
+
+    return load_schema(proposal["modality"], schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+
+
+def _fit_sidecar(sidecar: dict, schema: dict, label: str) -> dict:
+    # ponytail: fills a block's missing required key only with the first enum value or, for a
+    # plain string the label fits, the suffix name; other keys are left for the maintainer.
+    for block, spec in schema.get("properties", {}).items():
+        if block not in sidecar or not isinstance(spec, dict):
+            continue
+        for key in spec.get("required", []):
+            prop = spec.get("properties", {}).get(key)
+            if key in sidecar[block] or not isinstance(prop, dict):
+                continue
+            if prop.get("enum"):
+                sidecar[block][key] = prop["enum"][0]
+            elif "string" in (prop.get("type") if isinstance(prop.get("type"), list) else [prop.get("type")]) \
+                    and re.search(prop.get("pattern", ""), label):
+                sidecar[block][key] = label
+            # anything else stays missing, so check_extension_fit names it instead of a wrong value
+    return sidecar
+
+
+def check_extension_fit(proposal: dict, schema_dir: str | None = None) -> list[Problem]:
+    """Warn when the generated example sidecar does not match the target modality's own schema."""
+    import jsonschema
+
+    schema = _target_schema(proposal, schema_dir)
+    if not schema:
+        return []
+    sidecar = _fit_sidecar(build_example_sidecar(proposal), schema, proposal["suffix"])
+    return [
+        Problem("warning", f"{proposal['modality']}.schema.json",
+                f"{'/'.join(str(x) for x in e.absolute_path)}: {e.message}" if e.absolute_path else e.message)
+        for e in jsonschema.Draft7Validator(schema).iter_errors(sidecar)
+    ]
+
+
+def build_registration_md(proposal: dict, existing: dict | None = None) -> str:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    snippet = json.dumps({name: registration_entry(proposal, existing)}, indent=2)
+    review = """Review by hand what no check can judge: units, a modality that duplicates an
+existing one under another name, and whether the sample holds any real
+participant data.
+"""
+    if existing is not None:
+        return f"""# Adding the `_{suffix}` suffix to the `{name}` modality (maintainer steps)
+
+PRISM does not register suffixes automatically. Do these steps by hand in the
+pull request, then let CI validate the fixture in this folder.
+
+1. In `app/schemas/stable/entities.schema.json`, replace the `"{name}"` entry
+   under `"modalities"` with this one (the suffix and any new extensions are
+   appended):
+
+```json
+{snippet}
+```
+
+2. Documentation (CI check `modality-docs` fails without it): add the section
+   from `docs/{name}-{suffix}.md` to `docs/specs/{name}.md` (the page must
+   mention `_{suffix}`), and add `{suffix}` to the Suffixes column of the
+   `{name}` row in `docs/specs/entities.md`.
+3. Check the registration:
+   `python tests/verify_repo.py --check schema-sync` and
+   `python tests/verify_repo.py --check modality-docs`.
+4. Validate the generated dataset: from the repository root, run
+   `python prism.py <this folder>/fixture`. It must pass without errors.
+
+The example sidecar uses the `{name}` modality's own schema; keys that schema
+requires were filled in heuristically, so check them before relying on the
+example.
+
+{review}"""
     return f"""# Registering the `{name}` modality (maintainer steps)
 
 PRISM does not register modalities automatically. Do these steps by hand in the
@@ -715,46 +985,75 @@ pull request, then let CI validate the fixture in this folder.
 ```
 
 3. Add `"{name}"` to `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py`.
-4. Check the registration:
-   `python tests/verify_repo.py --check schema-sync` and
-   `python tests/verify_repo.py --check modality-schema-conventions`.
-5. Validate the generated dataset: from the repository root, run
+4. Documentation (CI check `modality-docs` fails without it):
+   - copy `docs/{name}.md` to `docs/specs/{name}.md`;
+   - add `   specs/{name}` to the "Schema Specifications" toctree in `docs/index.rst`;
+   - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`;
+   - add the row from `docs/snippets.md` to the table in `docs/specs/entities.md`.
+5. Check the registration:
+   `python tests/verify_repo.py --check schema-sync`,
+   `python tests/verify_repo.py --check modality-schema-conventions` and
+   `python tests/verify_repo.py --check modality-docs`.
+6. Validate the generated dataset: from the repository root, run
    `python prism.py <this folder>/fixture`. It must pass without errors.
 
-Review by hand what no check can judge: units, a modality that duplicates an
-existing one under another name, and whether the sample holds any real
-participant data.
-"""
+{review}"""
 
 
 def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir) -> list[Path]:
-    """Write schema, example sidecar, fixture, REGISTRATION.md and input copies.
+    """Write schema (new modality only), example sidecar, fixture, docs, REGISTRATION.md and input copies.
 
     Call check_proposal() and check_sample() first; this does not re-check.
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     sample, source = Path(sample_path), Path(proposal_path)
-    name = proposal["modality"]
+    name, suffix = proposal["modality"], proposal["suffix"]
     ext = sample_extension(sample, proposal["extensions"])
+    is_new = proposal_kind(proposal) == "new"
+    existing = None if is_new else _entities_schema(None)["modalities"][name]
 
-    schema_path = out / f"{name}.schema.json"
-    schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
+    written: list[Path] = []
+    if is_new:
+        schema_path = out / f"{name}.schema.json"
+        schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
+        written.append(schema_path)
     sidecar = build_example_sidecar(proposal)
+    if not is_new:
+        sidecar = _fit_sidecar(sidecar, _target_schema(proposal), suffix)
     sidecar["Technical"]["FileFormat"] = ext
     sidecar_path = out / "example_sidecar.json"
     sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
     write_minimal_dataset(
         out / "fixture",
         modality=name,
-        suffix=proposal["suffix"],
+        suffix=suffix,
         extension=ext,
         sidecar=sidecar,
         data_content=sample.read_bytes(),
-        task_name=name,
+        task_name=None if is_new else (existing.get("example", {}).get("task") or suffix),
     )
+    docs = out / "docs"
+    docs.mkdir(exist_ok=True)
+    if is_new:
+        page = docs / f"{name}.md"
+        page.write_text(build_docs_page(proposal), encoding="utf-8")
+        snippets_path = docs / "snippets.md"
+        s = build_docs_snippets(proposal)
+        snippets_path.write_text(
+            f"# Docs snippets for `{name}`\n\n"
+            f"Toctree line for docs/index.rst:\n\n```\n{s['toctree']}\n```\n\n"
+            f"Row for the table in docs/specs/entities.md:\n\n```\n{s['entities_row']}\n```\n\n"
+            f"Card for docs/SCHEMA_SPECIFICATIONS.md:\n\n```html\n{s['card']}\n```\n",
+            encoding="utf-8",
+        )
+        written += [page, snippets_path]
+    else:
+        page = docs / f"{name}-{suffix}.md"
+        page.write_text(_extension_docs_section(proposal), encoding="utf-8")
+        written.append(page)
     registration_path = out / "REGISTRATION.md"
-    registration_path.write_text(build_registration_md(proposal), encoding="utf-8")
+    registration_path.write_text(build_registration_md(proposal, existing), encoding="utf-8")
     proposal_copy = out / f"proposal{source.suffix.lower()}"
     shutil.copyfile(source, proposal_copy)
     sample_copy = out / f"sample.{ext}"
@@ -762,4 +1061,4 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
 
     fixture = out / "fixture"
     fixture_files = [p for p in sorted(fixture.rglob("*")) if p.is_file()]
-    return [schema_path, sidecar_path, registration_path, proposal_copy, sample_copy, *fixture_files]
+    return [*written, sidecar_path, registration_path, proposal_copy, sample_copy, *fixture_files]

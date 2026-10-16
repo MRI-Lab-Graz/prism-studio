@@ -19,7 +19,6 @@ def _body(proposal="[blood.xlsx](%s/1/blood.xlsx)" % BASE,
     return (
         "### Proposal file\n\n" + proposal + "\n\n"
         "### Sample data file\n\n" + sample + "\n\n"
-        "### Why this modality?\n\nBecause.\n\n"
         "### Privacy\n\n" + privacy + "\n"
     )
 
@@ -58,6 +57,7 @@ def test_bad_issue_bodies_are_clear_errors(kwargs, needle):
 def test_pr_body_links_the_issue_and_carries_warnings():
     text = mod.pr_body(7, "Wrote 9 files\nWARNING: s.tsv column 'patient_name': looks like an identifier\n")
     assert "#7" in text
+    assert "Closes #7" in text
     assert "patient_name" in text
     assert "draft" in text.lower()
     assert "REGISTRATION.md" in text

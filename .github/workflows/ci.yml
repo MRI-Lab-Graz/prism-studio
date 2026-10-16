@@ -82,7 +82,7 @@ jobs:
 
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-schema-conventions,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
   nightly-deep-checks:
     name: Nightly Deep Checks
@@ -117,7 +117,7 @@ jobs:
 
       - name: Nightly repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
 
   coverage:
     name: Coverage Report (Python ${{ matrix.python-version }})
