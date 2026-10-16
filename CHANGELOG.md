@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   include or exclude). In the Sociodemographics converter a column is linked to a criterion (pre-selected by
   NeuroBagel term), and the validator warns (`PRISM602`, never an error) for each participant outside the
   limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+  New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
+  Inclusion/Exclusion fields.
 
 ### Security
 Findings of a full security review; each fix has a regression test.

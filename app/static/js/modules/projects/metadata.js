@@ -21,7 +21,7 @@ import {
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -3721,8 +3721,8 @@ export function computeLocalCompleteness() {
     addField('Recruitment', 'Period.End', hasRecPeriodEnd());
     addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
 
-    const inclusionCriteriaCount = getOverviewList('smEligInclusion').length;
-    const exclusionCriteriaCount = getOverviewList('smEligExclusion').length;
+    const inclusionCriteriaCount = getOverviewList('smEligInclusion').length + checkedCriteriaCount('include');
+    const exclusionCriteriaCount = getOverviewList('smEligExclusion').length + checkedCriteriaCount('exclude');
 
     // CORE is satisfied by the Inclusion list alone - see
     // validateEligibilityCriteriaBadges() for why it no longer depends on the
@@ -4361,6 +4361,11 @@ document.addEventListener('DOMContentLoaded', function() {
         list: document.getElementById('smEligCriteriaList'),
         select: document.getElementById('smEligCriteriaSelect'),
         addButton: document.getElementById('smEligCriteriaAdd'),
+        onChange: () => {
+            validateEligibilityCriteriaBadges();
+            updateCompletenessUI(computeLocalCompleteness());
+            updateCreateProjectButton();
+        },
     });
     initFundingRows();
     initTwoFieldListFields();

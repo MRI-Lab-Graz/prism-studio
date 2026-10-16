@@ -58,6 +58,12 @@ stay empty) or the category labels. Enter the limits here only once: in the
 to the criterion. Participants outside a limit get a warning (`PRISM602`), never
 an error, so you can validate while data collection is still running.
 
+A new row is a draft: fill in the limits, then click the green check mark to accept it
+(it stays disabled until the row is complete; **Cancel** discards the draft). Only an
+accepted row is saved, and only an accepted row shows the red cross that deletes it.
+Accepted criteria count towards the Core fields: an *include* criterion satisfies
+**Inclusion Criteria**, an *exclude* criterion **Exclusion Criteria**.
+
 ### What gets created
 
 ```text

@@ -3,6 +3,7 @@
  * Real-time validation for project creation fields
  */
 
+import { checkedCriteriaCount } from './eligibility-criteria.js';
 import { getById, addClass, removeClass } from '../../shared/dom.js';
 
 const DATE_RANGE_BADGE_IDS = {
@@ -176,7 +177,9 @@ export function validateEligibilityCriteriaBadges() {
 
     const inclusionValues = _parseEligibilityCriteriaValues('smEligInclusion');
     const exclusionValues = _parseEligibilityCriteriaValues('smEligExclusion');
-    const hasInclusionCriterion = inclusionValues.length > 0;
+    // Accepted "Checked Criteria" count like entries of the free-text lists.
+    const hasInclusionCriterion = inclusionValues.length > 0 || checkedCriteriaCount('include') > 0;
+    const hasExclusionCriterion = exclusionValues.length > 0 || checkedCriteriaCount('exclude') > 0;
 
     const requiredBadge =
         getById('smEligCriteriaRequiredBadge') || findBadgeByText('Inclusion Criteria');
@@ -187,13 +190,13 @@ export function validateEligibilityCriteriaBadges() {
     const optionalBadge =
         getById('smEligExclusionOptionalBadge') || findBadgeByText('Exclusion Criteria');
     if (optionalBadge) {
-        updateBadgeColor(optionalBadge, exclusionValues.length > 0);
+        updateBadgeColor(optionalBadge, hasExclusionCriterion);
     }
 
     // Inclusion is the CORE-tier field (red-when-empty applies); Exclusion is
     // OPTIONAL (never gets the alarming red border).
     setRequiredFieldBorder(inclusionField, hasInclusionCriterion, false);
-    setRequiredFieldBorder(exclusionField, exclusionValues.length > 0, true);
+    setRequiredFieldBorder(exclusionField, hasExclusionCriterion, true);
 }
 
 /**

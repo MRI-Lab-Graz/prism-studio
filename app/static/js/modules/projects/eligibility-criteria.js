@@ -29,6 +29,7 @@ export function newRow(term) {
         max: '',
         unit: info.unit || '',
         values: [],
+        accepted: false, // a draft until the user clicks the check mark
     };
 }
 
@@ -44,6 +45,7 @@ export function rowsFromCriteria(criteria) {
         max: c.max === undefined ? '' : String(c.max),
         unit: c.unit || '',
         values: c.values || [],
+        accepted: true, // what is in project.json is already defined
     }));
 }
 
@@ -67,8 +69,8 @@ export function criteriaFromRows(rows) {
     const used = new Set(rows.map((r) => r.id).filter(Boolean));
     const out = [];
     for (const row of rows) {
-        if (!isComplete(row)) continue;
-        const { id: _id, label: _label, term: _term, type: _type, mode: _mode, min: _min, max: _max, unit: _unit, values: _values, ...extra } = row;
+        if (!row.accepted || !isComplete(row)) continue;
+        const { id: _id, label: _label, term: _term, type: _type, mode: _mode, min: _min, max: _max, unit: _unit, values: _values, accepted: _accepted, ...extra } = row;
         const label = String(row.label).trim();
         const criterion = { ...extra, label, term: row.term ?? null, type: row.type, mode: row.mode };
         if (row.type === 'numeric') {
@@ -99,44 +101,57 @@ let listEl = null;
 
 export const getEligibilityCriteria = () => criteriaFromRows(rows);
 
+/** Accepted criteria of one mode ("include"/"exclude"); counts towards the Core fields. */
+export const checkedCriteriaCount = (mode) => getEligibilityCriteria().filter((c) => c.mode === mode).length;
+
 export function setEligibilityCriteria(criteria) {
     rows = rowsFromCriteria(criteria);
     render();
 }
 
+const hintText = (row) => (isComplete(row)
+    ? 'click the check mark to add this criterion'
+    : `${row.accepted ? 'not saved' : 'to add it'}: ${row.type === 'numeric' ? 'enter a min or max' : 'choose at least one value'}${row.label ? '' : ' and a name'}`);
+// An accepted, complete row needs no hint; a draft always says what it still needs.
+const hintHidden = (row) => row.accepted && isComplete(row);
+
 function rowHtml(row, i) {
     const info = termInfo(row.term);
     const name = row.term
         ? `<strong>${escapeHtml(row.label)}</strong>`
-        : `<input class="form-control form-control-sm" data-f="label" placeholder="Name (e.g. IQ)" value="${escapeHtml(row.label)}">`;
+        : `<input class="form-control form-control-sm w-auto" data-f="label" placeholder="Name (e.g. IQ)" value="${escapeHtml(row.label)}">`;
     const mode = ['include', 'exclude'].map((m) => `<option value="${m}"${row.mode === m ? ' selected' : ''}>${m}</option>`).join('');
     let limits;
     if (row.type === 'numeric') {
-        limits = `<input class="form-control form-control-sm" data-f="min" placeholder="min" value="${escapeHtml(row.min)}">
-            <input class="form-control form-control-sm" data-f="max" placeholder="max" value="${escapeHtml(row.max)}">
-            <input class="form-control form-control-sm" data-f="unit" placeholder="unit" value="${escapeHtml(row.unit)}">`;
+        limits = `<input class="form-control form-control-sm w-auto" style="width: 6.5rem !important" data-f="min" placeholder="min" value="${escapeHtml(row.min)}">
+            <input class="form-control form-control-sm w-auto" style="width: 6.5rem !important" data-f="max" placeholder="max" value="${escapeHtml(row.max)}">
+            <input class="form-control form-control-sm w-auto" style="width: 6.5rem !important" data-f="unit" placeholder="unit" value="${escapeHtml(row.unit)}">`;
     } else if (info.values) {
         limits = info.values.map((v) => `<label class="form-check-label small me-2"><input type="checkbox" class="form-check-input" data-f="value" value="${escapeHtml(v)}"${row.values.includes(v) ? ' checked' : ''}> ${escapeHtml(v)}</label>`).join('');
     } else {
-        limits = `<input class="form-control form-control-sm" data-f="values" placeholder="labels, comma separated" value="${escapeHtml(row.values.join(', '))}">`;
+        limits = `<input class="form-control form-control-sm w-auto" data-f="values" placeholder="labels, comma separated" value="${escapeHtml(row.values.join(', '))}">`;
     }
     return `<div class="d-flex flex-wrap gap-2 align-items-center" data-i="${i}">${name}
         <select class="form-select form-select-sm w-auto" data-f="mode">${mode}</select>${limits}
-        <small class="text-warning" data-f="hint"${isComplete(row) ? ' hidden' : ''}>not saved yet: ${row.type === 'numeric' ? 'enter a min or max' : 'choose at least one value'}${row.label ? '' : ' and a name'}</small>
-        <button type="button" class="btn btn-outline-danger btn-sm" data-f="remove" aria-label="Remove criterion"><i class="fas fa-times"></i></button></div>`;
+        <small class="text-warning" data-f="hint"${hintHidden(row) ? ' hidden' : ''}>${hintText(row)}</small>
+        ${row.accepted
+        ? '<button type="button" class="btn btn-outline-danger btn-sm" data-f="remove" aria-label="Delete criterion" title="Delete criterion"><i class="fas fa-times"></i></button>'
+        : `<button type="button" class="btn btn-outline-success btn-sm" data-f="accept" aria-label="Accept criterion" title="Accept criterion"${isComplete(row) ? '' : ' disabled'}><i class="fas fa-check"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-f="cancel" title="Discard this draft">Cancel</button>`}</div>`;
 }
 
 function render() {
     if (listEl) listEl.innerHTML = rows.map(rowHtml).join('');
 }
 
-export function initEligibilityCriteria({ list, select, addButton }) {
+export function initEligibilityCriteria({ list, select, addButton, onChange = () => {} }) {
     if (!list || !select || !addButton) return; // page without the Eligibility form
     listEl = list;
     select.innerHTML = TERMS.map((t) => `<option value="${t.term ?? ''}">${escapeHtml(t.label)}</option>`).join('');
     addButton.addEventListener('click', () => {
         rows.push(newRow(select.value || null));
         render();
+        onChange();
     });
     const rowOf = (el) => rows[Number(el.closest('[data-i]').dataset.i)];
     list.addEventListener('input', (event) => {
@@ -145,14 +160,24 @@ export function initEligibilityCriteria({ list, select, addButton }) {
         if (f === 'value') row.values = [...list.querySelectorAll(`[data-i="${rows.indexOf(row)}"] [data-f="value"]:checked`)].map((c) => c.value);
         else if (f === 'values') row.values = event.target.value.split(',');
         else if (f) row[f] = event.target.value;
-        const hint = event.target.closest('[data-i]').querySelector('[data-f="hint"]');
-        if (hint) hint.hidden = isComplete(row);
+        const rowEl = event.target.closest('[data-i]');
+        const hint = rowEl.querySelector('[data-f="hint"]');
+        if (hint) {
+            hint.hidden = hintHidden(row);
+            hint.textContent = hintText(row);
+        }
+        const accept = rowEl.querySelector('[data-f="accept"]');
+        if (accept) accept.disabled = !isComplete(row);
+        onChange();
     });
     list.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-f="remove"]');
+        const button = event.target.closest('[data-f="remove"], [data-f="cancel"], [data-f="accept"]');
         if (!button) return;
-        rows.splice(Number(button.closest('[data-i]').dataset.i), 1);
+        const i = Number(button.closest('[data-i]').dataset.i);
+        if (button.dataset.f === 'accept') rows[i].accepted = true;
+        else rows.splice(i, 1);
         render();
+        onChange();
     });
     render();
 }
