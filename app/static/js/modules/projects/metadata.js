@@ -22,7 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
-import { mountChipList } from './chip-list.js';
+import { mountChipArea, mountChipList } from './chip-list.js';
 import { criterionSummary, knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
@@ -1891,7 +1891,7 @@ export function toggleRecLocationInputs() {
     const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
     const pickerGroup = document.getElementById('recLocationPickerGroup');
     const resultsRow = document.getElementById('recLocationResultsRow');
-    const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
+    const chips = document.querySelectorAll('#smRecLocationList button');
 
     if (pickerGroup) {
         pickerGroup.querySelectorAll('input, button').forEach(el => {
@@ -1903,10 +1903,8 @@ export function toggleRecLocationInputs() {
             el.disabled = Boolean(onlineOnly);
         });
     }
-    rows.forEach(row => {
-        row.querySelectorAll('button').forEach(el => {
-            el.disabled = Boolean(onlineOnly);
-        });
+    chips.forEach(el => {
+        el.disabled = Boolean(onlineOnly);
     });
     validateRecLocationBadge();
 }
@@ -1924,48 +1922,29 @@ function _clearRecLocationPicker() {
     document.getElementById('recLocationPickerGroup')?.classList.remove('row-pending');
 }
 
-export function addRecLocationRow(value = '') {
-    const list = document.getElementById('smRecLocationList');
-    if (!list) return;
+let _recLocationChips = null;
 
+// Recruitment locations are green chips; the search picker above is the entry.
+function _recLocationChipArea() {
+    const list = document.getElementById('smRecLocationList');
+    if (!list) return null;
+    if (!_recLocationChips || !list.classList.contains('chip-area')) {
+        list.classList.add('chip-area');
+        _recLocationChips = mountChipArea(list, {
+            onChange: () => {
+                toggleRecLocationInputs();
+                updateCreateProjectButton();
+                validateRecLocationBadge();
+            },
+        });
+    }
+    return _recLocationChips;
+}
+
+export function addRecLocationRow(value = '') {
     const location = String(value || '').trim();
     if (!location) return;
-
-    const existingLocations = Array.from(list.querySelectorAll('.rec-location-row'))
-        .map(row => String(row.dataset.location || '').trim().toLowerCase())
-        .filter(Boolean);
-    if (existingLocations.includes(location.toLowerCase())) {
-        return;
-    }
-
-    const row = document.createElement('div');
-    row.className = 'd-flex gap-2 align-items-center rec-location-row';
-    row.dataset.location = location;
-
-    const locationLabel = document.createElement('span');
-    locationLabel.className = 'form-control form-control-sm text-truncate';
-    locationLabel.style.cursor = 'default';
-    locationLabel.title = location;
-    locationLabel.textContent = location;
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger btn-sm remove-location flex-shrink-0';
-    removeButton.setAttribute('aria-label', `Remove ${location}`);
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        updateCreateProjectButton();
-        validateRecLocationBadge();
-    });
-
-    row.appendChild(locationLabel);
-    row.appendChild(removeButton);
-    list.appendChild(row);
-    toggleRecLocationInputs();
-    updateCreateProjectButton();
-    validateRecLocationBadge();
+    _recLocationChipArea()?.addValue(location); // a duplicate (any case) is ignored
 }
 
 export function getRecLocationList() {
@@ -1974,14 +1953,7 @@ export function getRecLocationList() {
         return ['Online'];
     }
 
-    const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    const locations = [];
-    rows.forEach(row => {
-        const location = String(row.dataset.location || '').trim();
-        if (!location) return;
-        locations.push(location);
-    });
-    return locations;
+    return [...(_recLocationChipArea()?.getValues() || [])];
 }
 
 export function hasAtLeastOneRecLocation() {
@@ -1992,9 +1964,8 @@ export function hasAtLeastOneRecLocation() {
 }
 
 export function setRecLocationList(locations) {
-    const list = document.getElementById('smRecLocationList');
-    if (!list) return;
-    list.innerHTML = '';
+    const area = _recLocationChipArea();
+    if (!area) return;
 
     const onlineOnlyInput = document.getElementById('smRecLocationOnlineOnly');
     const values = Array.isArray(locations) ? locations : [];
@@ -2003,7 +1974,7 @@ export function setRecLocationList(locations) {
         onlineOnlyInput.checked = values.some(loc => /^online(\s+only)?$/i.test(String(loc || '').trim()));
     }
 
-    nonOnline.forEach(loc => addRecLocationRow(loc));
+    area.setValues(nonOnline.map(loc => String(loc || '').trim()).filter(Boolean));
     toggleRecLocationInputs();
     validateRecLocationBadge();
 }

@@ -119,9 +119,7 @@ export function validateRecLocationBadge() {
     }
 
     // Check if there's at least one location with a country
-    const locationRows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    const hasAddedLocation = Array.from(locationRows)
-        .some(row => String(row.dataset.location || '').trim());
+    const hasAddedLocation = document.querySelectorAll('#smRecLocationList .chip-badge').length > 0;
 
     const hasLocation = hasAddedLocation;
 

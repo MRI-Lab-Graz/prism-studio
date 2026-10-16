@@ -100,7 +100,7 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
 
 
 
-def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_defined(app_page, studio_url, project):
+def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_chips(app_page, studio_url, project):
     meta = json.loads((project / "project.json").read_text())
     meta["Recruitment"] = {"Location": "Graz, Austria"}
     (project / "project.json").write_text(json.dumps(meta))
@@ -108,9 +108,10 @@ def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_
     add = app_page.locator("#recLocationAddBtn")
     expect(add).to_have_class(re.compile("btn-outline-success"))
     expect(add.locator(".fa-check")).to_have_count(1)
-    row = app_page.locator("#smRecLocationList .rec-location-row")
-    expect(row).to_have_count(1)
-    expect(row.locator("button.remove-location")).to_have_count(1)
+    chip = app_page.locator("#smRecLocationList .chip-badge")
+    expect(chip).to_have_count(1)
+    expect(chip.first).to_contain_text("Graz, Austria")
+    expect(chip.first).to_have_class(re.compile("btn-outline-primary"))  # a green chip, no red cross
 
 
 def _project_json_text(project):
@@ -202,7 +203,7 @@ def test_after_searching_and_adding_a_location_saving_is_not_blocked(app_page, s
     page.click("#recLocationSearchBtn")
     expect(page.locator("#recLocationResultsRow")).to_be_visible()
     page.click("#recLocationAddBtn")
-    expect(page.locator("#smRecLocationList .rec-location-row")).to_have_count(1)
+    expect(page.locator("#smRecLocationList .chip-badge")).to_have_count(1)
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_text("not accepted yet")).to_have_count(0)  # nothing is pending any more
     expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
@@ -479,3 +480,23 @@ def test_missing_files_entries_become_chips_with_a_readable_summary(app_page, st
     expect(accept).to_have_class(re.compile("btn-outline-secondary"))
     chip.first.click()
     assert page.input_value("#smMissingFiles") == ""
+
+
+def test_an_added_location_is_a_chip_that_can_be_removed_and_counts_for_the_location_badge(app_page, studio_url):
+    page = app_page
+    page.route("**/api/projects/recruitment-location-search*", lambda route: route.fulfill(
+        status=200, content_type="application/json",
+        body=json.dumps({"results": [{"display_name": "Graz, Styria, Austria"}]})))
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
+    badge = page.locator("#smRecLocationRequiredBadge")
+    expect(badge).not_to_have_class(re.compile("bg-success"))
+    page.fill("#recLocationQuery", "Graz")
+    page.click("#recLocationSearchBtn")
+    page.click("#recLocationAddBtn")
+    chip = page.locator("#smRecLocationList .chip-badge")
+    expect(chip).to_have_count(1)
+    expect(chip.first).to_contain_text("Graz, Styria, Austria")
+    expect(badge).to_have_class(re.compile("bg-success"))
+    chip.first.click()
+    expect(chip).to_have_count(0)
+    expect(badge).not_to_have_class(re.compile("bg-success"))

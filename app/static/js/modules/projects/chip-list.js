@@ -19,6 +19,50 @@ export function addChip(values, text) {
 
 export const removeChip = (values, text) => values.filter((v) => v !== text);
 
+/** Just the green chips (no input): `container` becomes the chip area. Returns
+ *  { getValues, setValues, addValue }; `setValues` does not call `onChange`. */
+export function mountChipArea(container, { chipText = (value) => value, onChange = () => {} } = {}) {
+    container.classList.remove('flex-column');
+    container.classList.add('d-flex', 'flex-wrap', 'gap-1');
+    let values = [];
+
+    const render = () => {
+        container.innerHTML = '';
+        values.forEach((value) => {
+            const text = chipText(value);
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 chip-badge';
+            chip.title = `Remove: ${text}`;
+            chip.setAttribute('aria-label', `Remove ${text}`);
+            chip.innerHTML = `${escapeHtml(text)} <span aria-hidden="true">&times;</span>`;
+            chip.addEventListener('click', () => {
+                values = removeChip(values, value);
+                render();
+                onChange(values);
+            });
+            container.appendChild(chip);
+        });
+    };
+
+    return {
+        getValues: () => values,
+        addValue(value) {
+            const next = addChip(values, value);
+            if (next === values) return false;
+            values = next;
+            render();
+            onChange(values);
+            return true;
+        },
+        setValues(next) {
+            values = [];
+            (next || []).forEach((value) => { values = addChip(values, value); });
+            render();
+        },
+    };
+}
+
 /** Mounts an entry row and the chip area into `container`; returns { getValues, setValues, addValue }.
  *  Default: one text input. For structured entries pass `fields` (input/select elements the
  *  caller built), `compose(values) -> string` (the stored string, '' = incomplete) and
@@ -46,39 +90,12 @@ export function mountChipList(container, {
         field.classList.add('chip-input');
         inputRow.insertBefore(field, accept);
     });
-    let values = [];
-
     const readFields = () => entryFields.map((field) => field.value);
     const hasContent = () => readFields().some((value) => normalizeChipText(value) !== '');
 
-    const renderChips = () => {
-        badges.innerHTML = '';
-        values.forEach((value) => {
-            const text = chipText(value);
-            const chip = document.createElement('button');
-            chip.type = 'button';
-            chip.className = 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 chip-badge';
-            chip.title = `Remove: ${text}`;
-            chip.setAttribute('aria-label', `Remove ${text}`);
-            chip.innerHTML = `${escapeHtml(text)} <span aria-hidden="true">&times;</span>`;
-            chip.addEventListener('click', () => {
-                values = removeChip(values, value);
-                renderChips();
-                onChange(values);
-            });
-            badges.appendChild(chip);
-        });
-    };
+    const area = mountChipArea(badges, { chipText, onChange });
 
     const syncAccept = () => syncAcceptButton(accept, compose(readFields()) !== '');
-    const addValue = (value) => {
-        const next = addChip(values, value);
-        if (next === values) return false;
-        values = next;
-        renderChips();
-        onChange(values);
-        return true;
-    };
     const clearFields = () => {
         entryFields.forEach((field) => { field.value = ''; });
         syncAccept();
@@ -86,7 +103,7 @@ export function mountChipList(container, {
     const acceptEntry = () => {
         const entry = compose(readFields());
         if (!entry) return;
-        addValue(entry);
+        area.addValue(entry);
         clearFields();
     };
 
@@ -110,13 +127,11 @@ export function mountChipList(container, {
     registerStagedControl(inputRow, hasContent);
 
     return {
-        getValues: () => values,
-        addValue,
+        getValues: area.getValues,
+        addValue: area.addValue,
         setValues(next) {
-            values = [];
-            (next || []).forEach((value) => { values = addChip(values, value); });
+            area.setValues(next);
             clearFields();
-            renderChips();
         },
     };
 }
