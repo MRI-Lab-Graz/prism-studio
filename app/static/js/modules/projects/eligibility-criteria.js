@@ -5,6 +5,8 @@
  * plus "Other measure" for anything without a standard (IQ, VO2max, ...).
  */
 import { escapeHtml } from '../../shared/dom.js';
+import { mountChipArea } from './chip-list.js';
+import { criterionSummary } from './chip-summaries.js';
 import { rowActionsHtml, rowActionsModel, syncAcceptButton } from './row-state.js';
 
 export const TERMS = [
@@ -35,7 +37,7 @@ export function newRow(term) {
 }
 
 export function rowsFromCriteria(criteria) {
-    return (criteria || []).map((c) => ({
+    const rows = (criteria || []).map((c) => ({
         ...c, // keys the form does not know about survive a save
         id: c.id,
         term: c.term ?? null,
@@ -46,8 +48,10 @@ export function rowsFromCriteria(criteria) {
         max: c.max === undefined ? '' : String(c.max),
         unit: c.unit || '',
         values: c.values || [],
-        accepted: true, // what is in project.json is already defined
     }));
+    // What is in project.json and complete is accepted (a chip); an incomplete one comes back
+    // as a draft so it can be fixed instead of being dropped.
+    return rows.map((row) => ({ ...row, accepted: isComplete(row) }));
 }
 
 const slug = (text) => String(text).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'criterion';
@@ -149,11 +153,24 @@ let notify = () => {};
 
 function render() {
     if (!listEl) return;
-    listEl.innerHTML = rows.map(rowHtml).join('');
+    // Entry rows (drafts) first, accepted criteria as green chips below them.
+    listEl.innerHTML = rows.map((row, i) => (row.accepted ? '' : rowHtml(row, i))).join('')
+        + '<div class="criteria-chips"></div>';
+    const accepted = getEligibilityCriteria(); // also gives every accepted row its stable id
+    const byId = new Map(accepted.map((c) => [c.id, c]));
+    const area = mountChipArea(listEl.querySelector('.criteria-chips'), {
+        chipText: (id) => criterionSummary(byId.get(id)),
+        onChange: (ids) => {
+            rows = rows.filter((row) => !row.accepted || ids.includes(row.id));
+            render(); // the draft rows are addressed by index
+            notify();
+        },
+    });
+    area.setValues(accepted.map((c) => c.id));
     // Row contract of row-state.js: the save guard asks each draft whether it holds content.
     listEl.querySelectorAll('[data-i]').forEach((el) => {
         const row = rows[Number(el.dataset.i)];
-        el.dataset.rowState = row.accepted ? 'defined' : 'draft';
+        el.dataset.rowState = 'draft';
         el._row = {
             hasContent: () => hasContent(row),
             discard: () => { rows.splice(rows.indexOf(row), 1); render(); notify(); },

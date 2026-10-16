@@ -19,17 +19,19 @@ def test_eligibility_criteria_load_edit_and_save(app_page, studio_url, project):
         if not page.locator(target).is_visible():
             page.locator(f'[data-bs-target="{target}"]').click()
             expect(page.locator(target)).to_be_visible()
-    rows = page.locator("#smEligCriteriaList [data-i]")
-    expect(rows).to_have_count(1)
-    expect(rows.first).to_contain_text("Age")
-    expect(rows.first.locator('[data-f="min"]')).to_have_value("18")
+    chips = page.locator("#smEligCriteriaList .chip-badge")
+    expect(chips).to_have_count(1)
+    expect(chips.first).to_contain_text("Age · include 18–35 years")
 
     page.select_option("#smEligCriteriaSelect", label="Sex")
     page.click("#smEligCriteriaAdd")
-    expect(rows).to_have_count(2)
-    rows.nth(1).locator('[data-f="mode"]').select_option("exclude")
-    rows.nth(1).locator('[data-f="value"][value="Male"]').check()
-    rows.nth(1).locator('[data-f="accept"]').click()
+    draft = page.locator("#smEligCriteriaList [data-i]")
+    expect(draft).to_have_count(1)  # accepted criteria are chips; only the new one is an entry row
+    draft.locator('[data-f="mode"]').select_option("exclude")
+    draft.locator('[data-f="value"][value="Male"]').check()
+    draft.locator('[data-f="accept"]').click()
+    expect(chips).to_have_count(2)
+    expect(chips.nth(1)).to_contain_text("Sex · exclude Male")
 
     page.click("#createProjectSubmitBtn")
     page.get_by_role("button", name="Save Preliminary State").click()  # required fields still missing
@@ -65,12 +67,14 @@ def test_new_criterion_is_a_draft_with_an_accept_icon_and_turns_core_green_when_
     expect(inclusion_badge).not_to_have_class(re.compile("bg-success"))  # not accepted yet
 
     row.locator('[data-f="accept"]').click()
-    expect(row.locator('[data-f="remove"]')).to_have_count(1)  # defined: now it can be deleted
-    expect(row.locator('[data-f="accept"]')).to_have_count(0)
+    chip = page.locator("#smEligCriteriaList .chip-badge")
+    expect(row).to_have_count(0)  # the entry row is gone: the criterion is now a green chip
+    expect(chip).to_have_count(1)
+    expect(chip.first).to_contain_text("Age · include ≥ 18 years")
     expect(inclusion_badge).to_have_class(re.compile("bg-success"))
 
-    row.locator('[data-f="remove"]').click()
-    expect(row).to_have_count(0)
+    chip.first.click()  # clicking the chip removes it
+    expect(chip).to_have_count(0)
     expect(inclusion_badge).not_to_have_class(re.compile("bg-success"))
 
 
@@ -86,12 +90,14 @@ def test_accepted_exclude_criterion_turns_the_exclusion_badge_green_and_a_draft_
     row.locator('[data-f="value"][value="Male"]').check()
     row.locator('[data-f="accept"]').click()
     expect(exclusion_badge).to_have_class(re.compile("bg-success"))
+    expect(page.locator("#smEligCriteriaList .chip-badge")).to_have_count(1)
 
     page.select_option("#smEligCriteriaSelect", label="Handedness")
     page.click("#smEligCriteriaAdd")
-    expect(row).to_have_count(2)
-    row.nth(1).locator('[data-f="cancel"]').click()
     expect(row).to_have_count(1)
+    row.locator('[data-f="cancel"]').click()
+    expect(row).to_have_count(0)
+    expect(page.locator("#smEligCriteriaList .chip-badge")).to_have_count(1)  # the accepted one stays
 
 
 def test_the_criteria_select_starts_on_a_placeholder_and_returns_to_it_after_adding(app_page, studio_url):

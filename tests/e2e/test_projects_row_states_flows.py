@@ -262,9 +262,9 @@ def test_new_project_starts_without_the_previous_projects_criteria(app_page, stu
     (project / "project.json").write_text(json.dumps(meta))
     page = app_page
     open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
-    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(1)
+    expect(page.locator("#smEligCriteriaList .chip-badge")).to_have_count(1)
     page.click("#card-create")
-    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(0)
+    expect(page.locator("#smEligCriteriaList .chip-badge")).to_have_count(0)
     expect(page.locator("#smEligCriteriaRequiredBadge")).not_to_have_class(re.compile("bg-success"))
 
 

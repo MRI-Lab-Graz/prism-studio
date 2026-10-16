@@ -127,3 +127,13 @@ describe('hasContent (decides whether a draft blocks a save or is discarded sile
         expect(hasContent({ ...newRow(null), label: 'IQ' })).toBe(true);
     });
 });
+
+describe('criteria loaded from project.json', () => {
+    it('a complete one is accepted (a chip); an incomplete one comes back as a draft to fix, not dropped', () => {
+        const incomplete = { id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric', mode: 'include' }; // no bounds
+        const [complete, fixme] = rowsFromCriteria([AGE, incomplete]);
+        expect(complete.accepted).toBe(true);
+        expect(fixme.accepted).toBe(false);
+        expect(fixme.id).toBe('age'); // its id is kept, so linked columns still find it once fixed
+    });
+});
