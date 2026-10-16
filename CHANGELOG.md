@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the column dictionary, and generates the schema, an example sidecar, a fixture dataset and maintainer
   registration steps. A GitHub Issue Form and bot open a draft pull request from the same files.
 
+- **Eligibility criteria checked by the validator.** Study Metadata > Eligibility takes structured *Checked
+  Criteria* (NeuroBagel terms such as Age or Sex, or any other measure; numeric ranges and category labels;
+  include or exclude). In the Sociodemographics converter a column is linked to a criterion (pre-selected by
+  NeuroBagel term), and the validator warns (`PRISM602`, never an error) for each participant outside the
+  limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example

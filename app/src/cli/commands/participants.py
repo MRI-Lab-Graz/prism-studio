@@ -23,6 +23,7 @@ from src.participants_backend import (
     save_participant_mapping,
 )
 from src.participants_converter import ParticipantsConverter, load_participant_source
+from src.eligibility import load_criteria
 from src.participants_sessions import scope_to_session
 from src.session_assignments import load_session_assignments, survey_id_of
 from src.participants_id_selection import resolve_participants_id_selection
@@ -350,6 +351,7 @@ def cmd_participants_preview(args) -> None:
         "participant_count": len(df),
         "preview_rows": preview_df.to_dict(orient="records"),
         "session_candidates": session_candidates,
+        "eligibility_criteria": load_criteria(str(project_root)),
     }
     identical_warning = format_identical_rows_warning(
         find_identical_value_rows(df[output_columns], id_column)

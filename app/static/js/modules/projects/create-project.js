@@ -3,6 +3,7 @@ export function initCreateProjectController({
     setButtonLoading,
     escapeHtml,
     textToArray,
+    getEligibilityCriteria,
     getProjectStateSnapshot,
     setCreateResultHtml,
     joinProjectTargetPath,
@@ -204,6 +205,7 @@ export function initCreateProjectController({
             Eligibility: {
                 InclusionCriteria: textToArray(document.getElementById('smEligInclusion').value) || undefined,
                 ExclusionCriteria: textToArray(document.getElementById('smEligExclusion').value) || undefined,
+                Criteria: getEligibilityCriteria().length ? getEligibilityCriteria() : undefined,
                 TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
                 PowerAnalysis: document.getElementById('smEligPower').value || undefined,
             },

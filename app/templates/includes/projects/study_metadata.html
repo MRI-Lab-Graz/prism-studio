@@ -500,6 +500,19 @@
                                         At least one Inclusion criterion is required. Exclusion criteria are optional but recommended.
                                     </small>
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Checked Criteria
+                                    </label>
+                                    <div><small class="text-muted">Limits the validator checks against participants.tsv (warnings only, also on partial data). Link a participants column to a criterion in the Sociodemographics converter.</small></div>
+                                    <div id="smEligCriteriaList" class="d-flex flex-column gap-2 my-2"></div>
+                                    <div class="input-group input-group-sm w-auto">
+                                        <select class="form-select form-select-sm" id="smEligCriteriaSelect" aria-label="Criterion type"></select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="smEligCriteriaAdd">
+                                            <i class="fas fa-plus me-1"></i>Add checked criterion
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Target Sample Size</label>
                                     <input type="number" class="form-control form-control-sm" id="smEligSampleSize"

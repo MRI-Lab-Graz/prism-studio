@@ -21,6 +21,7 @@ import {
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -183,6 +184,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         const elig = sm.Eligibility || {};
         setOverviewList('smEligInclusion', elig.InclusionCriteria);
         setOverviewList('smEligExclusion', elig.ExclusionCriteria);
+        setEligibilityCriteria(elig.Criteria);
         document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
         document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
 
@@ -447,6 +449,7 @@ function _buildStudyMetadataPayload() {
         Eligibility: {
             InclusionCriteria: getOverviewList('smEligInclusion') || undefined,
             ExclusionCriteria: getOverviewList('smEligExclusion') || undefined,
+            Criteria: getEligibilityCriteria().length ? getEligibilityCriteria() : undefined,
             TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
             PowerAnalysis: document.getElementById('smEligPower').value || undefined,
         },
@@ -4354,6 +4357,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     initOverviewListFields();
+    initEligibilityCriteria({
+        list: document.getElementById('smEligCriteriaList'),
+        select: document.getElementById('smEligCriteriaSelect'),
+        addButton: document.getElementById('smEligCriteriaAdd'),
+    });
     initFundingRows();
     initTwoFieldListFields();
     initMissingFilesListField();
