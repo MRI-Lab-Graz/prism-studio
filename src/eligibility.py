@@ -154,6 +154,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         for desc, _ in rejected
     ]
     found: list[tuple[str, str, str]] = []
+    flagged: set[str] = set()  # participants with at least one finding
     reported: set[str] = set()  # duplicate ids already warned about
     for col, crit_id in links.items():
         crit = by_id.get(crit_id)
@@ -207,8 +208,9 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             raw = (row.get(col) or "").strip()
             if raw.lower() in _MISSING or not violates(raw):
                 continue
+            flagged.add(row.get("participant_id", "?"))
             found.append(("WARNING", f"PRISM602 {row.get('participant_id', '?')}: {col} {shown(raw)} is {where} the {kind} {expected} (criterion: {label})", str(tsv)))
 
     if found:
-        config.append(("WARNING", f"PRISM602 {len(found)} participant(s) outside eligibility criteria.", str(tsv)))
+        config.append(("WARNING", f"PRISM602 {len(flagged)} participant(s) outside eligibility criteria.", str(tsv)))
     return config + found

@@ -246,3 +246,13 @@ def test_duplicate_id_warning_is_reported_once_even_with_two_linked_columns(tmp_
                  {"age": {"EligibilityCriterion": "age"}, "age2": {"EligibilityCriterion": "age"}},
                  [("sub-P01", "40", "40")], header=("participant_id", "age", "age2"))
     assert len([i for i in check_eligibility(root) if "more than once" in i[1]]) == 1
+
+
+def test_summary_counts_distinct_participants_not_violations(tmp_path):
+    iq = {"id": "iq", "label": "IQ", "term": None, "type": "numeric", "mode": "include", "min": 85}
+    root = _make(tmp_path, [AGE, iq],
+                 {"age": {"EligibilityCriterion": "age"}, "iq": {"EligibilityCriterion": "iq"}},
+                 [("sub-P01", "17", "70"), ("sub-P02", "20", "100")], header=("participant_id", "age", "iq"))
+    issues = check_eligibility(root)
+    assert "1 participant(s)" in issues[0][1]
+    assert len([i for i in issues if "sub-P01" in i[1]]) == 2
