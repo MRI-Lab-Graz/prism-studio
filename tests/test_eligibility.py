@@ -1,0 +1,121 @@
+import json
+
+from src.eligibility import check_eligibility
+
+
+def _make(tmp_path, criteria, sidecar, rows, header=("participant_id", "age")):
+    if criteria is not None:
+        (tmp_path / "project.json").write_text(
+            json.dumps({"Eligibility": {"Criteria": criteria}}), encoding="utf-8"
+        )
+    (tmp_path / "participants.json").write_text(json.dumps(sidecar), encoding="utf-8")
+    lines = ["\t".join(header)] + ["\t".join(r) for r in rows]
+    (tmp_path / "participants.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return str(tmp_path)
+
+
+AGE = {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
+       "mode": "include", "min": 18, "max": 35, "unit": "years"}
+LINK_AGE = {"age": {"EligibilityCriterion": "age"}}
+
+
+def _codes(issues, code):
+    return [i for i in issues if code in i[1]]
+
+
+def test_include_range_flags_outside_values(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE,
+                 [("sub-P01", "17"), ("sub-P02", "18"), ("sub-P03", "35"), ("sub-P04", "36")])
+    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
+    assert len(warnings) == 2
+    assert all(i[0] == "WARNING" and "PRISM602" in i[1] for i in warnings)
+    assert "sub-P01" in warnings[0][1] and "17" in warnings[0][1] and "18-35" in warnings[0][1]
+    assert "sub-P04" in warnings[1][1]
+
+
+def test_summary_line_counts_violations(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17"), ("sub-P02", "40")])
+    assert "2 participant(s)" in check_eligibility(root)[0][1]
+
+
+def test_exclude_range_flags_inside_values(tmp_path):
+    crit = {"id": "iq", "label": "IQ", "term": None, "type": "numeric",
+            "mode": "exclude", "max": 69}
+    root = _make(tmp_path, [crit], {"iq": {"EligibilityCriterion": "iq"}},
+                 [("sub-P01", "69"), ("sub-P02", "70")], header=("participant_id", "iq"))
+    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
+    assert len(warnings) == 1 and "sub-P01" in warnings[0][1]
+
+
+def test_open_ended_bounds(tmp_path):
+    crit = {"id": "iq", "label": "IQ", "term": None, "type": "numeric",
+            "mode": "include", "min": 85}
+    root = _make(tmp_path, [crit], {"iq": {"EligibilityCriterion": "iq"}},
+                 [("sub-P01", "84"), ("sub-P02", "200")], header=("participant_id", "iq"))
+    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
+    assert len(warnings) == 1 and "sub-P01" in warnings[0][1]
+
+
+def test_empty_na_and_non_numeric_skipped(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE,
+                 [("sub-P01", ""), ("sub-P02", "n/a"), ("sub-P03", "abc")])
+    assert check_eligibility(root) == []
+
+
+def test_decimal_comma(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17,5")])
+    assert _codes(check_eligibility(root), "sub-P01")
+
+
+def test_unlinked_criterion_silent(tmp_path):
+    root = _make(tmp_path, [AGE], {}, [("sub-P01", "10")])
+    assert check_eligibility(root) == []
+
+
+def test_missing_project_json_or_criteria_silent(tmp_path):
+    root = _make(tmp_path, None, LINK_AGE, [("sub-P01", "10")])
+    assert check_eligibility(root) == []
+    (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {}}))
+    assert check_eligibility(root) == []
+
+
+def test_invalid_project_json_silent(tmp_path):
+    root = _make(tmp_path, None, LINK_AGE, [("sub-P01", "10")])
+    (tmp_path / "project.json").write_text("{nope")
+    assert check_eligibility(root) == []
+
+
+def test_limit_change_applies_without_touching_participants_json(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "40")])
+    assert _codes(check_eligibility(root), "sub-P01")
+    wider = dict(AGE, max=50)
+    (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": [wider]}}))
+    assert check_eligibility(root) == []
+
+
+def test_min_greater_than_max_warns_once_and_skips(tmp_path):
+    bad = dict(AGE, min=40, max=20)
+    root = _make(tmp_path, [bad], LINK_AGE, [("sub-P01", "30"), ("sub-P02", "5")])
+    issues = check_eligibility(root)
+    assert len(issues) == 1 and "PRISM603" in issues[0][1]
+
+
+def test_unknown_criterion_id_warns_once(tmp_path):
+    root = _make(tmp_path, [AGE], {"age": {"EligibilityCriterion": "gone"}},
+                 [("sub-P01", "10"), ("sub-P02", "11")])
+    issues = check_eligibility(root)
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "gone" in issues[0][1]
+
+
+def test_duplicate_ids_warn_and_first_wins(tmp_path):
+    second = dict(AGE, min=0, max=99)
+    root = _make(tmp_path, [AGE, second], LINK_AGE, [("sub-P01", "40")])
+    issues = check_eligibility(root)
+    assert _codes(issues, "PRISM603") and _codes(issues, "sub-P01")
+
+
+def test_linked_column_missing_from_tsv_warns_once(tmp_path):
+    root = _make(tmp_path, [AGE], {"age": {"EligibilityCriterion": "age"}},
+                 [("sub-P01", "x")], header=("participant_id", "years"))
+    issues = check_eligibility(root)
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "age" in issues[0][1]
