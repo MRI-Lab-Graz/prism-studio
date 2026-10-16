@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
-from src.entity_rules import load_entity_rules
+from src.entity_rules import check_entities, load_entity_rules
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -1273,6 +1273,11 @@ class DatasetValidator:
         # Check BIDS naming for PRISM files
         if not BIDS_REGEX.match(base):
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
+
+        rule = _ENTITY_RULES.modalities.get(modality)
+        if rule is not None and rule.allowed_entities is not None:
+            for message in check_entities(base, rule.allowed_entities, _ENTITY_RULES.entity_order):
+                issues.append(("ERROR", f"{message}: {filename}"))
 
         # Check modality pattern (strict for survey/biometrics)
         if modality in {"survey", "biometrics"}:
