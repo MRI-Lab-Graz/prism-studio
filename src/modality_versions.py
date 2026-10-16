@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -125,9 +126,14 @@ def _write_pins(project_root, pins: dict[str, str], acknowledged: dict[str, str]
         data.pop("SchemaVersionsAcknowledged", None)
     path = Path(project_root) / "project.json"
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".project.json.")
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
-        fh.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+        shutil.copymode(path, tmp)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 def present_modalities(project_root, schema_dir=None) -> list[str]:

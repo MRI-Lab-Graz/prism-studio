@@ -1,4 +1,6 @@
 import json
+import os
+import stat
 from pathlib import Path
 
 import jsonschema
@@ -148,4 +150,32 @@ def test_project_schema_accepts_the_new_keys_and_rejects_bad_values():
     jsonschema.Draft7Validator(schema).validate({**base, "SchemaVersions": {"survey": "1.1.1"},
                                                   "SchemaVersionsAcknowledged": {"survey": "1.1.1"}})
     assert list(jsonschema.Draft7Validator(schema).iter_errors({**base, "SchemaVersions": {"survey": "latest"}}))
+    v = jsonschema.Draft7Validator(schema)
+    for bad in (
+        {"SchemaVersions": {"Survey": "1.0.0"}},
+        {"SchemaVersionsAcknowledged": {"Survey": "1.0.0"}},
+        {"SchemaVersions": {"survey": "1.0.0"}, "Bogus": 1},
+    ):
+        assert list(v.iter_errors({**base, **bad})), bad
     assert schema["version"] == "1.0.0"
+
+
+def test_pinning_keeps_file_mode(tmp_path, schema_dir):
+    root = _project(tmp_path)
+    os.chmod(root / "project.json", 0o664)
+    pin_modalities(root, ["survey"], schema_dir)
+    assert stat.S_IMODE((root / "project.json").stat().st_mode) == 0o664
+
+
+def test_failed_write_leaves_no_temp_file(tmp_path, schema_dir, monkeypatch):
+    root = _project(tmp_path)
+    before = (root / "project.json").read_text()
+
+    def boom(*a, **k):
+        raise OSError("disk")
+
+    monkeypatch.setattr(os, "replace", boom)
+    with pytest.raises(OSError):
+        pin_modalities(root, ["survey"], schema_dir)
+    assert [p.name for p in root.iterdir()] == ["project.json"]
+    assert (root / "project.json").read_text() == before
