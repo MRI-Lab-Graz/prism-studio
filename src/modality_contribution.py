@@ -31,7 +31,7 @@ def write_minimal_dataset(
     extension: str,
     sidecar: dict,
     data_content: str | bytes,
-    task_name: str = "demo",
+    task_name: str | None = "demo",
     modality: str | None = None,
 ) -> Path:
     """Write a minimal valid PRISM dataset for one subject/modality.
@@ -57,7 +57,7 @@ def write_minimal_dataset(
     modality_dir = dest_dir / "sub-01" / (modality or suffix)
     modality_dir.mkdir(parents=True, exist_ok=True)
 
-    stem = f"sub-01_task-{task_name}_{suffix}"
+    stem = f"sub-01_task-{task_name}_{suffix}" if task_name else f"sub-01_{suffix}"
     data_path = modality_dir / f"{stem}.{extension}"
     if isinstance(data_content, bytes):
         data_path.write_bytes(data_content)
@@ -520,6 +520,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
                 err(where, f"Type '{ctype}' is given but the proposal defines no types")
             elif ctype != TYPE_OTHER and ctype not in type_values:
                 err(where, f"Type '{ctype}' is not in the vocabulary; use one of {sorted(type_values)} or '{TYPE_OTHER}'")
+    if kind == "extension" and not errors_only(problems):  # the fit check needs a well-formed proposal
+        problems += check_extension_fit(proposal, schema_dir)
     return problems
 
 
@@ -688,7 +690,7 @@ def build_schema(proposal: dict) -> dict:
         "title": f"{name.capitalize()} Metadata",
         "description": (
             f"{proposal['description']}. Files should be named: "
-            f"sub-<label>[_ses-<label>]_task-<label>[_run-<index>]_{suffix}.<{'|'.join(exts)}>"
+            f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<{'|'.join(exts)}>"
         ),
         "type": "object",
         "properties": {
@@ -711,7 +713,7 @@ def build_schema(proposal: dict) -> dict:
                     "Description": {"type": ["string", "object"]},
                     "Citation": {"type": "string"},
                 },
-                "required": ["TaskName", "OriginalName"],
+                "required": ["OriginalName"],
             },
             "Metadata": {
                 "type": "object",
@@ -758,7 +760,6 @@ def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:
     sidecar = {
         "Technical": {"FileFormat": proposal["extensions"][0]},
         "Study": {
-            "TaskName": name,
             "OriginalName": name,
             "Description": proposal["description"],
         },
@@ -772,14 +773,151 @@ def build_example_sidecar(proposal: dict, today: str | None = None) -> dict:
     return sidecar
 
 
-def registration_entry(proposal: dict) -> dict:
+FIXED_ENTITIES = ["task", "acq", "run"]
+
+
+def registration_entry(proposal: dict, existing: dict | None = None) -> dict:
+    if existing is not None:  # adding a suffix to an existing modality
+        entry = dict(existing)
+        entry["suffixes"] = [*existing.get("suffixes", []), proposal["suffix"]]
+        entry["extensions"] = list(dict.fromkeys([*existing.get("extensions", []), *proposal["extensions"]]))
+        return entry
     exts = list(dict.fromkeys([*proposal["extensions"], "json"]))
-    return {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts}
+    entry = {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts,
+             "allowedEntities": list(FIXED_ENTITIES)}
+    values: dict[str, list[str]] = {}
+    for e in proposal.get("entities") or []:
+        values.setdefault(e["entity"], []).append(e["value"])
+    if values:
+        entry["optionalEntityValues"] = {
+            k: {"enum": v, "allowOther": True, "otherPattern": "[a-zA-Z0-9]+"} for k, v in values.items()
+        }
+    return entry
 
 
-def build_registration_md(proposal: dict) -> str:
-    name = proposal["modality"]
-    snippet = json.dumps({name: registration_entry(proposal)}, indent=2)
+def _pattern(suffix: str) -> str:
+    return f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<extension>"
+
+
+def build_docs_page(proposal: dict) -> str:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    exts = ", ".join(f"`.{e}`" for e in proposal["extensions"])
+    lines = [
+        f"# {name.capitalize()}", "", f"{proposal['description']}.", "",
+        "## File Name Structure", "", f"`{_pattern(suffix)}`", "",
+        "| Entity | Description |", "| --- | --- |",
+        "| `sub` | **Required**. The subject identifier. |",
+        "| `ses` | Optional. The session identifier. |",
+        "| `task` | Optional. The task or protocol, when the data belong to one. |",
+        "| `acq` | Optional. A variant of the acquisition. |",
+        "| `run` | Optional. The repeat within a session. |",
+        f"| `{suffix}` | **Required**. The suffix indicating the data. |",
+        f"| extension | **Required**. One of {exts}. |", "",
+    ]
+    if proposal.get("entities"):
+        lines += ["### Suggested values", "", "Other labels are accepted too.", ""]
+        lines += [
+            f"- `{e['entity']}-{e['value']}`" + (f": {e['description']}" if e["description"] else "")
+            for e in proposal["entities"]
+        ] + [""]
+    lines += ["## Example Columns", "", "Every study defines its own columns in its own sidecar; these are examples.", "",
+              "| Column | Description | Units |", "| --- | --- | --- |"]
+    lines += [f"| `{c['id']}` | {c['description']} | {c['units']} |" for c in proposal["columns"]]
+    lines += ["", "## Sidecar JSON", "",
+              f"Each data file needs a JSON sidecar (`*_{suffix}.json`) with `Technical`, `Study` and `Metadata` blocks "
+              "and one definition per column (Description, Units, optional MinValue/MaxValue/AllowedValues).", ""]
+    return "\n".join(lines)
+
+
+def _extension_docs_section(proposal: dict) -> str:
+    """The section to add to an existing modality's page: the new page minus its title."""
+    body = "\n".join("#" + line if line.startswith("##") else line
+                     for line in build_docs_page(proposal).splitlines()[2:])
+    return f"## Suffix `_{proposal['suffix']}`\n\n{body}\n"
+
+
+def build_docs_snippets(proposal: dict) -> dict[str, str]:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    exts = ", ".join(f"`{e}`" for e in [*proposal["extensions"], "json"])
+    return {
+        "toctree": f"   specs/{name}",
+        "entities_row": f"| `{name}` | prism | `{suffix}` | {exts} | optional `task`, `acq`, `run` |",
+        "card": (
+            '  <a class="prism-chapter-card" href="specs/%s.html">\n'
+            '    <span class="prism-chapter-title">%s</span>\n'
+            '    <span class="prism-chapter-outcome">%s</span>\n'
+            "  </a>" % (name, name.capitalize(), proposal["description"])
+        ),
+    }
+
+
+def _target_schema(proposal: dict, schema_dir: str | None = None) -> dict:
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
+
+    return load_schema(proposal["modality"], schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+
+
+def _fit_sidecar(sidecar: dict, schema: dict, label: str) -> dict:
+    # ponytail: fills each block's missing required keys with the first enum value or the
+    # suffix name; stricter value rules (patterns, formats) still need a maintainer's edit.
+    for block, spec in schema.get("properties", {}).items():
+        if block not in sidecar or not isinstance(spec, dict):
+            continue
+        for key in spec.get("required", []):
+            enum = spec.get("properties", {}).get(key, {}).get("enum")
+            sidecar[block].setdefault(key, enum[0] if enum else label)
+    return sidecar
+
+
+def check_extension_fit(proposal: dict, schema_dir: str | None = None) -> list[Problem]:
+    """Warn when the generated example sidecar does not match the target modality's own schema."""
+    import jsonschema
+
+    schema = _target_schema(proposal, schema_dir)
+    if not schema:
+        return []
+    sidecar = _fit_sidecar(build_example_sidecar(proposal), schema, proposal["suffix"])
+    return [
+        Problem("warning", f"{proposal['modality']}.schema.json", e.message)
+        for e in jsonschema.Draft7Validator(schema).iter_errors(sidecar)
+    ]
+
+
+def build_registration_md(proposal: dict, existing: dict | None = None) -> str:
+    name, suffix = proposal["modality"], proposal["suffix"]
+    snippet = json.dumps({name: registration_entry(proposal, existing)}, indent=2)
+    review = """Review by hand what no check can judge: units, a modality that duplicates an
+existing one under another name, and whether the sample holds any real
+participant data.
+"""
+    if existing is not None:
+        return f"""# Adding the `_{suffix}` suffix to the `{name}` modality (maintainer steps)
+
+PRISM does not register suffixes automatically. Do these steps by hand in the
+pull request, then let CI validate the fixture in this folder.
+
+1. In `app/schemas/stable/entities.schema.json`, replace the `"{name}"` entry
+   under `"modalities"` with this one (the suffix and any new extensions are
+   appended):
+
+```json
+{snippet}
+```
+
+2. Documentation (CI check `modality-docs` fails without it): add the section
+   from `docs/{name}-{suffix}.md` to `docs/specs/{name}.md` (the page must
+   mention `_{suffix}`).
+3. Check the registration:
+   `python tests/verify_repo.py --check schema-sync` and
+   `python tests/verify_repo.py --check modality-docs`.
+4. Validate the generated dataset: from the repository root, run
+   `python prism.py <this folder>/fixture`. It must pass without errors.
+
+The example sidecar uses the `{name}` modality's own schema; keys that schema
+requires were filled in heuristically, so check them before relying on the
+example.
+
+{review}"""
     return f"""# Registering the `{name}` modality (maintainer steps)
 
 PRISM does not register modalities automatically. Do these steps by hand in the
@@ -794,46 +932,75 @@ pull request, then let CI validate the fixture in this folder.
 ```
 
 3. Add `"{name}"` to `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py`.
-4. Check the registration:
-   `python tests/verify_repo.py --check schema-sync` and
-   `python tests/verify_repo.py --check modality-schema-conventions`.
-5. Validate the generated dataset: from the repository root, run
+4. Documentation (CI check `modality-docs` fails without it):
+   - copy `docs/{name}.md` to `docs/specs/{name}.md`;
+   - add `   specs/{name}` to the "Schema Specifications" toctree in `docs/index.rst`;
+   - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`;
+   - add the row from `docs/snippets.md` to the table in `docs/specs/entities.md`.
+5. Check the registration:
+   `python tests/verify_repo.py --check schema-sync`,
+   `python tests/verify_repo.py --check modality-schema-conventions` and
+   `python tests/verify_repo.py --check modality-docs`.
+6. Validate the generated dataset: from the repository root, run
    `python prism.py <this folder>/fixture`. It must pass without errors.
 
-Review by hand what no check can judge: units, a modality that duplicates an
-existing one under another name, and whether the sample holds any real
-participant data.
-"""
+{review}"""
 
 
 def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir) -> list[Path]:
-    """Write schema, example sidecar, fixture, REGISTRATION.md and input copies.
+    """Write schema (new modality only), example sidecar, fixture, docs, REGISTRATION.md and input copies.
 
     Call check_proposal() and check_sample() first; this does not re-check.
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     sample, source = Path(sample_path), Path(proposal_path)
-    name = proposal["modality"]
+    name, suffix = proposal["modality"], proposal["suffix"]
     ext = sample_extension(sample, proposal["extensions"])
+    is_new = proposal_kind(proposal) == "new"
+    existing = None if is_new else _entities_schema(None)["modalities"][name]
 
-    schema_path = out / f"{name}.schema.json"
-    schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
+    written: list[Path] = []
+    if is_new:
+        schema_path = out / f"{name}.schema.json"
+        schema_path.write_text(json.dumps(build_schema(proposal), indent=2) + "\n", encoding="utf-8")
+        written.append(schema_path)
     sidecar = build_example_sidecar(proposal)
+    if not is_new:
+        sidecar = _fit_sidecar(sidecar, _target_schema(proposal), suffix)
     sidecar["Technical"]["FileFormat"] = ext
     sidecar_path = out / "example_sidecar.json"
     sidecar_path.write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
     write_minimal_dataset(
         out / "fixture",
         modality=name,
-        suffix=proposal["suffix"],
+        suffix=suffix,
         extension=ext,
         sidecar=sidecar,
         data_content=sample.read_bytes(),
-        task_name=name,
+        task_name=None,
     )
+    docs = out / "docs"
+    docs.mkdir(exist_ok=True)
+    if is_new:
+        page = docs / f"{name}.md"
+        page.write_text(build_docs_page(proposal), encoding="utf-8")
+        snippets_path = docs / "snippets.md"
+        s = build_docs_snippets(proposal)
+        snippets_path.write_text(
+            f"# Docs snippets for `{name}`\n\n"
+            f"Toctree line for docs/index.rst:\n\n```\n{s['toctree']}\n```\n\n"
+            f"Row for the table in docs/specs/entities.md:\n\n```\n{s['entities_row']}\n```\n\n"
+            f"Card for docs/SCHEMA_SPECIFICATIONS.md:\n\n```html\n{s['card']}\n```\n",
+            encoding="utf-8",
+        )
+        written += [page, snippets_path]
+    else:
+        page = docs / f"{name}-{suffix}.md"
+        page.write_text(_extension_docs_section(proposal), encoding="utf-8")
+        written.append(page)
     registration_path = out / "REGISTRATION.md"
-    registration_path.write_text(build_registration_md(proposal), encoding="utf-8")
+    registration_path.write_text(build_registration_md(proposal, existing), encoding="utf-8")
     proposal_copy = out / f"proposal{source.suffix.lower()}"
     shutil.copyfile(source, proposal_copy)
     sample_copy = out / f"sample.{ext}"
@@ -841,4 +1008,4 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
 
     fixture = out / "fixture"
     fixture_files = [p for p in sorted(fixture.rglob("*")) if p.is_file()]
-    return [schema_path, sidecar_path, registration_path, proposal_copy, sample_copy, *fixture_files]
+    return [*written, sidecar_path, registration_path, proposal_copy, sample_copy, *fixture_files]

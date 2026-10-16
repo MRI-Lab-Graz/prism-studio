@@ -50,7 +50,7 @@ def test_example_sidecar_validates_against_generated_schema() -> None:
     sidecar = build_example_sidecar(p, today="2026-10-15")
     jsonschema.Draft7Validator(build_schema(p)).validate(sidecar)
     assert sidecar["Technical"]["FileFormat"] == "tsv"
-    assert sidecar["Study"]["TaskName"] == "biosample"
+    assert "TaskName" not in sidecar["Study"]
     assert sidecar["Metadata"]["CreationDate"] == "2026-10-15"
     assert sidecar["crp"] == {
         "Description": "C-reactive protein",
@@ -86,6 +86,10 @@ def test_registration_entry_and_markdown() -> None:
         "kind": "prism",
         "suffixes": ["bloodchem"],
         "extensions": ["tsv", "json"],
+        "allowedEntities": ["task", "acq", "run"],
+        "optionalEntityValues": {
+            "acq": {"enum": ["fasting", "nonfasting"], "allowOther": True, "otherPattern": "[a-zA-Z0-9]+"},
+        },
     }
     md = build_registration_md(p)
     assert "app/schemas/stable/biosample.schema.json" in md
@@ -105,7 +109,7 @@ def test_build_writes_every_artifact(tmp_path: Path) -> None:
     assert (out / "REGISTRATION.md").is_file()
     assert (out / "proposal.yml").is_file()
     assert (out / "sample.tsv").is_file()
-    data = out / "fixture" / "sub-01" / "biosample" / "sub-01_task-biosample_bloodchem.tsv"
+    data = out / "fixture" / "sub-01" / "biosample" / "sub-01_bloodchem.tsv"
     assert data.read_bytes() == SAMPLE.read_bytes()
     assert data.with_suffix(".json").is_file()
     assert (out / "fixture" / "dataset_description.json").is_file()

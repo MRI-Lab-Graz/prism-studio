@@ -99,3 +99,52 @@ def test_bids_and_passthrough_names_are_refused_with_advice():
 def test_alias_points_at_the_real_modality():
     msg = _messages(check_proposal(_proposal(modality="physiological")))
     assert "PRISM alias 'physiological'" in msg and "'physio'" in msg
+
+
+import json  # noqa: E402
+
+from src.modality_contribution import (  # noqa: E402
+    build_modality_artifacts,
+    build_registration_md,
+    check_extension_fit,
+    registration_entry,
+)
+
+EXT = EXAMPLES / "bloodpanel.yml"
+EXT_SAMPLE = EXAMPLES / "bloodpanel_sample.tsv"
+
+
+def test_extension_entry_appends_to_the_existing_one():
+    existing = {"kind": "prism", "suffixes": ["biometrics"], "extensions": ["tsv", "json"]}
+    e = registration_entry(read_proposal(EXT), existing)
+    assert e == {"kind": "prism", "suffixes": ["biometrics", "bloodpanel"], "extensions": ["tsv", "json"]}
+    e2 = registration_entry({**read_proposal(EXT), "extensions": ["tsv.gz"]}, existing)
+    assert e2["extensions"] == ["tsv", "json", "tsv.gz"]
+
+
+def test_extension_build_writes_no_schema_and_a_modality_fixture(tmp_path):
+    p = read_proposal(EXT)
+    files = build_modality_artifacts(p, EXT_SAMPLE, EXT, tmp_path / "out")
+    names = {f.relative_to(tmp_path / "out").as_posix() for f in files}
+    assert "biometrics.schema.json" not in names
+    assert "fixture/sub-01/biometrics/sub-01_bloodpanel.tsv" in names
+    assert "docs/biometrics-bloodpanel.md" in names
+    md = (tmp_path / "out" / "REGISTRATION.md").read_text(encoding="utf-8")
+    assert '"bloodpanel"' in md and "biometrics.schema.json" not in md
+
+
+def test_extension_example_sidecar_is_fitted_to_the_target_schema():
+    assert check_extension_fit(read_proposal(EXT)) == []
+
+
+def test_malformed_extension_proposal_returns_errors_without_raising():
+    problems = check_proposal({**read_proposal(EXT), "extensions": []})
+    assert "Modality.Extensions" in _messages(problems)
+
+
+def test_new_build_fixture_has_no_task_entity(tmp_path):
+    p = read_proposal(NEW)
+    files = build_modality_artifacts(p, EXAMPLES / "biosample_sample.tsv", NEW, tmp_path / "o")
+    assert any(f.name == "sub-01_bloodchem.tsv" for f in files)
+    assert (tmp_path / "o" / "docs" / "biosample.md").is_file()
+    assert json.loads((tmp_path / "o" / "example_sidecar.json").read_text())["Study"].get("TaskName") is None
