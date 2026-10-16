@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import sys
+import tempfile
 from pathlib import Path
 
 from src.schema_manager import DEFAULT_SCHEMA_DIR, _read_schema_file, load_schema, parse_version
@@ -109,3 +112,109 @@ def read_pins(project_root) -> tuple[dict[str, str], dict[str, str]]:
     """(SchemaVersions, SchemaVersionsAcknowledged) of a project; empty when absent or unreadable."""
     data = _read_project(project_root) or {}
     return _clean_map(data.get("SchemaVersions")), _clean_map(data.get("SchemaVersionsAcknowledged"))
+
+
+def _write_pins(project_root, pins: dict[str, str], acknowledged: dict[str, str]) -> None:
+    data = _read_project(project_root)
+    if data is None:
+        raise ModalityVersionError(f"no readable project.json in {project_root}")
+    data["SchemaVersions"] = dict(sorted(pins.items()))
+    if acknowledged:
+        data["SchemaVersionsAcknowledged"] = dict(sorted(acknowledged.items()))
+    else:
+        data.pop("SchemaVersionsAcknowledged", None)
+    path = Path(project_root) / "project.json"
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".project.json.")
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
+
+
+def present_modalities(project_root, schema_dir=None) -> list[str]:
+    root = Path(project_root)
+    found = []
+    for name in modality_names(schema_dir):
+        folders = [*root.glob(f"sub-*/{name}"), *root.glob(f"sub-*/ses-*/{name}")]
+        has_files = any(f.is_dir() and any(f.iterdir()) for f in folders)
+        if name == "events":  # events live next to other data, not in their own folder
+            has_files = has_files or any(root.glob("sub-*/*/*_events.*")) or any(
+                root.glob("sub-*/ses-*/*/*_events.*")
+            )
+        if has_files:
+            found.append(name)
+    return found
+
+
+def pin_modalities(project_root, names, schema_dir=None) -> dict[str, str]:
+    """Pin the current version of each named, not yet pinned modality; returns the new pins."""
+    pins, acknowledged = read_pins(project_root)
+    new = {n: current_version(n, schema_dir) for n in names if n not in pins}
+    if new:
+        _write_pins(project_root, {**pins, **new}, acknowledged)
+    return new
+
+
+def pin_present_modalities(project_root, schema_dir=None) -> dict[str, str]:
+    if _read_project(project_root) is None:
+        return {}
+    return pin_modalities(project_root, present_modalities(project_root, schema_dir), schema_dir)
+
+
+def pending_updates(project_root, schema_dir=None) -> list[tuple[str, str, str]]:
+    pins, acknowledged = read_pins(project_root)
+    out = []
+    for name, pinned in sorted(pins.items()):
+        try:
+            latest = current_version(name, schema_dir)
+        except ModalityVersionError:
+            continue
+        if parse_version(latest) > parse_version(pinned) and acknowledged.get(name) != latest:
+            out.append((name, pinned, latest))
+    return out
+
+
+def _require_pinned(name: str, pins: dict[str, str]) -> None:
+    if name not in pins:
+        raise ModalityVersionError(
+            f"'{name}' is not pinned in this project; pin it first: modality-version pin <project> {name}"
+        )
+
+
+def update_modality(project_root, name: str, schema_dir=None) -> str:
+    pins, acknowledged = read_pins(project_root)
+    _require_pinned(name, pins)
+    latest = current_version(name, schema_dir)
+    pins[name] = acknowledged[name] = latest
+    _write_pins(project_root, pins, acknowledged)
+    return latest
+
+
+def freeze_modality(project_root, name: str, schema_dir=None) -> str:
+    pins, acknowledged = read_pins(project_root)
+    _require_pinned(name, pins)
+    acknowledged[name] = current_version(name, schema_dir)
+    _write_pins(project_root, pins, acknowledged)
+    return pins[name]
+
+
+def pin_after_import(output_root) -> None:
+    """Pin modalities a conversion just wrote; a problem here must never fail the conversion."""
+    try:
+        new = pin_present_modalities(output_root)
+    except Exception as exc:  # noqa: BLE001 - pinning is best effort
+        print(f"Warning: could not record modality versions in project.json: {exc}", file=sys.stderr)
+        return
+    for name, version in new.items():
+        print(f"Pinned {name} schema version {version} in project.json", file=sys.stderr)
+
+
+def format_pending_hint(pending) -> list[str]:
+    lines = [
+        f"A newer {name} schema is available: {latest} (this project uses {pinned})."
+        for name, pinned, latest in pending
+    ]
+    if lines:
+        lines.append(
+            "Decide with: prism_tools modality-version update <project> <name> | freeze <project> <name>"
+        )
+    return lines
