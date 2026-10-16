@@ -170,3 +170,51 @@ def test_levels_from_annotations_are_used_when_no_plain_levels(tmp_path):
 def test_code_without_label_is_outside_an_include_criterion(tmp_path):
     root = _sex(tmp_path, "include", ["Female", "Male"], levels={"1": "Female", "2": "Male"})
     assert _flagged(check_eligibility(root)) == ["sub-P03"]
+
+
+# ---- final review: malformed criteria must never crash the validator ----
+
+def _run(tmp_path, criterion, link="age"):
+    root = _make(tmp_path, [criterion], {"age": {"EligibilityCriterion": link}},
+                 [("sub-P01", "17")])
+    return check_eligibility(root)
+
+
+import pytest
+
+
+@pytest.mark.parametrize("bad", [
+    {"id": "age", "type": "numeric", "mode": "include"},                         # no bounds
+    {"id": "age", "type": "numeric", "mode": "include", "min": "18"},            # string bound
+    {"id": "age", "type": "numeric", "mode": "include", "min": "18", "max": "35"},
+    {"id": "age", "type": "numeric", "mode": "include", "min": True},            # bool is no number
+    {"id": "age", "type": "categorical", "mode": "include", "values": "Male"},   # not a list
+    {"id": "age", "type": "categorical", "mode": "include", "values": []},
+    {"id": "age", "type": "other", "mode": "include", "min": 1},
+    {"id": "age", "type": "numeric", "mode": "sometimes", "min": 1},
+    {"id": ["age"], "type": "numeric", "mode": "include", "min": 1},
+    None,
+    "text",
+])
+def test_malformed_criterion_is_reported_not_fatal(tmp_path, bad):
+    issues = _run(tmp_path, bad)
+    assert all(i[0] == "WARNING" for i in issues)
+    assert not _codes(issues, "PRISM602")
+
+
+def test_malformed_criterion_with_a_link_gets_one_warning(tmp_path):
+    issues = _run(tmp_path, {"id": "age", "type": "numeric", "mode": "include"})
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "malformed" in issues[0][1]
+
+
+@pytest.mark.parametrize("link", [["age"], {"a": 1}, 5])
+def test_non_string_link_is_ignored(tmp_path, link):
+    assert _run(tmp_path, AGE, link=link) == []
+
+
+def test_load_criteria_only_returns_usable_criteria(tmp_path):
+    from src.eligibility import load_criteria
+
+    (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": [
+        None, "x", {"id": "a", "type": "numeric", "mode": "include"}, AGE]}}))
+    assert load_criteria(str(tmp_path)) == [AGE]

@@ -68,34 +68,68 @@ def _numeric_violation(raw: str, crit: dict) -> bool:
     return inside if crit.get("mode") == "exclude" else not inside
 
 
-def load_criteria(root_dir: str) -> list:
-    """The project's ``Eligibility.Criteria`` list, ``[]`` when there is none."""
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _usable(crit) -> bool:
+    """Shape the checks rely on; anything else is reported, never evaluated."""
+    if not isinstance(crit, dict):
+        return False
+    if not (isinstance(crit.get("id"), str) and crit["id"]):
+        return False
+    if crit.get("mode") not in ("include", "exclude"):
+        return False
+    if crit.get("type") == "numeric":
+        bounds = [crit[k] for k in ("min", "max") if k in crit]
+        return bool(bounds) and all(_is_number(b) for b in bounds)
+    if crit.get("type") == "categorical":
+        values = crit.get("values")
+        return isinstance(values, list) and bool(values) and all(isinstance(v, str) for v in values)
+    return False
+
+
+def _read_criteria(root_dir: str) -> tuple[list[dict], list[tuple[str, str | None]]]:
+    """(usable criteria, (description, id) per rejected entry) from project.json."""
     project = _load_json(Path(root_dir) / "project.json")
     eligibility = project.get("Eligibility") if isinstance(project, dict) else None
-    criteria = eligibility.get("Criteria") if isinstance(eligibility, dict) else None
-    return criteria if isinstance(criteria, list) else []
+    entries = eligibility.get("Criteria") if isinstance(eligibility, dict) else None
+    if not isinstance(entries, list):
+        return [], []
+    usable = [c for c in entries if _usable(c)]
+    rejected = []
+    for n, c in enumerate(entries, 1):
+        if _usable(c):
+            continue
+        crit_id = c.get("id") if isinstance(c, dict) and isinstance(c.get("id"), str) else None
+        rejected.append((f"#{n}" + (f" ('{crit_id}')" if crit_id else ""), crit_id))
+    return usable, rejected
+
+
+def load_criteria(root_dir: str) -> list:
+    """The project's usable ``Eligibility.Criteria``, ``[]`` when there are none."""
+    return _read_criteria(root_dir)[0]
 
 
 def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
     root = Path(root_dir)
-    criteria = load_criteria(root_dir)
+    criteria, rejected = _read_criteria(root_dir)
     sidecar = _load_json(root / "participants.json")
-    if not criteria or not isinstance(sidecar, dict):
+    if not (criteria or rejected) or not isinstance(sidecar, dict):
         return []
 
     by_id: dict[str, dict] = {}
     duplicates: set[str] = set()
     for crit in criteria:
-        if isinstance(crit, dict) and crit.get("id"):
-            if crit["id"] in by_id:
-                duplicates.add(crit["id"])
-            else:
-                by_id[crit["id"]] = crit
+        if crit["id"] in by_id:
+            duplicates.add(crit["id"])
+        else:
+            by_id[crit["id"]] = crit
 
     links = {
         col: spec[LINK_KEY]
         for col, spec in sidecar.items()
-        if isinstance(spec, dict) and spec.get(LINK_KEY)
+        if isinstance(spec, dict) and isinstance(spec.get(LINK_KEY), str) and spec[LINK_KEY]
     }
     if not links:
         return []
@@ -109,10 +143,15 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
     except OSError:
         return []  # unreadable files are reported elsewhere
 
-    config: list[tuple[str, str, str]] = []
+    config: list[tuple[str, str, str]] = [
+        ("WARNING", f"PRISM603 Eligibility criterion {desc} in project.json is malformed (needs an id, type numeric or categorical, mode include or exclude, and a numeric min/max or a list of values); it is ignored.", str(root / "project.json"))
+        for desc, _ in rejected
+    ]
     found: list[tuple[str, str, str]] = []
     for col, crit_id in links.items():
         crit = by_id.get(crit_id)
+        if crit is None and crit_id in {rid for _, rid in rejected}:
+            continue  # already reported as malformed
         if crit is None:
             config.append(("WARNING", f"PRISM603 Column '{col}' is linked to eligibility criterion '{crit_id}', which is not in project.json.", str(root / "participants.json")))
             continue

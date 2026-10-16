@@ -31,3 +31,11 @@ def test_validator_warns_about_participant_outside_criteria(tmp_path):
 def test_no_eligibility_issues_without_prism_validation(tmp_path):
     issues, _ = validate_dataset(_dataset(tmp_path), run_bids=False, run_prism=False)
     assert not [i for i in issues if "PRISM602" in str(i[1])]
+
+
+def test_malformed_criteria_do_not_take_down_the_validator(tmp_path):
+    root = _dataset(tmp_path)
+    (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": [
+        None, {"id": "age", "type": "numeric", "mode": "include", "min": "18"}]}}))
+    issues, _ = validate_dataset(root, run_bids=False, run_prism=True)
+    assert any("PRISM603" in str(i[1]) and "malformed" in str(i[1]) for i in issues)
