@@ -4,6 +4,10 @@ This page walks through the whole path from "I measure something PRISM does not
 know yet" to "it ships in the next release". The reference for the workbook
 fields is [Proposing a New Modality](MODALITY_PROPOSALS.md).
 
+PRISM is open and dynamic: anyone can propose a new modality or a new filename
+ending (suffix) for an existing one. You describe it in a short workbook, a bot
+checks it, and a maintainer registers it, so it can be part of the next release.
+
 ## How it works
 
 ```
