@@ -256,3 +256,13 @@ def test_creating_a_new_project_is_blocked_while_a_draft_is_pending(bare_page, s
     expect(page.get_by_text("not accepted yet")).to_be_visible()
     expect(row).to_have_class(re.compile("row-pending"))
     assert not (tmp_path / "row_guard_study").exists()  # nothing was created
+
+
+def test_a_project_switch_clears_a_half_typed_location_search(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
+    page.fill("#recLocationQuery", "Graz")
+    page.evaluate("window.dispatchEvent(new Event('prism-project-changed'))")
+    expect(page.locator("#recLocationQuery")).to_have_value("")
+    page.click("#createProjectSubmitBtn")  # must not be blocked by the previous project's typing
+    expect(page.get_by_text("not accepted yet")).to_have_count(0)

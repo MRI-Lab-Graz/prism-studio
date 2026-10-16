@@ -1986,6 +1986,13 @@ export function toggleRecLocationInputs() {
     validateRecLocationBadge();
 }
 
+function _clearRecLocationPicker() {
+    const query = document.getElementById('recLocationQuery');
+    if (query) query.value = '';
+    document.getElementById('recLocationResultsRow')?.classList.add('d-none');
+    document.getElementById('recLocationPickerGroup')?.classList.remove('row-pending');
+}
+
 export function addRecLocationRow(value = '') {
     const list = document.getElementById('smRecLocationList');
     if (!list) return;
@@ -4409,6 +4416,7 @@ document.addEventListener('DOMContentLoaded', function() {
         metadataMethodsController.handleProjectChanged();
         _resetStudyMetadataTracking();
         _loadMissingFilesStructureOptions();
+        _clearRecLocationPicker(); // a half-typed search belongs to the previous project
         if (!studyMetadataSubmitInFlight) {
             updateCreateProjectButton();
         }
