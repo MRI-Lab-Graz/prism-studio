@@ -1076,7 +1076,10 @@ function _parseAuthor(author) {
     };
 }
 
-export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
+// Authors that count: drafts the user has not accepted yet are left out everywhere.
+const DEFINED_AUTHOR_ROWS = '#metadataAuthorsList .author-row:not([data-row-state="draft"])';
+
+export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepted = false) {
     const list = document.getElementById('metadataAuthorsList');
     if (!list) return;
 
@@ -1111,9 +1114,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
             <button type="button" class="btn btn-outline-secondary btn-sm move-author-down" title="Move author down" aria-label="Move author down">
                 <i class="fas fa-arrow-down"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm remove-author">
-                <i class="fas fa-times"></i>
-            </button>
+            <span class="author-actions-slot"></span>
         </div>
         <div class="row g-2">
             <div class="col-md-6">
@@ -1163,14 +1164,33 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         </div>
     `;
 
-    const removeBtn = row.querySelector('.remove-author');
-    if (removeBtn) {
-        removeBtn.title = 'Remove this author';
-        removeBtn.setAttribute('aria-label', 'Remove this author');
-    }
+    const nameOf = (selector) => _cleanMetadataText(row.querySelector(selector)?.value || '');
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'author',
+        isComplete: () => Boolean(nameOf('.author-first') && nameOf('.author-last')),
+        hasContent: () => Array.from(row.querySelectorAll('input:not(.author-corresponding)'))
+            .some(input => input.value.trim() !== ''),
+        onAccept: () => {
+            updateCreateProjectButton();
+            validateAuthorsBadge();
+            _updateAuthorRowLabels();
+        },
+        onRemove: () => {
+            row.remove();
+            if (!document.querySelector('#metadataAuthorsList .author-row')) {
+                addAuthorRow();
+            }
+            updateCreateProjectButton();
+            validateAuthorsBadge(); // Update badge color when authors change
+            _updateAuthorRowLabels();
+        },
+    });
+    row.querySelector('.author-actions-slot').replaceWith(actions.slot);
 
     row.querySelectorAll('input:not(.author-corresponding)').forEach(input => {
         input.addEventListener('input', () => {
+            actions.refresh();
             _validateAuthorOptionalFields(row);
             updateCreateProjectButton();
             validateAuthorsBadge(); // Update badge color when authors change
@@ -1194,16 +1214,6 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         });
     }
 
-    row.querySelector('.remove-author').addEventListener('click', () => {
-        row.remove();
-        if (!document.querySelector('#metadataAuthorsList .author-row')) {
-            addAuthorRow();
-        }
-        updateCreateProjectButton();
-        validateAuthorsBadge(); // Update badge color when authors change
-        _updateAuthorRowLabels();
-    });
-
     row.querySelector('.move-author-up')?.addEventListener('click', () => {
         _moveAuthorRow(row, 'up');
     });
@@ -1224,7 +1234,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
 }
 
 function getAuthorState() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     let completeCount = 0;
     let incompleteCount = 0;
 
@@ -1245,7 +1255,7 @@ function getAuthorState() {
 }
 
 export function getAuthorsList() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     const authors = [];
     rows.forEach(row => {
         const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
@@ -1258,7 +1268,7 @@ export function getAuthorsList() {
 }
 
 export function getCitationAuthorsList() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     const authors = [];
     rows.forEach(row => {
         const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
@@ -1295,12 +1305,12 @@ export function hasAtLeastOneAuthor() {
 }
 
 function hasCorrespondingAuthor() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     return Array.from(rows).some(row => row.querySelector('.author-corresponding')?.checked);
 }
 
 function getCorrespondingAuthorEmail() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     for (const row of rows) {
         const isCorresponding = row.querySelector('.author-corresponding')?.checked;
         if (isCorresponding) {
@@ -1332,7 +1342,7 @@ export function setAuthorsList(authors) {
             email: parsed.email,
             corresponding: parsed.corresponding,
             roles: parsed.roles,
-        });
+        }, true);
         addedAuthors += 1;
     });
     if (addedAuthors === 0) {
@@ -3434,7 +3444,7 @@ function _syncFundingListField() {
     const list = document.getElementById('metadataFundingList');
     if (!hiddenField || !list) return;
 
-    const values = Array.from(list.querySelectorAll('.funding-row'))
+    const values = Array.from(list.querySelectorAll('.funding-row:not([data-row-state="draft"])'))
         .map(row => _combineFundingRow(
             row.querySelector('.funding-agency-input')?.value || '',
             row.querySelector('.funding-grant-input')?.value || ''
@@ -3449,7 +3459,7 @@ function _syncFundingListField() {
     }
 }
 
-export function addFundingRow(agency = '', grant = '') {
+export function addFundingRow(agency = '', grant = '', accepted = false) {
     const list = document.getElementById('metadataFundingList');
     if (!list) return;
 
@@ -3468,31 +3478,36 @@ export function addFundingRow(agency = '', grant = '') {
     grantInput.placeholder = 'Grant / award number (optional)';
     grantInput.value = String(grant || '');
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger funding-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove funding source');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'funding source',
+        isComplete: () => agencyInput.value.trim() !== '',
+        hasContent: () => agencyInput.value.trim() !== '' || grantInput.value.trim() !== '',
+        onAccept: () => {
+            _syncFundingListField();
+            updateCreateProjectButton();
+        },
+        onRemove: () => {
+            row.remove();
+            if (!list.querySelector('.funding-row')) {
+                addFundingRow();
+            }
+            _syncFundingListField();
+            updateCreateProjectButton();
+        },
+    });
 
     const onInput = () => {
+        actions.refresh();
         _syncFundingListField();
         updateCreateProjectButton();
     };
     agencyInput.addEventListener('input', onInput);
     grantInput.addEventListener('input', onInput);
 
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.funding-row')) {
-            addFundingRow();
-        }
-        _syncFundingListField();
-        updateCreateProjectButton();
-    });
-
     row.appendChild(agencyInput);
     row.appendChild(grantInput);
-    row.appendChild(removeButton);
+    row.appendChild(actions.slot);
     list.appendChild(row);
     _syncFundingListField();
 }
@@ -3514,9 +3529,9 @@ function setFundingRows(entries) {
         // the first comma only, for a cosmetic agency/grant split in the UI.
         const commaIndex = text.indexOf(',');
         if (commaIndex === -1) {
-            addFundingRow(text, '');
+            addFundingRow(text, '', true);
         } else {
-            addFundingRow(text.slice(0, commaIndex).trim(), text.slice(commaIndex + 1).trim());
+            addFundingRow(text.slice(0, commaIndex).trim(), text.slice(commaIndex + 1).trim(), true);
         }
     });
     if (!list.querySelector('.funding-row')) {

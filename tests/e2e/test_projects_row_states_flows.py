@@ -89,3 +89,73 @@ def test_a_malformed_doi_cannot_be_accepted(app_page, studio_url):
     row = page.locator("#smReferencesList .overview-list-row").last
     row.locator(".overview-list-input").fill("not a doi")
     expect(row.locator('[data-f="accept"]')).to_be_disabled()
+
+
+def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    row = page.locator("#metadataAuthorsList .author-row").first
+    badge = page.locator("#metadataAuthorsRequiredBadge")
+
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    row.locator(".author-first").fill("Ada")
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()  # last name missing
+    row.locator(".author-last").fill("Lovelace")
+    row.locator(".author-corresponding").check()
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()
+    expect(row.locator('[data-f="remove"]')).to_have_count(0)
+    expect(badge).not_to_have_class(re.compile("bg-success"))  # a draft is not an author yet
+
+    row.locator('[data-f="accept"]').click()
+    expect(row.locator('[data-f="remove"]')).to_have_count(1)
+    expect(badge).to_have_class(re.compile("bg-success"))
+
+    page.click("#addAuthorRow")
+    second = page.locator("#metadataAuthorsList .author-row").nth(1)
+    second.locator(".author-first").fill("Grace")  # half-filled draft must not turn the badge red
+    expect(badge).to_have_class(re.compile("bg-success"))
+    second.locator('[data-f="cancel"]').click()
+    expect(page.locator("#metadataAuthorsList .author-row")).to_have_count(1)
+
+
+def test_loaded_authors_are_defined(app_page, studio_url, project):
+    (project / "dataset_description.json").write_text(
+        json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))
+    open_sections(app_page, studio_url, "#smCoreSetupGroupBody")
+    row = app_page.locator("#metadataAuthorsList .author-row").first
+    expect(row.locator(".author-last")).to_have_value("Lovelace")
+    expect(row.locator('[data-f="remove"]')).to_have_count(1)
+    expect(row.locator('[data-f="accept"]')).to_have_count(0)
+
+
+def test_funding_rows_are_drafts_and_the_empty_placeholder_comes_back(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#metadataFundingYes")
+    row = page.locator("#metadataFundingList .funding-row").first
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    row.locator(".funding-agency-input").fill("FWF")
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()
+    assert page.input_value("#metadataFunding") == ""  # a draft is not saved
+    row.locator('[data-f="accept"]').click()
+    assert page.input_value("#metadataFunding") == "FWF"
+    row.locator('[data-f="remove"]').click()
+    # deleting the last row leaves the empty placeholder draft, nothing saved
+    expect(page.locator("#metadataFundingList .funding-row")).to_have_count(1)
+    expect(page.locator('#metadataFundingList [data-f="accept"]')).to_have_count(1)
+    assert page.input_value("#metadataFunding") == ""
+
+
+def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding(app_page, studio_url, project):
+    description = {"Name": "e2e", "BIDSVersion": "1.10.0",
+                   "Authors": ["Ada Lovelace"], "Funding": ["FWF, P12345"]}
+    (project / "dataset_description.json").write_text(json.dumps(description))
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    expect(page.locator('#metadataFundingList [data-f="remove"]')).to_have_count(1)  # loaded = defined
+    page.click("#createProjectSubmitBtn")
+    page.get_by_role("button", name="Save Preliminary State").click()
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
+    saved = json.loads((project / "dataset_description.json").read_text())
+    assert saved["Funding"] == ["FWF, P12345"]
+    assert "Lovelace" in (project / "project.json").read_text()  # authors live in project.json

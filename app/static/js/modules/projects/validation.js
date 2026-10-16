@@ -204,7 +204,8 @@ export function validateEligibilityCriteriaBadges() {
  */
 export function validateAuthorsBadge() {
     // Valid only if at least one complete author exists and no incomplete rows remain
-    const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    // Drafts the user has not accepted yet are not authors (and not "incomplete" ones either).
+    const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row:not([data-row-state="draft"])');
     debugLog(`validateAuthorsBadge: Found ${authorRows.length} author rows`);
     
     let completeCount = 0;
