@@ -230,6 +230,10 @@ def cmd_convert_physio(args):
             error_count += 1
 
     print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
+    if success_count:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_dir)
 
 
 def _parse_session_indicators(raw_value: str | None) -> list[str]:

@@ -27,10 +27,12 @@ converters), PRISM pins the then-current version in the project's
 - `SchemaVersions` is the version each modality is validated against.
 - `SchemaVersionsAcknowledged` records the newest version you have already
   decided about, so you are told about a newer version only once.
-- For DataLad projects the pin is recorded as a small separate commit whose
-  message ends with "(record modality versions)".
-- Validation never writes to `project.json`. A project is only pinned by an
-  import, or by the `pin` command below.
+- For DataLad projects, Studio imports record the pin as a small separate commit
+  whose message ends with "(record modality versions)". The command-line
+  converters and environment conversion leave `project.json` uncommitted along
+  with their data.
+- Validation never writes pins. A project is only pinned by an import, or by the
+  `pin` command below.
 
 When a newer version of a pinned modality exists, `prism.py` prints a hint on
 stderr after the validation. Decide with the command line:
@@ -80,12 +82,13 @@ command-line `--json` report does not list them yet.
 2. Edit the stable file and bump its `version` and the version suffix of its
    `$id`.
 
-The CI job `Modality schema versions` (`scripts/ci/check_schema_versions.py`,
-pull requests only) enforces three rules: files under `app/schemas/archive/` are
+The CI job `Modality schema versions` (`scripts/ci/check_schema_versions.py`)
+enforces three rules: files under `app/schemas/archive/` are
 never modified or deleted; a changed stable modality schema must carry a bumped
 `version`; and a bumped version needs the previous version archived as an exact
 copy of the previous stable file. It does not guard deleting or renaming a
-stable modality schema.
+stable modality schema. The check also runs on pushes to main, and maintainers can
+run it locally before merging: `python3 scripts/ci/check_schema_versions.py origin/main HEAD`.
 
 The archive ships automatically: the validator wheel copies the whole
 `app/schemas` tree and the app bundle adds the whole directory, so no extra

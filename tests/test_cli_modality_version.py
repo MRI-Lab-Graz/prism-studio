@@ -85,3 +85,28 @@ def test_non_project_path_exits_1_with_project_json_error(fn, extra, where, tmp_
     assert exc.value.code == 1
     out = json.loads(capsys.readouterr().out)
     assert out["success"] is False and "project.json" in out["error"]
+
+
+@pytest.mark.parametrize("bad", ["dataset_description", "project", "../stable/biometrics", "nope"])
+def test_cli_pin_rejects_non_modality_names(project, capsys, bad):
+    with pytest.raises(SystemExit) as exc:
+        cmds.cmd_modality_version_pin(_args(project, names=[bad], json=True))
+    assert exc.value.code == 1
+    assert json.loads(capsys.readouterr().out)["success"] is False
+    assert "SchemaVersions" not in json.loads((project / "project.json").read_text())
+
+
+@pytest.mark.parametrize("fn", ["pin", "update", "freeze"])
+def test_read_only_project_exits_1_not_traceback(project, capsys, monkeypatch, fn):
+    cmds.cmd_modality_version_pin(_args(project, names=["survey"]))
+    capsys.readouterr()
+
+    def boom(*a, **k):
+        raise PermissionError("read-only")
+
+    monkeypatch.setattr("src.modality_versions._write_pins", boom)
+    args = _args(project, names=["biometrics"], name="survey", json=True)
+    with pytest.raises(SystemExit) as exc:
+        getattr(cmds, f"cmd_modality_version_{fn}")(args)
+    assert exc.value.code == 1
+    assert json.loads(capsys.readouterr().out)["success"] is False

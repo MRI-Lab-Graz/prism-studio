@@ -1,6 +1,7 @@
 """Conversions pin the modality versions they wrote (project.json SchemaVersions)."""
 
 import json
+from pathlib import Path
 import pandas as pd
 import pytest
 
@@ -237,3 +238,38 @@ def test_datalad_copy_unsuccessful_save_result_warns(tmp_path, monkeypatch, caps
     assert result["copied_count"] == 1
     err = capsys.readouterr().err
     assert "project.json" in err and "boom" in err
+
+
+def _physio_args(tmp_path):
+    from argparse import Namespace
+
+    src = tmp_path / "in" / "sub-01" / "ses-1"
+    src.mkdir(parents=True)
+    (src / "a.raw").write_bytes(b"RAW")
+    return Namespace(input=str(tmp_path / "in"), output=str(tmp_path / "out"), task="rest",
+                     suffix="physio", sampling_rate=None)
+
+
+def _fake_varioport(monkeypatch, *, write):
+    def fake(input_path, output_edf, output_json, **k):
+        if write:
+            Path(output_edf).write_bytes(b"x" * 20000)
+            Path(output_json).write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr("src.cli.commands.convert.convert_varioport", fake)
+
+
+def test_convert_physio_pins_the_output(tmp_path, monkeypatch, pinned_roots):
+    from src.cli.commands.convert import cmd_convert_physio
+
+    _fake_varioport(monkeypatch, write=True)
+    cmd_convert_physio(_physio_args(tmp_path))
+    assert pinned_roots == [str(tmp_path / "out")]
+
+
+def test_convert_physio_nothing_converted_does_not_pin(tmp_path, monkeypatch, pinned_roots):
+    from src.cli.commands.convert import cmd_convert_physio
+
+    _fake_varioport(monkeypatch, write=False)
+    cmd_convert_physio(_physio_args(tmp_path))
+    assert pinned_roots == []

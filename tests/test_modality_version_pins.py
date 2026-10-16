@@ -179,3 +179,46 @@ def test_failed_write_leaves_no_temp_file(tmp_path, schema_dir, monkeypatch):
         pin_modalities(root, ["survey"], schema_dir)
     assert [p.name for p in root.iterdir()] == ["project.json"]
     assert (root / "project.json").read_text() == before
+
+
+BAD_NAMES = ["dataset_description", "project", "../stable/biometrics", "nope"]
+
+
+@pytest.mark.parametrize("bad", BAD_NAMES)
+def test_library_rejects_non_modality_names(tmp_path, schema_dir, bad):
+    from src.modality_versions import available_versions, current_version, load_modality_schema
+
+    root = _project(tmp_path)
+    for call in (
+        lambda: pin_modalities(root, [bad], schema_dir),
+        lambda: current_version(bad, schema_dir),
+        lambda: available_versions(bad, schema_dir),
+        lambda: load_modality_schema(bad, "1.0.0", schema_dir),
+    ):
+        with pytest.raises(ModalityVersionError, match="unknown modality"):
+            call()
+    for fn in (update_modality, freeze_modality):
+        with pytest.raises(ModalityVersionError):
+            fn(root, bad, schema_dir)
+
+
+def test_load_modality_schema_rejects_malformed_version(schema_dir):
+    from src.modality_versions import load_modality_schema
+
+    with pytest.raises(ModalityVersionError):
+        load_modality_schema("survey", "../../x", schema_dir)
+
+
+def test_trailing_newline_version_is_rejected(tmp_path):
+    from src.modality_versions import parse_overrides
+
+    with pytest.raises(ModalityVersionError):
+        parse_overrides(["survey=1.0.0\n"])
+    root = _project(tmp_path, SchemaVersions={"survey": "1.0.0\n"})
+    assert read_pins(root)[0] == {}
+
+
+def test_pinning_writes_lf_only(tmp_path, schema_dir):
+    root = _project(tmp_path)
+    pin_modalities(root, ["survey"], schema_dir)
+    assert b"\r" not in (root / "project.json").read_bytes()

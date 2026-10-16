@@ -10,9 +10,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+from src.cross_platform import _replace_with_retry
 from src.schema_manager import DEFAULT_SCHEMA_DIR, _read_schema_file, load_schema, parse_version
 
-VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+VERSION_RE = re.compile(r"\d+\.\d+\.\d+")
 
 
 class ModalityVersionError(ValueError):
@@ -30,11 +31,10 @@ def modality_names(schema_dir=None) -> list[str]:
 
 
 def current_version(name: str, schema_dir=None) -> str:
+    names = modality_names(schema_dir)
+    if name not in names:
+        raise ModalityVersionError(f"unknown modality '{name}'; known: {', '.join(names)}")
     path = _dir(schema_dir) / "stable" / f"{name}.schema.json"
-    if not path.is_file():
-        raise ModalityVersionError(
-            f"unknown modality '{name}'; known: {', '.join(modality_names(schema_dir))}"
-        )
     return json.loads(path.read_text(encoding="utf-8")).get("version", "1.0.0")
 
 
@@ -53,8 +53,10 @@ def available_versions(name: str, schema_dir=None) -> list[str]:
 
 def load_modality_schema(name: str, version: str, schema_dir=None) -> dict:
     base = _dir(schema_dir)
-    if version == current_version(name, schema_dir):
+    if version == current_version(name, schema_dir):  # also validates the name
         return load_schema(name, str(base), "stable")
+    if not VERSION_RE.fullmatch(version):
+        raise ModalityVersionError(f"'{version}' is not a version (use X.Y.Z)")
     path = base / "archive" / name / f"{version}.schema.json"
     schema = _read_schema_file(str(path), name, f"{name}@{version}")
     if schema is None:
@@ -69,7 +71,7 @@ def parse_overrides(items: list[str]) -> dict[str, str]:
     out: dict[str, str] = {}
     for item in items or []:
         name, sep, version = item.partition("=")
-        if not (sep and name and VERSION_RE.match(version)):
+        if not (sep and name and VERSION_RE.fullmatch(version)):
             raise ModalityVersionError(f"'{item}': use NAME=X.Y.Z (for example survey=1.0.3)")
         out[name] = version
     return out
@@ -106,7 +108,7 @@ def _read_project(project_root) -> dict | None:
 def _clean_map(value) -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
-    return {k: v for k, v in value.items() if isinstance(k, str) and isinstance(v, str) and VERSION_RE.match(v)}
+    return {k: v for k, v in value.items() if isinstance(k, str) and isinstance(v, str) and VERSION_RE.fullmatch(v)}
 
 
 def read_pins(project_root) -> tuple[dict[str, str], dict[str, str]]:
@@ -127,10 +129,10 @@ def _write_pins(project_root, pins: dict[str, str], acknowledged: dict[str, str]
     path = Path(project_root) / "project.json"
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".project.json.")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as fh:
             fh.write(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
         shutil.copymode(path, tmp)
-        os.replace(tmp, path)
+        _replace_with_retry(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise

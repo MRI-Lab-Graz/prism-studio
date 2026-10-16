@@ -56,7 +56,7 @@ def cmd_modality_version_list(args) -> None:
     try:
         names = [args.name] if args.name else modality_names()
         versions = {n: available_versions(n) for n in names}
-    except ModalityVersionError as exc:
+    except (ModalityVersionError, OSError) as exc:
         _fail(args, str(exc))
         return
     _emit(args, {"success": True, "versions": versions},
@@ -67,7 +67,7 @@ def cmd_modality_version_pin(args) -> None:
     _require_project(args)
     try:
         new = pin_modalities(args.project, args.names) if args.names else pin_present_modalities(args.project)
-    except ModalityVersionError as exc:
+    except (ModalityVersionError, OSError) as exc:
         _fail(args, str(exc))
         return
     _emit(args, {"success": True, "pinned": new},
@@ -78,7 +78,7 @@ def _change(args, fn, verb: str) -> None:
     _require_project(args)
     try:
         version = fn(args.project, args.name)
-    except ModalityVersionError as exc:
+    except (ModalityVersionError, OSError) as exc:
         _fail(args, str(exc))
         return
     _emit(args, {"success": True, "modality": args.name, "version": version},
