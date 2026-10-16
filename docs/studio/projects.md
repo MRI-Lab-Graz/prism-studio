@@ -47,6 +47,17 @@ fill in Study Metadata by hand.
 Buttons: **Preliminary Save** (saves the form without creating the project yet) and
 **Create Project**.
 
+### Checked eligibility criteria
+
+In **Study Metadata > Eligibility**, *Checked Criteria* holds limits the validator
+tests against `participants.tsv`. Pick a standard term (Age, Sex, Handedness,
+Group, Diagnosis, Education level) or **Other measure** (IQ, VO2max, ...), choose
+**include** or **exclude**, then give a range (numeric, inclusive, either end may
+stay empty) or the category labels. Enter the limits here only once: in the
+[Sociodemographics converter](converter_participants.md) you just link a column
+to the criterion. Participants outside a limit get a warning (`PRISM602`), never
+an error, so you can validate while data collection is still running.
+
 ### What gets created
 
 ```text
