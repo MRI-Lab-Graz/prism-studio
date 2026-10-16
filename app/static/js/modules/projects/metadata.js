@@ -22,6 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { mountRowActions } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -1438,7 +1439,7 @@ function _syncOverviewListField(fieldId) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !hiddenField || !list) return;
 
-    const values = Array.from(list.querySelectorAll('.overview-list-input'))
+    const values = Array.from(list.querySelectorAll('.overview-list-row:not([data-row-state="draft"]) .overview-list-input'))
         .map(input => input.value.trim())
         .filter(Boolean);
     hiddenField.value = values.join('\n');
@@ -1453,7 +1454,7 @@ function _syncOverviewListField(fieldId) {
     }
 }
 
-function addOverviewListRow(fieldId, value = '') {
+function addOverviewListRow(fieldId, value = '', accepted = false) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
@@ -1474,11 +1475,13 @@ function addOverviewListRow(fieldId, value = '') {
     input.placeholder = config.placeholder || '';
     input.value = String(value || '');
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger overview-list-remove';
-    removeButton.setAttribute('aria-label', 'Remove item');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+    // Looked-up rows (DOIs): an optional "check" helper while the row is a draft.
+    const lookupButton = document.createElement('button');
+    lookupButton.type = 'button';
+    lookupButton.className = 'btn btn-outline-primary btn-sm d-none';
+    lookupButton.setAttribute('aria-label', 'Check DOI');
+    lookupButton.title = 'Check DOI';
+    lookupButton.innerHTML = '<i class="fas fa-search"></i>';
 
     const markValidity = () => {
         if (config.validate) input.classList.toggle('is-invalid', !config.validate(input.value.trim()));
@@ -1488,19 +1491,35 @@ function addOverviewListRow(fieldId, value = '') {
     const feedback = document.createElement('div');
     feedback.className = 'form-text w-100 mt-0 d-none';
 
-    // Looked-up rows (DOIs): the end button is "search" until the value was
-    // checked, and only then the delete cross.
     let checked = false;
     const updateAction = () => {
         if (!config.lookup) return;
         const action = rowAction({ value: input.value, checked });
-        removeButton.classList.toggle('d-none', action === 'none');
-        removeButton.classList.toggle('btn-outline-danger', action === 'remove');
-        removeButton.classList.toggle('btn-outline-primary', action === 'search');
-        removeButton.dataset.action = action;
-        removeButton.setAttribute('aria-label', action === 'search' ? 'Check DOI' : 'Remove item');
-        removeButton.innerHTML = `<i class="fas fa-${action === 'search' ? 'search' : 'times'}"></i>`;
+        lookupButton.classList.toggle('d-none', !(row.dataset.rowState === 'draft' && action === 'search'));
     };
+
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'item',
+        isComplete: () => {
+            const text = input.value.trim();
+            return Boolean(text) && (!config.validate || config.validate(text));
+        },
+        hasContent: () => input.value.trim() !== '',
+        onAccept: () => {
+            updateAction();
+            _syncOverviewListField(fieldId);
+            updateCreateProjectButton();
+        },
+        onRemove: () => {
+            row.remove();
+            if (!list.querySelector('.overview-list-row')) {
+                addOverviewListRow(fieldId);
+            }
+            _syncOverviewListField(fieldId);
+            updateCreateProjectButton();
+        },
+    });
 
     const runLookup = async () => {
         const value = input.value.trim();
@@ -1519,24 +1538,14 @@ function addOverviewListRow(fieldId, value = '') {
         feedback.classList.add('d-none');
         checked = false;
         updateAction();
+        actions.refresh();
         _syncOverviewListField(fieldId);
         updateCreateProjectButton();
     });
     input.addEventListener('change', runLookup);
 
-    removeButton.addEventListener('mousedown', (e) => e.preventDefault());
-    removeButton.addEventListener('click', () => {
-        if (removeButton.dataset.action === 'search') {
-            runLookup();
-            return;
-        }
-        row.remove();
-        if (!list.querySelector('.overview-list-row')) {
-            addOverviewListRow(fieldId);
-        }
-        _syncOverviewListField(fieldId);
-        updateCreateProjectButton();
-    });
+    lookupButton.addEventListener('mousedown', (e) => e.preventDefault());
+    lookupButton.addEventListener('click', runLookup);
 
     row.addEventListener('dragstart', (e) => {
         _draggedListRow = row;
@@ -1565,7 +1574,8 @@ function addOverviewListRow(fieldId, value = '') {
 
     row.appendChild(dragHandle);
     row.appendChild(input);
-    row.appendChild(removeButton);
+    row.appendChild(lookupButton);
+    row.appendChild(actions.slot);
     row.appendChild(feedback);
     list.appendChild(row);
     updateAction();
@@ -1585,7 +1595,7 @@ export function setOverviewList(fieldId, rawValue) {
         return;
     }
 
-    values.forEach(value => addOverviewListRow(fieldId, value));
+    values.forEach(value => addOverviewListRow(fieldId, value, true));
     _syncOverviewListField(fieldId);
 }
 
@@ -1655,7 +1665,7 @@ function _syncTwoFieldListField(fieldId) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !hiddenField || !list) return;
 
-    const values = Array.from(list.querySelectorAll('.two-field-row'))
+    const values = Array.from(list.querySelectorAll('.two-field-row:not([data-row-state="draft"])'))
         .map(row => _combineTwoFieldRow(
             row.querySelector('.two-field-input-1')?.value || '',
             row.querySelector('.two-field-input-2')?.value || ''
@@ -1665,7 +1675,7 @@ function _syncTwoFieldListField(fieldId) {
     updateCreateProjectButton();
 }
 
-function addTwoFieldRow(fieldId, field1 = '', field2 = '') {
+function addTwoFieldRow(fieldId, field1 = '', field2 = '', accepted = false) {
     const config = TWO_FIELD_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
@@ -1685,27 +1695,32 @@ function addTwoFieldRow(fieldId, field1 = '', field2 = '') {
     input2.placeholder = config.field2Placeholder;
     input2.value = String(field2 || '');
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger two-field-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove entry');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+    const hasText = () => Boolean(input1.value.trim() || input2.value.trim());
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'entry',
+        isComplete: hasText,
+        hasContent: hasText,
+        onAccept: () => _syncTwoFieldListField(fieldId),
+        onRemove: () => {
+            row.remove();
+            if (!list.querySelector('.two-field-row')) {
+                addTwoFieldRow(fieldId);
+            }
+            _syncTwoFieldListField(fieldId);
+        },
+    });
 
-    const onInput = () => _syncTwoFieldListField(fieldId);
+    const onInput = () => {
+        actions.refresh();
+        _syncTwoFieldListField(fieldId);
+    };
     input1.addEventListener('input', onInput);
     input2.addEventListener('input', onInput);
 
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.two-field-row')) {
-            addTwoFieldRow(fieldId);
-        }
-        _syncTwoFieldListField(fieldId);
-    });
-
     row.appendChild(input1);
     row.appendChild(input2);
-    row.appendChild(removeButton);
+    row.appendChild(actions.slot);
     list.appendChild(row);
     _syncTwoFieldListField(fieldId);
 }
@@ -1722,7 +1737,7 @@ function setTwoFieldList(fieldId, rawValue) {
         return;
     }
 
-    entries.forEach(entry => addTwoFieldRow(fieldId, entry.field1, entry.field2));
+    entries.forEach(entry => addTwoFieldRow(fieldId, entry.field1, entry.field2, true));
     _syncTwoFieldListField(fieldId);
 }
 

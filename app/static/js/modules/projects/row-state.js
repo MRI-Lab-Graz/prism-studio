@@ -77,3 +77,28 @@ export function guardSave(form, showFeedback) {
     showFeedback(pendingMessage(pending.length), 'warning');
     return false;
 }
+
+/** Gives a row its action buttons and the row contract. Returns { slot, refresh }:
+ *  append `slot` to the row, call `refresh()` whenever completeness may have changed.
+ *  `state` is the initial state: 'draft' for rows the user adds, 'defined' for loaded rows. */
+export function mountRowActions(row, { state, noun, isComplete, hasContent, onAccept, onRemove }) {
+    const slot = document.createElement('span');
+    slot.style.display = 'contents'; // the buttons stay direct layout children of an input-group
+    row.dataset.rowState = state;
+    const refresh = () => {
+        slot.innerHTML = rowActionsHtml(
+            rowActionsModel({ state: row.dataset.rowState, complete: isComplete() }), noun);
+    };
+    row._row = { hasContent, discard: onRemove };
+    bindRowActions(slot, {
+        onAccept: () => {
+            row.dataset.rowState = 'defined';
+            refresh();
+            onAccept();
+        },
+        onCancel: onRemove,
+        onRemove,
+    });
+    refresh();
+    return { slot, refresh };
+}
