@@ -48,16 +48,19 @@ def _numeric_violation(raw: str, crit: dict) -> bool:
     return inside if crit.get("mode") == "exclude" else not inside
 
 
+def load_criteria(root_dir: str) -> list:
+    """The project's ``Eligibility.Criteria`` list, ``[]`` when there is none."""
+    project = _load_json(Path(root_dir) / "project.json")
+    eligibility = project.get("Eligibility") if isinstance(project, dict) else None
+    criteria = eligibility.get("Criteria") if isinstance(eligibility, dict) else None
+    return criteria if isinstance(criteria, list) else []
+
+
 def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
     root = Path(root_dir)
-    project = _load_json(root / "project.json")
+    criteria = load_criteria(root_dir)
     sidecar = _load_json(root / "participants.json")
-    criteria = (
-        project.get("Eligibility", {}).get("Criteria")
-        if isinstance(project, dict) and isinstance(project.get("Eligibility"), dict)
-        else None
-    )
-    if not isinstance(criteria, list) or not isinstance(sidecar, dict):
+    if not criteria or not isinstance(sidecar, dict):
         return []
 
     by_id: dict[str, dict] = {}
