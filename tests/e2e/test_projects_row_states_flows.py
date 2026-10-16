@@ -326,3 +326,19 @@ def test_an_added_checked_criterion_is_an_unsaved_change(app_page, studio_url):
     page.click("#card-create")
     page.wait_for_timeout(500)
     assert any("unsaved" in message.lower() for message in dialogs), dialogs
+
+
+def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_url):
+    page = app_page
+    page.route("**/api/projects/orcid/search*", lambda route: route.fulfill(
+        status=200, content_type="application/json",
+        body=json.dumps({"success": True, "candidates": [{
+            "orcid_id": "0000-0002-1825-0097", "given_names": "Ada", "family_name": "Lovelace",
+            "affiliation": "Analytical Engines"}]})))
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    row = page.locator("#metadataAuthorsList .author-row").first
+    row.locator(".author-last").fill("Lovelace")  # first name missing: the check is disabled
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    row.locator(".author-orcid-find").click()  # one candidate: picked without a dialog
+    expect(row.locator(".author-first")).to_have_value("Ada")
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()  # the helper filled what was missing

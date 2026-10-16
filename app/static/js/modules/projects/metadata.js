@@ -675,6 +675,7 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
         websiteInput.value = String(candidate.website || '').trim();
     }
 
+    row._row?.refresh(); // the names may now be complete: enable the green check
     _validateAuthorOptionalFields(row);
     _updateAuthorRowLabels();
     updateCreateProjectButton();

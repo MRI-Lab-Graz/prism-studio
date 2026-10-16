@@ -98,7 +98,7 @@ export function mountRowActions(row, { state, noun, isComplete, hasContent, onAc
         slot.innerHTML = rowActionsHtml(
             rowActionsModel({ state: row.dataset.rowState, complete: isComplete() }), noun);
     };
-    row._row = { hasContent, discard: onRemove };
+    row._row = { hasContent, discard: onRemove, refresh }; // refresh: for code that fills fields without an input event
     bindRowActions(slot, {
         onAccept: () => {
             row.dataset.rowState = 'defined';
