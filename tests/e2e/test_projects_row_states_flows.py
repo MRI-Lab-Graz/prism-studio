@@ -266,3 +266,19 @@ def test_a_project_switch_clears_a_half_typed_location_search(app_page, studio_u
     expect(page.locator("#recLocationQuery")).to_have_value("")
     page.click("#createProjectSubmitBtn")  # must not be blocked by the previous project's typing
     expect(page.get_by_text("not accepted yet")).to_have_count(0)
+
+
+def test_after_searching_and_adding_a_location_saving_is_not_blocked(app_page, studio_url):
+    page = app_page
+    page.route("**/api/projects/recruitment-location-search*", lambda route: route.fulfill(
+        status=200, content_type="application/json",
+        body=json.dumps({"results": [{"display_name": "Graz, Styria, Austria"}]})))
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
+    page.fill("#recLocationQuery", "Graz")
+    page.click("#recLocationSearchBtn")
+    expect(page.locator("#recLocationResultsRow")).to_be_visible()
+    page.click("#recLocationAddBtn")
+    expect(page.locator("#smRecLocationList .rec-location-row")).to_have_count(1)
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_have_count(0)  # nothing is pending any more
+    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()

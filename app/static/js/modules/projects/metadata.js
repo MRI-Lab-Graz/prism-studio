@@ -1986,9 +1986,15 @@ export function toggleRecLocationInputs() {
     validateRecLocationBadge();
 }
 
+function _resetRecLocationResults() {
+    const results = document.getElementById('recLocationResults');
+    if (results) results.innerHTML = '<option value="">— no location selected —</option>';
+}
+
 function _clearRecLocationPicker() {
     const query = document.getElementById('recLocationQuery');
     if (query) query.value = '';
+    _resetRecLocationResults();
     document.getElementById('recLocationResultsRow')?.classList.add('d-none');
     document.getElementById('recLocationPickerGroup')?.classList.remove('row-pending');
 }
@@ -2946,6 +2952,7 @@ if (recLocationAddBtn) {
             recLocationQuery.focus();
         }
         recLocationResultsRow?.classList.add('d-none');
+        _resetRecLocationResults();
     });
 }
 
@@ -2955,7 +2962,9 @@ const recLocationPicker = document.getElementById('recLocationPickerGroup');
 if (recLocationPicker && recLocationQuery) {
     registerStagedControl(recLocationPicker, () => {
         if (document.getElementById('smRecLocationOnlineOnly')?.checked) return false;
-        const chosen = recLocationResults?.options[recLocationResults.selectedIndex];
+        // A result only counts while the results are shown: after Add the select keeps its old options.
+        const resultsShown = !recLocationResultsRow?.classList.contains('d-none');
+        const chosen = resultsShown ? recLocationResults?.options[recLocationResults.selectedIndex] : null;
         return Boolean(String(recLocationQuery.value || '').trim() || (chosen && chosen.value));
     });
     recLocationQuery.addEventListener('input', () => recLocationPicker.classList.remove('row-pending'));
