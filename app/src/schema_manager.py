@@ -90,6 +90,8 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
         schema_dir: Base schemas directory
         version: Schema version to load (e.g., 'stable', 'v0.1', '0.1').
                  If None, uses DEFAULT_SCHEMA_VERSION
+        modality_versions: Optional {modality: 'X.Y.Z'} loaded from the stable/
+                 archive instead of `version` (aliases follow the override).
     """
     # Normalize version string
     if version is None:
@@ -103,7 +105,7 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     return _read_schema_file(schema_path, name, version)
 
 
-def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
+def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None, modality_versions=None):
     """Load all available schemas for a specific version
 
     Args:
@@ -125,6 +127,12 @@ def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
         schema = load_schema(modality, schema_dir, version)
         if schema:
             schemas[modality] = schema
+
+    if modality_versions:
+        from src.modality_versions import load_modality_schema
+
+        for modality, modality_version in modality_versions.items():
+            schemas[modality] = load_modality_schema(modality, modality_version, schema_dir)
 
     for alias, target in entities.get("aliases", {}).items():
         if target in schemas:

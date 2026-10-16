@@ -88,3 +88,24 @@ def resolve_modality_versions(pins=None, overrides=None, schema_dir=None):
         else:
             versions[name], sources[name] = current_version(name, schema_dir), "latest"
     return versions, sources
+
+
+def _read_project(project_root) -> dict | None:
+    path = Path(project_root) / "project.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _clean_map(value) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    return {k: v for k, v in value.items() if isinstance(k, str) and isinstance(v, str) and VERSION_RE.match(v)}
+
+
+def read_pins(project_root) -> tuple[dict[str, str], dict[str, str]]:
+    """(SchemaVersions, SchemaVersionsAcknowledged) of a project; empty when absent or unreadable."""
+    data = _read_project(project_root) or {}
+    return _clean_map(data.get("SchemaVersions")), _clean_map(data.get("SchemaVersionsAcknowledged"))
