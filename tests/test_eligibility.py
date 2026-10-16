@@ -150,9 +150,11 @@ def test_include_labels_flag_everyone_else(tmp_path):
     assert _flagged(check_eligibility(root)) == ["sub-P03"]
 
 
-def test_label_compare_is_exact(tmp_path):
-    root = _sex(tmp_path, "exclude", ["Male"], levels={"1": "Female", "2": "male", "3": "Other"})
-    assert check_eligibility(root) == []
+def test_label_compare_is_exact_and_a_total_mismatch_is_reported_once(tmp_path):
+    root = _sex(tmp_path, "exclude", ["Male"], levels={"1": "female", "2": "male", "3": "other"})
+    issues = check_eligibility(root)
+    assert not _codes(issues, "PRISM602")
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "Male" in issues[0][1]
 
 
 def test_linked_categorical_without_levels_warns_once(tmp_path):
@@ -218,3 +220,19 @@ def test_load_criteria_only_returns_usable_criteria(tmp_path):
     (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": [
         None, "x", {"id": "a", "type": "numeric", "mode": "include"}, AGE]}}))
     assert load_criteria(str(tmp_path)) == [AGE]
+
+
+def test_neurobagel_label_in_annotations_counts_next_to_free_text_levels(tmp_path):
+    levels = {"1": "weiblich", "2": "maennlich", "3": "anderes"}
+    ann = {"Annotations": {"Levels": {"2": {"TermURL": "snomed:248153007", "Label": "Male"}}}}
+    root = _sex(tmp_path, "exclude", ["Male"], levels=levels, extra=ann)
+    issues = check_eligibility(root)
+    assert _flagged(issues) == ["sub-P02", "sub-P04"]
+    assert not _codes(issues, "PRISM603")
+
+
+def test_levels_given_as_dicts_without_label_fall_back_to_annotations(tmp_path):
+    levels = {"1": {"Description": ""}, "2": {"Description": ""}}
+    ann = {"Annotations": {"Levels": {"2": {"Label": "Male"}}}}
+    root = _sex(tmp_path, "exclude", ["Male"], levels=levels, extra=ann)
+    assert _flagged(check_eligibility(root)) == ["sub-P02", "sub-P04"]

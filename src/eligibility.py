@@ -38,23 +38,29 @@ def _range_text(crit: dict) -> str:
     return f"{text} {crit['unit']}" if crit.get("unit") else text
 
 
-def _level_labels(spec) -> dict[str, str]:
-    """Code -> label from a participants.json column (Levels, else Annotations.Levels)."""
+def _level_labels(spec) -> dict[str, set[str]]:
+    """Code -> labels from a participants.json column.
+
+    Both ``Levels`` (free text, whatever the lab wrote) and
+    ``Annotations.Levels[code].Label`` (the NeuroBagel label) count, so a
+    criterion written with NeuroBagel labels still matches German or
+    abbreviated value labels.
+    """
     if not isinstance(spec, dict):
         return {}
-    levels = spec.get("Levels")
-    if isinstance(levels, dict) and levels:
-        pairs = levels.items()
-    else:
-        annotations = spec.get("Annotations")
-        annotated = annotations.get("Levels") if isinstance(annotations, dict) else None
-        pairs = annotated.items() if isinstance(annotated, dict) else ()
-    labels = {}
-    for code, value in pairs:
-        if isinstance(value, dict):
-            value = value.get("Label") or value.get("Description")
-        if value:
-            labels[str(code)] = str(value)
+    sources = []
+    if isinstance(spec.get("Levels"), dict):
+        sources.append(spec["Levels"])
+    annotations = spec.get("Annotations")
+    if isinstance(annotations, dict) and isinstance(annotations.get("Levels"), dict):
+        sources.append(annotations["Levels"])
+    labels: dict[str, set[str]] = {}
+    for source in sources:
+        for code, value in source.items():
+            if isinstance(value, dict):
+                value = value.get("Label") or value.get("Description")
+            if value:
+                labels.setdefault(str(code), set()).add(str(value))
     return labels
 
 
@@ -169,14 +175,18 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
                 config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' cannot be checked: column '{col}' has no Levels (value labels) in participants.json.", str(root / "participants.json")))
                 continue
             wanted = {str(v) for v in crit.get("values") or []}
+            known = set().union(*labels.values())
+            if not wanted & known:
+                config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' cannot be checked: none of its values ({', '.join(sorted(wanted))}) is a value label of column '{col}' ({', '.join(sorted(known))}).", str(root / "participants.json")))
+                continue
             expected = f"values {', '.join(sorted(wanted))}"
 
             def violates(raw, labels=labels, wanted=wanted, crit=crit):
-                hit = labels.get(raw) in wanted
+                hit = bool(labels.get(raw, set()) & wanted)
                 return hit if crit.get("mode") == "exclude" else not hit
 
             def shown(raw, labels=labels):
-                return f"{raw} ({labels[raw]})" if raw in labels else raw
+                return f"{raw} ({'/'.join(sorted(labels[raw]))})" if raw in labels else raw
         elif crit.get("type") == "numeric":
             lo, hi = crit.get("min"), crit.get("max")
             if lo is not None and hi is not None and lo > hi:
