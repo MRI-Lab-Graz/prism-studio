@@ -129,6 +129,21 @@ command-line override, how to release a new modality version (maintainers), and
 the legacy `v0.1`/`v0.2` bundles. The modality proposal docs say new modalities
 start at `1.0.0`. The `modality-docs` check is unchanged.
 
+## Clarifications from the plan
+
+- **Pins and the base.** Project pins apply only on the stable base. An explicit
+  legacy `--schema-version v0.x` ignores them; `--modality-version` applies on any base.
+- **Older projects.** `prism_tools modality-version pin <project>` exists so projects
+  created before pinning can be pinned.
+- **Validation is read-only.** It never writes pins; only imports and the `pin`,
+  `update` and `freeze` commands write `project.json`.
+- **Studio notice.** The Studio notice with Update / Keep current version buttons is a
+  follow-up plan. Until then the decision is made with `modality-version update` /
+  `freeze`, and the stderr hint from `prism.py` is the notice.
+- **Pin on import** is wired at the converter functions, `copy_files_into_project`
+  (all Studio imports) and `perform_environment_conversion`.
+- **CI guard.** It does not guard deletion or renaming of a stable modality schema.
+
 ## Testing
 
 TDD per piece: `src/modality_versions.py` (current/available versions,
