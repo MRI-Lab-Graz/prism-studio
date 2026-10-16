@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPending, pendingMessage, rowActionsHtml, rowActionsModel } from './row-state.js';
+import {
+    findPending, guardSave, isPending, pendingMessage, registerStagedControl, rowActionsHtml, rowActionsModel,
+} from './row-state.js';
 
 describe('rowActionsModel', () => {
     it('an incomplete draft shows a disabled check and Cancel, never the delete cross', () => {
@@ -56,5 +58,68 @@ describe('pendingMessage', () => {
     });
     it('uses the singular for one row', () => {
         expect(pendingMessage(1)).toContain('1 row ');
+    });
+});
+
+// Minimal DOM fakes: the guard only needs querySelectorAll/contains/classList/_row.
+const fakeEl = (hasContent, discard = () => {}) => {
+    const classes = new Set();
+    return {
+        _row: { hasContent: () => hasContent, discard },
+        classList: { add: (c) => classes.add(c), remove: (c) => classes.delete(c), has: (c) => classes.has(c) },
+        scrollIntoView: () => {},
+    };
+};
+const fakeForm = (draftRows = [], extra = []) => ({
+    querySelectorAll: (selector) => (selector === '[data-row-state="draft"]' ? draftRows : extra),
+    contains: () => true,
+});
+
+describe('guardSave', () => {
+    it('lets a form with no pending rows be saved, without any message', () => {
+        let said = 0;
+        expect(guardSave(fakeForm(), () => { said += 1; })).toBe(true);
+        expect(said).toBe(0);
+    });
+
+    it('blocks while a draft holds content: marks it and says what to do', () => {
+        const draft = fakeEl(true);
+        const calls = [];
+        expect(guardSave(fakeForm([draft]), (...args) => calls.push(args))).toBe(false);
+        expect(draft.classList.has('row-pending')).toBe(true);
+        expect(calls).toHaveLength(1);
+        expect(calls[0][1]).toBe('warning');
+        expect(calls[0][0]).toContain('1 row is');
+    });
+
+    it('discards an empty draft instead of blocking', () => {
+        let discarded = 0;
+        const empty = fakeEl(false, () => { discarded += 1; });
+        expect(guardSave(fakeForm([empty]), () => {})).toBe(true);
+        expect(discarded).toBe(1);
+    });
+
+    it('counts several pending rows in one message', () => {
+        const calls = [];
+        guardSave(fakeForm([fakeEl(true), fakeEl(true), fakeEl(false)]), (...args) => calls.push(args));
+        expect(calls[0][0]).toContain('2 rows are');
+    });
+});
+
+describe('staged controls (a picker whose typed text is lost without a click)', () => {
+    it('are pending while they hold something, and not otherwise', () => {
+        const picker = {};
+        let typed = true;
+        registerStagedControl(picker, () => typed);
+        expect(findPending(fakeForm())).toContain(picker);
+        typed = false;
+        expect(findPending(fakeForm())).not.toContain(picker);
+    });
+
+    it('block the save like a draft row does', () => {
+        const picker = { classList: fakeEl(true).classList, scrollIntoView: () => {} };
+        registerStagedControl(picker, () => true);
+        expect(guardSave(fakeForm(), () => {})).toBe(false);
+        expect(picker.classList.has('row-pending')).toBe(true);
     });
 });

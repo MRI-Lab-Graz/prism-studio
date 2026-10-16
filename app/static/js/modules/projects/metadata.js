@@ -22,7 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
-import { mountRowActions } from './row-state.js';
+import { mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -2940,6 +2940,18 @@ if (recLocationAddBtn) {
         }
         recLocationResultsRow?.classList.add('d-none');
     });
+}
+
+// The picker is a staged control: text typed or a result chosen is lost unless the
+// green check ("Add Selected Location") is clicked, so a save is blocked meanwhile.
+const recLocationPicker = document.getElementById('recLocationPickerGroup');
+if (recLocationPicker && recLocationQuery) {
+    registerStagedControl(recLocationPicker, () => {
+        if (document.getElementById('smRecLocationOnlineOnly')?.checked) return false;
+        const chosen = recLocationResults?.options[recLocationResults.selectedIndex];
+        return Boolean(String(recLocationQuery.value || '').trim() || (chosen && chosen.value));
+    });
+    recLocationQuery.addEventListener('input', () => recLocationPicker.classList.remove('row-pending'));
 }
 
 const recLocationOnlineOnly = document.getElementById('smRecLocationOnlineOnly');

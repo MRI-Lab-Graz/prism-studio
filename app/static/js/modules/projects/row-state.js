@@ -56,9 +56,18 @@ export function bindRowActions(slot, { onAccept, onCancel, onRemove }) {
 
 const drafts = (form) => [...form.querySelectorAll('[data-row-state="draft"]')].filter((el) => el._row);
 
-/** Draft rows that hold something the user typed or chose. */
+// Controls that are not rows but also lose what was typed without a click (a search
+// picker with its own Add button): registered once, pending while they hold something.
+const staged = [];
+export function registerStagedControl(el, hasContent) {
+    staged.push({ el, hasContent });
+}
+
+/** Draft rows and staged controls that hold something the user typed or chose. */
 export function findPending(form) {
-    return drafts(form).filter((el) => isPending({ state: 'draft', hasContent: el._row.hasContent() }));
+    const rows = drafts(form).filter((el) => isPending({ state: 'draft', hasContent: el._row.hasContent() }));
+    const pickers = staged.filter((s) => form.contains(s.el) && s.hasContent()).map((s) => s.el);
+    return [...rows, ...pickers];
 }
 
 /** An empty draft holds nothing to lose: drop it instead of blocking. */

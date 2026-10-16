@@ -174,3 +174,16 @@ def test_missing_files_rows_are_drafts_until_accepted(app_page, studio_url):
     row.locator('[data-f="accept"]').click()
     expect(row.locator('[data-f="remove"]')).to_have_count(1)
     assert "motion_artifact" in page.input_value("#smMissingFiles")
+
+
+def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_defined(app_page, studio_url, project):
+    meta = json.loads((project / "project.json").read_text())
+    meta["Recruitment"] = {"Location": "Graz, Austria"}
+    (project / "project.json").write_text(json.dumps(meta))
+    open_sections(app_page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
+    add = app_page.locator("#recLocationAddBtn")
+    expect(add).to_have_class(re.compile("btn-outline-success"))
+    expect(add.locator(".fa-check")).to_have_count(1)
+    row = app_page.locator("#smRecLocationList .rec-location-row")
+    expect(row).to_have_count(1)
+    expect(row.locator("button.remove-location")).to_have_count(1)
