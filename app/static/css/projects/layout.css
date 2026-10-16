@@ -267,3 +267,10 @@
 #section-open #validationResult .alert {
     padding: 0.5rem 0.75rem;
 }
+
+/* A draft row the user has not accepted yet (shown when a save is blocked). */
+.row-pending {
+    outline: 2px solid var(--bs-warning, #ffc107);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}

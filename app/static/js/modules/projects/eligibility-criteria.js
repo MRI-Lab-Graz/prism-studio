@@ -5,6 +5,7 @@
  * plus "Other measure" for anything without a standard (IQ, VO2max, ...).
  */
 import { escapeHtml } from '../../shared/dom.js';
+import { rowActionsHtml, rowActionsModel } from './row-state.js';
 
 export const TERMS = [
     { term: 'nb:Age', label: 'Age', type: 'numeric', unit: 'years' },
@@ -56,6 +57,13 @@ const parseNumber = (text) => {
     const value = trimmed === '' ? NaN : Number(trimmed);
     return Number.isNaN(value) ? undefined : value;
 };
+
+/** Something the user typed or chose (defaults such as Age's unit do not count). */
+export function hasContent(row) {
+    return Boolean(String(row.min ?? '').trim() || String(row.max ?? '').trim()
+        || (row.values || []).some((v) => String(v).trim())
+        || (!row.term && String(row.label || '').trim()));
+}
 
 /** A row the validator can use; incomplete rows are not saved. */
 export function isComplete(row) {
@@ -134,19 +142,29 @@ function rowHtml(row, i) {
     return `<div class="d-flex flex-wrap gap-2 align-items-center" data-i="${i}">${name}
         <select class="form-select form-select-sm w-auto" data-f="mode">${mode}</select>${limits}
         <small class="text-warning" data-f="hint"${hintHidden(row) ? ' hidden' : ''}>${hintText(row)}</small>
-        ${row.accepted
-        ? '<button type="button" class="btn btn-outline-danger btn-sm" data-f="remove" aria-label="Delete criterion" title="Delete criterion"><i class="fas fa-times"></i></button>'
-        : `<button type="button" class="btn btn-outline-success btn-sm" data-f="accept" aria-label="Accept criterion" title="Accept criterion"${isComplete(row) ? '' : ' disabled'}><i class="fas fa-check"></i></button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-f="cancel" title="Discard this draft">Cancel</button>`}</div>`;
+        ${rowActionsHtml(rowActionsModel({ state: row.accepted ? 'defined' : 'draft', complete: isComplete(row) }), 'criterion')}</div>`;
 }
 
+let notify = () => {};
+
 function render() {
-    if (listEl) listEl.innerHTML = rows.map(rowHtml).join('');
+    if (!listEl) return;
+    listEl.innerHTML = rows.map(rowHtml).join('');
+    // Row contract of row-state.js: the save guard asks each draft whether it holds content.
+    listEl.querySelectorAll('[data-i]').forEach((el) => {
+        const row = rows[Number(el.dataset.i)];
+        el.dataset.rowState = row.accepted ? 'defined' : 'draft';
+        el._row = {
+            hasContent: () => hasContent(row),
+            discard: () => { rows.splice(rows.indexOf(row), 1); render(); notify(); },
+        };
+    });
 }
 
 export function initEligibilityCriteria({ list, select, addButton, onChange = () => {} }) {
     if (!list || !select || !addButton) return; // page without the Eligibility form
     listEl = list;
+    notify = onChange;
     select.innerHTML = TERMS.map((t) => `<option value="${t.term ?? ''}">${escapeHtml(t.label)}</option>`).join('');
     addButton.addEventListener('click', () => {
         rows.push(newRow(select.value || null));

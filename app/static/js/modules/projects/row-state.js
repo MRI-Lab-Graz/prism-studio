@@ -1,0 +1,79 @@
+/** One behaviour for add-a-row controls on the Projects page.
+ *
+ * A new row is a draft (green check, Cancel); accepting it makes it defined (red
+ * cross = delete). Saving is blocked while a draft with content is pending.
+ * A row element carries `dataset.rowState` and `el._row = { hasContent(), discard() }`.
+ * Pure model first (unit tested in node), thin DOM helpers after.
+ */
+
+export function rowActionsModel({ state, complete }) {
+    const draft = state === 'draft';
+    return {
+        accept: { visible: draft, disabled: draft && !complete },
+        cancel: { visible: draft },
+        remove: { visible: !draft },
+    };
+}
+
+/** Buttons for a row's action slot; `noun` makes the delete label specific ("author"). */
+export function rowActionsHtml(model, noun = '') {
+    const label = (verb) => `${verb}${noun ? ` ${noun}` : ''}`;
+    const out = [];
+    if (model.accept.visible) {
+        out.push(`<button type="button" class="btn btn-outline-success btn-sm" data-f="accept" aria-label="${label('Accept')}" title="${label('Accept')}"${model.accept.disabled ? ' disabled' : ''}><i class="fas fa-check"></i></button>`);
+    }
+    if (model.cancel.visible) {
+        out.push('<button type="button" class="btn btn-outline-secondary btn-sm" data-f="cancel" title="Discard this draft">Cancel</button>');
+    }
+    if (model.remove.visible) {
+        out.push(`<button type="button" class="btn btn-outline-danger btn-sm" data-f="remove" aria-label="${label('Delete')}" title="${label('Delete')}"><i class="fas fa-times"></i></button>`);
+    }
+    return out.join('');
+}
+
+export const isPending = ({ state, hasContent }) => state === 'draft' && Boolean(hasContent);
+
+export function pendingMessage(count) {
+    const rows = count === 1 ? '1 row is' : `${count} rows are`;
+    return `${rows} not accepted yet. Click the green check on each (or Cancel to discard it), then save again.`;
+}
+
+/** One delegated click handler for a slot holding rowActionsHtml buttons. */
+export function bindRowActions(slot, { onAccept, onCancel, onRemove }) {
+    // Keep the focus where it is: a blur re-render could swallow the click (Chromium).
+    slot.addEventListener('mousedown', (event) => {
+        if (event.target.closest('[data-f]')) event.preventDefault();
+    });
+    slot.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-f]');
+        if (!button || !slot.contains(button) || button.disabled) return;
+        const row = slot.closest('[data-row-state]');
+        if (row) row.classList.remove('row-pending');
+        const handler = { accept: onAccept, cancel: onCancel, remove: onRemove }[button.dataset.f];
+        if (handler) handler();
+    });
+}
+
+const drafts = (form) => [...form.querySelectorAll('[data-row-state="draft"]')].filter((el) => el._row);
+
+/** Draft rows that hold something the user typed or chose. */
+export function findPending(form) {
+    return drafts(form).filter((el) => isPending({ state: 'draft', hasContent: el._row.hasContent() }));
+}
+
+/** An empty draft holds nothing to lose: drop it instead of blocking. */
+export function discardEmptyDrafts(form) {
+    drafts(form).filter((el) => !el._row.hasContent()).forEach((el) => el._row.discard());
+}
+
+/** true = the form may be saved. Otherwise the pending rows are marked and the user told what to do. */
+export function guardSave(form, showFeedback) {
+    form.querySelectorAll('.row-pending').forEach((el) => el.classList.remove('row-pending'));
+    discardEmptyDrafts(form);
+    const pending = findPending(form);
+    if (!pending.length) return true;
+    pending.forEach((el) => el.classList.add('row-pending'));
+    pending[0].scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    showFeedback(pendingMessage(pending.length), 'warning');
+    return false;
+}

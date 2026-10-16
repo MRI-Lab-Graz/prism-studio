@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TERMS, checkedCriteriaCount, criteriaFromRows, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { TERMS, checkedCriteriaCount, criteriaFromRows, hasContent, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 
 const AGE = {
     id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric',
@@ -112,5 +112,18 @@ describe('checkedCriteriaCount', () => {
         expect(checkedCriteriaCount('exclude')).toBe(1);
         setEligibilityCriteria([]);
         expect(checkedCriteriaCount('include')).toBe(0);
+    });
+});
+
+describe('hasContent (decides whether a draft blocks a save or is discarded silently)', () => {
+    it('a freshly added row holds nothing, even though Age comes with a default unit', () => {
+        expect(hasContent(newRow('nb:Age'))).toBe(false);
+        expect(hasContent(newRow('nb:Sex'))).toBe(false);
+        expect(hasContent(newRow(null))).toBe(false);
+    });
+    it('a typed limit, a ticked value or a name for Other measure is content', () => {
+        expect(hasContent({ ...newRow('nb:Age'), min: '18' })).toBe(true);
+        expect(hasContent({ ...newRow('nb:Sex'), values: ['Male'] })).toBe(true);
+        expect(hasContent({ ...newRow(null), label: 'IQ' })).toBe(true);
     });
 });
