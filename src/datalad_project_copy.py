@@ -47,9 +47,12 @@ def _pin(root: Path, *, commit_message: str | None = None) -> None:
     if commit_message is None or read_pins(root)[0] == before:
         return
     try:
-        run_datalad_save(root, message=commit_message, paths=["project.json"], recursive=False)
+        saved = run_datalad_save(root, message=commit_message, paths=["project.json"], recursive=False)
+        problem = None if saved.get("success") else saved.get("message") or "datalad save failed"
     except Exception as exc:  # noqa: BLE001 - never fail an import over a pin commit
-        print(f"Warning: could not commit project.json after pinning modality versions: {exc}", file=sys.stderr)
+        problem = exc
+    if problem:
+        print(f"Warning: could not commit project.json after pinning modality versions: {problem}", file=sys.stderr)
 
 
 def copy_files_into_project(

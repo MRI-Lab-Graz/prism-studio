@@ -184,7 +184,7 @@ def test_real_pin_records_the_current_survey_version(tmp_path):
     assert mv.read_pins(tmp_path)[0]["survey"] == mv.current_version("survey")
 
 
-def _datalad_copy(tmp_path, monkeypatch, *, pre_pinned=False, save_raises=False):
+def _datalad_copy(tmp_path, monkeypatch, *, pre_pinned=False, save_raises=False, save_result=None):
     """DataLad-branch copy of a survey file; returns (result, recorded save calls)."""
     import src.datalad_project_copy as dpc
 
@@ -207,7 +207,7 @@ def _datalad_copy(tmp_path, monkeypatch, *, pre_pinned=False, save_raises=False)
         saves.append(kw)
         if save_raises:
             raise RuntimeError("save failed")
-        return {}
+        return save_result if save_result is not None else {"success": True}
 
     monkeypatch.setattr(dpc, "run_tracked_mutation", fake_mutation)
     monkeypatch.setattr(dpc, "run_datalad_save", fake_save)
@@ -230,3 +230,10 @@ def test_datalad_copy_save_failure_only_warns(tmp_path, monkeypatch, capsys):
 def test_datalad_copy_does_not_save_when_nothing_was_pinned(tmp_path, monkeypatch):
     _, saves = _datalad_copy(tmp_path, monkeypatch, pre_pinned=True)
     assert saves == []
+
+
+def test_datalad_copy_unsuccessful_save_result_warns(tmp_path, monkeypatch, capsys):
+    result, saves = _datalad_copy(tmp_path, monkeypatch, save_result={"success": False, "message": "boom"})
+    assert result["copied_count"] == 1
+    err = capsys.readouterr().err
+    assert "project.json" in err and "boom" in err
