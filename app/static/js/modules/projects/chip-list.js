@@ -19,30 +19,48 @@ export function addChip(values, text) {
 
 export const removeChip = (values, text) => values.filter((v) => v !== text);
 
-/** Mounts the input row and the chip area into `container`; returns { getValues, setValues }. */
-export function mountChipList(container, { placeholder = '', onChange = () => {} } = {}) {
+/** Mounts an entry row and the chip area into `container`; returns { getValues, setValues, addValue }.
+ *  Default: one text input. For structured entries pass `fields` (input/select elements the
+ *  caller built), `compose(values) -> string` (the stored string, '' = incomplete) and
+ *  `chipText(storedString) -> string` (what the chip shows). */
+export function mountChipList(container, {
+    placeholder = '',
+    fields = null,
+    compose = ([text]) => normalizeChipText(text),
+    chipText = (value) => value,
+    onChange = () => {},
+} = {}) {
     container.innerHTML = `
         <div class="input-group input-group-sm chip-input-row">
-            <input type="text" class="form-control chip-input" placeholder="${escapeHtml(placeholder)}">
             <button type="button" class="btn btn-outline-secondary btn-sm" data-f="accept" disabled
                     aria-label="Add entry" title="Add entry"><i class="fas fa-check"></i></button>
         </div>
         <div class="d-flex flex-wrap gap-1 chip-badges"></div>`;
     const inputRow = container.querySelector('.chip-input-row');
-    const input = container.querySelector('.chip-input');
     const accept = container.querySelector('[data-f="accept"]');
     const badges = container.querySelector('.chip-badges');
+    const entryFields = fields || [Object.assign(document.createElement('input'), {
+        type: 'text', className: 'form-control chip-input', placeholder,
+    })];
+    entryFields.forEach((field) => {
+        field.classList.add('chip-input');
+        inputRow.insertBefore(field, accept);
+    });
     let values = [];
+
+    const readFields = () => entryFields.map((field) => field.value);
+    const hasContent = () => readFields().some((value) => normalizeChipText(value) !== '');
 
     const renderChips = () => {
         badges.innerHTML = '';
         values.forEach((value) => {
+            const text = chipText(value);
             const chip = document.createElement('button');
             chip.type = 'button';
             chip.className = 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 chip-badge';
-            chip.title = `Remove: ${value}`;
-            chip.setAttribute('aria-label', `Remove ${value}`);
-            chip.innerHTML = `${escapeHtml(value)} <span aria-hidden="true">&times;</span>`;
+            chip.title = `Remove: ${text}`;
+            chip.setAttribute('aria-label', `Remove ${text}`);
+            chip.innerHTML = `${escapeHtml(text)} <span aria-hidden="true">&times;</span>`;
             chip.addEventListener('click', () => {
                 values = removeChip(values, value);
                 renderChips();
@@ -52,35 +70,52 @@ export function mountChipList(container, { placeholder = '', onChange = () => {}
         });
     };
 
-    const syncAccept = () => syncAcceptButton(accept, normalizeChipText(input.value) !== '');
-    const acceptEntry = () => {
-        values = addChip(values, input.value);
-        input.value = '';
-        syncAccept();
+    const syncAccept = () => syncAcceptButton(accept, compose(readFields()) !== '');
+    const addValue = (value) => {
+        const next = addChip(values, value);
+        if (next === values) return false;
+        values = next;
         renderChips();
         onChange(values);
+        return true;
+    };
+    const clearFields = () => {
+        entryFields.forEach((field) => { field.value = ''; });
+        syncAccept();
+    };
+    const acceptEntry = () => {
+        const entry = compose(readFields());
+        if (!entry) return;
+        addValue(entry);
+        clearFields();
     };
 
-    input.addEventListener('input', () => {
-        syncAccept();
-        inputRow.classList.remove('row-pending');
-    });
-    input.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter') return;
-        event.preventDefault();
-        acceptEntry();
+    entryFields.forEach((field) => {
+        const onEdit = () => {
+            syncAccept();
+            inputRow.classList.remove('row-pending');
+        };
+        field.addEventListener('input', onEdit);
+        field.addEventListener('change', onEdit);
+        if (field.tagName === 'INPUT') {
+            field.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                acceptEntry();
+            });
+        }
     });
     accept.addEventListener('mousedown', (event) => event.preventDefault());
     accept.addEventListener('click', acceptEntry);
-    registerStagedControl(inputRow, () => normalizeChipText(input.value) !== '');
+    registerStagedControl(inputRow, hasContent);
 
     return {
         getValues: () => values,
+        addValue,
         setValues(next) {
             values = [];
             (next || []).forEach((value) => { values = addChip(values, value); });
-            input.value = '';
-            syncAccept();
+            clearFields();
             renderChips();
         },
     };

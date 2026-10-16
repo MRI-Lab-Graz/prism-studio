@@ -102,3 +102,22 @@ Project, Preliminary Save and Save for an opened project.
   swaps it for the red cross; Cancel discards; a loaded row is defined.
 - End to end, save guard: with a pending draft, Create Project, Preliminary Save and
   Save send nothing and highlight the row; after accepting, the save goes through.
+
+## Addendum: green chips (user feedback, 2026-10-16)
+
+The CRediT roles pattern (an input, accepted entries become green chips below, the input
+stays ready for the next one, click a chip to remove it) replaces accepted *rows* for
+every add-a-row list except authors:
+
+- Plain-text lists (variables, inclusion/exclusion, quality control): done, `chip-list.js`.
+- Structured lists: funding (agency + grant), known issues (two fields), missing files
+  (five fields), recruitment locations (the search picker) and Checked Criteria. Each keeps
+  one persistent **entry row** (the existing inputs plus the check); accepting adds a chip
+  with a short summary and clears the entry row. The stored format is unchanged: chips hold
+  the same serialized strings the hidden fields already use ("FWF, P12345",
+  "file | issue", "sub | ses | mod | reason | detail"); Checked Criteria hold the criterion
+  objects.
+- Authors stay cards (too much detail per entry for a chip).
+- DOI and URL reference lists keep rows (each row shows lookup feedback).
+- Not kept: drag-reordering of these entries, and per-list "Add" buttons.
+- Errors in the "Dataset description issues" box link to the field they name.
