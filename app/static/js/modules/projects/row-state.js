@@ -82,8 +82,8 @@ export function guardSave(form, showFeedback) {
     const pending = findPending(form);
     if (!pending.length) return true;
     pending.forEach((el) => el.classList.add('row-pending'));
-    pending[0].scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-    showFeedback(pendingMessage(pending.length), 'warning');
+    showFeedback(pendingMessage(pending.length), 'warning'); // scrolls to the top ...
+    pending[0].scrollIntoView?.({ block: 'center', behavior: 'smooth' }); // ... the row is what the user must act on
     return false;
 }
 

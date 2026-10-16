@@ -22,7 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
-import { mountRowActions, registerStagedControl } from './row-state.js';
+import { guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -4207,6 +4207,10 @@ studyMetadataSubmitController.initPrimaryStudyMetadataSubmitButton();
 studyMetadataForm?.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (studyMetadataSubmitInFlight) {
+        return;
+    }
+    // Rows the user has typed into but not accepted yet would be lost: block the save.
+    if (!guardSave(this, showTopFeedback)) {
         return;
     }
     studyMetadataSubmitInFlight = true;

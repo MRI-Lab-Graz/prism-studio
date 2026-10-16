@@ -187,3 +187,72 @@ def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_
     row = app_page.locator("#smRecLocationList .rec-location-row")
     expect(row).to_have_count(1)
     expect(row.locator("button.remove-location")).to_have_count(1)
+
+
+def _project_json_text(project):
+    return (project / "project.json").read_text()
+
+
+def _fill_draft_author(page):
+    row = page.locator("#metadataAuthorsList .author-row").first
+    row.locator(".author-first").fill("Ada")
+    row.locator(".author-last").fill("Lovelace")
+    return row
+
+
+def test_saving_is_blocked_while_a_draft_with_content_is_pending(app_page, studio_url, project):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    before = _project_json_text(project)
+    row = _fill_draft_author(page)  # typed, not accepted
+
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_be_visible()
+    expect(row).to_have_class(re.compile("row-pending"))
+    expect(page.get_by_role("button", name="Save Preliminary State")).to_have_count(0)  # no save flow started
+    assert _project_json_text(project) == before  # nothing was sent
+
+    row.locator('[data-f="accept"]').click()
+    expect(row).not_to_have_class(re.compile("row-pending"))
+    page.click("#createProjectSubmitBtn")
+    page.get_by_role("button", name="Save Preliminary State").click()  # now the normal flow runs
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
+    assert "Lovelace" in _project_json_text(project)
+
+
+def test_an_empty_draft_does_not_block_saving(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#addAuthorRow")  # an empty draft next to the empty placeholder
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()  # normal flow
+    expect(page.get_by_text("not accepted yet")).to_have_count(0)
+
+
+def test_text_typed_into_the_location_search_blocks_saving_but_an_empty_search_does_not(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smRecruitment")
+    page.fill("#recLocationQuery", "Graz")
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_be_visible()
+    expect(page.locator("#recLocationPickerGroup")).to_have_class(re.compile("row-pending"))
+    page.fill("#recLocationQuery", "")
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+
+
+def test_creating_a_new_project_is_blocked_while_a_draft_is_pending(bare_page, studio_url, tmp_path):
+    page = bare_page
+    page.goto(f"{studio_url}/projects")
+    page.click("#card-create")
+    page.fill("#projectName", "row_guard_study")
+    page.fill("#projectPath", str(tmp_path))
+    for target in ("#studyMetadataSection", "#smCoreSetupGroupBody"):
+        if not page.locator(target).is_visible():
+            page.locator(f'[data-bs-target="{target}"]').click()
+            expect(page.locator(target)).to_be_visible()
+    row = _fill_draft_author(page)
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_be_visible()
+    expect(row).to_have_class(re.compile("row-pending"))
+    assert not (tmp_path / "row_guard_study").exists()  # nothing was created
