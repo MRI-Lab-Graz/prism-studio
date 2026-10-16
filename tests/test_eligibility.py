@@ -261,3 +261,11 @@ def test_summary_counts_distinct_participants_not_violations(tmp_path):
 def test_nan_is_not_a_number_and_is_skipped(tmp_path):
     root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "nan"), ("sub-P02", "NaN")])
     assert check_eligibility(root) == []
+
+
+def test_large_bounds_are_not_printed_in_scientific_notation(tmp_path):
+    big = {"id": "n", "label": "N", "term": None, "type": "numeric", "mode": "include",
+           "min": 1234567, "max": 2500000.5}
+    root = _make(tmp_path, [big], {"n": {"EligibilityCriterion": "n"}}, [("sub-P01", "5")],
+                 header=("participant_id", "n"))
+    assert "1234567-2500000.5" in check_eligibility(root)[1][1]

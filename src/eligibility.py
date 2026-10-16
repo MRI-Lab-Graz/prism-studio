@@ -24,7 +24,7 @@ def _load_json(path: Path):
 
 
 def _num(value) -> str:
-    return f"{value:g}"
+    return str(int(value)) if float(value).is_integer() else str(value)
 
 
 def _range_text(crit: dict) -> str:
