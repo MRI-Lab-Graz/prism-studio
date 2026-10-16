@@ -2,7 +2,6 @@ modality: biosample
 suffix: bloodchem
 extensions: [tsv]
 description: Venous blood samples drawn alongside MRI
-rationale: Blood is drawn at each MRI session; this keeps the analyte values next to the imaging data.
 types:
   - value: CRP
     description: C-reactive protein
@@ -37,3 +36,10 @@ columns:
     scale: continuous
     units: nmol/L
     min: 0
+entities:
+  - entity: acq
+    value: fasting
+    description: Drawn after at least 8 hours without food
+  - entity: acq
+    value: nonfasting
+    description: Drawn without fasting

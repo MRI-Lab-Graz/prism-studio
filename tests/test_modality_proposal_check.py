@@ -49,11 +49,10 @@ def test_name_and_suffix_must_be_lowercase_letters_and_digits(bad) -> None:
     assert "lowercase" in _messages(check_proposal(_proposal(suffix=bad)))
 
 
-def test_extensions_description_and_rationale_are_required() -> None:
-    msg = _messages(check_proposal(_proposal(extensions=[], description="", rationale="")))
+def test_extensions_and_description_are_required() -> None:
+    msg = _messages(check_proposal(_proposal(extensions=[], description="")))
     assert "Modality.Extensions" in msg
     assert "Modality.Description" in msg
-    assert "Modality.Rationale" in msg
 
 
 def test_bad_extension_is_rejected() -> None:

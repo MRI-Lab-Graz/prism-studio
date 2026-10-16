@@ -75,6 +75,7 @@ SAMPLE_MAX_BYTES = 1_000_000
 COLUMN_DATATYPES = {"string", "integer", "float"}
 COLUMN_SCALES = ("categorical", "continuous", "boolean")
 TYPE_OTHER = "other"  # reserved escape value, added to every vocabulary
+ENTITY_SUGGESTIONS = ("task", "acq")
 
 
 class ProposalError(ValueError):
@@ -158,7 +159,26 @@ def _normalize_types(raw) -> list[dict]:
     return types
 
 
-def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
+def _normalize_entities(raw) -> list[dict]:
+    from src.converters.excel_to_biometrics import _clean_key
+
+    out = []
+    for item in raw or []:
+        if not isinstance(item, dict):
+            raise ProposalError("entities: every entry must be a mapping with entity, value, description")
+        if isinstance(item.get("value"), bool):
+            raise ProposalError(
+                "entities: a value was read as a YAML boolean (yes/no/on/off/true/false); put the values in quotes"
+            )
+        out.append({
+            "entity": (_clean_key(item.get("entity")) or "").lower(),
+            "value": _clean_key(item.get("value")) or "",
+            "description": _clean_key(item.get("description")) or "",
+        })
+    return out
+
+
+def _finish_proposal(base: dict, rows: list[dict], types=None, entities=None) -> dict:
     exts = base.get("extensions")
     if exts is not None and not isinstance(exts, (list, str)):
         raise ProposalError("'extensions' must be a list or a comma-separated string")
@@ -166,17 +186,18 @@ def _finish_proposal(base: dict, rows: list[dict], types=None) -> dict:
         exts = exts.split(",")
     proposal = {
         key: str(base.get(key) or "").strip()
-        for key in ("modality", "suffix", "description", "rationale")
+        for key in ("modality", "suffix", "description")
     }
     proposal["extensions"] = [
         str(e).strip().lstrip(".").lower() for e in (exts or []) if str(e).strip()
     ]
     proposal["columns"] = [_normalize_column(r) for r in rows]
     proposal["types"] = _normalize_types(types)
+    proposal["entities"] = _normalize_entities(entities)
     return proposal
 
 
-def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
+def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict], list[dict]]:
     import pandas as pd
 
     from src.converters import excel_to_biometrics as eb
@@ -203,7 +224,6 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
         ("suffix", "Suffix"),
         ("extensions", "Extensions"),
         ("description", "Description"),
-        ("rationale", "Rationale"),
     ):
         idx = find_column_idx(header, {title})
         if idx is None:
@@ -247,7 +267,20 @@ def _read_workbook(path: Path) -> tuple[dict, list[dict], list[dict]]:
             value = cell(row, value_idx)
             if value:
                 types.append({"value": value, "description": cell(row, desc_idx)})
-    return base, rows, types
+    entities: list[dict] = []
+    if "Entities" in sheets and len(sheets["Entities"]):
+        esheet = sheets["Entities"]
+        eheader = [str(v) for v in esheet.iloc[0].tolist()]
+        e_idx = find_column_idx(eheader, {"Entity"})
+        v_idx = find_column_idx(eheader, {"Value"})
+        d_idx = find_column_idx(eheader, {"Description"})
+        if e_idx is None or v_idx is None:
+            raise ProposalError("sheet 'Entities' needs 'Entity' and 'Value' columns")
+        for i in range(1, len(esheet)):
+            row = esheet.iloc[i]
+            if cell(row, e_idx) or cell(row, v_idx):
+                entities.append({"entity": cell(row, e_idx), "value": cell(row, v_idx), "description": cell(row, d_idx)})
+    return base, rows, types, entities
 
 
 def read_proposal(path) -> dict:
@@ -255,8 +288,8 @@ def read_proposal(path) -> dict:
     path = Path(path)
     kind = path.suffix.lower()
     if kind == ".xlsx":
-        base, rows, types = _read_workbook(path)
-        return _finish_proposal(base, rows, types)
+        base, rows, types, entities = _read_workbook(path)
+        return _finish_proposal(base, rows, types, entities)
     if kind in {".yml", ".yaml", ".json"}:
         import yaml  # JSON is a YAML subset, one reader covers both
 
@@ -272,7 +305,10 @@ def read_proposal(path) -> dict:
         types = raw.get("types")
         if types is not None and not isinstance(types, list):
             raise ProposalError(f"{path.name}: 'types' must be a list")
-        return _finish_proposal(raw, rows, types)
+        entities = raw.get("entities")
+        if entities is not None and not isinstance(entities, list):
+            raise ProposalError(f"{path.name}: 'entities' must be a list")
+        return _finish_proposal(raw, rows, types, entities)
     raise ProposalError(
         f"unsupported proposal file type '{path.suffix}' (use .xlsx, .yml, .yaml or .json)"
     )
@@ -285,13 +321,12 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     wb = openpyxl.Workbook()
     mod = wb.active
     mod.title = "Modality"
-    mod.append(["Name", "Suffix", "Extensions", "Description", "Rationale"])
+    mod.append(["Name", "Suffix", "Extensions", "Description"])
     mod.append([
         proposal["modality"],
         proposal["suffix"],
         ", ".join(proposal["extensions"]),
         proposal["description"],
-        proposal["rationale"],
     ])
     cols = wb.create_sheet("Columns")
     cols.append(["ID", "Description", "Units", "DataType", "Scale", "Type", "Min", "Max", "AllowedValues"])
@@ -318,6 +353,10 @@ def write_proposal_workbook(proposal: dict, path) -> None:
     types_ws.append(["Value", "Description"])
     for t in proposal["types"]:
         types_ws.append([t["value"], t["description"] or None])
+    ents = wb.create_sheet("Entities")
+    ents.append(["Entity", "Value", "Description"])
+    for e in proposal["entities"]:
+        ents.append([e["entity"], e["value"], e["description"] or None])
     wb.save(path)
 
 
@@ -325,6 +364,7 @@ _NAME_RE = re.compile(r"^[a-z][a-z0-9]*$")
 _EXT_RE = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)*$")
 _COLUMN_ID_RE = re.compile(r"^[A-Za-z0-9_]+$")
 _TYPE_VALUE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+_ENTITY_VALUE_RE = re.compile(r"^[A-Za-z0-9]+$")
 
 
 @lru_cache(maxsize=None)
@@ -386,9 +426,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         if not _EXT_RE.match(ext):
             err("Modality.Extensions", f"'{ext}' is not a valid extension (e.g. tsv, tsv.gz)")
 
-    for key, label in (("description", "Description"), ("rationale", "Rationale")):
-        if not (proposal.get(key) or "").strip():
-            err(f"Modality.{label}", "must not be empty")
+    if not (proposal.get("description") or "").strip():
+        err("Modality.Description", "must not be empty")
 
     types = proposal.get("types") or []
     type_values: set[str] = set()
@@ -404,6 +443,17 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         elif value in type_values:
             err(where, f"duplicate type '{value}'")
         type_values.add(value)
+
+    seen_entities: set[tuple[str, str]] = set()
+    for n, e in enumerate(proposal.get("entities") or [], start=1):
+        where = f"Entities.{e['entity']}-{e['value']}" if e["value"] else f"Entities row {n}"
+        if e["entity"] not in ENTITY_SUGGESTIONS:
+            err(where, f"only {list(ENTITY_SUGGESTIONS)} values can be suggested, got '{e['entity']}'")
+        if not _ENTITY_VALUE_RE.match(e["value"]):
+            err(where, f"'{e['value']}' may only contain letters and digits")
+        if (e["entity"], e["value"]) in seen_entities:
+            err(where, f"duplicate suggestion '{e['entity']}-{e['value']}'")
+        seen_entities.add((e["entity"], e["value"]))
 
     columns = proposal.get("columns") or []
     if not columns:
