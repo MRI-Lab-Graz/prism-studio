@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import datetime
 import gzip
+import html
 import io
 import itertools
 import json
@@ -76,6 +77,13 @@ COLUMN_DATATYPES = {"string", "integer", "float"}
 COLUMN_SCALES = ("categorical", "continuous", "boolean")
 TYPE_OTHER = "other"  # reserved escape value, added to every vocabulary
 ENTITY_SUGGESTIONS = ("task", "acq")
+NOT_EXTENDABLE = {
+    "environment": (
+        "'environment' cannot take a new suffix this way: its rules (a fixed column set, the "
+        "ses-*/environment/ folder, a required recording entity) cannot be met by a generated "
+        "fixture. Propose a new modality instead."
+    ),
+}
 
 
 class ProposalError(ValueError):
@@ -166,9 +174,11 @@ def _normalize_entities(raw) -> list[dict]:
     for item in raw or []:
         if not isinstance(item, dict):
             raise ProposalError("entities: every entry must be a mapping with entity, value, description")
-        if isinstance(item.get("value"), bool):
+        if item.get("value") is not None and not isinstance(item.get("value"), str):
+            # labels are free-form strings; never coerce (01 would silently become 1)
             raise ProposalError(
-                "entities: a value was read as a YAML boolean (yes/no/on/off/true/false); put the values in quotes"
+                f"entities: value {item.get('value')!r} was read as a number or YAML boolean "
+                "(yes/no/on/off/true/false); labels are text, put the values in quotes"
             )
         out.append({
             "entity": (_clean_key(item.get("entity")) or "").lower(),
@@ -445,6 +455,8 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
             err("Modality.Name", f"'{name}' is already taken: {taken[name]}. Choose another name.")
     if _NAME_RE.match(suffix) and suffix in taken:
         err("Modality.Suffix", f"'{suffix}' is already taken: {taken[suffix]}. Choose another suffix.")
+    if kind == "extension" and name in NOT_EXTENDABLE:
+        err("Modality.Name", NOT_EXTENDABLE[name])
     if kind == "extension" and proposal.get("entities"):
         err("Entities", "entity suggestions are not used when adding a suffix to an existing modality; remove them")
 
@@ -689,7 +701,7 @@ def build_schema(proposal: dict) -> dict:
         "version": "1.0.0",
         "title": f"{name.capitalize()} Metadata",
         "description": (
-            f"{proposal['description']}. Files should be named: "
+            f"{proposal['description'].rstrip('.')}. Files should be named: "
             f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<{'|'.join(exts)}>"
         ),
         "type": "object",
@@ -799,11 +811,36 @@ def _pattern(suffix: str) -> str:
     return f"sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_{suffix}.<extension>"
 
 
+def _text(value) -> str:
+    """Contributor text for a docs page: HTML-escaped (MyST passes raw HTML through)."""
+    return html.escape(str(value), quote=False)
+
+
+def _cell(value) -> str:
+    return _text(value).replace("|", r"\|")
+
+
+def _purpose(proposal: dict) -> str:
+    return f"{_text(proposal['description']).rstrip('.')}."
+
+
+def _columns_lines(proposal: dict) -> list[str]:
+    return ["## Example Columns", "", "Every study defines its own columns in its own sidecar; these are examples.", "",
+            "| Column | Description | Units |", "| --- | --- | --- |",
+            *(f"| `{c['id']}` | {_cell(c['description'])} | {_cell(c['units'])} |" for c in proposal["columns"]), ""]
+
+
+def _sidecar_lines(suffix: str) -> list[str]:
+    return ["## Sidecar JSON", "",
+            f"Each data file needs a JSON sidecar (`*_{suffix}.json`) with `Technical`, `Study` and `Metadata` blocks "
+            "and one definition per column (Description, Units, optional MinValue/MaxValue/AllowedValues).", ""]
+
+
 def build_docs_page(proposal: dict) -> str:
     name, suffix = proposal["modality"], proposal["suffix"]
     exts = ", ".join(f"`.{e}`" for e in proposal["extensions"])
     lines = [
-        f"# {name.capitalize()}", "", f"{proposal['description']}.", "",
+        f"# {name.capitalize()}", "", _purpose(proposal), "",
         "## File Name Structure", "", f"`{_pattern(suffix)}`", "",
         "| Entity | Description |", "| --- | --- |",
         "| `sub` | **Required**. The subject identifier. |",
@@ -817,15 +854,19 @@ def build_docs_page(proposal: dict) -> str:
     if proposal.get("entities"):
         lines += ["### Suggested values", "", "Other labels are accepted too.", ""]
         lines += [
-            f"- `{e['entity']}-{e['value']}`" + (f": {e['description']}" if e["description"] else "")
+            f"- `{e['entity']}-{e['value']}`" + (f": {_text(e['description'])}" if e["description"] else "")
             for e in proposal["entities"]
         ] + [""]
-    lines += ["## Example Columns", "", "Every study defines its own columns in its own sidecar; these are examples.", "",
-              "| Column | Description | Units |", "| --- | --- | --- |"]
-    lines += [f"| `{c['id']}` | {c['description']} | {c['units']} |" for c in proposal["columns"]]
-    lines += ["", "## Sidecar JSON", "",
-              f"Each data file needs a JSON sidecar (`*_{suffix}.json`) with `Technical`, `Study` and `Metadata` blocks "
-              "and one definition per column (Description, Units, optional MinValue/MaxValue/AllowedValues).", ""]
+    lines += _columns_lines(proposal)
+    if proposal.get("types"):
+        lines += ["### Types", "", f"Values for a column's `Type` field (`{TYPE_OTHER}` for anything not listed):", ""]
+        lines += [
+            f"- `{t['value']}`" + (f": {_text(t['description'])}" if t["description"] else "")
+            for t in proposal["types"]
+        ] + [""]
+    lines += _sidecar_lines(suffix)
+    lines += ["Example:", "", "```json", json.dumps(build_example_sidecar(proposal), indent=2), "```", "",
+              "To propose a change or a new modality, see the [contribution guide](../MODALITY_PROPOSALS.md).", ""]
     return "\n".join(lines)
 
 
@@ -833,9 +874,9 @@ def _extension_docs_section(proposal: dict) -> str:
     """The section to add to an existing modality's page; that page's own naming rules apply."""
     suffix = proposal["suffix"]
     exts = ", ".join(f"`_{suffix}.{e}`" for e in proposal["extensions"])
-    page = build_docs_page(proposal)
-    tail = re.sub(r"(?m)^## ", "### ", page[page.index("## Example Columns"):])
-    return (f"## Suffix `_{suffix}`\n\n{proposal['description']}.\n\n"
+    tail = "\n".join(_columns_lines(proposal) + _sidecar_lines(suffix))
+    tail = re.sub(r"(?m)^## ", "### ", tail)
+    return (f"## Suffix `_{suffix}`\n\n{_purpose(proposal)}\n\n"
             f"File names follow the naming rules on this page, ending in {exts}.\n\n{tail}")
 
 
@@ -849,7 +890,7 @@ def build_docs_snippets(proposal: dict) -> dict[str, str]:
             '  <a class="prism-chapter-card" href="specs/%s.html">\n'
             '    <span class="prism-chapter-title">%s</span>\n'
             '    <span class="prism-chapter-outcome">%s</span>\n'
-            "  </a>" % (name, name.capitalize(), proposal["description"])
+            "  </a>" % (name, name.capitalize(), html.escape(proposal["description"]))
         ),
     }
 
@@ -861,14 +902,21 @@ def _target_schema(proposal: dict, schema_dir: str | None = None) -> dict:
 
 
 def _fit_sidecar(sidecar: dict, schema: dict, label: str) -> dict:
-    # ponytail: fills each block's missing required keys with the first enum value or the
-    # suffix name; stricter value rules (patterns, formats) still need a maintainer's edit.
+    # ponytail: fills a block's missing required key only with the first enum value or, for a
+    # plain string the label fits, the suffix name; other keys are left for the maintainer.
     for block, spec in schema.get("properties", {}).items():
         if block not in sidecar or not isinstance(spec, dict):
             continue
         for key in spec.get("required", []):
-            enum = spec.get("properties", {}).get(key, {}).get("enum")
-            sidecar[block].setdefault(key, enum[0] if enum else label)
+            prop = spec.get("properties", {}).get(key)
+            if key in sidecar[block] or not isinstance(prop, dict):
+                continue
+            if prop.get("enum"):
+                sidecar[block][key] = prop["enum"][0]
+            elif "string" in (prop.get("type") if isinstance(prop.get("type"), list) else [prop.get("type")]) \
+                    and re.search(prop.get("pattern", ""), label):
+                sidecar[block][key] = label
+            # anything else stays missing, so check_extension_fit names it instead of a wrong value
     return sidecar
 
 
@@ -881,7 +929,8 @@ def check_extension_fit(proposal: dict, schema_dir: str | None = None) -> list[P
         return []
     sidecar = _fit_sidecar(build_example_sidecar(proposal), schema, proposal["suffix"])
     return [
-        Problem("warning", f"{proposal['modality']}.schema.json", e.message)
+        Problem("warning", f"{proposal['modality']}.schema.json",
+                f"{'/'.join(str(x) for x in e.absolute_path)}: {e.message}" if e.absolute_path else e.message)
         for e in jsonschema.Draft7Validator(schema).iter_errors(sidecar)
     ]
 
@@ -909,7 +958,8 @@ pull request, then let CI validate the fixture in this folder.
 
 2. Documentation (CI check `modality-docs` fails without it): add the section
    from `docs/{name}-{suffix}.md` to `docs/specs/{name}.md` (the page must
-   mention `_{suffix}`).
+   mention `_{suffix}`), and add `{suffix}` to the Suffixes column of the
+   `{name}` row in `docs/specs/entities.md`.
 3. Check the registration:
    `python tests/verify_repo.py --check schema-sync` and
    `python tests/verify_repo.py --check modality-docs`.
@@ -981,7 +1031,7 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
         extension=ext,
         sidecar=sidecar,
         data_content=sample.read_bytes(),
-        task_name=None,
+        task_name=None if is_new else (existing.get("example", {}).get("task") or suffix),
     )
     docs = out / "docs"
     docs.mkdir(exist_ok=True)

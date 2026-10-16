@@ -56,3 +56,26 @@ def test_registration_md_lists_the_docs_steps():
     for needle in ("docs/specs/biosample.md", "docs/index.rst", "docs/SCHEMA_SPECIFICATIONS.md",
                    "docs/specs/entities.md", "modality-docs"):
         assert needle in md
+
+
+def test_docs_page_shows_example_sidecar_types_and_guide_link():
+    page = build_docs_page(P)
+    assert "```json" in page and '"OriginalName": "biosample"' in page
+    assert "- `CRP`: C-reactive protein" in page
+    assert "../MODALITY_PROPOSALS.md" in page
+
+
+def test_contributor_text_is_escaped():
+    p = {**P, "description": "Blood <script>x</script> & more"}
+    p["columns"] = [{**P["columns"][0], "description": "a | b", "units": "x|y"}]
+    card = build_docs_snippets(p)["card"]
+    assert "<script>" not in card and "&lt;script&gt;" in card and "&amp;" in card
+    page = build_docs_page(p)
+    assert "a \\| b" in page and "x\\|y" in page
+    assert "<script>" not in page.split("```json")[0]  # fenced code is shown literally
+
+
+def test_description_ending_in_a_full_stop_is_not_doubled():
+    p = {**P, "description": "Venous blood."}
+    assert "Venous blood.." not in build_docs_page(p)
+    assert "Venous blood.." not in build_schema(p)["description"]

@@ -127,7 +127,7 @@ def test_extension_build_writes_no_schema_and_a_modality_fixture(tmp_path):
     files = build_modality_artifacts(p, EXT_SAMPLE, EXT, tmp_path / "out")
     names = {f.relative_to(tmp_path / "out").as_posix() for f in files}
     assert "biometrics.schema.json" not in names
-    assert "fixture/sub-01/biometrics/sub-01_bloodpanel.tsv" in names
+    assert "fixture/sub-01/biometrics/sub-01_task-bloodpanel_bloodpanel.tsv" in names
     assert "docs/biometrics-bloodpanel.md" in names
     md = (tmp_path / "out" / "REGISTRATION.md").read_text(encoding="utf-8")
     assert '"bloodpanel"' in md and "biometrics.schema.json" not in md
@@ -155,3 +155,52 @@ def test_extension_docs_section_keeps_the_modality_own_naming_rules(tmp_path):
     section = (tmp_path / "out" / "docs" / "biometrics-bloodpanel.md").read_text(encoding="utf-8")
     assert "[_acq-<label>]" not in section
     assert "_bloodpanel" in section
+
+
+@pytest.mark.parametrize("target,block", [("physio", "Technical"), ("survey", "Technical")])
+def test_extension_into_other_modalities_warns_with_the_block_path(target, block, tmp_path):
+    p = _ext(modality=target, suffix=f"x{target[:4]}")
+    problems = check_proposal(p)
+    assert errors_only(problems) == []
+    warnings = [w.message for w in problems if w.severity == "warning"]
+    assert any(m.startswith(f"{block}: ") for m in warnings), warnings
+    assert not any(p["suffix"] in m for m in warnings), warnings  # no suffix string forced into a typed field
+    build_modality_artifacts(p, EXT_SAMPLE, EXT, tmp_path / "out")  # does not crash
+
+
+def test_environment_cannot_be_extended():
+    assert "environment" in _messages(check_proposal(_ext(modality="environment", suffix="xenvi")))
+    assert "Modality.Name" in _messages(check_proposal(_ext(modality="environment", suffix="xenvi")))
+
+
+def test_fit_ignores_non_dict_property_schemas():
+    from src.modality_contribution import _fit_sidecar
+
+    schema = {"properties": {"Study": {"required": ["A", "B"], "properties": {"A": True}}}}
+    assert _fit_sidecar({"Study": {}}, schema, "lbl") == {"Study": {}}
+
+
+def test_extension_fixture_keeps_a_task_entity(tmp_path):
+    files = build_modality_artifacts(read_proposal(EXT), EXT_SAMPLE, EXT, tmp_path / "out")
+    assert any(f.name == "sub-01_task-bloodpanel_bloodpanel.tsv" for f in files)
+    survey = _ext(modality="survey", suffix="xsurv")
+    files = build_modality_artifacts(survey, EXT_SAMPLE, EXT, tmp_path / "s")
+    assert any(f.name == "sub-01_task-panas_xsurv.tsv" for f in files)
+
+
+def test_extension_registration_md_mentions_the_entities_table_row():
+    md = (build_registration_md(read_proposal(EXT), {"kind": "prism", "suffixes": ["biometrics"], "extensions": ["tsv"]}))
+    assert "docs/specs/entities.md" in md and "Suffixes" in md
+
+
+def test_numeric_entity_value_is_refused(tmp_path):
+    from src.modality_contribution import ProposalError
+
+    f = tmp_path / "p.yml"
+    f.write_text(
+        "modality: biosample\nsuffix: bloodchem\nextensions: [tsv]\ndescription: d\n"
+        "columns:\n  - id: crp\n    description: c\nentities:\n  - entity: acq\n    value: 01\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ProposalError, match="quotes"):
+        read_proposal(f)
