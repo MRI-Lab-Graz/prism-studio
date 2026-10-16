@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TERMS, criteriaFromRows, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria } from './eligibility-criteria.js';
+import { TERMS, checkedCriteriaCount, criteriaFromRows, hasContent, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 
 const AGE = {
     id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric',
@@ -36,15 +36,15 @@ describe('eligibility criteria rows', () => {
     });
 
     it('generates unique, stable ids', () => {
-        const a = { ...newRow('nb:Age'), min: '18' };
-        const b = { ...newRow('nb:Age'), max: '65' };
+        const a = { ...newRow('nb:Age'), min: '18', accepted: true };
+        const b = { ...newRow('nb:Age'), max: '65', accepted: true };
         const ids = criteriaFromRows([a, b]).map((c) => c.id);
         expect(new Set(ids).size).toBe(2);
         expect(criteriaFromRows(rowsFromCriteria(criteriaFromRows([a, b]))).map((c) => c.id)).toEqual(ids);
     });
 
     it('parses numbers, keeping decimals and open ends', () => {
-        const [c] = criteriaFromRows([{ ...newRow('nb:Age'), min: '17.5', max: '' }]);
+        const [c] = criteriaFromRows([{ ...newRow('nb:Age'), min: '17.5', max: '', accepted: true }]);
         expect(c.min).toBe(17.5);
         expect('max' in c).toBe(false);
     });
@@ -79,11 +79,61 @@ describe('criteria the form cannot fully show', () => {
 
 describe('id stability', () => {
     it('keeps a generated id when the label is renamed before the next load', () => {
-        const row = { ...newRow(null), label: 'IQ', min: '85' };
+        const row = { ...newRow(null), label: 'IQ', min: '85', accepted: true };
         const [first] = criteriaFromRows([row]);
         expect(first.id).toBe('iq');
         row.label = 'IQ (WAIS)';
         const [second] = criteriaFromRows([row]);
         expect(second.id).toBe('iq');
+    });
+});
+
+describe('draft and accepted rows', () => {
+    it('a new row is a draft; only accepted, complete rows are saved', () => {
+        const draft = { ...newRow('nb:Age'), min: '18' };
+        expect(draft.accepted).toBe(false);
+        expect(criteriaFromRows([draft])).toEqual([]);
+        expect(criteriaFromRows([{ ...draft, accepted: true }]).map((c) => c.id)).toEqual(['age']);
+    });
+
+    it('rows loaded from project.json are already accepted', () => {
+        expect(rowsFromCriteria([AGE])[0].accepted).toBe(true);
+    });
+
+    it('accepted state is not written into project.json', () => {
+        expect('accepted' in criteriaFromRows(rowsFromCriteria([AGE]))[0]).toBe(false);
+    });
+});
+
+describe('checkedCriteriaCount', () => {
+    it('counts accepted criteria per mode, which feeds the Core badges', () => {
+        setEligibilityCriteria([AGE, NO_MALE, IQ]);
+        expect(checkedCriteriaCount('include')).toBe(2);
+        expect(checkedCriteriaCount('exclude')).toBe(1);
+        setEligibilityCriteria([]);
+        expect(checkedCriteriaCount('include')).toBe(0);
+    });
+});
+
+describe('hasContent (decides whether a draft blocks a save or is discarded silently)', () => {
+    it('a freshly added row holds nothing, even though Age comes with a default unit', () => {
+        expect(hasContent(newRow('nb:Age'))).toBe(false);
+        expect(hasContent(newRow('nb:Sex'))).toBe(false);
+        expect(hasContent(newRow(null))).toBe(false);
+    });
+    it('a typed limit, a ticked value or a name for Other measure is content', () => {
+        expect(hasContent({ ...newRow('nb:Age'), min: '18' })).toBe(true);
+        expect(hasContent({ ...newRow('nb:Sex'), values: ['Male'] })).toBe(true);
+        expect(hasContent({ ...newRow(null), label: 'IQ' })).toBe(true);
+    });
+});
+
+describe('criteria loaded from project.json', () => {
+    it('a complete one is accepted (a chip); an incomplete one comes back as a draft to fix, not dropped', () => {
+        const incomplete = { id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric', mode: 'include' }; // no bounds
+        const [complete, fixme] = rowsFromCriteria([AGE, incomplete]);
+        expect(complete.accepted).toBe(true);
+        expect(fixme.accepted).toBe(false);
+        expect(fixme.id).toBe('age'); // its id is kept, so linked columns still find it once fixed
     });
 });

@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   include or exclude). In the Sociodemographics converter a column is linked to a criterion (pre-selected by
   NeuroBagel term), and the validator warns (`PRISM602`, never an error) for each participant outside the
   limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+  New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
+  Inclusion/Exclusion fields.
+- **One rule for add-a-row controls on the Projects page.** Authors, funding, the criteria and list fields,
+  known issues, missing files, DOIs, checked criteria and the location picker now behave the same: a new row
+  is a draft with a green check (and Cancel), the red cross appears only on accepted rows, and saving is
+  blocked, with the pending rows highlighted, while a draft with content is pending. The plain list fields
+  (variables, inclusion/exclusion criteria, quality control) are one input with green chips below, like the
+  CRediT roles, and so are funding, known issues, missing files, recruitment locations and checked
+  criteria (with a short summary on each chip); the Study Design fields now line up, and the
+  Dataset-description errors link to the field they name.
 
 ### Security
 Findings of a full security review; each fix has a regression test.

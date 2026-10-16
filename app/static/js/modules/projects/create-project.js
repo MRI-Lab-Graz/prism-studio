@@ -1,3 +1,6 @@
+import { showTopFeedback } from './helpers.js';
+import { guardSave } from './row-state.js';
+
 export function initCreateProjectController({
     fetchWithApiFallback,
     setButtonLoading,
@@ -92,6 +95,11 @@ export function initCreateProjectController({
     }
 
     async function submitCreateProject(options = {}) {
+        // Rows the user has typed into but not accepted yet would be lost: block the save.
+        const metadataForm = document.getElementById('studyMetadataForm');
+        if (metadataForm && !guardSave(metadataForm, showTopFeedback)) {
+            return;
+        }
         const forcePreliminary = Boolean(options.forcePreliminary);
         const triggerButton = options.triggerButton instanceof HTMLElement ? options.triggerButton : null;
 

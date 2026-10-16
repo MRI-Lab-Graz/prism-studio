@@ -97,6 +97,11 @@ def _usable(crit) -> bool:
     return False
 
 
+def usable_criteria(entries) -> list[dict]:
+    """The entries of an ``Eligibility.Criteria`` value the checks can use."""
+    return [c for c in entries if _usable(c)] if isinstance(entries, list) else []
+
+
 def _read_criteria(root_dir: str) -> tuple[list[dict], list[tuple[str, str | None]]]:
     """(usable criteria, (description, id) per rejected entry) from project.json."""
     project = _load_json(Path(root_dir) / "project.json")
@@ -104,7 +109,7 @@ def _read_criteria(root_dir: str) -> tuple[list[dict], list[tuple[str, str | Non
     entries = eligibility.get("Criteria") if isinstance(eligibility, dict) else None
     if not isinstance(entries, list):
         return [], []
-    usable = [c for c in entries if _usable(c)]
+    usable = usable_criteria(entries)
     rejected = []
     for n, c in enumerate(entries, 1):
         if _usable(c):

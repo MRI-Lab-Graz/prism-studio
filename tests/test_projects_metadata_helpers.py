@@ -260,3 +260,39 @@ def test_timepoints_blocks_project_creation_but_not_the_core_readiness_score():
 
     assert "Timepoints" in CREATION_BLOCKING_FIELDS["StudyDesign"]
     assert "Timepoints" not in REQUIRED_FIELDS_SCHEMA["StudyDesign"]  # third tier, not CORE
+
+
+def _eligibility_sections(eligibility):
+    project_data = {
+        "Overview": {"Main": "Overview"},
+        "StudyDesign": {"Type": "cross-sectional"},
+        "Recruitment": {"Method": "participant-pool"},
+        "Eligibility": eligibility,
+        "Procedure": {"Overview": "Procedure"},
+        "Conditions": {},
+    }
+    done = metadata_helpers._compute_methods_completeness(project_data, {"Name": "Demo"})
+    elig = done["sections"]["Eligibility"]
+    return elig["required_filled"], elig["optional_filled"]
+
+
+AGE_INCLUDE = {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
+               "mode": "include", "min": 18, "max": 35}
+SEX_EXCLUDE = {"id": "sex", "label": "Sex", "term": "nb:Sex", "type": "categorical",
+               "mode": "exclude", "values": ["Male"]}
+
+
+def test_checked_include_criterion_makes_the_core_inclusion_field_count():
+    assert _eligibility_sections({"Criteria": [AGE_INCLUDE]})[0] == 1
+    assert _eligibility_sections({})[0] == 0
+
+
+def test_checked_exclude_criterion_counts_as_an_exclusion_criterion_only():
+    required, optional = _eligibility_sections({"Criteria": [SEX_EXCLUDE]})
+    assert required == 0  # CORE needs an inclusion criterion
+    assert optional == _eligibility_sections({"ExclusionCriteria": ["No MRI"]})[1]
+
+
+def test_malformed_checked_criteria_do_not_count():
+    bad = {"id": "age", "type": "numeric", "mode": "include"}  # no bounds
+    assert _eligibility_sections({"Criteria": [bad, None, "x"]})[0] == 0
