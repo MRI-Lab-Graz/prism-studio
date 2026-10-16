@@ -19,18 +19,6 @@ def open_sections(page, studio_url, *targets):
 
 
 
-def test_two_field_rows_use_the_same_draft_and_accept_rule(app_page, studio_url):
-    page = app_page
-    open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smMissingData")
-    page.click("#smKnownIssuesAddRow")
-    row = page.locator("#smKnownIssuesList .two-field-row").last
-    expect(row.locator('[data-f="accept"]')).to_be_disabled()
-    row.locator(".two-field-input-1").fill("sub-002_task-nback_bold.nii")
-    expect(row.locator('[data-f="accept"]')).to_be_enabled()
-    assert page.input_value("#smKnownIssues") == ""
-    row.locator('[data-f="accept"]').click()
-    expect(row.locator('[data-f="remove"]')).to_have_count(1)
-    assert page.input_value("#smKnownIssues") == "sub-002_task-nback_bold.nii"
 
 
 def test_doi_rows_keep_the_lookup_as_a_helper_next_to_the_check(app_page, studio_url):
@@ -93,22 +81,6 @@ def test_loaded_authors_are_defined(app_page, studio_url, project):
     expect(row.locator('[data-f="accept"]')).to_have_count(0)
 
 
-def test_funding_rows_are_drafts_and_the_empty_placeholder_comes_back(app_page, studio_url):
-    page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
-    page.click("#metadataFundingYes")
-    row = page.locator("#metadataFundingList .funding-row").first
-    expect(row.locator('[data-f="accept"]')).to_be_disabled()
-    row.locator(".funding-agency-input").fill("FWF")
-    expect(row.locator('[data-f="accept"]')).to_be_enabled()
-    assert page.input_value("#metadataFunding") == ""  # a draft is not saved
-    row.locator('[data-f="accept"]').click()
-    assert page.input_value("#metadataFunding") == "FWF"
-    row.locator('[data-f="remove"]').click()
-    # deleting the last row leaves the empty placeholder draft, nothing saved
-    expect(page.locator("#metadataFundingList .funding-row")).to_have_count(1)
-    expect(page.locator('#metadataFundingList [data-f="accept"]')).to_have_count(1)
-    assert page.input_value("#metadataFunding") == ""
 
 
 def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding(app_page, studio_url, project):
@@ -117,7 +89,7 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
     (project / "dataset_description.json").write_text(json.dumps(description))
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody")
-    expect(page.locator('#metadataFundingList [data-f="remove"]')).to_have_count(1)  # loaded = defined
+    expect(page.locator("#metadataFundingList .chip-badge")).to_have_count(1)  # loaded = a chip
     page.click("#createProjectSubmitBtn")
     page.get_by_role("button", name="Save Preliminary State").click()
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
@@ -249,19 +221,6 @@ def test_after_searching_and_adding_a_location_saving_is_not_blocked(app_page, s
     expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
 
 
-def test_a_funding_draft_is_not_part_of_the_funding_list(app_page, studio_url):
-    page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
-    page.click("#metadataFundingYes")
-    row = page.locator("#metadataFundingList .funding-row").first
-    row.locator(".funding-agency-input").fill("FWF")  # typed, not accepted
-    listed = page.evaluate(
-        "import('/static/js/modules/projects/metadata.js').then(m => m.getFundingList())")
-    assert listed == []  # feeds the payload, the draft description and the Core count
-    row.locator('[data-f="accept"]').click()
-    listed = page.evaluate(
-        "import('/static/js/modules/projects/metadata.js').then(m => m.getFundingList())")
-    assert listed == ["FWF"]
 
 
 def test_a_pending_draft_triggers_the_unsaved_changes_warning_when_leaving_the_project(app_page, studio_url):
@@ -425,3 +384,87 @@ def test_text_typed_but_not_accepted_in_a_list_field_blocks_saving(app_page, stu
     page.locator("#smOverviewDVList .chip-input").press("Enter")  # accepted: the chip is part of the form
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+
+
+
+# ---- funding: agency + grant inputs, accepted sources become chips ----
+
+def test_funding_sources_become_chips_below_the_agency_and_grant_inputs(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#metadataFundingYes")
+    field = page.locator("#metadataFundingList")
+    agency = field.locator(".funding-agency-input")
+    grant = field.locator(".funding-grant-input")
+    accept = field.locator('[data-f="accept"]')
+    chips = field.locator(".chip-badge")
+
+    expect(accept).to_be_disabled()
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))
+    grant.fill("P12345")  # a grant without an agency is not enough
+    expect(accept).to_be_disabled()
+    agency.fill("FWF")
+    expect(accept).to_have_class(re.compile("btn-success"))
+    assert page.input_value("#metadataFunding") == ""  # typed, not accepted
+
+    accept.click()
+    expect(chips).to_have_count(1)
+    expect(chips.first).to_contain_text("FWF, P12345")
+    expect(agency).to_have_value("")
+    expect(grant).to_have_value("")
+    assert page.input_value("#metadataFunding") == "FWF, P12345"
+
+    agency.fill("ERC")
+    agency.press("Enter")  # Enter accepts, the grant stays optional
+    expect(chips).to_have_count(2)
+    assert page.input_value("#metadataFunding") == "FWF, P12345\nERC"
+    chips.first.click()
+    assert page.input_value("#metadataFunding") == "ERC"
+
+
+def test_a_funding_entry_that_is_typed_but_not_accepted_blocks_saving_and_is_not_listed(app_page, studio_url, project):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#metadataFundingYes")
+    before = _project_json_text(project)
+    page.locator("#metadataFundingList .funding-agency-input").fill("FWF")
+    badge = page.locator("#metadataFundingRequiredBadge")
+    expect(badge).not_to_have_class(re.compile("bg-success"))  # a typed source is not funding yet
+    assert page.input_value("#metadataFunding") == ""
+    page.click("#createProjectSubmitBtn")
+    expect(page.get_by_text("not accepted yet")).to_be_visible()
+    assert _project_json_text(project) == before
+
+
+def test_accepting_a_funding_source_turns_the_funding_badge_green(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#metadataFundingYes")
+    field = page.locator("#metadataFundingList")
+    field.locator(".funding-agency-input").fill("FWF")
+    field.locator(".funding-agency-input").press("Enter")
+    expect(page.locator("#metadataFundingRequiredBadge")).to_have_class(re.compile("bg-success"))
+
+
+
+# ---- known issues: two inputs, accepted entries become chips ----
+
+def test_known_issues_become_chips_with_the_file_and_the_issue(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smMissingData")
+    field = page.locator("#smKnownIssuesList")
+    first, second = field.locator(".two-field-input-1"), field.locator(".two-field-input-2")
+    accept = field.locator('[data-f="accept"]')
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))
+    first.fill("sub-002_task-nback_bold.nii")
+    expect(accept).to_have_class(re.compile("btn-success"))  # one field is enough
+    assert page.input_value("#smKnownIssues") == ""
+    second.fill("Shorter scan")
+    accept.click()
+    chip = field.locator(".chip-badge")
+    expect(chip).to_have_count(1)
+    expect(chip.first).to_contain_text("sub-002_task-nback_bold.nii – Shorter scan")
+    assert page.input_value("#smKnownIssues") == "sub-002_task-nback_bold.nii | Shorter scan"
+    expect(first).to_have_value("")
+    chip.first.click()
+    assert page.input_value("#smKnownIssues") == ""

@@ -23,6 +23,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 import { mountChipList } from './chip-list.js';
+import { criterionSummary, knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
@@ -1722,111 +1723,45 @@ function _parseTwoFieldListValue(rawValue) {
     });
 }
 
-function _syncTwoFieldListField(fieldId) {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const hiddenField = document.getElementById(fieldId);
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !hiddenField || !list) return;
+const _twoFieldChips = {};
 
-    const values = Array.from(list.querySelectorAll('.two-field-row:not([data-row-state="draft"])'))
-        .map(row => _combineTwoFieldRow(
-            row.querySelector('.two-field-input-1')?.value || '',
-            row.querySelector('.two-field-input-2')?.value || ''
-        ))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+// One input pair per list; accepted entries become chips holding the stored "a | b" strings.
+function _twoFieldChipList(fieldId) {
+    const config = TWO_FIELD_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return null;
+    if (!_twoFieldChips[fieldId] || !list.querySelector('.chip-input')) {
+        const make = (className, placeholder) => Object.assign(document.createElement('input'), {
+            type: 'text', className: `form-control ${className}`, placeholder,
+        });
+        _twoFieldChips[fieldId] = mountChipList(list, {
+            fields: [
+                make('two-field-input-1', config.field1Placeholder),
+                make('two-field-input-2', config.field2Placeholder),
+            ],
+            compose: ([a, b]) => _combineTwoFieldRow(a, b),
+            chipText: knownIssueChipText,
+            onChange: () => _syncTwoFieldListField(fieldId),
+        });
+    }
+    return _twoFieldChips[fieldId];
+}
+
+function _syncTwoFieldListField(fieldId) {
+    const hiddenField = document.getElementById(fieldId);
+    if (!hiddenField || !TWO_FIELD_LIST_FIELDS[fieldId]) return;
+    hiddenField.value = (_twoFieldChipList(fieldId)?.getValues() || []).join('\n');
     updateCreateProjectButton();
 }
 
-function addTwoFieldRow(fieldId, field1 = '', field2 = '', accepted = false) {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm two-field-row';
-
-    const input1 = document.createElement('input');
-    input1.type = 'text';
-    input1.className = 'form-control two-field-input-1';
-    input1.placeholder = config.field1Placeholder;
-    input1.value = String(field1 || '');
-
-    const input2 = document.createElement('input');
-    input2.type = 'text';
-    input2.className = 'form-control two-field-input-2';
-    input2.placeholder = config.field2Placeholder;
-    input2.value = String(field2 || '');
-
-    const hasText = () => Boolean(input1.value.trim() || input2.value.trim());
-    const actions = mountRowActions(row, {
-        state: accepted ? 'defined' : 'draft',
-        noun: 'entry',
-        incompleteHint: 'Fill in at least one field',
-        isComplete: hasText,
-        hasContent: hasText,
-        onAccept: () => _syncTwoFieldListField(fieldId),
-        onRemove: () => {
-            row.remove();
-            if (!list.querySelector('.two-field-row')) {
-                addTwoFieldRow(fieldId);
-            }
-            _syncTwoFieldListField(fieldId);
-        },
-    });
-
-    const onInput = () => {
-        actions.refresh();
-        _syncTwoFieldListField(fieldId);
-    };
-    input1.addEventListener('input', onInput);
-    input2.addEventListener('input', onInput);
-
-    row.appendChild(input1);
-    row.appendChild(input2);
-    row.appendChild(actions.slot);
-    list.appendChild(row);
-    _syncTwoFieldListField(fieldId);
-}
-
 function setTwoFieldList(fieldId, rawValue) {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !list) return;
-
-    list.innerHTML = '';
-    const entries = _parseTwoFieldListValue(rawValue);
-    if (!entries.length) {
-        addTwoFieldRow(fieldId);
-        return;
-    }
-
-    entries.forEach(entry => addTwoFieldRow(fieldId, entry.field1, entry.field2, true));
+    const values = _parseTwoFieldListValue(rawValue).map(entry => _combineTwoFieldRow(entry.field1, entry.field2));
+    _twoFieldChipList(fieldId)?.setValues(values.filter(Boolean));
     _syncTwoFieldListField(fieldId);
 }
 
 function initTwoFieldListFields() {
-    Object.entries(TWO_FIELD_LIST_FIELDS).forEach(([fieldId, config]) => {
-        const addButton = document.getElementById(config.addId);
-        if (addButton && !addButton.dataset.bound) {
-            addButton.dataset.bound = '1';
-            // Chromium (Windows) focuses buttons on mousedown, blurring the row
-            // input first; its change-triggered re-render shifts the button and
-            // swallows the click. macOS WebKit never focuses buttons, so match it.
-            addButton.addEventListener('mousedown', (e) => e.preventDefault());
-            addButton.addEventListener('click', () => {
-                addTwoFieldRow(fieldId);
-                const list = document.getElementById(config.listId);
-                const lastInput = list?.querySelector('.two-field-row:last-child .two-field-input-1');
-                lastInput?.focus();
-            });
-        }
-
-        const list = document.getElementById(config.listId);
-        if (list && !list.querySelector('.two-field-row')) {
-            addTwoFieldRow(fieldId);
-        }
-    });
+    Object.keys(TWO_FIELD_LIST_FIELDS).forEach(fieldId => _twoFieldChipList(fieldId));
 }
 
 // ===== MISSING FILES TABLE ROWS =====
@@ -3538,18 +3473,39 @@ function _combineFundingRow(agency, grant) {
     return cleanAgency || cleanGrant;
 }
 
+// Funding sources: agency + grant inputs, accepted sources become chips. The chips hold the
+// stored "Agency, Grant" strings, so the hidden field and the saved format are unchanged.
+let _fundingChips = null;
+
+function _fundingChipList() {
+    const list = document.getElementById('metadataFundingList');
+    if (!list) return null;
+    if (!_fundingChips || !list.querySelector('.chip-input')) {
+        const agency = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control funding-agency-input',
+            placeholder: 'Funding agency (e.g. NSF, FWF)',
+        });
+        const grant = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control funding-grant-input',
+            placeholder: 'Grant / award number (optional)',
+        });
+        _fundingChips = mountChipList(list, {
+            fields: [agency, grant],
+            // the agency is required, the grant optional
+            compose: ([a, g]) => (_cleanMetadataText(a) ? _combineFundingRow(a, g) : ''),
+            onChange: () => {
+                _syncFundingListField();
+                updateCreateProjectButton();
+            },
+        });
+    }
+    return _fundingChips;
+}
+
 function _syncFundingListField() {
     const hiddenField = document.getElementById('metadataFunding');
-    const list = document.getElementById('metadataFundingList');
-    if (!hiddenField || !list) return;
-
-    const values = Array.from(list.querySelectorAll('.funding-row:not([data-row-state="draft"])'))
-        .map(row => _combineFundingRow(
-            row.querySelector('.funding-agency-input')?.value || '',
-            row.querySelector('.funding-grant-input')?.value || ''
-        ))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+    if (!hiddenField) return;
+    hiddenField.value = (_fundingChipList()?.getValues() || []).join('\n');
 
     try {
         validateFundingBadge();
@@ -3558,105 +3514,22 @@ function _syncFundingListField() {
     }
 }
 
-export function addFundingRow(agency = '', grant = '', accepted = false) {
-    const list = document.getElementById('metadataFundingList');
-    if (!list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm funding-row';
-
-    const agencyInput = document.createElement('input');
-    agencyInput.type = 'text';
-    agencyInput.className = 'form-control funding-agency-input';
-    agencyInput.placeholder = 'Funding agency (e.g. NSF, FWF)';
-    agencyInput.value = String(agency || '');
-
-    const grantInput = document.createElement('input');
-    grantInput.type = 'text';
-    grantInput.className = 'form-control funding-grant-input';
-    grantInput.placeholder = 'Grant / award number (optional)';
-    grantInput.value = String(grant || '');
-
-    const actions = mountRowActions(row, {
-        state: accepted ? 'defined' : 'draft',
-        noun: 'funding source',
-        incompleteHint: 'Enter the funding agency',
-        isComplete: () => agencyInput.value.trim() !== '',
-        hasContent: () => agencyInput.value.trim() !== '' || grantInput.value.trim() !== '',
-        onAccept: () => {
-            _syncFundingListField();
-            updateCreateProjectButton();
-        },
-        onRemove: () => {
-            row.remove();
-            if (!list.querySelector('.funding-row')) {
-                addFundingRow();
-            }
-            _syncFundingListField();
-            updateCreateProjectButton();
-        },
-    });
-
-    const onInput = () => {
-        actions.refresh();
-        _syncFundingListField();
-        updateCreateProjectButton();
-    };
-    agencyInput.addEventListener('input', onInput);
-    grantInput.addEventListener('input', onInput);
-
-    row.appendChild(agencyInput);
-    row.appendChild(grantInput);
-    row.appendChild(actions.slot);
-    list.appendChild(row);
+// Also used by the study-application import: an imported source arrives accepted.
+export function addFundingRow(agency = '', grant = '') {
+    const combined = _combineFundingRow(agency, grant);
+    if (!combined) return;
+    _fundingChipList()?.addValue(combined);
     _syncFundingListField();
 }
 
 function setFundingRows(entries) {
-    const list = document.getElementById('metadataFundingList');
-    if (!list) return;
-
-    list.innerHTML = '';
-    if (!entries.length) {
-        addFundingRow();
-        return;
-    }
-
-    entries.forEach(entry => {
-        const text = _cleanMetadataText(entry);
-        if (!text) return;
-        // Legacy/loaded entries are opaque "Agency, Grant" strings; split on
-        // the first comma only, for a cosmetic agency/grant split in the UI.
-        const commaIndex = text.indexOf(',');
-        if (commaIndex === -1) {
-            addFundingRow(text, '', true);
-        } else {
-            addFundingRow(text.slice(0, commaIndex).trim(), text.slice(commaIndex + 1).trim(), true);
-        }
-    });
-    if (!list.querySelector('.funding-row')) {
-        addFundingRow();
-    }
+    const cleaned = (entries || []).map(entry => _cleanMetadataText(entry)).filter(Boolean);
+    _fundingChipList()?.setValues(cleaned);
     _syncFundingListField();
 }
 
 function initFundingRows() {
-    const addButton = document.getElementById('metadataFundingAddRow');
-    if (addButton && !addButton.dataset.bound) {
-        addButton.dataset.bound = '1';
-        addButton.addEventListener('click', () => {
-            addFundingRow();
-            const list = document.getElementById('metadataFundingList');
-            const lastInput = list?.querySelector('.funding-row:last-child .funding-agency-input');
-            lastInput?.focus();
-            updateCreateProjectButton();
-        });
-    }
-
-    const list = document.getElementById('metadataFundingList');
-    if (list && !list.querySelector('.funding-row')) {
-        addFundingRow();
-    }
+    _fundingChipList();
 }
 
 export function getFundingList() {
@@ -3664,16 +3537,7 @@ export function getFundingList() {
     if (!declaredInput) return [];
     if (declaredInput.value !== 'yes') return [];
 
-    const rows = document.querySelectorAll('#metadataFundingList .funding-row:not([data-row-state="draft"])');
-    const entries = [];
-    rows.forEach(row => {
-        const combined = _combineFundingRow(
-            row.querySelector('.funding-agency-input')?.value || '',
-            row.querySelector('.funding-grant-input')?.value || ''
-        );
-        if (combined) entries.push(combined);
-    });
-    return entries;
+    return [...(_fundingChipList()?.getValues() || [])];
 }
 
 function hasValidFundingResponse() {
