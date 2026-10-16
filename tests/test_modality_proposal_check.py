@@ -32,7 +32,6 @@ def test_example_proposal_has_no_errors() -> None:
         ("modality", "phenotype", "BIDS datatype 'phenotype'"),
         ("suffix", "eyetrack", "PRISM suffix 'eyetrack'"),
         ("modality", "physiological", "PRISM alias 'physiological'"),
-        ("modality", "survey", "PRISM modality 'survey'"),
     ],
 )
 def test_names_taken_in_prism_or_bids_are_rejected(field, value, needle) -> None:

@@ -382,11 +382,21 @@ def _bids_names() -> tuple[dict[str, str], dict[str, str]]:
     return suffixes, datatypes
 
 
-def _taken_names(schema_dir: str | None) -> dict[str, str]:
-    """Every name a new modality or suffix may not use, with the reason."""
+def _entities_schema(schema_dir: str | None) -> dict:
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
 
-    entities = load_schema("entities", schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+    return load_schema("entities", schema_dir or DEFAULT_SCHEMA_DIR, "stable") or {}
+
+
+def proposal_kind(proposal: dict, schema_dir: str | None = None) -> str:
+    """'extension' = add a suffix to an existing PRISM modality, else 'new'."""
+    rule = _entities_schema(schema_dir).get("modalities", {}).get(proposal.get("modality"), {})
+    return "extension" if rule.get("kind") == "prism" else "new"
+
+
+def _taken_names(schema_dir: str | None) -> dict[str, str]:
+    """Every name a new modality or suffix may not use, with the reason."""
+    entities = _entities_schema(schema_dir)
     taken: dict[str, str] = {}
     for name, rule in entities.get("modalities", {}).items():
         taken[name] = f"PRISM modality '{name}'"
@@ -411,13 +421,32 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         problems.append(Problem("error", where, message))
 
     taken = _taken_names(schema_dir)
-    for key, label in (("modality", "Name"), ("suffix", "Suffix")):
-        value = proposal.get(key) or ""
+    entities_schema = _entities_schema(schema_dir)
+    kind = proposal_kind(proposal, schema_dir)
+    name, suffix = proposal.get("modality") or "", proposal.get("suffix") or ""
+    aliases = entities_schema.get("aliases", {})
+    bids_modalities = {
+        n for n, r in entities_schema.get("modalities", {}).items() if r.get("kind") != "prism"
+    }
+    for value, label in ((name, "Name"), (suffix, "Suffix")):
         where = f"Modality.{label}"
         if not _NAME_RE.match(value):
             err(where, f"'{value}' must be lowercase letters and digits, starting with a letter")
-        elif value in taken:
-            err(where, f"'{value}' is already taken: {taken[value]}. Choose another {label.lower()}.")
+    if _NAME_RE.match(name):
+        if name in aliases:
+            err("Modality.Name", f"{taken[name]}. Use '{aliases[name]}' as the name to add a suffix to it.")
+        elif name in bids_modalities or (name in taken and kind == "new" and taken[name].startswith("BIDS")):
+            err(
+                "Modality.Name",
+                f"{taken.get(name, name)}: BIDS owns this folder; propose the suffix to BIDS upstream "
+                "(https://bids.neuroimaging.io), not here.",
+            )
+        elif kind == "new" and name in taken:
+            err("Modality.Name", f"'{name}' is already taken: {taken[name]}. Choose another name.")
+    if _NAME_RE.match(suffix) and suffix in taken:
+        err("Modality.Suffix", f"'{suffix}' is already taken: {taken[suffix]}. Choose another suffix.")
+    if kind == "extension" and proposal.get("entities"):
+        err("Entities", "entity suggestions are not used when adding a suffix to an existing modality; remove them")
 
     extensions = proposal.get("extensions") or []
     if not extensions:
