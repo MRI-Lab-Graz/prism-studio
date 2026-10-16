@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
   New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
   Inclusion/Exclusion fields.
+- **One rule for add-a-row controls on the Projects page.** Authors, funding, the criteria and list fields,
+  known issues, missing files, DOIs, checked criteria and the location picker now behave the same: a new row
+  is a draft with a green check (and Cancel), the red cross appears only on accepted rows, and saving is
+  blocked, with the pending rows highlighted, while a draft with content is pending.
 
 ### Security
 Findings of a full security review; each fix has a regression test.

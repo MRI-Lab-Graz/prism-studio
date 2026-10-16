@@ -58,11 +58,29 @@ stay empty) or the category labels. Enter the limits here only once: in the
 to the criterion. Participants outside a limit get a warning (`PRISM602`), never
 an error, so you can validate while data collection is still running.
 
-A new row is a draft: fill in the limits, then click the green check mark to accept it
-(it stays disabled until the row is complete; **Cancel** discards the draft). Only an
-accepted row is saved, and only an accepted row shows the red cross that deletes it.
+Rows follow the rule described under [Adding rows](#adding-rows-the-green-check-and-the-red-cross).
 Accepted criteria count towards the Core fields: an *include* criterion satisfies
 **Inclusion Criteria**, an *exclude* criterion **Exclusion Criteria**.
+
+### Adding rows: the green check and the red cross
+
+Everywhere on the Study Metadata form that you add a row (authors, funding, the
+criteria and list fields, known issues, missing files, DOIs, checked criteria) the
+same rule applies, so you always know whether a click is needed:
+
+- A **new row is a draft** with a green check mark and a gray **Cancel**. The check
+  stays disabled until the row is complete (for example both author names), and a short
+  hint says what is missing.
+- **Click the green check to accept the row.** Only now does it count: it is saved,
+  it feeds the badges and the readiness score, and it shows the **red cross**, which
+  deletes it. A red cross always means "delete something that is already part of the form".
+- A row with a check mark needs a click; a row without one never does.
+- Rows that are already in the project when you open it are accepted.
+- The recruitment-location search works the same way: its green **Add Selected Location**
+  button accepts the place you searched for.
+- **You cannot save while a draft with content is pending.** Create Project, Preliminary
+  Save and Save are blocked, the pending rows get a yellow outline, and a message says to
+  click the green check or Cancel. A completely empty draft is simply dropped.
 
 ### What gets created
 
