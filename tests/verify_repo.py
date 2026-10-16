@@ -2530,6 +2530,50 @@ def check_modality_schema_conventions(repo_path, fix=False):
         print_success("All community modality schemas follow PRISM conventions.")
 
 
+def check_modality_docs(repo_path, fix=False):
+    """Every PRISM modality registered in entities.schema.json must be documented."""
+    print_header("Checking Modality Documentation")
+    root = Path(repo_path)
+    entities_path = root / "app" / "schemas" / "stable" / "entities.schema.json"
+    if not entities_path.is_file():
+        print_success("Modality documentation check skipped (entities.schema.json not found).")
+        return
+
+    modalities = json.loads(entities_path.read_text(encoding="utf-8")).get("modalities", {})
+
+    def read(rel):
+        path = root / rel
+        return path.read_text(encoding="utf-8") if path.is_file() else ""
+
+    index = read("docs/index.rst")
+    cards = read("docs/SCHEMA_SPECIFICATIONS.md")
+    entities_doc = read("docs/specs/entities.md")
+    problems = 0
+    for name, rule in sorted(modalities.items()):
+        if rule.get("kind") != "prism":
+            continue
+        page = root / "docs" / "specs" / f"{name}.md"
+        if not page.is_file():
+            print_error(f"{name}: docs/specs/{name}.md is missing.")
+            problems += 1
+            continue
+        text = page.read_text(encoding="utf-8")
+        for ok, message in (
+            (f"specs/{name}" in index, f"{name}: not in the toctree of docs/index.rst."),
+            (f'href="specs/{name}.html"' in cards, f"{name}: no card in docs/SCHEMA_SPECIFICATIONS.md."),
+            (f"`{name}`" in entities_doc, f"{name}: no row in docs/specs/entities.md."),
+        ):
+            if not ok:
+                print_error(message)
+                problems += 1
+        for suffix in rule.get("suffixes", []):
+            if f"_{suffix}" not in text:
+                print_error(f"{name}: docs/specs/{name}.md never mentions the suffix _{suffix}.")
+                problems += 1
+    if not problems:
+        print_success("Every PRISM modality is documented (page, toctree, card, entities row, suffixes).")
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -2548,6 +2592,7 @@ CHECKS = {
     "library-uniqueness": check_library_uniqueness,
     "index-json-freshness": check_index_json_freshness,
     "modality-schema-conventions": check_modality_schema_conventions,
+    "modality-docs": check_modality_docs,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,

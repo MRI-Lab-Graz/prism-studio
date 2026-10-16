@@ -24,6 +24,11 @@ grammar that ties them together.
     <span class="prism-chapter-title">Environment</span>
     <span class="prism-chapter-outcome">The PRISM environment modality at a high level</span>
   </a>
+  <a class="prism-chapter-card" href="specs/physio.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></span>
+    <span class="prism-chapter-title">Physio</span>
+    <span class="prism-chapter-outcome">Physiological recordings such as ECG, EDA, respiration</span>
+  </a>
   <a class="prism-chapter-card" href="specs/entities.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l9 9-7 7-9-9V4Z"/><circle cx="8.5" cy="8.5" r="1.3"/></svg></span>
     <span class="prism-chapter-title">Entities and Filename Grammar</span>
