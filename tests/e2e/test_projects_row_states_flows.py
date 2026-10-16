@@ -366,3 +366,26 @@ def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
     row.locator(".author-last").fill("Lovelace")
     expect(row.locator('[data-f="hint"]')).to_have_count(0)  # complete: nothing missing
     expect(row.locator('[data-f="accept"]')).to_be_enabled()
+
+
+def test_the_check_is_gray_until_the_row_is_complete_and_then_turns_green(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    row = page.locator("#metadataAuthorsList .author-row").first
+    accept = row.locator('[data-f="accept"]')
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # nothing set: nothing looks ok
+    expect(accept).not_to_have_class(re.compile("btn-success|btn-outline-success"))
+    row.locator(".author-first").fill("Ada")
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # still incomplete
+    row.locator(".author-last").fill("Lovelace")
+    expect(accept).to_have_class(re.compile("btn-success"))
+    row.locator(".author-last").fill("")
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # back to gray when emptied
+
+
+def test_overview_placeholders_state_variables_instead_of_comparing_them(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smOverview")
+    placeholder = page.locator("#smOverviewIVList .overview-list-input").first.get_attribute("placeholder")
+    assert placeholder.startswith("e.g.,")
+    assert " vs" not in placeholder  # an independent variable is named, not compared

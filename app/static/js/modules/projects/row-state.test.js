@@ -41,6 +41,24 @@ describe('rowActionsHtml', () => {
     });
 });
 
+describe('rowActionsHtml colours', () => {
+    const accept = (html) => html.match(/<button[^>]*data-f="accept"[^>]*>/)[0];
+
+    it('the check is gray while the row is empty or incomplete: nothing is set yet, so nothing looks ok', () => {
+        const tag = accept(rowActionsHtml(rowActionsModel({ state: 'draft', complete: false })));
+        expect(tag).toContain('btn-outline-secondary');
+        expect(tag).not.toMatch(/btn-(outline-)?success/);
+        expect(tag).toContain('disabled');
+    });
+
+    it('the check turns green as soon as the row is complete', () => {
+        const tag = accept(rowActionsHtml(rowActionsModel({ state: 'draft', complete: true })));
+        expect(tag).toContain('btn-success');
+        expect(tag).not.toContain('btn-outline-secondary');
+        expect(tag).not.toContain('disabled');
+    });
+});
+
 describe('rowActionsHtml hint', () => {
     it('says why the check is disabled, only while it is disabled', () => {
         const draft = rowActionsHtml(rowActionsModel({ state: 'draft', complete: false }), 'author', 'Enter first and last name');

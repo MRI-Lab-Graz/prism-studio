@@ -27,7 +27,9 @@ export function rowActionsHtml(model, noun = '', hint = '') {
         out.push(`<small class="text-warning align-self-center mx-2 text-nowrap" data-f="hint">${escapeText(hint)}</small>`);
     }
     if (model.accept.visible) {
-        out.push(`<button type="button" class="btn btn-outline-success btn-sm" data-f="accept" aria-label="${label('Accept')}" title="${label('Accept')}"${model.accept.disabled ? ' disabled' : ''}><i class="fas fa-check"></i></button>`);
+        // Gray while nothing (or not enough) is set, green once the row can be accepted.
+        const colour = model.accept.disabled ? 'btn-outline-secondary' : 'btn-success';
+        out.push(`<button type="button" class="btn ${colour} btn-sm" data-f="accept" aria-label="${label('Accept')}" title="${label('Accept')}"${model.accept.disabled ? ' disabled' : ''}><i class="fas fa-check"></i></button>`);
     }
     if (model.cancel.visible) {
         out.push('<button type="button" class="btn btn-outline-secondary btn-sm" data-f="cancel" title="Discard this draft">Cancel</button>');

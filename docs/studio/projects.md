@@ -68,9 +68,10 @@ Everywhere on the Study Metadata form that you add a row (authors, funding, the
 criteria and list fields, known issues, missing files, DOIs, checked criteria) the
 same rule applies, so you always know whether a click is needed:
 
-- A **new row is a draft** with a green check mark and a gray **Cancel**. The check
-  stays disabled until the row is complete (for example both author names), and a short
-  hint says what is missing.
+- A **new row is a draft** with a check mark and a gray **Cancel**. The check is gray
+  and disabled while the row is empty or incomplete (for example without both author
+  names), and a short hint says what is missing. It turns green as soon as the row
+  can be accepted.
 - **Click the green check to accept the row.** Only now does it count: it is saved,
   it feeds the badges and the readiness score, and it shows the **red cross**, which
   deletes it. A red cross always means "delete something that is already part of the form".

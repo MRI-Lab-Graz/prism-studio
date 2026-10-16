@@ -1364,7 +1364,7 @@ const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
         listId: 'smOverviewIVList',
         addId: 'smOverviewIVAdd',
-        placeholder: 'e.g., pleasant vs. unpleasant images',
+        placeholder: 'e.g., stimulus valence, task difficulty',
     },
     smOverviewDV: {
         listId: 'smOverviewDVList',
