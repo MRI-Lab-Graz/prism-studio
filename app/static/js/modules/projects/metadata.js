@@ -3603,7 +3603,7 @@ export function getFundingList() {
     if (!declaredInput) return [];
     if (declaredInput.value !== 'yes') return [];
 
-    const rows = document.querySelectorAll('#metadataFundingList .funding-row');
+    const rows = document.querySelectorAll('#metadataFundingList .funding-row:not([data-row-state="draft"])');
     const entries = [];
     rows.forEach(row => {
         const combined = _combineFundingRow(

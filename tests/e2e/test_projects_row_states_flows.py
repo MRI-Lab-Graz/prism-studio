@@ -282,3 +282,18 @@ def test_after_searching_and_adding_a_location_saving_is_not_blocked(app_page, s
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_text("not accepted yet")).to_have_count(0)  # nothing is pending any more
     expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+
+
+def test_a_funding_draft_is_not_part_of_the_funding_list(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#metadataFundingYes")
+    row = page.locator("#metadataFundingList .funding-row").first
+    row.locator(".funding-agency-input").fill("FWF")  # typed, not accepted
+    listed = page.evaluate(
+        "import('/static/js/modules/projects/metadata.js').then(m => m.getFundingList())")
+    assert listed == []  # feeds the payload, the draft description and the Core count
+    row.locator('[data-f="accept"]').click()
+    listed = page.evaluate(
+        "import('/static/js/modules/projects/metadata.js').then(m => m.getFundingList())")
+    assert listed == ["FWF"]
