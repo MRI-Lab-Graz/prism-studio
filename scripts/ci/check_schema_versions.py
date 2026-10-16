@@ -44,15 +44,31 @@ def check(changes, read_base, read_head, exists_head, modalities) -> list[str]:
         if name not in modalities:
             continue
         old, new = _version(read_base(path)), _version(read_head(path))
-        if old is not None and old == new:
+        if old is None or new is None:
+            for side, value in (("base", old), ("head", new)):
+                if value is None:
+                    errors.append(f"{path}: could not read `version` in {side} (missing field or invalid JSON)")
+        elif old == new:
             errors.append(f"{path}: content changed but `version` is still {old}; bump it")
-        elif old is not None and new is not None:
+        else:
             archived = f"{ARCHIVE}{name}/{old}{SUFFIX}"
             if not exists_head(archived):
                 errors.append(f"{path}: version {old} must be copied to {archived} before it changes (archive)")
             elif not _same(read_head(archived), read_base(path)):
                 errors.append(f"{archived}: differs from the previous {path}; archive an exact copy")
     return errors
+
+
+def parse_name_status(text: str) -> list[tuple[str, str]]:
+    return [tuple(line.split("\t", 1)) for line in text.splitlines() if "\t" in line]
+
+
+def load_modalities(text: str | None) -> set[str] | None:
+    try:
+        modalities = json.loads(text)["modalities"]
+    except (TypeError, ValueError, KeyError):
+        return None
+    return set(modalities) if isinstance(modalities, dict) and modalities else None
 
 
 def _git_show(ref: str, path: str) -> str | None:
@@ -62,12 +78,16 @@ def _git_show(ref: str, path: str) -> str | None:
 
 def main(argv: list[str]) -> int:
     base, head = argv[1], argv[2]
+    # --no-renames: a move shows up as D + A, so the frozen-archive rule sees it.
     diff = subprocess.run(
-        ["git", "diff", "--name-status", f"{base}...{head}"], capture_output=True, text=True, check=True
+        ["git", "diff", "--no-renames", "--name-status", f"{base}...{head}"],
+        capture_output=True, text=True, check=True,
     ).stdout
-    changes = [tuple(line.split("\t", 1)) for line in diff.splitlines() if "\t" in line]
-    entities = _git_show(head, "app/schemas/stable/entities.schema.json")
-    modalities = set(json.loads(entities)["modalities"]) if entities else set()
+    changes = parse_name_status(diff)
+    modalities = load_modalities(_git_show(head, "app/schemas/stable/entities.schema.json"))
+    if modalities is None:
+        print(f"ERROR: app/schemas/stable/entities.schema.json at {head} is missing or has no `modalities` object")
+        return 1
     errors = check(
         changes,
         lambda p: _git_show(base, p),
