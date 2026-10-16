@@ -97,10 +97,12 @@ only renders it.
 
 ## CLI
 
-`participants convert` and `participants merge` take a repeatable
-`--eligibility-link COLUMN=CRITERION_ID` writing the same
-`EligibilityCriterion` into `participants.json`. Validation is already a CLI
-command and picks the check up automatically.
+No new flag. `participants convert` and `participants merge` already copy any
+extra per-column key of `--neurobagel-schema` into `participants.json`, so
+`--neurobagel-schema '{"age": {"EligibilityCriterion": "age"}}'` writes the
+link and the GUI panel sends it the same way. A test pins this. `participants
+preview --json` additionally returns the suggested links. Validation is
+already a CLI command and picks the check up automatically.
 
 ## Constraints
 
