@@ -3207,6 +3207,8 @@ export function resetStudyMetadataForm() {
 
     setAuthorsList([]);
     setRecLocationList([]);
+    _clearRecLocationPicker();
+    setEligibilityCriteria([]); // rows have no id: the loop above cannot clear them
     setRecMethodList([]);
     setEthicsChoice('');
     setFundingChoice('');

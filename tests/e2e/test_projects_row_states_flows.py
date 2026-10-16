@@ -342,3 +342,16 @@ def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_u
     row.locator(".author-orcid-find").click()  # one candidate: picked without a dialog
     expect(row.locator(".author-first")).to_have_value("Ada")
     expect(row.locator('[data-f="accept"]')).to_be_enabled()  # the helper filled what was missing
+
+
+def test_new_project_starts_without_the_previous_projects_criteria(app_page, studio_url, project):
+    meta = json.loads((project / "project.json").read_text())
+    meta["Eligibility"] = {"Criteria": [{"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
+                                         "mode": "include", "min": 18, "max": 35, "unit": "years"}]}
+    (project / "project.json").write_text(json.dumps(meta))
+    page = app_page
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(1)
+    page.click("#card-create")
+    expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(0)
+    expect(page.locator("#smEligCriteriaRequiredBadge")).not_to_have_class(re.compile("bg-success"))
