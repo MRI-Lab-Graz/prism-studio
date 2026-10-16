@@ -59,18 +59,19 @@ All five accept `--json`. See [CLI reference](CLI_REFERENCE.md).
 ### Overriding for one run
 
 ```bash
-python prism.py <dataset> --modality-version survey=1.0.3 --modality-version biometrics=1.0.0
+python prism.py <dataset> --modality-version survey=<version> --modality-version biometrics=<version>
 ```
 
-The flag is repeatable. Precedence per modality: the flag, then the pin in
+`<version>` is one of the versions `modality-version list` shows. The flag is repeatable. Precedence per modality: the flag, then the pin in
 `project.json`, then the latest version. Project pins apply
 on the `stable` base only: an explicit legacy `--schema-version v0.x` ignores the
 project pins, while `--modality-version` applies on any base. A version that does
 not exist is an error that lists the available versions. `prism.py --list-versions`
 prints the available versions of every modality.
 
-The validation report records, per modality, the version used and where it came
-from (`cli`, `project.json` or `latest`).
+Studio keeps the version used per modality, and where it came from (`cli`,
+`project.json` or `latest`), in the project's validation record. The
+command-line `--json` report does not list them yet.
 
 ### Releasing a new modality version (maintainers)
 

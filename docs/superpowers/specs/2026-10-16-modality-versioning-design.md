@@ -61,8 +61,10 @@ Studio call it):
 `modality_versions: dict[str, str] | None` and uses `load_modality_schema` for
 those names; everything else is unchanged. `--schema-version` keeps its meaning
 (a whole legacy bundle as the base); per-modality versions are applied on top.
-The validation report keeps listing the version used per modality and now also
-says where each came from (`cli`, `project.json` or `latest`).
+The version used per modality, and where each came from (`cli`, `project.json`
+or `latest`), is kept in the validation statistics (`validator_info`), which
+Studio stores in the project's validation record; the command-line `--json`
+report does not list it yet.
 
 ## 3. The pin in project.json
 

@@ -726,4 +726,3 @@ Per-modality schema versions and the pins in a project's `project.json`
 
 `<project>` must contain a readable `project.json`. `update` and `freeze` fail
 for a modality that is not pinned. Exit code 0 on success, 1 on error.
-
