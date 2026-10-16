@@ -201,8 +201,8 @@ prism_tools.py modality propose <proposal> --sample <file> --check
 ### Bot (GitHub Actions)
 
 `.github/workflows/propose-modality.yml`, triggered when an issue labelled
-`type: new-modality` is opened. It has two jobs, split by trust. The bot has
-not yet run on a real issue.
+`type: new-modality` is opened. It has two jobs, split by trust. It has since
+run on real issues (#179-#181, draft PR #182).
 
 **`check` (untrusted).** Parses attacker-controlled files, so it has a
 read-only token (`contents: read`), a checkout without persisted credentials

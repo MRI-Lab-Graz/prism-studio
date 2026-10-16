@@ -27,6 +27,10 @@ The contributor fills the same workbook; the `Name` field decides:
 - **`Name` is a BIDS modality** (`anat`, `func`, `eeg`, `beh`, ...): refused with
   "BIDS owns this folder; propose the suffix to BIDS upstream".
 
+`environment` is not extendable this way: its fixed column set, `ses-*/environment/`
+folder and required `recording` entity cannot be met by a generated fixture, so a
+proposal naming it is refused with advice to propose a new modality.
+
 Collision rules stay: a suffix already used by any modality or BIDS is refused,
 and the message says what it belongs to. Example columns and the sample are
 still required in both kinds (they drive the example sidecar and fixture).

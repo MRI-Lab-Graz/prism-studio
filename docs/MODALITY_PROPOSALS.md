@@ -71,7 +71,6 @@ draft pull request (automatically only when the issue author is an owner,
 member or collaborator of the repository; otherwise a maintainer takes it from
 here), or comment what to fix (then open a new issue with the corrected files). A
 *private* organisation membership is seen as an outsider; make it public.
-Note: this bot has not yet run on a real issue.
 
 **From the command line:**
 
@@ -109,8 +108,9 @@ page, toctree entry, card, `entities` table row or suffix mention.
 - PRs are opened automatically only for OWNER, MEMBER and COLLABORATOR authors.
 - Do not open a contributor's original `.xlsx` in desktop Excel (formulas or
   external links); review the generated JSON instead.
-- The bot has not run on a real issue yet. On the first real run check that
-  GitHub accepts `.tsv`/`.yml` attachments, that the artifact handoff between
-  the two jobs works and that the PR is created.
+- The bot has run on real issues (#179-#181, draft PR #182): GitHub accepts
+  `.tsv`/`.yml` attachments, the artifact handoff between the two jobs works and
+  the draft PR is created. That run also showed that a *private* organisation
+  membership makes the author an outsider (no automatic PR).
 - Registration also means adding the name to `COMMUNITY_MODALITY_SCHEMAS` in
   `tests/verify_repo.py` (the generated `REGISTRATION.md` lists this step).
