@@ -297,3 +297,32 @@ def test_a_funding_draft_is_not_part_of_the_funding_list(app_page, studio_url):
     listed = page.evaluate(
         "import('/static/js/modules/projects/metadata.js').then(m => m.getFundingList())")
     assert listed == ["FWF"]
+
+
+def test_a_pending_draft_triggers_the_unsaved_changes_warning_when_leaving_the_project(app_page, studio_url):
+    page = app_page
+    dialogs = []
+    page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    page.wait_for_timeout(1500)  # let the project's metadata finish loading
+    page.click("#smEligInclusionAdd")
+    page.locator("#smEligInclusionList .overview-list-row").last.locator(".overview-list-input").fill("Adults")
+    page.click("#card-create")
+    page.wait_for_timeout(500)
+    assert any("unsaved" in message.lower() for message in dialogs), dialogs
+
+
+def test_an_added_checked_criterion_is_an_unsaved_change(app_page, studio_url):
+    page = app_page
+    dialogs = []
+    page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    page.wait_for_timeout(1500)
+    page.select_option("#smEligCriteriaSelect", label="Age")
+    page.click("#smEligCriteriaAdd")
+    row = page.locator("#smEligCriteriaList [data-i]").first
+    row.locator('[data-f="min"]').fill("18")
+    row.locator('[data-f="accept"]').click()
+    page.click("#card-create")
+    page.wait_for_timeout(500)
+    assert any("unsaved" in message.lower() for message in dialogs), dialogs

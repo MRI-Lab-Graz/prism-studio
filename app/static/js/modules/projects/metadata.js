@@ -22,7 +22,7 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
-import { guardSave, mountRowActions, registerStagedControl } from './row-state.js';
+import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
@@ -383,6 +383,11 @@ function _snapshotStudyMetadataForm() {
 
         values.push(`${key}:${String(field.value || '').trim()}`);
     });
+
+    // Row inputs have no id: checked criteria and drafts the user has typed but not accepted
+    // would otherwise be invisible here, and leaving the project would lose them silently.
+    values.push(`criteria:${JSON.stringify(getEligibilityCriteria())}`);
+    values.push(`pending:${findPending(form).length}`);
 
     return values.join('\u001e');
 }
