@@ -24,7 +24,7 @@ import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 import { mountChipArea, mountChipList } from './chip-list.js';
 import { issueFieldTarget } from './issue-links.js';
-import { criterionSummary, knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
+import { knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
@@ -1363,47 +1363,42 @@ export function setAuthorsList(authors) {
 
 // ===== OVERVIEW LIST FIELDS =====
 
+// `chips: true`: plain text, one input and accepted entries become green chips. Others keep rows
+// (DOI/URL lookups) and an `addId` button.
 const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smOverviewIVList',
-        addId: 'smOverviewIVAdd',
         placeholder: 'e.g., stimulus valence, task difficulty',
     },
     smOverviewDV: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smOverviewDVList',
-        addId: 'smOverviewDVAdd',
         placeholder: 'e.g., reaction times, BOLD signal',
     },
     smOverviewCV: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smOverviewCVList',
-        addId: 'smOverviewCVAdd',
         placeholder: 'e.g., age, sex, reading performance',
     },
     smOverviewQA: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smOverviewQAList',
-        addId: 'smOverviewQAAdd',
         placeholder: 'e.g., link to quality report or QC notes',
     },
     smEligInclusion: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smEligInclusionList',
-        addId: 'smEligInclusionAdd',
         placeholder: 'Inclusion criterion',
     },
     smEligExclusion: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smEligExclusionList',
-        addId: 'smEligExclusionAdd',
         placeholder: 'Exclusion criterion',
     },
     smProcQC: {
-        chips: true, // plain text: one input, accepted entries become chips
+        chips: true,
         listId: 'smProcQCList',
-        addId: 'smProcQCAdd',
         placeholder: 'Quality control measure (e.g. attention check)',
     },
     smReferencesText: {
@@ -1467,7 +1462,7 @@ function _chipListFor(fieldId) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
     if (!config?.chips || !list) return null;
-    if (!_chipLists[fieldId] || !list.contains(list.querySelector('.chip-input'))) {
+    if (!_chipLists[fieldId] || !list.querySelector('.chip-input')) {
         _chipLists[fieldId] = mountChipList(list, {
             placeholder: config.placeholder || '',
             onChange: () => _syncOverviewListField(fieldId),
@@ -1698,7 +1693,6 @@ function initOverviewListFields() {
 const TWO_FIELD_LIST_FIELDS = {
     smKnownIssues: {
         listId: 'smKnownIssuesList',
-        addId: 'smKnownIssuesAddRow',
         field1Placeholder: 'Filename (e.g. sub-002_task-nback_bold.nii)',
         field2Placeholder: 'Issue description (e.g. Shorter scan)',
     },
