@@ -25,7 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is a draft with a green check (and Cancel), the red cross appears only on accepted rows, and saving is
   blocked, with the pending rows highlighted, while a draft with content is pending. The plain list fields
   (variables, inclusion/exclusion criteria, quality control) are one input with green chips below, like the
-  CRediT roles; the Study Design fields now line up.
+  CRediT roles, and so are funding, known issues, missing files, recruitment locations and checked
+  criteria (with a short summary on each chip); the Study Design fields now line up, and the
+  Dataset-description errors link to the field they name.
 
 ### Security
 Findings of a full security review; each fix has a regression test.

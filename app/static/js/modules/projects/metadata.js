@@ -23,6 +23,7 @@ import {
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 import { mountChipArea, mountChipList } from './chip-list.js';
+import { issueFieldTarget } from './issue-links.js';
 import { criterionSummary, knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
@@ -2976,9 +2977,12 @@ export function displayMetadataIssues(issues) {
     const errors = issues.filter(issue => (issue.level || 'ERROR') !== 'WARNING');
     const warnings = issues.filter(issue => issue.level === 'WARNING');
 
+    // An issue that names a field the user can fill in links to that field.
     const renderIssueItems = (list) => list.map(issue => `
         <li class="mb-1">
-            <strong>${issue.message}</strong>
+            <strong>${issueFieldTarget(issue.message)
+        ? `<a href="#" class="issue-link text-reset" data-target="${issueFieldTarget(issue.message)}">${issue.message}</a>`
+        : issue.message}</strong>
             ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
         </li>
     `).join('');
@@ -3005,6 +3009,30 @@ export function displayMetadataIssues(issues) {
         `;
     }
     feedbackDiv.innerHTML = html;
+    if (!feedbackDiv.dataset.issueLinks) {
+        feedbackDiv.dataset.issueLinks = '1';
+        feedbackDiv.addEventListener('click', (event) => {
+            const link = event.target.closest('.issue-link');
+            if (!link) return;
+            event.preventDefault();
+            _revealAndFocus(link.dataset.target);
+        });
+    }
+}
+
+// Open the sections around a field, scroll to it and focus it.
+function _revealAndFocus(selector) {
+    const field = document.querySelector(selector);
+    if (!field) return;
+    let fold = field.closest('.collapse');
+    while (fold) {
+        window.bootstrap?.Collapse?.getOrCreateInstance(fold, { toggle: false }).show();
+        fold = fold.parentElement?.closest('.collapse');
+    }
+    setTimeout(() => {
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus?.();
+    }, 250);
 }
 
 export async function saveDatasetDescription(projectPath = null) {
@@ -3979,7 +4007,7 @@ function _jumpToSection(sectionKey) {
 
     // Focus the first empty field inside the section once it has expanded.
     setTimeout(() => {
-        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, .funding-row .funding-agency-input:placeholder-shown');
+        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, #metadataFundingList .funding-agency-input:placeholder-shown');
         firstEmptyField?.focus();
     }, 250);
 }

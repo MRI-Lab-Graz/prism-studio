@@ -20,3 +20,18 @@ def test_study_design_selects_share_one_top_edge(app_page, studio_url):
     page.wait_for_timeout(300)
     tops = [_top(page, s) for s in ("#smSDType", "#smSDTimepoints", "#smSDConditionType")]
     assert max(tops) - min(tops) <= 1, tops  # a CORE badge, a REQUIRED badge and plain text must not shift the fields
+
+
+def test_a_dataset_description_error_links_to_the_field_it_names(app_page, studio_url):
+    page = app_page
+    page.goto(f"{studio_url}/projects")
+    for target in ("#studyMetadataSection", "#smCoreSetupGroupBody"):
+        if not page.locator(target).is_visible():
+            page.locator(f'[data-bs-target="{target}"]').click()
+            expect(page.locator(target)).to_be_visible()
+    feedback = page.locator("#metadataValidationFeedback")
+    expect(feedback).to_be_visible()
+    feedback.get_by_role("link", name="Keywords").first.click()
+    expect(page.locator("#metadataKeywords")).to_be_focused()
+    feedback.get_by_role("link", name="Authors").first.click()
+    expect(page.locator("#metadataAuthorsList .author-first").first).to_be_focused()
