@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
     MISSING_FILE_REASON_OPTIONS,
     combineMissingFilesRow,
-    isMissingFilesRowComplete,
     parseMissingFilesValue,
 } from './missing-files-row.js';
 
@@ -117,14 +116,5 @@ describe('MISSING_FILE_REASON_OPTIONS', () => {
                 'other',
             ])
         );
-    });
-});
-
-describe('isMissingFilesRowComplete', () => {
-    it('a row is complete as soon as it would be saved as a meaningful line', () => {
-        expect(isMissingFilesRowComplete({})).toBe(false);
-        expect(isMissingFilesRowComplete({ subject: '  ', detail: '' })).toBe(false);
-        expect(isMissingFilesRowComplete({ reason: 'other' })).toBe(true);
-        expect(isMissingFilesRowComplete({ subject: 'sub-01' })).toBe(true);
     });
 });

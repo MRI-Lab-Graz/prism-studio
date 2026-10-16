@@ -98,19 +98,6 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
     assert "Lovelace" in (project / "project.json").read_text()  # authors live in project.json
 
 
-def test_missing_files_rows_are_drafts_until_accepted(app_page, studio_url):
-    page = app_page
-    open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smMissingData")
-    page.click("#smMissingFilesAddRow")
-    row = page.locator("#smMissingFilesList .missing-files-row").last
-    expect(row.locator('[data-f="accept"]')).to_be_disabled()
-    row.locator(".missing-files-reason").select_option("motion_artifact")
-    expect(row.locator('[data-f="accept"]')).to_be_enabled()
-    expect(row.locator('[data-f="remove"]')).to_have_count(0)
-    assert page.input_value("#smMissingFiles") == ""
-    row.locator('[data-f="accept"]').click()
-    expect(row.locator('[data-f="remove"]')).to_have_count(1)
-    assert "motion_artifact" in page.input_value("#smMissingFiles")
 
 
 def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_defined(app_page, studio_url, project):
@@ -468,3 +455,27 @@ def test_known_issues_become_chips_with_the_file_and_the_issue(app_page, studio_
     expect(first).to_have_value("")
     chip.first.click()
     assert page.input_value("#smKnownIssues") == ""
+
+
+
+# ---- missing files: subject/session/modality/reason/detail, accepted entries become chips ----
+
+def test_missing_files_entries_become_chips_with_a_readable_summary(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smMissingData")
+    field = page.locator("#smMissingFilesList")
+    accept = field.locator('[data-f="accept"]')
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # nothing chosen yet
+    field.locator(".missing-files-reason").select_option("motion_artifact")
+    expect(accept).to_have_class(re.compile("btn-success"))
+    field.locator(".missing-files-detail").fill("excessive movement")
+    assert page.input_value("#smMissingFiles") == ""  # chosen, not accepted
+    accept.click()
+    chip = field.locator(".chip-badge")
+    expect(chip).to_have_count(1)
+    expect(chip.first).to_contain_text("Motion artifact (excessive movement)")
+    assert "motion_artifact" in page.input_value("#smMissingFiles")
+    expect(field.locator(".missing-files-reason")).to_have_value("")  # the entry row is ready again
+    expect(accept).to_have_class(re.compile("btn-outline-secondary"))
+    chip.first.click()
+    assert page.input_value("#smMissingFiles") == ""

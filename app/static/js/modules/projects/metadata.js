@@ -30,7 +30,7 @@ import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
-import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, isMissingFilesRowComplete, parseMissingFilesValue } from './missing-files-row.js';
+import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -1812,141 +1812,76 @@ async function _loadMissingFilesStructureOptions() {
             modalities: data.modalities || [],
         };
 
-        document.querySelectorAll('#smMissingFilesList .missing-files-row').forEach(row => {
-            _populateMissingFilesSelect(row.querySelector('.missing-files-subject'), 'Subject...', _missingFilesStructureOptions.subjects, row.dataset.subject);
-            _populateMissingFilesSelect(row.querySelector('.missing-files-session'), 'Session...', _missingFilesStructureOptions.sessions, row.dataset.session);
-            _populateMissingFilesSelect(row.querySelector('.missing-files-modality'), 'Modality...', _missingFilesStructureOptions.modalities, row.dataset.modality);
-        });
+        const entry = document.querySelector('#smMissingFilesList .chip-input-row');
+        if (entry) {
+            const keep = (selector) => entry.querySelector(selector)?.value || '';
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-subject'), 'Subject...', _missingFilesStructureOptions.subjects, keep('.missing-files-subject'));
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-session'), 'Session...', _missingFilesStructureOptions.sessions, keep('.missing-files-session'));
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-modality'), 'Modality...', _missingFilesStructureOptions.modalities, keep('.missing-files-modality'));
+        }
     } catch (e) {
         // Offline or no active project yet; selects just keep their placeholder-only options.
     }
 }
 
+let _missingFilesChips = null;
+
+// One entry row (subject, session, modality, reason, detail); accepted entries become chips
+// holding the stored " | "-joined line, so the hidden field and the saved format are unchanged.
+function _missingFilesChipList() {
+    const list = document.getElementById('smMissingFilesList');
+    if (!list) return null;
+    if (!_missingFilesChips || !list.querySelector('.chip-input')) {
+        const select = (className, placeholder, options) => {
+            const el = document.createElement('select');
+            el.className = `form-select ${className}`;
+            _populateMissingFilesSelect(el, placeholder, options, '');
+            return el;
+        };
+        const reason = document.createElement('select');
+        reason.className = 'form-select missing-files-reason';
+        MISSING_FILE_REASON_OPTIONS.forEach(({ value, label }) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            reason.appendChild(option);
+        });
+        const detail = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control missing-files-detail', placeholder: 'Detail (optional)',
+        });
+        _missingFilesChips = mountChipList(list, {
+            fields: [
+                select('missing-files-subject', 'Subject...', _missingFilesStructureOptions.subjects),
+                select('missing-files-session', 'Session...', _missingFilesStructureOptions.sessions),
+                select('missing-files-modality', 'Modality...', _missingFilesStructureOptions.modalities),
+                reason,
+                detail,
+            ],
+            compose: ([subject, session, modality, why, note]) => combineMissingFilesRow({
+                subject, session, modality, reason: why, detail: note,
+            }),
+            chipText: missingFilesChipText,
+            onChange: () => _syncMissingFilesField(),
+        });
+    }
+    return _missingFilesChips;
+}
+
 function _syncMissingFilesField() {
     const hiddenField = document.getElementById('smMissingFiles');
-    const list = document.getElementById('smMissingFilesList');
-    if (!hiddenField || !list) return;
-
-    const values = Array.from(list.querySelectorAll('.missing-files-row:not([data-row-state="draft"])'))
-        .map(row => combineMissingFilesRow({
-            subject: row.querySelector('.missing-files-subject')?.value || '',
-            session: row.querySelector('.missing-files-session')?.value || '',
-            modality: row.querySelector('.missing-files-modality')?.value || '',
-            reason: row.querySelector('.missing-files-reason')?.value || '',
-            detail: row.querySelector('.missing-files-detail')?.value || '',
-        }))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+    if (!hiddenField) return;
+    hiddenField.value = (_missingFilesChipList()?.getValues() || []).join('\n');
     updateCreateProjectButton();
 }
 
-function addMissingFilesRow(fields = {}, accepted = false) {
-    const list = document.getElementById('smMissingFilesList');
-    if (!list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm missing-files-row';
-    row.dataset.subject = fields.subject || '';
-    row.dataset.session = fields.session || '';
-    row.dataset.modality = fields.modality || '';
-
-    const subjectSelect = document.createElement('select');
-    subjectSelect.className = 'form-select missing-files-subject';
-    const sessionSelect = document.createElement('select');
-    sessionSelect.className = 'form-select missing-files-session';
-    const modalitySelect = document.createElement('select');
-    modalitySelect.className = 'form-select missing-files-modality';
-    _populateMissingFilesSelect(subjectSelect, 'Subject...', _missingFilesStructureOptions.subjects, fields.subject);
-    _populateMissingFilesSelect(sessionSelect, 'Session...', _missingFilesStructureOptions.sessions, fields.session);
-    _populateMissingFilesSelect(modalitySelect, 'Modality...', _missingFilesStructureOptions.modalities, fields.modality);
-
-    const reasonSelect = document.createElement('select');
-    reasonSelect.className = 'form-select missing-files-reason';
-    MISSING_FILE_REASON_OPTIONS.forEach(({ value, label }) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        reasonSelect.appendChild(option);
-    });
-    reasonSelect.value = fields.reason || '';
-
-    const detailInput = document.createElement('input');
-    detailInput.type = 'text';
-    detailInput.className = 'form-control missing-files-detail';
-    detailInput.placeholder = 'Detail (optional)';
-    detailInput.value = fields.detail || '';
-
-    const rowFields = () => ({
-        subject: subjectSelect.value,
-        session: sessionSelect.value,
-        modality: modalitySelect.value,
-        reason: reasonSelect.value,
-        detail: detailInput.value,
-    });
-    const actions = mountRowActions(row, {
-        state: accepted ? 'defined' : 'draft',
-        noun: 'entry',
-        incompleteHint: 'Choose or enter something',
-        isComplete: () => isMissingFilesRowComplete(rowFields()),
-        hasContent: () => isMissingFilesRowComplete(rowFields()),
-        onAccept: () => _syncMissingFilesField(),
-        onRemove: () => {
-            row.remove();
-            if (!list.querySelector('.missing-files-row')) {
-                addMissingFilesRow();
-            }
-            _syncMissingFilesField();
-        },
-    });
-
-    const onChange = () => {
-        actions.refresh();
-        _syncMissingFilesField();
-    };
-    [subjectSelect, sessionSelect, modalitySelect, reasonSelect].forEach(el => el.addEventListener('change', onChange));
-    detailInput.addEventListener('input', onChange);
-
-    row.appendChild(subjectSelect);
-    row.appendChild(sessionSelect);
-    row.appendChild(modalitySelect);
-    row.appendChild(reasonSelect);
-    row.appendChild(detailInput);
-    row.appendChild(actions.slot);
-    list.appendChild(row);
-    _syncMissingFilesField();
-}
-
 function setMissingFilesList(rawValue) {
-    const list = document.getElementById('smMissingFilesList');
-    if (!list) return;
-
-    list.innerHTML = '';
-    const entries = parseMissingFilesValue(rawValue);
-    if (!entries.length) {
-        addMissingFilesRow();
-        return;
-    }
-
-    entries.forEach(entry => addMissingFilesRow(entry, true));
+    const lines = parseMissingFilesValue(rawValue).map(entry => combineMissingFilesRow(entry));
+    _missingFilesChipList()?.setValues(lines.filter(Boolean));
     _syncMissingFilesField();
 }
 
 function initMissingFilesListField() {
-    const addButton = document.getElementById('smMissingFilesAddRow');
-    if (addButton && !addButton.dataset.bound) {
-        addButton.dataset.bound = '1';
-        addButton.addEventListener('click', () => {
-            addMissingFilesRow();
-            const list = document.getElementById('smMissingFilesList');
-            const lastSelect = list?.querySelector('.missing-files-row:last-child .missing-files-subject');
-            lastSelect?.focus();
-        });
-    }
-
-    const list = document.getElementById('smMissingFilesList');
-    if (list && !list.querySelector('.missing-files-row')) {
-        addMissingFilesRow();
-    }
+    _missingFilesChipList();
     _loadMissingFilesStructureOptions();
 }
 

@@ -37,9 +37,6 @@ export function parseMissingFilesValue(rawValue) {
         });
 }
 
-/** Complete = it would be saved as a meaningful line (something is filled in). */
-export const isMissingFilesRowComplete = (fields = {}) => Boolean(combineMissingFilesRow(fields));
-
 export function combineMissingFilesRow(fields = {}) {
     const values = FIELD_ORDER.map(key => String(fields[key] || '').trim());
     if (!values.some(Boolean)) return '';
