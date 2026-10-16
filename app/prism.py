@@ -571,6 +571,11 @@ Examples:
             print_dataset_summary(args.dataset, stats)
             print_validation_results(issues, show_bids_warnings=args.bids_warnings)
 
+        from src.modality_versions import format_pending_hint, pending_updates
+
+        for line in format_pending_hint(pending_updates(args.dataset)):
+            print(line, file=sys.stderr)
+
         # Exit with appropriate code
         sys.exit(determine_exit_code(structured_issues))
 
