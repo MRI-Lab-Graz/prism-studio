@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { TERMS, checkedCriteriaCount, criteriaFromRows, hasContent, initEligibilityCriteria, isComplete, newRow, rowsFromCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { TERMS, checkedCriteriaCount, criteriaFromRows, criterionKey, hasContent, initEligibilityCriteria, isComplete, newRow, rememberRemoved, rowsFromCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
 
 const AGE = {
     id: 'age', label: 'Age', term: 'nb:Age', type: 'numeric',
@@ -135,5 +135,51 @@ describe('criteria loaded from project.json', () => {
         expect(complete.accepted).toBe(true);
         expect(fixme.accepted).toBe(false);
         expect(fixme.id).toBe('age'); // its id is kept, so linked columns still find it once fixed
+    });
+});
+
+describe('remembering the id of a removed criterion', () => {
+    const ageRow = (extra = {}) => ({ ...newRow('nb:Age'), min: '5', accepted: true, ...extra });
+
+    it('a criterion with the same term and name gets its removed id back', () => {
+        const remembered = new Map();
+        rememberRemoved([{ ...ageRow(), id: 'min_age' }], remembered);
+        const [again] = criteriaFromRows([ageRow()], remembered);
+        expect(again.id).toBe('min_age');
+    });
+
+    it('the remembered id is used once', () => {
+        const remembered = new Map();
+        rememberRemoved([{ ...ageRow(), id: 'min_age' }], remembered);
+        const [first, second] = criteriaFromRows([ageRow(), ageRow({ min: '6' })], remembered);
+        expect(first.id).toBe('min_age');
+        expect(second.id).not.toBe('min_age');
+    });
+
+    it('a different term or name is not affected', () => {
+        const remembered = new Map();
+        rememberRemoved([{ ...ageRow(), id: 'min_age' }], remembered);
+        const [other] = criteriaFromRows([{ ...newRow(null), label: 'IQ', min: '85', accepted: true }], remembered);
+        expect(other.id).toBe('iq');
+    });
+
+    it('is not used when another criterion already holds that id', () => {
+        const remembered = new Map();
+        rememberRemoved([{ ...ageRow(), id: 'min_age' }], remembered);
+        const holder = { ...newRow(null), label: 'Holder', min: '1', accepted: true, id: 'min_age' };
+        const [, again] = criteriaFromRows([holder, ageRow()], remembered);
+        expect(again.id).toBe('age');
+    });
+
+    it('the key ignores case and surrounding spaces of the name', () => {
+        expect(criterionKey({ term: null, label: '  IQ ' })).toBe(criterionKey({ term: null, label: 'iq' }));
+        expect(criterionKey({ term: 'nb:Age', label: 'Age' })).not.toBe(criterionKey({ term: null, label: 'Age' }));
+    });
+
+    it('several removed criteria with the same key come back in turn', () => {
+        const remembered = new Map();
+        rememberRemoved([{ ...ageRow(), id: 'age' }, { ...ageRow(), id: 'age-2' }], remembered);
+        const [a, b] = criteriaFromRows([ageRow(), ageRow({ min: '6' })], remembered);
+        expect([a.id, b.id].sort()).toEqual(['age', 'age-2']);
     });
 });

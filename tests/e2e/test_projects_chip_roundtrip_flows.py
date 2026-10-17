@@ -88,3 +88,26 @@ def test_a_loaded_incomplete_criterion_is_kept_as_a_draft_and_blocks_saving_with
     expect(page.locator("#smEligCriteriaList [data-i]")).to_have_count(1)  # not silently dropped
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_text("not accepted yet")).to_be_visible()
+
+
+def test_removing_and_re_adding_a_criterion_keeps_its_hand_written_id(app_page, studio_url, project):
+    _edit_project(project, Eligibility={"Criteria": [
+        {"id": "min_age", "label": "Age", "term": "nb:Age", "type": "numeric", "mode": "include", "min": 18, "unit": "years"}]})
+    page = app_page
+    _open(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    chips = page.locator("#smEligCriteriaList .chip-badge")
+    expect(chips).to_have_count(1)
+    chips.first.click()  # remove ...
+    expect(chips).to_have_count(0)
+    page.select_option("#smEligCriteriaSelect", label="Age")  # ... and add the same criterion again
+    page.click("#smEligCriteriaAdd")
+    draft = page.locator("#smEligCriteriaList [data-i]")
+    draft.locator('[data-f="min"]').fill("21")
+    draft.locator('[data-f="accept"]').click()
+    expect(chips).to_have_count(1)
+    page.click("#createProjectSubmitBtn")
+    page.get_by_role("button", name="Save Preliminary State").click()
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
+    saved = json.loads((project / "project.json").read_text())["Eligibility"]["Criteria"]
+    assert [c["id"] for c in saved] == ["min_age"]  # participants.json links to it keep working
+    assert saved[0]["min"] == 21
