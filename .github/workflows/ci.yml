@@ -74,6 +74,20 @@ jobs:
           pip install -r requirements.txt
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
+      # The JavaScript unit tests (a few seconds). vitest needs Node 22.12 or newer.
+      # Content-only modality proposals touch no code, so they skip this.
+      - name: Set up Node
+        if: needs.scope.outputs.content_only != 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: JavaScript unit tests
+        if: needs.scope.outputs.content_only != 'true'
+        run: |
+          npm ci
+          npx vitest run
+
       # A bare proposal is not registered yet, so this stays red until the
       # maintainer's registration push (which is no longer content-only).
       - name: Modality proposal fixtures
