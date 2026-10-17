@@ -31,6 +31,11 @@
       "suffixes": ["biometrics"],
       "extensions": ["tsv", "json"]
     },
+    "biosample": {
+      "kind": "prism",
+      "suffixes": ["biosample"],
+      "extensions": ["tsv", "json"]
+    },
     "environment": {
       "kind": "prism",
       "suffixes": ["environment"],

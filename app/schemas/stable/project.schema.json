@@ -6,6 +6,18 @@
   "description": "Schema for project-level study design metadata. Complements BIDS dataset_description.json with procedure details needed for automatic methods section generation. File should be named: project.json (at dataset root, same level as dataset_description.json)",
   "type": "object",
   "properties": {
+    "SchemaVersions": {
+      "type": "object",
+      "description": "Schema version each modality is validated against in this project (written when the modality is first imported).",
+      "patternProperties": {"^[a-z][a-z0-9]*$": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}},
+      "additionalProperties": false
+    },
+    "SchemaVersionsAcknowledged": {
+      "type": "object",
+      "description": "Latest schema version per modality the user has already been told about (so a newer version is announced once).",
+      "patternProperties": {"^[a-z][a-z0-9]*$": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}},
+      "additionalProperties": false
+    },
     "Metadata": {
       "type": "object",
       "description": "Administrative metadata",

@@ -393,6 +393,9 @@ def convert_biometrics_table_to_prism_dataset(
             if task not in tasks_included:
                 tasks_included.append(task)
 
+    from src.modality_versions import pin_after_import
+
+    pin_after_import(output_root)
     return BiometricsConvertResult(
         id_column=col_pid,
         session_column=col_ses,

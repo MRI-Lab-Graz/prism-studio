@@ -1116,6 +1116,11 @@ def perform_environment_conversion(
         raise_if_cancelled=raise_if_cancelled,
     )
 
+    # Writes sub-*/ses-*/environment/ straight into the project root (CLI and Studio).
+    from src.modality_versions import pin_after_import
+
+    pin_after_import(project_root_path)
+
     elapsed_seconds = max(0.0, perf_counter() - conversion_started_at)
     estimated_total_seconds = None
     if pilot_random_subject and len(df) > 0 and len(source_df) > len(df):

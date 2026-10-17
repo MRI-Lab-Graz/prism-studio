@@ -1695,6 +1695,34 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_modality_version = subparsers.add_parser(
+        "modality-version",
+        help="Pin, list and update per-modality schema versions of a project",
+    )
+    mv_subparsers = parser_modality_version.add_subparsers(
+        dest="action", help="Modality version actions"
+    )
+    mv_actions = {
+        "status": "Show pinned versions and available updates",
+        "list": "List the available versions of one or all modalities",
+        "pin": "Pin modalities (default: those present in the project)",
+        "update": "Move one pinned modality to the latest version",
+        "freeze": "Keep one modality at its pinned version",
+    }
+    for mv_name, mv_help in mv_actions.items():
+        mv_parser = mv_subparsers.add_parser(mv_name, help=mv_help)
+        if mv_name == "list":
+            mv_parser.add_argument("name", nargs="?", help="Modality (default: all)")
+        else:
+            mv_parser.add_argument("project", help="Project folder")
+        if mv_name == "pin":
+            mv_parser.add_argument("names", nargs="*", help="Modalities to pin")
+        if mv_name in ("update", "freeze"):
+            mv_parser.add_argument("name", help="Modality name")
+        mv_parser.add_argument(
+            "--json", action="store_true", help="Emit machine-readable JSON"
+        )
+
     parser_survey_validate = survey_subparsers.add_parser(
         "validate",
         help="Validate survey library for item-key uniqueness and schema "
@@ -2423,4 +2451,5 @@ def build_prism_tools_parsers(
         "file_management": parser_file_management,
         "json_editor": parser_json_editor,
         "modality": parser_modality,
+        "modality-version": parser_modality_version,
     }

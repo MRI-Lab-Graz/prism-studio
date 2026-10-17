@@ -86,7 +86,9 @@ same rule applies, so you always know whether a click is needed:
   to detail, the location search, or the criterion), and every accepted entry becomes a
   green chip with a short summary, for example `FWF, P12345`, `sub-002_bold.nii – Shorter
   scan` or `Age · include 18–35 years`. To change an entry, remove its chip and add it
-  again. Only authors stay as cards, because each author carries many details.
+  again. A checked criterion that you remove and add again in the same editing session (same
+  variable and name) gets its old id back, so a column linked to it in the Sociodemographics
+  converter stays linked. Only authors stay as cards, because each author carries many details.
 - **Errors link to their field.** In the *Dataset description issues* box, a message that
   names a field you can fill in (Name, Authors, Keywords, Funding, Ethics) is a link: click
   it and the page opens that section and focuses the field.
