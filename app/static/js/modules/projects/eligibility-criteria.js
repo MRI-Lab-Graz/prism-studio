@@ -77,8 +77,21 @@ export function isComplete(row) {
     return (row.values || []).some((v) => String(v).trim());
 }
 
-/** Rows -> Eligibility.Criteria; incomplete rows are dropped, ids stay stable. */
-export function criteriaFromRows(rows) {
+/** What makes two criteria "the same" when one is removed and another added: term and name. */
+export const criterionKey = (row) => `${row.term ?? ''}|${String(row.label || '').trim().toLowerCase()}`;
+
+/** Remember the ids of removed criteria, so adding the same criterion again gets its id back
+ *  (a participants.json link points at the id, which may be hand-written). */
+export function rememberRemoved(removedRows, remembered) {
+    removedRows.filter((row) => row.id).forEach((row) => {
+        const key = criterionKey(row);
+        remembered.set(key, [...(remembered.get(key) || []), row.id]);
+    });
+}
+
+/** Rows -> Eligibility.Criteria; incomplete rows are dropped, ids stay stable.
+ *  `remembered` (see rememberRemoved) hands removed ids back to the same criterion. */
+export function criteriaFromRows(rows, remembered = new Map()) {
     const used = new Set(rows.map((r) => r.id).filter(Boolean));
     const out = [];
     for (const row of rows) {
@@ -97,9 +110,15 @@ export function criteriaFromRows(rows) {
         }
         let id = row.id;
         if (!id) {
-            const base = slug(label);
-            id = base;
-            for (let n = 2; used.has(id); n += 1) id = `${base}-${n}`;
+            const back = (remembered.get(criterionKey(row)) || []).find((candidate) => !used.has(candidate));
+            if (back) {
+                remembered.set(criterionKey(row), remembered.get(criterionKey(row)).filter((x) => x !== back));
+                id = back;
+            } else {
+                const base = slug(label);
+                id = base;
+                for (let n = 2; used.has(id); n += 1) id = `${base}-${n}`;
+            }
             used.add(id);
             row.id = id; // stays with the row: a later rename must not change the id links point at
         }
@@ -112,12 +131,15 @@ export function criteriaFromRows(rows) {
 let rows = [];
 let listEl = null;
 
-export const getEligibilityCriteria = () => criteriaFromRows(rows);
+const removedIds = new Map(); // per loaded project: criterion key -> ids of removed criteria
+
+export const getEligibilityCriteria = () => criteriaFromRows(rows, removedIds);
 
 /** Accepted criteria of one mode ("include"/"exclude"); counts towards the Core fields. */
 export const checkedCriteriaCount = (mode) => getEligibilityCriteria().filter((c) => c.mode === mode).length;
 
 export function setEligibilityCriteria(criteria) {
+    removedIds.clear(); // a different project: its removed criteria are not ours
     rows = rowsFromCriteria(criteria);
     render();
 }
@@ -164,11 +186,15 @@ function render() {
         onChange: (keys) => {
             const keep = new Set(keys.map(Number));
             let position = -1;
+            const dropped = [];
             rows = rows.filter((row) => {
                 if (!row.accepted) return true;
                 position += 1;
-                return keep.has(position);
+                if (keep.has(position)) return true;
+                dropped.push(row);
+                return false;
             });
+            rememberRemoved(dropped, removedIds);
             render(); // the draft rows are addressed by index
             notify();
         },
