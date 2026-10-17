@@ -38,10 +38,6 @@ def current_version(name: str, schema_dir=None) -> str:
     return json.loads(path.read_text(encoding="utf-8")).get("version", "1.0.0")
 
 
-def current_versions(schema_dir=None) -> dict[str, str]:
-    return {n: current_version(n, schema_dir) for n in modality_names(schema_dir)}
-
-
 def available_versions(name: str, schema_dir=None) -> list[str]:
     current = current_version(name, schema_dir)
     archived = {

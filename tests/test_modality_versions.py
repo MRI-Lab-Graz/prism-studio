@@ -7,7 +7,6 @@ from src.modality_versions import (
     ModalityVersionError,
     available_versions,
     current_version,
-    current_versions,
     load_modality_schema,
     modality_names,
     parse_overrides,
@@ -39,9 +38,6 @@ def test_names_are_modalities_that_have_a_stable_schema(schema_dir):
     assert modality_names(schema_dir) == ["survey", "physio"]  # anat has no schema file
 
 
-def test_current_versions(schema_dir):
-    assert current_version("survey", schema_dir) == "1.2.0"
-    assert current_versions(schema_dir) == {"survey": "1.2.0", "physio": "1.0.0"}
 
 
 def test_unknown_modality_lists_the_known_ones(schema_dir):
