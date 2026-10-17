@@ -195,6 +195,18 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("splitIrvScore(", importer)
         self.assertIn("rbIncludeIrv", importer)
 
+    def test_recipe_file_import_button_posts_to_the_save_endpoint(self):
+        template = RECIPE_BUILDER_TEMPLATE.read_text(encoding="utf-8")
+        script = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('id="rbImportRecipeBtn"', template)
+        self.assertIn('id="rbImportRecipeFile"', template)
+        self.assertIn('accept=".json,application/json"', template)
+        self.assertIn("modules/recipe-builder/recipe-file.js", script)
+        handler = script[script.index("rbImportRecipeFile") :]
+        self.assertIn("parseRecipeFile(", handler)
+        self.assertIn("'/api/recipe-builder/save'", handler)
+
 
 if __name__ == "__main__":
     unittest.main()

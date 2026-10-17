@@ -1,9 +1,104 @@
 # Schema Versioning
 
-PRISM supports schema versioning so datasets can be validated against a specific
-schema release. Versions are stored under `app/schemas/`.
+PRISM versions each modality schema separately, so a study keeps validating the
+same way until you decide to move it. The older whole-schema bundles (`v0.1`,
+`v0.2`) are still available; see [Legacy schema bundles](#legacy-schema-bundles).
 
-## Available versions
+## Per-modality versions
+
+Every modality (survey, biometrics, eyetracking, ...) has its own
+`major.minor.patch` version, stored as `version` in its schema file. A modality
+proposal starts at `1.0.0`. By default a validation uses the latest version of
+every modality.
+
+### Pins in project.json
+
+When a modality is first imported into a project (through Studio or the
+converters), PRISM pins the then-current version in the project's
+`project.json`:
+
+```json
+{
+  "SchemaVersions": { "survey": "1.0.0", "biometrics": "1.0.0" },
+  "SchemaVersionsAcknowledged": { "survey": "1.1.0" }
+}
+```
+
+- `SchemaVersions` is the version each modality is validated against.
+- `SchemaVersionsAcknowledged` records the newest version you have already
+  decided about, so you are told about a newer version only once.
+- For DataLad projects, Studio imports record the pin as a small separate commit
+  whose message ends with "(record modality versions)". The command-line
+  converters and environment conversion leave `project.json` uncommitted along
+  with their data.
+- Validation never writes pins. A project is only pinned by an import, or by the
+  `pin` command below.
+
+When a newer version of a pinned modality exists, `prism.py` prints a hint on
+stderr after the validation. Decide with the command line:
+
+```bash
+python prism_tools.py modality-version update <project> survey   # move to the latest
+python prism_tools.py modality-version freeze <project> survey   # keep the pinned version
+```
+
+Either choice is remembered in `SchemaVersionsAcknowledged`; freezing keeps the
+pin and only silences the hint until a still newer version is released. The
+Studio notice with "Update" and "Keep current version" buttons is coming; today
+the stderr hint is the notice. `status` shows the pins and pending updates,
+`list` shows the available versions, and `pin` pins projects created before this
+feature (it pins the modalities that have data in the project, or the ones you
+name):
+
+```bash
+python prism_tools.py modality-version status <project>
+python prism_tools.py modality-version list [survey]
+python prism_tools.py modality-version pin <project> [survey ...]
+```
+
+All five accept `--json`. See [CLI reference](CLI_REFERENCE.md).
+
+### Overriding for one run
+
+```bash
+python prism.py <dataset> --modality-version survey=<version> --modality-version biometrics=<version>
+```
+
+`<version>` is one of the versions `modality-version list` shows. The flag is repeatable. Precedence per modality: the flag, then the pin in
+`project.json`, then the latest version. Project pins apply
+on the `stable` base only: an explicit legacy `--schema-version v0.x` ignores the
+project pins, while `--modality-version` applies on any base. A version that does
+not exist is an error that lists the available versions. `prism.py --list-versions`
+prints the available versions of every modality.
+
+Studio keeps the version used per modality, and where it came from (`cli`,
+`project.json` or `latest`), in the project's validation record. The
+command-line `--json` report does not list them yet.
+
+### Releasing a new modality version (maintainers)
+
+1. Copy the current `app/schemas/stable/<name>.schema.json` unchanged to
+   `app/schemas/archive/<name>/<old version>.schema.json`.
+2. Edit the stable file and bump its `version` and the version suffix of its
+   `$id`.
+
+The CI job `Modality schema versions` (`scripts/ci/check_schema_versions.py`)
+enforces three rules: files under `app/schemas/archive/` are
+never modified or deleted; a changed stable modality schema must carry a bumped
+`version`; and a bumped version needs the previous version archived as an exact
+copy of the previous stable file. It does not guard deleting or renaming a
+stable modality schema. The check also runs on pushes to main, and maintainers can
+run it locally before merging: `python3 scripts/ci/check_schema_versions.py origin/main HEAD`.
+
+The archive ships automatically: the validator wheel copies the whole
+`app/schemas` tree and the app bundle adds the whole directory, so no extra
+packaging step is needed. Versions that existed before this feature (for example
+survey `1.1.1`) have no archive entry until their first change, so versions
+older than the first archive entry cannot be pinned.
+
+## Legacy schema bundles
+
+### Available versions
 
 | Version | Status | Notes |
 |---------|--------|-------|

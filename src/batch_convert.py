@@ -1533,6 +1533,11 @@ def batch_convert_folder(
             except Exception as e:
                 log(f"⚠️  Could not update participants.tsv: {e}", "warning")
 
+    if not dry_run and result.success_count > 0:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_folder)
+
     return result
 
 

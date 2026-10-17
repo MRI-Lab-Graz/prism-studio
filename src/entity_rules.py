@@ -48,6 +48,7 @@ class ModalityRule:
     required_entity_values: tuple[tuple[str, EntityValueRule], ...] = ()
     optional_entity_values: tuple[tuple[str, EntityValueRule], ...] = ()
     example_task: str = "rest"
+    allowed_entities: tuple[str, ...] | None = None
 
     @classmethod
     def from_json(cls, name: str, data: dict) -> "ModalityRule":
@@ -65,6 +66,9 @@ class ModalityRule:
                 for key, value in data.get("optionalEntityValues", {}).items()
             ),
             example_task=data.get("example", {}).get("task", "rest"),
+            allowed_entities=(
+                tuple(data["allowedEntities"]) if "allowedEntities" in data else None
+            ),
         )
 
 
@@ -133,6 +137,23 @@ def compile_modality_regex(rule: ModalityRule) -> str:
     ext_part = escaped_exts[0] if len(escaped_exts) == 1 else "(" + "|".join(escaped_exts) + ")"
 
     return rf".+{''.join(prefix_parts)}_{suffix_part}\.{ext_part}$"
+
+
+def check_entities(base: str, allowed: tuple[str, ...], order: tuple[str, ...]) -> list[str]:
+    """Problems with the entities of a filename (without extension) for a modality
+    that declares allowedEntities. sub/ses are always allowed."""
+    keys = [t.split("-", 1)[0] for t in base.split("_")[1:] if "-" in t]
+    permitted = {"sub", "ses", *allowed}
+    problems = [
+        f"entity '{k}' is not allowed (allowed: {', '.join(e for e in order if e in permitted)})"
+        for k in dict.fromkeys(keys)
+        if k not in permitted
+    ]
+    problems += [f"entity '{k}' appears twice" for k in dict.fromkeys(keys) if keys.count(k) > 1]
+    ranks = [order.index(k) for k in keys if k in order]
+    if ranks != sorted(ranks):
+        problems.append("entities must appear in the order " + ", ".join(e for e in order if e in permitted))
+    return problems
 
 
 def _human_join(items: tuple[str, ...]) -> str:

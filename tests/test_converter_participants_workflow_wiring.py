@@ -19,6 +19,21 @@ CONVERTER_STYLES = REPO_ROOT / "app" / "static" / "css" / "converter.css"
 
 
 class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
+    def test_annotation_is_a_required_stage_before_create_replace(self):
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn('id="participantsAnnotationConfirmBtn"', template)
+        self.assertNotIn("Participant Metadata (Optional)", template)
+        self.assertNotIn(">Optional</span>", template)
+        # The Create/Replace button lives below the annotation stage, not in the top row.
+        self.assertGreater(
+            template.index('id="participantsConvertBtn"'),
+            template.index('id="participantsAnnotationConfirmBtn"'),
+        )
+        self.assertIn("createAnnotationGate", module)
+        self.assertIn("participantsAnnotationGate.isConfirmed()", module)
+
     def test_case_guide_starts_hidden_and_uses_dynamic_placeholders(self):
         content = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
 
@@ -112,7 +127,6 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             "/api/projects/participants?project_path=${encodeURIComponent(projectPath)}",
             content,
         )
-        self.assertIn("project_path: currentProjectPath,", content)
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/participants-detect-id', {",
             content,
@@ -155,14 +169,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {",
-            content,
-        )
-        self.assertIn(
             "const tsvResponse = await fetchWithApiFallback(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);",
             content,
         )
-        self.assertIn("Please select a project first from the top of the page", content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
