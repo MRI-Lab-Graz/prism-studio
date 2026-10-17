@@ -13,3 +13,8 @@ DEFAULT_BIDS_VERSION = "1.10.1"
 # but is a separate axis (e.g. adding a new BIDS suffix to entities.schema.json
 # should not automatically expand recipe/template support to it).
 SUPPORTED_MODALITIES: tuple[str, ...] = ("survey", "biometrics")
+
+# Modalities whose data files are validated cell-by-cell against column
+# definitions in their sidecar (validator.validate_data_content and the strict
+# filename-pattern check). Add new tabular modalities here, not at each call site.
+TABULAR_MODALITIES: tuple[str, ...] = ("survey", "biometrics", "biosample")
