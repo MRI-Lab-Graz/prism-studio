@@ -29,6 +29,11 @@ def dispatch_prism_tools(
             handlers["modality_propose"](args)
         else:
             parsers["modality"].print_help()
+    elif args.command == "modality-version":
+        if args.action in ("status", "list", "pin", "update", "freeze"):
+            handlers[f"modality_version_{args.action}"](args)
+        else:
+            parsers["modality-version"].print_help()
     elif args.command == "convert" and args.modality == "physio":
         handlers["convert_physio"](args)
     elif args.command == "wide-to-long":

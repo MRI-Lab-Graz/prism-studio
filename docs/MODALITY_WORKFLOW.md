@@ -141,6 +141,11 @@ it. A pull request that only adds `proposals/` files gets a reduced CI run and
 its fixture test stays red until the modality is registered; the registration
 push runs the full CI.
 
+A new modality is registered at version `1.0.0`. Later changes to it release a
+new version: bump `version` in the stable schema and first copy the previous
+file to `app/schemas/archive/<name>/`, as described in
+[Schema versioning](SCHEMA_VERSIONING.md). CI enforces this.
+
 ### After the pull request
 
 1. Check out the PR branch and follow `REGISTRATION.md`.
