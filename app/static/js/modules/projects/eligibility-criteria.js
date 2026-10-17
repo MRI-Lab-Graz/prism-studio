@@ -110,9 +110,10 @@ export function criteriaFromRows(rows, remembered = new Map()) {
         }
         let id = row.id;
         if (!id) {
-            const back = (remembered.get(criterionKey(row)) || []).find((candidate) => !used.has(candidate));
+            const stack = remembered.get(criterionKey(row)) || [];
+            const back = stack.find((candidate) => !used.has(candidate));
             if (back) {
-                remembered.set(criterionKey(row), remembered.get(criterionKey(row)).filter((x) => x !== back));
+                stack.splice(stack.indexOf(back), 1);
                 id = back;
             } else {
                 const base = slug(label);
