@@ -135,6 +135,25 @@
           "items": { "type": "string" },
           "description": "List of exclusion criteria"
         },
+        "Criteria": {
+          "type": "array",
+          "description": "Structured criteria the validator checks against participants.tsv (warnings only)",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "mode"],
+            "properties": {
+              "id": { "type": "string", "description": "Stable id a participants.json column links to via EligibilityCriterion" },
+              "label": { "type": "string" },
+              "term": { "type": ["string", "null"], "description": "NeuroBagel term (e.g. nb:Age) or null for any other measure" },
+              "type": { "enum": ["numeric", "categorical"] },
+              "mode": { "enum": ["include", "exclude"] },
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "unit": { "type": "string" },
+              "values": { "type": "array", "items": { "type": "string" }, "description": "Category labels, not raw codes" }
+            }
+          }
+        },
         "TargetSampleSize": {
           "type": "integer",
           "description": "Planned/target sample size"

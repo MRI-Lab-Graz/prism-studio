@@ -83,6 +83,7 @@ from .conversion_participants_convert import (
 )
 from .conversion_utils import resolve_effective_library_path
 from .projects_helpers import _resolve_project_root_path
+from src.eligibility import load_criteria
 
 def _identical_rows_warnings(groups: list[list[str]]) -> list[str]:
     """Preview warning list for participants that duplicate another row's values."""
@@ -300,6 +301,7 @@ def api_participants_preview():
         tmp_dir = str(upload["tmp_dir"])
         try:
             preview_stage = "initializing preview"
+            preview_project_root = _get_session_project_root()
             input_path = Path(str(upload["input_path"]))
             suffix = str(upload["suffix"])
 
@@ -512,6 +514,11 @@ def api_participants_preview():
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
+                    "eligibility_criteria": (
+                        load_criteria(str(preview_project_root))
+                        if preview_project_root
+                        else []
+                    ),
                     "unmapped_session_labels": unmapped_session_labels,
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []

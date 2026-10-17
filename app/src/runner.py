@@ -412,6 +412,10 @@ def validate_dataset(
 
         issues.extend(check_participants_levels(root_dir))
 
+        from src.eligibility import check_eligibility
+
+        issues.extend(check_eligibility(root_dir))
+
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.

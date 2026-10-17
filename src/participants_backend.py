@@ -196,6 +196,14 @@ def merge_neurobagel_schema_for_columns(
             for key, value in schema_def.items():
                 if key == "Annotations":
                     continue
+                if key == "EligibilityCriterion":
+                    # An explicit choice in the panel: it replaces the old link,
+                    # and an empty value removes it.
+                    if value:
+                        base_schema[col][key] = value
+                    else:
+                        base_schema[col].pop(key, None)
+                    continue
                 if key not in base_schema[col]:
                     base_schema[col][key] = value
 

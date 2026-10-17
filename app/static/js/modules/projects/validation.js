@@ -3,6 +3,7 @@
  * Real-time validation for project creation fields
  */
 
+import { checkedCriteriaCount } from './eligibility-criteria.js';
 import { getById, addClass, removeClass } from '../../shared/dom.js';
 
 const DATE_RANGE_BADGE_IDS = {
@@ -118,9 +119,7 @@ export function validateRecLocationBadge() {
     }
 
     // Check if there's at least one location with a country
-    const locationRows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    const hasAddedLocation = Array.from(locationRows)
-        .some(row => String(row.dataset.location || '').trim());
+    const hasAddedLocation = document.querySelectorAll('#smRecLocationList .chip-badge').length > 0;
 
     const hasLocation = hasAddedLocation;
 
@@ -176,7 +175,9 @@ export function validateEligibilityCriteriaBadges() {
 
     const inclusionValues = _parseEligibilityCriteriaValues('smEligInclusion');
     const exclusionValues = _parseEligibilityCriteriaValues('smEligExclusion');
-    const hasInclusionCriterion = inclusionValues.length > 0;
+    // Accepted "Checked Criteria" count like entries of the free-text lists.
+    const hasInclusionCriterion = inclusionValues.length > 0 || checkedCriteriaCount('include') > 0;
+    const hasExclusionCriterion = exclusionValues.length > 0 || checkedCriteriaCount('exclude') > 0;
 
     const requiredBadge =
         getById('smEligCriteriaRequiredBadge') || findBadgeByText('Inclusion Criteria');
@@ -187,13 +188,13 @@ export function validateEligibilityCriteriaBadges() {
     const optionalBadge =
         getById('smEligExclusionOptionalBadge') || findBadgeByText('Exclusion Criteria');
     if (optionalBadge) {
-        updateBadgeColor(optionalBadge, exclusionValues.length > 0);
+        updateBadgeColor(optionalBadge, hasExclusionCriterion);
     }
 
     // Inclusion is the CORE-tier field (red-when-empty applies); Exclusion is
     // OPTIONAL (never gets the alarming red border).
     setRequiredFieldBorder(inclusionField, hasInclusionCriterion, false);
-    setRequiredFieldBorder(exclusionField, exclusionValues.length > 0, true);
+    setRequiredFieldBorder(exclusionField, hasExclusionCriterion, true);
 }
 
 /**
@@ -201,7 +202,8 @@ export function validateEligibilityCriteriaBadges() {
  */
 export function validateAuthorsBadge() {
     // Valid only if at least one complete author exists and no incomplete rows remain
-    const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    // Drafts the user has not accepted yet are not authors (and not "incomplete" ones either).
+    const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row:not([data-row-state="draft"])');
     debugLog(`validateAuthorsBadge: Found ${authorRows.length} author rows`);
     
     let completeCount = 0;
