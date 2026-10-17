@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Modality proposals.** A new modality can be proposed with a filled-in Excel workbook and a small synthetic
+  sample file: `prism_tools.py modality propose` checks names against PRISM and BIDS, checks the sample against
+  the column dictionary, and generates the schema, an example sidecar, a fixture dataset and maintainer
+  registration steps. A GitHub Issue Form and bot open a draft pull request from the same files.
+
+- **Eligibility criteria checked by the validator.** Study Metadata > Eligibility takes structured *Checked
+  Criteria* (NeuroBagel terms such as Age or Sex, or any other measure; numeric ranges and category labels;
+  include or exclude). In the Sociodemographics converter a column is linked to a criterion (pre-selected by
+  NeuroBagel term), and the validator warns (`PRISM602`, never an error) for each participant outside the
+  limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+  New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
+  Inclusion/Exclusion fields.
+- **One rule for add-a-row controls on the Projects page.** Authors, funding, the criteria and list fields,
+  known issues, missing files, DOIs, checked criteria and the location picker now behave the same: a new row
+  is a draft with a green check (and Cancel), the red cross appears only on accepted rows, and saving is
+  blocked, with the pending rows highlighted, while a draft with content is pending. The plain list fields
+  (variables, inclusion/exclusion criteria, quality control) are one input with green chips below, like the
+  CRediT roles, and so are funding, known issues, missing files, recruitment locations and checked
+  criteria (with a short summary on each chip); the Study Design fields now line up, and the
+  Dataset-description errors link to the field they name.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example
@@ -33,6 +55,7 @@ Findings of a full security review; each fix has a regression test.
   inputs, validator image runs as non-root.
 
 ### Added
+- **New `biosample` modality** (assay results on blood, serum, plasma, saliva, urine, ...): schema, validator support, `<LOD`/`<LLOQ`/`>ULOQ` codes for censored values, recommended-field warnings and an example template. Phase 1 of 5; converter and GUI follow.
 - **Windows symlink and long-path detection**: `cross_platform.windows_symlinks_supported()` and
   `windows_long_paths_enabled()` report whether this Windows machine can create symlinks (Developer
   Mode / admin rights) and whether `LongPathsEnabled` is set; the DataLad/git-annex preflight status

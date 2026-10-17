@@ -78,6 +78,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return sharedFetchWithApiFallbackPromise;
     }
 
+    // Reads a picked recipe file (modules/recipe-builder/recipe-file.js).
+    let parseRecipeFile;
+    const recipeFileReady = import(
+        new URL('./modules/recipe-builder/recipe-file.js', recipeBuilderScriptUrl).href
+    ).then(mod => {
+        ({ parseRecipeFile } = mod);
+    });
+
     const root = document.getElementById('recipeBuilderRoot');
     if (!root) return;
 
@@ -85,6 +93,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalityPicker     = document.getElementById('rbModalityPicker');
     const surveyPicker       = document.getElementById('rbSurveyPicker');
     const includeGlobalToggle= document.getElementById('rbIncludeGlobal');
+    const importRecipeBtn    = document.getElementById('rbImportRecipeBtn');
+    const importRecipeFile   = document.getElementById('rbImportRecipeFile');
+    const importStatus       = document.getElementById('rbImportStatus');
     const variationRow       = document.getElementById('rbVariationRow');
     const variationSelect    = document.getElementById('rbVariationSelect');
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
@@ -1471,15 +1482,61 @@ document.addEventListener('DOMContentLoaded', function () {
                 warnings.length ? 'warning' : 'success'
             );
         } catch (error) {
-            const details = Array.isArray(error.payload && error.payload.validation_errors)
-                ? error.payload.validation_errors
-                : [];
-            const detailHtml = details.length
-                ? '<div class="small mt-1">' + details.slice(0, 3).map(_escHtml).join('<br>') + (details.length > 3 ? '<br>…' : '') + '</div>'
-                : '';
-            showStatus('Error: ' + _escHtml(error.message || 'Network error while saving.') + detailHtml, 'danger');
+            showStatus(saveErrorHtml(error, 'Network error while saving.'), 'danger');
         } finally {
             saveBtn.disabled = false;
+        }
+    });
+
+    function saveErrorHtml(error, fallbackMessage) {
+        const details = Array.isArray(error.payload && error.payload.validation_errors)
+            ? error.payload.validation_errors
+            : [];
+        const detailHtml = details.length
+            ? '<div class="small mt-1">' + details.slice(0, 3).map(_escHtml).join('<br>') + (details.length > 3 ? '<br>…' : '') + '</div>'
+            : '';
+        return 'Error: ' + _escHtml(error.message || fallbackMessage) + detailHtml;
+    }
+
+    // ── Import recipe file ────────────────────────────────────────────────
+    // Same save endpoint (and validation) as the Save button / `recipes save` CLI.
+    function showImportStatus(html, type) {
+        importStatus.innerHTML = '<div class="alert alert-' + type + ' py-2 mb-0">' + html + '</div>';
+    }
+
+    importRecipeBtn && importRecipeBtn.addEventListener('click', () => importRecipeFile.click());
+
+    importRecipeFile && importRecipeFile.addEventListener('change', async () => {
+        const file = importRecipeFile.files[0];
+        importRecipeFile.value = '';
+        if (!file) return;
+        importStatus.innerHTML = '';
+        const path = resolveProjectPath();
+        if (!path) { showImportStatus('No project loaded.', 'warning'); return; }
+
+        try {
+            await recipeFileReady;
+            const { recipe, modality, task } = parseRecipeFile(await file.text(), selectedModality());
+            const response = await fetchWithApiFallback('/api/recipe-builder/save', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ dataset_path: path, task, modality, recipe }),
+            });
+            await parseApiJsonResponse(response, 'Failed to import recipe.');
+
+            modalityPicker.value = modality;
+            resetBuilderState();
+            await loadSurveyList();
+            if (![...surveyPicker.options].some(o => o.value === task)) {
+                // The template only exists in the official library.
+                includeGlobalToggle.checked = true;
+                await loadSurveyList();
+            }
+            surveyPicker.value = task;
+            selectedTask = task;
+            loadItemsAndRecipe(task);
+        } catch (error) {
+            showImportStatus(saveErrorHtml(error, 'Could not import the recipe.'), 'danger');
         }
     });
 

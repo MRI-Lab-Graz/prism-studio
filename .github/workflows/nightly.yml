@@ -1,0 +1,99 @@
+name: Nightly Full Tests
+
+# The full suite once a night on main: pytest including the browser (Playwright) tests, and the
+# JavaScript unit tests, with freshly resolved dependencies. Day-to-day work runs only the checks
+# for what it touched; this job is the safety net.
+#
+# A failure opens (or comments on) ONE issue labelled `nightly-failure`, and GitHub emails the
+# failed run. A failed first run is retried once for the failing tests only, so a flaky browser
+# test does not wake anybody up; a test that fails twice is a real failure.
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  # See ci.yml: keeps pip on the wheel-only solution for pybids' loosely pinned dependency tree.
+  PIP_PREFER_BINARY: '1'
+
+on:
+  schedule:
+    - cron: "0 1 * * *"  # 01:00 UTC: 02:00-03:00 in Vienna, results are there in the morning
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-full-tests
+  cancel-in-progress: false
+
+jobs:
+  full-suite:
+    name: Full suite (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # vitest needs Node 22.12 or newer.
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          npm ci
+
+      - name: Install browser for GUI tests
+        run: python -m playwright install --with-deps chromium
+
+      - name: JavaScript unit tests
+        run: npx vitest run
+
+      - name: Python tests (including browser tests)
+        run: |
+          pytest tests/ -q -rf || {
+            echo "::warning::First run failed; re-running only the failures once to tell flaky tests from real failures"
+            pytest tests/ -q -rf --last-failed --last-failed-no-failures none
+          }
+
+  report:
+    name: Report failure
+    needs: full-suite
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the nightly-failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-failure --repo "$GITHUB_REPOSITORY" \
+            --color B60205 --description "The nightly full test run failed" 2>/dev/null || true
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --label nightly-failure --state open \
+            --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" \
+              --body "Failed again on $(date -u +%F): $RUN_URL"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label nightly-failure \
+              --title "Nightly full test run failed" \
+              --body "The nightly full run failed on $(date -u +%F): $RUN_URL
+
+          Close this issue once it is fixed; the next failure opens a new one."
+          fi

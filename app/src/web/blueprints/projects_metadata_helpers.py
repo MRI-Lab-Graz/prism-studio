@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 
+from src.eligibility import usable_criteria
 from src.project_ready import REQUIRED_FIELDS
 
 from .projects_helpers import _read_tabular_dataframe
@@ -380,8 +381,13 @@ def _compute_methods_completeness(
             return len([item for item in parts if item.strip()])
         return 0
 
-    inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria"))
-    exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria"))
+    checked = usable_criteria(elig.get("Criteria"))  # structured "Checked Criteria"
+    inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria")) + sum(
+        c["mode"] == "include" for c in checked
+    )
+    exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria")) + sum(
+        c["mode"] == "exclude" for c in checked
+    )
 
     # Only fields the Study Metadata form can actually set belong here: a
     # readiness score must never be capped by something the user has no input

@@ -108,6 +108,7 @@ def test_participants_import_runs_once_the_session_is_mapped(app_page, studio_ur
     panel.locator("[data-role=save]").click()
 
     expect(panel).to_be_hidden(timeout=30000)
+    app_page.click("#participantsAnnotationConfirmBtn", timeout=30000)
     expect(app_page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)

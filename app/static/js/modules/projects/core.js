@@ -5,6 +5,7 @@
 
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
 import { initCreateProjectController } from './create-project.js';
+import { getEligibilityCriteria } from './eligibility-criteria.js';
 import { initSurveyImportController } from './import-survey.js';
 import { initCreatePreflightController } from './create-preflight.js';
 import { createProjectsCurrentStateController } from './current-project-state.js';
@@ -213,6 +214,7 @@ initCreateProjectController({
     setButtonLoading,
     escapeHtml,
     textToArray: _textToArray,
+    getEligibilityCriteria,
     getProjectStateSnapshot,
     setCreateResultHtml,
     joinProjectTargetPath,

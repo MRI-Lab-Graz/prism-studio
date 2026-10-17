@@ -30,8 +30,10 @@ app/src/utils/naming.py
 app/src/validator.py
 src/datalad_doctor.py
 src/datalad_execution.py
+src/eligibility.py
 src/entity_rules.py
 src/formatters.py
+src/modality_versions.py
 src/participants_levels.py
 src/participants_sessions.py
 src/recipe_validation.py

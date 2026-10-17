@@ -22,6 +22,12 @@ ships modalities and templates for psychological research (surveys,
 biometrics). **PRISM Studio** is the local web and CLI tool that applies the
 model to validation, conversion, and dataset management.
 
+**Missing a modality?** PRISM is open and dynamic: propose a new modality or a
+new filename suffix with a short workbook and a synthetic sample, and it can ship
+in the next release. See the
+[proposal workflow](https://prism-studio.readthedocs.io/en/latest/MODALITY_WORKFLOW.html)
+(or `docs/MODALITY_WORKFLOW.md`).
+
 Full documentation, including a complete install and usage guide, is on
 [ReadTheDocs](https://prism-studio.readthedocs.io). This README covers the
 essentials to get running.

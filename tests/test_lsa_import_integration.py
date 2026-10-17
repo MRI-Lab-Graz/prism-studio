@@ -15,6 +15,20 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "src"))
 
+OFFICIAL_SURVEY_LIBRARY = (
+    Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+)
+
+
+@pytest.fixture(autouse=True)
+def _official_global_library(monkeypatch):
+    """Match against the repo's official library, not whatever global library
+    the developer's own app settings point to (that varies per machine)."""
+    import src.converters.survey_templates as st
+
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: OFFICIAL_SURVEY_LIBRARY)
+
+
 # ── Synthetic multi-questionnaire .lsa ────────────────────────────────
 
 MULTI_LSS_XML = """\

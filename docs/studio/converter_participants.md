@@ -81,6 +81,32 @@ workflow before Review/Save unlock:
   re-preview) — Merge never silently overwrites existing data. Use **Download Full
   Conflict Report** to see exactly what disagreed.
 
+## Eligibility criteria (optional)
+
+If the project defines *Checked Criteria* (see [Projects](projects.md)), each column
+in the Participant Annotation panel has an **Eligibility criterion** select. A column
+mapped to the same NeuroBagel term as a criterion (e.g. Age) is pre-selected; confirm it,
+change it, or choose *none*. For measures without a NeuroBagel term (IQ, VO2max) pick
+the criterion by hand. Only the criterion id is stored in `participants.json`
+(`"EligibilityCriterion": "age"`); the limits stay in `project.json`, so changing a limit
+there changes the next validation without re-mapping. The panel warns when the column's
+unit differs from the criterion's. **Replace** discards these links together with the
+other annotations; **Merge** keeps them.
+
+The validator then warns per participant outside the limits, for example
+`sub-P002: age 17 is outside the inclusion range 18-35 years (criterion: Age)`.
+Rerun it whenever new participants arrive.
+
+From the command line the link travels through the existing option:
+
+```bash
+python prism_tools.py participants convert --input data.tsv --project P \
+    --neurobagel-schema '{"age": {"EligibilityCriterion": "age"}}'
+python prism.py P        # PRISM602 warnings for participants outside the criteria
+```
+
+`participants preview --json` returns the project's criteria as `eligibility_criteria`.
+
 ## Step 3 — Create Participant Files
 
 Writes `participants.tsv` and `participants.json` together — every conversion path

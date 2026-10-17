@@ -1,0 +1,13 @@
+column	value	label	unit	neurobagel_term	keep_in_dataset
+participant_id		Participant ID (P001-P300)		(automatic, nothing to map)	yes
+age		Age at testing	years	Age	yes
+sex	1	Female		Sex	yes
+sex	2	Male		Sex	yes
+sex	3	Other		Sex	yes
+handedness	1	Right-handed		Handedness	yes
+handedness	2	Left-handed		Handedness	yes
+handedness	3	Ambidextrous		Handedness	yes
+iq		IQ score (standard scale, mean 100, SD 15)	points	(no NeuroBagel term: describe it yourself)	yes
+vo2max		Maximal oxygen uptake from treadmill test	ml/kg/min	(no NeuroBagel term: describe it yourself)	yes
+data_entry_clerk		Initials of person who typed in the data		-	NO - remove
+spreadsheet_row_check		Scratch number from data entry		-	NO - remove

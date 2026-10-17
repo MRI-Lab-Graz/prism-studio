@@ -204,3 +204,43 @@ def test_main_reuses_running_instance(prism_studio_module, monkeypatch):
     prism_studio_module.main()
 
     assert opened == ["http://127.0.0.1:5001"]
+
+
+def test_version_ignores_stale_git_tags_in_parent_dir(
+    prism_studio_module, monkeypatch, tmp_path
+):
+    """A ZIP unpacked inside an older git clone must report its own version."""
+    from src import __version__
+
+    (tmp_path / ".git" / "refs" / "tags").mkdir(parents=True)
+    (tmp_path / ".git" / "refs" / "tags" / "v0.0.1").write_text("x")
+    install_dir = tmp_path / "prism-studio"
+    install_dir.mkdir()
+    monkeypatch.setattr(prism_studio_module, "BASE_DIR", install_dir)
+    monkeypatch.setitem(prism_studio_module._github_tag_cache, "expires_at", 0.0)
+
+    assert prism_studio_module.get_prism_studio_version() == __version__
+
+
+def test_ensure_clean_start_kills_unresponsive_prism_instance_without_force(
+    prism_studio_module, monkeypatch
+):
+    """An old PRISM instance that ignores /shutdown must not survive a restart."""
+    monkeypatch.setattr(prism_studio_module, "is_port_in_use", lambda host, port: True)
+    monkeypatch.setattr(
+        prism_studio_module, "is_prism_studio_instance", lambda host, port: True
+    )
+    monkeypatch.setattr(
+        prism_studio_module, "request_existing_instance_shutdown", lambda h, p: False
+    )
+    killed = []
+    monkeypatch.setattr(
+        prism_studio_module,
+        "try_kill_existing_process",
+        lambda port: killed.append(port) or True,
+    )
+    monkeypatch.setattr(prism_studio_module, "wait_for_port_release", lambda h, p: True)
+
+    prism_studio_module.ensure_clean_start("127.0.0.1", 5001)
+
+    assert killed == [5001]

@@ -17,6 +17,7 @@ from typing import Callable, Optional
 from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
+from src.modality_versions import ModalityVersionError
 from schema_manager import validate_schema_version
 from validator import (
     DatasetValidator,
@@ -101,6 +102,26 @@ def _validate_citation_cff(root_dir: str) -> list[tuple[str, str, str]]:
     ]
 
 
+def _default_schema_dir() -> str:
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
+
+
+def _load_schemas(root_dir, schema_version, modality_versions, schema_dir=None):
+    """Schemas for one run plus where each modality's version came from.
+
+    Project pins apply on the stable base only; an explicit legacy
+    --schema-version ignores them, --modality-version applies on any base.
+    """
+    from src.modality_versions import read_pins, resolve_modality_versions
+
+    schema_dir = schema_dir or _default_schema_dir()
+    pins = read_pins(root_dir)[0] if schema_version in (None, "stable") else {}
+    versions, sources = resolve_modality_versions(pins, modality_versions, schema_dir)
+    explicit = {n: v for n, v in versions.items() if sources[n] != "latest"}
+    schemas = load_all_schemas(schema_dir, version=schema_version, modality_versions=explicit or None)
+    return schemas, sources
+
+
 def validate_dataset(
     root_dir,
     verbose=False,
@@ -111,6 +132,7 @@ def validate_dataset(
     project_path: Optional[str] = None,
     progress_callback: Optional[ProgressCallback] = None,
     check_nifti_headers: bool = False,
+    modality_versions: Optional[dict] = None,
 ):
     """Main dataset validation function (refactored from prism.py)
 
@@ -124,6 +146,7 @@ def validate_dataset(
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
         check_nifti_headers: Whether the BIDS validator should read NIfTI headers.
+        modality_versions: Optional {modality: 'X.Y.Z'} overriding project.json pins.
 
     Returns: (issues, stats)
     """
@@ -160,8 +183,10 @@ def validate_dataset(
     report_progress(0, 100, "Loading schemas...")
 
     # Load schemas with specified version
-    schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
-    schemas = load_all_schemas(schema_dir, version=schema_version)
+    try:
+        schemas, schema_sources = _load_schemas(root_dir, schema_version, modality_versions)
+    except ModalityVersionError as exc:
+        return [("ERROR", f"Schema version problem: {exc}")], stats
 
     # Record which schema files actually answered this run, so callers can
     # show it and detect a schema bump between two validations of the same
@@ -185,6 +210,7 @@ def validate_dataset(
         stats.validator_info = {
             "prism_schema_tag": version_tag,
             "prism_schema_versions": schema_versions,
+            "prism_schema_sources": schema_sources,
         }
 
     if verbose:
@@ -385,6 +411,10 @@ def validate_dataset(
         from src.participants_levels import check_participants_levels
 
         issues.extend(check_participants_levels(root_dir))
+
+        from src.eligibility import check_eligibility
+
+        issues.extend(check_eligibility(root_dir))
 
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
@@ -792,6 +822,7 @@ def validate_subject_only(
     *,
     schema_version=None,
     library_path=None,
+    modality_versions=None,
 ):
     """Validate one sub-* folder in isolation (what a nested-dataset commit changes).
 
@@ -800,8 +831,7 @@ def validate_subject_only(
     stay with the full validation. Returns (issues, stats).
     """
     root_dir = os.path.abspath(root_dir)
-    schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
-    schemas = load_all_schemas(schema_dir, version=schema_version)
+    schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
     validator = DatasetValidator(schemas, library_path=library_path)
     stats = DatasetStats()
     issues = _validate_subject(

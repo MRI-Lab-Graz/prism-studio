@@ -9,7 +9,11 @@ import tempfile
 from pathlib import Path
 from typing import Any, Sequence
 
-from src.datalad_execution import is_datalad_dataset, parse_json_from_output
+from src.datalad_execution import (
+    is_datalad_dataset,
+    parse_json_from_output,
+    run_datalad_save,
+)
 from src.datalad_mutation_policy import run_tracked_mutation
 
 _SUBJECT_PART_PATTERN = re.compile(r"^sub-[A-Za-z0-9]+$")
@@ -28,6 +32,27 @@ def _extract_subject_from_rel_path(rel_path: str) -> str | None:
         if _SUBJECT_PART_PATTERN.fullmatch(part):
             return part
     return None
+
+
+def _pin(root: Path, *, commit_message: str | None = None) -> None:
+    """Record modality versions; with commit_message also commit project.json when pins changed.
+
+    Plain `datalad run` refuses a dirty tree, so an uncommitted pin would break the next
+    scoped mutation. Committing is best effort: a failure only warns.
+    """
+    from src.modality_versions import pin_after_import, read_pins
+
+    before = read_pins(root)[0]
+    pin_after_import(root)
+    if commit_message is None or read_pins(root)[0] == before:
+        return
+    try:
+        saved = run_datalad_save(root, message=commit_message, paths=["project.json"], recursive=False)
+        problem = None if saved.get("success") else saved.get("message") or "datalad save failed"
+    except Exception as exc:  # noqa: BLE001 - never fail an import over a pin commit
+        problem = exc
+    if problem:
+        print(f"Warning: could not commit project.json after pinning modality versions: {problem}", file=sys.stderr)
 
 
 def copy_files_into_project(
@@ -63,6 +88,7 @@ def copy_files_into_project(
             dst_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src_path, dst_path)
             copied_rel.append(rel_path)
+        _pin(root)
         return {
             "copied_count": len(copied_rel),
             "copied_paths": copied_rel,
@@ -148,6 +174,7 @@ def copy_files_into_project(
         finally:
             Path(manifest_path).unlink(missing_ok=True)
 
+    _pin(root, commit_message=f"{run_message} (record modality versions)")
     return {
         "copied_count": len(all_copied_paths),
         "copied_paths": all_copied_paths,
