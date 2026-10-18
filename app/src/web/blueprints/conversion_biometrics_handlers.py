@@ -425,7 +425,7 @@ def api_biometrics_convert():
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
-        for note in result.notes:
+        for note in getattr(result, "notes", []):
             log_msg(note, "warning")
 
         # Save to project if requested (but not in dry-run mode)
