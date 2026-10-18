@@ -52,12 +52,12 @@ function Write-Error {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✅ $Message" -ForegroundColor Green
+    Write-Host "OK: $Message" -ForegroundColor Green
 }
 
 function Write-Warning {
     param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+    Write-Host "WARNING: $Message" -ForegroundColor Yellow
 }
 
 # --- Main Script ---
@@ -181,7 +181,7 @@ Write-Info "Installing dependencies from '$RequirementsFile'..."
 
 if ($UseUv) {
     # uv has better package resolution and can avoid C++ compiler issues
-    & uv pip install -r $RequirementsFile
+    & uv pip install --python "$VenvDir\Scripts\python.exe" -r $RequirementsFile
 } else {
     & $VenvDir\Scripts\python.exe -m pip install --upgrade pip
     & $VenvDir\Scripts\pip.exe install -r $RequirementsFile
@@ -199,7 +199,7 @@ if ($Build) {
     }
     Write-Info "Installing build dependencies from '$BuildRequirementsFile'..."
     if ($UseUv) {
-        & uv pip install -r $BuildRequirementsFile
+        & uv pip install --python "$VenvDir\Scripts\python.exe" -r $BuildRequirementsFile
     } else {
         & $VenvDir\Scripts\pip.exe install -r $BuildRequirementsFile
     }
@@ -217,7 +217,7 @@ if ($Dev) {
     }
     Write-Info "Installing development dependencies from '$DevRequirementsFile'..."
     if ($UseUv) {
-        & uv pip install -r $DevRequirementsFile
+        & uv pip install --python "$VenvDir\Scripts\python.exe" -r $DevRequirementsFile
     } else {
         & $VenvDir\Scripts\pip.exe install -r $DevRequirementsFile
     }
@@ -231,7 +231,7 @@ if ($Dev) {
 # 6. Install the project in development mode (editable install)
 Write-Info "Installing prism in development mode..."
 if ($UseUv) {
-    & uv pip install -e .
+    & uv pip install --python "$VenvDir\Scripts\python.exe" -e .
 } else {
     & $VenvDir\Scripts\pip.exe install -e .
 }

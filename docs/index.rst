@@ -260,6 +260,7 @@ in the repository root for the full citation, including all authors.
    SCHEMA_SPECIFICATIONS
    specs/survey
    specs/biometrics
+   specs/biosample
    specs/events
    specs/environment
    specs/physio

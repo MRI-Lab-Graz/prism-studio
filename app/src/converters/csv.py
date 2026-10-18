@@ -121,7 +121,7 @@ def _ensure_participants(
                 f"  - Created participants.tsv with {len(df_part)} subjects and {len(found_part_vars)} columns."
             )
 
-            with open(os.path.join(output_root, "participants.json"), "w") as f:
+            with open(os.path.join(output_root, "participants.json"), "w", encoding="utf-8") as f:
                 json.dump(part_schema, f, indent=2)
         else:
             if inferred:

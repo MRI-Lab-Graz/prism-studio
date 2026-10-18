@@ -1183,6 +1183,9 @@ def shutdown():
 def is_port_in_use(host, port):
     """Check if a port is already in use."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # Windows retries a refused loopback connect for ~1-2 s unless cut off;
+        # a live local listener accepts in well under a millisecond.
+        s.settimeout(0.25)
         try:
             return s.connect_ex((host, port)) == 0
         except Exception:
@@ -1299,6 +1302,9 @@ def is_prism_studio_instance(host: str, port: int) -> bool:
         probe_host = "127.0.0.1" if ipaddress.ip_address(host).is_unspecified else host
     except ValueError:
         probe_host = host
+
+    if not is_port_in_use(probe_host, port):
+        return False
 
     conn = None
     try:

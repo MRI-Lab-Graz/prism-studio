@@ -279,7 +279,8 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("success"), result)
         self.assertFalse(result.get("datalad", {}).get("requested"))
         self.assertFalse(result.get("datalad", {}).get("initialized"))
-        mock_run.assert_not_called()
+        # Windows alone sets core.longpaths; no other git/datalad call may run
+        self.assertEqual([c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]], [])
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
@@ -301,7 +302,8 @@ class TestProjectManager(unittest.TestCase):
             )
 
         self.assertTrue(result.get("success"), result)
-        mock_run.assert_not_called()
+        # Windows alone sets core.longpaths; no other git/datalad call may run
+        self.assertEqual([c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]], [])
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 

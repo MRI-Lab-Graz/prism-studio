@@ -65,7 +65,7 @@ def _read_schema_file(schema_path, name, version_tag):
     if not os.path.exists(schema_path):
         return None
     try:
-        with open(schema_path) as f:
+        with open(schema_path, encoding="utf-8") as f:
             schema = json.load(f)
 
         # Add schema metadata for versioning
