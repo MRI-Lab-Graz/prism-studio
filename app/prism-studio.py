@@ -916,6 +916,7 @@ def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
         return False
 
 
+from src.web.project_ready_guard import install_project_ready_guard
 from src.web.request_guard import (
     install_cross_site_guard,
     install_public_token_guard,
@@ -997,6 +998,8 @@ def ensure_project_selected_first():
         return None
     if path == "/api/browse-file":
         return None
+    if path == "/api/config":  # static constants the create flow needs (BIDSVersion, field lists)
+        return None
     if path.startswith("/api/settings/"):
         return None
 
@@ -1059,6 +1062,10 @@ def ensure_project_selected_first():
 
     # For non-GET requests, return a structured error.
     return jsonify({"success": False, "error": "No current project selected"}), 400
+
+
+# After ensure_project_selected_first: a stale session project is cleared first.
+install_project_ready_guard(app)
 
 
 @app.route("/")

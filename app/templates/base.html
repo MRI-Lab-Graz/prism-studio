@@ -1788,6 +1788,10 @@
         import { isSameProjectPath } from "{{ url_for('static', filename='js/shared/project-state.js', v=static_token) }}";
         window.isSameProjectPath = isSameProjectPath;
     </script>
+    <script type="module">
+        import { installNotReadyNotice } from "{{ url_for('static', filename='js/shared/not-ready-notice.js', v=static_token) }}";
+        installNotReadyNotice();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

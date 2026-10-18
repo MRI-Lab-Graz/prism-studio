@@ -22,6 +22,7 @@ from src.participants_backend import (
     preview_participants_merge,
     save_participant_mapping,
 )
+from src.participant_data_checks import find_participant_data_problems
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.eligibility import load_criteria
 from src.participants_sessions import scope_to_session
@@ -356,8 +357,12 @@ def cmd_participants_preview(args) -> None:
     identical_warning = format_identical_rows_warning(
         find_identical_value_rows(df[output_columns], id_column)
     )
-    payload["data_warnings"] = load_warnings + (
-        [identical_warning] if identical_warning else []
+    problems = find_participant_data_problems(df, id_column, output_columns)
+    payload["data_errors"] = problems["errors"]
+    payload["data_warnings"] = (
+        load_warnings
+        + problems["warnings"]
+        + ([identical_warning] if identical_warning else [])
     )
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
@@ -367,8 +372,10 @@ def cmd_participants_preview(args) -> None:
         print(f"ID col:  {id_column}")
         print(f"Rows:    {len(df)}")
         print(f"Columns: {', '.join(output_columns)}")
-        if identical_warning:
-            print(f"Warning: {identical_warning}")
+        for warning in payload["data_warnings"]:
+            print(f"Warning: {warning}")
+        for error in payload["data_errors"]:
+            print(f"Error: {error}")
 
 
 def cmd_participants_convert(args) -> None:

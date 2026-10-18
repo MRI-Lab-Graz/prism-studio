@@ -19,10 +19,21 @@ Imports a sociodemographics/participants source file and produces `participants.
 Click **Review Participant Fields** to preview detected columns and sample values
 before anything is written.
 
-## Step 2b — Add More Columns (optional)
+## Step 2b — Add Your Own Columns
 
-**Add More Columns (Optional)** lets you pull in source columns beyond the
-automatically-detected participant-relevant set.
+Only the standard sociodemographics (age, sex, handedness, …) are imported
+automatically. Every other column - IQ, VO2max, a group label - is **not** imported
+until you add it with **Add Your Own Columns**; the preview lists the columns that are
+still left out.
+
+## Problems found in the table
+
+The preview checks the table before anything is written. **Warnings** (the file can
+still be imported): rows without a participant ID are skipped, and different IDs in the
+source that become the same PRISM ID (`P-1` and `P 1` both give `sub-P1`) are merged.
+**Errors** (nothing is imported until the source file is fixed): text in a numeric
+column, and an `age` outside 0-120 years. `prism_tools participants preview` prints the
+same lists, and `participants convert` refuses a table with errors.
 
 ## Longitudinal files (several sessions per participant)
 

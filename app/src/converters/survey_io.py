@@ -14,6 +14,9 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+
+from src.cleaning_notes import cleaning_note, missing_id_note
+from src.survey_scale_check import find_scale_violations
 from typing import Any
 
 from . import survey_processing as _survey_processing
@@ -149,8 +152,12 @@ def _process_and_write_responses(
     sort_cols = [
         c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
     ]
+    df = df.reset_index(drop=True)
+    row_numbers = list(range(1, len(df) + 1))  # 1-based data row of each sorted row
     if sort_cols:
-        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+        df = df.sort_values(sort_cols, kind="stable")
+        row_numbers = [int(i) + 1 for i in df.index]
+        df = df.reset_index(drop=True)
 
     for _, row in df.iterrows():
         sub_id = normalize_sub_fn(row[res_id_col])
@@ -968,6 +975,7 @@ def _generate_dry_run_preview(
         dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
 
@@ -1010,18 +1018,29 @@ def _generate_dry_run_preview(
     sort_cols = [
         c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
     ]
+    df = df.reset_index(drop=True)
+    row_numbers = list(range(1, len(df) + 1))  # 1-based data row of each sorted row
     if sort_cols:
-        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+        df = df.sort_values(sort_cols, kind="stable")
+        row_numbers = [int(i) + 1 for i in df.index]
+        df = df.reset_index(drop=True)
+
+    missing_id_rows: list[int] = []
+    id_pairs: list[tuple[Any, str]] = []
+    ses_pairs: list[tuple[Any, str]] = []
 
     for idx, row in df.iterrows():
         sub_id_raw = row[res_id_col]
         sub_id = normalize_sub_fn(sub_id_raw)
+        if not sub_id or sub_id == "sub-":
+            missing_id_rows.append(row_numbers[int(idx)])  # the conversion skips these rows
+            continue
 
-        ses_id = (
-            normalize_ses_fn(session)
-            if session and session != "all"
-            else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
-        )
+        ses_raw = session if session and session != "all" else (row[res_ses_col] if res_ses_col else None)
+        ses_id = normalize_ses_fn(ses_raw) if ses_raw is not None else "ses-1"
+        id_pairs.append((sub_id_raw, sub_id))
+        if ses_raw is not None:
+            ses_pairs.append((ses_raw, ses_id))
 
         run_id: str | None = None
         if res_run_col and res_run_col in df.columns:
@@ -1098,6 +1117,13 @@ def _generate_dry_run_preview(
 
     preview["participants"] = participants_info
 
+    notes = [
+        ("missing_id", missing_id_note(missing_id_rows)),
+        ("id_cleaned", cleaning_note(*zip(*id_pairs), "participant ID", "sub-") if id_pairs else ""),
+        ("session_cleaned", cleaning_note(*zip(*ses_pairs), "session label", "ses-") if ses_pairs else ""),
+    ]
+    issues.extend({"type": kind, "severity": "warning", "message": text} for kind, text in notes if text)
+
     key_counts = Counter(composite_keys)
     # A true duplicate is a row where (sub_id, ses_id, run_id) repeats
     dup_keys = {key: count for key, count in key_counts.items() if count > 1}
@@ -1135,6 +1161,15 @@ def _generate_dry_run_preview(
         total_values = len(df.index)
         expected_levels = item_def.get("Levels") if isinstance(item_def, dict) else None
 
+        # A configured task offset shifts the answers before they are checked at conversion.
+        scale_issues = (
+            []
+            if (task_value_offsets or {}).get(task) is not None
+            else find_scale_violations(df, col, item_def, res_id_col, is_missing_fn)
+        )
+        for issue in scale_issues:
+            issues.append({**issue, "task": task, "item": base_item})
+
         col_mapping_details[col] = {
             "task": task,
             "run": run,
@@ -1143,7 +1178,7 @@ def _generate_dry_run_preview(
             "missing_percent": (
                 round((missing_count / total_values) * 100, 1) if total_values else 0.0
             ),
-            "has_unexpected_values": False,
+            "has_unexpected_values": bool(scale_issues),
             "expected_levels": (
                 sorted(expected_levels.keys())
                 if isinstance(expected_levels, dict)

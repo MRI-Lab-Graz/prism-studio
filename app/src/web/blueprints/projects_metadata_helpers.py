@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from src.eligibility import usable_criteria
+from src.project_ready import REQUIRED_FIELDS
 
 from .projects_helpers import _read_tabular_dataframe
 
@@ -332,12 +333,12 @@ REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
 
 # REQUIRED-tier (red, creation-blocking) fields - a third tier, neither CORE
 # nor optional. Excluded from the CORE/FAIR readiness score below so they
-# don't inflate "optional_total"; mirrors creationBlockingFields in
-# metadata.js's computeLocalCompleteness.
-CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {
-    "Basics": {"Name", "Authors", "Keywords"},
-    "StudyDesign": {"Timepoints"},
-}
+# don't inflate "optional_total"; mirrors the creation-blocking list in
+# metadata.js's computeLocalCompleteness (which reads it from /api/config and
+# the study-metadata GET response). Derived from the one constant, src.project_ready.REQUIRED_FIELDS.
+CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {}
+for _section, _field in REQUIRED_FIELDS:
+    CREATION_BLOCKING_FIELDS.setdefault(_section, set()).add(_field)
 
 
 def _compute_methods_completeness(

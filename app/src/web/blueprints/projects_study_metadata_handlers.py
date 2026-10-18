@@ -6,9 +6,15 @@ from pathlib import Path
 
 from flask import jsonify, request
 
+from src.project_ready import (
+    ProjectNotReadyError,
+    missing_required_fields,
+    not_ready_message,
+)
 from src.readme_generator import ReadmeGenerator
 
 from .projects_citation_helpers import _read_citation_cff_fields
+from .projects_metadata_helpers import CREATION_BLOCKING_FIELDS
 from .projects_helpers import _resolve_requested_or_current_project_root
 
 logger = logging.getLogger(__name__)
@@ -136,6 +142,18 @@ def _build_citation_refresh_payload(project_data: dict, dataset_desc):
     return payload
 
 
+def _not_ready_fields(project_path) -> dict:
+    """Response fields telling the page which required fields are still empty."""
+    try:
+        missing = missing_required_fields(project_path)
+    except ProjectNotReadyError as exc:  # unreadable project.json: report, don't 500
+        return {"missing_required": [], "not_ready_message": str(exc)}
+    return {
+        "missing_required": missing,
+        "not_ready_message": not_ready_message(missing) if missing else None,
+    }
+
+
 def handle_get_study_metadata(
     get_current_project,
     read_project_json,
@@ -189,6 +207,10 @@ def handle_get_study_metadata(
             "hints": hints,
             "has_sessions": len(data.get("Sessions", [])) > 0,
             "has_tasks": len(data.get("TaskDefinitions", {})) > 0,
+            "creation_blocking_fields": {
+                k: sorted(v) for k, v in CREATION_BLOCKING_FIELDS.items()
+            },
+            **_not_ready_fields(project_path),
         }
     )
 
@@ -267,6 +289,7 @@ def handle_save_study_metadata(
             "success": True,
             "message": "Study metadata saved",
             "completeness": completeness,
+            **_not_ready_fields(project_path),
         }
     )
 

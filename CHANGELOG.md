@@ -29,6 +29,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   criteria (with a short summary on each chip); the Study Design fields now line up, and the
   Dataset-description errors link to the field they name.
 
+### Changed
+- **Breaking: project tools are blocked until the required fields are set.** A project needs Name, Authors,
+  Keywords and Timepoints (single or multiple). Until they are set, the converters, recipes, validator, file
+  management, exports and publishing answer with a message that links back to the Projects page (HTTP 409 in the
+  GUI, a non-zero exit with the keys to set in `project.json` on the command line). Saving the Projects page,
+  creating/opening projects, session maps, environment commands, diagnostics and saving stay open. Projects created
+  before the Timepoints field existed are blocked until it is set once. Projects created from the command line
+  (`create_project`, `init-on-bids`, demo builders) do not set these fields yet: set them in `project.json` or on
+  the Projects page. `src/project_ready.py` is the one rule; `session_target()` is added for the importer rollout and
+  changes no import yet.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example

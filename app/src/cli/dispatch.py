@@ -6,10 +6,30 @@ introduced incrementally as handlers are extracted from app/prism_tools.py.
 
 from __future__ import annotations
 
+import sys
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from typing import Callable, Mapping
 
+from src.project_ready import ProjectNotReadyError, require_project_ready
+
 CommandHandler = Callable[[Namespace], None]
+
+# Commands that must keep working on an unfinished project (they fix or inspect it).
+GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo", "save-gate"}
+
+
+def project_path_from_args(args: Namespace) -> str | None:
+    for name in ("project", "dataset", "output", "prism"):
+        value = getattr(args, name, None)
+        if not value:
+            continue
+        path = Path(str(value)).expanduser()
+        if path.name == "project.json" and path.is_file():
+            return str(value)
+        if (path / "project.json").is_file():
+            return str(value)
+    return None
 
 
 def dispatch_prism_tools(
@@ -19,6 +39,20 @@ def dispatch_prism_tools(
 ) -> None:
     """Dispatch prism_tools commands with compatibility-preserving fallback help output."""
     root_parser = parsers["root"]
+
+    diagnostic = args.command == "datalad" and getattr(args, "action", None) == "doctor"
+    if args.command not in GATE_EXEMPT_COMMANDS and not diagnostic:
+        project = project_path_from_args(args)
+        if project:
+            try:
+                require_project_ready(project)
+            except ProjectNotReadyError as exc:
+                print(f"Error: {exc}")
+                print(
+                    "In project.json set Basics.Name, Basics.Authors, Basics.Keywords and "
+                    "StudyDesign.Timepoints (single or multiple)."
+                )
+                sys.exit(2)
 
     if args.command == "anonymize":
         handlers["anonymize"](args)

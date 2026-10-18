@@ -1762,6 +1762,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_questions_map=lsa_questions_map,
             task_runs=task_runs,
             task_context_acq_map=task_context_acq_map,
+            task_value_offsets=normalized_task_value_offsets,
         )
         if participant_registry_warning:
             dry_run_preview["participant_registry_warning"] = (
@@ -2628,6 +2629,7 @@ def _generate_dry_run_preview(
         dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
     return _survey_io._generate_dry_run_preview(
@@ -2655,6 +2657,7 @@ def _generate_dry_run_preview(
         task_runs=task_runs,
         task_context_acq_map=task_context_acq_map,
         task_acq_map=task_acq_map,
+        task_value_offsets=task_value_offsets,
     )
 
 

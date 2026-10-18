@@ -43,3 +43,12 @@ def test_api_config_exposes_backend_owned_required_fields_schema() -> None:
         section: sorted(fields)
         for section, fields in metadata_helpers.REQUIRED_FIELDS_SCHEMA.items()
     }
+
+
+def test_api_config_exposes_creation_blocking_fields() -> None:
+    """Needed before any project is loaded (create flow), so it rides on /api/config."""
+    payload = _build_app().test_client().get("/api/config").get_json()
+    assert payload["creationBlockingFields"] == {
+        section: sorted(fields)
+        for section, fields in metadata_helpers.CREATION_BLOCKING_FIELDS.items()
+    }

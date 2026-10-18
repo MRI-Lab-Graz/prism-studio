@@ -29,6 +29,7 @@ import { findPending, guardSave, mountRowActions, registerStagedControl } from '
 import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { renderNotReadyBanner } from './not-ready-banner.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
@@ -44,6 +45,13 @@ function _getCurrentProjectState() {
 // frontend/backend" rule. Fallbacks are used if offline.
 let _bidsVersion = '1.10.1';
 let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
+// Creation-blocking fields come only from the backend (derived from
+// src.project_ready.REQUIRED_FIELDS): /api/config (available before any project
+// is loaded, e.g. the create flow) and the study-metadata GET response
+// (creation_blocking_fields). {} until one arrives, then completeness is re-run.
+let _creationBlockingFields = {};
+const _toFieldSets = (raw) =>
+    Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, new Set(v)]));
 (async () => {
     try {
         const r = await fetchWithApiFallback('/api/config');
@@ -51,6 +59,10 @@ let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
         if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
         if (cfg && cfg.studyMetadataRequiredFields) {
             _requiredFieldsSchema = normalizeRequiredFieldsSchema(cfg.studyMetadataRequiredFields);
+        }
+        if (cfg && cfg.creationBlockingFields) {
+            _creationBlockingFields = _toFieldSets(cfg.creationBlockingFields);
+            updateCompletenessUI(computeLocalCompleteness());
         }
     } catch { /* use fallback */ }
 })();
@@ -136,6 +148,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
     ),
     applyStudyMetadataPayload: (data) => {
         const sm = data.study_metadata;
+        renderNotReadyBanner(data.not_ready_message);
 
         const overview = sm.Overview || {};
         document.getElementById('smOverviewMain').value = overview.Main || '';
@@ -208,6 +221,8 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         setOverviewList('smReferencesText', _referencesToDoiLines(sm.References));
 
         _applyHints(data.hints || {});
+
+        _creationBlockingFields = _toFieldSets(data.creation_blocking_fields || {});
 
         // Keep frontend readiness scoring semantics stable by recomputing from the
         // current form state instead of mixing in backend completeness payloads.
@@ -1177,8 +1192,13 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepte
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'author',
-        incompleteHint: 'Enter first and last name',
-        isComplete: () => Boolean(nameOf('.author-first') && nameOf('.author-last')),
+        incompleteHint: 'Enter first and last name (an author already listed cannot be added twice)',
+        isComplete: () => {
+            const [first, last] = [nameOf('.author-first'), nameOf('.author-last')];
+            const same = (r) => [first, last].every((n, i) => _cleanMetadataText(r.querySelector(i ? '.author-last' : '.author-first')?.value || '').toLowerCase() === n.toLowerCase());
+            const listed = Array.from(document.querySelectorAll(DEFINED_AUTHOR_ROWS)).some((r) => r !== row && same(r));
+            return Boolean(first && last) && !listed;
+        },
         hasContent: () => Array.from(row.querySelectorAll('input:not(.author-corresponding)'))
             .some(input => input.value.trim() !== ''),
         onAccept: () => {
@@ -1699,8 +1719,9 @@ const TWO_FIELD_LIST_FIELDS = {
 };
 
 function _combineTwoFieldRow(field1, field2) {
-    const clean1 = _cleanMetadataText(field1);
-    const clean2 = _cleanMetadataText(field2);
+    // "|" separates the two parts in the stored text, so it cannot be part of either
+    const clean1 = _cleanMetadataText(field1).replaceAll('|', '/');
+    const clean2 = _cleanMetadataText(field2).replaceAll('|', '/');
     if (clean1 && clean2) return `${clean1} | ${clean2}`;
     return clean1 || clean2;
 }
@@ -3553,10 +3574,7 @@ export function computeLocalCompleteness() {
     // readiness-only: researchers often cannot know it yet at creation time
     // (e.g. recruitment period, compensation) or should not be forced to
     // decide it immediately (e.g. ethics/funding).
-    const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords']),
-        StudyDesign: new Set(['Timepoints'])
-    };
+    const creationBlockingFields = _creationBlockingFields;
 
     const addField = (section, name, isFilled) => {
         const isRequired = requiredFields[section]?.has(name) || false;

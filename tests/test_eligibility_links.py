@@ -9,7 +9,11 @@ AGE = {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
 
 
 def _project_json(root: Path, criteria):
-    (root / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": criteria}}))
+    ready = {  # the CLI refuses projects without these four
+        "Basics": {"Name": "t", "Authors": ["Doe, Jane"], "Keywords": ["a", "b", "c"]},
+        "StudyDesign": {"Timepoints": "single"},
+    }
+    (root / "project.json").write_text(json.dumps({**ready, "Eligibility": {"Criteria": criteria}}))
 
 
 def test_load_criteria(tmp_path):

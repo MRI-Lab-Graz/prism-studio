@@ -275,3 +275,10 @@ def test_non_utf8_participants_tsv_is_left_to_other_checks(tmp_path):
     root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17")])
     (tmp_path / "participants.tsv").write_bytes("participant_id\tage\nsub-Müller\t17\n".encode("latin-1"))
     assert check_eligibility(root) == []
+
+
+def test_numeric_criterion_on_a_column_with_value_labels_warns_once_instead_of_flagging_codes(tmp_path):
+    sidecar = {"age": {"EligibilityCriterion": "age", "Levels": {"1": "Female", "2": "Male"}}}
+    root = _make(tmp_path, [AGE], sidecar, [("sub-P01", "1"), ("sub-P02", "2")])
+    issues = check_eligibility(root)
+    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "numeric" in issues[0][1]

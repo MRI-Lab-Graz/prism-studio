@@ -1,3 +1,4 @@
+import { renderNotReadyBanner } from './not-ready-banner.js';
 import { isSameProjectPath } from '../../shared/project-state.js';
 
 export function createStudyMetadataSaveController({
@@ -43,6 +44,7 @@ export function createStudyMetadataSaveController({
 
             const result = await response.json();
             if (result.success) {
+                renderNotReadyBanner(result.not_ready_message, true);
                 // Keep frontend readiness scoring semantics stable by recomputing from
                 // the current form state after save.
                 updateCompletenessUI(computeLocalCompleteness());

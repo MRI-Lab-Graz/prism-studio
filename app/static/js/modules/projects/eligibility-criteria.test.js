@@ -72,6 +72,8 @@ describe('criteria the form cannot fully show', () => {
     it('tells an incomplete row apart, so the page can say it is not saved', () => {
         expect(isComplete(newRow('nb:Age'))).toBe(false);
         expect(isComplete({ ...newRow('nb:Age'), min: '18' })).toBe(true);
+        expect(isComplete({ ...newRow('nb:Age'), min: '35', max: '18' })).toBe(false); // inverted range
+        expect(isComplete({ ...newRow('nb:Age'), min: '18', max: '18' })).toBe(true);
         expect(isComplete({ ...newRow('nb:Sex') })).toBe(false);
         expect(isComplete({ ...newRow('nb:Sex'), values: ['Male'] })).toBe(true);
     });

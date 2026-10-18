@@ -120,7 +120,7 @@ values before anything is written. You should see `age`, `sex`, `education`,
 If `WB01`-`WB05` show up as available-but-not-selected columns, leave them
 out here — pulling survey items into `participants.tsv` would mix
 one-time-per-participant demographics with repeated-measure survey data,
-which don't belong in the same file. Use **Add More Columns (Optional)**
+which don't belong in the same file. Use **Add Your Own Columns**
 only if you want to bring in additional demographic-style columns beyond
 what's auto-detected — not for the survey items.
 

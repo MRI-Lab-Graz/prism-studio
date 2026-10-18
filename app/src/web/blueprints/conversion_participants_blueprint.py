@@ -84,6 +84,7 @@ from .conversion_participants_convert import (
 from .conversion_utils import resolve_effective_library_path
 from .projects_helpers import _resolve_project_root_path
 from src.eligibility import load_criteria
+from src.participant_data_checks import find_participant_data_problems
 
 def _identical_rows_warnings(groups: list[list[str]]) -> list[str]:
     """Preview warning list for participants that duplicate another row's values."""
@@ -271,6 +272,8 @@ def api_participants_detect_id():
                 ),
             }
         )
+    except ValueError as e:  # unreadable or empty file: the user's input, not a server fault
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -490,6 +493,9 @@ def api_participants_preview():
                 participant_filter_config=participant_filter_config,
             )
 
+            data_problems = find_participant_data_problems(
+                df, id_column, [str(c) for c in output_df.columns]
+            )
             return jsonify(
                 {
                     "status": "success",
@@ -523,7 +529,9 @@ def api_participants_preview():
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []
                     ),
+                    "data_errors": data_problems["errors"],
                     "data_warnings": sessions_warnings
+                    + data_problems["warnings"]
                     + _identical_rows_warnings(
                         find_identical_value_rows(output_df, preview_id_column)
                     ),

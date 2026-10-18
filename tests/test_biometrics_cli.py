@@ -189,3 +189,25 @@ def test_biometrics_convert_cli_preserves_existing_prefixed_ids(tmp_path: Path) 
         / "biometrics"
         / "sub-001_ses-1_task-grip_biometrics.tsv"
     ).exists()
+
+
+def test_biometrics_convert_says_which_labels_were_cleaned_and_which_rows_were_skipped(tmp_path: Path) -> None:
+    from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
+
+    library_dir = tmp_path / "library"
+    library_dir.mkdir()
+    _write_biometrics_template(library_dir, "grip")
+    input_path = tmp_path / "biometrics.csv"
+    pd.DataFrame(
+        {"participant_id": ["P 1", "", "sub-P3"], "session": ["pre test", "pre test", "1"], "grip_strength": [42, 40, 41]}
+    ).to_csv(input_path, index=False)
+
+    result = convert_biometrics_table_to_prism_dataset(
+        input_path=input_path, library_dir=str(library_dir), output_root=tmp_path / "out",
+        session_column="session",
+    )
+
+    text = " ".join(result.notes)
+    assert "'P 1' → sub-P1" in text
+    assert "'pre test' → ses-pretest" in text
+    assert "no participant ID" in text and "data rows 2" in text

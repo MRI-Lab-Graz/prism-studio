@@ -4,7 +4,16 @@ the red cross only appears on defined rows."""
 import json
 import re
 
+import pytest
 from playwright.sync_api import expect
+
+
+@pytest.fixture(autouse=True)
+def _no_authors_yet(project):
+    """The shared project is complete (it has an author); these tests start with an empty author list."""
+    meta = json.loads((project / "project.json").read_text())
+    del meta["Basics"]["Authors"]
+    (project / "project.json").write_text(json.dumps(meta))
 
 
 def open_sections(page, studio_url, *targets):
@@ -500,3 +509,30 @@ def test_an_added_location_is_a_chip_that_can_be_removed_and_counts_for_the_loca
     chip.first.click()
     expect(chip).to_have_count(0)
     expect(badge).not_to_have_class(re.compile("bg-success"))
+
+
+def test_an_author_who_is_already_listed_cannot_be_added_twice(app_page, studio_url, project):
+    (project / "dataset_description.json").write_text(
+        json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))
+    page = app_page
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    page.click("#addAuthorRow")
+    row = page.locator("#metadataAuthorsList .author-row").nth(1)
+    row.locator(".author-first").fill("ada")
+    row.locator(".author-last").fill("LOVELACE")
+    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    row.locator(".author-first").fill("Grace")
+    expect(row.locator('[data-f="accept"]')).to_be_enabled()
+
+
+def test_a_criterion_with_min_above_max_cannot_be_accepted(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smEligibility")
+    page.select_option("#smEligCriteriaSelect", label="Age")
+    page.click("#smEligCriteriaAdd")
+    draft = page.locator("#smEligCriteriaList [data-i]")
+    draft.locator('[data-f="min"]').fill("35")
+    draft.locator('[data-f="max"]').fill("18")
+    expect(draft.locator('[data-f="accept"]')).to_be_disabled()
+    draft.locator('[data-f="max"]').fill("40")
+    expect(draft.locator('[data-f="accept"]')).to_be_enabled()
