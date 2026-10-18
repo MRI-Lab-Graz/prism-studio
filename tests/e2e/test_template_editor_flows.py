@@ -280,3 +280,27 @@ def test_adding_a_language_checks_the_code_and_refuses_one_the_template_has(page
     assert any('"xx" is not an ISO 639-1' in m for m in messages), messages
     assert any('already has the language "de"' in m for m in messages), messages
     expect(page.locator("#langBadges")).to_contain_text("fr")
+
+
+def bulk_column(page, label):
+    import re
+
+    return page.locator("#bulkEditForm > .row > div").filter(has=page.locator("label").filter(has_text=re.compile(f"^{label}"))).first
+
+
+def test_bulk_edit_asks_before_changing_every_item_and_a_bad_hint_is_named(page):
+    prompts = []
+    page.on("dialog", lambda dialog: (prompts.append(dialog.message), dialog.accept()))
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+    page.click("#tabItems")
+    page.click("[data-bs-target='#bulkEditSection']")
+    hint = bulk_column(page, "SessionHint")
+    hint.locator("input").fill("session 1")
+    hint.get_by_role("button", name="Apply to Selected").click()
+    assert any("Set SessionHint on all 10 items" in m for m in prompts), prompts
+    page.click("#btnValidate")
+    alert = page.locator("#alertArea")
+    expect(alert).to_contain_text("SessionHint")
+    expect(alert).to_contain_text("ses-<label>")
+    expect(alert).not_to_contain_text("is not valid under any of the given schemas")

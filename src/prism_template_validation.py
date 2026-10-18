@@ -70,6 +70,39 @@ _PATTERN_HINTS = {
 }
 
 
+def _readable_errors(err) -> list[dict]:
+    """One or more ``{path, message}`` for a jsonschema error.
+
+    "X is not valid under any of the given schemas" (oneOf/anyOf) would print the whole
+    instance; instead report what is wrong in the alternative that is closest to matching.
+    """
+    if err.validator in ("oneOf", "anyOf") and err.context:
+        branches: dict[int, list] = {}
+        for sub in err.context:
+            branches.setdefault(sub.schema_path[0], []).append(sub)
+        # An alternative that lacks its required key is the wrong kind of object, not a typo.
+        closest = min(
+            branches.values(),
+            key=lambda errs: (any(e.validator == "required" and not e.path for e in errs), len(errs)),
+        )
+        return [item for sub in closest for item in _readable_errors_at(sub, list(err.path))]
+    return [_error_dict(err, list(err.path))]
+
+
+def _readable_errors_at(sub, base_path: list) -> list[dict]:
+    if sub.validator in ("oneOf", "anyOf") and sub.context:
+        return _readable_errors(sub)
+    return [_error_dict(sub, base_path + list(sub.path))]
+
+
+def _error_dict(err, path: list) -> dict:
+    hint = _PATTERN_HINTS.get(err.schema.get("pattern")) if err.validator == "pattern" else None
+    return {
+        "path": "/".join(str(p) for p in path),
+        "message": f"'{err.instance}' is not allowed: {hint}" if hint else err.message,
+    }
+
+
 def validate_template_against_schema(*, instance: object, schema: dict) -> list[dict]:
     """Validate a PRISM template against a JSON schema.
 
@@ -85,9 +118,7 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
     validator = Draft7Validator(schema)
     errors = []
     for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
-        path = "/".join(str(p) for p in err.path)
-        hint = _PATTERN_HINTS.get(err.schema.get("pattern")) if err.validator == "pattern" else None
-        errors.append({"path": path, "message": f"'{err.instance}' is not allowed: {hint}" if hint else err.message})
+        errors.extend(_readable_errors(err))
 
     if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
         technical = normalized_instance["Technical"]

@@ -1016,7 +1016,7 @@ class TemplateValidator:
         for item_id, item in items.items():
             if not isinstance(item, dict):
                 continue
-            if not re.fullmatch(r"[A-Za-z0-9_-]+", item_id):
+            if item_id == "__proto__" or not re.fullmatch(r"[A-Za-z0-9_-]+", item_id):
                 add(item_id, "warning", f"Item ID '{item_id}' should only contain letters, digits, '_' and '-' (it becomes a data column name)")
             first = seen.setdefault(item_id.lower(), item_id)
             if first != item_id:
@@ -1051,8 +1051,21 @@ class TemplateValidator:
         if isinstance(study, dict):
             for field in ("OriginalName", "Description", "Instructions", "License"):
                 check_texts(f"Study/{field}", study.get(field))
+        def blank(text: Any) -> bool:
+            if isinstance(text, dict):
+                return all(blank(t) for t in text.values())
+            return not str(text or "").strip()
+
         for item_id, item in items.items():
             if isinstance(item, dict):
+                if "Description" in item and blank(item["Description"]):
+                    add(item_id, "warning", f"Item {item_id} has no description text")
+                alias_of = item.get("AliasOf")
+                if isinstance(alias_of, str) and alias_of and alias_of not in items:
+                    add(item_id, "warning", f"AliasOf '{alias_of}' is not an item of this template")
+                for key, label in (item.get("Levels").items() if isinstance(item.get("Levels"), dict) else []):
+                    if isinstance(label, dict) and blank(label):
+                        add(f"{item_id}/Levels/{key}", "warning", f"Level {key} of {item_id} has no label text")
                 check_texts(f"{item_id}/Description", item.get("Description"))
                 levels = item.get("Levels")
                 for key, label in (levels.items() if isinstance(levels, dict) else []):

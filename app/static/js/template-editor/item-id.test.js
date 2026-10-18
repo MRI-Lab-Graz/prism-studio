@@ -8,7 +8,7 @@ describe('itemIdProblem', () => {
         expect(itemIdProblem('Task-1b', [])).toBe('');
     });
     it('rejects spaces, path characters, markup and non-ASCII letters', () => {
-        for (const bad of ['A B', '../x', '<b>x</b>', 'ünï', 'a.b', 'a\\b']) {
+        for (const bad of ['A B', '../x', '<b>x</b>', 'ünï', 'a.b', 'a\\b', '__proto__']) {
             expect(itemIdProblem(bad, [])).toMatch(/letters, digits/);
         }
     });

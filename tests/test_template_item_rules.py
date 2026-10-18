@@ -117,3 +117,42 @@ def test_library_templates_still_need_a_task_name_to_validate_and_to_save(monkey
     assert saved.status_code == 400
     body["template"]["Study"]["TaskName"] = "x"
     assert client.post("/api/template-editor/validate", json=body).get_json()["ok"]
+
+
+def test_a_wrong_value_inside_an_item_names_the_field_not_the_whole_item():
+    from src.prism_template_validation import validate_template_against_schema
+
+    item_schema = {
+        "oneOf": [
+            {"type": "object", "properties": {"SessionHint": {"type": "string", "pattern": "^(ses-[a-zA-Z0-9]+)?$"},
+                                               "MinValue": {"type": ["number", "null"]}}, "required": ["Description"]},
+            {"type": "object", "required": ["AliasOf"]},
+        ]
+    }
+    schema = {"type": "object", "additionalProperties": item_schema}
+    errors = validate_template_against_schema(
+        instance={"Q1": {"Description": "q", "SessionHint": "session 1", "MinValue": "x"}}, schema=schema
+    )
+    assert errors and all(len(e["message"]) < 160 for e in errors), errors
+    assert any(e["path"].endswith("Q1/SessionHint") and "ses-<label>" in e["message"] for e in errors) or any(
+        e["path"].endswith("Q1/MinValue") for e in errors
+    ), errors
+
+
+def test_empty_description_and_empty_level_labels_are_warnings():
+    findings = CHECK({
+        "Q1": {"Description": {"de": "", "en": ""}, "Levels": {"1": {"de": "", "en": ""}, "2": {"en": "ok"}}},
+        "Q2": {"Description": ""},
+        "Q3": {"Description": {"en": "fine"}, "Levels": {"1": "text"}},
+    })
+    messages = sorted((f["path"], f["severity"]) for f in findings)
+    assert messages == [("Q1", "warning"), ("Q1/Levels/1", "warning"), ("Q2", "warning")]
+
+
+def test_an_alias_of_an_unknown_item_is_a_warning():
+    findings = CHECK({"Q1": _item(), "Q2": {"AliasOf": "Q9"}, "Q3": {"AliasOf": "Q1"}})
+    assert [(f["path"], f["severity"]) for f in findings] == [("Q2", "warning")] and "Q9" in findings[0]["message"]
+
+
+def test_proto_is_not_a_usable_item_id():
+    assert any("__proto__" in f["message"] for f in CHECK({"__proto__": _item()}))

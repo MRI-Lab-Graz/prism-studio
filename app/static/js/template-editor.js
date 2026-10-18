@@ -1952,7 +1952,7 @@
         const newKey = prompt('Enter level key (e.g., 0, 1, 2, or a code):');
         if (!newKey) return;
         const key = newKey.trim();
-        if (Object.hasOwn(levelsData, key)) {
+        if (key === '__proto__' || Object.hasOwn(levelsData, key)) {
           alert('Level already exists.');
           return;
         }
@@ -3127,6 +3127,7 @@
           showAlert('warning', 'No items selected to update.');
           return;
         }
+        if (checkedItemIds.size === 0 && !confirm(`No items are checked. Set ${name} on all ${targetKeys.length} items?`)) return;
 
         targetKeys.forEach(k => {
           if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
