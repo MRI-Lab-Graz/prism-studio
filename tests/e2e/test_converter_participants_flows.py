@@ -1,6 +1,7 @@
 """Converter > Sociodemographics: build and merge participants.tsv the way a user does."""
 
 import csv
+import re
 
 from playwright.sync_api import expect
 
@@ -166,3 +167,30 @@ def test_an_empty_file_says_so_next_to_the_id_column(app_page, studio_url, tmp_p
     open_participants_tab(app_page, studio_url)
     select_people_file(app_page, tmp_path, "")
     expect(app_page.locator("#participantsIdColumnHint")).to_contain_text("empty", timeout=30000)
+
+
+PROBLEMS = "participant_id,age,iq\nP1,21,100\nP-2,22,99\nP 2,23,98\n,24,97\nP5,twenty,96\nP6,200,95\nP7,30,94\n"
+
+
+def test_problems_in_the_table_are_listed_and_errors_block_convert(app_page, studio_url, tmp_path):
+    open_participants_tab(app_page, studio_url)
+    select_people_file(app_page, tmp_path, PROBLEMS)
+    app_page.click("#participantsPreviewBtn")
+    info = app_page.locator("#participantsInfo")
+    expect(info).to_contain_text("no participant ID", timeout=30000)
+    expect(info).to_contain_text("sub-P2")
+    expect(info).to_contain_text("not numbers")
+    expect(info).to_contain_text("outside 0-120")
+    expect(info).to_have_class(re.compile("alert-danger"))
+    app_page.click("#participantsAnnotationConfirmBtn", timeout=30000)
+    expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
+
+
+def test_the_preview_names_the_columns_that_are_not_imported_yet(app_page, studio_url, tmp_path):
+    open_participants_tab(app_page, studio_url)
+    select_people_file(app_page, tmp_path, "participant_id,age,sex,iq,vo2max\nP1,21,f,100,40\nP2,30,m,99,38\n")
+    app_page.click("#participantsPreviewBtn")
+    text = app_page.locator("#participantsPreviewAvailabilityText")
+    expect(text).to_contain_text("NOT imported yet", timeout=30000)
+    expect(text).to_contain_text("iq")
+    expect(text).to_contain_text("vo2max")
