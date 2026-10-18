@@ -28,7 +28,7 @@ A file name without the `biosample-<label>` entity is an error.
 
 One file per subject, session and run. One row per sample, one column per analyte, plus optional sample-level columns. Every column is described in the sidecar.
 
-```tsv
+```text
 sample_id	collection_time	fasting	crp	il6	tnfa
 B-0152	08:40	0	0.4	<LOD	1.12
 ```
