@@ -14,6 +14,11 @@ grammar that ties them together.
     <span class="prism-chapter-title">Biometrics</span>
     <span class="prism-chapter-outcome">Physiological assessments that don't fit standard BIDS <code>beh</code>/<code>physio</code></span>
   </a>
+  <a class="prism-chapter-card" href="specs/biosample.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v10.5a4 4 0 1 0 4 0V3"/><path d="M10 12h4"/></svg></span>
+    <span class="prism-chapter-title">Biosample</span>
+    <span class="prism-chapter-outcome">Laboratory assay results from blood, saliva, urine and other samples</span>
+  </a>
   <a class="prism-chapter-card" href="specs/events.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>
     <span class="prism-chapter-title">Events (Super-BIDS)</span>
