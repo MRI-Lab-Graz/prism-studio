@@ -111,9 +111,9 @@ sessions are populated automatically as you import data in later chapters.
 
 The **Study Metadata** card appears once you start filling in the form
 above. It's a large form covering a study's entire lifecycle (design,
-recruitment, procedure, missing-data notes, and more), but only three things
-in it actually block project creation: **Dataset Name**, **Authors** and
-**Keywords**.
+recruitment, procedure, missing-data notes, and more), but only four things
+in it actually block project creation: **Dataset Name**, **Authors**,
+**Keywords** and **Timepoints**.
 Fill those in properly now rather than dismissing them — it's little extra
 effort at this point, and it means `dataset_description.json` and
 `CITATION.cff` start out correct instead of needing a cleanup pass later.
@@ -159,7 +159,24 @@ in [Chapter 5](TUTORIAL_BEGINNER_5_VALIDATOR.md) report `PRISM301`
 ("Keywords: [] is too short"), and it triggers the Required Fields Missing
 dialog in Part C.
 
-### 4. Worth doing now, not required: Ethics and Funding
+### 4. Timepoints
+
+Open the **Study Design** section and set **Timepoints**. For this tutorial
+choose **One timepoint (cross-sectional)**; pick *Several timepoints
+(longitudinal)* for a study with repeated measurements. It is required
+because PRISM needs to know whether to write `ses-1` or to ask you to map
+every session label.
+
+```{important}
+Until **Dataset Name**, **Authors**, **Keywords** and **Timepoints** are all
+set, the tools (Converter, Recipes, Validator, File Management, ...) are
+blocked: they answer with a message that links back to the Projects page.
+Saving the Projects page always works, so you can fill the fields in step by
+step. Projects that were created before Timepoints existed are blocked until
+you set it once.
+```
+
+### 5. Worth doing now, not required: Ethics and Funding
 
 Two more fields sit in the same Basics section under a **Core study setup**
 header and carry a blue **CORE** badge — not the red **REQUIRED** badge that
@@ -177,8 +194,8 @@ gate. They're quick to answer honestly right now, so do that:
 
 ### What's intentionally left for later
 
-Everything else in the Study Metadata card — **Overview**, **Study
-Design**, **Recruitment**, **Eligibility**, **Procedure**, **Discovery &
+Everything else in the Study Metadata card — **Overview**, the rest of **Study
+Design** (everything except Timepoints), **Recruitment**, **Eligibility**, **Procedure**, **Discovery &
 Citation**, **Missing Data & Known Issues**, **References** — is grouped
 under "Recruitment and execution" and "Reporting and follow-up," collapsed
 by default in the UI itself. That's a deliberate signal, not an oversight
@@ -271,7 +288,7 @@ reconstruct from memory.
   common reason the Required Fields Missing dialog still appears after
   filling in Part B; the email is only required *because* that author is
   corresponding, so add it or unmark the checkbox.
-- **Confusing CORE with REQUIRED** — see Part B, step 4: the blue CORE badge
+- **Confusing CORE with REQUIRED** — see Part B, step 5: the blue CORE badge
   (Ethics Approvals, Funding) never blocks creation, only the red REQUIRED
   badge (Dataset Name, Authors, Keywords) does.
 - **Fewer than three keywords** — the Required Fields Missing dialog will

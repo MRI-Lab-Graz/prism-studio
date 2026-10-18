@@ -82,3 +82,30 @@ def test_save_gate_is_exempt(tmp_path):
     h = {"save_gate": MagicMock()}
     _run(Namespace(command="save-gate", project=_incomplete(tmp_path)), h)
     h["save_gate"].assert_called_once()
+
+
+def test_datalad_doctor_is_a_diagnostic_and_is_exempt(tmp_path):
+    h = {"datalad_doctor": MagicMock()}
+    parsers = {"root": MagicMock(), "datalad": MagicMock()}
+    args = Namespace(command="datalad", action="doctor", project=_incomplete(tmp_path))
+    dispatch_prism_tools(args, parsers=parsers, handlers=h)
+    h["datalad_doctor"].assert_called_once()
+
+
+def test_recipes_prism_argument_names_a_project_and_is_gated(tmp_path):
+    h = {"recipes_surveys": MagicMock()}
+    parsers = {"root": MagicMock(), "recipes": MagicMock()}
+    args = Namespace(command="recipes", action="surveys", prism=_incomplete(tmp_path))
+    with pytest.raises(SystemExit) as exc:
+        dispatch_prism_tools(args, parsers=parsers, handlers=h)
+    assert exc.value.code == 2
+    h["recipes_surveys"].assert_not_called()
+
+
+def test_the_cli_message_names_the_project_json_keys_to_set(tmp_path, capsys):
+    args = Namespace(command="survey", action="convert", project=_incomplete(tmp_path))
+    with pytest.raises(SystemExit):
+        _run(args, {"survey_convert": MagicMock()})
+    out = capsys.readouterr().out
+    for key in ("Basics.Name", "Basics.Authors", "Basics.Keywords", "StudyDesign.Timepoints"):
+        assert key in out
