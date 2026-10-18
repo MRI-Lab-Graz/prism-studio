@@ -528,3 +528,23 @@ def test_deleting_a_whole_subject_says_participants_tsv_still_lists_them(app_pag
     page.click("#fileDeleteApplyBtn")
     expect(page.locator("#fileDeleteResult")).to_contain_text("Deleted")
     expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists")
+
+
+@pytest.mark.parametrize("replacement,reason", [("../../escape.tsv", "folder separator"), ("a/b.tsv", "folder separator"), ("", "empty")])
+def test_renamer_preview_and_copy_both_refuse_a_new_name_that_is_not_a_plain_file_name(app_page, studio_url, project, replacement, reason):
+    def send(dry_run):
+        return app_page.context.request.post(
+            f"{studio_url}/api/physio-rename",
+            multipart={
+                "pattern": "^(.*)$", "replacement": replacement, "dry_run": dry_run, "organize": "false",
+                "save_to_project": "false" if dry_run == "true" else "true", "skip_zip": "true", "dest_root": "root",
+                "project_path": str(project),
+                "files": {"name": "orig.edf", "mimeType": "application/octet-stream", "buffer": b"x"},
+            },
+        ).json()
+
+    for dry_run in ("true", "false"):
+        (result,) = send(dry_run)["results"]
+        assert result["success"] is False and reason in result["new"], result
+    assert not (project.parent / "escape.tsv").exists()
+    assert not [f for f in project_files(project) if f.endswith((".tsv", ".edf")) and "escape" in f]

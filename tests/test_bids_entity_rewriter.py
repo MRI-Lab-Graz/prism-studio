@@ -393,3 +393,12 @@ def test_renaming_another_entity_leaves_task_name_alone(tmp_path):
     BidsEntityRewriter(root).apply(modality="survey", entity="_acq", operation="rename", replacement="b")
 
     assert _read_json(folder / "sub-01_ses-1_task-wb_acq-b_survey.json")["TaskName"] == "wb"
+
+
+def test_replacement_value_is_limited_to_32_ascii_label_characters(tmp_path):
+    from src.bids_entity_rewriter import BidsEntityRewriter
+
+    for bad in ("x" * 33, "ünï"):
+        with pytest.raises(ValueError, match="Replacement values"):
+            BidsEntityRewriter._normalize_replacement(bad)
+    assert BidsEntityRewriter._normalize_replacement("x" * 32) == "x" * 32
