@@ -990,6 +990,89 @@ class TemplateValidator:
         ]
 
     @staticmethod
+    def validate_item_rules_from_data(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Item rules the JSON schema cannot express, for the template editor.
+
+        Returns dicts with ``path`` (item id), ``message`` and ``severity``:
+        errors for impossible ranges, warnings for item ids that are not
+        letters/digits/``_``/``-`` (they become column names), ids that differ only
+        in case, and integer items with fractional bounds.
+        """
+        import re
+
+        validator = TemplateValidator.__new__(TemplateValidator)
+        findings: List[Dict[str, Any]] = []
+
+        def add(item_id: str, severity: str, message: str) -> None:
+            findings.append({"path": item_id, "message": message, "severity": severity})
+
+        def number(value: Any) -> float | None:
+            return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+        items = validator._extract_items(data)
+        if not items:
+            add("(template)", "warning", "The template has no items yet")
+        seen: Dict[str, str] = {}
+        for item_id, item in items.items():
+            if not isinstance(item, dict):
+                continue
+            if item_id == "__proto__" or not re.fullmatch(r"[A-Za-z0-9_-]+", item_id):
+                add(item_id, "warning", f"Item ID '{item_id}' should only contain letters, digits, '_' and '-' (it becomes a data column name)")
+            first = seen.setdefault(item_id.lower(), item_id)
+            if first != item_id:
+                add(item_id, "warning", f"Item IDs '{first}' and '{item_id}' differ only in case")
+            for low_key, high_key in (("MinValue", "MaxValue"), ("WarnMinValue", "WarnMaxValue")):
+                low, high = number(item.get(low_key)), number(item.get(high_key))
+                if low is not None and high is not None and low > high:
+                    add(item_id, "error", f"{low_key} ({item[low_key]}) must not be greater than {high_key} ({item[high_key]})")
+            if item.get("DataType") == "integer":
+                for key in ("MinValue", "MaxValue"):
+                    value = number(item.get(key))
+                    if value is not None and not value.is_integer():
+                        add(item_id, "warning", f"{key} ({item[key]}) is not a whole number but DataType is integer")
+
+        from src.language_codes import is_language_code
+
+        def check_language(where: str, code: Any) -> None:
+            if not is_language_code(code):
+                add(where, "error", f"'{code}' is not a language code (use e.g. 'en', 'de' or 'en-US')")
+
+        def check_texts(where: str, value: Any) -> None:
+            if isinstance(value, dict):
+                for code in value:
+                    if not is_language_code(code):
+                        add(where, "error", f"'{code}' is not a language code (use e.g. 'en', 'de' or 'en-US')")
+
+        technical, i18n, study = data.get("Technical"), data.get("I18n"), data.get("Study")
+        if isinstance(technical, dict) and technical.get("Language"):
+            check_language("Technical/Language", technical["Language"])
+        if isinstance(i18n, dict) and i18n.get("DefaultLanguage"):
+            check_language("I18n/DefaultLanguage", i18n["DefaultLanguage"])
+        if isinstance(study, dict):
+            for field in ("OriginalName", "Description", "Instructions", "License"):
+                check_texts(f"Study/{field}", study.get(field))
+        def blank(text: Any) -> bool:
+            if isinstance(text, dict):
+                return all(blank(t) for t in text.values())
+            return not str(text or "").strip()
+
+        for item_id, item in items.items():
+            if isinstance(item, dict):
+                if "Description" in item and blank(item["Description"]):
+                    add(item_id, "warning", f"Item {item_id} has no description text")
+                alias_of = item.get("AliasOf")
+                if isinstance(alias_of, str) and alias_of and alias_of not in items:
+                    add(item_id, "warning", f"AliasOf '{alias_of}' is not an item of this template")
+                for key, label in (item.get("Levels").items() if isinstance(item.get("Levels"), dict) else []):
+                    if isinstance(label, dict) and blank(label):
+                        add(f"{item_id}/Levels/{key}", "warning", f"Level {key} of {item_id} has no label text")
+                check_texts(f"{item_id}/Description", item.get("Description"))
+                levels = item.get("Levels")
+                for key, label in (levels.items() if isinstance(levels, dict) else []):
+                    check_texts(f"{item_id}/Levels/{key}", label)
+        return findings
+
+    @staticmethod
     def _is_valid_language_code(code: str) -> bool:
         """Check if a string is a valid language code (e.g., 'en', 'de', 'en-US')."""
         import re

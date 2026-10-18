@@ -11,6 +11,7 @@ docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 from __future__ import annotations
 
 import copy
+import re
 
 from src.converters.survey_io import normalize_paper_software_platform
 
@@ -61,6 +62,48 @@ def relax_schema_for_library_template(schema: dict) -> dict:
     return schema
 
 
+# What a schema regex means, for the people who fill in the form.
+_PATTERN_HINTS = {
+    "^[a-zA-Z0-9][-a-zA-Z0-9]*$": "use only letters, digits and hyphens, starting with a letter or digit (no spaces or underscores)",
+    "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$": "use only letters, digits and hyphens, starting with a letter or digit (no spaces or underscores)",
+    "^(ses-[a-zA-Z0-9]+)?$": "use the form ses-<label>, e.g. ses-1",
+    "^(run-[a-zA-Z0-9]+)?$": "use the form run-<label>, e.g. run-2",
+}
+
+
+def _readable_errors(err) -> list[dict]:
+    """One or more ``{path, message}`` for a jsonschema error.
+
+    "X is not valid under any of the given schemas" (oneOf/anyOf) would print the whole
+    instance; instead report what is wrong in the alternative that is closest to matching.
+    """
+    if err.validator in ("oneOf", "anyOf") and err.context:
+        branches: dict[int, list] = {}
+        for sub in err.context:
+            branches.setdefault(sub.schema_path[0], []).append(sub)
+        # An alternative that lacks its required key is the wrong kind of object, not a typo.
+        closest = min(
+            branches.values(),
+            key=lambda errs: (any(e.validator == "required" and not e.path for e in errs), len(errs)),
+        )
+        return [item for sub in closest for item in _readable_errors_at(sub, list(err.path))]
+    return [_error_dict(err, list(err.path))]
+
+
+def _readable_errors_at(sub, base_path: list) -> list[dict]:
+    if sub.validator in ("oneOf", "anyOf") and sub.context:
+        return _readable_errors(sub)
+    return [_error_dict(sub, base_path + list(sub.path))]
+
+
+def _error_dict(err, path: list) -> dict:
+    hint = _PATTERN_HINTS.get(err.schema.get("pattern")) if err.validator == "pattern" else None
+    return {
+        "path": "/".join(str(p) for p in path),
+        "message": f"'{err.instance}' is not allowed: {hint}" if hint else err.message,
+    }
+
+
 def validate_template_against_schema(*, instance: object, schema: dict) -> list[dict]:
     """Validate a PRISM template against a JSON schema.
 
@@ -76,8 +119,7 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
     validator = Draft7Validator(schema)
     errors = []
     for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
-        path = "/".join(str(p) for p in err.path)
-        errors.append({"path": path, "message": err.message})
+        errors.extend(_readable_errors(err))
 
     if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
         technical = normalized_instance["Technical"]
@@ -99,3 +141,25 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
                 )
 
     return errors
+
+
+_TASK_NAME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9\-]*")
+
+
+def with_default_task_name(template: dict, filename: str, modality: str) -> dict:
+    """Fill an empty ``Study.TaskName`` from ``<modality>-<task>.json``; the file name is the task name."""
+    study = template.get("Study")
+    if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
+        return template
+    task = filename[len(modality) + 1 : -len(".json")] if filename.startswith(f"{modality}-") and filename.endswith(".json") else ""
+    if _TASK_NAME.fullmatch(task):
+        template = {**template, "Study": {**(study if isinstance(study, dict) else {}), "TaskName": task}}
+    return template
+
+
+def missing_task_name_error(template: dict) -> dict | None:
+    """Every template needs a task name (the library relaxation only covers the other project fields)."""
+    study = template.get("Study")
+    if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
+        return None
+    return {"path": "Study/TaskName", "message": "Every template needs a task name (letters, digits and hyphens, e.g. 'pss')"}

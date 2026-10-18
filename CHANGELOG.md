@@ -40,6 +40,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the Projects page. `src/project_ready.py` is the one rule; `session_target()` is added for the importer rollout and
   changes no import yet.
 
+### Fixed
+- **Converter previews tell you what they change or skip.** The sociodemographics, survey and biometrics
+  previews now list rows without a participant ID (skipped), participant and session labels that were cleaned to
+  BIDS-safe form (`'P 1' → sub-P1`), and, for sociodemographics, different IDs that become the same participant.
+  Text in a numeric column and an age outside 0-120 are errors (Convert stays locked; `participants convert` refuses
+  the file). The survey preview lists every answer outside a template's scale with the participant.
+- **"Auto-detect" now finds semicolon-separated CSVs** (German Excel exports) in every tabular import; the reason
+  an empty or unreadable file fails is shown next to the ID column.
+- **Template editor.** Item IDs must be letters, digits, `_` or `-` (they become column names) and IDs differing
+  only in case are refused; Validate fails on `MinValue` above `MaxValue`, warns about odd IDs, integer items with
+  fractional bounds and templates without items, and explains the TaskName rule instead of showing a regex.
+  A template always needs a task name (taken from the file name when a library template has none), language
+  codes must be real ISO 639-1 codes (`en`, `de-AT`) wherever they are typed or stored, a language cannot be added
+  twice, bulk edit asks before changing every item, and errors inside an item name the field instead of printing the
+  whole item.
+- **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
+  accepted; a `|` in a known-issue text no longer splits it.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example
