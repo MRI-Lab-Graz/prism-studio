@@ -17,7 +17,7 @@ export function createSurveySelectedInputController({
         }
         const serverFilePath = getServerFilePath();
         if (serverFilePath) {
-            const tokens = serverFilePath.split('/');
+            const tokens = serverFilePath.split(/[\\/]/);
             return tokens[tokens.length - 1] || serverFilePath;
         }
         return '';

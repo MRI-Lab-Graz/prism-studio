@@ -13,8 +13,8 @@ _EXEMPT_PREFIXES = (
     "/api/environment",  # like the CLI: environment commands stay open
 )
 _EXEMPT_PATHS = {
-    "/favicon.ico", "/health", "/shutdown", "/specifications", "/api/browse-folder",
-    "/api/browse-file", "/api/runtime-capabilities", "/api/list-library-files",
+    "/favicon.ico", "/health", "/shutdown", "/specifications",
+    "/api/runtime-capabilities", "/api/list-library-files",
     "/api/config", "/api/filesystem-context",
     # the survey generator does not work on the open project
     "/api/generate-lss", "/api/generate-boilerplate", "/api/generate-pavlovia",

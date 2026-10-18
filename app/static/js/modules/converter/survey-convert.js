@@ -33,6 +33,7 @@ import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapt
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { serverFileHintText } from './server-file-hint.js';
 import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
 import { createSurveySessionInputController } from './survey-session-input-controller.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
@@ -685,6 +686,19 @@ export function initSurveyConvert(elements) {
         });
     }
 
+    // The native input cannot display a server path, so show it in the hint line.
+    let defaultFileHintHtml = null;
+    function showServerFileHint(path) {
+        const hint = document.getElementById('convertFileHint');
+        if (!hint) return;
+        defaultFileHintHtml ??= hint.innerHTML;
+        hint.replaceChildren();
+        const label = document.createElement('span');
+        label.className = 'text-success';
+        label.textContent = serverFileHintText(path);
+        hint.append(label);
+    }
+
     function applySurveyPickerUiState() {
         const connectedToServer = prefersServerPicker();
 
@@ -692,9 +706,10 @@ export function initSurveyConvert(elements) {
             browseServerSurveyFileBtn.classList.toggle('d-none', !connectedToServer);
         }
 
+        // Keep the local picker usable (like participants): server mode only adds the Server button.
         if (convertSurveyFile) {
-            convertSurveyFile.disabled = connectedToServer;
-            convertSurveyFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
+            convertSurveyFile.disabled = false;
+            convertSurveyFile.title = '';
         }
     }
 
@@ -1893,6 +1908,9 @@ export function initSurveyConvert(elements) {
 
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
+        if (defaultFileHintHtml !== null) {
+            document.getElementById('convertFileHint').innerHTML = defaultFileHintHtml;
+        }
         resetSurveyRefreshFingerprint();
         convertSurveyFile.value = '';
         convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1966,6 +1984,7 @@ export function initSurveyConvert(elements) {
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
+            showServerFileHint(pickedPath);
             resetSurveyRefreshFingerprint();
             if (convertSurveyFile) {
                 convertSurveyFile.value = '';

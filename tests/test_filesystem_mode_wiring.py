@@ -7,35 +7,16 @@ FILESYSTEM_MODE_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "filesystem-mode.
 
 
 class TestFilesystemModeWiring(unittest.TestCase):
-    def test_filesystem_mode_uses_shared_api_fallback_for_context_detection(self):
+    def test_filesystem_mode_is_a_single_in_app_picker(self):
         content = FILESYSTEM_MODE_SCRIPT.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "const filesystemModeScriptUrl = document.currentScript?.src || window.location.href;",
-            content,
-        )
-        self.assertIn("function loadSharedFetchWithApiFallback() {", content)
-        self.assertIn(
-            "sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {",
-            content,
-        )
-        self.assertIn(
-            "const settingsResponse = await fetchWithApiFallback('/api/settings/global-library');",
-            content,
-        )
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/filesystem-context');",
-            content,
-        )
-        self.assertIn(
-            "return sharedFetchWithApiFallback(url, options, fallbackMessage);",
-            content,
-        )
-        self.assertIn("async function browseFolder(options = {}) {", content)
-        self.assertIn("async function browseFile(options = {}) {", content)
         self.assertIn("window.PrismPathPicker = {", content)
         self.assertIn("pickServerFolder: pickFolder,", content)
         self.assertIn("pickServerFile: pickFile,", content)
+        # No native dialog endpoints and no local/server mode detection.
+        self.assertNotIn("/api/browse-", content)
+        self.assertNotIn("/api/filesystem-context", content)
+        self.assertNotIn("fetch", content)
 
 
 if __name__ == "__main__":

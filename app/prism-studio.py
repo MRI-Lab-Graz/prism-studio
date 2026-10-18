@@ -902,8 +902,6 @@ def disable_static_js_css_cache(response):
 
 _LOOPBACK_ONLY_PATHS = {
     "/api/fs/browse",
-    "/api/browse-file",
-    "/api/browse-folder",
 }
 
 
@@ -994,10 +992,6 @@ def ensure_project_selected_first():
         return None
 
     # Allow utility endpoints needed before a project is selected (used on /projects).
-    if path == "/api/browse-folder":
-        return None
-    if path == "/api/browse-file":
-        return None
     if path == "/api/config":  # static constants the create flow needs (BIDSVersion, field lists)
         return None
     if path.startswith("/api/settings/"):
@@ -1038,8 +1032,6 @@ def ensure_project_selected_first():
         "/api/generate-boilerplate",
         "/api/template-editor/export-questionnaire",
         "/api/fs/browse",
-        "/api/browse-file",
-        "/api/browse-folder",
     ):
         return None
 

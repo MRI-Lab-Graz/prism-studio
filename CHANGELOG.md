@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`create_project`, `init-on-bids`, demo builders) do not set these fields yet: set them in `project.json` or on
   the Projects page. `src/project_ready.py` is the one rule; `session_target()` is added for the importer rollout and
   changes no import yet.
+- **One file picker.** The native operating-system file and folder dialogs and the "connected to server" switch
+  are gone; every page uses the in-app picker. Browser uploads (`<input type="file">`) are unchanged.
 
 ### Fixed
 - **Converter previews tell you what they change or skip.** The sociodemographics, survey and biometrics

@@ -612,17 +612,6 @@ def export_project_structure():
         return jsonify({"error": str(e)}), 500
 
 
-@projects_export_bp.route("/api/projects/export/browse-folder", methods=["POST"])
-def export_browse_folder():
-    """Open a native folder-picker dialog and return the chosen path."""
-    from src.web.services import file_picker
-
-    outcome = file_picker.pick_folder()
-    if outcome.error:
-        return jsonify({"folder": None, "error": outcome.error}), outcome.status_code
-    return jsonify({"folder": outcome.path or None})
-
-
 @projects_export_bp.route("/api/projects/export/folder", methods=["POST"])
 def export_project_folder():
     """Create a plain folder export without Git/DataLad metadata."""
