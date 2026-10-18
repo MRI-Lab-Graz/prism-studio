@@ -271,6 +271,8 @@ def api_participants_detect_id():
                 ),
             }
         )
+    except ValueError as e:  # unreadable or empty file: the user's input, not a server fault
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:

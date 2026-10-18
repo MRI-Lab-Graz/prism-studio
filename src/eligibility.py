@@ -203,6 +203,9 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             if lo is not None and hi is not None and lo > hi:
                 config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' has min {_num(lo)} greater than max {_num(hi)}; it is skipped.", str(root / "project.json")))
                 continue
+            if _level_labels(sidecar.get(col)):
+                config.append(("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' is numeric but column '{col}' has value labels (Levels), so its values are codes; link a categorical criterion instead.", str(root / "participants.json")))
+                continue
             expected = f"range {_range_text(crit)}"
 
             def violates(raw, crit=crit):

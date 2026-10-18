@@ -150,3 +150,19 @@ def test_a_new_preview_revokes_the_annotation_confirmation(app_page, studio_url,
     app_page.click("#participantsPreviewBtn")
     expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
     expect(app_page.locator("#convertBtnHint")).to_contain_text("Confirm the annotation", timeout=30000)
+
+
+def test_a_semicolon_file_is_detected_without_touching_the_separator(app_page, studio_url, tmp_path, project):
+    """German Excel exports use ';' - the ID column must be found with "Auto-detect"."""
+    open_participants_tab(app_page, studio_url)
+    content = "participant_id;age;iq\n" + "".join(f"P{i};{20 + i};10{i % 10},5\n" for i in range(1, 12))
+    select_people_file(app_page, tmp_path, content)
+    app_page.click("#participantsPreviewBtn")
+    expect(app_page.locator("#participantsPreviewTable")).to_contain_text("sub-P1", timeout=30000)
+
+
+def test_an_empty_file_says_so_next_to_the_id_column(app_page, studio_url, tmp_path):
+    app_page.allowed_http[400] = "/api/participants-detect-id"  # the answer is the message shown below
+    open_participants_tab(app_page, studio_url)
+    select_people_file(app_page, tmp_path, "")
+    expect(app_page.locator("#participantsIdColumnHint")).to_contain_text("empty", timeout=30000)

@@ -81,6 +81,11 @@ def _sessions_from_date_option() -> str | None:
     return request.form.get("sessions_from_date", "").strip() or None
 
 
+def _separator_for_reader(suffix: str, separator_option: str) -> str | None:
+    """None for "Auto-detect": the reader then sniffs a wrong default (e.g. ';' in a .csv)."""
+    return None if separator_option == "auto" else _expected_delimiter_for_suffix(suffix, separator_option)
+
+
 def _read_participants_input_table(
     *,
     input_path: Path,
@@ -97,7 +102,7 @@ def _read_participants_input_table(
         project_path = session.get("current_project_path")
         df, warnings = load_participant_source(
             input_path,
-            separator=_expected_delimiter_for_suffix(suffix, separator_option),
+            separator=_separator_for_reader(suffix, separator_option),
             sheet=sheet_arg,
             sessions_from_date=sessions_from_date,
             id_column=id_column,
@@ -122,7 +127,7 @@ def _read_participants_input_table(
             input_path,
             kind=kind,
             sheet=sheet_arg,
-            separator=_expected_delimiter_for_suffix(suffix, separator_option),
+            separator=_separator_for_reader(suffix, separator_option),
         )
         return result.df
 

@@ -1398,7 +1398,7 @@ export function initParticipants() {
             clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
-            if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
+            if (idHint) idHint.textContent = error?.message || 'Automatic detection unavailable. Select the source ID column manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
     }
