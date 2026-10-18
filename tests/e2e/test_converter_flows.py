@@ -179,7 +179,9 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
 
     app_page.allowed_http[409] = "/api/survey-detect-version-contexts"  # unmapped labels are the point
     app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # error mode has no session yet
-    (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
+    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta["StudyDesign"] = {"Timepoints": "multiple"}
+    (project / "project.json").write_text(json.dumps(meta))
     shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
     open_survey_tab(app_page, studio_url)
     app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
