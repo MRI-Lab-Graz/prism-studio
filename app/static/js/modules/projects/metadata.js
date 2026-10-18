@@ -1192,8 +1192,13 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepte
     const actions = mountRowActions(row, {
         state: accepted ? 'defined' : 'draft',
         noun: 'author',
-        incompleteHint: 'Enter first and last name',
-        isComplete: () => Boolean(nameOf('.author-first') && nameOf('.author-last')),
+        incompleteHint: 'Enter first and last name (an author already listed cannot be added twice)',
+        isComplete: () => {
+            const [first, last] = [nameOf('.author-first'), nameOf('.author-last')];
+            const same = (r) => [first, last].every((n, i) => _cleanMetadataText(r.querySelector(i ? '.author-last' : '.author-first')?.value || '').toLowerCase() === n.toLowerCase());
+            const listed = Array.from(document.querySelectorAll(DEFINED_AUTHOR_ROWS)).some((r) => r !== row && same(r));
+            return Boolean(first && last) && !listed;
+        },
         hasContent: () => Array.from(row.querySelectorAll('input:not(.author-corresponding)'))
             .some(input => input.value.trim() !== ''),
         onAccept: () => {
@@ -1714,8 +1719,9 @@ const TWO_FIELD_LIST_FIELDS = {
 };
 
 function _combineTwoFieldRow(field1, field2) {
-    const clean1 = _cleanMetadataText(field1);
-    const clean2 = _cleanMetadataText(field2);
+    // "|" separates the two parts in the stored text, so it cannot be part of either
+    const clean1 = _cleanMetadataText(field1).replaceAll('|', '/');
+    const clean2 = _cleanMetadataText(field2).replaceAll('|', '/');
     if (clean1 && clean2) return `${clean1} | ${clean2}`;
     return clean1 || clean2;
 }

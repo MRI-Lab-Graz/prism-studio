@@ -73,7 +73,10 @@ export function hasContent(row) {
 /** A row the validator can use; incomplete rows are not saved. */
 export function isComplete(row) {
     if (!String(row.label || '').trim()) return false;
-    if (row.type === 'numeric') return parseNumber(row.min) !== undefined || parseNumber(row.max) !== undefined;
+    if (row.type === 'numeric') {
+        const [lo, hi] = [parseNumber(row.min), parseNumber(row.max)];
+        return (lo !== undefined || hi !== undefined) && !(lo > hi); // min above max flags everyone
+    }
     return (row.values || []).some((v) => String(v).trim());
 }
 
@@ -147,7 +150,7 @@ export function setEligibilityCriteria(criteria) {
 
 const hintText = (row) => (isComplete(row)
     ? 'click the check mark to add this criterion'
-    : `${row.accepted ? 'not saved' : 'to add it'}: ${row.type === 'numeric' ? 'enter a min or max' : 'choose at least one value'}${row.label ? '' : ' and a name'}`);
+    : `${row.accepted ? 'not saved' : 'to add it'}: ${row.type === 'numeric' ? 'enter a min or max (min must not exceed max)' : 'choose at least one value'}${row.label ? '' : ' and a name'}`);
 // An accepted, complete row needs no hint; a draft always says what it still needs.
 const hintHidden = (row) => row.accepted && isComplete(row);
 
