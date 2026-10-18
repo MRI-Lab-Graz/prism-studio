@@ -211,3 +211,22 @@ def test_without_a_project_the_page_says_so(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/recipes")
 
     expect(bare_page.locator("body")).to_contain_text("No project loaded")
+
+
+def test_the_run_warns_about_answers_outside_the_scale_and_sums_over_missing_items(app_page, studio_url, project):
+    (project / "code/library/survey").mkdir(parents=True, exist_ok=True)
+    shutil.copy(BRS, project / "code/library/survey/survey-brs.json")
+    rows = [("sub-P1", "3", "4", "2"), ("sub-P2", "n/a", "4", "2"), ("sub-P3", "9", "4", "2")]
+    (project / "participants.tsv").write_text("participant_id\n" + "".join(f"{r[0]}\n" for r in rows))
+    for pid, *values in rows:
+        folder = project / pid / "ses-1" / "survey"
+        folder.mkdir(parents=True)
+        (folder / f"{pid}_ses-1_task-brs_survey.tsv").write_text("BRS01\tBRS02\tBRS03\n" + "\t".join(values) + "\n")
+
+    open_recipes(app_page, studio_url)
+    app_page.click("#derivRunBtn")
+
+    terminal = app_page.locator("#derivTerminal")
+    expect(terminal).to_contain_text("outside the scale of the questionnaire", timeout=60000)
+    expect(terminal).to_contain_text("sub-P3 ses-1 BRS01=9")
+    expect(terminal).to_contain_text("answered only some of the 3 items")

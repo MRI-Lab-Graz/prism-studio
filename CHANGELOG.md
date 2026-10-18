@@ -61,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rename accept only ASCII letters and digits (no accents; at most 32 characters). Delete says which deleted subjects
   `participants.tsv` still lists (the table is never edited silently). The file renamer's preview and copy both refuse
   a new name that is empty or contains a folder separator instead of failing with an operating-system error.
+- **Recipes.** A scoring run now lists, next to the result, answers outside the questionnaire's scale (with the
+  participant and item), text answers (counted as missing) and sums computed from only some of the items (add
+  `"Missing": "require_all"` to a score to leave those empty). The length of anonymized IDs must be 4-12, and a score
+  cannot be named like an ID column or an item of the questionnaire.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 

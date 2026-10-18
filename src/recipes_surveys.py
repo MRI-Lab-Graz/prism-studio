@@ -74,6 +74,8 @@ class SurveyRecipesResult:
     """Input tasks detected in data files without a matching loaded recipe."""
     raw_only_tasks: tuple[str, ...] = ()
     """Input tasks exported as raw-only because no matching recipe was available."""
+    data_warnings: tuple[str, ...] = ()
+    """Things that look wrong in the scored data (out-of-scale answers, partial sums)."""
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -1371,6 +1373,20 @@ def _load_and_validate_recipes(
     return {k: v for k, v in all_recipes.items() if k in selected_set}, recipes_dir
 
 
+def _recipe_input_warnings(
+    recipe_id: str, recipe: dict, files: list[Path], prism_root: Path, task: str, modality: str
+) -> list[str]:
+    from src.recipes_data_checks import recipe_data_warnings
+
+    labelled: list[tuple[str, dict[str, str]]] = []
+    for path in files:
+        sub_id, ses_id = _infer_sub_ses_from_path(path)
+        _, rows = _read_tsv_rows(path)
+        labelled.extend((" ".join(filter(None, [sub_id, ses_id])), row) for row in rows)
+    template = _get_sidecar_for_task(prism_root, modality, task)
+    return recipe_data_warnings(recipe_id, recipe, labelled, template)
+
+
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
     """Scan dataset for TSV files based on modality."""
     search_roots = [prism_root]
@@ -2173,6 +2189,7 @@ def compute_survey_recipes(
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
     nan_report: dict[str, list[str]] = {}
+    data_warnings: list[str] = []
     applied_recipes_list: list[dict] = []
     boilerplate_path: Path | None = None
     boilerplate_html_path: Path | None = None
@@ -2221,6 +2238,9 @@ def compute_survey_recipes(
         applied_recipe_ids.add(recipe_id)
         applied_recipes_list.append(recipe)
         recipe_inputs[recipe_id] = list(matching)
+        data_warnings.extend(
+            _recipe_input_warnings(recipe_id, recipe, matching, output_prism_root, survey_task, modality)
+        )
 
         if out_format in ("csv", "xlsx", "sav"):
             if merge_all:
@@ -2853,6 +2873,7 @@ def compute_survey_recipes(
         written_recipe_ids=tuple(sorted(written_recipe_ids)),
         missing_input_tasks=missing_input_tasks,
         raw_only_tasks=tuple(sorted(raw_only_tasks)),
+        data_warnings=tuple(data_warnings),
     )
 
 
@@ -3124,6 +3145,12 @@ def anonymize_recipe_output(
         (anonymized_file_count, mapping_file_path), where the mapping path is
         None when participant IDs were not anonymized.
     """
+    try:
+        id_length = int(id_length)
+    except (TypeError, ValueError):
+        id_length = 0
+    if not 4 <= id_length <= 12:  # shorter risks collisions, longer is pointless
+        raise ValueError("The length of the new participant IDs must be a whole number between 4 and 12.")
     import pandas as pd
 
     dataset_path = str(dataset_path)

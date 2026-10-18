@@ -164,6 +164,8 @@ def cmd_recipes_surveys(args):
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
             print(f"   Note: {result.fallback_note}")
+        for warning in result.data_warnings:
+            print(f"   Warning: {warning}")
         if result.nan_report:
             print("   Columns with all n/a:")
             for key, cols in result.nan_report.items():
@@ -264,6 +266,8 @@ def cmd_recipes_biometrics(args):
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
             print(f"   Note: {result.fallback_note}")
+        for warning in result.data_warnings:
+            print(f"   Warning: {warning}")
         if result.nan_report:
             print("   Columns with all n/a:")
             for key, cols in result.nan_report.items():

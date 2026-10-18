@@ -37,6 +37,9 @@ def _as_list_of_str(x: Any) -> list[str]:
     return out
 
 
+_RESERVED_OUTPUT_COLUMNS = {"participant_id", "session", "run"}
+
+
 def _unknown_items(items: list[str], known_items_lower: set[str] | None) -> list[str]:
     """Return the subset of ``items`` that aren't in ``known_items_lower``.
 
@@ -93,6 +96,13 @@ def _validate_score_entries(
         if score_name in score_names:
             errors.append(prefix + f"duplicate score Name '{score_name}'")
         score_names.add(score_name)
+        if score_name.lower() in _RESERVED_OUTPUT_COLUMNS or (
+            known_items_lower is not None and score_name.lower() in known_items_lower
+        ):
+            errors.append(
+                prefix + f"score Name '{score_name}' collides with an ID column or an item of the "
+                "questionnaire; choose another name"
+            )
 
         combined_known = (
             None if known_items_lower is None else (known_items_lower | available_lower)
