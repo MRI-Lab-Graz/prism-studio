@@ -41,7 +41,7 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
         col_to_mapping={
             "ADS01": ColumnMapping(task="ads", run=None, base_item="ADS01")
         },
-        templates={"ads": {"json": {"ADS01": {"Levels": {"1": "low"}}}}},
+        templates={"ads": {"json": {"ADS01": {"Levels": {"3": "low", "4": "high"}}}}},
         res_id_col="participant_id",
         res_ses_col="session",
         res_run_col="run",
@@ -82,7 +82,7 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
         "missing_count": 0,
         "missing_percent": 0.0,
         "has_unexpected_values": False,
-        "expected_levels": ["1"],
+        "expected_levels": ["3", "4"],
     }
 
 

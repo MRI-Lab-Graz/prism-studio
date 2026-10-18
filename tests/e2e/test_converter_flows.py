@@ -267,3 +267,23 @@ def test_review_session_assignment_button_folds_the_table_back_in(app_page, stud
 
     app_page.click("#sessionAssignmentsBtn")  # and a third shows it again
     expect(rows).to_have_count(6, timeout=15000)
+
+
+def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,-1,0,2\nP003,often,1,1\n")
+    app_page.fill("#convertSessionCustom", "1")
+    app_page.click("#previewBtn")
+    log = app_page.locator("#conversionLog")
+    expect(log).to_contain_text("outside the scale 0-4", timeout=30000)
+    expect(log).to_contain_text("P001: 9")
+    expect(log).to_contain_text("P002: -1")
+    expect(log).to_contain_text("P003: often")
+
+
+def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    data = tmp_path / "semi.csv"
+    data.write_text("participant_id;BRS01;BRS02;BRS03\nP001;3;4;2\nP002;1;0;2\n")
+    app_page.set_input_files("#convertSurveyFile", str(data))
+    expect(app_page.locator("#convertIdColumn")).to_have_value("participant_id", timeout=30000)

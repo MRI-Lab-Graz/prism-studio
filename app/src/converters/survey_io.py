@@ -14,6 +14,8 @@ import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+
+from src.survey_scale_check import find_scale_violations
 from typing import Any
 
 from . import survey_processing as _survey_processing
@@ -968,6 +970,7 @@ def _generate_dry_run_preview(
         dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
 
@@ -1135,6 +1138,15 @@ def _generate_dry_run_preview(
         total_values = len(df.index)
         expected_levels = item_def.get("Levels") if isinstance(item_def, dict) else None
 
+        # A configured task offset shifts the answers before they are checked at conversion.
+        scale_issues = (
+            []
+            if (task_value_offsets or {}).get(task) is not None
+            else find_scale_violations(df, col, item_def, res_id_col, is_missing_fn)
+        )
+        for issue in scale_issues:
+            issues.append({**issue, "task": task, "item": base_item})
+
         col_mapping_details[col] = {
             "task": task,
             "run": run,
@@ -1143,7 +1155,7 @@ def _generate_dry_run_preview(
             "missing_percent": (
                 round((missing_count / total_values) * 100, 1) if total_values else 0.0
             ),
-            "has_unexpected_values": False,
+            "has_unexpected_values": bool(scale_issues),
             "expected_levels": (
                 sorted(expected_levels.keys())
                 if isinstance(expected_levels, dict)
