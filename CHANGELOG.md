@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Template editor.** Item IDs must be letters, digits, `_` or `-` (they become column names) and IDs differing
   only in case are refused; Validate fails on `MinValue` above `MaxValue`, warns about odd IDs, integer items with
   fractional bounds and templates without items, and explains the TaskName rule instead of showing a regex.
+  A template always needs a task name (taken from the file name when a library template has none), language
+  codes must be real ISO 639-1 codes (`en`, `de-AT`) wherever they are typed or stored, a language cannot be added
+  twice, bulk edit asks before changing every item, and errors inside an item name the field instead of printing the
+  whole item.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 
