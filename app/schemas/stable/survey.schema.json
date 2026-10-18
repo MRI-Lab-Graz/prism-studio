@@ -83,7 +83,7 @@
       "properties": {
         "TaskName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$",
           "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
         },
         "OriginalName": {
@@ -111,7 +111,7 @@
             "properties": {
               "VariantID": {
                 "type": "string",
-                "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$",
                 "description": "Identifier for this concrete variant (e.g., 10item-likert5, 10item-vas100)."
               },
               "ItemCount": {
@@ -533,7 +533,7 @@
               "properties": {
                 "VariantID": {
                   "type": "string",
-                  "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                  "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$",
                   "description": "Identifier of the concrete variant this scale definition applies to."
                 },
                 "ScaleType": {

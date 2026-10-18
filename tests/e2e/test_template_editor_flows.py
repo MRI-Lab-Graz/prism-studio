@@ -217,3 +217,35 @@ def test_items_tab_shows_the_item_panel_with_its_count(page):
     page.click("#tabEditor")
     expect(page.locator("#itemsPanelCol")).to_be_hidden()
     expect(page.locator("#topLevelPanel")).to_be_visible()
+
+
+def load_global_template(page):
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+
+
+def test_item_ids_that_cannot_be_column_names_or_clash_in_case_are_refused(page):
+    load_global_template(page)
+    page.click("#tabItems")
+    items = page.locator("#itemList > *")
+    count = items.count()
+    for bad in ("A B", "../x", "ünï", "aai01"):
+        page.fill("#newItemId", bad)
+        page.click("#btnAddItem")
+        expect(page.locator("#alertArea .alert-warning")).to_be_visible()
+        assert items.count() == count, bad
+    page.fill("#newItemId", "aai_11")
+    page.click("#btnAddItem")
+    expect(page.locator("#alertArea")).to_contain_text("Added item aai_11")
+
+
+def test_min_above_max_fails_validation_and_odd_ids_in_a_loaded_template_are_listed(page):
+    load_global_template(page)
+    page.click("#tabItems")
+    page.locator("#itemList > *").first.click()
+    page.fill("#field_ITEM_MinValue", "10")
+    page.fill("#field_ITEM_MaxValue", "1")
+    page.click("#btnValidate")
+    expect(page.locator("#alertArea")).to_contain_text("MinValue (10) must not be greater than MaxValue (1)")
+    expect(page.locator("#btnSave")).to_be_disabled()

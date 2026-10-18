@@ -290,12 +290,23 @@ def api_template_editor_validate():
         except Exception:
             pass
 
+        item_warnings = []
+        if modality in ("survey", "biometrics"):
+            from src.template_validator import TemplateValidator
+
+            for finding in TemplateValidator.validate_item_rules_from_data(template):
+                if finding["severity"] == "error":
+                    errors.append({"path": finding["path"], "message": finding["message"]})
+                else:
+                    item_warnings.append(finding)
+
         return (
             jsonify(
                 {
                     "ok": len(errors) == 0,
                     "errors": errors,
                     "language_warnings": lang_warnings,
+                    "item_warnings": item_warnings,
                 }
             ),
             200,

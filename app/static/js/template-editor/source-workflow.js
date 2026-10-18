@@ -248,6 +248,14 @@ export async function validateCurrent(context, { initial = false, imported = fal
     langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
   }
 
+  const itemWarnings = data.item_warnings || [];
+  if (itemWarnings.length > 0) {
+    const items = itemWarnings
+      .map((warning) => `<li><code>${context.escapeHtml(warning.path)}</code>: ${context.escapeHtml(warning.message)}</li>`)
+      .join('');
+    langWarnHtml += `<div class="alert alert-warning mt-2 mb-0"><strong>Item warnings:</strong><ul class="mb-0">${items}</ul></div>`;
+  }
+
   if (data.ok) {
     context.btnDownload.disabled = false;
     if (exportWordButton) {

@@ -334,6 +334,10 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  let itemId = null;
+  import(new URL('./template-editor/item-id.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { itemId = module; });
+
   const templateEditorSourceWorkflowModuleUrl = new URL('./template-editor/source-workflow.js', document.currentScript?.src || window.location.href).href;
   let templateEditorSourceWorkflowPromise = null;
 
@@ -5019,6 +5023,11 @@
       }
       if (currentTemplate[id]) {
         showAlert('warning', 'That item already exists.');
+        return;
+      }
+      const idProblem = itemId?.itemIdProblem(id, Object.keys(currentTemplate).filter((key) => !RESERVED_TOPLEVEL.has(key)));
+      if (idProblem) {
+        showAlert('warning', escapeHtml(idProblem));
         return;
       }
       const itemSchema = getItemSchema();

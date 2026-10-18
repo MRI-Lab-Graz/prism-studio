@@ -80,7 +80,7 @@
       "properties": {
         "TaskName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$",
           "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
         },
         "OriginalName": {

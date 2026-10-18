@@ -990,6 +990,46 @@ class TemplateValidator:
         ]
 
     @staticmethod
+    def validate_item_rules_from_data(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Item rules the JSON schema cannot express, for the template editor.
+
+        Returns dicts with ``path`` (item id), ``message`` and ``severity``:
+        errors for impossible ranges, warnings for item ids that are not
+        letters/digits/``_``/``-`` (they become column names), ids that differ only
+        in case, and integer items with fractional bounds.
+        """
+        import re
+
+        validator = TemplateValidator.__new__(TemplateValidator)
+        findings: List[Dict[str, Any]] = []
+
+        def add(item_id: str, severity: str, message: str) -> None:
+            findings.append({"path": item_id, "message": message, "severity": severity})
+
+        def number(value: Any) -> float | None:
+            return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+        seen: Dict[str, str] = {}
+        for item_id, item in validator._extract_items(data).items():
+            if not isinstance(item, dict):
+                continue
+            if not re.fullmatch(r"[A-Za-z0-9_-]+", item_id):
+                add(item_id, "warning", f"Item ID '{item_id}' should only contain letters, digits, '_' and '-' (it becomes a data column name)")
+            first = seen.setdefault(item_id.lower(), item_id)
+            if first != item_id:
+                add(item_id, "warning", f"Item IDs '{first}' and '{item_id}' differ only in case")
+            for low_key, high_key in (("MinValue", "MaxValue"), ("WarnMinValue", "WarnMaxValue")):
+                low, high = number(item.get(low_key)), number(item.get(high_key))
+                if low is not None and high is not None and low > high:
+                    add(item_id, "error", f"{low_key} ({item[low_key]}) must not be greater than {high_key} ({item[high_key]})")
+            if item.get("DataType") == "integer":
+                for key in ("MinValue", "MaxValue"):
+                    value = number(item.get(key))
+                    if value is not None and not value.is_integer():
+                        add(item_id, "warning", f"{key} ({item[key]}) is not a whole number but DataType is integer")
+        return findings
+
+    @staticmethod
     def _is_valid_language_code(code: str) -> bool:
         """Check if a string is a valid language code (e.g., 'en', 'de', 'en-US')."""
         import re
