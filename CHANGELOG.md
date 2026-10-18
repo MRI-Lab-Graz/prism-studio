@@ -69,6 +69,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Recipes.** A scoring run now lists, next to the result, answers outside the questionnaire's scale (with the
   participant and item), text answers (counted as missing) and sums left empty because an item is missing. The length
   of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
+  Excel exports now hold scores as numbers (they were stored as text), and SPSS variable names that differ only in
+  case are made unique.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 

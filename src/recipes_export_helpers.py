@@ -265,6 +265,35 @@ def _apply_missing_export_policy(
     return out
 
 
+_ID_COLUMNS = {"participant_id", "session", "run"}
+
+
+def numbers_as_numbers(df: Any) -> Any:
+    """Copy of ``df`` where columns holding only numbers (or empty cells) are real numbers.
+
+    The recipe tables are read from TSV as text; an xlsx written from them would hold numbers as text
+    (green triangles in Excel, no sums). ID columns, columns with a text marker such as ``n/a`` and
+    codes with leading zeros stay text.
+    """
+    import pandas as pd
+
+    out = df.copy()
+    for col in out.columns:
+        if str(col) in _ID_COLUMNS:
+            continue
+        text = out[col].astype("string").str.strip()
+        present = text.dropna()
+        present = present[present != ""]
+        if present.empty or present.str.match(r"^0\d").any() or present.str.match(r"^-0\d").any():
+            continue
+        numeric = pd.to_numeric(present.str.replace(",", ".", regex=False), errors="coerce")
+        if numeric.isna().any():
+            continue
+        converted = pd.to_numeric(text.str.replace(",", ".", regex=False).replace("", pd.NA), errors="coerce")
+        out[col] = converted.astype(object).where(converted.notna(), None) if (converted.dropna() % 1 != 0).any() else converted.round().astype("Int64")
+    return out
+
+
 def _sanitize_spss_variable_name(name: str) -> str:
     """Return an SPSS-safe variable name.
 
@@ -297,13 +326,13 @@ def _build_spss_rename_map(columns: Any) -> dict[str, str]:
         counter = 2
 
         # Avoid collisions after sanitization (e.g. "a-b" and "a.b" -> "a_b").
-        while candidate in used_names:
+        while candidate.lower() in used_names:  # SPSS names are case-insensitive
             suffix = f"_{counter}"
             max_base_len = _SPSS_VARIABLE_MAX_LENGTH - len(suffix)
             candidate = f"{base_name[:max_base_len]}{suffix}"
             counter += 1
 
-        used_names.add(candidate)
+        used_names.add(candidate.lower())
         if candidate != original:
             rename_map[original] = candidate
 

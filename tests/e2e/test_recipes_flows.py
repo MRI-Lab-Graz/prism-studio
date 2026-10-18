@@ -163,7 +163,7 @@ def test_xlsx_export_opens_and_holds_the_scores(app_page, studio_url, scored_pro
     sheet = openpyxl.load_workbook(out).active
     rows = [[cell for cell in row] for row in sheet.iter_rows(values_only=True)]
     assert rows[0] == ("participant_id", "session", "Total") or list(rows[0]) == ["participant_id", "session", "Total"]
-    assert [row[2] for row in rows[1:]] == [9, 11, 3] or [str(row[2]) for row in rows[1:]] == ["9", "11", "3"]
+    assert [row[2] for row in rows[1:]] == [9, 11, 3]  # real numbers: Excel can sum them
 
 
 def test_sav_export_keeps_the_value_labels(app_page, studio_url, scored_project):

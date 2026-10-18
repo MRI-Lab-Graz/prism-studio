@@ -648,6 +648,7 @@ from src.recipes_export_helpers import (  # noqa: E402
     _build_spss_rename_map,
     _coerce_value_labeled_columns_for_sav,
     _normalize_declared_data_type,
+    numbers_as_numbers,
     _prepare_dataframe_for_sav,
     _sanitize_spss_variable_name,
     _write_codebook_json,
@@ -1719,7 +1720,7 @@ def _export_recipe_aggregated(
         _unlock_for_overwrite(out_fname, output_prism_root)
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
-                to_excel_safe(df_for_write, writer, sheet_name="Data", index=False)
+                to_excel_safe(numbers_as_numbers(df_for_write), writer, sheet_name="Data", index=False)
                 # Codebook sheet
                 cb_rows = []
                 for var in df_for_write.columns:
@@ -2700,7 +2701,7 @@ def compute_survey_recipes(
                 missing_numeric_value=missing_numeric_value,
             )
             _unlock_for_overwrite(out_path, output_prism_root)
-            to_excel_safe(combined_for_write, out_path, index=False)
+            to_excel_safe(numbers_as_numbers(combined_for_write), out_path, index=False)
         elif out_format == "sav":
             _unlock_for_overwrite(out_path, output_prism_root)
             try:
