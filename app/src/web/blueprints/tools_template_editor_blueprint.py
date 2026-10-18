@@ -15,7 +15,9 @@ from flask import (
 from src.config import load_config
 from src.constants import SUPPORTED_MODALITIES
 from src.prism_template_validation import (
+    missing_task_name_error,
     relax_schema_for_library_template as _relax_schema_for_library_template,
+    with_default_task_name,
 )
 from src.survey_template_normalization import (
     autofill_single_version_variant_ids as _autofill_single_version_variant_ids,
@@ -216,6 +218,13 @@ def api_template_editor_new():
     return jsonify({"template": template, "suggested_filename": suggested}), 200
 
 
+@tools_template_editor_bp.route("/api/template-editor/language-codes", methods=["GET"])
+def api_template_editor_language_codes():
+    from src.language_codes import ISO_639_1
+
+    return jsonify({"codes": sorted(ISO_639_1)})
+
+
 @tools_template_editor_bp.route("/api/template-editor/load", methods=["GET"])
 def api_template_editor_load():
     modality = (request.args.get("modality") or "").strip().lower()
@@ -253,6 +262,9 @@ def api_template_editor_load():
     except Exception as e:
         return jsonify({"error": f"Could not read JSON: {e}"}), 400
 
+    if isinstance(loaded, dict) and modality in ("survey", "biometrics"):
+        loaded = with_default_task_name(loaded, filename, modality)
+
     return (
         jsonify({"template": loaded, "filename": filename, "library_path": str(path)}),
         200,
@@ -279,6 +291,8 @@ def api_template_editor_validate():
         if is_global:
             schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
+        if is_global and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
+            errors.append(error)
 
         lang_warnings = []
         try:
@@ -290,12 +304,23 @@ def api_template_editor_validate():
         except Exception:
             pass
 
+        item_warnings = []
+        if modality in ("survey", "biometrics"):
+            from src.template_validator import TemplateValidator
+
+            for finding in TemplateValidator.validate_item_rules_from_data(template):
+                if finding["severity"] == "error":
+                    errors.append({"path": finding["path"], "message": finding["message"]})
+                else:
+                    item_warnings.append(finding)
+
         return (
             jsonify(
                 {
                     "ok": len(errors) == 0,
                     "errors": errors,
                     "language_warnings": lang_warnings,
+                    "item_warnings": item_warnings,
                 }
             ),
             200,
@@ -437,6 +462,8 @@ def api_template_editor_save():
         if is_global:
             schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
+        if is_global and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
+            errors.append(error)
         if errors:
             return (
                 jsonify(
