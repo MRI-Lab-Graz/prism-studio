@@ -61,6 +61,14 @@ def relax_schema_for_library_template(schema: dict) -> dict:
     return schema
 
 
+# What a schema regex means, for the people who fill in the form.
+_PATTERN_HINTS = {
+    "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$": "use only letters, digits and hyphens, starting with a letter or digit (no spaces or underscores)",
+    "^(ses-[a-zA-Z0-9]+)?$": "use the form ses-<label>, e.g. ses-1",
+    "^(run-[a-zA-Z0-9]+)?$": "use the form run-<label>, e.g. run-2",
+}
+
+
 def validate_template_against_schema(*, instance: object, schema: dict) -> list[dict]:
     """Validate a PRISM template against a JSON schema.
 
@@ -77,7 +85,8 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
     errors = []
     for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
         path = "/".join(str(p) for p in err.path)
-        errors.append({"path": path, "message": err.message})
+        hint = _PATTERN_HINTS.get(err.schema.get("pattern")) if err.validator == "pattern" else None
+        errors.append({"path": path, "message": f"'{err.instance}' is not allowed: {hint}" if hint else err.message})
 
     if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
         technical = normalized_instance["Technical"]

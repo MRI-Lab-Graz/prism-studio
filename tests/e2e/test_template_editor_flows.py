@@ -249,3 +249,14 @@ def test_min_above_max_fails_validation_and_odd_ids_in_a_loaded_template_are_lis
     page.click("#btnValidate")
     expect(page.locator("#alertArea")).to_contain_text("MinValue (10) must not be greater than MaxValue (1)")
     expect(page.locator("#btnSave")).to_be_disabled()
+
+
+def test_a_blank_template_explains_the_task_name_rule_and_the_missing_items(page):
+    page.click("label[for=modeCreate]")
+    page.click("#btnNew")
+    page.fill("#field_Study_TaskName", "My Task!")
+    page.click("#btnValidate")
+    alert = page.locator("#alertArea")
+    expect(alert).to_contain_text("'My Task!' is not allowed: use only letters, digits and hyphens")
+    expect(alert).not_to_contain_text("[a-zA-Z0-9]")
+    expect(alert).to_contain_text("The template has no items yet")

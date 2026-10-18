@@ -13,6 +13,11 @@ def _by_severity(findings, severity):
     return [f for f in findings if f["severity"] == severity]
 
 
+def test_a_template_without_items_gets_a_warning():
+    (finding,) = CHECK({"Study": {"TaskName": "t"}, "Technical": {}})
+    assert finding["severity"] == "warning" and "no items" in finding["message"]
+
+
 def test_a_clean_template_has_no_findings():
     assert CHECK({"Study": {"TaskName": "t"}, "Q1": _item(MinValue=0, MaxValue=4), "Q_2-b": _item()}) == []
 
@@ -73,3 +78,16 @@ def test_validate_route_fails_on_an_impossible_range_and_lists_item_warnings(mon
     assert not body["ok"]
     assert any(e["path"] == "Q1" and "MinValue" in e["message"] for e in body["errors"])
     assert [w["path"] for w in body["item_warnings"]] == ["A B"]
+
+
+def test_pattern_errors_say_what_is_allowed_instead_of_showing_the_regex():
+    from src.prism_template_validation import validate_template_against_schema
+
+    schema = {
+        "type": "object",
+        "properties": {"Study": {"type": "object", "properties": {"TaskName": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$"}}}},
+    }
+    (error,) = validate_template_against_schema(instance={"Study": {"TaskName": "My Task!"}}, schema=schema)
+    assert error["path"] == "Study/TaskName"
+    assert "My Task!" in error["message"] and "letters, digits and hyphens" in error["message"]
+    assert "[a-zA-Z0-9]" not in error["message"]

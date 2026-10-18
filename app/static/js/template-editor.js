@@ -1935,7 +1935,7 @@
         const newKey = prompt('Enter level key (e.g., 0, 1, 2, or a code):');
         if (!newKey) return;
         const key = newKey.trim();
-        if (levelsData[key] !== undefined) {
+        if (Object.hasOwn(levelsData, key)) {
           alert('Level already exists.');
           return;
         }
@@ -5021,7 +5021,7 @@
         showAlert('danger', 'That ID is reserved.');
         return;
       }
-      if (currentTemplate[id]) {
+      if (Object.hasOwn(currentTemplate, id)) {
         showAlert('warning', 'That item already exists.');
         return;
       }

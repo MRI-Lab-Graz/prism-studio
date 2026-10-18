@@ -1009,8 +1009,11 @@ class TemplateValidator:
         def number(value: Any) -> float | None:
             return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
+        items = validator._extract_items(data)
+        if not items:
+            add("(template)", "warning", "The template has no items yet")
         seen: Dict[str, str] = {}
-        for item_id, item in validator._extract_items(data).items():
+        for item_id, item in items.items():
             if not isinstance(item, dict):
                 continue
             if not re.fullmatch(r"[A-Za-z0-9_-]+", item_id):
