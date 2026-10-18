@@ -1,0 +1,6 @@
+# Shell scripts must stay LF (sh rejects CRLF); Windows launchers must stay CRLF.
+# Without this, core.autocrlf=true checks install.sh out as CRLF on Windows.
+*.sh text eol=lf
+*.command text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
