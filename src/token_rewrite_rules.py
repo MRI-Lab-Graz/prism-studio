@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Shared "example_keep" / "last3" rule logic for BIDS entity token rewriters.
 
 Extracted so `SubjectCodeRewriter` (sub-XXX) and `SessionCodeRewriter`
@@ -11,6 +9,10 @@ owns its own directory traversal, collision detection, and DataLad-aware
 apply, since subjects and sessions nest differently (subjects are top-level
 project directories, sessions nest one level inside each subject).
 """
+
+from __future__ import annotations
+
+import re
 
 
 def build_example_keep_rule(
@@ -46,8 +48,11 @@ def build_example_keep_rule(
         raise ValueError(
             f"Enter a part to keep and/or a part to add for the selected example {id_noun}."
         )
-    if raw_add and not raw_add.isalnum():
-        raise ValueError("Text to add can only contain letters and numbers.")
+    if raw_add and not re.fullmatch(r"[A-Za-z0-9]{1,32}", raw_add):
+        raise ValueError(
+            "Text to add can only contain the letters a-z and digits 0-9 (no accents, spaces or symbols), "
+            "at most 32 characters."
+        )
 
     example_label = normalized_example[len(token_prefix):]
 

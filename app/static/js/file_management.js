@@ -4700,6 +4700,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /** participants.tsv is never edited by Delete: say which deleted subjects it still lists. */
+    function participantsStillListedHtml(ids) {
+        if (!ids.length) return '';
+        const shown = ids.slice(0, 5).map((id) => `<code>${escapeHtml(id)}</code>`).join(', ');
+        return `<div class="mt-1 small"><i class="fas fa-table me-1"></i>participants.tsv still lists ${ids.length} subject(s) whose files are removed: ${shown}${ids.length > 5 ? ' …' : ''}. Remove the rows yourself if they should go.</div>`;
+    }
+
     function renderFileDeletePreviewResult(payload) {
         if (!fileDeleteResult) return;
         const fileCount = Number(payload.file_count || 0);
@@ -4730,11 +4737,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<div class="mt-1 text-warning small"><i class="fas fa-file-code me-1"></i><strong>${orphanedSidecars.length} orphaned root sidecar(s) will also be deleted</strong> (no matching data files remain): ${orphanedSidecars.map((s) => `<code>${escapeHtml(s)}</code>`).join(', ')}</div>`
             : '';
 
+        const stillListed = Array.isArray(payload.participants_still_listed) ? payload.participants_still_listed : [];
+        const participantsNote = participantsStillListedHtml(stillListed);
         fileDeleteResult.innerHTML = `
             <div class="alert alert-warning py-2 mb-0">
                 <div class="fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Preview: ${fileCount} data file(s) will be deleted.${orphanedSidecars.length > 0 ? ` + ${orphanedSidecars.length} root sidecar(s).` : ''}</div>
                 ${emptyDirNote}
                 ${sidecarNote}
+                ${participantsNote}
                 ${fileListHtml}
                 <div class="mt-2 text-danger fw-semibold">Review the list above carefully, then click <em>Delete Files</em> to proceed.</div>
             </div>
@@ -4763,6 +4773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileDeleteResult.innerHTML = `
             <div class="alert alert-success py-2 mb-0">
                 <i class="fas fa-check-circle me-1"></i><strong>Deleted ${deleted} file(s).</strong>${sidecarNote}${dirNote}
+                ${participantsStillListedHtml(Array.isArray(payload.participants_still_listed) ? payload.participants_still_listed : [])}
                 ${dataladNote}
             </div>
         `;

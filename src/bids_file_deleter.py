@@ -468,6 +468,16 @@ class BidsFileDeleter:
 
         return empty_dirs
 
+    def _participants_still_listed(self, plan: _DeletePlan) -> list[str]:
+        """Subjects whose whole folder goes but who stay in participants.tsv (it is never edited silently)."""
+        table = self.project_root / "participants.tsv"
+        if not table.is_file():
+            return []
+        gone = {d.name for d in plan.empty_dirs if d.parent == self.project_root and d.name.startswith("sub-")}
+        lines = table.read_text(encoding="utf-8-sig", errors="replace").splitlines()[1:]
+        listed = {line.split("\t")[0].strip() for line in lines}
+        return sorted(gone & listed)
+
     def _plan_to_dict(self, plan: _DeletePlan, applied: bool) -> dict:
         file_list = sorted(
             str(t.relative_to(self.project_root).as_posix()) for t in plan.targets
@@ -481,6 +491,7 @@ class BidsFileDeleter:
         )
         return {
             "applied": applied,
+            "participants_still_listed": self._participants_still_listed(plan),
             "file_count": len(plan.targets),
             "files": file_list,
             "empty_dirs_to_remove": empty_dir_list,

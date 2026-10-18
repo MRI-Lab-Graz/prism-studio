@@ -514,3 +514,17 @@ def test_a_filter_only_delete_is_not_described_as_deleting_everything(app_page, 
 
     assert eventually(lambda: bool(messages))
     assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]
+
+
+def test_deleting_a_whole_subject_says_participants_tsv_still_lists_them(app_page, studio_url, project):
+    build_two_subjects(project)
+    page = app_page
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.goto(f"{studio_url}/file-management")
+    page.click("#fm-delete-tab")
+    page.locator("#fileDeleteSubjectsContainer input[type=checkbox]").first.check()
+    page.click("#fileDeletePreviewBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists 1 subject(s)")
+    page.click("#fileDeleteApplyBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("Deleted")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists")
