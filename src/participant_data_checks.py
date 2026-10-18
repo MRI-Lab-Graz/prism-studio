@@ -41,12 +41,16 @@ def find_participant_data_problems(
     if id_column not in df.columns:
         return {"warnings": warnings, "errors": errors}
 
+    from src.cleaning_notes import cleaning_note, missing_id_note
+
     ids = df[id_column]
-    missing = [pos + 1 for pos, value in enumerate(ids) if ParticipantsConverter._normalize_participant_id(value) is None]
-    if missing:
-        warnings.append(
-            f"{len(missing)} row(s) have no participant ID and will be skipped (data rows {_examples([str(m) for m in missing], 8)})."
-        )
+    cleaned = [ParticipantsConverter._normalize_participant_id(value) for value in ids]
+    note = missing_id_note([pos + 1 for pos, value in enumerate(cleaned) if value is None])
+    if note:
+        warnings.append(note)
+    note = cleaning_note(list(ids), [c or "" for c in cleaned], "participant ID", "sub-")
+    if note:
+        warnings.append(note)
 
     typed_by_id: dict[str, list[str]] = {}
     for value in ids:

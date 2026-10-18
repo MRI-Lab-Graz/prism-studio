@@ -287,3 +287,14 @@ def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, 
     data.write_text("participant_id;BRS01;BRS02;BRS03\nP001;3;4;2\nP002;1;0;2\n")
     app_page.set_input_files("#convertSurveyFile", str(data))
     expect(app_page.locator("#convertIdColumn")).to_have_value("participant_id", timeout=30000)
+
+
+def test_preview_warns_about_skipped_rows_and_cleaned_labels(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
+    app_page.fill("#convertSessionCustom", "pre test")
+    app_page.click("#previewBtn")
+    log = app_page.locator("#conversionLog")
+    expect(log).to_contain_text("no participant ID", timeout=30000)
+    expect(log).to_contain_text("'P 1' → sub-P1")
+    expect(log).to_contain_text("'pre test' → ses-pretest")

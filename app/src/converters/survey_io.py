@@ -15,6 +15,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.cleaning_notes import cleaning_note, missing_id_note
 from src.survey_scale_check import find_scale_violations
 from typing import Any
 
@@ -151,8 +152,12 @@ def _process_and_write_responses(
     sort_cols = [
         c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
     ]
+    df = df.reset_index(drop=True)
+    row_numbers = list(range(1, len(df) + 1))  # 1-based data row of each sorted row
     if sort_cols:
-        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+        df = df.sort_values(sort_cols, kind="stable")
+        row_numbers = [int(i) + 1 for i in df.index]
+        df = df.reset_index(drop=True)
 
     for _, row in df.iterrows():
         sub_id = normalize_sub_fn(row[res_id_col])
@@ -1013,18 +1018,29 @@ def _generate_dry_run_preview(
     sort_cols = [
         c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
     ]
+    df = df.reset_index(drop=True)
+    row_numbers = list(range(1, len(df) + 1))  # 1-based data row of each sorted row
     if sort_cols:
-        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+        df = df.sort_values(sort_cols, kind="stable")
+        row_numbers = [int(i) + 1 for i in df.index]
+        df = df.reset_index(drop=True)
+
+    missing_id_rows: list[int] = []
+    id_pairs: list[tuple[Any, str]] = []
+    ses_pairs: list[tuple[Any, str]] = []
 
     for idx, row in df.iterrows():
         sub_id_raw = row[res_id_col]
         sub_id = normalize_sub_fn(sub_id_raw)
+        if not sub_id or sub_id == "sub-":
+            missing_id_rows.append(row_numbers[int(idx)])  # the conversion skips these rows
+            continue
 
-        ses_id = (
-            normalize_ses_fn(session)
-            if session and session != "all"
-            else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
-        )
+        ses_raw = session if session and session != "all" else (row[res_ses_col] if res_ses_col else None)
+        ses_id = normalize_ses_fn(ses_raw) if ses_raw is not None else "ses-1"
+        id_pairs.append((sub_id_raw, sub_id))
+        if ses_raw is not None:
+            ses_pairs.append((ses_raw, ses_id))
 
         run_id: str | None = None
         if res_run_col and res_run_col in df.columns:
@@ -1100,6 +1116,13 @@ def _generate_dry_run_preview(
         )
 
     preview["participants"] = participants_info
+
+    notes = [
+        ("missing_id", missing_id_note(missing_id_rows)),
+        ("id_cleaned", cleaning_note(*zip(*id_pairs), "participant ID", "sub-") if id_pairs else ""),
+        ("session_cleaned", cleaning_note(*zip(*ses_pairs), "session label", "ses-") if ses_pairs else ""),
+    ]
+    issues.extend({"type": kind, "severity": "warning", "message": text} for kind, text in notes if text)
 
     key_counts = Counter(composite_keys)
     # A true duplicate is a row where (sub_id, ses_id, run_id) repeats

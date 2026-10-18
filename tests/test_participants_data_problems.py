@@ -26,14 +26,14 @@ def test_rows_without_an_id_are_a_warning_naming_the_rows():
 
 def test_different_ids_that_become_the_same_prism_id_are_a_warning():
     out = _problems([("P-1", "21", "1"), ("P 1", "22", "2"), ("P2", "23", "3"), ("P2", "23", "3")])
-    (warning,) = out["warnings"]
+    (warning,) = [w for w in out["warnings"] if "become the same participant" in w]
     assert "sub-P1" in warning and "P-1" in warning and "P 1" in warning
-    assert "sub-P2" not in warning  # the same typed ID twice is a repeated row, not a collision
+    assert "sub-P2" not in " ".join(out["warnings"])  # the same typed ID twice is a repeated row, not a collision
 
 
 def test_sub_prefix_and_bare_label_are_the_same_id_not_a_collision_warning_of_cleaning():
     # "sub-P1" and "P1" differ as typed and give the same PRISM ID: that is a collision too
-    (warning,) = _problems([("sub-P1", "21", "1"), ("P1", "22", "2")])["warnings"]
+    (warning,) = _problems([("sub-P1", "21", "1"), ("P1", "22", "2")])["warnings"]  # no cleaning note: nothing was removed
     assert "sub-P1" in warning
 
 
@@ -129,3 +129,9 @@ def test_the_cli_preview_reports_them_too(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     payload = json.loads(result.stdout)
     assert len(payload["data_errors"]) == 2 and payload["data_warnings"]
+
+
+def test_cleaned_ids_are_reported_but_a_added_prefix_is_not():
+    out = _problems([("P 1", "21", "1"), ("P2", "22", "2"), ("sub-P3", "23", "3")])
+    (warning,) = out["warnings"]
+    assert "'P 1' → sub-P1" in warning and "P2" not in warning and "P3" not in warning
