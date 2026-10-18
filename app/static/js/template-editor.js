@@ -334,6 +334,19 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  let languageCodes = null;
+  let knownLanguageCodes = null;
+  import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { languageCodes = module; });
+  fetch('/api/template-editor/language-codes')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => { if (data && Array.isArray(data.codes)) knownLanguageCodes = new Set(data.codes); })
+    .catch(() => {}); // the format check still applies without the list
+  /** Message for a language code the user typed, '' when it is fine. */
+  function languageProblem(raw) {
+    return languageCodes ? languageCodes.languageCodeProblem(raw, knownLanguageCodes) : '';
+  }
+
   let itemId = null;
   import(new URL('./template-editor/item-id.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { itemId = module; });
@@ -1095,8 +1108,10 @@
         addLangBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add language';
         addLangBtn.addEventListener('click', () => {
           const newLang = prompt('Enter language code (e.g., en, de):');
-          if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
-            if (newLang !== null) alert('Invalid language code.');
+          if (newLang === null) return;
+          const problem = languageProblem(newLang);
+          if (problem) {
+            alert(problem);
             return;
           }
           const lang = newLang.trim();
@@ -1894,8 +1909,10 @@
             addLangBtn.textContent = '+ Language';
             addLangBtn.addEventListener('click', () => {
               const newLang = prompt('Enter language code (e.g., en, de):');
-              if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
-                if (newLang !== null) alert('Invalid language code.');
+              if (newLang === null) return;
+              const problem = languageProblem(newLang);
+              if (problem) {
+                alert(problem);
                 return;
               }
               const lang = newLang.trim();
@@ -3774,6 +3791,8 @@
   btnSetPrimaryLang.addEventListener('click', () => {
     if (!currentTemplate || !primaryLanguage) return;
     try {
+      const primaryProblem = languageProblem(primaryLanguageInputEl.value);
+      if (primaryProblem) throw new Error(primaryProblem);
       primaryLanguage.applyPrimaryLanguage(currentTemplate, primaryLanguageInputEl.value.trim());
     } catch (error) {
       alert(error.message);
@@ -3788,11 +3807,17 @@
   btnAddLang.addEventListener('click', () => {
     if (!currentTemplate) return;
     const newLang = prompt('Enter language code to add (e.g., en, de, fr):');
-    if (!newLang || !LANG_CODE_RE.test(newLang.trim())) {
-      if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+    if (newLang === null) return;
+    const problem = languageProblem(newLang);
+    if (problem) {
+      alert(problem);
       return;
     }
     const lang = newLang.trim();
+    if (detectLanguagesFromTemplate(currentTemplate).includes(lang)) {
+      alert(`The template already has the language "${lang}".`);
+      return;
+    }
     const items = itemKeysFromTemplate(currentTemplate);
     const primaryLang = currentTemplate.Technical?.Language || 'en';
 

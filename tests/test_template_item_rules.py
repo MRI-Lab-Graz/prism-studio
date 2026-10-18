@@ -91,3 +91,29 @@ def test_pattern_errors_say_what_is_allowed_instead_of_showing_the_regex():
     assert error["path"] == "Study/TaskName"
     assert "My Task!" in error["message"] and "letters, digits and hyphens" in error["message"]
     assert "[a-zA-Z0-9]" not in error["message"]
+
+
+def _client(monkeypatch):
+    import sys
+    from pathlib import Path
+
+    from flask import Flask
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
+    from src.web.blueprints import tools_template_editor_blueprint as handlers
+
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    app = Flask(__name__)
+    app.register_blueprint(handlers.tools_template_editor_bp)
+    return app.test_client()
+
+
+def test_library_templates_still_need_a_task_name_to_validate_and_to_save(monkeypatch):
+    client = _client(monkeypatch)
+    body = {"modality": "survey", "template": {"Study": {"TaskName": ""}, "Q1": _item()}, "is_global": True}
+    validated = client.post("/api/template-editor/validate", json=body).get_json()
+    assert not validated["ok"] and validated["errors"][0]["path"] == "Study/TaskName"
+    saved = client.post("/api/template-editor/save", json={**body, "filename": "survey-x.json"})
+    assert saved.status_code == 400
+    body["template"]["Study"]["TaskName"] = "x"
+    assert client.post("/api/template-editor/validate", json=body).get_json()["ok"]

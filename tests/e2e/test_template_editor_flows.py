@@ -260,3 +260,23 @@ def test_a_blank_template_explains_the_task_name_rule_and_the_missing_items(page
     expect(alert).to_contain_text("'My Task!' is not allowed: use only letters, digits and hyphens")
     expect(alert).not_to_contain_text("[a-zA-Z0-9]")
     expect(alert).to_contain_text("The template has no items yet")
+
+
+def test_adding_a_language_checks_the_code_and_refuses_one_the_template_has(page):
+    messages = []
+
+    def answer(dialog):
+        messages.append(dialog.message)
+        dialog.accept(answers.pop(0) if dialog.type == "prompt" else None)
+
+    answers = ["xx", "de", "fr"]
+    page.on("dialog", answer)
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+    page.wait_for_function("() => fetch('/api/template-editor/language-codes').then(r => r.ok)")
+    page.wait_for_timeout(500)  # the list is fetched once at start-up
+    for _ in range(3):
+        page.click("#btnAddLang")
+    assert any('"xx" is not an ISO 639-1' in m for m in messages), messages
+    assert any('already has the language "de"' in m for m in messages), messages
+    expect(page.locator("#langBadges")).to_contain_text("fr")

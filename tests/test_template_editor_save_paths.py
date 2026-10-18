@@ -138,7 +138,7 @@ def test_template_editor_save_relaxes_schema_when_copying_global_template(
     )
 
     template = {
-        "Study": {"ShortName": "aai"},
+        "Study": {"ShortName": "aai", "TaskName": "aai"},  # the task name is never relaxed
         "Technical": {"Language": "en"},
     }
 

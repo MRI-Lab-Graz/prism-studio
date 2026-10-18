@@ -11,6 +11,7 @@ docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 from __future__ import annotations
 
 import copy
+import re
 
 from src.converters.survey_io import normalize_paper_software_platform
 
@@ -108,3 +109,25 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
                 )
 
     return errors
+
+
+_TASK_NAME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9\-]*")
+
+
+def with_default_task_name(template: dict, filename: str, modality: str) -> dict:
+    """Fill an empty ``Study.TaskName`` from ``<modality>-<task>.json``; the file name is the task name."""
+    study = template.get("Study")
+    if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
+        return template
+    task = filename[len(modality) + 1 : -len(".json")] if filename.startswith(f"{modality}-") and filename.endswith(".json") else ""
+    if _TASK_NAME.fullmatch(task):
+        template = {**template, "Study": {**(study if isinstance(study, dict) else {}), "TaskName": task}}
+    return template
+
+
+def missing_task_name_error(template: dict) -> dict | None:
+    """Every template needs a task name (the library relaxation only covers the other project fields)."""
+    study = template.get("Study")
+    if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
+        return None
+    return {"path": "Study/TaskName", "message": "Every template needs a task name (letters, digits and hyphens, e.g. 'pss')"}

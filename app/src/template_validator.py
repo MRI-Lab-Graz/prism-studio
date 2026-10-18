@@ -1030,6 +1030,33 @@ class TemplateValidator:
                     value = number(item.get(key))
                     if value is not None and not value.is_integer():
                         add(item_id, "warning", f"{key} ({item[key]}) is not a whole number but DataType is integer")
+
+        from src.language_codes import is_language_code
+
+        def check_language(where: str, code: Any) -> None:
+            if not is_language_code(code):
+                add(where, "error", f"'{code}' is not a language code (use e.g. 'en', 'de' or 'en-US')")
+
+        def check_texts(where: str, value: Any) -> None:
+            if isinstance(value, dict):
+                for code in value:
+                    if not is_language_code(code):
+                        add(where, "error", f"'{code}' is not a language code (use e.g. 'en', 'de' or 'en-US')")
+
+        technical, i18n, study = data.get("Technical"), data.get("I18n"), data.get("Study")
+        if isinstance(technical, dict) and technical.get("Language"):
+            check_language("Technical/Language", technical["Language"])
+        if isinstance(i18n, dict) and i18n.get("DefaultLanguage"):
+            check_language("I18n/DefaultLanguage", i18n["DefaultLanguage"])
+        if isinstance(study, dict):
+            for field in ("OriginalName", "Description", "Instructions", "License"):
+                check_texts(f"Study/{field}", study.get(field))
+        for item_id, item in items.items():
+            if isinstance(item, dict):
+                check_texts(f"{item_id}/Description", item.get("Description"))
+                levels = item.get("Levels")
+                for key, label in (levels.items() if isinstance(levels, dict) else []):
+                    check_texts(f"{item_id}/Levels/{key}", label)
         return findings
 
     @staticmethod
