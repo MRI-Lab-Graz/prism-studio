@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.cleaning_notes import shown_examples
+
 import pandas as pd
 
 _MISSING = {"", "n/a", "na", "nan", "none"}
@@ -19,11 +21,6 @@ def _number_or_none(value: Any) -> float | None:
     except ValueError:
         return None
     return number if number == number else None  # "nan" is no measurement
-
-
-def _examples(items: list[str], limit: int = 3) -> str:
-    shown = ", ".join(items[:limit])
-    return shown + (f" (+{len(items) - limit} more)" if len(items) > limit else "")
 
 
 def find_participant_data_problems(
@@ -74,10 +71,10 @@ def find_participant_data_problems(
             continue
         text = [f"{pid}: '{v}'" for (pid, v), n in zip(values, numbers) if n is None]
         if text:
-            errors.append(f"Column '{col}' is numeric but {len(text)} value(s) are not numbers - {_examples(text)}.")
+            errors.append(f"Column '{col}' is numeric but {len(text)} value(s) are not numbers - {shown_examples(text)}.")
         if str(col).strip().lower() == "age":
             low, high = _AGE_LIMITS
             bad = [f"{pid}: {v}" for (pid, v), n in zip(values, numbers) if n is not None and not low <= n <= high]
             if bad:
-                errors.append(f"Column '{col}' has {len(bad)} age(s) outside {low}-{high} years - {_examples(bad)}.")
+                errors.append(f"Column '{col}' has {len(bad)} age(s) outside {low}-{high} years - {shown_examples(bad)}.")
     return {"warnings": warnings, "errors": errors}

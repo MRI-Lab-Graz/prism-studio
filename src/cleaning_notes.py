@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Sequence
 
 
-def _shown(items: Sequence[str], limit: int) -> str:
+def shown_examples(items: Sequence[str], limit: int = 3) -> str:
     return ", ".join(items[:limit]) + (f" (+{len(items) - limit} more)" if len(items) > limit else "")
 
 
@@ -13,7 +13,7 @@ def missing_id_note(positions: Sequence[int], limit: int = 8) -> str:
     """Warning for rows that have no usable participant ID; ``positions`` are 1-based data rows."""
     if not positions:
         return ""
-    return f"{len(positions)} row(s) have no participant ID and will be skipped (data rows {_shown([str(p) for p in positions], limit)})."
+    return f"{len(positions)} row(s) have no participant ID and will be skipped (data rows {shown_examples([str(p) for p in positions], limit)})."
 
 
 def cleaning_note(raw: Sequence[object], cleaned: Sequence[str], kind: str, prefix: str, limit: int = 3) -> str:
@@ -31,5 +31,5 @@ def cleaning_note(raw: Sequence[object], cleaned: Sequence[str], kind: str, pref
     listed = [f"'{before}' → {after}" for before, after in changes.items()]
     return (
         f"{len(changes)} {kind}(s) were cleaned to BIDS-safe labels (letters and digits only): "
-        f"{_shown(listed, limit)}."
+        f"{shown_examples(listed, limit)}."
     )
