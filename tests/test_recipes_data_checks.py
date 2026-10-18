@@ -28,13 +28,13 @@ def test_text_answers_are_reported_as_counted_missing():
     assert "not a number" in text and "sub-P1 Q1=often" in text and "missing" in text
 
 
-def test_a_sum_over_answered_items_only_is_reported_with_the_remedy():
+def test_a_sum_left_empty_because_of_a_missing_item_is_reported():
     (text,) = _warn([("n/a", "2", "3"), ("1", "2", "3"), ("n/a", "n/a", "n/a")])
-    assert "Total" in text and "1 participant(s)" in text and "require_all" in text  # all-missing is just empty
+    assert "Total" in text and "1 participant(s)" in text and "left empty" in text  # all-missing is just empty
 
 
-def test_no_partial_warning_when_the_recipe_already_decides():
-    for extra in ({"Missing": "require_all"}, {"MinValid": 2}, {"Method": "mean"}):
+def test_no_empty_sum_warning_when_the_recipe_uses_the_answered_items():
+    for extra in ({"Missing": "ignore"}, {"Method": "mean"}):
         recipe = {"Scores": [{**RECIPE["Scores"][0], **extra}]}
         assert _warn([("n/a", "2", "3")], recipe) == [], extra
 

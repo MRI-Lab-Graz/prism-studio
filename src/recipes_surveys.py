@@ -404,8 +404,10 @@ def _build_variable_metadata(
                 details["range"] = score["Range"]
             if score.get("Note"):
                 details["note"] = get_i18n_text(score["Note"], lang)
-            if score.get("Missing"):
-                details["missing_handling"] = score["Missing"]
+            if score.get("Missing") or str(score.get("Method", "sum")).strip().lower() == "sum":
+                from src.recipes_formula_engine import effective_missing
+
+                details["missing_handling"] = effective_missing(score)
             if score.get("MinValid") is not None:
                 details["min_valid"] = score["MinValid"]
             if score.get("Interpretation"):

@@ -7,7 +7,6 @@ from typing import Any, Iterable
 from src.cleaning_notes import shown_examples
 
 _MISSING = {"", "n/a", "na", "nan", "none"}
-_STRICT = {"require_all", "all", "strict"}
 
 
 def _number(value: Any) -> float | None:
@@ -67,21 +66,20 @@ def recipe_data_warnings(
             f"{recipe_id}: {len(not_numbers)} answer(s) are not a number - {shown_examples(not_numbers)}. "
             "They are counted as missing."
         )
+    from src.recipes_formula_engine import effective_missing
+
     for score in scores:
-        method = str(score.get("Method", "sum")).strip().lower()
         names = [str(i) for i in (score.get("Items") or [])]
-        if method != "sum" or not names or score.get("MinValid") is not None:
+        method = str(score.get("Method", "sum")).strip().lower()
+        if method not in {"sum", "mean"} or len(names) < 2 or effective_missing(score) != "require_all":
             continue
-        if str(score.get("Missing", "ignore")).strip().lower() in _STRICT:
-            continue
-        partial = 0
+        empty = 0
         for _, row in rows:
             answered = sum(1 for i in names if _number(row.get(i, "")) is not None)
-            partial += 0 < answered < len(names)
-        if partial:
+            empty += 0 < answered < len(names)
+        if empty:
             warnings.append(
-                f"{recipe_id} {score.get('Name', '')}: {partial} participant(s) answered only some of the "
-                f"{len(names)} items; the sum is computed from the answered items "
-                '(set "Missing": "require_all" in the recipe to leave it empty).'
+                f"{recipe_id} {score.get('Name', '')}: {empty} participant(s) answered only some of the "
+                f"{len(names)} items, so this {method} is left empty (n/a) for them."
             )
     return warnings

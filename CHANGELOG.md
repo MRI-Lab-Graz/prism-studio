@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changes no import yet.
 - **One file picker.** The native operating-system file and folder dialogs and the "connected to server" switch
   are gone; every page uses the in-app picker. Browser uploads (`<input type="file">`) are unchanged.
+- **Breaking for scores: a `sum` is empty (`n/a`) when any of its items is missing** (before, the answered items
+  were summed, so a skipped item lowered the total). A `mean` still uses the answered items. A recipe can choose per
+  score with `"Missing": "ignore"` (sum the answered items; combine with `MinValid`) or `"Missing": "require_all"`;
+  Recipe Builder's "If answers are missing" shows and saves the choice. Scores exported earlier may differ for
+  participants with skipped items: re-run the recipes.
 
 ### Fixed
 - **Converter previews tell you what they change or skip.** The sociodemographics, survey and biometrics
@@ -62,9 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `participants.tsv` still lists (the table is never edited silently). The file renamer's preview and copy both refuse
   a new name that is empty or contains a folder separator instead of failing with an operating-system error.
 - **Recipes.** A scoring run now lists, next to the result, answers outside the questionnaire's scale (with the
-  participant and item), text answers (counted as missing) and sums computed from only some of the items (add
-  `"Missing": "require_all"` to a score to leave those empty). The length of anonymized IDs must be 4-12, and a score
-  cannot be named like an ID column or an item of the questionnaire.
+  participant and item), text answers (counted as missing) and sums left empty because an item is missing. The length
+  of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 

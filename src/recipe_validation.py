@@ -508,8 +508,9 @@ def _score_warnings(scores: Any, *, list_label: str, prefix: str) -> list[str]:
         items = _as_list_of_str(score.get("Items"))
         if len(items) < 2:
             continue
-        missing = str(score.get("Missing", "ignore")).strip().lower()
-        if missing != "ignore":
+        from src.recipes_formula_engine import effective_missing
+
+        if effective_missing(score) != "ignore":
             continue
         if score.get("MinValid") is not None:
             continue

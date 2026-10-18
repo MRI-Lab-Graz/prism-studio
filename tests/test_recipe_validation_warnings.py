@@ -28,11 +28,21 @@ def _recipe(**overrides):
     return recipe
 
 
-def test_warns_on_sum_without_min_valid_and_default_missing_policy():
-    warnings = validate_recipe_warnings(_recipe())
+def test_warns_on_a_sum_that_ignores_missing_items_without_min_valid():
+    recipe = _recipe(Scores=[{"Name": "total", "Method": "sum", "Items": ["q1", "q2", "q3"], "Missing": "ignore"}])
+    warnings = validate_recipe_warnings(recipe)
     assert len(warnings) == 1
     assert "total" in warnings[0]
     assert "MinValid" in warnings[0]
+
+
+def test_a_plain_sum_needs_no_warning_because_it_requires_every_item():
+    assert validate_recipe_warnings(_recipe()) == []
+
+
+def test_warns_on_a_mean_with_the_default_missing_policy():
+    recipe = _recipe(Scores=[{"Name": "avg", "Method": "mean", "Items": ["q1", "q2", "q3"]}])
+    assert len(validate_recipe_warnings(recipe)) == 1
 
 
 def test_no_warning_when_min_valid_is_set():

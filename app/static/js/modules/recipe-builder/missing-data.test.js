@@ -11,11 +11,19 @@ import {
 } from './missing-data.js';
 
 describe('policyFromScore', () => {
-    it('defaults to using whatever was answered', () => {
+    it('defaults to every item for a sum and to the answered items for a mean', () => {
         expect(policyFromScore({ Name: 'a', Method: 'sum', Items: ['x', 'y'] })).toEqual({
+            policy: POLICY.REQUIRE_ALL,
+            minValid: null,
+        });
+        expect(policyFromScore({ Name: 'a', Method: 'mean', Items: ['x', 'y'] })).toEqual({
             policy: POLICY.USE_ANSWERED,
             minValid: null,
         });
+    });
+
+    it('reads Missing=ignore on a sum as "use the answered items"', () => {
+        expect(policyFromScore({ Method: 'sum', Missing: 'ignore' }).policy).toBe(POLICY.USE_ANSWERED);
     });
 
     it('reads MinValid as "require at least N"', () => {
@@ -35,20 +43,22 @@ describe('policyFromScore', () => {
 describe('applyPolicyToScore', () => {
     const base = { Name: 'a', Method: 'sum', Items: ['x', 'y', 'z'], Description: 'keep me' };
 
-    it('use answered: no Missing/MinValid', () => {
-        const score = applyPolicyToScore({ ...base, MinValid: 2, Missing: 'require_all' }, {
-            policy: POLICY.USE_ANSWERED,
-            minValid: null,
-        });
-        expect(score).toEqual(base);
+    it('use answered: a mean needs no keys, a sum says Missing=ignore', () => {
+        const input = { ...base, MinValid: 2, Missing: 'require_all' };
+        expect(applyPolicyToScore({ ...input, Method: 'mean' }, { policy: POLICY.USE_ANSWERED, minValid: null }))
+            .toEqual({ ...base, Method: 'mean' });
+        expect(applyPolicyToScore(input, { policy: POLICY.USE_ANSWERED, minValid: null }))
+            .toEqual({ ...base, Missing: 'ignore' });
     });
 
-    it('require N: sets MinValid and clears Missing', () => {
+    it('require N: sets MinValid (a sum also says Missing=ignore, or it would still need every item)', () => {
         const score = applyPolicyToScore({ ...base, Missing: 'require_all' }, {
             policy: POLICY.REQUIRE_N,
             minValid: 2,
         });
-        expect(score).toEqual({ ...base, MinValid: 2 });
+        expect(score).toEqual({ ...base, MinValid: 2, Missing: 'ignore' });
+        expect(applyPolicyToScore({ ...base, Method: 'mean' }, { policy: POLICY.REQUIRE_N, minValid: 2 }))
+            .toEqual({ ...base, Method: 'mean', MinValid: 2 });
     });
 
     it('require all: sets Missing=require_all and clears MinValid', () => {
