@@ -64,6 +64,7 @@ def relax_schema_for_library_template(schema: dict) -> dict:
 
 # What a schema regex means, for the people who fill in the form.
 _PATTERN_HINTS = {
+    "^[a-zA-Z0-9][-a-zA-Z0-9]*$": "use only letters, digits and hyphens, starting with a letter or digit (no spaces or underscores)",
     "^[a-zA-Z0-9][a-zA-Z0-9\\-]*$": "use only letters, digits and hyphens, starting with a letter or digit (no spaces or underscores)",
     "^(ses-[a-zA-Z0-9]+)?$": "use the form ses-<label>, e.g. ses-1",
     "^(run-[a-zA-Z0-9]+)?$": "use the form run-<label>, e.g. run-2",

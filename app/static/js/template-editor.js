@@ -1548,6 +1548,9 @@
       }
     }
 
+    // The pattern attribute is compiled with the /v flag, where a leading "-" in a class must be escaped.
+    const htmlInputPattern = (pattern) => pattern.replace(/\[-/g, '[\\-');
+
     // Detect if value is a translation table (object with lang keys like "de", "en", etc.)
     function isTranslationObject(val) {
       if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
@@ -1975,7 +1978,7 @@
       inp.className = 'form-control';
       inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
       inp.placeholder = '— Not set —';
-      if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+      if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
       inp.addEventListener('input', () => onChange(inp.value));
       container.appendChild(inp);
 
@@ -2043,7 +2046,7 @@
     const initVal = (value === undefined || value === null) ? '' : stripDOIPrefix(String(value));
     inp.value = initVal;
     inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
-    if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+    if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
     inp.addEventListener('input', () => {
       const cleaned = stripDOIPrefix(inp.value);
       if (cleaned !== inp.value) inp.value = cleaned;
