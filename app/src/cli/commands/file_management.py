@@ -79,6 +79,12 @@ def cmd_file_management_delete_files(args) -> None:
             f"{len(preview.get('orphaned_root_sidecars', []))} orphaned sidecar(s), "
             f"{len(preview.get('empty_dirs_to_remove', []))} empty directory/directories after deletion."
         )
+        if preview.get("participants_still_listed"):
+            print(
+                "Note: participants.tsv still lists "
+                + ", ".join(preview["participants_still_listed"])
+                + " (their files are removed; the table is not edited)."
+            )
 
     if not getattr(args, "apply", False):
         if as_json:

@@ -496,7 +496,7 @@ def test_subject_code_rewriter_example_keep_add_text_rejects_invalid_chars(tmp_p
     (project_root / "sub-001").mkdir(parents=True)
 
     rewriter = SubjectCodeRewriter(project_root)
-    with pytest.raises(ValueError, match="letters and numbers"):
+    with pytest.raises(ValueError, match="Text to add can only contain"):
         rewriter.preview(
             mode="example_keep",
             example_subject="sub-001",

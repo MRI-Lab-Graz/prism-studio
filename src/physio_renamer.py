@@ -427,3 +427,16 @@ def plan_rename(
             results.append({"old": source_path, "new": str(exc), "success": False})
 
     return results, warnings
+
+
+def new_filename_problem(name: str) -> str:
+    """Why `name` cannot be a new file name ('' when it can): it must be one plain, non-empty name."""
+    if not name.strip() or name in (".", ".."):
+        return "The new name is empty."
+    if "/" in name or "\\" in name:
+        return "The new name contains a folder separator (/ or \\); use the organize option to place files in folders."
+    if any(ord(ch) < 32 for ch in name):
+        return "The new name contains a control character."
+    if len(name.encode("utf-8")) > 255:
+        return "The new name is longer than 255 characters."
+    return ""

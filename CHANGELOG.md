@@ -57,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   codes must be real ISO 639-1 codes (`en`, `de-AT`) wherever they are typed or stored, a language cannot be added
   twice, bulk edit asks before changing every item, and errors inside an item name the field instead of printing the
   whole item.
+- **File management.** The text to add in the subject/session ID rewrite and the new value in the filename-part
+  rename accept only ASCII letters and digits (no accents; at most 32 characters). Delete says which deleted subjects
+  `participants.tsv` still lists (the table is never edited silently). The file renamer's preview and copy both refuse
+  a new name that is empty or contains a folder separator instead of failing with an operating-system error.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 
