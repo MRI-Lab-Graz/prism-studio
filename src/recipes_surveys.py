@@ -387,6 +387,12 @@ def _build_variable_metadata(
             desc = score.get("Description") or ""
             if desc:
                 variable_labels[name] = get_i18n_text(desc, lang)
+            else:  # SPSS/Excel users still see how the column was computed
+                method = str(score.get("Method") or "sum").strip().lower()
+                words = {"sum": "Summe", "mean": "Mittelwert"} if lang == "de" else {}
+                of = "von" if lang == "de" else "of"
+                items = ", ".join(str(i) for i in (score.get("Items") or []))
+                variable_labels[name] = f"{name} ({words.get(method, method)} {of} {items})" if items else name
             # Add interpretation as value labels if present
             interp = score.get("Interpretation")
             if interp and isinstance(interp, dict):

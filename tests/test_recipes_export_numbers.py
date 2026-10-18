@@ -39,3 +39,19 @@ def test_long_names_with_the_same_first_64_characters_stay_unique():
     renames = _build_spss_rename_map([a, b])
     assert len({renames.get(c, c).lower() for c in (a, b)}) == 2
     assert all(len(v) <= 64 for v in renames.values())
+
+
+def test_scores_without_a_description_get_a_label_that_says_how_they_are_computed():
+    from src.recipes_surveys import _build_variable_metadata
+
+    recipe = {"Scores": [
+        {"Name": "Total", "Method": "sum", "Items": ["Q1", "Q2"]},
+        {"Name": "Avg", "Method": "mean", "Items": ["Q1", "Q2", "Q3"], "Description": "Own text"},
+        {"Name": "Weird", "Method": "formula", "Items": ["Q1"], "Formula": "{Q1}*2"},
+    ]}
+    labels = _build_variable_metadata(["participant_id", "Total", "Avg", "Weird"], {}, recipe, None, "en")[0]
+    assert labels["Total"] == "Total (sum of Q1, Q2)"
+    assert labels["Avg"] == "Own text"
+    assert labels["Weird"] == "Weird (formula of Q1)"
+    german = _build_variable_metadata(["Total"], {}, recipe, None, "de")[0]
+    assert german["Total"] == "Total (Summe von Q1, Q2)"
