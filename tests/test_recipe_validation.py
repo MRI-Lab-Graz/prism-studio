@@ -591,3 +591,20 @@ class TestScoresValidation:
         )
         errors = validate_recipe(recipe, known_items={"q1"})
         assert any("Name collision between Derived and Scores" in e for e in errors)
+
+
+def test_a_score_name_may_not_be_an_id_column_or_an_item_of_the_questionnaire():
+    from src.recipe_validation import _validate_score_entries
+
+    def errors_for(name):
+        errors: list[str] = []
+        _validate_score_entries(
+            [{"Name": name, "Method": "sum", "Items": ["Q1"]}],
+            list_label="Scores", errors=errors, prefix="", known_items_lower={"q1", "q2"},
+        )
+        return errors
+
+    assert errors_for("Total") == []
+    for bad in ("participant_id", "Session", "RUN", "Q2", "q1"):
+        (error,) = errors_for(bad)
+        assert "collides" in error, bad

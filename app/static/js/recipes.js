@@ -624,6 +624,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (payload.format === 'csv') {
         logToTerminal('CSV labels are in companion codebook files (*_codebook.json and *_codebook.tsv) in the output folder.');
       }
+      if (data && Array.isArray(data.data_warnings)) {
+        data.data_warnings.forEach((warning) => logToTerminal(`Warning: ${warning}`, 'warning'));
+      }
       if (data && data.nan_report) {
         logToTerminal('Columns with all n/a:', 'warning');
         for (const [key, cols] of Object.entries(data.nan_report)) {

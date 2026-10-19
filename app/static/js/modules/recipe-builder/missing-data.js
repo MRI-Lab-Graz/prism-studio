@@ -5,7 +5,8 @@
  *
  * The wording must match what the scoring engine really does
  * (src/recipes_formula_engine.py: _calculate_scores):
- *  - sum/mean skip missing items unless MinValid / Missing=require_all stop it;
+ *  - a sum is empty when any item is missing unless Missing=ignore (optionally with MinValid);
+ *    a mean skips missing items unless MinValid / Missing=require_all stop it;
  *  - formula scores are empty when any item they use is missing;
  *  - a cell is missing when it is empty, "n/a" or not a number.
  */
@@ -21,6 +22,13 @@ export const MISSING_MEANING =
 
 const REQUIRE_ALL_ALIASES = new Set(['require_all', 'all', 'strict']);
 
+const methodOf = (score) => String((score && score.Method) || 'sum').trim().toLowerCase();
+
+/** What the engine does when the recipe says nothing: a sum needs every item, a mean uses the answered ones. */
+export function defaultPolicyFor(method) {
+    return method === 'sum' ? POLICY.REQUIRE_ALL : POLICY.USE_ANSWERED;
+}
+
 export function policyFromScore(score) {
     const missing = String((score && score.Missing) || '').trim().toLowerCase();
     if (REQUIRE_ALL_ALIASES.has(missing)) {
@@ -30,7 +38,7 @@ export function policyFromScore(score) {
     if (Number.isInteger(minValid) && minValid > 0) {
         return { policy: POLICY.REQUIRE_N, minValid };
     }
-    return { policy: POLICY.USE_ANSWERED, minValid: null };
+    return { policy: missing === 'ignore' ? POLICY.USE_ANSWERED : defaultPolicyFor(methodOf(score)), minValid: null };
 }
 
 export function applyPolicyToScore(score, { policy, minValid }) {
@@ -39,8 +47,12 @@ export function applyPolicyToScore(score, { policy, minValid }) {
     delete next.MinValid;
     if (policy === POLICY.REQUIRE_ALL) {
         next.Missing = 'require_all';
-    } else if (policy === POLICY.REQUIRE_N && Number.isInteger(minValid) && minValid > 0) {
-        next.MinValid = minValid;
+    } else {
+        if (policy === POLICY.REQUIRE_N && Number.isInteger(minValid) && minValid > 0) {
+            next.MinValid = minValid;
+        }
+        // a sum is only computed from the answered items when the recipe says so
+        if (methodOf(score) === 'sum') next.Missing = 'ignore';
     }
     return next;
 }

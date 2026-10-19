@@ -479,6 +479,7 @@ def handle_api_recipes_surveys(data: dict):
             "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
             "nan_report": result.nan_report,
+            "data_warnings": list(result.data_warnings),
             "recipe_source": recipe_source,
             "recipes_seeded": result.recipes_seeded,
             "details": {

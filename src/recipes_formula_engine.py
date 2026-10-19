@@ -428,6 +428,18 @@ def _calculate_derived_variables(
         current_row[d_name] = _format_numeric_cell(d_result)
 
 
+_STRICT_MISSING = {"require_all", "all", "strict"}
+
+
+def effective_missing(score: dict) -> str:
+    """"require_all" or "ignore". A sum is empty when any item is missing unless the recipe says
+    ``"Missing": "ignore"``; a mean uses the answered items unless the recipe says otherwise."""
+    given = str(score.get("Missing") or "").strip().lower()
+    if not given:
+        given = "require_all" if str(score.get("Method", "sum")).strip().lower() == "sum" else "ignore"
+    return "require_all" if given in _STRICT_MISSING else "ignore"
+
+
 def _calculate_scores(
     scores: list[dict],
     current_row: dict[str, str],
@@ -443,7 +455,7 @@ def _calculate_scores(
             continue
         method = str(score.get("Method", "sum")).strip().lower()
         items = [str(i).strip() for i in (score.get("Items") or []) if str(i).strip()]
-        missing = str(score.get("Missing", "ignore")).strip().lower()
+        missing = effective_missing(score)
         min_valid_raw = score.get("MinValid")
         min_valid: int | None = None
         if isinstance(min_valid_raw, int) and not isinstance(min_valid_raw, bool):
@@ -470,7 +482,7 @@ def _calculate_scores(
         result: float | None = None
         if min_valid is not None and len(values) < min_valid:
             result = None
-        elif missing in {"require_all", "all", "strict"} and any_missing:
+        elif missing == "require_all" and any_missing:
             result = None
         elif method == "formula":
             formula = score.get("Formula")
