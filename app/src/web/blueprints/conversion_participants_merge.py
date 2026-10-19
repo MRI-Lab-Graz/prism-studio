@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Response, jsonify, request, session
 
 from src.converters.file_reader import read_tabular_file
+from src.participants_levels import add_missing_levels
 from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
 )
@@ -490,6 +491,7 @@ def _convert_existing_participants_files(
                 col_name, f"Participant {col_name}"
             )
 
+    add_missing_levels(participants_json_data, output_df)
     participants_json.write_text(
         json.dumps(participants_json_data, indent=2, ensure_ascii=False),
         encoding="utf-8",

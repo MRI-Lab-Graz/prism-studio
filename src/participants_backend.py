@@ -21,6 +21,7 @@ from typing import Any, Callable, cast
 import pandas as pd
 
 from src.participants_converter import ParticipantsConverter, load_participant_source
+from src.participants_levels import add_missing_levels
 from src.participants_sessions import (
     sanitize_session_token as _sanitize_session_token,
     session_label,
@@ -2029,6 +2030,7 @@ def apply_participants_merge(
                 backup_files.append(backup_path)
 
     merged_df.to_csv(participants_tsv, sep="\t", index=False)
+    add_missing_levels(merged_schema, merged_df)
     participants_json.write_text(
         json.dumps(merged_schema, indent=2, ensure_ascii=False),
         encoding="utf-8",
