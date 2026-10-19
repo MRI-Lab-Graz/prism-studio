@@ -603,6 +603,12 @@ def _hist_svg(
     )
 
 
+def _physio_report_name(converted: ConvertedFile) -> str:
+    """sub[_ses][_task]_physio_report.html, leaving out what the file does not have."""
+    parts = [converted.subject, converted.session, converted.task]
+    return "_".join(p for p in parts if p) + "_physio_report.html"
+
+
 def _generate_physio_html_report(
     *,
     converted: ConvertedFile,
@@ -621,9 +627,7 @@ def _generate_physio_html_report(
         if converted.session:
             report_dir = report_dir / converted.session
         report_dir.mkdir(parents=True, exist_ok=True)
-        report_path = (
-            report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
-        )
+        report_path = report_dir / _physio_report_name(converted)
         report_path.write_text(
             "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
             encoding="utf-8",
@@ -671,7 +675,7 @@ def _generate_physio_html_report(
         if ecg.size == 0:
             return None
 
-    sidecar_path = _find_physio_sidecar(output_folder, converted.task, edf_path)
+    sidecar_path = _find_physio_sidecar(output_folder, converted.task or "", edf_path)
     sidecar_info = {}
     if sidecar_path and sidecar_path.exists():
         try:
@@ -837,11 +841,8 @@ def _generate_physio_html_report(
         report_dir = report_dir / converted.session
     report_dir.mkdir(parents=True, exist_ok=True)
 
-    session_label = converted.session or "nosession"
-    report_name = (
-        f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
-    )
-    report_path = report_dir / report_name
+    report_path = report_dir / _physio_report_name(converted)
+    task = converted.task or ""
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     html = f"""
@@ -850,7 +851,7 @@ def _generate_physio_html_report(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PRISM Physio Report - {escape(converted.subject)} {escape(converted.task)}</title>
+  <title>PRISM Physio Report - {escape(converted.subject)} {escape(task)}</title>
   <style>
     body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 20px; color: #212529; background: #f8f9fa; }}
     .card {{ background: #fff; border: 1px solid #dee2e6; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }}
@@ -874,7 +875,7 @@ def _generate_physio_html_report(
   <div class="card grid">
     <div><div class="k">Subject</div><div class="v">{escape(converted.subject)}</div></div>
     <div><div class="k">Session</div><div class="v">{escape(converted.session or "n/a")}</div></div>
-    <div><div class="k">Task</div><div class="v">{escape(converted.task)}</div></div>
+    <div><div class="k">Task</div><div class="v">{escape(task or "n/a")}</div></div>
     <div><div class="k">ECG Channel</div><div class="v">{escape(ecg_label)}</div></div>
     <div><div class="k">Sampling Rate</div><div class="v">{sampling_rate:.2f} Hz</div></div>
     <div><div class="k">Duration</div><div class="v">{duration_sec:.1f} s</div></div>
@@ -1577,6 +1578,8 @@ def batch_convert_folder(
                             f"   🧾 Physio report: {report_path.relative_to(output_folder)}",
                             "info",
                         )
+                    else:
+                        log("   ℹ️ No physio report for BIDS .tsv.gz output", "info")
                 except Exception as report_error:
                     log(
                         f"   ⚠️ Physio report generation failed: {report_error}",

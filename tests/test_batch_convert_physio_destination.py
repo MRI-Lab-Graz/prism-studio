@@ -213,3 +213,52 @@ def test_eyetracking_filter_routes_task_bound_edf_to_eyetracking(tmp_path, make_
         "sub-01/eyetracking/sub-01_task-reading_eyetrack.edf",
         "sub-01/eyetracking/sub-01_task-reading_eyetrack.json",
     ]
+
+
+def _converted(**kw):
+    from pathlib import Path
+
+    from src.batch_convert import ConvertedFile
+
+    base = dict(
+        source_path=Path("x.edf"), output_files=[], modality="physio",
+        subject="sub-01", session="ses-pre", task=None, success=True,
+    )
+    base.update(kw)
+    return ConvertedFile(**base)
+
+
+def test_physio_report_for_task_free_file_does_not_say_none(tmp_path, make_edf):
+    """Placeholder report (no pyedflib) for a task-free file: no 'None' in its name."""
+    from src.batch_convert import _generate_physio_html_report
+
+    edf = tmp_path / "sub-01_ses-pre_recording-ecg_physio.edf"
+    make_edf(edf, {"ecg": (np.linspace(-1, 1, 8), 4)})
+    report = _generate_physio_html_report(
+        converted=_converted(output_files=[edf]), output_folder=tmp_path / "out"
+    )
+    assert report.name == "sub-01_ses-pre_physio_report.html"
+
+
+def test_physio_report_main_path_handles_task_none(tmp_path, make_edf, monkeypatch):
+    """The full report (needs pyedflib) must not crash on task=None; here a stub reader is enough to reach the task fields."""
+    pytest.importorskip("pyedflib")
+    from src.batch_convert import _generate_physio_html_report
+
+    monkeypatch.undo()  # allow the real pyedflib
+    edf = tmp_path / "sub-01_ses-pre_recording-ecg_physio.edf"
+    make_edf(edf, {"ecg": (np.sin(np.linspace(0, 60, 2000)), 200)}, duration=10.0)
+    report = _generate_physio_html_report(
+        converted=_converted(output_files=[edf]), output_folder=tmp_path / "out"
+    )
+    assert report is not None and "None" not in report.name
+
+
+def test_task_bound_bids_output_logs_that_no_report_is_made(tmp_path, make_edf):
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf")
+    logs = []
+    batch_convert_folder(
+        src, tmp_path / "out", physio_destination="func",
+        generate_physio_reports=True, log_callback=lambda m, lvl="info": logs.append(m),
+    )
+    assert any("no physio report" in m.lower() and "tsv.gz" in m for m in logs)
