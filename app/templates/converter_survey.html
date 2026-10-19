@@ -153,6 +153,13 @@
                                         <option value="keep_last">Keep the last row</option>
                                     </select>
                                     <div class="form-text">For files with one row per participant and wave but no session column (e.g. LimeSurvey).</div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="convertSkipExisting">
+                                        <label class="form-check-label small" for="convertSkipExisting">
+                                            Skip surveys already in the project
+                                        </label>
+                                        <div class="form-text mt-0">Only new responses are previewed and imported. A response is recognised by its LimeSurvey record (start date, seed, token), not by its session number.</div>
+                                    </div>
                                 </div>
                             </div>
 

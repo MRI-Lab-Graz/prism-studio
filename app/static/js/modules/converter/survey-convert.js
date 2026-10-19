@@ -8,7 +8,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { defaultDuplicateHandling } from './survey-duplicate-default.js';
+import { defaultDuplicateHandling, defaultSkipExisting } from './survey-duplicate-default.js';
 import { buildVariantDefinitionBadges, buildVersionOptions } from './survey-version-markup.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
 import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
@@ -1194,6 +1194,9 @@ export function initSurveyConvert(elements) {
         if (duplicateHandling) {
             formData.append('duplicate_handling', duplicateHandling);
         }
+        if (document.getElementById('convertSkipExisting')?.checked) {
+            formData.append('skip_existing', 'true');
+        }
 
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
@@ -1538,6 +1541,8 @@ export function initSurveyConvert(elements) {
         const duplicateDefault = defaultDuplicateHandling(filename);
         const duplicateSelect = document.getElementById('convertDuplicateHandling');
         if (duplicateDefault && duplicateSelect) duplicateSelect.value = duplicateDefault;
+        const skipExistingBox = document.getElementById('convertSkipExisting');
+        if (skipExistingBox) skipExistingBox.checked = defaultSkipExisting(filename);
 
         const previousIdSelection = String(idColumnSelect.value || '').trim();
         const hadManualIdSelection = previousIdSelection !== '' && previousIdSelection !== 'auto';

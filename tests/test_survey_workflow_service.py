@@ -212,3 +212,29 @@ def test_supported_survey_input_constants_are_canonical() -> None:
     assert ".lsa" not in SUPPORTED_SURVEY_TABULAR_SUFFIXES
     assert ".lsa" in SUPPORTED_SURVEY_INPUT_SUFFIXES
     assert "Supported formats:" in SUPPORTED_SURVEY_INPUT_MESSAGE
+
+
+def test_skip_existing_is_parsed_and_forwarded_to_the_converter() -> None:
+    service = SurveyWorkflowStageService(tabular_suffixes={".csv"})
+    assert service.parse_stage_form_fields(form={"skip_existing": "true"}).skip_existing is True
+    assert service.parse_stage_form_fields(form={}).skip_existing is False
+
+    captured: dict[str, Any] = {}
+
+    def workflow_runner(converter: Any, **kwargs: Any) -> dict[str, Any]:
+        captured.update(kwargs)
+        return kwargs
+
+    service.run_stage(
+        workflow_runner=workflow_runner,
+        tabular_converter=object(),
+        lsa_converter=None,
+        options=SurveyWorkflowStageOptions(
+            suffix=".csv",
+            input_path=Path("input.csv"),
+            library_dir=Path("/tmp/library"),
+            output_root=Path("/tmp/output"),
+            skip_existing=True,
+        ),
+    )
+    assert captured["skip_existing"] is True

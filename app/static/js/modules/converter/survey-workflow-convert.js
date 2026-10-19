@@ -255,6 +255,9 @@ export function createSurveyWorkflowConvertController({
         if (duplicateHandling) {
             formData.append('duplicate_handling', duplicateHandling);
         }
+        if (document.getElementById('convertSkipExisting')?.checked) {
+            formData.append('skip_existing', 'true');
+        }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename));

@@ -172,6 +172,12 @@ language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
 (unmapped columns), `--dry-run`, `--force`,
 `--duplicate-handling {error,keep_first,keep_last,sessions}` (repeated IDs; `sessions`
 numbers each ID's rows 1, 2, … by `startdate`/`datestamp`).
+`--skip-existing` imports only what is new: a response already in the output project
+(recognised by the `startdate`/`seed`/`token` record in its `tool-limesurvey` file, whatever
+session it was stored under) is skipped per survey, a response found under another session is
+flagged, and a different response in an occupied subject/session/survey slot is reported as a
+conflict and never overwritten. Without a `tool-limesurvey` record the check falls back to the
+file name and says so.
 
 Templates are optional for `.lsa` files: questionnaires without a library template are
 left out of the conversion and listed as a warning; the matched ones convert.

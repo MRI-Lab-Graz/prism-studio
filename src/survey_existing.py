@@ -62,14 +62,19 @@ class ImportIndex:
 class ExistingPolicy:
     """Per-conversion decisions: one ``decide`` call per (response row, target file)."""
 
-    def __init__(self, root: str | Path, available_columns):
+    def __init__(self, root: str | Path, available_columns, output_root: str | Path | None = None):
+        # Files are written under output_root (a scratch folder in the GUI) but
+        # "already there" means: under root (the project).
+        self._root = Path(root)
+        self._output_root = Path(output_root) if output_root is not None else self._root
         self.columns = tuple(c for c in FINGERPRINT_COLUMNS if c in set(available_columns))
         self._index = ImportIndex(root, self.columns)
         self._verdicts: dict[tuple, set[str]] = {}
 
     def decide(self, row, sub: str, ses: str, target: str | Path) -> str:
         fp = row_fingerprint(row, self.columns)
-        verdict = self._index.classify(sub, ses, fp, target_exists=Path(target).exists())
+        existing = self._root / Path(target).relative_to(self._output_root)
+        verdict = self._index.classify(sub, ses, fp, target_exists=existing.exists())
         self._verdicts.setdefault((sub, ses, fp), set()).add(verdict)
         return verdict
 

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Re-importing a LimeSurvey export only brings in what is new.** "Skip surveys already in the project"
+  (on by default for `.lsa` files; command line: `survey convert --skip-existing`) skips responses already
+  imported per subject, session and survey, flags a response stored under a different session, and reports (never
+  overwrites) a different response in an occupied slot. Choosing an `.lsa` file now also preselects "Number as
+  sessions by date".
+
+### Fixed
+- The validator no longer checks `tool-limesurvey` system-variable files against the survey schema
+  ("'Technical' is a required property").
+
 ## [1.21.0] - 2026-10-19
 
 ### Added

@@ -55,6 +55,7 @@ class SurveyWorkflowStageOptions:
     strict_levels: bool = False
     separator: str | None = None
     duplicate_handling: str = "error"
+    skip_existing: bool = False
     skip_participants: bool = True
     project_path: str | None = None
     fallback_project_path: str | None = None
@@ -80,6 +81,7 @@ class SurveyWorkflowStageFormFields:
     strict_levels: bool
     allow_near_item_match: bool
     duplicate_handling: str
+    skip_existing: bool = False
 
 
 class SurveyWorkflowStageService:
@@ -120,6 +122,8 @@ class SurveyWorkflowStageService:
             allow_near_item_match=allow_near_item_match_raw
             in _BOOLEAN_TRUTHY_VALUES,
             duplicate_handling=duplicate_handling,
+            skip_existing=str(form.get("skip_existing") or "").strip().lower()
+            in _BOOLEAN_TRUTHY_VALUES,
         )
 
     @staticmethod
@@ -245,6 +249,7 @@ class SurveyWorkflowStageService:
             "alias_file": options.alias_file,
             "id_map_file": options.id_map_file,
             "duplicate_handling": options.duplicate_handling,
+            "skip_existing": options.skip_existing,
             "skip_participants": options.skip_participants,
             "fallback_project_path": options.fallback_project_path,
             "template_version_overrides": template_version_overrides_payload,

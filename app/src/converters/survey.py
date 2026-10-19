@@ -1755,7 +1755,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     if skip_existing:
         from src.survey_existing import ExistingPolicy
 
-        existing_policy = ExistingPolicy(output_root, df.columns)
+        # The GUI converts into a scratch folder and copies into the project afterwards.
+        existing_policy = ExistingPolicy(
+            _survey_core._resolve_existing_project_root(project_path) or output_root,
+            df.columns,
+            output_root,
+        )
 
     def _existing_summary():
         if existing_policy is None:

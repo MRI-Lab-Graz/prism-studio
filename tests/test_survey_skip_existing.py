@@ -74,3 +74,24 @@ def test_default_still_overwrites(tmp_path):
     _convert(tmp_path, REAL_PATTERN, force=True)
 
     assert all(p.read_text() != "SENTINEL" for p in marked)
+
+
+def test_existing_responses_are_looked_up_in_the_project_not_the_temp_output(tmp_path):
+    _convert(tmp_path, REAL_PATTERN)  # the project: tmp_path / "out"
+    project = tmp_path / "out"
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
+
+    result = convert_survey_lsa_to_prism_dataset(
+        input_path=make_lsa(tmp_path, REAL_PATTERN + [NEW]),
+        library_dir=tmp_path / "lib",
+        output_root=tmp_path / "scratch",  # the GUI converts into a temp folder, then copies
+        id_column="token",
+        duplicate_handling="sessions",
+        project_path=project,
+        skip_existing=True,
+    )
+
+    written = sorted(p.name for p in (tmp_path / "scratch").glob("sub-*/ses-*/survey/*_survey.tsv"))
+    assert not any(n.startswith("sub-c") for n in written)
+    assert result.existing_summary["new"] == 1
+    assert result.existing_summary["already_imported"] == 3

@@ -164,6 +164,7 @@ def handle_api_survey_convert_validate(
     save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     duplicate_handling = parsed_stage_fields.duplicate_handling
+    skip_existing = parsed_stage_fields.skip_existing
 
     if not save_to_project:
         return (
@@ -239,6 +240,7 @@ def handle_api_survey_convert_validate(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
@@ -401,6 +403,7 @@ def handle_api_survey_convert_validate(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=current_project_path,
@@ -948,6 +951,7 @@ def handle_api_survey_convert_validate_start(
     save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     duplicate_handling = parsed_stage_fields.duplicate_handling
+    skip_existing = parsed_stage_fields.skip_existing
 
     if not save_to_project:
         return (
@@ -1038,6 +1042,7 @@ def handle_api_survey_convert_validate_start(
         "save_to_project": save_to_project,
         "archive_sourcedata": archive_sourcedata,
         "duplicate_handling": duplicate_handling,
+        "skip_existing": skip_existing,
         "separator": separator,
         "validate_requested": validate_requested,
     }
@@ -1188,6 +1193,7 @@ def _run_survey_convert_validate_job(
     save_to_project = config["save_to_project"]
     archive_sourcedata = config["archive_sourcedata"]
     duplicate_handling = config["duplicate_handling"]
+    skip_existing = config["skip_existing"]
     separator = config["separator"]
 
     try:
@@ -1219,6 +1225,7 @@ def _run_survey_convert_validate_job(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
@@ -1371,6 +1378,7 @@ def _run_survey_convert_validate_job(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=current_project_path,
