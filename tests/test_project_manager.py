@@ -349,13 +349,12 @@ class TestProjectManager(unittest.TestCase):
                 [
                     "/usr/bin/datalad",
                     "save",
-                    "-m",
-                    'PRISM: Nested structure conversion (initialize "derivatives")',
+                    "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
                 ],
                 commands,
             )
             self.assertIn(
-                ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
+                ["/usr/bin/datalad", "save", "--message=Initialize PRISM dataset structure"],
                 commands,
             )
             gitattributes_content = (project_path / ".gitattributes").read_text(
@@ -428,8 +427,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "derivatives")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )
@@ -438,8 +436,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-001")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-001")',
             ],
             commands,
         )
@@ -448,8 +445,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-002")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-002")',
             ],
             commands,
         )
@@ -1496,7 +1492,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("datalad", {}).get("gitattributes_policy_updated"))
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-r", "-m", "Checkpoint metadata updates"],
+            ["/usr/bin/datalad", "save", "-r", "--message=Checkpoint metadata updates"],
             commands,
         )
 
@@ -1625,7 +1621,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("attempted"), result)
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-m", "PRISM auto-save before project switch"],
+            ["/usr/bin/datalad", "save", "--message=PRISM auto-save before project switch"],
             commands,
         )
 
@@ -1702,7 +1698,7 @@ class TestProjectManager(unittest.TestCase):
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(["/usr/bin/datalad", "create", "--force"], commands)
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"],
+            ["/usr/bin/datalad", "save", "--message=Enable DataLad for PRISM project"],
             commands,
         )
 
@@ -2002,12 +1998,11 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-172")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-172")',
             ],
             commands,
         )
-        self.assertIn(["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"], commands)
+        self.assertIn(["/usr/bin/datalad", "save", "--message=Enable DataLad for PRISM project"], commands)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -2058,8 +2053,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "derivatives")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )

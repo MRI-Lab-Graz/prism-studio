@@ -5540,7 +5540,7 @@ git push -u origin main
             save_command.append("-r")
         if updated_only:
             save_command.append("--updated")
-        save_command.extend(["-m", normalized_message])
+        save_command.append(f"--message={normalized_message}")  # a message starting with "-" must not be read as an option
 
         head_before = self._git_head(project_path) if detect_no_changes else None
         try:

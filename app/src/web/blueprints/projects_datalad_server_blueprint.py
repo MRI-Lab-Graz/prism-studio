@@ -259,10 +259,18 @@ def datalad_server_save_config():
     if resolved is None:
         return jsonify({"error": "Invalid project path"}), 400
 
+    from src.datalad_execution import sibling_label_problem
+
+    sibling_name = str(data.get("sibling_name") or "").strip() or "ria-store"
+    alias = str(data.get("alias") or "").strip()
+    for label, what in ((sibling_name, "sibling name"), (alias, "alias")):
+        if label and (problem := sibling_label_problem(label, what)):
+            return jsonify({"error": problem}), 400
+
     config = load_config(str(resolved))
     config.datalad_ria_store_url = str(data.get("ria_url") or "").strip() or None
-    config.datalad_sibling_name = str(data.get("sibling_name") or "").strip() or "ria-store"
-    config.datalad_sibling_alias = str(data.get("alias") or "").strip() or None
+    config.datalad_sibling_name = sibling_name
+    config.datalad_sibling_alias = alias or None
 
     filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
     saved_path = save_config(config, str(resolved), filename=filename)
