@@ -506,12 +506,9 @@ def handle_api_survey_convert_preview(
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
-    skip_existing = (request.form.get("skip_existing") or "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    skip_existing = SurveyWorkflowStageService.parse_prepared_workflow_flag(
+        request.form.get("skip_existing")
+    )
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
