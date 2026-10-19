@@ -21,7 +21,11 @@ from typing import Any, Callable, cast
 import pandas as pd
 
 from src.participants_converter import ParticipantsConverter, load_participant_source
-from src.participants_sessions import session_label, sort_session_labels
+from src.participants_sessions import (
+    sanitize_session_token as _sanitize_session_token,
+    session_label,
+    sort_session_labels,
+)
 from src.subject_id_matching import build_subject_id_matcher
 
 
@@ -683,14 +687,6 @@ def _resolve_source_column_for_standard_variable(
             return source_column
 
     return ""
-
-
-def _sanitize_session_token(value: str) -> str:
-    token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
-    token = re.sub(r"-+", "-", token).strip("-")
-    if not token:
-        token = "unknown"  # noqa: S105 - sanitized session-label fallback, not a credential
-    return token.lower()
 
 
 def _find_session_column_name(columns: list[str], preferred: str = "") -> str:

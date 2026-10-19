@@ -25,7 +25,7 @@ from src.participants_backend import (
 from src.participant_data_checks import find_participant_data_problems
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.eligibility import load_criteria
-from src.participants_sessions import scope_to_session
+from src.participants_sessions import find_repeat_conflicts, scope_to_session
 from src.session_assignments import load_session_assignments, survey_id_of
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
@@ -352,6 +352,7 @@ def cmd_participants_preview(args) -> None:
         "participant_count": len(df),
         "preview_rows": preview_df.to_dict(orient="records"),
         "session_candidates": session_candidates,
+        "repeat_conflicts": find_repeat_conflicts(df, id_column, output_columns),
         "eligibility_criteria": load_criteria(str(project_root)),
     }
     identical_warning = format_identical_rows_warning(
@@ -502,6 +503,7 @@ def cmd_participants_convert(args) -> None:
         session_column=getattr(args, "session_column", None),
         session_value=getattr(args, "session", None),
         sessions_from_date=getattr(args, "sessions_from_date", None),
+        split_sessions=bool(getattr(args, "split_sessions", False)),
     )
 
     neurobagel_schema = _parse_neurobagel_schema(

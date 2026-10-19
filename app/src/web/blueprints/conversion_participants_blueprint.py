@@ -37,7 +37,7 @@ from src.participants_backend import (
     find_identical_value_rows,
     format_identical_rows_warning,
 )
-from src.participants_sessions import scope_to_session
+from src.participants_sessions import find_repeat_conflicts, scope_to_session
 from src.session_map import SessionMapError
 from src.session_map import unmapped_session_labels as _unmapped_session_labels
 
@@ -520,6 +520,9 @@ def api_participants_preview():
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
+                    "repeat_conflicts": find_repeat_conflicts(
+                        output_df, preview_id_column, output_df.columns
+                    ),
                     "eligibility_criteria": (
                         load_criteria(str(preview_project_root))
                         if preview_project_root
@@ -925,6 +928,7 @@ def api_participants_convert_start():
                     "mapping": mapping,
                     "session_column": request.form.get("session_column", "").strip(),
                     "session_value": request.form.get("session_value", "").strip(),
+                    "split_sessions": request.form.get("split_sessions") == "1",
                     "sessions_from_date": _sessions_from_date_option(),
                 }
             )

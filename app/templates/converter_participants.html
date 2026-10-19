@@ -176,35 +176,46 @@
                 </div>
             </div>
 
-            <div class="form-check mt-3">
-                <input class="form-check-input" type="checkbox" id="participantsSessionsFromDate">
-                <label class="form-check-label" for="participantsSessionsFromDate">
-                    Number sessions by acquisition date (repeated IDs, no session column, e.g. LimeSurvey)
-                </label>
-                <div class="form-text">Each ID's responses become sessions 1, 2, … ordered by <code>startdate</code>. Incomplete runs are flagged, not removed.</div>
-            </div>
-
-            <!-- Longitudinal file: which ONE session goes into participants.tsv -->
+            <!-- Repeated rows per participant. Identical values collapse quietly; this card only
+                 appears when a value CHANGES between a participant's rows (e.g. age across sessions). -->
             <div id="participantsSessionChoiceCard" class="card border-warning mt-3 d-none">
                 <div class="card-body py-3">
-                    <div class="fw-semibold mb-1"><i class="fas fa-calendar-days me-2"></i>This file contains several sessions</div>
-                    <div class="small text-muted mb-2">participants.tsv has exactly one row per participant. Is this a longitudinal dataset?</div>
-                    <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Longitudinal dataset">
-                        <button type="button" class="btn btn-outline-secondary" id="participantsSessionLongitudinalYes">Yes, longitudinal</button>
-                        <button type="button" class="btn btn-outline-secondary" id="participantsSessionLongitudinalNo">No</button>
+                    <div class="fw-semibold mb-1"><i class="fas fa-calendar-days me-2"></i>Some values change between a participant's rows</div>
+                    <div class="small text-muted mb-2" id="participantsSessionConflictText">
+                        participants.tsv has exactly one row per participant.
                     </div>
-                    <div class="row g-2 d-none" id="participantsSessionPickers">
-                        <div class="col-md-4">
-                            <label for="participantsSessionColumn" class="form-label small mb-1">Session column</label>
-                            <select class="form-select form-select-sm" id="participantsSessionColumn"></select>
+
+                    <!-- File without a session column (e.g. LimeSurvey): sessions come from the dates -->
+                    <div class="d-none" id="participantsSessionDateOption">
+                        <div class="small mb-2">
+                            This file has no session column. If each participant filled it in several times
+                            (repeated surveys), PRISM can number each ID's responses 1, 2, &hellip; by their
+                            <code>startdate</code>. Incomplete runs are flagged, not removed. Otherwise fix the source file.
                         </div>
-                        <div class="col-md-4">
-                            <label for="participantsSessionValue" class="form-label small mb-1">Session to import (one for all participants)</label>
-                            <select class="form-select form-select-sm" id="participantsSessionValue"></select>
-                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="participantsSessionByDateBtn">
+                            Number the responses by date
+                        </button>
                     </div>
-                    <div class="small text-muted mt-2 d-none" id="participantsSessionNoHint">
-                        Each participant must then appear in one row only. If a participant repeats with different values, the import stops.
+
+                    <!-- File with a session column: keep one session, or keep them all as separate columns -->
+                    <div class="d-none" id="participantsSessionModeGroup">
+                        <div class="btn-group btn-group-sm mb-2" role="group" aria-label="How to keep the values">
+                            <button type="button" class="btn btn-outline-secondary" id="participantsSessionModeOne">Keep one session for everybody</button>
+                            <button type="button" class="btn btn-outline-secondary" id="participantsSessionModeSplit">One column per session (e.g. age@ses-1)</button>
+                        </div>
+                        <div class="row g-2 d-none" id="participantsSessionPickers">
+                            <div class="col-md-4">
+                                <label for="participantsSessionColumn" class="form-label small mb-1">Session column</label>
+                                <select class="form-select form-select-sm" id="participantsSessionColumn"></select>
+                            </div>
+                            <div class="col-md-4" id="participantsSessionValueGroup">
+                                <label for="participantsSessionValue" class="form-label small mb-1">Session to import (one for all participants)</label>
+                                <select class="form-select form-select-sm" id="participantsSessionValue"></select>
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-2 d-none" id="participantsSessionSplitHint">
+                            Values that change between sessions get one column per session; values that never change stay one column.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -217,11 +228,6 @@
                 <button type="button" class="btn btn-sm btn-warning mt-2" data-role="save" disabled>Save session map</button>
                 <span class="small ms-2" data-role="status" aria-live="polite"></span>
             </div>
-
-            <!-- Messages -->
-            <div id="participantsError" class="alert alert-danger d-none mt-3"></div>
-            <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
-            <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
 
             <!-- Preview Results -->
             <div id="participantsPreviewResults" class="d-none mt-4">
@@ -318,6 +324,11 @@
                 </div>
 
             </div>
+
+            <!-- Messages: below the Create/Replace button so the result is where the user is looking -->
+            <div id="participantsError" class="alert alert-danger d-none mt-3"></div>
+            <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
+            <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
 
             <!-- Conversion Progress -->
             <div id="participantsConversionProgress" class="d-none mt-4">

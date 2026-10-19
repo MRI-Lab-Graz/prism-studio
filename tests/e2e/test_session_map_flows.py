@@ -81,7 +81,7 @@ def choose_pre_session_in_participants(page, studio_url, tmp_path):
     page.set_input_files("#participantsDataFile", str(data))
     page.click("#participantsPreviewBtn")
     expect(page.locator("#participantsSessionChoiceCard")).to_be_visible(timeout=30000)
-    page.click("#participantsSessionLongitudinalYes")
+    page.click("#participantsSessionModeOne")
     page.select_option("#participantsSessionColumn", "session")
     page.select_option("#participantsSessionValue", "pre")
 
