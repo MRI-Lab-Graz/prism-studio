@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.cleaning_notes import shown_examples
+from src.participants_levels import MAX_CODES
 
 import pandas as pd
 
@@ -70,7 +71,10 @@ def find_participant_data_problems(
         if not values or sum(n is not None for n in numbers) / len(values) < _NUMERIC_SHARE:
             continue
         text = [f"{pid}: '{v}'" for (pid, v), n in zip(values, numbers) if n is None]
-        if text:
+        distinct = {v for _, v in values}
+        # a few repeating values are a code list (1..6 plus "-oth-"); convert gives the text code a Level
+        is_code_list = len(distinct) <= MAX_CODES and len(distinct) < len(values)
+        if text and not is_code_list:
             errors.append(f"Column '{col}' is numeric but {len(text)} value(s) are not numbers - {shown_examples(text)}.")
         if str(col).strip().lower() == "age":
             low, high = _AGE_LIMITS

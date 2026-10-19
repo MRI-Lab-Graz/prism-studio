@@ -1,5 +1,6 @@
 """BIDS validator integration for PRISM: runs the bids-validator-deno engine and filters its report."""
 
+import fnmatch
 import importlib.metadata
 import json
 import os
@@ -74,6 +75,16 @@ def _is_citation_precedence_warning(
         return loc.endswith("dataset_description.json")
 
     return False
+
+
+def _is_prism_artifact(location: str) -> bool:
+    from src.bids_integration import EXTRA_BIDSIGNORE_RULES
+
+    rel = location.replace("\\", "/").strip("/")
+    return bool(rel) and any(
+        rel.startswith(rule) if rule.endswith("/") else fnmatch.fnmatch(rel, rule) or fnmatch.fnmatch(rel.rsplit("/", 1)[-1], rule)
+        for rule in EXTRA_BIDSIGNORE_RULES
+    )
 
 
 def run_bids_validator(
@@ -321,6 +332,11 @@ def run_bids_validator(
     for issue in issue_list:
         code = issue.get("code", "UNKNOWN_CODE")
         location = issue.get("location", "")
+
+        # PRISM's own files (project.json, code/, ...) are .bidsignore material; a project
+        # without a .bidsignore must not get BIDS errors for them
+        if _is_prism_artifact(location):
+            continue
 
         # PRISM citation-precedence: when CITATION.cff exists, suppress
         # BIDS citation overlap guidance and dataset_description-only

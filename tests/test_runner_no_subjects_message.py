@@ -80,3 +80,15 @@ def test_participants_file_without_subject_folders_is_an_error(tmp_path, name):
 def test_folder_without_dataset_description_still_says_point_at_the_root(tmp_path):
     errors = _no_subject_errors(_dataset(tmp_path, description=False))
     assert len(errors) == 1 and "dataset root" in errors[0]
+
+
+def test_prism_only_run_reports_the_participants_mismatch_too(tmp_path):
+    root = _project(tmp_path, ["sub-01"])
+    (root / "sub-02").mkdir()
+    (root / "dataset_description.json").write_text(
+        json.dumps({"Name": "x", "BIDSVersion": "1.10.0", "DatasetType": "raw"})
+    )
+
+    issues, _ = validate_dataset(str(root), run_bids=False, run_prism=True)
+
+    assert any("participants.tsv mismatch" in message for _, message, _ in issues)

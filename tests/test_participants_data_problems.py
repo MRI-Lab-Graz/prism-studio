@@ -135,3 +135,9 @@ def test_cleaned_ids_are_reported_but_a_added_prefix_is_not():
     out = _problems([("P 1", "21", "1"), ("P2", "22", "2"), ("sub-P3", "23", "3")])
     (warning,) = out["warnings"]
     assert "'P 1' → sub-P1" in warning and "P2" not in warning and "P3" not in warning
+
+
+def test_code_list_column_with_a_text_code_is_not_a_numeric_column():
+    # LimeSurvey exports "-oth-" next to the numeric codes 1..6 of a coded question
+    rows = [(f"P{i}", "20", str(i % 6 + 1)) for i in range(12)] + [("P99", "20", "-oth-")]
+    assert _problems(rows)["errors"] == []
