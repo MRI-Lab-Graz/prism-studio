@@ -254,6 +254,11 @@ def _session_project_root() -> Path | None:
     return project_path
 
 
+def _source_file_path(req) -> str:
+    """Server-side path chosen in the file picker (sent instead of an upload)."""
+    return str(req.form.get("source_file_path", "") or "").strip()
+
+
 def _absolute_input_path(filename: str) -> str:
     """Return absolute input path for CLI previews.
 
@@ -804,7 +809,11 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
     files = req.files
     form = req.form
     uploaded = files.get("data") or files.get("file")
-    filename = str(getattr(uploaded, "filename", "") or "").strip() or "<input-file>"
+    filename = (
+        str(getattr(uploaded, "filename", "") or "").strip()
+        or _source_file_path(req)
+        or "<input-file>"
+    )
 
     cmd_parts: list[str] = [
         "python",
@@ -1099,6 +1108,7 @@ def _build_biometrics_detect_terminal_command(req) -> str:
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    filename = filename or _source_file_path(req)
     input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
     project_root = _session_project_root()
@@ -1133,6 +1143,7 @@ def _build_biometrics_convert_terminal_command(req) -> str:
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    filename = filename or _source_file_path(req)
     input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
     project_root = _session_project_root()
@@ -1194,6 +1205,7 @@ def _build_physio_convert_terminal_command(req) -> str:
 
     uploaded = files.get("raw") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    filename = filename or _source_file_path(req)
     input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
     project_root = _session_project_root()
@@ -1370,7 +1382,7 @@ def _build_participants_preview_terminal_command(req) -> str:
         if uploaded is not None:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
-            filename = "<input-file>"
+            filename = _source_file_path(req) or "<input-file>"
         input_path = _absolute_input_path(filename)
 
         sheet = str(form.get("sheet", "0") or "0").strip() or "0"
@@ -1427,7 +1439,7 @@ def _build_participants_detect_id_terminal_command(req) -> str:
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
-        filename = "<input-file>"
+        filename = _source_file_path(req) or "<input-file>"
     input_path = _absolute_input_path(filename)
 
     sheet = str(form.get("sheet", "0") or "0").strip() or "0"
@@ -1465,7 +1477,7 @@ def _build_participants_convert_terminal_command(req) -> str:
         if uploaded is not None:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
-            filename = "<input-file>"
+            filename = _source_file_path(req) or "<input-file>"
         input_path = _absolute_input_path(filename)
 
         cmd_parts: list[str] = [
@@ -1568,7 +1580,7 @@ def _build_participants_merge_terminal_command(
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
-        filename = "<input-file>"
+        filename = _source_file_path(req) or "<input-file>"
     input_path = _absolute_input_path(filename)
 
     cmd_parts: list[str] = [
@@ -1627,7 +1639,7 @@ def _build_environment_preview_terminal_command(req) -> str:
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
-        filename = "<input-file>"
+        filename = _source_file_path(req) or "<input-file>"
     input_path = _absolute_input_path(filename)
 
     separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
@@ -1681,7 +1693,7 @@ def _build_environment_convert_terminal_command(req) -> str:
     if uploaded is not None:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
-        filename = "<input-file>"
+        filename = _source_file_path(req) or "<input-file>"
     input_path = _absolute_input_path(filename)
 
     separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
