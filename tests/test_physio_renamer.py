@@ -189,14 +189,54 @@ class TestComputeOrganizedRelativePath:
         )
         assert result == "sub-01/ses-pre/physio/sub-01_ses-pre_recording-ecg_physio.edf"
 
-    def test_organize_into_beh_ok(self):
+    def test_organize_tsv_gz_into_beh_ok(self):
         result = compute_organized_relative_path(
-            "sub-01_ses-pre_task-rest_recording-ecg_physio.edf",
+            "sub-01_ses-pre_task-rest_recording-ecg_physio.tsv.gz",
             modality="beh",
             organize=True,
             parse_bids_filename=lambda name: {"sub": "sub-01", "ses": "ses-pre"},
         )
-        assert result == "sub-01/ses-pre/beh/sub-01_ses-pre_task-rest_recording-ecg_physio.edf"
+        assert (
+            result
+            == "sub-01/ses-pre/beh/sub-01_ses-pre_task-rest_recording-ecg_physio.tsv.gz"
+        )
+
+    def test_organize_json_into_func_ok(self):
+        result = compute_organized_relative_path(
+            "sub-01_task-rest_recording-ecg_physio.json",
+            modality="func",
+            organize=True,
+            parse_bids_filename=lambda name: {"sub": "sub-01"},
+        )
+        assert result == "sub-01/func/sub-01_task-rest_recording-ecg_physio.json"
+
+    @pytest.mark.parametrize("ext", [".edf", ".vpd"])
+    def test_organize_raw_into_beh_refused(self, ext):
+        with pytest.raises(ValueError, match="physio batch-convert --destination beh"):
+            compute_organized_relative_path(
+                f"sub-01_task-rest_recording-ecg_physio{ext}",
+                modality="beh",
+                organize=True,
+                parse_bids_filename=lambda name: {"sub": "sub-01"},
+            )
+
+    def test_organize_events_refused(self):
+        with pytest.raises(ValueError, match="next to its task in func/, beh/ or eeg/"):
+            compute_organized_relative_path(
+                "sub-01_task-rest_events.tsv",
+                modality="events",
+                organize=True,
+                parse_bids_filename=lambda name: {"sub": "sub-01"},
+            )
+
+    def test_task_in_physio_hint_mentions_converter(self):
+        with pytest.raises(ValueError, match="Physio converter"):
+            compute_organized_relative_path(
+                "sub-01_task-rest_physio.edf",
+                modality="physio",
+                organize=True,
+                parse_bids_filename=lambda name: {"sub": "sub-01"},
+            )
 
 
 class TestComputeRenamedFilename:

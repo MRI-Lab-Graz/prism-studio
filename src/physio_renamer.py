@@ -332,10 +332,27 @@ def compute_organized_relative_path(
     if not bids:
         return filename
 
+    if modality == "events":
+        raise ValueError(
+            "There is no events/ folder: move *_events.tsv next to its task in func/, beh/ or eeg/"
+        )
+
     if modality == "physio" and re.search(r"(?:^|_)task-", filename):
         raise ValueError(
             "Physio in physio/ has no task- entity; task-bound physio belongs next to its task: "
             + ", ".join(PHYSIO_TASK_DESTINATIONS)
+            + ". Convert it with the Physio converter (physio batch-convert --destination beh/func/eeg)."
+        )
+
+    if (
+        modality in PHYSIO_TASK_DESTINATIONS
+        and re.search(r"_physio\.", filename)
+        and not filename.endswith((".tsv.gz", ".json"))
+    ):
+        raise ValueError(
+            f"EDF/raw physio cannot be organized into {modality}/ as-is; convert with the "
+            f"Physio converter (physio batch-convert --destination {modality}) "
+            "to get BIDS _physio.tsv.gz"
         )
 
     sub = bids.get("sub")

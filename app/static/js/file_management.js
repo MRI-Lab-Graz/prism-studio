@@ -2879,9 +2879,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentExampleFile = null;
     let renamerTemplateManuallyEdited = false;
 
+    // physio/ plus the task-bound destinations: all of them name files "..._physio".
+    function isPhysioModality(modality) {
+        return ['physio', 'beh', 'func', 'eeg'].includes(modality);
+    }
+
     function updateRecordingVisibility() {
         if (!renamerModality || !renamerRecordingContainer) return;
-        const showRecording = renamerModality.value === 'physio';
+        const showRecording = isPhysioModality(renamerModality.value);
         renamerRecordingContainer.style.display = showRecording ? 'block' : 'none';
     }
 
@@ -3061,7 +3066,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function syncTemplateWithTaskAndRecording(templateValue) {
         const task = getValidatedTaskLabel();
         const modality = renamerModality ? renamerModality.value : 'physio';
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3072,7 +3077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updated = updated.replace(/task-[^_\.]+/g, `task-${task}`);
         }
 
-        if (modality === 'physio') {
+        if (isPhysioModality(modality)) {
             if (recording) {
                 if (/_recording-[^_]+_physio/.test(updated)) {
                     updated = updated.replace(/_recording-[^_]+_physio/g, `_recording-${recording}_physio`);
@@ -3211,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idSource = renamerIdSource();
         const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
         const hasSession = idSource === 'folder' ? true : !!sessionValue;
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3232,8 +3237,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasSession) entities.push('ses-{session}');
         if (task) entities.push(`task-${task}`);
 
-        let suffix = modality;
-        if (modality === 'physio' && recording) {
+        let suffix = isPhysioModality(modality) ? 'physio' : modality;
+        if (isPhysioModality(modality) && recording) {
             suffix = `recording-${recording}_physio`;
         }
 
@@ -3828,8 +3833,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const suffix = stem.split('_').pop();
                             const expectedSuffixes = {
                                 physio: 'physio',
+                                beh: 'physio',
+                                func: 'physio',
+                                eeg: 'physio',
                                 biometrics: 'biometrics',
-                                events: 'events',
                                 survey: 'survey'
                             };
                             if (expectedSuffixes[selectedModality] && suffix !== expectedSuffixes[selectedModality]) {

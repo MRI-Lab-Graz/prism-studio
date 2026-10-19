@@ -563,3 +563,20 @@ def test_renamer_task_is_optional_for_physio_only(app_page, studio_url, tmp_path
     expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
     app_page.select_option("#renamerModality", "beh")
     expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+
+
+def test_renamer_task_bound_physio_is_named_physio(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path)
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".edf")
+    app_page.fill("#renamerTask", "rest")
+    app_page.select_option("#renamerModality", "beh")
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    expect(app_page.locator("#renamerRecording")).to_be_visible()
+    app_page.select_option("#renamerRecording", "ecg")
+    expect(app_page.locator("#renamerNewExample")).to_have_value(
+        "sub-{subject}_ses-{session}_task-rest_recording-ecg_physio.edf"
+    )
+    expect(app_page.locator("#renamerModality option[value=events]")).to_have_count(0)
