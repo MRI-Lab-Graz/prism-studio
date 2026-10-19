@@ -22,25 +22,19 @@ def _is_integer_like(value: str) -> bool:
         return True  # text such as "M"/"F" can be a code too
 
 
-def add_missing_levels(schema: dict, df) -> dict[str, list[str]]:
+def add_missing_levels(schema: dict, df) -> None:
     """Add every data value a column's ``Levels`` lacks, labelled with the code itself.
 
     Codes can be any string (``-oth-``, ``AO02``), whatever tool produced them; a
     real label can be filled in later. Columns without ``Levels`` are left alone.
-    Returns ``{column: [added codes]}``.
     """
-    added: dict[str, list[str]] = {}
     for column, spec in schema.items():
         levels = spec.get("Levels") if isinstance(spec, dict) else None
         if not isinstance(levels, dict) or column not in df.columns:
             continue
         values = {str(v).strip() for v in df[column].dropna()} - _MISSING
-        new = sorted(values - set(levels))
-        for code in new:
+        for code in sorted(values - set(levels)):
             levels[code] = code
-        if new:
-            added[column] = new
-    return added
 
 
 def check_participants_levels(root_dir: str) -> list[tuple[str, str, str]]:

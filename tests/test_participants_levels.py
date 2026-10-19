@@ -118,8 +118,7 @@ def test_add_missing_levels_labels_new_codes_with_the_code():
         {"education": ["4", "6", "-oth-", "n/a", None], "weight": ["55", "60", "1", "2", "3"]}
     )
 
-    added = add_missing_levels(schema, df)
+    add_missing_levels(schema, df)
 
     assert schema["education"]["Levels"] == {"4": "Bachelor", "6": "6", "-oth-": "-oth-"}
     assert "Levels" not in schema["weight"]
-    assert added == {"education": ["-oth-", "6"]}
