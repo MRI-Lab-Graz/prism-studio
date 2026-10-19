@@ -138,6 +138,7 @@ def _process_and_write_responses(
     process_survey_row_with_run_fn,
     build_bids_survey_filename_fn,
     task_value_offsets: dict[str, float] | None = None,
+    existing_policy=None,
 ) -> tuple[dict[str, int], dict[str, set[str]], dict[str, int]]:
     """Process all response rows and write survey TSV files."""
     missing_cells_by_subject: dict[str, int] = {}
@@ -188,6 +189,26 @@ def _process_and_write_responses(
                 effective_run = row_run
             else:
                 effective_run = run if include_run else None
+
+            acq_value = _lookup_task_context_value(
+                task_context_acq_map,
+                task=task,
+                session=ses_id,
+                run=effective_run,
+            )
+            filename = build_bids_survey_filename_fn(
+                sub_id,
+                ses_id,
+                task,
+                effective_run,
+                "tsv",
+                acq_value,
+            )
+            res_file = modality_dir / filename
+            if existing_policy is not None and (
+                existing_policy.decide(row, sub_id, ses_id, res_file) != "import"
+            ):
+                continue
 
             schema = _lookup_task_context_value(
                 task_context_templates,
@@ -290,23 +311,6 @@ def _process_and_write_responses(
                 if k not in non_item_toplevel_keys
                 and k not in schema.get("_aliases", {})
             ]
-
-            acq_value = _lookup_task_context_value(
-                task_context_acq_map,
-                task=task,
-                session=ses_id,
-                run=effective_run,
-            )
-
-            filename = build_bids_survey_filename_fn(
-                sub_id,
-                ses_id,
-                task,
-                effective_run,
-                "tsv",
-                acq_value,
-            )
-            res_file = modality_dir / filename
 
             with open(res_file, "w", encoding="utf-8", newline="") as f:
                 writer = csv.DictWriter(
@@ -761,6 +765,7 @@ def _write_tool_limesurvey_files(
     ensure_dir_fn,
     build_bids_survey_filename_fn,
     ls_metadata: dict | None = None,
+    existing_policy=None,
 ) -> int:
     """Write tool-limesurvey TSV + JSON sidecar files.
 
@@ -797,6 +802,10 @@ def _write_tool_limesurvey_files(
             if session and session != "all"
             else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
         )
+        if existing_policy is not None and not existing_policy.row_imported(
+            row, sub_id, ses_id
+        ):
+            continue
         modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
 
         # ── TSV file ─────────────────────────────────────────────
@@ -976,6 +985,7 @@ def _generate_dry_run_preview(
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
     task_value_offsets: dict[str, float] | None = None,
+    existing_policy=None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
 
@@ -1083,6 +1093,10 @@ def _generate_dry_run_preview(
             parts.append("survey")
             fname = "_".join(parts) + ".tsv"
             fpath = str(output_root / sub_id / ses_id / "survey" / fname)
+            if existing_policy is not None and (
+                existing_policy.decide(row, sub_id, ses_id, fpath) != "import"
+            ):
+                continue
             if fpath not in planned_file_paths:
                 description_parts = [f"Survey data for task {task}"]
                 if acq:

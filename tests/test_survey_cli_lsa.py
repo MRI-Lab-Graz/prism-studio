@@ -81,3 +81,25 @@ def test_repeated_ids_become_dated_sessions_with_duplicate_handling_sessions(tmp
     assert result.returncode == 0, result.stdout + result.stderr
     sessions = sorted(p.name for p in (tmp_path / "out" / "sub-a").glob("ses-*"))
     assert sessions == ["ses-1", "ses-2"]
+
+
+def test_skip_existing_keeps_responses_already_in_the_project(tmp_path):
+    first = _convert(tmp_path, "--duplicate-handling", "sessions")
+    assert first.returncode == 0, first.stdout + first.stderr
+    kept = tmp_path / "out" / "sub-a" / "ses-1" / "survey" / "sub-a_ses-1_task-wellbeing_survey.tsv"
+    kept.write_text("SENTINEL")
+
+    lib = tmp_path / "lib"
+    second = subprocess.run(
+        [
+            sys.executable, str(PRISM_TOOLS_APP), "survey", "convert",
+            "--input", str(_lsa(tmp_path)), "--library", str(lib),
+            "--output", str(tmp_path / "out"), "--id-column", "token",
+            "--duplicate-handling", "sessions", "--skip-existing",
+        ],
+        capture_output=True, text=True, encoding="utf-8", cwd=str(PROJECT_ROOT), timeout=120,
+    )
+
+    assert second.returncode == 0, second.stdout + second.stderr
+    assert kept.read_text() == "SENTINEL"
+    assert "Already in project" in second.stdout
