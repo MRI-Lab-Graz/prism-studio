@@ -71,6 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
   Excel exports now hold scores as numbers (they were stored as text), and SPSS variable names that differ only in
   case are made unique.
+- **Environment and batch converters.** Environment rows get BIDS-safe subject and session labels (letters and
+  digits only; a participant `P/4` or `../x` no longer creates nested or escaping folders), say in the log which
+  labels were cleaned, default to `ses-1` like the other converters, and warn about slash dates that could be
+  day-first. `physio batch-convert --dry-run` (command line) no longer writes the converted files into the output
+  folder and reports new versus existing files correctly; `SUB-003`/`SES-1` in file names are written in lowercase.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 
