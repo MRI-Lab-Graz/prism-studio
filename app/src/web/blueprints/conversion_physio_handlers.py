@@ -113,7 +113,8 @@ def _register_converted_sessions(project_path, converted, dataset_name, log=None
                 Path(project_path), ses_id, tasks, folder, dataset_name, "physio"
             )
             if log:
-                log(f"Registered in project.json: ses-{ses_id} ({folder}) → {', '.join(tasks)}", "info")
+                tail = f" → {', '.join(tasks)}" if tasks else ""
+                log(f"Registered in project.json: ses-{ses_id} ({folder}){tail}", "info")
         except Exception as reg_err:
             if log:
                 log(f"⚠️ Could not register session ses-{ses_id} in project.json: {reg_err}", "warning")

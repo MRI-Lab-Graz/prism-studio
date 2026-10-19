@@ -83,3 +83,22 @@ def test_register_session_accepts_empty_task_list(tmp_path):
 
     (tmp_path / "project.json").write_text(json.dumps({"Name": "p"}), encoding="utf-8")
     register_session_in_project(tmp_path, "1", [], "physio", "ds", "physio")
+
+
+def test_sync_batch_convert_without_destination_for_task_files_is_400(client, task_folder):
+    resp = client.post(
+        "/api/batch-convert",
+        data={"folder_path": str(task_folder), "modality": "physio", "dry_run": "true"},
+    )
+    assert resp.status_code == 400
+    assert "These physio files have a task and need a destination" in resp.get_json()["error"]
+
+
+def test_registration_log_has_no_dangling_arrow_without_tasks(monkeypatch, tmp_path):
+    monkeypatch.setattr(handlers, "register_session_in_project", lambda *a: None)
+    logs = []
+    cf = SimpleNamespace(success=True, session="1", task=None, target_folder="physio")
+    handlers._register_converted_sessions(
+        tmp_path, [cf], "ds", log=lambda msg, level="info": logs.append(msg)
+    )
+    assert logs == ["Registered in project.json: ses-1 (physio)"]
