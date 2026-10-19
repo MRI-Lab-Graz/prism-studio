@@ -1379,7 +1379,10 @@ def _create_backup(path: Path) -> str | None:
     if not path.exists():
         return None
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup_path = path.with_name(f"{path.name}.bak-{timestamp}")
+    # Backups in the dataset root fail validation; keep them under code/.
+    backup_dir = path.parent / "code"
+    backup_dir.mkdir(exist_ok=True)
+    backup_path = backup_dir / f"{path.name}.bak-{timestamp}"
     shutil.copy2(path, backup_path)
     return str(backup_path)
 

@@ -9,6 +9,7 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initEnvironment(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -449,6 +450,10 @@ export function initEnvironment(elements) {
 
     function updateFileBtn() {
         const hasFile = hasSelectedEnvInput();
+        syncPickedLabel(document.getElementById('envDataFileName'), {
+            files: envDataFile?.files,
+            path: envServerFilePath,
+        });
         if (envPreviewBtn) envPreviewBtn.disabled = !hasFile;
         clearEnvDataFileBtn?.classList.toggle('d-none', !hasFile);
 

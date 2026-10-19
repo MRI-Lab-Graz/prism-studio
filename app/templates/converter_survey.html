@@ -45,7 +45,7 @@
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12 studio-file-picker">
-                                    <label for="convertSurveyFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
+                                    <label for="convertSurveyFileName" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
@@ -55,10 +55,9 @@
                                         </div>
                                     </div>
                                     <div class="input-group studio-picker-group">
-                                        <input class="form-control" type="file" id="convertSurveyFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" data-help-key="convertSurveyFile">
-                                        <button class="btn btn-outline-secondary d-none" type="button" id="browseServerSurveyFileBtn" aria-label="Browse server survey file" title="Browse server survey file">
-                                            <i class="fas fa-server me-1"></i>Server
-                                        </button>
+                                        <input class="visually-hidden" type="file" id="convertSurveyFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" tabindex="-1" aria-hidden="true">
+                                        <input class="form-control" type="text" id="convertSurveyFileName" value="No file selected" readonly data-help-key="convertSurveyFile">
+                                        <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="browseServerSurveyFileBtn" aria-label="Browse for survey file" title="Browse for survey file">Browse</button>
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
                                             <i class="fas fa-times"></i>
                                         </button>

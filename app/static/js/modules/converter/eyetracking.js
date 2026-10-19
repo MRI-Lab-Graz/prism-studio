@@ -9,6 +9,7 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
 import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initEyetracking(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -236,6 +237,11 @@ export function initEyetracking(elements) {
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
         const hasServerFolder = Boolean(eyetrackingServerFolderPath);
+        syncPickedLabel(document.getElementById('eyetrackingBatchFilesName'), {
+            files: eyetrackingBatchFiles?.files,
+            path: eyetrackingServerFolderPath,
+            empty: 'No folder selected',
+        });
         clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !(hasFiles || hasServerFolder));
         if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = !(hasFiles || hasServerFolder);
         if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !(hasFiles || hasServerFolder);

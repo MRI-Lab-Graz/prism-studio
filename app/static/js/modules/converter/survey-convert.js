@@ -33,6 +33,7 @@ import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapt
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 import { serverFileHintText } from './server-file-hint.js';
 import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
 import { createSurveySessionInputController } from './survey-session-input-controller.js';
@@ -1744,6 +1745,10 @@ export function initSurveyConvert(elements) {
 
     function updateConvertBtn() {
         const hasFile = hasSelectedSurveyInput();
+        syncPickedLabel(document.getElementById('convertSurveyFileName'), {
+            files: convertSurveyFile?.files,
+            path: convertServerFilePath,
+        });
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
         const isAwaitingConfirmation = hasRunningRequest && surveyWorkflowProgressController.getIsSurveyRunAwaitingConfirmation();

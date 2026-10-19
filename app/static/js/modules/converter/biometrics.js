@@ -11,6 +11,7 @@ import { createPollingRunState, isPollingAbortError } from './polling-run-state.
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
@@ -433,6 +434,10 @@ export function initBiometrics(elements) {
 
     function updateBiometricsBtn() {
         const hasFile = hasSelectedBiometricsInput();
+        syncPickedLabel(document.getElementById('biometricsDataFileName'), {
+            files: biometricsDataFile?.files,
+            path: biometricsServerFilePath,
+        });
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
         clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);

@@ -12,6 +12,7 @@ import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
 import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initPhysio(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -308,6 +309,11 @@ export function initPhysio(elements) {
         const hasAutoPath = physioBatchFolderPath && physioBatchFolderPath.value && physioBatchFolderPath.value.length > 0;
         const hasServerFolderPath = Boolean(physioServerFolderPath);
         const shouldEnable = hasFiles || hasFolder || hasAutoPath || hasServerFolderPath;
+        syncPickedLabel(document.getElementById('physioBatchFolderName'), {
+            files: physioBatchFolder?.files,
+            path: physioServerFolderPath || (physioBatchFolderPath ? physioBatchFolderPath.value : ''),
+            empty: 'No folder selected',
+        });
 
         clearPhysioBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
         clearPhysioBatchFolderBtn?.classList.toggle('d-none', !(hasFolder || hasAutoPath || hasServerFolderPath));

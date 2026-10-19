@@ -5,7 +5,7 @@ import { escapeHtml } from '../../shared/dom.js';
 import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
 import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
 import {
@@ -189,37 +189,8 @@ export function initParticipants() {
         }
     }
 
-    function openParticipantsLocalFilePicker(fileInput) {
-        if (!(fileInput instanceof HTMLInputElement) || fileInput.disabled) {
-            return;
-        }
-
-        if (typeof fileInput.showPicker === 'function') {
-            try {
-                fileInput.showPicker();
-                return;
-            } catch (_error) {
-                // Fall back to click() for browsers that expose showPicker but reject it here.
-            }
-        }
-
-        fileInput.click();
-    }
-
     function applyParticipantsPickerUiState() {
-        const connectedToServer = prefersServerPicker();
         const fileInput = document.getElementById('participantsDataFile');
-        const chooseFileBtn = document.getElementById('participantsChooseFileBtn');
-        const browseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-
-        if (browseServerFileBtn) {
-            browseServerFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (chooseFileBtn) {
-            chooseFileBtn.classList.remove('d-none');
-        }
-
         if (fileInput) {
             fileInput.disabled = false;
             fileInput.title = '';
@@ -1487,13 +1458,6 @@ export function initParticipants() {
         participantsSourcedataQuickSelectController.initialize();
     }
     
-    const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
-    if (participantsChooseFileBtn && fileInput) {
-        participantsChooseFileBtn.addEventListener('click', function() {
-            openParticipantsLocalFilePicker(fileInput);
-        });
-    }
-
     const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
     if (participantsBrowseServerFileBtn) {
         participantsBrowseServerFileBtn.addEventListener('click', async function() {
