@@ -115,7 +115,6 @@ class DatasetStats:
             "biometrics",
             "eyetracking",
             "physio",
-            "physiological",
             "environment",
             "beh",
             "func",
@@ -157,7 +156,7 @@ class DatasetStats:
                 if match:
                     self.eyetracking.add(match.group(1))
 
-        elif modality in ["physio", "physiological"]:
+        elif modality in ["physio"]:
             if task:
                 self.physio.add(task)
             else:

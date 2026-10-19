@@ -325,7 +325,7 @@ def _find_inherited_root_sidecar(
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
     path_parts = set(Path(file_path).parts)
-    is_physio_context = bool(path_parts.intersection({"physio", "physiological"}))
+    is_physio_context = bool(path_parts.intersection({"physio"}))
 
     candidate_names = []
     for survey_candidate in _value_candidates(survey_value, acq_value):
@@ -397,7 +397,6 @@ def _find_inherited_root_sidecar(
             safe_path_join(root_abs, "surveys"),
             safe_path_join(root_abs, "biometrics"),
             safe_path_join(root_abs, "physio"),
-            safe_path_join(root_abs, "physiological"),
         ]
     )
 
@@ -1316,6 +1315,11 @@ class DatasetValidator:
         rule = _ENTITY_RULES.modalities.get(modality)
         if rule is not None and rule.allowed_entities is not None:
             for message in check_entities(base, rule.allowed_entities, _ENTITY_RULES.entity_order):
+                if modality == "physio" and "'task'" in message:
+                    message += (
+                        " - task-bound physio belongs next to its task: "
+                        "beh/, func/ or eeg/"
+                    )
                 issues.append(("ERROR", f"{message}: {filename}"))
 
         # Check modality pattern (strict for survey/biometrics)

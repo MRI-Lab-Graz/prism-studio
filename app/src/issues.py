@@ -361,7 +361,7 @@ def _base_fix_hint(code: str, message: str = "") -> str:
                 # get one here; others fall through to the generic message
                 # below (matches the pre-entity_rules.py hardcoded dict).
                 hinted_modalities = {
-                    "survey", "biometrics", "physio", "physiological", "eyetracking", "events",
+                    "survey", "biometrics", "physio", "eyetracking", "events",
                 }
                 rules = load_entity_rules()
                 rule = rules.modalities.get(modality)
