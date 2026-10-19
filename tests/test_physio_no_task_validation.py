@@ -68,3 +68,20 @@ def test_events_tsv_in_func_still_checked(tmp_path):
     issues = _validate(tmp_path, ["sub-01/func/sub-01_task-x_events.tsv"])
     assert not any("is not a PRISM modality" in m for m in _errors(issues))
     assert any("sidecar" in m.lower() for _, m in issues), issues
+
+
+def test_events_folder_at_session_level_is_flagged(tmp_path):
+    errs = _errors(
+        _validate(tmp_path, ["sub-01/ses-pre/events/sub-01_ses-pre_task-x_events.tsv"])
+    )
+    assert any("events" in m and "func" in m for m in errs), errs
+
+
+def test_physiological_folder_at_session_level_is_flagged(tmp_path):
+    errs = _errors(
+        _validate(
+            tmp_path,
+            ["sub-01/ses-pre/physiological/sub-01_ses-pre_recording-ecg_physio.edf"],
+        )
+    )
+    assert any("physiological" in m and "physio/" in m for m in errs), errs
