@@ -76,6 +76,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   labels were cleaned, default to `ses-1` like the other converters, and warn about slash dates that could be
   day-first. `physio batch-convert --dry-run` (command line) no longer writes the converted files into the output
   folder and reports new versus existing files correctly; `SUB-003`/`SES-1` in file names are written in lowercase.
+- **Survey generator exports.** Control characters pasted from Word or PDFs (vertical tab and similar) are dropped from
+  question texts, because they made the LimeSurvey `.lss` and the PsychoPy file invalid XML and made the Word export
+  fail.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 
