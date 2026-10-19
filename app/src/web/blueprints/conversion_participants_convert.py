@@ -6,6 +6,7 @@ from typing import Any
 from flask import Response, jsonify
 
 from src.participants_backend import convert_dataset_participants
+from src.participants_levels import add_missing_levels
 from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
 )
@@ -133,6 +134,7 @@ def _write_participants_outputs(
             col_name, f"Participant {col_name}"
         )
 
+    add_missing_levels(participants_json_data, df)
     with open(participants_json, "w", encoding="utf-8") as f:
         json.dump(participants_json_data, f, indent=2, ensure_ascii=False)
 
