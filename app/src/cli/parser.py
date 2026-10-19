@@ -827,6 +827,15 @@ def build_prism_tools_parsers(
         ),
     )
     parser_survey_convert.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help=(
+            "Only import what is new: skip LimeSurvey responses already in the output "
+            "project (matched by their tool-limesurvey record) and never overwrite files "
+            "that belong to a different response"
+        ),
+    )
+    parser_survey_convert.add_argument(
         "--dry-run",
         action="store_true",
         help="Only print mapping report; do not write files",
