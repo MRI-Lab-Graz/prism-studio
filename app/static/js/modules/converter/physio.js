@@ -28,6 +28,7 @@ export function initPhysio(elements) {
         browsePhysioFolderBtn,
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
+        physioBatchDestination,
         physioGenerateReports,
         physioBatchDryRun,
         physioBatchPreviewBtn,
@@ -569,6 +570,9 @@ export function initPhysio(elements) {
                 formData.append('sampling_rate', samplingRate);
             }
             formData.append('dry_run', isDryRun ? 'true' : 'false');
+            if (physioBatchDestination && physioBatchDestination.value) {
+                formData.append('physio_destination', physioBatchDestination.value);
+            }
 
             let activePollController = null;
             try {
