@@ -19,7 +19,7 @@ export function initEyetracking(elements) {
     const {
         // Batch convert elements
         eyetrackingBatchFiles,
-        browseServerEyetrackingFolderBtn,
+        browseEyetrackingFolderBtn,
         clearEyetrackingBatchFilesBtn,
         eyetrackingBatchDatasetName,
         eyetrackingBatchPreviewBtn,
@@ -32,7 +32,7 @@ export function initEyetracking(elements) {
         eyetrackingBatchLog,
         eyetrackingBatchLogClearBtn,
         eyetrackingBatchDryRunCheckbox,
-        eyetrackingServerFolderHint,
+        eyetrackingFolderHint,
         // Shared functions
         downloadBase64Zip
     } = elements;
@@ -243,9 +243,9 @@ export function initEyetracking(elements) {
     if (eyetrackingBatchFiles) {
         eyetrackingBatchFiles.addEventListener('change', function() {
             eyetrackingServerFolderPath = '';
-            if (eyetrackingServerFolderHint) {
-                eyetrackingServerFolderHint.textContent = '';
-                eyetrackingServerFolderHint.classList.add('d-none');
+            if (eyetrackingFolderHint) {
+                eyetrackingFolderHint.textContent = '';
+                eyetrackingFolderHint.classList.add('d-none');
             }
             resetEyetrackingWorkflowState();
             updateEyetrackingBatchBtn();
@@ -253,8 +253,8 @@ export function initEyetracking(elements) {
         updateEyetrackingBatchBtn();
     }
 
-    if (browseServerEyetrackingFolderBtn) {
-        browseServerEyetrackingFolderBtn.addEventListener('click', async function() {
+    if (browseEyetrackingFolderBtn) {
+        browseEyetrackingFolderBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerEyetrackingFolder();
             if (!pickedPath) return;
 
@@ -262,9 +262,9 @@ export function initEyetracking(elements) {
             if (eyetrackingBatchFiles) {
                 eyetrackingBatchFiles.value = '';
             }
-            if (eyetrackingServerFolderHint) {
-                eyetrackingServerFolderHint.textContent = `Server folder: ${pickedPath}`;
-                eyetrackingServerFolderHint.classList.remove('d-none');
+            if (eyetrackingFolderHint) {
+                eyetrackingFolderHint.textContent = `Folder: ${pickedPath}`;
+                eyetrackingFolderHint.classList.remove('d-none');
             }
 
             resetEyetrackingWorkflowState();
@@ -274,9 +274,9 @@ export function initEyetracking(elements) {
 
     clearEyetrackingBatchFilesBtn?.addEventListener('click', function() {
         eyetrackingServerFolderPath = '';
-        if (eyetrackingServerFolderHint) {
-            eyetrackingServerFolderHint.textContent = '';
-            eyetrackingServerFolderHint.classList.add('d-none');
+        if (eyetrackingFolderHint) {
+            eyetrackingFolderHint.textContent = '';
+            eyetrackingFolderHint.classList.add('d-none');
         }
         if (eyetrackingBatchFiles) {
             eyetrackingBatchFiles.value = '';
@@ -328,9 +328,9 @@ export function initEyetracking(elements) {
                 }
 
                 eyetrackingServerFolderPath = '';
-                if (eyetrackingServerFolderHint) {
-                    eyetrackingServerFolderHint.textContent = '';
-                    eyetrackingServerFolderHint.classList.add('d-none');
+                if (eyetrackingFolderHint) {
+                    eyetrackingFolderHint.textContent = '';
+                    eyetrackingFolderHint.classList.add('d-none');
                 }
             } catch (_error) {
                 if (eyetrackingBatchError) {

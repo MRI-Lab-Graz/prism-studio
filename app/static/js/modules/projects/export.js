@@ -1672,9 +1672,6 @@ export function initExportForm() {
                     statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Global default saved.</span>';
                     setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
                 }
-                window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
-                    detail: { export_defacing_confirmation_mode: mode },
-                }));
                 await loadExportPreferences();
             } catch (error) {
                 if (statusDiv) {

@@ -20,7 +20,7 @@ export function initEnvironment(elements) {
         envDataFile,
         envScanMriBtn,
         envRescanMriBtn,
-        browseServerEnvFileBtn,
+        browseEnvFileBtn,
         clearEnvDataFileBtn,
         envPreviewBtn,
         envSeparatorGroup,
@@ -513,7 +513,7 @@ export function initEnvironment(elements) {
         updateFileBtn();
     }
 
-    browseServerEnvFileBtn?.addEventListener('click', async () => {
+    browseEnvFileBtn?.addEventListener('click', async () => {
         const pickedPath = await pickServerEnvironmentFile();
         if (!pickedPath) return;
 

@@ -17,7 +17,7 @@ export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
     const {
         biometricsDataFile,
-        browseServerBiometricsFileBtn,
+        browseBiometricsFileBtn,
         clearBiometricsDataFileBtn,
         biometricsPreviewBtn,
         biometricsConvertBtn,
@@ -461,8 +461,8 @@ export function initBiometrics(elements) {
         updateBiometricsBtn();
     }
 
-    if (browseServerBiometricsFileBtn) {
-        browseServerBiometricsFileBtn.addEventListener('click', async function() {
+    if (browseBiometricsFileBtn) {
+        browseBiometricsFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerBiometricsFile();
             if (!pickedPath) return;
 

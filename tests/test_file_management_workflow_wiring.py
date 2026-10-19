@@ -127,10 +127,10 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
     def test_file_management_template_exposes_server_file_pick_buttons(self):
         content = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('id="renamerBrowseServerFileBtn"', content)
-        self.assertIn('id="renamerClearServerSelectionBtn"', content)
-        self.assertIn('id="organizeBrowseServerFileBtn"', content)
-        self.assertIn('id="organizeClearServerFilesBtn"', content)
+        self.assertIn('id="renamerBrowseFileBtn"', content)
+        self.assertIn('id="renamerClearSelectionBtn"', content)
+        self.assertIn('id="organizeBrowseFileBtn"', content)
+        self.assertIn('id="organizeClearFilesBtn"', content)
 
     def test_file_management_script_submits_server_file_paths(self):
         content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
@@ -138,8 +138,8 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         self.assertIn("formData.append('server_file_paths', entry.sourcePath);", content)
         self.assertIn("formData.append('server_file_paths', serverFilePath);", content)
         self.assertIn("formData.append('id_column', ((wideLongIdColumn && wideLongIdColumn.value) || '').trim());", content)
-        self.assertIn("const organizeBrowseServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');", content)
-        self.assertIn("const renamerBrowseServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');", content)
+        self.assertIn("const organizeBrowseFileBtn = document.getElementById('organizeBrowseFileBtn');", content)
+        self.assertIn("const renamerBrowseFileBtn = document.getElementById('renamerBrowseFileBtn');", content)
 
     def test_file_management_subject_rewrite_supports_preview_and_example_rule(self):
         template = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")

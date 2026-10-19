@@ -1479,9 +1479,9 @@ export function initParticipants() {
         participantsSourcedataQuickSelectController.initialize();
     }
     
-    const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-    if (participantsBrowseServerFileBtn) {
-        participantsBrowseServerFileBtn.addEventListener('click', async function() {
+    const participantsBrowseFileBtn = document.getElementById('participantsBrowseFileBtn');
+    if (participantsBrowseFileBtn) {
+        participantsBrowseFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerFile({
                 title: 'Select Participants File on Server',
                 confirmLabel: 'Use This File',

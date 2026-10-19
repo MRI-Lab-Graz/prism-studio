@@ -25,7 +25,7 @@ export function initPhysio(elements) {
         physioBatchFiles,
         clearPhysioBatchFilesBtn,
         physioBatchFolder,
-        browseServerPhysioFolderBtn,
+        browsePhysioFolderBtn,
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
         physioGenerateReports,
@@ -342,8 +342,8 @@ export function initPhysio(elements) {
         updatePhysioBatchBtn();
     }
 
-    if (browseServerPhysioFolderBtn) {
-        browseServerPhysioFolderBtn.addEventListener('click', async function() {
+    if (browsePhysioFolderBtn) {
+        browsePhysioFolderBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerPhysioFolder();
             if (!pickedPath) return;
 
@@ -356,7 +356,7 @@ export function initPhysio(elements) {
                 physioBatchFolder.value = '';
             }
             if (autoDetectHint) {
-                autoDetectHint.innerHTML = `<i class="fas fa-server me-1"></i>Server folder selected: ${pickedPath}`;
+                autoDetectHint.innerHTML = `<i class="fas fa-folder me-1"></i>Folder selected: ${pickedPath}`;
             }
 
             resetPhysioWorkflowState();

@@ -123,7 +123,7 @@ export function initSurveyConvert(elements) {
     const convertValueOffsetsStatus = document.getElementById('convertValueOffsetsStatus');
     const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
     const surveyWorkflowHint = document.getElementById('surveyWorkflowHint');
-    const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
+    const browseSurveyFileBtn = document.getElementById('browseSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
     let templateWorkflowGate = null;
@@ -1934,8 +1934,8 @@ export function initSurveyConvert(elements) {
     convertSessionGroup?.classList.remove('d-none');
     updateConvertBtn();
 
-    if (browseServerSurveyFileBtn) {
-        browseServerSurveyFileBtn.addEventListener('click', async () => {
+    if (browseSurveyFileBtn) {
+        browseSurveyFileBtn.addEventListener('click', async () => {
             const pickedPath = await pickServerFile({
                 title: 'Select Survey File on Server',
                 confirmLabel: 'Use This File',
