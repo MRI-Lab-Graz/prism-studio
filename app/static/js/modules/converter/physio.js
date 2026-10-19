@@ -11,7 +11,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { pickServerFolder } from './server-picker.js';
 import { syncPickedLabel } from './picker-label.js';
 
 export function initPhysio(elements) {
@@ -25,7 +25,7 @@ export function initPhysio(elements) {
         physioBatchFiles,
         clearPhysioBatchFilesBtn,
         physioBatchFolder,
-        browseServerPhysioFolderBtn,
+        browsePhysioFolderBtn,
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
         physioGenerateReports,
@@ -52,13 +52,6 @@ export function initPhysio(elements) {
     let physioSourcedataFileSelectEl = null;
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
-
-    function applyPhysioPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        if (browseServerPhysioFolderBtn) {
-            browseServerPhysioFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-    }
 
     async function pickServerPhysioFolder() {
         return pickServerFolder({
@@ -349,8 +342,8 @@ export function initPhysio(elements) {
         updatePhysioBatchBtn();
     }
 
-    if (browseServerPhysioFolderBtn) {
-        browseServerPhysioFolderBtn.addEventListener('click', async function() {
+    if (browsePhysioFolderBtn) {
+        browsePhysioFolderBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerPhysioFolder();
             if (!pickedPath) return;
 
@@ -363,7 +356,7 @@ export function initPhysio(elements) {
                 physioBatchFolder.value = '';
             }
             if (autoDetectHint) {
-                autoDetectHint.innerHTML = `<i class="fas fa-server me-1"></i>Server folder selected: ${pickedPath}`;
+                autoDetectHint.innerHTML = `<i class="fas fa-folder me-1"></i>Folder selected: ${pickedPath}`;
             }
 
             resetPhysioWorkflowState();
@@ -405,19 +398,6 @@ export function initPhysio(elements) {
         refreshPhysioSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyPhysioPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyPhysioPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyPhysioPickerUiState();
 
     ensurePhysioSourcedataQuickSelectElements();
     if (physioSourcedataQuickSelectEl && physioSourcedataFileSelectEl) {

@@ -1881,3 +1881,31 @@ def test_build_wide_to_long_terminal_command_handles_plain_indicators():
     assert "--session-indicators T1_,T2_" in cmd
     assert "--session-map" not in cmd
     assert "--output" in cmd and "<output-file>" in cmd
+
+
+def test_file_input_builders_log_server_picked_path_not_placeholder():
+    """Picker sends source_file_path (no upload); the logged command must carry it."""
+    from src.web import backend_monitoring as bm
+
+    builders = [
+        bm._build_participants_preview_terminal_command,
+        bm._build_participants_detect_id_terminal_command,
+        bm._build_participants_convert_terminal_command,
+        bm._build_participants_merge_terminal_command,
+        bm._build_environment_preview_terminal_command,
+        bm._build_environment_convert_terminal_command,
+        bm._build_biometrics_detect_terminal_command,
+        bm._build_biometrics_convert_terminal_command,
+        bm._build_physio_convert_terminal_command,
+        lambda r: bm._build_wide_to_long_terminal_command(r, inspect_only=False),
+    ]
+    app = Flask(__name__)
+    for build in builders:
+        with app.test_request_context(
+            "/x",
+            method="POST",
+            data={"source_file_path": "/data/my study/part.xlsx", "mode": "file"},
+        ):
+            cmd = build(request)
+        assert "<input-file>" not in cmd, build
+        assert "'/data/my study/part.xlsx'" in cmd, build

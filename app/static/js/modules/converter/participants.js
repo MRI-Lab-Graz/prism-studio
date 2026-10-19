@@ -207,16 +207,6 @@ export function initParticipants() {
         }
     }
 
-    function applyParticipantsPickerUiState() {
-        const fileInput = document.getElementById('participantsDataFile');
-        if (fileInput) {
-            fileInput.disabled = false;
-            fileInput.title = '';
-        }
-
-        updateParticipantsButtonState();
-    }
-
     function normalizeParticipantsCaseId(value) {
         const normalized = String(value || '').trim();
         return Object.prototype.hasOwnProperty.call(PARTICIPANTS_CASE_CONFIG, normalized)
@@ -1489,9 +1479,9 @@ export function initParticipants() {
         participantsSourcedataQuickSelectController.initialize();
     }
     
-    const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-    if (participantsBrowseServerFileBtn) {
-        participantsBrowseServerFileBtn.addEventListener('click', async function() {
+    const participantsBrowseFileBtn = document.getElementById('participantsBrowseFileBtn');
+    if (participantsBrowseFileBtn) {
+        participantsBrowseFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerFile({
                 title: 'Select Participants File on Server',
                 confirmLabel: 'Use This File',
@@ -1550,10 +1540,6 @@ export function initParticipants() {
         });
     }
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyParticipantsPickerUiState();
-    });
-
     if (!window.__participantsProjectChangeListenerBound) {
         window.addEventListener('prism-project-changed', function() {
             pollingRunState.abortActive('Participants polling aborted due to project change.');
@@ -1562,14 +1548,6 @@ export function initParticipants() {
             participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());
         });
         window.__participantsProjectChangeListenerBound = true;
-    }
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyParticipantsPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
     }
 
     const participantsCaseGuideCards = document.getElementById('participantsCaseGuideCards');
@@ -1615,7 +1593,7 @@ export function initParticipants() {
     // Run immediately
     updateParticipantsInputVisibility();
     updateParticipantsButtonState();
-    applyParticipantsPickerUiState();
+    updateParticipantsButtonState();
     setParticipantsAdditionalVariablesEnabled(false);
 
     function renderParticipantsOverwriteWarning(showWarning = false) {

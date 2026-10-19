@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (biometricsDataFile) {
         initBiometrics({
             biometricsDataFile,
-            browseServerBiometricsFileBtn: document.getElementById('browseServerBiometricsFileBtn'),
+            browseBiometricsFileBtn: document.getElementById('browseBiometricsFileBtn'),
             clearBiometricsDataFileBtn: document.getElementById('clearBiometricsDataFileBtn'),
             biometricsPreviewBtn: document.getElementById('biometricsPreviewBtn'),
             biometricsConvertBtn: document.getElementById('biometricsConvertBtn'),
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
             physioBatchFiles,
             clearPhysioBatchFilesBtn: document.getElementById('clearPhysioBatchFilesBtn'),
             physioBatchFolder: document.getElementById('physioBatchFolder'),
-            browseServerPhysioFolderBtn: document.getElementById('browseServerPhysioFolderBtn'),
+            browsePhysioFolderBtn: document.getElementById('browsePhysioFolderBtn'),
             clearPhysioBatchFolderBtn: document.getElementById('clearPhysioBatchFolderBtn'),
             physioBatchSamplingRate: document.getElementById('physioBatchSamplingRate'),
             physioGenerateReports: document.getElementById('physioGenerateReports'),
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (eyetrackingBatchFiles) {
         initEyetracking({
             eyetrackingBatchFiles,
-            browseServerEyetrackingFolderBtn: document.getElementById('browseServerEyetrackingFolderBtn'),
+            browseEyetrackingFolderBtn: document.getElementById('browseEyetrackingFolderBtn'),
             clearEyetrackingBatchFilesBtn: document.getElementById('clearEyetrackingBatchFilesBtn'),
             eyetrackingBatchDatasetName: document.getElementById('eyetrackingBatchDatasetName'),
             eyetrackingBatchPreviewBtn: document.getElementById('eyetrackingBatchPreviewBtn'),
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
             eyetrackingBatchLog: document.getElementById('eyetrackingBatchLog'),
             eyetrackingBatchLogClearBtn: document.getElementById('eyetrackingBatchLogClearBtn'),
             eyetrackingBatchDryRunCheckbox: document.getElementById('eyetrackingBatchDryRun'),
-            eyetrackingServerFolderHint: document.getElementById('eyetrackingServerFolderHint'),
+            eyetrackingFolderHint: document.getElementById('eyetrackingFolderHint'),
             downloadBase64Zip
         });
     }
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
             envDataFile,
             envScanMriBtn: document.getElementById('envScanMriBtn'),
             envRescanMriBtn: document.getElementById('envRescanMriBtn'),
-            browseServerEnvFileBtn: document.getElementById('browseServerEnvFileBtn'),
+            browseEnvFileBtn: document.getElementById('browseEnvFileBtn'),
             clearEnvDataFileBtn: document.getElementById('clearEnvDataFileBtn'),
             envPreviewBtn: document.getElementById('envPreviewBtn'),
             envSeparatorGroup: document.getElementById('envSeparatorGroup'),
