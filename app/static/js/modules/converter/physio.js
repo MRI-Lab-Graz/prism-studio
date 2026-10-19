@@ -11,7 +11,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { pickServerFolder } from './server-picker.js';
 import { syncPickedLabel } from './picker-label.js';
 
 export function initPhysio(elements) {
@@ -52,13 +52,6 @@ export function initPhysio(elements) {
     let physioSourcedataFileSelectEl = null;
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
-
-    function applyPhysioPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        if (browseServerPhysioFolderBtn) {
-            browseServerPhysioFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-    }
 
     async function pickServerPhysioFolder() {
         return pickServerFolder({
@@ -405,19 +398,6 @@ export function initPhysio(elements) {
         refreshPhysioSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyPhysioPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyPhysioPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyPhysioPickerUiState();
 
     ensurePhysioSourcedataQuickSelectElements();
     if (physioSourcedataQuickSelectEl && physioSourcedataFileSelectEl) {

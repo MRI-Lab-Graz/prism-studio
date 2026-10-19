@@ -8,7 +8,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { pickServerFolder } from './server-picker.js';
 import { syncPickedLabel } from './picker-label.js';
 
 export function initEyetracking(elements) {
@@ -43,13 +43,6 @@ export function initEyetracking(elements) {
     let eyetrackingSourcedataFileSelectEl = null;
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
-
-    function applyEyetrackingPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        if (browseServerEyetrackingFolderBtn) {
-            browseServerEyetrackingFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-    }
 
     async function pickServerEyetrackingFolder() {
         return pickServerFolder({
@@ -302,19 +295,6 @@ export function initEyetracking(elements) {
         refreshEyetrackingSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyEyetrackingPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyEyetrackingPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyEyetrackingPickerUiState();
 
     ensureEyetrackingSourcedataQuickSelectElements();
     if (eyetrackingSourcedataQuickSelectEl && eyetrackingSourcedataFileSelectEl) {

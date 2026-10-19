@@ -699,7 +699,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             content,
         )
         self.assertIn("const runController = createJobRunController();", content)
@@ -810,7 +810,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             physio_content,
         )
         self.assertIn(
-            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFolder } from './server-picker.js';",
             physio_content,
         )
         self.assertIn("const pollingRunState = createPollingRunState();", physio_content)
@@ -867,7 +867,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             eyetracking_content,
         )
         self.assertIn(
-            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFolder } from './server-picker.js';",
             eyetracking_content,
         )
         self.assertIn(
@@ -1052,7 +1052,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             environment_content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             environment_content,
         )
         self.assertIn("const pollingRunState = createPollingRunState();", environment_content)
@@ -1663,7 +1663,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             content,
         )
         self.assertIn("const pickedPath = await pickServerFile({", content)

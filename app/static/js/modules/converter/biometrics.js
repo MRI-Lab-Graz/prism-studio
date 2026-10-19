@@ -10,7 +10,7 @@ import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
 import { syncPickedLabel } from './picker-label.js';
 
 export function initBiometrics(elements) {
@@ -208,26 +208,6 @@ export function initBiometrics(elements) {
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: biometricsServerFilePath || ''
         });
-    }
-
-    function applyBiometricsPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-
-        if (browseServerBiometricsFileBtn) {
-            browseServerBiometricsFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (biometricsDataFile) {
-            biometricsDataFile.disabled = false;
-            biometricsDataFile.title = '';
-        }
-
-        if (!connectedToServer && biometricsServerFilePath) {
-            biometricsServerFilePath = '';
-            resetBiometricsWorkflowState();
-        }
-
-        updateBiometricsBtn();
     }
 
     function ensureBiometricsSourcedataQuickSelectElements() {
@@ -513,19 +493,7 @@ export function initBiometrics(elements) {
         refreshBiometricsSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyBiometricsPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyBiometricsPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyBiometricsPickerUiState();
+    updateBiometricsBtn();
 
     ensureBiometricsSourcedataQuickSelectElements();
     if (biometricsSourcedataQuickSelectEl && biometricsSourcedataFileSelectEl) {

@@ -8,7 +8,7 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
 import { syncPickedLabel } from './picker-label.js';
 
 export function initEnvironment(elements) {
@@ -117,26 +117,6 @@ export function initEnvironment(elements) {
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: envServerFilePath || ''
         });
-    }
-
-    function applyEnvironmentPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-
-        if (browseServerEnvFileBtn) {
-            browseServerEnvFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (envDataFile) {
-            envDataFile.disabled = false;
-            envDataFile.title = '';
-        }
-
-        if (!connectedToServer && envServerFilePath) {
-            envServerFilePath = '';
-            resetUI();
-        }
-
-        updateFileBtn();
     }
 
     function ensureEnvironmentSourcedataQuickSelectElements() {
@@ -738,10 +718,6 @@ export function initEnvironment(elements) {
         updateFileBtn();
     });
 
-    window.addEventListener('prism-library-settings-changed', () => {
-        applyEnvironmentPickerUiState();
-    });
-
     window.addEventListener('prism-project-changed', () => {
         void runController.cancelActiveJob({
             buildCancelUrl: (jobId) => `/api/environment-convert-cancel/${encodeURIComponent(jobId)}`,
@@ -753,15 +729,7 @@ export function initEnvironment(elements) {
         prefillRecruitmentLocationDefaults();
     });
 
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyEnvironmentPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyEnvironmentPickerUiState();
+    updateFileBtn();
 
     prefillRecruitmentLocationDefaults();
 
