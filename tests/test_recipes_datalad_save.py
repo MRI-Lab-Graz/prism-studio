@@ -103,9 +103,8 @@ def test_compute_survey_recipes_calls_datalad_save_when_tracked(
     assert len(captured_commands) == 1
     save_command = captured_commands[0]
     assert save_command[:2] == ["datalad", "save"]
-    assert "-m" in save_command
-    message_index = save_command.index("-m") + 1
-    assert "recipes" in save_command[message_index]
+    message = next(a for a in save_command if a.startswith("--message="))
+    assert "recipes" in message
     # Scoped to the paths this run actually touched (derivative output +
     # seeded recipe copy), not an unscoped whole-dataset save.
     relative_out_root = str(result.out_root.relative_to(project_root))
