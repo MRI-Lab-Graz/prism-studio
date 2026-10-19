@@ -202,6 +202,17 @@
       border-color: #0d6efd;
     }
     
+    .nb-btn-danger {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+
+    .nb-btn-danger:hover {
+      background: #bb2d3b;
+      border-color: #bb2d3b;
+    }
+
     .nb-btn-primary {
       background: #0d6efd;
       color: white;
@@ -632,6 +643,8 @@ window.clearNeurobagelEnrichment = function(colName) {
 };
 
 window.removeNeurobagelVariable = async function(colName) {
+  // The short empty-state below shrinks the page; keep the viewport where it was.
+  const scrollY = window.scrollY;
   const actualColName = window.resolveNeurobagelColumnStateKey(colName);
   const removeHandler = window.removeAdditionalParticipantVariable;
   if (typeof removeHandler === 'function') {
@@ -671,6 +684,8 @@ window.removeNeurobagelVariable = async function(colName) {
   if (typeof refreshPreview === 'function') {
     refreshPreview();
   }
+  window.scrollTo(0, scrollY);
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
 };
 
 window.addNeurobagelLevel = function(colName) {
@@ -1295,7 +1310,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
         <span class="nb-editor-type-badge">${dataType}</span>
         ${colData.standardized_variable ? `<span class="badge bg-success ms-1" style="font-size: 10px;">Enriched: ${colData.standardized_variable}</span>` : ''}
         ${canRemoveVariable ? `
-        <button class="nb-btn ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
+        <button class="nb-btn nb-btn-danger ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
           Remove From Output
         </button>
         ` : ''}

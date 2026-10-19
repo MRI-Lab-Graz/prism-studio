@@ -104,6 +104,19 @@ class TestParticipantsNeurobagelWidgetWiring(unittest.TestCase):
         self.assertIn("Could not persist removal of ${colName}:", widget_content)
         self.assertIn("return;", widget_content)
 
+    def test_remove_from_output_keeps_scroll_and_is_red(self):
+        widget_content = WIDGET_FILE.read_text(encoding="utf-8")
+
+        self.assertIn("nb-btn-danger", widget_content)
+        self.assertIn("const scrollY = window.scrollY;", widget_content)
+        self.assertIn("window.scrollTo(0, scrollY);", widget_content)
+
+    def test_variable_change_preview_rerun_restores_scroll(self):
+        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("keepScrollY", participants_content)
+        self.assertIn("window.scrollTo(0, keepScrollY)", participants_content)
+
     def test_widget_resolves_sidebar_columns_back_to_state_keys(self):
         widget_content = WIDGET_FILE.read_text(encoding="utf-8")
 
