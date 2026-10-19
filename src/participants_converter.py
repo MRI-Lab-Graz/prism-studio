@@ -158,7 +158,7 @@ class ParticipantsConverter:
             return None
 
         text = str(value).strip()
-        if not text or text.lower() == "nan":
+        if not text or text.lower() in {"nan", "n/a", "na", "none"}:
             return None
 
         # Normalize to NFC before stripping non-ASCII characters. Without
@@ -491,9 +491,21 @@ class ParticipantsConverter:
                 messages.append(f"✗ {error}")
             return False, None, messages
 
+        mappings = mapping.get("mappings", {})
+        if reject_conflicting_repeats and id_source:
+            from src.participant_data_checks import find_participant_data_problems
+
+            problems = find_participant_data_problems(
+                df, id_source, [spec.get("source_column") for spec in mappings.values()]
+            )
+            if problems["errors"]:
+                for error in problems["errors"]:
+                    self._log("ERROR", error)
+                    messages.append(f"✗ {error}")
+                return False, None, messages
+
         # Build output dataframe
         output_df = pd.DataFrame()
-        mappings = mapping.get("mappings", {})
 
         for var_name, spec in mappings.items():
             source_column = spec.get("source_column")

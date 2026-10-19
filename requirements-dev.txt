@@ -2,13 +2,13 @@ pytest
 pytest-cov
 codecov-cli
 matplotlib
-black>=26.10.0
+black>=26.10.1
 flake8
 ruff
 detect-secrets
 bandit
 mypy
-semgrep>=1.179.0
+semgrep>=1.180.0
 PyJWT>=2.13.0
 codespell
 safety

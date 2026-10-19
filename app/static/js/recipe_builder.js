@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // Awaited before a recipe is imported, so a saved Missing/MinValid can never
     // be read with the wrong (default) rules and then dropped on save.
     let POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
-        describeMissingHandling, describeReverseCoding, describeIrv;
+        describeMissingHandling, describeReverseCoding, describeIrv, defaultPolicyFor;
     const missingDataReady = import(
         new URL('./modules/recipe-builder/missing-data.js', recipeBuilderScriptUrl).href
     ).then(mod => {
         ({
             POLICY, MISSING_MEANING, policyFromScore, applyPolicyToScore,
-            describeMissingHandling, describeReverseCoding, describeIrv,
+            describeMissingHandling, describeReverseCoding, describeIrv, defaultPolicyFor,
         } = mod);
     });
 
@@ -1244,7 +1244,16 @@ document.addEventListener('DOMContentLoaded', function () {
             scale.minValid = Number.isInteger(parsed) && parsed >= 1 ? parsed : 1;
             syncMissingUi();
         });
-        methodSelect.addEventListener('change', syncMissingUi);
+        let shownMethod = scale.method;
+        methodSelect.addEventListener('change', () => {
+            // an untouched default follows the method: a sum needs every item, a mean uses the answered ones
+            if (scale.policy === defaultPolicyFor(shownMethod)) {
+                scale.policy = defaultPolicyFor(scale.method);
+                policySelect.value = scale.policy;
+            }
+            shownMethod = scale.method;
+            syncMissingUi();
+        });
         syncMissingUi();
         policyWrap.append(policyLabel, policySelect, minValidInput);
 

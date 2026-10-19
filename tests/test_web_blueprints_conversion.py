@@ -3004,11 +3004,11 @@ class TestParticipantsSeparatorHelpers(unittest.TestCase):
     def test_expected_delimiter_for_suffix(self):
         self.assertEqual(
             participants_module._expected_delimiter_for_suffix(".csv", "auto"),
-            ",",
+            None,  # the reader picks the format default and sniffs
         )
         self.assertEqual(
             participants_module._expected_delimiter_for_suffix(".tsv", "auto"),
-            "\t",
+            None,
         )
         self.assertEqual(
             participants_module._expected_delimiter_for_suffix(".csv", "semicolon"),
@@ -5731,11 +5731,11 @@ class TestSharedSeparatorHelpers(unittest.TestCase):
 
         self.assertEqual(
             conversion_utils.expected_delimiter_for_suffix(".csv", "auto"),
-            ",",
+            None,  # the reader picks the format default and sniffs
         )
         self.assertEqual(
             conversion_utils.expected_delimiter_for_suffix(".tsv", "auto"),
-            "\t",
+            None,
         )
         self.assertEqual(
             conversion_utils.expected_delimiter_for_suffix(".csv", "pipe"),

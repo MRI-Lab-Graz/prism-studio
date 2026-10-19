@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from flask import Flask
@@ -46,17 +47,56 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
                 [{"name": "study", "path": str(resolved_root / "study")}],
             )
 
-    def test_fs_browse_rejects_non_directories(self):
+    def test_fs_browse_skips_unreadable_entry_instead_of_truncating(self):
+        # Windows home dirs hold junctions ("Application Data") whose is_dir()
+        # raises PermissionError; that used to abort the whole listing.
         with tempfile.TemporaryDirectory() as tmp_dir:
-            file_path = Path(tmp_dir) / "not_a_directory.txt"
-            file_path.write_text("hello", encoding="utf-8")
+            root = Path(tmp_dir)
+            (root / "Application Data").mkdir()
+            (root / "Documents").mkdir()
+            real_is_dir = Path.is_dir
+
+            def flaky_is_dir(self):
+                if self.name == "Application Data":
+                    raise PermissionError("denied")
+                return real_is_dir(self)
+
+            with mock.patch.object(Path, "is_dir", flaky_is_dir):
+                response = self.client.get(
+                    "/api/fs/browse", query_string={"path": str(root)}
+                )
+
+            names = [d["name"] for d in response.get_json()["dirs"]]
+            self.assertEqual(names, ["Documents"])
+
+    def test_fs_browse_file_path_lists_its_parent_folder(self):
+        # Pickers reopen at the previously chosen value, which is often a file.
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir).resolve()
+            file_path = root / "data.csv"
+            file_path.write_text("a", encoding="utf-8")
 
             response = self.client.get(
-                "/api/fs/browse", query_string={"path": str(file_path)}
+                "/api/fs/browse",
+                query_string={"path": str(file_path), "include_files": "1"},
             )
 
-            self.assertEqual(response.status_code, 400)
-            self.assertEqual(response.get_json()["error"], "Not a directory")
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json()
+            self.assertEqual(payload["path"], str(root))
+            self.assertEqual([f["name"] for f in payload["files"]], ["data.csv"])
+
+    def test_fs_browse_missing_path_falls_back_to_existing_ancestor(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir).resolve()
+
+            response = self.client.get(
+                "/api/fs/browse",
+                query_string={"path": str(root / "gone" / "deeper")},
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.get_json()["path"], str(root))
 
 
 if __name__ == "__main__":

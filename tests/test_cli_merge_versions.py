@@ -15,6 +15,7 @@ def _run(script, *args):
         [sys.executable, str(ROOT / "app" / script), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",  # the CLI writes UTF-8; the Windows locale (cp1252) cannot decode it
         env=env,
         cwd=ROOT,
         timeout=60,

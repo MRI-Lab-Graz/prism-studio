@@ -521,3 +521,16 @@ class TestAnonymizationKeyStaysOutOfTheShareableFolder:
         assert json.loads(mapping_file.read_text())["mapping"]["sub-01"] == "sub-LEGACY1"
         df = pd.read_csv(out_root / "scores.tsv", sep="\t", dtype=str)
         assert list(df["participant_id"]) == ["sub-LEGACY1"]
+
+
+@pytest.mark.parametrize("bad", [0, 1, 3, 13, 200, -3, "abc", None])
+def test_pseudonym_length_outside_4_to_12_is_refused_before_anything_is_written(tmp_path, bad):
+    _write_participants_tsv(tmp_path, ["sub-1", "sub-2"])
+    out_root = tmp_path / "out"
+    out_root.mkdir()
+    _write_scores_tsv(out_root, "scores.tsv", ["sub-1", "sub-2"])
+
+    with pytest.raises(ValueError, match="between 4 and 12"):
+        anonymize_recipe_output(dataset_path=tmp_path, out_root=out_root, out_format="flat", id_length=bad)
+    assert "sub-1" in (out_root / "scores.tsv").read_text()
+    assert not (tmp_path / "code" / "anonymization").exists()

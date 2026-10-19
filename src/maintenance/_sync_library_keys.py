@@ -32,7 +32,7 @@ def _sync_library_keys(
 
     template_file = preferred_template_name if preferred_template_name in files else files[0]
 
-    with open(os.path.join(library_dir, template_file), "r") as f:
+    with open(os.path.join(library_dir, template_file), "r", encoding="utf-8") as f:
         template = json.load(f)
 
     template_keys = set(template.keys())

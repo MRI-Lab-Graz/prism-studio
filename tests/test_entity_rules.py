@@ -19,6 +19,7 @@ from src.entity_rules import (
 _EXPECTED_PATTERNS = {
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
+    "biosample": r".+_biosample\.(tsv|json)$",
     "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
@@ -69,7 +70,7 @@ def test_default_required_entities_matches_hardcoded_constant():
 def test_prism_modalities_matches_hardcoded_constant():
     rules = load_entity_rules()
     assert rules.prism_modalities == {
-        "survey", "biometrics", "environment", "events", "physio", "physiological",
+        "survey", "biometrics", "biosample", "environment", "events", "physio", "physiological",
     }
 
 
@@ -91,7 +92,7 @@ def test_load_entity_rules_is_cached():
 
 
 def test_modalities_with_suffixes_matches_original_pattern_dict_keys():
-    """validator.py's MODALITY_PATTERNS must only carry the 7 modalities the
+    """validator.py's MODALITY_PATTERNS must only carry the 8 modalities the
     hardcoded dict used to have - not every entities.schema.json entry (e.g.
     bidsPassthrough modalities like anat/func with no suffix grammar of
     their own). Consumers like app/src/runner.py iterate this dict's keys
@@ -109,7 +110,7 @@ def test_project_modalities_matches_project_manager_hardcoded_list():
     6 names (order differs, which is harmless - nothing depends on it)."""
     rules = load_entity_rules()
     assert set(rules.project_modalities) == {
-        "survey", "biometrics", "environment", "physio", "eyetracking", "events",
+        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking", "events",
     }
 
 
@@ -125,5 +126,19 @@ def test_prism_modalities_matches_bids_integration_prism_folders_intent():
     (plus dead "eeg" and vestigial "metadata" entries, since removed)."""
     rules = load_entity_rules()
     assert rules.prism_modalities == {
-        "survey", "biometrics", "environment", "physio", "physiological", "events",
+        "survey", "biometrics", "biosample", "environment", "physio", "physiological", "events",
     }
+
+
+def test_biosample_is_registered_with_tsv_json_suffix():
+    rules = load_entity_rules()
+    rule = rules.modalities["biosample"]
+    assert rule.kind == "prism"
+    assert rule.suffixes == ("biosample",)
+    assert rules.pattern_for("biosample") == r".+_biosample\.(tsv|json)$"
+
+
+def test_tabular_modalities_constant_includes_biosample():
+    from src.constants import TABULAR_MODALITIES
+
+    assert TABULAR_MODALITIES == ("survey", "biometrics", "biosample")

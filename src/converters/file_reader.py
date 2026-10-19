@@ -496,11 +496,9 @@ def normalize_separator_option(value: str | None) -> str:
 
 
 def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | None:
-    """Return delimiter to use for a file suffix and normalized separator option."""
-    if separator_option != "auto":
-        return SEPARATOR_MAP[separator_option]
-    if suffix == ".tsv":
-        return "\t"
-    if suffix == ".csv":
-        return ","
-    return None
+    """Delimiter for an explicit separator choice; ``None`` for "auto".
+
+    ``None`` makes :func:`read_tabular_file` use the format's default and fall back to
+    sniffing, so a semicolon-separated ``.csv`` (German Excel) is read correctly.
+    """
+    return None if separator_option == "auto" else SEPARATOR_MAP[separator_option]

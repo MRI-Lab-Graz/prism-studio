@@ -14,6 +14,14 @@ BRS = Path(__file__).resolve().parents[2] / "official" / "library" / "survey" / 
 DATA = "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\nP002,1,1,0,2\n"
 
 
+def make_project_ready(root):
+    """create_project leaves Name, Authors, Keywords and Timepoints empty; the tools are blocked until they are set."""
+    meta = json.loads((root / "project.json").read_text())
+    meta.setdefault("Basics", {}).update(Name=root.name, Authors=["Lovelace, Ada"], Keywords=["psychology", "experiment", "PRISM"])
+    meta.setdefault("StudyDesign", {})["Timepoints"] = "single"
+    (root / "project.json").write_text(json.dumps(meta))
+
+
 @pytest.fixture
 def converted_project(tmp_path):
     """A project created the way the Projects page creates it, holding converted survey data."""
@@ -22,9 +30,7 @@ def converted_project(tmp_path):
     root = tmp_path / "fresh"
     created = ProjectManager().create_project(str(root), {"name": "fresh", "sessions": 0})
     assert created["success"], created
-    meta = json.loads((root / "project.json").read_text())
-    meta.setdefault("StudyDesign", {})["Timepoints"] = "single"
-    (root / "project.json").write_text(json.dumps(meta))
+    make_project_ready(root)
     library = tmp_path / "lib"
     library.mkdir()
     shutil.copy(BRS, library / "survey-brs.json")
@@ -146,6 +152,7 @@ def test_an_empty_project_says_there_is_no_data_instead_of_passing(bare_page, st
 
     empty = tmp_path / "empty"
     assert ProjectManager().create_project(str(empty), {"name": "empty", "sessions": 0})["success"]
+    make_project_ready(empty)
     # participants.tsv promises data; without it a metadata-only project is valid by design (#156)
     (empty / "participants.tsv").write_text("participant_id\nsub-001\n")
     bare_page.request.post(f"{studio_url}/api/projects/current", data={"path": str(empty), "name": "empty"})

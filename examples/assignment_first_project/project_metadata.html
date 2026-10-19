@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitCog Study Metadata</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6570; --line:#d8dee4; --accent:#1f6feb; --soft:#f5f7fa; --req:#b42318; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14181d; --fg:#e6e9ed; --muted:#9aa5b1; --line:#2d353e; --accent:#58a6ff; --soft:#1c2128; --req:#ff8a80; }
+  }
+  body { background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; max-width:820px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { margin-bottom:0; } h2 { margin-top:2rem; border-bottom:1px solid var(--line); padding-bottom:.25rem; }
+  .sub { color:var(--muted); margin-top:.25rem; }
+  table { width:100%; border-collapse:collapse; margin:.75rem 0; }
+  th, td { text-align:left; vertical-align:top; padding:.5rem .6rem; border-bottom:1px solid var(--line); }
+  th { width:32%; color:var(--muted); font-weight:600; }
+  code, .val { background:var(--soft); padding:.1rem .35rem; border-radius:4px; user-select:all; }
+  .req { color:var(--req); font-size:.75rem; font-weight:700; margin-left:.4rem; }
+  .core { color:var(--accent); font-size:.75rem; font-weight:700; margin-left:.4rem; }
+  .note { background:var(--soft); border-left:4px solid var(--accent); padding:.6rem .9rem; margin:1rem 0; }
+  @media (max-width:560px) { th, td { display:block; width:auto; } th { border:0; padding-bottom:0; } }
+</style>
+</head>
+<body>
+<h1>FitCog Study Metadata</h1>
+<p class="sub">Fictive study for the PRISM Studio assignment. Copy the values below into the Study Metadata form on the Projects page. The study, ethics number and grant are invented; the authors are real (you and your instructor).</p>
+
+<div class="note">Fields marked <span class="req">REQUIRED</span> block project creation. Fields marked <span class="core">CORE</span> do not block, but count towards the FAIR score. Everything under "Optional" can stay empty.</div>
+
+<h2>0. Project (Create New Project card)</h2>
+<table>
+<tr><th>Project Name</th><td><span class="val">fitcog_study</span> (no spaces, no umlauts)</td></tr>
+<tr><th>Project Location</th><td>Any folder you can find again, e.g. <span class="val">Documents/prism_projects</span></td></tr>
+<tr><th>DataLad</th><td>Leave unchecked</td></tr>
+</table>
+
+<h2>1. Basics (BIDS)</h2>
+<table>
+<tr><th>Dataset Name <span class="req">REQUIRED</span></th><td><span class="val">Fitness and Cognition in Young Adults (FitCog)</span></td></tr>
+<tr><th>Keywords <span class="req">REQUIRED</span><br>(at least 3, comma separated)</th><td><span class="val">cardiorespiratory fitness, cognition, intelligence, young adults, VO2max</span></td></tr>
+</table>
+
+<h3>Authors <span class="req">REQUIRED</span></h3>
+<p>Add two author rows. Exactly one is corresponding, and the corresponding author needs an email.</p>
+<table>
+<tr><th>Author 1 (you)</th><td>Your own first and last name<br>Corresponding: <strong>yes</strong><br>Email: your own email address<br>Affiliation: your own university<br>ORCID: use the lookup button to search for your name (leave empty if you have none)</td></tr>
+<tr><th>Author 2 (co-author)</th><td>First name: <span class="val">Karl</span><br>Last name: <span class="val">Koschutnig</span><br>Corresponding: no<br>Email: leave empty<br>ORCID: use the <strong>ORCID lookup button</strong> to search for the name and pick the right entry</td></tr>
+</table>
+
+<h3>Ethics Approvals <span class="core">CORE</span></h3>
+<table>
+<tr><th>Ethics approval?</th><td>Yes</td></tr>
+<tr><th>Committee</th><td><span class="val">Ethics Committee of the Fictive University of Examplestadt</span></td></tr>
+<tr><th>Reference number</th><td><span class="val">EK-2026-0042</span></td></tr>
+</table>
+
+<h3>Funding <span class="core">CORE</span></h3>
+<table>
+<tr><th>Funded?</th><td>Yes</td></tr>
+<tr><th>Funding source (one row)</th><td>Agency: <span class="val">Fictive Science Fund</span><br>Grant number: <span class="val">FSF-2026-12345</span></td></tr>
+</table>
+
+<h2>2. Optional (collapsed sections, fill in if you like)</h2>
+<table>
+<tr><th>Overview</th><td>Cross-sectional study on the relationship between cardiorespiratory fitness (VO2max) and general cognitive ability (IQ) in healthy young adults.</td></tr>
+<tr><th>Study design</th><td>Cross-sectional, single session, one lab visit.</td></tr>
+<tr><th>Recruitment</th><td>Convenience sample recruited via university mailing lists and notice boards. Data collection: January to June 2026.</td></tr>
+<tr><th>Eligibility</th><td>Inclusion: age 18 to 35, normal or corrected-to-normal vision, able to run on a treadmill. Exclusion: cardiovascular disease, neurological or psychiatric disorder.</td></tr>
+<tr><th>Procedure</th><td>Participants complete an IQ test (about 60 minutes), then a graded treadmill test to exhaustion with spiroergometry to determine VO2max (about 30 minutes).</td></tr>
+<tr><th>Checked criterion</th><td>In the Eligibility section, under <em>Checked Criteria</em>, add the criterion <span class="val">Age</span>, <strong>include</strong>, min <span class="val">18</span>, max <span class="val">35</span>, unit <span class="val">years</span>. In the converter you will link the <code>age</code> column to it; the validator then warns about anyone outside 18-35.</td></tr>
+<tr><th>Sample size</th><td>300 participants</td></tr>
+</table>
+
+<div class="note"><strong>Checkpoint:</strong> after <em>Create Project</em> your folder must contain <code>dataset_description.json</code>, <code>CITATION.cff</code>, <code>README.md</code>, <code>project.json</code> and the folders <code>sourcedata</code>, <code>derivatives</code>, <code>code</code>. Open <code>dataset_description.json</code> and check that the name and both authors are there.</div>
+</body>
+</html>

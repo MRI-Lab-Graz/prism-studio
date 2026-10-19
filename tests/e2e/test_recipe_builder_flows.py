@@ -217,3 +217,14 @@ def test_the_summary_explains_the_irv_column_only_while_it_is_switched_on(app_pa
     app_page.locator("#rbIncludeIrv").uncheck()
 
     expect(summary).not_to_contain_text("IRV")
+
+
+def test_a_scale_named_like_an_item_or_the_id_column_is_refused_on_save(app_page, studio_url, project):
+    app_page.allowed_http[400] = "/api/recipe-builder/save"
+    open_builder(app_page, studio_url, project)
+    add_scale(app_page, "participant_id", items=3)
+
+    app_page.click("#rbSaveBtn")
+
+    expect(app_page.locator("#rbStatus")).to_contain_text("collides with an ID column or an item", timeout=30000)
+    assert not (project / RECIPE_FILE).exists()

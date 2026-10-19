@@ -131,7 +131,7 @@ def _find_key(ssh_dir: Path) -> tuple:
     for name in _KEY_NAMES:
         if (ssh_dir / name).is_file():
             pub = ssh_dir / f"{name}.pub"
-            return ssh_dir / name, pub.read_text().strip() if pub.is_file() else ""
+            return ssh_dir / name, pub.read_text(encoding="utf-8").strip() if pub.is_file() else ""
     return None, ""
 
 

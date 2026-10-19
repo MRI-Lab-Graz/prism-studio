@@ -32,7 +32,7 @@ modality's own entry overrides them.
 
 Each entry under `modalities` has a `kind`:
 
-- **`prism`** - a PRISM-native modality (`survey`, `biometrics`,
+- **`prism`** - a PRISM-native modality (`survey`, `biometrics`, `biosample`,
   `environment`, `events`, `physio`). These define their own `suffixes` and
   `extensions`.
 - **`bidsPassthrough`** - a standard BIDS modality PRISM validates using
@@ -50,6 +50,7 @@ names resolve to their canonical entry.
 | --- | --- | --- | --- | --- |
 | `survey` | prism | `survey` | `tsv`, `json` | example: `task-panas` |
 | `biometrics` | prism | `biometrics` | `tsv`, `json` | - |
+| `biosample` | prism | `biosample` | `tsv`, `json` | required `biosample` entity naming the assay panel (alphanumeric) |
 | `environment` | prism | `environment` | `tsv`, `tsv.gz`, `json` | `recording` entity required, matching `[a-zA-Z0-9]+` |
 | `events` | prism | `events` | `tsv` | - |
 | `physio` | prism | `physio` | `tsv`, `tsv.gz`, `json`, `edf` | optional `recording` entity: enum of common channel types (`ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`), plus any other alphanumeric value |

@@ -173,3 +173,29 @@ def test_bids_file_deleter_apply_runs_once_per_subject_group(tmp_path, monkeypat
 def _no_save_gate_hook(monkeypatch):
     # these tests fake `subprocess.run`; the hook probe would need a real git repo
     monkeypatch.setattr("src.datalad_mutation_policy.has_save_hook", lambda root: False)
+
+
+def test_deleting_a_whole_subject_says_participants_tsv_still_lists_them(tmp_path):
+    root = tmp_path / "project"
+    (root / "participants.tsv").parent.mkdir(parents=True, exist_ok=True)
+    (root / "participants.tsv").write_text("participant_id\tage\nsub-001\t20\nsub-002\t21\n")
+    _touch_file(root / "sub-001" / "survey" / "sub-001_task-wb_survey.tsv")
+    _touch_file(root / "sub-002" / "survey" / "sub-002_task-wb_survey.tsv")
+
+    deleter = BidsFileDeleter(root)
+    preview = deleter.preview(modality=None, entity_filters={}, subjects=["sub-001"])
+    assert preview["participants_still_listed"] == ["sub-001"]
+    applied = deleter.apply(modality=None, entity_filters={}, subjects=["sub-001"])
+    assert applied["participants_still_listed"] == ["sub-001"]
+    assert "sub-001" in (root / "participants.tsv").read_text()  # the table is never edited silently
+
+
+def test_deleting_one_task_leaves_no_participant_note(tmp_path):
+    root = tmp_path / "project"
+    (root).mkdir()
+    (root / "participants.tsv").write_text("participant_id\nsub-001\n")
+    _touch_file(root / "sub-001" / "survey" / "sub-001_task-wb_survey.tsv")
+    _touch_file(root / "sub-001" / "survey" / "sub-001_task-other_survey.tsv")
+
+    result = BidsFileDeleter(root).preview(modality=None, entity_filters={"task": "wb"}, subjects=None)
+    assert result["participants_still_listed"] == []

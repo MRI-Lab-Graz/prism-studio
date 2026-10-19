@@ -21,6 +21,7 @@ import {
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
+import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
@@ -493,6 +494,11 @@ export function initParticipants() {
         if (participantsUsesPlainFileRoute() && participantsSessionMapPanel && participantsSessionMapPanel.isPending()) {
             return 'Map the session name first (Session mapping panel above).';
         }
+        // Errors found in the source table by the preview (the backend refuses them too).
+        const dataErrors = window.lastParticipantsPreviewData?.data_errors;
+        if (Array.isArray(dataErrors) && dataErrors.length) {
+            return 'Fix the errors in the source file (listed under the preview), then choose it again.';
+        }
         return '';
     }
 
@@ -712,7 +718,7 @@ export function initParticipants() {
                 checklist: [
                     'Choose the participant source file and confirm the detected ID column.',
                     'Run the review step to confirm sample values and output columns.',
-                    'Optional: add more columns or adjust metadata.',
+                    'Add the columns you need beyond the standard ones (e.g. IQ), then adjust metadata.',
                     hasAnyParticipantFile
                         ? 'Create or rebuild the participant files from the imported source of truth.'
                         : 'Create participants.tsv and participants.json in the current project.',
@@ -774,7 +780,7 @@ export function initParticipants() {
             checklist: [
                 'Choose the participant source file and confirm the detected ID column.',
                 'Run the review step to confirm sample values and output columns.',
-                'Optional: add more columns or adjust metadata.',
+                'Add the columns you need beyond the standard ones (e.g. IQ), then adjust metadata.',
                 hasAnyParticipantFile
                     ? 'Replace the current participant files with the imported source of truth.'
                     : 'Create participants.tsv and participants.json in the current project.',
@@ -1412,7 +1418,7 @@ export function initParticipants() {
             clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
-            if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
+            if (idHint) idHint.textContent = error?.message || 'Automatic detection unavailable. Select the source ID column manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
     }
@@ -2494,6 +2500,17 @@ export function initParticipants() {
         refreshParticipantsWorkflowSummary();
     }
     
+    /** Names of the source columns that are not imported yet (empty when the payload has no column list). */
+    function listAvailableAdditionalParticipantColumns(previewData) {
+        const names = Array.isArray(previewData?.source_columns) ? previewData.source_columns : [];
+        const excluded = new Set([
+            ...(previewData?.columns || []),
+            ...(previewData?.questionnaire_like_columns || []),
+            previewData?.source_id_column || previewData?.id_column,
+        ].map(col => String(col || '').trim()));
+        return [...new Set(names.map(col => String(col || '').trim()).filter(col => col && !excluded.has(col)))];
+    }
+
     function countAvailableAdditionalParticipantColumns(previewData) {
         if (!previewData || typeof previewData !== 'object') {
             return 0;
@@ -2988,6 +3005,13 @@ export function initParticipants() {
     
             // Make participants preview available to shared mapping modal logic
             window.lastParticipantsPreviewData = data;
+            // Project eligibility criteria for the annotation panel's link select
+            window.neurobagelEligibility = {
+                criteria: Array.isArray(data.eligibility_criteria) ? data.eligibility_criteria : [],
+                effectiveLink,
+                unitMismatch,
+                criterionOptionsHtml,
+            };
             // Keep NeuroBagel editor in sync with the latest preview schema/types
             if (effectiveSchema) {
                 window.existingParticipantsData = effectiveSchema;
@@ -3008,7 +3032,9 @@ export function initParticipants() {
             setParticipantsAdditionalVariablesEnabled(hiddenColumns > 0);
     
             if (hiddenColumns > 0 && availabilityInfo && availabilityText) {
-                availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in ${sourceLabel} but not shown in this preview (survey/questionnaire columns are excluded). Use "Add Additional Variables" to select and include them.`;
+                const names = listAvailableAdditionalParticipantColumns(data);
+                const listed = names.length ? `: ${names.slice(0, 8).join(', ')}${names.length > 8 ? ', …' : ''}` : '';
+                availabilityText.textContent = `Standard sociodemographics (age, sex, handedness, …) are imported automatically. ${hiddenColumns} other column(s) in the ${sourceLabel} are NOT imported yet${listed}. Anything else you need (e.g. IQ, VO2max) has to be added with "2. Add Your Own Columns"; columns you leave out stay out of the dataset.`;
                 availabilityInfo.classList.remove('d-none');
             } else if (availabilityInfo) {
                 availabilityInfo.classList.add('d-none');
@@ -3031,6 +3057,7 @@ export function initParticipants() {
             const dataWarnings = Array.isArray(data.data_warnings)
                 ? data.data_warnings.filter(Boolean)
                 : [];
+            const dataErrors = Array.isArray(data.data_errors) ? data.data_errors.filter(Boolean) : [];
             const escapeHtml = (value) => String(value)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -3040,10 +3067,14 @@ export function initParticipants() {
             const dataWarningsHtml = dataWarnings
                 .map(message => `<div class="mt-2"><i class="fas fa-triangle-exclamation me-2"></i>${escapeHtml(message)}</div>`)
                 .join('');
-            // Warnings get the amber style; alert-info is green in this theme.
+            const dataErrorsHtml = dataErrors
+                .map(message => `<div class="mt-2"><i class="fas fa-circle-xmark me-2"></i>${escapeHtml(message)}</div>`)
+                .join('');
+            // Warnings get the amber style (alert-info is green in this theme); errors red.
             const hasWarnings = formatWarnings.length > 0 || dataWarnings.length > 0;
-            infoDiv.classList.toggle('alert-warning', hasWarnings);
-            infoDiv.classList.toggle('alert-info', !hasWarnings);
+            infoDiv.classList.toggle('alert-danger', dataErrors.length > 0);
+            infoDiv.classList.toggle('alert-warning', hasWarnings && dataErrors.length === 0);
+            infoDiv.classList.toggle('alert-info', !hasWarnings && dataErrors.length === 0);
             if (formatWarnings.length > 0) {    
                 const columnListHtml = problemColumns.length > 0
                     ? `
@@ -3067,13 +3098,15 @@ export function initParticipants() {
                         Please fix the listed columns manually in the source file before import.
                         Use one consistent format per column (recommended: all HH:MM or all numeric minutes).
                     </div>
+                    ${dataErrorsHtml}
                     ${dataWarningsHtml}
                 `;
                 infoDiv.classList.remove('d-none');
-            } else if (dataWarnings.length > 0) {
+            } else if (dataWarnings.length > 0 || dataErrors.length > 0) {
                 infoDiv.innerHTML = `
                     <i class="fas fa-circle-info me-2"></i>
                     <strong>Data check:</strong>
+                    ${dataErrorsHtml}
                     ${dataWarningsHtml}
                 `;
                 infoDiv.classList.remove('d-none');
@@ -3362,6 +3395,11 @@ export function initParticipants() {
             annotatedData[targetColumnName] = {
                 Description: colData.description || colData.Description || ""
             };
+            applyLinkToSchema(
+                annotatedData,
+                targetColumnName,
+                savedLink(colData, window.neurobagelEligibility?.criteria || [])
+            );
     
             if (isCategorical && retainedLevels.length > 0) {
                 annotatedData[targetColumnName].Levels = {};

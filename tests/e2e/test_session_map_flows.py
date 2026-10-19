@@ -13,7 +13,9 @@ DETECT = "/api/survey-detect-version-contexts"
 
 
 def make_longitudinal(project):
-    (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
+    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta["StudyDesign"] = {"Timepoints": "multiple"}
+    (project / "project.json").write_text(json.dumps(meta))
 
 
 def select_file(page, tmp_path):

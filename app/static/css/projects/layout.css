@@ -267,3 +267,26 @@
 #section-open #validationResult .alert {
     padding: 0.5rem 0.75rem;
 }
+
+/* A draft row the user has not accepted yet (shown when a save is blocked). */
+.row-pending {
+    outline: 2px solid var(--bs-warning, #ffc107);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}
+
+/* Fields in one row line up whatever their label looks like (CORE/REQUIRED badge,
+   info icon or plain text): every label gets the same minimum height. */
+#studyMetadataForm .row > [class*="col-"] > label.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 1.75rem;
+}
+
+/* The info-icon button inside a label must not make the label taller than its neighbours. */
+#studyMetadataForm label.form-label .field-hint-trigger {
+    line-height: 1;
+    align-self: center;
+    min-height: 0; /* the theme gives every .btn a 2.5rem minimum height */
+}

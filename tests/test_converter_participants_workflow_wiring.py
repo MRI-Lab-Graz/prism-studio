@@ -393,8 +393,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             module.index("const dataWarnings = Array.isArray(data.data_warnings)") :
             module.index("previewStage = 'rendering preview table'")
         ]
-        self.assertIn("classList.toggle('alert-warning', hasWarnings)", block)
-        self.assertIn("classList.toggle('alert-info', !hasWarnings)", block)
+        self.assertIn("classList.toggle('alert-warning', hasWarnings && dataErrors.length === 0)", block)
+        self.assertIn("classList.toggle('alert-info', !hasWarnings && dataErrors.length === 0)", block)
+        self.assertIn("classList.toggle('alert-danger', dataErrors.length > 0)", block)
 
     def test_participants_file_input_has_no_accept_filter(self):
         """Safari/macOS greys out every file on first open when accept= lists

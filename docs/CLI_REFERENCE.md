@@ -38,8 +38,9 @@ prism-validator /path/to/dataset
 |---|---|
 | `-v`, `--verbose` | Print detailed progress / scanning info |
 | `--schema-version VERSION` | Choose schema version (e.g. `stable`, `0.1`). Default `stable` |
+| `--modality-version NAME=X.Y.Z` | Validate one modality against a specific version (repeatable); overrides the `project.json` pin. See [Schema versioning](SCHEMA_VERSIONING.md) |
 | `--schema-info MODALITY` | Show schema details for a modality (minimal stub) |
-| `--list-versions` | List schema versions available in `app/schemas/` |
+| `--list-versions` | List schema versions available in `app/schemas/`, and the versions of each modality |
 | `--bids` | Run the BIDS validator. This is the default; the flag only overrides `"runBids": false` in `.prismrc.json` |
 | `--no-bids` | Skip the BIDS validator and run only the PRISM checks (cannot be combined with `--bids`) |
 | `--bids-warnings` | Include BIDS validator warnings (default hidden) |
@@ -689,3 +690,39 @@ python prism_tools.py datalad finalize --project /absolute/path/to/my-project --
 On Windows the install hint is: install Git for Windows, then (without uv)
 `py -m pip install datalad git-annex` and restart PRISM Studio (macOS/Linux:
 `uv tool install datalad --with-executables-from git-annex`).
+
+## modality propose
+
+Check a modality proposal and generate its schema, example sidecar, fixture
+dataset and `REGISTRATION.md`.
+
+    python prism_tools.py modality propose <proposal.xlsx|.yml|.json> --sample <file> [--out <dir>] [--check] [--json]
+
+- `--sample`: synthetic sample data file (required).
+- `--out`: output folder (required unless `--check`). The proposal may add a suffix to an existing modality; `--out` then writes no schema file.
+- `--check`: validate only, write nothing.
+- `--json`: machine-readable output.
+
+Exit code 0 on success, 1 if any problem is an error, 2 if `--out` is missing
+without `--check`. See `MODALITY_PROPOSALS.md`.
+
+## modality-version
+
+Per-modality schema versions and the pins in a project's `project.json`
+(see [Schema versioning](SCHEMA_VERSIONING.md)).
+
+    python prism_tools.py modality-version status <project> [--json]
+    python prism_tools.py modality-version list [<name>] [--json]
+    python prism_tools.py modality-version pin <project> [<name> ...] [--json]
+    python prism_tools.py modality-version update <project> <name> [--json]
+    python prism_tools.py modality-version freeze <project> <name> [--json]
+
+- `status`: the pinned versions and the updates not yet decided.
+- `list`: the available versions of one modality, or of all.
+- `pin`: pin the named modalities, or those with data in the project; modalities already pinned are left alone. For projects created before pinning existed.
+- `update`: move a pinned modality to the latest version.
+- `freeze`: keep the pinned version and stop reporting the newer one.
+- `--json`: machine-readable output (`{"success": true, ...}`, or `{"success": false, "error": ...}`).
+
+`<project>` must contain a readable `project.json`. `update` and `freeze` fail
+for a modality that is not pinned. Exit code 0 on success, 1 on error.

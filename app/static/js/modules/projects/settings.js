@@ -16,15 +16,6 @@ export async function loadGlobalSettings() {
             const recipesInput = document.getElementById('globalRecipesPath');
             recipesInput.value = data.global_recipes_path || '';
 
-            const connectedToggle = document.getElementById('connectedToServerToggle');
-            if (connectedToggle) {
-                connectedToggle.checked = Boolean(data.connected_to_server);
-            }
-
-            if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.setConnectedToServer === 'function') {
-                window.PrismFileSystemMode.setConnectedToServer(Boolean(data.connected_to_server));
-            }
-
             updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
         }
     } catch (error) {
@@ -327,7 +318,6 @@ export function initProjectSettingsForm() {
 
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
-        const connectedToServer = Boolean(document.getElementById('connectedToServerToggle')?.checked);
 
         try {
             const response = await fetchWithApiFallback('/api/settings/global-library', {
@@ -336,7 +326,6 @@ export function initProjectSettingsForm() {
                 body: JSON.stringify({
                     global_template_library_path: libraryPath,
                     global_recipes_path: recipesPath,
-                    connected_to_server: connectedToServer,
                 })
             });
             const result = await response.json();
@@ -358,14 +347,9 @@ export function initProjectSettingsForm() {
             }
 
             if (result.success) {
-                if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.setConnectedToServer === 'function') {
-                    window.PrismFileSystemMode.setConnectedToServer(connectedToServer);
-                }
-
                 window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
                     detail: {
                         global_library_path: document.getElementById('globalLibraryPath').value,
-                        connected_to_server: connectedToServer,
                     }
                 }));
             }

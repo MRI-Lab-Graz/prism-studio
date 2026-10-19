@@ -902,8 +902,6 @@ def disable_static_js_css_cache(response):
 
 _LOOPBACK_ONLY_PATHS = {
     "/api/fs/browse",
-    "/api/browse-file",
-    "/api/browse-folder",
 }
 
 
@@ -916,6 +914,7 @@ def _is_loopback_remote_addr(remote_addr: Optional[str]) -> bool:
         return False
 
 
+from src.web.project_ready_guard import install_project_ready_guard
 from src.web.request_guard import (
     install_cross_site_guard,
     install_public_token_guard,
@@ -993,9 +992,7 @@ def ensure_project_selected_first():
         return None
 
     # Allow utility endpoints needed before a project is selected (used on /projects).
-    if path == "/api/browse-folder":
-        return None
-    if path == "/api/browse-file":
+    if path == "/api/config":  # static constants the create flow needs (BIDSVersion, field lists)
         return None
     if path.startswith("/api/settings/"):
         return None
@@ -1035,8 +1032,6 @@ def ensure_project_selected_first():
         "/api/generate-boilerplate",
         "/api/template-editor/export-questionnaire",
         "/api/fs/browse",
-        "/api/browse-file",
-        "/api/browse-folder",
     ):
         return None
 
@@ -1059,6 +1054,10 @@ def ensure_project_selected_first():
 
     # For non-GET requests, return a structured error.
     return jsonify({"success": False, "error": "No current project selected"}), 400
+
+
+# After ensure_project_selected_first: a stale session project is cleared first.
+install_project_ready_guard(app)
 
 
 @app.route("/")
@@ -1176,6 +1175,9 @@ def shutdown():
 def is_port_in_use(host, port):
     """Check if a port is already in use."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        # Windows retries a refused loopback connect for ~1-2 s unless cut off;
+        # a live local listener accepts in well under a millisecond.
+        s.settimeout(0.25)
         try:
             return s.connect_ex((host, port)) == 0
         except Exception:
@@ -1292,6 +1294,9 @@ def is_prism_studio_instance(host: str, port: int) -> bool:
         probe_host = "127.0.0.1" if ipaddress.ip_address(host).is_unspecified else host
     except ValueError:
         probe_host = host
+
+    if not is_port_in_use(probe_host, port):
+        return False
 
     conn = None
     try:

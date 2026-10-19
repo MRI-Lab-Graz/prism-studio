@@ -1,252 +1,20 @@
 (function () {
-    const MODE_STORAGE_KEY = 'prism.filePickerMode';
-    const filesystemModeScriptUrl = document.currentScript?.src || window.location.href;
-    const sharedApiModuleUrl = new URL('./shared/api.js', filesystemModeScriptUrl).href;
-    let sharedFetchWithApiFallbackPromise = null;
-
-    const state = {
-        initialized: false,
-        mode: 'auto',
-        connectedToServer: null,
-        serverPlatform: 'unknown',
-        clientPlatform: 'unknown',
-        remoteDetected: false,
-        initPromise: null,
-    };
-
-    function normalizePlatform(value) {
-        const raw = String(value || '').toLowerCase();
-        if (!raw) return 'unknown';
-        if (raw.includes('mac') || raw.includes('darwin')) return 'macos';
-        if (raw.includes('win')) return 'windows';
-        if (raw.includes('linux') || raw.includes('x11')) return 'linux';
-        return 'unknown';
-    }
-
-    function getClientPlatform() {
-        const uaDataPlatform = (navigator.userAgentData && navigator.userAgentData.platform) || '';
-        const platform = navigator.platform || '';
-        return normalizePlatform(uaDataPlatform || platform);
-    }
-
-    function readStoredMode() {
-        try {
-            const value = (window.localStorage && window.localStorage.getItem(MODE_STORAGE_KEY)) || 'auto';
-            if (value === 'host' || value === 'server' || value === 'auto') {
-                return value;
-            }
-        } catch (_error) {
-            // Ignore storage errors and keep auto mode.
-        }
-        return 'auto';
-    }
-
-    function writeStoredMode(value) {
-        try {
-            if (window.localStorage) {
-                window.localStorage.setItem(MODE_STORAGE_KEY, value);
-            }
-        } catch (_error) {
-            // Ignore storage write failures.
-        }
-    }
-
-    function getEffectiveMode() {
-        if (state.connectedToServer === true) {
-            return 'server';
-        }
-        if (state.connectedToServer === false) {
-            return 'host';
-        }
-
-        if (state.mode === 'host' || state.mode === 'server') {
-            return state.mode;
-        }
-        return state.remoteDetected ? 'server' : 'host';
-    }
-
-    function loadSharedFetchWithApiFallback() {
-        if (!sharedFetchWithApiFallbackPromise) {
-            sharedFetchWithApiFallbackPromise = import(sharedApiModuleUrl).then(({ fetchWithApiFallback }) => {
-                if (typeof fetchWithApiFallback !== 'function') {
-                    throw new Error('Shared API helper is unavailable.');
-                }
-                return fetchWithApiFallback;
-            });
-        }
-        return sharedFetchWithApiFallbackPromise;
-    }
-
-    async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
-        const sharedFetchWithApiFallback = await loadSharedFetchWithApiFallback();
-        return sharedFetchWithApiFallback(url, options, fallbackMessage);
-    }
-
-    function openInAppPicker(options = {}) {
+    // One picker: the in-app browser lists the machine PRISM Studio runs on
+    // (the same machine for a local install), so no native dialog or
+    // local/server mode is needed.
+    function open(mode, options) {
         if (!(window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function')) {
-            return null;
+            return Promise.resolve('');
         }
-
-        return window.PrismFolderBrowser.open(options);
+        return window.PrismFolderBrowser.open(Object.assign({}, options || {}, { mode }));
     }
 
-    async function runInAppFallback(options = {}, fallback = null) {
-        if (typeof fallback === 'function') {
-            return fallback();
-        }
-
-        const inAppResult = openInAppPicker(options);
-        if (inAppResult !== null) {
-            return inAppResult;
-        }
-
-        throw new Error('In-app picker unavailable.');
-    }
-
-    async function init() {
-        if (state.initialized) {
-            return state;
-        }
-
-        if (state.initPromise) {
-            return state.initPromise;
-        }
-
-        state.initPromise = (async () => {
-            state.mode = readStoredMode();
-            state.clientPlatform = getClientPlatform();
-
-            try {
-                const settingsResponse = await fetchWithApiFallback('/api/settings/global-library');
-                const settingsPayload = await settingsResponse.json();
-                if (settingsResponse.ok && settingsPayload && settingsPayload.success) {
-                    if (typeof settingsPayload.connected_to_server === 'boolean') {
-                        state.connectedToServer = settingsPayload.connected_to_server;
-                    }
-                }
-            } catch (_error) {
-                // Keep auto detection fallback when settings are unavailable.
-            }
-
-            try {
-                const response = await fetchWithApiFallback('/api/filesystem-context');
-                const payload = await response.json();
-                if (response.ok) {
-                    state.serverPlatform = normalizePlatform(payload.server_platform || payload.server_system);
-                }
-            } catch (_error) {
-                state.serverPlatform = 'unknown';
-            }
-
-            state.remoteDetected = (
-                state.clientPlatform !== 'unknown' &&
-                state.serverPlatform !== 'unknown' &&
-                state.clientPlatform !== state.serverPlatform
-            );
-
-            state.initialized = true;
-            return state;
-        })();
-
-        return state.initPromise;
-    }
-
-    async function pickFolder(options) {
-        await init();
-        if (!(window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function')) {
-            return '';
-        }
-        return window.PrismFolderBrowser.open(Object.assign({}, options || {}, { mode: 'folder' }));
-    }
-
-    async function pickFile(options) {
-        await init();
-        if (!(window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function')) {
-            return '';
-        }
-        return window.PrismFolderBrowser.open(Object.assign({}, options || {}, { mode: 'file' }));
-    }
-
-    async function browseFolder(options = {}) {
-        await init();
-
-        if (getEffectiveMode() === 'server') {
-            return pickFolder(options);
-        }
-
-        try {
-            const response = await fetchWithApiFallback('/api/browse-folder');
-            const data = await response.json();
-            if (!response.ok || data.error) {
-                throw new Error(data.error || 'Folder picker unavailable.');
-            }
-            return (data.path || '').trim();
-        } catch (error) {
-            console.warn('Native folder picker failed, falling back to in-app browser:', error);
-            return runInAppFallback({
-                title: options.title || 'Select Folder',
-                confirmLabel: options.confirmLabel || 'Select Folder',
-                startPath: options.startPath || '',
-                mode: 'folder'
-            }, options.fallback);
-        }
-    }
-
-    async function browseFile(options = {}) {
-        await init();
-
-        if (getEffectiveMode() === 'server') {
-            return pickFile(options);
-        }
-
-        let response;
-        let data;
-        try {
-            const projectJsonOnly = options.projectJsonOnly !== false;
-            const params = new URLSearchParams();
-            if (!projectJsonOnly) params.set('project_json_only', '0');
-            if (options.startPath) params.set('start_dir', options.startPath);
-            const query = params.toString() ? `?${params.toString()}` : '';
-            response = await fetchWithApiFallback(`/api/browse-file${query}`);
-            data = await response.json();
-        } catch (error) {
-            console.warn('Native file picker failed, falling back to in-app browser:', error);
-            return runInAppFallback({
-                title: options.title || 'Select File',
-                confirmLabel: options.confirmLabel || 'Use This File',
-                startPath: options.startPath || '',
-                extensions: options.extensions || '',
-                mode: 'file'
-            }, options.fallback);
-        }
-
-        if (response.status === 400 && data.error) {
-            // User picked a file via the native dialog that failed validation (e.g. wrong
-            // filename). That's not a picker failure, so don't silently fall back to the
-            // in-app browser -- surface the message and let them re-open the dialog.
-            const validationError = new Error(data.error);
-            validationError.isPickerValidationError = true;
-            throw validationError;
-        }
-
-        if (!response.ok || data.error) {
-            console.warn('Native file picker unavailable, falling back to in-app browser:', data.error);
-            return runInAppFallback({
-                title: options.title || 'Select File',
-                confirmLabel: options.confirmLabel || 'Use This File',
-                startPath: options.startPath || '',
-                extensions: options.extensions || '',
-                mode: 'file'
-            }, options.fallback);
-        }
-
-        return (data.path || '').trim();
-    }
+    const pickFolder = (options) => open('folder', options);
+    const pickFile = (options) => open('file', options);
 
     // No in-app "save as" dialog exists (the folder browser modal only picks
-    // existing folders/files), so the fallback is: pick a folder, then ask for
-    // a filename.
-    async function pickSaveFileFallback(options = {}) {
+    // existing folders/files), so: pick a folder, then ask for a filename.
+    async function browseSaveFile(options = {}) {
         const folder = await pickFolder({
             title: options.title || 'Select Destination Folder',
             confirmLabel: 'Choose Folder',
@@ -258,73 +26,23 @@
         return `${folder.replace(/[\\/]+$/, '')}/${name}`;
     }
 
-    async function browseSaveFile(options = {}) {
-        await init();
-
-        if (getEffectiveMode() === 'server') {
-            return pickSaveFileFallback(options);
-        }
-
-        let response;
-        let data;
-        try {
-            const params = new URLSearchParams();
-            if (options.defaultName) params.set('default_name', options.defaultName);
-            if (options.startPath) params.set('start_dir', options.startPath);
-            const query = params.toString() ? `?${params.toString()}` : '';
-            response = await fetchWithApiFallback(`/api/browse-save-file${query}`);
-            data = await response.json();
-        } catch (error) {
-            console.warn('Native save picker failed, falling back:', error);
-            return pickSaveFileFallback(options);
-        }
-
-        if (!response.ok || data.error) {
-            console.warn('Native save picker unavailable, falling back:', data.error);
-            return pickSaveFileFallback(options);
-        }
-
-        return (data.path || '').trim();
-    }
+    // init() stays so converter pages that await it keep working.
+    const init = () => Promise.resolve();
 
     window.PrismFileSystemMode = {
         init,
-        getState: () => ({
-            mode: state.mode,
-            connectedToServer: state.connectedToServer,
-            effectiveMode: getEffectiveMode(),
-            serverPlatform: state.serverPlatform,
-            clientPlatform: state.clientPlatform,
-            remoteDetected: state.remoteDetected,
-        }),
-        getMode: () => state.mode,
-        setMode: (value) => {
-            const normalized = (value === 'host' || value === 'server') ? value : 'auto';
-            state.mode = normalized;
-            writeStoredMode(normalized);
-        },
-        setConnectedToServer: (value) => {
-            if (value === null || value === undefined) {
-                state.connectedToServer = null;
-                return;
-            }
-            state.connectedToServer = Boolean(value);
-        },
-        getEffectiveMode,
-        prefersServerPicker: () => getEffectiveMode() === 'server',
+        prefersServerPicker: () => true,
         pickFolder,
         pickFile,
     };
 
     window.PrismPathPicker = {
         init,
-        prefersServerPicker: () => getEffectiveMode() === 'server',
-        browseFolder,
-        browseFile,
+        prefersServerPicker: () => true,
+        browseFolder: pickFolder,
+        browseFile: pickFile,
         browseSaveFile,
         pickServerFolder: pickFolder,
         pickServerFile: pickFile,
     };
-
-    window.PrismFileSystemMode.init();
 })();

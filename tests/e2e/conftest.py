@@ -57,9 +57,14 @@ def browser():
 def project(tmp_path):
     root = tmp_path / "study"
     (root / "code" / "library" / "survey").mkdir(parents=True)
-    # A real PRISM project always has these; the pages request them on load.
+    # A real PRISM project always has these; the pages request them on load. The tools are
+    # blocked (409) until Name, Authors, Keywords and Timepoints are set, so a project the
+    # tool pages can work with has all four.
     (root / "project.json").write_text(
-        json.dumps({"Basics": {"Name": "e2e"}, "StudyDesign": {"Timepoints": "single"}})
+        json.dumps({
+            "Basics": {"Name": "e2e", "Authors": ["Lovelace, Ada"], "Keywords": ["psychology", "experiment", "PRISM"]},
+            "StudyDesign": {"Timepoints": "single"},
+        })
     )
     (root / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0"})

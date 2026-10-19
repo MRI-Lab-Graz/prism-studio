@@ -217,3 +217,90 @@ def test_items_tab_shows_the_item_panel_with_its_count(page):
     page.click("#tabEditor")
     expect(page.locator("#itemsPanelCol")).to_be_hidden()
     expect(page.locator("#topLevelPanel")).to_be_visible()
+
+
+def load_global_template(page):
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+
+
+def test_item_ids_that_cannot_be_column_names_or_clash_in_case_are_refused(page):
+    load_global_template(page)
+    page.click("#tabItems")
+    items = page.locator("#itemList > *")
+    count = items.count()
+    for bad in ("A B", "../x", "ünï", "aai01"):
+        page.fill("#newItemId", bad)
+        page.click("#btnAddItem")
+        expect(page.locator("#alertArea .alert-warning")).to_be_visible()
+        assert items.count() == count, bad
+    page.fill("#newItemId", "aai_11")
+    page.click("#btnAddItem")
+    expect(page.locator("#alertArea")).to_contain_text("Added item aai_11")
+
+
+def test_min_above_max_fails_validation_and_odd_ids_in_a_loaded_template_are_listed(page):
+    load_global_template(page)
+    page.click("#tabItems")
+    page.locator("#itemList > *").first.click()
+    page.fill("#field_ITEM_MinValue", "10")
+    page.fill("#field_ITEM_MaxValue", "1")
+    page.click("#btnValidate")
+    expect(page.locator("#alertArea")).to_contain_text("MinValue (10) must not be greater than MaxValue (1)")
+    expect(page.locator("#btnSave")).to_be_disabled()
+
+
+def test_a_blank_template_explains_the_task_name_rule_and_the_missing_items(page):
+    page.click("label[for=modeCreate]")
+    page.click("#btnNew")
+    page.fill("#field_Study_TaskName", "My Task!")
+    page.click("#btnValidate")
+    alert = page.locator("#alertArea")
+    expect(alert).to_contain_text("'My Task!' is not allowed: use only letters, digits and hyphens")
+    expect(alert).not_to_contain_text("[a-zA-Z0-9]")
+    expect(alert).to_contain_text("The template has no items yet")
+
+
+def test_adding_a_language_checks_the_code_and_refuses_one_the_template_has(page):
+    messages = []
+
+    def answer(dialog):
+        messages.append(dialog.message)
+        dialog.accept(answers.pop(0) if dialog.type == "prompt" else None)
+
+    answers = ["xx", "de", "fr"]
+    page.on("dialog", answer)
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+    page.wait_for_function("() => fetch('/api/template-editor/language-codes').then(r => r.ok)")
+    page.wait_for_timeout(500)  # the list is fetched once at start-up
+    for _ in range(3):
+        page.click("#btnAddLang")
+    assert any('"xx" is not an ISO 639-1' in m for m in messages), messages
+    assert any('already has the language "de"' in m for m in messages), messages
+    expect(page.locator("#langBadges")).to_contain_text("fr")
+
+
+def bulk_column(page, label):
+    import re
+
+    return page.locator("#bulkEditForm > .row > div").filter(has=page.locator("label").filter(has_text=re.compile(f"^{label}"))).first
+
+
+def test_bulk_edit_asks_before_changing_every_item_and_a_bad_hint_is_named(page):
+    prompts = []
+    page.on("dialog", lambda dialog: (prompts.append(dialog.message), dialog.accept()))
+    page.select_option("#globalTemplateSelect", GLOBAL)
+    page.wait_for_selector("#btnValidate:enabled")
+    page.click("#tabItems")
+    page.click("[data-bs-target='#bulkEditSection']")
+    hint = bulk_column(page, "SessionHint")
+    hint.locator("input").fill("session 1")
+    hint.get_by_role("button", name="Apply to Selected").click()
+    assert any("Set SessionHint on all 10 items" in m for m in prompts), prompts
+    page.click("#btnValidate")
+    alert = page.locator("#alertArea")
+    expect(alert).to_contain_text("SessionHint")
+    expect(alert).to_contain_text("ses-<label>")
+    expect(alert).not_to_contain_text("is not valid under any of the given schemas")

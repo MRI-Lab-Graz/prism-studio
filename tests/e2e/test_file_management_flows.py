@@ -514,3 +514,37 @@ def test_a_filter_only_delete_is_not_described_as_deleting_everything(app_page, 
 
     assert eventually(lambda: bool(messages))
     assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]
+
+
+def test_deleting_a_whole_subject_says_participants_tsv_still_lists_them(app_page, studio_url, project):
+    build_two_subjects(project)
+    page = app_page
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.goto(f"{studio_url}/file-management")
+    page.click("#fm-delete-tab")
+    page.locator("#fileDeleteSubjectsContainer input[type=checkbox]").first.check()
+    page.click("#fileDeletePreviewBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists 1 subject(s)")
+    page.click("#fileDeleteApplyBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("Deleted")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists")
+
+
+@pytest.mark.parametrize("replacement,reason", [("../../escape.tsv", "folder separator"), ("a/b.tsv", "folder separator"), ("", "empty")])
+def test_renamer_preview_and_copy_both_refuse_a_new_name_that_is_not_a_plain_file_name(app_page, studio_url, project, replacement, reason):
+    def send(dry_run):
+        return app_page.context.request.post(
+            f"{studio_url}/api/physio-rename",
+            multipart={
+                "pattern": "^(.*)$", "replacement": replacement, "dry_run": dry_run, "organize": "false",
+                "save_to_project": "false" if dry_run == "true" else "true", "skip_zip": "true", "dest_root": "root",
+                "project_path": str(project),
+                "files": {"name": "orig.edf", "mimeType": "application/octet-stream", "buffer": b"x"},
+            },
+        ).json()
+
+    for dry_run in ("true", "false"):
+        (result,) = send(dry_run)["results"]
+        assert result["success"] is False and reason in result["new"], result
+    assert not (project.parent / "escape.tsv").exists()
+    assert not [f for f in project_files(project) if f.endswith((".tsv", ".edf")) and "escape" in f]

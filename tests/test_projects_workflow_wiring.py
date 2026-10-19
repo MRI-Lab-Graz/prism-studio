@@ -675,7 +675,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("async function fetchDefacingSummary(projectPath) {", content)
         self.assertIn("async function fetchAnnexAvailabilitySummary(projectPath) {", content)
         self.assertIn(
-            "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
+            "const folder = await window.PrismPathPicker.browseFolder({",
             content,
         )
         self.assertIn(
@@ -1630,7 +1630,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             metadata_content,
         )
         self.assertIn("export function validateEligibilityCriteriaBadges()", validation_content)
-        self.assertIn("const hasInclusionCriterion = inclusionValues.length > 0;", validation_content)
+        # Accepted "Checked Criteria" of mode include count as inclusion criteria; the
+        # exclusion side (free text or exclude-mode criteria) never feeds this badge.
+        inclusion_line = next(
+            line for line in validation_content.splitlines()
+            if "const hasInclusionCriterion" in line
+        )
+        self.assertEqual(
+            inclusion_line.strip(),
+            "const hasInclusionCriterion = inclusionValues.length > 0 || checkedCriteriaCount('include') > 0;",
+        )
+        self.assertNotIn("exclusion", inclusion_line.lower())
         self.assertNotIn("totalCriteria >= 2", validation_content)
         self.assertIn('id="smEligCriteriaRequiredBadge"', template_content)
         self.assertIn('id="smEligExclusionOptionalBadge"', template_content)

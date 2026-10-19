@@ -142,16 +142,19 @@ def test_a_file_that_is_not_json_is_refused_with_a_message(app_page, studio_url,
     expect(app_page.locator("#editorSection")).to_be_hidden()
 
 
-def pretend_picker(page, endpoint, path):
-    """Answer the native picker endpoint ourselves, so no real dialog opens on the dev machine."""
-    page.route(f"**/api/{endpoint}*", lambda route: route.fulfill(json={"path": path}))
+def pretend_picker(page, method, path):
+    """Answer the in-app picker ourselves (call after page.goto), so no modal needs clicking."""
+    page.evaluate(
+        "([method, path]) => { window.PrismPathPicker[method] = async () => path; }",
+        [method, path],
+    )
 
 
 def test_open_button_opens_the_file_the_picker_returns(app_page, studio_url, tmp_path):
     chosen = tmp_path / "sub-01_task-rest_beh.json"
     chosen.write_text(json.dumps({"TaskName": "rest", "Units": "ms"}))
-    pretend_picker(app_page, "browse-file", str(chosen))
     app_page.goto(f"{studio_url}/editor/")
+    pretend_picker(app_page, "browseFile", str(chosen))
 
     app_page.click("#jsonFileBtn")
 
@@ -160,8 +163,8 @@ def test_open_button_opens_the_file_the_picker_returns(app_page, studio_url, tmp
 
 
 def test_cancelling_the_picker_changes_nothing(app_page, studio_url):
-    pretend_picker(app_page, "browse-file", "")
     app_page.goto(f"{studio_url}/editor/")
+    pretend_picker(app_page, "browseFile", "")
 
     app_page.click("#jsonFileBtn")
     app_page.wait_for_timeout(500)
@@ -172,8 +175,8 @@ def test_cancelling_the_picker_changes_nothing(app_page, studio_url):
 def test_a_new_file_is_written_where_the_save_dialog_says(app_page, studio_url, project):
     target = project / "derivatives" / "notes.json"
     target.parent.mkdir()
-    pretend_picker(app_page, "browse-save-file", str(target))
     app_page.goto(f"{studio_url}/editor/")
+    pretend_picker(app_page, "browseSaveFile", str(target))
     app_page.click("#newJsonBtn")
     app_page.locator("#jsonEditor").fill('{"note": "hello"}')
 
@@ -185,8 +188,8 @@ def test_a_new_file_is_written_where_the_save_dialog_says(app_page, studio_url, 
 
 def test_cancelling_the_save_dialog_writes_nothing(app_page, studio_url, project):
     before = sorted(str(p) for p in project.rglob("*"))
-    pretend_picker(app_page, "browse-save-file", "")
     app_page.goto(f"{studio_url}/editor/")
+    pretend_picker(app_page, "browseSaveFile", "")
     app_page.click("#newJsonBtn")
     app_page.locator("#jsonEditor").fill('{"note": "hello"}')
 

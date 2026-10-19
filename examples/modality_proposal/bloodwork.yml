@@ -1,0 +1,45 @@
+modality: bloodwork
+suffix: bloodchem
+extensions: [tsv]
+description: Venous blood samples drawn alongside MRI
+types:
+  - value: CRP
+    description: C-reactive protein
+  - value: glucose
+    description: Blood glucose
+  - value: cortisol
+    description: Serum cortisol
+columns:
+  - id: sample_id
+    description: Laboratory sample identifier
+  - id: draw_time
+    description: Time of the blood draw (HH:MM)
+  - id: fasting
+    description: Whether the participant had fasted at the time of the draw
+    scale: boolean
+    allowed_values: ["yes", "no"]
+  - id: crp
+    description: C-reactive protein
+    type: CRP
+    scale: continuous
+    units: mg/L
+    min: 0
+  - id: glucose
+    description: Blood glucose
+    type: glucose
+    scale: continuous
+    units: mmol/L
+    min: 0
+  - id: cortisol
+    description: Serum cortisol
+    type: cortisol
+    scale: continuous
+    units: nmol/L
+    min: 0
+entities:
+  - entity: acq
+    value: fasting
+    description: Drawn after at least 8 hours without food
+  - entity: acq
+    value: nonfasting
+    description: Drawn without fasting

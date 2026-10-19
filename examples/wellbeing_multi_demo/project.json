@@ -1,4 +1,18 @@
 {
+  "Basics": {
+    "Name": "Wellbeing multi-version demo",
+    "Authors": [
+      "Example, Author"
+    ],
+    "Keywords": [
+      "demo",
+      "survey",
+      "wellbeing"
+    ]
+  },
+  "StudyDesign": {
+    "Timepoints": "multiple"
+  },
   "survey_version_mapping": {
     "wellbeing-multi": {
       "default_version": "10-likert",

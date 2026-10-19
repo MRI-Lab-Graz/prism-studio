@@ -112,23 +112,23 @@ def pypi_readme(text: str, version: str) -> str:
 
 def stage(dest: Path) -> None:
     pkg = dest / "prism_validator"
-    files = (ROOT / "scripts" / "validator_manifest.txt").read_text().split()
+    files = (ROOT / "scripts" / "validator_manifest.txt").read_text(encoding="utf-8").split()
     for rel in files:
         target = pkg / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, target)  # follows symlinks
     shutil.copytree(ROOT / "app" / "schemas", pkg / "app" / "schemas")
-    (pkg / "__init__.py").write_text("")
-    (pkg / "cli.py").write_text(CLI)
+    (pkg / "__init__.py").write_text("", encoding="utf-8")
+    (pkg / "cli.py").write_text(CLI, encoding="utf-8")
     src_init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
     version = re.search(r'__version__ = "([^"]+)"', src_init).group(1)
     deps = [
         line.strip()
-        for line in (ROOT / "requirements-validator.txt").read_text().splitlines()
+        for line in (ROOT / "requirements-validator.txt").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     ]
     (dest / "pyproject.toml").write_text(
-        PYPROJECT.format(version=version, deps=json.dumps(deps))
+        PYPROJECT.format(version=version, deps=json.dumps(deps)), encoding="utf-8"
     )
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     (dest / "README.md").write_text(pypi_readme(readme, version), encoding="utf-8")

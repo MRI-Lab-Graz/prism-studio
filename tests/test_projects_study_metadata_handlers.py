@@ -436,3 +436,31 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
         self.assertEqual(citation_desc.get("Name"), "Canonical Study")
         self.assertEqual(citation_desc.get("Authors"), ["Ada Lovelace"])
         self.assertEqual(citation_desc.get("License"), "CC0-1.0")
+
+    def test_save_study_metadata_keeps_structured_eligibility_criteria(self):
+        criteria = [
+            {"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",
+             "mode": "include", "min": 18, "max": 35, "unit": "years"},
+            {"id": "sex", "label": "Sex", "term": "nb:Sex", "type": "categorical",
+             "mode": "exclude", "values": ["Male"]},
+        ]
+
+        with self.app.test_request_context(
+            "/api/projects/study-metadata",
+            method="POST",
+            json={"Eligibility": {"InclusionCriteria": ["healthy"], "Criteria": criteria}},
+        ):
+            response = self.handle_save_study_metadata(
+                get_current_project=lambda: {"path": str(self.project_root), "name": "demo_project"},
+                read_project_json=self.read_project_json,
+                write_project_json=self.write_project_json,
+                get_bids_file_path=lambda project_path, filename: project_path / filename,
+                editable_sections=("Eligibility",),
+                compute_methods_completeness=lambda project_data, dataset_desc: {"score": 0},
+                project_manager=_DummyProjectManager(),
+            )
+
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        self.assertTrue(resp_obj.get_json().get("success"))
+        saved = json.loads((self.project_root / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(saved["Eligibility"]["Criteria"], criteria)

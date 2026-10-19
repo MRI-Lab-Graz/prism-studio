@@ -303,7 +303,7 @@ def main():
 
         if json_files:
             ok("JSON sidecar created for sub-01")
-            with open(json_files[0], "r") as f:
+            with open(json_files[0], "r", encoding="utf-8") as f:
                 sidecar = json.load(f)
             if sidecar.get("Metadata", {}).get("ToolVersion") == "6.0.0":
                 ok("JSON sidecar has correct ToolVersion")
@@ -326,7 +326,7 @@ def main():
         if tsv3:
             import csv
 
-            with open(tsv3[0], "r") as f:
+            with open(tsv3[0], "r", encoding="utf-8") as f:
                 row = list(csv.DictReader(f, delimiter="\t"))[0]
             if row.get("CompletionStatus") == "incomplete":
                 ok("Incomplete response correctly marked")

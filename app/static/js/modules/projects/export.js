@@ -1571,12 +1571,14 @@ export function initExportForm() {
     if (browseBtn) {
         browseBtn.addEventListener('click', async () => {
             try {
-                const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });
-                const data = await resp.json();
-                if (data.folder) {
-                    const input = getById('exportOutputFolder');
-                    if (input) input.value = data.folder;
-                    saveExportPreferencesPatch({ output_folder: data.folder });
+                const input = getById('exportOutputFolder');
+                const folder = await window.PrismPathPicker.browseFolder({
+                    title: 'Select export folder',
+                    startPath: input ? input.value : '',
+                });
+                if (folder) {
+                    if (input) input.value = folder;
+                    saveExportPreferencesPatch({ output_folder: folder });
                     resetAnnexAvailabilityReport();
                 }
             } catch { /* ignore */ }

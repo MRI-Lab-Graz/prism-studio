@@ -10,7 +10,7 @@ def _get_version() -> str:
     """Extract version from app/src/__init__.py"""
     try:
         init_path = Path(__file__).resolve().parents[2] / "app" / "src" / "__init__.py"
-        with open(init_path, "r") as f:
+        with open(init_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.startswith("__version__"):
                     return line.split("=")[1].strip().strip('"').strip("'")

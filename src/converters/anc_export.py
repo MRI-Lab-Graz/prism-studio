@@ -385,7 +385,7 @@ class ANCExporter:
         # Extract from README if exists
         readme_file = self.dataset_path / "README.md"
         if readme_file.exists():
-            readme_text = readme_file.read_text()
+            readme_text = readme_file.read_text(encoding="utf-8")
             # Extract first paragraph as abstract
             lines = [
                 line.strip()
@@ -676,7 +676,7 @@ For more information about this dataset, please contact the dataset authors.
 """
 
         output_file = self.output_path / "README.md"
-        output_file.write_text(readme)
+        output_file.write_text(readme, encoding="utf-8")
         logger.info(f"✓ Generated basic {output_file.name}")
 
     def _generate_citation(self, metadata: Dict[str, Any]):
@@ -829,7 +829,7 @@ For more information about this dataset, please contact the dataset authors.
         citation = header + yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
         output_file = self.output_path / "CITATION.cff"
-        output_file.write_text(citation)
+        output_file.write_text(citation, encoding="utf-8")
         logger.info(f"✓ Generated {output_file.name}")
 
     def _convert_to_git_lfs(self):
@@ -857,7 +857,7 @@ derivatives/mriqc/*.html filter=lfs diff=lfs merge=lfs -text
 """
 
         gitattributes_file = self.output_path / ".gitattributes"
-        gitattributes_file.write_text(gitattributes)
+        gitattributes_file.write_text(gitattributes, encoding="utf-8")
         logger.info("✓ Created .gitattributes for Git LFS")
 
         # Add instructions
@@ -891,7 +891,7 @@ This dataset has been prepared for Git LFS. To push to AND:
    ```
 
 For more information, see: https://git-lfs.github.com/
-""")
+""", encoding="utf-8")
         logger.info("✓ Created Git LFS setup instructions")
 
     def _add_datalad_note(self):
@@ -907,7 +907,7 @@ python -m src.converters.anc_export /path/to/dataset --convert-to-git-lfs
 ```
 
 **For DataLad users**: This dataset can be used with DataLad directly.
-""")
+""", encoding="utf-8")
         logger.info("✓ Added DataLad note")
 
     def _add_ci_examples(self):
@@ -974,7 +974,7 @@ Example CI/CD configuration files have been included:
 - Generate validation reports
 
 See the example files for customization options.
-""")
+""", encoding="utf-8")
         logger.info("✓ Added CI setup instructions")
 
     def _validate_anc_requirements(self) -> Dict[str, Any]:
@@ -1051,7 +1051,7 @@ def main():
     # Load metadata if provided
     metadata = {}
     if args.metadata and args.metadata.exists():
-        with open(args.metadata) as f:
+        with open(args.metadata, encoding="utf-8") as f:
             metadata = json.load(f)
 
     # Create exporter and run
