@@ -924,4 +924,4 @@ def test_run_datalad_run_default_is_unchanged(monkeypatch, tmp_path):
 
     captured = _capture_run_command(monkeypatch)
     run_datalad_run(tmp_path, message="m", command=["echo", "x"], datalad_executable="datalad")
-    assert captured["command"] == ["datalad", "run", "-m", "m", "--", "echo", "x"]
+    assert captured["command"] == ["datalad", "run", "--message=m", "--", "echo", "x"]

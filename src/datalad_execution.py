@@ -364,7 +364,7 @@ def _run_datalad_run(
         run_flags.append("--explicit")
         for path in outputs:
             run_flags.extend(["-o", str(path)])
-    datalad_command = [resolved, "run", *run_flags, "-m", run_message, "--", *escaped_command]
+    datalad_command = [resolved, "run", *run_flags, f"--message={run_message}", "--", *escaped_command]
     result["attempted"] = True
     result["command"] = shlex.join(datalad_command)
 
@@ -442,7 +442,7 @@ def run_datalad_save(
     command = [resolved, "save"]
     if recursive:
         command.append("-r")
-    command.extend(["-m", save_message])
+    command.append(f"--message={save_message}")  # "--message=..." so a text starting with "-" is not an option
     normalized_paths = sorted({str(p).strip() for p in (paths or []) if str(p).strip()})
     if normalized_paths:
         command.append("--")
@@ -586,6 +586,16 @@ def _run_streaming_command(
     return {"returncode": process.returncode, "output": "".join(output_lines)}
 
 
+_SIBLING_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+
+
+def sibling_label_problem(label: str, what: str) -> str:
+    """'' for a plain label (git remote name / store alias), else why it is refused."""
+    if _SIBLING_LABEL.fullmatch(str(label or "")):
+        return ""
+    return f"The {what} must be a plain label: letters, digits, '.', '_' and '-' only (at most 64, not starting with a symbol)."
+
+
 def run_datalad_create_sibling(
     project_root: Path,
     *,
@@ -681,6 +691,9 @@ def run_datalad_create_sibling_plain(
         return result
 
     name = str(sibling_name or "").strip() or "server"
+    if problem := sibling_label_problem(name, "sibling name"):
+        result["message"] = problem
+        return result
     command = [
         resolved,
         "create-sibling",
@@ -764,6 +777,10 @@ def run_datalad_create_sibling_ria(
         return result
 
     name = str(sibling_name or "").strip() or "ria-store"
+    for label, what in ((name, "sibling name"), (str(alias or "").strip(), "alias")):
+        if label and (problem := sibling_label_problem(label, what)):
+            result["message"] = problem
+            return result
     command = [resolved, "create-sibling-ria", url, "-s", name, "--existing", str(existing or "reconfigure")]
     if recursive:
         command.append("-r")
