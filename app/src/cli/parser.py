@@ -2415,7 +2415,8 @@ def build_prism_tools_parsers(
     parser_file_management_rename_physio.add_argument(
         "--modality",
         default="physio",
-        help="Modality label used when --organize is set (default: physio)",
+        help="Target folder when --organize is set: physio (files without task-) or "
+        "beh, func, eeg (task-bound physio); default: physio",
     )
     parser_file_management_rename_physio.add_argument(
         "--organize",

@@ -19,6 +19,9 @@ from pathlib import Path, PurePosixPath
 
 from src.utils.naming import normalize_filename
 
+# Where a physio recording that belongs to a task may go.
+PHYSIO_TASK_DESTINATIONS = ("beh", "func", "eeg")
+
 # ---------------------------------------------------------------------------
 # Subject/session inference from a source file's folder path
 # ---------------------------------------------------------------------------
@@ -328,6 +331,12 @@ def compute_organized_relative_path(
     bids = parse_bids_filename(filename)
     if not bids:
         return filename
+
+    if modality == "physio" and re.search(r"(?:^|_)task-", filename):
+        raise ValueError(
+            "Physio in physio/ has no task- entity; task-bound physio belongs next to its task: "
+            + ", ".join(PHYSIO_TASK_DESTINATIONS)
+        )
 
     sub = bids.get("sub")
     ses = bids.get("ses")

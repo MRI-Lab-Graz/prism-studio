@@ -12,6 +12,8 @@ the same logic indirectly via the re-exported names.
 
 import re
 
+import pytest
+
 from src.physio_renamer import (
     apply_folder_placeholders,
     compute_organized_relative_path,
@@ -153,12 +155,12 @@ class TestComputeOrganizedRelativePath:
             return {"sub": "sub-001", "ses": "ses-1"}
 
         result = compute_organized_relative_path(
-            "sub-001_ses-1_task-rest.vpd",
+            "sub-001_ses-1_recording-ecg_physio.vpd",
             modality="physio",
             organize=True,
             parse_bids_filename=_fake_parse_bids_filename,
         )
-        assert result == "sub-001/ses-1/physio/sub-001_ses-1_task-rest.vpd"
+        assert result == "sub-001/ses-1/physio/sub-001_ses-1_recording-ecg_physio.vpd"
 
     def test_returns_filename_when_parse_fails(self):
         result = compute_organized_relative_path(
@@ -168,6 +170,33 @@ class TestComputeOrganizedRelativePath:
             parse_bids_filename=lambda name: None,
         )
         assert result == "not-bids.vpd"
+
+    def test_organize_physio_with_task_fails_with_hint(self):
+        with pytest.raises(ValueError, match="beh, func, eeg"):
+            compute_organized_relative_path(
+                "sub-01_ses-pre_task-rest_recording-ecg_physio.edf",
+                modality="physio",
+                organize=True,
+                parse_bids_filename=lambda name: {"sub": "sub-01", "ses": "ses-pre"},
+            )
+
+    def test_organize_task_free_physio_ok(self):
+        result = compute_organized_relative_path(
+            "sub-01_ses-pre_recording-ecg_physio.edf",
+            modality="physio",
+            organize=True,
+            parse_bids_filename=lambda name: {"sub": "sub-01", "ses": "ses-pre"},
+        )
+        assert result == "sub-01/ses-pre/physio/sub-01_ses-pre_recording-ecg_physio.edf"
+
+    def test_organize_into_beh_ok(self):
+        result = compute_organized_relative_path(
+            "sub-01_ses-pre_task-rest_recording-ecg_physio.edf",
+            modality="beh",
+            organize=True,
+            parse_bids_filename=lambda name: {"sub": "sub-01", "ses": "ses-pre"},
+        )
+        assert result == "sub-01/ses-pre/beh/sub-01_ses-pre_task-rest_recording-ecg_physio.edf"
 
 
 class TestComputeRenamedFilename:
@@ -224,11 +253,11 @@ class TestPlanRename:
             return {"sub": "sub-001", "ses": None}
 
         results, _ = plan_rename(
-            [("sub-001_task-rest.vpd", "sub-001_task-rest.vpd")],
+            [("sub-001_recording-ecg_physio.vpd", "sub-001_recording-ecg_physio.vpd")],
             pattern=r"^sub-001",
             replacement="sub-001",
             modality="physio",
             organize=True,
             parse_bids_filename=_fake_parse_bids_filename,
         )
-        assert results[0]["path"] == "sub-001/physio/sub-001_task-rest.vpd"
+        assert results[0]["path"] == "sub-001/physio/sub-001_recording-ecg_physio.vpd"

@@ -226,7 +226,7 @@ class TestApply:
                 input=str(input_dir),
                 output=str(output_dir),
                 pattern=r"^raw_001\.vpd$",
-                replacement="sub-001_task-rest_physio.vpd",
+                replacement="sub-001_recording-ecg_physio.vpd",
                 modality="physio",
                 organize=True,
                 apply=True,
@@ -234,5 +234,34 @@ class TestApply:
         )
 
         assert (
-            output_dir / "sub-001" / "physio" / "sub-001_task-rest_physio.vpd"
+            output_dir / "sub-001" / "physio" / "sub-001_recording-ecg_physio.vpd"
         ).exists()
+
+    def test_organize_into_beh_accepted(self, tmp_path):
+        input_dir = tmp_path / "in"
+        input_dir.mkdir()
+        (input_dir / "raw_001.vpd").write_bytes(b"data")
+        output_dir = tmp_path / "out"
+
+        cmd_file_management_rename_physio(
+            _args(
+                input=str(input_dir),
+                output=str(output_dir),
+                pattern=r"^raw_001\.vpd$",
+                replacement="sub-001_task-rest_physio.vpd",
+                modality="beh",
+                organize=True,
+                apply=True,
+            )
+        )
+
+        assert (output_dir / "sub-001" / "beh" / "sub-001_task-rest_physio.vpd").exists()
+
+    def test_parser_accepts_beh_modality(self):
+        from src.cli.parser import build_prism_tools_parsers
+
+        parser, _ = build_prism_tools_parsers(APP_ROOT)
+        args = parser.parse_args(
+            ["file-management", "rename-physio", "--input", "x", "--pattern", "a", "--replacement", "b", "--modality", "beh"]
+        )
+        assert args.modality == "beh"

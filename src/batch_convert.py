@@ -46,8 +46,7 @@ BIDS_FILENAME_PATTERN = re.compile(
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
 
-# Where a physio recording that belongs to a task may go.
-PHYSIO_TASK_DESTINATIONS = ("beh", "func", "eeg")
+from src.physio_renamer import PHYSIO_TASK_DESTINATIONS  # noqa: E402  (shared definition)
 
 
 def physio_target_folder(task: str | None, destination: str | None) -> str:
