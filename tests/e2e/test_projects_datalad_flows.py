@@ -198,3 +198,18 @@ def test_sync_to_an_unreachable_server_explains_what_is_wrong(bare_page, studio_
     result = bare_page.locator("#dataladServerResult")
     expect(result).to_contain_text("Cannot reach the server", timeout=120000)
     expect(result).to_contain_text("Details:")
+
+
+def test_saving_the_server_settings_refuses_a_sibling_name_or_alias_that_is_not_a_plain_label(bare_page, studio_url, project):
+    request = bare_page.context.request
+
+    def save(**fields):
+        return request.post(
+            f"{studio_url}/api/projects/datalad-server/config",
+            data={"project_path": str(project), "ria_url": "ria+ssh://host/store", **fields},
+        )
+
+    assert save(sibling_name="lab-server", alias="my_study.v2").ok
+    for bad in ({"sibling_name": "-x"}, {"sibling_name": "a b"}, {"alias": "../../evil"}, {"alias": "a/b"}):
+        response = save(**bad)
+        assert response.status == 400 and "plain label" in response.json()["error"], bad
