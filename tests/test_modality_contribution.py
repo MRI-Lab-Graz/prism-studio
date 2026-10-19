@@ -96,13 +96,13 @@ def test_write_minimal_dataset_modality_folder_and_bytes(tmp_path: Path) -> None
 
     data_path = write_minimal_dataset(
         tmp_path,
-        modality="biosample",
+        modality="bloodwork",
         suffix="bloodchem",
         extension="tsv.gz",
         sidecar={"Study": {}},
         data_content=b"\x1f\x8bbytes",
-        task_name="biosample",
+        task_name="bloodwork",
     )
-    assert data_path == tmp_path / "sub-01" / "biosample" / "sub-01_task-biosample_bloodchem.tsv.gz"
+    assert data_path == tmp_path / "sub-01" / "bloodwork" / "sub-01_task-bloodwork_bloodchem.tsv.gz"
     assert data_path.read_bytes() == b"\x1f\x8bbytes"
-    assert (data_path.parent / "sub-01_task-biosample_bloodchem.json").is_file()
+    assert (data_path.parent / "sub-01_task-bloodwork_bloodchem.json").is_file()

@@ -43,7 +43,7 @@ registers it, and it ships with the next release.
   its folder, schema and naming rules; no new schema file is written, and
   `Entities` suggestions are not allowed.
 - **Name is new**: you propose a new modality (its folder) with its schema.
-  `examples/modality_proposal/biosample.yml` is the new-modality example and
+  `examples/modality_proposal/bloodwork.yml` is the new-modality example and
   `examples/modality_proposal/bloodpanel.yml` the suffix example.
 
 BIDS-owned names cannot be extended here; propose those to BIDS upstream.
