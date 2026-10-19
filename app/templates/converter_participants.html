@@ -158,21 +158,6 @@
                 <span id="participantsPreviewAvailabilityText"></span>
             </div>
 
-            <!-- Existing Files Warning (shown once preview indicates save readiness) -->
-            <div id="participantsExistingFilesWarning" class="alert alert-warning d-none mt-3 mb-0">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Existing Files Detected:</strong>
-                <span id="participantsExistingFilesMessage"></span>
-                <div class="mt-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="participantsForceOverwrite">
-                        <label class="form-check-label" for="participantsForceOverwrite">
-                            I understand that existing <code>participants.tsv</code> and <code>participants.json</code> will be overwritten
-                        </label>
-                    </div>
-                </div>
-            </div>
-
             <!-- Repeated rows per participant. Identical values collapse quietly; this card only
                  appears when a value CHANGES between a participant's rows (e.g. age across sessions). -->
             <div id="participantsSessionChoiceCard" class="card border-warning mt-3 d-none">
@@ -320,6 +305,21 @@
                     
                 </div>
 
+            </div>
+
+            <!-- Existing Files Warning (next to the Create/Replace button so nobody scrolls back up) -->
+            <div id="participantsExistingFilesWarning" class="alert alert-warning d-none mt-3 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Existing Files Detected:</strong>
+                <span id="participantsExistingFilesMessage"></span>
+                <div class="mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="participantsForceOverwrite">
+                        <label class="form-check-label" for="participantsForceOverwrite">
+                            I understand that existing <code>participants.tsv</code> and <code>participants.json</code> will be overwritten
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Messages: below the Create/Replace button so the result is where the user is looking -->

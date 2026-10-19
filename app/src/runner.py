@@ -423,9 +423,13 @@ def validate_dataset(
     if run_prism and len(stats.subjects) == 0 and _subjects_expected(root_dir):
         issues.append(("ERROR", _no_subjects_message(root_dir), root_dir))
 
+    # PRISM707 is a PRISM code: report it in every mode, not only next to the BIDS run
+    issues.extend(
+        _check_participants_subject_alignment(root_dir, {name for name, _ in subject_dirs})
+    )
+
     # Run standard BIDS validator if requested
     if run_bids:
-        issues.extend(_check_participants_subject_alignment(root_dir))
         report_progress(bids_progress, 100, "Running BIDS validator...")
         bids_backend_info: dict = {}
         bids_issues = _run_bids_validator(
@@ -594,7 +598,9 @@ def _no_subjects_message(root_dir: str) -> str:
     return f"{message} Did you point the validator at the dataset root?"
 
 
-def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str, str]]:
+def _check_participants_subject_alignment(
+    root_dir: str, subject_ids: Optional[set[str]] = None
+) -> list[tuple[str, str, str]]:
     """Return explicit mismatch errors between top-level sub-* folders and participants.tsv.
 
     This check is intentionally strict and read-only. It surfaces both mismatch
@@ -623,11 +629,12 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
     if participants_converter is None:
         return []
 
-    subject_ids = {
-        child.name
-        for child in Path(root_dir).iterdir()
-        if child.is_dir() and child.name.startswith("sub-")
-    }
+    if subject_ids is None:
+        subject_ids = {
+            child.name
+            for child in Path(root_dir).iterdir()
+            if child.is_dir() and child.name.startswith("sub-")
+        }
 
     participant_ids: set[str] = set()
     try:

@@ -261,3 +261,14 @@ def test_real_3_0_2_output_keeps_real_problems_and_silences_prism_folders(monkey
     assert all("/survey/" not in m for m in not_included)
     assert any("PARTICIPANT_ID_MISMATCH" in m for m in messages)
     assert not any("JSON_KEY_RECOMMENDED" in m for m in messages)
+
+
+def test_prisms_own_root_files_are_not_bids_errors_even_without_a_bidsignore(monkeypatch, tmp_path):
+    issues = [
+        {"code": code, "severity": "error", "location": "/project.json"}
+        for code in ("NOT_INCLUDED", "SIDECAR_WITHOUT_DATAFILE")
+    ] + [{"code": "NOT_INCLUDED", "severity": "error", "location": "/notes.docx"}]
+    use_engine(monkeypatch, {"issues": {"issues": issues}}, returncode=16)
+    messages = [i[1] for i in bids_validator.run_bids_validator(str(tmp_path))]
+    assert not any("project.json" in m for m in messages)
+    assert any("notes.docx" in m for m in messages)
