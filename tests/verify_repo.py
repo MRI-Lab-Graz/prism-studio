@@ -1578,6 +1578,7 @@ def check_schema_sync(repo_path, fix=False):
         "recipe.survey",
         "tool-limesurvey",
         "entities",  # filename/entity rules file, not a per-modality content schema
+        "events",  # content schema for _events.tsv in func/beh/eeg; no events/ folder
         "instrument-registry",  # generated data index, not a per-modality content schema
     }
     schema_modalities = set()
