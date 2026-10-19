@@ -420,7 +420,7 @@ def _convert_existing_participants_files(
             + ", ".join(sorted(resolved_excluded_columns)),
         )
 
-    output_df.to_csv(participants_tsv, sep="\t", index=False)
+    output_df.to_csv(participants_tsv, sep="\t", index=False, na_rep="n/a")
     log_callback(
         "INFO",
         f"Normalized and wrote {participants_tsv.name} with {len(output_df)} participant row(s)",

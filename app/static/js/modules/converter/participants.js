@@ -63,7 +63,11 @@ export function initParticipants() {
 
     // Result messages live below the Create/Replace button, away from the buttons that raise
     // them (e.g. step 1): bring any message into view the moment it is shown.
+    // keepScrollY is set while a preview re-run (after removing a variable) is in flight:
+    // the re-run must not move the viewport, so message auto-scroll is paused.
+    let keepScrollY = null;
     const participantsMessageObserver = new MutationObserver((records) => {
+        if (keepScrollY !== null) return;
         records.forEach(({ target }) => {
             if (!target.classList.contains('d-none')) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
@@ -1877,6 +1881,7 @@ export function initParticipants() {
             return false;
         }
 
+        keepScrollY = window.scrollY;
         window.setTimeout(() => {
             try {
                 previewBtn.click();
@@ -2837,6 +2842,7 @@ export function initParticipants() {
         participantsAnnotationGate.reset();
 
         if (!runController.tryStartRun()) {
+            keepScrollY = null;
             return;
         }
         setParticipantsPrimaryActionButtonsDisabled(true);
@@ -3154,6 +3160,13 @@ export function initParticipants() {
         } finally {
             runController.finishRun();
             updateParticipantsButtonState({ skipIdAutoDetect: true });
+            if (keepScrollY !== null) {
+                window.scrollTo(0, keepScrollY);
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, keepScrollY);
+                    keepScrollY = null;
+                });
+            }
         }
     });
 
