@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
+  rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
+  their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.
 - **BREAKING: physio is task-free; `events/` and `physiological/` folders are retired.** The validator now
   reports both folders as errors, and `task-` in a `physio/` filename or sidecar as an error naming `beh/`,
   `func/` and `eeg/`. Fixes: rename `physiological/` to `physio/`; move each `_events.tsv` next to its task in
