@@ -18,12 +18,12 @@ from src.modality_contribution import (  # noqa: E402
 )
 
 EXAMPLE_DIR = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal"
-EXAMPLE_YAML = EXAMPLE_DIR / "biosample.yml"
+EXAMPLE_YAML = EXAMPLE_DIR / "bloodwork.yml"
 
 
 def test_read_yaml_example_normalizes_columns() -> None:
     p = read_proposal(EXAMPLE_YAML)
-    assert (p["modality"], p["suffix"], p["extensions"]) == ("biosample", "bloodchem", ["tsv"])
+    assert (p["modality"], p["suffix"], p["extensions"]) == ("bloodwork", "bloodchem", ["tsv"])
     assert [c["id"] for c in p["columns"]] == [
         "sample_id", "draw_time", "fasting", "crp", "glucose", "cortisol",
     ]

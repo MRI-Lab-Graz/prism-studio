@@ -13,7 +13,7 @@ from src.modality_contribution import (  # noqa: E402
     registration_entry,
 )
 
-P = read_proposal(Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "biosample.yml")
+P = read_proposal(Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "bloodwork.yml")
 
 
 def test_new_entry_has_the_fixed_pattern_and_the_suggestions():
@@ -38,7 +38,7 @@ def test_schema_text_and_study_block_make_task_optional():
 
 def test_docs_page_has_pattern_suggestions_and_columns():
     page = build_docs_page(P)
-    assert page.startswith("# Biosample")
+    assert page.startswith("# Bloodwork")
     assert "sub-<label>[_ses-<label>][_task-<label>][_acq-<label>][_run-<index>]_bloodchem.<extension>" in page
     assert "`acq-fasting`" in page and "Drawn after at least 8 hours" in page
     assert "`crp`" in page and "mg/L" in page
@@ -46,21 +46,21 @@ def test_docs_page_has_pattern_suggestions_and_columns():
 
 def test_snippets_name_the_pages_the_gate_checks():
     s = build_docs_snippets(P)
-    assert s["toctree"] == "   specs/biosample"
-    assert s["entities_row"].startswith("| `biosample` | prism | `bloodchem` |")
-    assert 'href="specs/biosample.html"' in s["card"]
+    assert s["toctree"] == "   specs/bloodwork"
+    assert s["entities_row"].startswith("| `bloodwork` | prism | `bloodchem` |")
+    assert 'href="specs/bloodwork.html"' in s["card"]
 
 
 def test_registration_md_lists_the_docs_steps():
     md = build_registration_md(P)
-    for needle in ("docs/specs/biosample.md", "docs/index.rst", "docs/SCHEMA_SPECIFICATIONS.md",
+    for needle in ("docs/specs/bloodwork.md", "docs/index.rst", "docs/SCHEMA_SPECIFICATIONS.md",
                    "docs/specs/entities.md", "modality-docs"):
         assert needle in md
 
 
 def test_docs_page_shows_example_sidecar_types_and_guide_link():
     page = build_docs_page(P)
-    assert "```json" in page and '"OriginalName": "biosample"' in page
+    assert "```json" in page and '"OriginalName": "bloodwork"' in page
     assert "- `CRP`: C-reactive protein" in page
     assert "../MODALITY_PROPOSALS.md" in page
 

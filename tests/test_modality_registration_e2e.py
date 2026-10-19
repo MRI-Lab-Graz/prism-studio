@@ -38,24 +38,24 @@ def test_following_registration_md_makes_the_fixture_validate(tmp_path: Path) ->
     sys.path.insert(0, str(REPO / "app" / "src"))
     from src.modality_contribution import build_modality_artifacts, read_proposal
 
-    proposal = read_proposal(EXAMPLE_DIR / "biosample.yml")
+    proposal = read_proposal(EXAMPLE_DIR / "bloodwork.yml")
     out = tmp_path / "proposal"
     build_modality_artifacts(
-        proposal, EXAMPLE_DIR / "biosample_sample.tsv", EXAMPLE_DIR / "biosample.yml", out
+        proposal, EXAMPLE_DIR / "bloodwork_sample.tsv", EXAMPLE_DIR / "bloodwork.yml", out
     )
     repo = _copy_repo(tmp_path / "repo")
     fixture = out / "fixture"
 
     # Before registration the validator silently skips the unknown modality
-    # folder: no errors, but nothing is counted as biosample data either.
+    # folder: no errors, but nothing is counted as bloodwork data either.
     before = _validate(repo, fixture)
-    assert "biosample" not in before["modalities"]
+    assert "bloodwork" not in before["modalities"]
 
     # Apply the maintainer steps exactly as REGISTRATION.md prints them.
     md = (out / "REGISTRATION.md").read_text(encoding="utf-8")
     snippet = json.loads(re.search(r"```json\n(.*?)\n```", md, re.S).group(1))
     stable = repo / "app" / "schemas" / "stable"
-    shutil.copyfile(out / "biosample.schema.json", stable / "biosample.schema.json")
+    shutil.copyfile(out / "bloodwork.schema.json", stable / "bloodwork.schema.json")
     entities_path = stable / "entities.schema.json"
     entities = json.loads(entities_path.read_text(encoding="utf-8"))
     entities["modalities"].update(snippet)
@@ -63,7 +63,7 @@ def test_following_registration_md_makes_the_fixture_validate(tmp_path: Path) ->
 
     after = _validate(repo, fixture)
     assert after["errors"] == []
-    assert after["modalities"].get("biosample", 0) >= 1
+    assert after["modalities"].get("bloodwork", 0) >= 1
 
 
 def test_extension_registration_makes_the_fixture_validate(tmp_path: Path) -> None:

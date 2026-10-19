@@ -71,6 +71,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
   Excel exports now hold scores as numbers (they were stored as text), and SPSS variable names that differ only in
   case are made unique.
+- **Modality proposal example.** The shipped example is now `examples/modality_proposal/bloodwork.yml` (the
+  former `biosample` example became a real modality), so `modality propose` on it works again.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 

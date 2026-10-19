@@ -18,8 +18,8 @@ from src.modality_contribution import (  # noqa: E402
 )
 
 EXAMPLE_DIR = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal"
-PROPOSAL = EXAMPLE_DIR / "biosample.yml"
-SAMPLE = EXAMPLE_DIR / "biosample_sample.tsv"
+PROPOSAL = EXAMPLE_DIR / "bloodwork.yml"
+SAMPLE = EXAMPLE_DIR / "bloodwork_sample.tsv"
 
 
 def _load_verify_repo_module():
@@ -34,10 +34,10 @@ def test_generated_schema_passes_the_modality_conventions_check(tmp_path: Path, 
     p = read_proposal(PROPOSAL)
     schema_dir = tmp_path / "app" / "schemas" / "stable"
     schema_dir.mkdir(parents=True)
-    (schema_dir / "biosample.schema.json").write_text(json.dumps(build_schema(p)), encoding="utf-8")
+    (schema_dir / "bloodwork.schema.json").write_text(json.dumps(build_schema(p)), encoding="utf-8")
 
     verify_repo = _load_verify_repo_module()
-    verify_repo.COMMUNITY_MODALITY_SCHEMAS = {"biosample"}
+    verify_repo.COMMUNITY_MODALITY_SCHEMAS = {"bloodwork"}
     verify_repo.check_modality_schema_conventions(str(tmp_path))
     out = capsys.readouterr().out
 
@@ -92,10 +92,10 @@ def test_registration_entry_and_markdown() -> None:
         },
     }
     md = build_registration_md(p)
-    assert "app/schemas/stable/biosample.schema.json" in md
+    assert "app/schemas/stable/bloodwork.schema.json" in md
     assert "entities.schema.json" in md
     assert "COMMUNITY_MODALITY_SCHEMAS" in md
-    assert '"biosample"' in md and '"bloodchem"' in md
+    assert '"bloodwork"' in md and '"bloodchem"' in md
     assert "fixture" in md
 
 
@@ -104,12 +104,12 @@ def test_build_writes_every_artifact(tmp_path: Path) -> None:
     out = tmp_path / "out"
     written = build_modality_artifacts(p, SAMPLE, PROPOSAL, out)
 
-    assert (out / "biosample.schema.json").is_file()
+    assert (out / "bloodwork.schema.json").is_file()
     assert (out / "example_sidecar.json").is_file()
     assert (out / "REGISTRATION.md").is_file()
     assert (out / "proposal.yml").is_file()
     assert (out / "sample.tsv").is_file()
-    data = out / "fixture" / "sub-01" / "biosample" / "sub-01_bloodchem.tsv"
+    data = out / "fixture" / "sub-01" / "bloodwork" / "sub-01_bloodchem.tsv"
     assert data.read_bytes() == SAMPLE.read_bytes()
     assert data.with_suffix(".json").is_file()
     assert (out / "fixture" / "dataset_description.json").is_file()
@@ -139,5 +139,5 @@ def test_fixture_sidecar_file_format_matches_compound_sample(tmp_path: Path) -> 
     example = json.loads((out / "example_sidecar.json").read_text())
     assert fixture_sidecar["Technical"]["FileFormat"] == "tsv.gz"
     assert example["Technical"]["FileFormat"] == "tsv.gz"
-    schema = json.loads((out / "biosample.schema.json").read_text())
+    schema = json.loads((out / "bloodwork.schema.json").read_text())
     jsonschema.Draft7Validator(schema).validate(fixture_sidecar)

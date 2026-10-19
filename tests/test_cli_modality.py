@@ -13,8 +13,8 @@ import src.cli.commands.modality as modality_cmds  # noqa: E402
 from src.cli.parser import build_prism_tools_parsers  # noqa: E402
 
 EXAMPLE_DIR = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal"
-PROPOSAL = EXAMPLE_DIR / "biosample.yml"
-SAMPLE = EXAMPLE_DIR / "biosample_sample.tsv"
+PROPOSAL = EXAMPLE_DIR / "bloodwork.yml"
+SAMPLE = EXAMPLE_DIR / "bloodwork_sample.tsv"
 
 
 def _args(**over) -> SimpleNamespace:
@@ -33,7 +33,7 @@ def test_parser_accepts_modality_propose() -> None:
 def test_propose_writes_all_artifacts(tmp_path: Path, capsys) -> None:
     out = tmp_path / "out"
     modality_cmds.cmd_modality_propose(_args(out=str(out)))
-    assert (out / "biosample.schema.json").is_file()
+    assert (out / "bloodwork.schema.json").is_file()
     assert (out / "REGISTRATION.md").is_file()
     assert "REGISTRATION.md" in capsys.readouterr().out
 
@@ -50,7 +50,7 @@ def test_invalid_proposal_exits_1_and_lists_every_problem(tmp_path: Path, capsys
     bad.write_text(
         PROPOSAL.read_text(encoding="utf-8")
         .replace("suffix: bloodchem", "suffix: blood")
-        .replace("modality: biosample", "modality: Bio Sample"),
+        .replace("modality: bloodwork", "modality: Bio Sample"),
         encoding="utf-8",
     )
     with pytest.raises(SystemExit) as exc:
@@ -80,7 +80,7 @@ def test_json_output(tmp_path: Path, capsys) -> None:
     modality_cmds.cmd_modality_propose(_args(out=str(tmp_path / "o"), json=True))
     payload = json.loads(capsys.readouterr().out)
     assert payload["success"] is True
-    assert payload["modality"] == "biosample"
+    assert payload["modality"] == "bloodwork"
     assert any(f.endswith("REGISTRATION.md") for f in payload["files"])
 
 
