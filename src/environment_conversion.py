@@ -21,6 +21,7 @@ import json
 import math
 import random
 import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter, sleep
@@ -30,6 +31,7 @@ import pandas as pd
 import requests
 
 from src.bids_integration import check_and_update_bidsignore
+from src.cleaning_notes import cleaning_note
 from src.converters.file_reader import (
     expected_delimiter_for_suffix,
     infer_tabular_kind,
@@ -203,12 +205,14 @@ def _parse_timestamp(value: str) -> datetime | None:
 
 
 def _bids_label(value: str, prefix: str) -> str:
-    v = str(value or "").strip()
-    if not v or v.lower() in ("nan", "none", "n/a"):
+    """``prefix-label`` with ASCII letters and digits only (like every other converter), '' if none."""
+    v = unicodedata.normalize("NFC", str(value or "").strip())
+    if v.lower() in ("nan", "none", "n/a"):
         return ""
-    if v.startswith(f"{prefix}-"):
-        return v
-    return f"{prefix}-{v}"
+    if v.lower().startswith(f"{prefix}-"):
+        v = v[len(prefix) + 1 :]
+    label = re.sub(r"[^A-Za-z0-9]+", "", v)
+    return f"{prefix}-{label}" if label else ""
 
 
 def _compute_row(
@@ -961,6 +965,10 @@ def perform_environment_conversion(
     inherited_sidecar_path: Path | None = None
     provider_failures: set[str] = set()
 
+    id_pairs: list[tuple[str, str]] = []
+    ses_pairs: list[tuple[str, str]] = []
+    day_first_unsure = 0
+
     for processed_idx, (row_idx, row) in enumerate(df.iterrows(), start=1):
         raise_if_cancelled()
 
@@ -986,6 +994,10 @@ def perform_environment_conversion(
             skipped += 1
             continue
 
+        slash_date = re.match(r"^(\d{1,2})/(\d{1,2})/\d{4}", ts_raw)
+        if slash_date and int(slash_date[1]) <= 12 and int(slash_date[2]) <= 12 and slash_date[1] != slash_date[2]:
+            day_first_unsure += 1
+
         if participant_col and participant_col in df.columns:
             raw_pid = str(row.get(participant_col, "")).strip()
             if raw_pid:
@@ -998,15 +1010,22 @@ def perform_environment_conversion(
             subject_id = _bids_label(participant_override, "sub")
         else:
             subject_id = f"sub-{fallback_idx:02d}"
+        if not subject_id:  # an ID with no letters or digits
+            subject_id = f"sub-{fallback_idx:02d}"
+        if raw_pid_for_note := (str(row.get(participant_col, "")).strip() if participant_col else ""):
+            id_pairs.append((raw_pid_for_note, subject_id))
         fallback_idx += 1
 
         if session_col and session_col in df.columns:
             raw_ses = str(row.get(session_col, "")).strip()
-            session_id = _bids_label(raw_ses or session_override or "01", "ses")
+            session_id = _bids_label(raw_ses or session_override or "1", "ses") or "ses-1"
         elif session_override:
             session_id = _bids_label(session_override, "ses")
         else:
-            session_id = "ses-01"
+            session_id = "ses-1"
+        raw_session_for_note = str(row.get(session_col, "")).strip() if session_col else ""
+        if raw_session_for_note:
+            ses_pairs.append((raw_session_for_note, session_id))
 
         location_label = location_label_override or "survey-site"
         if location_col and location_col in df.columns:
@@ -1086,6 +1105,18 @@ def perform_environment_conversion(
         rows_out.append(base_row)
 
     if rows_out:
+        for note in (
+            cleaning_note([r for r, _ in id_pairs], [c for _, c in id_pairs], "participant ID", "sub-"),
+            cleaning_note([r for r, _ in ses_pairs], [c for _, c in ses_pairs], "session label", "ses-"),
+        ):
+            if note:
+                log_callback(note, "warning")
+        if day_first_unsure:
+            log_callback(
+                f"{day_first_unsure} timestamp(s) like 03/04/2025 were read as month/day/year; "
+                "write them as 2025-04-03 or 03.04.2025 if they are day-first.",
+                "warning",
+            )
         log_callback(f"Processed {len(rows_out)} rows ({skipped} skipped)", "success")
     else:
         log_callback(f"No rows processed ({skipped} skipped)", "warning")

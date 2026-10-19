@@ -11,6 +11,8 @@ import random
 from datetime import datetime
 from typing import Optional
 
+from src.text_sanitizer import strip_invalid_xml_chars
+
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
@@ -138,6 +140,7 @@ def render_questionnaire_docx(
         header_repeat_every (int): Repeat scale header every N items in matrix (0=never, default 0)
         font_size (int): Base font size in pt (default 10)
     """
+    template = strip_invalid_xml_chars(template)  # python-docx refuses control characters
     try:
         from docx import Document
         from docx.shared import Pt, Inches, RGBColor, Cm, Emu
