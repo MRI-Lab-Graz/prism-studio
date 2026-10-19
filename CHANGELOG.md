@@ -89,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 Findings of a full security review; each fix has a regression test.
+- **Publish guard.** A project with `sourcedata/` could still be pushed to a public host written as `git+ssh://git@github.com/...` or with a trailing dot (`github.com.`); both are recognised as public now.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example
   `-oProxyCommand=...`) reached `ssh`/`rsync`/`datalad` as an option. It was reachable from any web
   page through the DataLad doctor GET route, and from a shared project's `.prismrc.json` through

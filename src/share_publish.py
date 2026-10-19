@@ -115,10 +115,11 @@ def _is_public_target(url: str) -> bool:
 
     url = str(url or "").strip()
     url = url[4:] if url.startswith("ria+") else url
+    url = url[4:] if url.lower().startswith("git+") else url  # git+ssh://...
     if url.lower().startswith(("http://", "https://", "git://")):
         return True
     target = parse_ssh_target(url)
-    return bool(target) and target[1].lower().endswith(_PUBLIC_HOSTS)
+    return bool(target) and target[1].lower().rstrip(".").endswith(_PUBLIC_HOSTS)  # "github.com." is github.com
 
 
 def has_sibling(project_root, sibling_name: str) -> bool:
