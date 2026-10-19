@@ -47,7 +47,8 @@ for participant-oriented datasets. PRISM-specific extensions add survey, biometr
 physiology, and environment files under subject/session paths, each usually paired
 with a JSON sidecar sharing the same filename stem — e.g.
 `sub-001_ses-1_task-ads_survey.tsv` + `.json`, or
-`sub-001_ses-1_task-rest_physio.edf` + `.json`.
+`sub-001_ses-1_recording-ecg_physio.edf` + `.json` (`physio/` is task-free;
+task-bound physio is BIDS `_physio.tsv.gz` in `beh/`, `func/` or `eeg/`).
 
 Derivative outputs (scores/subscales computed via recipes) live under
 `derivatives/`, with their own `dataset_description.json`; recipe *definitions* live
@@ -75,7 +76,7 @@ fields, allowed types/value shapes, and optional blocks (i18n, scoring metadata)
   Beinkraft."}` — useful for instrument descriptions and item text.
 
 For modality-specific semantics, see the spec pages:
-[Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events),
+[Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events) (`_events.tsv` next to its task in `func/`/`beh/`/`eeg/`),
 [Environment](specs/environment), [Entities & filename grammar](specs/entities).
 
 A few schemas under `app/schemas/stable/` don't have their own spec page yet,

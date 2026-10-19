@@ -128,7 +128,7 @@ One structure for multimodal studies
      <li><span class="prism-structure-check">&check;</span><span><code>biometrics/</code> &mdash; Fitness, strength, balance, and other assessments</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>environment/</code> &mdash; Privacy-safe contextual enrichment data</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>eyetracking/</code> &mdash; Eye tracking workflows in the same study layout</span></li>
-     <li><span class="prism-structure-check">&check;</span><span><code>physiological/</code> &mdash; Standard BIDS physio alongside PRISM extensions</span></li>
+     <li><span class="prism-structure-check">&check;</span><span><code>physio/</code> &mdash; Task-free physiological recordings (task-bound physio lives in <code>beh/</code>, <code>func/</code>, <code>eeg/</code>)</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>your-modality/</code> &mdash; Missing a data type? <a href="MODALITY_WORKFLOW.html">Propose it</a></span></li>
    </ul>
    </div>

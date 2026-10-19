@@ -270,7 +270,7 @@ Survey converter as its input.
 Skip this one if you only ever use Filename Renamer with **Organize into
 PRISM structure** checked (Step 1 above already does this in one pass).
 Reach for Organize Folders instead when you receive files that are *already*
-validly named (`sub-012_ses-pre_task-rest_physio.edf`) but sitting flat in
+validly named (`sub-012_ses-pre_recording-ecg_physio.edf`) but sitting flat in
 one folder — e.g. unzipped from a shared drive — and just need sorting into
 `sub-<label>/ses-<label>/<modality>/`. It only copies; there's no
 move/delete option, so your source files are never at risk.
