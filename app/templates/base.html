@@ -1719,8 +1719,27 @@
         </div>
     </footer>
 
+    <style>
+        #folderBrowserModal .fb-body { display: flex; height: 460px; }
+        #folderBrowserModal .fb-places { width: 170px; flex: 0 0 170px; overflow-y: auto; }
+        #folderBrowserModal .fb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        #folderBrowserModal .fb-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 90px; gap: .5rem; align-items: center; }
+        #folderBrowserModal .fb-head { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary-color); }
+        #folderBrowserModal .fb-head button { all: unset; cursor: pointer; }
+        #folderBrowserModal .fb-head button:hover { color: var(--bs-body-color); }
+        #folderBrowserModal .fb-entry { cursor: pointer; border-radius: .35rem; padding: .3rem .5rem; font-size: .92rem; }
+        #folderBrowserModal .fb-entry:hover { background: var(--bs-tertiary-bg); }
+        #folderBrowserModal .fb-entry.selected { background: var(--bs-primary-bg-subtle); }
+        #folderBrowserModal .fb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #folderBrowserModal .fb-crumbs .btn-link { padding: 0 .15rem; text-decoration: none; }
+        @media (max-width: 767.98px) {
+            #folderBrowserModal .fb-places { display: none; }
+            #folderBrowserModal .fb-row { grid-template-columns: minmax(0, 1fr) 80px; }
+            #folderBrowserModal .fb-modified { display: none; }
+        }
+    </style>
     <div class="modal fade" id="folderBrowserModal" tabindex="-1" aria-labelledby="folderBrowserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="folderBrowserModalLabel">
@@ -1728,32 +1747,47 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div class="px-3 pt-3 pb-2 border-bottom bg-light">
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <button class="btn btn-sm btn-outline-secondary" id="folderBrowserUp" title="Go up">
-                                <i class="fas fa-arrow-up"></i>
-                            </button>
-                            <code class="small text-truncate flex-grow-1" id="folderBrowserCurrentPath" style="word-break:break-all;"></code>
+                <div class="modal-body p-0 fb-body">
+                    <nav class="fb-places border-end bg-body-tertiary p-2" aria-label="Places">
+                        <div class="small text-muted text-uppercase px-2 pb-1">Places</div>
+                        <div class="d-grid gap-1" id="folderBrowserRoots"></div>
+                    </nav>
+                    <div class="fb-main">
+                        <div class="p-2 border-bottom">
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" id="folderBrowserUp" title="Go up" aria-label="Go up">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <div class="fb-crumbs flex-grow-1 text-truncate small" id="folderBrowserCurrentPath" title="Click the empty space to type a path"></div>
+                                <button class="btn btn-sm btn-outline-secondary" id="folderBrowserEditPath" title="Type a path" aria-label="Type a path">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                            </div>
+                            <div class="d-none gap-1 mt-2" id="folderBrowserPathRow">
+                                <input type="text" class="form-control form-control-sm font-monospace" id="folderBrowserPathInput"
+                                    placeholder="Paste or type a path (e.g. \\server\share or /mnt/nas)…"
+                                    aria-label="Go to path" autocomplete="off" spellcheck="false">
+                                <button class="btn btn-sm btn-outline-primary flex-shrink-0" id="folderBrowserGoBtn" title="Go to path" aria-label="Go to path">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                            <input type="search" class="form-control form-control-sm mt-2" id="folderBrowserFilter"
+                                placeholder="Filter this folder…" aria-label="Filter this folder" autocomplete="off">
                         </div>
-                        <div class="d-flex gap-1 mt-2">
-                            <input type="text" class="form-control form-control-sm font-monospace" id="folderBrowserPathInput"
-                                placeholder="Paste or type a path (e.g. \\server\share or /mnt/nas)…"
-                                aria-label="Go to path" autocomplete="off" spellcheck="false">
-                            <button class="btn btn-sm btn-outline-primary flex-shrink-0" id="folderBrowserGoBtn" title="Go to path">
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
+                        <div class="fb-row fb-head px-3 py-1 border-bottom" id="folderBrowserHeader">
+                            <button type="button" data-sort="name">Name <i class="fas fa-sort ms-1"></i></button>
+                            <button type="button" class="fb-modified" data-sort="modified">Modified <i class="fas fa-sort ms-1"></i></button>
+                            <button type="button" class="text-end" data-sort="size">Size <i class="fas fa-sort ms-1"></i></button>
                         </div>
-                        <div class="d-flex flex-wrap gap-2 mt-2" id="folderBrowserRoots" style="display:none;"></div>
-                    </div>
-                    <div style="min-height:260px; max-height:420px; overflow-y:auto;" id="folderBrowserList" aria-live="polite">
-                        <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
-                            <span><i class="fas fa-spinner fa-spin me-2"></i>Loading...</span>
+                        <div class="flex-grow-1 overflow-auto p-2" id="folderBrowserList" aria-live="polite">
+                            <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
+                                <span><i class="fas fa-spinner fa-spin me-2"></i>Loading...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <div class="text-success small fw-semibold" id="folderBrowserSelectedHint" style="display:none;">
+                    <div class="text-success small fw-semibold text-truncate" id="folderBrowserSelectedHint" style="display:none; max-width:55%;">
                         <i class="fas fa-check-circle me-1"></i><span id="folderBrowserSelectedPath"></span>
                     </div>
                     <div class="ms-auto d-flex gap-2">

@@ -19,7 +19,8 @@ function bindFolderPickerButton({
             const selectedPath = await browseFolderWithFallback(fetchWithApiFallback, {
                 title,
                 confirmLabel,
-                startPath: input?.value || ''
+                startPath: input?.value || '',
+                keepStartPath: true
             });
 
             if (selectedPath) {

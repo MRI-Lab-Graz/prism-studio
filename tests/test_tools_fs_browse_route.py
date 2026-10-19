@@ -42,9 +42,54 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
                 payload["project_json_path"], str(resolved_root / "project.json")
             )
             self.assertTrue(payload["has_project_json"])
+            self.assertEqual(len(payload["dirs"]), 1)
+            self.assertEqual(payload["dirs"][0]["name"], "study")
+            self.assertEqual(payload["dirs"][0]["path"], str(resolved_root / "study"))
+
+    def _browse(self, root, **params):
+        params.update(path=str(root), include_files="1")
+        return self.client.get("/api/fs/browse", query_string=params).get_json()
+
+    def test_fs_browse_sorts_by_size_and_modified_with_order(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            for name, size, mtime in (("a.txt", 30, 300), ("b.txt", 10, 100), ("c.txt", 20, 200)):
+                f = root / name
+                f.write_text("x" * size, encoding="utf-8")
+                os.utime(f, (mtime, mtime))
+
+            names = lambda p: [f["name"] for f in p["files"]]  # noqa: E731
+            self.assertEqual(names(self._browse(root)), ["a.txt", "b.txt", "c.txt"])
+            self.assertEqual(names(self._browse(root, sort="size")), ["b.txt", "c.txt", "a.txt"])
+            self.assertEqual(names(self._browse(root, sort="size", order="desc")), ["a.txt", "c.txt", "b.txt"])
+            by_date = self._browse(root, sort="modified", order="desc")
+            self.assertEqual(names(by_date), ["a.txt", "c.txt", "b.txt"])
+            self.assertEqual(by_date["files"][0]["modified"], 300)
+
+    def test_fs_browse_sort_keeps_directories_sorted_and_ignores_bad_sort(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            for name, mtime in (("a_old", 100), ("b_new", 200)):
+                (root / name).mkdir()
+                os.utime(root / name, (mtime, mtime))
+
+            by_date = self._browse(root, sort="modified", order="desc")
+            self.assertEqual([d["name"] for d in by_date["dirs"]], ["b_new", "a_old"])
+            fallback = self._browse(root, sort="bogus")
+            self.assertEqual([d["name"] for d in fallback["dirs"]], ["a_old", "b_new"])
+
+    def test_fs_browse_returns_breadcrumbs_from_root_to_current(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            current = (Path(tmp_dir) / "study").resolve()
+            current.mkdir()
+
+            crumbs = self._browse(current)["crumbs"]
+
+            self.assertEqual(crumbs[-1], {"name": "study", "path": str(current)})
+            self.assertEqual(crumbs[0]["path"], str(Path(current.anchor)))
             self.assertEqual(
-                payload["dirs"],
-                [{"name": "study", "path": str(resolved_root / "study")}],
+                [c["path"] for c in crumbs],
+                [str(p) for p in reversed([current, *current.parents])],
             )
 
     def test_fs_browse_skips_unreadable_entry_instead_of_truncating(self):

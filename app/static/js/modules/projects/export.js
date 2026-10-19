@@ -1575,6 +1575,7 @@ export function initExportForm() {
                 const folder = await window.PrismPathPicker.browseFolder({
                     title: 'Select export folder',
                     startPath: input ? input.value : '',
+                    keepStartPath: true,
                 });
                 if (folder) {
                     if (input) input.value = folder;

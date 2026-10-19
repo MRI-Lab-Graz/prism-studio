@@ -1058,7 +1058,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pickedPath = await browseFolder({
                     title: 'Select Template Library Root',
                     confirmLabel: 'Use This Folder',
-                    startPath: (libraryPathInput.value || '').trim()
+                    startPath: (libraryPathInput.value || '').trim(),
+                    keepStartPath: true
                 });
                 if (pickedPath) {
                     libraryPathInput.value = pickedPath;
@@ -1085,7 +1086,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pickedPath = await pickServerFolder({
                     title: 'Select Dataset Folder to Validate',
                     confirmLabel: 'Validate This Folder',
-                    startPath: selectedServerFolderPath || ''
+                    startPath: selectedServerFolderPath || '',
+                    keepStartPath: true
                 });
                 if (!pickedPath) {
                     return;

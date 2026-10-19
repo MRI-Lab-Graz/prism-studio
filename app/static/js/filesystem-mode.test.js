@@ -34,4 +34,16 @@ describe('single in-app picker', () => {
     const { picker } = await load();
     expect(await picker.browseSaveFile({ defaultName: 'x.json' })).toBe('/picked/out.json');
   });
+
+  it('starts at the project root unless the caller keeps its own start path', async () => {
+    const { picker, open } = await load();
+    globalThis.window.currentProjectPath = '/proj';
+    await picker.browseFolder({ startPath: '/last' });
+    await picker.browseFile({ startPath: '/last', keepStartPath: true });
+    globalThis.window.currentProjectPath = '';
+    await picker.browseFolder({ startPath: '/last' });
+    expect(open).toHaveBeenNthCalledWith(1, expect.objectContaining({ startPath: '/proj' }));
+    expect(open).toHaveBeenNthCalledWith(2, expect.objectContaining({ startPath: '/last' }));
+    expect(open).toHaveBeenNthCalledWith(3, expect.objectContaining({ startPath: '/last' }));
+  });
 });
