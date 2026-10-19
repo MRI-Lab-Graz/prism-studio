@@ -97,6 +97,20 @@ def test_batch_convert_pins(tmp_path, pinned_roots):
     assert pinned_roots == [str(out)]
 
 
+def test_batch_convert_task_bound_pins(tmp_path, pinned_roots, make_edf):
+    import numpy as np
+
+    src = tmp_path / "source"
+    src.mkdir()
+    make_edf(src / "sub-001_task-rest.edf", {"ecg": (np.linspace(-1, 1, 8), 4)})
+    out = tmp_path / "output"
+
+    batch_convert_folder(src, out, modality_filter="physio", physio_destination="beh")
+
+    assert (out / "sub-001" / "beh").is_dir()
+    assert pinned_roots == [str(out)]
+
+
 def test_batch_convert_dry_run_does_not_pin(tmp_path, pinned_roots):
     src = tmp_path / "source"
     src.mkdir()
