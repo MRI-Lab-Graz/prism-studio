@@ -8,7 +8,7 @@ from src.batch_convert import batch_convert_folder
 def _source(tmp_path: Path) -> Path:
     src = tmp_path / "src"
     src.mkdir()
-    (src / "sub-001_ses-1_task-rest.edf").write_bytes(b"0" * 10)
+    (src / "sub-001_ses-1_recording-ecg.edf").write_bytes(b"0" * 10)
     return src
 
 

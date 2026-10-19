@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import gzip
+import io
 import json
 import re
-import struct
 from pathlib import Path
 
 import numpy as np
@@ -24,8 +24,9 @@ def write_bids_physio(
     data = np.column_stack(list(channels.values()))
     tsv = out_base.with_name(out_base.name + ".tsv.gz")
     sidecar = out_base.with_name(out_base.name + ".json")
-    with gzip.open(tsv, "wt", newline="\n") as fh:
-        np.savetxt(fh, data, delimiter="\t", fmt="%.10g")
+    with open(tsv, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as gz:
+        with io.TextIOWrapper(gz, encoding="utf-8", newline="\n") as fh:
+            np.savetxt(fh, data, delimiter="\t", fmt="%.10g")
     meta = {
         "SamplingFrequency": float(sampling_frequency),
         "StartTime": float(start_time),
@@ -84,9 +85,13 @@ def read_edf(edf_path: Path) -> tuple[dict[str, np.ndarray], dict[str, float], f
         pos += spr[i]
         if label == "EDF Annotations":
             continue
+        if label in channels:
+            raise _bad(f"duplicate channel label {label!r}")
         gain = (pmax[i] - pmin[i]) / (dmax[i] - dmin[i])
         channels[label] = (block.reshape(-1).astype(float) - dmin[i]) * gain + pmin[i]
         rates[label] = spr[i] / dur
+    if not channels:
+        raise _bad("no signal channels")
     return channels, rates, 0.0
 
 
@@ -96,6 +101,7 @@ def edf_to_bids_physio(edf_path: Path, out_dir: Path, stem_prefix: str, recordin
     groups: dict[float, dict[str, np.ndarray]] = {}
     for label, values in channels.items():
         groups.setdefault(rates[label], {})[label] = values
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
     out: list[Path] = []
     for rate, group in groups.items():
         label = recording_label

@@ -641,14 +641,19 @@ def cmd_physio_batch_convert(args) -> None:
         }.get(level, "")
         print(f"{prefix}{msg}")
 
-    result = batch_convert_folder(
-        source_folder=source_folder,
-        output_folder=output_folder,
-        physio_sampling_rate=getattr(args, "sampling_rate", None),
-        modality_filter=getattr(args, "modality", "all"),
-        log_callback=_log,
-        dry_run=getattr(args, "dry_run", False),
-    )
+    try:
+        result = batch_convert_folder(
+            source_folder=source_folder,
+            output_folder=output_folder,
+            physio_sampling_rate=getattr(args, "sampling_rate", None),
+            modality_filter=getattr(args, "modality", "all"),
+            log_callback=_log,
+            dry_run=getattr(args, "dry_run", False),
+            physio_destination=getattr(args, "destination", None),
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(2)
 
     print(
         f"\n{'DRY-RUN ' if getattr(args, 'dry_run', False) else ''}Batch convert complete: "

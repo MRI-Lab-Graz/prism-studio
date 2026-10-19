@@ -1000,6 +1000,12 @@ def build_prism_tools_parsers(
         dest="dry_run",
         help="Preview without writing files",
     )
+    parser_physio_batch.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task- entity (written as BIDS .tsv.gz); "
+        "task-free physio always goes to physio/",
+    )
 
     parser_recipes = subparsers.add_parser(
         "recipes",

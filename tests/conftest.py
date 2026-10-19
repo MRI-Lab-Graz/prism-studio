@@ -60,8 +60,6 @@ def make_edf():
     int16 with the EDF physical/digital mapping; length must be a whole number
     of records for every channel.
     """
-    import struct
-
     import numpy as np
 
     def _make(path, channels, *, pmin=-100.0, pmax=100.0, dmin=-32768, dmax=32767, duration=1.0):
