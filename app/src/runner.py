@@ -969,6 +969,10 @@ def _validate_modality_dir(
 
     for fname in filtered_files:
         file_path = os.path.join(modality_dir, fname)
+        # tool-<name> files (e.g. LimeSurvey system variables) are tool
+        # exports with their own sidecar layout, not PRISM survey data.
+        if "_tool-" in fname:
+            continue
         if entries[fname].is_file():
             task = _extract_task_from_filename(fname)
 
