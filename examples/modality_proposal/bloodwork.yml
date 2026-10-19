@@ -1,4 +1,4 @@
-modality: biosample
+modality: bloodwork
 suffix: bloodchem
 extensions: [tsv]
 description: Venous blood samples drawn alongside MRI

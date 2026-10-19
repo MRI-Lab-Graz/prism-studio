@@ -79,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Survey generator exports.** Control characters pasted from Word or PDFs (vertical tab and similar) are dropped from
   question texts, because they made the LimeSurvey `.lss` and the PsychoPy file invalid XML and made the Word export
   fail.
+- **Modality proposal example.** The shipped example is now `examples/modality_proposal/bloodwork.yml` (the
+  former `biosample` example became a real modality), so `modality propose` on it works again.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 

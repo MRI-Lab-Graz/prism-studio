@@ -19,5 +19,5 @@ EXAMPLE_DIR = REPO / "examples" / "modality_proposal"
 def test_template_workbook_is_a_valid_proposal_equal_to_the_yaml_example() -> None:
     p = read_proposal(TEMPLATE)
     assert errors_only(check_proposal(p)) == []
-    assert errors_only(check_sample(p, EXAMPLE_DIR / "biosample_sample.tsv")) == []
-    assert p == read_proposal(EXAMPLE_DIR / "biosample.yml")
+    assert errors_only(check_sample(p, EXAMPLE_DIR / "bloodwork_sample.tsv")) == []
+    assert p == read_proposal(EXAMPLE_DIR / "bloodwork.yml")

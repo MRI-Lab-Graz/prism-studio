@@ -19,7 +19,7 @@ from src.modality_contribution import (  # noqa: E402
     write_proposal_workbook,
 )
 
-EXAMPLE_YAML = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "biosample.yml"
+EXAMPLE_YAML = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "bloodwork.yml"
 
 
 def _proposal(**over) -> dict:
