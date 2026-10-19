@@ -44,6 +44,13 @@ def test_task_in_physio_filename_is_error(tmp_path):
     assert any("beh" in m and "func" in m and "eeg" in m for m in errs), errs
 
 
+def test_task_in_physio_hint_names_the_converter(tmp_path):
+    errs = _errors(
+        _validate(tmp_path, ["sub-01/physio/sub-01_task-x_recording-ecg_physio.edf"])
+    )
+    assert any("re-convert with destination beh/func/eeg (BIDS .tsv.gz) using the Physio converter" in m for m in errs), errs
+
+
 def test_task_in_physio_sidecar_is_error(tmp_path):
     errs = _errors(
         _validate(tmp_path, ["sub-01/physio/sub-01_task-x_recording-ecg_physio.json"])

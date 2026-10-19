@@ -138,12 +138,13 @@ def present_modalities(project_root, schema_dir=None) -> list[str]:
     root = Path(project_root)
     found = []
     for name in modality_names(schema_dir):
-        folders = [*root.glob(f"sub-*/{name}"), *root.glob(f"sub-*/ses-*/{name}")]
-        has_files = any(f.is_dir() and any(f.iterdir()) for f in folders)
-        if name == "events":  # events live next to other data, not in their own folder
-            has_files = has_files or any(root.glob("sub-*/*/*_events.*")) or any(
+        if name == "events":  # events live next to other data (no events/ folder any more)
+            has_files = any(root.glob("sub-*/*/*_events.*")) or any(
                 root.glob("sub-*/ses-*/*/*_events.*")
             )
+        else:
+            folders = [*root.glob(f"sub-*/{name}"), *root.glob(f"sub-*/ses-*/{name}")]
+            has_files = any(f.is_dir() and any(f.iterdir()) for f in folders)
         if has_files:
             found.append(name)
     return found

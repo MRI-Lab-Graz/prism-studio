@@ -1318,7 +1318,8 @@ class DatasetValidator:
                 if modality == "physio" and "'task'" in message:
                     message += (
                         " - task-bound physio belongs next to its task: "
-                        "beh/, func/ or eeg/"
+                        "beh/, func/ or eeg/ (re-convert with destination beh/func/eeg "
+                        "(BIDS .tsv.gz) using the Physio converter)"
                     )
                 issues.append(("ERROR", f"{message}: {filename}"))
 

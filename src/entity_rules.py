@@ -146,8 +146,9 @@ def check_entities(base: str, allowed: tuple[str, ...], order: tuple[str, ...]) 
     that declares allowedEntities. sub/ses are always allowed."""
     keys = [t.split("-", 1)[0] for t in base.split("_")[1:] if "-" in t]
     permitted = {"sub", "ses", *allowed}
+    listed = [*(e for e in order if e in permitted), *(e for e in allowed if e not in order)]
     problems = [
-        f"entity '{k}' is not allowed (allowed: {', '.join(e for e in order if e in permitted)})"
+        f"entity '{k}' is not allowed (allowed: {', '.join(listed)})"
         for k in dict.fromkeys(keys)
         if k not in permitted
     ]

@@ -49,6 +49,8 @@ def read_edf(edf_path: Path) -> tuple[dict[str, np.ndarray], dict[str, float], f
     raw = Path(edf_path).read_bytes()
     if len(raw) < 256:
         raise _bad("header is truncated")
+    if raw[192:197] == b"EDF+D":
+        raise _bad("discontinuous EDF+D is not supported")
     try:
         header_bytes = int(raw[184:192])
         n_rec = int(raw[236:244])

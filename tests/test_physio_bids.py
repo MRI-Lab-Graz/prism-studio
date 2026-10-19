@@ -48,6 +48,23 @@ def test_read_edf_roundtrip(tmp_path, make_edf):
     assert start == 0.0
 
 
+def test_read_edf_rejects_discontinuous_edf_plus_d(tmp_path, make_edf):
+    p = make_edf(tmp_path / "a.edf", {"ecg": (np.zeros(8), 4)})
+    raw = bytearray(p.read_bytes())
+    raw[192:197] = b"EDF+D"
+    p.write_bytes(bytes(raw))
+    with pytest.raises(ValueError, match="discontinuous EDF\\+D is not supported"):
+        read_edf(p)
+
+
+def test_read_edf_accepts_edf_plus_c(tmp_path, make_edf):
+    p = make_edf(tmp_path / "a.edf", {"ecg": (np.zeros(8), 4)})
+    raw = bytearray(p.read_bytes())
+    raw[192:197] = b"EDF+C"
+    p.write_bytes(bytes(raw))
+    assert "ecg" in read_edf(p)[0]
+
+
 def test_read_edf_rejects_truncated(tmp_path, make_edf):
     p = make_edf(tmp_path / "a.edf", {"ecg": (np.zeros(8), 4)})
     p.write_bytes(p.read_bytes()[:-6])

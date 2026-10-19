@@ -163,6 +163,15 @@ def test_physio_rejects_task():
     assert check_entities("sub-01_ses-pre_recording-ecg", allowed, rules.entity_order) == []
 
 
+def test_not_allowed_message_lists_every_permitted_entity():
+    from src.entity_rules import check_entities
+
+    rules = load_entity_rules()
+    allowed = rules.modalities["physio"].allowed_entities
+    (message,) = check_entities("sub-01_task-x_recording-ecg_physio", allowed, rules.entity_order)
+    assert "recording" in message.split("allowed:")[1]
+
+
 def test_events_pin_still_resolves():
     from src.modality_versions import modality_names
 
