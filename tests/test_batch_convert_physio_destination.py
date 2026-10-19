@@ -138,3 +138,65 @@ def test_bids_collector_writes_flat_sidecar(tmp_path, module):
                     "AverageHeartRateBPM": 61.5, "TaskName": "x"}
     with gzip.open(tmp_path / "sub-01_task-x_recording-ecg_physio.tsv.gz", "rt") as fh:
         assert np.loadtxt(fh).shape == (4, 2)
+
+
+def test_failed_dry_run_leaves_no_staging_dir(tmp_path, make_edf, monkeypatch):
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf")
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    monkeypatch.setattr("tempfile.tempdir", str(tmp))
+    with pytest.raises(ValueError):
+        batch_convert_folder(src, tmp_path / "out", dry_run=True)
+    assert list(tmp.iterdir()) == []
+
+
+def _raw_src(tmp_path, name):
+    src = tmp_path / "rawsrc"
+    src.mkdir()
+    (src / name).write_bytes(b"raw")
+    return src
+
+
+def _stub(calls, fail_first=False):
+    def fake(raw, edf, js, **kw):
+        calls.append(kw)
+        if fail_first and len(calls) == 1:
+            raise ValueError("Unsupported Varioport header type 7")
+        if kw.get("bids_base") is not None:
+            base = kw["bids_base"]
+            base.with_name(base.name + ".tsv.gz").write_bytes(b"x")
+            base.with_name(base.name + ".json").write_text("{}")
+        else:
+            open(edf, "wb").write(b"edf")
+            open(js, "w").write("{}")
+        return {}
+
+    return fake
+
+
+@pytest.mark.parametrize("fail_first", [False, True])
+def test_task_bound_raw_uses_bids_base_in_destination(tmp_path, monkeypatch, fail_first):
+    calls = []
+    monkeypatch.setattr("helpers.physio.convert_varioport.convert_varioport", _stub(calls, fail_first))
+    src = _raw_src(tmp_path, "sub-01_ses-1_task-stroop.raw")
+    out = tmp_path / "out"
+    result = batch_convert_folder(src, out, physio_destination="eeg")
+    base = "sub-01_ses-1_task-stroop_recording-ecg_physio"
+    assert [c["bids_base"] for c in calls] == [out / "sub-01/ses-1/eeg" / base] * len(calls)
+    assert len(calls) == (2 if fail_first else 1)
+    assert fail_first == bool(calls[-1].get("allow_raw_multiplexed"))
+    assert result.success_count == 1
+    assert sorted(f.name for f in result.converted[0].output_files) == [f"{base}.json", f"{base}.tsv.gz"]
+    assert result.converted[0].target_folder == "eeg"
+
+
+def test_task_free_raw_gets_no_bids_base_and_lands_in_physio(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr("helpers.physio.convert_varioport.convert_varioport", _stub(calls))
+    src = _raw_src(tmp_path, "sub-01_recording-ecg.raw")
+    out = tmp_path / "out"
+    result = batch_convert_folder(src, out)
+    assert "bids_base" not in calls[0]
+    assert (out / "sub-01/physio/sub-01_recording-ecg_physio.edf").exists()
+    assert (out / "sub-01/physio/sub-01_recording-ecg_physio.json").exists()
+    assert result.converted[0].target_folder == "physio"

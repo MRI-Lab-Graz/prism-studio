@@ -1371,10 +1371,6 @@ def batch_convert_folder(
         output_folder=output_folder,
     )
 
-    # A dry run converts into a throw-away staging folder, so nothing lands in the real output folder.
-    staging = Path(tempfile.mkdtemp(prefix="prism_dry_run_")) if dry_run else None
-    work_folder = staging or output_folder
-
     log(f"📂 Scanning source folder: {source_folder.name}", "info")
     if dry_run:
         log("🧪 DRY RUN MODE - No files will be written", "info")
@@ -1429,6 +1425,11 @@ def batch_convert_folder(
                 "These physio files have a task and need a destination "
                 f"({', '.join(PHYSIO_TASK_DESTINATIONS)}): {', '.join(task_bound)}"
             )
+
+    # Created only after the pre-scan above can no longer raise.
+    # A dry run converts into a throw-away staging folder, so nothing lands in the real output folder.
+    staging = Path(tempfile.mkdtemp(prefix="prism_dry_run_")) if dry_run else None
+    work_folder = staging or output_folder
 
     log(f"📋 Found {len(files_to_process)} files to process", "info")
 
