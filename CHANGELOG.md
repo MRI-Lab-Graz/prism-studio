@@ -71,6 +71,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
   Excel exports now hold scores as numbers (they were stored as text), and SPSS variable names that differ only in
   case are made unique.
+- **Environment and batch converters.** Environment rows get BIDS-safe subject and session labels (letters and
+  digits only; a participant `P/4` or `../x` no longer creates nested or escaping folders), say in the log which
+  labels were cleaned, default to `ses-1` like the other converters, and warn about slash dates that could be
+  day-first. `physio batch-convert --dry-run` (command line) no longer writes the converted files into the output
+  folder and reports new versus existing files correctly; `SUB-003`/`SES-1` in file names are written in lowercase.
+- **Survey generator exports.** Control characters pasted from Word or PDFs (vertical tab and similar) are dropped from
+  question texts, because they made the LimeSurvey `.lss` and the PsychoPy file invalid XML and made the Word export
+  fail.
 - **DataLad.** A snapshot message that starts with `-` (for example `--wip`) was read as an option and the save
   failed; messages are passed as `--message=...` now. A server sibling name or alias must be a plain label (letters,
   digits, `.`, `_`, `-`), so it can no longer break the remote name or place a store alias outside the store.
