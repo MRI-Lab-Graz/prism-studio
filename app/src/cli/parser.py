@@ -47,7 +47,14 @@ def build_prism_tools_parsers(
         "--output", required=True, help="Path to output directory"
     )
     parser_physio.add_argument(
-        "--task", default="rest", help="Task name (default: rest)"
+        "--task",
+        help="Task name (optional). Without it files go to physio/ without a task- "
+        "entity; with it --destination is required for a directory input",
+    )
+    parser_physio.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task (written as BIDS .tsv.gz)",
     )
     parser_physio.add_argument(
         "--suffix",

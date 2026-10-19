@@ -18,6 +18,7 @@ from src.converters.wide_to_long import (
     inspect_wide_to_long_columns,
     resolve_wide_to_long_id_uniqueness,
 )
+from src.batch_convert import _build_physio_base_name, physio_target_folder
 from src.cross_platform import normalize_path
 from src.safe_excel import to_excel_safe
 from src.entity_rules import load_entity_rules
@@ -67,7 +68,9 @@ def _run_varioport_conversion(
     *,
     task: str,
     sampling_rate: float | None,
+    bids_base: Path | None = None,
 ) -> None:
+    extra = {"bids_base": bids_base} if bids_base else {}
     try:
         convert_varioport(
             str(raw_file),
@@ -75,6 +78,7 @@ def _run_varioport_conversion(
             str(out_json),
             task_name=task,
             base_freq=sampling_rate,
+            **extra,
         )
     except ValueError as e:
         if "Unsupported Varioport header type" not in str(e):
@@ -90,6 +94,7 @@ def _run_varioport_conversion(
             task_name=task,
             base_freq=sampling_rate,
             allow_raw_multiplexed=True,
+            **extra,
         )
 
 
@@ -110,6 +115,7 @@ def cmd_convert_physio(args):
     input_path = Path(args.input)
     output_dir = Path(args.output)
     canonical_suffix = _normalize_physio_suffix(getattr(args, "suffix", "physio"))
+    task = (getattr(args, "task", None) or "").strip().removeprefix("task-")
 
     if not input_path.exists():
         print(f"Error: Input path '{input_path}' does not exist.")
@@ -138,7 +144,7 @@ def cmd_convert_physio(args):
                 raw_file,
                 out_edf,
                 out_json,
-                task=args.task,
+                task=task,
                 sampling_rate=args.sampling_rate,
             )
         except Exception as e:
@@ -147,6 +153,12 @@ def cmd_convert_physio(args):
 
         print(f"\nConversion finished. Success: 1, Errors: 0")
         return
+
+    try:
+        folder = physio_target_folder(task, getattr(args, "destination", None))
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(2)
 
     print(f"Scanning {input_path} for raw physio files...")
 
@@ -192,23 +204,26 @@ def cmd_convert_physio(args):
         sub_id = sanitize_id(sub_id)
         ses_id = sanitize_id(ses_id)
 
-        target_dir = output_dir / sub_id / ses_id / "physio"
+        target_dir = output_dir / sub_id / ses_id / folder
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        out_base = f"{sub_id}_{ses_id}_task-{args.task}_{canonical_suffix}"
-        out_edf = target_dir / f"{out_base}.edf"
+        recording = canonical_suffix.removeprefix("recording-").removesuffix("_physio")
+        out_base = _build_physio_base_name(
+            sub_id, ses_id, f"task-{task}" if task else None, recording
+        )
+        bids = folder != "physio"
+        out_edf = target_dir / f"{out_base}.{'tsv.gz' if bids else 'edf'}"
 
-        out_root_json = output_dir / f"task-{args.task}_{canonical_suffix}.json"
-
-        print(f"Converting {filename} -> {out_base}.edf")
+        print(f"Converting {filename} -> {out_edf.name}")
 
         try:
             _run_varioport_conversion(
                 raw_file,
                 out_edf,
-                out_root_json,
-                task=args.task,
+                target_dir / f"{out_base}.json",
+                task=task,
                 sampling_rate=args.sampling_rate,
+                bids_base=target_dir / out_base if bids else None,
             )
 
             if out_edf.exists():

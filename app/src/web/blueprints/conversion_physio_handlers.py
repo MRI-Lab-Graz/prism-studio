@@ -547,7 +547,7 @@ def api_physio_convert():
             400,
         )
 
-    task = (request.form.get("task") or "rest").strip() or "rest"
+    task = (request.form.get("task") or "").strip()
     base_freq = (request.form.get("sampling_rate") or "").strip() or None
     try:
         base_freq_val = float(base_freq) if base_freq is not None else None
