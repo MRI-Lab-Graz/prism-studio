@@ -33,8 +33,8 @@ import { createSurveyImportFormStateController } from './survey-import-form-stat
 import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
-import { serverFileHintText } from './server-file-hint.js';
+import { pickServerFile } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 import { createSurveySelectedInputController } from './survey-selected-input-controller.js';
 import { createSurveySessionInputController } from './survey-session-input-controller.js';
 import { createSurveyValidationResultsController } from './survey-validation-results.js';
@@ -124,7 +124,7 @@ export function initSurveyConvert(elements) {
     const convertValueOffsetsStatus = document.getElementById('convertValueOffsetsStatus');
     const convertValueOffsetAdvice = document.getElementById('convertValueOffsetAdvice');
     const surveyWorkflowHint = document.getElementById('surveyWorkflowHint');
-    const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
+    const browseSurveyFileBtn = document.getElementById('browseSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
     let templateWorkflowGate = null;
@@ -685,33 +685,6 @@ export function initSurveyConvert(elements) {
                 return Boolean(selectedVersion && allowedVersions.includes(selectedVersion));
             });
         });
-    }
-
-    // The native input cannot display a server path, so show it in the hint line.
-    let defaultFileHintHtml = null;
-    function showServerFileHint(path) {
-        const hint = document.getElementById('convertFileHint');
-        if (!hint) return;
-        defaultFileHintHtml ??= hint.innerHTML;
-        hint.replaceChildren();
-        const label = document.createElement('span');
-        label.className = 'text-success';
-        label.textContent = serverFileHintText(path);
-        hint.append(label);
-    }
-
-    function applySurveyPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-
-        if (browseServerSurveyFileBtn) {
-            browseServerSurveyFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        // Keep the local picker usable (like participants): server mode only adds the Server button.
-        if (convertSurveyFile) {
-            convertSurveyFile.disabled = false;
-            convertSurveyFile.title = '';
-        }
     }
 
     function getTemplateVersionSelections() {
@@ -1754,6 +1727,10 @@ export function initSurveyConvert(elements) {
 
     function updateConvertBtn() {
         const hasFile = hasSelectedSurveyInput();
+        syncPickedLabel(document.getElementById('convertSurveyFileName'), {
+            files: convertSurveyFile?.files,
+            path: convertServerFilePath,
+        });
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasRunningRequest = isConvertRunning || isPreviewRunning;
         const isAwaitingConfirmation = hasRunningRequest && surveyWorkflowProgressController.getIsSurveyRunAwaitingConfirmation();
@@ -1918,9 +1895,6 @@ export function initSurveyConvert(elements) {
 
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
-        if (defaultFileHintHtml !== null) {
-            document.getElementById('convertFileHint').innerHTML = defaultFileHintHtml;
-        }
         resetSurveyRefreshFingerprint();
         convertSurveyFile.value = '';
         convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1969,22 +1943,9 @@ export function initSurveyConvert(elements) {
     convertAliasGroup?.classList.remove('d-none');
     convertSessionGroup?.classList.remove('d-none');
     updateConvertBtn();
-    applySurveyPickerUiState();
 
-    if (browseServerSurveyFileBtn) {
-        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-            window.PrismFileSystemMode.init().then(() => {
-                applySurveyPickerUiState();
-            }).catch(() => {
-                // Keep default host picker behavior on init failures.
-            });
-        }
-
-        window.addEventListener('prism-library-settings-changed', () => {
-            applySurveyPickerUiState();
-        });
-
-        browseServerSurveyFileBtn.addEventListener('click', async () => {
+    if (browseSurveyFileBtn) {
+        browseSurveyFileBtn.addEventListener('click', async () => {
             const pickedPath = await pickServerFile({
                 title: 'Select Survey File on Server',
                 confirmLabel: 'Use This File',
@@ -1994,7 +1955,6 @@ export function initSurveyConvert(elements) {
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
-            showServerFileHint(pickedPath);
             resetSurveyRefreshFingerprint();
             if (convertSurveyFile) {
                 convertSurveyFile.value = '';

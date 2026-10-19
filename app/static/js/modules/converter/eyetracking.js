@@ -8,7 +8,8 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFolder, prefersServerPicker } from './server-picker.js';
+import { pickServerFolder } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initEyetracking(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -18,7 +19,7 @@ export function initEyetracking(elements) {
     const {
         // Batch convert elements
         eyetrackingBatchFiles,
-        browseServerEyetrackingFolderBtn,
+        browseEyetrackingFolderBtn,
         clearEyetrackingBatchFilesBtn,
         eyetrackingBatchDatasetName,
         eyetrackingBatchPreviewBtn,
@@ -31,7 +32,7 @@ export function initEyetracking(elements) {
         eyetrackingBatchLog,
         eyetrackingBatchLogClearBtn,
         eyetrackingBatchDryRunCheckbox,
-        eyetrackingServerFolderHint,
+        eyetrackingFolderHint,
         // Shared functions
         downloadBase64Zip
     } = elements;
@@ -42,13 +43,6 @@ export function initEyetracking(elements) {
     let eyetrackingSourcedataFileSelectEl = null;
     const pollingRunState = createPollingRunState();
     const runController = createJobRunController();
-
-    function applyEyetrackingPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        if (browseServerEyetrackingFolderBtn) {
-            browseServerEyetrackingFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-    }
 
     async function pickServerEyetrackingFolder() {
         return pickServerFolder({
@@ -236,6 +230,11 @@ export function initEyetracking(elements) {
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
         const hasServerFolder = Boolean(eyetrackingServerFolderPath);
+        syncPickedLabel(document.getElementById('eyetrackingBatchFilesName'), {
+            files: eyetrackingBatchFiles?.files,
+            path: eyetrackingServerFolderPath,
+            empty: 'No folder selected',
+        });
         clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !(hasFiles || hasServerFolder));
         if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = !(hasFiles || hasServerFolder);
         if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !(hasFiles || hasServerFolder);
@@ -244,9 +243,9 @@ export function initEyetracking(elements) {
     if (eyetrackingBatchFiles) {
         eyetrackingBatchFiles.addEventListener('change', function() {
             eyetrackingServerFolderPath = '';
-            if (eyetrackingServerFolderHint) {
-                eyetrackingServerFolderHint.textContent = '';
-                eyetrackingServerFolderHint.classList.add('d-none');
+            if (eyetrackingFolderHint) {
+                eyetrackingFolderHint.textContent = '';
+                eyetrackingFolderHint.classList.add('d-none');
             }
             resetEyetrackingWorkflowState();
             updateEyetrackingBatchBtn();
@@ -254,8 +253,8 @@ export function initEyetracking(elements) {
         updateEyetrackingBatchBtn();
     }
 
-    if (browseServerEyetrackingFolderBtn) {
-        browseServerEyetrackingFolderBtn.addEventListener('click', async function() {
+    if (browseEyetrackingFolderBtn) {
+        browseEyetrackingFolderBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerEyetrackingFolder();
             if (!pickedPath) return;
 
@@ -263,9 +262,9 @@ export function initEyetracking(elements) {
             if (eyetrackingBatchFiles) {
                 eyetrackingBatchFiles.value = '';
             }
-            if (eyetrackingServerFolderHint) {
-                eyetrackingServerFolderHint.textContent = `Server folder: ${pickedPath}`;
-                eyetrackingServerFolderHint.classList.remove('d-none');
+            if (eyetrackingFolderHint) {
+                eyetrackingFolderHint.textContent = `Folder: ${pickedPath}`;
+                eyetrackingFolderHint.classList.remove('d-none');
             }
 
             resetEyetrackingWorkflowState();
@@ -275,9 +274,9 @@ export function initEyetracking(elements) {
 
     clearEyetrackingBatchFilesBtn?.addEventListener('click', function() {
         eyetrackingServerFolderPath = '';
-        if (eyetrackingServerFolderHint) {
-            eyetrackingServerFolderHint.textContent = '';
-            eyetrackingServerFolderHint.classList.add('d-none');
+        if (eyetrackingFolderHint) {
+            eyetrackingFolderHint.textContent = '';
+            eyetrackingFolderHint.classList.add('d-none');
         }
         if (eyetrackingBatchFiles) {
             eyetrackingBatchFiles.value = '';
@@ -296,19 +295,6 @@ export function initEyetracking(elements) {
         refreshEyetrackingSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyEyetrackingPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyEyetrackingPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyEyetrackingPickerUiState();
 
     ensureEyetrackingSourcedataQuickSelectElements();
     if (eyetrackingSourcedataQuickSelectEl && eyetrackingSourcedataFileSelectEl) {
@@ -342,9 +328,9 @@ export function initEyetracking(elements) {
                 }
 
                 eyetrackingServerFolderPath = '';
-                if (eyetrackingServerFolderHint) {
-                    eyetrackingServerFolderHint.textContent = '';
-                    eyetrackingServerFolderHint.classList.add('d-none');
+                if (eyetrackingFolderHint) {
+                    eyetrackingFolderHint.textContent = '';
+                    eyetrackingFolderHint.classList.add('d-none');
                 }
             } catch (_error) {
                 if (eyetrackingBatchError) {

@@ -142,10 +142,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_shared_path_picker_honors_server_preference_and_in_app_fallback(self):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("export function prefersServerPicker()", content)
         self.assertIn("export async function browseFolderWithFallback(_fetchWithApiFallback, options = {})", content)
         self.assertIn("export async function browseFileWithFallback(_fetchWithApiFallback, options = {})", content)
-        self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
         self.assertIn("return requirePathPicker('browseFolder').browseFolder(options);", content)
         self.assertIn("return requirePathPicker('browseFile').browseFile(options);", content)
         self.assertIn("throw new Error('Shared path picker is unavailable.');", content)
@@ -485,26 +483,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
 
-    def test_file_browser_uses_fallback_and_button_rows(self):
+    def test_file_browser_uses_the_single_picker_and_checks_the_filename(self):
         content = PROJECTS_FILE_BROWSER_MODULE.read_text(encoding="utf-8")
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("import { browseFileWithFallback } from '../../shared/path-picker.js';", content)
-        self.assertIn("const res = await fetchWithApiFallback(url);", content)
+        self.assertIn(
+            "import { browseFileWithFallback, isProjectJsonPath } from '../../shared/path-picker.js';",
+            content,
+        )
         self.assertIn("const pickedPath = await browseFileWithFallback(fetchWithApiFallback, {", content)
-        self.assertIn("await openProjectBrowserModal(startPath || null);", content)
-        self.assertIn(
-            'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start"',
-            content,
-        )
-        self.assertIn(
-            'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-dir text-start bg-white"',
-            content,
-        )
-        self.assertIn(
-            'aria-label="Select project.json at ${escHtml(data.project_json_path)}"',
-            content,
-        )
+        self.assertIn("if (!isProjectJsonPath(pickedPath)) {", content)
         self.assertIn("export function initProjectFileBrowser(", content)
         self.assertIn("initProjectFileBrowser({ fetchWithApiFallback });", core_content)
 
@@ -1414,14 +1402,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             save_content,
         )
 
-    def test_file_browser_template_announces_dynamic_updates(self):
-        content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
+    def test_the_single_file_picker_announces_dynamic_updates(self):
+        content = (REPO_ROOT / "app" / "templates" / "base.html").read_text(encoding="utf-8")
 
-        self.assertIn('id="fsBrowserList" aria-live="polite"', content)
-        self.assertIn(
-            'id="fsBrowserSelectedHint" style="display:none;" role="status" aria-live="polite"',
-            content,
-        )
+        self.assertIn('id="folderBrowserList" aria-live="polite"', content)
+        self.assertNotIn("projectFileBrowserModal", OPEN_FORM_TEMPLATE.read_text(encoding="utf-8"))
 
     def test_open_form_drops_quick_validate_control(self):
         content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")

@@ -183,7 +183,7 @@ def install_save_hook(root) -> Path:
     )
     if os.path.lexists(hook) and not _is_own_hook(hook) and not chain:
         raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
-    hook.write_text(_save_hook_script(chain), encoding="utf-8")
+    hook.write_text(_save_hook_script(chain), encoding="utf-8", newline="\n")  # sh needs LF
     hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     return hook
 

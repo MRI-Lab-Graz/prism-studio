@@ -52,7 +52,7 @@ def test_check_refused_exit_1_and_text_names_the_gate(monkeypatch, capsys):
 def test_check_audits_every_decision(monkeypatch, capsys):
     seen = []
     monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(False, ["E"], "validation_errors"))
-    monkeypatch.setattr(cmd, "audit_save", lambda root, check: seen.append((str(root), check.allowed)))
+    monkeypatch.setattr(cmd, "audit_save", lambda root, check: seen.append((Path(root).as_posix(), check.allowed)))
     run(capsys, check=True)
     assert seen == [(str(Path("/p")), False)]
 

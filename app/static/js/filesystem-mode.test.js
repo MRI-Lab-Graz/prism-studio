@@ -21,11 +21,6 @@ describe('single in-app picker', () => {
     vi.restoreAllMocks();
   });
 
-  it('always prefers the in-app picker, regardless of any setting', async () => {
-    const { picker } = await load();
-    expect(picker.prefersServerPicker()).toBe(true);
-  });
-
   it('browseFile / browseFolder open the in-app browser and never call a native dialog endpoint', async () => {
     const { picker, open, fetchSpy } = await load();
     expect(await picker.browseFile({ extensions: '.json', startPath: '/a' })).toBe('/picked');

@@ -8,7 +8,8 @@ import { pollJobStatus } from '../../shared/job-polling.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { createJobRunController } from './job-run-controller.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initEnvironment(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -19,7 +20,7 @@ export function initEnvironment(elements) {
         envDataFile,
         envScanMriBtn,
         envRescanMriBtn,
-        browseServerEnvFileBtn,
+        browseEnvFileBtn,
         clearEnvDataFileBtn,
         envPreviewBtn,
         envSeparatorGroup,
@@ -116,26 +117,6 @@ export function initEnvironment(elements) {
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: envServerFilePath || ''
         });
-    }
-
-    function applyEnvironmentPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-
-        if (browseServerEnvFileBtn) {
-            browseServerEnvFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (envDataFile) {
-            envDataFile.disabled = connectedToServer;
-            envDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
-        }
-
-        if (!connectedToServer && envServerFilePath) {
-            envServerFilePath = '';
-            resetUI();
-        }
-
-        updateFileBtn();
     }
 
     function ensureEnvironmentSourcedataQuickSelectElements() {
@@ -449,6 +430,10 @@ export function initEnvironment(elements) {
 
     function updateFileBtn() {
         const hasFile = hasSelectedEnvInput();
+        syncPickedLabel(document.getElementById('envDataFileName'), {
+            files: envDataFile?.files,
+            path: envServerFilePath,
+        });
         if (envPreviewBtn) envPreviewBtn.disabled = !hasFile;
         clearEnvDataFileBtn?.classList.toggle('d-none', !hasFile);
 
@@ -528,7 +513,7 @@ export function initEnvironment(elements) {
         updateFileBtn();
     }
 
-    browseServerEnvFileBtn?.addEventListener('click', async () => {
+    browseEnvFileBtn?.addEventListener('click', async () => {
         const pickedPath = await pickServerEnvironmentFile();
         if (!pickedPath) return;
 
@@ -733,10 +718,6 @@ export function initEnvironment(elements) {
         updateFileBtn();
     });
 
-    window.addEventListener('prism-library-settings-changed', () => {
-        applyEnvironmentPickerUiState();
-    });
-
     window.addEventListener('prism-project-changed', () => {
         void runController.cancelActiveJob({
             buildCancelUrl: (jobId) => `/api/environment-convert-cancel/${encodeURIComponent(jobId)}`,
@@ -748,15 +729,7 @@ export function initEnvironment(elements) {
         prefillRecruitmentLocationDefaults();
     });
 
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyEnvironmentPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyEnvironmentPickerUiState();
+    updateFileBtn();
 
     prefillRecruitmentLocationDefaults();
 

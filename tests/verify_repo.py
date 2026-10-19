@@ -8,6 +8,13 @@ import ast
 import tempfile
 import json
 from pathlib import Path
+
+# Check marks below are not cp1252: piped output on Windows would crash on them.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
 from datetime import datetime
 from colorama import init, Fore, Style
 
@@ -2321,7 +2328,7 @@ def check_dual_tree_drift(repo_path, fix=False):
         unresolved.append(rel_path)
 
     if unresolved:
-        for rel_path in unresolved:
+        for rel_path in map(Path.as_posix, unresolved):
             print_error(
                 f"Unresolved dual-tree duplicate: src/{rel_path} and app/src/{rel_path} "
                 "both exist as independent files. Keep one real file and delete the "

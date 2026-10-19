@@ -10,13 +10,14 @@ import { createJobRunController } from './job-run-controller.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
+import { syncPickedLabel } from './picker-label.js';
 
 export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
     const {
         biometricsDataFile,
-        browseServerBiometricsFileBtn,
+        browseBiometricsFileBtn,
         clearBiometricsDataFileBtn,
         biometricsPreviewBtn,
         biometricsConvertBtn,
@@ -207,26 +208,6 @@ export function initBiometrics(elements) {
             extensions: '.xlsx,.csv,.tsv,.sav,.rds,.rdata,.rda',
             startPath: biometricsServerFilePath || ''
         });
-    }
-
-    function applyBiometricsPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-
-        if (browseServerBiometricsFileBtn) {
-            browseServerBiometricsFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (biometricsDataFile) {
-            biometricsDataFile.disabled = connectedToServer;
-            biometricsDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
-        }
-
-        if (!connectedToServer && biometricsServerFilePath) {
-            biometricsServerFilePath = '';
-            resetBiometricsWorkflowState();
-        }
-
-        updateBiometricsBtn();
     }
 
     function ensureBiometricsSourcedataQuickSelectElements() {
@@ -433,6 +414,10 @@ export function initBiometrics(elements) {
 
     function updateBiometricsBtn() {
         const hasFile = hasSelectedBiometricsInput();
+        syncPickedLabel(document.getElementById('biometricsDataFileName'), {
+            files: biometricsDataFile?.files,
+            path: biometricsServerFilePath,
+        });
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
         clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);
@@ -476,8 +461,8 @@ export function initBiometrics(elements) {
         updateBiometricsBtn();
     }
 
-    if (browseServerBiometricsFileBtn) {
-        browseServerBiometricsFileBtn.addEventListener('click', async function() {
+    if (browseBiometricsFileBtn) {
+        browseBiometricsFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerBiometricsFile();
             if (!pickedPath) return;
 
@@ -508,19 +493,7 @@ export function initBiometrics(elements) {
         refreshBiometricsSourcedataQuickSelect();
     });
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyBiometricsPickerUiState();
-    });
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyBiometricsPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
-    }
-
-    applyBiometricsPickerUiState();
+    updateBiometricsBtn();
 
     ensureBiometricsSourcedataQuickSelectElements();
     if (biometricsSourcedataQuickSelectEl && biometricsSourcedataFileSelectEl) {

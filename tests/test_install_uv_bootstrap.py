@@ -2,6 +2,13 @@
 print a curl command and exit: users may have nothing relevant installed."""
 import subprocess
 from pathlib import Path
+import pytest
+import sys
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="tests install.sh (macOS/Linux); Windows uses install.cmd"
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -10,7 +17,7 @@ FAKE_INSTALLER = 'mkdir -p "$HOME/.local/bin"; printf "#!/bin/sh\\n" > "$HOME/.l
 
 
 def _fake(path, body):
-    path.write_text("#!/bin/bash\n" + body)
+    path.write_text("#!/bin/bash\n" + body, newline="\n")
     path.chmod(0o755)
 
 

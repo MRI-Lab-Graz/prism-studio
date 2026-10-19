@@ -33,7 +33,7 @@ def repos(tmp_path):
 
 def fake_tool(tmp_path, exit_code):
     tool = tmp_path / f"prism_tools_{exit_code}"
-    tool.write_text(f"#!/bin/sh\nexit {exit_code}\n")
+    tool.write_text(f"#!/bin/sh\nexit {exit_code}\n", newline="\n")
     tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
     return tool
 
@@ -71,7 +71,7 @@ def test_hook_fails_closed_when_tool_is_missing(repos):
 
 def test_install_refuses_to_overwrite_a_foreign_hook(repos):
     hook = repos / ".git" / "hooks" / "pre-push"
-    hook.write_text("#!/bin/sh\necho mine\n")
+    hook.write_text("#!/bin/sh\necho mine\n", newline="\n")
     with pytest.raises(sp.HookExistsError):
         sp.install_hook(repos, "ria-store")
     assert "mine" in hook.read_text()

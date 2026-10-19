@@ -7,7 +7,7 @@ import { createJobRunController } from './job-run-controller.js';
 import { createAnnotationGate } from './participants-annotation-gate.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
 import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
 import {
@@ -205,45 +205,6 @@ export function initParticipants() {
         if (resetSourcedataSelection) {
             participantsSourcedataQuickSelectController.clearSelectedFile();
         }
-    }
-
-    function openParticipantsLocalFilePicker(fileInput) {
-        if (!(fileInput instanceof HTMLInputElement) || fileInput.disabled) {
-            return;
-        }
-
-        if (typeof fileInput.showPicker === 'function') {
-            try {
-                fileInput.showPicker();
-                return;
-            } catch (_error) {
-                // Fall back to click() for browsers that expose showPicker but reject it here.
-            }
-        }
-
-        fileInput.click();
-    }
-
-    function applyParticipantsPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        const fileInput = document.getElementById('participantsDataFile');
-        const chooseFileBtn = document.getElementById('participantsChooseFileBtn');
-        const browseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-
-        if (browseServerFileBtn) {
-            browseServerFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (chooseFileBtn) {
-            chooseFileBtn.classList.remove('d-none');
-        }
-
-        if (fileInput) {
-            fileInput.disabled = false;
-            fileInput.title = '';
-        }
-
-        updateParticipantsButtonState();
     }
 
     function normalizeParticipantsCaseId(value) {
@@ -1518,16 +1479,9 @@ export function initParticipants() {
         participantsSourcedataQuickSelectController.initialize();
     }
     
-    const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
-    if (participantsChooseFileBtn && fileInput) {
-        participantsChooseFileBtn.addEventListener('click', function() {
-            openParticipantsLocalFilePicker(fileInput);
-        });
-    }
-
-    const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-    if (participantsBrowseServerFileBtn) {
-        participantsBrowseServerFileBtn.addEventListener('click', async function() {
+    const participantsBrowseFileBtn = document.getElementById('participantsBrowseFileBtn');
+    if (participantsBrowseFileBtn) {
+        participantsBrowseFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerFile({
                 title: 'Select Participants File on Server',
                 confirmLabel: 'Use This File',
@@ -1586,10 +1540,6 @@ export function initParticipants() {
         });
     }
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyParticipantsPickerUiState();
-    });
-
     if (!window.__participantsProjectChangeListenerBound) {
         window.addEventListener('prism-project-changed', function() {
             pollingRunState.abortActive('Participants polling aborted due to project change.');
@@ -1598,14 +1548,6 @@ export function initParticipants() {
             participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());
         });
         window.__participantsProjectChangeListenerBound = true;
-    }
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyParticipantsPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
     }
 
     const participantsCaseGuideCards = document.getElementById('participantsCaseGuideCards');
@@ -1651,7 +1593,7 @@ export function initParticipants() {
     // Run immediately
     updateParticipantsInputVisibility();
     updateParticipantsButtonState();
-    applyParticipantsPickerUiState();
+    updateParticipantsButtonState();
     setParticipantsAdditionalVariablesEnabled(false);
 
     function renderParticipantsOverwriteWarning(showWarning = false) {

@@ -21,7 +21,7 @@ def ds(tmp_path, monkeypatch):
     subprocess.run(["datalad", "save", "-m", "a"], cwd=root, check=True, capture_output=True)
     # fake tool: invalid while a file named BAD exists
     tool = tmp_path / "prism_tools"
-    tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n')
+    tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n', newline="\n")
     tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PRISM_TOOLS", str(tool))
     sg.install_save_hook(root)
@@ -81,7 +81,7 @@ def test_annexed_content_path_mutation_on_invalid_tree(tmp_path, monkeypatch):
     (root / "big.bin").write_bytes(b"\x00\x01binary")
     subprocess.run(["datalad", "save", "-m", "big"], cwd=root, check=True, capture_output=True)
     tool = tmp_path / "prism_tools"
-    tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n')
+    tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n', newline="\n")
     tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PRISM_TOOLS", str(tool))
     sg.install_save_hook(root)

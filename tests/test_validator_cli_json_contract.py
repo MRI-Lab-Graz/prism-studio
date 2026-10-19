@@ -65,7 +65,7 @@ def test_bids_machine_output_is_pure_json_and_fails_closed(
     ds = tmp_path / "ds"
     ds.mkdir()
     script = tmp_path / "bids-validator-deno"
-    script.write_text("#!/bin/sh\necho engine exploded >&2\nexit 1\n")
+    script.write_text("#!/bin/sh\necho engine exploded >&2\nexit 1\n", newline="\n")
     script.chmod(0o755)
     found = str(script) if engine == "broken" else None
     monkeypatch.setattr(bids_validator, "find_bids_engine", lambda: found)

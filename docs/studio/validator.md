@@ -9,8 +9,8 @@ against PRISM and/or BIDS rules and shows the results grouped by severity.
 
 - **Default: Validate current project** — pre-selected if you have a project loaded,
   showing its name and path with a "Change Project" button.
-- **Alternative: Validate another dataset folder** — pick any other folder via Browse
-  (local) or Browse Server Folder. This becomes the only option, auto-selected, if you
+- **Alternative: Validate another dataset folder** — pick any other folder with
+  Browse Folder. This becomes the only option, auto-selected, if you
   have no project currently loaded.
 
 ## Step 2 — Advanced Options (optional)

@@ -699,7 +699,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             content,
         )
         self.assertIn("const runController = createJobRunController();", content)
@@ -810,7 +810,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             physio_content,
         )
         self.assertIn(
-            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFolder } from './server-picker.js';",
             physio_content,
         )
         self.assertIn("const pollingRunState = createPollingRunState();", physio_content)
@@ -867,7 +867,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             eyetracking_content,
         )
         self.assertIn(
-            "import { pickServerFolder, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFolder } from './server-picker.js';",
             eyetracking_content,
         )
         self.assertIn(
@@ -1052,7 +1052,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             environment_content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             environment_content,
         )
         self.assertIn("const pollingRunState = createPollingRunState();", environment_content)
@@ -1126,7 +1126,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             participants_content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             participants_content,
         )
         self.assertIn("const runController = createJobRunController();", participants_content)
@@ -1599,36 +1599,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             helper_block,
         )
 
-    def test_participants_local_picker_uses_native_trigger_path(self):
-        participants_content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
-        template_content = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
-
-        self.assertIn("function openParticipantsLocalFilePicker(fileInput) {", participants_content)
-        self.assertIn("if (typeof fileInput.showPicker === 'function') {", participants_content)
-        self.assertIn("fileInput.showPicker();", participants_content)
-        self.assertIn("openParticipantsLocalFilePicker(fileInput);", participants_content)
-        self.assertIn('id="participantsDataFile"', template_content)
-        self.assertIn('class="visually-hidden"', template_content)
-        self.assertNotIn('class="form-control d-none" type="file" id="participantsDataFile"', template_content)
-
-    def test_other_converter_local_file_inputs_remain_direct_visible_controls(self):
-        survey_content = SURVEY_TEMPLATE.read_text(encoding="utf-8")
-        biometrics_content = BIOMETRICS_TEMPLATE.read_text(encoding="utf-8")
-        environment_content = ENVIRONMENT_TEMPLATE.read_text(encoding="utf-8")
-        eyetracking_content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
-
-        self.assertIn('class="form-control" type="file" id="convertSurveyFile"', survey_content)
-        self.assertNotIn('visually-hidden" type="file" id="convertSurveyFile"', survey_content)
-
-        self.assertIn('class="form-control" type="file" id="biometricsDataFile"', biometrics_content)
-        self.assertNotIn('visually-hidden" type="file" id="biometricsDataFile"', biometrics_content)
-
-        self.assertIn('class="form-control" type="file" id="envDataFile"', environment_content)
-        self.assertNotIn('visually-hidden" type="file" id="envDataFile"', environment_content)
-
-        self.assertIn('class="form-control" type="file" id="eyetrackingBatchFiles"', eyetracking_content)
-        self.assertNotIn('visually-hidden" type="file" id="eyetrackingBatchFiles"', eyetracking_content)
-
     def test_eyetracking_template_references_bids_modality(self):
         content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
 
@@ -1693,7 +1663,7 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "import { pickServerFile, prefersServerPicker } from './server-picker.js';",
+            "import { pickServerFile } from './server-picker.js';",
             content,
         )
         self.assertIn("const pickedPath = await pickServerFile({", content)
@@ -1848,14 +1818,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "fetchWithApiFallback(requestUrl)",
             session_picker_content,
-        )
-        self.assertIn(
-            "import { prefersServerPicker } from '../../shared/path-picker.js';",
-            server_picker_content,
-        )
-        self.assertIn(
-            "export { prefersServerPicker };",
-            server_picker_content,
         )
         self.assertIn(
             "export async function pickServerFile(options)",

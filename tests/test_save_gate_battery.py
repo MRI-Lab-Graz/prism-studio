@@ -216,7 +216,7 @@ def test_gate_fails_closed_when_prism_tools_is_missing(green, monkeypatch):
 @needs_datalad
 def test_gate_fails_closed_when_the_checker_crashes(green, tmp_path, monkeypatch):
     crash = tmp_path / "crash"
-    crash.write_text("#!/bin/sh\necho boom >&2\nexit 3\n")
+    crash.write_text("#!/bin/sh\necho boom >&2\nexit 3\n", newline="\n")
     crash.chmod(0o755)
     monkeypatch.setenv("PRISM_TOOLS", str(crash))
     before = head(green)
@@ -315,7 +315,7 @@ def test_foreign_pre_commit_hook_is_never_overwritten(tmp_path):
     repo.mkdir()
     sh("git", "init", "-q", cwd=repo)
     hook = repo / ".git" / "hooks" / "pre-commit"
-    hook.write_text("#!/bin/sh\n# someone else's hook\nexit 0\n")
+    hook.write_text("#!/bin/sh\n# someone else's hook\nexit 0\n", newline="\n")
     hook.chmod(0o755)
     before = hook.read_bytes()
     result = sg.install_save_hooks(repo)

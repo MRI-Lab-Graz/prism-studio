@@ -355,7 +355,7 @@ def install_hook(project_root, sibling_name: str | None = None) -> Path:
         hook.is_symlink() or HOOK_MARKER not in hook.read_text(encoding="utf-8", errors="replace")
     ):
         raise HookExistsError(f"{hook} already exists and is not a PRISM hook; not overwriting.")
-    hook.write_text(_hook_script(sibling), encoding="utf-8")
+    hook.write_text(_hook_script(sibling), encoding="utf-8", newline="\n")  # sh needs LF
     hook.chmod(hook.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
     return hook
 
