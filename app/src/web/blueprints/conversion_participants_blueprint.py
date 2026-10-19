@@ -520,8 +520,10 @@ def api_participants_preview():
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
+                    # output_df is already collapsed to one row per participant, so
+                    # a value that changes between rows is only visible in the source.
                     "repeat_conflicts": find_repeat_conflicts(
-                        output_df, preview_id_column, output_df.columns
+                        df, id_column, output_columns
                     ),
                     "eligibility_criteria": (
                         load_criteria(str(preview_project_root))

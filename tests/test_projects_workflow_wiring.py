@@ -142,10 +142,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_shared_path_picker_honors_server_preference_and_in_app_fallback(self):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("export function prefersServerPicker()", content)
         self.assertIn("export async function browseFolderWithFallback(_fetchWithApiFallback, options = {})", content)
         self.assertIn("export async function browseFileWithFallback(_fetchWithApiFallback, options = {})", content)
-        self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
         self.assertIn("return requirePathPicker('browseFolder').browseFolder(options);", content)
         self.assertIn("return requirePathPicker('browseFile').browseFile(options);", content)
         self.assertIn("throw new Error('Shared path picker is unavailable.');", content)

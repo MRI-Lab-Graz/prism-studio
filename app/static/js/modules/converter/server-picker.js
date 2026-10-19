@@ -1,7 +1,3 @@
-import { prefersServerPicker } from '../../shared/path-picker.js';
-
-export { prefersServerPicker };
-
 function getPathPicker() {
     return typeof window !== 'undefined' ? window.PrismPathPicker : null;
 }
