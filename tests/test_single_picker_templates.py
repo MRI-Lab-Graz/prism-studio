@@ -102,10 +102,17 @@ FILES_JS = Path(__file__).resolve().parent.parent / "app" / "static" / "js"
 
 
 def test_page_scripts_have_no_server_mode_leftovers():
-    leftovers = ["prefersServerPicker", "PrismFileSystemMode", "prism-library-settings-changed", "applyRemotePickerUiState", "connectedToServer"]
+    leftovers = [
+        "prefersServerPicker", "PrismFileSystemMode", "prism-library-settings-changed",
+        "applyRemotePickerUiState", "PickerUiState", "connectedToServer",
+    ]
+    scripts = ["index.js", "file_management.js"] + [
+        f"modules/converter/{name}.js"
+        for name in ("survey-convert", "participants", "biometrics", "environment", "physio", "eyetracking")
+    ]
     found = [
         f"{name}: {token}"
-        for name in ("index.js", "file_management.js")
+        for name in scripts
         for token in leftovers
         if token in (FILES_JS / name).read_text(encoding="utf-8")
     ]

@@ -26,19 +26,7 @@
         return `${folder.replace(/[\\/]+$/, '')}/${name}`;
     }
 
-    // init() stays so converter pages that await it keep working.
-    const init = () => Promise.resolve();
-
-    window.PrismFileSystemMode = {
-        init,
-        prefersServerPicker: () => true,
-        pickFolder,
-        pickFile,
-    };
-
     window.PrismPathPicker = {
-        init,
-        prefersServerPicker: () => true,
         browseFolder: pickFolder,
         browseFile: pickFile,
         browseSaveFile,
