@@ -1413,7 +1413,7 @@ def batch_convert_folder(
         elif ext in all_extensions:
             files_to_process.append(file_path)
 
-    if modality_filter in ("all", "physio", "eyetracking") and physio_destination not in PHYSIO_TASK_DESTINATIONS:
+    if modality_filter in ("all", "physio") and physio_destination not in PHYSIO_TASK_DESTINATIONS:
         task_bound = [
             f.name
             for f in files_to_process
@@ -1472,10 +1472,12 @@ def batch_convert_folder(
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
             target_modality = modality_filter
-        elif modality_filter == "eyetracking" and ext in EYETRACKING_TABULAR_EXTENSIONS:
-            # .tsv/.tsv.gz are generic-by-default (see detect_modality), but an
-            # eyetracking-scoped batch job should route them to the eyetracking
-            # converter, not the generic-copy path.
+        elif modality_filter == "eyetracking" and (
+            ext in EYETRACKING_TABULAR_EXTENSIONS or ext in EYETRACKING_EXTENSIONS
+        ):
+            # .tsv/.tsv.gz are generic-by-default and .edf is physio-by-default
+            # (see detect_modality), but an eyetracking-scoped batch job should
+            # route them to the eyetracking converter.
             modality = "eyetracking"
             target_modality = "eyetracking"
         else:

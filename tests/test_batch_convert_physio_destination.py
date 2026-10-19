@@ -200,3 +200,16 @@ def test_task_free_raw_gets_no_bids_base_and_lands_in_physio(tmp_path, monkeypat
     assert (out / "sub-01/physio/sub-01_recording-ecg_physio.edf").exists()
     assert (out / "sub-01/physio/sub-01_recording-ecg_physio.json").exists()
     assert result.converted[0].target_folder == "physio"
+
+
+def test_eyetracking_filter_routes_task_bound_edf_to_eyetracking(tmp_path, make_edf):
+    """An EyeLink .edf with a task is not physio: no destination needed, eyetracking converter handles it."""
+    src = _src(tmp_path, make_edf, "sub-01_task-reading_eyetrack.edf")
+    out = tmp_path / "out"
+    result = batch_convert_folder(src, out, modality_filter="eyetracking")
+    assert [c.modality for c in result.converted] == ["eyetracking"]
+    assert result.skipped == [] and result.converted[0].success
+    assert [f for f in _rel(out) if f.startswith("sub-")] == [
+        "sub-01/eyetracking/sub-01_task-reading_eyetrack.edf",
+        "sub-01/eyetracking/sub-01_task-reading_eyetrack.json",
+    ]
