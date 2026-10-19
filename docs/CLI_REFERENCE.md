@@ -371,6 +371,11 @@ python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-
 # (default column startdate, falling back to datestamp); works on preview, convert and merge
 python prism_tools.py participants merge --input /absolute/path/to/survey_archive.lsa --id-column token --sessions-from-date --project /absolute/path/to/my-project/project.json --json
 
+# Repeated rows per ID: identical values collapse quietly. A value that changes between an ID's rows
+# (e.g. age across sessions) is an error unless you keep ONE session (--session-column + --session)
+# or one column per session (--session-column + --split-sessions: age@ses-1, age@ses-2)
+python prism_tools.py participants convert --input /absolute/path/to/T1.xlsx --id-column ID --session-column session --split-sessions --project /absolute/path/to/my-project/project.json --json
+
 # Save a reusable mapping (preferred target: <project>/code/library)
 python prism_tools.py participants save-mapping --mapping-json '{"participant_id": {"source_column": "ID"}}' --project /absolute/path/to/my-project/project.json
 

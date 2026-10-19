@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Repeated rows in the Sociodemographics converter.** Several rows per participant with identical values collapse
+  quietly. When a value changes between rows (e.g. age across sessions) you choose: keep one session, or one column
+  per session (`age@ses-1`, `age@ses-2`; command line: `--session-column` with `--split-sessions`).
 - **Modality proposals.** A new modality can be proposed with a filled-in Excel workbook and a small synthetic
   sample file: `prism_tools.py modality propose` checks names against PRISM and BIDS, checks the sample against
   the column dictionary, and generates the schema, an example sidecar, a fixture dataset and maintainer
