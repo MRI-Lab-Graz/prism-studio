@@ -60,6 +60,28 @@ def is_compatible_version(required_version, provided_version):
     return True
 
 
+def _read_schema_file(schema_path, name, version_tag):
+    """Load one schema file and attach the _validator_info block (None on failure)."""
+    if not os.path.exists(schema_path):
+        return None
+    try:
+        with open(schema_path, encoding="utf-8") as f:
+            schema = json.load(f)
+
+        # Add schema metadata for versioning
+        schema_version = schema.get("version", "1.0.0")
+        schema["_validator_info"] = {
+            "schema_version": schema_version,
+            "modality": name,
+            "version_tag": version_tag,
+            "loaded_at": json.dumps({"timestamp": "runtime"}),
+        }
+        return schema
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Warning: Could not load schema {schema_path}: {e}")
+    return None
+
+
 def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     """Load schema with version information
 
@@ -68,6 +90,8 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
         schema_dir: Base schemas directory
         version: Schema version to load (e.g., 'stable', 'v0.1', '0.1').
                  If None, uses DEFAULT_SCHEMA_VERSION
+        modality_versions: Optional {modality: 'X.Y.Z'} loaded from the stable/
+                 archive instead of `version` (aliases follow the override).
     """
     # Normalize version string
     if version is None:
@@ -78,26 +102,10 @@ def load_schema(name, schema_dir=DEFAULT_SCHEMA_DIR, version=None):
     # Build schema path with version
     schema_path = os.path.join(schema_dir, version, f"{name}.schema.json")
 
-    if os.path.exists(schema_path):
-        try:
-            with open(schema_path, encoding="utf-8") as f:
-                schema = json.load(f)
-
-            # Add schema metadata for versioning
-            schema_version = schema.get("version", "1.0.0")
-            schema["_validator_info"] = {
-                "schema_version": schema_version,
-                "modality": name,
-                "version_tag": version,
-                "loaded_at": json.dumps({"timestamp": "runtime"}),
-            }
-            return schema
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not load schema {schema_path}: {e}")
-    return None
+    return _read_schema_file(schema_path, name, version)
 
 
-def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
+def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None, modality_versions=None):
     """Load all available schemas for a specific version
 
     Args:
@@ -119,6 +127,12 @@ def load_all_schemas(schema_dir=DEFAULT_SCHEMA_DIR, version=None):
         schema = load_schema(modality, schema_dir, version)
         if schema:
             schemas[modality] = schema
+
+    if modality_versions:
+        from src.modality_versions import load_modality_schema
+
+        for modality, modality_version in modality_versions.items():
+            schemas[modality] = load_modality_schema(modality, modality_version, schema_dir)
 
     for alias, target in entities.get("aliases", {}).items():
         if target in schemas:

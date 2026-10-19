@@ -29,14 +29,15 @@ result you report — that's what `Scores` is for.
 
 ## Missing-data handling
 
-An answer is missing when the cell is empty, `n/a` or not a number. For `sum`/`mean`
-scores:
+An answer is missing when the cell is empty, `n/a` or not a number.
 
-- `Missing: "ignore"` (default) — only the answered items are used (the sum of 3 of 5
-  items is lower than a complete response).
-- `MinValid: N` — the score is left empty (`n/a`) if fewer than N items are answered.
-- `Missing: "require_all"` (aliases `all`, `strict`) — any missing item leaves the score
-  empty.
+- A **`sum`** is left empty (`n/a`) when *any* item is missing - a total over only some of the items is
+  not comparable with a complete one. This is the default (`Missing: "require_all"`, aliases `all`, `strict`).
+- A **`mean`** uses the answered items by default (`Missing: "ignore"`).
+- `Missing: "ignore"` on a `sum` opts back in to summing only the answered items (the sum of 3 of 5 items is
+  lower than a complete response).
+- `MinValid: N` - the score is left empty (`n/a`) if fewer than N items are answered. For a `sum`
+  combine it with `Missing: "ignore"`, otherwise every item is still required.
 
 `formula` scores are left empty whenever any item they use is missing (earlier versions
 treated a missing item as 0, so an unanswered questionnaire scored 0). Recipe Builder

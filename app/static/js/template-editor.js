@@ -334,6 +334,23 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  let languageCodes = null;
+  let knownLanguageCodes = null;
+  import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { languageCodes = module; });
+  fetch('/api/template-editor/language-codes')
+    .then((response) => (response.ok ? response.json() : null))
+    .then((data) => { if (data && Array.isArray(data.codes)) knownLanguageCodes = new Set(data.codes); })
+    .catch(() => {}); // the format check still applies without the list
+  /** Message for a language code the user typed, '' when it is fine. */
+  function languageProblem(raw) {
+    return languageCodes ? languageCodes.languageCodeProblem(raw, knownLanguageCodes) : '';
+  }
+
+  let itemId = null;
+  import(new URL('./template-editor/item-id.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { itemId = module; });
+
   const templateEditorSourceWorkflowModuleUrl = new URL('./template-editor/source-workflow.js', document.currentScript?.src || window.location.href).href;
   let templateEditorSourceWorkflowPromise = null;
 
@@ -1091,8 +1108,10 @@
         addLangBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add language';
         addLangBtn.addEventListener('click', () => {
           const newLang = prompt('Enter language code (e.g., en, de):');
-          if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
-            if (newLang !== null) alert('Invalid language code.');
+          if (newLang === null) return;
+          const problem = languageProblem(newLang);
+          if (problem) {
+            alert(problem);
             return;
           }
           const lang = newLang.trim();
@@ -1529,6 +1548,9 @@
       }
     }
 
+    // The pattern attribute is compiled with the /v flag, where a leading "-" in a class must be escaped.
+    const htmlInputPattern = (pattern) => pattern.replace(/\[-/g, '[\\-');
+
     // Detect if value is a translation table (object with lang keys like "de", "en", etc.)
     function isTranslationObject(val) {
       if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
@@ -1890,8 +1912,10 @@
             addLangBtn.textContent = '+ Language';
             addLangBtn.addEventListener('click', () => {
               const newLang = prompt('Enter language code (e.g., en, de):');
-              if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
-                if (newLang !== null) alert('Invalid language code.');
+              if (newLang === null) return;
+              const problem = languageProblem(newLang);
+              if (problem) {
+                alert(problem);
                 return;
               }
               const lang = newLang.trim();
@@ -1931,7 +1955,7 @@
         const newKey = prompt('Enter level key (e.g., 0, 1, 2, or a code):');
         if (!newKey) return;
         const key = newKey.trim();
-        if (levelsData[key] !== undefined) {
+        if (key === '__proto__' || Object.hasOwn(levelsData, key)) {
           alert('Level already exists.');
           return;
         }
@@ -1954,7 +1978,7 @@
       inp.className = 'form-control';
       inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
       inp.placeholder = '— Not set —';
-      if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+      if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
       inp.addEventListener('input', () => onChange(inp.value));
       container.appendChild(inp);
 
@@ -2022,7 +2046,7 @@
     const initVal = (value === undefined || value === null) ? '' : stripDOIPrefix(String(value));
     inp.value = initVal;
     inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
-    if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+    if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
     inp.addEventListener('input', () => {
       const cleaned = stripDOIPrefix(inp.value);
       if (cleaned !== inp.value) inp.value = cleaned;
@@ -3106,6 +3130,7 @@
           showAlert('warning', 'No items selected to update.');
           return;
         }
+        if (checkedItemIds.size === 0 && !confirm(`No items are checked. Set ${name} on all ${targetKeys.length} items?`)) return;
 
         targetKeys.forEach(k => {
           if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
@@ -3770,6 +3795,8 @@
   btnSetPrimaryLang.addEventListener('click', () => {
     if (!currentTemplate || !primaryLanguage) return;
     try {
+      const primaryProblem = languageProblem(primaryLanguageInputEl.value);
+      if (primaryProblem) throw new Error(primaryProblem);
       primaryLanguage.applyPrimaryLanguage(currentTemplate, primaryLanguageInputEl.value.trim());
     } catch (error) {
       alert(error.message);
@@ -3784,11 +3811,17 @@
   btnAddLang.addEventListener('click', () => {
     if (!currentTemplate) return;
     const newLang = prompt('Enter language code to add (e.g., en, de, fr):');
-    if (!newLang || !LANG_CODE_RE.test(newLang.trim())) {
-      if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+    if (newLang === null) return;
+    const problem = languageProblem(newLang);
+    if (problem) {
+      alert(problem);
       return;
     }
     const lang = newLang.trim();
+    if (detectLanguagesFromTemplate(currentTemplate).includes(lang)) {
+      alert(`The template already has the language "${lang}".`);
+      return;
+    }
     const items = itemKeysFromTemplate(currentTemplate);
     const primaryLang = currentTemplate.Technical?.Language || 'en';
 
@@ -5017,8 +5050,13 @@
         showAlert('danger', 'That ID is reserved.');
         return;
       }
-      if (currentTemplate[id]) {
+      if (Object.hasOwn(currentTemplate, id)) {
         showAlert('warning', 'That item already exists.');
+        return;
+      }
+      const idProblem = itemId?.itemIdProblem(id, Object.keys(currentTemplate).filter((key) => !RESERVED_TOPLEVEL.has(key)));
+      if (idProblem) {
+        showAlert('warning', escapeHtml(idProblem));
         return;
       }
       const itemSchema = getItemSchema();

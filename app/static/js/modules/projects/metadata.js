@@ -21,8 +21,15 @@ import {
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
+import { mountChipArea, mountChipList } from './chip-list.js';
+import { issueFieldTarget } from './issue-links.js';
+import { knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
+import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
+import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { renderNotReadyBanner } from './not-ready-banner.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
@@ -38,6 +45,13 @@ function _getCurrentProjectState() {
 // frontend/backend" rule. Fallbacks are used if offline.
 let _bidsVersion = '1.10.1';
 let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
+// Creation-blocking fields come only from the backend (derived from
+// src.project_ready.REQUIRED_FIELDS): /api/config (available before any project
+// is loaded, e.g. the create flow) and the study-metadata GET response
+// (creation_blocking_fields). {} until one arrives, then completeness is re-run.
+let _creationBlockingFields = {};
+const _toFieldSets = (raw) =>
+    Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, new Set(v)]));
 (async () => {
     try {
         const r = await fetchWithApiFallback('/api/config');
@@ -45,6 +59,10 @@ let _requiredFieldsSchema = DEFAULT_REQUIRED_FIELDS_SCHEMA;
         if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
         if (cfg && cfg.studyMetadataRequiredFields) {
             _requiredFieldsSchema = normalizeRequiredFieldsSchema(cfg.studyMetadataRequiredFields);
+        }
+        if (cfg && cfg.creationBlockingFields) {
+            _creationBlockingFields = _toFieldSets(cfg.creationBlockingFields);
+            updateCompletenessUI(computeLocalCompleteness());
         }
     } catch { /* use fallback */ }
 })();
@@ -130,6 +148,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
     ),
     applyStudyMetadataPayload: (data) => {
         const sm = data.study_metadata;
+        renderNotReadyBanner(data.not_ready_message);
 
         const overview = sm.Overview || {};
         document.getElementById('smOverviewMain').value = overview.Main || '';
@@ -182,6 +201,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         const elig = sm.Eligibility || {};
         setOverviewList('smEligInclusion', elig.InclusionCriteria);
         setOverviewList('smEligExclusion', elig.ExclusionCriteria);
+        setEligibilityCriteria(elig.Criteria);
         document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
         document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
 
@@ -201,6 +221,8 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         setOverviewList('smReferencesText', _referencesToDoiLines(sm.References));
 
         _applyHints(data.hints || {});
+
+        _creationBlockingFields = _toFieldSets(data.creation_blocking_fields || {});
 
         // Keep frontend readiness scoring semantics stable by recomputing from the
         // current form state instead of mixing in backend completeness payloads.
@@ -380,6 +402,11 @@ function _snapshotStudyMetadataForm() {
         values.push(`${key}:${String(field.value || '').trim()}`);
     });
 
+    // Row inputs have no id: checked criteria and drafts the user has typed but not accepted
+    // would otherwise be invisible here, and leaving the project would lose them silently.
+    values.push(`criteria:${JSON.stringify(getEligibilityCriteria())}`);
+    values.push(`pending:${findPending(form).length}`);
+
     return values.join('\u001e');
 }
 
@@ -446,6 +473,7 @@ function _buildStudyMetadataPayload() {
         Eligibility: {
             InclusionCriteria: getOverviewList('smEligInclusion') || undefined,
             ExclusionCriteria: getOverviewList('smEligExclusion') || undefined,
+            Criteria: getEligibilityCriteria().length ? getEligibilityCriteria() : undefined,
             TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
             PowerAnalysis: document.getElementById('smEligPower').value || undefined,
         },
@@ -462,7 +490,7 @@ function _buildStudyMetadataPayload() {
             MissingFiles: document.getElementById('smMissingFiles').value || undefined,
             KnownIssues: document.getElementById('smKnownIssues').value || undefined,
         },
-        References: _getReferenceDoiLines().map(_normalizeDoi).join('\n') || undefined,
+        References: [...new Set(_getReferenceDoiLines().map(_normalizeDoi))].join('\n') || undefined,
     };
 }
 
@@ -665,18 +693,11 @@ function _applyOrcidCandidateToAuthorRow(row, candidate) {
         websiteInput.value = String(candidate.website || '').trim();
     }
 
+    row._row?.refresh(); // the names may now be complete: enable the green check
     _validateAuthorOptionalFields(row);
     _updateAuthorRowLabels();
     updateCreateProjectButton();
     validateAuthorsBadge();
-}
-
-function _normalizeDoi(value) {
-    let doi = String(value || '').trim();
-    if (!doi) return '';
-    doi = doi.replace(/^https?:\/\/doi\.org\//i, '');
-    doi = doi.replace(/^doi:\s*/i, '');
-    return doi.trim();
 }
 
 function _getReferenceDoiLines() {
@@ -1079,7 +1100,10 @@ function _parseAuthor(author) {
     };
 }
 
-export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
+// Authors that count: drafts the user has not accepted yet are left out everywhere.
+const DEFINED_AUTHOR_ROWS = '#metadataAuthorsList .author-row:not([data-row-state="draft"])';
+
+export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepted = false) {
     const list = document.getElementById('metadataAuthorsList');
     if (!list) return;
 
@@ -1114,9 +1138,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
             <button type="button" class="btn btn-outline-secondary btn-sm move-author-down" title="Move author down" aria-label="Move author down">
                 <i class="fas fa-arrow-down"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm remove-author">
-                <i class="fas fa-times"></i>
-            </button>
+            <span class="author-actions-slot"></span>
         </div>
         <div class="row g-2">
             <div class="col-md-6">
@@ -1166,14 +1188,39 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         </div>
     `;
 
-    const removeBtn = row.querySelector('.remove-author');
-    if (removeBtn) {
-        removeBtn.title = 'Remove this author';
-        removeBtn.setAttribute('aria-label', 'Remove this author');
-    }
+    const nameOf = (selector) => _cleanMetadataText(row.querySelector(selector)?.value || '');
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'author',
+        incompleteHint: 'Enter first and last name (an author already listed cannot be added twice)',
+        isComplete: () => {
+            const [first, last] = [nameOf('.author-first'), nameOf('.author-last')];
+            const same = (r) => [first, last].every((n, i) => _cleanMetadataText(r.querySelector(i ? '.author-last' : '.author-first')?.value || '').toLowerCase() === n.toLowerCase());
+            const listed = Array.from(document.querySelectorAll(DEFINED_AUTHOR_ROWS)).some((r) => r !== row && same(r));
+            return Boolean(first && last) && !listed;
+        },
+        hasContent: () => Array.from(row.querySelectorAll('input:not(.author-corresponding)'))
+            .some(input => input.value.trim() !== ''),
+        onAccept: () => {
+            updateCreateProjectButton();
+            validateAuthorsBadge();
+            _updateAuthorRowLabels();
+        },
+        onRemove: () => {
+            row.remove();
+            if (!document.querySelector('#metadataAuthorsList .author-row')) {
+                addAuthorRow();
+            }
+            updateCreateProjectButton();
+            validateAuthorsBadge(); // Update badge color when authors change
+            _updateAuthorRowLabels();
+        },
+    });
+    row.querySelector('.author-actions-slot').replaceWith(actions.slot);
 
     row.querySelectorAll('input:not(.author-corresponding)').forEach(input => {
         input.addEventListener('input', () => {
+            actions.refresh();
             _validateAuthorOptionalFields(row);
             updateCreateProjectButton();
             validateAuthorsBadge(); // Update badge color when authors change
@@ -1197,16 +1244,6 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         });
     }
 
-    row.querySelector('.remove-author').addEventListener('click', () => {
-        row.remove();
-        if (!document.querySelector('#metadataAuthorsList .author-row')) {
-            addAuthorRow();
-        }
-        updateCreateProjectButton();
-        validateAuthorsBadge(); // Update badge color when authors change
-        _updateAuthorRowLabels();
-    });
-
     row.querySelector('.move-author-up')?.addEventListener('click', () => {
         _moveAuthorRow(row, 'up');
     });
@@ -1227,7 +1264,7 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
 }
 
 function getAuthorState() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     let completeCount = 0;
     let incompleteCount = 0;
 
@@ -1248,7 +1285,7 @@ function getAuthorState() {
 }
 
 export function getAuthorsList() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     const authors = [];
     rows.forEach(row => {
         const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
@@ -1261,7 +1298,7 @@ export function getAuthorsList() {
 }
 
 export function getCitationAuthorsList() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     const authors = [];
     rows.forEach(row => {
         const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
@@ -1298,12 +1335,12 @@ export function hasAtLeastOneAuthor() {
 }
 
 function hasCorrespondingAuthor() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     return Array.from(rows).some(row => row.querySelector('.author-corresponding')?.checked);
 }
 
 function getCorrespondingAuthorEmail() {
-    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const rows = document.querySelectorAll(DEFINED_AUTHOR_ROWS);
     for (const row of rows) {
         const isCorresponding = row.querySelector('.author-corresponding')?.checked;
         if (isCorresponding) {
@@ -1335,7 +1372,7 @@ export function setAuthorsList(authors) {
             email: parsed.email,
             corresponding: parsed.corresponding,
             roles: parsed.roles,
-        });
+        }, true);
         addedAuthors += 1;
     });
     if (addedAuthors === 0) {
@@ -1346,40 +1383,42 @@ export function setAuthorsList(authors) {
 
 // ===== OVERVIEW LIST FIELDS =====
 
+// `chips: true`: plain text, one input and accepted entries become green chips. Others keep rows
+// (DOI/URL lookups) and an `addId` button.
 const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
+        chips: true,
         listId: 'smOverviewIVList',
-        addId: 'smOverviewIVAdd',
-        placeholder: 'e.g., pleasant vs. unpleasant images',
+        placeholder: 'e.g., stimulus valence, task difficulty',
     },
     smOverviewDV: {
+        chips: true,
         listId: 'smOverviewDVList',
-        addId: 'smOverviewDVAdd',
         placeholder: 'e.g., reaction times, BOLD signal',
     },
     smOverviewCV: {
+        chips: true,
         listId: 'smOverviewCVList',
-        addId: 'smOverviewCVAdd',
         placeholder: 'e.g., age, sex, reading performance',
     },
     smOverviewQA: {
+        chips: true,
         listId: 'smOverviewQAList',
-        addId: 'smOverviewQAAdd',
         placeholder: 'e.g., link to quality report or QC notes',
     },
     smEligInclusion: {
+        chips: true,
         listId: 'smEligInclusionList',
-        addId: 'smEligInclusionAdd',
         placeholder: 'Inclusion criterion',
     },
     smEligExclusion: {
+        chips: true,
         listId: 'smEligExclusionList',
-        addId: 'smEligExclusionAdd',
         placeholder: 'Exclusion criterion',
     },
     smProcQC: {
+        chips: true,
         listId: 'smProcQCList',
-        addId: 'smProcQCAdd',
         placeholder: 'Quality control measure (e.g. attention check)',
     },
     smReferencesText: {
@@ -1418,16 +1457,63 @@ function getOverviewList(fieldId) {
     return _parseOverviewListValue(document.getElementById(fieldId)?.value || '');
 }
 
+// Flag every row repeating an earlier DOI.
+function _markDuplicateRows(list, validate) {
+    const rows = Array.from(list.querySelectorAll('.overview-list-row'));
+    const dupes = duplicateIndexes(rows.map(row => row.querySelector('.overview-list-input').value));
+    rows.forEach((row, i) => {
+        let note = row.querySelector('.overview-dup-note');
+        if (!note) {
+            note = document.createElement('div');
+            note.className = 'form-text text-danger w-100 mt-0 overview-dup-note';
+            note.textContent = 'Duplicate DOI: already listed above.';
+            row.appendChild(note);
+        }
+        note.classList.toggle('d-none', !dupes.has(i));
+        const input = row.querySelector('.overview-list-input');
+        input.classList.toggle('is-invalid', dupes.has(i) || !validate(input.value.trim()));
+    });
+}
+
+const _chipLists = {};
+
+// The chip list of a plain-text list field, mounted on first use.
+function _chipListFor(fieldId) {
+    const config = OVERVIEW_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config?.chips || !list) return null;
+    if (!_chipLists[fieldId] || !list.querySelector('.chip-input')) {
+        _chipLists[fieldId] = mountChipList(list, {
+            placeholder: config.placeholder || '',
+            onChange: () => _syncOverviewListField(fieldId),
+        });
+    }
+    return _chipLists[fieldId];
+}
+
 function _syncOverviewListField(fieldId) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const hiddenField = document.getElementById(fieldId);
     const list = document.getElementById(config?.listId || '');
     if (!config || !hiddenField || !list) return;
 
-    const values = Array.from(list.querySelectorAll('.overview-list-input'))
+    if (config.chips) {
+        hiddenField.value = (_chipListFor(fieldId)?.getValues() || []).join('\n');
+        try {
+            validateProjectField(fieldId);
+        } catch (_) {
+            // no-op: field may not participate in badge validation in all contexts
+        }
+        updateCreateProjectButton();
+        return;
+    }
+
+    const values = Array.from(list.querySelectorAll('.overview-list-row:not([data-row-state="draft"]) .overview-list-input'))
         .map(input => input.value.trim())
         .filter(Boolean);
     hiddenField.value = values.join('\n');
+
+    if (config.lookup) _markDuplicateRows(list, config.validate);
 
     // Keep required-badge state in sync for list-backed mandatory fields.
     try {
@@ -1437,7 +1523,7 @@ function _syncOverviewListField(fieldId) {
     }
 }
 
-function addOverviewListRow(fieldId, value = '') {
+function addOverviewListRow(fieldId, value = '', accepted = false) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
@@ -1458,11 +1544,13 @@ function addOverviewListRow(fieldId, value = '') {
     input.placeholder = config.placeholder || '';
     input.value = String(value || '');
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger overview-list-remove';
-    removeButton.setAttribute('aria-label', 'Remove item');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+    // Looked-up rows (DOIs): an optional "check" helper while the row is a draft.
+    const lookupButton = document.createElement('button');
+    lookupButton.type = 'button';
+    lookupButton.className = 'btn btn-outline-primary btn-sm d-none';
+    lookupButton.setAttribute('aria-label', 'Check DOI');
+    lookupButton.title = 'Check DOI';
+    lookupButton.innerHTML = '<i class="fas fa-search"></i>';
 
     const markValidity = () => {
         if (config.validate) input.classList.toggle('is-invalid', !config.validate(input.value.trim()));
@@ -1472,6 +1560,37 @@ function addOverviewListRow(fieldId, value = '') {
     const feedback = document.createElement('div');
     feedback.className = 'form-text w-100 mt-0 d-none';
 
+    let checked = false;
+    const updateAction = () => {
+        if (!config.lookup) return;
+        const action = rowAction({ value: input.value, checked });
+        lookupButton.classList.toggle('d-none', !(row.dataset.rowState === 'draft' && action === 'search'));
+    };
+
+    const actions = mountRowActions(row, {
+        state: accepted ? 'defined' : 'draft',
+        noun: 'item',
+        incompleteHint: config.lookup ? 'Enter a valid DOI' : 'Enter text',
+        isComplete: () => {
+            const text = input.value.trim();
+            return Boolean(text) && (!config.validate || config.validate(text));
+        },
+        hasContent: () => input.value.trim() !== '',
+        onAccept: () => {
+            updateAction();
+            _syncOverviewListField(fieldId);
+            updateCreateProjectButton();
+        },
+        onRemove: () => {
+            row.remove();
+            if (!list.querySelector('.overview-list-row')) {
+                addOverviewListRow(fieldId);
+            }
+            _syncOverviewListField(fieldId);
+            updateCreateProjectButton();
+        },
+    });
+
     const runLookup = async () => {
         const value = input.value.trim();
         feedback.classList.add('d-none');
@@ -1480,24 +1599,23 @@ function addOverviewListRow(fieldId, value = '') {
         if (input.value.trim() !== value) return; // edited while waiting
         feedback.className = `form-text w-100 mt-0 ${cls}`;
         feedback.textContent = text;
+        checked = true;
+        updateAction();
     };
 
     input.addEventListener('input', () => {
         markValidity();
         feedback.classList.add('d-none');
+        checked = false;
+        updateAction();
+        actions.refresh();
         _syncOverviewListField(fieldId);
         updateCreateProjectButton();
     });
     input.addEventListener('change', runLookup);
 
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.overview-list-row')) {
-            addOverviewListRow(fieldId);
-        }
-        _syncOverviewListField(fieldId);
-        updateCreateProjectButton();
-    });
+    lookupButton.addEventListener('mousedown', (e) => e.preventDefault());
+    lookupButton.addEventListener('click', runLookup);
 
     row.addEventListener('dragstart', (e) => {
         _draggedListRow = row;
@@ -1526,9 +1644,11 @@ function addOverviewListRow(fieldId, value = '') {
 
     row.appendChild(dragHandle);
     row.appendChild(input);
-    row.appendChild(removeButton);
+    row.appendChild(lookupButton);
+    row.appendChild(actions.slot);
     row.appendChild(feedback);
     list.appendChild(row);
+    updateAction();
     _syncOverviewListField(fieldId);
     if (input.value) runLookup();
 }
@@ -1538,6 +1658,12 @@ export function setOverviewList(fieldId, rawValue) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
 
+    if (config.chips) {
+        _chipListFor(fieldId)?.setValues(_parseOverviewListValue(rawValue));
+        _syncOverviewListField(fieldId);
+        return;
+    }
+
     list.innerHTML = '';
     const values = _parseOverviewListValue(rawValue);
     if (!values.length) {
@@ -1545,12 +1671,16 @@ export function setOverviewList(fieldId, rawValue) {
         return;
     }
 
-    values.forEach(value => addOverviewListRow(fieldId, value));
+    values.forEach(value => addOverviewListRow(fieldId, value, true));
     _syncOverviewListField(fieldId);
 }
 
 function initOverviewListFields() {
     Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
+        if (config.chips) {
+            _chipListFor(fieldId);
+            return;
+        }
         const addButton = document.getElementById(config.addId);
         if (addButton && !addButton.dataset.bound) {
             addButton.dataset.bound = '1';
@@ -1583,15 +1713,15 @@ function initOverviewListFields() {
 const TWO_FIELD_LIST_FIELDS = {
     smKnownIssues: {
         listId: 'smKnownIssuesList',
-        addId: 'smKnownIssuesAddRow',
         field1Placeholder: 'Filename (e.g. sub-002_task-nback_bold.nii)',
         field2Placeholder: 'Issue description (e.g. Shorter scan)',
     },
 };
 
 function _combineTwoFieldRow(field1, field2) {
-    const clean1 = _cleanMetadataText(field1);
-    const clean2 = _cleanMetadataText(field2);
+    // "|" separates the two parts in the stored text, so it cannot be part of either
+    const clean1 = _cleanMetadataText(field1).replaceAll('|', '/');
+    const clean2 = _cleanMetadataText(field2).replaceAll('|', '/');
     if (clean1 && clean2) return `${clean1} | ${clean2}`;
     return clean1 || clean2;
 }
@@ -1609,105 +1739,45 @@ function _parseTwoFieldListValue(rawValue) {
     });
 }
 
-function _syncTwoFieldListField(fieldId) {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const hiddenField = document.getElementById(fieldId);
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !hiddenField || !list) return;
+const _twoFieldChips = {};
 
-    const values = Array.from(list.querySelectorAll('.two-field-row'))
-        .map(row => _combineTwoFieldRow(
-            row.querySelector('.two-field-input-1')?.value || '',
-            row.querySelector('.two-field-input-2')?.value || ''
-        ))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+// One input pair per list; accepted entries become chips holding the stored "a | b" strings.
+function _twoFieldChipList(fieldId) {
+    const config = TWO_FIELD_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return null;
+    if (!_twoFieldChips[fieldId] || !list.querySelector('.chip-input')) {
+        const make = (className, placeholder) => Object.assign(document.createElement('input'), {
+            type: 'text', className: `form-control ${className}`, placeholder,
+        });
+        _twoFieldChips[fieldId] = mountChipList(list, {
+            fields: [
+                make('two-field-input-1', config.field1Placeholder),
+                make('two-field-input-2', config.field2Placeholder),
+            ],
+            compose: ([a, b]) => _combineTwoFieldRow(a, b),
+            chipText: knownIssueChipText,
+            onChange: () => _syncTwoFieldListField(fieldId),
+        });
+    }
+    return _twoFieldChips[fieldId];
+}
+
+function _syncTwoFieldListField(fieldId) {
+    const hiddenField = document.getElementById(fieldId);
+    if (!hiddenField || !TWO_FIELD_LIST_FIELDS[fieldId]) return;
+    hiddenField.value = (_twoFieldChipList(fieldId)?.getValues() || []).join('\n');
     updateCreateProjectButton();
 }
 
-function addTwoFieldRow(fieldId, field1 = '', field2 = '') {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm two-field-row';
-
-    const input1 = document.createElement('input');
-    input1.type = 'text';
-    input1.className = 'form-control two-field-input-1';
-    input1.placeholder = config.field1Placeholder;
-    input1.value = String(field1 || '');
-
-    const input2 = document.createElement('input');
-    input2.type = 'text';
-    input2.className = 'form-control two-field-input-2';
-    input2.placeholder = config.field2Placeholder;
-    input2.value = String(field2 || '');
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger two-field-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove entry');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
-
-    const onInput = () => _syncTwoFieldListField(fieldId);
-    input1.addEventListener('input', onInput);
-    input2.addEventListener('input', onInput);
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.two-field-row')) {
-            addTwoFieldRow(fieldId);
-        }
-        _syncTwoFieldListField(fieldId);
-    });
-
-    row.appendChild(input1);
-    row.appendChild(input2);
-    row.appendChild(removeButton);
-    list.appendChild(row);
-    _syncTwoFieldListField(fieldId);
-}
-
 function setTwoFieldList(fieldId, rawValue) {
-    const config = TWO_FIELD_LIST_FIELDS[fieldId];
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !list) return;
-
-    list.innerHTML = '';
-    const entries = _parseTwoFieldListValue(rawValue);
-    if (!entries.length) {
-        addTwoFieldRow(fieldId);
-        return;
-    }
-
-    entries.forEach(entry => addTwoFieldRow(fieldId, entry.field1, entry.field2));
+    const values = _parseTwoFieldListValue(rawValue).map(entry => _combineTwoFieldRow(entry.field1, entry.field2));
+    _twoFieldChipList(fieldId)?.setValues(values.filter(Boolean));
     _syncTwoFieldListField(fieldId);
 }
 
 function initTwoFieldListFields() {
-    Object.entries(TWO_FIELD_LIST_FIELDS).forEach(([fieldId, config]) => {
-        const addButton = document.getElementById(config.addId);
-        if (addButton && !addButton.dataset.bound) {
-            addButton.dataset.bound = '1';
-            // Chromium (Windows) focuses buttons on mousedown, blurring the row
-            // input first; its change-triggered re-render shifts the button and
-            // swallows the click. macOS WebKit never focuses buttons, so match it.
-            addButton.addEventListener('mousedown', (e) => e.preventDefault());
-            addButton.addEventListener('click', () => {
-                addTwoFieldRow(fieldId);
-                const list = document.getElementById(config.listId);
-                const lastInput = list?.querySelector('.two-field-row:last-child .two-field-input-1');
-                lastInput?.focus();
-            });
-        }
-
-        const list = document.getElementById(config.listId);
-        if (list && !list.querySelector('.two-field-row')) {
-            addTwoFieldRow(fieldId);
-        }
-    });
+    Object.keys(TWO_FIELD_LIST_FIELDS).forEach(fieldId => _twoFieldChipList(fieldId));
 }
 
 // ===== MISSING FILES TABLE ROWS =====
@@ -1758,129 +1828,76 @@ async function _loadMissingFilesStructureOptions() {
             modalities: data.modalities || [],
         };
 
-        document.querySelectorAll('#smMissingFilesList .missing-files-row').forEach(row => {
-            _populateMissingFilesSelect(row.querySelector('.missing-files-subject'), 'Subject...', _missingFilesStructureOptions.subjects, row.dataset.subject);
-            _populateMissingFilesSelect(row.querySelector('.missing-files-session'), 'Session...', _missingFilesStructureOptions.sessions, row.dataset.session);
-            _populateMissingFilesSelect(row.querySelector('.missing-files-modality'), 'Modality...', _missingFilesStructureOptions.modalities, row.dataset.modality);
-        });
+        const entry = document.querySelector('#smMissingFilesList .chip-input-row');
+        if (entry) {
+            const keep = (selector) => entry.querySelector(selector)?.value || '';
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-subject'), 'Subject...', _missingFilesStructureOptions.subjects, keep('.missing-files-subject'));
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-session'), 'Session...', _missingFilesStructureOptions.sessions, keep('.missing-files-session'));
+            _populateMissingFilesSelect(entry.querySelector('.missing-files-modality'), 'Modality...', _missingFilesStructureOptions.modalities, keep('.missing-files-modality'));
+        }
     } catch (e) {
         // Offline or no active project yet; selects just keep their placeholder-only options.
     }
 }
 
+let _missingFilesChips = null;
+
+// One entry row (subject, session, modality, reason, detail); accepted entries become chips
+// holding the stored " | "-joined line, so the hidden field and the saved format are unchanged.
+function _missingFilesChipList() {
+    const list = document.getElementById('smMissingFilesList');
+    if (!list) return null;
+    if (!_missingFilesChips || !list.querySelector('.chip-input')) {
+        const select = (className, placeholder, options) => {
+            const el = document.createElement('select');
+            el.className = `form-select ${className}`;
+            _populateMissingFilesSelect(el, placeholder, options, '');
+            return el;
+        };
+        const reason = document.createElement('select');
+        reason.className = 'form-select missing-files-reason';
+        MISSING_FILE_REASON_OPTIONS.forEach(({ value, label }) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            reason.appendChild(option);
+        });
+        const detail = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control missing-files-detail', placeholder: 'Detail (optional)',
+        });
+        _missingFilesChips = mountChipList(list, {
+            fields: [
+                select('missing-files-subject', 'Subject...', _missingFilesStructureOptions.subjects),
+                select('missing-files-session', 'Session...', _missingFilesStructureOptions.sessions),
+                select('missing-files-modality', 'Modality...', _missingFilesStructureOptions.modalities),
+                reason,
+                detail,
+            ],
+            compose: ([subject, session, modality, why, note]) => combineMissingFilesRow({
+                subject, session, modality, reason: why, detail: note,
+            }),
+            chipText: missingFilesChipText,
+            onChange: () => _syncMissingFilesField(),
+        });
+    }
+    return _missingFilesChips;
+}
+
 function _syncMissingFilesField() {
     const hiddenField = document.getElementById('smMissingFiles');
-    const list = document.getElementById('smMissingFilesList');
-    if (!hiddenField || !list) return;
-
-    const values = Array.from(list.querySelectorAll('.missing-files-row'))
-        .map(row => combineMissingFilesRow({
-            subject: row.querySelector('.missing-files-subject')?.value || '',
-            session: row.querySelector('.missing-files-session')?.value || '',
-            modality: row.querySelector('.missing-files-modality')?.value || '',
-            reason: row.querySelector('.missing-files-reason')?.value || '',
-            detail: row.querySelector('.missing-files-detail')?.value || '',
-        }))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+    if (!hiddenField) return;
+    hiddenField.value = (_missingFilesChipList()?.getValues() || []).join('\n');
     updateCreateProjectButton();
 }
 
-function addMissingFilesRow(fields = {}) {
-    const list = document.getElementById('smMissingFilesList');
-    if (!list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm missing-files-row';
-    row.dataset.subject = fields.subject || '';
-    row.dataset.session = fields.session || '';
-    row.dataset.modality = fields.modality || '';
-
-    const subjectSelect = document.createElement('select');
-    subjectSelect.className = 'form-select missing-files-subject';
-    const sessionSelect = document.createElement('select');
-    sessionSelect.className = 'form-select missing-files-session';
-    const modalitySelect = document.createElement('select');
-    modalitySelect.className = 'form-select missing-files-modality';
-    _populateMissingFilesSelect(subjectSelect, 'Subject...', _missingFilesStructureOptions.subjects, fields.subject);
-    _populateMissingFilesSelect(sessionSelect, 'Session...', _missingFilesStructureOptions.sessions, fields.session);
-    _populateMissingFilesSelect(modalitySelect, 'Modality...', _missingFilesStructureOptions.modalities, fields.modality);
-
-    const reasonSelect = document.createElement('select');
-    reasonSelect.className = 'form-select missing-files-reason';
-    MISSING_FILE_REASON_OPTIONS.forEach(({ value, label }) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        reasonSelect.appendChild(option);
-    });
-    reasonSelect.value = fields.reason || '';
-
-    const detailInput = document.createElement('input');
-    detailInput.type = 'text';
-    detailInput.className = 'form-control missing-files-detail';
-    detailInput.placeholder = 'Detail (optional)';
-    detailInput.value = fields.detail || '';
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger missing-files-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove entry');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
-
-    const onChange = () => _syncMissingFilesField();
-    [subjectSelect, sessionSelect, modalitySelect, reasonSelect].forEach(el => el.addEventListener('change', onChange));
-    detailInput.addEventListener('input', onChange);
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.missing-files-row')) {
-            addMissingFilesRow();
-        }
-        _syncMissingFilesField();
-    });
-
-    row.appendChild(subjectSelect);
-    row.appendChild(sessionSelect);
-    row.appendChild(modalitySelect);
-    row.appendChild(reasonSelect);
-    row.appendChild(detailInput);
-    row.appendChild(removeButton);
-    list.appendChild(row);
-    _syncMissingFilesField();
-}
-
 function setMissingFilesList(rawValue) {
-    const list = document.getElementById('smMissingFilesList');
-    if (!list) return;
-
-    list.innerHTML = '';
-    const entries = parseMissingFilesValue(rawValue);
-    if (!entries.length) {
-        addMissingFilesRow();
-        return;
-    }
-
-    entries.forEach(entry => addMissingFilesRow(entry));
+    const lines = parseMissingFilesValue(rawValue).map(entry => combineMissingFilesRow(entry));
+    _missingFilesChipList()?.setValues(lines.filter(Boolean));
     _syncMissingFilesField();
 }
 
 function initMissingFilesListField() {
-    const addButton = document.getElementById('smMissingFilesAddRow');
-    if (addButton && !addButton.dataset.bound) {
-        addButton.dataset.bound = '1';
-        addButton.addEventListener('click', () => {
-            addMissingFilesRow();
-            const list = document.getElementById('smMissingFilesList');
-            const lastSelect = list?.querySelector('.missing-files-row:last-child .missing-files-subject');
-            lastSelect?.focus();
-        });
-    }
-
-    const list = document.getElementById('smMissingFilesList');
-    if (list && !list.querySelector('.missing-files-row')) {
-        addMissingFilesRow();
-    }
+    _missingFilesChipList();
     _loadMissingFilesStructureOptions();
 }
 
@@ -1890,7 +1907,7 @@ export function toggleRecLocationInputs() {
     const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
     const pickerGroup = document.getElementById('recLocationPickerGroup');
     const resultsRow = document.getElementById('recLocationResultsRow');
-    const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
+    const chips = document.querySelectorAll('#smRecLocationList button');
 
     if (pickerGroup) {
         pickerGroup.querySelectorAll('input, button').forEach(el => {
@@ -1902,56 +1919,48 @@ export function toggleRecLocationInputs() {
             el.disabled = Boolean(onlineOnly);
         });
     }
-    rows.forEach(row => {
-        row.querySelectorAll('button').forEach(el => {
-            el.disabled = Boolean(onlineOnly);
-        });
+    chips.forEach(el => {
+        el.disabled = Boolean(onlineOnly);
     });
     validateRecLocationBadge();
 }
 
-export function addRecLocationRow(value = '') {
-    const list = document.getElementById('smRecLocationList');
-    if (!list) return;
+function _resetRecLocationResults() {
+    const results = document.getElementById('recLocationResults');
+    if (results) results.innerHTML = '<option value="">— no location selected —</option>';
+}
 
+function _clearRecLocationPicker() {
+    const query = document.getElementById('recLocationQuery');
+    if (query) query.value = '';
+    _resetRecLocationResults();
+    document.getElementById('recLocationResultsRow')?.classList.add('d-none');
+    document.getElementById('recLocationPickerGroup')?.classList.remove('row-pending');
+}
+
+let _recLocationChips = null;
+
+// Recruitment locations are green chips; the search picker above is the entry.
+function _recLocationChipArea() {
+    const list = document.getElementById('smRecLocationList');
+    if (!list) return null;
+    if (!_recLocationChips || !list.classList.contains('chip-area')) {
+        list.classList.add('chip-area');
+        _recLocationChips = mountChipArea(list, {
+            onChange: () => {
+                toggleRecLocationInputs();
+                updateCreateProjectButton();
+                validateRecLocationBadge();
+            },
+        });
+    }
+    return _recLocationChips;
+}
+
+export function addRecLocationRow(value = '') {
     const location = String(value || '').trim();
     if (!location) return;
-
-    const existingLocations = Array.from(list.querySelectorAll('.rec-location-row'))
-        .map(row => String(row.dataset.location || '').trim().toLowerCase())
-        .filter(Boolean);
-    if (existingLocations.includes(location.toLowerCase())) {
-        return;
-    }
-
-    const row = document.createElement('div');
-    row.className = 'd-flex gap-2 align-items-center rec-location-row';
-    row.dataset.location = location;
-
-    const locationLabel = document.createElement('span');
-    locationLabel.className = 'form-control form-control-sm text-truncate';
-    locationLabel.style.cursor = 'default';
-    locationLabel.title = location;
-    locationLabel.textContent = location;
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger btn-sm remove-location flex-shrink-0';
-    removeButton.setAttribute('aria-label', `Remove ${location}`);
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        updateCreateProjectButton();
-        validateRecLocationBadge();
-    });
-
-    row.appendChild(locationLabel);
-    row.appendChild(removeButton);
-    list.appendChild(row);
-    toggleRecLocationInputs();
-    updateCreateProjectButton();
-    validateRecLocationBadge();
+    _recLocationChipArea()?.addValue(location); // a duplicate (any case) is ignored
 }
 
 export function getRecLocationList() {
@@ -1960,14 +1969,7 @@ export function getRecLocationList() {
         return ['Online'];
     }
 
-    const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    const locations = [];
-    rows.forEach(row => {
-        const location = String(row.dataset.location || '').trim();
-        if (!location) return;
-        locations.push(location);
-    });
-    return locations;
+    return [...(_recLocationChipArea()?.getValues() || [])];
 }
 
 export function hasAtLeastOneRecLocation() {
@@ -1978,9 +1980,8 @@ export function hasAtLeastOneRecLocation() {
 }
 
 export function setRecLocationList(locations) {
-    const list = document.getElementById('smRecLocationList');
-    if (!list) return;
-    list.innerHTML = '';
+    const area = _recLocationChipArea();
+    if (!area) return;
 
     const onlineOnlyInput = document.getElementById('smRecLocationOnlineOnly');
     const values = Array.isArray(locations) ? locations : [];
@@ -1989,7 +1990,7 @@ export function setRecLocationList(locations) {
         onlineOnlyInput.checked = values.some(loc => /^online(\s+only)?$/i.test(String(loc || '').trim()));
     }
 
-    nonOnline.forEach(loc => addRecLocationRow(loc));
+    area.setValues(nonOnline.map(loc => String(loc || '').trim()).filter(Boolean));
     toggleRecLocationInputs();
     validateRecLocationBadge();
 }
@@ -2125,7 +2126,7 @@ export function initYearMonthSelect(yearSelectId, monthSelectId) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const startYear = currentYear - 20;
-    const endYear = currentYear;
+    const endYear = currentYear + 10; // planned studies may recruit in the future
 
     yearSelect.innerHTML = '<option value="">Year</option>';
     for (let y = endYear; y >= startYear; y -= 1) {
@@ -2284,6 +2285,9 @@ export function validateAllMandatoryFields() {
         optionalInvalidFields.push(`Citation Links must be http(s) URLs. Invalid: ${badLinks.join(', ')}`);
     }
 
+    if (duplicateIndexes(_getReferenceDoiLines()).size) {
+        optionalInvalidFields.push('Background Literature lists the same DOI more than once.');
+    }
     const badRefs = _getReferenceDoiLines().filter(l => !_isValidDoiFormat(l));
     if (badRefs.length) {
         optionalInvalidFields.push(`Background Literature must be one DOI per line (10.xxxx/... or https://doi.org/10.xxxx/...). Invalid: ${badRefs.join(', ')}`);
@@ -2860,7 +2864,22 @@ if (recLocationAddBtn) {
             recLocationQuery.focus();
         }
         recLocationResultsRow?.classList.add('d-none');
+        _resetRecLocationResults();
     });
+}
+
+// The picker is a staged control: text typed or a result chosen is lost unless the
+// green check ("Add Selected Location") is clicked, so a save is blocked meanwhile.
+const recLocationPicker = document.getElementById('recLocationPickerGroup');
+if (recLocationPicker && recLocationQuery) {
+    registerStagedControl(recLocationPicker, () => {
+        if (document.getElementById('smRecLocationOnlineOnly')?.checked) return false;
+        // A result only counts while the results are shown: after Add the select keeps its old options.
+        const resultsShown = !recLocationResultsRow?.classList.contains('d-none');
+        const chosen = resultsShown ? recLocationResults?.options[recLocationResults.selectedIndex] : null;
+        return Boolean(String(recLocationQuery.value || '').trim() || (chosen && chosen.value));
+    });
+    recLocationQuery.addEventListener('input', () => recLocationPicker.classList.remove('row-pending'));
 }
 
 const recLocationOnlineOnly = document.getElementById('smRecLocationOnlineOnly');
@@ -2973,10 +2992,13 @@ export function displayMetadataIssues(issues) {
     const errors = issues.filter(issue => (issue.level || 'ERROR') !== 'WARNING');
     const warnings = issues.filter(issue => issue.level === 'WARNING');
 
+    // An issue that names a field the user can fill in links to that field.
     const renderIssueItems = (list) => list.map(issue => `
         <li class="mb-1">
-            <strong>${issue.message}</strong>
-            ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
+            <strong>${issueFieldTarget(issue.message)
+        ? `<a href="#" class="issue-link text-reset" data-target="${issueFieldTarget(issue.message)}">${escapeHtml(issue.message)}</a>`
+        : escapeHtml(issue.message)}</strong>
+            ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${escapeHtml(issue.fix_hint)}</div>` : ''}
         </li>
     `).join('');
 
@@ -3002,6 +3024,30 @@ export function displayMetadataIssues(issues) {
         `;
     }
     feedbackDiv.innerHTML = html;
+    if (!feedbackDiv.dataset.issueLinks) {
+        feedbackDiv.dataset.issueLinks = '1';
+        feedbackDiv.addEventListener('click', (event) => {
+            const link = event.target.closest('.issue-link');
+            if (!link) return;
+            event.preventDefault();
+            _revealAndFocus(link.dataset.target);
+        });
+    }
+}
+
+// Open the sections around a field, scroll to it and focus it.
+function _revealAndFocus(selector) {
+    const field = document.querySelector(selector);
+    if (!field) return;
+    let fold = field.closest('.collapse');
+    while (fold) {
+        window.bootstrap?.Collapse?.getOrCreateInstance(fold, { toggle: false }).show();
+        fold = fold.parentElement?.closest('.collapse');
+    }
+    setTimeout(() => {
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field.focus?.();
+    }, 250);
 }
 
 export async function saveDatasetDescription(projectPath = null) {
@@ -3094,6 +3140,14 @@ export function resetStudyMetadataForm() {
 
     setAuthorsList([]);
     setRecLocationList([]);
+    _clearRecLocationPicker();
+    setEligibilityCriteria([]); // rows have no id: the loop above cannot clear them
+    document.getElementById('smEligCriteriaSelect')?.dispatchEvent(new Event('change')); // the Add button follows the select
+    setTwoFieldList('smKnownIssues', ''); // chips hold their values in memory, not in the form fields
+    setMissingFilesList('');
+    Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
+        if (config.chips) setOverviewList(fieldId, ''); // chips have no id either
+    });
     setRecMethodList([]);
     setEthicsChoice('');
     setFundingChoice('');
@@ -3371,18 +3425,39 @@ function _combineFundingRow(agency, grant) {
     return cleanAgency || cleanGrant;
 }
 
+// Funding sources: agency + grant inputs, accepted sources become chips. The chips hold the
+// stored "Agency, Grant" strings, so the hidden field and the saved format are unchanged.
+let _fundingChips = null;
+
+function _fundingChipList() {
+    const list = document.getElementById('metadataFundingList');
+    if (!list) return null;
+    if (!_fundingChips || !list.querySelector('.chip-input')) {
+        const agency = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control funding-agency-input',
+            placeholder: 'Funding agency (e.g. NSF, FWF)',
+        });
+        const grant = Object.assign(document.createElement('input'), {
+            type: 'text', className: 'form-control funding-grant-input',
+            placeholder: 'Grant / award number (optional)',
+        });
+        _fundingChips = mountChipList(list, {
+            fields: [agency, grant],
+            // the agency is required, the grant optional
+            compose: ([a, g]) => (_cleanMetadataText(a) ? _combineFundingRow(a, g) : ''),
+            onChange: () => {
+                _syncFundingListField();
+                updateCreateProjectButton();
+            },
+        });
+    }
+    return _fundingChips;
+}
+
 function _syncFundingListField() {
     const hiddenField = document.getElementById('metadataFunding');
-    const list = document.getElementById('metadataFundingList');
-    if (!hiddenField || !list) return;
-
-    const values = Array.from(list.querySelectorAll('.funding-row'))
-        .map(row => _combineFundingRow(
-            row.querySelector('.funding-agency-input')?.value || '',
-            row.querySelector('.funding-grant-input')?.value || ''
-        ))
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
+    if (!hiddenField) return;
+    hiddenField.value = (_fundingChipList()?.getValues() || []).join('\n');
 
     try {
         validateFundingBadge();
@@ -3391,99 +3466,22 @@ function _syncFundingListField() {
     }
 }
 
+// Also used by the study-application import: an imported source arrives accepted.
 export function addFundingRow(agency = '', grant = '') {
-    const list = document.getElementById('metadataFundingList');
-    if (!list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm funding-row';
-
-    const agencyInput = document.createElement('input');
-    agencyInput.type = 'text';
-    agencyInput.className = 'form-control funding-agency-input';
-    agencyInput.placeholder = 'Funding agency (e.g. NSF, FWF)';
-    agencyInput.value = String(agency || '');
-
-    const grantInput = document.createElement('input');
-    grantInput.type = 'text';
-    grantInput.className = 'form-control funding-grant-input';
-    grantInput.placeholder = 'Grant / award number (optional)';
-    grantInput.value = String(grant || '');
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger funding-row-remove';
-    removeButton.setAttribute('aria-label', 'Remove funding source');
-    removeButton.innerHTML = '<i class="fas fa-times"></i>';
-
-    const onInput = () => {
-        _syncFundingListField();
-        updateCreateProjectButton();
-    };
-    agencyInput.addEventListener('input', onInput);
-    grantInput.addEventListener('input', onInput);
-
-    removeButton.addEventListener('click', () => {
-        row.remove();
-        if (!list.querySelector('.funding-row')) {
-            addFundingRow();
-        }
-        _syncFundingListField();
-        updateCreateProjectButton();
-    });
-
-    row.appendChild(agencyInput);
-    row.appendChild(grantInput);
-    row.appendChild(removeButton);
-    list.appendChild(row);
+    const combined = _combineFundingRow(agency, grant);
+    if (!combined) return;
+    _fundingChipList()?.addValue(combined);
     _syncFundingListField();
 }
 
 function setFundingRows(entries) {
-    const list = document.getElementById('metadataFundingList');
-    if (!list) return;
-
-    list.innerHTML = '';
-    if (!entries.length) {
-        addFundingRow();
-        return;
-    }
-
-    entries.forEach(entry => {
-        const text = _cleanMetadataText(entry);
-        if (!text) return;
-        // Legacy/loaded entries are opaque "Agency, Grant" strings; split on
-        // the first comma only, for a cosmetic agency/grant split in the UI.
-        const commaIndex = text.indexOf(',');
-        if (commaIndex === -1) {
-            addFundingRow(text, '');
-        } else {
-            addFundingRow(text.slice(0, commaIndex).trim(), text.slice(commaIndex + 1).trim());
-        }
-    });
-    if (!list.querySelector('.funding-row')) {
-        addFundingRow();
-    }
+    const cleaned = (entries || []).map(entry => _cleanMetadataText(entry)).filter(Boolean);
+    _fundingChipList()?.setValues(cleaned);
     _syncFundingListField();
 }
 
 function initFundingRows() {
-    const addButton = document.getElementById('metadataFundingAddRow');
-    if (addButton && !addButton.dataset.bound) {
-        addButton.dataset.bound = '1';
-        addButton.addEventListener('click', () => {
-            addFundingRow();
-            const list = document.getElementById('metadataFundingList');
-            const lastInput = list?.querySelector('.funding-row:last-child .funding-agency-input');
-            lastInput?.focus();
-            updateCreateProjectButton();
-        });
-    }
-
-    const list = document.getElementById('metadataFundingList');
-    if (list && !list.querySelector('.funding-row')) {
-        addFundingRow();
-    }
+    _fundingChipList();
 }
 
 export function getFundingList() {
@@ -3491,16 +3489,7 @@ export function getFundingList() {
     if (!declaredInput) return [];
     if (declaredInput.value !== 'yes') return [];
 
-    const rows = document.querySelectorAll('#metadataFundingList .funding-row');
-    const entries = [];
-    rows.forEach(row => {
-        const combined = _combineFundingRow(
-            row.querySelector('.funding-agency-input')?.value || '',
-            row.querySelector('.funding-grant-input')?.value || ''
-        );
-        if (combined) entries.push(combined);
-    });
-    return entries;
+    return [...(_fundingChipList()?.getValues() || [])];
 }
 
 function hasValidFundingResponse() {
@@ -3585,10 +3574,7 @@ export function computeLocalCompleteness() {
     // readiness-only: researchers often cannot know it yet at creation time
     // (e.g. recruitment period, compensation) or should not be forced to
     // decide it immediately (e.g. ethics/funding).
-    const creationBlockingFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords']),
-        StudyDesign: new Set(['Timepoints'])
-    };
+    const creationBlockingFields = _creationBlockingFields;
 
     const addField = (section, name, isFilled) => {
         const isRequired = requiredFields[section]?.has(name) || false;
@@ -3678,8 +3664,8 @@ export function computeLocalCompleteness() {
     addField('Recruitment', 'Period.End', hasRecPeriodEnd());
     addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
 
-    const inclusionCriteriaCount = getOverviewList('smEligInclusion').length;
-    const exclusionCriteriaCount = getOverviewList('smEligExclusion').length;
+    const inclusionCriteriaCount = getOverviewList('smEligInclusion').length + checkedCriteriaCount('include');
+    const exclusionCriteriaCount = getOverviewList('smEligExclusion').length + checkedCriteriaCount('exclude');
 
     // CORE is satisfied by the Inclusion list alone - see
     // validateEligibilityCriteriaBadges() for why it no longer depends on the
@@ -4036,7 +4022,7 @@ function _jumpToSection(sectionKey) {
 
     // Focus the first empty field inside the section once it has expanded.
     setTimeout(() => {
-        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, .funding-row .funding-agency-input:placeholder-shown');
+        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, #metadataFundingList .funding-agency-input:placeholder-shown');
         firstEmptyField?.focus();
     }, 250);
 }
@@ -4111,6 +4097,10 @@ studyMetadataSubmitController.initPrimaryStudyMetadataSubmitButton();
 studyMetadataForm?.addEventListener('submit', async function(e) {
     e.preventDefault();
     if (studyMetadataSubmitInFlight) {
+        return;
+    }
+    // Rows the user has typed into but not accepted yet would be lost: block the save.
+    if (!guardSave(this, showTopFeedback)) {
         return;
     }
     studyMetadataSubmitInFlight = true;
@@ -4309,11 +4299,22 @@ document.addEventListener('DOMContentLoaded', function() {
         metadataMethodsController.handleProjectChanged();
         _resetStudyMetadataTracking();
         _loadMissingFilesStructureOptions();
+        _clearRecLocationPicker(); // a half-typed search belongs to the previous project
         if (!studyMetadataSubmitInFlight) {
             updateCreateProjectButton();
         }
     });
     initOverviewListFields();
+    initEligibilityCriteria({
+        list: document.getElementById('smEligCriteriaList'),
+        select: document.getElementById('smEligCriteriaSelect'),
+        addButton: document.getElementById('smEligCriteriaAdd'),
+        onChange: () => {
+            validateEligibilityCriteriaBadges();
+            updateCompletenessUI(computeLocalCompleteness());
+            updateCreateProjectButton();
+        },
+    });
     initFundingRows();
     initTwoFieldListFields();
     initMissingFilesListField();

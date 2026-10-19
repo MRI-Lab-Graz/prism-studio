@@ -403,9 +403,9 @@ class BidsEntityRewriter:
         normalized = str(replacement or "").strip()
         if not normalized:
             raise ValueError("Enter a new value for the selected part.")
-        if not BidsEntityParser.is_valid_label(normalized):
+        if not BidsEntityParser.is_valid_label(normalized) or len(normalized) > 32:
             raise ValueError(
-                "Replacement values must contain only letters and numbers."
+                "Replacement values must contain only the letters a-z and digits 0-9, at most 32 characters."
             )
         return normalized
 

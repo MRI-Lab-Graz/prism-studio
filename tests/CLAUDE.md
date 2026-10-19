@@ -89,5 +89,6 @@ When modifying modalities:
    `MODALITY_PATTERNS`/`PRISM_MODALITIES`/`BIDS_MODALITIES` and `issues.py`'s
    fix hints, and `schema_manager.load_all_schemas` reads its modality names
    from it — don't hand-edit those, edit the rules file instead)
-3. `prism-studio.py` - restricted_names
-4. `templates/index.html` - UI list
+3. `docs/specs/<name>.md` plus its toctree entry (`docs/index.rst`), landing card
+   (`docs/SCHEMA_SPECIFICATIONS.md`) and row in `docs/specs/entities.md` — the CI
+   check `modality-docs` fails without them

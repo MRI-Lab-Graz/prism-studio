@@ -22,6 +22,7 @@ import filecmp
 import re
 from datetime import date
 import shutil
+import tempfile
 from contextlib import redirect_stdout
 from datetime import datetime
 from dataclasses import dataclass, field
@@ -122,10 +123,14 @@ def parse_bids_filename(filename: str) -> dict | None:
     if not match:
         return None
 
+    def lower_prefix(part: str | None, prefix: str) -> str | None:
+        # BIDS entity keys are lowercase ("SUB-003" would become a second folder next to "sub-003")
+        return f"{prefix}{part[len(prefix):]}" if part else part
+
     return {
-        "sub": match.group("sub"),
-        "ses": match.group("ses"),
-        "task": match.group("task"),
+        "sub": lower_prefix(match.group("sub"), "sub-"),
+        "ses": lower_prefix(match.group("ses"), "ses-"),
+        "task": lower_prefix(match.group("task"), "task-"),
         "extra": match.group("extra") or "",
         "ext": match.group("ext").lower(),
     }
@@ -1296,6 +1301,10 @@ def batch_convert_folder(
         output_folder=output_folder,
     )
 
+    # A dry run converts into a throw-away staging folder, so nothing lands in the real output folder.
+    staging = Path(tempfile.mkdtemp(prefix="prism_dry_run_")) if dry_run else None
+    work_folder = staging or output_folder
+
     log(f"📂 Scanning source folder: {source_folder.name}", "info")
     if dry_run:
         log("🧪 DRY RUN MODE - No files will be written", "info")
@@ -1344,6 +1353,8 @@ def batch_convert_folder(
     for idx, file_path in enumerate(files_to_process, 1):
         if cancel_check and cancel_check():
             log("⏹️ Conversion cancelled before processing next file", "warning")
+            if staging is not None:
+                shutil.rmtree(staging, ignore_errors=True)
             return result
 
         ext = file_path.suffix.lower()
@@ -1396,7 +1407,7 @@ def batch_convert_folder(
         if target_modality == "physio":
             converted = convert_physio_file(
                 file_path,
-                output_folder,
+                work_folder,
                 parsed=parsed,
                 base_freq=physio_sampling_rate,
                 log_callback=log_callback,
@@ -1404,7 +1415,7 @@ def batch_convert_folder(
         elif target_modality == "eyetracking":
             converted = convert_eyetracking_file(
                 file_path,
-                output_folder,
+                work_folder,
                 parsed=parsed,
             )
         elif modality == "generic" or modality_filter not in (
@@ -1414,7 +1425,7 @@ def batch_convert_folder(
         ):
             converted = convert_generic_file(
                 file_path,
-                output_folder,
+                work_folder,
                 parsed=parsed,
                 target_modality=(
                     target_modality if target_modality != "generic" else "extra"
@@ -1429,6 +1440,8 @@ def batch_convert_folder(
             )
             continue
 
+        if staging is not None:  # report the paths the real run would write
+            converted.output_files = [output_folder / f.relative_to(staging) for f in converted.output_files]
         result.converted.append(converted)
 
         if converted.success:
@@ -1533,6 +1546,13 @@ def batch_convert_folder(
             except Exception as e:
                 log(f"⚠️  Could not update participants.tsv: {e}", "warning")
 
+    if not dry_run and result.success_count > 0:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_folder)
+
+    if staging is not None:
+        shutil.rmtree(staging, ignore_errors=True)
     return result
 
 

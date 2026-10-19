@@ -105,6 +105,14 @@ from src.cli.commands.survey import (
     cmd_survey_import_lsq,
     cmd_survey_validate,
 )
+from src.cli.commands.modality import cmd_modality_propose
+from src.cli.commands.modality_version import (
+    cmd_modality_version_freeze,
+    cmd_modality_version_list,
+    cmd_modality_version_pin,
+    cmd_modality_version_status,
+    cmd_modality_version_update,
+)
 from src.cli.commands.template_export import cmd_template_export
 from src.cli.dispatch import dispatch_prism_tools
 from src.cli.parser import build_prism_tools_parsers
@@ -141,6 +149,12 @@ def main() -> None:
         handlers={
             "anonymize": cmd_anonymize,
             "template_export": cmd_template_export,
+            "modality_propose": cmd_modality_propose,
+            "modality_version_status": cmd_modality_version_status,
+            "modality_version_list": cmd_modality_version_list,
+            "modality_version_pin": cmd_modality_version_pin,
+            "modality_version_update": cmd_modality_version_update,
+            "modality_version_freeze": cmd_modality_version_freeze,
             "convert_physio": cmd_convert_physio,
             "wide_to_long": cmd_convert_wide_to_long,
             "demo_create": cmd_demo_create,

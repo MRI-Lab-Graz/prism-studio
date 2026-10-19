@@ -78,7 +78,7 @@ def _autolabel_description_column(path: Path) -> None:
 def parse_excel_groups(file_bytes: bytes, filename: str) -> dict:
     """Parse an Excel/CSV/TSV codebook into {prefix: full_prism_sidecar}."""
     suffix = Path(filename).suffix.lower() or ".xlsx"
-    # A directory, not NamedTemporaryFile: Windows cannot reopen a file that is still open.
+    # A directory, not NamedTemporaryFile: Windows refuses to reopen a file that is still open.
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir) / f"codebook{suffix}"
         tmp_path.write_bytes(file_bytes)

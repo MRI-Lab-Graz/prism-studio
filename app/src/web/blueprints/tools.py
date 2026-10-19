@@ -15,7 +15,10 @@ from flask import (
     Response,
 )
 from src.constants import DEFAULT_BIDS_VERSION
-from .projects_metadata_helpers import REQUIRED_FIELDS_SCHEMA
+from .projects_metadata_helpers import (
+    CREATION_BLOCKING_FIELDS,
+    REQUIRED_FIELDS_SCHEMA,
+)
 from src.converters.file_reader import list_excel_sheets, resolve_sheet_selection
 from src.cross_platform import normalize_path
 from src.runtime_dependencies import (
@@ -110,6 +113,10 @@ def api_config():
         "studyMetadataRequiredFields": {
             section: sorted(fields)
             for section, fields in REQUIRED_FIELDS_SCHEMA.items()
+        },
+        "creationBlockingFields": {
+            section: sorted(fields)
+            for section, fields in CREATION_BLOCKING_FIELDS.items()
         },
     })
 

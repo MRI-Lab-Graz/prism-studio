@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 async function load() {
   const open = vi.fn(async () => '/picked');
   const fetchSpy = vi.fn(async () => { throw new Error('no network expected'); });
-  globalThis.window = { PrismFolderBrowser: { open }, prompt: () => 'out.json', location: { href: 'http://x/' } };
-  globalThis.document = { currentScript: { src: 'http://x/js/filesystem-mode.js' } };
+  globalThis.window = { PrismFolderBrowser: { open }, prompt: () => 'out.json', location: { href: 'https://x/' } };
+  globalThis.document = { currentScript: { src: 'https://x/js/filesystem-mode.js' } };
   globalThis.fetch = fetchSpy;
   vi.resetModules();
   await import('./filesystem-mode.js');

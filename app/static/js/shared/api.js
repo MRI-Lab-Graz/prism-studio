@@ -3,6 +3,8 @@
  * Used across projects, converters, surveys, and tools
  */
 
+import { showNotReadyNotice } from './not-ready-notice.js';
+
 const nativeFetch = (typeof window !== 'undefined' && typeof window.fetch === 'function')
     ? window.fetch.bind(window)
     : null;
@@ -66,13 +68,21 @@ function normalizeFetchOptionsForRuntime(url, options = {}) {
     return options;
 }
 
+// A request blocked by the required-fields gate shows the notice with the link to the Projects page.
+// It lives here because every API caller goes through this function (some pages keep their own copy
+// of window.fetch, so patching window.fetch alone misses them).
+function notifyIfNotReady(response) {
+    showNotReadyNotice(response);
+    return response;
+}
+
 async function fetchWithFallbackUsing(fetchImpl, url, options = {}, fallbackMessage, canRetryWithFallback) {
     if (typeof fetchImpl !== 'function') {
         throw new Error('Fetch is not available in this runtime.');
     }
 
     try {
-        return await fetchImpl(url, normalizeFetchOptionsForRuntime(url, options));
+        return await notifyIfNotReady(await fetchImpl(url, normalizeFetchOptionsForRuntime(url, options)));
     } catch (primaryError) {
         if (typeof canRetryWithFallback !== 'function' || !canRetryWithFallback(url)) {
             throw primaryError;
@@ -80,10 +90,10 @@ async function fetchWithFallbackUsing(fetchImpl, url, options = {}, fallbackMess
 
         const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
         try {
-            return await fetchImpl(
+            return notifyIfNotReady(await fetchImpl(
                 fallbackUrl,
                 normalizeFetchOptionsForRuntime(fallbackUrl, options)
-            );
+            ));
         } catch (_fallbackError) {
             throw new Error(fallbackMessage);
         }

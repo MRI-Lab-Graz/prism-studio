@@ -54,6 +54,12 @@
         </label>
       </div>
 
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="rbImportRecipeBtn"
+              title="Import a recipe JSON file into this project">
+        <i class="fas fa-file-import me-1"></i>Import recipe
+      </button>
+      <input type="file" id="rbImportRecipeFile" accept=".json,application/json" class="d-none">
+
       <div class="ms-auto d-flex align-items-center gap-2" id="rbVariationRow" style="display:none!important;">
         <label class="text-muted small mb-0 text-nowrap">Variation:</label>
         <select class="form-select form-select-sm" id="rbVariationSelect" style="min-width:130px;"></select>
@@ -68,6 +74,8 @@
       </div>
     </div>
   </div>
+
+  <div id="rbImportStatus" class="small mb-3"></div>
 
   <div id="rbCompatibilityNotice" class="alert alert-warning py-2 small mb-3" style="display:none;"></div>
 

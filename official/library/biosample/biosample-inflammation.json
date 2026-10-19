@@ -1,0 +1,24 @@
+{
+  "Technical": {
+    "SpecimenType": "serum",
+    "CollectionMethod": "venipuncture",
+    "Anticoagulant": "none",
+    "FastingRequired": true,
+    "ProcessingProtocol": "Clotted 30 min at room temperature, centrifuged 10 min at 2000 g, aliquoted",
+    "StorageTemperature": -80,
+    "Laboratory": "Example central laboratory",
+    "AssayMethod": "ELISA",
+    "AssayKit": "Example high-sensitivity multiplex kit"
+  },
+  "Study": {
+    "BiosampleName": "inflammation",
+    "Description": "Serum markers of low-grade systemic inflammation (example template)."
+  },
+  "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-15"},
+  "sample_id": {"Description": "Lab tube ID (pseudonymous)", "Units": "n/a", "DataType": "string"},
+  "collection_time": {"Description": "Clock time of the blood draw, hh:mm only (never a date)", "Units": "hh:mm", "DataType": "string"},
+  "fasting": {"Description": "Participant fasted for at least 8 h", "Units": "n/a", "Levels": {"0": "no", "1": "yes"}},
+  "crp": {"Description": "High-sensitivity C-reactive protein", "Units": "mg/L", "DataType": "float", "LOINC": "30522-7", "LowerLimitOfDetection": 0.1, "MinValue": 0, "WarnMaxValue": 10},
+  "il6": {"Description": "Interleukin-6", "Units": "pg/mL", "DataType": "float", "LOINC": "26881-3", "LowerLimitOfDetection": 0.5, "MinValue": 0},
+  "tnfa": {"Description": "Tumor necrosis factor alpha", "Units": "pg/mL", "DataType": "float", "LowerLimitOfDetection": 0.7, "MinValue": 0}
+}

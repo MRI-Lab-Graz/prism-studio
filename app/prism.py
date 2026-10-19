@@ -186,6 +186,14 @@ Examples:
         help="Schema version to use (e.g., 'stable', '0.1'). Default: stable",
     )
     parser.add_argument(
+        "--modality-version",
+        action="append",
+        default=[],
+        metavar="NAME=X.Y.Z",
+        help="Validate one modality against a specific version (repeatable), "
+        "e.g. --modality-version survey=1.0.3. Overrides the project.json pin.",
+    )
+    parser.add_argument(
         "--schema-info",
         metavar="MODALITY",
         help="Display schema details for a specific modality",
@@ -326,6 +334,12 @@ Examples:
         for v in versions:
             default_marker = " (default)" if v == "stable" else ""
             print(f"  • {v}{default_marker}")
+
+        from src.modality_versions import available_versions, modality_names
+
+        print("\nModality versions (latest last):")
+        for name in modality_names(schema_dir):
+            print(f"  • {name}: {', '.join(available_versions(name, schema_dir))}")
         return
 
     # Handle schema info request
@@ -471,6 +485,14 @@ Examples:
         if schema_version != "stable":
             print(f"📋 Using schema version: {schema_version}")
 
+    from src.modality_versions import ModalityVersionError, parse_overrides
+
+    try:
+        modality_versions = parse_overrides(args.modality_version)
+    except ModalityVersionError as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        sys.exit(2)
+
     if run_prism:
         apply_participants_mapping_before_validation(
             args.dataset, machine_output=machine_output
@@ -485,6 +507,7 @@ Examples:
             args.dataset,
             verbose=args.verbose and not machine_output,
             schema_version=schema_version,
+            modality_versions=modality_versions,
             run_bids=run_bids,
             run_prism=run_prism,
             library_path=library_path,
@@ -547,6 +570,11 @@ Examples:
             # Standard human-readable output
             print_dataset_summary(args.dataset, stats)
             print_validation_results(issues, show_bids_warnings=args.bids_warnings)
+
+        from src.modality_versions import format_pending_hint, pending_updates
+
+        for line in format_pending_hint(pending_updates(args.dataset)):
+            print(line, file=sys.stderr)
 
         # Exit with appropriate code
         sys.exit(determine_exit_code(structured_issues))

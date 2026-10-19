@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from xml.etree import ElementTree as ET
+
+from src.text_sanitizer import strip_invalid_xml_chars
 try:
     from defusedxml import minidom
 except ImportError:
@@ -71,14 +73,14 @@ def _resolve_text(value: Any, language: str) -> str:
     """
     if isinstance(value, dict):
         if language in value:
-            return str(value[language])
+            return strip_invalid_xml_chars(str(value[language]))
         for v in value.values():
             if v:
-                return str(v)
+                return strip_invalid_xml_chars(str(v))
         return ""
     if value is None:
         return ""
-    return str(value)
+    return strip_invalid_xml_chars(str(value))  # the .psyexp is XML: no control characters
 
 
 def _get_active_variant_id(prism_json: Dict[str, Any]) -> Optional[str]:

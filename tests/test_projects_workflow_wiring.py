@@ -1617,7 +1617,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             metadata_content,
         )
         self.assertIn("export function validateEligibilityCriteriaBadges()", validation_content)
-        self.assertIn("const hasInclusionCriterion = inclusionValues.length > 0;", validation_content)
+        # Accepted "Checked Criteria" of mode include count as inclusion criteria; the
+        # exclusion side (free text or exclude-mode criteria) never feeds this badge.
+        inclusion_line = next(
+            line for line in validation_content.splitlines()
+            if "const hasInclusionCriterion" in line
+        )
+        self.assertEqual(
+            inclusion_line.strip(),
+            "const hasInclusionCriterion = inclusionValues.length > 0 || checkedCriteriaCount('include') > 0;",
+        )
+        self.assertNotIn("exclusion", inclusion_line.lower())
         self.assertNotIn("totalCriteria >= 2", validation_content)
         self.assertIn('id="smEligCriteriaRequiredBadge"', template_content)
         self.assertIn('id="smEligExclusionOptionalBadge"', template_content)
@@ -1656,3 +1666,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_year_month_select_offers_future_years_for_planned_studies():
+    """Recruitment may still be in planning, so the year list must extend past today."""
+    source = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+    body = source.split("export function initYearMonthSelect", 1)[1].split("\n}\n", 1)[0]
+    assert "const endYear = currentYear;" not in body
+    assert "const endYear = currentYear +" in body

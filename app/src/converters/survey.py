@@ -819,7 +819,7 @@ def convert_survey_file_to_prism_dataset(
 
     New integrations should prefer ``SurveyResponsesConverter.convert_xlsx``.
     """
-    return SurveyResponsesConverter().convert_xlsx(
+    result = SurveyResponsesConverter().convert_xlsx(
         input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
@@ -846,6 +846,11 @@ def convert_survey_file_to_prism_dataset(
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
+    if not dry_run:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_root)
+    return result
 
 
 def convert_survey_lsa_to_prism_dataset(
@@ -879,7 +884,7 @@ def convert_survey_lsa_to_prism_dataset(
 
     New integrations should prefer ``SurveyResponsesConverter.convert_lsa``.
     """
-    return SurveyResponsesConverter().convert_lsa(
+    result = SurveyResponsesConverter().convert_lsa(
         input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
@@ -905,6 +910,11 @@ def convert_survey_lsa_to_prism_dataset(
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
+    if not dry_run:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_root)
+    return result
 
 
 def _debug_print_file_head(input_path: Path, num_lines: int = 4):
@@ -1752,6 +1762,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_questions_map=lsa_questions_map,
             task_runs=task_runs,
             task_context_acq_map=task_context_acq_map,
+            task_value_offsets=normalized_task_value_offsets,
         )
         if participant_registry_warning:
             dry_run_preview["participant_registry_warning"] = (
@@ -2618,6 +2629,7 @@ def _generate_dry_run_preview(
         dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
     return _survey_io._generate_dry_run_preview(
@@ -2645,6 +2657,7 @@ def _generate_dry_run_preview(
         task_runs=task_runs,
         task_context_acq_map=task_context_acq_map,
         task_acq_map=task_acq_map,
+        task_value_offsets=task_value_offsets,
     )
 
 

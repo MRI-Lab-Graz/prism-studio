@@ -51,13 +51,23 @@ except ImportError:
 
 def _import_session_helpers():
     try:
-        from src.participants_sessions import filter_rows_to_session, number_sessions_by_date
+        from src.participants_sessions import (
+            filter_rows_to_session,
+            number_sessions_by_date,
+            split_columns_by_session,
+        )
     except ImportError:
-        from participants_sessions import filter_rows_to_session, number_sessions_by_date
-    return filter_rows_to_session, number_sessions_by_date
+        from participants_sessions import (
+            filter_rows_to_session,
+            number_sessions_by_date,
+            split_columns_by_session,
+        )
+    return filter_rows_to_session, number_sessions_by_date, split_columns_by_session
 
 
-filter_rows_to_session, number_sessions_by_date = _import_session_helpers()
+filter_rows_to_session, number_sessions_by_date, split_columns_by_session = (
+    _import_session_helpers()
+)
 
 _SOURCE_KINDS = {
     ".xlsx": "xlsx",
@@ -148,7 +158,7 @@ class ParticipantsConverter:
             return None
 
         text = str(value).strip()
-        if not text or text.lower() == "nan":
+        if not text or text.lower() in {"nan", "n/a", "na", "none"}:
             return None
 
         # Normalize to NFC before stripping non-ASCII characters. Without
@@ -383,6 +393,7 @@ class ParticipantsConverter:
         session_column: Optional[str] = None,
         session_value: Optional[str] = None,
         sessions_from_date: Optional[str] = None,
+        split_sessions: bool = False,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -397,6 +408,9 @@ class ParticipantsConverter:
                 the rows of this one session (exact label match) before converting.
             sessions_from_date: Date column (e.g. "startdate") to number each ID's
                 rows "1", "2", ... by, for sources without a session column.
+            split_sessions: With session_column (and no session_value), values that
+                differ between a participant's sessions become one column per session
+                (age@ses-1, age@ses-2); stable values stay a single column.
             reject_conflicting_repeats: Fail (and write nothing) when a participant
                 appears in several rows with different values, instead of keeping
                 the first non-empty value with a warning. Merge leaves this off:
@@ -442,6 +456,15 @@ class ParticipantsConverter:
             messages.append(f"✗ Failed to load source file: {e}")
             return False, None, messages
 
+        if split_sessions and (not session_column or session_value or session_column not in df.columns):
+            error = (
+                "Splitting by session needs the session column of the file "
+                "(and no single session chosen)."
+            )
+            self._log("ERROR", error)
+            messages.append(f"✗ {error}")
+            return False, None, messages
+
         if session_column and session_value:
             try:
                 session_map = _session_map.session_map_for_conversion(self.dataset_path)
@@ -468,9 +491,21 @@ class ParticipantsConverter:
                 messages.append(f"✗ {error}")
             return False, None, messages
 
+        mappings = mapping.get("mappings", {})
+        if reject_conflicting_repeats and id_source:
+            from src.participant_data_checks import find_participant_data_problems
+
+            problems = find_participant_data_problems(
+                df, id_source, [spec.get("source_column") for spec in mappings.values()]
+            )
+            if problems["errors"]:
+                for error in problems["errors"]:
+                    self._log("ERROR", error)
+                    messages.append(f"✗ {error}")
+                return False, None, messages
+
         # Build output dataframe
         output_df = pd.DataFrame()
-        mappings = mapping.get("mappings", {})
 
         for var_name, spec in mappings.items():
             source_column = spec.get("source_column")
@@ -583,9 +618,38 @@ class ParticipantsConverter:
         output_df = output_df[ordered_columns]
 
         pre_collapse_rows = len(output_df)
+        pre_collapse_df = output_df
         output_df, dropped_columns, conflicting_columns = (
             self._collapse_to_bids_participants_table(output_df)
         )
+        if split_sessions and conflicting_columns:
+            try:
+                wide = split_columns_by_session(
+                    pre_collapse_df,
+                    df.loc[pre_collapse_df.index, session_column],
+                    conflicting_columns,
+                )
+            except ValueError as e:
+                self._log("ERROR", str(e))
+                messages.append(f"✗ {e}")
+                return False, None, messages
+            wide_by_column = {
+                col: [c for c in wide.columns if c.startswith(f"{col}@ses-")]
+                for col in conflicting_columns
+            }
+            parts = {}
+            for col in output_df.columns:
+                if col in wide_by_column:
+                    for name in wide_by_column[col]:
+                        parts[name] = wide[name].reindex(output_df["participant_id"]).values
+                else:
+                    parts[col] = output_df[col].values
+            output_df = pd.DataFrame(parts)
+            messages.append(
+                "✓ Kept values that differ between sessions as one column per session: "
+                + ", ".join(conflicting_columns)
+            )
+            conflicting_columns = []
         if dropped_columns:
             dropped_display = ", ".join(dropped_columns)
             self._log(

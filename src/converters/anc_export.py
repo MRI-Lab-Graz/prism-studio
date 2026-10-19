@@ -857,7 +857,7 @@ derivatives/mriqc/*.html filter=lfs diff=lfs merge=lfs -text
 """
 
         gitattributes_file = self.output_path / ".gitattributes"
-        gitattributes_file.write_text(gitattributes, encoding="utf-8", newline="\n")
+        gitattributes_file.write_text(gitattributes, encoding="utf-8")
         logger.info("✓ Created .gitattributes for Git LFS")
 
         # Add instructions

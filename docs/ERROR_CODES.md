@@ -103,6 +103,8 @@ sub-01/survey/sub-01_task-demo_survey.json
 | Code | Meaning | Fix |
 |---|---|---|
 | `PRISM601` | Dataset consistency warning | Check for missing sessions/modalities across subjects |
+| `PRISM602` | Participant outside an eligibility criterion (warning only) | Check the participant, or correct the criterion in the project's Study Metadata |
+| `PRISM603` | Eligibility criterion cannot be checked (unknown id, missing column, min above max, no value labels) | Fix the link in participants.json or the criterion in project.json |
 | `PRISM701` | Session on disk not declared in `project.json` | Add it to the `Sessions` array, or use the session picker in the Converter |
 | `PRISM702` | Deprecated | Session presence is now inferred from disk; no action needed, not emitted by current validation |
 | `PRISM703` | Task on disk not declared in session | Register it in the session's `tasks` array |

@@ -1,0 +1,12 @@
+modality: biometrics
+suffix: bloodpanel
+extensions: [tsv]
+description: Venous blood panel drawn at the same visit as other biometrics
+columns:
+  - id: sample_id
+    description: Laboratory sample identifier
+  - id: crp
+    description: C-reactive protein
+    scale: continuous
+    units: mg/L
+    min: 0

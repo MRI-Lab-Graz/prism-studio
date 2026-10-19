@@ -257,6 +257,12 @@ def build_prism_tools_parsers(
         help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_convert.add_argument(
+        "--split-sessions",
+        action="store_true",
+        help="Longitudinal file (with --session-column, without --session): values that "
+        "differ between sessions become one column per session (age@ses-1, age@ses-2)",
+    )
+    parser_participants_convert.add_argument(
         "--sessions-from-date",
         nargs="?",
         const="startdate",
@@ -1666,6 +1672,63 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_modality = subparsers.add_parser(
+        "modality",
+        help="Propose a new PRISM modality",
+    )
+    modality_subparsers = parser_modality.add_subparsers(
+        dest="action", help="Modality actions"
+    )
+    parser_modality_propose = modality_subparsers.add_parser(
+        "propose",
+        help="Check a modality proposal (workbook, YAML or JSON) plus a sample "
+        "data file and generate schema, example sidecar, fixture dataset and "
+        "REGISTRATION.md",
+    )
+    parser_modality_propose.add_argument(
+        "proposal", help="Proposal file (.xlsx, .yml, .yaml or .json)"
+    )
+    parser_modality_propose.add_argument(
+        "--sample", required=True, help="Synthetic sample data file in the modality's format"
+    )
+    parser_modality_propose.add_argument(
+        "--out", help="Output folder for the generated files (required unless --check)"
+    )
+    parser_modality_propose.add_argument(
+        "--check", action="store_true", help="Validate only; write nothing"
+    )
+    parser_modality_propose.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_modality_version = subparsers.add_parser(
+        "modality-version",
+        help="Pin, list and update per-modality schema versions of a project",
+    )
+    mv_subparsers = parser_modality_version.add_subparsers(
+        dest="action", help="Modality version actions"
+    )
+    mv_actions = {
+        "status": "Show pinned versions and available updates",
+        "list": "List the available versions of one or all modalities",
+        "pin": "Pin modalities (default: those present in the project)",
+        "update": "Move one pinned modality to the latest version",
+        "freeze": "Keep one modality at its pinned version",
+    }
+    for mv_name, mv_help in mv_actions.items():
+        mv_parser = mv_subparsers.add_parser(mv_name, help=mv_help)
+        if mv_name == "list":
+            mv_parser.add_argument("name", nargs="?", help="Modality (default: all)")
+        else:
+            mv_parser.add_argument("project", help="Project folder")
+        if mv_name == "pin":
+            mv_parser.add_argument("names", nargs="*", help="Modalities to pin")
+        if mv_name in ("update", "freeze"):
+            mv_parser.add_argument("name", help="Modality name")
+        mv_parser.add_argument(
+            "--json", action="store_true", help="Emit machine-readable JSON"
+        )
+
     parser_survey_validate = survey_subparsers.add_parser(
         "validate",
         help="Validate survey library for item-key uniqueness and schema "
@@ -2393,4 +2456,6 @@ def build_prism_tools_parsers(
         "recipes": parser_recipes,
         "file_management": parser_file_management,
         "json_editor": parser_json_editor,
+        "modality": parser_modality,
+        "modality-version": parser_modality_version,
     }

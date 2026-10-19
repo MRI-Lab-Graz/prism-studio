@@ -137,3 +137,18 @@ def sanitize_answer_text(text: Optional[str]) -> str:
     return sanitize_display_text(text, strip_html=False)
 
 
+
+
+# Characters XML 1.0 (and so .docx and .lss files) cannot hold; text pasted from Word/PDF often has them.
+INVALID_XML_CHARS = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f￾￿]")
+
+
+def strip_invalid_xml_chars(value):
+    """The same value with the characters XML forbids removed (strings inside lists/dicts too)."""
+    if isinstance(value, str):
+        return INVALID_XML_CHARS.sub("", value)
+    if isinstance(value, list):
+        return [strip_invalid_xml_chars(v) for v in value]
+    if isinstance(value, dict):
+        return {strip_invalid_xml_chars(k): strip_invalid_xml_chars(v) for k, v in value.items()}
+    return value

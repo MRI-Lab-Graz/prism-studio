@@ -35,6 +35,7 @@ describe('participants Replace policy', () => {
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/participants\.tsv/);
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/participants\.json/);
         expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/annotations/i);
+        expect(REPLACE_CONFIRMATION_MESSAGE).toMatch(/eligibility/i);
     });
 });
 

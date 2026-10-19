@@ -33,6 +33,7 @@ from src.datalad_project_copy import copy_files_into_project
 from src.physio_renamer import (
     apply_folder_placeholders as _apply_folder_placeholders,
     extract_subject_session_from_source_path as _extract_subject_session_from_source_path,
+    new_filename_problem,
     normalize_project_dest_root as _normalize_project_dest_root,
     normalize_subject_rewrite_mode as _normalize_subject_rewrite_mode,
     resolve_project_copy_root as _resolve_project_copy_root,
@@ -1185,6 +1186,8 @@ def api_physio_rename():
                         session_example_value=folder_session_value,
                     )
                 new_name = normalize_filename(new_name)
+                if problem := new_filename_problem(new_name):
+                    raise ValueError(problem)
 
                 zip_path = new_name
                 if organize:
@@ -1264,6 +1267,8 @@ def api_physio_rename():
                             session_example_value=folder_session_value,
                         )
                     new_name = normalize_filename(new_name)
+                    if problem := new_filename_problem(new_name):
+                        raise ValueError(problem)
                     project_name = (
                         _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
                         if save_to_project
@@ -1370,6 +1375,8 @@ def api_physio_rename():
                             session_example_value=folder_session_value,
                         )
                     new_name = normalize_filename(new_name)
+                    if problem := new_filename_problem(new_name):
+                        raise ValueError(problem)
                     project_name = (
                         _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
                         if save_to_project

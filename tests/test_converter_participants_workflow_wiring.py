@@ -19,6 +19,27 @@ CONVERTER_STYLES = REPO_ROOT / "app" / "static" / "css" / "converter.css"
 
 
 class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
+    def test_result_messages_sit_below_the_create_button(self):
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        convert = template.index('id="participantsConvertBtn"')
+        for message in ("participantsError", "participantsInfo", "participantsSuccess"):
+            self.assertGreater(template.index(f'id="{message}"'), convert, message)
+
+    def test_annotation_is_a_required_stage_before_create_replace(self):
+        template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
+        module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn('id="participantsAnnotationConfirmBtn"', template)
+        self.assertNotIn("Participant Metadata (Optional)", template)
+        self.assertNotIn(">Optional</span>", template)
+        # The Create/Replace button lives below the annotation stage, not in the top row.
+        self.assertGreater(
+            template.index('id="participantsConvertBtn"'),
+            template.index('id="participantsAnnotationConfirmBtn"'),
+        )
+        self.assertIn("createAnnotationGate", module)
+        self.assertIn("participantsAnnotationGate.isConfirmed()", module)
+
     def test_case_guide_starts_hidden_and_uses_dynamic_placeholders(self):
         content = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
 
@@ -112,7 +133,6 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             "/api/projects/participants?project_path=${encodeURIComponent(projectPath)}",
             content,
         )
-        self.assertIn("project_path: currentProjectPath,", content)
         self.assertIn(
             "const response = await fetchWithApiFallback('/api/participants-detect-id', {",
             content,
@@ -155,14 +175,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {",
-            content,
-        )
-        self.assertIn(
             "const tsvResponse = await fetchWithApiFallback(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);",
             content,
         )
-        self.assertIn("Please select a project first from the top of the page", content)
         self.assertIn(
             "window.addEventListener('prism-project-changed', function() {", content
         )
@@ -277,18 +292,22 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
 
         for element_id in (
             "participantsSessionChoiceCard",
-            "participantsSessionLongitudinalYes",
-            "participantsSessionLongitudinalNo",
+            "participantsSessionModeOne",
+            "participantsSessionModeSplit",
+            "participantsSessionByDateBtn",
             "participantsSessionColumn",
             "participantsSessionValue",
         ):
             self.assertIn(f'id="{element_id}"', template)
 
+        # The always-visible checkbox is gone: numbering by date is offered inside the card.
+        self.assertNotIn('id="participantsSessionsFromDate"', template)
         self.assertIn("./participants-session-choice.js", module)
         # The chosen session travels with every file request ...
         self.assertIn("sessionChoiceFormFields(participantsSessionChoice)", module)
         # ... the card is fed by the preview response ...
         self.assertIn("data.session_candidates", module)
+        self.assertIn("data.repeat_conflicts", module)
         # ... and Convert is disabled (and refused on click) while the question is unanswered.
         self.assertIn("sessionChoiceBlockReasonForRoute(", module)
         can_apply = module[module.index("function canApplyParticipantsConversion") :]
@@ -346,9 +365,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         ]
         self.assertIn("participantsExplicitCase = {", card_click)
 
-    def test_longitudinal_buttons_look_unanswered_until_one_is_clicked(self):
-        """Yes and No must be styled identically before an answer: an outline-primary
-        Yes next to a grey No reads as "Yes is preselected"."""
+    def test_session_mode_buttons_look_unanswered_until_one_is_clicked(self):
+        """Both modes must be styled identically before a choice: one outlined in
+        primary next to a grey one reads as "preselected"."""
         template = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
         module = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
@@ -356,8 +375,8 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             start = template.index(f'id="{element_id}"')
             return template[template.rindex("<button", 0, start) : template.index(">", start)]
 
-        yes = button_tag("participantsSessionLongitudinalYes")
-        no = button_tag("participantsSessionLongitudinalNo")
+        yes = button_tag("participantsSessionModeOne")
+        no = button_tag("participantsSessionModeSplit")
         self.assertIn("btn-outline-secondary", yes)
         self.assertIn("btn-outline-secondary", no)
         self.assertNotIn("btn-outline-primary", yes)
@@ -374,8 +393,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
             module.index("const dataWarnings = Array.isArray(data.data_warnings)") :
             module.index("previewStage = 'rendering preview table'")
         ]
-        self.assertIn("classList.toggle('alert-warning', hasWarnings)", block)
-        self.assertIn("classList.toggle('alert-info', !hasWarnings)", block)
+        self.assertIn("classList.toggle('alert-warning', hasWarnings && dataErrors.length === 0)", block)
+        self.assertIn("classList.toggle('alert-info', !hasWarnings && dataErrors.length === 0)", block)
+        self.assertIn("classList.toggle('alert-danger', dataErrors.length > 0)", block)
 
     def test_participants_file_input_has_no_accept_filter(self):
         """Safari/macOS greys out every file on first open when accept= lists
