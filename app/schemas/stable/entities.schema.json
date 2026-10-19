@@ -16,9 +16,6 @@
     "desc"
   ],
   "defaultRequiredEntities": ["sub", "task"],
-  "aliases": {
-    "physiological": "physio"
-  },
   "modalities": {
     "survey": {
       "kind": "prism",
@@ -47,12 +44,14 @@
     "events": {
       "kind": "prism",
       "suffixes": ["events"],
-      "extensions": ["tsv"]
+      "extensions": ["tsv"],
+      "folder": false
     },
     "physio": {
       "kind": "prism",
       "suffixes": ["physio"],
       "extensions": ["tsv", "tsv.gz", "json", "edf"],
+      "allowedEntities": ["acq", "run", "recording"],
       "optionalEntityValues": {
         "recording": {
           "enum": ["ecg", "cardiac", "puls", "resp", "eda", "ppg", "emg", "temp", "bp", "spo2", "trigger"],

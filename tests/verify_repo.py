@@ -1587,8 +1587,6 @@ def check_schema_sync(repo_path, fix=False):
             continue
         schema_modalities.add(stem)
 
-    aliases = {"physiological": "physio"}
-
     # validator.py's MODALITY_PATTERNS/PRISM_MODALITIES and
     # project_manager.py's PRISM_MODALITIES are no longer hardcoded literals
     # - both are derived at import time from src/entity_rules.py (see that
@@ -1627,7 +1625,7 @@ def check_schema_sync(repo_path, fix=False):
             ui_modalities = set(
                 re.findall(r"<code>([a-zA-Z]+)\/</code>", html, flags=re.IGNORECASE)
             )
-            ui_modalities = {aliases.get(m.lower(), m.lower()) for m in ui_modalities}
+            ui_modalities = {m.lower() for m in ui_modalities}
             unknown = sorted(m for m in ui_modalities if m not in schema_modalities)
             if unknown:
                 print_warning(

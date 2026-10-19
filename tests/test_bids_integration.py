@@ -70,7 +70,7 @@ def test_check_and_update_bidsignore_adds_all_prism_modality_folders() -> None:
         check_and_update_bidsignore(str(dataset_root), [])
 
         content = (dataset_root / ".bidsignore").read_text(encoding="utf-8")
-        for folder in ("survey", "biometrics", "environment", "physio", "physiological", "events"):
+        for folder in ("survey", "biometrics", "environment", "physio", "events"):
             assert f"{folder}/" in content, folder
 
 

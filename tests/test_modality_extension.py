@@ -96,11 +96,6 @@ def test_bids_and_passthrough_names_are_refused_with_advice():
     assert "upstream" in _messages(check_proposal(_proposal(modality="eyetracking")))
 
 
-def test_alias_points_at_the_real_modality():
-    msg = _messages(check_proposal(_proposal(modality="physiological")))
-    assert "PRISM alias 'physiological'" in msg and "'physio'" in msg
-
-
 import json  # noqa: E402
 
 from src.modality_contribution import (  # noqa: E402

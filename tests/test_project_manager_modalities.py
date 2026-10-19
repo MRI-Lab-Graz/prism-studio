@@ -20,7 +20,7 @@ def test_prism_modalities_matches_previously_hardcoded_set():
     # (nothing depends on it - see get_available_modalities() and its one
     # test, which mocks the function out entirely), so compare as a set.
     assert set(PRISM_MODALITIES) == {
-        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking", "events",
+        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking",
     }
 
 

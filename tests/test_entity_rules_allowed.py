@@ -24,7 +24,7 @@ def test_rule_without_the_key_has_none():
 
 def test_existing_modalities_have_no_allowed_entities_yet():
     rules = load_entity_rules()
-    existing = ["survey", "biometrics", "environment", "events", "physio", "eyetracking"]
+    existing = ["survey", "biometrics", "environment", "events", "eyetracking"]
     assert all(rules.modalities[name].allowed_entities is None for name in existing)
 
 
