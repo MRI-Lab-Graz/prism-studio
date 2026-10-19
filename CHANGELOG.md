@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-10-19
+
 ### Added
 - **Repeated rows in the Sociodemographics converter.** Several rows per participant with identical values collapse
   quietly. When a value changes between rows (e.g. age across sessions) you choose: keep one session, or one column
