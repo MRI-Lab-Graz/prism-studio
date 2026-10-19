@@ -15,7 +15,7 @@ from src.modality_contribution import (  # noqa: E402
 )
 
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal"
-NEW = EXAMPLES / "biosample.yml"
+NEW = EXAMPLES / "bloodwork.yml"
 
 
 def _proposal(**over) -> dict:
@@ -31,7 +31,7 @@ def _messages(problems) -> str:
 def test_old_files_with_rationale_still_read(tmp_path):
     f = tmp_path / "p.yml"
     f.write_text(
-        "modality: biosample\nsuffix: bloodchem\nextensions: [tsv]\ndescription: d\n"
+        "modality: bloodwork\nsuffix: bloodchem\nextensions: [tsv]\ndescription: d\n"
         "rationale: old text\ncolumns:\n  - id: crp\n    description: c\n",
         encoding="utf-8",
     )
@@ -144,9 +144,9 @@ def test_malformed_extension_proposal_returns_errors_without_raising():
 
 def test_new_build_fixture_has_no_task_entity(tmp_path):
     p = read_proposal(NEW)
-    files = build_modality_artifacts(p, EXAMPLES / "biosample_sample.tsv", NEW, tmp_path / "o")
+    files = build_modality_artifacts(p, EXAMPLES / "bloodwork_sample.tsv", NEW, tmp_path / "o")
     assert any(f.name == "sub-01_bloodchem.tsv" for f in files)
-    assert (tmp_path / "o" / "docs" / "biosample.md").is_file()
+    assert (tmp_path / "o" / "docs" / "bloodwork.md").is_file()
     assert json.loads((tmp_path / "o" / "example_sidecar.json").read_text())["Study"].get("TaskName") is None
 
 
@@ -198,7 +198,7 @@ def test_numeric_entity_value_is_refused(tmp_path):
 
     f = tmp_path / "p.yml"
     f.write_text(
-        "modality: biosample\nsuffix: bloodchem\nextensions: [tsv]\ndescription: d\n"
+        "modality: bloodwork\nsuffix: bloodchem\nextensions: [tsv]\ndescription: d\n"
         "columns:\n  - id: crp\n    description: c\nentities:\n  - entity: acq\n    value: 01\n",
         encoding="utf-8",
     )

@@ -18,7 +18,7 @@ ROW = "S001\t08:15\tyes\t1.2\t5.1\t310"
 
 
 def _proposal(**over) -> dict:
-    p = read_proposal(EXAMPLE_DIR / "biosample.yml")
+    p = read_proposal(EXAMPLE_DIR / "bloodwork.yml")
     p.update(over)
     return p
 
@@ -34,7 +34,7 @@ def _msgs(problems) -> str:
 
 
 def test_example_sample_is_clean() -> None:
-    assert check_sample(_proposal(), EXAMPLE_DIR / "biosample_sample.tsv") == []
+    assert check_sample(_proposal(), EXAMPLE_DIR / "bloodwork_sample.tsv") == []
 
 
 def test_header_mismatch_lists_missing_and_extra_columns(tmp_path: Path) -> None:
