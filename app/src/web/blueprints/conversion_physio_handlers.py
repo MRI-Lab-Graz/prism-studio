@@ -96,6 +96,30 @@ def _mark_job_cancelled(job_id: str) -> bool:
     return _batch_job_store.cancel(job_id)
 
 
+def _register_converted_sessions(project_path, converted, dataset_name, log=None):
+    """Register each converted (session, destination folder) in project.json."""
+    from collections import defaultdict
+
+    session_tasks: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for cf in converted:
+        if cf.success and cf.session:
+            tasks = session_tasks[(cf.session, cf.target_folder)]
+            if cf.task:
+                tasks.append(cf.task)
+    for (ses_id, folder), tasks in session_tasks.items():
+        tasks = sorted(set(tasks))
+        try:
+            register_session_in_project(
+                Path(project_path), ses_id, tasks, folder, dataset_name, "physio"
+            )
+            if log:
+                tail = f" → {', '.join(tasks)}" if tasks else ""
+                log(f"Registered in project.json: ses-{ses_id} ({folder}){tail}", "info")
+        except Exception as reg_err:
+            if log:
+                log(f"⚠️ Could not register session ses-{ses_id} in project.json: {reg_err}", "warning")
+
+
 def _run_batch_job(job_id: str, config: dict[str, Any]):
     def log_callback(message: str, level: str = "info"):
         _append_job_log(job_id, message, level)
@@ -144,6 +168,7 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             log_callback=log_callback,
             cancel_check=lambda: _is_job_cancelled(job_id),
             dry_run=config["dry_run"],
+            physio_destination=config["physio_destination"],
         )
 
         if _is_job_cancelled(job_id):
@@ -235,38 +260,12 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                             )
                             payload["project_output_count"] = len(copied_files)
 
-                        # Register each converted session in project.json
-                        from collections import defaultdict
-
-                        session_tasks: dict[str, list[str]] = defaultdict(list)
-                        for cf in result.converted:
-                            if cf.success and cf.session and cf.task:
-                                session_tasks[cf.session].append(cf.task)
-                        for ses_id, tasks in session_tasks.items():
-                            try:
-                                register_session_in_project(
-                                    Path(p_path),
-                                    ses_id,
-                                    sorted(set(tasks)),
-                                    (
-                                        config["modality_filter"]
-                                        if config["modality_filter"] != "all"
-                                        else "physio"
-                                    ),
-                                    config["dataset_name"],
-                                    "physio",
-                                )
-                                _append_job_log(
-                                    job_id,
-                                    f"Registered in project.json: ses-{ses_id} → {', '.join(sorted(set(tasks)))}",
-                                    "info",
-                                )
-                            except Exception as reg_err:
-                                _append_job_log(
-                                    job_id,
-                                    f"⚠️ Could not register session ses-{ses_id} in project.json: {reg_err}",
-                                    "warning",
-                                )
+                        _register_converted_sessions(
+                            p_path,
+                            result.converted,
+                            config["dataset_name"],
+                            log=log_callback,
+                        )
                     else:
                         payload["warnings"].append(
                             f"Project path not found: {p_path}. Copy to project skipped."
@@ -302,6 +301,7 @@ def api_batch_convert_start():
     ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
+    physio_destination = request.form.get("physio_destination") or None
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -404,6 +404,21 @@ def api_batch_convert_start():
             return jsonify({"error": str(error)}), 400
         project_path = str(project_root)
 
+    # Pre-scan only: cancel_check stops before any file is converted, but the
+    # backend's "task needs a destination" ValueError is raised first.
+    try:
+        batch_convert_folder(
+            source_dir,
+            tmp_path / "output",
+            modality_filter=modality_filter,
+            dry_run=True,
+            cancel_check=lambda: True,
+            physio_destination=physio_destination,
+        )
+    except ValueError as error:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return jsonify({"error": str(error)}), 400
+
     job_id = ""
     for _ in range(5):
         candidate = uuid.uuid4().hex
@@ -426,6 +441,7 @@ def api_batch_convert_start():
         "generate_physio_reports": generate_physio_reports,
         "modality_filter": modality_filter,
         "dry_run": dry_run,
+        "physio_destination": physio_destination,
         "dataset_name": dataset_name,
         "save_to_project": save_to_project,
         "dest_root": dest_root,
@@ -547,7 +563,7 @@ def api_physio_convert():
             400,
         )
 
-    task = (request.form.get("task") or "rest").strip() or "rest"
+    task = (request.form.get("task") or "").strip()
     base_freq = (request.form.get("sampling_rate") or "").strip() or None
     try:
         base_freq_val = float(base_freq) if base_freq is not None else None
@@ -630,6 +646,7 @@ def api_batch_convert():
     ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
+    physio_destination = request.form.get("physio_destination") or None
     server_file_paths = request.form.getlist("server_file_paths[]") or request.form.getlist(
         "server_file_paths"
     )
@@ -700,6 +717,7 @@ def api_batch_convert():
                 modality_filter=modality_filter,
                 log_callback=log_callback,
                 dry_run=dry_run,
+                physio_destination=physio_destination,
             )
 
             # If not a dry-run, move files to project if save_to_project is true
@@ -762,6 +780,8 @@ def api_batch_convert():
                     "datalad": datalad_copy,
                 }
             )
+        except ValueError as error:
+            return jsonify({"error": str(error), "logs": logs}), 400
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -885,6 +905,7 @@ def api_batch_convert():
             modality_filter=modality_filter,
             log_callback=log_callback,
             dry_run=dry_run,
+            physio_destination=physio_destination,
         )
 
         if dry_run:
@@ -1007,26 +1028,9 @@ def api_batch_convert():
             project_saved = bool(copied_output_paths)
 
         if project_saved and not dry_run:
-            from collections import defaultdict
-
-            session_tasks: dict[str, list[str]] = defaultdict(list)
-            for cf in result.converted:
-                if cf.success and cf.session and cf.task:
-                    session_tasks[cf.session].append(cf.task)
             p_path = resolve_existing_project_root(session.get("current_project_path"))
             if p_path is not None:
-                for ses_id, tasks in session_tasks.items():
-                    try:
-                        register_session_in_project(
-                            p_path,
-                            ses_id,
-                            sorted(set(tasks)),
-                            modality_filter if modality_filter != "all" else "physio",
-                            dataset_name,
-                            "physio",
-                        )
-                    except Exception:
-                        pass
+                _register_converted_sessions(p_path, result.converted, dataset_name)
 
         output_paths = []
         if copied_output_paths and base_project_root is not None:
@@ -1060,6 +1064,8 @@ def api_batch_convert():
                 "warnings": warnings,
             }
         )
+    except ValueError as e:
+        return jsonify({"error": str(e), "logs": logs}), 400
     except Exception as e:
         return jsonify({"error": str(e), "logs": logs}), 500
     finally:

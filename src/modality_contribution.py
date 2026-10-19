@@ -412,8 +412,6 @@ def _taken_names(schema_dir: str | None) -> dict[str, str]:
         taken[name] = f"PRISM modality '{name}'"
         for suffix in rule.get("suffixes", []):
             taken.setdefault(suffix, f"PRISM suffix '{suffix}' (modality '{name}')")
-    for alias, target in entities.get("aliases", {}).items():
-        taken.setdefault(alias, f"PRISM alias '{alias}' (for '{target}')")
     bids_suffixes, bids_datatypes = _bids_names()
     for name, reason in {**bids_datatypes, **bids_suffixes}.items():
         taken.setdefault(name, reason)
@@ -434,7 +432,6 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
     entities_schema = _entities_schema(schema_dir)
     kind = proposal_kind(proposal, schema_dir)
     name, suffix = proposal.get("modality") or "", proposal.get("suffix") or ""
-    aliases = entities_schema.get("aliases", {})
     bids_modalities = {
         n for n, r in entities_schema.get("modalities", {}).items() if r.get("kind") != "prism"
     }
@@ -443,9 +440,7 @@ def check_proposal(proposal: dict, *, schema_dir: str | None = None) -> list[Pro
         if not _NAME_RE.match(value):
             err(where, f"'{value}' must be lowercase letters and digits, starting with a letter")
     if _NAME_RE.match(name):
-        if name in aliases:
-            err("Modality.Name", f"{taken[name]}. Use '{aliases[name]}' as the name to add a suffix to it.")
-        elif name in bids_modalities or (name in taken and kind == "new" and taken[name].startswith("BIDS")):
+        if name in bids_modalities or (name in taken and kind == "new" and taken[name].startswith("BIDS")):
             err(
                 "Modality.Name",
                 f"{taken.get(name, name)}: BIDS owns this folder; propose the suffix to BIDS upstream "

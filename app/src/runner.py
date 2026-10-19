@@ -752,6 +752,21 @@ def _scan_dir(path, dir_cache=None):
     return entries
 
 
+# Folders that used to be PRISM modalities; flagged with where the files go now.
+RETIRED_FOLDERS = {
+    "events": "move each *_events.tsv next to its task data in func/, beh/ or eeg/",
+    "physiological": "rename the folder to physio/",
+}
+
+
+def _retired_folder_issue(item, item_path):
+    return (
+        "ERROR",
+        f"Folder '{item}' is not a PRISM modality: {RETIRED_FOLDERS[item]}",
+        item_path,
+    )
+
+
 def _validate_subject(
     subject_dir,
     subject_id,
@@ -804,6 +819,9 @@ def _validate_subject(
                         entries=child_entries,
                     )
                 )
+            elif item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
             elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
@@ -929,6 +947,11 @@ def _validate_session(
                     )
                 continue
 
+            if item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
+                continue
+
             if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
@@ -1027,7 +1050,7 @@ def _validate_modality_dir(
                         description_entity = "biometrics"
                     elif modality == "eyetracking":
                         description_entity = "eyetracking"
-                    elif modality in ["physio", "physiological"]:
+                    elif modality in ["physio"]:
                         description_entity = "physio"
                     else:
                         description_entity = "task"

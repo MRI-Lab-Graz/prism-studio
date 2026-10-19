@@ -23,7 +23,6 @@ _EXPECTED_PATTERNS = {
     "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
-    "physiological": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
     "eyetracking": r".+(_trackedEye-(left|right|both))?_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
 }
 
@@ -32,7 +31,6 @@ _EXPECTED_HINTS = {
     "survey": "Ensure the filename ends with '_survey.tsv' or '_survey.json' (e.g., sub-001_task-panas_survey.tsv)",
     "biometrics": "Ensure the filename ends with '_biometrics.tsv' or '_biometrics.json' (e.g., sub-001_task-rest_biometrics.tsv)",
     "physio": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
-    "physiological": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
     "eyetracking": "Ensure the filename ends with '_eyetrack.<ext>' or '_eye.<ext>' or '_gaze.<ext>' where <ext> is tsv, tsv.gz, json, edf, or asc (e.g., sub-001_task-rest_trackedEye-left_eyetrack.tsv)",
     "events": "Ensure the filename ends with '_events.tsv' (e.g., sub-001_task-rest_events.tsv)",
 }
@@ -70,7 +68,7 @@ def test_default_required_entities_matches_hardcoded_constant():
 def test_prism_modalities_matches_hardcoded_constant():
     rules = load_entity_rules()
     assert rules.prism_modalities == {
-        "survey", "biometrics", "biosample", "environment", "events", "physio", "physiological",
+        "survey", "biometrics", "biosample", "environment", "events", "physio",
     }
 
 
@@ -110,13 +108,13 @@ def test_project_modalities_matches_project_manager_hardcoded_list():
     6 names (order differs, which is harmless - nothing depends on it)."""
     rules = load_entity_rules()
     assert set(rules.project_modalities) == {
-        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking", "events",
+        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking",
     }
 
 
 def test_project_modalities_excludes_alias_and_bare_bids_passthrough():
     rules = load_entity_rules()
-    assert "physiological" not in rules.project_modalities
+    assert "physiological" not in rules.modalities
     assert "anat" not in rules.project_modalities
     assert "func" not in rules.project_modalities
 
@@ -126,7 +124,7 @@ def test_prism_modalities_matches_bids_integration_prism_folders_intent():
     (plus dead "eeg" and vestigial "metadata" entries, since removed)."""
     rules = load_entity_rules()
     assert rules.prism_modalities == {
-        "survey", "biometrics", "biosample", "environment", "physio", "physiological", "events",
+        "survey", "biometrics", "biosample", "environment", "physio", "events",
     }
 
 
@@ -142,3 +140,39 @@ def test_tabular_modalities_constant_includes_biosample():
     from src.constants import TABULAR_MODALITIES
 
     assert TABULAR_MODALITIES == ("survey", "biometrics", "biosample")
+
+
+def test_physiological_alias_is_gone():
+    assert load_entity_rules().aliases == {}
+
+
+def test_events_is_not_a_project_folder():
+    rules = load_entity_rules()
+    assert "events" not in rules.project_modalities
+    assert rules.modalities["events"].folder is False
+    assert rules.modalities["physio"].folder is True
+
+
+def test_physio_rejects_task():
+    from src.entity_rules import check_entities
+
+    rules = load_entity_rules()
+    allowed = rules.modalities["physio"].allowed_entities
+    assert allowed == ("acq", "run", "recording")
+    assert check_entities("sub-01_task-x_recording-ecg_physio", allowed, rules.entity_order)
+    assert check_entities("sub-01_ses-pre_recording-ecg", allowed, rules.entity_order) == []
+
+
+def test_not_allowed_message_lists_every_permitted_entity():
+    from src.entity_rules import check_entities
+
+    rules = load_entity_rules()
+    allowed = rules.modalities["physio"].allowed_entities
+    (message,) = check_entities("sub-01_task-x_recording-ecg_physio", allowed, rules.entity_order)
+    assert "recording" in message.split("allowed:")[1]
+
+
+def test_events_pin_still_resolves():
+    from src.modality_versions import modality_names
+
+    assert "events" in modality_names()

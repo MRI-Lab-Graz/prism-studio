@@ -396,7 +396,7 @@ class TestSchemaManager:
         assert "dataset_description" in schemas
         for name in ("biometrics", "environment", "events", "physio", "eyetracking"):
             assert name in schemas
-        assert schemas["physiological"] is schemas["physio"]
+        assert "physiological" not in schemas
 
     def test_load_all_schemas_picks_up_modality_declared_in_rules(self, tmp_path):
         """A new modality needs only a rules entry and a schema file, no code."""

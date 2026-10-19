@@ -111,6 +111,16 @@
                                                 <small class="d-block mt-2 text-muted"><i class="fas fa-lightbulb me-1"></i> Currently supports Varioport ECG/EDA devices</small>
                                             </div>
                                             <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2" for="physioBatchDestination">Destination for files with a task</label>
+                                                <select class="form-select form-select-sm" id="physioBatchDestination" name="physio_destination">
+                                                    <option value="" selected></option>
+                                                    <option value="beh">beh</option>
+                                                    <option value="func">func</option>
+                                                    <option value="eeg">eeg</option>
+                                                </select>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-info-circle me-1"></i> Needed only for files whose name contains task-…</small>
+                                            </div>
+                                            <div class="col-md-4">
                                                 <label class="form-label small fw-bold text-muted mb-2">Base Sampling Rate Override</label>
                                                 <div class="input-group input-group-sm">
                                                     <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="512" value="512" step="any">

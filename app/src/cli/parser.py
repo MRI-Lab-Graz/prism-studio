@@ -47,7 +47,14 @@ def build_prism_tools_parsers(
         "--output", required=True, help="Path to output directory"
     )
     parser_physio.add_argument(
-        "--task", default="rest", help="Task name (default: rest)"
+        "--task",
+        help="Task name (optional). Without it files go to physio/ without a task- "
+        "entity; with it --destination is required for a directory input",
+    )
+    parser_physio.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task (written as BIDS .tsv.gz)",
     )
     parser_physio.add_argument(
         "--suffix",
@@ -999,6 +1006,12 @@ def build_prism_tools_parsers(
         action="store_true",
         dest="dry_run",
         help="Preview without writing files",
+    )
+    parser_physio_batch.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task- entity (written as BIDS .tsv.gz); "
+        "task-free physio always goes to physio/",
     )
 
     parser_recipes = subparsers.add_parser(
@@ -2402,7 +2415,8 @@ def build_prism_tools_parsers(
     parser_file_management_rename_physio.add_argument(
         "--modality",
         default="physio",
-        help="Modality label used when --organize is set (default: physio)",
+        help="Target folder when --organize is set: physio (files without task-) or "
+        "beh, func, eeg (task-bound physio); default: physio",
     )
     parser_file_management_rename_physio.add_argument(
         "--organize",

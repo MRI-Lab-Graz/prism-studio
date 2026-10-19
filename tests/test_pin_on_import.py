@@ -89,11 +89,25 @@ def test_biometrics_pins(tmp_path, pinned_roots):
 def test_batch_convert_pins(tmp_path, pinned_roots):
     src = tmp_path / "source"
     src.mkdir()
-    (src / "sub-001_task-rest.edf").write_bytes(b"fake edf")
+    (src / "sub-001.edf").write_bytes(b"fake edf")
     out = tmp_path / "output"
 
     batch_convert_folder(src, out, modality_filter="physio")
 
+    assert pinned_roots == [str(out)]
+
+
+def test_batch_convert_task_bound_pins(tmp_path, pinned_roots, make_edf):
+    import numpy as np
+
+    src = tmp_path / "source"
+    src.mkdir()
+    make_edf(src / "sub-001_task-rest.edf", {"ecg": (np.linspace(-1, 1, 8), 4)})
+    out = tmp_path / "output"
+
+    batch_convert_folder(src, out, modality_filter="physio", physio_destination="beh")
+
+    assert (out / "sub-001" / "beh").is_dir()
     assert pinned_roots == [str(out)]
 
 
@@ -102,7 +116,8 @@ def test_batch_convert_dry_run_does_not_pin(tmp_path, pinned_roots):
     src.mkdir()
     (src / "sub-001_task-rest.edf").write_bytes(b"fake edf")
 
-    batch_convert_folder(src, tmp_path / "output", modality_filter="physio", dry_run=True)
+    batch_convert_folder(src, tmp_path / "output", modality_filter="physio", dry_run=True,
+                         physio_destination="beh")
 
     assert pinned_roots == []
 
@@ -247,7 +262,7 @@ def _physio_args(tmp_path):
     src.mkdir(parents=True)
     (src / "a.raw").write_bytes(b"RAW")
     return Namespace(input=str(tmp_path / "in"), output=str(tmp_path / "out"), task="rest",
-                     suffix="physio", sampling_rate=None)
+                     suffix="physio", sampling_rate=None, destination="beh")
 
 
 def _fake_varioport(monkeypatch, *, write):

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
+  rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
+  their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.
+- **BREAKING: physio is task-free; `events/` and `physiological/` folders are retired.** The validator now
+  reports both folders as errors, and `task-` in a `physio/` filename or sidecar as an error naming `beh/`,
+  `func/` and `eeg/`. Fixes: rename `physiological/` to `physio/`; move each `_events.tsv` next to its task in
+  `func/`, `beh/` or `eeg/`; move task-bound physio out of `physio/` (the entity rewriter can remove `task-`).
+- **Task-bound physio conversion needs a destination.** `physio batch-convert` and `convert physio` take
+  `--destination beh|func|eeg` and write BIDS `_physio.tsv.gz` + sidecar there; files without a task go to
+  `physio/` as before. The Studio converter has a matching "Destination for files with a task" select, and the
+  file-management renamer offers `beh`/`func`/`eeg` for physio with the task optional.
+
 ### Added
 - **Re-importing a LimeSurvey export only brings in what is new.** "Skip surveys already in the project"
   (on by default for `.lsa` files; command line: `survey convert --skip-existing`) skips responses already

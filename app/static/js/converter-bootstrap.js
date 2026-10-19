@@ -173,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
             browsePhysioFolderBtn: document.getElementById('browsePhysioFolderBtn'),
             clearPhysioBatchFolderBtn: document.getElementById('clearPhysioBatchFolderBtn'),
             physioBatchSamplingRate: document.getElementById('physioBatchSamplingRate'),
+            physioBatchDestination: document.getElementById('physioBatchDestination'),
             physioGenerateReports: document.getElementById('physioGenerateReports'),
             physioBatchDryRun: document.getElementById('physioBatchDryRun'),
             physioBatchPreviewBtn: document.getElementById('physioBatchPreviewBtn'),

@@ -226,7 +226,7 @@ class TestApply:
                 input=str(input_dir),
                 output=str(output_dir),
                 pattern=r"^raw_001\.vpd$",
-                replacement="sub-001_task-rest_physio.vpd",
+                replacement="sub-001_recording-ecg_physio.vpd",
                 modality="physio",
                 organize=True,
                 apply=True,
@@ -234,5 +234,76 @@ class TestApply:
         )
 
         assert (
-            output_dir / "sub-001" / "physio" / "sub-001_task-rest_physio.vpd"
+            output_dir / "sub-001" / "physio" / "sub-001_recording-ecg_physio.vpd"
         ).exists()
+
+    def test_organize_raw_into_beh_refused(self, tmp_path, capsys):
+        input_dir = tmp_path / "in"
+        input_dir.mkdir()
+        (input_dir / "raw_001.vpd").write_bytes(b"data")
+        output_dir = tmp_path / "out"
+
+        cmd_file_management_rename_physio(
+            _args(
+                input=str(input_dir),
+                output=str(output_dir),
+                pattern=r"^raw_001\.vpd$",
+                replacement="sub-001_task-rest_physio.vpd",
+                modality="beh",
+                organize=True,
+                apply=True,
+            )
+        )
+
+        assert "physio batch-convert --destination beh" in capsys.readouterr().out
+        assert not (output_dir / "sub-001").exists()
+
+    def test_organize_tsv_gz_into_beh_accepted(self, tmp_path):
+        input_dir = tmp_path / "in"
+        input_dir.mkdir()
+        (input_dir / "raw_001.tsv.gz").write_bytes(b"data")
+        output_dir = tmp_path / "out"
+
+        cmd_file_management_rename_physio(
+            _args(
+                input=str(input_dir),
+                output=str(output_dir),
+                pattern=r"^raw_001\.tsv\.gz$",
+                replacement="sub-001_task-rest_physio.tsv.gz",
+                modality="beh",
+                organize=True,
+                apply=True,
+            )
+        )
+
+        assert (
+            output_dir / "sub-001" / "beh" / "sub-001_task-rest_physio.tsv.gz"
+        ).exists()
+
+    def test_organize_events_refused(self, tmp_path, capsys):
+        input_dir = tmp_path / "in"
+        input_dir.mkdir()
+        (input_dir / "raw.tsv").write_bytes(b"data")
+
+        cmd_file_management_rename_physio(
+            _args(
+                input=str(input_dir),
+                output=str(tmp_path / "out"),
+                pattern=r"^raw\.tsv$",
+                replacement="sub-001_task-rest_events.tsv",
+                modality="events",
+                organize=True,
+                apply=True,
+            )
+        )
+
+        assert "next to its task in func/, beh/ or eeg/" in capsys.readouterr().out
+
+    def test_parser_accepts_beh_modality(self):
+        from src.cli.parser import build_prism_tools_parsers
+
+        parser, _ = build_prism_tools_parsers(APP_ROOT)
+        args = parser.parse_args(
+            ["file-management", "rename-physio", "--input", "x", "--pattern", "a", "--replacement", "b", "--modality", "beh"]
+        )
+        assert args.modality == "beh"

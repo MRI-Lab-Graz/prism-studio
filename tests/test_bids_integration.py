@@ -70,7 +70,7 @@ def test_check_and_update_bidsignore_adds_all_prism_modality_folders() -> None:
         check_and_update_bidsignore(str(dataset_root), [])
 
         content = (dataset_root / ".bidsignore").read_text(encoding="utf-8")
-        for folder in ("survey", "biometrics", "environment", "physio", "physiological", "events"):
+        for folder in ("survey", "biometrics", "environment", "physio", "events"):
             assert f"{folder}/" in content, folder
 
 
@@ -88,3 +88,15 @@ def test_check_and_update_bidsignore_never_mentions_dead_eeg_or_metadata() -> No
         content = (dataset_root / ".bidsignore").read_text(encoding="utf-8")
         assert "eeg/" not in content
         assert "metadata/" not in content
+
+
+def test_check_and_update_bidsignore_does_not_hide_task_bound_bids_physio() -> None:
+    """PRISM physio lives only in physio/; _physio files in beh/func/eeg are BIDS and must be validated."""
+    with tempfile.TemporaryDirectory() as tmp:
+        dataset_root = Path(tmp)
+
+        check_and_update_bidsignore(str(dataset_root), ["physio"])
+
+        lines = (dataset_root / ".bidsignore").read_text(encoding="utf-8").splitlines()
+        assert "physio/" in lines
+        assert not [ln for ln in lines if "_physio" in ln]

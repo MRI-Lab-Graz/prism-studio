@@ -44,5 +44,5 @@ def test_aliases_follow_the_overridden_schema(tmp_path):
     phys["version"] = "1.0.0"
     (archive / "1.0.0.schema.json").write_text(json.dumps(phys))
     schemas = load_all_schemas(schema_dir, modality_versions={"physio": "1.0.0"})
-    assert schemas["physiological"] is schemas["physio"]
+    assert "physiological" not in schemas
     assert schemas["physio"]["version"] == "1.0.0"

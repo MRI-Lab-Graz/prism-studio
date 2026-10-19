@@ -60,6 +60,12 @@ def test_present_modalities_by_folder_and_events_by_file(tmp_path, schema_dir):
     assert present_modalities(root, schema_dir) == ["survey", "biometrics", "events"]
 
 
+def test_retired_events_folder_does_not_count_as_events(tmp_path, schema_dir):
+    root = _project(tmp_path)
+    _touch(root, "sub-01/events/sub-01_task-a_notes.txt")  # events/ is retired; only *_events.* files count
+    assert present_modalities(root, schema_dir) == []
+
+
 def test_pin_present_pins_current_versions_and_never_overwrites(tmp_path, schema_dir):
     root = _project(tmp_path, SchemaVersions={"survey": "1.0.0"})
     _touch(root, "sub-01/survey/sub-01_task-a_survey.tsv")

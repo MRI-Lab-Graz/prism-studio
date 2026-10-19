@@ -5767,15 +5767,14 @@ class TestSharedSeparatorHelpers(unittest.TestCase):
 class TestRenamerTemplateRequirements(unittest.TestCase):
     """UI regression checks for renamer form requirements."""
 
-    def test_task_field_is_required(self):
+    def test_task_field_is_optional(self):
         template_path = (
             Path(project_root) / "app" / "templates" / "file_management.html"
         )
         template = template_path.read_text(encoding="utf-8")
         self.assertIn('id="renamerTask"', template)
-        self.assertIn(
-            'id="renamerTask" value="rest" placeholder="e.g. rest" required', template
-        )
+        self.assertNotIn('id="renamerTask" value="rest"', template)
+        self.assertNotRegex(template, r'id="renamerTask"[^>]*\brequired')
         self.assertIn('id="renamerIdFromFilename"', template)
         self.assertIn('id="renamerIdFromFolder"', template)
 

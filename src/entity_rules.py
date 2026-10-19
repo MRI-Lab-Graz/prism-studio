@@ -49,6 +49,7 @@ class ModalityRule:
     optional_entity_values: tuple[tuple[str, EntityValueRule], ...] = ()
     example_task: str = "rest"
     allowed_entities: tuple[str, ...] | None = None
+    folder: bool = True
 
     @classmethod
     def from_json(cls, name: str, data: dict) -> "ModalityRule":
@@ -69,6 +70,7 @@ class ModalityRule:
             allowed_entities=(
                 tuple(data["allowedEntities"]) if "allowedEntities" in data else None
             ),
+            folder=bool(data.get("folder", True)),
         )
 
 
@@ -92,7 +94,7 @@ class EntityRules:
     @property
     def project_modalities(self) -> list[str]:
         """Modality identities with their own filename-suffix grammar (i.e.
-        excludes alias names like "physiological" and pure-BIDS-passthrough
+        excludes alias names, modalities without a folder (events) and pure-BIDS-passthrough
         entries with no PRISM suffix data like anat/func). This is the set
         PRISM offers/manages a folder for at the project level - it includes
         eyetracking, which has suffix data even though it's validated as
@@ -100,7 +102,7 @@ class EntityRules:
         return [
             name
             for name, rule in self.modalities.items()
-            if rule.suffixes and name not in self.aliases
+            if rule.suffixes and rule.folder and name not in self.aliases
         ]
 
     def pattern_for(self, modality: str) -> str:
@@ -144,8 +146,9 @@ def check_entities(base: str, allowed: tuple[str, ...], order: tuple[str, ...]) 
     that declares allowedEntities. sub/ses are always allowed."""
     keys = [t.split("-", 1)[0] for t in base.split("_")[1:] if "-" in t]
     permitted = {"sub", "ses", *allowed}
+    listed = [*(e for e in order if e in permitted), *(e for e in allowed if e not in order)]
     problems = [
-        f"entity '{k}' is not allowed (allowed: {', '.join(e for e in order if e in permitted)})"
+        f"entity '{k}' is not allowed (allowed: {', '.join(listed)})"
         for k in dict.fromkeys(keys)
         if k not in permitted
     ]

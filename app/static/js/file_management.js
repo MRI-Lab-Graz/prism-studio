@@ -2879,16 +2879,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentExampleFile = null;
     let renamerTemplateManuallyEdited = false;
 
+    // physio/ plus the task-bound destinations: all of them name files "..._physio".
+    function isPhysioModality(modality) {
+        return ['physio', 'beh', 'func', 'eeg'].includes(modality);
+    }
+
     function updateRecordingVisibility() {
         if (!renamerModality || !renamerRecordingContainer) return;
-        const showRecording = renamerModality.value === 'physio';
+        const showRecording = isPhysioModality(renamerModality.value);
         renamerRecordingContainer.style.display = showRecording ? 'block' : 'none';
     }
 
     function updateRenamerBtn() {
         const hasFiles = (renamerFiles && renamerFiles.files && renamerFiles.files.length > 0) || renamerServerEntries.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
-        const hasTask = !!getValidatedTaskLabel();
+        const hasTask = !!getValidatedTaskLabel() || taskIsOptional();
         const hasCurrentProject = Boolean(getCurrentProjectPath());
         const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
@@ -3036,6 +3041,24 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/[^a-z0-9-]/g, '');
     }
 
+    // Physio recordings without a task are valid (they stay in physio/); other modalities need one.
+    function taskIsOptional() {
+        return !!renamerModality && renamerModality.value === 'physio';
+    }
+
+    function updateTaskRequirement() {
+        const optional = taskIsOptional();
+        if (renamerTask) renamerTask.required = !optional;
+        const badge = document.getElementById('renamerTaskBadge');
+        if (badge) {
+            badge.textContent = optional ? 'OPTIONAL' : 'REQUIRED';
+            badge.classList.toggle('bg-danger', !optional);
+            badge.classList.toggle('bg-secondary', optional);
+        }
+        const hint = document.getElementById('renamerTaskHint');
+        if (hint) hint.classList.toggle('d-none', !optional);
+    }
+
     function getValidatedTaskLabel() {
         return sanitizeTaskLabel(renamerTask && renamerTask.value ? renamerTask.value : '');
     }
@@ -3043,7 +3066,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function syncTemplateWithTaskAndRecording(templateValue) {
         const task = getValidatedTaskLabel();
         const modality = renamerModality ? renamerModality.value : 'physio';
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3054,7 +3077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updated = updated.replace(/task-[^_\.]+/g, `task-${task}`);
         }
 
-        if (modality === 'physio') {
+        if (isPhysioModality(modality)) {
             if (recording) {
                 if (/_recording-[^_]+_physio/.test(updated)) {
                     updated = updated.replace(/_recording-[^_]+_physio/g, `_recording-${recording}_physio`);
@@ -3193,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idSource = renamerIdSource();
         const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
         const hasSession = idSource === 'folder' ? true : !!sessionValue;
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3205,17 +3228,17 @@ document.addEventListener('DOMContentLoaded', () => {
             renamerExtension.value = sourceExt || '(none)';
         }
 
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             renamerNewExample.value = '';
             return;
         }
 
         const entities = ['sub-{subject}'];
         if (hasSession) entities.push('ses-{session}');
-        entities.push(`task-${task}`);
+        if (task) entities.push(`task-${task}`);
 
-        let suffix = modality;
-        if (modality === 'physio' && recording) {
+        let suffix = isPhysioModality(modality) ? 'physio' : modality;
+        if (isPhysioModality(modality) && recording) {
             suffix = `recording-${recording}_physio`;
         }
 
@@ -3437,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function inferPattern() {
         if (!currentExampleFile || !renamerNewExample) return;
         const task = getValidatedTaskLabel();
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             if (renamerPattern) renamerPattern.value = '';
             if (renamerReplacement) renamerReplacement.value = '';
             if (renamerPreview) renamerPreview.classList.add('d-none');
@@ -3810,8 +3833,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const suffix = stem.split('_').pop();
                             const expectedSuffixes = {
                                 physio: 'physio',
+                                beh: 'physio',
+                                func: 'physio',
+                                eeg: 'physio',
                                 biometrics: 'biometrics',
-                                events: 'events',
                                 survey: 'survey'
                             };
                             if (expectedSuffixes[selectedModality] && suffix !== expectedSuffixes[selectedModality]) {
@@ -4111,8 +4136,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
             updateRecordingVisibility();
+            updateTaskRequirement();
             buildAutoRenamerFilename();
             inferPattern();
+            updateRenamerBtn();
         });
     }
 
@@ -4215,6 +4242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial state
     updateRecordingVisibility();
+    updateTaskRequirement();
     updateMappingVisibility();
     buildAutoRenamerFilename();
     updateRenamerBtn();

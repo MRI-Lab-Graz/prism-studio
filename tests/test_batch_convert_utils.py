@@ -707,7 +707,7 @@ class TestGeneratePhysioHtmlReport:
 
 class TestConvertPhysioFile:
     def test_edf_physio_copies_file_and_creates_sidecar(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.edf"
+        src = tmp_path / "sub-001_ses-1.edf"
         src.write_bytes(b"fake edf bytes")
         out_dir = tmp_path / "output"
         parsed = parse_bids_filename(src.name)
@@ -718,18 +718,18 @@ class TestConvertPhysioFile:
         assert result.success
         assert result.subject == "sub-001"
         assert result.session == "ses-1"
-        assert result.task == "task-rest"
+        assert result.task is None
         assert result.modality == "physio"
         assert len(result.output_files) == 2
         edf_out = next(f for f in result.output_files if f.suffix == ".edf")
         json_out = next(f for f in result.output_files if f.suffix == ".json")
         assert edf_out.exists()
         assert json_out.exists()
-        assert edf_out.name == "sub-001_ses-1_task-rest_recording-ecg_physio.edf"
-        assert json_out.name == "sub-001_ses-1_task-rest_recording-ecg_physio.json"
+        assert edf_out.name == "sub-001_ses-1_recording-ecg_physio.edf"
+        assert json_out.name == "sub-001_ses-1_recording-ecg_physio.json"
 
     def test_edf_physio_no_session(self, tmp_path):
-        src = tmp_path / "sub-002_task-gaze.edf"
+        src = tmp_path / "sub-002.edf"
         src.write_bytes(b"x")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -741,7 +741,7 @@ class TestConvertPhysioFile:
         assert result.session is None
 
     def test_edf_physio_with_sampling_rate(self, tmp_path):
-        src = tmp_path / "sub-003_task-rest.edf"
+        src = tmp_path / "sub-003.edf"
         src.write_bytes(b"x")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -755,7 +755,7 @@ class TestConvertPhysioFile:
         assert data["Technical"]["SamplingFrequency"] == 512.0
 
     def test_raw_with_mock_varioport_success(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.raw"
+        src = tmp_path / "sub-001_ses-1.raw"
         src.write_bytes(b"fake raw data")
         out_dir = tmp_path / "output"
         parsed = parse_bids_filename(src.name)
@@ -783,7 +783,7 @@ class TestConvertPhysioFile:
         assert any("72" in msg for msg, _ in logs)
 
     def test_raw_with_mock_varioport_no_avg_hr(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.raw"
+        src = tmp_path / "sub-001_ses-1.raw"
         src.write_bytes(b"x")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -808,7 +808,7 @@ class TestConvertPhysioFile:
         assert any("low quality" in msg for msg, _ in logs)
 
     def test_raw_with_type7_retry(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.raw"
+        src = tmp_path / "sub-001_ses-1.raw"
         src.write_bytes(b"x")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -833,7 +833,7 @@ class TestConvertPhysioFile:
         assert call_count[0] == 2
 
     def test_raw_conversion_error_returns_failed(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.raw"
+        src = tmp_path / "sub-001_ses-1.raw"
         src.write_bytes(b"bad data")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -852,7 +852,7 @@ class TestConvertPhysioFile:
         assert "conversion totally failed" in str(result.error)
 
     def test_raw_with_import_error_fallback(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-rest.raw"
+        src = tmp_path / "sub-001_ses-1.raw"
         src.write_bytes(b"raw data bytes")
         out_dir = tmp_path / "out"
         parsed = parse_bids_filename(src.name)
@@ -1123,7 +1123,7 @@ class TestBatchConvertFolder:
     def test_converts_edf_physio_file(self, tmp_path):
         src = tmp_path / "source"
         src.mkdir()
-        (src / "sub-001_task-rest.edf").write_bytes(b"fake edf")
+        (src / "sub-001.edf").write_bytes(b"fake edf")
         out = tmp_path / "output"
 
         result = batch_convert_folder(src, out, modality_filter="physio")

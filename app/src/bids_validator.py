@@ -133,13 +133,11 @@ def run_bids_validator(
 
     # PRISM-only modalities that should be ignored by BIDS
     prism_ignore_folders = {
-        "physiological",
         "physio",
         "survey",
         "biometrics",
         "metadata",
         "environment",
-        "events",
     }
     standard_bids_folders = {
         "anat",

@@ -10,8 +10,17 @@ older single-file/sourcedata-folder path that this tab does not use).
 ## Required naming
 
 ```text
-sub-<label>[_ses-<label>]_task-<label>.[raw|vpd]
+sub-<label>[_ses-<label>][_task-<label>].[raw|vpd]
 ```
+
+`task-` is optional. Files without a task go to `physio/` (EDF + PRISM sidecar).
+Files with a task are written as BIDS `_physio.tsv.gz` + sidecar to a destination
+you must choose: `beh`, `func` or `eeg` (the **Destination for files with a task**
+select; command line: `--destination beh|func|eeg` on `physio batch-convert` and
+`convert physio`). `physio/` never holds task-bound files.
+
+Sleep tracking: raw night signals (actigraphy etc.) belong in `physio/`
+(`recording-actigraphy`); nightly summaries belong in `biometrics/`.
 
 ## Step 1 — Select files or a folder
 
