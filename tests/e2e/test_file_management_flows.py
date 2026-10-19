@@ -548,3 +548,18 @@ def test_renamer_preview_and_copy_both_refuse_a_new_name_that_is_not_a_plain_fil
         assert result["success"] is False and reason in result["new"], result
     assert not (project.parent / "escape.tsv").exists()
     assert not [f for f in project_files(project) if f.endswith((".tsv", ".edf")) and "escape" in f]
+
+
+def test_renamer_task_is_optional_for_physio_only(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path)
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".edf")
+    app_page.fill("#renamerTask", "")
+    app_page.select_option("#renamerModality", "physio")
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    expect(app_page.locator("#renamerNewExample")).to_have_value("sub-{subject}_ses-{session}_physio.edf")
+    expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
+    app_page.select_option("#renamerModality", "beh")
+    expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()

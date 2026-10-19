@@ -2888,7 +2888,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateRenamerBtn() {
         const hasFiles = (renamerFiles && renamerFiles.files && renamerFiles.files.length > 0) || renamerServerEntries.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
-        const hasTask = !!getValidatedTaskLabel();
+        const hasTask = !!getValidatedTaskLabel() || taskIsOptional();
         const hasCurrentProject = Boolean(getCurrentProjectPath());
         const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
@@ -3034,6 +3034,24 @@ document.addEventListener('DOMContentLoaded', () => {
             .toLowerCase()
             .replace(/\s+/g, '-')
             .replace(/[^a-z0-9-]/g, '');
+    }
+
+    // Physio recordings without a task are valid (they stay in physio/); other modalities need one.
+    function taskIsOptional() {
+        return !!renamerModality && renamerModality.value === 'physio';
+    }
+
+    function updateTaskRequirement() {
+        const optional = taskIsOptional();
+        if (renamerTask) renamerTask.required = !optional;
+        const badge = document.getElementById('renamerTaskBadge');
+        if (badge) {
+            badge.textContent = optional ? 'OPTIONAL' : 'REQUIRED';
+            badge.classList.toggle('bg-danger', !optional);
+            badge.classList.toggle('bg-secondary', optional);
+        }
+        const hint = document.getElementById('renamerTaskHint');
+        if (hint) hint.classList.toggle('d-none', !optional);
     }
 
     function getValidatedTaskLabel() {
@@ -3205,14 +3223,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renamerExtension.value = sourceExt || '(none)';
         }
 
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             renamerNewExample.value = '';
             return;
         }
 
         const entities = ['sub-{subject}'];
         if (hasSession) entities.push('ses-{session}');
-        entities.push(`task-${task}`);
+        if (task) entities.push(`task-${task}`);
 
         let suffix = modality;
         if (modality === 'physio' && recording) {
@@ -3437,7 +3455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function inferPattern() {
         if (!currentExampleFile || !renamerNewExample) return;
         const task = getValidatedTaskLabel();
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             if (renamerPattern) renamerPattern.value = '';
             if (renamerReplacement) renamerReplacement.value = '';
             if (renamerPreview) renamerPreview.classList.add('d-none');
@@ -4111,8 +4129,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
             updateRecordingVisibility();
+            updateTaskRequirement();
             buildAutoRenamerFilename();
             inferPattern();
+            updateRenamerBtn();
         });
     }
 
@@ -4215,6 +4235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial state
     updateRecordingVisibility();
+    updateTaskRequirement();
     updateMappingVisibility();
     buildAutoRenamerFilename();
     updateRenamerBtn();

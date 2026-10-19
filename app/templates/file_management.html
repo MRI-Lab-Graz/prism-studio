@@ -338,8 +338,9 @@
                                                 </div>
                                                 <div class="row g-2">
                                                     <div class="col-md-3">
-                                                        <label for="renamerTask" class="form-label small text-muted mb-1">Task <span class="badge bg-danger ms-1">REQUIRED</span></label>
-                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerTask" value="rest" placeholder="e.g. rest" required>
+                                                        <label for="renamerTask" class="form-label small text-muted mb-1">Task <span class="badge bg-secondary ms-1" id="renamerTaskBadge">OPTIONAL</span></label>
+                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerTask" value="" placeholder="e.g. rest">
+                                                        <small id="renamerTaskHint" class="text-muted">Leave empty for recordings without a task. With a task, choose beh, func or eeg as modality.</small>
                                                     </div>
                                                     <div class="col-md-3">
                                                         <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
