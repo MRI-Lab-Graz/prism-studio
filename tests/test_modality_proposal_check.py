@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app
 
 from src.modality_contribution import check_proposal, errors_only, read_proposal  # noqa: E402
 
-EXAMPLE_YAML = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "biosample.yml"
+EXAMPLE_YAML = Path(__file__).resolve().parents[1] / "examples" / "modality_proposal" / "bloodwork.yml"
 
 
 def _proposal(**over) -> dict:

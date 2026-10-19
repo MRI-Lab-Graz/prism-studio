@@ -170,10 +170,10 @@ file to `app/schemas/archive/<name>/`, as described in
 ## Example
 
 A complete example (venous blood drawn alongside MRI) lives in
-`examples/modality_proposal/biosample.yml` with
-`examples/modality_proposal/biosample_sample.tsv`:
+`examples/modality_proposal/bloodwork.yml` with
+`examples/modality_proposal/bloodwork_sample.tsv`:
 
 ```bash
-python prism_tools.py modality propose examples/modality_proposal/biosample.yml \
-    --sample examples/modality_proposal/biosample_sample.tsv --out biosample_out
+python prism_tools.py modality propose examples/modality_proposal/bloodwork.yml \
+    --sample examples/modality_proposal/bloodwork_sample.tsv --out bloodwork_out
 ```

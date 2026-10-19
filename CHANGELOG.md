@@ -74,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DataLad.** A snapshot message that starts with `-` (for example `--wip`) was read as an option and the save
   failed; messages are passed as `--message=...` now. A server sibling name or alias must be a plain label (letters,
   digits, `.`, `_`, `-`), so it can no longer break the remote name or place a store alias outside the store.
+- **Modality proposal example.** The shipped example is now `examples/modality_proposal/bloodwork.yml` (the
+  former `biosample` example became a real modality), so `modality propose` on it works again.
 - **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
   accepted; a `|` in a known-issue text no longer splits it.
 
