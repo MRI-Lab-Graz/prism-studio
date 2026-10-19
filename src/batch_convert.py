@@ -45,6 +45,20 @@ BIDS_FILENAME_PATTERN = re.compile(
 # Modality detection by extension
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
+
+# Where a physio recording that belongs to a task may go.
+PHYSIO_TASK_DESTINATIONS = ("beh", "func", "eeg")
+
+
+def physio_target_folder(task: str | None, destination: str | None) -> str:
+    """Folder for a physio file: `physio` without a task, else the chosen destination."""
+    if not task:
+        return "physio"
+    if destination not in PHYSIO_TASK_DESTINATIONS:
+        raise ValueError(
+            f"A physio recording with a task needs a destination: one of {', '.join(PHYSIO_TASK_DESTINATIONS)}"
+        )
+    return destination
 # Pre-processed eyetracking trial-summary tables (e.g. exported from EyeLink Data
 # Viewer). Kept separate from EYETRACKING_EXTENSIONS/detect_modality() because
 # .tsv/.tsv.gz are ambiguous in general (they're also GENERIC_EXTENSIONS) — these
