@@ -274,7 +274,7 @@ def test_export_methods_docx(tmp_path):
 def test_export_methods_bib_is_text(tmp_path):
     resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "bib"})
     assert resp.status_code == 200
-    assert "methods_section_en.bib" in resp.headers["Content-Disposition"]
+    assert "references.bib" in resp.headers["Content-Disposition"]
 
 
 def test_export_methods_rejects_unknown_format(tmp_path):

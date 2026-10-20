@@ -337,9 +337,9 @@ def test_processing_names_task_scores_and_software():
     assert "DataProcessing" in used
 
 
-def test_processing_without_recipes_is_software_only():
-    md, _ = _proc(proc={"recipes": [], "software": _PROC["software"]})
-    assert "scored" not in md and "PRISM Studio v9.9.9" in md
+def test_processing_without_recipes_or_exclusions_adds_nothing():
+    md, used = _proc(proc={"recipes": [], "software": _PROC["software"]})
+    assert "processed with" not in md and "DataProcessing" not in used
 
 
 def test_processing_brief_is_empty():

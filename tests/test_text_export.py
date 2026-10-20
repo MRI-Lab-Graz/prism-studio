@@ -121,3 +121,53 @@ def test_tex_maps_common_non_latin_symbols():
     tex = md_to_tex("Cronbach α = .89, x ≥ 3, ± 2")
     assert "α" not in tex and "≥" not in tex and "±" not in tex
     assert "\\ensuremath{\\alpha}" in tex and "\\ensuremath{\\geq}" in tex
+
+
+# ---- TeX citations linked to the .bib ------------------------------------------
+
+_CIT = "Smith, J., & Doe, A. (2020). Stress. Journal."
+
+
+def _tpl_cit(cit=_CIT):
+    return {"ads": {"Study": {"References": [{"Type": "primary", "Citation": cit}]}}}
+
+
+def test_bib_entry_has_author_and_year_from_apa_text():
+    from src.text_export import references_bib
+
+    bib = references_bib(_tpl_cit())
+    assert "author = {{Smith, J., \\& Doe, A.}}" in bib
+    assert "year = {2020}" in bib
+
+
+def test_citation_keys_maps_text_to_bib_key():
+    from src.text_export import citation_keys, references_bib
+
+    keys = citation_keys(_tpl_cit())
+    assert keys == {_CIT: "smith2020"}
+    assert "@misc{smith2020," in references_bib(_tpl_cit())
+    assert citation_keys(_tpl_cit("no year here")) == {}  # unparseable stays plain text
+
+
+def test_tex_cites_replace_inline_citation_and_load_natbib():
+    from src.text_export import md_to_tex
+
+    tex = md_to_tex(f"The ADS ({_CIT}) was used & scored.", cites={_CIT: "smith2020"})
+    assert "\\citep{smith2020}" in tex and "Stress. Journal" not in tex
+    assert "was used \\& scored" in tex
+    assert "\\usepackage{natbib}" in tex and "\\bibliography{references}" in tex
+
+
+def test_tex_without_cites_has_no_bibliography():
+    from src.text_export import md_to_tex
+
+    tex = md_to_tex("Plain text.", cites={_CIT: "smith2020"})
+    assert "natbib" not in tex and "\\bibliography" not in tex
+
+
+def test_render_methods_tex_links_citations():
+    from src.methods_project import MethodsResult, render_methods
+
+    result = MethodsResult(f"The ADS ({_CIT}) was used.", [], [], _tpl_cit())
+    assert "\\citep{smith2020}" in render_methods(result, "tex").decode()
+    assert _CIT in render_methods(result, "md").decode()  # md/html/docx keep the APA text
