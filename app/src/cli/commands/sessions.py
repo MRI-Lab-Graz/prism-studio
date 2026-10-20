@@ -28,7 +28,8 @@ def cmd_sessions_review(args) -> None:
         survey_id = survey_id_of(source)
         decisions = load_session_assignments(args.project, survey_id) if args.project else {}
         rows, warnings = session_assignment_table(
-            df, args.id_column, args.date_column, decisions=decisions
+            df, args.id_column, args.date_column, decisions=decisions,
+            imported_root=args.project if getattr(args, "skip_existing", False) else None,
         )
     except (ValueError, OSError) as exc:  # SessionAssignmentError is a ValueError
         _fail(exc)

@@ -176,7 +176,8 @@ numbers each ID's rows 1, 2, … by `startdate`/`datestamp`).
 (recognised by the `startdate`/`seed`/`token` record kept in `code/survey_imports.json`, whatever
 session it was stored under) is skipped per survey, a response found under another session is
 flagged, and a different response in an occupied subject/session/survey slot is reported as a
-conflict and never overwritten. Without a record in that file the check falls back to the
+conflict and never overwritten. A recorded response is skipped as a whole, even if the project lacks a file for one of the
+questionnaires in the export (the check is about new *responses*). Without a record in that file it falls back to the
 file name and says so.
 
 Templates are optional for `.lsa` files: questionnaires without a library template are
@@ -431,6 +432,7 @@ by `startdate`/`datestamp`; incomplete ones are left out. Review, then override:
 
 ```bash
 python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project
+python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project --skip-existing  # only responses not yet imported
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 502 --session pre
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 501 --skip
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 503 --include

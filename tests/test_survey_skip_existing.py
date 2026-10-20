@@ -43,15 +43,14 @@ def test_second_import_with_new_response_only_adds_the_new_session(tmp_path):
     assert result.existing_summary["already_imported"] == 3
 
 
-def test_missing_survey_file_is_restored_while_others_stay(tmp_path):
+def test_a_recorded_response_is_not_reimported_even_if_one_of_its_files_is_gone(tmp_path):
     _convert(tmp_path, REAL_PATTERN)
     marked = _mark(tmp_path)
-    gone = marked[0]
-    gone.unlink()
+    marked[0].unlink()
 
     _convert(tmp_path, REAL_PATTERN, skip_existing=True)
 
-    assert gone.exists() and gone.read_text() != "SENTINEL"
+    assert not marked[0].exists()  # the response is known; nothing is restored behind your back
     assert all(p.read_text() == "SENTINEL" for p in marked[1:])
 
 

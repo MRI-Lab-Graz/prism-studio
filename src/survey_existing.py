@@ -65,16 +65,22 @@ class ImportIndex:
             None,
         )
 
+    def is_imported(self, fingerprint) -> bool:
+        """True when this response is recorded anywhere in the project (whatever its session)."""
+        return fingerprint in self._by_slot.values()
+
     def classify(self, sub: str, ses: str, fingerprint, *, target_exists: bool) -> str:
-        """import | skip_imported | skip_unverified | conflict | moved"""
+        """skip_imported | skip_unverified | conflict | moved | import
+
+        A recorded response is skipped as a whole: a questionnaire file the project
+        never had (a sociodemographic one, say) does not make it new again.
+        """
         stored = self._by_slot.get((sub, ses))
+        if stored == fingerprint:
+            return "skip_imported"
         if target_exists:
-            if stored is None:
-                return "skip_unverified"
-            return "skip_imported" if stored == fingerprint else "conflict"
-        if stored != fingerprint and self.where_imported(sub, fingerprint):
-            return "moved"
-        return "import"
+            return "skip_unverified" if stored is None else "conflict"
+        return "moved" if self.where_imported(sub, fingerprint) else "import"
 
 
 class ExistingPolicy:

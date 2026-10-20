@@ -1,12 +1,13 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 
 /** Review request body: the uploaded file, or the path picked with Browse. Null until both inputs exist. */
-export function reviewFormData({ file, serverPath, idColumn }) {
+export function reviewFormData({ file, serverPath, idColumn, skipExisting = false }) {
     if (!idColumn || !(file || serverPath)) return null;
     const formData = new FormData();
     if (file) formData.append('file', file);
     else formData.append('source_file_path', serverPath);
     formData.append('id_column', idColumn);
+    if (skipExisting) formData.append('skip_existing', 'true');
     return formData;
 }
 
@@ -85,6 +86,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             file: document.getElementById('convertSurveyFile')?.files?.[0],
             serverPath: getConvertServerFilePath(),
             idColumn: document.getElementById('convertIdColumn')?.value || '',
+            skipExisting: Boolean(document.getElementById('convertSkipExisting')?.checked),
         });
         if (!formData) {
             body.textContent = 'Choose the survey file and the participant ID column first.';
@@ -118,6 +120,10 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             if (!expanded) return load();
             loadSeq += 1; // drop a load still in flight so it cannot re-open the table
             body.replaceChildren();
+        });
+        // An open table follows the checkbox: imported responses appear or disappear.
+        document.getElementById('convertSkipExisting')?.addEventListener('change', () => {
+            if (toggleBtn?.getAttribute('aria-expanded') === 'true') load();
         });
         body?.addEventListener('change', async (event) => {
             const row = event.target.closest('tr[data-response-id]');

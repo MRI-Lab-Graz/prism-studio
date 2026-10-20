@@ -17,6 +17,13 @@ describe('reviewFormData', () => {
         expect(form.get('source_file_path')).toBeNull();
     });
 
+    it('asks to hide responses already in the project when skip-existing is on', () => {
+        const on = reviewFormData({ file: null, serverPath: '/d/a.lsa', idColumn: 'token', skipExisting: true });
+        const off = reviewFormData({ file: null, serverPath: '/d/a.lsa', idColumn: 'token' });
+        expect(on.get('skip_existing')).toBe('true');
+        expect(off.get('skip_existing')).toBeNull();
+    });
+
     it('returns null until a file (or path) and an ID column are chosen', () => {
         expect(reviewFormData({ file: null, serverPath: '', idColumn: 'token' })).toBeNull();
         expect(reviewFormData({ file: null, serverPath: '/data/a.lsa', idColumn: '' })).toBeNull();

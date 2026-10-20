@@ -536,6 +536,7 @@ def build_prism_tools_parsers(
     parser_sessions_review.add_argument("--id-column", required=True, help="Participant ID column (e.g. token)")
     parser_sessions_review.add_argument("--date-column", default="startdate", help="Date column (default: startdate, falls back to datestamp)")
     parser_sessions_review.add_argument("--project", help="Project root or project.json path (applies its saved decisions)")
+    parser_sessions_review.add_argument("--skip-existing", action="store_true", help="Leave out responses already imported into --project")
     parser_sessions_review.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_sessions_set = sessions_subparsers.add_parser(

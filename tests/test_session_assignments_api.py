@@ -112,3 +112,21 @@ def test_post_saves_an_include_decision(client):
 
     assert resp.status_code == 200
     assert load_session_assignments(client.project, "999999") == {"1": {"include": True}}
+
+
+def test_review_hides_responses_already_in_the_project_when_asked(client, tmp_path):
+    from src.survey_existing import record_imports, row_fingerprint
+
+    fp = row_fingerprint({"startdate": "2026-03-01 11:00:00", "token": "a"}, ["startdate", "token"])
+    record_imports(client.project, client.project, [("sub-a", "ses-1", fp)])
+
+    def review(**extra):
+        return client.post(
+            "/api/session-assignments/review", data={**_upload(tmp_path), **extra},
+            content_type="multipart/form-data",
+        ).get_json()
+
+    assert "2" in {r["response_id"] for r in review()["rows"]}
+    hidden = review(skip_existing="true")
+    assert "2" not in {r["response_id"] for r in hidden["rows"]}
+    assert {r["response_id"]: r for r in hidden["rows"]}["3"]["session"] == "2"

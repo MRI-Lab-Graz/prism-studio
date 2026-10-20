@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   files are gone; the `startdate`/`seed`/`token` fingerprint that "skip surveys already in the project" relies on now
   lives in one `code/survey_imports.json`, outside the PRISM-checked folders. Projects imported before keep their old
   files (the validator still ignores them); their skipped responses are matched by file name until re-imported.
+- **Skip-existing judges whole responses, and the session review hides imported ones.** A response already recorded in
+  `code/survey_imports.json` is skipped even if the project lacks a file for one of the export's questionnaires (it no
+  longer reappears as "new"). With "Skip surveys already in the project" on, "Review session assignment" (and
+  `sessions review --skip-existing`) lists only responses not yet imported; sessions are still numbered across the file.
 - **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
   rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
   their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.
