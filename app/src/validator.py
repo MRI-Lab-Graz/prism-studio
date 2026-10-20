@@ -1314,8 +1314,11 @@ class DatasetValidator:
 
         rule = _ENTITY_RULES.modalities.get(modality)
         if rule is not None and rule.allowed_entities is not None:
+            has_task = any(t.startswith("task-") for t in base.split("_")[1:])
+            hint_pending = modality == "physio" and has_task
             for message in check_entities(base, rule.allowed_entities, _ENTITY_RULES.entity_order):
-                if modality == "physio" and "'task'" in message:
+                if hint_pending:
+                    hint_pending = False
                     message += (
                         " - task-bound physio belongs next to its task: "
                         "beh/, func/ or eeg/ (re-convert with destination beh/func/eeg "

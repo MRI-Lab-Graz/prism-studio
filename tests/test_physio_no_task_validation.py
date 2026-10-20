@@ -9,11 +9,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app
 import runner  # noqa: E402
 
 
-def _validate(tmp_path, files):
+def _validate(tmp_path, files, sidecar=None, sidecar_for=None):
     for rel in files:
         p = tmp_path / rel
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({}) if rel.endswith(".json") else "x\n")
+        if rel.endswith(".json"):
+            p.write_text(json.dumps((sidecar or {}) if rel in (sidecar_for or ()) else {}))
+        else:
+            p.write_text("x\n")
     (tmp_path / "dataset_description.json").write_text(
         json.dumps({"Name": "t", "BIDSVersion": "1.9.0"})
     )
@@ -65,9 +68,15 @@ def test_task_free_physio_is_clean(tmp_path):
             "sub-01/ses-pre/physio/sub-01_ses-pre_recording-ecg_physio.edf",
             "sub-01/ses-pre/physio/sub-01_ses-pre_recording-ecg_physio.json",
         ],
+        sidecar={
+            "Technical": {"SamplingFrequency": 100, "StartTime": 0.0, "Columns": ["ecg"]},
+            "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-19"},
+        },
+        sidecar_for=["sub-01/ses-pre/physio/sub-01_ses-pre_recording-ecg_physio.json"],
     )
-    bad = [m for m in _errors(issues) if "sub-01_ses-pre_recording-ecg_physio" in m
-           and ("entity" in m or "filename" in m.lower() or "pattern" in m)]
+    # No ERROR/WARNING at all about these files (filename, entities, pattern, ...).
+    bad = [(lvl, m) for lvl, m in issues
+           if lvl in ("ERROR", "WARNING") and "recording-ecg_physio" in m]
     assert bad == []
 
 
@@ -92,3 +101,16 @@ def test_physiological_folder_at_session_level_is_flagged(tmp_path):
         )
     )
     assert any("physiological" in m and "physio/" in m for m in errs), errs
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("folder", ["events", "physiological"])
+@pytest.mark.parametrize("level", ["sub-01", "sub-01/ses-pre"])
+def test_empty_retired_folder_gets_retired_hint(tmp_path, folder, level):
+    (tmp_path / level / folder).mkdir(parents=True)
+    errs = _errors(_validate(tmp_path, []))
+    assert not any("Empty directory" in m and folder in m for m in errs), errs
+    hint = "func" if folder == "events" else "physio/"
+    assert any(folder in m and hint in m for m in errs), errs
