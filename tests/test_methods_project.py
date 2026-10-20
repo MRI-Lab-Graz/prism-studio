@@ -76,3 +76,15 @@ def test_build_methods_reports_warnings(tmp_path):
     p = _project(tmp_path, {"TaskDefinitions": {"ads": {"modality": "survey"}}})
     result = build_methods(p, app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
     assert any("sample size" in w for w in result.warnings)
+
+
+def test_build_methods_includes_acquisition_from_sidecars(tmp_path):
+    p = _project(tmp_path, {"StudyDesign": {"Type": "cross-sectional"}})
+    d = p / "sub-01" / "ses-1" / "func"
+    d.mkdir(parents=True)
+    (d / "sub-01_ses-1_task-x_bold.json").write_text(
+        json.dumps({"RepetitionTime": 2.0}), encoding="utf-8"
+    )
+    result = build_methods(p, app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
+    assert "TR = 2000 ms" in result.md
+    assert "DataAcquisition" in result.sections_used

@@ -257,3 +257,54 @@ def test_no_warnings_complete_project():
     project = {"TaskDefinitions": {"ads": {"modality": "survey"}}}
     tpl = {"ads": {"Study": {"References": [{"Type": "primary", "Citation": "Smith (2020)"}]}}}
     assert methods_warnings(project, {"n": 5}, tpl) == []
+
+
+# ---- Task 7: acquisition section ---------------------------------------------
+
+_ACQ = {
+    "modalities": {
+        "func": {
+            "n_subjects": 2,
+            "sessions": {"1": 1, "01": 1},
+            "params": {
+                "RepetitionTime": [2.0],
+                "EchoTime": [0.03],
+                "FlipAngle": [90],
+                "MagneticFieldStrength": [3],
+                "Manufacturer": ["Siemens"],
+                "ManufacturersModelName": ["Prisma"],
+            },
+        }
+    }
+}
+
+
+def _acq(detail="standard", lang="en", acq=_ACQ):
+    return generate_full_methods(
+        project_data={},
+        dataset_desc=None,
+        template_data={},
+        lang=lang,
+        detail_level=detail,
+        continuous=True,
+        acquisition=acq,
+    )
+
+
+def test_acquisition_section_has_parameters_and_verbatim_sessions():
+    md, used = _acq()
+    assert "TR = 2000 ms" in md and "TE = 30 ms" in md and "3 T Siemens Prisma" in md
+    assert "N = 2" not in md and "2 participants" in md
+    assert "1 (*n* = 1)" in md and "01 (*n* = 1)" in md
+    assert "DataAcquisition" in used
+
+
+def test_acquisition_section_brief_and_empty():
+    assert "TR =" not in _acq("brief")[0]
+    assert "DataAcquisition" not in _acq(acq={"modalities": {}})[1]
+
+
+def test_acquisition_section_de_is_not_mixed_language():
+    md, _ = _acq(lang="de")
+    assert "TR = 2000 ms" in md
+    assert "were acquired" not in md and "participants" not in md

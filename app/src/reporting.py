@@ -587,6 +587,65 @@ def _session_display_label(sess: dict, index: int) -> str:
     return raw
 
 
+_ACQ_LABELS = {
+    "func": ("Functional MRI", "Funktionelle MRT-Daten"),
+    "anat": ("Structural MRI", "Strukturelle MRT-Daten"),
+    "dwi": ("Diffusion MRI", "Diffusions-MRT-Daten"),
+    "fmap": ("Field map", "Feldkarten"),
+    "eeg": ("EEG", "EEG-Daten"),
+    "physio": ("Physiological", "Physiologische Daten"),
+    "eyetracking": ("Eye-tracking", "Eyetracking-Daten"),
+}
+
+
+def _acq_num(values, scale: float = 1) -> str:
+    return " / ".join(f"{round(v * scale, 3):g}" for v in values if isinstance(v, (int, float)))
+
+
+def _acquisition_section(summary: dict | None, lang: str, detail_level: str) -> str:
+    """Per-modality sentences from sidecar parameters; only fields present are mentioned."""
+    if detail_level == "brief" or not (summary or {}).get("modalities"):
+        return ""
+    de = lang == "de"
+    out: list[str] = []
+    for modality, info in summary["modalities"].items():
+        label = _ACQ_LABELS.get(modality, (modality, modality))[1 if de else 0]
+        n = info.get("n_subjects", 0)
+        sessions = ", ".join(f"{k} (*n* = {v})" for k, v in (info.get("sessions") or {}).items())
+        if de:
+            sent = f"{label} wurden für {n} Teilnehmende erhoben"
+            sent += f" (Sitzungen: {sessions})." if sessions else "."
+        else:
+            sent = f"{label} data were acquired for {n} participants"
+            sent += f" (sessions: {sessions})." if sessions else "."
+        p = info.get("params") or {}
+        device = " ".join(
+            x
+            for x in (
+                f"{_acq_num(p['MagneticFieldStrength'])} T" if p.get("MagneticFieldStrength") else "",
+                " / ".join(map(str, p.get("Manufacturer") or [])),
+                " / ".join(map(str, p.get("ManufacturersModelName") or [])),
+            )
+            if x
+        )
+        details = [
+            f"{name} = {text}{unit}"
+            for name, text, unit in (
+                ("TR", _acq_num(p.get("RepetitionTime") or [], 1000), " ms"),
+                ("TE", _acq_num(p.get("EchoTime") or [], 1000), " ms"),
+                ("Flipwinkel" if de else "flip angle", _acq_num(p.get("FlipAngle") or []), "°"),
+                ("Abtastrate" if de else "sampling rate", _acq_num(p.get("SamplingFrequency") or []), " Hz"),
+            )
+            if text
+        ]
+        if device:
+            sent += (f" Gerät: {device}" if de else f" Device: {device}") + (f" ({', '.join(details)})." if details else ".")
+        elif details:
+            sent += f" ({', '.join(details)})."
+        out.append(sent)
+    return " ".join(out)
+
+
 def methods_warnings(
     project_data: dict, participant_stats: dict | None, template_data: dict[str, dict]
 ) -> list[str]:
@@ -611,6 +670,7 @@ def generate_full_methods(
     lang: str = "en",
     detail_level: str = "standard",
     continuous: bool = False,
+    acquisition: dict | None = None,
 ) -> tuple[str, list[str]]:
     """Generate a publication-ready methods section from project.json metadata.
 
@@ -1137,6 +1197,15 @@ def generate_full_methods(
                 sections.append("\n" + h)
             sections.append(" ".join(parts))
             sections_used.append("DataCollection")
+
+    # --- Data Acquisition (sidecar parameters) ---
+    acq_text = _acquisition_section(acquisition, lang, detail_level)
+    if acq_text:
+        h = _heading(2, "Data Acquisition")
+        if h:
+            sections.append("\n" + h)
+        sections.append(acq_text)
+        sections_used.append("DataAcquisition")
 
     # --- Quality Control ---
     qc = (procedure.get("QualityControl") or []) if procedure else []
