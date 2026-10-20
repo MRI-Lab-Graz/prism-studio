@@ -356,3 +356,94 @@ def test_processing_de_is_not_mixed_language():
     md, _ = _proc(lang="de")
     assert "Depression, Anxiety" in md
     assert "were scored" not in md and "Software" in md
+
+
+# ---- Task 9: richer participants / procedure / measures ------------------------
+
+_TPL9 = {
+    "ads": {
+        "Study": {
+            "TaskName": {"en": "Affective Distress Scale"},
+            "Subscales": ["Worry", "Tension"],
+            "AdministrationTime": {"min": 5, "max": 10},
+            "License": "CC BY 4.0",
+        }
+    }
+}
+
+
+def _measures(detail="standard", tpl=_TPL9):
+    return generate_full_methods(
+        project_data={"TaskDefinitions": {"ads": {"modality": "survey"}}},
+        dataset_desc=None,
+        template_data=tpl,
+        lang="en",
+        detail_level=detail,
+        continuous=True,
+    )[0]
+
+
+def test_standard_measures_state_subscales_time_and_license():
+    md = _measures()
+    assert "subscales: Worry, Tension" in md
+    assert "approximately 5-10 minutes" in md
+    assert "License: CC BY 4.0." in md
+
+
+def test_brief_measures_skip_the_new_details():
+    md = _measures("brief")
+    assert "Worry" not in md and "License" not in md
+
+
+def test_unverified_license_is_not_published():
+    tpl = {"ads": {"Study": {"License": "NOT VERIFIED: the upstream page states nothing"}}}
+    assert "NOT VERIFIED" not in _measures(tpl=tpl)
+
+
+def test_procedure_keeps_session_labels_verbatim():
+    md, _ = generate_full_methods(
+        project_data={
+            "Sessions": [
+                {"id": "ses-1", "label": "1", "tasks": []},
+                {"id": "ses-01", "label": "01", "tasks": []},
+            ]
+        },
+        dataset_desc=None,
+        template_data={},
+        continuous=True,
+    )
+    assert '("1")' in md and '("01")' in md
+
+
+def test_participants_state_per_session_n_when_counts_differ():
+    acq = {"modalities": {"func": {"n_subjects": 40, "sessions": {"1": 40, "01": 35}, "params": {}}}}
+    md, _ = generate_full_methods(
+        project_data={"Recruitment": {"Method": "flyers"}},
+        dataset_desc=None,
+        template_data={},
+        continuous=True,
+        acquisition=acq,
+    )
+    assert "*N* = 40 at 1, *N* = 35 at 01" in md
+
+
+def test_participants_no_per_session_n_when_counts_equal():
+    acq = {"modalities": {"func": {"n_subjects": 5, "sessions": {"1": 5, "2": 5}, "params": {}}}}
+    md, _ = generate_full_methods(
+        project_data={"Recruitment": {"Method": "flyers"}},
+        dataset_desc=None,
+        template_data={},
+        continuous=True,
+        acquisition=acq,
+    )
+    assert " at 1," not in md
+
+
+def test_session_id_label_is_shown_exactly_without_ses_prefix():
+    md, _ = generate_full_methods(
+        project_data={"Sessions": [{"id": "ses-pre", "tasks": []}, {"id": "ses-01", "tasks": []}]},
+        dataset_desc=None,
+        template_data={},
+        continuous=True,
+    )
+    assert '("pre")' in md and '("01")' in md

@@ -14,7 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
-- **Status: Tasks 1-8 done. Resume at Task 9. (Task 8 rulings: recipes read directly from code/recipes/*/recipe-*.json, not via recipes_surveys loader (heavy, validating); eligibility_flags omitted since check_eligibility yields messages, not a participant count.) (Task 6 ruling: reordered by moving existing section blocks, not splitting into functions; old Data Collection block stays as its own section until Task 7 adds sidecar-based acquisition.) (Task 5 GUI buttons not clicked in a browser; pre-existing e2e failure tests/e2e/test_projects_layout.py::test_a_dataset_description_error_links_to_the_field_it_names fails on a clean checkout too.)** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
+- **Status: Tasks 1-9 done. Resume at Task 10. (Task 8 rulings: recipes read directly from code/recipes/*/recipe-*.json, not via recipes_surveys loader (heavy, validating); eligibility_flags omitted since check_eligibility yields messages, not a participant count.) (Task 6 ruling: reordered by moving existing section blocks, not splitting into functions; old Data Collection block stays as its own section until Task 7 adds sidecar-based acquisition.) (Task 5 GUI buttons not clicked in a browser; pre-existing e2e failure tests/e2e/test_projects_layout.py::test_a_dataset_description_error_links_to_the_field_it_names fails on a clean checkout too.)** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -179,9 +179,9 @@
 - Consumes: `project_data` fields already read plus `DataCollection`, `Procedure.*`, instrument `Study.Subscales/Reliability/Validity/License/AdministrationTime`.
 - Behaviour: at `standard` level also state subscales, administration time and licence per instrument (today `detailed` only for subscales/reliability); Procedure states session order and timing for every session (labels verbatim); Participants states per-session N when `acquisition_summary` gives different counts per session ("N = 40 at 1, N = 35 at 01" style, labels verbatim).
 
-- [ ] **Step 1: Write failing tests** for each bullet above (assert exact sentences for a small fixture; one test with sessions `"1"` and `"01"` asserting both labels appear and no merged count).
-- [ ] **Step 2:** Run; FAIL. **Step 3:** Implement in the section functions from Task 6. **Step 4:** Run the whole file; PASS.
-- [ ] **Step 5:** Commit `feat(methods): richer participants/procedure/measures text`.
+- [x] **Step 1: Write failing tests** for each bullet above (assert exact sentences for a small fixture; one test with sessions `"1"` and `"01"` asserting both labels appear and no merged count).
+- [x] **Step 2:** Run; FAIL. **Step 3:** Implement in the section functions from Task 6. **Step 4:** Run the whole file; PASS.
+- [x] **Step 5:** Commit `feat(methods): richer participants/procedure/measures text`.
 
 ### Task 10: Docs and finish
 

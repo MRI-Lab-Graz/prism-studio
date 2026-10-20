@@ -569,21 +569,17 @@ def _get_response_format(template: dict, lang: str = "en") -> str | None:
 def _session_display_label(sess: dict, index: int) -> str:
     """Return a human-readable session label for use in prose.
 
-    Strips the 'ses-' prefix and capitalises, e.g. 'ses-01' -> 'Session 01',
-    'ses-baseline' -> 'Baseline'.  Falls back to 'Session N'.
+    Strips the 'ses-' prefix, e.g. 'ses-01' -> '01', 'ses-pre' -> 'pre'; the label
+    is never normalised.  Falls back to 'Session N'.
     """
     raw = sess.get("label", "")
     if not raw:
         raw = sess.get("id", "")
     if not raw:
         return f"Session {index + 1}"
-    # Strip ses- prefix for display
+    # Strip the ses- prefix only; labels are free-form strings and stay exactly as given
     if raw.lower().startswith("ses-"):
-        stripped = raw[4:]
-        # If purely numeric, keep as "Session <num>"
-        if stripped.isdigit():
-            return f"Session {stripped}"
-        return stripped.capitalize()
+        return raw[4:]
     return raw
 
 
@@ -791,6 +787,14 @@ def generate_full_methods(
                         )
             sections_used.append("SampleDescription")
 
+        per_session: dict[str, int] = {}
+        for info in ((acquisition or {}).get("modalities") or {}).values():
+            for label, count in (info.get("sessions") or {}).items():
+                per_session[label] = max(per_session.get(label, 0), count)
+        if len(set(per_session.values())) > 1:
+            listed = ", ".join(f"*N* = {c} at {k}" for k, c in per_session.items())
+            parts.append(f"The number of participants with recorded data differed between sessions ({listed}).")
+
         method = recruitment.get("Method", "")
         if method:
             parts.append(f"Participants were recruited via {method.rstrip('.')}.")
@@ -933,6 +937,16 @@ def generate_full_methods(
                     sess_intro = f'In session {i + 1} ("{sess_label}"),'
 
                 tasks = sess.get("tasks") or []
+                if not tasks:
+                    if i == 0:
+                        parts.append(f'The first session ("{sess_label}") took place at study enrollment.')
+                    elif isinstance(timing_val, (int, float)) and timing_val > 0:
+                        parts.append(
+                            f'Session {i + 1} ("{sess_label}") took place approximately '
+                            f"{int(timing_val)} {timing_unit} after baseline."
+                        )
+                    else:
+                        parts.append(f'Session {i + 1} ("{sess_label}") followed.')
                 if tasks:
                     grouped: dict[int, list[str]] = {}
                     for t in tasks:
@@ -1157,12 +1171,14 @@ def generate_full_methods(
                             sentences.append(f"Normative data reference: {norms_ref}.")
                         sentences.extend(_instrument_additional_metadata(study))
 
-                if is_detailed:
-                    subscales = study.get("Subscales") or [] if study else []
+                if not is_brief and study:
+                    subscales = study.get("Subscales") or []
                     if subscales:
-                        sentences.append(
-                            f"The instrument contains the following subscales: {', '.join(subscales)}."
-                        )
+                        sentences.append(f"The instrument has the subscales: {', '.join(subscales)}.")
+                    license_text = _get_i18n_text_strict(study.get("License"), lang)
+                    if license_text and not license_text.upper().startswith("NOT VERIFIED"):
+                        sentences.append(f"License: {license_text.rstrip('.')}.")
+                if is_detailed:
                     reliability = (
                         _get_i18n_text_strict(study.get("Reliability"), lang)
                         if study
@@ -1181,10 +1197,18 @@ def generate_full_methods(
                 duration = td.get("duration") or {}
                 dur_val = duration.get("Value")
                 dur_unit = duration.get("Unit", "minutes")
+                admin = (study or {}).get("AdministrationTime") if tpl else None
                 if isinstance(dur_val, (int, float)) and not is_brief:
                     sentences.append(
                         f"The estimated completion time is {dur_val} {dur_unit}."
                     )
+                elif admin and not is_brief:
+                    if isinstance(admin, dict) and isinstance(admin.get("min"), (int, float)):
+                        lo, hi = admin["min"], admin.get("max", admin["min"])
+                        span = f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"
+                        sentences.append(f"Administration takes approximately {span} minutes.")
+                    elif isinstance(admin, str) and admin.strip():
+                        sentences.append(f"Administration takes approximately {admin.strip().rstrip('.')}.")
 
                 measures_parts.append(" ".join(sentences))
 
