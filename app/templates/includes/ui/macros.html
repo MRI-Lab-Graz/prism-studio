@@ -80,10 +80,10 @@
 {% macro section_card(title, icon_class, icon_color_class='text-success', card_classes='feature-card mb-4', body_classes='p-5', title_classes='card-title mb-4 home-section-title') -%}
 <div class="card {{ card_classes }}">
     <div class="card-body {{ body_classes }}">
-        <h4 class="{{ title_classes }}">
+        <h3 class="h4 {{ title_classes }}">
             <i class="{{ icon_class }} {{ icon_color_class }} me-2"></i>
             {{ title }}
-        </h4>
+        </h3>
         {{ caller() }}
     </div>
 </div>

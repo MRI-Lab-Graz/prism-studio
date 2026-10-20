@@ -5,7 +5,7 @@
     <div class="form-section" id="section-init-bids">
         <div class="card shadow-sm">
             <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0"><i class="fas fa-layer-group text-warning me-2"></i>Init PRISM on Existing BIDS Dataset</h5>
+                <h4 class="h5 mb-0"><i class="fas fa-layer-group text-warning me-2"></i>Init PRISM on Existing BIDS Dataset</h4>
             </div>
             <div class="card-body">
                 {{ project_flow_strip('project-flow-strip--init', 'initBidsFlowStrip', [
@@ -23,9 +23,9 @@
                 <form id="initBidsForm">
                     <label class="form-label fw-bold d-block">Where is your dataset?</label>
                     <div class="btn-group mb-3" role="group" aria-label="Dataset source">
-                        <input type="radio" class="btn-check" name="initBidsSource" id="initBidsSourceLocal" value="local" autocomplete="off" checked>
+                        <input type="radio" class="btn-check" name="initBidsSource" id="initBidsSourceLocal" value="local" checked>
                         <label class="btn btn-outline-secondary" for="initBidsSourceLocal"><i class="fas fa-folder-open me-2"></i>Existing folder (local or network drive)</label>
-                        <input type="radio" class="btn-check" name="initBidsSource" id="initBidsSourceRemote" value="remote" autocomplete="off">
+                        <input type="radio" class="btn-check" name="initBidsSource" id="initBidsSourceRemote" value="remote">
                         <label class="btn btn-outline-secondary" for="initBidsSourceRemote"><i class="fas fa-cloud-arrow-down me-2"></i>Download from URL (Git / DataLad / OpenNeuro)</label>
                     </div>
 
