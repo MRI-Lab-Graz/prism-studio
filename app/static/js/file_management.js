@@ -3828,8 +3828,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             isValidBids = false;
                             bidsError = 'Missing entities/suffix';
                         } else {
-                            const lastDot = res.new.lastIndexOf('.');
-                            const stem = lastDot > -1 ? res.new.slice(0, lastDot) : res.new;
+                            // compound extension .tsv.gz must go as a whole
+                            const stem = res.new.replace(/\.(tsv\.gz|[^.]*)$/i, '');
                             const suffix = stem.split('_').pop();
                             const expectedSuffixes = {
                                 physio: 'physio',

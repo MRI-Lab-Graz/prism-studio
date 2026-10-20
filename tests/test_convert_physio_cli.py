@@ -168,3 +168,21 @@ def test_task_with_destination_writes_bids_files(tmp_path, monkeypatch) -> None:
     assert (folder / f"{base}.tsv.gz").exists()
     assert (folder / f"{base}.json").exists()
     assert not (out / "sub-01" / "ses-01" / "physio").exists()
+
+
+def test_destination_without_task_warns_that_it_is_ignored(tmp_path, monkeypatch, capsys) -> None:
+    inp, out = _dir_input(tmp_path)
+    monkeypatch.setattr("src.cli.commands.convert.convert_varioport", _fake_bids)
+    cmd_convert_physio(_args(inp, out, destination="beh"))
+    assert "--destination is ignored without --task: files go to physio/" in capsys.readouterr().err
+    assert (out / "sub-01" / "ses-01" / "physio" / "sub-01_ses-01_recording-ecg_physio.edf").exists()
+
+
+def test_single_file_with_task_and_no_destination_writes_flat_output(tmp_path, monkeypatch) -> None:
+    """Single-file mode: task is only a label, no destination needed, output stays flat."""
+    raw = tmp_path / "signal.raw"
+    raw.write_bytes(b"RAW")
+    out = tmp_path / "out"
+    monkeypatch.setattr("src.cli.commands.convert.convert_varioport", _fake_bids)
+    cmd_convert_physio(_args(raw, out, task="rest"))
+    assert (out / "signal.edf").exists() and (out / "signal.json").exists()

@@ -280,6 +280,29 @@ class TestApply:
             output_dir / "sub-001" / "beh" / "sub-001_task-rest_physio.tsv.gz"
         ).exists()
 
+    def test_organize_task_bound_name_into_physio_refused(self, tmp_path, capsys):
+        input_dir = tmp_path / "in"
+        input_dir.mkdir()
+        (input_dir / "raw_001.vpd").write_bytes(b"data")
+        output_dir = tmp_path / "out"
+
+        cmd_file_management_rename_physio(
+            _args(
+                input=str(input_dir),
+                output=str(output_dir),
+                pattern=r"^raw_001\.vpd$",
+                replacement="sub-001_task-rest_recording-ecg_physio.vpd",
+                modality="physio",
+                organize=True,
+                apply=True,
+            )
+        )
+
+        out = capsys.readouterr().out
+        assert "beh, func, eeg" in out
+        assert not (output_dir / "sub-001").exists()
+        assert not output_dir.exists() or not any(output_dir.rglob("*"))
+
     def test_organize_events_refused(self, tmp_path, capsys):
         input_dir = tmp_path / "in"
         input_dir.mkdir()

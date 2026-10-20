@@ -793,6 +793,12 @@ def _validate_subject(
             elif run_bids and item in BIDS_MODALITIES and item != "func":
                 continue
 
+            # The retired-folder hint wins over "Empty directory" (even if empty).
+            if item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
+                continue
+
             # Check for empty directory
             child_entries = _scan_dir(item_path, validator._dir_cache)
             filtered_contents = filter_system_files(list(child_entries))
@@ -819,9 +825,6 @@ def _validate_subject(
                         entries=child_entries,
                     )
                 )
-            elif item in RETIRED_FOLDERS:
-                if run_prism:
-                    issues.append(_retired_folder_issue(item, item_path))
             elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
@@ -940,16 +943,16 @@ def _validate_session(
                 )
                 continue
 
+            if item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
+                continue
+
             if not filtered_contents:
                 if run_prism:
                     issues.append(
                         ("ERROR", f"Empty directory found: {item}", item_path)
                     )
-                continue
-
-            if item in RETIRED_FOLDERS:
-                if run_prism:
-                    issues.append(_retired_folder_issue(item, item_path))
                 continue
 
             if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:

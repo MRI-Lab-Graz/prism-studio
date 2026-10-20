@@ -941,6 +941,11 @@ class _BidsCollector:
     def finish(self, extra_meta):
         from src.physio_bids import write_bids_physio
 
+        if not self.signals:
+            raise ValueError("no samples were written")
+        lengths = {h["label"]: len(x) for h, x in zip(self.headers, self.signals)}
+        if len(set(lengths.values())) > 1:
+            raise ValueError(f"channels have different lengths: {lengths}")
         write_bids_physio(
             {h["label"]: np.asarray(x, dtype=float) for h, x in zip(self.headers, self.signals)},
             sampling_frequency=self.headers[0]["sample_frequency"],

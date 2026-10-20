@@ -32,6 +32,8 @@ from typing import Any, Callable, cast
 
 import numpy as np
 
+from src.physio_renamer import PHYSIO_TASK_DESTINATIONS
+
 # Pattern for BIDS-like filenames: sub-XXX[_ses-YYY][_task-ZZZ][_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
     r"^(?P<sub>sub-[a-zA-Z0-9]+)"
@@ -46,7 +48,9 @@ BIDS_FILENAME_PATTERN = re.compile(
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
 
-from src.physio_renamer import PHYSIO_TASK_DESTINATIONS  # noqa: E402  (shared definition)
+
+class PhysioDestinationError(ValueError):
+    """A task-bound physio recording has no (valid) destination folder."""
 
 
 def physio_target_folder(task: str | None, destination: str | None) -> str:
@@ -54,7 +58,7 @@ def physio_target_folder(task: str | None, destination: str | None) -> str:
     if not task:
         return "physio"
     if destination not in PHYSIO_TASK_DESTINATIONS:
-        raise ValueError(
+        raise PhysioDestinationError(
             f"A physio recording with a task needs a destination: one of {', '.join(PHYSIO_TASK_DESTINATIONS)}"
         )
     return destination
@@ -925,6 +929,37 @@ def convert_physio_file(
     recording_label = _extract_recording_label_from_extra(parsed_extra) or "ecg"
     base_name = _build_physio_base_name(sub, ses, task, recording_label)
 
+    def _run_varioport(*, out_edf, out_json, bids_base=None):
+        """Run convert_varioport (Type-7 retry), forwarding its stdout to log_callback."""
+        try:
+            from helpers.physio.convert_varioport import convert_varioport
+        except ImportError:
+            from app.helpers.physio.convert_varioport import convert_varioport
+
+        kwargs = dict(task_name=_task_label(task), base_freq=base_freq)
+        if bids_base is not None:
+            kwargs["bids_base"] = bids_base
+        captured = io.StringIO()
+        with redirect_stdout(captured):
+            try:
+                meta = convert_varioport(str(source_path), out_edf, out_json, **kwargs)
+            except ValueError as e:
+                if "Unsupported Varioport header type" not in str(e):
+                    raise
+                if log_callback:
+                    log_callback(
+                        "  ⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required).",
+                        "warning",
+                    )
+                meta = convert_varioport(
+                    str(source_path), out_edf, out_json, allow_raw_multiplexed=True, **kwargs
+                )
+        if log_callback:
+            for raw_line in captured.getvalue().splitlines():
+                if raw_line.strip():
+                    log_callback(f"    {raw_line.strip()}", "info")
+        return meta
+
     output_files = []
 
     try:
@@ -940,23 +975,8 @@ def convert_physio_file(
                     recording_label,
                 )
             else:
-                try:
-                    from helpers.physio.convert_varioport import convert_varioport
-                except ImportError:
-                    from app.helpers.physio.convert_varioport import convert_varioport
-
                 out_folder.mkdir(parents=True, exist_ok=True)
-                kwargs = dict(task_name=_task_label(task), base_freq=base_freq,
-                              bids_base=out_folder / base_name)
-                with redirect_stdout(io.StringIO()):
-                    try:
-                        convert_varioport(str(source_path), "", "", **kwargs)
-                    except ValueError as e:
-                        if "Unsupported Varioport header type" not in str(e):
-                            raise
-                        if log_callback:
-                            log_callback("  ⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required).", "warning")
-                        convert_varioport(str(source_path), "", "", allow_raw_multiplexed=True, **kwargs)
+                _run_varioport(out_edf="", out_json="", bids_base=out_folder / base_name)
                 output_files = sorted(out_folder.glob(f"{base_name}.*"))
             return ConvertedFile(
                 source_path=source_path,
@@ -973,47 +993,10 @@ def convert_physio_file(
         # Note: parse_bids_filename stores extension without leading dot
         if ext in ("raw", "vpd"):
             try:
-                try:
-                    from helpers.physio.convert_varioport import convert_varioport
-                except ImportError:
-                    from app.helpers.physio.convert_varioport import convert_varioport
-
                 out_edf = out_folder / f"{base_name}.edf"
                 out_json = out_folder / f"{base_name}.json"
 
-                conversion_stdout = io.StringIO()
-                with redirect_stdout(conversion_stdout):
-                    try:
-                        conversion_meta = convert_varioport(
-                            str(source_path),
-                            str(out_edf),
-                            str(out_json),
-                            task_name=_task_label(task),
-                            base_freq=base_freq,
-                        )
-                    except ValueError as e:
-                        if "Unsupported Varioport header type" in str(e):
-                            if log_callback:
-                                log_callback(
-                                    "  ⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required).",
-                                    "warning",
-                                )
-                            conversion_meta = convert_varioport(
-                                str(source_path),
-                                str(out_edf),
-                                str(out_json),
-                                task_name=_task_label(task),
-                                base_freq=base_freq,
-                                allow_raw_multiplexed=True,
-                            )
-                        else:
-                            raise
-
-                if log_callback:
-                    for raw_line in conversion_stdout.getvalue().splitlines():
-                        line = raw_line.strip()
-                        if line:
-                            log_callback(f"    {line}", "info")
+                conversion_meta = _run_varioport(out_edf=str(out_edf), out_json=str(out_json))
 
                 avg_hr: Any = None
                 hr_est: dict[str, Any] = {}
@@ -1327,6 +1310,32 @@ def convert_generic_file(
         )
 
 
+def _check_task_bound_physio(files, modality_filter, physio_destination) -> None:
+    if modality_filter not in ("all", "physio") or physio_destination in PHYSIO_TASK_DESTINATIONS:
+        return
+    task_bound = [
+        f.name
+        for f in files
+        if f.suffix.lower() in PHYSIO_EXTENSIONS and (parse_bids_filename(f.name) or {}).get("task")
+    ]
+    if task_bound:
+        raise PhysioDestinationError(
+            "These physio files have a task and need a destination "
+            f"({', '.join(PHYSIO_TASK_DESTINATIONS)}): {', '.join(task_bound)}"
+        )
+
+
+def check_physio_destination(
+    source_folder: Path | str, modality_filter: str = "all", physio_destination: str | None = None
+) -> None:
+    """Raise PhysioDestinationError if the folder has task-bound physio files but no destination.
+
+    Same rule as the pre-scan in batch_convert_folder; writes nothing.
+    """
+    files = [f for f in sorted(Path(source_folder).iterdir()) if f.is_file()]
+    _check_task_bound_physio(files, modality_filter, physio_destination)
+
+
 def batch_convert_folder(
     source_folder: Path | str,
     output_folder: Path | str,
@@ -1356,7 +1365,7 @@ def batch_convert_folder(
         BatchConvertResult with details of all conversions
 
     Raises:
-        ValueError: task-bound physio files but no physio_destination (nothing is written)
+        PhysioDestinationError (a ValueError): task-bound physio files but no physio_destination (nothing is written)
     """
 
     def log(msg: str, level: str = "info"):
@@ -1414,17 +1423,7 @@ def batch_convert_folder(
         elif ext in all_extensions:
             files_to_process.append(file_path)
 
-    if modality_filter in ("all", "physio") and physio_destination not in PHYSIO_TASK_DESTINATIONS:
-        task_bound = [
-            f.name
-            for f in files_to_process
-            if f.suffix.lower() in PHYSIO_EXTENSIONS and (parse_bids_filename(f.name) or {}).get("task")
-        ]
-        if task_bound:
-            raise ValueError(
-                "These physio files have a task and need a destination "
-                f"({', '.join(PHYSIO_TASK_DESTINATIONS)}): {', '.join(task_bound)}"
-            )
+    _check_task_bound_physio(files_to_process, modality_filter, physio_destination)
 
     # Created only after the pre-scan above can no longer raise.
     # A dry run converts into a throw-away staging folder, so nothing lands in the real output folder.
@@ -1578,7 +1577,7 @@ def batch_convert_folder(
                             f"   🧾 Physio report: {report_path.relative_to(output_folder)}",
                             "info",
                         )
-                    else:
+                    elif not any(f.suffix == ".edf" for f in converted.output_files):
                         log("   ℹ️ No physio report for BIDS .tsv.gz output", "info")
                 except Exception as report_error:
                     log(
@@ -1683,6 +1682,7 @@ def create_dataset_description(
 # CLI interface
 if __name__ == "__main__":
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(
         description="Batch convert physio/eyetracking data from flat folder to PRISM format"
@@ -1714,12 +1714,23 @@ if __name__ == "__main__":
         help="Generate per subject/session HTML physio reports under derivatives/physio",
     )
     parser.add_argument(
+        "--destination",
+        choices=list(PHYSIO_TASK_DESTINATIONS),
+        help="Folder for physio files that have a task (beh, func or eeg)",
+    )
+    parser.add_argument(
         "--dataset-name",
         default="Converted Dataset",
         help="Name for dataset_description.json",
     )
 
     args = parser.parse_args()
+
+    try:
+        check_physio_destination(args.source, args.modality, args.destination)
+    except PhysioDestinationError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(2)
 
     print(f"Converting files from: {args.source}")
     print(f"Output folder: {args.output}")
@@ -1735,6 +1746,7 @@ if __name__ == "__main__":
         physio_sampling_rate=args.sampling_rate,
         generate_physio_reports=args.physio_reports,
         modality_filter=args.modality,
+        physio_destination=args.destination,
     )
 
     # Create dataset description

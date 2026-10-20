@@ -102,3 +102,52 @@ def test_registration_log_has_no_dangling_arrow_without_tasks(monkeypatch, tmp_p
         tmp_path, [cf], "ds", log=lambda msg, level="info": logs.append(msg)
     )
     assert logs == ["Registered in project.json: ses-1 (physio)"]
+
+
+def _boom(*args, **kwargs):
+    raise ValueError("boom: unrelated")
+
+
+def test_sync_folder_unrelated_value_error_is_500_not_400(client, task_folder, monkeypatch):
+    monkeypatch.setattr(handlers, "batch_convert_folder", _boom)
+    resp = client.post(
+        "/api/batch-convert",
+        data={"folder_path": str(task_folder), "modality": "physio", "physio_destination": "beh"},
+    )
+    assert resp.status_code == 500
+
+
+def test_sync_upload_unrelated_value_error_is_500_not_400(client, monkeypatch):
+    import io
+
+    monkeypatch.setattr(handlers, "batch_convert_folder", _boom)
+    resp = client.post(
+        "/api/batch-convert",
+        data={
+            "files[]": (io.BytesIO(b"x"), "sub-001_task-rest.raw"),
+            "modality": "physio",
+            "physio_destination": "beh",
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 500
+
+
+def test_sync_upload_without_destination_for_task_files_is_400(client):
+    import io
+
+    resp = client.post(
+        "/api/batch-convert",
+        data={"files[]": (io.BytesIO(b"x"), "sub-001_task-rest.raw"), "modality": "physio"},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 400
+
+
+def test_async_start_uses_public_destination_check(client, task_folder, monkeypatch):
+    calls = []
+    monkeypatch.setattr(handlers, "check_physio_destination", lambda *a: calls.append(a))
+    monkeypatch.setattr(handlers, "batch_convert_folder", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no pre-scan via batch_convert_folder")) if k.get("cancel_check") else SimpleNamespace(success_count=0, error_count=0, new_files=0, existing_files=0, converted=[]))
+    resp = _start(client, task_folder)
+    assert resp.status_code == 200
+    assert calls and calls[0][2] is None
