@@ -301,7 +301,7 @@ class TestApply:
         out = capsys.readouterr().out
         assert "beh, func, eeg" in out
         assert not (output_dir / "sub-001").exists()
-        assert not list(output_dir.rglob("*.vpd")) if output_dir.exists() else True
+        assert not output_dir.exists() or not any(output_dir.rglob("*"))
 
     def test_organize_events_refused(self, tmp_path, capsys):
         input_dir = tmp_path / "in"
