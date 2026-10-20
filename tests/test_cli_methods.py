@@ -64,3 +64,19 @@ def test_missing_project_exits_2(tmp_path):
     with pytest.raises(SystemExit) as exc:
         _run_cli(["methods", "generate", "--project", str(tmp_path)])
     assert exc.value.code == 2
+
+
+def test_bib_format(project, tmp_path, monkeypatch):
+    from src import methods_project
+
+    real = methods_project.build_methods
+
+    def fake(*a, **k):
+        r = real(*a, **k)
+        r.template_data = {"ads": {"Study": {"References": [{"Citation": "Smith, J. (2020). T."}]}}}
+        return r
+
+    monkeypatch.setattr("src.cli.commands.methods.build_methods", fake)
+    out = project / "refs.bib"
+    _run_cli(["methods", "generate", "--project", str(project), "--format", "bib", "--output", str(out)])
+    assert "@misc{smith2020" in out.read_text(encoding="utf-8")

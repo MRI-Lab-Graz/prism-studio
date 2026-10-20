@@ -58,3 +58,43 @@ def test_docx_missing_dependency(monkeypatch):
     monkeypatch.setitem(sys.modules, "docx", None)
     with pytest.raises(RuntimeError, match="python-docx"):
         convert(MD, "docx")
+
+
+# ---- references_bib ---------------------------------------------------------
+
+
+def _tpl(*citations, **extra):
+    return {"Study": {"References": [{"Type": "primary", "Citation": c, **extra} for c in citations]}}
+
+
+def test_bib_same_paper_in_two_templates_is_one_entry():
+    from src.text_export import references_bib
+
+    c = "Smith, J. (2020). Stress. Journal."
+    bib = references_bib({"a": _tpl(c), "b": _tpl(c)})
+    assert bib.count("@misc") == 1
+
+
+def test_bib_distinct_papers_get_sorted_suffixes_and_are_stable():
+    from src.text_export import references_bib
+
+    data = {"x": _tpl("Smith, J. (2020). Zeta."), "y": _tpl("Smith, J. (2020). Alpha.")}
+    bib = references_bib(data)
+    assert "smith2020a" in bib and "smith2020b" in bib
+    assert bib.index("Alpha") < bib.index("Zeta")  # sorted by citation text
+    assert references_bib(dict(reversed(list(data.items())))) == bib
+
+
+def test_bib_escapes_specials_and_keeps_doi():
+    from src.text_export import references_bib
+
+    bib = references_bib({"a": _tpl("Smith, J. (2020). R&D in a_b.", DOI="10.1/x_y")})
+    assert r"R\&D in a\_b" in bib
+    assert "doi = {10.1/x_y}" in bib
+
+
+def test_bib_empty():
+    from src.text_export import references_bib
+
+    assert references_bib({}) == ""
+    assert references_bib({"a": {"Study": {}}}) == ""

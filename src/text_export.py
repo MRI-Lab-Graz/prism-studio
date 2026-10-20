@@ -135,3 +135,42 @@ def convert(md: str, fmt: str) -> bytes:
     if fmt == "tex":
         return md_to_tex(md).encode("utf-8")
     raise ValueError(f"Unknown format {fmt!r}; use one of {', '.join(FORMATS)}")
+
+
+def _bib_escape(text: str) -> str:
+    return "".join(r"\textbackslash{}" if c == "\\" else ("\\" + c if c in "&%$#_{}" else c) for c in text)
+
+
+def references_bib(template_data: dict[str, dict]) -> str:
+    """BibTeX ``@misc`` entries for the distinct ``Study.References`` of all templates.
+
+    Keys are surname+year from the APA citation text (``Surname, X. (Year). ...``);
+    colliding keys get ``a``, ``b`` ... in citation order, so re-export is stable.
+    """
+    refs: dict[str, dict] = {}  # citation text -> reference
+    for tpl in template_data.values():
+        study = tpl.get("Study") if isinstance(tpl, dict) else None
+        for ref in (study or {}).get("References") or []:
+            cit = " ".join(str(ref.get("Citation") or "").split()) if isinstance(ref, dict) else ""
+            if cit:
+                refs.setdefault(cit, ref)
+    bases = {}
+    for cit in refs:
+        surname = re.sub(r"[^a-z]", "", cit.split(",")[0].split()[-1].lower()) if "," in cit else ""
+        year = re.search(r"\((\d{4})", cit) or re.search(r"\b(\d{4})\b", cit)
+        bases[cit] = (surname or "ref") + (year.group(1) if year else "")
+    counts = {b: list(bases.values()).count(b) for b in bases.values()}
+    seen: dict[str, int] = {}
+    entries = []
+    for cit in sorted(refs):
+        base = bases[cit]
+        key = base
+        if counts[base] > 1:
+            key = base + chr(ord("a") + seen.get(base, 0))
+            seen[base] = seen.get(base, 0) + 1
+        fields = [f"  note = {{{_bib_escape(cit)}}}"]
+        for name, src in (("doi", "DOI"), ("url", "URL"), ("year", "Year")):
+            if refs[cit].get(src):
+                fields.append(f"  {name} = {{{refs[cit][src]}}}")
+        entries.append(f"@misc{{{key},\n" + ",\n".join(fields) + "\n}\n")
+    return "\n".join(entries)

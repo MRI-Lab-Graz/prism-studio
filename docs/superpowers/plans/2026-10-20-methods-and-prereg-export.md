@@ -14,7 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
-- **Status: Tasks 1-3 done. Resume at Task 4.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
+- **Status: Tasks 1-4 done. Resume at Task 5.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -108,9 +108,9 @@
 **Interfaces:**
 - Produces: `references_bib(template_data: dict[str, dict]) -> str`. One `@misc` entry per distinct reference in each template's `Study.References` (fields from `Citation`, `DOI`, `URL`, `Year`; the `Citation` text goes in `note`). Key = lower-case first author surname + year (from `Study.Authors`/`Year` or parsed from the citation), de-duplicated with `a`, `b` suffixes in sorted order, so re-export gives identical keys.
 
-- [ ] **Step 1: Write failing tests**: two templates citing the same paper -> one entry; two different papers by "Smith 2020" -> keys `smith2020a`, `smith2020b`; output for the same input twice is identical; `&` and `_` in a citation are escaped for BibTeX; empty input -> `""`.
-- [ ] **Step 2:** Run; expect FAIL. **Step 3:** Implement. **Step 4:** Run; PASS.
-- [ ] **Step 5:** Wire `--format bib` (uses `MethodsResult.template_data`); add a CLI test; commit `feat(export): bib file for instrument references`.
+- [x] **Step 1: Write failing tests**: two templates citing the same paper -> one entry; two different papers by "Smith 2020" -> keys `smith2020a`, `smith2020b`; output for the same input twice is identical; `&` and `_` in a citation are escaped for BibTeX; empty input -> `""`.
+- [x] **Step 2:** Run; expect FAIL. **Step 3:** Implement. **Step 4:** Run; PASS.
+- [x] **Step 5:** Wire `--format bib` (uses `MethodsResult.template_data`); add a CLI test; commit `feat(export): bib file for instrument references`.
 
 ### Task 5: GUI routes and buttons
 

@@ -545,7 +545,7 @@ def build_prism_tools_parsers(
     )
     parser_methods_generate.add_argument(
         "--format",
-        choices=("md", "html", "docx", "tex"),
+        choices=("md", "html", "docx", "tex", "bib"),
         default="md",
         help="Output format (docx needs --output and python-docx)",
     )

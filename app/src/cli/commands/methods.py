@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from src.methods_project import build_methods
-from src.text_export import convert
+from src.text_export import convert, references_bib
 
 
 def emit_document(markdown: str, fmt: str, output: str | None) -> None:
@@ -36,4 +36,7 @@ def cmd_methods_generate(args) -> None:
         sys.exit(2)
     for warning in result.warnings:
         print(f"Warning: {warning}", file=sys.stderr)
-    emit_document(result.md, args.format, args.output)
+    if args.format == "bib":
+        emit_document(references_bib(result.template_data), "md", args.output)
+    else:
+        emit_document(result.md, args.format, args.output)
