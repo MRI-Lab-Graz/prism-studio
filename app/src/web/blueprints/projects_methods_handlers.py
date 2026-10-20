@@ -78,7 +78,7 @@ def handle_generate_methods_section(
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-_EXPORT_FORMATS = {"docx": "docx", "tex": "tex", "bib": "bib"}
+_EXPORT_FORMATS = ("docx", "tex", "bib")
 
 
 def handle_export_methods(get_current_project, read_project_json, compute_participant_stats):
