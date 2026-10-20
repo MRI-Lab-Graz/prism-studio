@@ -320,6 +320,10 @@ def should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# Raw physio inputs (same set as batch_convert.PHYSIO_EXTENSIONS, which imports this module).
+_RAW_PHYSIO_EXTENSIONS = (".raw", ".vpd", ".edf")
+
+
 def compute_organized_relative_path(
     filename: str, *, modality: str, organize: bool, parse_bids_filename=None
 ) -> str:
@@ -344,10 +348,11 @@ def compute_organized_relative_path(
             + ". Convert it with the Physio converter (physio batch-convert --destination beh/func/eeg)."
         )
 
+    lower = filename.lower()
     if (
         modality in PHYSIO_TASK_DESTINATIONS
-        and re.search(r"_physio\.", filename)
-        and not filename.endswith((".tsv.gz", ".json"))
+        and lower.endswith(_RAW_PHYSIO_EXTENSIONS)
+        and not (modality == "eeg" and lower.endswith("_eeg.edf"))  # a real EEG recording
     ):
         raise ValueError(
             f"EDF/raw physio cannot be organized into {modality}/ as-is; convert with the "

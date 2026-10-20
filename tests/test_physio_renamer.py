@@ -220,6 +220,30 @@ class TestComputeOrganizedRelativePath:
                 parse_bids_filename=lambda name: {"sub": "sub-01"},
             )
 
+    @pytest.mark.parametrize(
+        "name",
+        ["sub-01_task-rest_recording-ecg.raw", "sub-01_task-rest.VPD", "sub-01_task-rest_ecg.EDF"],
+    )
+    @pytest.mark.parametrize("modality", ["beh", "func", "eeg"])
+    def test_organize_raw_physio_extension_refused_whatever_the_suffix(self, name, modality):
+        with pytest.raises(ValueError, match="Physio converter|physio batch-convert"):
+            compute_organized_relative_path(
+                name, modality=modality, organize=True,
+                parse_bids_filename=lambda n: {"sub": "sub-01"},
+            )
+
+    def test_organize_other_legitimate_files_still_allowed(self):
+        parse = lambda n: {"sub": "sub-01"}  # noqa: E731
+        assert (
+            compute_organized_relative_path("sub-01_task-rest_beh.tsv", modality="beh", organize=True, parse_bids_filename=parse)
+            == "sub-01/beh/sub-01_task-rest_beh.tsv"
+        )
+        # a real EEG recording is not raw physio
+        assert (
+            compute_organized_relative_path("sub-01_task-rest_eeg.edf", modality="eeg", organize=True, parse_bids_filename=parse)
+            == "sub-01/eeg/sub-01_task-rest_eeg.edf"
+        )
+
     def test_organize_events_refused(self):
         with pytest.raises(ValueError, match="next to its task in func/, beh/ or eeg/"):
             compute_organized_relative_path(
