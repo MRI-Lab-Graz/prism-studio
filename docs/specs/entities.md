@@ -54,6 +54,7 @@ validator reports both folders as errors with a fix hint (rename
 | `biometrics` | prism | `biometrics` | `tsv`, `json` | - |
 | `biosample` | prism | `biosample` | `tsv`, `json` | required `biosample` entity naming the assay panel (alphanumeric) |
 | `environment` | prism | `environment` | `tsv`, `tsv.gz`, `json` | `recording` entity required, matching `[a-zA-Z0-9]+` |
+| `events` | prism | `events` | `tsv` | no folder of its own: `_events.tsv` sits next to its task in `func/`, `beh/` or `eeg/` |
 | `physio` | prism | `physio` | `tsv`, `tsv.gz`, `json`, `edf` | task-free: a `task-` entity in `physio/` is an error (task-bound physio goes to `beh/`, `func/` or `eeg/` as BIDS `_physio.tsv.gz`); optional `recording` entity: enum of common channel types (`ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`), plus any other alphanumeric value |
 | `eyetracking` | bidsPassthrough | `eyetrack`, `eye`, `gaze` | `tsv`, `tsv.gz`, `json`, `edf`, `asc` | optional `trackedEye` entity: `left`, `right`, or `both` |
 | `anat`, `func`, `fmap`, `dwi`, `eeg`, `beh` | bidsPassthrough | (standard BIDS) | (standard BIDS) | validated per standard BIDS rules |

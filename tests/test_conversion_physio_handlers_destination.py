@@ -13,7 +13,7 @@ from src.web.blueprints.conversion import conversion_bp
 @pytest.fixture
 def client():
     app = Flask(__name__)
-    app.secret_key = "test"
+    app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(conversion_bp)
     return app.test_client()
 
