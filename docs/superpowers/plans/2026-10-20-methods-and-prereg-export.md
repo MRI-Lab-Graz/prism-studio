@@ -14,7 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
-- **Status: Task 1 done (commit 4ccbf3b). Resume at Task 2.** The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
+- **Status: Tasks 1-2 done (last commit 563da04). Resume at Task 3.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -76,11 +76,11 @@
 - Consumes: `generate_full_methods` (existing, `src.reporting`), `compute_participant_stats` (callable, optional; default lazily imports `_compute_participant_stats` from `app/src/web/blueprints/projects_metadata_helpers.py`).
 - Produces: `build_methods(project_path: Path, *, lang: str = "en", detail_level: str = "standard", app_root: str | None = None, compute_participant_stats=None) -> MethodsResult` where `MethodsResult` is a dataclass `(md: str, sections_used: list[str], warnings: list[str], template_data: dict[str, dict])`. Raises `FileNotFoundError("No project metadata available...")` when project.json is missing/empty.
 
-- [ ] **Step 1: Write failing tests**: tmp project with `project.json` (one survey task, Participants info), `participants.tsv` absent -> `build_methods(...)` returns md containing "Procedure" or the task name, `warnings == []` for now; empty folder -> `FileNotFoundError`; project with `code/library/survey/survey-ads.json` -> template found and its name is in md (move the template-discovery behaviour from the handler, including `_candidate_template_names`).
-- [ ] **Step 2:** Run; expect FAIL.
-- [ ] **Step 3:** Move the template lookup (library dirs, candidate names), `dataset_description.json` loading and the call to `generate_full_methods` from `handle_generate_methods_section` into `build_methods`; `app_root=None` means skip the external/global library dirs. The handler becomes: resolve project, call `build_methods`, return `md`, `_md_to_html(md)`, `filename_base`, `sections_used`, plus new key `warnings`.
-- [ ] **Step 4:** Run `pytest tests/test_methods_project.py tests/test_projects_methods_handlers.py tests/test_reporting_methods_generation.py -v`; expect PASS.
-- [ ] **Step 5:** Commit `refactor(methods): shared build_methods for CLI and GUI`.
+- [x] **Step 1: Write failing tests**: tmp project with `project.json` (one survey task, Participants info), `participants.tsv` absent -> `build_methods(...)` returns md containing "Procedure" or the task name, `warnings == []` for now; empty folder -> `FileNotFoundError`; project with `code/library/survey/survey-ads.json` -> template found and its name is in md (move the template-discovery behaviour from the handler, including `_candidate_template_names`).
+- [x] **Step 2:** Run; expect FAIL.
+- [x] **Step 3:** Move the template lookup (library dirs, candidate names), `dataset_description.json` loading and the call to `generate_full_methods` from `handle_generate_methods_section` into `build_methods`; `app_root=None` means skip the external/global library dirs. The handler becomes: resolve project, call `build_methods`, return `md`, `_md_to_html(md)`, `filename_base`, `sections_used`, plus new key `warnings`.
+- [x] **Step 4:** Run `pytest tests/test_methods_project.py tests/test_projects_methods_handlers.py tests/test_reporting_methods_generation.py -v`; expect PASS.
+- [x] **Step 5:** Commit `refactor(methods): shared build_methods for CLI and GUI`.
 
 ### Task 3: CLI for methods and `--format` for preregistration
 
