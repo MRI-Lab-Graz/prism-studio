@@ -63,18 +63,20 @@ and software versions are not used.
 
 ### Structured document in the middle
 
-The backend builds a small document model (sections -> paragraphs -> inline
-text, plus a reference list), then thin renderers produce each format:
+**Revised 2026-10-20 (simplification, same user-visible result):** no separate
+document model. The generator and the preregistration draft already emit a tiny
+Markdown subset (`##`, `###`, `- `, `*italic*`, `**bold**`, paragraphs), so
+Markdown is the intermediate and thin converters turn it into each format:
 
-- `src/methods_document.py` (new, canonical `src/` tree): the model and the
-  renderers `to_markdown`, `to_html`, `to_docx`, `to_tex` (+ `to_bib`).
-- `generate_full_methods` is refactored (extract sections into small functions,
-  per the "prefer extracting functions" rule) to build the model instead of
-  concatenating Markdown. Existing Markdown/HTML output must stay equivalent
-  where content is unchanged (existing tests in `tests/` guard this).
-- The preregistration draft builds the same model in `src/preregistration.py`
-  (its AsPredicted question order is kept), so it gets docx/tex/html for free.
-  Its Markdown output must remain byte-identical to today's.
+- `src/text_export.py` (new, canonical `src/` tree): `md_to_tex`, `md_to_docx`,
+  `convert(md, fmt)`; HTML keeps using `_md_to_html` from `app/src/reporting.py`.
+  `references_bib(template_data)` builds the `.bib` from the structured
+  `Study.References` of the instrument templates.
+- `generate_full_methods` is split into small section functions (per the
+  "prefer extracting functions" rule). Existing Markdown/HTML output stays
+  equivalent where content is unchanged (existing tests guard this).
+- The preregistration draft needs no change to its Markdown; it gets
+  docx/tex/html through `convert`. Its Markdown must stay byte-identical.
 
 ### CLI and GUI
 
