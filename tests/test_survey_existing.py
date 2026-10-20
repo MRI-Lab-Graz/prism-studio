@@ -103,7 +103,7 @@ def test_review_table_hides_responses_already_in_the_project_but_keeps_the_numbe
     shown, warnings = session_assignment_table(pd.DataFrame(rows), "token", imported_root=tmp_path)
 
     assert [(r["response_id"], r["session"]) for r in shown] == [("2", "2")]
-    assert any("1 response(s) already in the project" in w for w in warnings)
+    assert any("1 response(s) already handled" in w for w in warnings)
 
 
 def test_review_table_keeps_imported_responses_with_a_manual_session_override(tmp_path):
@@ -123,10 +123,20 @@ def test_review_table_keeps_imported_responses_with_a_manual_session_override(tm
     )
 
     assert [(r["response_id"], r["session"], r["reason"]) for r in shown] == [("1", "pre", "override")]
-    assert any("1 response(s) already in the project" in w for w in warnings)
+    assert any("1 response(s) already handled" in w for w in warnings)
 
 
-def test_review_table_hides_unfinished_attempts_of_participants_already_in_the_project(tmp_path):
+def test_ledger_remembers_every_response_seen_with_its_state(tmp_path):
+    record_imports(tmp_path, tmp_path, [], seen={"7": ["", "2"]}, survey_id="999")
+    record_imports(tmp_path, tmp_path, [], seen={"8": ["x", "6"]}, survey_id="999")  # merges
+    idx = ImportIndex(tmp_path)
+    assert idx.is_seen("999", "7", ["", "2"])
+    assert idx.is_seen("999", "8", ["x", "6"])
+    assert not idx.is_seen("999", "7", ["2026-03-01 10:00:00", "6"])  # finished since: new data
+    assert not idx.is_seen("other-survey", "7", ["", "2"])
+
+
+def test_review_table_shows_only_new_data_but_all_of_it_skipped_or_not(tmp_path):
     import pandas as pd
 
     from src.participants_sessions import session_assignment_table
@@ -136,10 +146,18 @@ def test_review_table_hides_unfinished_attempts_of_participants_already_in_the_p
         {"id": "1", "token": "a", "seed": "1", "startdate": "2026-03-01 09:00:00", "submitdate": "", "lastpage": "2"},
         {"id": "2", "token": "a", "seed": "2", "startdate": "2026-03-01 09:05:00", "submitdate": "x", "lastpage": "6"},
         {"id": "3", "token": "b", "seed": "3", "startdate": "2026-03-02 09:00:00", "submitdate": "", "lastpage": "2"},
+        {"id": "4", "token": "a", "seed": "4", "startdate": "2026-09-01 09:00:00", "submitdate": "", "lastpage": "1"},
+        {"id": "5", "token": "c", "seed": "5", "startdate": "2026-03-03 09:00:00", "submitdate": "x", "lastpage": "6"},
     ]
-    record_imports(tmp_path, tmp_path, [("sub-a", "ses-1", row_fingerprint(rows[1], cols))])
+    record_imports(
+        tmp_path, tmp_path, [("sub-a", "ses-1", row_fingerprint(rows[1], cols))],
+        seen={"1": ["", "2"], "2": ["x", "6"], "3": ["", "2"], "5": ["", "2"]}, survey_id="999",
+    )
 
-    shown, warnings = session_assignment_table(pd.DataFrame(rows), "token", imported_root=tmp_path)
+    shown, warnings = session_assignment_table(
+        pd.DataFrame(rows), "token", imported_root=tmp_path, survey_id="999"
+    )
 
-    assert [r["response_id"] for r in shown] == ["3"]  # b has nothing imported: its attempt stays visible
-    assert any("1 unfinished attempt(s)" in w for w in warnings)
+    # 1-3 were reviewed before; 4 is a new unfinished attempt (shown, skipped); 5 was unfinished then, finished now
+    assert [(r["response_id"], r["session"]) for r in shown] == [("4", None), ("5", "1")]
+    assert any("3 response(s) already handled" in w for w in warnings)

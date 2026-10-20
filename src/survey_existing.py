@@ -2,7 +2,9 @@
 
 A response's identity in the project is the fingerprint recorded for it in
 ``code/survey_imports.json`` (outside the PRISM-checked BIDS folders):
-``{"version": 1, "responses": {"sub-1": {"ses-1": ["<startdate>", "<seed>", "<token>"]}}}``.
+``{"version": 1, "responses": {"sub-1": {"ses-1": ["<startdate>", "<seed>", "<token>"]}},
+"seen": {"<survey id>": {"<response id>": ["<submitdate>", "<lastpage>"]}}}``.
+``seen`` remembers every response of an imported file, finished or not, in the state it was reviewed in.
 Session labels are compared as exact strings (never normalized).
 """
 
@@ -26,27 +28,53 @@ def row_fingerprint(row, columns=FINGERPRINT_COLUMNS) -> tuple[str, ...]:
     return tuple(_clean(row.get(c)) for c in columns)
 
 
-def _load_ledger(root: str | Path) -> dict[str, dict[str, list[str]]]:
+def _read_ledger(root: str | Path) -> dict:
     try:
         data = json.loads((Path(root) / LEDGER).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-    responses = data.get("responses") if isinstance(data, dict) else None
+    return data if isinstance(data, dict) else {}
+
+
+def _load_ledger(root: str | Path) -> dict[str, dict[str, list[str]]]:
+    responses = _read_ledger(root).get("responses")
     return responses if isinstance(responses, dict) else {}
 
 
-def record_imports(project_root: str | Path, output_root: str | Path, entries) -> None:
-    """Add ``(sub, ses, fingerprint)`` entries to the project's ledger, written under ``output_root``.
+def seen_entry(row) -> tuple[str, list[str]]:
+    """(key, state) of a response for the "seen" memory: its id and (submitdate, lastpage)."""
+    from src.participants_sessions import session_label
+
+    key = session_label(row.get("id")) or "|".join(row_fingerprint(row))
+    return key, [session_label(row.get("submitdate")), session_label(row.get("lastpage"))]
+
+
+def record_imports(
+    project_root: str | Path,
+    output_root: str | Path,
+    entries,
+    *,
+    seen: dict[str, list[str]] | None = None,
+    survey_id: str = "default",
+) -> None:
+    """Add ``(sub, ses, fingerprint)`` entries and ``seen`` responses to the project's ledger, written under ``output_root``.
 
     The GUI converts into a scratch ``output_root`` and copies it into the project,
     so the project's ledger is merged in here and the copy carries the full result.
     """
+    data = _read_ledger(project_root)
     responses = _load_ledger(project_root)
     for sub, ses, fp in entries:
         responses.setdefault(sub, {})[ses] = list(fp)
+    all_seen = data.get("seen") if isinstance(data.get("seen"), dict) else {}
+    if seen:
+        all_seen.setdefault(survey_id, {}).update(seen)
     path = Path(output_root) / LEDGER
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"version": 1, "responses": responses}, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps({"version": 1, "responses": responses, "seen": all_seen}, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 class ImportIndex:
@@ -54,6 +82,8 @@ class ImportIndex:
 
     def __init__(self, root: str | Path, columns=FINGERPRINT_COLUMNS):
         self.columns = tuple(columns)
+        seen = _read_ledger(root).get("seen")
+        self._seen: dict[str, dict[str, list[str]]] = seen if isinstance(seen, dict) else {}
         self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {
             (sub, ses): tuple(fp) for sub, slots in _load_ledger(root).items() for ses, fp in slots.items()
         }
@@ -64,6 +94,11 @@ class ImportIndex:
             (s for (u, s), fp in self._by_slot.items() if u == sub and fp == fingerprint),
             None,
         )
+
+    def is_seen(self, survey_id: str, key: str, state) -> bool:
+        """True when this response was reviewed before and has not changed since."""
+        stored = (self._seen.get(survey_id) or {}).get(key)
+        return stored is not None and list(stored) == list(state)
 
     def is_imported(self, fingerprint) -> bool:
         """True when this response is recorded anywhere in the project (whatever its session)."""

@@ -12,10 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   files are gone; the `startdate`/`seed`/`token` fingerprint that "skip surveys already in the project" relies on now
   lives in one `code/survey_imports.json`, outside the PRISM-checked folders. Projects imported before keep their old
   files (the validator still ignores them); their skipped responses are matched by file name until re-imported.
-- **Skip-existing judges whole responses, and the session review hides imported ones.** A response already recorded in
-  `code/survey_imports.json` is skipped even if the project lacks a file for one of the export's questionnaires (it no
-  longer reappears as "new"). With "Skip surveys already in the project" on, "Review session assignment" (and
-  `sessions review --skip-existing`) lists only responses not yet imported, without the unfinished attempts of participants already in the project (manual session overrides stay listed, highlighted yellow); sessions are still numbered across the file.
+- **Skip-existing judges whole responses, and the session review lists only new data.** A response already recorded in
+  `code/survey_imports.json` is skipped even if the project lacks a file for one of the export's questionnaires. Each
+  import also remembers every response of the file, finished or not, in the state it was reviewed in. With "Skip
+  surveys already in the project" on, "Review session assignment" (and `sessions review --skip-existing`) then lists
+  only new data: responses not seen before, or unfinished ones that have changed since. Their skip marks are shown, so
+  a half-filled response can still be taken. Manual session overrides stay listed (highlighted yellow); sessions are
+  still numbered across the whole file. The first import after updating shows everything once, because earlier
+  imports did not record what they had seen.
 - **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
   rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
   their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.

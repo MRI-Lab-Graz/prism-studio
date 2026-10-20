@@ -1610,11 +1610,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
+    from src.session_assignments import load_session_assignments, survey_id_of
+
+    all_responses = df  # every response of the file, before incomplete ones are left out
+    survey_id = survey_id_of(input_path) if input_path else "default"
     decisions = None
     if duplicate_handling == "sessions" and project_path:
-        from src.session_assignments import load_session_assignments, survey_id_of
-
-        decisions = load_session_assignments(project_path, survey_id_of(input_path) if input_path else "default")
+        decisions = load_session_assignments(project_path, survey_id)
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
@@ -1931,6 +1933,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             normalize_sub_fn=_normalize_sub_id,
             normalize_ses_fn=_normalize_ses_id,
             existing_policy=existing_policy,
+            all_responses=all_responses,
+            survey_id=survey_id,
         )
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders

@@ -106,3 +106,13 @@ def test_no_tool_limesurvey_files_are_written_and_the_ledger_records_each_respon
     first = REAL_PATTERN[1]  # sub-a's first completed response
     fp = row_fingerprint({"startdate": first[2], "token": first[1]}, ["startdate", "token"])
     assert ImportIndex(tmp_path / "out").where_imported("sub-a", fp) is not None
+
+
+def test_every_response_of_the_file_is_remembered_as_seen_including_unfinished_ones(tmp_path):
+    from src.survey_existing import ImportIndex
+
+    _convert(tmp_path, REAL_PATTERN)
+
+    seen = ImportIndex(tmp_path / "out")
+    assert seen.is_seen("999999", "2", ["2026-03-01 11:20:00", "5"])  # completed
+    assert seen.is_seen("999999", "4", ["", "4"])  # abandoned start: reviewed, skipped

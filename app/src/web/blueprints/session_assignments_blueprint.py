@@ -62,6 +62,7 @@ def api_review_session_assignments():
             request.form.get("date_column", "").strip() or "startdate",
             decisions=decisions,
             imported_root=root if request.form.get("skip_existing") == "true" else None,
+            survey_id=survey_id,
         )
         return jsonify({"survey_id": survey_id, "rows": rows, "warnings": warnings})
     except (ValueError, OSError) as exc:

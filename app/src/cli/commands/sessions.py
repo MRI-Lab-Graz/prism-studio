@@ -30,6 +30,7 @@ def cmd_sessions_review(args) -> None:
         rows, warnings = session_assignment_table(
             df, args.id_column, args.date_column, decisions=decisions,
             imported_root=args.project if getattr(args, "skip_existing", False) else None,
+            survey_id=survey_id,
         )
     except (ValueError, OSError) as exc:  # SessionAssignmentError is a ValueError
         _fail(exc)
