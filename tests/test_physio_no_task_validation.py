@@ -114,3 +114,12 @@ def test_empty_retired_folder_gets_retired_hint(tmp_path, folder, level):
     assert not any("Empty directory" in m and folder in m for m in errs), errs
     hint = "func" if folder == "events" else "physio/"
     assert any(folder in m and hint in m for m in errs), errs
+
+
+def test_task_hint_attached_to_the_task_message_not_the_first(tmp_path):
+    errs = _errors(
+        _validate(tmp_path, ["sub-01/physio/sub-01_ses-1_foo-x_task-rest_recording-ecg_physio.edf"])
+    )
+    hint = "re-convert with destination"
+    assert any("task" in m.split(" - task-bound")[0] and hint in m for m in errs), errs
+    assert not any("foo" in m.split(" - task-bound")[0] and hint in m for m in errs), errs
