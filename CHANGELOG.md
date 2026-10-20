@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **LimeSurvey imports no longer write `tool-limesurvey` files.** The per-subject `_tool-limesurvey_survey.tsv/.json`
+  files are gone; the `startdate`/`seed`/`token` fingerprint that "skip surveys already in the project" relies on now
+  lives in one `code/survey_imports.json`, outside the PRISM-checked folders. Projects imported before keep their old
+  files (the validator still ignores them); their skipped responses are matched by file name until re-imported.
 - **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
   rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
   their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.

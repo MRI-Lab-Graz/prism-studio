@@ -173,10 +173,10 @@ language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
 `--duplicate-handling {error,keep_first,keep_last,sessions}` (repeated IDs; `sessions`
 numbers each ID's rows 1, 2, … by `startdate`/`datestamp`).
 `--skip-existing` imports only what is new: a response already in the output project
-(recognised by the `startdate`/`seed`/`token` record in its `tool-limesurvey` file, whatever
+(recognised by the `startdate`/`seed`/`token` record kept in `code/survey_imports.json`, whatever
 session it was stored under) is skipped per survey, a response found under another session is
 flagged, and a different response in an occupied subject/session/survey slot is reported as a
-conflict and never overwritten. Without a `tool-limesurvey` record the check falls back to the
+conflict and never overwritten. Without a record in that file the check falls back to the
 file name and says so.
 
 Templates are optional for `.lsa` files: questionnaires without a library template are

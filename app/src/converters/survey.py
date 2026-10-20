@@ -1751,16 +1751,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         lsa_analysis=lsa_analysis,
     )
 
+    # The GUI converts into a scratch folder and copies into the project afterwards.
+    existing_root = _survey_core._resolve_existing_project_root(project_path) or output_root
     existing_policy = None
     if skip_existing:
         from src.survey_existing import ExistingPolicy
 
-        # The GUI converts into a scratch folder and copies into the project afterwards.
-        existing_policy = ExistingPolicy(
-            _survey_core._resolve_existing_project_root(project_path) or output_root,
-            df.columns,
-            output_root,
-        )
+        existing_policy = ExistingPolicy(existing_root, df.columns, output_root)
 
     def _existing_summary():
         if existing_policy is None:
@@ -1774,7 +1771,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         if summary["unverified"]:
             conversion_warnings.append(
                 f"{summary['unverified']} skipped response(s) could only be matched by file name "
-                "(no tool-limesurvey record), so the check is weaker."
+                "(not in code/survey_imports.json), so the check is weaker."
             )
         return summary
 
@@ -1922,33 +1919,19 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
     )
 
-    # --- Write LimeSurvey System Variables ---
+    # --- Remember imported LimeSurvey responses (for "skip surveys already in the project") ---
     if ls_system_cols:
-        # Extract LS metadata from the .lsa analysis if available
-        _ls_meta: dict = {}
-        if lsa_analysis and isinstance(lsa_analysis, dict):
-            _ls_meta["survey_id"] = lsa_analysis.get("survey_id", "")
-            _ls_meta["survey_title"] = lsa_analysis.get("survey_title", "")
-            _ls_meta["tool_version"] = lsa_analysis.get("software_version", "")
-
-        ls_files_written = _survey_io._write_tool_limesurvey_files(
+        _survey_io._record_imported_responses(
             df=df,
-            ls_system_cols=ls_system_cols,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
             session=session,
             output_root=output_root,
+            project_root=existing_root,
             normalize_sub_fn=_normalize_sub_id,
             normalize_ses_fn=_normalize_ses_id,
-            ensure_dir_fn=_ensure_dir,
-            build_bids_survey_filename_fn=_build_bids_survey_filename,
-            ls_metadata=_ls_meta,
             existing_policy=existing_policy,
         )
-        if ls_files_written:
-            conversion_warnings.append(
-                f"Wrote {ls_files_written} tool-limesurvey file(s) with JSON sidecar"
-            )
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
     # that standard BIDS validators don't recognize.

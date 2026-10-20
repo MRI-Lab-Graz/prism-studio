@@ -682,119 +682,30 @@ def _generate_participants_preview(
     return preview
 
 
-_LS_SYSTEM_FIELD_DESCRIPTIONS: dict[str, dict[str, Any]] = {
-    # Core default columns (always present)
-    "id": {
-        "Description": "LimeSurvey response ID (auto-increment)",
-        "DataType": "integer",
-    },
-    "submitdate": {
-        "Description": "Timestamp when participant submitted the survey (NULL if incomplete)",
-        "DataType": "string",
-        "Format": "ISO8601",
-    },
-    "lastpage": {
-        "Description": "Last survey page viewed by participant",
-        "DataType": "integer",
-    },
-    "startlanguage": {
-        "Description": "Language selected at survey start",
-        "DataType": "string",
-    },
-    "completed": {
-        "Description": "LimeSurvey internal completion status flag",
-        "DataType": "string",
-    },
-    "seed": {
-        "Description": "Randomization seed for question/answer order",
-        "DataType": "string",
-    },
-    "token": {
-        "Description": "Participant access token (if token-based access was enabled)",
-        "DataType": "string",
-        "Sensitive": True,
-    },
-    # Optional columns (enabled via survey settings)
-    "startdate": {
-        "Description": "Timestamp when participant started the survey",
-        "DataType": "string",
-        "Format": "ISO8601",
-    },
-    "datestamp": {
-        "Description": "Timestamp of last respondent action on the survey",
-        "DataType": "string",
-        "Format": "ISO8601",
-    },
-    "ipaddr": {
-        "Description": "IP address of participant (if Save IP Address was enabled)",
-        "DataType": "string",
-        "Sensitive": True,
-    },
-    "refurl": {
-        "Description": "Referrer URL when participant entered the survey (if Save Referrer URL was enabled)",
-        "DataType": "string",
-    },
-    # Timing
-    "interviewtime": {
-        "Description": "Total time spent on the survey",
-        "DataType": "float",
-        "Unit": "seconds",
-    },
-    # Participant management
-    "optout": {
-        "Description": "Participant opt-out status from token management",
-        "DataType": "string",
-    },
-    "emailstatus": {
-        "Description": "Email delivery status for token-based surveys",
-        "DataType": "string",
-    },
-}
-
-
-def _write_tool_limesurvey_files(
+def _record_imported_responses(
     *,
     df,
-    ls_system_cols: list[str],
     res_id_col: str,
     res_ses_col: str | None,
     session: str | None,
     output_root: Path,
+    project_root: Path,
     normalize_sub_fn,
     normalize_ses_fn,
-    ensure_dir_fn,
-    build_bids_survey_filename_fn,
-    ls_metadata: dict | None = None,
     existing_policy=None,
 ) -> int:
-    """Write tool-limesurvey TSV + JSON sidecar files.
+    """Remember each imported response in the project's ``code/survey_imports.json`` ledger.
 
-    For each participant/session, writes:
-    - A TSV file with the system columns (startdate, submitdate, seed, etc.)
-    - A JSON sidecar describing the columns and their semantics
-
-    The JSON sidecar is written once per modality directory (shared across
-    subjects in the same session).
-
-    Args:
-        ls_metadata: Optional dict with keys like 'survey_id', 'survey_title',
-            'tool_version' extracted from the .lss structure during import.
-
-    Returns the number of TSV files written.
+    The (startdate, seed, token) fingerprint is what "skip surveys already in the
+    project" recognises a response by on the next import. Returns the number recorded.
     """
-    import json as _json
+    from src.survey_existing import FINGERPRINT_COLUMNS, record_imports, row_fingerprint
 
-    if not ls_system_cols:
+    columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
+    if not columns:
         return 0
 
-    available_cols = [c for c in ls_system_cols if c in df.columns]
-    if not available_cols:
-        return 0
-
-    meta = ls_metadata or {}
-    files_written = 0
-    sidecar_dirs_written: set[str] = set()
-
+    entries = []
     for _, row in df.iterrows():
         sub_id = normalize_sub_fn(row[res_id_col])
         ses_id = (
@@ -806,152 +717,10 @@ def _write_tool_limesurvey_files(
             row, sub_id, ses_id
         ):
             continue
-        modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
-
-        # ── TSV file ─────────────────────────────────────────────
-        tsv_filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.tsv"
-        tsv_path = modality_dir / tsv_filename
-
-        out_row = {}
-        for col in available_cols:
-            val = row.get(col)
-            if val is None or (isinstance(val, float) and str(val) == "nan"):
-                out_row[col] = "n/a"
-            else:
-                out_row[col] = str(val)
-
-        # Derived fields
-        try:
-            import pandas as pd
-
-            start = pd.to_datetime(row.get("startdate"), errors="coerce")
-            submit = pd.to_datetime(row.get("submitdate"), errors="coerce")
-            if pd.notna(start) and pd.notna(submit):
-                duration_min = round((submit - start).total_seconds() / 60, 2)
-                out_row["SurveyDuration_minutes"] = str(duration_min)
-            if pd.notna(submit):
-                out_row["CompletionStatus"] = "complete"
-            else:
-                out_row["CompletionStatus"] = "incomplete"
-        except Exception:
-            pass
-
-        fieldnames = list(out_row.keys())
-        with open(tsv_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(
-                f, fieldnames=fieldnames, delimiter="\t", lineterminator="\n"
-            )
-            writer.writeheader()
-            writer.writerow(out_row)
-
-        files_written += 1
-
-        # ── JSON sidecar (once per directory) ────────────────────
-        dir_key = str(modality_dir)
-        if dir_key not in sidecar_dirs_written:
-            sidecar_dirs_written.add(dir_key)
-            json_filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.json"
-            json_path = modality_dir / json_filename
-
-            sidecar = _build_tool_limesurvey_sidecar(
-                available_cols=available_cols,
-                has_duration="SurveyDuration_minutes" in out_row,
-                has_completion="CompletionStatus" in out_row,
-                ls_metadata=meta,
-            )
-            with open(json_path, "w", encoding="utf-8") as f:
-                _json.dump(sidecar, f, indent=2, ensure_ascii=False)
-                f.write("\n")
-
-    return files_written
-
-
-def _build_tool_limesurvey_sidecar(
-    *,
-    available_cols: list[str],
-    has_duration: bool,
-    has_completion: bool,
-    ls_metadata: dict,
-) -> dict:
-    """Build the JSON sidecar for a tool-limesurvey_survey.tsv file."""
-    sidecar: dict = {
-        "Metadata": {
-            "SchemaVersion": "1.0.0",
-            "Tool": "LimeSurvey",
-            "CreationDate": _utc_creation_date(),
-        },
-        "SystemFields": {},
-    }
-
-    # Add optional metadata from .lss import
-    if ls_metadata.get("tool_version"):
-        sidecar["Metadata"]["ToolVersion"] = ls_metadata["tool_version"]
-    if ls_metadata.get("survey_id"):
-        sidecar["Metadata"]["SurveyId"] = ls_metadata["survey_id"]
-    if ls_metadata.get("survey_title"):
-        sidecar["Metadata"]["SurveyTitle"] = ls_metadata["survey_title"]
-
-    # Document system fields that are present in the TSV
-    timing_cols = []
-    for col in available_cols:
-        col_lower = col.strip().lower()
-        if col_lower in _LS_SYSTEM_FIELD_DESCRIPTIONS:
-            sidecar["SystemFields"][col] = _LS_SYSTEM_FIELD_DESCRIPTIONS[
-                col_lower
-            ].copy()
-        elif col_lower.startswith("grouptime"):
-            timing_cols.append(("group", col))
-        elif col_lower.startswith("questiontime"):
-            timing_cols.append(("question", col))
-        elif col_lower.startswith("duration_"):
-            timing_cols.append(("duration", col))
-        elif re.match(r"^attribute_\d+$", col_lower):
-            sidecar["SystemFields"][col] = {
-                "Description": f"Custom participant attribute '{col}'",
-                "DataType": "string",
-            }
-        else:
-            sidecar["SystemFields"][col] = {
-                "Description": f"LimeSurvey system column '{col}'",
-                "DataType": "string",
-            }
-
-    # Timing fields (group timing, question timing, duration columns)
-    if timing_cols:
-        sidecar["Timings"] = {}
-        for kind, col in timing_cols:
-            if kind == "group":
-                desc = f"Time spent on question group (column '{col}')"
-            elif kind == "question":
-                desc = f"Time spent on individual question (column '{col}')"
-            else:
-                desc = f"Duration measurement (column '{col}')"
-            sidecar["Timings"][col] = {
-                "Description": desc,
-                "Unit": "seconds",
-                "DataType": "float",
-            }
-
-    # Derived fields
-    derived: dict[str, Any] = {}
-    if has_duration:
-        derived["SurveyDuration_minutes"] = {
-            "Description": "Total survey duration calculated from submitdate - startdate",
-            "Unit": "minutes",
-            "DataType": "float",
-        }
-    if has_completion:
-        derived["CompletionStatus"] = {
-            "Description": "Whether the survey was completed and submitted",
-            "Levels": {
-                "complete": "Survey was submitted (submitdate present)",
-                "incomplete": "Survey was not submitted (submitdate missing)",
-            },
-        }
-    if derived:
-        sidecar["DerivedFields"] = derived
-
-    return sidecar
+        entries.append((sub_id, ses_id, row_fingerprint(row, columns)))
+    if entries:
+        record_imports(project_root, output_root, entries)
+    return len(entries)
 
 
 def _generate_dry_run_preview(

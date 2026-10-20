@@ -95,3 +95,15 @@ def test_existing_responses_are_looked_up_in_the_project_not_the_temp_output(tmp
     assert not any(n.startswith("sub-c") for n in written)
     assert result.existing_summary["new"] == 1
     assert result.existing_summary["already_imported"] == 3
+
+
+def test_no_tool_limesurvey_files_are_written_and_the_ledger_records_each_response(tmp_path):
+    from src.survey_existing import ImportIndex, row_fingerprint
+
+    result = _convert(tmp_path, REAL_PATTERN)
+
+    assert not list((tmp_path / "out").rglob("*tool-limesurvey*"))
+    assert not any("tool-limesurvey" in w for w in result.conversion_warnings)
+    first = REAL_PATTERN[1]  # sub-a's first completed response
+    fp = row_fingerprint({"startdate": first[2], "token": first[1]}, ["startdate", "token"])
+    assert ImportIndex(tmp_path / "out").where_imported("sub-a", fp) is not None

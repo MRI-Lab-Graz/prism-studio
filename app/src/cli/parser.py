@@ -855,7 +855,7 @@ def build_prism_tools_parsers(
         action="store_true",
         help=(
             "Only import what is new: skip LimeSurvey responses already in the output "
-            "project (matched by their tool-limesurvey record) and never overwrite files "
+            "project (matched by their record in code/survey_imports.json) and never overwrite files "
             "that belong to a different response"
         ),
     )

@@ -1,16 +1,18 @@
 """Tell new LimeSurvey responses from ones the project already holds.
 
-A response's identity in the project is the fingerprint stored in its
-``sub-X_ses-N_tool-limesurvey_survey.tsv``. Session labels are compared as
-exact strings (never normalized).
+A response's identity in the project is the fingerprint recorded for it in
+``code/survey_imports.json`` (outside the PRISM-checked BIDS folders):
+``{"version": 1, "responses": {"sub-1": {"ses-1": ["<startdate>", "<seed>", "<token>"]}}}``.
+Session labels are compared as exact strings (never normalized).
 """
 
 from __future__ import annotations
 
-import csv
+import json
 from pathlib import Path
 
 FINGERPRINT_COLUMNS = ("startdate", "seed", "token")
+LEDGER = Path("code") / "survey_imports.json"
 
 
 def _clean(value) -> str:
@@ -24,21 +26,37 @@ def row_fingerprint(row, columns=FINGERPRINT_COLUMNS) -> tuple[str, ...]:
     return tuple(_clean(row.get(c)) for c in columns)
 
 
+def _load_ledger(root: str | Path) -> dict[str, dict[str, list[str]]]:
+    try:
+        data = json.loads((Path(root) / LEDGER).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    responses = data.get("responses") if isinstance(data, dict) else None
+    return responses if isinstance(responses, dict) else {}
+
+
+def record_imports(project_root: str | Path, output_root: str | Path, entries) -> None:
+    """Add ``(sub, ses, fingerprint)`` entries to the project's ledger, written under ``output_root``.
+
+    The GUI converts into a scratch ``output_root`` and copies it into the project,
+    so the project's ledger is merged in here and the copy carries the full result.
+    """
+    responses = _load_ledger(project_root)
+    for sub, ses, fp in entries:
+        responses.setdefault(sub, {})[ses] = list(fp)
+    path = Path(output_root) / LEDGER
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"version": 1, "responses": responses}, indent=2) + "\n", encoding="utf-8")
+
+
 class ImportIndex:
     """Fingerprints of the responses already imported below ``root``."""
 
     def __init__(self, root: str | Path, columns=FINGERPRINT_COLUMNS):
         self.columns = tuple(columns)
-        self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {}
-        for path in Path(root).glob("sub-*/ses-*/survey/*_tool-limesurvey_survey.tsv"):
-            try:
-                with open(path, encoding="utf-8", newline="") as f:
-                    row = next(csv.DictReader(f, delimiter="\t"), None)
-            except OSError:
-                continue
-            if row:
-                sub, ses = path.parts[-4], path.parts[-3]
-                self._by_slot[(sub, ses)] = row_fingerprint(row, self.columns)
+        self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {
+            (sub, ses): tuple(fp) for sub, slots in _load_ledger(root).items() for ses, fp in slots.items()
+        }
 
     def where_imported(self, sub: str, fingerprint) -> str | None:
         """Session under which this response is already stored for ``sub``."""
