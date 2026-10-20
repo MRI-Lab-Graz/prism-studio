@@ -54,7 +54,10 @@ from .projects_sessions_handlers import (
     handle_register_session,
     handle_save_sessions,
 )
-from .projects_methods_handlers import handle_generate_methods_section
+from .projects_methods_handlers import (
+    handle_export_methods,
+    handle_generate_methods_section,
+)
 from .projects_lifecycle_handlers import (
     handle_create_project,
     handle_datalad_doctor,
@@ -874,6 +877,16 @@ def generate_methods_section():
     )
 
 
+@projects_bp.route("/api/projects/export-methods", methods=["POST"])
+def export_methods_section():
+    """Download the methods section as docx/tex/bib. Body: language, detail_level, format."""
+    return handle_export_methods(
+        get_current_project=get_current_project,
+        read_project_json=_read_project_json,
+        compute_participant_stats=_compute_participant_stats,
+    )
+
+
 # =============================================================================
 # Study Metadata & Methods Completeness
 # =============================================================================
@@ -891,18 +904,24 @@ def lookup_doi_route():
 def preregistration_draft_route():
     """Download the preregistration draft (same function as `prism_tools preregistration draft`)."""
     from src.preregistration import load_draft
+    from src.text_export import FORMATS, MIME, convert
 
     project_path = session.get("current_project_path")
     if not project_path:
         return jsonify({"success": False, "error": "No project selected"}), 400
+    fmt = request.args.get("format", "md")
+    if fmt not in FORMATS:
+        return jsonify({"success": False, "error": f"Unknown format {fmt!r}"}), 400
     try:
-        markdown = load_draft(project_path)
+        data = convert(load_draft(project_path), fmt)
     except FileNotFoundError as exc:
         return jsonify({"success": False, "error": str(exc)}), 404
+    except RuntimeError as exc:  # python-docx missing
+        return jsonify({"success": False, "error": str(exc)}), 501
     return Response(
-        markdown,
-        mimetype="text/markdown",
-        headers={"Content-Disposition": 'attachment; filename="preregistration_draft.md"'},
+        data,
+        mimetype=MIME[fmt],
+        headers={"Content-Disposition": f'attachment; filename="preregistration_draft.{fmt}"'},
     )
 
 

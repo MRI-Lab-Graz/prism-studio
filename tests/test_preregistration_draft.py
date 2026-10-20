@@ -240,3 +240,27 @@ def test_cli_format_docx_requires_output(tmp_path):
     with pytest.raises(SystemExit) as exc:
         _run_cli(["preregistration", "draft", "--project", str(tmp_path), "--format", "docx"])
     assert exc.value.code == 2
+
+
+def test_gui_route_format_tex_and_default_unchanged(tmp_path):
+    from flask import Flask
+
+    from src.web.blueprints.projects import projects_bp
+
+    (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
+    app = Flask(__name__)
+    app.secret_key = "test"
+    app.register_blueprint(projects_bp)
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess["current_project_path"] = str(tmp_path)
+
+    tex = client.get("/api/projects/preregistration-draft?format=tex")
+    assert tex.status_code == 200
+    assert tex.get_data(as_text=True).startswith("\\documentclass")
+    assert "preregistration_draft.tex" in tex.headers["Content-Disposition"]
+    assert client.get("/api/projects/preregistration-draft?format=pdf").status_code == 400
+    assert (
+        client.get("/api/projects/preregistration-draft").get_data(as_text=True)
+        == load_draft(tmp_path)
+    )

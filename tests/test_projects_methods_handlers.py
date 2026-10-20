@@ -4,6 +4,8 @@ import os
 import sys
 import tempfile
 import unittest
+
+import pytest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -223,3 +225,65 @@ class TestProjectsMethodsHandlers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---- export-methods route (Word / TeX / BibTeX downloads) -------------------
+
+
+def _client(tmp_path, with_project=True):
+    from src.web.blueprints.projects import projects_bp
+
+    (tmp_path / "project.json").write_text(
+        json.dumps(
+            {
+                "StudyDesign": {"Type": "cross-sectional"},
+                "TaskDefinitions": {"ads": {"modality": "survey"}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    app = Flask(__name__)
+    app.secret_key = "test"
+    app.register_blueprint(projects_bp)
+    client = app.test_client()
+    if with_project:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path)
+            sess["current_project_name"] = "demo"
+    return client
+
+
+def test_export_methods_tex(tmp_path):
+    resp = _client(tmp_path).post(
+        "/api/projects/export-methods", json={"language": "en", "format": "tex"}
+    )
+    assert resp.status_code == 200
+    assert resp.get_data(as_text=True).startswith("\\documentclass")
+    assert "methods_section_en.tex" in resp.headers["Content-Disposition"]
+
+
+def test_export_methods_docx(tmp_path):
+    pytest.importorskip("docx")
+    resp = _client(tmp_path).post(
+        "/api/projects/export-methods", json={"format": "docx"}
+    )
+    assert resp.status_code == 200
+    assert resp.data[:2] == b"PK"
+
+
+def test_export_methods_bib_is_text(tmp_path):
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "bib"})
+    assert resp.status_code == 200
+    assert "methods_section_en.bib" in resp.headers["Content-Disposition"]
+
+
+def test_export_methods_rejects_unknown_format(tmp_path):
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "pdf"})
+    assert resp.status_code == 400
+
+
+def test_export_methods_without_python_docx_is_501(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "docx", None)
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "docx"})
+    assert resp.status_code == 501
+    assert "python-docx" in resp.get_json()["error"]

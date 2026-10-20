@@ -26,6 +26,8 @@ export function createMetadataMethodsController({
         if (errorDiv) errorDiv.style.display = 'none';
         if (preview) preview.innerHTML = '';
         if (badgesDiv) badgesDiv.innerHTML = '';
+        const warningsDiv = document.getElementById('methodsWarnings');
+        if (warningsDiv) warningsDiv.style.display = 'none';
     }
 
     function showMethodsCard() {
@@ -89,6 +91,13 @@ export function createMetadataMethodsController({
             methodsHtml = data.html;
             methodsFilenameBase = data.filename_base;
 
+            const warningsDiv = document.getElementById('methodsWarnings');
+            const warnings = data.warnings || [];
+            warningsDiv.innerHTML = warnings.length
+                ? `<ul class="mb-0">${warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('')}</ul>`
+                : '';
+            warningsDiv.style.display = warnings.length ? 'block' : 'none';
+
             const badgesDiv = document.getElementById('methodsSectionsBadges');
             badgesDiv.innerHTML = (data.sections_used || []).map(
                 s => `<span class="badge bg-success bg-opacity-75 me-1">${s}</span>`
@@ -127,6 +136,31 @@ export function createMetadataMethodsController({
         document.body.removeChild(anchor);
     }
 
+    async function exportMethods(format) {
+        const lang = document.getElementById('methodsLanguage').value;
+        const detailLevel = document.getElementById('methodsDetailLevel').value;
+        const response = await fetchWithApiFallback('/api/projects/export-methods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: getCurrentProjectPath(), language: lang, detail_level: detailLevel, format }),
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            const errorDiv = document.getElementById('methodsError');
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `<div class="alert alert-warning py-2"><i class="fas fa-info-circle me-2"></i>${escapeHtml(err.error || 'Export failed.')}</div>`;
+            return;
+        }
+        const url = URL.createObjectURL(await response.blob());
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `methods_section_${lang}.${format}`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(anchor);
+    }
+
     function handleProjectChanged() {
         methodsRequestToken += 1;
     }
@@ -146,6 +180,10 @@ export function createMetadataMethodsController({
             });
         }
 
+        document.querySelectorAll('[data-export-format]').forEach(btn => {
+            btn.addEventListener('click', () => exportMethods(btn.dataset.exportFormat));
+        });
+
         const downloadMethodsHtmlBtn = document.getElementById('downloadMethodsHtmlBtn');
         if (downloadMethodsHtmlBtn) {
             downloadMethodsHtmlBtn.addEventListener('click', () => {
@@ -158,6 +196,7 @@ export function createMetadataMethodsController({
         showMethodsCard,
         generateMethodsSection,
         downloadMethods,
+        exportMethods,
         handleProjectChanged,
         initMethodsControls,
     };

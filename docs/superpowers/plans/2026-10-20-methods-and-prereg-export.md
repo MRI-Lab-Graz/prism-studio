@@ -14,7 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
-- **Status: Tasks 1-4 done. Resume at Task 5.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
+- **Status: Tasks 1-5 done. Resume at Task 6. (Task 5 GUI buttons not clicked in a browser; pre-existing e2e failure tests/e2e/test_projects_layout.py::test_a_dataset_description_error_links_to_the_field_it_names fails on a clean checkout too.)** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -122,10 +122,10 @@
 - Consumes: `build_methods`, `convert`, `references_bib`.
 - Produces: `POST /api/projects/export-methods` body `{language, detail_level, format}` with `format in {docx, tex, bib}` returns the file with `Content-Disposition` (`methods_section_<lang>.<ext>`); invalid format -> 400; missing python-docx -> 501 JSON `{success:false,error}`. Preregistration route: `?format=md|html|docx|tex` (default `md`, unchanged behaviour).
 
-- [ ] **Step 1: Write failing route tests** with the Flask test client used in the existing handler tests: docx response starts with `PK`; tex response contains `\documentclass`; `format=pdf` -> 400; prereg `?format=tex` -> tex, no format -> unchanged Markdown.
-- [ ] **Step 2:** Run; FAIL. **Step 3:** Implement routes (adapters only). Add Word/TeX/BibTeX buttons beside the existing MD/HTML ones, reusing the blob-download helper pattern in `downloadMethods`; show `warnings` returned by `generate-methods` as a yellow list in the preview; add Word/TeX links to the prereg download.
-- [ ] **Step 4:** Run the route tests; PASS. Open the page in the app and click each button once (state what you saw in the commit/PR).
-- [ ] **Step 5:** Commit `feat(gui): word/tex/bib downloads for methods, formats for prereg`.
+- [x] **Step 1: Write failing route tests** with the Flask test client used in the existing handler tests: docx response starts with `PK`; tex response contains `\documentclass`; `format=pdf` -> 400; prereg `?format=tex` -> tex, no format -> unchanged Markdown.
+- [x] **Step 2:** Run; FAIL. **Step 3:** Implement routes (adapters only). Add Word/TeX/BibTeX buttons beside the existing MD/HTML ones, reusing the blob-download helper pattern in `downloadMethods`; show `warnings` returned by `generate-methods` as a yellow list in the preview; add Word/TeX links to the prereg download.
+- [x] **Step 4:** Run the route tests; PASS. Open the page in the app and click each button once (state what you saw in the commit/PR).
+- [x] **Step 5:** Commit `feat(gui): word/tex/bib downloads for methods, formats for prereg`.
 
 ### Task 6: Journal-order sections, shorter boilerplate, warnings
 

@@ -158,3 +158,12 @@ def build_methods(
         continuous=True,  # methods output is always continuous prose
     )
     return MethodsResult(md, sections_used, [], template_data)
+
+
+def render_methods(result: MethodsResult, fmt: str) -> bytes:
+    """Bytes of a methods result in ``fmt`` (md/html/docx/tex, or bib for the references)."""
+    from src.text_export import convert, references_bib
+
+    if fmt == "bib":
+        return references_bib(result.template_data).encode("utf-8")
+    return convert(result.md, fmt)

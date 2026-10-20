@@ -5,17 +5,17 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from src.methods_project import build_methods
-from src.text_export import convert, references_bib
+from src.methods_project import build_methods, render_methods
+from src.text_export import convert
 
 
-def emit_document(markdown: str, fmt: str, output: str | None) -> None:
-    """Convert Markdown to ``fmt`` and print or write it; exit 2 on a user error."""
+def emit_document(markdown, fmt: str, output: str | None, render=convert) -> None:
+    """``render(markdown, fmt)`` to bytes, then print or write; exit 2 on a user error."""
     if fmt == "docx" and not output:
         print("Error: --format docx is binary and needs --output FILE")
         sys.exit(2)
     try:
-        data = convert(markdown, fmt)
+        data = render(markdown, fmt)
     except RuntimeError as exc:  # python-docx missing
         print(f"Error: {exc}")
         sys.exit(2)
@@ -36,7 +36,4 @@ def cmd_methods_generate(args) -> None:
         sys.exit(2)
     for warning in result.warnings:
         print(f"Warning: {warning}", file=sys.stderr)
-    if args.format == "bib":
-        emit_document(references_bib(result.template_data), "md", args.output)
-    else:
-        emit_document(result.md, args.format, args.output)
+    emit_document(result, args.format, args.output, render=render_methods)
