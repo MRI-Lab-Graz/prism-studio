@@ -354,7 +354,7 @@ def session_assignment_table(
     """One row per response for review: what session it gets and why.
 
     With ``imported_root`` (a project), responses already recorded there are left out of
-    the table; the sessions are still numbered across the whole file.
+    the table (except manual session overrides); the sessions are still numbered across the whole file.
     """
     res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
     if imported_root is not None:
@@ -362,7 +362,11 @@ def session_assignment_table(
 
         columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
         index = ImportIndex(imported_root, columns)
-        known = [index.is_imported(row_fingerprint(df.loc[i], columns)) for i in res.index]
+        # A manual session override stays visible: it usually marks a session-mapping problem.
+        known = [
+            index.is_imported(row_fingerprint(df.loc[i], columns)) and res.at[i, "reason"] != "override"
+            for i in res.index
+        ]
         if any(known):
             res = res[[not k for k in known]]
             warnings.append(f"{sum(known)} response(s) already in the project are not shown.")

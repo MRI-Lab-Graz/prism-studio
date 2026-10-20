@@ -104,3 +104,23 @@ def test_review_table_hides_responses_already_in_the_project_but_keeps_the_numbe
 
     assert [(r["response_id"], r["session"]) for r in shown] == [("2", "2")]
     assert any("1 response(s) already in the project" in w for w in warnings)
+
+
+def test_review_table_keeps_imported_responses_with_a_manual_session_override(tmp_path):
+    import pandas as pd
+
+    from src.participants_sessions import session_assignment_table
+
+    cols = ["startdate", "seed", "token"]
+    rows = [
+        {"id": "1", "token": "a", "seed": "1", "startdate": "2026-03-01 09:00:00", "submitdate": "x", "lastpage": "6"},
+        {"id": "2", "token": "b", "seed": "2", "startdate": "2026-03-02 09:00:00", "submitdate": "x", "lastpage": "6"},
+    ]
+    record_imports(tmp_path, tmp_path, [(f"sub-{r['token']}", "ses-1", row_fingerprint(r, cols)) for r in rows])
+
+    shown, warnings = session_assignment_table(
+        pd.DataFrame(rows), "token", decisions={"1": {"session": "pre"}}, imported_root=tmp_path
+    )
+
+    assert [(r["response_id"], r["session"], r["reason"]) for r in shown] == [("1", "pre", "override")]
+    assert any("1 response(s) already in the project" in w for w in warnings)

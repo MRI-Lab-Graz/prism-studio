@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reviewFormData } from './survey-session-assignments.js';
+import { reviewFormData, rowClass } from './survey-session-assignments.js';
 
 describe('reviewFormData', () => {
     it('sends the picked server path when no file was uploaded', () => {
@@ -27,5 +27,13 @@ describe('reviewFormData', () => {
     it('returns null until a file (or path) and an ID column are chosen', () => {
         expect(reviewFormData({ file: null, serverPath: '', idColumn: 'token' })).toBeNull();
         expect(reviewFormData({ file: null, serverPath: '/data/a.lsa', idColumn: '' })).toBeNull();
+    });
+});
+
+describe('rowClass', () => {
+    it('marks manual session overrides, mutes left-out rows, leaves the rest plain', () => {
+        expect(rowClass({ session: 'pre', reason: 'override' })).toBe('table-warning');
+        expect(rowClass({ session: null, reason: 'incomplete' })).toBe('text-muted');
+        expect(rowClass({ session: '1', reason: '' })).toBe('');
     });
 });

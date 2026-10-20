@@ -11,6 +11,12 @@ export function reviewFormData({ file, serverPath, idColumn, skipExisting = fals
     return formData;
 }
 
+/** Manual overrides are highlighted (they mark a session-mapping problem); left-out rows are muted. */
+export function rowClass(row) {
+    if (row.reason === 'override') return 'table-warning';
+    return row.session === null ? 'text-muted' : '';
+}
+
 export function createSurveySessionAssignmentsController({ getConvertServerFilePath = () => '' } = {}) {
     const DERIVED_HINT = 'Sessions are numbered 1, 2, … by startdate (completed responses only).';
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
@@ -46,7 +52,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
         rows.forEach((r) => {
             const left = r.session === null;
-            html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${left ? 'text-muted' : ''}">`
+            html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${rowClass(r)}">`
                 + `<td>${esc(r.participant)}</td><td>${esc(r.response_id)}</td>`
                 + `<td>${esc(String(r.date).slice(0, 16))}</td><td>${r.completed ? 'yes' : 'no'}</td>`
                 + `<td>${esc(r.lastpage)}</td>`
