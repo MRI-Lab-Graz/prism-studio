@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/physio/v1.2.0",
-  "version": "1.2.0",
+  "$id": "https://prism.org/schemas/physio/v1.3.0",
+  "version": "1.3.0",
   "title": "Physiological Data Metadata",
-  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research. Files should be named with an optional recording- entity to distinguish signal types: sub-<label>[_ses-<label>]_task-<label>[_recording-<label>]_physio.<tsv.gz|json>",
+  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research. Files are named with an optional recording- entity to distinguish signal types. Without a task: sub-<label>[_ses-<label>][_recording-<label>]_physio.<edf|json> in physio/ (no task- entity). Task-bound recordings: sub-<label>[_ses-<label>]_task-<label>[_recording-<label>]_physio.<tsv.gz|json> next to the task data in beh/, func/ or eeg/.",
   "type": "object",
   "properties": {
     "Technical": {
@@ -295,7 +295,7 @@
         }
       },
       "Metadata": {
-        "SchemaVersion": "1.2.0",
+        "SchemaVersion": "1.3.0",
         "CreationDate": "2024-01-15"
       }
     },
@@ -324,7 +324,7 @@
         }
       },
       "Metadata": {
-        "SchemaVersion": "1.2.0",
+        "SchemaVersion": "1.3.0",
         "CreationDate": "2024-01-15"
       }
     }
