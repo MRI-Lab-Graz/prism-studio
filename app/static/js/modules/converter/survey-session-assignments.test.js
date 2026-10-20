@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reviewFormData, rowClass, visibleRows } from './survey-session-assignments.js';
+import { reviewFormData, rowClass } from './survey-session-assignments.js';
 
 describe('reviewFormData', () => {
     it('sends the picked server path when no file was uploaded', () => {
@@ -35,14 +35,5 @@ describe('rowClass', () => {
         expect(rowClass({ session: 'pre', reason: 'override' })).toBe('table-warning');
         expect(rowClass({ session: null, reason: 'incomplete' })).toBe('text-muted');
         expect(rowClass({ session: '1', reason: '' })).toBe('');
-    });
-});
-
-describe('visibleRows', () => {
-    const rows = [{ session: '1' }, { session: null, reason: 'incomplete' }, { session: 'pre', reason: 'override' }, { session: null, reason: 'skipped' }];
-
-    it('hides every row that gets no session unless skipped ones are asked for', () => {
-        expect(visibleRows(rows, false)).toEqual([rows[0], rows[2]]);
-        expect(visibleRows(rows, true)).toEqual(rows);
     });
 });

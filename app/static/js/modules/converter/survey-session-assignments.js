@@ -17,11 +17,6 @@ export function rowClass(row) {
     return row.session === null ? 'text-muted' : '';
 }
 
-/** Rows that get no session (incomplete, or skipped by hand) are hidden unless asked for. */
-export function visibleRows(rows, showSkipped) {
-    return showSkipped ? rows : rows.filter((r) => r.session !== null);
-}
-
 export function createSurveySessionAssignmentsController({ getConvertServerFilePath = () => '' } = {}) {
     const DERIVED_HINT = 'Sessions are numbered 1, 2, … by startdate (completed responses only).';
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
@@ -50,21 +45,9 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         document.getElementById('sessionAssignmentsCard')?.classList.toggle('d-none', !derived);
     }
 
-    let showSkipped = false;
-    let lastData = null;
-
     function render(body, data) {
-        lastData = data;
-        const all = Array.isArray(data.rows) ? data.rows : [];
-        const rows = visibleRows(all, showSkipped);
-        const hidden = all.length - rows.length;
-        let html = '';
-        if (hidden || showSkipped) {
-            html += '<div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="sessionShowSkipped"'
-                + `${showSkipped ? ' checked' : ''}><label class="form-check-label" for="sessionShowSkipped">`
-                + `Show skipped${hidden ? ` (${hidden} hidden)` : ''}</label></div>`;
-        }
-        html += '<table class="table table-sm table-bordered mb-2"><thead><tr>'
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+        let html = '<table class="table table-sm table-bordered mb-2"><thead><tr>'
             + '<th>Participant</th><th>Response</th><th>Date</th><th>Done</th><th>Last page</th>'
             + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
         rows.forEach((r) => {
@@ -149,11 +132,6 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             if (toggleBtn?.getAttribute('aria-expanded') === 'true') load();
         });
         body?.addEventListener('change', async (event) => {
-            if (event.target.id === 'sessionShowSkipped') {
-                showSkipped = event.target.checked;
-                if (lastData) render(body, lastData);
-                return;
-            }
             const row = event.target.closest('tr[data-response-id]');
             if (!row) return;
             const responseId = row.dataset.responseId;
