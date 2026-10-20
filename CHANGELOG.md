@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Methods section export and richer text.** `prism_tools methods generate` (and the Studio Projects page) writes the
+  Methods as Markdown, HTML, Word, TeX, or a BibTeX file of the instrument references; sections follow journal order,
+  and the text now covers acquisition parameters and session counts from the sidecars, scoring recipes and software
+  versions. Missing facts are reported as warnings, not invented. `preregistration draft` gained `--format md|html|docx|tex`.
+
 ### Changed
 - **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
   rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep

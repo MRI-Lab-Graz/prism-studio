@@ -477,6 +477,23 @@ Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
 `--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
 for the hook's requirements and limits.
 
+### Methods section and preregistration draft
+
+```bash
+python prism_tools.py methods generate --project /path/to/project [--lang en|de] \
+    [--detail brief|standard|detailed] [--format md|html|docx|tex|bib] [--output FILE]
+python prism_tools.py preregistration draft --project /path/to/project \
+    [--format md|html|docx|tex] [--output FILE]
+```
+
+`methods generate` builds a paper-ready Methods text from `project.json`, the
+task templates, the BIDS sidecars (scanner/sequence parameters, counts per
+session), the scoring recipes and the PRISM version. Gaps (no sample size, an
+instrument without a citation) are printed to stderr as warnings and are never
+invented. `--format bib` writes the instrument references as BibTeX. `docx`
+needs `--output` and the `python-docx` package (exit code 2 otherwise); the Studio
+Projects page offers the same downloads (Word, TeX, BibTeX).
+
 ### Save gate
 
 Refuses a `git commit` in a PRISM dataset unless the dataset validates (a git pre-commit
