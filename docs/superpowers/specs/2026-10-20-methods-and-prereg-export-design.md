@@ -128,3 +128,8 @@ Markdown is the intermediate and thin converters turn it into each format:
 
 None blocking. Calls made without asking: section order, boilerplate shrink,
 deterministic citation keys, loud TODO markers over silent omission.
+
+## Deviation recorded after review (2026-10-20)
+
+The TeX export does not emit `\citep{key}` / `\bibliography`: citations stay inline APA text and the `.bib` file is a
+separate download of the instrument references. Linking them needs the generator to emit citation keys in the prose; left for a follow-up.

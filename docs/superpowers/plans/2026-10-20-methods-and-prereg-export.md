@@ -191,4 +191,4 @@
 
 - [x] **Step 1:** Document `prism_tools methods generate` and the new `--format` options where the preregistration command is documented.
 - [x] **Step 2:** Run targeted tests: `pytest tests/test_text_export.py tests/test_methods_project.py tests/test_cli_methods.py tests/test_methods_acquisition.py tests/test_methods_processing.py tests/test_reporting_methods_generation.py tests/test_projects_methods_handlers.py tests/test_preregistration_draft.py tests/test_preregistration_block.py -q`; expect all pass. Also `python tests/verify_repo.py --check dual-tree-drift --no-fix`.
-- [ ] **Step 3:** Run `/ponytail:ponytail-audit` on the branch (standing rule), apply worthwhile findings, re-run the tests, then finish via `superpowers:finishing-a-development-branch`.
+- [x] **Step 3:** Run `/ponytail:ponytail-audit` on the branch (standing rule), apply worthwhile findings, re-run the tests, then finish via `superpowers:finishing-a-development-branch`.
