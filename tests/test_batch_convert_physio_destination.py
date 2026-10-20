@@ -242,10 +242,10 @@ def test_physio_report_for_task_free_file_does_not_say_none(tmp_path, make_edf):
 
 def test_physio_report_main_path_handles_task_none(tmp_path, make_edf, monkeypatch):
     """The full report (needs pyedflib) must not crash on task=None; here a stub reader is enough to reach the task fields."""
+    monkeypatch.delitem(sys.modules, "pyedflib", raising=False)  # drop the autouse block
     pytest.importorskip("pyedflib")
     from src.batch_convert import _generate_physio_html_report
 
-    monkeypatch.undo()  # allow the real pyedflib
     edf = tmp_path / "sub-01_ses-pre_recording-ecg_physio.edf"
     make_edf(edf, {"ecg": (np.sin(np.linspace(0, 60, 2000)), 200)}, duration=10.0)
     report = _generate_physio_html_report(
@@ -262,3 +262,94 @@ def test_task_bound_bids_output_logs_that_no_report_is_made(tmp_path, make_edf):
         generate_physio_reports=True, log_callback=lambda m, lvl="info": logs.append(m),
     )
     assert any("no physio report" in m.lower() and "tsv.gz" in m for m in logs)
+
+
+# --- cleanup wave -----------------------------------------------------------
+
+
+def test_task_bound_raw_forwards_converter_stdout_to_log(tmp_path, monkeypatch):
+    def fake(raw, edf, js, **kw):
+        print("Average heart rate: 71 bpm")
+        base = kw["bids_base"]
+        base.with_name(base.name + ".tsv.gz").write_bytes(b"x")
+        base.with_name(base.name + ".json").write_text("{}")
+        return {}
+
+    monkeypatch.setattr("helpers.physio.convert_varioport.convert_varioport", fake)
+    src = _raw_src(tmp_path, "sub-01_task-stroop.raw")
+    logs = []
+    batch_convert_folder(
+        src, tmp_path / "out", physio_destination="eeg",
+        log_callback=lambda m, lvl="info": logs.append(m),
+    )
+    assert any("Average heart rate: 71 bpm" in m for m in logs)
+
+
+def test_no_report_message_only_for_bids_output(tmp_path, make_edf, monkeypatch):
+    """A task-free EDF whose report is None (e.g. no labels) must not claim it is BIDS .tsv.gz output."""
+    monkeypatch.setattr("src.batch_convert._generate_physio_html_report", lambda **kw: None)
+    src = _src(tmp_path, make_edf, "sub-01_recording-ecg.edf")
+    logs = []
+    batch_convert_folder(
+        src, tmp_path / "out", generate_physio_reports=True,
+        log_callback=lambda m, lvl="info": logs.append(m),
+    )
+    assert not any("no physio report" in m.lower() for m in logs)
+
+
+def test_physio_renamer_import_is_in_top_import_block():
+    import src.batch_convert as bc
+
+    lines = open(bc.__file__, encoding="utf-8").read().splitlines()
+    imp = next(i for i, l in enumerate(lines) if l.startswith("from src.physio_renamer import"))
+    first_code = next(i for i, l in enumerate(lines) if l.startswith("PHYSIO_EXTENSIONS"))
+    assert imp < first_code
+    assert "noqa" not in lines[imp]
+
+
+def _run_main(args, cwd):
+    import subprocess
+
+    root = __import__("pathlib").Path(__file__).resolve().parents[1]
+    env = {**__import__("os").environ, "PYTHONPATH": str(root)}
+    return subprocess.run(
+        [sys.executable, "-m", "src.batch_convert", *map(str, args)],
+        capture_output=True, text=True, cwd=cwd, env=env,
+    )
+
+
+def test_main_requires_destination_for_task_files(tmp_path, make_edf):
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf")
+    proc = _run_main([src, tmp_path / "out"], tmp_path)
+    assert proc.returncode == 2
+    assert "sub-01_task-stroop_recording-ecg.edf" in proc.stderr
+    assert "Traceback" not in proc.stderr
+
+
+def test_main_destination_option_converts_task_files(tmp_path, make_edf):
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf")
+    proc = _run_main([src, tmp_path / "out", "--destination", "func"], tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    assert any(f.startswith("sub-01/func/") for f in _rel(tmp_path / "out"))
+
+
+def test_destination_problems_raise_the_dedicated_error(tmp_path, make_edf):
+    from src.batch_convert import PhysioDestinationError, physio_target_folder
+
+    assert issubclass(PhysioDestinationError, ValueError)
+    with pytest.raises(PhysioDestinationError):
+        physio_target_folder("task-x", None)
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf")
+    with pytest.raises(PhysioDestinationError):
+        batch_convert_folder(src, tmp_path / "out")
+
+
+def test_check_physio_destination_is_public_and_filters(tmp_path, make_edf):
+    from src.batch_convert import PhysioDestinationError, check_physio_destination
+
+    src = _src(tmp_path, make_edf, "sub-01_task-stroop_recording-ecg.edf", "sub-02_recording-ecg.edf")
+    with pytest.raises(PhysioDestinationError, match="sub-01_task-stroop_recording-ecg.edf"):
+        check_physio_destination(src, "all", None)
+    check_physio_destination(src, "all", "beh")  # destination given: fine
+    check_physio_destination(src, "eyetracking", None)  # not physio: nothing to check
+    assert not (tmp_path / "out").exists()

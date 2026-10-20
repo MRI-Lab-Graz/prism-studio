@@ -404,18 +404,9 @@ def api_batch_convert_start():
             return jsonify({"error": str(error)}), 400
         project_path = str(project_root)
 
-    # Pre-scan only: cancel_check stops before any file is converted, but the
-    # backend's "task needs a destination" ValueError is raised first.
     try:
-        batch_convert_folder(
-            source_dir,
-            tmp_path / "output",
-            modality_filter=modality_filter,
-            dry_run=True,
-            cancel_check=lambda: True,
-            physio_destination=physio_destination,
-        )
-    except ValueError as error:
+        check_physio_destination(source_dir, modality_filter, physio_destination)
+    except PhysioDestinationError as error:
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return jsonify({"error": str(error)}), 400
 
@@ -493,11 +484,20 @@ def api_batch_convert_metrics():
 
 
 batch_convert_folder: Any = None
+check_physio_destination: Any = None
 create_dataset_description: Any = None
 parse_bids_filename: Any = None
+
+
+class PhysioDestinationError(ValueError):  # placeholder if src.batch_convert is missing
+    pass
+
+
 try:
     from src.batch_convert import (
+        PhysioDestinationError,
         batch_convert_folder,
+        check_physio_destination,
         create_dataset_description,
         parse_bids_filename,
     )
@@ -780,7 +780,7 @@ def api_batch_convert():
                     "datalad": datalad_copy,
                 }
             )
-        except ValueError as error:
+        except PhysioDestinationError as error:
             return jsonify({"error": str(error), "logs": logs}), 400
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -1064,7 +1064,7 @@ def api_batch_convert():
                 "warnings": warnings,
             }
         )
-    except ValueError as e:
+    except PhysioDestinationError as e:
         return jsonify({"error": str(e), "logs": logs}), 400
     except Exception as e:
         return jsonify({"error": str(e), "logs": logs}), 500

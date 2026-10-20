@@ -18,7 +18,11 @@ from src.converters.wide_to_long import (
     inspect_wide_to_long_columns,
     resolve_wide_to_long_id_uniqueness,
 )
-from src.batch_convert import _build_physio_base_name, physio_target_folder
+from src.batch_convert import (
+    PhysioDestinationError,
+    _build_physio_base_name,
+    physio_target_folder,
+)
 from src.cross_platform import normalize_path
 from src.safe_excel import to_excel_safe
 from src.entity_rules import load_entity_rules
@@ -154,9 +158,11 @@ def cmd_convert_physio(args):
         print(f"\nConversion finished. Success: 1, Errors: 0")
         return
 
+    if not task and getattr(args, "destination", None):
+        print("--destination is ignored without --task: files go to physio/", file=sys.stderr)
     try:
         folder = physio_target_folder(task, getattr(args, "destination", None))
-    except ValueError as exc:
+    except PhysioDestinationError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(2)
 
@@ -211,7 +217,7 @@ def cmd_convert_physio(args):
         out_base = _build_physio_base_name(
             sub_id, ses_id, f"task-{task}" if task else None, recording
         )
-        bids = folder != "physio"
+        bids = bool(task)
         out_edf = target_dir / f"{out_base}.{'tsv.gz' if bids else 'edf'}"
 
         print(f"Converting {filename} -> {out_edf.name}")
@@ -638,7 +644,7 @@ def cmd_convert_wide_to_long(args) -> None:
 
 def cmd_physio_batch_convert(args) -> None:
     """Handle 'physio batch-convert' command."""
-    from src.batch_convert import batch_convert_folder
+    from src.batch_convert import PhysioDestinationError, batch_convert_folder
 
     source_folder = Path(args.input)
     output_folder = Path(args.output)
@@ -666,7 +672,7 @@ def cmd_physio_batch_convert(args) -> None:
             dry_run=getattr(args, "dry_run", False),
             physio_destination=getattr(args, "destination", None),
         )
-    except ValueError as exc:
+    except PhysioDestinationError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(2)
 

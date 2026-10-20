@@ -111,14 +111,23 @@ def test_batch_convert_task_bound_pins(tmp_path, pinned_roots, make_edf):
     assert pinned_roots == [str(out)]
 
 
-def test_batch_convert_dry_run_does_not_pin(tmp_path, pinned_roots):
+def test_batch_convert_dry_run_does_not_pin(tmp_path, pinned_roots, make_edf):
+    import numpy as np
+
+    from src.batch_convert import PhysioDestinationError
+
     src = tmp_path / "source"
     src.mkdir()
-    (src / "sub-001_task-rest.edf").write_bytes(b"fake edf")
+    make_edf(src / "sub-001_task-rest.edf", {"ecg": (np.linspace(-1, 1, 8), 4)})
 
-    batch_convert_folder(src, tmp_path / "output", modality_filter="physio", dry_run=True,
-                         physio_destination="beh")
+    # A real, convertible file: only dry_run keeps the pin away (not a failed conversion).
+    result = batch_convert_folder(src, tmp_path / "output", modality_filter="physio",
+                                  dry_run=True, physio_destination="beh")
+    assert result.success_count == 1
+    assert pinned_roots == []
 
+    with pytest.raises(PhysioDestinationError):
+        batch_convert_folder(src, tmp_path / "output", modality_filter="physio", dry_run=True)
     assert pinned_roots == []
 
 
