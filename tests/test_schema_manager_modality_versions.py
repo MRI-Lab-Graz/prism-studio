@@ -39,7 +39,7 @@ def test_one_modality_can_be_loaded_at_an_archived_version(tmp_path):
 def test_aliases_follow_the_overridden_schema(tmp_path):
     schema_dir = _copy_schemas(tmp_path)
     archive = Path(schema_dir) / "archive" / "physio"
-    archive.mkdir(parents=True, exist_ok=True)
+    archive.mkdir(parents=True)
     phys = json.loads((Path(schema_dir) / "stable" / "physio.schema.json").read_text())
     phys["version"] = "1.0.0"
     (archive / "1.0.0.schema.json").write_text(json.dumps(phys))
