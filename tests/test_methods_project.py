@@ -41,7 +41,7 @@ def test_build_methods_returns_result(tmp_path):
     assert isinstance(result, MethodsResult)
     assert "cross sectional design" in result.md
     assert "StudyDesign" in result.sections_used
-    assert result.warnings == []
+    assert result.warnings and "sample size" in result.warnings[0]
     assert result.template_data == {}
 
 
@@ -70,3 +70,9 @@ def test_build_methods_uses_given_project_data_and_stats(tmp_path):
             compute_participant_stats=lambda path, lang="en": {"n": 12},
         )
     assert "*N* = 12 participants" in result.md
+
+
+def test_build_methods_reports_warnings(tmp_path):
+    p = _project(tmp_path, {"TaskDefinitions": {"ads": {"modality": "survey"}}})
+    result = build_methods(p, app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
+    assert any("sample size" in w for w in result.warnings)

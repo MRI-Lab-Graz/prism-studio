@@ -112,7 +112,7 @@ def build_methods(
 
     Raises FileNotFoundError when the project has no project metadata.
     """
-    from src.reporting import generate_full_methods
+    from src.reporting import generate_full_methods, methods_warnings
 
     project_path = Path(project_path)
     if project_data is None:
@@ -148,16 +148,22 @@ def build_methods(
             _compute_participant_stats as compute_participant_stats,
         )
 
+    participant_stats = compute_participant_stats(project_path, lang=lang)
     md, sections_used = generate_full_methods(
         project_data,
         dataset_desc,
         template_data,
-        participant_stats=compute_participant_stats(project_path, lang=lang),
+        participant_stats=participant_stats,
         lang=lang,
         detail_level=detail_level,
         continuous=True,  # methods output is always continuous prose
     )
-    return MethodsResult(md, sections_used, [], template_data)
+    return MethodsResult(
+        md,
+        sections_used,
+        methods_warnings(project_data, participant_stats, template_data),
+        template_data,
+    )
 
 
 def render_methods(result: MethodsResult, fmt: str) -> bytes:

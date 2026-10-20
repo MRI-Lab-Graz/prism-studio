@@ -587,6 +587,22 @@ def _session_display_label(sess: dict, index: int) -> str:
     return raw
 
 
+def methods_warnings(
+    project_data: dict, participant_stats: dict | None, template_data: dict[str, dict]
+) -> list[str]:
+    """Gaps a human should fill before the methods text is paper-ready (never invented)."""
+    warnings: list[str] = []
+    target = (project_data.get("Eligibility") or {}).get("TargetSampleSize")
+    if not (participant_stats or {}).get("n") and not isinstance(target, int):
+        warnings.append(
+            "No sample size: add participants.tsv or Eligibility.TargetSampleSize."
+        )
+    for task, tpl in template_data.items():
+        if not _get_apa_citation(tpl.get("Study") or {}):
+            warnings.append(f"Instrument '{task}' has no citation in its template.")
+    return warnings
+
+
 def generate_full_methods(
     project_data: dict,
     dataset_desc: dict | None,
@@ -625,36 +641,6 @@ def generate_full_methods(
         return f"{prefix} {text}\n"
 
     dd = dataset_desc or {}
-
-    # --- Study Design ---
-    sd = project_data.get("StudyDesign") or {}
-    if sd:
-        parts: list[str] = []
-        sd_type = sd.get("Type", "")
-        sd_desc = sd.get("TypeDescription", "")
-        if sd_type:
-            label = sd_type.replace("-", " ")
-            parts.append(f"The present study employed a {label} design.")
-        if sd_desc:
-            parts.append(sd_desc.rstrip(".") + ".")
-        if not is_brief:
-            blinding = sd.get("Blinding", "")
-            if blinding and blinding != "none":
-                parts.append(f"A {blinding.replace('-', ' ')} procedure was used.")
-            randomization = sd.get("Randomization", "")
-            if randomization:
-                parts.append(randomization.rstrip(".") + ".")
-            control = sd.get("ControlCondition", "")
-            if control:
-                parts.append(
-                    f"The control condition consisted of {control.rstrip('.')}."
-                )
-        if parts:
-            h = _heading(2, "Study Design")
-            if h:
-                sections.append(h)
-            sections.append(" ".join(parts))
-            sections_used.append("StudyDesign")
 
     # --- Participants ---
     recruitment = project_data.get("Recruitment") or {}
@@ -758,6 +744,36 @@ def generate_full_methods(
             sections.append(" ".join(parts))
             if "Participants" not in sections_used:
                 sections_used.append("Participants")
+
+    # --- Study Design ---
+    sd = project_data.get("StudyDesign") or {}
+    if sd:
+        parts: list[str] = []
+        sd_type = sd.get("Type", "")
+        sd_desc = sd.get("TypeDescription", "")
+        if sd_type:
+            label = sd_type.replace("-", " ")
+            parts.append(f"The present study employed a {label} design.")
+        if sd_desc:
+            parts.append(sd_desc.rstrip(".") + ".")
+        if not is_brief:
+            blinding = sd.get("Blinding", "")
+            if blinding and blinding != "none":
+                parts.append(f"A {blinding.replace('-', ' ')} procedure was used.")
+            randomization = sd.get("Randomization", "")
+            if randomization:
+                parts.append(randomization.rstrip(".") + ".")
+            control = sd.get("ControlCondition", "")
+            if control:
+                parts.append(
+                    f"The control condition consisted of {control.rstrip('.')}."
+                )
+        if parts:
+            h = _heading(2, "Study Design")
+            if h:
+                sections.append(h)
+            sections.append(" ".join(parts))
+            sections_used.append("StudyDesign")
 
     # --- Experimental Conditions ---
     conditions = project_data.get("Conditions") or {}
@@ -1122,27 +1138,6 @@ def generate_full_methods(
             sections.append(" ".join(parts))
             sections_used.append("DataCollection")
 
-    # --- Data Standardization (PRISM/BIDS boilerplate) ---
-    if not is_brief:
-        meta = project_data.get("Metadata") or {}
-        schema_ver = meta.get("SchemaVersion", "")
-        ver_suffix = f" (schema version {schema_ver})" if schema_ver else ""
-        boilerplate = (
-            "Data were organized and validated according to the PRISM "
-            "(Principled Research Information & Sidecar Model) standard"
-            f"{ver_suffix}, which extends the Brain Imaging Data Structure "
-            "(BIDS; Gorgolewski et al., 2016) to psychological and behavioral research. "
-            "This framework ensures high interoperability and machine-readability by "
-            "enforcing standardized filename patterns and comprehensive metadata sidecars "
-            "in JSON format. All datasets were automatically validated for structural "
-            f"integrity and schema compliance using PRISM Studio v{prism_version}."
-        )
-        h = _heading(2, "Data Standardization and Validation")
-        if h:
-            sections.append("\n" + h)
-        sections.append(boilerplate)
-        sections_used.append("DataStandardization")
-
     # --- Quality Control ---
     qc = (procedure.get("QualityControl") or []) if procedure else []
     missing_data = (procedure.get("MissingDataHandling") or "") if procedure else ""
@@ -1191,7 +1186,7 @@ def generate_full_methods(
     dd_refs = dd.get("ReferencesAndLinks") or []
     if isinstance(dd_refs, str):
         dd_refs = [r.strip() for r in dd_refs.split(",") if r.strip()]
-    if (dd_license or dd_doi or dd_desc_clean) and not is_brief:
+    if not is_brief:
         parts_da: list[str] = []
         if dd_name and dd_desc_clean:
             parts_da.append(
@@ -1207,12 +1202,16 @@ def generate_full_methods(
             parts_da.append(f"The dataset can be accessed via DOI: {dd_doi}.")
         if dd_refs:
             parts_da.append("Related references: " + "; ".join(dd_refs) + ".")
-        if parts_da:
-            h = _heading(2, "Data Availability")
-            if h:
-                sections.append("\n" + h)
-            sections.append(" ".join(parts_da))
-            sections_used.append("DataAvailability")
+        parts_da.append(
+            "Data were organized according to the PRISM standard, an extension of "
+            "BIDS (Gorgolewski et al., 2016), and validated with "
+            f"PRISM Studio v{prism_version}."
+        )
+        h = _heading(2, "Data Availability")
+        if h:
+            sections.append("\n" + h)
+        sections.append(" ".join(parts_da))
+        sections_used.extend(["DataAvailability", "DataStandardization"])
 
     # --- Funding ---
     funding = dd.get("Funding") or []

@@ -183,3 +183,77 @@ def test_generate_full_methods_does_not_fallback_to_other_i18n_language():
     # No German fallback labels in English output when only German i18n entries exist.
     assert "Trifft nicht zu" not in md_text
     assert "Trifft voellig zu" not in md_text
+
+
+# ---- Task 6: journal order, short boilerplate, warnings ---------------------
+
+_FULL_PROJECT = {
+    "StudyDesign": {"Type": "cross-sectional"},
+    "Recruitment": {"Method": "flyers"},
+    "Sessions": [{"id": "ses-1", "label": "Baseline", "tasks": [{"task": "ads"}]}],
+    "TaskDefinitions": {"ads": {"modality": "survey"}},
+}
+_FULL_DD = {"Funding": ["DFG"], "License": "CC0", "EthicsApprovals": ["Ethics board X"]}
+
+
+def _full(detail="standard", dd=_FULL_DD):
+    return generate_full_methods(
+        project_data=_FULL_PROJECT,
+        dataset_desc=dd,
+        template_data={},
+        lang="en",
+        detail_level=detail,
+    )
+
+
+def test_section_order():
+    _, used = _full()
+    order = ["Participants", "StudyDesign", "Procedure", "Measures", "Ethics", "DataAvailability", "Funding"]
+    order = [k if k != "Ethics" else "EthicsStatement" for k in order]
+    idx = [used.index(k) for k in order]
+    assert idx == sorted(idx)
+
+
+def test_boilerplate_is_short():
+    md, used = _full()
+    assert "enforcing standardized filename patterns" not in md
+    assert "PRISM Studio v" in md
+    assert "DataStandardization" in used
+    assert "Data Standardization and Validation" not in md
+
+
+def test_brief_has_no_standardization_or_new_sections():
+    md, used = _full("brief")
+    assert "PRISM Studio v" not in md
+    assert "DataStandardization" not in used
+
+
+def test_standardization_sentence_sits_in_data_availability():
+    md, _ = _full()
+    avail = md.split("## Data Availability")[1].split("## ")[0]
+    assert "PRISM Studio v" in avail
+
+
+def test_warnings_missing_n():
+    from src.reporting import methods_warnings
+
+    w = methods_warnings({}, None, {})
+    assert any("sample size" in x for x in w)
+    assert methods_warnings({"Eligibility": {"TargetSampleSize": 40}}, None, {}) == []
+    assert methods_warnings({}, {"n": 12}, {}) == []
+
+
+def test_warnings_instrument_without_citation():
+    from src.reporting import methods_warnings
+
+    project = {"TaskDefinitions": {"ads": {"modality": "survey"}}}
+    w = methods_warnings(project, {"n": 5}, {"ads": {"Study": {"TaskName": {"en": "ADS"}}}})
+    assert len(w) == 1 and "ads" in w[0]
+
+
+def test_no_warnings_complete_project():
+    from src.reporting import methods_warnings
+
+    project = {"TaskDefinitions": {"ads": {"modality": "survey"}}}
+    tpl = {"ads": {"Study": {"References": [{"Type": "primary", "Citation": "Smith (2020)"}]}}}
+    assert methods_warnings(project, {"n": 5}, tpl) == []
