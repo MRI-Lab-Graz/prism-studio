@@ -10,6 +10,13 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-20-methods-and-prereg-export-design.md`
 
+## Pick-up note (2026-10-20)
+
+- Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
+- Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
+- Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
+- Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
+
 ## Global Constraints
 
 - Methods and preregistration stay separate documents; prereg does not feed Methods.
