@@ -362,14 +362,25 @@ def session_assignment_table(
 
         columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
         index = ImportIndex(imported_root, columns)
-        # A manual session override stays visible: it usually marks a session-mapping problem.
-        known = [
-            index.is_imported(row_fingerprint(df.loc[i], columns)) and res.at[i, "reason"] != "override"
-            for i in res.index
+        imported = {
+            i: index.is_imported(row_fingerprint(df.loc[i], columns)) for i in res.index
+        }
+        has_import = set(res.loc[[i for i, v in imported.items() if v], "participant"])
+        # Manual session overrides stay visible (they usually mark a session-mapping problem);
+        # so does an unfinished attempt of a participant with nothing imported yet.
+        done = [i for i in res.index if imported[i] and res.at[i, "reason"] != "override"]
+        stale = [
+            i for i in res.index
+            if res.at[i, "reason"] == "incomplete" and res.at[i, "participant"] in has_import
         ]
-        if any(known):
-            res = res[[not k for k in known]]
-            warnings.append(f"{sum(known)} response(s) already in the project are not shown.")
+        if done or stale:
+            res = res.drop(done + stale)
+        if done:
+            warnings.append(f"{len(done)} response(s) already in the project are not shown.")
+        if stale:
+            warnings.append(
+                f"{len(stale)} unfinished attempt(s) of participants already in the project are not shown."
+            )
     rows = [
         {
             "participant": r["participant"],

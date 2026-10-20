@@ -124,3 +124,22 @@ def test_review_table_keeps_imported_responses_with_a_manual_session_override(tm
 
     assert [(r["response_id"], r["session"], r["reason"]) for r in shown] == [("1", "pre", "override")]
     assert any("1 response(s) already in the project" in w for w in warnings)
+
+
+def test_review_table_hides_unfinished_attempts_of_participants_already_in_the_project(tmp_path):
+    import pandas as pd
+
+    from src.participants_sessions import session_assignment_table
+
+    cols = ["startdate", "seed", "token"]
+    rows = [
+        {"id": "1", "token": "a", "seed": "1", "startdate": "2026-03-01 09:00:00", "submitdate": "", "lastpage": "2"},
+        {"id": "2", "token": "a", "seed": "2", "startdate": "2026-03-01 09:05:00", "submitdate": "x", "lastpage": "6"},
+        {"id": "3", "token": "b", "seed": "3", "startdate": "2026-03-02 09:00:00", "submitdate": "", "lastpage": "2"},
+    ]
+    record_imports(tmp_path, tmp_path, [("sub-a", "ses-1", row_fingerprint(rows[1], cols))])
+
+    shown, warnings = session_assignment_table(pd.DataFrame(rows), "token", imported_root=tmp_path)
+
+    assert [r["response_id"] for r in shown] == ["3"]  # b has nothing imported: its attempt stays visible
+    assert any("1 unfinished attempt(s)" in w for w in warnings)
