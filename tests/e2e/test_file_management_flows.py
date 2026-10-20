@@ -561,8 +561,33 @@ def test_renamer_task_is_optional_for_physio_only(app_page, studio_url, tmp_path
     app_page.fill("#renamerSessionValue", "t2")
     expect(app_page.locator("#renamerNewExample")).to_have_value("sub-{subject}_ses-{session}_physio.edf")
     expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
+    for modality in ("beh", "func", "eeg"):
+        app_page.select_option("#renamerModality", modality)
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+        # the task alone flips the button: fill it and the same modality is allowed
+        app_page.fill("#renamerTask", "rest")
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
+        app_page.fill("#renamerTask", "")
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+
+
+def test_renamer_preview_accepts_compound_tsv_gz_extension(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path, names=("004-t2.tsv.gz",))
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".tsv.gz")
+    app_page.fill("#renamerTask", "rest")
     app_page.select_option("#renamerModality", "beh")
-    expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    app_page.select_option("#renamerRecording", "ecg")
+    expect(app_page.locator("#renamerNewExample")).to_have_value(
+        "sub-{subject}_ses-{session}_task-rest_recording-ecg_physio.tsv.gz"
+    )
+    app_page.click("#renamerDryRunBtn")
+    panel = app_page.locator("#fm-renamer-panel")
+    expect(panel).to_contain_text("sub-004_ses-t2_task-rest_recording-ecg_physio.tsv.gz")
+    expect(panel).not_to_contain_text("Expected _physio suffix")
 
 
 def test_renamer_task_bound_physio_is_named_physio(app_page, studio_url, tmp_path):
