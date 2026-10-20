@@ -1,0 +1,332 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/physio/v1.2.0",
+  "version": "1.2.0",
+  "title": "Physiological Data Metadata",
+  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research. Files should be named with an optional recording- entity to distinguish signal types: sub-<label>[_ses-<label>]_task-<label>[_recording-<label>]_physio.<tsv.gz|json>",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical recording properties",
+      "properties": {
+        "SamplingFrequency": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sampling frequency in Hz for the stored file. If channels have different native rates but are stored in one file, record per-channel native rates in Channels.<name>.SamplingFrequencyNative."
+        },
+        "StartTime": {
+          "type": "number",
+          "description": "Start time of recording relative to first trigger/event (in seconds). Use negative values if physio started before the first event."
+        },
+        "Columns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Names of columns in the TSV file, in order. Each column should have a corresponding entry in Channels."
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", "tsv.gz", "edf", "bdf"],
+          "description": "File format of the physiological data"
+        },
+        "Manufacturer": {
+          "type": "string",
+          "description": "Manufacturer of the recording device (e.g., Biopac, Varioport, ADInstruments)"
+        },
+        "ManufacturerModelName": {
+          "type": "string",
+          "description": "Model name of the recording device (e.g., MP160, BioNomadix)"
+        },
+        "RecordingDevice": {
+          "type": "string",
+          "description": "Name/model of the recording device (e.g., Biopac MP160, Varioport). Deprecated: use Manufacturer + ManufacturerModelName instead."
+        },
+        "RecordingSoftware": {
+          "type": "string",
+          "description": "Software used for recording (e.g., AcqKnowledge, Kubios)"
+        },
+        "RecordingSoftwareVersion": {
+          "type": "string",
+          "description": "Version of the recording software"
+        }
+      },
+      "required": ["SamplingFrequency", "Columns"]
+    },
+    "Recording": {
+      "type": "object",
+      "description": "Recording-specific metadata. Use recording- entity in filename to distinguish signal types (e.g., recording-ecg, recording-resp).",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": ["ecg", "cardiac", "puls", "ppg", "resp", "respiratory", "eda", "gsr", "emg", "temp", "bp", "spo2", "trigger", "mixed", "other"],
+          "description": "Type of physiological signal in this file. Use 'mixed' if file contains multiple signal types with identical sampling frequencies."
+        },
+        "Description": {
+          "type": "string",
+          "description": "Human-readable description of this recording"
+        }
+      }
+    },
+    "Channels": {
+      "type": "object",
+      "description": "Per-column/channel metadata. Keys should match column names in Technical.Columns.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "Description": {
+            "type": "string",
+            "description": "Description of what this channel/column measures"
+          },
+          "LongName": {
+            "type": "string",
+            "description": "Long (unabbreviated) name of the column"
+          },
+          "Type": {
+            "type": "string",
+            "enum": ["ECG", "EDA", "GSR", "PPG", "RESP", "EMG", "TEMP", "BP", "SpO2", "TRIGGER", "OTHER"],
+            "description": "Type of physiological signal"
+          },
+          "Role": {
+            "type": "string",
+            "enum": ["cardiac", "trigger", "respiration", "electrodermal", "device_status", "unknown"],
+            "description": "PRISM semantic role of this channel"
+          },
+          "Units": {
+            "type": "string",
+            "description": "Physical units (e.g., mV, µS, BPM, °C, n/a for dimensionless)"
+          },
+          "SamplingFrequencyNative": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Native sampling frequency of this channel prior to storage harmonization"
+          },
+          "SamplingFrequencyStored": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sampling frequency used in the stored file for this channel"
+          },
+          "AnnotationExported": {
+            "type": "boolean",
+            "description": "Whether channel events are also exported as EDF+ annotations"
+          },
+          "TermURL": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL pointing to a formal definition of this column (e.g., a SNOMED or LOINC code)"
+          },
+          "Derivative": {
+            "type": "boolean",
+            "description": "Whether this column is a derived measure (e.g., heart rate from ECG)"
+          },
+          "Gain": {
+            "type": "number",
+            "description": "Amplifier gain applied to the signal"
+          },
+          "HighCutoff": {
+            "type": "number",
+            "description": "High-pass filter cutoff frequency in Hz"
+          },
+          "LowCutoff": {
+            "type": "number",
+            "description": "Low-pass filter cutoff frequency in Hz"
+          },
+          "NotchFilter": {
+            "type": "number",
+            "description": "Notch filter frequency in Hz (e.g., 50 or 60 for line noise)"
+          },
+          "Placement": {
+            "type": "string",
+            "description": "Electrode/sensor placement (e.g., Lead II, left index finger)"
+          }
+        },
+        "required": ["Units"]
+      }
+    },
+    "TriggerAnnotations": {
+      "type": "object",
+      "description": "How trigger/event information is exported for EDF+ files.",
+      "properties": {
+        "Encoding": {
+          "type": "string",
+          "enum": ["signal_channel_only", "edfplus_annotations_only", "signal_channel_and_edfplus_annotations"],
+          "description": "Trigger encoding strategy used in the exported file"
+        },
+        "SourceChannel": {
+          "type": ["string", "null"],
+          "description": "Channel label used as source for annotation events"
+        },
+        "Count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of trigger annotations exported"
+        }
+      }
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific parameters",
+      "properties": {
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Short task identifier (e.g., rest, stress, stroop)"
+        },
+        "TaskDescription": {
+          "type": "string",
+          "description": "Description of the task/condition during recording"
+        },
+        "Instructions": {
+          "type": "string",
+          "description": "Instructions given to the participant"
+        },
+        "InstitutionName": {
+          "type": "string",
+          "description": "Name of the institution where data was collected"
+        }
+      },
+      "required": ["TaskName"]
+    },
+    "Acquisition": {
+      "type": "object",
+      "description": "Acquisition parameters",
+      "properties": {
+        "AcquisitionDuration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total duration of the recording in seconds"
+        },
+        "EnvironmentConditions": {
+          "type": "string",
+          "description": "Environmental conditions (e.g., temperature-controlled room, 22°C)"
+        },
+        "ParticipantPosition": {
+          "type": "string",
+          "enum": ["supine", "seated", "standing", "prone", "other"],
+          "description": "Position of the participant during recording"
+        },
+        "RestingState": {
+          "type": "boolean",
+          "description": "Whether this is a resting-state recording"
+        },
+        "EyesOpen": {
+          "type": "boolean",
+          "description": "Whether participant had eyes open during recording"
+        },
+        "CaffeineAbstinence": {
+          "type": "number",
+          "description": "Hours of caffeine abstinence before recording"
+        },
+        "AlcoholAbstinence": {
+          "type": "number",
+          "description": "Hours of alcohol abstinence before recording"
+        }
+      }
+    },
+    "Processing": {
+      "type": "object",
+      "description": "Processing/analysis parameters (if data is processed)",
+      "properties": {
+        "ProcessingLevel": {
+          "type": "string",
+          "enum": ["raw", "filtered", "artifact-corrected", "derived"],
+          "description": "Level of processing applied to the data"
+        },
+        "ProcessingSoftware": {
+          "type": "string",
+          "description": "Software used for processing (e.g., Kubios HRV, NeuroKit2)"
+        },
+        "ProcessingSoftwareVersion": {
+          "type": "string",
+          "description": "Version of the processing software"
+        },
+        "ArtifactCorrection": {
+          "type": "string",
+          "description": "Method used for artifact correction"
+        },
+        "FilteringApplied": {
+          "type": "string",
+          "description": "Description of filtering applied"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date this metadata file was created"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Metadata"],
+  "examples": [
+    {
+      "_comment": "Example 1: Single-channel ECG recording",
+      "filename": "sub-01_ses-01_task-rest_recording-ecg_physio.tsv.gz",
+      "Technical": {
+        "SamplingFrequency": 1000,
+        "StartTime": 0,
+        "Columns": ["ecg"],
+        "Manufacturer": "Biopac",
+        "ManufacturerModelName": "MP160"
+      },
+      "Recording": {
+        "Type": "ecg",
+        "Description": "3-lead ECG recording during resting state"
+      },
+      "Channels": {
+        "ecg": {
+          "Description": "Electrocardiogram Lead II",
+          "Units": "mV",
+          "Placement": "Lead II"
+        }
+      },
+      "Metadata": {
+        "SchemaVersion": "1.2.0",
+        "CreationDate": "2024-01-15"
+      }
+    },
+    {
+      "_comment": "Example 2: Multi-channel physio with same sampling rate",
+      "filename": "sub-01_ses-01_task-stress_physio.tsv.gz",
+      "Technical": {
+        "SamplingFrequency": 500,
+        "StartTime": -10,
+        "Columns": ["cardiac", "respiratory"],
+        "Manufacturer": "ADInstruments"
+      },
+      "Recording": {
+        "Type": "mixed",
+        "Description": "Cardiac and respiratory signals recorded together"
+      },
+      "Channels": {
+        "cardiac": {
+          "Description": "Pulse waveform from finger photoplethysmograph",
+          "Units": "mV",
+          "Placement": "left index finger"
+        },
+        "respiratory": {
+          "Description": "Respiration belt signal",
+          "Units": "n/a"
+        }
+      },
+      "Metadata": {
+        "SchemaVersion": "1.2.0",
+        "CreationDate": "2024-01-15"
+      }
+    }
+  ]
+}

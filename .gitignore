@@ -11,6 +11,7 @@ tmp/
 venv/
 .venv_intel/
 archive/
+!app/schemas/archive/
 survey_library/*
 .venv/
 .DS_Store
