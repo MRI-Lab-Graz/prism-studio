@@ -74,14 +74,10 @@
         return epochSeconds ? new Date(epochSeconds * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
     }
 
-    function projectRoot() {
-        const store = window.prismProjectStateStore;
-        return (store && store.getState && store.getState().path) || window.currentProjectPath || '';
-    }
-
     function renderPlaces(roots) {
         const places = [];
-        if (projectRoot()) places.push({ name: 'Project', path: projectRoot(), icon: 'fa-folder-tree' });
+        const project = window.PrismPathPicker.projectRoot();
+        if (project) places.push({ name: 'Project', path: project, icon: 'fa-folder-tree' });
         places.push({ name: 'Home', path: '', icon: 'fa-house' });
         (roots || []).forEach(root => places.push({ name: root.name, path: root.path, icon: 'fa-hard-drive' }));
 
@@ -90,18 +86,12 @@
                 <i class="fas ${place.icon} me-2 text-secondary"></i>${escHtml(place.name)}
             </button>
         `).join('');
-        rootsEl.querySelectorAll('.folder-browser-root').forEach(button => {
-            button.addEventListener('click', () => loadFolder(button.dataset.path || ''));
-        });
     }
 
     function renderCrumbs(crumbs) {
         currentPathEl.innerHTML = (crumbs || []).map((crumb, i) => `
             ${i ? '<i class="fas fa-chevron-right text-muted mx-1" style="font-size:.6rem"></i>' : ''}<button type="button" class="btn btn-link btn-sm folder-browser-crumb" data-path="${escHtml(crumb.path)}">${escHtml(crumb.name)}</button>
         `).join('');
-        currentPathEl.querySelectorAll('.folder-browser-crumb').forEach(button => {
-            button.addEventListener('click', () => loadFolder(button.dataset.path || ''));
-        });
     }
 
     function renderSortIndicators() {
@@ -147,8 +137,7 @@
                 }
             }
 
-            const url = `/api/fs/browse${query.toString() ? `?${query.toString()}` : ''}`;
-            const response = await fetch(url);
+            const response = await fetch(`/api/fs/browse?${query}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -158,7 +147,7 @@
             state.currentPath = data.path || '';
             state.parentPath = data.parent || '';
             renderCrumbs(data.crumbs);
-            if (pathInputEl) pathInputEl.value = state.currentPath;
+            pathInputEl.value = state.currentPath;
             upBtn.disabled = !state.parentPath;
             renderPlaces(data.roots);
             renderSortIndicators();
@@ -234,7 +223,12 @@
         if (show) pathInputEl.focus();
     }
     editPathBtn.addEventListener('click', () => showPathRow(pathRowEl.classList.contains('d-none')));
-    currentPathEl.addEventListener('click', (e) => { if (e.target === currentPathEl) showPathRow(true); });
+    // Places and breadcrumbs are re-rendered on every load, so one listener each.
+    [rootsEl, currentPathEl].forEach(container => container.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-path]');
+        if (button) loadFolder(button.dataset.path);
+        else if (container === currentPathEl) showPathRow(true);
+    }));
     filterEl.addEventListener('input', applyFilter);
     headerEl.addEventListener('click', (e) => {
         const button = e.target.closest('button[data-sort]');
@@ -244,21 +238,17 @@
         loadFolder(state.currentPath);
     });
 
-    if (goBtnEl) {
-        goBtnEl.addEventListener('click', () => {
-            const typed = (pathInputEl ? pathInputEl.value : '').trim();
-            if (typed) loadFolder(typed);
-        });
-    }
-    if (pathInputEl) {
-        pathInputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const typed = pathInputEl.value.trim();
-                if (typed) loadFolder(typed);
-            }
-        });
-    }
+    const goToTypedPath = () => {
+        const typed = pathInputEl.value.trim();
+        if (typed) loadFolder(typed);
+    };
+    goBtnEl.addEventListener('click', goToTypedPath);
+    pathInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            goToTypedPath();
+        }
+    });
 
     selectBtn.addEventListener('click', () => {
         resolveAndHide(state.selectedPath || state.currentPath);
@@ -291,7 +281,7 @@
             titleEl.innerHTML = `<i class="fas fa-folder-open text-primary me-2"></i>${escHtml(title)}`;
             selectBtn.innerHTML = `<i class="fas fa-check me-1"></i>${escHtml(confirmLabel)}`;
             currentPathEl.innerHTML = '';
-            if (pathInputEl) pathInputEl.value = '';
+            pathInputEl.value = '';
             filterEl.value = '';
             showPathRow(false);
             renderPlaces([]);

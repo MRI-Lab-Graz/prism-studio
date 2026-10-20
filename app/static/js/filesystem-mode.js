@@ -5,11 +5,14 @@
     // Pickers start at the open project's root; locations outside the project
     // (global libraries, export target, ...) pass keepStartPath to reopen at
     // their last value.
+    function projectRoot() {
+        const store = window.prismProjectStateStore;
+        return (store && store.getState && store.getState().path) || window.currentProjectPath || '';
+    }
+
     function resolveStartPath(options) {
         if (options.keepStartPath) return options.startPath || '';
-        const store = window.prismProjectStateStore;
-        const project = (store && store.getState && store.getState().path) || window.currentProjectPath;
-        return project || options.startPath || '';
+        return projectRoot() || options.startPath || '';
     }
 
     function open(mode, options = {}) {
@@ -37,6 +40,7 @@
     }
 
     window.PrismPathPicker = {
+        projectRoot,
         browseFolder: pickFolder,
         browseFile: pickFile,
         browseSaveFile,
