@@ -664,7 +664,7 @@ def _processing_section(summary: dict | None, lang: str, detail_level: str) -> s
             else f"{flags} participants did not meet the eligibility criteria."
         )
     sw = summary.get("software") or {}
-    if sw.get("prism_version"):
+    if out and sw.get("prism_version"):  # software is only worth stating next to actual processing
         schemas = ", ".join(f"{k} {v}" for k, v in (sw.get("modality_schemas") or {}).items())
         tail = f" (Schemas: {schemas})" if de and schemas else f" (schemas: {schemas})" if schemas else ""
         out.append(
