@@ -351,8 +351,13 @@ def compute_organized_relative_path(
     lower = filename.lower()
     if (
         modality in PHYSIO_TASK_DESTINATIONS
-        and lower.endswith(_RAW_PHYSIO_EXTENSIONS)
-        and not (modality == "eeg" and lower.endswith("_eeg.edf"))  # a real EEG recording
+        and (
+            ("_physio." in lower and not lower.endswith((".tsv.gz", ".json")))
+            or (
+                lower.endswith(_RAW_PHYSIO_EXTENSIONS)
+                and not (modality == "eeg" and lower.endswith("_eeg.edf"))  # a real EEG recording
+            )
+        )
     ):
         raise ValueError(
             f"EDF/raw physio cannot be organized into {modality}/ as-is; convert with the "

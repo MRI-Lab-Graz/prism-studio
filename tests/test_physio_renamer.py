@@ -232,6 +232,25 @@ class TestComputeOrganizedRelativePath:
                 parse_bids_filename=lambda n: {"sub": "sub-01"},
             )
 
+    @pytest.mark.parametrize("ext", [".tsv", ".csv", ".bdf", ".TSV"])
+    @pytest.mark.parametrize("modality", ["beh", "func", "eeg"])
+    def test_organize_physio_non_bids_extension_refused(self, ext, modality):
+        with pytest.raises(ValueError, match="Physio converter|physio batch-convert"):
+            compute_organized_relative_path(
+                f"sub-01_task-x_physio{ext}", modality=modality, organize=True,
+                parse_bids_filename=lambda n: {"sub": "sub-01"},
+            )
+
+    @pytest.mark.parametrize("ext", [".tsv.gz", ".json"])
+    def test_organize_physio_bids_extension_accepted(self, ext):
+        assert (
+            compute_organized_relative_path(
+                f"sub-01_task-x_physio{ext}", modality="beh", organize=True,
+                parse_bids_filename=lambda n: {"sub": "sub-01"},
+            )
+            == f"sub-01/beh/sub-01_task-x_physio{ext}"
+        )
+
     def test_organize_other_legitimate_files_still_allowed(self):
         parse = lambda n: {"sub": "sub-01"}  # noqa: E731
         assert (
