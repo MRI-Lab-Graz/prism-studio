@@ -20,7 +20,7 @@ select; command line: `--destination beh|func|eeg` on `physio batch-convert` and
 `convert physio`). `physio/` never holds task-bound files.
 
 The sidecar `StartTime` is always `0.0`: it is relative to the first data row and
-does not claim synchronization with the task. Channels recorded at different
+does not claim synchronization with the task. For EDF input, channels recorded at different
 sampling rates are written as separate files, with the rate as a suffix on the
 `recording-` label.
 
