@@ -14,6 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
+- **Status: Task 1 done (commit 4ccbf3b). Resume at Task 2.** The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -53,16 +54,16 @@
   - `convert(md: str, fmt: str) -> bytes` for `fmt in {"md","html","docx","tex"}`; unknown -> `ValueError`; `docx` without python-docx -> `RuntimeError` containing "python-docx"
   - `FORMATS: tuple[str, ...] = ("md", "html", "docx", "tex")` and `MIME: dict[str, str]`
 
-- [ ] **Step 1: Write failing tests** in `tests/test_text_export.py`:
+- [x] **Step 1: Write failing tests** in `tests/test_text_export.py`:
   - `test_tex_escapes_specials`: `md_to_tex("Smith & Co. 50% of a_b")` contains `Smith \& Co. 50\% of a\_b`.
   - `test_tex_structure`: `"## Participants\n\nText *n* = 5 and **bold**.\n\n- a\n- b"` -> contains `\section{Participants}`, `\emph{n}`, `\textbf{bold}`, `\begin{itemize}`, two `\item`.
   - `test_docx_roundtrip`: `convert(md, "docx")` re-opened with `docx.Document(io.BytesIO(...))` has a heading "Participants" and a paragraph containing "Text" (`pytest.importorskip("docx")`).
   - `test_convert_md_passthrough` (utf-8 bytes of input), `test_convert_html_contains_h2`, `test_convert_unknown_raises`.
   - `test_docx_missing_dependency`: monkeypatch `sys.modules["docx"] = None`; `convert(..., "docx")` raises `RuntimeError` matching "python-docx".
-- [ ] **Step 2:** Run `pytest tests/test_text_export.py -v`; expect FAIL (module missing).
-- [ ] **Step 3:** Implement. Parse line by line exactly like `_md_to_html` in `app/src/reporting.py:359` (`## `, `### `, `- `, blank, paragraph); inline `**bold**` before `*italic*` (same regexes as `_md_inline`); html format imports `_md_to_html` lazily from `src.reporting`. Escape TeX text before inserting commands.
-- [ ] **Step 4:** Run tests; expect PASS.
-- [ ] **Step 5:** `git add src/text_export.py tests/test_text_export.py && git commit -m "feat(export): md to tex/docx converters"`.
+- [x] **Step 2:** Run `pytest tests/test_text_export.py -v`; expect FAIL (module missing).
+- [x] **Step 3:** Implement. Parse line by line exactly like `_md_to_html` in `app/src/reporting.py:359` (`## `, `### `, `- `, blank, paragraph); inline `**bold**` before `*italic*` (same regexes as `_md_inline`); html format imports `_md_to_html` lazily from `src.reporting`. Escape TeX text before inserting commands.
+- [x] **Step 4:** Run tests; expect PASS.
+- [x] **Step 5:** `git add src/text_export.py tests/test_text_export.py && git commit -m "feat(export): md to tex/docx converters"`.
 
 ### Task 2: One backend entry point for methods (extract from the Flask handler)
 
