@@ -173,7 +173,7 @@ def _process_and_write_responses(
         if res_run_col and res_run_col in df.columns:
             row_run = _normalize_run_entity(row[res_run_col])
 
-        modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
+        modality_dir = output_root / sub_id / ses_id / "survey"
 
         for (task, run), columns in sorted(
             task_run_columns.items(), key=lambda x: (x[0][0], x[0][1] or 0)
@@ -209,6 +209,7 @@ def _process_and_write_responses(
                 existing_policy.decide(row, sub_id, ses_id, res_file) != "import"
             ):
                 continue
+            ensure_dir_fn(modality_dir)  # only now: skipped responses must not leave empty folders
 
             schema = _lookup_task_context_value(
                 task_context_templates,

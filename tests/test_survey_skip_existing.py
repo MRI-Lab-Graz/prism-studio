@@ -116,3 +116,16 @@ def test_every_response_of_the_file_is_remembered_as_seen_including_unfinished_o
     seen = ImportIndex(tmp_path / "out")
     assert seen.is_seen("999999", "2", ["2026-03-01 11:20:00", "5"])  # completed
     assert seen.is_seen("999999", "4", ["", "4"])  # abandoned start: reviewed, skipped
+
+
+def test_skipped_responses_leave_no_empty_survey_folders(tmp_path):
+    import shutil
+
+    _convert(tmp_path, REAL_PATTERN)
+    for sub in (tmp_path / "out").glob("sub-*"):
+        shutil.rmtree(sub)  # files deleted by hand, ledger in code/ still lists them
+
+    _convert(tmp_path, REAL_PATTERN, skip_existing=True)
+
+    empty = [p for p in (tmp_path / "out").rglob("*") if p.is_dir() and not any(p.iterdir())]
+    assert empty == []
