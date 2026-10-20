@@ -252,9 +252,12 @@ def test_min_above_max_fails_validation_and_odd_ids_in_a_loaded_template_are_lis
 
 
 def test_a_blank_template_explains_the_task_name_rule_and_the_missing_items(page):
+    page.wait_for_load_state("networkidle")  # the page's own start-up load of a blank template is done
     page.click("label[for=modeCreate]")
+    # "New" fetches the blank template and then re-renders the form: type into the new field, not a stale one
+    page.evaluate("document.querySelectorAll('[id^=field_]').forEach(e => e.dataset.stale = '1')")
     page.click("#btnNew")
-    page.fill("#field_Study_TaskName", "My Task!")
+    page.fill("#field_Study_TaskName:not([data-stale])", "My Task!")
     page.click("#btnValidate")
     alert = page.locator("#alertArea")
     expect(alert).to_contain_text("'My Task!' is not allowed: use only letters, digits and hyphens")

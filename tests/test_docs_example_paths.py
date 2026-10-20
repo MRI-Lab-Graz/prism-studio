@@ -19,7 +19,9 @@ def _docs():
     for md in sorted(REPO.glob("docs/**/*.md")) + sorted(
         REPO.glob("examples/**/*.md")
     ):
-        if "_archive" in md.parts:
+        # Plans are dated records of work as planned (the examples they name get
+        # renamed later), not user-facing docs.
+        if "_archive" in md.parts or "superpowers" in md.parts:
             continue
         yield md
 

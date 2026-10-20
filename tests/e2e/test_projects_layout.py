@@ -1,5 +1,7 @@
 """Projects page layout: fields in one row line up, whatever their label looks like."""
 
+import json
+
 from playwright.sync_api import expect
 
 
@@ -22,7 +24,9 @@ def test_study_design_selects_share_one_top_edge(app_page, studio_url):
     assert max(tops) - min(tops) <= 1, tops  # a CORE badge, a REQUIRED badge and plain text must not shift the fields
 
 
-def test_a_dataset_description_error_links_to_the_field_it_names(app_page, studio_url):
+def test_a_dataset_description_error_links_to_the_field_it_names(app_page, studio_url, project):
+    # the shared project is complete: drop the fields the test needs the page to complain about
+    (project / "project.json").write_text(json.dumps({"Basics": {"Name": "e2e"}}))
     page = app_page
     page.goto(f"{studio_url}/projects")
     for target in ("#studyMetadataSection", "#smCoreSetupGroupBody"):

@@ -124,6 +124,7 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
     open_survey_tab(app_page, studio_url)
     app_page.set_input_files("#convertSurveyFile", str(_lsa_with_two_questionnaires(tmp_path)))
     app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "error")  # a .lsa defaults to sessions-from-dates
     app_page.fill("#convertSessionCustom", "1")
 
     app_page.click("#previewBtn")

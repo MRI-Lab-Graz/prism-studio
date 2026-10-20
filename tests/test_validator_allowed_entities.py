@@ -12,17 +12,17 @@ from src.entity_rules import ModalityRule  # noqa: E402
 @pytest.fixture
 def strict_modality(monkeypatch):
     rule = ModalityRule.from_json(
-        "biosample",
+        "bloodtest",
         {"kind": "prism", "suffixes": ["bloodchem"], "extensions": ["tsv", "json"],
          "allowedEntities": ["task", "acq", "run"]},
     )
-    monkeypatch.setitem(v._ENTITY_RULES.modalities, "biosample", rule)
-    monkeypatch.setitem(v.MODALITY_PATTERNS, "biosample", v._ENTITY_RULES.pattern_for("biosample"))
-    monkeypatch.setattr(v, "PRISM_MODALITIES", v.PRISM_MODALITIES | {"biosample"})
+    monkeypatch.setitem(v._ENTITY_RULES.modalities, "bloodtest", rule)
+    monkeypatch.setitem(v.MODALITY_PATTERNS, "bloodtest", v._ENTITY_RULES.pattern_for("bloodtest"))
+    monkeypatch.setattr(v, "PRISM_MODALITIES", v.PRISM_MODALITIES | {"bloodtest"})
 
 
 def _errors(name):
-    issues = v.DatasetValidator().validate_filename(name, "biosample", subject_id="sub-01")
+    issues = v.DatasetValidator().validate_filename(name, "bloodtest", subject_id="sub-01")
     return [m for level, m in issues if level == "ERROR"]
 
 
