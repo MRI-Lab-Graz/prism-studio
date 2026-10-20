@@ -363,7 +363,7 @@ def session_assignment_table(
         from src.survey_existing import FINGERPRINT_COLUMNS, ImportIndex, row_fingerprint, seen_entry
 
         columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
-        index = ImportIndex(imported_root, columns)
+        index = ImportIndex(imported_root)
 
         def handled(i) -> bool:
             row = df.loc[i]

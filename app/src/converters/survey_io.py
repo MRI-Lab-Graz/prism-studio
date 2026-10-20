@@ -695,19 +695,19 @@ def _record_imported_responses(
     existing_policy=None,
     all_responses=None,
     survey_id: str = "default",
-) -> int:
+) -> None:
     """Remember the file's responses in the project's ``code/survey_imports.json`` ledger.
 
     The (startdate, seed, token) fingerprint of each imported response is what "skip surveys
     already in the project" recognises it by on the next import; every response of the file
     (``all_responses``, finished or not) is also marked as seen, so the review table can show
-    only new data next time. Returns the number of imported responses recorded.
+    only new data next time.
     """
     from src.survey_existing import FINGERPRINT_COLUMNS, record_imports, row_fingerprint, seen_entry
 
     columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
     if not columns:
-        return 0
+        return
     seen = dict(seen_entry(row) for _, row in all_responses.iterrows()) if all_responses is not None else None
 
     entries = []
@@ -725,7 +725,6 @@ def _record_imported_responses(
         entries.append((sub_id, ses_id, row_fingerprint(row, columns)))
     if entries or seen:
         record_imports(project_root, output_root, entries, seen=seen, survey_id=survey_id)
-    return len(entries)
 
 
 def _generate_dry_run_preview(

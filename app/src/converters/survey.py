@@ -1589,10 +1589,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             require_sessions_mapped(session_map, session_labels)
 
     # --- Extract LimeSurvey System Columns ---
-    # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
+    # Only native LimeSurvey sources have system columns to set aside and responses to remember.
     # Generic CSV/XLSX/TSV imports may contain similarly named columns, but
-    # those must remain in the primary survey flow and not produce
-    # tool-limesurvey artifacts.
+    # those must remain in the primary survey flow.
     source_format_normalized = str(source_format or "").strip().lower()
     ls_system_cols: list[str] = []
     if source_format_normalized in {"lsa", "lss"}:

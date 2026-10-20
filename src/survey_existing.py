@@ -24,7 +24,7 @@ def _clean(value) -> str:
 
 
 def row_fingerprint(row, columns=FINGERPRINT_COLUMNS) -> tuple[str, ...]:
-    """Fingerprint of one response row, in the form the tool file stores it."""
+    """Fingerprint of one response row, as the ledger stores it."""
     return tuple(_clean(row.get(c)) for c in columns)
 
 
@@ -80,8 +80,7 @@ def record_imports(
 class ImportIndex:
     """Fingerprints of the responses already imported below ``root``."""
 
-    def __init__(self, root: str | Path, columns=FINGERPRINT_COLUMNS):
-        self.columns = tuple(columns)
+    def __init__(self, root: str | Path):
         seen = _read_ledger(root).get("seen")
         self._seen: dict[str, dict[str, list[str]]] = seen if isinstance(seen, dict) else {}
         self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {
@@ -127,7 +126,7 @@ class ExistingPolicy:
         self._root = Path(root)
         self._output_root = Path(output_root) if output_root is not None else self._root
         self.columns = tuple(c for c in FINGERPRINT_COLUMNS if c in set(available_columns))
-        self._index = ImportIndex(root, self.columns)
+        self._index = ImportIndex(root)
         self._verdicts: dict[tuple, set[str]] = {}
 
     def decide(self, row, sub: str, ses: str, target: str | Path) -> str:
