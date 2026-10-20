@@ -1,6 +1,16 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 
-export function createSurveySessionAssignmentsController() {
+/** Review request body: the uploaded file, or the path picked with Browse. Null until both inputs exist. */
+export function reviewFormData({ file, serverPath, idColumn }) {
+    if (!idColumn || !(file || serverPath)) return null;
+    const formData = new FormData();
+    if (file) formData.append('file', file);
+    else formData.append('source_file_path', serverPath);
+    formData.append('id_column', idColumn);
+    return formData;
+}
+
+export function createSurveySessionAssignmentsController({ getConvertServerFilePath = () => '' } = {}) {
     const DERIVED_HINT = 'Sessions are numbered 1, 2, … by startdate (completed responses only).';
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -32,7 +42,7 @@ export function createSurveySessionAssignmentsController() {
         const rows = Array.isArray(data.rows) ? data.rows : [];
         let html = '<table class="table table-sm table-bordered mb-2"><thead><tr>'
             + '<th>Participant</th><th>Response</th><th>Date</th><th>Done</th><th>Last page</th>'
-            + '<th>Session</th><th>Skip</th><th>Set label</th></tr></thead><tbody>';
+            + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
         rows.forEach((r) => {
             const left = r.session === null;
             html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${left ? 'text-muted' : ''}">`
@@ -41,8 +51,8 @@ export function createSurveySessionAssignmentsController() {
                 + `<td>${esc(r.lastpage)}</td>`
                 + `<td class="session-cell">${left ? `left out (${esc(r.reason)})` : esc(r.session)}</td>`
                 + `<td><input type="checkbox" data-role="skip" ${left ? 'checked' : ''}></td>`
-                + `<td><input type="text" data-role="label" class="form-control form-control-sm" size="8"`
-                + ` value="${r.reason === 'override' ? esc(r.session) : ''}" placeholder="auto"></td></tr>`;
+                + `<td><input type="text" data-role="label" class="form-control form-control-sm" size="14"`
+                + ` value="${r.reason === 'override' ? esc(r.session) : ''}" placeholder="auto (by date)"></td></tr>`;
         });
         html += '</tbody></table>';
         (data.warnings || []).forEach((w) => { html += `<div class="text-muted">${esc(w)}</div>`; });
@@ -71,16 +81,16 @@ export function createSurveySessionAssignmentsController() {
     // `notice` (a failed save) is shown above the freshly loaded table so the controls reflect the saved state.
     async function load(notice = '') {
         const body = document.getElementById('sessionAssignmentsBody');
-        const file = document.getElementById('convertSurveyFile')?.files?.[0];
-        const idColumn = document.getElementById('convertIdColumn')?.value || '';
-        if (!file || !idColumn) {
-            body.textContent = 'Choose the survey file (from your computer) and the participant ID column first.';
+        const formData = reviewFormData({
+            file: document.getElementById('convertSurveyFile')?.files?.[0],
+            serverPath: getConvertServerFilePath(),
+            idColumn: document.getElementById('convertIdColumn')?.value || '',
+        });
+        if (!formData) {
+            body.textContent = 'Choose the survey file and the participant ID column first.';
             return;
         }
         const seq = ++loadSeq;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('id_column', idColumn);
         try {
             const response = await fetchWithApiFallback('/api/session-assignments/review', { method: 'POST', body: formData });
             const data = await response.json();

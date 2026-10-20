@@ -8,7 +8,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { createSessionRegistrar } from '../../shared/session-register.js';
 import { escapeHtml } from '../../shared/dom.js';
-import { defaultDuplicateHandling, defaultSkipExisting } from './survey-duplicate-default.js';
+import { applyDuplicateDefault, defaultSkipExisting } from './survey-duplicate-default.js';
 import { buildVariantDefinitionBadges, buildVersionOptions } from './survey-version-markup.js';
 import { createSurveyParticipantsMetadataController } from './survey-participants-metadata.js';
 import { createSurveyWorkflowPrepareController } from './survey-workflow-prepare.js';
@@ -1511,9 +1511,7 @@ export function initSurveyConvert(elements) {
         const idColumnHelp = document.getElementById('idColumnHelp');
         if (!idColumnSelect) return;
 
-        const duplicateDefault = defaultDuplicateHandling(filename);
-        const duplicateSelect = document.getElementById('convertDuplicateHandling');
-        if (duplicateDefault && duplicateSelect) duplicateSelect.value = duplicateDefault;
+        applyDuplicateDefault(filename, document.getElementById('convertDuplicateHandling'));
         const skipExistingBox = document.getElementById('convertSkipExisting');
         if (skipExistingBox) skipExistingBox.checked = defaultSkipExisting(filename);
 
@@ -2330,7 +2328,9 @@ export function initSurveyConvert(elements) {
         hideSurveyRunProgress,
     });
 
-    const surveySessionAssignmentsController = createSurveySessionAssignmentsController();
+    const surveySessionAssignmentsController = createSurveySessionAssignmentsController({
+        getConvertServerFilePath: () => convertServerFilePath,
+    });
 
     const surveyUnmatchedTemplatesController = createSurveyUnmatchedTemplatesController({
         conversionSummaryBody,
