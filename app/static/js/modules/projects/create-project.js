@@ -225,6 +225,15 @@ export function initCreateProjectController({
                 AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
                 Notes: document.getElementById('smProcNotes').value || undefined,
             },
+            Preregistration: {
+                DataStatus: document.getElementById('smPreregDataStatus').value || undefined,
+                Hypotheses: textToArray(document.getElementById('smPreregHypotheses').value) || undefined,
+                PrimaryOutcomes: document.getElementById('smPreregPrimaryOutcomes').value || undefined,
+                SecondaryOutcomes: document.getElementById('smPreregSecondaryOutcomes').value || undefined,
+                AnalysisPlan: document.getElementById('smPreregAnalysisPlan').value || undefined,
+                InferenceCriteria: document.getElementById('smPreregInferenceCriteria').value || undefined,
+                ExploratoryAnalyses: document.getElementById('smPreregExploratoryAnalyses').value || undefined,
+            },
             MissingData: {
                 Description: document.getElementById('smMissingDesc').value || undefined,
                 MissingFiles: document.getElementById('smMissingFiles').value || undefined,

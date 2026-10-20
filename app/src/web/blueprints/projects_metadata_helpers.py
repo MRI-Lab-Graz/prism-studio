@@ -312,6 +312,7 @@ _EDITABLE_SECTIONS = (
     "MissingData",
     "References",
     "Conditions",
+    "Preregistration",
 )
 
 # Single source of truth for which fields count toward the CORE tier (blue

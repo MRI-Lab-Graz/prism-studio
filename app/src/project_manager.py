@@ -7197,6 +7197,7 @@ participants/sociodemographics import step, not at project creation.
             "MissingData": config.get("MissingData", {}),
             "References": config.get("References", ""),
             "Conditions": config.get("Conditions", {}),
+            "Preregistration": config.get("Preregistration", {}),
             "TaskDefinitions": {},
         }
 
