@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reviewFormData, rowClass } from './survey-session-assignments.js';
+import { clearReviewTable, reviewFormData, rowClass } from './survey-session-assignments.js';
 
 describe('reviewFormData', () => {
     it('sends the picked server path when no file was uploaded', () => {
@@ -35,5 +35,20 @@ describe('rowClass', () => {
         expect(rowClass({ session: 'pre', reason: 'override' })).toBe('table-warning');
         expect(rowClass({ session: null, reason: 'incomplete' })).toBe('text-muted');
         expect(rowClass({ session: '1', reason: '' })).toBe('');
+    });
+});
+
+describe('clearReviewTable', () => {
+    it('empties the table and collapses the toggle', () => {
+        const attrs = { 'aria-expanded': 'true' };
+        const body = { emptied: false, replaceChildren() { this.emptied = true; } };
+        const toggleBtn = { setAttribute: (k, v) => { attrs[k] = v; } };
+        clearReviewTable(body, toggleBtn);
+        expect(body.emptied).toBe(true);
+        expect(attrs['aria-expanded']).toBe('false');
+    });
+
+    it('copes with a page that has no review card', () => {
+        expect(() => clearReviewTable(null, null)).not.toThrow();
     });
 });

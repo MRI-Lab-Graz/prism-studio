@@ -1883,10 +1883,8 @@ export function initSurveyConvert(elements) {
 
             await detectFileColumns(file);
         } else {
-            convertInfo.classList.add('d-none');
-            resetDetectedColumnsState();
-            populateSessionPickers();
-            updateSeparatorVisibility('');
+            // File unselected: drop the preview, results, detected columns and session review with it.
+            surveyImportFormStateController.resetSurveyImportFormState();
         }
         updateConvertBtn();
     });
@@ -1896,7 +1894,6 @@ export function initSurveyConvert(elements) {
         resetSurveyRefreshFingerprint();
         convertSurveyFile.value = '';
         convertSurveyFile.dispatchEvent(new Event('change', { bubbles: true }));
-        surveyImportFormStateController.resetSurveyImportFormState();
     });
 
     const idColSelect = document.getElementById('convertIdColumn');
@@ -2376,6 +2373,7 @@ export function initSurveyConvert(elements) {
         setConvertServerFilePath: (value) => {
             convertServerFilePath = String(value || '');
         },
+        resetSessionAssignments: () => surveySessionAssignmentsController.reset(),
     });
 
     const surveyValidationResultsController = createSurveyValidationResultsController({

@@ -17,6 +17,11 @@ export function rowClass(row) {
     return row.session === null ? 'text-muted' : '';
 }
 
+export function clearReviewTable(body, toggleBtn) {
+    toggleBtn?.setAttribute('aria-expanded', 'false');
+    body?.replaceChildren();
+}
+
 export function createSurveySessionAssignmentsController({ getConvertServerFilePath = () => '' } = {}) {
     const DERIVED_HINT = 'Sessions are numbered 1, 2, … by startdate (completed responses only).';
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({
@@ -116,6 +121,12 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         if (notice) body.insertAdjacentHTML('afterbegin', `<div class="text-danger">${esc(notice)}</div>`);
     }
 
+    // The survey file was removed: drop the table and any load still in flight so it cannot re-open it.
+    function reset() {
+        loadSeq += 1;
+        clearReviewTable(document.getElementById('sessionAssignmentsBody'), document.getElementById('sessionAssignmentsBtn'));
+    }
+
     function initialize() {
         document.getElementById('convertDuplicateHandling')?.addEventListener('change', applyMode);
         const body = document.getElementById('sessionAssignmentsBody');
@@ -124,8 +135,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
             toggleBtn.setAttribute('aria-expanded', String(!expanded));
             if (!expanded) return load();
-            loadSeq += 1; // drop a load still in flight so it cannot re-open the table
-            body.replaceChildren();
+            reset();
         });
         // An open table follows the checkbox: imported responses appear or disappear.
         document.getElementById('convertSkipExisting')?.addEventListener('change', () => {
@@ -154,5 +164,5 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         applyMode();
     }
 
-    return { initialize, applyMode };
+    return { initialize, applyMode, reset };
 }

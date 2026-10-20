@@ -26,6 +26,7 @@ export function createSurveyImportFormStateController({
     setVersionWizardRetryGateMode,
     setAppliedTaskValueOffsetSelectionSignature,
     setConvertServerFilePath,
+    resetSessionAssignments = () => {},
 }) {
     function resetSurveyImportFormState({ clearSelectedInput = false } = {}) {
         setTemplateWorkflowGate(null);
@@ -37,6 +38,7 @@ export function createSurveyImportFormStateController({
         setTemplateEditorErrorCtaVisible(false);
         resetConversionUI();
         resetSurveyRefreshFingerprint();
+        resetSessionAssignments();
 
         setCurrentTemplateData(null);
         window.lastPreviewData = null;
