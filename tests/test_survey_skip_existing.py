@@ -43,15 +43,14 @@ def test_second_import_with_new_response_only_adds_the_new_session(tmp_path):
     assert result.existing_summary["already_imported"] == 3
 
 
-def test_missing_survey_file_is_restored_while_others_stay(tmp_path):
+def test_a_recorded_response_is_not_reimported_even_if_one_of_its_files_is_gone(tmp_path):
     _convert(tmp_path, REAL_PATTERN)
     marked = _mark(tmp_path)
-    gone = marked[0]
-    gone.unlink()
+    marked[0].unlink()
 
     _convert(tmp_path, REAL_PATTERN, skip_existing=True)
 
-    assert gone.exists() and gone.read_text() != "SENTINEL"
+    assert not marked[0].exists()  # the response is known; nothing is restored behind your back
     assert all(p.read_text() == "SENTINEL" for p in marked[1:])
 
 
@@ -95,3 +94,25 @@ def test_existing_responses_are_looked_up_in_the_project_not_the_temp_output(tmp
     assert not any(n.startswith("sub-c") for n in written)
     assert result.existing_summary["new"] == 1
     assert result.existing_summary["already_imported"] == 3
+
+
+def test_no_tool_limesurvey_files_are_written_and_the_ledger_records_each_response(tmp_path):
+    from src.survey_existing import ImportIndex, row_fingerprint
+
+    result = _convert(tmp_path, REAL_PATTERN)
+
+    assert not list((tmp_path / "out").rglob("*tool-limesurvey*"))
+    assert not any("tool-limesurvey" in w for w in result.conversion_warnings)
+    first = REAL_PATTERN[1]  # sub-a's first completed response
+    fp = row_fingerprint({"startdate": first[2], "token": first[1]}, ["startdate", "token"])
+    assert ImportIndex(tmp_path / "out").where_imported("sub-a", fp) is not None
+
+
+def test_every_response_of_the_file_is_remembered_as_seen_including_unfinished_ones(tmp_path):
+    from src.survey_existing import ImportIndex
+
+    _convert(tmp_path, REAL_PATTERN)
+
+    seen = ImportIndex(tmp_path / "out")
+    assert seen.is_seen("999999", "2", ["2026-03-01 11:20:00", "5"])  # completed
+    assert seen.is_seen("999999", "4", ["", "4"])  # abandoned start: reviewed, skipped

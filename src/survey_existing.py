@@ -1,16 +1,20 @@
 """Tell new LimeSurvey responses from ones the project already holds.
 
-A response's identity in the project is the fingerprint stored in its
-``sub-X_ses-N_tool-limesurvey_survey.tsv``. Session labels are compared as
-exact strings (never normalized).
+A response's identity in the project is the fingerprint recorded for it in
+``code/survey_imports.json`` (outside the PRISM-checked BIDS folders):
+``{"version": 1, "responses": {"sub-1": {"ses-1": ["<startdate>", "<seed>", "<token>"]}},
+"seen": {"<survey id>": {"<response id>": ["<submitdate>", "<lastpage>"]}}}``.
+``seen`` remembers every response of an imported file, finished or not, in the state it was reviewed in.
+Session labels are compared as exact strings (never normalized).
 """
 
 from __future__ import annotations
 
-import csv
+import json
 from pathlib import Path
 
 FINGERPRINT_COLUMNS = ("startdate", "seed", "token")
+LEDGER = Path("code") / "survey_imports.json"
 
 
 def _clean(value) -> str:
@@ -20,25 +24,68 @@ def _clean(value) -> str:
 
 
 def row_fingerprint(row, columns=FINGERPRINT_COLUMNS) -> tuple[str, ...]:
-    """Fingerprint of one response row, in the form the tool file stores it."""
+    """Fingerprint of one response row, as the ledger stores it."""
     return tuple(_clean(row.get(c)) for c in columns)
+
+
+def _read_ledger(root: str | Path) -> dict:
+    try:
+        data = json.loads((Path(root) / LEDGER).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _load_ledger(root: str | Path) -> dict[str, dict[str, list[str]]]:
+    responses = _read_ledger(root).get("responses")
+    return responses if isinstance(responses, dict) else {}
+
+
+def seen_entry(row) -> tuple[str, list[str]]:
+    """(key, state) of a response for the "seen" memory: its id and (submitdate, lastpage)."""
+    from src.participants_sessions import session_label
+
+    key = session_label(row.get("id")) or "|".join(row_fingerprint(row))
+    return key, [session_label(row.get("submitdate")), session_label(row.get("lastpage"))]
+
+
+def record_imports(
+    project_root: str | Path,
+    output_root: str | Path,
+    entries,
+    *,
+    seen: dict[str, list[str]] | None = None,
+    survey_id: str = "default",
+) -> None:
+    """Add ``(sub, ses, fingerprint)`` entries and ``seen`` responses to the project's ledger, written under ``output_root``.
+
+    The GUI converts into a scratch ``output_root`` and copies it into the project,
+    so the project's ledger is merged in here and the copy carries the full result.
+    """
+    data = _read_ledger(project_root)
+    responses = _load_ledger(project_root)
+    for sub, ses, fp in entries:
+        responses.setdefault(sub, {})[ses] = list(fp)
+    all_seen = data.get("seen") if isinstance(data.get("seen"), dict) else {}
+    if seen:
+        all_seen.setdefault(survey_id, {}).update(seen)
+    path = Path(output_root) / LEDGER
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"version": 1, "responses": responses, "seen": all_seen}, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 class ImportIndex:
     """Fingerprints of the responses already imported below ``root``."""
 
-    def __init__(self, root: str | Path, columns=FINGERPRINT_COLUMNS):
-        self.columns = tuple(columns)
-        self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {}
-        for path in Path(root).glob("sub-*/ses-*/survey/*_tool-limesurvey_survey.tsv"):
-            try:
-                with open(path, encoding="utf-8", newline="") as f:
-                    row = next(csv.DictReader(f, delimiter="\t"), None)
-            except OSError:
-                continue
-            if row:
-                sub, ses = path.parts[-4], path.parts[-3]
-                self._by_slot[(sub, ses)] = row_fingerprint(row, self.columns)
+    def __init__(self, root: str | Path):
+        seen = _read_ledger(root).get("seen")
+        self._seen: dict[str, dict[str, list[str]]] = seen if isinstance(seen, dict) else {}
+        self._by_slot: dict[tuple[str, str], tuple[str, ...]] = {
+            (sub, ses): tuple(fp) for sub, slots in _load_ledger(root).items() for ses, fp in slots.items()
+        }
 
     def where_imported(self, sub: str, fingerprint) -> str | None:
         """Session under which this response is already stored for ``sub``."""
@@ -47,16 +94,27 @@ class ImportIndex:
             None,
         )
 
+    def is_seen(self, survey_id: str, key: str, state) -> bool:
+        """True when this response was reviewed before and has not changed since."""
+        stored = (self._seen.get(survey_id) or {}).get(key)
+        return stored is not None and list(stored) == list(state)
+
+    def is_imported(self, fingerprint) -> bool:
+        """True when this response is recorded anywhere in the project (whatever its session)."""
+        return fingerprint in self._by_slot.values()
+
     def classify(self, sub: str, ses: str, fingerprint, *, target_exists: bool) -> str:
-        """import | skip_imported | skip_unverified | conflict | moved"""
+        """skip_imported | skip_unverified | conflict | moved | import
+
+        A recorded response is skipped as a whole: a questionnaire file the project
+        never had (a sociodemographic one, say) does not make it new again.
+        """
         stored = self._by_slot.get((sub, ses))
+        if stored == fingerprint:
+            return "skip_imported"
         if target_exists:
-            if stored is None:
-                return "skip_unverified"
-            return "skip_imported" if stored == fingerprint else "conflict"
-        if stored != fingerprint and self.where_imported(sub, fingerprint):
-            return "moved"
-        return "import"
+            return "skip_unverified" if stored is None else "conflict"
+        return "moved" if self.where_imported(sub, fingerprint) else "import"
 
 
 class ExistingPolicy:
@@ -68,7 +126,7 @@ class ExistingPolicy:
         self._root = Path(root)
         self._output_root = Path(output_root) if output_root is not None else self._root
         self.columns = tuple(c for c in FINGERPRINT_COLUMNS if c in set(available_columns))
-        self._index = ImportIndex(root, self.columns)
+        self._index = ImportIndex(root)
         self._verdicts: dict[tuple, set[str]] = {}
 
     def decide(self, row, sub: str, ses: str, target: str | Path) -> str:

@@ -349,9 +349,34 @@ def session_assignment_table(
     date_column: str = "startdate",
     decisions: dict | None = None,
     response_id_column: str = "id",
+    imported_root=None,
+    survey_id: str = "default",
 ) -> tuple[list[dict], list[str]]:
-    """One row per response for review: what session it gets and why."""
+    """One row per response for review: what session it gets and why.
+
+    With ``imported_root`` (a project), responses it already handled (imported, or reviewed
+    and unchanged since) are left out, except manual session overrides; the sessions are
+    still numbered across the whole file.
+    """
     res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    if imported_root is not None:
+        from src.survey_existing import FINGERPRINT_COLUMNS, ImportIndex, row_fingerprint, seen_entry
+
+        columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
+        index = ImportIndex(imported_root)
+
+        def handled(i) -> bool:
+            row = df.loc[i]
+            return index.is_imported(row_fingerprint(row, columns)) or index.is_seen(
+                survey_id, *seen_entry(row)
+            )
+
+        # Only new data is listed (skipped or not, so a half-filled response can still be taken).
+        # A manual session override stays: it usually marks a session-mapping problem.
+        done = [i for i in res.index if res.at[i, "reason"] != "override" and handled(i)]
+        if done:
+            res = res.drop(done)
+            warnings.append(f"{len(done)} response(s) already handled in an earlier import are not shown.")
     rows = [
         {
             "participant": r["participant"],
