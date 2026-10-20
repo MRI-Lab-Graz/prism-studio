@@ -88,3 +88,14 @@ def test_build_methods_includes_acquisition_from_sidecars(tmp_path):
     result = build_methods(p, app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
     assert "TR = 2000 ms" in result.md
     assert "DataAcquisition" in result.sections_used
+
+
+def test_build_methods_includes_processing_from_recipes(tmp_path):
+    p = _project(tmp_path, {"StudyDesign": {"Type": "cross-sectional"}})
+    d = p / "code" / "recipes" / "survey"
+    d.mkdir(parents=True)
+    (d / "recipe-ads.json").write_text(
+        json.dumps({"Survey": {"TaskName": "ads"}, "Scores": [{"Name": "Total"}]}), encoding="utf-8"
+    )
+    result = build_methods(p, app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
+    assert "ads (Total)" in result.md and "DataProcessing" in result.sections_used

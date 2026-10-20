@@ -308,3 +308,51 @@ def test_acquisition_section_de_is_not_mixed_language():
     md, _ = _acq(lang="de")
     assert "TR = 2000 ms" in md
     assert "were acquired" not in md and "participants" not in md
+
+
+# ---- Task 8: processing section -----------------------------------------------
+
+_PROC = {
+    "recipes": [{"task": "dass21", "scores": ["Depression", "Anxiety"]}],
+    "software": {"prism_version": "9.9.9", "modality_schemas": {"survey": "1.2.0"}},
+}
+
+
+def _proc(detail="standard", lang="en", proc=_PROC):
+    return generate_full_methods(
+        project_data={},
+        dataset_desc=None,
+        template_data={},
+        lang=lang,
+        detail_level=detail,
+        continuous=True,
+        processing=proc,
+    )
+
+
+def test_processing_names_task_scores_and_software():
+    md, used = _proc()
+    assert "dass21" in md and "Depression, Anxiety" in md
+    assert "PRISM Studio v9.9.9" in md and "survey 1.2.0" in md
+    assert "DataProcessing" in used
+
+
+def test_processing_without_recipes_is_software_only():
+    md, _ = _proc(proc={"recipes": [], "software": _PROC["software"]})
+    assert "scored" not in md and "PRISM Studio v9.9.9" in md
+
+
+def test_processing_brief_is_empty():
+    assert "9.9.9" not in _proc("brief")[0]
+
+
+def test_processing_has_no_exclusion_sentence_without_count():
+    assert "did not meet" not in _proc()[0]
+    md, _ = _proc(proc={**_PROC, "eligibility_flags": 3})
+    assert "3 participants did not meet" in md
+
+
+def test_processing_de_is_not_mixed_language():
+    md, _ = _proc(lang="de")
+    assert "Depression, Anxiety" in md
+    assert "were scored" not in md and "Software" in md

@@ -113,6 +113,7 @@ def build_methods(
     Raises FileNotFoundError when the project has no project metadata.
     """
     from src.methods_acquisition import acquisition_summary
+    from src.methods_processing import processing_summary
     from src.reporting import generate_full_methods, methods_warnings
 
     project_path = Path(project_path)
@@ -156,6 +157,7 @@ def build_methods(
         template_data,
         participant_stats=participant_stats,
         acquisition=acquisition_summary(project_path),
+        processing=processing_summary(project_path),
         lang=lang,
         detail_level=detail_level,
         continuous=True,  # methods output is always continuous prose

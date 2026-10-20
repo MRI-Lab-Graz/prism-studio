@@ -646,6 +646,39 @@ def _acquisition_section(summary: dict | None, lang: str, detail_level: str) -> 
     return " ".join(out)
 
 
+def _processing_section(summary: dict | None, lang: str, detail_level: str) -> str:
+    """Scoring, software versions and (when counted) exclusions; empty for brief."""
+    if detail_level == "brief" or not summary:
+        return ""
+    de = lang == "de"
+    out: list[str] = []
+    recipes = summary.get("recipes") or []
+    if recipes:
+        scored = "; ".join(f"{r['task']} ({', '.join(r['scores'])})" for r in recipes)
+        out.append(
+            f"Die folgenden Instrumente wurden zu Skalen ausgewertet: {scored}."
+            if de
+            else f"The following instruments were scored into scales: {scored}."
+        )
+    flags = summary.get("eligibility_flags")
+    if isinstance(flags, int) and flags > 0:
+        out.append(
+            f"{flags} Teilnehmende erfüllten die Eligibility-Kriterien nicht."
+            if de
+            else f"{flags} participants did not meet the eligibility criteria."
+        )
+    sw = summary.get("software") or {}
+    if sw.get("prism_version"):
+        schemas = ", ".join(f"{k} {v}" for k, v in (sw.get("modality_schemas") or {}).items())
+        tail = f" (Schemas: {schemas})" if de and schemas else f" (schemas: {schemas})" if schemas else ""
+        out.append(
+            f"Software: PRISM Studio v{sw['prism_version']}{tail}."
+            if de
+            else f"Data were processed with PRISM Studio v{sw['prism_version']}{tail}."
+        )
+    return " ".join(out)
+
+
 def methods_warnings(
     project_data: dict, participant_stats: dict | None, template_data: dict[str, dict]
 ) -> list[str]:
@@ -671,6 +704,7 @@ def generate_full_methods(
     detail_level: str = "standard",
     continuous: bool = False,
     acquisition: dict | None = None,
+    processing: dict | None = None,
 ) -> tuple[str, list[str]]:
     """Generate a publication-ready methods section from project.json metadata.
 
@@ -1206,6 +1240,15 @@ def generate_full_methods(
             sections.append("\n" + h)
         sections.append(acq_text)
         sections_used.append("DataAcquisition")
+
+    # --- Data Processing and Scoring ---
+    proc_text = _processing_section(processing, lang, detail_level)
+    if proc_text:
+        h = _heading(2, "Data Processing and Scoring")
+        if h:
+            sections.append("\n" + h)
+        sections.append(proc_text)
+        sections_used.append("DataProcessing")
 
     # --- Quality Control ---
     qc = (procedure.get("QualityControl") or []) if procedure else []
