@@ -506,6 +506,23 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_preregistration = subparsers.add_parser(
+        "preregistration",
+        help="Preregistration draft from project.json (AsPredicted question order)",
+    )
+    preregistration_subparsers = parser_preregistration.add_subparsers(
+        dest="action", help="Action"
+    )
+    parser_preregistration_draft = preregistration_subparsers.add_parser(
+        "draft", help="Write a Markdown preregistration draft (not a registration)"
+    )
+    parser_preregistration_draft.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_preregistration_draft.add_argument(
+        "--output", help="Write the draft to this file instead of printing it"
+    )
+
     parser_sessions = subparsers.add_parser(
         "sessions",
         help="Review how repeated survey responses map to sessions (code/session_assignments.json)",
@@ -2467,6 +2484,7 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "session-map": parser_session_map,
+        "preregistration": parser_preregistration,
         "sessions": parser_sessions,
         "publish": parser_publish,
         "save-gate": parser_save_gate,

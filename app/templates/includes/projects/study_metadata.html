@@ -569,6 +569,77 @@
                     </div>
                 </div>
 
+                <!-- Preregistration (optional) -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smPreregistration" aria-expanded="false" aria-controls="smPreregistration">
+                        <span class="sm-section-toggle__titleline">
+                            <span class="sm-section-toggle__title"><i class="fas fa-clipboard-check me-1"></i> Preregistration (optional)</span>
+                        </span>
+                        <span class="sm-section-toggle__summary">Prepare a preregistration draft: hypotheses, outcomes and analysis plan. Design, sample and procedure come from the sections above.</span>
+                    </button>
+                    <div class="collapse" id="smPreregistration">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0 beginner-help-block">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        This is a draft only, not a registration. Register it at a registry (e.g. OSF, AsPredicted) to get a time-stamped, frozen version.
+                                    </div>
+                                </div>
+                                {% if current_project.path %}
+                                <div class="col-12">
+                                    <a class="btn btn-outline-secondary btn-sm" id="smPreregDownload"
+                                       href="/api/projects/preregistration-draft" download>
+                                        <i class="fas fa-download me-1"></i>Download draft (.md)
+                                    </a>
+                                    <small class="text-muted ms-2">Built from the saved project metadata: save first to include recent edits.</small>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregDataStatus">Data status</label>
+                                    <select class="form-select form-select-sm" id="smPreregDataStatus">
+                                        <option value="">Select...</option>
+                                        <option value="not-collected">No data collected yet</option>
+                                        <option value="collected-not-accessed">Data collected, not yet looked at</option>
+                                        <option value="accessed">Data collected and accessed</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregHypotheses">Hypotheses</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregHypotheses" rows="3"
+                                              placeholder="One hypothesis per line (e.g. H1: Mindfulness training lowers perceived stress)"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregPrimaryOutcomes">Primary outcomes</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregPrimaryOutcomes" rows="2"
+                                              placeholder="Measure(s) that test the hypotheses"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregSecondaryOutcomes">Secondary outcomes</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregSecondaryOutcomes" rows="2"
+                                              placeholder="Further measures"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregAnalysisPlan">Analysis plan</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregAnalysisPlan" rows="3"
+                                              placeholder="Planned confirmatory analyses (models, covariates)"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregInferenceCriteria">Inference criteria</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregInferenceCriteria" rows="2"
+                                              placeholder="e.g. alpha = .05, one-sided, Holm correction"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregExploratoryAnalyses">Exploratory analyses</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregExploratoryAnalyses" rows="2"
+                                              placeholder="Planned analyses that are not confirmatory"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 </div><!-- /smRecruitmentExecutionGroupBody -->
 
                 <div class="mb-3" id="smReportingFollowupGroup">

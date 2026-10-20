@@ -393,6 +393,42 @@
           "description": "How missing data was handled"
         }
       }
+    },
+    "Preregistration": {
+      "type": "object",
+      "description": "Optional preregistration preparation: the parts of a preregistration (e.g. AsPredicted, OSF) not covered by the sections above. A draft only - register it at a registry; put the registration link in governance.preregistration.",
+      "properties": {
+        "DataStatus": {
+          "enum": ["not-collected", "collected-not-accessed", "accessed"],
+          "description": "Have data been collected and/or looked at before registering?"
+        },
+        "Hypotheses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Hypotheses, one per entry (e.g., 'H1: Mindfulness training lowers perceived stress')"
+        },
+        "PrimaryOutcomes": {
+          "type": "string",
+          "description": "Primary outcome measure(s) that test the hypotheses"
+        },
+        "SecondaryOutcomes": {
+          "type": "string",
+          "description": "Secondary outcome measure(s)"
+        },
+        "AnalysisPlan": {
+          "type": "string",
+          "description": "Planned confirmatory analyses (models, covariates)"
+        },
+        "InferenceCriteria": {
+          "type": "string",
+          "description": "Decision criteria (e.g., 'alpha = .05, one-sided, Holm correction')"
+        },
+        "ExploratoryAnalyses": {
+          "type": "string",
+          "description": "Planned exploratory analyses (not confirmatory)"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["Metadata", "Sessions", "TaskDefinitions"],
