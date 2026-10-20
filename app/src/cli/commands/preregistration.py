@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import sys
 
-from src.cli.commands.methods import emit_document
 from src.preregistration import load_draft
+from src.text_export import emit_document
 
 
 def cmd_preregistration_draft(args) -> None:

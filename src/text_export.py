@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import io
 import re
+import sys
+from pathlib import Path
 
 FORMATS = ("md", "html", "docx", "tex")
 MIME = {
@@ -190,3 +192,20 @@ def references_bib(template_data: dict[str, dict]) -> str:
                 fields.append(f"  {name} = {{{refs[cit][src]}}}")
         entries.append(f"@misc{{{key},\n" + ",\n".join(fields) + "\n}\n")
     return "\n".join(entries)
+
+
+def emit_document(markdown, fmt: str, output: str | None, render=convert) -> None:
+    """``render(markdown, fmt)`` to bytes, then print or write; exit 2 on a user error."""
+    if fmt == "docx" and not output:
+        print("Error: --format docx is binary and needs --output FILE")
+        sys.exit(2)
+    try:
+        data = render(markdown, fmt)
+    except RuntimeError as exc:  # python-docx missing
+        print(f"Error: {exc}")
+        sys.exit(2)
+    if output:
+        Path(output).write_bytes(data)
+        print(f"Wrote {fmt} to {output}")
+    else:
+        print(data.decode("utf-8"))
