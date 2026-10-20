@@ -492,7 +492,7 @@ python prism_tools.py preregistration draft --project /path/to/project \
 task templates, the BIDS sidecars (scanner/sequence parameters, counts per
 session), the scoring recipes and the PRISM version. Gaps (no sample size, an
 instrument without a citation) are printed to stderr as warnings and are never
-invented. `--format bib` writes the instrument references as BibTeX. `docx`
+invented. `--format bib` writes the instrument references as BibTeX; the `.tex` output cites them with `\citep{key}` and ends with `\bibliography{references}`, so save the bib as `references.bib` next to the `.tex` and compile with `pdflatex`, `bibtex`, `pdflatex` twice (citations without a readable author and year stay plain text). `docx`
 needs `--output` and the `python-docx` package (exit code 2 otherwise); the Studio
 Projects page offers the same downloads (Word, TeX, BibTeX).
 

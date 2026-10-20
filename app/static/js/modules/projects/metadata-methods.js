@@ -154,7 +154,7 @@ export function createMetadataMethodsController({
         const url = URL.createObjectURL(await response.blob());
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `methods_section_${lang}.${format}`;
+        anchor.download = format === 'bib' ? 'references.bib' : `methods_section_${lang}.${format}`;
         document.body.appendChild(anchor);
         anchor.click();
         URL.revokeObjectURL(url);

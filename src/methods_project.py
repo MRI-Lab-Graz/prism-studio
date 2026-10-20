@@ -174,8 +174,9 @@ def build_methods(
 
 def render_methods(result: MethodsResult, fmt: str) -> bytes:
     """Bytes of a methods result in ``fmt`` (md/html/docx/tex, or bib for the references)."""
-    from src.text_export import convert, references_bib
+    from src.text_export import citation_keys, convert, references_bib
 
     if fmt == "bib":
         return references_bib(result.template_data).encode("utf-8")
-    return convert(result.md, fmt)
+    cites = citation_keys(result.template_data) if fmt == "tex" else None
+    return convert(result.md, fmt, cites)

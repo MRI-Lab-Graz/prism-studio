@@ -100,8 +100,9 @@ def handle_export_methods(get_current_project, read_project_json, compute_partic
         return jsonify({"success": False, "error": str(e)}), 501
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    filename = "references.bib" if fmt == "bib" else f"methods_section_{lang}.{fmt}"  # \bibliography{references}
     return Response(
         data,
         mimetype=MIME.get(fmt, "text/plain"),
-        headers={"Content-Disposition": f'attachment; filename="methods_section_{lang}.{fmt}"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

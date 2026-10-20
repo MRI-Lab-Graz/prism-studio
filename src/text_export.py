@@ -68,7 +68,18 @@ def _normalize(md: str) -> str:
     return _UNDERSCORE_ITALIC.sub(r"*\1*", md)
 
 
-def _tex_inline(text: str) -> str:
+def _tex_inline(text: str, cites: dict[str, str] | None = None) -> str:
+    if cites:  # known citations become \\citep{key}; the rest is escaped as usual
+        pattern = "|".join(
+            r"\(" + re.escape(c) + r"\)|" + re.escape(c) for c in sorted(cites, key=len, reverse=True)
+        )
+        parts = re.split(f"({pattern})", text)
+        return "".join(
+            r"\citep{" + cites[p[1:-1] if p[1:-1] in cites else p] + "}"
+            if i % 2
+            else _tex_inline(p)
+            for i, p in enumerate(parts)
+        )
     out, pos = [], 0
     for m in _INLINE.finditer(text):
         out.append(_tex_escape(text[pos : m.start()]))
@@ -81,7 +92,8 @@ def _tex_inline(text: str) -> str:
     return "".join(out)
 
 
-def md_to_tex(md: str) -> str:
+def md_to_tex(md: str, cites: dict[str, str] | None = None) -> str:
+    """Article source; with ``cites`` (citation text -> bib key) known citations become ``\\citep``."""
     body: list[str] = []
     in_list = False
     for kind, text in _blocks(md):
@@ -91,20 +103,26 @@ def md_to_tex(md: str) -> str:
         if kind == "li" and not in_list:
             body.append(r"\begin{itemize}")
             in_list = True
+        inline = _tex_inline(text, cites)
         if kind == "h2":
-            body.append(r"\section{" + _tex_inline(text) + "}")
+            body.append(r"\section{" + inline + "}")
         elif kind == "h3":
-            body.append(r"\subsection{" + _tex_inline(text) + "}")
+            body.append(r"\subsection{" + inline + "}")
         elif kind == "li":
-            body.append(r"\item " + _tex_inline(text))
+            body.append(r"\item " + inline)
         else:
-            body.append(_tex_inline(text) + "\n")
+            body.append(inline + "\n")
     if in_list:
         body.append(r"\end{itemize}")
+    text = "\n".join(body)
+    cited = "\\citep{" in text
     return (
         "\\documentclass{article}\n\\usepackage[utf8]{inputenc}\n"
-        "\\usepackage[T1]{fontenc}\n\\begin{document}\n\n"
-        + "\n".join(body)
+        "\\usepackage[T1]{fontenc}\n"
+        + ("\\usepackage{natbib}\n" if cited else "")
+        + "\\begin{document}\n\n"
+        + text
+        + ("\n\n\\bibliographystyle{apalike}\n\\bibliography{references}" if cited else "")
         + "\n\n\\end{document}\n"
     )
 
@@ -140,7 +158,7 @@ def md_to_docx(md: str) -> bytes:
     return buf.getvalue()
 
 
-def convert(md: str, fmt: str) -> bytes:
+def convert(md: str, fmt: str, cites: dict[str, str] | None = None) -> bytes:
     if fmt == "md":
         return md.encode("utf-8")
     md = _normalize(md)
@@ -151,7 +169,7 @@ def convert(md: str, fmt: str) -> bytes:
     if fmt == "docx":
         return md_to_docx(md)
     if fmt == "tex":
-        return md_to_tex(md).encode("utf-8")
+        return md_to_tex(md, cites).encode("utf-8")
     raise ValueError(f"Unknown format {fmt!r}; use one of {', '.join(FORMATS)}")
 
 
@@ -159,11 +177,14 @@ def _bib_escape(text: str) -> str:
     return "".join(r"\textbackslash{}" if c == "\\" else ("\\" + c if c in "&%$#_{}" else c) for c in text)
 
 
-def references_bib(template_data: dict[str, dict]) -> str:
-    """BibTeX ``@misc`` entries for the distinct ``Study.References`` of all templates.
+_APA_AUTHOR_YEAR = re.compile(r"^(.+?)\s*\((\d{4}[a-z]?)\)")
 
-    Keys are surname+year from the APA citation text (``Surname, X. (Year). ...``);
-    colliding keys get ``a``, ``b`` ... in citation order, so re-export is stable.
+
+def _bib_entries(template_data: dict[str, dict]) -> list[tuple[str, str, dict]]:
+    """``(key, citation text, reference)`` for the distinct references, in stable order.
+
+    Keys are surname+year from the APA text (``Surname, X. (Year). ...``); colliding keys
+    get ``a``, ``b`` ... in citation order, so re-export is identical.
     """
     refs: dict[str, dict] = {}  # citation text -> reference
     for tpl in template_data.values():
@@ -181,17 +202,35 @@ def references_bib(template_data: dict[str, dict]) -> str:
     seen: dict[str, int] = {}
     entries = []
     for cit in sorted(refs):
-        base = bases[cit]
-        key = base
-        if counts[base] > 1:
-            key = base + chr(ord("a") + seen.get(base, 0))
-            seen[base] = seen.get(base, 0) + 1
-        fields = [f"  note = {{{_bib_escape(cit)}}}"]
-        for name, src in (("doi", "DOI"), ("url", "URL"), ("year", "Year")):
-            if refs[cit].get(src):
-                fields.append(f"  {name} = {{{refs[cit][src]}}}")
-        entries.append(f"@misc{{{key},\n" + ",\n".join(fields) + "\n}\n")
-    return "\n".join(entries)
+        key = bases[cit]
+        if counts[key] > 1:
+            key += chr(ord("a") + seen.get(bases[cit], 0))
+            seen[bases[cit]] = seen.get(bases[cit], 0) + 1
+        entries.append((key, cit, refs[cit]))
+    return entries
+
+
+def citation_keys(template_data: dict[str, dict]) -> dict[str, str]:
+    """Citation text -> bib key, only for citations whose author and year could be read."""
+    return {cit: key for key, cit, _ in _bib_entries(template_data) if _APA_AUTHOR_YEAR.match(cit)}
+
+
+def references_bib(template_data: dict[str, dict]) -> str:
+    """BibTeX ``@misc`` entries for the distinct ``Study.References`` of all templates."""
+    out = []
+    for key, cit, ref in _bib_entries(template_data):
+        fields = []
+        m = _APA_AUTHOR_YEAR.match(cit)
+        if m:  # double braces: the APA author string is printed as written
+            fields += [f"  author = {{{{{_bib_escape(m.group(1))}}}}}", f"  year = {{{m.group(2)}}}"]
+        fields.append(f"  note = {{{_bib_escape(cit)}}}")
+        for name, src in (("doi", "DOI"), ("url", "URL")):
+            if ref.get(src):
+                fields.append(f"  {name} = {{{ref[src]}}}")
+        if not m and ref.get("Year"):
+            fields.append(f"  year = {{{ref['Year']}}}")
+        out.append(f"@misc{{{key},\n" + ",\n".join(fields) + "\n}\n")
+    return "\n".join(out)
 
 
 def emit_document(markdown, fmt: str, output: str | None, render=convert) -> None:
