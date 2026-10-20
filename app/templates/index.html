@@ -73,11 +73,14 @@
                 <!-- File Upload Section -->
                 <div class="mb-4">
                         <!-- 1. Select Dataset -->
+                                <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
+                                    <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
+                                    <input type="hidden" id="currentProjectName" value="{{ current_project.name | default('Current Project') }}">
                         <div class="mb-4">
-                            <h5 class="mb-3">
+                            <h4 class="h5 mb-3">
                                 <i class="fas fa-folder-open text-success me-2"></i>
                                 1. Select Dataset
-                            </h5>
+                            </h4>
                             
                             <!-- Browser Support Warning -->
                             <div class="alert alert-info alert-dismissible fade show" role="alert" id="browserWarning" style="display: none;">
@@ -88,9 +91,6 @@
                             </div>
 
                             <div class="border border-success rounded p-3 bg-light" id="uploadArea">
-                                <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
-                                    <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
-                                    <input type="hidden" id="currentProjectName" value="{{ current_project.name | default('Current Project') }}">
 
                                 <div class="mb-3 pb-3 border-bottom border-success-subtle">
                                     <label class="form-label mb-2">Validation target</label>
@@ -277,8 +277,6 @@
                         </div>
                     </form>
                 </div>
-            </div>
-        </div>
         {% endcall %}
 
         <!-- Local validation note -->

@@ -2,16 +2,16 @@
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
              role="button" tabindex="0" aria-expanded="false" aria-controls="studyMetadataSection">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-flask text-info me-2"></i>Study Metadata</span>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
-                        <div class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></div>
-                    </div>
+                <span class="d-flex align-items-center gap-2">
+                    <span class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
+                        <span class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></span>
+                    </span>
                     <span class="badge bg-secondary" id="smHeaderBadge">0%</span>
                     <i class="fas fa-chevron-down text-muted" id="studyMetadataChevron"></i>
-                </div>
-            </h5>
+                </span>
+            </div>
         </div>
         <div class="collapse" id="studyMetadataSection">
         <div class="card-body">
@@ -29,7 +29,7 @@
                         <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
                     </div>
                     <span class="fw-bold" id="smMainScore">0%</span>
-                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0"
+                    <div class="sm-fair-motivation" id="smFairMotivation" role="img" aria-label="FAIR readiness 0%" data-score="0"
                          data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
                          title="<strong>Methods Readiness / FAIR score</strong><br>Share of CORE and optional fields you've filled in across all sections below. It does not block project creation &mdash; it tracks how reusable and FAIR-compliant your documentation is.">
                         <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
@@ -43,7 +43,7 @@
             </div>
 
             <div class="d-none align-items-center gap-2 flex-wrap mb-3 p-2 border rounded bg-light" id="surveyImportContainer">
-                <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0" role="button">
+                <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0">
                     <i class="fas fa-file-import me-1"></i>Import from study application (survey.json)
                 </label>
                 <input type="file" id="surveyImportInput" accept="application/json,.json" class="visually-hidden">
@@ -62,7 +62,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</span>
                     </button>
                 </div>
 
@@ -328,7 +328,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</span>
                     </button>
                 </div>
 
@@ -652,7 +652,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</span>
                     </button>
                 </div>
 

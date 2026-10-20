@@ -25,6 +25,25 @@
             window.PRISM_API_ORIGIN = {{ prism_api_origin|tojson }};
         })();
     </script>
+    <style>
+        #folderBrowserModal .fb-body { display: flex; height: 460px; }
+        #folderBrowserModal .fb-places { width: 170px; flex: 0 0 170px; overflow-y: auto; }
+        #folderBrowserModal .fb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        #folderBrowserModal .fb-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 90px; gap: .5rem; align-items: center; }
+        #folderBrowserModal .fb-head { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary-color); }
+        #folderBrowserModal .fb-head button { all: unset; cursor: pointer; }
+        #folderBrowserModal .fb-head button:hover { color: var(--bs-body-color); }
+        #folderBrowserModal .fb-entry { cursor: pointer; border-radius: .35rem; padding: .3rem .5rem; font-size: .92rem; }
+        #folderBrowserModal .fb-entry:hover { background: var(--bs-tertiary-bg); }
+        #folderBrowserModal .fb-entry.selected { background: var(--bs-primary-bg-subtle); }
+        #folderBrowserModal .fb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #folderBrowserModal .fb-crumbs .btn-link { padding: 0 .15rem; text-decoration: none; }
+        @media (max-width: 767.98px) {
+            #folderBrowserModal .fb-places { display: none; }
+            #folderBrowserModal .fb-row { grid-template-columns: minmax(0, 1fr) 80px; }
+            #folderBrowserModal .fb-modified { display: none; }
+        }
+    </style>
     {% block styles %}{% endblock %}
     <style>
         .upload-area {
@@ -375,7 +394,7 @@
                         <span class="me-1" aria-hidden="true">{{ current_project.icon or '🧪' }}</span>{{ current_project.name or 'Project' }}
                     </a>
                     {% else %}
-                    <span class="badge bg-light text-muted" aria-label="No project loaded">
+                    <span class="badge bg-light text-muted">
                         <i class="fas fa-circle-info me-1"></i>No project loaded
                     </span>
                     {% endif %}
@@ -1655,7 +1674,7 @@
     </main>
 
     {% if prism_studio_update_available %}
-    <div class="modal fade" id="prismVersionUpdateModal" tabindex="-1" aria-labelledby="prismVersionUpdateModalLabel" aria-hidden="true" data-current-version="{{ prism_studio_version }}" data-latest-version="{{ latest_prism_studio_version }}">
+    <div class="modal fade" id="prismVersionUpdateModal" tabindex="-1" aria-labelledby="prismVersionUpdateModalLabel" aria-hidden="true" data-current-version="{{ prism_studio_version }}" data-latest-version="{{ latest_prism_studio_version }}" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1687,7 +1706,7 @@
                 <div class="col-md-4 d-flex align-items-center">
                     <img src="{{ url_for('static', filename='img/MRI_Lab_Logo.png') }}" alt="MRI-Lab Graz logo" class="footer-logo me-3">
                     <div>
-                        <h5 class="mb-1">MRI-Lab Graz</h5>
+                        <h4 class="h5 mb-1">MRI-Lab Graz</h4>
                         <p class="text-muted mb-0 small">University of Graz</p>
                     </div>
                 </div>
@@ -1719,26 +1738,7 @@
         </div>
     </footer>
 
-    <style>
-        #folderBrowserModal .fb-body { display: flex; height: 460px; }
-        #folderBrowserModal .fb-places { width: 170px; flex: 0 0 170px; overflow-y: auto; }
-        #folderBrowserModal .fb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-        #folderBrowserModal .fb-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 90px; gap: .5rem; align-items: center; }
-        #folderBrowserModal .fb-head { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-secondary-color); }
-        #folderBrowserModal .fb-head button { all: unset; cursor: pointer; }
-        #folderBrowserModal .fb-head button:hover { color: var(--bs-body-color); }
-        #folderBrowserModal .fb-entry { cursor: pointer; border-radius: .35rem; padding: .3rem .5rem; font-size: .92rem; }
-        #folderBrowserModal .fb-entry:hover { background: var(--bs-tertiary-bg); }
-        #folderBrowserModal .fb-entry.selected { background: var(--bs-primary-bg-subtle); }
-        #folderBrowserModal .fb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        #folderBrowserModal .fb-crumbs .btn-link { padding: 0 .15rem; text-decoration: none; }
-        @media (max-width: 767.98px) {
-            #folderBrowserModal .fb-places { display: none; }
-            #folderBrowserModal .fb-row { grid-template-columns: minmax(0, 1fr) 80px; }
-            #folderBrowserModal .fb-modified { display: none; }
-        }
-    </style>
-    <div class="modal fade" id="folderBrowserModal" tabindex="-1" aria-labelledby="folderBrowserModalLabel" aria-hidden="true">
+    <div class="modal fade" id="folderBrowserModal" tabindex="-1" aria-labelledby="folderBrowserModalLabel" aria-hidden="true" role="dialog">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
