@@ -216,3 +216,27 @@ def test_download_link_is_only_rendered_when_a_project_is_open():
         r'\{% if current_project\.path %\}\s*<div[^>]*>\s*<a [^>]*id="smPreregDownload"',
         tpl,
     )
+
+
+def test_cli_format_md_equals_load_draft(tmp_path):
+    (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
+    out = tmp_path / "p.md"
+    _run_cli(["preregistration", "draft", "--project", str(tmp_path), "--format", "md", "--output", str(out)])
+    assert out.read_text(encoding="utf-8") == load_draft(tmp_path)
+
+
+def test_cli_format_docx_writes_zip(tmp_path):
+    import zipfile
+
+    pytest.importorskip("docx")
+    (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
+    out = tmp_path / "p.docx"
+    _run_cli(["preregistration", "draft", "--project", str(tmp_path), "--format", "docx", "--output", str(out)])
+    assert zipfile.is_zipfile(out)
+
+
+def test_cli_format_docx_requires_output(tmp_path):
+    (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        _run_cli(["preregistration", "draft", "--project", str(tmp_path), "--format", "docx"])
+    assert exc.value.code == 2

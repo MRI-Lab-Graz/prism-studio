@@ -522,6 +522,36 @@ def build_prism_tools_parsers(
     parser_preregistration_draft.add_argument(
         "--output", help="Write the draft to this file instead of printing it"
     )
+    parser_preregistration_draft.add_argument(
+        "--format",
+        choices=("md", "html", "docx", "tex"),
+        default="md",
+        help="Output format (docx needs --output and python-docx)",
+    )
+
+    parser_methods = subparsers.add_parser(
+        "methods", help="Methods section from project metadata"
+    )
+    methods_subparsers = parser_methods.add_subparsers(dest="action", help="Action")
+    parser_methods_generate = methods_subparsers.add_parser(
+        "generate", help="Generate the methods section"
+    )
+    parser_methods_generate.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_methods_generate.add_argument("--lang", choices=("en", "de"), default="en")
+    parser_methods_generate.add_argument(
+        "--detail", choices=("brief", "standard", "detailed"), default="standard"
+    )
+    parser_methods_generate.add_argument(
+        "--format",
+        choices=("md", "html", "docx", "tex"),
+        default="md",
+        help="Output format (docx needs --output and python-docx)",
+    )
+    parser_methods_generate.add_argument(
+        "--output", help="Write to this file instead of printing"
+    )
 
     parser_sessions = subparsers.add_parser(
         "sessions",
@@ -2485,6 +2515,7 @@ def build_prism_tools_parsers(
         "participants": parser_participants,
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
+        "methods": parser_methods,
         "sessions": parser_sessions,
         "publish": parser_publish,
         "save-gate": parser_save_gate,

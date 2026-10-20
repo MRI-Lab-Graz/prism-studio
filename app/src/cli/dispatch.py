@@ -111,6 +111,11 @@ def dispatch_prism_tools(
             handlers["preregistration_draft"](args)
         else:
             parsers["preregistration"].print_help()
+    elif args.command == "methods":
+        if args.action == "generate":
+            handlers["methods_generate"](args)
+        else:
+            parsers["methods"].print_help()
     elif args.command == "sessions":
         if args.action in ("review", "set", "unset"):
             handlers[f"sessions_{args.action}"](args)

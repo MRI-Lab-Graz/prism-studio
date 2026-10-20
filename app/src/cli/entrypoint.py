@@ -76,6 +76,7 @@ from src.cli.commands.sessions import (
     cmd_sessions_set,
     cmd_sessions_unset,
 )
+from src.cli.commands.methods import cmd_methods_generate
 from src.cli.commands.preregistration import cmd_preregistration_draft
 from src.cli.commands.session_map import (
     cmd_session_map_set,
@@ -186,6 +187,7 @@ def main() -> None:
             "datalad_sync": cmd_datalad_sync,
             "datalad_finalize": cmd_datalad_finalize,
             "preregistration_draft": cmd_preregistration_draft,
+            "methods_generate": cmd_methods_generate,
             "session_map_show": cmd_session_map_show,
             "session_map_set": cmd_session_map_set,
             "session_map_unset": cmd_session_map_unset,

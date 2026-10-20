@@ -14,7 +14,7 @@
 
 - Branch: `feat/methods-prereg-export` (pushed). Execution mode chosen: **native** (implement every task in one session via `superpowers:executing-plans`, then one fresh reviewer on the whole branch). Start the next session with the CLAUDE.md mandatory skills, then `git checkout feat/methods-prereg-export` and resume at the first unchecked task below.
 - Design changed vs. the first draft: Markdown is the intermediate (no document model); see the spec's "Revised" paragraph.
-- **Status: Tasks 1-2 done (last commit 563da04). Resume at Task 3.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
+- **Status: Tasks 1-3 done. Resume at Task 4.** Ruling in Task 2: `build_methods` takes optional `project_data` and `compute_participant_stats` (the Flask handler injects its own); default `app_root` is the repo's `app/` dir. The SDD ledger lives in git-ignored `.superpowers/` and does not travel; recreate it (`sdd-workspace`) and trust these checkboxes and `git log`.
 - Progress is tracked by the checkboxes in each task and by the commit log (`git log --oneline main..HEAD`).
 - Before merging: `/ponytail:ponytail-audit` (standing rule), targeted tests, dual-tree check.
 
@@ -93,11 +93,11 @@
 - Consumes: `build_methods`, `convert`, `FORMATS`.
 - Produces: `prism_tools methods generate --project P [--lang en|de] [--detail brief|standard|detailed] [--format md|html|docx|tex|bib] [--output FILE]`; `prism_tools preregistration draft --project P [--format md|html|docx|tex] [--output FILE]`. Warnings go to stderr. Binary formats (`docx`) require `--output`, otherwise exit code 2 with a message. `bib` is added in Task 4.
 
-- [ ] **Step 1: Write failing tests** (call `main([...])`/subprocess like the existing CLI tests in `tests/test_cli_dispatch_routing.py`): `methods generate --format tex --output x.tex` writes a file starting with `\documentclass`; `--format docx` without `--output` exits 2; missing project exits 2; `preregistration draft --format md` output equals current `load_draft(...)`; `--format docx` writes a valid zip.
-- [ ] **Step 2:** Run; expect FAIL.
-- [ ] **Step 3:** Implement handlers as thin adapters over `build_methods`/`load_draft` + `convert`; map `RuntimeError` (python-docx) to exit 2.
-- [ ] **Step 4:** Run the new tests plus `tests/test_cli_dispatch_routing.py`; expect PASS.
-- [ ] **Step 5:** Commit `feat(cli): methods generate and multi-format preregistration draft`.
+- [x] **Step 1: Write failing tests** (call `main([...])`/subprocess like the existing CLI tests in `tests/test_cli_dispatch_routing.py`): `methods generate --format tex --output x.tex` writes a file starting with `\documentclass`; `--format docx` without `--output` exits 2; missing project exits 2; `preregistration draft --format md` output equals current `load_draft(...)`; `--format docx` writes a valid zip.
+- [x] **Step 2:** Run; expect FAIL.
+- [x] **Step 3:** Implement handlers as thin adapters over `build_methods`/`load_draft` + `convert`; map `RuntimeError` (python-docx) to exit 2.
+- [x] **Step 4:** Run the new tests plus `tests/test_cli_dispatch_routing.py`; expect PASS.
+- [x] **Step 5:** Commit `feat(cli): methods generate and multi-format preregistration draft`.
 
 ### Task 4: BibTeX for instrument references
 

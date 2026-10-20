@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
+from src.cli.commands.methods import emit_document
 from src.preregistration import load_draft
 
 
@@ -14,8 +14,4 @@ def cmd_preregistration_draft(args) -> None:
     except FileNotFoundError as exc:
         print(f"Error: {exc}")
         sys.exit(2)
-    if args.output:
-        Path(args.output).write_text(markdown, encoding="utf-8")
-        print(f"Wrote preregistration draft to {args.output}")
-    else:
-        print(markdown)
+    emit_document(markdown, args.format, args.output)
