@@ -618,7 +618,7 @@ def _acquisition_section(summary: dict | None, lang: str, detail_level: str) -> 
         device = " ".join(
             x
             for x in (
-                f"{_acq_num(p['MagneticFieldStrength'])} T" if p.get("MagneticFieldStrength") else "",
+                f"{_acq_num(p.get('MagneticFieldStrength') or [])} T" if _acq_num(p.get("MagneticFieldStrength") or []) else "",
                 " / ".join(map(str, p.get("Manufacturer") or [])),
                 " / ".join(map(str, p.get("ManufacturersModelName") or [])),
             )
@@ -791,7 +791,7 @@ def generate_full_methods(
         for info in ((acquisition or {}).get("modalities") or {}).values():
             for label, count in (info.get("sessions") or {}).items():
                 per_session[label] = max(per_session.get(label, 0), count)
-        if len(set(per_session.values())) > 1:
+        if len(set(per_session.values())) > 1 and not is_brief and lang != "de":
             listed = ", ".join(f"*N* = {c} at {k}" for k, c in per_session.items())
             parts.append(f"The number of participants with recorded data differed between sessions ({listed}).")
 
@@ -937,7 +937,7 @@ def generate_full_methods(
                     sess_intro = f'In session {i + 1} ("{sess_label}"),'
 
                 tasks = sess.get("tasks") or []
-                if not tasks:
+                if not tasks and lang != "de":
                     if i == 0:
                         parts.append(f'The first session ("{sess_label}") took place at study enrollment.')
                     elif isinstance(timing_val, (int, float)) and timing_val > 0:
@@ -1171,7 +1171,7 @@ def generate_full_methods(
                             sentences.append(f"Normative data reference: {norms_ref}.")
                         sentences.extend(_instrument_additional_metadata(study))
 
-                if not is_brief and study:
+                if not is_brief and study and lang != "de":
                     subscales = study.get("Subscales") or []
                     if subscales:
                         sentences.append(f"The instrument has the subscales: {', '.join(subscales)}.")
@@ -1202,7 +1202,7 @@ def generate_full_methods(
                     sentences.append(
                         f"The estimated completion time is {dur_val} {dur_unit}."
                     )
-                elif admin and not is_brief:
+                elif admin and not is_brief and lang != "de":
                     if isinstance(admin, dict) and isinstance(admin.get("min"), (int, float)):
                         lo, hi = admin["min"], admin.get("max", admin["min"])
                         span = f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"

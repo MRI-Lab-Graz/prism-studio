@@ -80,3 +80,12 @@ def test_bib_format(project, tmp_path, monkeypatch):
     out = project / "refs.bib"
     _run_cli(["methods", "generate", "--project", str(project), "--format", "bib", "--output", str(out)])
     assert "@misc{smith2020" in out.read_text(encoding="utf-8")
+
+
+def test_methods_works_on_a_project_that_is_not_ready_yet(tmp_path, capsys):
+    """Same as the GUI routes: the required-fields gate must not block methods."""
+    (tmp_path / "project.json").write_text(
+        json.dumps({"StudyDesign": {"Type": "cross-sectional"}}), encoding="utf-8"
+    )
+    _run_cli(["methods", "generate", "--project", str(tmp_path)])
+    assert "cross sectional design" in capsys.readouterr().out

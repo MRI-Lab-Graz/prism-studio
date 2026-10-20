@@ -22,6 +22,7 @@ GATE_EXEMPT_COMMANDS = {
     "demo",
     "save-gate",
     "preregistration",  # a draft is prepared before the project is complete
+    "methods",  # like the GUI routes: gaps are reported as warnings, not blocked
 }
 
 

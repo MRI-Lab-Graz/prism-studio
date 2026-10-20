@@ -117,6 +117,8 @@ def build_methods(
     from src.reporting import generate_full_methods, methods_warnings
 
     project_path = Path(project_path)
+    if project_path.is_file():  # a project.json path
+        project_path = project_path.parent
     if project_data is None:
         from src.web.blueprints.projects_metadata_helpers import _read_project_json
 

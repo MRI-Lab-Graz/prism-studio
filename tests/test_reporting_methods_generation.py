@@ -447,3 +447,43 @@ def test_session_id_label_is_shown_exactly_without_ses_prefix():
         continuous=True,
     )
     assert '("pre")' in md and '("01")' in md
+
+
+# ---- review fixes -------------------------------------------------------------
+
+_DIFF_ACQ = {"modalities": {"func": {"n_subjects": 3, "sessions": {"1": 3, "01": 2}, "params": {}}}}
+
+
+def test_brief_has_no_per_session_n_sentence():
+    md, _ = generate_full_methods(
+        project_data={"Recruitment": {"Method": "flyers"}},
+        dataset_desc=None,
+        template_data={},
+        detail_level="brief",
+        continuous=True,
+        acquisition=_DIFF_ACQ,
+    )
+    assert "differed between sessions" not in md
+
+
+def test_de_omits_new_english_only_sentences():
+    md, _ = generate_full_methods(
+        project_data={
+            "Recruitment": {"Method": "flyers"},
+            "TaskDefinitions": {"ads": {"modality": "survey"}},
+            "Sessions": [{"id": "ses-1", "tasks": []}, {"id": "ses-2", "tasks": []}],
+        },
+        dataset_desc=None,
+        template_data=_TPL9,
+        lang="de",
+        continuous=True,
+        acquisition=_DIFF_ACQ,
+    )
+    for english in ("differed between sessions", "has the subscales", "License:", "Administration takes", "took place", "followed."):
+        assert english not in md
+
+
+def test_device_line_skips_non_numeric_field_strength():
+    acq = {"modalities": {"func": {"n_subjects": 1, "sessions": {}, "params": {"MagneticFieldStrength": ["3T"], "Manufacturer": ["Siemens"]}}}}
+    md, _ = _acq(acq=acq)
+    assert "  T" not in md and " T Siemens" not in md

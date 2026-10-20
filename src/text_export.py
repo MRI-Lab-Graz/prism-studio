@@ -28,6 +28,15 @@ _TEX_SPECIALS = {
     "~": r"\textasciitilde{}",
     "^": r"\textasciicircum{}",
 }
+_SYMBOLS = {
+    c: r"\ensuremath{\%s}" % name
+    for c, name in zip(
+        "αβγδηλμρσχω≥≤≠±×",
+        "alpha beta gamma delta eta lambda mu rho sigma chi omega geq leq neq pm times".split(),
+    )
+}
+_SYMBOLS["−"] = "-"
+_UNDERSCORE_ITALIC = re.compile(r"(?<!\w)_(.+?)_(?!\w)")
 _INLINE = re.compile(r"\*\*(.+?)\*\*|\*(.+?)\*")
 
 
@@ -48,7 +57,13 @@ def _blocks(md: str):
 
 
 def _tex_escape(text: str) -> str:
-    return "".join(_TEX_SPECIALS.get(c, c) for c in text)
+    return "".join(_TEX_SPECIALS.get(c) or _SYMBOLS.get(c, c) for c in text)
+
+
+def _normalize(md: str) -> str:
+    """Preregistration Markdown uses ``# title`` and ``_italic_``; fold them into the supported subset."""
+    md = re.sub(r"^# ", "## ", md, flags=re.M)
+    return _UNDERSCORE_ITALIC.sub(r"*\1*", md)
 
 
 def _tex_inline(text: str) -> str:
@@ -126,6 +141,7 @@ def md_to_docx(md: str) -> bytes:
 def convert(md: str, fmt: str) -> bytes:
     if fmt == "md":
         return md.encode("utf-8")
+    md = _normalize(md)
     if fmt == "html":
         from src.reporting import _md_to_html
 

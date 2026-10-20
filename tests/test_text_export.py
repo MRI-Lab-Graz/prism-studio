@@ -98,3 +98,26 @@ def test_bib_empty():
 
     assert references_bib({}) == ""
     assert references_bib({"a": {"Study": {}}}) == ""
+
+
+# ---- review fixes -------------------------------------------------------------
+
+
+def test_title_and_underscore_italics_are_converted_not_shown_raw():
+    from src.text_export import convert
+
+    md = "# Preregistration draft\n\n_Not filled in yet._\n"
+    tex = convert(md, "tex").decode()
+    assert "\\section{Preregistration draft}" in tex and "\\emph{Not filled in yet.}" in tex
+    html = convert(md, "html").decode()
+    assert "<h2>Preregistration draft</h2>" in html and "_Not" not in html
+    assert "a_b" in convert("a_b and c_d", "md").decode()  # md stays untouched
+    assert "a\\_b" in convert("a_b and c_d", "tex").decode()  # snake_case is not italic
+
+
+def test_tex_maps_common_non_latin_symbols():
+    from src.text_export import md_to_tex
+
+    tex = md_to_tex("Cronbach α = .89, x ≥ 3, ± 2")
+    assert "α" not in tex and "≥" not in tex and "±" not in tex
+    assert "\\ensuremath{\\alpha}" in tex and "\\ensuremath{\\geq}" in tex
