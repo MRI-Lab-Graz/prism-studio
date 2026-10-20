@@ -16,7 +16,13 @@ from src.project_ready import ProjectNotReadyError, require_project_ready
 CommandHandler = Callable[[Namespace], None]
 
 # Commands that must keep working on an unfinished project (they fix or inspect it).
-GATE_EXEMPT_COMMANDS = {"session-map", "environment", "demo", "save-gate"}
+GATE_EXEMPT_COMMANDS = {
+    "session-map",
+    "environment",
+    "demo",
+    "save-gate",
+    "preregistration",  # a draft is prepared before the project is complete
+}
 
 
 def project_path_from_args(args: Namespace) -> str | None:
@@ -100,6 +106,11 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "preregistration":
+        if args.action == "draft":
+            handlers["preregistration_draft"](args)
+        else:
+            parsers["preregistration"].print_help()
     elif args.command == "sessions":
         if args.action in ("review", "set", "unset"):
             handlers[f"sessions_{args.action}"](args)

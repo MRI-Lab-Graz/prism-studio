@@ -11,7 +11,7 @@ Provides routes for:
 from pathlib import Path
 from typing import Any
 
-from flask import Blueprint, render_template, jsonify, session, request, current_app
+from flask import Blueprint, Response, render_template, jsonify, session, request, current_app
 
 from src.config import load_config
 from src.project_manager import ProjectManager, get_available_modalities
@@ -885,6 +885,25 @@ def lookup_doi_route():
     from src.doi_lookup import lookup_doi
 
     return jsonify(lookup_doi(request.args.get("doi", "")))
+
+
+@projects_bp.route("/api/projects/preregistration-draft", methods=["GET"])
+def preregistration_draft_route():
+    """Download the preregistration draft (same function as `prism_tools preregistration draft`)."""
+    from src.preregistration import load_draft
+
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"success": False, "error": "No project selected"}), 400
+    try:
+        markdown = load_draft(project_path)
+    except FileNotFoundError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 404
+    return Response(
+        markdown,
+        mimetype="text/markdown",
+        headers={"Content-Disposition": 'attachment; filename="preregistration_draft.md"'},
+    )
 
 
 @projects_bp.route("/api/projects/study-metadata", methods=["GET"])

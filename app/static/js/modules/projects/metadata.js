@@ -213,6 +213,15 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         document.getElementById('smProcAdditionalData').value = proc.AdditionalData || '';
         document.getElementById('smProcNotes').value = proc.Notes || '';
 
+        const prereg = sm.Preregistration || {};
+        document.getElementById('smPreregDataStatus').value = prereg.DataStatus || '';
+        document.getElementById('smPreregHypotheses').value = (prereg.Hypotheses || []).join('\n');
+        document.getElementById('smPreregPrimaryOutcomes').value = prereg.PrimaryOutcomes || '';
+        document.getElementById('smPreregSecondaryOutcomes').value = prereg.SecondaryOutcomes || '';
+        document.getElementById('smPreregAnalysisPlan').value = prereg.AnalysisPlan || '';
+        document.getElementById('smPreregInferenceCriteria').value = prereg.InferenceCriteria || '';
+        document.getElementById('smPreregExploratoryAnalyses').value = prereg.ExploratoryAnalyses || '';
+
         const missingData = sm.MissingData || {};
         document.getElementById('smMissingDesc').value = missingData.Description || '';
         setMissingFilesList(missingData.MissingFiles || '');
@@ -484,6 +493,15 @@ function _buildStudyMetadataPayload() {
             Debriefing: document.getElementById('smProcDebriefing').value || undefined,
             AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
             Notes: document.getElementById('smProcNotes').value || undefined,
+        },
+        Preregistration: {
+            DataStatus: document.getElementById('smPreregDataStatus').value || undefined,
+            Hypotheses: _textToArray(document.getElementById('smPreregHypotheses').value) || undefined,
+            PrimaryOutcomes: document.getElementById('smPreregPrimaryOutcomes').value || undefined,
+            SecondaryOutcomes: document.getElementById('smPreregSecondaryOutcomes').value || undefined,
+            AnalysisPlan: document.getElementById('smPreregAnalysisPlan').value || undefined,
+            InferenceCriteria: document.getElementById('smPreregInferenceCriteria').value || undefined,
+            ExploratoryAnalyses: document.getElementById('smPreregExploratoryAnalyses').value || undefined,
         },
         MissingData: {
             Description: document.getElementById('smMissingDesc').value || undefined,

@@ -327,6 +327,7 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
             "MissingData": data.get("MissingData"),
             "References": data.get("References"),
             "Conditions": data.get("Conditions"),
+            "Preregistration": data.get("Preregistration"),
         }
 
         result = project_manager.create_project(path, config)
