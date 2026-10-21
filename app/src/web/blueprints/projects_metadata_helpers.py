@@ -188,6 +188,15 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
         if df.empty:
             return None
 
+        # screening-only participants are listed on purpose but are not the sample
+        from src.eligibility import screening_only_ids
+
+        screened = screening_only_ids(tsv_path)
+        if screened and "participant_id" in df.columns:
+            df = df[~df["participant_id"].astype(str).str.strip().isin(screened)]
+            if df.empty:
+                return None
+
         # participants.tsv also lists people who were pre-screened but did not take part;
         # the sample is those with data. Until data is imported, everyone listed counts.
         from src.environment_mri_scan import resolve_bids_rawdata_root
@@ -200,6 +209,8 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
 
         schema = _read_participants_schema(project_path)
         stats: dict = {"n": len(df)}
+        if screened:
+            stats["n_screened"] = len(screened)
 
         age_col = None
         for candidate in ["age", "Age", "AGE"]:
