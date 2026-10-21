@@ -104,3 +104,15 @@ def test_prism_only_run_reports_the_participants_mismatch_too(tmp_path):
     issues, _ = validate_dataset(str(root), run_bids=False, run_prism=True)
 
     assert any("participants.tsv mismatch" in message for _, message, _ in issues)
+
+
+def test_screening_only_rows_without_folder_raise_no_warning(tmp_path):
+    (tmp_path / "participants.tsv").write_text(
+        "participant_id\tgroup\nsub-01\tcontrol\nsub-02\tscreening-only\nsub-03\tcontrol\n"
+    )
+    (tmp_path / "sub-01").mkdir()
+
+    issues = _check_participants_subject_alignment(str(tmp_path))
+
+    assert len(issues) == 1 and "1 participant(s)" in issues[0][1]
+    assert "sub-03" in issues[0][1] and "sub-02" not in issues[0][1]

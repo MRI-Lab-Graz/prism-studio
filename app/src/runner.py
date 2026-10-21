@@ -598,6 +598,8 @@ def _check_participants_subject_alignment(
     Read-only. A sub-* folder missing from participants.tsv is an error; a
     participants.tsv row without a folder is a warning (not everyone screened is enrolled).
     """
+    from src.eligibility import is_screening_only
+
     participants_path = Path(root_dir) / "participants.tsv"
     if not participants_path.exists() or not participants_path.is_file():
         return []
@@ -628,6 +630,7 @@ def _check_participants_subject_alignment(
         }
 
     participant_ids: set[str] = set()
+    screening_ids: set[str] = set()
     try:
         with participants_path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle, delimiter="\t")
@@ -648,6 +651,8 @@ def _check_participants_subject_alignment(
                 normalized = participants_converter._normalize_participant_id(raw_value)
                 if normalized:
                     participant_ids.add(normalized)
+                    if is_screening_only(row):
+                        screening_ids.add(normalized)
     except Exception:
         return []
 
@@ -657,7 +662,8 @@ def _check_participants_subject_alignment(
         return []
 
     missing_in_tsv = sorted(subject_ids - participant_ids)
-    missing_subject_dirs = sorted(participant_ids - subject_ids)
+    # screening-only rows are expected to have no folder
+    missing_subject_dirs = sorted(participant_ids - subject_ids - screening_ids)
 
     if not missing_in_tsv and not missing_subject_dirs:
         return []

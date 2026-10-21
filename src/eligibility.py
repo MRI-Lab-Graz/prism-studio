@@ -14,6 +14,12 @@ from pathlib import Path
 
 LINK_KEY = "EligibilityCriterion"
 _MISSING = {"", "n/a", "na"}
+SCREENING_GROUP = "screening-only"
+
+
+def is_screening_only(row: dict) -> bool:
+    """Prescreened rows (``group`` = screening-only) skip eligibility and tailored checks."""
+    return (row.get("group") or "").strip().lower() == SCREENING_GROUP
 
 
 def _load_json(path: Path):
@@ -212,7 +218,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             def violates(raw, crit=crit):
                 return _numeric_violation(raw, crit)
 
-        values = ((row.get(col) or "").strip() for row in rows)
+        values = ((row.get(col) or "").strip() for row in rows if not is_screening_only(row))
         count = sum(1 for raw in values if raw.lower() not in _MISSING and violates(raw))
         if count:  # one line per criterion: a count, never a list of participants
             found.append(("WARNING", f"PRISM602 {count} participant(s) with {col} {where} the {kind} {expected} (criterion: {label})", str(tsv)))
