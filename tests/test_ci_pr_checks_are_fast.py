@@ -1,7 +1,7 @@
 """Pushes and pull requests get the fast checks; the full suite (browser tests, all systems) runs nightly.
 
-The required checks on main are "Pytest (<os>)" for ubuntu, windows and macos, so those jobs still
-report on every pull request, they just skip the slow browser tests.
+The required check on main is "Pytest (ubuntu-latest)" (plus Fast On-Demand Checks and codecov/patch);
+Windows and macOS are covered nightly, so a pull request waits for one system only.
 """
 
 import re
@@ -39,10 +39,10 @@ def test_pull_request_jobs_install_no_browser_and_run_no_browser_tests():
     assert not offenders, offenders
 
 
-def test_the_required_pytest_checks_still_report_on_every_pull_request():
+def test_the_required_pytest_check_reports_on_every_pull_request_from_ubuntu_only():
     job = _load("ci.yml")["jobs"]["cross-platform-tests"]
     assert job["name"] == "Pytest (${{ matrix.os }})"
-    assert set(job["strategy"]["matrix"]["os"]) == {"ubuntu-latest", "windows-latest", "macos-latest"}
+    assert job["strategy"]["matrix"]["os"] == ["ubuntu-latest"]
     assert _on_push_or_pr(job)
 
 

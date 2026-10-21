@@ -113,6 +113,7 @@ jobs:
         run: |
           python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
+  # No pytest here: nightly.yml already runs the full suite every night.
   nightly-deep-checks:
     name: Nightly Deep Checks
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -146,8 +147,9 @@ jobs:
 
       - name: Nightly repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,linting,ruff,mypy,testing,todos,documentation --no-fix
 
+  # One system on purpose: Windows and macOS run the full suite nightly (nightly.yml).
   cross-platform-tests:
     name: Pytest (${{ matrix.os }})
     needs: scope
@@ -156,7 +158,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - name: Checkout
@@ -181,19 +183,11 @@ jobs:
       # The browser (Playwright) tests take most of the time and run in the nightly workflow
       # (nightly.yml, on every system); a pull request gets everything else.
       - name: Run tests with coverage
-        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src --cov-report=xml --cov-report=term-missing -q
 
-      - name: Run tests
-        if: matrix.os != 'ubuntu-latest'
-        shell: bash
-        run: |
-          pytest tests/ --ignore=tests/e2e -q
-
       - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest'
         # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
         continue-on-error: true
