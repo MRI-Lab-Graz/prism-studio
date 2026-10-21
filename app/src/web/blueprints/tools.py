@@ -1722,6 +1722,18 @@ def api_runtime_capabilities():
     return jsonify(payload)
 
 
+def _is_hidden(entry) -> bool:
+    """Dot-name, or the Windows hidden/system attribute ($RECYCLE.BIN, AppData...)."""
+    if entry.name.startswith("."):
+        return True
+    try:
+        # Don't follow: a junction's own attributes say hidden, its target's don't.
+        attrs = getattr(entry.stat(follow_symlinks=False), "st_file_attributes", 0)
+    except OSError:
+        return False
+    return bool(attrs & 0x6)  # FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM
+
+
 @tools_bp.route("/api/fs/browse")
 def api_fs_browse():
     """List directory contents filtered to sub-directories and project.json files only.
@@ -1740,7 +1752,7 @@ def api_fs_browse():
         "roots": [{"name": "...", "path": "..."}]   # drives on Windows, else []
       }
     """
-    raw_path = (request.args.get("path") or "").strip()
+    raw_path = (request.args.get("path") or "").strip().strip('"')  # Explorer "Copy as path"
     include_files = (request.args.get("include_files") or "0").strip().lower() in {
         "1",
         "true",
@@ -1767,6 +1779,8 @@ def api_fs_browse():
         allowed_extensions = {
             ext for ext in normalized_extensions if re.fullmatch(r"\.[a-z0-9]+", ext)
         }
+    if re.fullmatch(r"[A-Za-z]:", raw_path):
+        raw_path += "\\"  # bare "C:" means the drive's current dir, i.e. our cwd
     if raw_path:
         current = Path(raw_path).expanduser().resolve()
     else:
@@ -1790,7 +1804,7 @@ def api_fs_browse():
     files = []
     try:
         for entry in sorted(current.iterdir(), key=lambda e: e.name.lower()):
-            if not include_hidden and entry.name.startswith("."):
+            if not include_hidden and _is_hidden(entry):
                 continue
             # One unreadable entry (e.g. Windows junction "Application Data")
             # must not abort the whole listing.
