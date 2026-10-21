@@ -109,7 +109,9 @@ cd prism-studio
 .\install.cmd
 ```
 
-Or download the ZIP, extract it, and double-click **`install.cmd`**. It is the
+Or download the ZIP, **right-click it and choose Extract All…** (running
+`install.cmd` from inside the zip viewer does not work), and double-click
+**`install.cmd`** in the extracted folder. It is the
 only Windows entry point: it clears the "downloaded from internet" mark that
 makes PowerShell refuse scripts (so no execution-policy changes are needed),
 creates `.venv` and installs the dependencies, puts a **PRISM Studio** shortcut
@@ -146,6 +148,12 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 
 ## Troubleshooting
 
+- **Windows blocks the setup or a download (Windows 11 Smart App Control)** —
+  Smart App Control refuses unsigned or unknown programs, including some tools
+  the installer downloads. `install.cmd` prints a warning when it is on. Turn
+  it off under *Windows Security → App & browser control → Smart App Control
+  settings → Off*, then run `install.cmd` again. Note that Windows only allows
+  turning it back on by reinstalling Windows.
 - **App starts but no browser page appears** — open `http://localhost:5001` manually
   and check the terminal output for launch errors.
 - **`... is not digitally signed` / `kann nicht geladen werden`
