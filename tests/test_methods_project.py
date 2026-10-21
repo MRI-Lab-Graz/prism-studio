@@ -130,3 +130,51 @@ def test_methods_cites_prism_studio_zenodo(tmp_path):
         result = build_methods(root)
     assert "https://doi.org/10.5281/zenodo.22809100" in result.md
     assert "10.5281/zenodo.22809100" in references_bib(result.template_data)
+
+
+def _survey_file(root, sub, ses, task):
+    folder = root / "rawdata" / f"sub-{sub}" / (f"ses-{ses}" if ses else "") / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"sub-{sub}_" + (f"ses-{ses}_" if ses else "") + f"task-{task}_survey.tsv"
+    (folder / name).write_text("item_01\n1\n", encoding="utf-8")
+
+
+def test_discover_sessions_groups_tasks_and_counts(tmp_path):
+    from src.methods_project import discover_sessions
+
+    for sub in ("01", "02"):
+        _survey_file(tmp_path, sub, "1", "ads")
+    _survey_file(tmp_path, "01", "2", "ads")
+    _survey_file(tmp_path, "01", "2", "pss")
+    sessions = discover_sessions(tmp_path)
+    assert [s["label"] for s in sessions] == ["1", "2"]
+    assert sessions[0]["id"] == "ses-1"
+    assert sessions[0]["tasks"] == [{"task": "ads", "n": 2}]
+    assert sessions[1]["tasks"] == [{"task": "ads", "n": 1}, {"task": "pss", "n": 1}]
+    assert all(s["ordered"] for s in sessions)
+
+
+def test_discover_sessions_keeps_1_and_01_distinct(tmp_path):
+    from src.methods_project import discover_sessions
+
+    _survey_file(tmp_path, "01", "1", "ads")
+    _survey_file(tmp_path, "01", "01", "ads")
+    assert sorted(s["label"] for s in discover_sessions(tmp_path)) == ["01", "1"]
+
+
+def test_discover_sessions_non_numeric_unordered(tmp_path):
+    from src.methods_project import discover_sessions
+
+    _survey_file(tmp_path, "01", "pre", "ads")
+    _survey_file(tmp_path, "01", "post", "ads")
+    sessions = discover_sessions(tmp_path)
+    assert [s["label"] for s in sessions] == ["post", "pre"]
+    assert not any(s["ordered"] for s in sessions)
+
+
+def test_discover_sessions_without_session_folders(tmp_path):
+    from src.methods_project import discover_sessions
+
+    _survey_file(tmp_path, "01", "", "ads")
+    sessions = discover_sessions(tmp_path)
+    assert sessions == [{"id": "", "label": "", "tasks": [{"task": "ads", "n": 1}], "ordered": True}]

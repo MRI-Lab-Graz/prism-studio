@@ -67,17 +67,50 @@ def candidate_template_names(task_name: str, task_definition: dict) -> list[str]
     return out
 
 
-def discover_tasks(project_path: Path) -> dict[str, dict]:
-    """``{task: {"modality": ...}}`` for every ``task-<name>`` data file under the dataset's modality folders."""
+def _task_files(project_path: Path):
+    """``(modality, task, subject, session label or "")`` for every task data file in the dataset."""
     from src.environment_mri_scan import resolve_bids_rawdata_root
 
-    found: dict[str, dict] = {}
+    root = resolve_bids_rawdata_root(project_path)
     for modality in ("survey", "biometrics"):
-        for path in sorted(resolve_bids_rawdata_root(project_path).glob(f"sub-*/**/{modality}/*_task-*")):
+        for path in sorted(root.glob(f"sub-*/**/{modality}/*_task-*")):
             match = re.search(r"_task-([A-Za-z0-9]+)", path.name)
             if match and path.suffix in (".tsv", ".gz", ".json"):
-                found.setdefault(match.group(1), {"modality": modality})
+                parts = path.relative_to(root).parts
+                session = next((p[4:] for p in parts if p.startswith("ses-")), "")
+                yield modality, match.group(1), parts[0], session
+
+
+def discover_tasks(project_path: Path) -> dict[str, dict]:
+    """``{task: {"modality": ...}}`` for every ``task-<name>`` data file under the dataset's modality folders."""
+    found: dict[str, dict] = {}
+    for modality, task, _, _ in _task_files(project_path):
+        found.setdefault(task, {"modality": modality})
     return found
+
+
+def discover_sessions(project_path: Path) -> list[dict]:
+    """Sessions found in the dataset, ``{"id", "label", "tasks": [{"task", "n"}], "ordered"}``.
+
+    Labels are kept exactly as found. They are put in numeric order only when all are
+    digits (``ordered`` True); any other set is sorted lexically and ``ordered`` is False,
+    because the true order of labels like ``pre``/``post`` cannot be known.
+    """
+    by_session: dict[str, dict[str, set]] = {}
+    for _, task, subject, session in _task_files(project_path):
+        by_session.setdefault(session, {}).setdefault(task, set()).add(subject)
+    labels = list(by_session)
+    ordered = len(labels) <= 1 or all(label.isdigit() for label in labels)
+    labels.sort(key=lambda label: (int(label), label) if ordered and label.isdigit() else (0, label))
+    return [
+        {
+            "id": f"ses-{label}" if label else "",
+            "label": label,
+            "tasks": [{"task": t, "n": len(subs)} for t, subs in sorted(by_session[label].items())],
+            "ordered": ordered,
+        }
+        for label in labels
+    ]
 
 
 def _library_dirs(project_path: Path, app_root: str) -> list[Path]:
