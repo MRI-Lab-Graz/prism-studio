@@ -398,6 +398,17 @@
         </div>
         {% endif %}
 
+        <!-- Notes (INFO) -->
+        {% if results.notes %}
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body small text-muted">
+                {% for note in results.notes %}
+                <div class="{% if not loop.last %}mb-1{% endif %}"><i class="fas fa-info-circle me-2"></i>{{ note.message }} <span class="text-nowrap">({{ note.code }}, optional)</span></div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Warnings Section -->
         {% if results.warning_groups %}
         <div class="card mb-4 border-0 shadow-sm">
