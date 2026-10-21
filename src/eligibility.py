@@ -40,7 +40,7 @@ def mark_screening_only(df, schema: dict, screening_ids, source_ids) -> None:
     for i, pid in df["participant_id"].items():
         if pid in ticked:
             df.at[i, "group"] = SCREENING_GROUP
-        elif pid in source_ids and is_screening_only({"group": df.at[i, "group"]}):
+        elif pid in source_ids and str(df.at[i, "group"]).strip().lower() == SCREENING_GROUP:
             df.at[i, "group"] = "n/a"
 
 

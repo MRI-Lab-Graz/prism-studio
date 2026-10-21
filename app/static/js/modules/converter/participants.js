@@ -2604,8 +2604,9 @@ export function initParticipants() {
     }
 
     // like the global button guard: a focus change on press re-renders above and drops the click
-    document.getElementById('participantsMergeScreeningRows')?.addEventListener('mousedown', (event) => event.preventDefault());
-    document.getElementById('participantsMergeScreeningRows')?.addEventListener('change', (event) => {
+    const screeningRows = document.getElementById('participantsMergeScreeningRows');
+    screeningRows?.addEventListener('mousedown', (event) => event.preventDefault());
+    screeningRows?.addEventListener('change', (event) => {
         const id = event.target?.dataset?.screeningId;
         if (!id || !participantsScreeningTicks) return;
         if (event.target.checked) participantsScreeningTicks.add(id);
