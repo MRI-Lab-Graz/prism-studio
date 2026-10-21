@@ -63,6 +63,14 @@ function Write-Warning {
 # --- Main Script ---
 Write-Info "Starting project setup for prism (Windows)..."
 
+# Smart App Control (Windows 11) blocks unsigned downloads such as uv and Python;
+# state 1 = on, 2 = evaluation mode, 0 = off. Warn up front instead of failing later.
+$SacState = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy" -ErrorAction SilentlyContinue).VerifiedAndReputablePolicyState
+if ($SacState -in 1, 2) {
+    Write-Warning "Smart App Control is on and may block the setup tools it downloads."
+    Write-Warning "If a download is blocked: Windows Security > App & browser control > Smart App Control settings > Off, then re-run install.cmd."
+}
+
 # 0. Clear stale bytecode caches so old .pyc files from a different Python version
 #    (e.g., cpython-314.pyc left over when switching from 3.12 to 3.14) cannot mask
 #    changes in the current source tree.
