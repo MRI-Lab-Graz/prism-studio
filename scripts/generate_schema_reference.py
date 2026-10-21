@@ -1,11 +1,10 @@
 """Write the field tables in docs/specs/*.md from app/schemas/stable/*.schema.json.
 
 The schema is the one source of truth; the prose around each table stays hand-written.
-Usage: python scripts/generate_schema_reference.py [--check]
+Usage: python scripts/generate_schema_reference.py
 """
 
 import json
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -117,9 +116,4 @@ def sync(write=True):
 
 
 if __name__ == "__main__":
-    changed = sync(write="--check" not in sys.argv)
-    print(
-        "changed:" if "--check" not in sys.argv else "stale:",
-        ", ".join(changed) or "none",
-    )
-    sys.exit(1 if changed and "--check" in sys.argv else 0)
+    print("changed:", ", ".join(sync()) or "none")

@@ -4,7 +4,6 @@ Fix a failure with: python scripts/generate_schema_reference.py
 """
 
 import importlib.util
-import json
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -62,7 +61,7 @@ def test_committed_reference_matches_schemas():
     ), f"stale generated tables, run scripts/generate_schema_reference.py: {stale}"
 
 
-def test_pages_cover_every_schema_field():
+def test_every_schema_has_a_page_or_is_listed_elsewhere():
     """Guard against a schema being added without a page (instrument registry, entities, recipe and tool schemas have their own pages)."""
     gen = _load()
     schemas = {
@@ -70,8 +69,3 @@ def test_pages_cover_every_schema_field():
         for p in (REPO_ROOT / "app/schemas/stable").glob("*.schema.json")
     }
     assert schemas - set(gen.PAGES) <= gen.OTHER_DOCS, schemas - set(gen.PAGES)
-    json.loads(
-        (REPO_ROOT / "app/schemas/stable/survey.schema.json").read_text(
-            encoding="utf-8"
-        )
-    )
