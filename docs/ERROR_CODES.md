@@ -104,14 +104,14 @@ sub-01/survey/sub-01_task-demo_survey.json
 |---|---|---|
 | `PRISM601` | Dataset consistency warning | Check for missing sessions/modalities across subjects |
 | `PRISM602` | Participants outside an eligibility criterion (warning only; one line per criterion with the number of participants) | Check the participants in participants.tsv, or correct the criterion in the project's Study Metadata |
-| `PRISM603` | Eligibility criterion cannot be checked (unknown id, missing column, min above max, no value labels) | Fix the link in participants.json or the criterion in project.json |
+| `PRISM603` | Eligibility criterion cannot be checked (not linked to a participants column, unknown id, missing column, min above max, no value labels) | Fix the link in participants.json or the criterion in project.json |
 | `PRISM701` | Session on disk not declared in `project.json` | Add it to the `Sessions` array, or use the session picker in the Converter |
 | `PRISM702` | Deprecated | Session presence is now inferred from disk; no action needed, not emitted by current validation |
 | `PRISM703` | Task on disk not declared in session | Register it in the session's `tasks` array |
 | `PRISM704` | Declared non-optional task has no data on disk | Convert data for it, mark it optional, or remove it |
 | `PRISM705` | Task references undefined `TaskDefinition` | Add it to `TaskDefinitions` with at least a `modality` |
 | `PRISM706` | Sessions array is empty | Define your study procedure in `Sessions`, or convert data with save-to-project to auto-register it |
-| `PRISM707` | `participants.tsv` doesn't cover all subject folders | Import or add the missing participants via the participants import step |
+| `PRISM707` | A `sub-*` folder has no row in `participants.tsv` (error), or `participants.tsv` lists participants without a folder, e.g. prescreened but not enrolled (warning) | Import or add the missing participants for the error; the warning needs no action |
 | `PRISM708` | A survey in the dataset has no recipe in the project (`code/recipes/survey/`) | Create or copy it with the Recipe builder |
 | `PRISM709` | A participants column has no value labels, or its `Levels` miss a value in `participants.tsv` (warning if unlabeled and it looks like a code list, error if `Levels` exist but are incomplete) | Add every code to `Levels` in `participants.json`, or add a `Unit` if the column is a measurement |
 

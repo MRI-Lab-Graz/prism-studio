@@ -489,6 +489,7 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM002"
     elif (
         "participants.tsv mismatch with dataset subject folders" in msg_lower
+        or "participant(s) without a sub-* folder" in msg_lower
         or (
             "subjects present as sub-* folders" in msg_lower
             and "missing in participants.tsv" in msg_lower

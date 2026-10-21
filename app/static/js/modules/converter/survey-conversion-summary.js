@@ -1,3 +1,10 @@
+/** Template matches cover every survey group in the file; only groups with response data become tasks. */
+export function isTemplateMatchConverted(group, info, surveyTasks) {
+    const converted = new Set(surveyTasks.map((entry) => String(entry.task).toLowerCase()));
+    const keys = [group, info && (info.template_key || info.template || info.matched_template)];
+    return keys.some((key) => converted.has(String(key || '').toLowerCase()));
+}
+
 export function createSurveyConversionSummaryController({
     conversionSummaryContainer,
     conversionSummaryBody,
@@ -227,19 +234,23 @@ export function createSurveyConversionSummaryController({
 
         const matches = summary.template_matches;
         if (matches && Object.keys(matches).length > 0) {
-            html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
-            html += `<table class="table table-sm table-bordered mb-3"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th></tr></thead><tbody>`;
-            for (const [group, info] of Object.entries(matches)) {
-                if (!info) continue;
+            const rows = Object.entries(matches).filter(([, info]) => info);
+            const withoutData = rows.filter(([group, info]) => !isTemplateMatchConverted(group, info, surveyTasks)).length;
+            html += `<details class="mb-3"><summary class="fw-semibold" style="cursor:pointer;"><i class="fas fa-puzzle-piece me-1"></i>Surveys found in the file (${rows.length})`
+                + (withoutData > 0 ? ` <span class="badge bg-secondary">${withoutData} without data - not converted</span>` : '')
+                + `</summary><div class="text-muted small my-1">Only the surveys listed in Preview Review are converted; this table shows every survey the file contains and its template match.</div>`;
+            html += `<table class="table table-sm table-bordered mb-0"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th><th>Converted</th></tr></thead><tbody>`;
+            for (const [group, info] of rows) {
                 const tmpl = info.template_key || info.template || info.matched_template || 'None';
                 const conf = info.confidence || info.match_confidence || 'unknown';
                 let badgeClass = 'bg-secondary';
                 if (conf === 'exact' || conf === 'high') badgeClass = 'bg-success';
                 else if (conf === 'medium') badgeClass = 'bg-warning text-dark';
                 else if (conf === 'low') badgeClass = 'bg-danger';
-                html += `<tr><td>${group}</td><td><code>${tmpl}</code></td><td><span class="badge ${badgeClass}">${conf}</span></td></tr>`;
+                const converted = isTemplateMatchConverted(group, info, surveyTasks);
+                html += `<tr class="${converted ? '' : 'text-muted'}"><td>${group}</td><td><code>${tmpl}</code></td><td><span class="badge ${badgeClass}">${conf}</span></td><td>${converted ? 'yes' : 'no data'}</td></tr>`;
             }
-            html += `</tbody></table>`;
+            html += `</tbody></table></details>`;
         }
 
         const toolCols = summary.tool_columns;

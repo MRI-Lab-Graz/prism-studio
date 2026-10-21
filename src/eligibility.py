@@ -144,8 +144,14 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         for col, spec in sidecar.items()
         if isinstance(spec, dict) and isinstance(spec.get(LINK_KEY), str) and spec[LINK_KEY]
     }
+    linked = set(links.values())
+    unlinked = [
+        ("WARNING", f"PRISM603 Eligibility criterion '{crit_id}' is not linked to a participants column, so it is not checked; link it in the participant annotation step (Eligibility criterion).", str(root / "participants.json"))
+        for crit_id in by_id
+        if crit_id not in linked
+    ]
     if not links:
-        return []
+        return unlinked
 
     tsv = root / "participants.tsv"
     try:
@@ -211,4 +217,4 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         if count:  # one line per criterion: a count, never a list of participants
             found.append(("WARNING", f"PRISM602 {count} participant(s) with {col} {where} the {kind} {expected} (criterion: {label})", str(tsv)))
 
-    return config + found
+    return config + unlinked + found
