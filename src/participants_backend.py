@@ -20,6 +20,7 @@ from typing import Any, Callable, cast
 
 import pandas as pd
 
+from src.eligibility import mark_screening_only
 from src.participants_converter import ParticipantsConverter, load_participant_source
 from src.participants_levels import add_missing_levels
 from src.participants_sessions import (
@@ -1440,6 +1441,7 @@ def _plan_participants_merge(
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
     include_all_conflicts: bool = False,
+    screening_only_ids: list[str] | None = None,
 ) -> tuple[dict[str, Any], pd.DataFrame, dict[str, Any]]:
     resolved_root = project_root.expanduser().resolve()
     source_path = Path(source_file).expanduser().resolve()
@@ -1876,6 +1878,10 @@ def _plan_participants_merge(
         )
     )
 
+    if screening_only_ids is not None:  # None: the group column is not this merge's business
+        mark_screening_only(merged_df, merged_schema, screening_only_ids, incoming_id_set)
+        full_columns = [str(col) for col in merged_df.columns]
+
     preview_df = _select_merge_preview_rows(
         merged_df,
         set(new_participant_ids) | set(cell_changes),
@@ -1901,6 +1907,14 @@ def _plan_participants_merge(
         "columns": full_columns,
         "existing_participant_count": len(existing_ids),
         "incoming_participant_count": len(incoming_ids),
+        "screening_candidates": [
+            {
+                "participant_id": pid,
+                "has_folder": (resolved_root / pid).is_dir(),
+                "group": str((existing_rows_by_id.get(pid) or {}).get("group") or "").strip(),
+            }
+            for pid in sorted(incoming_id_set)
+        ],
         "merged_participant_count": len(merged_df),
         "matched_participant_count": len(matched_ids),
         "new_participant_count": len(new_participant_ids),
@@ -1970,6 +1984,7 @@ def preview_participants_merge(
     session_resolution_decisions: dict[str, Any] | None = None,
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
+    screening_only_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Preview a safe merge from a source table into an existing participants.tsv."""
     payload, _merged_df, _merged_schema = _plan_participants_merge(
@@ -1984,6 +1999,7 @@ def preview_participants_merge(
         session_resolution_decisions=session_resolution_decisions,
         sessions_from_date=sessions_from_date,
         log_callback=log_callback,
+        screening_only_ids=screening_only_ids,
     )
     payload["action"] = "preview"
     return payload
@@ -2002,6 +2018,7 @@ def apply_participants_merge(
     session_resolution_decisions: dict[str, Any] | None = None,
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
+    screening_only_ids: list[str] | None = None,
     create_backups: bool = True,
 ) -> dict[str, Any]:
     """Apply a conflict-free merge into participants.tsv and participants.json."""
@@ -2017,6 +2034,7 @@ def apply_participants_merge(
         session_resolution_decisions=session_resolution_decisions,
         sessions_from_date=sessions_from_date,
         log_callback=log_callback,
+        screening_only_ids=screening_only_ids,
     )
 
     if not bool(payload.get("can_apply")):

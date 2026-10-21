@@ -22,6 +22,28 @@ def is_screening_only(row: dict) -> bool:
     return (row.get("group") or "").strip().lower() == SCREENING_GROUP
 
 
+def mark_screening_only(df, schema: dict, screening_ids, source_ids) -> None:
+    """Put ``screening_ids`` into the screening-only group, in place; nobody is removed.
+
+    Among ``source_ids`` (the participants this merge covers) a ticked id takes the
+    group whatever it held, an unticked one is released if it was screening-only.
+    Everyone else is untouched. Adds the ``group`` column and its value label if missing.
+    """
+    if "group" not in df.columns:
+        if not screening_ids:
+            return
+        df["group"] = "n/a"
+        schema.setdefault("group", {"Description": "Participant group", "Levels": {}})
+    if isinstance(schema.get("group", {}).get("Levels"), dict):
+        schema["group"]["Levels"].setdefault(SCREENING_GROUP, "Screening only")
+    ticked = set(screening_ids)
+    for i, pid in df["participant_id"].items():
+        if pid in ticked:
+            df.at[i, "group"] = SCREENING_GROUP
+        elif pid in source_ids and str(df.at[i, "group"]).strip().lower() == SCREENING_GROUP:
+            df.at[i, "group"] = "n/a"
+
+
 def _load_json(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))

@@ -136,6 +136,18 @@
                     <div class="small mt-1 d-none" id="participantsMergeHarmonizationStatus"></div>
                     <div class="mt-2" id="participantsMergeHarmonizationList"></div>
                 </div>
+                <div class="mt-3 d-none" id="participantsMergeScreeningSection">
+                    <div class="small fw-semibold">Screening only</div>
+                    <div class="small text-muted">
+                        Tick participants who were only screened. They stay in participants.tsv with group
+                        <code>screening-only</code> (replacing any group they have) and are not checked against the eligibility criteria.
+                        Unticked participants already marked screening-only are released.
+                    </div>
+                    <table class="table table-sm small mt-2 mb-0">
+                        <thead><tr><th>Screening only</th><th>Participant</th><th>sub-folder</th><th>Current group</th></tr></thead>
+                        <tbody id="participantsMergeScreeningRows"></tbody>
+                    </table>
+                </div>
                 <div class="mt-3 d-none" id="participantsMergeSessionResolutionSection">
                     <div class="small fw-semibold">Session Resolution</div>
                     <div class="small text-muted" id="participantsMergeSessionResolutionHint">

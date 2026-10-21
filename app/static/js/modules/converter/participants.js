@@ -29,6 +29,12 @@ import {
 } from './participants-replace-policy.js';
 import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
 import {
+    appendScreeningOnlyIds,
+    defaultScreeningTicks,
+    needsScreeningChoice,
+    screeningRowsHtml,
+} from './participants-screening-only.js';
+import {
     getParticipantsMergeHarmonizationDecisions as getParticipantsMergeHarmonizationDecisionsPayload,
     appendParticipantsMergeHarmonizationDecisions as appendParticipantsMergeHarmonizationDecisionsPayload,
     appendParticipantsMergeSessionResolutionDecisions as appendParticipantsMergeSessionResolutionDecisionsPayload,
@@ -37,6 +43,9 @@ import {
 export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
     if (!participantsPanel) return;
+    // null = no choice offered (the group column is left alone); else the ticked participant ids
+    let participantsScreeningTicks = null;
+
     const neurobagelWidgetUrl = participantsPanel.dataset.neurobagelWidgetUrl || '/static/neurobagel_widget.html';
 
     const neurobagelCollapseEl = document.getElementById('neurobagelCollapse');
@@ -1043,6 +1052,7 @@ export function initParticipants() {
         window.excludedParticipantColumns = [];
         window.participantsMergeHarmonizationDecisions = {};
         window.participantsMergeSessionResolutionDecisions = {};
+        participantsScreeningTicks = null;
         setParticipantsAdditionalVariablesEnabled(false);
     
         const widgetContainer = document.getElementById('neurobagelWidgetContainer');
@@ -2575,7 +2585,33 @@ export function initParticipants() {
 
     function renderParticipantsMergeSummary(previewData) {
         participantsMergeSummaryController.render(previewData);
+        renderParticipantsScreeningOnly(previewData);
     }
+
+    function renderParticipantsScreeningOnly(previewData) {
+        const section = document.getElementById('participantsMergeScreeningSection');
+        const body = document.getElementById('participantsMergeScreeningRows');
+        if (!section || !body) return;
+        const candidates = Array.isArray(previewData?.screening_candidates) ? previewData.screening_candidates : [];
+        const offered = Boolean(previewData?.merge_mode) && needsScreeningChoice(candidates);
+        section.classList.toggle('d-none', !offered);
+        if (!offered) {
+            participantsScreeningTicks = null;
+            return;
+        }
+        if (!participantsScreeningTicks) participantsScreeningTicks = defaultScreeningTicks(candidates);
+        body.innerHTML = screeningRowsHtml(candidates, participantsScreeningTicks);
+    }
+
+    // like the global button guard: a focus change on press re-renders above and drops the click
+    const screeningRows = document.getElementById('participantsMergeScreeningRows');
+    screeningRows?.addEventListener('mousedown', (event) => event.preventDefault());
+    screeningRows?.addEventListener('change', (event) => {
+        const id = event.target?.dataset?.screeningId;
+        if (!id || !participantsScreeningTicks) return;
+        if (event.target.checked) participantsScreeningTicks.add(id);
+        else participantsScreeningTicks.delete(id);
+    });
 
     // Longitudinal source file: the user says so and picks ONE session for everybody.
     let participantsSessionCandidates = [];
@@ -2880,6 +2916,7 @@ export function initParticipants() {
                 if (previewEndpoint === '/api/participants-merge') {
                     appendParticipantsMergeHarmonizationDecisions(formData);
                     appendParticipantsMergeSessionResolutionDecisions(formData);
+                    appendScreeningOnlyIds(formData, participantsScreeningTicks);
                 }
             } else {
                 if (!canModifyExistingParticipants()) {
@@ -3579,6 +3616,7 @@ export function initParticipants() {
                 if (useMergeRoute) {
                     appendParticipantsMergeHarmonizationDecisions(formData);
                     appendParticipantsMergeSessionResolutionDecisions(formData);
+                    appendScreeningOnlyIds(formData, participantsScreeningTicks);
                     formData.append('apply', 'true');
                 }
             } else {
