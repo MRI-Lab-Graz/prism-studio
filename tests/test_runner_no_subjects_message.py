@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from src.issues import infer_code_from_message
 from src.runner import (
     _check_participants_subject_alignment,
     _has_subject_dirs,
@@ -39,8 +40,19 @@ def test_real_mismatch_is_still_reported(tmp_path):
 
     issues = _check_participants_subject_alignment(str(root))
 
-    assert len(issues) == 1
+    assert [level for level, _, _ in issues] == ["ERROR", "WARNING"]
     assert "mismatch" in issues[0][1]
+
+
+def test_participants_without_folder_are_only_a_warning(tmp_path):
+    root = _project(tmp_path, ["sub-01", "sub-02", "sub-03"])
+    (root / "sub-01").mkdir()
+
+    issues = _check_participants_subject_alignment(str(root))
+
+    assert [level for level, _, _ in issues] == ["WARNING"]
+    assert "2 participant(s)" in issues[0][1]
+    assert infer_code_from_message(issues[0][1]) == "PRISM707"
 
 
 # --- metadata-only projects are green; participants without subjects are red ---

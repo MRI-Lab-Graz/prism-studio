@@ -601,11 +601,10 @@ def _no_subjects_message(root_dir: str) -> str:
 def _check_participants_subject_alignment(
     root_dir: str, subject_ids: Optional[set[str]] = None
 ) -> list[tuple[str, str, str]]:
-    """Return explicit mismatch errors between top-level sub-* folders and participants.tsv.
+    """Return the mismatches between top-level sub-* folders and participants.tsv.
 
-    This check is intentionally strict and read-only. It surfaces both mismatch
-    directions so users can immediately see whether IDs are missing from
-    participants.tsv or whether participants.tsv contains orphan IDs.
+    Read-only. A sub-* folder missing from participants.tsv is an error; a
+    participants.tsv row without a folder is a warning (not everyone screened is enrolled).
     """
     participants_path = Path(root_dir) / "participants.tsv"
     if not participants_path.exists() or not participants_path.is_file():
@@ -677,25 +676,28 @@ def _check_participants_subject_alignment(
         remaining = len(values) - limit
         return f"{', '.join(values[:limit])}, +{remaining} more"
 
-    details: list[str] = []
+    found: list[tuple[str, str, str]] = []
     if missing_in_tsv:
-        details.append(
-            "Subjects present as sub-* folders but missing in participants.tsv: "
-            + _summarize(missing_in_tsv)
+        found.append(
+            (
+                "ERROR",
+                "participants.tsv mismatch with dataset subject folders. "
+                "Subjects present as sub-* folders but missing in participants.tsv: "
+                + _summarize(missing_in_tsv),
+                str(participants_path),
+            )
         )
     if missing_subject_dirs:
-        details.append(
-            "participant_id values present in participants.tsv but missing sub-* folders: "
-            + _summarize(missing_subject_dirs)
+        # Only a warning: e.g. prescreened participants who were never invited stay listed on purpose.
+        found.append(
+            (
+                "WARNING",
+                f"participants.tsv lists {len(missing_subject_dirs)} participant(s) without a sub-* folder "
+                "(for example prescreened but not enrolled): " + _summarize(missing_subject_dirs),
+                str(participants_path),
+            )
         )
-
-    return [
-        (
-            "ERROR",
-            "participants.tsv mismatch with dataset subject folders. " + " | ".join(details),
-            str(participants_path),
-        )
-    ]
+    return found
 
 
 def _run_bids_validator(

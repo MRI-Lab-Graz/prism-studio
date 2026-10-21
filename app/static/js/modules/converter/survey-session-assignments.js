@@ -17,6 +17,15 @@ export function rowClass(row) {
     return row.session === null ? 'text-muted' : '';
 }
 
+/** Rows arrive grouped by participant; flip the shade whenever the participant changes. */
+export function subjectStripes(rows) {
+    let shade = false;
+    return rows.map((r, i) => {
+        if (i && r.participant !== rows[i - 1].participant) shade = !shade;
+        return shade;
+    });
+}
+
 export function clearReviewTable(body, toggleBtn) {
     toggleBtn?.setAttribute('aria-expanded', 'false');
     body?.replaceChildren();
@@ -55,9 +64,10 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         let html = '<table class="table table-sm table-bordered mb-2"><thead><tr>'
             + '<th>Participant</th><th>Response</th><th>Date</th><th>Done</th><th>Last page</th>'
             + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
-        rows.forEach((r) => {
+        const stripes = subjectStripes(rows);
+        rows.forEach((r, i) => {
             const left = r.session === null;
-            html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${rowClass(r)}">`
+            html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${rowClass(r)}${stripes[i] ? ' subject-alt' : ''}">`
                 + `<td>${esc(r.participant)}</td><td>${esc(r.response_id)}</td>`
                 + `<td>${esc(String(r.date).slice(0, 16))}</td><td>${r.completed ? 'yes' : 'no'}</td>`
                 + `<td>${esc(r.lastpage)}</td>`

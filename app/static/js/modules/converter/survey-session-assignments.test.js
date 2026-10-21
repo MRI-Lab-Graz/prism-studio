@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearReviewTable, reviewFormData, rowClass } from './survey-session-assignments.js';
+import { clearReviewTable, reviewFormData, rowClass, subjectStripes } from './survey-session-assignments.js';
 
 describe('reviewFormData', () => {
     it('sends the picked server path when no file was uploaded', () => {
@@ -50,5 +50,12 @@ describe('clearReviewTable', () => {
 
     it('copes with a page that has no review card', () => {
         expect(() => clearReviewTable(null, null)).not.toThrow();
+    });
+});
+
+describe('subjectStripes', () => {
+    it('alternates only when the participant changes, so one subject shares a shade', () => {
+        const rows = ['a', 'a', 'b', 'c', 'c', 'a'].map((participant) => ({ participant }));
+        expect(subjectStripes(rows)).toEqual([false, false, true, false, false, true]);
     });
 });

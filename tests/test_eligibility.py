@@ -68,8 +68,18 @@ def test_decimal_comma(tmp_path):
     assert _codes(check_eligibility(root), "PRISM602")
 
 
-def test_unlinked_criterion_silent(tmp_path):
-    root = _make(tmp_path, [AGE], {}, [("sub-P01", "10")])
+def test_unlinked_criterion_warns_that_it_is_not_checked(tmp_path):
+    sex = {"id": "sex", "type": "categorical", "mode": "exclude", "values": ["Male"]}
+    root = _make(tmp_path, [AGE, sex], {}, [("sub-P01", "10")])
+    found = _codes(check_eligibility(root), "PRISM603")
+    assert [i[0] for i in found] == ["WARNING", "WARNING"]
+    assert "'age'" in found[0][1] and "not linked" in found[0][1]
+    assert "'sex'" in found[1][1]
+    assert not _codes(check_eligibility(root), "PRISM602")
+
+
+def test_linked_criterion_is_not_reported_as_unlinked(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "20")])
     assert check_eligibility(root) == []
 
 
@@ -105,7 +115,8 @@ def test_unknown_criterion_id_warns_once(tmp_path):
     root = _make(tmp_path, [AGE], {"age": {"EligibilityCriterion": "gone"}},
                  [("sub-P01", "10"), ("sub-P02", "11")])
     issues = check_eligibility(root)
-    assert len(issues) == 1 and "PRISM603" in issues[0][1] and "gone" in issues[0][1]
+    gone = [i for i in issues if "gone" in i[1]]
+    assert len(gone) == 1 and "PRISM603" in gone[0][1]
 
 
 def test_duplicate_ids_warn_and_first_wins(tmp_path):
@@ -213,7 +224,8 @@ def test_malformed_criterion_with_a_link_gets_one_warning(tmp_path):
 
 @pytest.mark.parametrize("link", [["age"], {"a": 1}, 5])
 def test_non_string_link_is_ignored(tmp_path, link):
-    assert _run(tmp_path, AGE, link=link) == []
+    issues = _run(tmp_path, AGE, link=link)
+    assert len(issues) == 1 and "not linked" in issues[0][1] and not _codes(issues, "PRISM602")
 
 
 def test_load_criteria_only_returns_usable_criteria(tmp_path):

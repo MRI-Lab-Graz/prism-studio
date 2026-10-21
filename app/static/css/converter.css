@@ -506,3 +506,6 @@ td.prism-diff-conflict,
 .ansi-blue { color: #ffffff; }
 .ansi-cyan { color: #ffffff; }
 .ansi-reset { color: #ffffff; }
+
+/* Session review: alternate shade per participant so a subject's several responses read as one block. */
+#sessionAssignmentsBody tr.subject-alt > td { box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.07); }
