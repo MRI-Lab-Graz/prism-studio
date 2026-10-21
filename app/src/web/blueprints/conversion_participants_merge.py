@@ -133,6 +133,14 @@ def _parse_participants_merge_request(
         except json.JSONDecodeError:
             harmonization_decisions = {}
 
+    screening_only_ids = None  # absent: the group column is left alone
+    try:
+        decoded = json.loads(request.form.get("screening_only_ids") or "null")
+        if isinstance(decoded, list):
+            screening_only_ids = [str(item) for item in decoded]
+    except json.JSONDecodeError:
+        pass
+
     session_resolution_decisions_json = request.form.get("session_resolution_decisions")
     session_resolution_decisions: dict[str, object] = {}
     if session_resolution_decisions_json:
@@ -182,6 +190,7 @@ def _parse_participants_merge_request(
         "preview_limit": preview_limit,
         "neurobagel_schema": neurobagel_schema,
         "harmonization_decisions": harmonization_decisions,
+        "screening_only_ids": screening_only_ids,
         "session_resolution_decisions": session_resolution_decisions,
         "sessions_from_date": _sessions_from_date_option(),
         "context": context,

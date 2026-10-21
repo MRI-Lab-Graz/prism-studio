@@ -382,6 +382,15 @@ def build_prism_tools_parsers(
         ),
     )
     parser_participants_merge.add_argument(
+        "--screening-only",
+        help=(
+            "Comma-separated participant ids (as in participants.tsv, e.g. sub-007) "
+            "to put in the screening-only group; they stay in participants.tsv. "
+            "Source ids not listed are released from that group; pass an empty "
+            "string to release all. Omit the flag to leave the group column alone."
+        ),
+    )
+    parser_participants_merge.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 

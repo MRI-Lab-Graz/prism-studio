@@ -572,6 +572,12 @@ def cmd_participants_merge(args) -> None:
         input_path.suffix.lower(), separator_option
     )
     export_conflicts_csv = bool(getattr(args, "conflicts_csv", False))
+    screening_text = getattr(args, "screening_only", None)
+    screening_only_ids = (
+        None
+        if screening_text is None
+        else [part.strip() for part in screening_text.split(",") if part.strip()]
+    )
 
     if export_conflicts_csv and bool(getattr(args, "apply", False)):
         print("Error: --conflicts-csv cannot be combined with --apply.")
@@ -644,6 +650,7 @@ def cmd_participants_merge(args) -> None:
             session_resolution_decisions=session_resolution,
             sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
+            screening_only_ids=screening_only_ids,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})
@@ -725,6 +732,7 @@ def cmd_participants_merge(args) -> None:
             session_resolution_decisions=session_resolution,
             sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
+            screening_only_ids=screening_only_ids,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})
