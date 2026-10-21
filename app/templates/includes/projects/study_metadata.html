@@ -430,11 +430,11 @@
                                         <select class="form-select form-select-sm" id="smRecPeriodEndMonth"></select>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label class="form-label fw-bold small">
                                         <span class="badge bg-secondary">OPTIONAL</span> Financial Compensation
                                     </label>
-                                    <select class="form-select form-select-sm" id="smRecCompensation">
+                                    <select class="form-select form-select-sm w-auto" id="smRecCompensation">
                                         <option value="">-- Select --</option>
                                         <option value="Financial compensation">Yes</option>
                                         <option value="No financial compensation">No</option>
@@ -484,13 +484,13 @@
                                         <span class="badge bg-secondary">OPTIONAL</span> Checked Criteria
                                     </label>
                                     <div><small class="text-muted">Limits the validator checks against participants.tsv (warnings only, also on partial data). Link a participants column to a criterion in the Sociodemographics converter.</small></div>
-                                    <div id="smEligCriteriaList" class="d-flex flex-column gap-2 my-2"></div>
-                                    <div class="input-group input-group-sm w-auto">
+                                    <div class="input-group input-group-sm w-auto my-2">
                                         <select class="form-select form-select-sm" id="smEligCriteriaSelect" aria-label="Criterion type"></select>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="smEligCriteriaAdd">
                                             <i class="fas fa-plus me-1"></i>Add checked criterion
                                         </button>
                                     </div>
+                                    <div id="smEligCriteriaList" class="d-flex flex-column gap-2 mb-2"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Target Sample Size</label>
@@ -700,10 +700,7 @@
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="metadataReferences" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="metadataReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="metadataReferencesAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Link
-                                    </button>
-                                    <small class="text-muted d-block">One http(s) URL per box. They sync into CITATION.cff and dataset_description.json.</small>
+                                    <small class="text-muted d-block mt-1">One http(s) URL per entry. They sync into CITATION.cff and dataset_description.json.</small>
                                 </div>
                             </div>
                         </div>
@@ -768,10 +765,7 @@
                                     <label class="form-label fw-bold small">Background Literature</label>
                                     <textarea class="form-control form-control-sm d-none" id="smReferencesText" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smReferencesAdd">
-                                        <i class="fas fa-plus me-1"></i>Add DOI
-                                    </button>
-                                    <small class="text-muted">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
+                                    <small class="text-muted d-block mt-1">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>
