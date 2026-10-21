@@ -1826,6 +1826,10 @@
         import { installNotReadyNotice } from "{{ url_for('static', filename='js/shared/not-ready-notice.js', v=static_token) }}";
         installNotReadyNotice();
     </script>
+    <script type="module">
+        import { installButtonPressGuard } from "{{ url_for('static', filename='js/shared/button-press.js', v=static_token) }}";
+        installButtonPressGuard();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
