@@ -10,18 +10,19 @@ import { registerStagedControl, syncAcceptButton } from './row-state.js';
 
 export const normalizeChipText = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
 
-/** New list with `text` appended; empty text and duplicates (any case) change nothing. */
-export function addChip(values, text) {
+/** New list with `text` appended; empty text and duplicates (any case) change nothing.
+ *  `single`: the list holds one value, so the entry replaces it. */
+export function addChip(values, text, single = false) {
     const entry = normalizeChipText(text);
     if (!entry || values.some((v) => v.toLowerCase() === entry.toLowerCase())) return values;
-    return [...values, entry];
+    return single ? [entry] : [...values, entry];
 }
 
 export const removeChipAt = (values, index) => values.filter((_, i) => i !== index);
 
 /** Just the green chips (no input): `container` becomes the chip area. Returns
  *  { getValues, setValues, addValue }; `setValues` does not call `onChange`. */
-export function mountChipArea(container, { chipText = (value) => value, onChange = () => {} } = {}) {
+export function mountChipArea(container, { chipText = (value) => value, single = false, onChange = () => {} } = {}) {
     container.classList.remove('flex-column');
     container.classList.add('d-flex', 'flex-wrap', 'gap-1');
     let values = [];
@@ -48,7 +49,7 @@ export function mountChipArea(container, { chipText = (value) => value, onChange
     return {
         getValues: () => values,
         addValue(value) {
-            const next = addChip(values, value);
+            const next = addChip(values, value, single);
             if (next === values) return false;
             values = next;
             render();
@@ -72,6 +73,7 @@ export function mountChipList(container, {
     fields = null,
     compose = ([text]) => normalizeChipText(text),
     chipText = (value) => value,
+    single = false,
     onChange = () => {},
 } = {}) {
     container.innerHTML = `
@@ -93,7 +95,7 @@ export function mountChipList(container, {
     const readFields = () => entryFields.map((field) => field.value);
     const hasContent = () => readFields().some((value) => normalizeChipText(value) !== '');
 
-    const area = mountChipArea(badges, { chipText, onChange });
+    const area = mountChipArea(badges, { chipText, single, onChange });
 
     const syncAccept = () => syncAcceptButton(accept, compose(readFields()) !== '');
     const clearFields = () => {

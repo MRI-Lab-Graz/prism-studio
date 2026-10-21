@@ -19,6 +19,10 @@ describe('addChip', () => {
     it('ignores a duplicate, whatever its case, and keeps the first spelling', () => {
         expect(addChip(['Age'], 'age')).toEqual(['Age']);
     });
+    it('replaces the single entry of a single-value list, even with a different value', () => {
+        expect(addChip(['20'], '21', true)).toEqual(['21']);
+        expect(addChip([], '21', true)).toEqual(['21']);
+    });
     it('never changes the list it was given', () => {
         const before = ['age'];
         addChip(before, 'sex');

@@ -1555,6 +1555,42 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             metadata_content,
         )
 
+    def test_target_sample_size_label_carries_a_tier_badge(self):
+        """validateProjectField() turns the badge inside the field's label
+        green once the field is filled (and the section counter drops). A
+        label without a badge - as Target Sample Size had - gets neither the
+        green check nor any feedback.
+        """
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertRegex(
+            content,
+            r'<span class="badge bg-secondary">OPTIONAL</span>\s*Target Sample Size',
+        )
+
+    def test_target_sample_size_is_a_single_value_chip_list(self):
+        """Like Inclusion Criteria: type a number, press the green check, and
+        it drops below the input as a chip. The stored value lives in a hidden
+        field so the save/validation code keeps reading smEligSampleSize.
+        """
+        template = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        metadata = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertRegex(template, r'<input type="hidden"[^>]*id="smEligSampleSize"')
+        self.assertIn('id="smEligSampleSizeList"', template)
+        block = metadata.split("const OVERVIEW_LIST_FIELDS = {", 1)[1].split("\n};", 1)[0]
+        self.assertIn("smEligSampleSize: {", block)
+        self.assertIn("single: true", block)
+
+    def test_target_sample_size_revalidates_live_while_typing(self):
+        """The green badge must follow the input as the user types, which
+        only happens for fields listed in METADATA_VALIDATION_FIELDS.
+        """
+        content = PROJECTS_VALIDATION_MODULE.read_text(encoding="utf-8")
+        fields = content.split("const METADATA_VALIDATION_FIELDS = [", 1)[1].split("];", 1)[0]
+
+        self.assertIn("'smEligSampleSize'", fields)
+
     def test_recruitment_method_dropdown_commits_on_selection(self):
         """Every other dropdown on the Study Metadata form (Study Design Type,
         Condition Type, Compensation) commits on selection. The CORE Method

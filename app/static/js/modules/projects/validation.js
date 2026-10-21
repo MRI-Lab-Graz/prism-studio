@@ -68,6 +68,7 @@ const METADATA_VALIDATION_FIELDS = [
     'smRecCompensation',
     'smEligInclusion',
     'smEligExclusion',
+    'smEligSampleSize',
     'smProcOverview'
 ];
 

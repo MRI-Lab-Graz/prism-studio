@@ -200,8 +200,7 @@ function applyMappedFields(mapped, deps) {
     }
 
     if (Number.isFinite(mapped.sampleSize) && mapped.sampleSize > 0) {
-        const sampleSizeField = document.getElementById('smEligSampleSize');
-        if (sampleSizeField) sampleSizeField.value = String(mapped.sampleSize);
+        if (setOverviewList) setOverviewList('smEligSampleSize', String(mapped.sampleSize));
     }
 
     if (mapped.financialCompensation) {

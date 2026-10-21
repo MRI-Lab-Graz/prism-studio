@@ -493,9 +493,11 @@
                                     <div id="smEligCriteriaList" class="d-flex flex-column gap-2 mb-2"></div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-bold small">Target Sample Size</label>
-                                    <input type="number" class="form-control form-control-sm" id="smEligSampleSize"
-                                           min="1" placeholder="N">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Target Sample Size
+                                    </label>
+                                    <input type="hidden" id="smEligSampleSize">
+                                    <div id="smEligSampleSizeList" class="d-flex flex-column gap-2"></div>
                                 </div>
                                 <div class="col-md-8">
                                     <label class="form-label fw-bold small">Power Analysis</label>

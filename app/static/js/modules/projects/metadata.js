@@ -202,7 +202,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         setOverviewList('smEligInclusion', elig.InclusionCriteria);
         setOverviewList('smEligExclusion', elig.ExclusionCriteria);
         setEligibilityCriteria(elig.Criteria);
-        document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
+        setOverviewList('smEligSampleSize', elig.TargetSampleSize);
         document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
 
         const proc = sm.Procedure || {};
@@ -1415,6 +1415,14 @@ const OVERVIEW_LIST_FIELDS = {
         listId: 'smEligExclusionList',
         placeholder: 'Exclusion criterion',
     },
+    // One number: accepting a new one replaces the chip.
+    smEligSampleSize: {
+        listId: 'smEligSampleSizeList',
+        placeholder: 'Target number of participants (N)',
+        single: true,
+        chipText: value => `N = ${value}`,
+        validate: value => /^[1-9]\d*$/.test(value),
+    },
     smProcQC: {
         listId: 'smProcQCList',
         placeholder: 'Quality control measure (e.g. attention check)',
@@ -1461,6 +1469,8 @@ function _chipListFor(fieldId) {
     if (!_chipLists[fieldId] || !list.querySelector('.chip-input')) {
         _chipLists[fieldId] = mountChipList(list, {
             placeholder: config.placeholder || '',
+            single: Boolean(config.single),
+            ...(config.chipText && { chipText: config.chipText }),
             // A chip list with `validate` only accepts valid entries (the check stays gray until then).
             ...(config.validate && { compose: ([text]) => (config.validate(normalizeChipText(text)) ? normalizeChipText(text) : '') }),
             onChange: () => _syncOverviewListField(fieldId),
@@ -2997,7 +3007,8 @@ function _applyHintBadge(elementId, hint, type) {
     badge.title = `Detected from ${hint.source} — click to apply`;
     badge.innerHTML = `<i class="fas fa-magic me-1"></i>${_escapeHtmlAttr(displayVal)}`;
     badge.addEventListener('click', () => {
-        el.value = hint.value;
+        if (OVERVIEW_LIST_FIELDS[elementId]) setOverviewList(elementId, hint.value);
+        else el.value = hint.value;
         badge.remove();
         if (type === 'select') el.dispatchEvent(new Event('change'));
     });
