@@ -822,6 +822,13 @@ def generate_full_methods(
                 sample_sent += f" ({', '.join(sex_parts)})"
             sample_sent += "."
             parts.append(sample_sent)
+            screened = pstats.get("n_screened")
+            if screened:
+                many = screened != 1
+                parts.append(
+                    f"{screened} further participant{'s' if many else ''} "
+                    f"{'were' if many else 'was'} screened only and {'are' if many else 'is'} not part of the sample."
+                )
 
             if age_mean is not None and age_sd is not None:
                 if age_min is not None and age_max is not None:

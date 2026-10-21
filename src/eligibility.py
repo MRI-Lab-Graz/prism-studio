@@ -22,6 +22,16 @@ def is_screening_only(row: dict) -> bool:
     return (row.get("group") or "").strip().lower() == SCREENING_GROUP
 
 
+def screening_only_ids(participants_tsv) -> set[str]:
+    """Participant ids in the screening-only group of a participants.tsv (empty if unreadable)."""
+    try:
+        with Path(participants_tsv).open(encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle, delimiter="\t"))
+    except (OSError, ValueError):
+        return set()
+    return {(row.get("participant_id") or "").strip() for row in rows if is_screening_only(row)}
+
+
 def mark_screening_only(df, schema: dict, screening_ids, source_ids) -> None:
     """Put ``screening_ids`` into the screening-only group, in place; nobody is removed.
 

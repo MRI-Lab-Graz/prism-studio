@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+from src.eligibility import screening_only_ids
+
 
 class ReadmeGenerator:
     """Generate README.md from project.json study metadata."""
@@ -132,6 +134,8 @@ class ReadmeGenerator:
 
         # --- Dataset contents ---
         participant_count = self._count_participants()
+        screened_only = len(screening_only_ids(self.project_path / "participants.tsv"))
+        participant_count -= screened_only
         modalities = self._detect_modalities()
         modality_str = ", ".join(modalities) if modalities else "behavioral data"
         metadata["DATASET_CONTENTS"] = (
@@ -158,6 +162,8 @@ class ReadmeGenerator:
 
         # Subject description
         subject_parts = [f"Total participants: {participant_count}"]
+        if screened_only:
+            subject_parts.append(f"Screened only: {screened_only}")
 
         target_n = eligibility.get("TargetSampleSize")
         if target_n:
