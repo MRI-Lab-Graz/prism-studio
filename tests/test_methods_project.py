@@ -292,3 +292,17 @@ def test_declared_sessions_override_inference(tmp_path):
         result = build_methods(root)
     assert "Baseline" in result.md
     assert '"2"' not in result.md
+
+
+def test_timing_falls_back_to_scans_tsv(tmp_path):
+    from src.methods_project import add_session_timing
+
+    for ses, when in (("1", "2025-02-01T10:00:00"), ("2", "2025-02-08T10:00:00")):
+        folder = tmp_path / "rawdata" / "sub-01" / f"ses-{ses}"
+        folder.mkdir(parents=True)
+        (folder / f"sub-01_ses-{ses}_scans.tsv").write_text(
+            f"filename\tacq_time\nfunc/x.nii.gz\t{when}\n", encoding="utf-8"
+        )
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert sessions[1]["timingRelativeToBaseline"] == {"Value": 7, "Unit": "days"}
