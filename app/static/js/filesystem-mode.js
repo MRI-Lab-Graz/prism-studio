@@ -36,7 +36,8 @@
         if (!folder) return '';
         const name = window.prompt('File name:', options.defaultName || 'new-file.json');
         if (!name) return '';
-        return `${folder.replace(/[\\/]+$/, '')}/${name}`;
+        const sep = folder.includes('\\') ? '\\' : '/';  // keep Windows paths all-backslash
+        return `${folder.replace(/[\\/]+$/, '')}${sep}${name}`;
     }
 
     window.PrismPathPicker = {

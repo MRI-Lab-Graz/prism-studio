@@ -1722,6 +1722,15 @@ def api_runtime_capabilities():
     return jsonify(payload)
 
 
+def _drive_roots(bitmask: int) -> list[dict]:
+    """Drive letters from GetLogicalDrives' bitmask (bit 0 = A:); no disk is touched."""
+    return [
+        {"name": f"{chr(65 + i)}:\\", "path": f"{chr(65 + i)}:\\"}
+        for i in range(26)
+        if bitmask >> i & 1
+    ]
+
+
 def _is_hidden(entry) -> bool:
     """Dot-name, or the Windows hidden/system attribute ($RECYCLE.BIN, AppData...)."""
     if entry.name.startswith("."):
@@ -1855,15 +1864,11 @@ def api_fs_browse():
     project_json = current / "project.json"
     has_project_json = project_json.is_file()
 
-    # Drive roots on Windows
     roots: list[dict] = []
     if sys.platform.startswith("win"):
-        import string
+        import ctypes
 
-        for letter in string.ascii_uppercase:
-            drive = Path(f"{letter}:\\")
-            if drive.exists():
-                roots.append({"name": f"{letter}:\\", "path": str(drive)})
+        roots = _drive_roots(ctypes.windll.kernel32.GetLogicalDrives())
 
     return jsonify(
         {

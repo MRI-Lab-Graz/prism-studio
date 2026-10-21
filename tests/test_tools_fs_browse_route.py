@@ -181,6 +181,16 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
         response = self.client.get("/api/fs/browse", query_string={"path": drive})
         self.assertEqual(response.get_json()["path"], drive + "\\")
 
+    def test_drive_roots_come_from_the_bitmask_without_touching_the_disks(self):
+        # Bit 0 = A:, bit 2 = C:, bit 25 = Z:. Probing letters with exists()
+        # stalls on an offline network drive.
+        from src.web.blueprints.tools import _drive_roots
+
+        self.assertEqual(
+            _drive_roots((1 << 2) | (1 << 25)),
+            [{"name": "C:\\", "path": "C:\\"}, {"name": "Z:\\", "path": "Z:\\"}],
+        )
+
     def test_fs_browse_missing_path_falls_back_to_existing_ancestor(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir).resolve()
