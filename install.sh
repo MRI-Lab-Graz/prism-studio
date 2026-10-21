@@ -77,6 +77,41 @@ ensure_uv() {
     return 1
 }
 
+ensure_system_packages() {
+    # Linux only: one sudo command for every OS package a standard user needs
+    # (tkinter = folder picker, git = DataLad, curl = downloads).
+    [ "$(uname)" = "Linux" ] || return 0
+    local pm tk install_cmd
+    pm=$(detect_package_manager)
+    case "$pm" in
+        apt)    tk=python3-tk;      install_cmd="apt-get install -y" ;;
+        dnf)    tk=python3-tkinter; install_cmd="dnf install -y" ;;
+        pacman) tk=tk;              install_cmd="pacman -S --needed --noconfirm" ;;
+        zypper) tk=python3-tk;      install_cmd="zypper install -y" ;;
+        *) return 0 ;;
+    esac
+    local missing=()
+    python3 -c "import tkinter" 2>/dev/null || missing+=("$tk")
+    command -v git >/dev/null 2>&1 || missing+=(git)
+    command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1 || missing+=(curl)
+    [ ${#missing[@]} -eq 0 ] && return 0
+
+    local cmd="$install_cmd ${missing[*]}"
+    [ "$(id -u)" = "0" ] || cmd="sudo $cmd"
+    echo_info "PRISM Studio needs these system packages: ${missing[*]} (folder picker, version control, downloads)."
+    local answer=""
+    read -r -p "Install them now with '$cmd'? [Y/n] " answer || answer="n"
+    if [[ "$answer" =~ ^[Nn] ]]; then
+        echo_info "Skipped. You can install them later with: $cmd"
+        return 0
+    fi
+    if $cmd; then
+        echo_success "System packages installed."
+    else
+        echo_error "Installing system packages failed. You can retry later with: $cmd"
+    fi
+}
+
 offer_datalad() {
     if command -v datalad >/dev/null 2>&1 && command -v git-annex >/dev/null 2>&1; then
         echo_info "DataLad and git-annex are already installed."
@@ -371,25 +406,11 @@ echo_info "Clearing stale __pycache__ directories..."
 find . -path './.venv' -prune -o -type d -name '__pycache__' -print | xargs -r rm -rf
 echo_success "__pycache__ cleared."
 
-# 1. Check for uv
+# 1. System packages (Linux), then uv
+ensure_system_packages
+
 ensure_uv || exit 1
 echo_info "'uv' is installed."
-
-# 2b. Check for tkinter (required for folder picker on Linux)
-echo_info "Checking for tkinter (required for folder picker)..."
-if [ "$(uname)" = "Darwin" ]; then
-    echo_info "macOS uses the native folder picker; tkinter not needed."
-elif python3 -c "import tkinter" 2>/dev/null; then
-    echo_success "tkinter is available"
-else
-    echo "⚠️  WARNING: tkinter is NOT available"
-    echo "⚠️  The web interface folder picker will not work."
-    echo "⚠️  To fix on Ubuntu/Debian: sudo apt-get install python3-tk"
-    echo "⚠️  To fix on Fedora/RHEL: sudo dnf install python3-tkinter"
-    echo "⚠️  Or continue without it - you can enter paths manually."
-    echo "Press Enter to continue anyway, or Ctrl+C to abort..."
-    read -r
-fi
 
 # 3. Check for requirements.txt
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
