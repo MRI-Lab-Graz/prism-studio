@@ -675,6 +675,23 @@ def _processing_section(summary: dict | None, lang: str, detail_level: str) -> s
     return " ".join(out)
 
 
+def _session_intro(sess: dict, index: int, label: str) -> str:
+    """Opening words of a session's sentence. Sessions found in the dataset carry an
+    ``ordered`` key; they get no enrollment claim, and no ordinal unless their order is known."""
+    inferred = "ordered" in sess
+    if inferred and not sess.get("label"):
+        return "In the study,"
+    ordinal = sess.get("ordered", True)
+    timing = sess.get("timingRelativeToBaseline") or {}
+    value = timing.get("Value")
+    if index == 0 and not inferred:
+        return f'In the first session ("{label}"), administered at study enrollment,'
+    if isinstance(value, (int, float)) and value > 0:
+        head = f'In session {index + 1} ("{label}")' if ordinal else f'In session "{label}"'
+        return f"{head}, administered approximately {int(value)} {timing.get('Unit', 'days')} after baseline,"
+    return f'In session "{label}",' if inferred else f'In session {index + 1} ("{label}"),'
+
+
 def methods_warnings(
     project_data: dict, participant_stats: dict | None, template_data: dict[str, dict]
 ) -> list[str]:
@@ -684,6 +701,10 @@ def methods_warnings(
     if not (participant_stats or {}).get("n") and not isinstance(target, int):
         warnings.append(
             "No sample size: add participants.tsv or Eligibility.TargetSampleSize."
+        )
+    if any(s.get("ordered") is False for s in project_data.get("Sessions") or []):
+        warnings.append(
+            "Session order could not be inferred from the labels; add Sessions to project.json to state it."
         )
     for task, tpl in template_data.items():
         if not _get_apa_citation(tpl.get("Study") or {}):
@@ -925,16 +946,7 @@ def generate_full_methods(
                 timing = sess.get("timingRelativeToBaseline") or {}
                 timing_val = timing.get("Value")
                 timing_unit = timing.get("Unit", "days")
-
-                if i == 0:
-                    sess_intro = f'In the first session ("{sess_label}"), administered at study enrollment,'
-                elif isinstance(timing_val, (int, float)) and timing_val > 0:
-                    sess_intro = (
-                        f'In session {i + 1} ("{sess_label}"), administered approximately '
-                        f"{int(timing_val)} {timing_unit} after baseline,"
-                    )
-                else:
-                    sess_intro = f'In session {i + 1} ("{sess_label}"),'
+                sess_intro = _session_intro(sess, i, sess_label)
 
                 tasks = sess.get("tasks") or []
                 if not tasks and lang != "de":
@@ -969,6 +981,8 @@ def generate_full_methods(
                             td_desc = task_defs[task_name].get("description", "")
                             if td_desc:
                                 display_name = td_desc
+                        if "n" in t:
+                            display_name += f" (*n* = {t['n']})"
                         grouped.setdefault(eg, []).append(display_name)
 
                     all_task_names = []
@@ -991,6 +1005,9 @@ def generate_full_methods(
                         parts.append(
                             f"{sess_intro} participants completed the {joined}."
                         )
+
+        if len(sessions) > 1 and not any(s.get("timingRelativeToBaseline") for s in sessions):
+            parts.append("[please add: time between sessions]")
 
         debriefing = procedure.get("Debriefing", "")
         if debriefing and is_detailed:
@@ -1130,6 +1147,8 @@ def generate_full_methods(
                     opening += f" {verb}"
                 opening += "."
                 sentences.append(opening)
+                if not apa:
+                    sentences.append(f"[please add: reference for {name}]")
 
                 if not is_brief:
                     desc = (
@@ -1341,7 +1360,8 @@ def generate_full_methods(
         parts_da.append(
             "Data were organized according to the PRISM standard, an extension of "
             "BIDS (Gorgolewski et al., 2016), and validated with "
-            f"PRISM Studio v{prism_version}."
+            f"PRISM Studio v{prism_version} (Koschutnig et al., 2026; "
+            "https://doi.org/10.5281/zenodo.22809100)."
         )
         h = _heading(2, "Data Availability")
         if h:

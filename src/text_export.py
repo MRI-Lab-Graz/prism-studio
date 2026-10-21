@@ -215,9 +215,19 @@ def citation_keys(template_data: dict[str, dict]) -> dict[str, str]:
     return {cit: key for key, cit, _ in _bib_entries(template_data) if _APA_AUTHOR_YEAR.match(cit)}
 
 
+PRISM_BIB = """@misc{koschutnig2026prism,
+  author = {{Koschutnig, K. and Weber, B. and Matischek, D.}},
+  year = {2026},
+  title = {{PRISM Studio}},
+  doi = {10.5281/zenodo.22809100},
+  url = {https://doi.org/10.5281/zenodo.22809100}
+}
+"""
+
+
 def references_bib(template_data: dict[str, dict]) -> str:
-    """BibTeX ``@misc`` entries for the distinct ``Study.References`` of all templates."""
-    out = []
+    """BibTeX ``@misc`` entries for the distinct ``Study.References`` of all templates, plus PRISM Studio."""
+    out = [PRISM_BIB]
     for key, cit, ref in _bib_entries(template_data):
         fields = []
         m = _APA_AUTHOR_YEAR.match(cit)
