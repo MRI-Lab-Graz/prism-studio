@@ -233,6 +233,11 @@ def build_methods(
         except (OSError, ValueError):
             pass
 
+    if not project_data.get("Sessions"):  # declared sessions win over what the files show
+        sessions = discover_sessions(project_path)
+        add_session_timing(project_path, sessions)
+        project_data = {**project_data, "Sessions": sessions}
+
     # surveys present as data but not declared in project.json still belong in the text
     declared = project_data.get("TaskDefinitions") or {}
     task_defs = {**discover_tasks(project_path), **declared}

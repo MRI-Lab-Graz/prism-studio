@@ -220,3 +220,75 @@ def test_timing_absent_without_tsv(tmp_path):
     sessions = _two_sessions()
     add_session_timing(tmp_path, sessions)
     assert not any("timingRelativeToBaseline" in s for s in sessions)
+
+
+def _build_two_session_project(tmp_path, labels=("1", "2"), project=None):
+    root = _project(tmp_path, project or {"StudyDesign": {"Type": "longitudinal"}})
+    for sub in ("01", "02"):
+        _survey_file(root, sub, labels[0], "ads")
+    _survey_file(root, "01", labels[1], "ads")
+    lib = root / "code" / "library" / "survey"
+    lib.mkdir(parents=True)
+    (lib / "survey-ads.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    return root
+
+
+def test_build_methods_procedure_lists_surveys_per_session(tmp_path):
+    root = _build_two_session_project(tmp_path)
+    with _no_global_library():
+        result = build_methods(root)
+    assert "Procedure" in result.sections_used
+    assert 'In the first session ("1")' not in result.md  # inferred sessions: no enrollment claim
+    assert '"1"' in result.md and '"2"' in result.md
+    assert "ADS" in result.md or "Affective Distress Scale" in result.md
+
+
+def test_methods_states_participant_count_per_instrument(tmp_path):
+    root = _build_two_session_project(tmp_path)
+    with _no_global_library():
+        result = build_methods(root)
+    assert "*n* = 2" in result.md and "*n* = 1" in result.md
+
+
+def test_methods_unordered_sessions_make_no_ordinal_claim(tmp_path):
+    root = _build_two_session_project(tmp_path, labels=("pre", "post"))
+    with _no_global_library():
+        result = build_methods(root)
+    assert "first session" not in result.md.lower()
+    assert "session 2" not in result.md.lower()
+    assert any("order" in w for w in result.warnings)
+
+
+def test_methods_placeholder_for_unknown_timing(tmp_path):
+    root = _build_two_session_project(tmp_path)
+    with _no_global_library():
+        result = build_methods(root)
+    assert "[please add: time between sessions]" in result.md
+
+
+def test_methods_no_timing_placeholder_when_timing_known(tmp_path):
+    root = _build_two_session_project(tmp_path)
+    _sessions_tsv(root, "01", [("1", "2025-01-01T09:00:00"), ("2", "2025-01-15T09:00:00")])
+    with _no_global_library():
+        result = build_methods(root)
+    assert "[please add: time between sessions]" not in result.md
+    assert "14 days after baseline" in result.md
+
+
+def test_methods_placeholder_for_missing_reference(tmp_path):
+    root = _build_two_session_project(tmp_path)
+    (root / "code" / "library" / "survey" / "survey-ads.json").unlink()
+    with _no_global_library():
+        result = build_methods(root)
+    assert "[please add: reference for" in result.md
+
+
+def test_declared_sessions_override_inference(tmp_path):
+    root = _build_two_session_project(
+        tmp_path,
+        project={"Sessions": [{"id": "ses-A", "label": "Baseline", "tasks": [{"task": "ads"}]}]},
+    )
+    with _no_global_library():
+        result = build_methods(root)
+    assert "Baseline" in result.md
+    assert '"2"' not in result.md
