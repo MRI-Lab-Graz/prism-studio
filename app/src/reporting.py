@@ -1341,7 +1341,8 @@ def generate_full_methods(
         parts_da.append(
             "Data were organized according to the PRISM standard, an extension of "
             "BIDS (Gorgolewski et al., 2016), and validated with "
-            f"PRISM Studio v{prism_version}."
+            f"PRISM Studio v{prism_version} (Koschutnig et al., 2026; "
+            "https://doi.org/10.5281/zenodo.22809100)."
         )
         h = _heading(2, "Data Availability")
         if h:

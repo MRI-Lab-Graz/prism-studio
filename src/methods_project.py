@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -64,6 +65,19 @@ def candidate_template_names(task_name: str, task_definition: dict) -> list[str]
             seen.add(candidate.casefold())
             out.append(candidate)
     return out
+
+
+def discover_tasks(project_path: Path) -> dict[str, dict]:
+    """``{task: {"modality": ...}}`` for every ``task-<name>`` data file under the dataset's modality folders."""
+    from src.environment_mri_scan import resolve_bids_rawdata_root
+
+    found: dict[str, dict] = {}
+    for modality in ("survey", "biometrics"):
+        for path in sorted(resolve_bids_rawdata_root(project_path).glob(f"sub-*/**/{modality}/*_task-*")):
+            match = re.search(r"_task-([A-Za-z0-9]+)", path.name)
+            if match and path.suffix in (".tsv", ".gz", ".json"):
+                found.setdefault(match.group(1), {"modality": modality})
+    return found
 
 
 def _library_dirs(project_path: Path, app_root: str) -> list[Path]:
@@ -136,11 +150,16 @@ def build_methods(
         except (OSError, ValueError):
             pass
 
+    # surveys present as data but not declared in project.json still belong in the text
+    declared = project_data.get("TaskDefinitions") or {}
+    task_defs = {**discover_tasks(project_path), **declared}
+    project_data = {**project_data, "TaskDefinitions": task_defs}
+
     # ponytail: default app_root is the repo's app/ dir; a frozen build must pass app_root explicitly
     app_root = app_root or str(Path(__file__).resolve().parents[1] / "app")
     search_dirs = _library_dirs(project_path, app_root)
     template_data: dict[str, dict] = {}
-    for task_name, task_definition in (project_data.get("TaskDefinitions") or {}).items():
+    for task_name, task_definition in task_defs.items():
         template = _find_template(
             search_dirs, candidate_template_names(task_name, task_definition)
         )

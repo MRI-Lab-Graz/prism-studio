@@ -105,3 +105,28 @@ def test_build_methods_accepts_project_json_path(tmp_path):
     p = _project(tmp_path, {"StudyDesign": {"Type": "cross-sectional"}})
     result = build_methods(p / "project.json", app_root=str(tmp_path), compute_participant_stats=lambda *a, **k: None)
     assert "cross sectional design" in result.md
+
+
+def test_build_methods_lists_surveys_found_in_dataset_without_task_definitions(tmp_path):
+    root = _project(tmp_path, {"StudyDesign": {"Type": "cross-sectional"}})
+    survey = root / "rawdata" / "sub-01" / "ses-1" / "survey"
+    survey.mkdir(parents=True)
+    (survey / "sub-01_ses-1_task-ads_survey.tsv").write_text("item_01\n1\n", encoding="utf-8")
+    lib = root / "code" / "library" / "survey"
+    lib.mkdir(parents=True)
+    (lib / "survey-ads.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    with _no_global_library():
+        result = build_methods(root)
+    assert "Measures" in result.sections_used
+    assert "Affective Distress Scale" in result.md
+    assert set(result.template_data) == {"ads"}
+
+
+def test_methods_cites_prism_studio_zenodo(tmp_path):
+    from src.text_export import references_bib
+
+    root = _project(tmp_path, {"StudyDesign": {"Type": "cross-sectional"}})
+    with _no_global_library():
+        result = build_methods(root)
+    assert "https://doi.org/10.5281/zenodo.22809100" in result.md
+    assert "10.5281/zenodo.22809100" in references_bib(result.template_data)

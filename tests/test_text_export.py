@@ -72,7 +72,7 @@ def test_bib_same_paper_in_two_templates_is_one_entry():
 
     c = "Smith, J. (2020). Stress. Journal."
     bib = references_bib({"a": _tpl(c), "b": _tpl(c)})
-    assert bib.count("@misc") == 1
+    assert bib.count("@misc") == 2  # the paper once, plus PRISM Studio
 
 
 def test_bib_distinct_papers_get_sorted_suffixes_and_are_stable():
@@ -96,8 +96,10 @@ def test_bib_escapes_specials_and_keeps_doi():
 def test_bib_empty():
     from src.text_export import references_bib
 
-    assert references_bib({}) == ""
-    assert references_bib({"a": {"Study": {}}}) == ""
+    from src.text_export import PRISM_BIB
+
+    assert references_bib({}).strip() == PRISM_BIB.strip()
+    assert references_bib({"a": {"Study": {}}}).strip() == PRISM_BIB.strip()
 
 
 # ---- review fixes -------------------------------------------------------------
