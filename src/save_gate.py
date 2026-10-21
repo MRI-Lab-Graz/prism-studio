@@ -58,8 +58,14 @@ def _git_ok(root: Path, *args: str) -> tuple[bool, str]:
     return True, r.stdout.strip()
 
 
+# git-annex adds these when it puts a dataset on an adjusted branch (always on Windows,
+# which has no symlinks): they are not history the user made.
+_ANNEX_BOOKKEEPING = ("commit before entering adjusted branch", "git-annex adjusted branch")
+
+
 def _commit_count(root: Path) -> int | None:
-    ok, out = _git_ok(root, "rev-list", "--count", "HEAD")
+    greps = [f"--grep=^{subject}$" for subject in _ANNEX_BOOKKEEPING]
+    ok, out = _git_ok(root, "rev-list", "--count", "--invert-grep", *greps, "HEAD")
     return int(out) if ok and out.isdigit() else None
 
 

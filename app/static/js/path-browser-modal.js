@@ -29,6 +29,7 @@
     const goBtnEl = document.getElementById('folderBrowserGoBtn');
     const pathRowEl = document.getElementById('folderBrowserPathRow');
     const editPathBtn = document.getElementById('folderBrowserEditPath');
+    const newFolderBtn = document.getElementById('folderBrowserNewFolder');
     const filterEl = document.getElementById('folderBrowserFilter');
     const headerEl = document.getElementById('folderBrowserHeader');
 
@@ -223,6 +224,22 @@
         if (show) pathInputEl.focus();
     }
     editPathBtn.addEventListener('click', () => showPathRow(pathRowEl.classList.contains('d-none')));
+    newFolderBtn.addEventListener('click', async () => {
+        if (!state.currentPath) return;
+        const name = window.prompt('New folder name:');
+        if (!name) return;
+        const response = await fetch('/api/fs/mkdir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ parent: state.currentPath, name })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            window.alert(data.error || 'Could not create the folder.');
+            return;
+        }
+        loadFolder(data.path);
+    });
     // Places and breadcrumbs are re-rendered on every load, so one listener each.
     [rootsEl, currentPathEl].forEach(container => container.addEventListener('click', (e) => {
         const button = e.target.closest('[data-path]');

@@ -1722,6 +1722,27 @@ def api_runtime_capabilities():
     return jsonify(payload)
 
 
+def _drive_roots(bitmask: int) -> list[dict]:
+    """Drive letters from GetLogicalDrives' bitmask (bit 0 = A:); no disk is touched."""
+    return [
+        {"name": f"{chr(65 + i)}:\\", "path": f"{chr(65 + i)}:\\"}
+        for i in range(26)
+        if bitmask >> i & 1
+    ]
+
+
+def _is_hidden(entry) -> bool:
+    """Dot-name, or the Windows hidden/system attribute ($RECYCLE.BIN, AppData...)."""
+    if entry.name.startswith("."):
+        return True
+    try:
+        # Don't follow: a junction's own attributes say hidden, its target's don't.
+        attrs = getattr(entry.stat(follow_symlinks=False), "st_file_attributes", 0)
+    except OSError:
+        return False
+    return bool(attrs & 0x6)  # FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM
+
+
 @tools_bp.route("/api/fs/browse")
 def api_fs_browse():
     """List directory contents filtered to sub-directories and project.json files only.
@@ -1740,7 +1761,7 @@ def api_fs_browse():
         "roots": [{"name": "...", "path": "..."}]   # drives on Windows, else []
       }
     """
-    raw_path = (request.args.get("path") or "").strip()
+    raw_path = (request.args.get("path") or "").strip().strip('"')  # Explorer "Copy as path"
     include_files = (request.args.get("include_files") or "0").strip().lower() in {
         "1",
         "true",
@@ -1767,6 +1788,8 @@ def api_fs_browse():
         allowed_extensions = {
             ext for ext in normalized_extensions if re.fullmatch(r"\.[a-z0-9]+", ext)
         }
+    if re.fullmatch(r"[A-Za-z]:", raw_path):
+        raw_path += "\\"  # bare "C:" means the drive's current dir, i.e. our cwd
     if raw_path:
         current = Path(raw_path).expanduser().resolve()
     else:
@@ -1790,7 +1813,7 @@ def api_fs_browse():
     files = []
     try:
         for entry in sorted(current.iterdir(), key=lambda e: e.name.lower()):
-            if not include_hidden and entry.name.startswith("."):
+            if not include_hidden and _is_hidden(entry):
                 continue
             # One unreadable entry (e.g. Windows junction "Application Data")
             # must not abort the whole listing.
@@ -1841,15 +1864,11 @@ def api_fs_browse():
     project_json = current / "project.json"
     has_project_json = project_json.is_file()
 
-    # Drive roots on Windows
     roots: list[dict] = []
     if sys.platform.startswith("win"):
-        import string
+        import ctypes
 
-        for letter in string.ascii_uppercase:
-            drive = Path(f"{letter}:\\")
-            if drive.exists():
-                roots.append({"name": f"{letter}:\\", "path": str(drive)})
+        roots = _drive_roots(ctypes.windll.kernel32.GetLogicalDrives())
 
     return jsonify(
         {
@@ -1866,6 +1885,19 @@ def api_fs_browse():
             "roots": roots,
         }
     )
+
+
+@tools_bp.route("/api/fs/mkdir", methods=["POST"])
+def api_fs_mkdir():
+    """Create a sub-folder for the picker's "New folder" button."""
+    from src.folder_create import create_folder
+
+    data = request.get_json(silent=True) or {}
+    try:
+        made = create_folder(data.get("parent") or "", str(data.get("name") or ""))
+    except (ValueError, OSError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"path": str(made)})
 
 
 @tools_bp.route("/api/fs/list-files")

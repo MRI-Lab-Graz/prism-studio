@@ -70,6 +70,9 @@ def green(tmp_path):
     """A DataLad dataset holding a valid PRISM dataset, gate installed, first save done."""
     ds = tmp_path / "ds"
     assert sh("datalad", "create", "-c", "text2git", str(ds), cwd=tmp_path).returncode == 0
+    # A global core.autocrlf=true (Windows default) makes `git add` rewrite line endings that
+    # `datalad save` committed untouched, so "restored to the saved state" would still differ.
+    sh("git", "config", "core.autocrlf", "false", cwd=ds)
     shutil.copytree(DEMO, ds, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".datalad"))
     assert sg.install_save_hooks(ds)["installed"] == [str(ds)]
     first = sh("datalad", "save", "-m", "scaffold", cwd=ds)

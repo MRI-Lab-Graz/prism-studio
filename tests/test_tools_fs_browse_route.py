@@ -131,6 +131,66 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
             self.assertEqual(payload["path"], str(root))
             self.assertEqual([f["name"] for f in payload["files"]], ["data.csv"])
 
+    def test_fs_mkdir_creates_folder_and_rejects_bad_names(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir).resolve()
+
+            ok = self.client.post("/api/fs/mkdir", json={"parent": str(root), "name": "study"})
+            self.assertEqual(ok.status_code, 200)
+            self.assertEqual(ok.get_json()["path"], str(root / "study"))
+            self.assertTrue((root / "study").is_dir())
+
+            bad = self.client.post("/api/fs/mkdir", json={"parent": str(root), "name": "a:b"})
+            self.assertEqual(bad.status_code, 400)
+            self.assertIn("error", bad.get_json())
+
+    def test_fs_browse_accepts_a_path_pasted_with_quotes(self):
+        # Explorer's "Copy as path" puts double quotes around the path.
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir).resolve()
+            (root / "study").mkdir()
+
+            response = self.client.get(
+                "/api/fs/browse", query_string={"path": f'"{root}"'}
+            )
+
+            self.assertEqual(response.get_json()["path"], str(root))
+
+    def test_fs_browse_hides_entries_with_the_windows_hidden_attribute(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "visible").mkdir()
+            (root / "$RECYCLE.BIN").mkdir()
+
+            def fake_hidden(entry):
+                return entry.name == "$RECYCLE.BIN"
+
+            with mock.patch("src.web.blueprints.tools._is_hidden", fake_hidden):
+                names = [d["name"] for d in self._browse(root)["dirs"]]
+                shown = [
+                    d["name"]
+                    for d in self._browse(root, include_hidden="1")["dirs"]
+                ]
+
+            self.assertEqual(names, ["visible"])
+            self.assertEqual(sorted(shown), ["$RECYCLE.BIN", "visible"])
+
+    @unittest.skipUnless(sys.platform == "win32", "drive-relative paths are Windows-only")
+    def test_fs_browse_bare_drive_letter_means_the_drive_root_not_the_cwd(self):
+        drive = Path.cwd().drive
+        response = self.client.get("/api/fs/browse", query_string={"path": drive})
+        self.assertEqual(response.get_json()["path"], drive + "\\")
+
+    def test_drive_roots_come_from_the_bitmask_without_touching_the_disks(self):
+        # Bit 0 = A:, bit 2 = C:, bit 25 = Z:. Probing letters with exists()
+        # stalls on an offline network drive.
+        from src.web.blueprints.tools import _drive_roots
+
+        self.assertEqual(
+            _drive_roots((1 << 2) | (1 << 25)),
+            [{"name": "C:\\", "path": "C:\\"}, {"name": "Z:\\", "path": "Z:\\"}],
+        )
+
     def test_fs_browse_missing_path_falls_back_to_existing_ancestor(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir).resolve()

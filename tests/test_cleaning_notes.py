@@ -42,7 +42,7 @@ def test_survey_dry_run_reports_skipped_rows_and_cleaned_labels(tmp_path):
         [sys.executable, str(root / "prism_tools.py"), "survey", "convert", "--input", str(src),
          "--output", str(tmp_path / "out"), "--session", "pre test", "--dry-run",
          "--library", str(root / "official" / "library" / "survey")],
-        capture_output=True, text=True, env={**os.environ, "PRISM_SKIP_VENV_CHECK": "1"},
+        capture_output=True, text=True, encoding="utf-8", env={**os.environ, "PRISM_SKIP_VENV_CHECK": "1"},
     ).stdout
     assert "no participant ID and will be skipped (data rows 2)" in out
     assert "'P 1' → sub-P1" in out

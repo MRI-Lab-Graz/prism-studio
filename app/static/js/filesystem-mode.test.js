@@ -35,6 +35,12 @@ describe('single in-app picker', () => {
     expect(await picker.browseSaveFile({ defaultName: 'x.json' })).toBe('/picked/out.json');
   });
 
+  it('browseSaveFile keeps a Windows folder\'s backslashes instead of mixing in a slash', async () => {
+    const { picker, open } = await load();
+    open.mockResolvedValue('C:\\data\\out');
+    expect(await picker.browseSaveFile({ defaultName: 'x.json' })).toBe('C:\\data\\out\\out.json');
+  });
+
   it('starts at the project root unless the caller keeps its own start path', async () => {
     const { picker, open } = await load();
     globalThis.window.currentProjectPath = '/proj';
