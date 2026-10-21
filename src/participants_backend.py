@@ -1329,10 +1329,15 @@ def _build_merged_participants_schema(
     existing_schema: dict[str, Any],
     *,
     merged_columns: list[str],
+    new_columns: list[str] | None = None,
     neurobagel_schema: dict | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> tuple[dict[str, Any], list[str], int]:
     merged_schema: dict[str, Any] = dict(existing_schema)
+    # A column that is new to the table starts fresh: a leftover entry from an
+    # earlier, since-removed column must not override the annotation sent now.
+    for column in new_columns or []:
+        merged_schema.pop(column, None)
     schema_fields_added: list[str] = []
 
     neurobagel_merged = 0
@@ -1865,6 +1870,7 @@ def _plan_participants_merge(
         _build_merged_participants_schema(
             existing_schema,
             merged_columns=full_columns,
+            new_columns=new_columns,
             neurobagel_schema=neurobagel_schema,
             log_callback=log_callback,
         )
