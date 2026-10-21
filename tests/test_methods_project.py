@@ -306,3 +306,45 @@ def test_timing_falls_back_to_scans_tsv(tmp_path):
     sessions = _two_sessions()
     add_session_timing(tmp_path, sessions)
     assert sessions[1]["timingRelativeToBaseline"] == {"Value": 7, "Unit": "days"}
+
+
+def _dated_survey(root, sub, ses, date):
+    folder = root / "rawdata" / f"sub-{sub}" / f"ses-{ses}" / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"sub-{sub}_ses-{ses}_task-ads_survey.tsv").write_text(
+        f"SurveyStartDate\titem_01\n{date}\t1\n", encoding="utf-8"
+    )
+
+
+def test_timing_from_survey_start_date_is_per_subject(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "2025-01-01")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    _dated_survey(tmp_path, "02", "1", "2025-01-10")
+    _dated_survey(tmp_path, "02", "2", "2025-01-24")
+    _dated_survey(tmp_path, "03", "2", "2025-03-01")  # one dated session only: no interval
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert sessions[1]["timingRelativeToBaseline"] == {"Value": 14, "Unit": "days"}
+
+
+def test_timing_survey_date_beats_sessions_tsv(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "2025-01-01")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    _sessions_tsv(tmp_path, "01", [("1", "2025-01-01T09:00:00"), ("2", "2025-04-11T09:00:00")])
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert sessions[1]["timingRelativeToBaseline"]["Value"] == 14
+
+
+def test_timing_survey_dates_with_empty_cells_are_skipped(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert not any("timingRelativeToBaseline" in s for s in sessions)

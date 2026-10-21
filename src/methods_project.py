@@ -116,51 +116,78 @@ def discover_sessions(project_path: Path) -> list[dict]:
     ]
 
 
-def _acq_times(project_path: Path, pattern: str, label_of) -> dict[str, list[float]]:
-    """``{session label: [acq_time as epoch seconds]}`` from the TSVs matching ``pattern``; unparsable values are skipped."""
+def _dated_sessions(project_path: Path, pattern: str, read) -> dict[str, dict[str, float]]:
+    """``{subject: {session label: earliest time as epoch seconds}}`` from the TSVs matching ``pattern``.
+
+    ``read(tsv_path)`` yields ``(session label, raw time text)``; unparsable times are skipped.
+    """
     from src.environment_mri_scan import resolve_bids_rawdata_root
 
     root = resolve_bids_rawdata_root(project_path)
-    times: dict[str, list[float]] = {}
+    found: dict[str, dict[str, float]] = {}
     for tsv in sorted(root.glob(pattern)):
+        subject = tsv.relative_to(root).parts[0]
         try:
-            with tsv.open(encoding="utf-8", newline="") as fh:
-                for row in csv.DictReader(fh, delimiter="\t"):
-                    try:
-                        when = datetime.fromisoformat((row.get("acq_time") or "").strip()).timestamp()
-                    except ValueError:  # "n/a", empty, other formats
-                        continue
-                    label = label_of(tsv, row)
-                    if label is not None:
-                        times.setdefault(label, []).append(when)
+            for label, raw in read(tsv):
+                try:
+                    when = datetime.fromisoformat((raw or "").strip()).timestamp()
+                except ValueError:  # "n/a", empty, other formats
+                    continue
+                times = found.setdefault(subject, {})
+                times[label] = min(when, times.get(label, when))
         except (OSError, UnicodeDecodeError):
             continue
-    return times
+    return found
+
+
+def _tsv_rows(tsv: Path):
+    with tsv.open(encoding="utf-8", newline="") as fh:
+        yield from csv.DictReader(fh, delimiter="\t")
+
+
+def _from_survey_dates(tsv: Path):
+    label = next((p[4:] for p in tsv.parts if p.startswith("ses-")), "")
+    return ((label, row.get("SurveyStartDate")) for row in _tsv_rows(tsv))
+
+
+def _from_sessions_tsv(tsv: Path):
+    return (((row.get("session_id") or "")[4:], row.get("acq_time")) for row in _tsv_rows(tsv))
+
+
+def _from_scans_tsv(tsv: Path):
+    return ((tsv.parent.name[4:], row.get("acq_time")) for row in _tsv_rows(tsv))
 
 
 def add_session_timing(project_path: Path, sessions: list[dict]) -> None:
-    """Set ``timingRelativeToBaseline`` (whole days) on sessions from ``acq_time`` in sessions.tsv, else scans.tsv.
+    """Set ``timingRelativeToBaseline`` (whole days) on sessions, from dates in the data.
 
-    The session with the earliest median ``acq_time`` is baseline. Sessions without
-    usable times, and the baseline itself, get no key.
+    Per subject, a session's offset is the days from that subject's earliest dated session;
+    the session gets the median offset over subjects. Sources, first with any data wins:
+    ``SurveyStartDate`` in survey TSVs, ``acq_time`` in sessions.tsv, then in scans.tsv.
+    Sessions without a later date than the subject's baseline get no key.
     """
-    times = _acq_times(
-        project_path,
-        "sub-*/*_sessions.tsv",
-        lambda _tsv, row: (row.get("session_id") or "")[4:] or None,
-    ) or _acq_times(
-        project_path,
-        "sub-*/ses-*/*_scans.tsv",
-        lambda tsv, _row: tsv.parent.name[4:],
-    )
-    medians = {s["label"]: statistics.median(times[s["label"]]) for s in sessions if s["label"] in times}
-    if len(medians) < 2:
-        return
-    baseline = min(medians.values())
+    for pattern, read in (
+        ("sub-*/**/survey/*.tsv", _from_survey_dates),
+        ("sub-*/*_sessions.tsv", _from_sessions_tsv),
+        ("sub-*/ses-*/*_scans.tsv", _from_scans_tsv),
+    ):
+        by_subject = _dated_sessions(project_path, pattern, read)
+        if by_subject:
+            break
+    offsets: dict[str, list[float]] = {}
+    for times in by_subject.values():
+        if len(times) < 2:
+            continue
+        baseline = min(times.values())
+        for label, when in times.items():
+            if when > baseline:
+                offsets.setdefault(label, []).append((when - baseline) / 86400)
     for session in sessions:
-        median = medians.get(session["label"])
-        if median is not None and median > baseline:
-            session["timingRelativeToBaseline"] = {"Value": round((median - baseline) / 86400), "Unit": "days"}
+        if session["label"] in offsets:
+            session["timingRelativeToBaseline"] = {
+                "Value": round(statistics.median(offsets[session["label"]])),
+                "Unit": "days",
+            }
 
 
 def _library_dirs(project_path: Path, app_root: str) -> list[Path]:
