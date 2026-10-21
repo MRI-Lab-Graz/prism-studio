@@ -147,6 +147,30 @@ There is still no "trash"/undo — deletion goes straight to the filesystem. If 
 a safety net, make sure the project is backed up (e.g. pushed to a DataLad sibling)
 before deleting it here.
 
+## Generate Methods Section
+
+The **Generate Methods Section** card writes a paper-ready Methods text from
+`project.json`, `dataset_description.json`, the linked templates **and the data in the
+project**: sessions and instrument counts per session, survey language, version and
+completion time, session timing (from `SurveyStartDate` or `acq_time`), scoring
+recipes and sidecar acquisition parameters. Only participants that have data count
+as the sample; screening-only participants are reported separately. Gaps (no sample
+size, an instrument without a citation) are flagged, never invented.
+
+Pick a **Detail Level** (Brief / Standard / Detailed), press **Generate**, then
+download `.md`, `.html`, Word (`.docx`), TeX (`.tex`, citing the instruments via
+natbib) or the references as BibTeX (`.bib`). CLI: `prism_tools.py methods generate`
+([CLI Reference](../CLI_REFERENCE.md#methods-section-and-preregistration-draft)).
+
+## Preregistration (optional)
+
+The **Preregistration** block in the study metadata holds what a preregistration needs
+beyond design and sample: data status, hypotheses, primary and secondary outcomes and
+the analysis plan. **Download draft** produces a Markdown draft in AsPredicted question
+order (also Word and TeX). It is a draft only, not a registration: register it at OSF
+or AsPredicted to get a time-stamped, frozen version. Save the metadata first so
+recent edits are included. CLI: `prism_tools.py preregistration draft`.
+
 ## Opening an existing project
 
 The **Open Existing Project** form takes a single path, and accepts either:

@@ -31,7 +31,7 @@ import/conversion, validation, scoring/derivatives, and export.
 
 ## Schema versions
 
-Schemas are versioned under `app/schemas/stable/` and `app/schemas/vX.Y/`.
+Schemas are versioned under `app/schemas/stable/` (the current version of each) and `app/schemas/vX.Y/` (frozen older sets). A project can pin a version per modality in `project.json`.
 
 ```bash
 prism-validator --list-versions
@@ -42,18 +42,69 @@ See [Schema Versioning](SCHEMA_VERSIONING.md) for migration details.
 
 ## What a PRISM dataset looks like
 
-At the BIDS-core level: `dataset_description.json`, and typically `participants.tsv`
-for participant-oriented datasets. PRISM-specific extensions add survey, biometrics,
-physiology, and environment files under subject/session paths, each usually paired
-with a JSON sidecar sharing the same filename stem — e.g.
-`sub-001_ses-1_task-ads_survey.tsv` + `.json`, or
-`sub-001_ses-1_recording-ecg_physio.edf` + `.json` (`physio/` is task-free;
-task-bound physio is BIDS `_physio.tsv.gz` in `beh/`, `func/` or `eeg/`).
+```text
+my_study/
+├── dataset_description.json     BIDS root file (see Dataset description)
+├── participants.tsv / .json     one row per participant, with value labels
+├── project.json                 study design, sessions, tasks, eligibility
+├── CITATION.cff, README.md, CHANGES, .bidsignore, .prismrc.json
+├── sub-001/
+│   └── ses-1/                   sessions are free-form labels (pre, 1, 01 are different)
+│       ├── survey/              sub-001_ses-1_task-ads_survey.tsv + .json
+│       ├── biometrics/          sub-001_ses-1_task-grip_biometrics.tsv + .json
+│       ├── physio/              sub-001_ses-1_recording-ecg_physio.edf + .json
+│       ├── eyetracking/         sub-001_ses-1_task-find_eyetrack.edf + .json
+│       ├── beh/ func/ eeg/ ... standard BIDS (events and task-bound physio live here)
+├── sourcedata/                  raw input; internal lab server only
+├── code/library/, code/recipes/ project copies of templates and scoring recipes
+└── derivatives/                 scores and other computed outputs
+```
 
-Derivative outputs (scores/subscales computed via recipes) live under
-`derivatives/`, with their own `dataset_description.json`; recipe *definitions* live
-separately from the derivative *outputs* they produce. See
-[Recipes](RECIPES.md) and [Export](studio/export.md) for the operational side.
+Every data file has a JSON sidecar with the same file stem (or a BIDS-inherited sidecar
+higher up). The sidecar carries the metadata that makes the file self-describing.
+
+### Modalities
+
+| Modality | Folder | Suffix | Spec page |
+|---|---|---|---|
+| Survey | `survey/` | `_survey` | [Survey](specs/survey.md) |
+| Biometrics | `biometrics/` | `_biometrics` | [Biometrics](specs/biometrics.md) |
+| Biosample | `biosample/` | `_biosample` | [Biosample](specs/biosample.md) |
+| Environment | `environment/` | `_environment` | [Environment](specs/environment.md) |
+| Physio (task-free) | `physio/` | `_physio` | [Physio](specs/physio.md) |
+| Eyetracking | `eyetracking/` | `_eyetrack` (also `_eye`, `_gaze`) | [Eyetracking](specs/eyetracking.md) |
+| Events | next to its task in `func/`, `beh/`, `eeg/` | `_events` | [Events](specs/events.md) |
+| Standard BIDS (`anat`, `func`, `fmap`, `dwi`, `eeg`, `beh`) | as in BIDS | as in BIDS | validated by the BIDS validator |
+
+### Project-level files
+
+| File | Purpose | Spec page |
+|---|---|---|
+| `dataset_description.json` | Name, license, authors, FAIR metadata | [Dataset description](specs/dataset_description.md) |
+| `project.json` | Study design, sessions, tasks, eligibility, preregistration | [Project metadata](specs/project.md) |
+| `participants.tsv` / `.json` | Participants and their value labels | [Participants converter](studio/converter_participants.md) |
+| `code/recipes/survey/*.json` | Scoring recipe definitions (outputs go to `derivatives/`) | [Recipes](RECIPES.md) |
+
+Filename rules for every modality, including entity order, are in
+[Entities and filename grammar](specs/entities.md).
+
+## How validation works
+
+`prism-validator` (and the Studio Validator page) runs two layers: the standard BIDS
+validator, then PRISM's own checks. PRISM checks fall into the groups below; each issue
+carries a code, a severity (error, warning or info) and a fix hint. The
+[Error codes](ERROR_CODES.md) page lists every code.
+
+| Check | Looks at | Codes |
+|---|---|---|
+| Dataset structure | root files, subjects, schema version, FAIR metadata, templates | `PRISM0xx` |
+| File naming | entities, suffix, folder vs. filename | `PRISM1xx` |
+| Sidecars | existence, valid JSON, not empty | `PRISM2xx` |
+| Schema | required fields and types against the modality schema | `PRISM3xx` |
+| Content | TSV values against `Levels`, `MinValue`/`MaxValue`, warning ranges | `PRISM4xx` |
+| BIDS compatibility | `.bidsignore`, BIDS validator results | `PRISM5xx` |
+| Consistency, eligibility | gaps across sessions/subjects, participants outside criteria | `PRISM6xx` |
+| Procedure | what is on disk vs. `Sessions`/`TaskDefinitions` in `project.json`, participants coverage, recipes | `PRISM7xx` |
 
 ## Schema anatomy
 
@@ -79,46 +130,22 @@ For modality-specific semantics, see the spec pages:
 [Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events) (`_events.tsv` next to its task in `func/`/`beh/`/`eeg/`),
 [Environment](specs/environment), [Entities & filename grammar](specs/entities).
 
-A few schemas under `app/schemas/stable/` don't have their own spec page yet,
-since they're either simple or narrowly scoped: `dataset_description.schema.json`
-(covered above under BIDS compatibility), `project.schema.json` (PRISM project
-metadata, not dataset content), `recipe.survey.schema.json` (recipe
-definitions — see [Recipes](RECIPES.md)), and `tool-limesurvey.schema.json`
-(LimeSurvey import mapping).
+Besides the modality schemas, `app/schemas/stable/` holds `dataset_description`,
+`project`, `entities` (filename grammar), `recipe.survey` (see [Recipes](RECIPES.md)),
+`instrument-registry` (the index of the official survey library) and `tool-limesurvey`
+(a legacy mapping that the importer no longer writes). Each spec page ends with a field
+reference generated from its schema, so the tables always match the shipped version
+(`python scripts/generate_schema_reference.py` refreshes them; a test fails when they
+are stale).
 
-## BIDS compatibility field reference
+## BIDS compatibility
 
-Keeping `dataset_description.json` and `CITATION.cff` in sync matters day to day:
-avoid duplicating citation-oriented information across both, treat `CITATION.cff`
-as the citation-focused file when present, and keep `dataset_description.json`
-aligned with the broader BIDS dataset metadata. Drifted metadata leads to confusing
-validation results, inconsistent exports, and extra cleanup before sharing.
-
-| Field | Type | Required | Default | Array | CITATION.cff | Notes |
-|-------|------|----------|---------|-------|-------------|-------|
-| Name | string | ✅ | - | ❌ | ✅ Synced | BIDS core identifier |
-| BIDSVersion | string | ✅ | "1.10.1" | ❌ | ❌ | Auto-set by backend |
-| DatasetType | string | ⚠️ | "raw" | ❌ | ❌ | raw, derivative, study |
-| License | string | ⚠️ | "CC0" | ❌ | Omitted if CITATION.cff | SPDX identifier |
-| Authors | array | ❌ | [] | ✅ | Omitted if CITATION.cff | {name, email} format |
-| Keywords | array | ❌ | [] | ✅ | ❌ | ≥3 for FAIR |
-| Acknowledgements | string | ❌ | "" | ❌ | ❌ | Free text |
-| HowToAcknowledge | string | ❌ | "" | ❌ | Omitted if CITATION.cff | Citation instructions |
-| Funding | array | ❌ | [] | ✅ | ❌ | Free text |
-| EthicsApprovals | array | ❌ | [] | ✅ | ❌ | {name, reference} |
-| ReferencesAndLinks | array | ❌ | [] | ✅ | Omitted if CITATION.cff | URLs |
-| DatasetDOI | string | ❌ | "" | ❌ | ✅ Synced | DOI URI |
-| HEDVersion | string | ❌ | "" | ❌ | ❌ | If HED tags used |
-
-Common pitfalls: filling only the minimum required fields and forgetting the
-recommended ones; manually editing multiple metadata files and letting them drift
-apart; assuming citation metadata and dataset metadata are interchangeable;
-validating too late, after multiple metadata edits have accumulated.
-
-```bash
-cat <project_path>/dataset_description.json | python3 -m json.tool
-cat <project_path>/CITATION.cff
-```
+Keep `dataset_description.json` and `CITATION.cff` in sync (details and the field list
+are on [Dataset description](specs/dataset_description.md)): treat `CITATION.cff` as
+the citation-focused file and avoid repeating citation information in both. Drifted
+metadata leads to confusing validation results and extra cleanup before sharing. Fill
+the recommended fields, not only the required ones, and validate after each batch of
+metadata edits rather than at the end.
 
 ## FAIR compliance
 
@@ -134,6 +161,7 @@ PRISM's schema-driven design maps directly onto the FAIR principles:
 ## What's next
 
 - [What is PRISM](WHAT_IS_PRISM.md)
+- [Error codes](ERROR_CODES.md)
 - [Validator](studio/validator.md)
 - [Schema Versioning](SCHEMA_VERSIONING.md)
 - [Recipes](RECIPES.md)

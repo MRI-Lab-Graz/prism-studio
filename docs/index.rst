@@ -264,6 +264,9 @@ in the repository root for the full citation, including all authors.
    specs/events
    specs/environment
    specs/physio
+   specs/eyetracking
+   specs/project
+   specs/dataset_description
    specs/entities
 
 .. toctree::

@@ -34,6 +34,21 @@ grammar that ties them together.
     <span class="prism-chapter-title">Physio</span>
     <span class="prism-chapter-outcome">Physiological recordings such as ECG, EDA, respiration</span>
   </a>
+  <a class="prism-chapter-card" href="specs/eyetracking.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+    <span class="prism-chapter-title">Eyetracking</span>
+    <span class="prism-chapter-outcome">Gaze recordings (EyeLink EDF or tables) with a required sidecar</span>
+  </a>
+  <a class="prism-chapter-card" href="specs/project.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
+    <span class="prism-chapter-title">Project metadata</span>
+    <span class="prism-chapter-outcome"><code>project.json</code>: study design, eligibility, sessions and tasks</span>
+  </a>
+  <a class="prism-chapter-card" href="specs/dataset_description.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
+    <span class="prism-chapter-title">Dataset description</span>
+    <span class="prism-chapter-outcome"><code>dataset_description.json</code> and its FAIR expectations</span>
+  </a>
   <a class="prism-chapter-card" href="specs/entities.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l9 9-7 7-9-9V4Z"/><circle cx="8.5" cy="8.5" r="1.3"/></svg></span>
     <span class="prism-chapter-title">Entities and Filename Grammar</span>

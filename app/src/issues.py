@@ -85,11 +85,16 @@ class Issue:
 #   PRISM3xx: Schema validation errors
 #   PRISM4xx: Content validation errors
 #   PRISM5xx: BIDS compatibility warnings
-#   PRISM6xx: Consistency errors
+#   PRISM6xx: Consistency and eligibility checks
+#   PRISM7xx: Procedure/session declarations in project.json
 #   PRISM9xx: Internal/system errors
 
 ERROR_CODES: Dict[str, Dict[str, str]] = {
     # Dataset structure errors (0xx)
+    "PRISM000": {
+        "message": "Optional .prismrc.json configuration not present",
+        "fix_hint": "Create a .prismrc.json at the dataset root to configure PRISM (optional)",
+    },
     "PRISM001": {
         "message": "Missing dataset_description.json",
         "fix_hint": "Create a dataset_description.json file at the dataset root with required fields: Name, BIDSVersion",
@@ -121,6 +126,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM008": {
         "message": "Template consistency error",
         "fix_hint": "Check that ItemCount matches actual questions, Subscale items exist, ReverseCodedItems exist, and Levels keys are within MinValue/MaxValue range",
+    },
+    "PRISM010": {
+        "message": "Missing project.json at project root",
+        "fix_hint": "Create the project with PRISM Studio (Projects page) or add a project.json with Metadata, Sessions and TaskDefinitions",
     },
     # Filename errors (1xx)
     "PRISM101": {
@@ -204,6 +213,14 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Dataset consistency warning",
         "fix_hint": "Check for missing sessions or modalities across subjects",
     },
+    "PRISM602": {
+        "message": "Participants outside an eligibility criterion",
+        "fix_hint": "Check the participants in participants.tsv, or correct the criterion in the project's Checked Criteria",
+    },
+    "PRISM603": {
+        "message": "Eligibility criterion cannot be checked",
+        "fix_hint": "Link the criterion to a participants column in participants.json, or fix the criterion in project.json",
+    },
     # Procedure/Session errors (7xx)
     "PRISM701": {
         "message": "Session on disk not declared in project.json",
@@ -242,6 +259,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "fix_hint": "Open participants.json and add every code of the column to Levels (or a Unit if it is a measurement), or label the codes in the Sociodemographics Participant Annotation panel",
     },
     # Internal/System (9xx)
+    "PRISM900": {
+        "message": "Issue reported by a validation plugin",
+        "fix_hint": "See the message: it is prefixed with the plugin name that reported it",
+    },
     "PRISM901": {
         "message": "Internal validation error",
         "fix_hint": "An unexpected error occurred during validation",

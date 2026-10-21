@@ -16,6 +16,11 @@ Build a rename rule "by example" against selected files or a folder,
 **Preview renames**, then either **Copy to Project** or **Rename & Download**
 (as a ZIP). For files that don't have BIDS names yet.
 
+Physio files follow the task-free rule: in `physio/` the name has no `task-` entity
+(the task is optional in the renamer), a task-bound recording is named `_physio` and goes
+to `beh/`, `func/` or `eeg/`, and raw EDF files are never organized into those folders.
+There is no `events/` folder. Text added to names must be short and ASCII-only.
+
 ## Organize Folders (Copy)
 
 Copy-only reorganization into `sub-<label>/ses-<label>/<modality>/` — the card header
