@@ -95,7 +95,9 @@ install.cmd               # Windows — double-click, or run from any shell
 Both create a virtual environment, install dependencies, and add a
 **PRISM Studio** desktop shortcut. See the
 [installation guide](https://prism-studio.readthedocs.io) for Windows
-execution-policy notes and other platform-specific details.
+execution-policy notes and other platform-specific details. On Windows,
+extract the ZIP first (don't run `install.cmd` from inside it); if Windows 11
+**Smart App Control** blocks a download, see the guide's Troubleshooting section.
 
 ## Quick Usage
 
