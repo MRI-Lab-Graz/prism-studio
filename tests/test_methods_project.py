@@ -178,3 +178,45 @@ def test_discover_sessions_without_session_folders(tmp_path):
     _survey_file(tmp_path, "01", "", "ads")
     sessions = discover_sessions(tmp_path)
     assert sessions == [{"id": "", "label": "", "tasks": [{"task": "ads", "n": 1}], "ordered": True}]
+
+
+def _sessions_tsv(root, sub, rows):
+    folder = root / "rawdata" / f"sub-{sub}"
+    folder.mkdir(parents=True, exist_ok=True)
+    lines = ["session_id\tacq_time"] + [f"ses-{label}\t{when}" for label, when in rows]
+    (folder / f"sub-{sub}_sessions.tsv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _two_sessions():
+    return [
+        {"id": "ses-1", "label": "1", "tasks": [], "ordered": True},
+        {"id": "ses-2", "label": "2", "tasks": [], "ordered": True},
+    ]
+
+
+def test_timing_from_sessions_tsv_gives_days_after_baseline(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _sessions_tsv(tmp_path, "01", [("1", "2025-01-01T09:00:00"), ("2", "2025-01-15T09:00:00")])
+    _sessions_tsv(tmp_path, "02", [("1", "2025-01-03T09:00:00"), ("2", "2025-01-17T09:00:00")])
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert "timingRelativeToBaseline" not in sessions[0]
+    assert sessions[1]["timingRelativeToBaseline"] == {"Value": 14, "Unit": "days"}
+
+
+def test_timing_ignores_na_and_empty_acq_time(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _sessions_tsv(tmp_path, "01", [("1", "n/a"), ("2", "")])
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert not any("timingRelativeToBaseline" in s for s in sessions)
+
+
+def test_timing_absent_without_tsv(tmp_path):
+    from src.methods_project import add_session_timing
+
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert not any("timingRelativeToBaseline" in s for s in sessions)

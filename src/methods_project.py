@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import re
+import statistics
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -111,6 +114,53 @@ def discover_sessions(project_path: Path) -> list[dict]:
         }
         for label in labels
     ]
+
+
+def _acq_times(project_path: Path, pattern: str, label_of) -> dict[str, list[float]]:
+    """``{session label: [acq_time as epoch seconds]}`` from the TSVs matching ``pattern``; unparsable values are skipped."""
+    from src.environment_mri_scan import resolve_bids_rawdata_root
+
+    root = resolve_bids_rawdata_root(project_path)
+    times: dict[str, list[float]] = {}
+    for tsv in sorted(root.glob(pattern)):
+        try:
+            with tsv.open(encoding="utf-8", newline="") as fh:
+                for row in csv.DictReader(fh, delimiter="\t"):
+                    try:
+                        when = datetime.fromisoformat((row.get("acq_time") or "").strip()).timestamp()
+                    except ValueError:  # "n/a", empty, other formats
+                        continue
+                    label = label_of(tsv, row)
+                    if label is not None:
+                        times.setdefault(label, []).append(when)
+        except (OSError, UnicodeDecodeError):
+            continue
+    return times
+
+
+def add_session_timing(project_path: Path, sessions: list[dict]) -> None:
+    """Set ``timingRelativeToBaseline`` (whole days) on sessions from ``acq_time`` in sessions.tsv, else scans.tsv.
+
+    The session with the earliest median ``acq_time`` is baseline. Sessions without
+    usable times, and the baseline itself, get no key.
+    """
+    times = _acq_times(
+        project_path,
+        "sub-*/*_sessions.tsv",
+        lambda _tsv, row: (row.get("session_id") or "")[4:] or None,
+    ) or _acq_times(
+        project_path,
+        "sub-*/ses-*/*_scans.tsv",
+        lambda tsv, _row: tsv.parent.name[4:],
+    )
+    medians = {s["label"]: statistics.median(times[s["label"]]) for s in sessions if s["label"] in times}
+    if len(medians) < 2:
+        return
+    baseline = min(medians.values())
+    for session in sessions:
+        median = medians.get(session["label"])
+        if median is not None and median > baseline:
+            session["timingRelativeToBaseline"] = {"Value": round((median - baseline) / 86400), "Unit": "days"}
 
 
 def _library_dirs(project_path: Path, app_root: str) -> list[Path]:
