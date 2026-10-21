@@ -104,3 +104,39 @@ def test_merge_apply_cli_clears_an_existing_link(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     sidecar = json.loads((tmp_path / "participants.json").read_text(encoding="utf-8"))
     assert "EligibilityCriterion" not in sidecar["age"]
+
+
+def test_flask_merge_preview_returns_project_criteria(tmp_path):
+    """Merge/modify is the mode used once a project has participants files; the
+    annotation card needs the criteria there too or it shows no link select."""
+    import io
+
+    from flask import Flask
+
+    from src.web.blueprints import conversion_participants_blueprint as module
+
+    _project_json(tmp_path, [AGE])
+    (tmp_path / "participants.tsv").write_text("participant_id\tage\nsub-001\t21\n", encoding="utf-8")
+    (tmp_path / "participants.json").write_text(json.dumps({"age": {"Description": "Age"}}), encoding="utf-8")
+    app = Flask(__name__)
+    app.secret_key = "test"  # pragma: allowlist secret
+    app.register_blueprint(module.conversion_participants_bp)
+    client = app.test_client()
+    with client.session_transaction() as flask_session:
+        flask_session["current_project_path"] = str(tmp_path)
+    response = client.post(
+        "/api/participants-merge",
+        data={"mode": "file", "file": (io.BytesIO(b"participant_id,age\nsub-002,22\n"), "d.csv")},
+        content_type="multipart/form-data",
+    )
+    assert response.get_json()["eligibility_criteria"] == [AGE]
+
+
+def test_flask_modify_existing_preview_returns_project_criteria(tmp_path):
+    """Modify (mode=existing) previews the saved participants.tsv, no upload."""
+    from tests.test_participants_session_map_preview import make_client
+
+    client = make_client(tmp_path, {"Eligibility": {"Criteria": [AGE]}})
+    (client.project / "participants.tsv").write_text("participant_id\tage\nsub-001\t21\n", encoding="utf-8")
+    response = client.post("/api/participants-preview", data={"mode": "existing"})
+    assert response.get_json()["eligibility_criteria"] == [AGE]

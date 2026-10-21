@@ -38,6 +38,26 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
     def tearDown(self):
         self.tmp_dir.cleanup()
 
+    def test_get_schema_returns_the_project_eligibility_criteria(self):
+        """The annotation card opened without a preview still needs the criteria."""
+        age = {"id": "age", "type": "numeric", "mode": "include", "min": 18, "max": 20}
+        (self.project_root / "project.json").write_text(
+            json.dumps({"Eligibility": {"Criteria": [age]}}), encoding="utf-8"
+        )
+        handler = importlib.import_module(
+            "src.web.blueprints.projects_participants_handlers"
+        ).handle_get_participants_schema
+
+        for with_file in (False, True):  # no participants.json yet, then one
+            if with_file:
+                (self.project_root / "participants.json").write_text("{}", encoding="utf-8")
+            with self.app.test_request_context("/api/projects/participants"):
+                response = handler(
+                    get_current_project=lambda: {"path": str(self.project_root), "name": "demo"},
+                    get_bids_file_path=lambda root, name: root / name,
+                )
+            self.assertEqual(response.get_json()["eligibility_criteria"], [age])
+
     def test_save_schema_accepts_project_json_current_path(self):
         def get_current_project():
             return {

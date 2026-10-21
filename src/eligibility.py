@@ -161,7 +161,6 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         for desc, _ in rejected
     ]
     found: list[tuple[str, str, str]] = []
-    flagged: set[str] = set()  # participants with at least one finding
     reported: set[str] = set()  # duplicate ids already warned about
     for col, crit_id in links.items():
         crit = by_id.get(crit_id)
@@ -179,7 +178,6 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         kind = "exclusion" if crit.get("mode") == "exclude" else "inclusion"
         where = "inside" if crit.get("mode") == "exclude" else "outside"
         label = crit.get("label") or crit_id
-        shown = str
         if crit.get("type") == "categorical":
             labels = _level_labels(sidecar.get(col))
             if not labels:
@@ -195,9 +193,6 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             def violates(raw, labels=labels, wanted=wanted, crit=crit):
                 hit = bool(labels.get(raw, set()) & wanted)
                 return hit if crit.get("mode") == "exclude" else not hit
-
-            def shown(raw, labels=labels):
-                return f"{raw} ({'/'.join(sorted(labels[raw]))})" if raw in labels else raw
         else:  # numeric: _usable guarantees a known type
             lo, hi = crit.get("min"), crit.get("max")
             if lo is not None and hi is not None and lo > hi:
@@ -211,13 +206,9 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             def violates(raw, crit=crit):
                 return _numeric_violation(raw, crit)
 
-        for row in rows:
-            raw = (row.get(col) or "").strip()
-            if raw.lower() in _MISSING or not violates(raw):
-                continue
-            flagged.add(row.get("participant_id", "?"))
-            found.append(("WARNING", f"PRISM602 {row.get('participant_id', '?')}: {col} {shown(raw)} is {where} the {kind} {expected} (criterion: {label})", str(tsv)))
+        values = ((row.get(col) or "").strip() for row in rows)
+        count = sum(1 for raw in values if raw.lower() not in _MISSING and violates(raw))
+        if count:  # one line per criterion: a count, never a list of participants
+            found.append(("WARNING", f"PRISM602 {count} participant(s) with {col} {where} the {kind} {expected} (criterion: {label})", str(tsv)))
 
-    if found:
-        config.append(("WARNING", f"PRISM602 {len(flagged)} participant(s) outside eligibility criteria.", str(tsv)))
     return config + found

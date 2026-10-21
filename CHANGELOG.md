@@ -62,9 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Eligibility criteria checked by the validator.** Study Metadata > Eligibility takes structured *Checked
   Criteria* (NeuroBagel terms such as Age or Sex, or any other measure; numeric ranges and category labels;
-  include or exclude). In the Sociodemographics converter a column is linked to a criterion (pre-selected by
-  NeuroBagel term), and the validator warns (`PRISM602`, never an error) for each participant outside the
-  limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+  include or exclude). In the Sociodemographics converter a column is linked to a criterion (chosen by you,
+  never pre-selected), and the validator warns (`PRISM602`, never an error) once per criterion with the number
+  of participants outside the limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
   New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
   Inclusion/Exclusion fields.
 - **One rule for add-a-row controls on the Projects page.** Authors, funding, the criteria and list fields,
