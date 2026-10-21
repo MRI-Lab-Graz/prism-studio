@@ -57,7 +57,7 @@ def strip_survey_dates_in_tree(root: Path) -> int:
             if path.suffix == ".tsv" and "survey" in path.parent.parts:
                 text = path.read_text(encoding="utf-8")
                 new = drop_survey_date_tsv(text)
-            elif path.suffix == ".json" and path.stem.endswith("_survey"):
+            elif path.suffix == ".json" and "survey" in path.name:  # task-x_survey.json, survey-x.json
                 text = path.read_text(encoding="utf-8")
                 data = json.loads(text)
                 if not isinstance(data, dict) or SURVEY_DATE_COLUMN not in data:

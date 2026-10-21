@@ -370,3 +370,23 @@ def test_survey_durations_mean_sd_n_skips_bad_cells(tmp_path):
     assert result["ads"]["mean"] == 5.0 and result["ads"]["n"] == 2
     assert round(result["ads"]["sd"], 2) == 1.41
     assert "pss" not in result
+
+
+def test_discover_tasks_keeps_hyphenated_task_names(tmp_path):
+    from src.methods_project import discover_tasks
+
+    folder = tmp_path / "rawdata" / "sub-01" / "ses-1" / "survey"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_ses-1_task-wellbeing-multi_acq-10-likert_survey.tsv").write_text("q1\n1\n", encoding="utf-8")
+    assert list(discover_tasks(tmp_path)) == ["wellbeing-multi"]
+
+
+def test_discover_tasks_reads_the_survey_dash_task_naming(tmp_path):
+    from src.methods_project import discover_sessions, discover_tasks, survey_durations
+
+    folder = tmp_path / "rawdata" / "sub-01" / "ses-1" / "survey"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_ses-1_survey-ads.tsv").write_text("SurveyDuration\tq1\n5\t1\n", encoding="utf-8")
+    assert discover_tasks(tmp_path) == {"ads": {"modality": "survey"}}
+    assert discover_sessions(tmp_path)[0]["tasks"] == [{"task": "ads", "n": 1}]
+    assert survey_durations(tmp_path)["ads"]["n"] == 1

@@ -149,3 +149,12 @@ def test_plain_folder_export_leaves_out_the_survey_import_ledger(_which, tmp_pat
     out = Path(result["output_path"])
     assert (out / "code" / "analysis.R").exists()
     assert not (out / "code" / "survey_imports.json").exists()
+
+
+def test_strip_handles_the_survey_dash_sidecar_name(tmp_path):
+    survey = tmp_path / "survey"
+    survey.mkdir()
+    (tmp_path / "survey-ads.json").write_text(json.dumps({SURVEY_DATE_COLUMN: {}, "q1": {}}), encoding="utf-8")
+    (tmp_path / "participants.json").write_text(json.dumps({SURVEY_DATE_COLUMN: {}}), encoding="utf-8")
+    assert strip_survey_dates_in_tree(tmp_path) == 1
+    assert SURVEY_DATE_COLUMN not in (tmp_path / "survey-ads.json").read_text(encoding="utf-8")

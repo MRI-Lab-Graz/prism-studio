@@ -70,14 +70,19 @@ def candidate_template_names(task_name: str, task_definition: dict) -> list[str]
     return out
 
 
+# `task-ads_survey.tsv` (schema/validator) and `survey-ads.tsv` (csv converter) both occur; task
+# labels may contain hyphens (``task-wellbeing-multi_acq-10-likert``), never underscores.
+_TASK_NAME = re.compile(r"_(?:task|survey|biometrics)-([A-Za-z0-9][-A-Za-z0-9]*)")
+
+
 def _task_files(project_path: Path):
     """``(modality, task, subject, session label or "")`` for every task data file in the dataset."""
     from src.environment_mri_scan import resolve_bids_rawdata_root
 
     root = resolve_bids_rawdata_root(project_path)
     for modality in ("survey", "biometrics"):
-        for path in sorted(root.glob(f"sub-*/**/{modality}/*_task-*")):
-            match = re.search(r"_task-([A-Za-z0-9]+)", path.name)
+        for path in sorted(root.glob(f"sub-*/**/{modality}/*")):
+            match = _TASK_NAME.search(path.name)
             if match and path.suffix in (".tsv", ".gz", ".json"):
                 parts = path.relative_to(root).parts
                 session = next((p[4:] for p in parts if p.startswith("ses-")), "")
@@ -195,8 +200,10 @@ def survey_durations(project_path: Path) -> dict[str, dict]:
     from src.environment_mri_scan import resolve_bids_rawdata_root
 
     values: dict[str, list[float]] = {}
-    for tsv in sorted(resolve_bids_rawdata_root(project_path).glob("sub-*/**/survey/*_task-*.tsv")):
-        match = re.search(r"_task-([A-Za-z0-9]+)", tsv.name)
+    for tsv in sorted(resolve_bids_rawdata_root(project_path).glob("sub-*/**/survey/*.tsv")):
+        match = _TASK_NAME.search(tsv.name)
+        if not match:
+            continue
         try:
             for row in _tsv_rows(tsv):
                 try:
