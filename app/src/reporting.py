@@ -471,7 +471,15 @@ def _normalize_markdownish_description(text: str) -> str:
     return re.sub(r"\s+", " ", merged).strip()
 
 
+_NO_CITATION = {"n.a.", "n.a", "n/a", "na", "none"}
+
+
 def _get_apa_citation(study: dict) -> str:
+    cit = _apa_citation(study)
+    return "" if cit.strip().lower() in _NO_CITATION else cit
+
+
+def _apa_citation(study: dict) -> str:
     """Extract a clean APA-style citation string from a template's Study block.
 
     Handles both the flat legacy format (Study.Citation) and the newer
@@ -569,22 +577,183 @@ def _get_response_format(template: dict, lang: str = "en") -> str | None:
 def _session_display_label(sess: dict, index: int) -> str:
     """Return a human-readable session label for use in prose.
 
-    Strips the 'ses-' prefix and capitalises, e.g. 'ses-01' -> 'Session 01',
-    'ses-baseline' -> 'Baseline'.  Falls back to 'Session N'.
+    Strips the 'ses-' prefix, e.g. 'ses-01' -> '01', 'ses-pre' -> 'pre'; the label
+    is never normalised.  Falls back to 'Session N'.
     """
     raw = sess.get("label", "")
     if not raw:
         raw = sess.get("id", "")
     if not raw:
         return f"Session {index + 1}"
-    # Strip ses- prefix for display
+    # Strip the ses- prefix only; labels are free-form strings and stay exactly as given
     if raw.lower().startswith("ses-"):
-        stripped = raw[4:]
-        # If purely numeric, keep as "Session <num>"
-        if stripped.isdigit():
-            return f"Session {stripped}"
-        return stripped.capitalize()
+        return raw[4:]
     return raw
+
+
+_ACQ_LABELS = {
+    "func": ("Functional MRI", "Funktionelle MRT-Daten"),
+    "anat": ("Structural MRI", "Strukturelle MRT-Daten"),
+    "dwi": ("Diffusion MRI", "Diffusions-MRT-Daten"),
+    "fmap": ("Field map", "Feldkarten"),
+    "eeg": ("EEG", "EEG-Daten"),
+    "physio": ("Physiological", "Physiologische Daten"),
+    "eyetracking": ("Eye-tracking", "Eyetracking-Daten"),
+}
+
+
+def _acq_num(values, scale: float = 1) -> str:
+    return " / ".join(f"{round(v * scale, 3):g}" for v in values if isinstance(v, (int, float)))
+
+
+def _acquisition_section(summary: dict | None, lang: str, detail_level: str) -> str:
+    """Per-modality sentences from sidecar parameters; only fields present are mentioned."""
+    if detail_level == "brief" or not (summary or {}).get("modalities"):
+        return ""
+    de = lang == "de"
+    out: list[str] = []
+    for modality, info in summary["modalities"].items():
+        label = _ACQ_LABELS.get(modality, (modality, modality))[1 if de else 0]
+        n = info.get("n_subjects", 0)
+        sessions = ", ".join(f"{k} (*n* = {v})" for k, v in (info.get("sessions") or {}).items())
+        if de:
+            sent = f"{label} wurden für {n} Teilnehmende erhoben"
+            sent += f" (Sitzungen: {sessions})." if sessions else "."
+        else:
+            sent = f"{label} data were acquired for {n} participants"
+            sent += f" (sessions: {sessions})." if sessions else "."
+        p = info.get("params") or {}
+        device = " ".join(
+            x
+            for x in (
+                f"{_acq_num(p.get('MagneticFieldStrength') or [])} T" if _acq_num(p.get("MagneticFieldStrength") or []) else "",
+                " / ".join(map(str, p.get("Manufacturer") or [])),
+                " / ".join(map(str, p.get("ManufacturersModelName") or [])),
+            )
+            if x
+        )
+        details = [
+            f"{name} = {text}{unit}"
+            for name, text, unit in (
+                ("TR", _acq_num(p.get("RepetitionTime") or [], 1000), " ms"),
+                ("TE", _acq_num(p.get("EchoTime") or [], 1000), " ms"),
+                ("Flipwinkel" if de else "flip angle", _acq_num(p.get("FlipAngle") or []), "°"),
+                ("Abtastrate" if de else "sampling rate", _acq_num(p.get("SamplingFrequency") or []), " Hz"),
+            )
+            if text
+        ]
+        if device:
+            sent += (f" Gerät: {device}" if de else f" Device: {device}") + (f" ({', '.join(details)})." if details else ".")
+        elif details:
+            sent += f" ({', '.join(details)})."
+        out.append(sent)
+    return " ".join(out)
+
+
+def _processing_section(summary: dict | None, lang: str, detail_level: str) -> str:
+    """Scoring, software versions and (when counted) exclusions; empty for brief."""
+    if detail_level == "brief" or not summary:
+        return ""
+    de = lang == "de"
+    out: list[str] = []
+    recipes = summary.get("recipes") or []
+    if recipes:
+        scored = "; ".join(f"{r['task']} ({', '.join(r['scores'])})" for r in recipes)
+        out.append(
+            f"Die folgenden Instrumente wurden zu Skalen ausgewertet: {scored}."
+            if de
+            else f"The following instruments were scored into scales: {scored}."
+        )
+    flags = summary.get("eligibility_flags")
+    if isinstance(flags, int) and flags > 0:
+        out.append(
+            f"{flags} Teilnehmende erfüllten die Eligibility-Kriterien nicht."
+            if de
+            else f"{flags} participants did not meet the eligibility criteria."
+        )
+    sw = summary.get("software") or {}
+    if out and sw.get("prism_version"):  # software is only worth stating next to actual processing
+        schemas = ", ".join(f"{k} {v}" for k, v in (sw.get("modality_schemas") or {}).items())
+        tail = f" (Schemas: {schemas})" if de and schemas else f" (schemas: {schemas})" if schemas else ""
+        out.append(
+            f"Software: PRISM Studio v{sw['prism_version']}{tail}."
+            if de
+            else f"Data were processed with PRISM Studio v{sw['prism_version']}{tail}."
+        )
+    return " ".join(out)
+
+
+_LANGUAGE_NAMES = {"en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian"}
+_UNINFORMATIVE = {"", "other", "unspecified", "n/a", "unknown"}
+
+
+def _survey_info_sentences(tpl: dict | None, durations: dict | None) -> list[str]:
+    """Language, version, administration and completion time of one instrument; unknown parts are left out."""
+    tech = (tpl or {}).get("Technical") or {}
+    study = (tpl or {}).get("Study") or {}
+
+    def known(value) -> str:
+        text = str(value or "").strip()
+        return "" if text.lower() in _UNINFORMATIVE else text
+
+    sentences: list[str] = []
+    language = known(tech.get("Language"))
+    if language:
+        sentences.append(f"Language: {_LANGUAGE_NAMES.get(language.lower(), language)}.")
+    version = known(study.get("Version"))
+    if version and len(study.get("Versions") or []) > 1:  # a lone "1.0" says nothing
+        sentences.append(f"Version: {version}.")
+    method = known(tech.get("AdministrationMethod")) or known((tech.get("ResponseType") or [""])[0])
+    platform = known(tech.get("SoftwarePlatform"))
+    if method or platform:
+        text = f"Administration was {method}" if method else "Administration"
+        if platform:
+            software_version = known(tech.get("SoftwareVersion"))
+            text += f" via {platform}" + (f" (version {software_version})" if software_version else "")
+        sentences.append(text + ".")
+    if durations:
+        sd = f"*SD* = {durations['sd']:.1f}, " if durations.get("sd") is not None else ""
+        sentences.append(
+            f"The mean completion time was *M* = {durations['mean']:.1f} minutes ({sd}*n* = {durations['n']})."
+        )
+    return sentences
+
+
+def _session_intro(sess: dict, index: int, label: str) -> str:
+    """Opening words of a session's sentence. Sessions found in the dataset carry an
+    ``ordered`` key; they get no enrollment claim, and no ordinal unless their order is known."""
+    inferred = "ordered" in sess
+    if inferred and not sess.get("label"):
+        return "In the study,"
+    ordinal = sess.get("ordered", True)
+    timing = sess.get("timingRelativeToBaseline") or {}
+    value = timing.get("Value")
+    if index == 0 and not inferred:
+        return f'In the first session ("{label}"), administered at study enrollment,'
+    if isinstance(value, (int, float)) and value > 0:
+        head = f'In session {index + 1} ("{label}")' if ordinal else f'In session "{label}"'
+        return f"{head}, administered approximately {int(value)} {timing.get('Unit', 'days')} after baseline,"
+    return f'In session "{label}",' if inferred else f'In session {index + 1} ("{label}"),'
+
+
+def methods_warnings(
+    project_data: dict, participant_stats: dict | None, template_data: dict[str, dict]
+) -> list[str]:
+    """Gaps a human should fill before the methods text is paper-ready (never invented)."""
+    warnings: list[str] = []
+    target = (project_data.get("Eligibility") or {}).get("TargetSampleSize")
+    if not (participant_stats or {}).get("n") and not isinstance(target, int):
+        warnings.append(
+            "No sample size: add participants.tsv or Eligibility.TargetSampleSize."
+        )
+    if any(s.get("ordered") is False for s in project_data.get("Sessions") or []):
+        warnings.append(
+            "Session order could not be inferred from the labels; add Sessions to project.json to state it."
+        )
+    for task, tpl in template_data.items():
+        if not _get_apa_citation(tpl.get("Study") or {}):
+            warnings.append(f"Instrument '{task}' has no citation in its template.")
+    return warnings
 
 
 def generate_full_methods(
@@ -595,6 +764,9 @@ def generate_full_methods(
     lang: str = "en",
     detail_level: str = "standard",
     continuous: bool = False,
+    acquisition: dict | None = None,
+    processing: dict | None = None,
+    survey_info: dict | None = None,
 ) -> tuple[str, list[str]]:
     """Generate a publication-ready methods section from project.json metadata.
 
@@ -626,36 +798,6 @@ def generate_full_methods(
 
     dd = dataset_desc or {}
 
-    # --- Study Design ---
-    sd = project_data.get("StudyDesign") or {}
-    if sd:
-        parts: list[str] = []
-        sd_type = sd.get("Type", "")
-        sd_desc = sd.get("TypeDescription", "")
-        if sd_type:
-            label = sd_type.replace("-", " ")
-            parts.append(f"The present study employed a {label} design.")
-        if sd_desc:
-            parts.append(sd_desc.rstrip(".") + ".")
-        if not is_brief:
-            blinding = sd.get("Blinding", "")
-            if blinding and blinding != "none":
-                parts.append(f"A {blinding.replace('-', ' ')} procedure was used.")
-            randomization = sd.get("Randomization", "")
-            if randomization:
-                parts.append(randomization.rstrip(".") + ".")
-            control = sd.get("ControlCondition", "")
-            if control:
-                parts.append(
-                    f"The control condition consisted of {control.rstrip('.')}."
-                )
-        if parts:
-            h = _heading(2, "Study Design")
-            if h:
-                sections.append(h)
-            sections.append(" ".join(parts))
-            sections_used.append("StudyDesign")
-
     # --- Participants ---
     recruitment = project_data.get("Recruitment") or {}
     eligibility = project_data.get("Eligibility") or {}
@@ -680,6 +822,13 @@ def generate_full_methods(
                 sample_sent += f" ({', '.join(sex_parts)})"
             sample_sent += "."
             parts.append(sample_sent)
+            screened = pstats.get("n_screened")
+            if screened:
+                many = screened != 1
+                parts.append(
+                    f"{screened} further participant{'s' if many else ''} "
+                    f"{'were' if many else 'was'} screened only and {'are' if many else 'is'} not part of the sample."
+                )
 
             if age_mean is not None and age_sd is not None:
                 if age_min is not None and age_max is not None:
@@ -710,6 +859,14 @@ def generate_full_methods(
                             f"Regarding {col_name.lower()}: {'; '.join(dist_parts)}."
                         )
             sections_used.append("SampleDescription")
+
+        per_session: dict[str, int] = {}
+        for info in ((acquisition or {}).get("modalities") or {}).values():
+            for label, count in (info.get("sessions") or {}).items():
+                per_session[label] = max(per_session.get(label, 0), count)
+        if len(set(per_session.values())) > 1 and not is_brief and lang != "de":
+            listed = ", ".join(f"*N* = {c} at {k}" for k, c in per_session.items())
+            parts.append(f"The number of participants with recorded data differed between sessions ({listed}).")
 
         method = recruitment.get("Method", "")
         if method:
@@ -758,6 +915,36 @@ def generate_full_methods(
             sections.append(" ".join(parts))
             if "Participants" not in sections_used:
                 sections_used.append("Participants")
+
+    # --- Study Design ---
+    sd = project_data.get("StudyDesign") or {}
+    if sd:
+        parts: list[str] = []
+        sd_type = sd.get("Type", "")
+        sd_desc = sd.get("TypeDescription", "")
+        if sd_type:
+            label = sd_type.replace("-", " ")
+            parts.append(f"The present study employed a {label} design.")
+        if sd_desc:
+            parts.append(sd_desc.rstrip(".") + ".")
+        if not is_brief:
+            blinding = sd.get("Blinding", "")
+            if blinding and blinding != "none":
+                parts.append(f"A {blinding.replace('-', ' ')} procedure was used.")
+            randomization = sd.get("Randomization", "")
+            if randomization:
+                parts.append(randomization.rstrip(".") + ".")
+            control = sd.get("ControlCondition", "")
+            if control:
+                parts.append(
+                    f"The control condition consisted of {control.rstrip('.')}."
+                )
+        if parts:
+            h = _heading(2, "Study Design")
+            if h:
+                sections.append(h)
+            sections.append(" ".join(parts))
+            sections_used.append("StudyDesign")
 
     # --- Experimental Conditions ---
     conditions = project_data.get("Conditions") or {}
@@ -811,18 +998,19 @@ def generate_full_methods(
                 timing = sess.get("timingRelativeToBaseline") or {}
                 timing_val = timing.get("Value")
                 timing_unit = timing.get("Unit", "days")
-
-                if i == 0:
-                    sess_intro = f'In the first session ("{sess_label}"), administered at study enrollment,'
-                elif isinstance(timing_val, (int, float)) and timing_val > 0:
-                    sess_intro = (
-                        f'In session {i + 1} ("{sess_label}"), administered approximately '
-                        f"{int(timing_val)} {timing_unit} after baseline,"
-                    )
-                else:
-                    sess_intro = f'In session {i + 1} ("{sess_label}"),'
+                sess_intro = _session_intro(sess, i, sess_label)
 
                 tasks = sess.get("tasks") or []
+                if not tasks and lang != "de":
+                    if i == 0:
+                        parts.append(f'The first session ("{sess_label}") took place at study enrollment.')
+                    elif isinstance(timing_val, (int, float)) and timing_val > 0:
+                        parts.append(
+                            f'Session {i + 1} ("{sess_label}") took place approximately '
+                            f"{int(timing_val)} {timing_unit} after baseline."
+                        )
+                    else:
+                        parts.append(f'Session {i + 1} ("{sess_label}") followed.')
                 if tasks:
                     grouped: dict[int, list[str]] = {}
                     for t in tasks:
@@ -845,6 +1033,8 @@ def generate_full_methods(
                             td_desc = task_defs[task_name].get("description", "")
                             if td_desc:
                                 display_name = td_desc
+                        if "n" in t:
+                            display_name += f" (*n* = {t['n']})"
                         grouped.setdefault(eg, []).append(display_name)
 
                     all_task_names = []
@@ -867,6 +1057,9 @@ def generate_full_methods(
                         parts.append(
                             f"{sess_intro} participants completed the {joined}."
                         )
+
+        if len(sessions) > 1 and not any(s.get("timingRelativeToBaseline") for s in sessions):
+            parts.append("[please add: time between sessions]")
 
         debriefing = procedure.get("Debriefing", "")
         if debriefing and is_detailed:
@@ -1006,8 +1199,11 @@ def generate_full_methods(
                     opening += f" {verb}"
                 opening += "."
                 sentences.append(opening)
+                if not apa:
+                    sentences.append(f"[please add: reference for {name}]")
 
                 if not is_brief:
+                    sentences.extend(_survey_info_sentences(tpl, (survey_info or {}).get(task_name)))
                     desc = (
                         _to_methods_description(study.get("Description"), lang)
                         if study
@@ -1047,12 +1243,17 @@ def generate_full_methods(
                             sentences.append(f"Normative data reference: {norms_ref}.")
                         sentences.extend(_instrument_additional_metadata(study))
 
-                if is_detailed:
-                    subscales = study.get("Subscales") or [] if study else []
+                if not is_brief and study and lang != "de":
+                    subscales = study.get("Subscales") or []
                     if subscales:
-                        sentences.append(
-                            f"The instrument contains the following subscales: {', '.join(subscales)}."
-                        )
+                        sentences.append(f"The instrument has the subscales: {', '.join(subscales)}.")
+                    license_text = _get_i18n_text_strict(study.get("License"), lang)
+                    # converters write "Proprietary / Copyright protected. Please ensure ..." as a reminder, not a license
+                    if license_text and not license_text.upper().startswith(
+                        ("NOT VERIFIED", "PROPRIETARY / COPYRIGHT PROTECTED")
+                    ):
+                        sentences.append(f"License: {license_text.rstrip('.')}.")
+                if is_detailed:
                     reliability = (
                         _get_i18n_text_strict(study.get("Reliability"), lang)
                         if study
@@ -1071,10 +1272,18 @@ def generate_full_methods(
                 duration = td.get("duration") or {}
                 dur_val = duration.get("Value")
                 dur_unit = duration.get("Unit", "minutes")
+                admin = (study or {}).get("AdministrationTime") if tpl else None
                 if isinstance(dur_val, (int, float)) and not is_brief:
                     sentences.append(
                         f"The estimated completion time is {dur_val} {dur_unit}."
                     )
+                elif admin and not is_brief and lang != "de":
+                    if isinstance(admin, dict) and isinstance(admin.get("min"), (int, float)):
+                        lo, hi = admin["min"], admin.get("max", admin["min"])
+                        span = f"{lo:g}" if lo == hi else f"{lo:g}-{hi:g}"
+                        sentences.append(f"Administration takes approximately {span} minutes.")
+                    elif isinstance(admin, str) and admin.strip():
+                        sentences.append(f"Administration takes approximately {admin.strip().rstrip('.')}.")
 
                 measures_parts.append(" ".join(sentences))
 
@@ -1122,26 +1331,23 @@ def generate_full_methods(
             sections.append(" ".join(parts))
             sections_used.append("DataCollection")
 
-    # --- Data Standardization (PRISM/BIDS boilerplate) ---
-    if not is_brief:
-        meta = project_data.get("Metadata") or {}
-        schema_ver = meta.get("SchemaVersion", "")
-        ver_suffix = f" (schema version {schema_ver})" if schema_ver else ""
-        boilerplate = (
-            "Data were organized and validated according to the PRISM "
-            "(Principled Research Information & Sidecar Model) standard"
-            f"{ver_suffix}, which extends the Brain Imaging Data Structure "
-            "(BIDS; Gorgolewski et al., 2016) to psychological and behavioral research. "
-            "This framework ensures high interoperability and machine-readability by "
-            "enforcing standardized filename patterns and comprehensive metadata sidecars "
-            "in JSON format. All datasets were automatically validated for structural "
-            f"integrity and schema compliance using PRISM Studio v{prism_version}."
-        )
-        h = _heading(2, "Data Standardization and Validation")
+    # --- Data Acquisition (sidecar parameters) ---
+    acq_text = _acquisition_section(acquisition, lang, detail_level)
+    if acq_text:
+        h = _heading(2, "Data Acquisition")
         if h:
             sections.append("\n" + h)
-        sections.append(boilerplate)
-        sections_used.append("DataStandardization")
+        sections.append(acq_text)
+        sections_used.append("DataAcquisition")
+
+    # --- Data Processing and Scoring ---
+    proc_text = _processing_section(processing, lang, detail_level)
+    if proc_text:
+        h = _heading(2, "Data Processing and Scoring")
+        if h:
+            sections.append("\n" + h)
+        sections.append(proc_text)
+        sections_used.append("DataProcessing")
 
     # --- Quality Control ---
     qc = (procedure.get("QualityControl") or []) if procedure else []
@@ -1191,7 +1397,7 @@ def generate_full_methods(
     dd_refs = dd.get("ReferencesAndLinks") or []
     if isinstance(dd_refs, str):
         dd_refs = [r.strip() for r in dd_refs.split(",") if r.strip()]
-    if (dd_license or dd_doi or dd_desc_clean) and not is_brief:
+    if not is_brief:
         parts_da: list[str] = []
         if dd_name and dd_desc_clean:
             parts_da.append(
@@ -1207,12 +1413,17 @@ def generate_full_methods(
             parts_da.append(f"The dataset can be accessed via DOI: {dd_doi}.")
         if dd_refs:
             parts_da.append("Related references: " + "; ".join(dd_refs) + ".")
-        if parts_da:
-            h = _heading(2, "Data Availability")
-            if h:
-                sections.append("\n" + h)
-            sections.append(" ".join(parts_da))
-            sections_used.append("DataAvailability")
+        parts_da.append(
+            "Data were organized according to the PRISM standard, an extension of "
+            "BIDS (Gorgolewski et al., 2016), and validated with "
+            f"PRISM Studio v{prism_version} (Koschutnig et al., 2026; "
+            "https://doi.org/10.5281/zenodo.22809100)."
+        )
+        h = _heading(2, "Data Availability")
+        if h:
+            sections.append("\n" + h)
+        sections.append(" ".join(parts_da))
+        sections_used.extend(["DataAvailability", "DataStandardization"])
 
     # --- Funding ---
     funding = dd.get("Funding") or []

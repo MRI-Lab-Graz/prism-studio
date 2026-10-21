@@ -398,6 +398,17 @@
         </div>
         {% endif %}
 
+        <!-- Notes (INFO) -->
+        {% if results.notes %}
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body small text-muted">
+                {% for note in results.notes %}
+                <div class="{% if not loop.last %}mb-1{% endif %}"><i class="fas fa-info-circle me-2"></i>{{ note.message }} <span class="text-nowrap">({{ note.code }}, optional)</span></div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Warnings Section -->
         {% if results.warning_groups %}
         <div class="card mb-4 border-0 shadow-sm">
@@ -602,7 +613,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between mb-1">
                             <span>
-                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality in ['physio', 'physiological'] else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'cloud-sun' if modality == 'environment' else 'brain' }} me-2 text-secondary modality-icon"></i>
+                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality == 'physio' else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'cloud-sun' if modality == 'environment' else 'brain' }} me-2 text-secondary modality-icon"></i>
                                 {{ modality|capitalize }}
                             </span>
                             <span class="badge bg-light text-dark border">{{ count }}</span>
@@ -619,7 +630,7 @@
                                 {% for e in dataset_stats.eyetracking %}
                                 <span class="badge bg-primary x-small">{{ e }}</span>
                                 {% endfor %}
-                            {% elif modality in ['physio', 'physiological'] and dataset_stats.physio %}
+                            {% elif modality == 'physio' and dataset_stats.physio %}
                                 {% for p in dataset_stats.physio %}
                                 <span class="badge bg-warning text-dark x-small">{{ p }}</span>
                                 {% endfor %}

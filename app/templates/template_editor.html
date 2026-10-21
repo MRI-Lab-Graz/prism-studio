@@ -24,9 +24,9 @@
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
         <div class="btn-group w-100 mb-4" role="group" aria-label="Edit or create a template">
-          <input type="radio" class="btn-check" name="editorMode" id="modeEdit" value="edit" autocomplete="off" checked>
+          <input type="radio" class="btn-check" name="editorMode" id="modeEdit" value="edit" checked>
           <label class="btn btn-outline-success py-2" for="modeEdit"><i class="fas fa-pen-to-square me-1"></i>Edit existing template</label>
-          <input type="radio" class="btn-check" name="editorMode" id="modeCreate" value="create" autocomplete="off">
+          <input type="radio" class="btn-check" name="editorMode" id="modeCreate" value="create">
           <label class="btn btn-outline-success py-2" for="modeCreate"><i class="fas fa-plus me-1"></i>Create or import new</label>
         </div>
 
@@ -74,7 +74,7 @@
         <div class="d-none mb-4" id="templateSourceSection">
           <div class="card border-success-subtle bg-light" id="templateSourceCard">
             <div class="card-body py-3">
-            <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Create or Import Template Source</h6>
+            <h3 class="h6 mb-3"><i class="fas fa-file-import text-success me-2"></i>Create or Import Template Source</h3>
             <div class="d-grid gap-2 d-md-flex">
               <button class="btn btn-outline-primary flex-fill" id="btnNew" type="button">
                 <i class="fas fa-file-circle-plus me-1"></i>Create Blank Template
@@ -334,13 +334,13 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-file-earmark-word me-2"></i>Export Paper-Pencil Questionnaire</h5>
+        <h4 class="h5 modal-title"><i class="bi bi-file-earmark-word me-2"></i>Export Paper-Pencil Questionnaire</h4>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small">Configure the Word export for use as a paper-pencil instrument.</p>
 
-        <h6 class="fw-bold mt-3">Header Fields</h6>
+        <h5 class="h6 fw-bold mt-3">Header Fields</h5>
         <div class="form-check mb-2">
           <input class="form-check-input" type="checkbox" id="optParticipantId" checked>
           <label class="form-check-label" for="optParticipantId">Participant ID line</label>

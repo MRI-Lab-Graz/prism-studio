@@ -918,6 +918,43 @@ def _extract_trigger_annotations_from_signal(
     return annotations
 
 
+class _BidsCollector:
+    """Stands in for pyedflib.EdfWriter when writing BIDS `.tsv.gz` + flat `.json` (no pyedflib)."""
+
+    def __init__(self, bids_base):
+        self.bids_base = Path(bids_base)
+        self.headers: list[dict] = []
+        self.signals: list = []
+
+    def setSignalHeaders(self, headers):
+        self.headers = list(headers)
+
+    def writeAnnotation(self, onset, duration, text):
+        pass  # trigger events belong in _events.tsv, out of scope here
+
+    def writeSamples(self, signals):
+        self.signals = list(signals)
+
+    def close(self):
+        pass  # the sidecar needs values only known later; see finish()
+
+    def finish(self, extra_meta):
+        from src.physio_bids import write_bids_physio
+
+        if not self.signals:
+            raise ValueError("no samples were written")
+        lengths = {h["label"]: len(x) for h, x in zip(self.headers, self.signals)}
+        if len(set(lengths.values())) > 1:
+            raise ValueError(f"channels have different lengths: {lengths}")
+        write_bids_physio(
+            {h["label"]: np.asarray(x, dtype=float) for h, x in zip(self.headers, self.signals)},
+            sampling_frequency=self.headers[0]["sample_frequency"],
+            start_time=0.0,
+            out_base=self.bids_base,
+            extra_meta=extra_meta,
+        )
+
+
 def convert_varioport(
     raw_path,
     output_path,
@@ -925,9 +962,14 @@ def convert_varioport(
     task_name="rest",
     base_freq=None,
     allow_raw_multiplexed: bool = False,
+    bids_base=None,
 ):
     """
     Converts a Varioport .RAW file to BIDS .edf and .json.
+
+    With ``bids_base`` set, ``output_path``/``sidecar_path`` are ignored and the
+    signals are written as ``<bids_base>.tsv.gz`` + flat ``<bids_base>.json``
+    without pyedflib.
 
     Returns:
         dict: Written sidecar metadata (includes AverageHeartRateBPM when estimable)
@@ -1143,22 +1185,26 @@ def convert_varioport(
         # pyedflib is an optional dependency (no wheels for Python 3.13+), so
         # it is imported here rather than at module import time -- everything
         # in this module except EDF writing works without it.
-        try:
-            import pyedflib
-        except ImportError as exc:  # pragma: no cover - exercised via test double
-            raise RuntimeError(
-                "Writing EDF output requires pyedflib. Install it with: "
-                "pip install pyedflib"
-            ) from exc
-
-        try:
-            f_edf = pyedflib.EdfWriter(
-                output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS
-            )
+        if bids_base is not None:
+            f_edf = _BidsCollector(bids_base)
             f_edf.setSignalHeaders(signal_headers)
-        except Exception as e:
-            print(f"Error initializing EDF writer: {e}")
-            return
+        else:
+            try:
+                import pyedflib
+            except ImportError as exc:  # pragma: no cover - exercised via test double
+                raise RuntimeError(
+                    "Writing EDF output requires pyedflib. Install it with: "
+                    "pip install pyedflib"
+                ) from exc
+
+            try:
+                f_edf = pyedflib.EdfWriter(
+                    output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS
+                )
+                f_edf.setSignalHeaders(signal_headers)
+            except Exception as e:
+                print(f"Error initializing EDF writer: {e}")
+                return
 
         channel_data: dict[str, np.ndarray] = {}  # Only used for Type 6
         trigger_annotations: list[tuple[float, float, str]] = []
@@ -1373,6 +1419,13 @@ def convert_varioport(
             type7_selection_meta["demux"] = demux_info
 
         # Create Sidecar JSON
+        if bids_base is not None:
+            extra = {"TaskName": task_name}
+            if avg_hr_bpm is not None:
+                extra["AverageHeartRateBPM"] = avg_hr_bpm
+            f_edf.finish(extra)
+            print("Conversion complete.")
+            return extra
         note = "Converted from VPDATA.RAW. Base rate set to default 512 Hz."
         if base_freq is not None:
             note = f"Converted from VPDATA.RAW. Base rate overridden to {base_freq} Hz."
@@ -1405,6 +1458,9 @@ def convert_varioport(
             "Note": note,
             "DecodingMode": decoding_mode,
         }
+
+        if not task_name:
+            del sidecar["Study"]  # task-free physio has no task
 
         if definition_file:
             sidecar["CompanionDefinitionFile"] = str(definition_file)

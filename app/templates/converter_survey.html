@@ -7,7 +7,7 @@
                                     <i class="fas fa-clipboard-list fa-2x text-warning"></i>
                                 </div>
                                 <div>
-                                    <h5 class="mb-1">Survey Data Conversion</h5>
+                                    <h3 class="h5 mb-1">Survey Data Conversion</h3>
                                     <p class="text-muted mb-0">Convert questionnaire responses from Excel or LimeSurvey archives</p>
                                 </div>
                             </div>
@@ -45,7 +45,7 @@
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12 studio-file-picker">
-                                    <label for="convertSurveyFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
+                                    <label for="convertSurveyFileName" class="form-label">Survey File (.xlsx, .csv, .tsv, .sav, .rds, .rdata, .lsa)</label>
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
@@ -55,10 +55,9 @@
                                         </div>
                                     </div>
                                     <div class="input-group studio-picker-group">
-                                        <input class="form-control" type="file" id="convertSurveyFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" data-help-key="convertSurveyFile">
-                                        <button class="btn btn-outline-secondary d-none" type="button" id="browseServerSurveyFileBtn" aria-label="Browse server survey file" title="Browse server survey file">
-                                            <i class="fas fa-server me-1"></i>Server
-                                        </button>
+                                        <input class="visually-hidden" type="file" id="convertSurveyFile" accept=".xlsx,.lsa,.csv,.tsv,.sav,.rds,.rdata,.rda" tabindex="-1" aria-hidden="true">
+                                        <input class="form-control" type="text" id="convertSurveyFileName" value="No file selected" readonly data-help-key="convertSurveyFile">
+                                        <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="browseSurveyFileBtn" aria-label="Browse for survey file" title="Browse for survey file">Browse</button>
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -153,6 +152,13 @@
                                         <option value="keep_last">Keep the last row</option>
                                     </select>
                                     <div class="form-text">For files with one row per participant and wave but no session column (e.g. LimeSurvey).</div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="convertSkipExisting">
+                                        <label class="form-check-label small" for="convertSkipExisting">
+                                            Skip surveys already in the project
+                                        </label>
+                                        <div class="form-text mt-0">Only new responses are previewed and imported. A response is recognised by its LimeSurvey record (start date, seed, token), not by its session number.</div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -244,7 +250,7 @@
                             <div id="surveyVersionWizard" class="alert d-none mb-3 survey-version-card">
                                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                     <div>
-                                        <h6 class="mb-1">Questionnaire Version Selection</h6>
+                                        <h4 class="h6 mb-1">Questionnaire Version Selection</h4>
                                         <p class="mb-0 small survey-version-help-text">Choose the instrument version to use for multi-version templates. This controls the emitted <code>acq</code> label and which <code>ApplicableVersions</code> items are included.</p>
                                     </div>
                                     <span class="badge survey-version-count-badge" id="surveyVersionWizardCount"></span>
@@ -413,11 +419,11 @@
 
                                 <!-- Participant Metadata Section -->
                                 <div id="participantMetadataSection" class="d-none mt-4 border-top pt-3">
-                                    <h6 class="mb-3">
+                                    <h5 class="h6 mb-3">
                                         <i class="fas fa-users text-info me-2"></i>
                                         Mark Participant Metadata Fields
                                         <small class="text-muted ms-2">(fields that go into participants.tsv)</small>
-                                    </h6>
+                                    </h5>
 
                                     <div class="alert alert-info py-2 mb-3 beginner-help-block">
                                         <small>

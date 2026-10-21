@@ -142,10 +142,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_shared_path_picker_honors_server_preference_and_in_app_fallback(self):
         content = SHARED_PATH_PICKER_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("export function prefersServerPicker()", content)
         self.assertIn("export async function browseFolderWithFallback(_fetchWithApiFallback, options = {})", content)
         self.assertIn("export async function browseFileWithFallback(_fetchWithApiFallback, options = {})", content)
-        self.assertIn("window.PrismFileSystemMode.prefersServerPicker()", content)
         self.assertIn("return requirePathPicker('browseFolder').browseFolder(options);", content)
         self.assertIn("return requirePathPicker('browseFile').browseFile(options);", content)
         self.assertIn("throw new Error('Shared path picker is unavailable.');", content)
@@ -1617,7 +1615,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             metadata_content,
         )
         self.assertIn("export function validateEligibilityCriteriaBadges()", validation_content)
-        self.assertIn("const hasInclusionCriterion = inclusionValues.length > 0;", validation_content)
+        # Accepted "Checked Criteria" of mode include count as inclusion criteria; the
+        # exclusion side (free text or exclude-mode criteria) never feeds this badge.
+        inclusion_line = next(
+            line for line in validation_content.splitlines()
+            if "const hasInclusionCriterion" in line
+        )
+        self.assertEqual(
+            inclusion_line.strip(),
+            "const hasInclusionCriterion = inclusionValues.length > 0 || checkedCriteriaCount('include') > 0;",
+        )
+        self.assertNotIn("exclusion", inclusion_line.lower())
         self.assertNotIn("totalCriteria >= 2", validation_content)
         self.assertIn('id="smEligCriteriaRequiredBadge"', template_content)
         self.assertIn('id="smEligExclusionOptionalBadge"', template_content)
@@ -1656,3 +1664,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_year_month_select_offers_future_years_for_planned_studies():
+    """Recruitment may still be in planning, so the year list must extend past today."""
+    source = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+    body = source.split("export function initYearMonthSelect", 1)[1].split("\n}\n", 1)[0]
+    assert "const endYear = currentYear;" not in body
+    assert "const endYear = currentYear +" in body

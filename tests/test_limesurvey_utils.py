@@ -296,6 +296,7 @@ def test_convert_lsa_to_dataset_injects_task_duration_and_calls_process(monkeypa
     ads_schema = captured["schemas"]["ads"]
     assert ads_schema["SurveyDuration"]["Units"] == "seconds"
     assert "SurveyStartTime" in ads_schema
+    assert "SurveyStartDate" in ads_schema
     assert "SurveyDuration" in captured["df"].columns
 
 
@@ -570,3 +571,38 @@ def test_parse_lsa_timings_handles_invalid_zip_and_dataframe_failures(tmp_path, 
         assert parse_lsa_timings(str(archive)) is None
     finally:
         monkeypatch.setattr(limesurvey_module.pd, "DataFrame", original_dataframe)
+
+
+def test_add_survey_time_columns_writes_start_date():
+    import pandas as pd
+
+    from src.converters.limesurvey import add_survey_time_columns
+
+    df = pd.DataFrame(
+        {"startdate": ["2025-03-04 10:15:00"], "submitdate": ["2025-03-04 10:25:00"]}
+    )
+    add_survey_time_columns(df)
+    assert df.loc[0, "SurveyStartDate"] == "2025-03-04"
+    assert df.loc[0, "SurveyStartTime"] == "10:15:00"
+    assert df.loc[0, "SurveyDuration"] == 10.0
+
+
+def test_add_survey_time_columns_date_falls_back_to_datestamp():
+    import pandas as pd
+
+    from src.converters.limesurvey import add_survey_time_columns
+
+    df = pd.DataFrame({"datestamp": ["2025-03-04 10:25:00"], "submitdate": ["2025-03-04 10:25:00"]})
+    add_survey_time_columns(df)
+    assert df.loc[0, "SurveyStartDate"] == "2025-03-04"
+    assert "SurveyDuration" not in df.columns  # datestamp is the last action, not the start
+
+
+def test_add_survey_time_columns_bad_date_is_empty():
+    import pandas as pd
+
+    from src.converters.limesurvey import add_survey_time_columns
+
+    df = pd.DataFrame({"startdate": ["not a date", ""], "submitdate": ["", ""]})
+    add_survey_time_columns(df)
+    assert list(df["SurveyStartDate"]) == ["", ""]

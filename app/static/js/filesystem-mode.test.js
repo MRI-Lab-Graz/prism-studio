@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 async function load() {
   const open = vi.fn(async () => '/picked');
   const fetchSpy = vi.fn(async () => { throw new Error('no network expected'); });
-  globalThis.window = { PrismFolderBrowser: { open }, prompt: () => 'out.json', location: { href: 'http://x/' } };
-  globalThis.document = { currentScript: { src: 'http://x/js/filesystem-mode.js' } };
+  globalThis.window = { PrismFolderBrowser: { open }, prompt: () => 'out.json', location: { href: 'https://x/' } };
+  globalThis.document = { currentScript: { src: 'https://x/js/filesystem-mode.js' } };
   globalThis.fetch = fetchSpy;
   vi.resetModules();
   await import('./filesystem-mode.js');
@@ -21,11 +21,6 @@ describe('single in-app picker', () => {
     vi.restoreAllMocks();
   });
 
-  it('always prefers the in-app picker, regardless of any setting', async () => {
-    const { picker } = await load();
-    expect(picker.prefersServerPicker()).toBe(true);
-  });
-
   it('browseFile / browseFolder open the in-app browser and never call a native dialog endpoint', async () => {
     const { picker, open, fetchSpy } = await load();
     expect(await picker.browseFile({ extensions: '.json', startPath: '/a' })).toBe('/picked');
@@ -38,5 +33,17 @@ describe('single in-app picker', () => {
   it('browseSaveFile picks a folder, then joins the typed name', async () => {
     const { picker } = await load();
     expect(await picker.browseSaveFile({ defaultName: 'x.json' })).toBe('/picked/out.json');
+  });
+
+  it('starts at the project root unless the caller keeps its own start path', async () => {
+    const { picker, open } = await load();
+    globalThis.window.currentProjectPath = '/proj';
+    await picker.browseFolder({ startPath: '/last' });
+    await picker.browseFile({ startPath: '/last', keepStartPath: true });
+    globalThis.window.currentProjectPath = '';
+    await picker.browseFolder({ startPath: '/last' });
+    expect(open).toHaveBeenNthCalledWith(1, expect.objectContaining({ startPath: '/proj' }));
+    expect(open).toHaveBeenNthCalledWith(2, expect.objectContaining({ startPath: '/last' }));
+    expect(open).toHaveBeenNthCalledWith(3, expect.objectContaining({ startPath: '/last' }));
   });
 });

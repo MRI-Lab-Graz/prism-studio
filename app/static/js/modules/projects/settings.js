@@ -346,14 +346,6 @@ export function initProjectSettingsForm() {
                 `;
             }
 
-            if (result.success) {
-                window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
-                    detail: {
-                        global_library_path: document.getElementById('globalLibraryPath').value,
-                    }
-                }));
-            }
-
             setTimeout(() => {
                 if (result.success) {
                     statusDiv.innerHTML = '';
@@ -412,10 +404,6 @@ export async function clearGlobalLibrary() {
                 </div>
             `;
             updateLibraryInfoPanel(null, null);
-
-            window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
-                detail: { global_library_path: null }
-            }));
 
             setTimeout(() => {
                 document.getElementById('libraryStatusMessage').innerHTML = '';

@@ -161,13 +161,17 @@ class TestIssues:
             assert "File Management" in get_fix_hint(code, message), code
 
     def test_missing_survey_recipe_warning_has_its_own_code(self):
-        message = (
-            "Missing survey recipes for dataset-used surveys. "
-            "Used surveys: brs. Missing: brs."
-        )
+        message = "Missing survey recipes for dataset-used surveys: brs."
 
         assert infer_code_from_message(message) == "PRISM708"
         assert "Recipe builder" in get_fix_hint("PRISM708", message)
+
+    def test_session_missing_for_subjects_is_a_consistency_warning(self):
+        for message in (
+            "Session ses-2 missing for subjects",
+            "Session ses-1 missing for 12/40 subjects",
+        ):
+            assert infer_code_from_message(message) == "PRISM601", message
 
 
 class TestConfig:
@@ -396,7 +400,7 @@ class TestSchemaManager:
         assert "dataset_description" in schemas
         for name in ("biometrics", "environment", "events", "physio", "eyetracking"):
             assert name in schemas
-        assert schemas["physiological"] is schemas["physio"]
+        assert "physiological" not in schemas
 
     def test_load_all_schemas_picks_up_modality_declared_in_rules(self, tmp_path):
         """A new modality needs only a rules entry and a schema file, no code."""

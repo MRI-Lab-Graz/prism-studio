@@ -38,8 +38,9 @@ prism-validator /path/to/dataset
 |---|---|
 | `-v`, `--verbose` | Print detailed progress / scanning info |
 | `--schema-version VERSION` | Choose schema version (e.g. `stable`, `0.1`). Default `stable` |
+| `--modality-version NAME=X.Y.Z` | Validate one modality against a specific version (repeatable); overrides the `project.json` pin. See [Schema versioning](SCHEMA_VERSIONING.md) |
 | `--schema-info MODALITY` | Show schema details for a modality (minimal stub) |
-| `--list-versions` | List schema versions available in `app/schemas/` |
+| `--list-versions` | List schema versions available in `app/schemas/`, and the versions of each modality |
 | `--bids` | Run the BIDS validator. This is the default; the flag only overrides `"runBids": false` in `.prismrc.json` |
 | `--no-bids` | Skip the BIDS validator and run only the PRISM checks (cannot be combined with `--bids`) |
 | `--bids-warnings` | Include BIDS validator warnings (default hidden) |
@@ -171,6 +172,13 @@ language, `de` default / `auto` for `.lsa`), `--unknown {error,warn,ignore}`
 (unmapped columns), `--dry-run`, `--force`,
 `--duplicate-handling {error,keep_first,keep_last,sessions}` (repeated IDs; `sessions`
 numbers each ID's rows 1, 2, … by `startdate`/`datestamp`).
+`--skip-existing` imports only what is new: a response already in the output project
+(recognised by the `startdate`/`seed`/`token` record kept in `code/survey_imports.json`, whatever
+session it was stored under) is skipped per survey, a response found under another session is
+flagged, and a different response in an occupied subject/session/survey slot is reported as a
+conflict and never overwritten. A recorded response is skipped as a whole, even if the project lacks a file for one of the
+questionnaires in the export (the check is about new *responses*). Without a record in that file it falls back to the
+file name and says so.
 
 Templates are optional for `.lsa` files: questionnaires without a library template are
 left out of the conversion and listed as a warning; the matched ones convert.
@@ -370,6 +378,11 @@ python prism_tools.py participants merge --input /absolute/path/to/T1.xlsx --id-
 # (default column startdate, falling back to datestamp); works on preview, convert and merge
 python prism_tools.py participants merge --input /absolute/path/to/survey_archive.lsa --id-column token --sessions-from-date --project /absolute/path/to/my-project/project.json --json
 
+# Repeated rows per ID: identical values collapse quietly. A value that changes between an ID's rows
+# (e.g. age across sessions) is an error unless you keep ONE session (--session-column + --session)
+# or one column per session (--session-column + --split-sessions: age@ses-1, age@ses-2)
+python prism_tools.py participants convert --input /absolute/path/to/T1.xlsx --id-column ID --session-column session --split-sessions --project /absolute/path/to/my-project/project.json --json
+
 # Save a reusable mapping (preferred target: <project>/code/library)
 python prism_tools.py participants save-mapping --mapping-json '{"participant_id": {"source_column": "ID"}}' --project /absolute/path/to/my-project/project.json
 
@@ -419,6 +432,7 @@ by `startdate`/`datestamp`; incomplete ones are left out. Review, then override:
 
 ```bash
 python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project
+python prism_tools.py sessions review --input survey_archive.lsa --id-column token --project /abs/path/my-project --skip-existing  # only responses not yet imported
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 502 --session pre
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 501 --skip
 python prism_tools.py sessions set --project /abs/path/my-project --survey 999999 --response 503 --include
@@ -464,6 +478,23 @@ python prism_tools.py publish --install-hook --project /absolute/path/to/share/m
 Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
 `--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
 for the hook's requirements and limits.
+
+### Methods section and preregistration draft
+
+```bash
+python prism_tools.py methods generate --project /path/to/project \
+    [--detail brief|standard|detailed] [--format md|html|docx|tex|bib] [--output FILE]
+python prism_tools.py preregistration draft --project /path/to/project \
+    [--format md|html|docx|tex] [--output FILE]
+```
+
+`methods generate` builds a paper-ready Methods text from `project.json`, the
+task templates, the BIDS sidecars (scanner/sequence parameters, counts per
+session), the scoring recipes and the PRISM version. Gaps (no sample size, an
+instrument without a citation) are printed to stderr as warnings and are never
+invented. `--format bib` writes the instrument references as BibTeX; the `.tex` output cites them with `\citep{key}` and ends with `\bibliography{references}`, so save the bib as `references.bib` next to the `.tex` and compile with `pdflatex`, `bibtex`, `pdflatex` twice (citations without a readable author and year stay plain text). `docx`
+needs `--output` and the `python-docx` package (exit code 2 otherwise); the Studio
+Projects page offers the same downloads (Word, TeX, BibTeX).
 
 ### Save gate
 
@@ -689,3 +720,39 @@ python prism_tools.py datalad finalize --project /absolute/path/to/my-project --
 On Windows the install hint is: install Git for Windows, then (without uv)
 `py -m pip install datalad git-annex` and restart PRISM Studio (macOS/Linux:
 `uv tool install datalad --with-executables-from git-annex`).
+
+## modality propose
+
+Check a modality proposal and generate its schema, example sidecar, fixture
+dataset and `REGISTRATION.md`.
+
+    python prism_tools.py modality propose <proposal.xlsx|.yml|.json> --sample <file> [--out <dir>] [--check] [--json]
+
+- `--sample`: synthetic sample data file (required).
+- `--out`: output folder (required unless `--check`). The proposal may add a suffix to an existing modality; `--out` then writes no schema file.
+- `--check`: validate only, write nothing.
+- `--json`: machine-readable output.
+
+Exit code 0 on success, 1 if any problem is an error, 2 if `--out` is missing
+without `--check`. See `MODALITY_PROPOSALS.md`.
+
+## modality-version
+
+Per-modality schema versions and the pins in a project's `project.json`
+(see [Schema versioning](SCHEMA_VERSIONING.md)).
+
+    python prism_tools.py modality-version status <project> [--json]
+    python prism_tools.py modality-version list [<name>] [--json]
+    python prism_tools.py modality-version pin <project> [<name> ...] [--json]
+    python prism_tools.py modality-version update <project> <name> [--json]
+    python prism_tools.py modality-version freeze <project> <name> [--json]
+
+- `status`: the pinned versions and the updates not yet decided.
+- `list`: the available versions of one modality, or of all.
+- `pin`: pin the named modalities, or those with data in the project; modalities already pinned are left alone. For projects created before pinning existed.
+- `update`: move a pinned modality to the latest version.
+- `freeze`: keep the pinned version and stop reporting the newer one.
+- `--json`: machine-readable output (`{"success": true, ...}`, or `{"success": false, "error": ...}`).
+
+`<project>` must contain a readable `project.json`. `update` and `freeze` fail
+for a modality that is not pinned. Exit code 0 on success, 1 on error.

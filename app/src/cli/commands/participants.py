@@ -22,8 +22,10 @@ from src.participants_backend import (
     preview_participants_merge,
     save_participant_mapping,
 )
+from src.participant_data_checks import find_participant_data_problems
 from src.participants_converter import ParticipantsConverter, load_participant_source
-from src.participants_sessions import scope_to_session
+from src.eligibility import load_criteria
+from src.participants_sessions import find_repeat_conflicts, scope_to_session
 from src.session_assignments import load_session_assignments, survey_id_of
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
@@ -350,12 +352,18 @@ def cmd_participants_preview(args) -> None:
         "participant_count": len(df),
         "preview_rows": preview_df.to_dict(orient="records"),
         "session_candidates": session_candidates,
+        "repeat_conflicts": find_repeat_conflicts(df, id_column, output_columns),
+        "eligibility_criteria": load_criteria(str(project_root)),
     }
     identical_warning = format_identical_rows_warning(
         find_identical_value_rows(df[output_columns], id_column)
     )
-    payload["data_warnings"] = load_warnings + (
-        [identical_warning] if identical_warning else []
+    problems = find_participant_data_problems(df, id_column, output_columns)
+    payload["data_errors"] = problems["errors"]
+    payload["data_warnings"] = (
+        load_warnings
+        + problems["warnings"]
+        + ([identical_warning] if identical_warning else [])
     )
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
@@ -365,8 +373,10 @@ def cmd_participants_preview(args) -> None:
         print(f"ID col:  {id_column}")
         print(f"Rows:    {len(df)}")
         print(f"Columns: {', '.join(output_columns)}")
-        if identical_warning:
-            print(f"Warning: {identical_warning}")
+        for warning in payload["data_warnings"]:
+            print(f"Warning: {warning}")
+        for error in payload["data_errors"]:
+            print(f"Error: {error}")
 
 
 def cmd_participants_convert(args) -> None:
@@ -493,6 +503,7 @@ def cmd_participants_convert(args) -> None:
         session_column=getattr(args, "session_column", None),
         session_value=getattr(args, "session", None),
         sessions_from_date=getattr(args, "sessions_from_date", None),
+        split_sessions=bool(getattr(args, "split_sessions", False)),
     )
 
     neurobagel_schema = _parse_neurobagel_schema(
@@ -561,6 +572,12 @@ def cmd_participants_merge(args) -> None:
         input_path.suffix.lower(), separator_option
     )
     export_conflicts_csv = bool(getattr(args, "conflicts_csv", False))
+    screening_text = getattr(args, "screening_only", None)
+    screening_only_ids = (
+        None
+        if screening_text is None
+        else [part.strip() for part in screening_text.split(",") if part.strip()]
+    )
 
     if export_conflicts_csv and bool(getattr(args, "apply", False)):
         print("Error: --conflicts-csv cannot be combined with --apply.")
@@ -633,6 +650,7 @@ def cmd_participants_merge(args) -> None:
             session_resolution_decisions=session_resolution,
             sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
+            screening_only_ids=screening_only_ids,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})
@@ -714,6 +732,7 @@ def cmd_participants_merge(args) -> None:
             session_resolution_decisions=session_resolution,
             sessions_from_date=getattr(args, "sessions_from_date", None),
             harmonization_decisions=harmonization,
+            screening_only_ids=screening_only_ids,
         )
     except ValueError as exc:
         payload = cast(dict[str, object], {"error": str(exc), "log": []})

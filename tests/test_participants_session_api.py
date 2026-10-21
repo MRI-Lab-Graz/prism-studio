@@ -110,3 +110,27 @@ def test_convert_with_a_chosen_session_writes_one_row_per_participant(client):
     lines = (client.project / "participants.tsv").read_text().splitlines()
     assert [line.split("\t")[0] for line in lines[1:]] == ["sub-1", "sub-2"]
     assert [line.split("\t")[1] for line in lines[1:]] == ["30", "40"]
+
+
+def _preview(client, csv_text, **fields):
+    response = client.post(
+        "/api/participants-preview",
+        data=_upload(csv_text, **fields),
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 200, response.get_json()
+    return response.get_json()
+
+
+def test_preview_reports_the_columns_whose_value_changes_between_sessions(client):
+    # age differs per session: the page must ask which session to keep; sex repeats identically.
+    assert _preview(client, LONGITUDINAL_CSV)["repeat_conflicts"] == ["age"]
+
+
+def test_preview_is_quiet_when_repeated_rows_are_identical(client):
+    same = "participant_id,session,age\n1,baseline,30\n1,followup,30\n2,baseline,40\n2,followup,40\n"
+    assert _preview(client, same)["repeat_conflicts"] == []
+
+
+def test_preview_has_no_conflicts_without_repeated_rows(client):
+    assert _preview(client, CROSS_SECTIONAL_CSV)["repeat_conflicts"] == []

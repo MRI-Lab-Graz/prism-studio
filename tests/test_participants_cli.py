@@ -200,6 +200,9 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
     assert len(payload["backup_files"]) == 2
     for backup_path in payload["backup_files"]:
         assert Path(backup_path).exists()
+        # Root-level *.bak-* files fail validation; backups live under code/.
+        assert Path(backup_path).parent == tmp_path / "code"
+    assert not list(tmp_path.glob("participants.*.bak-*"))
 
     merged_lines = (
         (tmp_path / "participants.tsv").read_text(encoding="utf-8").splitlines()

@@ -95,7 +95,7 @@ def test_build_example_keep_rule_requires_keep_or_add():
 
 
 def test_build_example_keep_rule_add_text_rejects_invalid_chars():
-    with pytest.raises(ValueError, match="letters and numbers"):
+    with pytest.raises(ValueError, match="Text to add can only contain"):
         build_example_keep_rule(
             tokens=["sub-001"],
             example_token="sub-001",
@@ -124,3 +124,21 @@ def test_rewrite_token_last3_extracts_last_three_digits():
 
 def test_rewrite_token_last3_returns_unchanged_when_no_digits():
     assert rewrite_token("ses-followup", "last3", rule=None, token_prefix="ses-") == "ses-followup"
+
+
+@pytest.mark.parametrize("text", ["ünï", "中", "²", "a b", "a_b", "a-b", "../x", "x" * 33])
+def test_text_to_add_must_be_a_short_ascii_label_part(text):
+    """BIDS labels are ASCII letters and digits; str.isalnum() lets accents and CJK through."""
+    with pytest.raises(ValueError, match="Text to add"):
+        build_example_keep_rule(
+            tokens=["sub-1291003"], example_token="sub-1291003", keep_fragment="003",
+            token_prefix="sub-", add_text=text, add_position="append",
+        )
+
+
+def test_ascii_text_to_add_is_accepted():
+    rule = build_example_keep_rule(
+        tokens=["sub-1291003"], example_token="sub-1291003", keep_fragment="003",
+        token_prefix="sub-", add_text="Ab9", add_position="prepend",
+    )
+    assert rewrite_token("sub-1291003", "example_keep", rule, "sub-") == "sub-Ab9003"

@@ -144,7 +144,7 @@
 
             {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
             <div class="small">
-                <p class="mb-2"><strong>Why rename?</strong> PRISM/BIDS expects names like <code>sub-01_ses-pre_task-rest_physio.edf</code>. The Renamer turns your lab's names into this pattern, and the Organizer copies files into the matching <code>sub-*/ses-*</code> folders.</p>
+                <p class="mb-2"><strong>Why rename?</strong> PRISM/BIDS expects names like <code>sub-01_ses-pre_recording-ecg_physio.edf</code> (files with a task, e.g. <code>task-rest</code>, go to beh/func/eeg). The Renamer turns your lab's names into this pattern, and the Organizer copies files into the matching <code>sub-*/ses-*</code> folders.</p>
                 <p class="mb-0"><strong>Previews are safe.</strong> Nothing changes on disk until you click the apply / copy button.</p>
             </div>
             {% endcall %}
@@ -228,7 +228,7 @@
                                     <div class="mt-3 small text-muted">
                                         <div><strong>Input:</strong> Files or a folder with your original filenames.</div>
                                         <div><strong>You define:</strong> Subject/session source, structure, and output template.</div>
-                                        <div><strong>Example:</strong> <code>004-t2.edf</code> becomes <code>sub-004_ses-2_task-rest_physio.edf</code> based on your template.</div>
+                                        <div><strong>Example:</strong> <code>004-t2.edf</code> becomes <code>sub-004_ses-2_recording-ecg_physio.edf</code> based on your template.</div>
                                         <div><strong>Result:</strong> Previewed, consistent names you can copy into the project or download.</div>
                                     </div>
                                 </div>
@@ -242,22 +242,22 @@
                                             </span>
                                         </label>
                                         <div id="renamerLocalUploadGroup">
-                                            <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory data-help-key="renamerFiles">
-                                            <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
+                                            <input class="visually-hidden" type="file" id="renamerFiles" multiple webkitdirectory directory tabindex="-1" aria-hidden="true">
+                                            <small class="text-muted" data-help-key="renamerFiles">Choose files or an entire folder. We will pick one file as an example to define the rule.</small>
                                         </div>
                                         <div class="d-flex flex-wrap gap-2 mt-2">
-                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="renamerBrowseServerFileBtn">
-                                                <i class="fas fa-server me-1"></i>Server File
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" id="renamerBrowseFileBtn">
+                                                <i class="fas fa-file me-1"></i>Browse files
                                             </button>
-                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="renamerBrowseServerFolderBtn">
-                                                <i class="fas fa-server me-1"></i>Server Folder
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" id="renamerBrowseFolderBtn">
+                                                <i class="fas fa-folder-open me-1"></i>Browse folder
                                             </button>
-                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="renamerClearServerSelectionBtn">
-                                                <i class="fas fa-xmark me-1"></i>Clear Server Selection
+                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="renamerClearSelectionBtn">
+                                                <i class="fas fa-xmark me-1"></i>Clear selection
                                             </button>
                                         </div>
-                                        <div class="form-text d-none" id="renamerServerFileHint"></div>
-                                        <div class="form-text d-none" id="renamerServerFolderHint"></div>
+                                        <div class="form-text d-none" id="renamerFileHint"></div>
+                                        <div class="form-text d-none" id="renamerFolderHint"></div>
                                     </div>
                                 </div>
 
@@ -338,15 +338,18 @@
                                                 </div>
                                                 <div class="row g-2">
                                                     <div class="col-md-3">
-                                                        <label for="renamerTask" class="form-label small text-muted mb-1">Task <span class="badge bg-danger ms-1">REQUIRED</span></label>
-                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerTask" value="rest" placeholder="e.g. rest" required>
+                                                        <label for="renamerTask" class="form-label small text-muted mb-1">Task <span class="badge bg-secondary ms-1" id="renamerTaskBadge">OPTIONAL</span></label>
+                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerTask" value="" placeholder="e.g. rest">
+                                                        <small id="renamerTaskHint" class="text-muted">Leave empty for recordings without a task. With a task, choose beh, func or eeg as modality.</small>
                                                     </div>
                                                     <div class="col-md-3">
                                                         <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
                                                         <select class="form-select form-select-sm" id="renamerModality">
                                                             <option value="physio" selected>Physio</option>
+                                                            <option value="beh">Physio with task (beh)</option>
+                                                            <option value="func">Physio with task (func)</option>
+                                                            <option value="eeg">Physio with task (eeg)</option>
                                                             <option value="biometrics">Biometrics</option>
-                                                            <option value="events">Events</option>
                                                             <option value="survey">Survey</option>
                                                         </select>
                                                     </div>
@@ -402,7 +405,7 @@
                                                         <div class="col-12">
                                                             <small class="text-muted">
                                                                 We generate <code>{subject}</code> and <code>{session}</code> placeholders automatically (or shorthand <code>{}</code>, <code>{}</code>). Example:
-                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the source path/name, leave it empty and <code>ses-</code> will be removed automatically.
+                                                                <code>sub-{subject}_ses-{session}_recording-ecg_physio.vpd</code>. If session is not in the source path/name, leave it empty and <code>ses-</code> will be removed automatically.
                                                             </small>
                                                         </div>
                                                         <div class="col-12">
@@ -412,7 +415,7 @@
                                                     <div class="row g-3 mt-2">
                                                         <div class="col-md-12">
                                                             <label for="renamerNewExample" class="form-label small text-muted mb-1">Output Filename Template</label>
-                                                            <input type="text" class="form-control font-monospace" id="renamerNewExample" placeholder="sub-{subject}_ses-{session}_task-rest_physio.RAW">
+                                                            <input type="text" class="form-control font-monospace" id="renamerNewExample" placeholder="sub-{subject}_ses-{session}_recording-ecg_physio.RAW">
                                                             <small class="text-muted">Use placeholders <code>{subject}</code> and optional <code>{session}</code>. You can add fixed parts like <code>acq-night</code> or <code>run-01</code>.</small>
                                                         </div>
                                                     </div>
@@ -745,7 +748,7 @@
                                     <div class="mt-3 small text-muted">
                                         <div><strong>Input:</strong> Individual files or a folder upload.</div>
                                         <div><strong>You choose:</strong> Target modality, destination root, and flat or nested structure.</div>
-                                        <div><strong>Example:</strong> <code>sub-012_ses-pre_task-rest_physio.edf</code> and <code>sub-012_ses-pre_task-rest_physio.json</code> are copied to <code>sub-012/ses-pre/physio/</code>.</div>
+                                        <div><strong>Example:</strong> <code>sub-012_ses-pre_recording-ecg_physio.edf</code> and <code>sub-012_ses-pre_recording-ecg_physio.json</code> are copied to <code>sub-012/ses-pre/physio/</code>. Files with a task go to beh/func/eeg.</div>
                                         <div><strong>Result:</strong> Copied files in organized folders. Validation still happens in the Validator tool.</div>
                                     </div>
                                 </div>
@@ -754,28 +757,28 @@
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6 d-flex flex-column studio-file-picker" id="organizeFilesPickerCol">
                                         <label for="organizeFiles" class="form-label">Select Files to Organize</label>
-                                        <input class="form-control flex-grow-1" type="file" id="organizeFiles" multiple data-help-key="organizeFiles">
-                                        <div class="form-text">Supports .edf, .tsv, .tsv.gz, .nii.gz, .json, .png, etc.</div>
+                                        <input class="visually-hidden" type="file" id="organizeFiles" multiple tabindex="-1" aria-hidden="true">
+                                        <div class="form-text" data-help-key="organizeFiles">Supports .edf, .tsv, .tsv.gz, .nii.gz, .json, .png, etc.</div>
                                         <div class="d-flex flex-wrap gap-2 mt-2">
-                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="organizeBrowseServerFileBtn">
-                                                <i class="fas fa-server me-1"></i>Server File
+                                            <button class="btn btn-outline-secondary btn-sm" type="button" id="organizeBrowseFileBtn">
+                                                <i class="fas fa-file me-1"></i>Browse files
                                             </button>
-                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="organizeClearServerFilesBtn">
-                                                <i class="fas fa-xmark me-1"></i>Clear Server Files
+                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="organizeClearFilesBtn">
+                                                <i class="fas fa-xmark me-1"></i>Clear selection
                                             </button>
                                         </div>
-                                        <div class="form-text d-none" id="organizeFilesServerPathHint"></div>
+                                        <div class="form-text d-none" id="organizeFilesPathHint"></div>
                                     </div>
                                     <div class="col-md-6 d-flex flex-column studio-file-picker" id="organizeFolderPickerCol">
                                         <label for="organizeFolder" class="form-label" id="organizeFolderLabel">Or Select a Folder</label>
                                         <div id="organizeFolderLocalUploadGroup">
-                                            <input class="form-control flex-grow-1" type="file" id="organizeFolder" webkitdirectory directory multiple data-help-key="organizeFolder">
-                                            <div class="form-text">Folder uploads are flattened to filenames (subfolders ignored).</div>
+                                            <input class="visually-hidden" type="file" id="organizeFolder" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
+                                            <div class="form-text" data-help-key="organizeFolder">Folders are flattened to filenames (subfolders ignored).</div>
                                         </div>
-                                        <button class="btn btn-outline-secondary btn-sm mt-2 d-none" type="button" id="organizeFolderServerBrowseBtn">
-                                            <i class="fas fa-server me-1"></i>Server Folder
+                                        <button class="btn btn-outline-secondary btn-sm mt-2" type="button" id="organizeBrowseFolderBtn">
+                                            <i class="fas fa-folder-open me-1"></i>Browse folder
                                         </button>
-                                        <div class="form-text d-none" id="organizeFolderServerPathHint"></div>
+                                        <div class="form-text d-none" id="organizeFolderPathHint"></div>
                                     </div>
                                 </div>
 
@@ -898,11 +901,8 @@
                                         </div>
                                         <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx" data-help-key="wideLongFile">
                                         <div class="input-group studio-picker-group">
-                                            <button class="btn btn-outline-secondary" type="button" id="wideLongPickFileBtn">
-                                                Select File
-                                            </button>
-                                            <button class="btn btn-outline-secondary d-none" type="button" id="wideLongBrowseServerFileBtn">
-                                                <i class="fas fa-server me-1"></i>Server File
+                                            <button class="btn btn-outline-secondary" type="button" id="wideLongBrowseFileBtn">
+                                                Browse
                                             </button>
                                             <input type="text" class="form-control" id="wideLongFileName" value="No file selected" readonly>
                                             <button class="btn btn-outline-danger" type="button" id="wideLongClearBtn" title="Clear form" aria-label="Clear form">

@@ -102,6 +102,76 @@ def scope_to_session(
     return candidates, df
 
 
+def sanitize_session_token(value: Any) -> str:
+    """Session label as it appears inside a column name (``age@ses-<token>``)."""
+    token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
+    token = re.sub(r"-+", "-", token).strip("-")
+    return (token or "unknown").lower()
+
+
+def _non_empty(values: Iterable[Any]) -> list[Any]:
+    return [v for v in values if not _is_missing(v) and str(v).strip() != ""]
+
+
+def find_repeat_conflicts(
+    df: pd.DataFrame, id_column: str, columns: Iterable[str]
+) -> list[str]:
+    """Columns whose non-empty values differ between rows of the same participant.
+
+    Identical repeats are not conflicts: they collapse to one row without any
+    question. A conflict is a value that changes between a participant's rows
+    (e.g. age across sessions).
+    """
+    conflicts = []
+    for column in columns:
+        if column == id_column or column not in df.columns:
+            continue
+        varies = df.groupby(id_column, sort=False)[column].apply(
+            lambda values: len({str(v).strip() for v in _non_empty(values)}) > 1
+        )
+        if varies.any():
+            conflicts.append(str(column))
+    return conflicts
+
+
+def split_columns_by_session(
+    df: pd.DataFrame,
+    labels: pd.Series,
+    columns: Iterable[str],
+    id_column: str = "participant_id",
+) -> pd.DataFrame:
+    """One column per session (``age@ses-1``) for ``columns``, one row per participant.
+
+    ``labels`` holds each row's exact session label (aligned with ``df``).
+    Rows without a label are ignored. Raises ValueError when two labels would
+    name the same column or one participant has different values in one session.
+    """
+    labels = labels.map(session_label)
+    names: dict[str, str] = {}  # token -> label that claimed it
+    for label in sort_session_labels(set(labels) - {""}):
+        token = sanitize_session_token(label)
+        if names.setdefault(token, label) != label:
+            raise ValueError(
+                f"Session labels {names[token]!r} and {label!r} would name the same column "
+                f"(@ses-{token}). Rename one of them in the source file."
+            )
+    ids = list(dict.fromkeys(df[id_column]))
+    wide: dict[str, pd.Series] = {}
+    for column in columns:
+        for token, label in names.items():
+            values: dict[Any, Any] = {}
+            for pid, group in df[labels == label].groupby(id_column, sort=False):
+                found = _non_empty(group[column])
+                if len({str(v).strip() for v in found}) > 1:
+                    raise ValueError(
+                        f"ID {pid} has different values for '{column}' within session {label!r}."
+                    )
+                if found:
+                    values[pid] = found[0]
+            wide[f"{column}@ses-{token}"] = pd.Series(values, dtype=object).reindex(ids)
+    return pd.DataFrame(wide, index=ids)
+
+
 def _outcomes(
     df: pd.DataFrame,
     id_column: str,
@@ -279,9 +349,34 @@ def session_assignment_table(
     date_column: str = "startdate",
     decisions: dict | None = None,
     response_id_column: str = "id",
+    imported_root=None,
+    survey_id: str = "default",
 ) -> tuple[list[dict], list[str]]:
-    """One row per response for review: what session it gets and why."""
+    """One row per response for review: what session it gets and why.
+
+    With ``imported_root`` (a project), responses it already handled (imported, or reviewed
+    and unchanged since) are left out, except manual session overrides; the sessions are
+    still numbered across the whole file.
+    """
     res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    if imported_root is not None:
+        from src.survey_existing import FINGERPRINT_COLUMNS, ImportIndex, row_fingerprint, seen_entry
+
+        columns = tuple(c for c in FINGERPRINT_COLUMNS if c in df.columns)
+        index = ImportIndex(imported_root)
+
+        def handled(i) -> bool:
+            row = df.loc[i]
+            return index.is_imported(row_fingerprint(row, columns)) or index.is_seen(
+                survey_id, *seen_entry(row)
+            )
+
+        # Only new data is listed (skipped or not, so a half-filled response can still be taken).
+        # A manual session override stays: it usually marks a session-mapping problem.
+        done = [i for i in res.index if res.at[i, "reason"] != "override" and handled(i)]
+        if done:
+            res = res.drop(done)
+            warnings.append(f"{len(done)} response(s) already handled in an earlier import are not shown.")
     rows = [
         {
             "participant": r["participant"],

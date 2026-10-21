@@ -26,8 +26,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Bot-generated modality proposals only add content under proposals/; they skip
+  # the code-oriented jobs below (a job skipped by its own `if` counts as passing
+  # for required checks). Anything else runs everything.
+  scope:
+    name: PR scope
+    runs-on: ubuntu-latest
+    outputs:
+      content_only: ${{ steps.scope.outputs.content_only }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect modality-proposal PR
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            python3 scripts/ci/pr_scope.py "$HEAD_BRANCH" "origin/$BASE_BRANCH" HEAD | tee -a "$GITHUB_OUTPUT"
+          else
+            echo content_only=false >> "$GITHUB_OUTPUT"
+          fi
+
+  schema-versions:
+    name: Modality schema versions
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Check frozen modality schema versions
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: python3 scripts/ci/check_schema_versions.py "$BASE" HEAD
+
   fast-pr-checks:
     name: Fast On-Demand Checks
+    needs: scope
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 
@@ -46,9 +89,29 @@ jobs:
           pip install -r requirements.txt
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
+      # The JavaScript unit tests (a few seconds). vitest needs Node 22.12 or newer.
+      # Content-only modality proposals touch no code, so they skip this.
+      - name: Set up Node
+        if: needs.scope.outputs.content_only != 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+
+      - name: JavaScript unit tests
+        if: needs.scope.outputs.content_only != 'true'
+        run: |
+          npm ci
+          npx vitest run
+
+      # A bare proposal is not registered yet, so this stays red until the
+      # maintainer's registration push (which is no longer content-only).
+      - name: Modality proposal fixtures
+        if: needs.scope.outputs.content_only == 'true'
+        run: python -m pytest tests/test_modality_proposal_fixtures.py -q
+
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
   nightly-deep-checks:
     name: Nightly Deep Checks
@@ -83,57 +146,12 @@ jobs:
 
       - name: Nightly repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
-
-  coverage:
-    name: Coverage Report (Python ${{ matrix.python-version }})
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11"]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-
-      - name: Install browser for GUI tests
-        shell: bash
-        run: python -m playwright install --with-deps chromium
-
-      - name: Run tests with coverage
-        run: |
-          pytest tests/ --cov=src --cov=app/src --cov-report=xml --cov-report=term-missing -q
-
-      - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.10'
-        # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
-        continue-on-error: true
-        with:
-          files: coverage.xml
-          fail_ci_if_error: false
-          # main is a protected branch on Codecov, which rejects tokenless
-          # uploads ("Token required because branch is protected") -- without
-          # this, continue-on-error/fail_ci_if_error masked every upload
-          # failing silently, so coverage data on codecov.io went stale.
-          token: ${{ secrets.CODECOV_TOKEN }}
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix
 
   cross-platform-tests:
     name: Pytest (${{ matrix.os }})
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs: scope
+    if: (github.event_name == 'push' || github.event_name == 'pull_request') && needs.scope.outputs.content_only != 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -160,18 +178,38 @@ jobs:
           pip install -r requirements.txt
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
-      - name: Install browser for GUI tests
-        shell: bash
-        run: python -m playwright install --with-deps chromium
-
-      - name: Run tests
+      # The browser (Playwright) tests take most of the time and run in the nightly workflow
+      # (nightly.yml, on every system); a pull request gets everything else.
+      - name: Run tests with coverage
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
-          pytest tests/ -q
+          pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src --cov-report=xml --cov-report=term-missing -q
+
+      - name: Run tests
+        if: matrix.os != 'ubuntu-latest'
+        shell: bash
+        run: |
+          pytest tests/ --ignore=tests/e2e -q
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        # Pin to v5.5.0 commit to avoid transient tag-resolution/codeload issues.
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+        continue-on-error: true
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+          # main is a protected branch on Codecov, which rejects tokenless
+          # uploads ("Token required because branch is protected") -- without
+          # this, continue-on-error/fail_ci_if_error masked every upload
+          # failing silently, so coverage data on codecov.io went stale.
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   docs-build:
     name: Docs Build
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs: scope
+    if: (github.event_name == 'push' || github.event_name == 'pull_request') && needs.scope.outputs.content_only != 'true'
     runs-on: ubuntu-latest
 
     steps:

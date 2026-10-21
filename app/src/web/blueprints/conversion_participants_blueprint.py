@@ -37,7 +37,7 @@ from src.participants_backend import (
     find_identical_value_rows,
     format_identical_rows_warning,
 )
-from src.participants_sessions import scope_to_session
+from src.participants_sessions import find_repeat_conflicts, scope_to_session
 from src.session_map import SessionMapError
 from src.session_map import unmapped_session_labels as _unmapped_session_labels
 
@@ -83,6 +83,8 @@ from .conversion_participants_convert import (
 )
 from .conversion_utils import resolve_effective_library_path
 from .projects_helpers import _resolve_project_root_path
+from src.eligibility import load_criteria
+from src.participant_data_checks import find_participant_data_problems
 
 def _identical_rows_warnings(groups: list[list[str]]) -> list[str]:
     """Preview warning list for participants that duplicate another row's values."""
@@ -270,6 +272,8 @@ def api_participants_detect_id():
                 ),
             }
         )
+    except ValueError as e:  # unreadable or empty file: the user's input, not a server fault
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -300,6 +304,7 @@ def api_participants_preview():
         tmp_dir = str(upload["tmp_dir"])
         try:
             preview_stage = "initializing preview"
+            preview_project_root = _get_session_project_root()
             input_path = Path(str(upload["input_path"]))
             suffix = str(upload["suffix"])
 
@@ -488,6 +493,9 @@ def api_participants_preview():
                 participant_filter_config=participant_filter_config,
             )
 
+            data_problems = find_participant_data_problems(
+                df, id_column, [str(c) for c in output_df.columns]
+            )
             return jsonify(
                 {
                     "status": "success",
@@ -512,11 +520,23 @@ def api_participants_preview():
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
                     "session_candidates": session_candidates,
+                    # output_df is already collapsed to one row per participant, so
+                    # a value that changes between rows is only visible in the source.
+                    "repeat_conflicts": find_repeat_conflicts(
+                        df, id_column, output_columns
+                    ),
+                    "eligibility_criteria": (
+                        load_criteria(str(preview_project_root))
+                        if preview_project_root
+                        else []
+                    ),
                     "unmapped_session_labels": unmapped_session_labels,
                     "format_warnings": (
                         [mixed_time_warning] if mixed_time_warning else []
                     ),
+                    "data_errors": data_problems["errors"],
                     "data_warnings": sessions_warnings
+                    + data_problems["warnings"]
                     + _identical_rows_warnings(
                         find_identical_value_rows(output_df, preview_id_column)
                     ),
@@ -633,6 +653,7 @@ def api_participants_merge():
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             harmonization_decisions=harmonization_decisions,
+            screening_only_ids=merge_request["screening_only_ids"],
             session_resolution_decisions=session_resolution_decisions,
             sessions_from_date=sessions_from_date,
             log_callback=log_msg,
@@ -666,6 +687,7 @@ def api_participants_merge():
                     mapping=mapping,
                     log_callback=log_msg,
                 ),
+                "eligibility_criteria": load_criteria(str(project_root)),
                 "format_warnings": [],
                 "data_warnings": _identical_rows_warnings(
                     preview_payload.get("identical_value_rows") or []
@@ -693,6 +715,7 @@ def api_participants_merge():
             preview_limit=preview_limit,
             neurobagel_schema=neurobagel_schema,
             harmonization_decisions=harmonization_decisions,
+            screening_only_ids=merge_request["screening_only_ids"],
             session_resolution_decisions=session_resolution_decisions,
             sessions_from_date=sessions_from_date,
             log_callback=log_msg,
@@ -910,6 +933,7 @@ def api_participants_convert_start():
                     "mapping": mapping,
                     "session_column": request.form.get("session_column", "").strip(),
                     "session_value": request.form.get("session_value", "").strip(),
+                    "split_sessions": request.form.get("split_sessions") == "1",
                     "sessions_from_date": _sessions_from_date_option(),
                 }
             )

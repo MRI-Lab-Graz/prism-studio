@@ -18,13 +18,6 @@ REM with Unix line endings.
 setlocal
 cd /d "%~dp0"
 
-if not exist "scripts\setup\windows.ps1" echo.
-if not exist "scripts\setup\windows.ps1" echo This install.cmd is not next to the rest of PRISM Studio - you probably
-if not exist "scripts\setup\windows.ps1" echo started it from inside the downloaded .zip. Close this window, right-click
-if not exist "scripts\setup\windows.ps1" echo the .zip, choose "Extract All...", and run install.cmd from the new folder.
-if not exist "scripts\setup\windows.ps1" pause
-if not exist "scripts\setup\windows.ps1" exit /b 1
-
 echo Removing the "downloaded from internet" mark from repository files...
 powershell -NoProfile -Command "Get-ChildItem -Recurse | Unblock-File"
 

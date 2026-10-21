@@ -361,7 +361,7 @@ def _base_fix_hint(code: str, message: str = "") -> str:
                 # get one here; others fall through to the generic message
                 # below (matches the pre-entity_rules.py hardcoded dict).
                 hinted_modalities = {
-                    "survey", "biometrics", "physio", "physiological", "eyetracking", "events",
+                    "survey", "biometrics", "physio", "eyetracking", "events",
                 }
                 rules = load_entity_rules()
                 rule = rules.modalities.get(modality)
@@ -489,6 +489,7 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM002"
     elif (
         "participants.tsv mismatch with dataset subject folders" in msg_lower
+        or "participant(s) without a sub-* folder" in msg_lower
         or (
             "subjects present as sub-* folders" in msg_lower
             and "missing in participants.tsv" in msg_lower
@@ -503,6 +504,7 @@ def infer_code_from_message(message: str) -> str:
         "consistency" in msg_lower
         or "mislabeled" in msg_lower
         or "mixed session" in msg_lower
+        or re.match(r"session \S+ missing for ", msg_lower)
     ):
         return "PRISM601"
     elif "empty" in msg_lower:

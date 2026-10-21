@@ -124,6 +124,7 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
     open_survey_tab(app_page, studio_url)
     app_page.set_input_files("#convertSurveyFile", str(_lsa_with_two_questionnaires(tmp_path)))
     app_page.select_option("#convertIdColumn", "token")
+    app_page.select_option("#convertDuplicateHandling", "error")  # a .lsa defaults to sessions-from-dates
     app_page.fill("#convertSessionCustom", "1")
 
     app_page.click("#previewBtn")
@@ -179,7 +180,9 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
 
     app_page.allowed_http[409] = "/api/survey-detect-version-contexts"  # unmapped labels are the point
     app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # error mode has no session yet
-    (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
+    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta["StudyDesign"] = {"Timepoints": "multiple"}
+    (project / "project.json").write_text(json.dumps(meta))
     shutil.copy(make_library(tmp_path) / "survey-wellbeing.json", project / "code" / "library" / "survey")
     open_survey_tab(app_page, studio_url)
     app_page.set_input_files("#convertSurveyFile", str(make_lsa(tmp_path)))
@@ -265,3 +268,34 @@ def test_review_session_assignment_button_folds_the_table_back_in(app_page, stud
 
     app_page.click("#sessionAssignmentsBtn")  # and a third shows it again
     expect(rows).to_have_count(6, timeout=15000)
+
+
+def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,-1,0,2\nP003,often,1,1\n")
+    app_page.fill("#convertSessionCustom", "1")
+    app_page.click("#previewBtn")
+    log = app_page.locator("#conversionLog")
+    expect(log).to_contain_text("outside the scale 0-4", timeout=30000)
+    expect(log).to_contain_text("P001: 9")
+    expect(log).to_contain_text("P002: -1")
+    expect(log).to_contain_text("P003: often")
+
+
+def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    data = tmp_path / "semi.csv"
+    data.write_text("participant_id;BRS01;BRS02;BRS03\nP001;3;4;2\nP002;1;0;2\n")
+    app_page.set_input_files("#convertSurveyFile", str(data))
+    expect(app_page.locator("#convertIdColumn")).to_have_value("participant_id", timeout=30000)
+
+
+def test_preview_warns_about_skipped_rows_and_cleaned_labels(app_page, studio_url, tmp_path):
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
+    app_page.fill("#convertSessionCustom", "pre test")
+    app_page.click("#previewBtn")
+    log = app_page.locator("#conversionLog")
+    expect(log).to_contain_text("no participant ID", timeout=30000)
+    expect(log).to_contain_text("'P 1' → sub-P1")
+    expect(log).to_contain_text("'pre test' → ses-pretest")

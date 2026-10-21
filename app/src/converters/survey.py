@@ -353,6 +353,7 @@ class SurveyConvertResult:
     near_match_candidates: list[dict[str, object]] = field(default_factory=list)
     near_match_applied: bool = False
     unmatched_groups: list[dict] = field(default_factory=list)  # LSA groups left out (no template)
+    existing_summary: dict | None = None  # skip_existing: responses by outcome
     applied_value_offsets: dict[str, float] = field(default_factory=dict)
     value_offset_application_counts: dict[str, int] = field(default_factory=dict)
 
@@ -443,6 +444,7 @@ class SurveyResponsesConverter:
         id_map_file: str | Path | None = None,
         separator: str | None = None,
         duplicate_handling: str = "error",
+        skip_existing: bool = False,
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
@@ -470,6 +472,7 @@ class SurveyResponsesConverter:
             id_map_file=id_map_file,
             separator=separator,
             duplicate_handling=duplicate_handling,
+            skip_existing=skip_existing,
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
@@ -499,6 +502,7 @@ class SurveyResponsesConverter:
         id_map_file: str | Path | None = None,
         strict_levels: bool | None = None,
         duplicate_handling: str = "error",
+        skip_existing: bool = False,
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
@@ -525,6 +529,7 @@ class SurveyResponsesConverter:
             id_map_file=id_map_file,
             strict_levels=strict_levels,
             duplicate_handling=duplicate_handling,
+            skip_existing=skip_existing,
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
@@ -578,6 +583,7 @@ def _convert_survey_file_to_prism_dataset_impl(
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
+    skip_existing: bool = False,
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
@@ -631,6 +637,7 @@ def _convert_survey_file_to_prism_dataset_impl(
         id_map_file=id_map_file,
         strict_levels=True,
         duplicate_handling=duplicate_handling,
+        skip_existing=skip_existing,
         skip_participants=skip_participants,
         source_format=kind,
         project_path=project_path,
@@ -716,6 +723,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
+    skip_existing: bool = False,
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
@@ -775,6 +783,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         id_map_file=id_map_file,
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
+        skip_existing=skip_existing,
         lsa_questions_map=lsa_questions_map,
         skip_participants=skip_participants,
         lsa_analysis=lsa_analysis,
@@ -808,6 +817,7 @@ def convert_survey_file_to_prism_dataset(
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
+    skip_existing: bool = False,
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
@@ -819,7 +829,7 @@ def convert_survey_file_to_prism_dataset(
 
     New integrations should prefer ``SurveyResponsesConverter.convert_xlsx``.
     """
-    return SurveyResponsesConverter().convert_xlsx(
+    result = SurveyResponsesConverter().convert_xlsx(
         input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
@@ -839,6 +849,7 @@ def convert_survey_file_to_prism_dataset(
         id_map_file=id_map_file,
         separator=separator,
         duplicate_handling=duplicate_handling,
+        skip_existing=skip_existing,
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
@@ -846,6 +857,11 @@ def convert_survey_file_to_prism_dataset(
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
+    if not dry_run:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_root)
+    return result
 
 
 def convert_survey_lsa_to_prism_dataset(
@@ -868,6 +884,7 @@ def convert_survey_lsa_to_prism_dataset(
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
+    skip_existing: bool = False,
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
@@ -879,7 +896,7 @@ def convert_survey_lsa_to_prism_dataset(
 
     New integrations should prefer ``SurveyResponsesConverter.convert_lsa``.
     """
-    return SurveyResponsesConverter().convert_lsa(
+    result = SurveyResponsesConverter().convert_lsa(
         input_path=input_path,
         library_dir=library_dir,
         output_root=output_root,
@@ -898,6 +915,7 @@ def convert_survey_lsa_to_prism_dataset(
         id_map_file=id_map_file,
         strict_levels=strict_levels,
         duplicate_handling=duplicate_handling,
+        skip_existing=skip_existing,
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
@@ -905,6 +923,11 @@ def convert_survey_lsa_to_prism_dataset(
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
+    if not dry_run:
+        from src.modality_versions import pin_after_import
+
+        pin_after_import(output_root)
+    return result
 
 
 def _debug_print_file_head(input_path: Path, num_lines: int = 4):
@@ -1359,6 +1382,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     id_map_file: str | Path | None = None,
     strict_levels: bool = True,
     duplicate_handling: str = "error",
+    skip_existing: bool = False,
     lsa_questions_map: dict | None = None,
     skip_participants: bool = True,
     lsa_analysis: dict | None = None,
@@ -1384,7 +1408,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             f"Library folder does not exist or is not a directory: {library_dir}"
         )
 
-    if output_root.exists() and any(output_root.iterdir()) and not force:
+    if output_root.exists() and any(output_root.iterdir()) and not (force or skip_existing):
         raise ValueError(
             f"Output directory is not empty: {output_root}. Use force=True to write into a non-empty directory."
         )
@@ -1565,10 +1589,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             require_sessions_mapped(session_map, session_labels)
 
     # --- Extract LimeSurvey System Columns ---
-    # Only native LimeSurvey sources should emit tool-limesurvey sidecars.
+    # Only native LimeSurvey sources have system columns to set aside and responses to remember.
     # Generic CSV/XLSX/TSV imports may contain similarly named columns, but
-    # those must remain in the primary survey flow and not produce
-    # tool-limesurvey artifacts.
+    # those must remain in the primary survey flow.
     source_format_normalized = str(source_format or "").strip().lower()
     ls_system_cols: list[str] = []
     if source_format_normalized in {"lsa", "lss"}:
@@ -1586,11 +1609,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
+    from src.session_assignments import load_session_assignments, survey_id_of
+
+    all_responses = df  # every response of the file, before incomplete ones are left out
+    survey_id = survey_id_of(input_path) if input_path else "default"
     decisions = None
     if duplicate_handling == "sessions" and project_path:
-        from src.session_assignments import load_session_assignments, survey_id_of
-
-        decisions = load_session_assignments(project_path, survey_id_of(input_path) if input_path else "default")
+        decisions = load_session_assignments(project_path, survey_id)
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
@@ -1727,6 +1752,30 @@ def _convert_survey_dataframe_to_prism_dataset(
         lsa_analysis=lsa_analysis,
     )
 
+    # The GUI converts into a scratch folder and copies into the project afterwards.
+    existing_root = _survey_core._resolve_existing_project_root(project_path) or output_root
+    existing_policy = None
+    if skip_existing:
+        from src.survey_existing import ExistingPolicy
+
+        existing_policy = ExistingPolicy(existing_root, df.columns, output_root)
+
+    def _existing_summary():
+        if existing_policy is None:
+            return None
+        summary = existing_policy.summary()
+        conversion_warnings.append(
+            f"Already in project: {summary['already_imported']} response(s) skipped, "
+            f"{summary['new']} new, {summary['conflict']} conflict(s), "
+            f"{summary['moved']} found under another session."
+        )
+        if summary["unverified"]:
+            conversion_warnings.append(
+                f"{summary['unverified']} skipped response(s) could only be matched by file name "
+                "(not in code/survey_imports.json), so the check is weaker."
+            )
+        return summary
+
     if dry_run:
         # Generate detailed dry-run preview
         dry_run_preview = _generate_dry_run_preview(
@@ -1752,7 +1801,10 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_questions_map=lsa_questions_map,
             task_runs=task_runs,
             task_context_acq_map=task_context_acq_map,
+            task_value_offsets=normalized_task_value_offsets,
+            existing_policy=existing_policy,
         )
+        existing_summary = _existing_summary()
         if participant_registry_warning:
             dry_run_preview["participant_registry_warning"] = (
                 participant_registry_warning
@@ -1779,6 +1831,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             near_match_candidates=near_match_candidates,
             near_match_applied=near_match_applied,
             unmatched_groups=unmatched_lsa_groups,
+            existing_summary=existing_summary,
         )
 
     # --- Write Output ---
@@ -1845,7 +1898,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         process_survey_row_with_run_fn=_process_survey_row_with_run,
         build_bids_survey_filename_fn=_build_bids_survey_filename,
         task_value_offsets=normalized_task_value_offsets,
+        existing_policy=existing_policy,
     )
+    existing_summary = _existing_summary()
 
     applied_value_offsets: dict[str, float] = {}
     if normalized_task_value_offsets:
@@ -1865,32 +1920,21 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
     )
 
-    # --- Write LimeSurvey System Variables ---
+    # --- Remember imported LimeSurvey responses (for "skip surveys already in the project") ---
     if ls_system_cols:
-        # Extract LS metadata from the .lsa analysis if available
-        _ls_meta: dict = {}
-        if lsa_analysis and isinstance(lsa_analysis, dict):
-            _ls_meta["survey_id"] = lsa_analysis.get("survey_id", "")
-            _ls_meta["survey_title"] = lsa_analysis.get("survey_title", "")
-            _ls_meta["tool_version"] = lsa_analysis.get("software_version", "")
-
-        ls_files_written = _survey_io._write_tool_limesurvey_files(
+        _survey_io._record_imported_responses(
             df=df,
-            ls_system_cols=ls_system_cols,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
             session=session,
             output_root=output_root,
+            project_root=existing_root,
             normalize_sub_fn=_normalize_sub_id,
             normalize_ses_fn=_normalize_ses_id,
-            ensure_dir_fn=_ensure_dir,
-            build_bids_survey_filename_fn=_build_bids_survey_filename,
-            ls_metadata=_ls_meta,
+            existing_policy=existing_policy,
+            all_responses=all_responses,
+            survey_id=survey_id,
         )
-        if ls_files_written:
-            conversion_warnings.append(
-                f"Wrote {ls_files_written} tool-limesurvey file(s) with JSON sidecar"
-            )
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
     # that standard BIDS validators don't recognize.
@@ -1916,6 +1960,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         unmatched_groups=unmatched_lsa_groups,
         applied_value_offsets=applied_value_offsets,
         value_offset_application_counts=value_offset_application_counts,
+        existing_summary=existing_summary,
     )
 
 
@@ -2618,6 +2663,8 @@ def _generate_dry_run_preview(
         dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
+    task_value_offsets: dict[str, float] | None = None,
+    existing_policy=None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
     return _survey_io._generate_dry_run_preview(
@@ -2645,6 +2692,8 @@ def _generate_dry_run_preview(
         task_runs=task_runs,
         task_context_acq_map=task_context_acq_map,
         task_acq_map=task_acq_map,
+        task_value_offsets=task_value_offsets,
+        existing_policy=existing_policy,
     )
 
 

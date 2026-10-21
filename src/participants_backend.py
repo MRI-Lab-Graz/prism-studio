@@ -20,8 +20,14 @@ from typing import Any, Callable, cast
 
 import pandas as pd
 
+from src.eligibility import mark_screening_only
 from src.participants_converter import ParticipantsConverter, load_participant_source
-from src.participants_sessions import session_label, sort_session_labels
+from src.participants_levels import add_missing_levels
+from src.participants_sessions import (
+    sanitize_session_token as _sanitize_session_token,
+    session_label,
+    sort_session_labels,
+)
 from src.subject_id_matching import build_subject_id_matcher
 
 
@@ -195,6 +201,14 @@ def merge_neurobagel_schema_for_columns(
         if isinstance(schema_def, dict):
             for key, value in schema_def.items():
                 if key == "Annotations":
+                    continue
+                if key == "EligibilityCriterion":
+                    # An explicit choice in the panel: it replaces the old link,
+                    # and an empty value removes it.
+                    if value:
+                        base_schema[col][key] = value
+                    else:
+                        base_schema[col].pop(key, None)
                     continue
                 if key not in base_schema[col]:
                     base_schema[col][key] = value
@@ -675,14 +689,6 @@ def _resolve_source_column_for_standard_variable(
             return source_column
 
     return ""
-
-
-def _sanitize_session_token(value: str) -> str:
-    token = re.sub(r"[^A-Za-z0-9]+", "-", str(value or "").strip())
-    token = re.sub(r"-+", "-", token).strip("-")
-    if not token:
-        token = "unknown"  # noqa: S105 - sanitized session-label fallback, not a credential
-    return token.lower()
 
 
 def _find_session_column_name(columns: list[str], preferred: str = "") -> str:
@@ -1324,10 +1330,15 @@ def _build_merged_participants_schema(
     existing_schema: dict[str, Any],
     *,
     merged_columns: list[str],
+    new_columns: list[str] | None = None,
     neurobagel_schema: dict | None = None,
     log_callback: ParticipantLogCallback | None = None,
 ) -> tuple[dict[str, Any], list[str], int]:
     merged_schema: dict[str, Any] = dict(existing_schema)
+    # A column that is new to the table starts fresh: a leftover entry from an
+    # earlier, since-removed column must not override the annotation sent now.
+    for column in new_columns or []:
+        merged_schema.pop(column, None)
     schema_fields_added: list[str] = []
 
     neurobagel_merged = 0
@@ -1379,7 +1390,10 @@ def _create_backup(path: Path) -> str | None:
     if not path.exists():
         return None
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    backup_path = path.with_name(f"{path.name}.bak-{timestamp}")
+    # Backups in the dataset root fail validation; keep them under code/.
+    backup_dir = path.parent / "code"
+    backup_dir.mkdir(exist_ok=True)
+    backup_path = backup_dir / f"{path.name}.bak-{timestamp}"
     shutil.copy2(path, backup_path)
     return str(backup_path)
 
@@ -1427,6 +1441,7 @@ def _plan_participants_merge(
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
     include_all_conflicts: bool = False,
+    screening_only_ids: list[str] | None = None,
 ) -> tuple[dict[str, Any], pd.DataFrame, dict[str, Any]]:
     resolved_root = project_root.expanduser().resolve()
     source_path = Path(source_file).expanduser().resolve()
@@ -1857,10 +1872,15 @@ def _plan_participants_merge(
         _build_merged_participants_schema(
             existing_schema,
             merged_columns=full_columns,
+            new_columns=new_columns,
             neurobagel_schema=neurobagel_schema,
             log_callback=log_callback,
         )
     )
+
+    if screening_only_ids is not None:  # None: the group column is not this merge's business
+        mark_screening_only(merged_df, merged_schema, screening_only_ids, incoming_id_set)
+        full_columns = [str(col) for col in merged_df.columns]
 
     preview_df = _select_merge_preview_rows(
         merged_df,
@@ -1887,6 +1907,14 @@ def _plan_participants_merge(
         "columns": full_columns,
         "existing_participant_count": len(existing_ids),
         "incoming_participant_count": len(incoming_ids),
+        "screening_candidates": [
+            {
+                "participant_id": pid,
+                "has_folder": (resolved_root / pid).is_dir(),
+                "group": str((existing_rows_by_id.get(pid) or {}).get("group") or "").strip(),
+            }
+            for pid in sorted(incoming_id_set)
+        ],
         "merged_participant_count": len(merged_df),
         "matched_participant_count": len(matched_ids),
         "new_participant_count": len(new_participant_ids),
@@ -1956,6 +1984,7 @@ def preview_participants_merge(
     session_resolution_decisions: dict[str, Any] | None = None,
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
+    screening_only_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     """Preview a safe merge from a source table into an existing participants.tsv."""
     payload, _merged_df, _merged_schema = _plan_participants_merge(
@@ -1970,6 +1999,7 @@ def preview_participants_merge(
         session_resolution_decisions=session_resolution_decisions,
         sessions_from_date=sessions_from_date,
         log_callback=log_callback,
+        screening_only_ids=screening_only_ids,
     )
     payload["action"] = "preview"
     return payload
@@ -1988,6 +2018,7 @@ def apply_participants_merge(
     session_resolution_decisions: dict[str, Any] | None = None,
     sessions_from_date: str | None = None,
     log_callback: ParticipantLogCallback | None = None,
+    screening_only_ids: list[str] | None = None,
     create_backups: bool = True,
 ) -> dict[str, Any]:
     """Apply a conflict-free merge into participants.tsv and participants.json."""
@@ -2003,6 +2034,7 @@ def apply_participants_merge(
         session_resolution_decisions=session_resolution_decisions,
         sessions_from_date=sessions_from_date,
         log_callback=log_callback,
+        screening_only_ids=screening_only_ids,
     )
 
     if not bool(payload.get("can_apply")):
@@ -2022,6 +2054,7 @@ def apply_participants_merge(
                 backup_files.append(backup_path)
 
     merged_df.to_csv(participants_tsv, sep="\t", index=False)
+    add_missing_levels(merged_schema, merged_df)
     participants_json.write_text(
         json.dumps(merged_schema, indent=2, ensure_ascii=False),
         encoding="utf-8",
@@ -2109,3 +2142,4 @@ __all__ = [
     "resolve_participant_mapping_target",
     "save_participant_mapping",
 ]
+

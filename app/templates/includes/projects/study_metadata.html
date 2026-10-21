@@ -2,16 +2,16 @@
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
              role="button" tabindex="0" aria-expanded="false" aria-controls="studyMetadataSection">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-flask text-info me-2"></i>Study Metadata</span>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
-                        <div class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></div>
-                    </div>
+                <span class="d-flex align-items-center gap-2">
+                    <span class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
+                        <span class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></span>
+                    </span>
                     <span class="badge bg-secondary" id="smHeaderBadge">0%</span>
                     <i class="fas fa-chevron-down text-muted" id="studyMetadataChevron"></i>
-                </div>
-            </h5>
+                </span>
+            </div>
         </div>
         <div class="collapse" id="studyMetadataSection">
         <div class="card-body">
@@ -29,7 +29,7 @@
                         <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
                     </div>
                     <span class="fw-bold" id="smMainScore">0%</span>
-                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0"
+                    <div class="sm-fair-motivation" id="smFairMotivation" role="img" aria-label="FAIR readiness 0%" data-score="0"
                          data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
                          title="<strong>Methods Readiness / FAIR score</strong><br>Share of CORE and optional fields you've filled in across all sections below. It does not block project creation &mdash; it tracks how reusable and FAIR-compliant your documentation is.">
                         <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
@@ -43,7 +43,7 @@
             </div>
 
             <div class="d-none align-items-center gap-2 flex-wrap mb-3 p-2 border rounded bg-light" id="surveyImportContainer">
-                <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0" role="button">
+                <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0">
                     <i class="fas fa-file-import me-1"></i>Import from study application (survey.json)
                 </label>
                 <input type="file" id="surveyImportInput" accept="application/json,.json" class="visually-hidden">
@@ -62,7 +62,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Start with the sections that unlock project creation, methods readiness, and cross-file metadata syncing.</span>
                     </button>
                 </div>
 
@@ -154,12 +154,9 @@
                                     </div>
                                     <div id="fundingDetailsSection" style="display: none; margin-top: 12px;">
                                         <div id="metadataFundingList" class="d-flex flex-column gap-2 mb-2"></div>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="metadataFundingAddRow">
-                                            <i class="fas fa-plus me-1"></i>Add Funding Source
-                                        </button>
                                         <input type="hidden" id="metadataFunding" value="">
                                     </div>
-                                    <small class="text-muted">If funding exists, add one row per funding source with its agency and grant number.</small>
+                                    <small class="text-muted">If funding exists, enter each source with its agency (and grant number) and accept it with the check mark.</small>
                                 </div>
                                 <div class="col-12">
                                     <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button"
@@ -207,11 +204,8 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">Independent Variables</label>
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewIV" rows="3"
-                                              placeholder="One per line (e.g., pleasant vs. unpleasant images)" aria-hidden="true" tabindex="-1"></textarea>
+                                              placeholder="One per line (e.g., stimulus valence, task difficulty)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewIVList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smOverviewIVAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Variable
-                                    </button>
                                     <small class="text-muted">Condition variables that were manipulated</small>
                                 </div>
                                 <div class="col-md-6">
@@ -219,9 +213,6 @@
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewDV" rows="3"
                                               placeholder="One per line (e.g., reaction times, BOLD signal)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewDVList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smOverviewDVAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Variable
-                                    </button>
                                     <small class="text-muted">Response variables that were measured</small>
                                 </div>
                                 <div class="col-md-6">
@@ -229,9 +220,6 @@
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewCV" rows="3"
                                               placeholder="One per line (e.g., age, sex, reading performance)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewCVList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smOverviewCVAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Variable
-                                    </button>
                                     <small class="text-muted">Aspects that were explicitly controlled</small>
                                 </div>
                                 <div class="col-md-6">
@@ -239,9 +227,6 @@
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewQA" rows="3"
                                               placeholder="Link to quality report or brief quality notes" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewQAList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smOverviewQAAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Note
-                                    </button>
                                     <small class="text-muted">Reference to quality control measures</small>
                                 </div>
                             </div>
@@ -343,7 +328,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Expand these sections once the core project scaffold is in place and you are ready to document participants and procedure details.</span>
                     </button>
                 </div>
 
@@ -413,8 +398,8 @@
                                         <select class="form-select form-select-sm mb-1" id="recLocationResults">
                                             <option value="">— no location selected —</option>
                                         </select>
-                                        <button type="button" class="btn btn-outline-primary btn-sm" id="recLocationAddBtn" aria-label="Add selected recruitment location">
-                                            <i class="fas fa-plus me-1"></i>Add Selected Location
+                                        <button type="button" class="btn btn-outline-success btn-sm" id="recLocationAddBtn" aria-label="Accept selected recruitment location" title="Accept selected location">
+                                            <i class="fas fa-check me-1"></i>Add Selected Location
                                         </button>
                                     </div>
                                     <!-- Added locations list -->
@@ -445,11 +430,11 @@
                                         <select class="form-select form-select-sm" id="smRecPeriodEndMonth"></select>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label class="form-label fw-bold small">
                                         <span class="badge bg-secondary">OPTIONAL</span> Financial Compensation
                                     </label>
-                                    <select class="form-select form-select-sm" id="smRecCompensation">
+                                    <select class="form-select form-select-sm w-auto" id="smRecCompensation">
                                         <option value="">-- Select --</option>
                                         <option value="Financial compensation">Yes</option>
                                         <option value="No financial compensation">No</option>
@@ -480,9 +465,6 @@
                                     <textarea class="form-control form-control-sm d-none" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smEligInclusionList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smEligInclusionAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Criterion
-                                    </button>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
@@ -491,14 +473,24 @@
                                     <textarea class="form-control form-control-sm d-none" id="smEligExclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smEligExclusionList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smEligExclusionAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Criterion
-                                    </button>
                                 </div>
                                 <div class="col-12">
                                     <small class="text-muted">
                                         At least one Inclusion criterion is required. Exclusion criteria are optional but recommended.
                                     </small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Checked Criteria
+                                    </label>
+                                    <div><small class="text-muted">Limits the validator checks against participants.tsv (warnings only, also on partial data). Link a participants column to a criterion in the Sociodemographics converter.</small></div>
+                                    <div class="input-group input-group-sm w-auto my-2">
+                                        <select class="form-select form-select-sm" id="smEligCriteriaSelect" aria-label="Criterion type"></select>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="smEligCriteriaAdd">
+                                            <i class="fas fa-plus me-1"></i>Add checked criterion
+                                        </button>
+                                    </div>
+                                    <div id="smEligCriteriaList" class="d-flex flex-column gap-2 mb-2"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Target Sample Size</label>
@@ -552,9 +544,6 @@
                                                 <textarea class="form-control form-control-sm d-none" id="smProcQC" rows="2"
                                                           placeholder="One measure per line (e.g. Attention checks)" aria-hidden="true" tabindex="-1"></textarea>
                                                 <div id="smProcQCList" class="d-flex flex-column gap-2"></div>
-                                                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smProcQCAdd">
-                                                    <i class="fas fa-plus me-1"></i>Add Measure
-                                                </button>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small">Debriefing</label>
@@ -580,6 +569,79 @@
                     </div>
                 </div>
 
+                <!-- Preregistration (optional) -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smPreregistration" aria-expanded="false" aria-controls="smPreregistration">
+                        <span class="sm-section-toggle__titleline">
+                            <span class="sm-section-toggle__title"><i class="fas fa-clipboard-check me-1"></i> Preregistration (optional)</span>
+                        </span>
+                        <span class="sm-section-toggle__summary">Prepare a preregistration draft: hypotheses, outcomes and analysis plan. Design, sample and procedure come from the sections above.</span>
+                    </button>
+                    <div class="collapse" id="smPreregistration">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0 beginner-help-block">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        This is a draft only, not a registration. Register it at a registry (e.g. OSF, AsPredicted) to get a time-stamped, frozen version.
+                                    </div>
+                                </div>
+                                {% if current_project.path %}
+                                <div class="col-12">
+                                    <a class="btn btn-outline-secondary btn-sm" id="smPreregDownload"
+                                       href="/api/projects/preregistration-draft" download>
+                                        <i class="fas fa-download me-1"></i>Download draft (.md)
+                                    </a>
+                                    <a class="btn btn-outline-secondary btn-sm" href="/api/projects/preregistration-draft?format=docx" download>Word</a>
+                                    <a class="btn btn-outline-secondary btn-sm" href="/api/projects/preregistration-draft?format=tex" download>TeX</a>
+                                    <small class="text-muted ms-2">Built from the saved project metadata: save first to include recent edits.</small>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregDataStatus">Data status</label>
+                                    <select class="form-select form-select-sm" id="smPreregDataStatus">
+                                        <option value="">Select...</option>
+                                        <option value="not-collected">No data collected yet</option>
+                                        <option value="collected-not-accessed">Data collected, not yet looked at</option>
+                                        <option value="accessed">Data collected and accessed</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregHypotheses">Hypotheses</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregHypotheses" rows="3"
+                                              placeholder="One hypothesis per line (e.g. H1: Mindfulness training lowers perceived stress)"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregPrimaryOutcomes">Primary outcomes</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregPrimaryOutcomes" rows="2"
+                                              placeholder="Measure(s) that test the hypotheses"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small" for="smPreregSecondaryOutcomes">Secondary outcomes</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregSecondaryOutcomes" rows="2"
+                                              placeholder="Further measures"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregAnalysisPlan">Analysis plan</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregAnalysisPlan" rows="3"
+                                              placeholder="Planned confirmatory analyses (models, covariates)"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregInferenceCriteria">Inference criteria</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregInferenceCriteria" rows="2"
+                                              placeholder="e.g. alpha = .05, one-sided, Holm correction"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small" for="smPreregExploratoryAnalyses">Exploratory analyses</label>
+                                    <textarea class="form-control form-control-sm" id="smPreregExploratoryAnalyses" rows="2"
+                                              placeholder="Planned analyses that are not confirmatory"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 </div><!-- /smRecruitmentExecutionGroupBody -->
 
                 <div class="mb-3" id="smReportingFollowupGroup">
@@ -592,7 +654,7 @@
                             </span>
                             <i class="fas fa-chevron-down sm-group-chevron"></i>
                         </span>
-                        <p class="sm-section-group__copy mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</p>
+                        <span class="sm-section-group__copy d-block mb-0">Use these sections later in the project lifecycle to document gaps, issues, citation/discovery details, and supporting literature.</span>
                     </button>
                 </div>
 
@@ -638,10 +700,7 @@
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="metadataReferences" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="metadataReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="metadataReferencesAdd">
-                                        <i class="fas fa-plus me-1"></i>Add Link
-                                    </button>
-                                    <small class="text-muted d-block">One http(s) URL per box. They sync into CITATION.cff and dataset_description.json.</small>
+                                    <small class="text-muted d-block mt-1">One http(s) URL per entry. They sync into CITATION.cff and dataset_description.json.</small>
                                 </div>
                             </div>
                         </div>
@@ -676,19 +735,13 @@
                                     <label class="form-label fw-bold small">Missing Files (Table)</label>
                                     <textarea class="form-control form-control-sm d-none" id="smMissingFiles" rows="3" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smMissingFilesList" class="d-flex flex-column gap-2 mb-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="smMissingFilesAddRow">
-                                        <i class="fas fa-plus me-1"></i>Add Entry
-                                    </button>
-                                    <small class="text-muted d-block mt-1">One row per problem: pick the subject, session, and modality, then the reason and an optional detail.</small>
+                                    <small class="text-muted d-block mt-1">One entry per problem: pick the subject, session, and modality, then the reason and an optional detail, and accept it with the check mark.</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Known Issues (Table)</label>
                                     <textarea class="form-control form-control-sm d-none" id="smKnownIssues" rows="3" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smKnownIssuesList" class="d-flex flex-column gap-2 mb-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="smKnownIssuesAddRow">
-                                        <i class="fas fa-plus me-1"></i>Add Entry
-                                    </button>
-                                    <small class="text-muted d-block mt-1">One row per file: Filename, then the issue description.</small>
+                                    <small class="text-muted d-block mt-1">One entry per file: filename, then the issue description, and accept it with the check mark.</small>
                                 </div>
                             </div>
                         </div>
@@ -712,10 +765,7 @@
                                     <label class="form-label fw-bold small">Background Literature</label>
                                     <textarea class="form-control form-control-sm d-none" id="smReferencesText" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smReferencesAdd">
-                                        <i class="fas fa-plus me-1"></i>Add DOI
-                                    </button>
-                                    <small class="text-muted">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
+                                    <small class="text-muted d-block mt-1">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>
@@ -737,6 +787,7 @@
                         <i class="fas fa-info-circle me-1"></i>Fill all required fields for complete metadata, or create the project now with what you have.
                     </small>
                     <small class="text-muted d-block mt-1" id="metadataSaveStatus" aria-live="polite"></small>
+                    <div class="alert alert-warning mt-2 d-none" id="smNotReadyBanner" role="status"></div>
                 </div>
             </form>
         </div>

@@ -6,6 +6,18 @@
   "description": "Schema for project-level study design metadata. Complements BIDS dataset_description.json with procedure details needed for automatic methods section generation. File should be named: project.json (at dataset root, same level as dataset_description.json)",
   "type": "object",
   "properties": {
+    "SchemaVersions": {
+      "type": "object",
+      "description": "Schema version each modality is validated against in this project (written when the modality is first imported).",
+      "patternProperties": {"^[a-z][a-z0-9]*$": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}},
+      "additionalProperties": false
+    },
+    "SchemaVersionsAcknowledged": {
+      "type": "object",
+      "description": "Latest schema version per modality the user has already been told about (so a newer version is announced once).",
+      "patternProperties": {"^[a-z][a-z0-9]*$": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}},
+      "additionalProperties": false
+    },
     "Metadata": {
       "type": "object",
       "description": "Administrative metadata",
@@ -122,6 +134,25 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "List of exclusion criteria"
+        },
+        "Criteria": {
+          "type": "array",
+          "description": "Structured criteria the validator checks against participants.tsv (warnings only)",
+          "items": {
+            "type": "object",
+            "required": ["id", "type", "mode"],
+            "properties": {
+              "id": { "type": "string", "description": "Stable id a participants.json column links to via EligibilityCriterion" },
+              "label": { "type": "string" },
+              "term": { "type": ["string", "null"], "description": "NeuroBagel term (e.g. nb:Age) or null for any other measure" },
+              "type": { "enum": ["numeric", "categorical"] },
+              "mode": { "enum": ["include", "exclude"] },
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "unit": { "type": "string" },
+              "values": { "type": "array", "items": { "type": "string" }, "description": "Category labels, not raw codes" }
+            }
+          }
         },
         "TargetSampleSize": {
           "type": "integer",
@@ -362,6 +393,42 @@
           "description": "How missing data was handled"
         }
       }
+    },
+    "Preregistration": {
+      "type": "object",
+      "description": "Optional preregistration preparation: the parts of a preregistration (e.g. AsPredicted, OSF) not covered by the sections above. A draft only - register it at a registry; put the registration link in governance.preregistration.",
+      "properties": {
+        "DataStatus": {
+          "enum": ["not-collected", "collected-not-accessed", "accessed"],
+          "description": "Have data been collected and/or looked at before registering?"
+        },
+        "Hypotheses": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Hypotheses, one per entry (e.g., 'H1: Mindfulness training lowers perceived stress')"
+        },
+        "PrimaryOutcomes": {
+          "type": "string",
+          "description": "Primary outcome measure(s) that test the hypotheses"
+        },
+        "SecondaryOutcomes": {
+          "type": "string",
+          "description": "Secondary outcome measure(s)"
+        },
+        "AnalysisPlan": {
+          "type": "string",
+          "description": "Planned confirmatory analyses (models, covariates)"
+        },
+        "InferenceCriteria": {
+          "type": "string",
+          "description": "Decision criteria (e.g., 'alpha = .05, one-sided, Holm correction')"
+        },
+        "ExploratoryAnalyses": {
+          "type": "string",
+          "description": "Planned exploratory analyses (not confirmatory)"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["Metadata", "Sessions", "TaskDefinitions"],

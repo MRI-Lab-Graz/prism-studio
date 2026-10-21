@@ -4,6 +4,8 @@ import os
 import sys
 import tempfile
 import unittest
+
+import pytest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -105,6 +107,31 @@ class TestProjectsMethodsHandlers(unittest.TestCase):
         self.assertTrue(payload.get("success"))
         self.assertIn("Affective Distress Scale", payload.get("md", ""))
         self.assertIn("comprises 1 items", payload.get("md", ""))
+
+    def test_generate_methods_lists_sessions_found_in_dataset(self):
+        for sub, ses in (("01", "1"), ("02", "1"), ("01", "2")):
+            folder = self.project_root / "rawdata" / f"sub-{sub}" / f"ses-{ses}" / "survey"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"sub-{sub}_ses-{ses}_task-ads_survey.tsv").write_text("item_01\n1\n", encoding="utf-8")
+
+        with patch("src.config.load_app_settings", return_value={}):
+            with patch(
+                "src.config.get_effective_template_library_path",
+                return_value={"effective_external_path": str(self.library_root), "global_library_path": ""},
+            ):
+                with self.app.test_request_context(
+                    "/api/projects/generate-methods", method="POST", json={"language": "en"}
+                ):
+                    response = self.handle_generate_methods_section(
+                        get_current_project=lambda: {"path": str(self.project_root), "name": "demo_project"},
+                        read_project_json=lambda _p: {"StudyDesign": {"Type": "longitudinal"}},
+                        get_bids_file_path=lambda p, f: p / f,
+                        compute_participant_stats=lambda _p, lang="en": None,
+                    )
+
+        md = response.get_json()["md"]
+        self.assertIn('In session "1"', md)
+        self.assertIn("[please add: time between sessions]", md)
 
     def test_generate_methods_forces_continuous_output(self):
         project_data = {
@@ -223,3 +250,65 @@ class TestProjectsMethodsHandlers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---- export-methods route (Word / TeX / BibTeX downloads) -------------------
+
+
+def _client(tmp_path, with_project=True):
+    from src.web.blueprints.projects import projects_bp
+
+    (tmp_path / "project.json").write_text(
+        json.dumps(
+            {
+                "StudyDesign": {"Type": "cross-sectional"},
+                "TaskDefinitions": {"ads": {"modality": "survey"}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    app = Flask(__name__)
+    app.secret_key = "test"  # pragma: allowlist secret
+    app.register_blueprint(projects_bp)
+    client = app.test_client()
+    if with_project:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path)
+            sess["current_project_name"] = "demo"
+    return client
+
+
+def test_export_methods_tex(tmp_path):
+    resp = _client(tmp_path).post(
+        "/api/projects/export-methods", json={"language": "en", "format": "tex"}
+    )
+    assert resp.status_code == 200
+    assert resp.get_data(as_text=True).startswith("\\documentclass")
+    assert "methods_section_en.tex" in resp.headers["Content-Disposition"]
+
+
+def test_export_methods_docx(tmp_path):
+    pytest.importorskip("docx")
+    resp = _client(tmp_path).post(
+        "/api/projects/export-methods", json={"format": "docx"}
+    )
+    assert resp.status_code == 200
+    assert resp.data[:2] == b"PK"
+
+
+def test_export_methods_bib_is_text(tmp_path):
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "bib"})
+    assert resp.status_code == 200
+    assert "references.bib" in resp.headers["Content-Disposition"]
+
+
+def test_export_methods_rejects_unknown_format(tmp_path):
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "pdf"})
+    assert resp.status_code == 400
+
+
+def test_export_methods_without_python_docx_is_501(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "docx", None)
+    resp = _client(tmp_path).post("/api/projects/export-methods", json={"format": "docx"})
+    assert resp.status_code == 501
+    assert "python-docx" in resp.get_json()["error"]

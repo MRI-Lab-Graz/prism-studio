@@ -293,3 +293,16 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Results: {passed} passed, {failed} failed")
     sys.exit(0 if failed == 0 else 1)
+
+
+def test_info_issues_become_notes_not_warnings():
+    issues = [
+        ("INFO", "Missing survey recipes for dataset-used surveys: stress.", "code/recipes/survey"),
+        ("WARNING", "Inconsistent session structure"),
+    ]
+
+    results = format_validation_results(issues, MockDatasetStats(total_files=3), "/test/dataset")
+
+    assert results["summary"]["total_warnings"] == 1
+    assert [n["code"] for n in results["notes"]] == ["PRISM708"]
+    assert "stress" in results["notes"][0]["message"]

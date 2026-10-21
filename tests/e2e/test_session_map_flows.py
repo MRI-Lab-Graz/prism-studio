@@ -13,7 +13,9 @@ DETECT = "/api/survey-detect-version-contexts"
 
 
 def make_longitudinal(project):
-    (project / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "multiple"}}))
+    meta = json.loads((project / "project.json").read_text())  # keep the complete project, change the timepoints
+    meta["StudyDesign"] = {"Timepoints": "multiple"}
+    (project / "project.json").write_text(json.dumps(meta))
 
 
 def select_file(page, tmp_path):
@@ -79,7 +81,7 @@ def choose_pre_session_in_participants(page, studio_url, tmp_path):
     page.set_input_files("#participantsDataFile", str(data))
     page.click("#participantsPreviewBtn")
     expect(page.locator("#participantsSessionChoiceCard")).to_be_visible(timeout=30000)
-    page.click("#participantsSessionLongitudinalYes")
+    page.click("#participantsSessionModeOne")
     page.select_option("#participantsSessionColumn", "session")
     page.select_option("#participantsSessionValue", "pre")
 
@@ -108,6 +110,7 @@ def test_participants_import_runs_once_the_session_is_mapped(app_page, studio_ur
     panel.locator("[data-role=save]").click()
 
     expect(panel).to_be_hidden(timeout=30000)
+    app_page.click("#participantsAnnotationConfirmBtn", timeout=30000)
     expect(app_page.locator("#participantsConvertBtn")).to_be_enabled(timeout=30000)
     app_page.click("#participantsConvertBtn")
     expect(app_page.locator("#participantsSuccess")).to_be_visible(timeout=30000)

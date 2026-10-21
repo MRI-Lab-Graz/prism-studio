@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import io
 
-from src.text_sanitizer import sanitize_answer_text
+from src.text_sanitizer import sanitize_answer_text, strip_invalid_xml_chars
 from src.survey_template_metadata import get_study_short_name
 
 logger = logging.getLogger(__name__)
@@ -638,6 +638,15 @@ def _format_single_metadata_html(
     lines.append("</div>")
 
     return "\n".join(lines)
+
+
+def _strip_invalid_xml_chars(root) -> None:
+    """Drop characters XML 1.0 forbids (pasted Word/PDF text has them); the .lss would not import otherwise."""
+    for element in root.iter():
+        element.text = strip_invalid_xml_chars(element.text)
+        element.tail = strip_invalid_xml_chars(element.tail)
+        for key, value in element.attrib.items():
+            element.attrib[key] = strip_invalid_xml_chars(value)
 
 
 def generate_lss(
@@ -1448,6 +1457,7 @@ def generate_lss(
     )
 
     # Generate XML
+    _strip_invalid_xml_chars(root)
     tree = ET.ElementTree(root)
     if hasattr(ET, "indent"):
         ET.indent(tree, space="  ", level=0)
@@ -2329,6 +2339,7 @@ def generate_lss_from_customization(
     )
 
     # Generate XML
+    _strip_invalid_xml_chars(root)
     tree = ET.ElementTree(root)
     if hasattr(ET, "indent"):
         ET.indent(tree, space="  ", level=0)

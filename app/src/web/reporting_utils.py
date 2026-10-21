@@ -37,6 +37,7 @@ def format_validation_results(
     """Format validation results in BIDS-validator style with grouped errors."""
     error_groups: Dict[str, Dict[str, Any]] = {}
     warning_groups: Dict[str, Dict[str, Any]] = {}
+    notes: list[Dict[str, Any]] = []  # INFO issues: shown as plain lines, never counted
 
     # Track unique files and their issues to avoid double-counting and ensure correct categorization
     file_issues: Dict[str, Dict[str, list]] = {}  # path -> {errors: [], warnings: []}
@@ -126,6 +127,10 @@ def format_validation_results(
                 file_issues[file_path]["warnings"].append(message)
 
         error_code = infer_code_from_message(message)
+
+        if level == "INFO":
+            notes.append({"code": error_code, "message": message, "file": file_path})
+            continue
 
         group_message = message
         if ": " in message:
@@ -370,6 +375,7 @@ def format_validation_results(
         },
         "error_groups": error_groups,
         "warning_groups": warning_groups,
+        "notes": notes,
         "valid_files": valid_files,
         "invalid_files": invalid_files,
         "errors": errors_list,

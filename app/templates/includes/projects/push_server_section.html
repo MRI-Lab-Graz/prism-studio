@@ -2,10 +2,10 @@
     <div class="card shadow-sm mt-4" id="pushServerCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#pushServerSection"
              role="button" tabindex="0" aria-expanded="false" aria-controls="pushServerSection">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-server text-info me-2"></i>Push to Server</span>
                 <i class="fas fa-chevron-down text-muted" id="pushServerChevron"></i>
-            </h5>
+            </div>
             <small class="text-muted d-block mt-1 fw-normal">
                 Back up this project to a DataLad RIA store or a plain rsync destination — pick one below.
                 <span class="badge bg-secondary ms-1" id="pushServerStatusBadge">Not configured</span>
@@ -19,11 +19,11 @@
                     Use the <strong>internal lab server only</strong> &mdash; never a public host such as GitHub.
                 </div>
                 <div class="btn-group w-100 mb-4" role="group" aria-label="Push destination">
-                    <input type="radio" class="btn-check" name="pushServerTarget" id="pushTargetDatalad" autocomplete="off" checked>
+                    <input type="radio" class="btn-check" name="pushServerTarget" id="pushTargetDatalad" checked>
                     <label class="btn btn-outline-info" for="pushTargetDatalad">
                         <i class="fas fa-server me-2"></i>DataLad Server
                     </label>
-                    <input type="radio" class="btn-check" name="pushServerTarget" id="pushTargetRsync" autocomplete="off">
+                    <input type="radio" class="btn-check" name="pushServerTarget" id="pushTargetRsync">
                     <label class="btn btn-outline-info" for="pushTargetRsync">
                         <i class="fas fa-server me-2"></i>Remote Server (rsync)
                     </label>
@@ -210,7 +210,7 @@
     </div>
 
 <!-- Remote SSH Folder Browser Modal (shared by DataLad server + rsync destination pickers) -->
-<div class="modal fade" id="remoteFolderBrowserModal" tabindex="-1" aria-labelledby="remoteFolderBrowserModalLabel" aria-hidden="true">
+<div class="modal fade" id="remoteFolderBrowserModal" tabindex="-1" aria-labelledby="remoteFolderBrowserModalLabel" aria-hidden="true" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">

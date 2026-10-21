@@ -29,24 +29,19 @@
                             <div class="tab-content" id="physioSubTabContent">
                                 <div class="tab-pane fade show active" id="physio-batch" role="tabpanel">
                                     <div class="row g-3 align-items-end">
-                                        <div class="col-md-6 studio-file-picker">
-                                            <label for="physioBatchFiles" class="form-label fw-bold">Select Physio Files</label>
-                                            <div class="input-group studio-picker-group">
-                                                <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple data-help-key="physioBatchFiles">
-                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearPhysioBatchFilesBtn" aria-label="Clear selected physio files" title="Clear selection">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                            <small class="text-muted">Select individual files</small>
+                                        <div class="d-none">
+                                            <input class="visually-hidden" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple tabindex="-1" aria-hidden="true">
+                                            <button type="button" id="clearPhysioBatchFilesBtn" aria-label="Clear selected physio files" tabindex="-1">
+                                                <i class="fas fa-times"></i>
+                                            </button>
                                         </div>
-                                        <div class="col-md-6 studio-file-picker">
+                                        <div class="col-md-12 studio-file-picker">
                                             <div>
-                                                <label for="physioBatchFolder" class="form-label fw-bold">Or Select a Folder</label>
+                                                <label for="physioBatchFolderName" class="form-label fw-bold">Select a Folder</label>
                                                 <div class="input-group studio-picker-group">
-                                                    <input class="form-control" type="file" id="physioBatchFolder" webkitdirectory directory multiple data-help-key="physioBatchFolder">
-                                                    <button class="btn btn-outline-secondary d-none" type="button" id="browseServerPhysioFolderBtn" aria-label="Browse server physio folder" title="Browse server physio folder">
-                                                        <i class="fas fa-server me-1"></i>Server Folder
-                                                    </button>
+                                                    <input class="visually-hidden" type="file" id="physioBatchFolder" webkitdirectory directory multiple tabindex="-1" aria-hidden="true">
+                                                    <input class="form-control" type="text" id="physioBatchFolderName" value="No folder selected" readonly data-help-key="physioBatchFolder">
+                                                    <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="browsePhysioFolderBtn" aria-label="Browse for physio folder" title="Browse for physio folder">Browse</button>
                                                     <button class="btn btn-outline-secondary d-none" type="button" id="clearPhysioBatchFolderBtn" aria-label="Clear selected physio folder" title="Clear selection">
                                                         <i class="fas fa-times"></i>
                                                     </button>
@@ -114,6 +109,16 @@
                                                     <option selected>Varioport (.raw / .vpd)</option>
                                                 </select>
                                                 <small class="d-block mt-2 text-muted"><i class="fas fa-lightbulb me-1"></i> Currently supports Varioport ECG/EDA devices</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2" for="physioBatchDestination">Destination for files with a task</label>
+                                                <select class="form-select form-select-sm" id="physioBatchDestination" name="physio_destination">
+                                                    <option value="" label="(default)" selected></option>
+                                                    <option value="beh">beh</option>
+                                                    <option value="func">func</option>
+                                                    <option value="eeg">eeg</option>
+                                                </select>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-info-circle me-1"></i> Needed only for files whose name contains task-…</small>
                                             </div>
                                             <div class="col-md-4">
                                                 <label class="form-label small fw-bold text-muted mb-2">Base Sampling Rate Override</label>

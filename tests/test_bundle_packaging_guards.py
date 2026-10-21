@@ -102,10 +102,10 @@ def test_validator_spec_includes_backend_bundle_and_optional_excludes() -> None:
         assert excluded_pkg in validator_content
 
 
-def test_ci_workflow_runs_coverage_on_python_310_and_311() -> None:
+def test_ci_workflow_reports_coverage_from_the_ubuntu_pytest_run() -> None:
     content = CI_WORKFLOW.read_text(encoding="utf-8")
 
-    assert 'name: Coverage Report (Python ${{ matrix.python-version }})' in content
-    assert 'python-version: ["3.10", "3.11"]' in content
-    assert 'python-version: ${{ matrix.python-version }}' in content
-    assert "if: matrix.python-version == '3.10'" in content
+    assert "pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src" in content
+    assert "--cov-report=xml" in content
+    assert content.count("if: matrix.os == 'ubuntu-latest'") >= 2  # tests + upload
+    assert "codecov/codecov-action" in content

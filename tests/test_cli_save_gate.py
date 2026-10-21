@@ -54,7 +54,7 @@ def test_check_audits_every_decision(monkeypatch, capsys):
     monkeypatch.setattr(cmd, "check_save", lambda p: SaveCheck(False, ["E"], "validation_errors"))
     monkeypatch.setattr(cmd, "audit_save", lambda root, check: seen.append((Path(root).as_posix(), check.allowed)))
     run(capsys, check=True)
-    assert seen == [("/p", False)]
+    assert seen == [(str(Path("/p")), False)]
 
 
 def test_install_hooks_reports_foreign_as_exit_2(monkeypatch, capsys):

@@ -514,3 +514,94 @@ def test_a_filter_only_delete_is_not_described_as_deleting_everything(app_page, 
 
     assert eventually(lambda: bool(messages))
     assert "2 files" in messages[0] and "EVERY" not in messages[0], messages[0]
+
+
+def test_deleting_a_whole_subject_says_participants_tsv_still_lists_them(app_page, studio_url, project):
+    build_two_subjects(project)
+    page = app_page
+    page.on("dialog", lambda dialog: dialog.accept())
+    page.goto(f"{studio_url}/file-management")
+    page.click("#fm-delete-tab")
+    page.locator("#fileDeleteSubjectsContainer input[type=checkbox]").first.check()
+    page.click("#fileDeletePreviewBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists 1 subject(s)")
+    page.click("#fileDeleteApplyBtn")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("Deleted")
+    expect(page.locator("#fileDeleteResult")).to_contain_text("participants.tsv still lists")
+
+
+@pytest.mark.parametrize("replacement,reason", [("../../escape.tsv", "folder separator"), ("a/b.tsv", "folder separator"), ("", "empty")])
+def test_renamer_preview_and_copy_both_refuse_a_new_name_that_is_not_a_plain_file_name(app_page, studio_url, project, replacement, reason):
+    def send(dry_run):
+        return app_page.context.request.post(
+            f"{studio_url}/api/physio-rename",
+            multipart={
+                "pattern": "^(.*)$", "replacement": replacement, "dry_run": dry_run, "organize": "false",
+                "save_to_project": "false" if dry_run == "true" else "true", "skip_zip": "true", "dest_root": "root",
+                "project_path": str(project),
+                "files": {"name": "orig.edf", "mimeType": "application/octet-stream", "buffer": b"x"},
+            },
+        ).json()
+
+    for dry_run in ("true", "false"):
+        (result,) = send(dry_run)["results"]
+        assert result["success"] is False and reason in result["new"], result
+    assert not (project.parent / "escape.tsv").exists()
+    assert not [f for f in project_files(project) if f.endswith((".tsv", ".edf")) and "escape" in f]
+
+
+def test_renamer_task_is_optional_for_physio_only(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path)
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".edf")
+    app_page.fill("#renamerTask", "")
+    app_page.select_option("#renamerModality", "physio")
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    expect(app_page.locator("#renamerNewExample")).to_have_value("sub-{subject}_ses-{session}_physio.edf")
+    expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
+    for modality in ("beh", "func", "eeg"):
+        app_page.select_option("#renamerModality", modality)
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+        # the task alone flips the button: fill it and the same modality is allowed
+        app_page.fill("#renamerTask", "rest")
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_enabled()
+        app_page.fill("#renamerTask", "")
+        expect(app_page.locator("#renamerDryRunBtn")).to_be_disabled()
+
+
+def test_renamer_preview_accepts_compound_tsv_gz_extension(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path, names=("004-t2.tsv.gz",))
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".tsv.gz")
+    app_page.fill("#renamerTask", "rest")
+    app_page.select_option("#renamerModality", "beh")
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    app_page.select_option("#renamerRecording", "ecg")
+    expect(app_page.locator("#renamerNewExample")).to_have_value(
+        "sub-{subject}_ses-{session}_task-rest_recording-ecg_physio.tsv.gz"
+    )
+    app_page.click("#renamerDryRunBtn")
+    panel = app_page.locator("#fm-renamer-panel")
+    expect(panel).to_contain_text("sub-004_ses-t2_task-rest_recording-ecg_physio.tsv.gz")
+    expect(panel).not_to_contain_text("Expected _physio suffix")
+
+
+def test_renamer_task_bound_physio_is_named_physio(app_page, studio_url, tmp_path):
+    folder = incoming_edf_files(tmp_path)
+    open_renamer(app_page, studio_url)
+    app_page.set_input_files("#renamerFiles", str(folder))
+    expect(app_page.locator("#renamerOriginalExample")).to_contain_text(".edf")
+    app_page.fill("#renamerTask", "rest")
+    app_page.select_option("#renamerModality", "beh")
+    app_page.fill("#renamerSubjectValue", "004")
+    app_page.fill("#renamerSessionValue", "t2")
+    expect(app_page.locator("#renamerRecording")).to_be_visible()
+    app_page.select_option("#renamerRecording", "ecg")
+    expect(app_page.locator("#renamerNewExample")).to_have_value(
+        "sub-{subject}_ses-{session}_task-rest_recording-ecg_physio.edf"
+    )
+    expect(app_page.locator("#renamerModality option[value=events]")).to_have_count(0)

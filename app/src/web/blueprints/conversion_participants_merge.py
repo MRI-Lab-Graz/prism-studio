@@ -4,6 +4,8 @@ from pathlib import Path
 from flask import Response, jsonify, request, session
 
 from src.converters.file_reader import read_tabular_file
+from src.eligibility import load_criteria
+from src.participants_levels import add_missing_levels
 from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
 )
@@ -131,6 +133,14 @@ def _parse_participants_merge_request(
         except json.JSONDecodeError:
             harmonization_decisions = {}
 
+    screening_only_ids = None  # absent: the group column is left alone
+    try:
+        decoded = json.loads(request.form.get("screening_only_ids") or "null")
+        if isinstance(decoded, list):
+            screening_only_ids = [str(item) for item in decoded]
+    except json.JSONDecodeError:
+        pass
+
     session_resolution_decisions_json = request.form.get("session_resolution_decisions")
     session_resolution_decisions: dict[str, object] = {}
     if session_resolution_decisions_json:
@@ -180,6 +190,7 @@ def _parse_participants_merge_request(
         "preview_limit": preview_limit,
         "neurobagel_schema": neurobagel_schema,
         "harmonization_decisions": harmonization_decisions,
+        "screening_only_ids": screening_only_ids,
         "session_resolution_decisions": session_resolution_decisions,
         "sessions_from_date": _sessions_from_date_option(),
         "context": context,
@@ -358,6 +369,7 @@ def _build_existing_participants_preview_payload(
         "total_source_columns": len(source_columns),
         "extracted_columns": len(output_df.columns),
         "neurobagel_schema": neurobagel_schema,
+        "eligibility_criteria": load_criteria(str(project_root)),
         "format_warnings": [],
         "problem_columns": [],
     }
@@ -420,7 +432,7 @@ def _convert_existing_participants_files(
             + ", ".join(sorted(resolved_excluded_columns)),
         )
 
-    output_df.to_csv(participants_tsv, sep="\t", index=False)
+    output_df.to_csv(participants_tsv, sep="\t", index=False, na_rep="n/a")
     log_callback(
         "INFO",
         f"Normalized and wrote {participants_tsv.name} with {len(output_df)} participant row(s)",
@@ -490,6 +502,7 @@ def _convert_existing_participants_files(
                 col_name, f"Participant {col_name}"
             )
 
+    add_missing_levels(participants_json_data, output_df)
     participants_json.write_text(
         json.dumps(participants_json_data, indent=2, ensure_ascii=False),
         encoding="utf-8",

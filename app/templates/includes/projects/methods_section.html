@@ -2,10 +2,10 @@
     <div class="card shadow-sm mt-4" id="methodsSectionCard" style="display: none;">
         <div class="card-header bg-success bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#methodsSectionBody"
              role="button" tabindex="0" aria-expanded="false" aria-controls="methodsSectionBody">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+            <div class="h5 mb-0 d-flex justify-content-between align-items-center">
                 <span><i class="fas fa-file-alt text-success me-2"></i>Generate Methods Section</span>
                 <i class="fas fa-chevron-down text-muted" id="methodsSectionChevron"></i>
-            </h5>
+            </div>
         </div>
         <div class="collapse" id="methodsSectionBody">
             <div class="card-body">
@@ -14,13 +14,6 @@
                     Uses data from <code>project.json</code>, <code>dataset_description.json</code>, and linked templates.
                 </p>
                 <div class="row align-items-end mb-3 g-2">
-                    <div class="col-auto">
-                        <label for="methodsLanguage" class="form-label fw-bold mb-1">Language</label>
-                        <select class="form-select form-select-sm" id="methodsLanguage" style="width: 140px;">
-                            <option value="en" selected>English</option>
-                            <option value="de">German</option>
-                        </select>
-                    </div>
                     <div class="col-auto">
                         <label for="methodsDetailLevel" class="form-label fw-bold mb-1">Detail Level</label>
                         <select class="form-select form-select-sm" id="methodsDetailLevel" style="width: 150px;">
@@ -41,6 +34,7 @@
 
                 <div id="methodsResult" style="display: none;">
                     <div id="methodsSectionsBadges" class="mb-2"></div>
+                    <div id="methodsWarnings" class="alert alert-warning py-2 small" style="display: none;"></div>
                     <div id="methodsPreview" class="border rounded p-3 bg-white mb-3" style="max-height: 500px; overflow-y: auto;"></div>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadMethodsMdBtn">
@@ -48,6 +42,15 @@
                         </button>
                         <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadMethodsHtmlBtn">
                             <i class="fas fa-download me-1"></i>Download .html
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="exportMethodsDocxBtn" data-export-format="docx">
+                            <i class="fas fa-file-word me-1"></i>Word (.docx)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="exportMethodsTexBtn" data-export-format="tex">
+                            <i class="fas fa-download me-1"></i>TeX (.tex)
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="exportMethodsBibBtn" data-export-format="bib">
+                            <i class="fas fa-download me-1"></i>References (.bib)
                         </button>
                     </div>
                 </div>

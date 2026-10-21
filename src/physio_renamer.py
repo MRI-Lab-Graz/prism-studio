@@ -19,6 +19,9 @@ from pathlib import Path, PurePosixPath
 
 from src.utils.naming import normalize_filename
 
+# Where a physio recording that belongs to a task may go.
+PHYSIO_TASK_DESTINATIONS = ("beh", "func", "eeg")
+
 # ---------------------------------------------------------------------------
 # Subject/session inference from a source file's folder path
 # ---------------------------------------------------------------------------
@@ -317,6 +320,10 @@ def should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# Raw physio inputs (same set as batch_convert.PHYSIO_EXTENSIONS, which imports this module).
+_RAW_PHYSIO_EXTENSIONS = (".raw", ".vpd", ".edf")
+
+
 def compute_organized_relative_path(
     filename: str, *, modality: str, organize: bool, parse_bids_filename=None
 ) -> str:
@@ -328,6 +335,35 @@ def compute_organized_relative_path(
     bids = parse_bids_filename(filename)
     if not bids:
         return filename
+
+    if modality == "events":
+        raise ValueError(
+            "There is no events/ folder: move *_events.tsv next to its task in func/, beh/ or eeg/"
+        )
+
+    if modality == "physio" and re.search(r"(?:^|_)task-", filename):
+        raise ValueError(
+            "Physio in physio/ has no task- entity; task-bound physio belongs next to its task: "
+            + ", ".join(PHYSIO_TASK_DESTINATIONS)
+            + ". Convert it with the Physio converter (physio batch-convert --destination beh/func/eeg)."
+        )
+
+    lower = filename.lower()
+    if (
+        modality in PHYSIO_TASK_DESTINATIONS
+        and (
+            ("_physio." in lower and not lower.endswith((".tsv.gz", ".json")))
+            or (
+                lower.endswith(_RAW_PHYSIO_EXTENSIONS)
+                and not (modality == "eeg" and lower.endswith("_eeg.edf"))  # a real EEG recording
+            )
+        )
+    ):
+        raise ValueError(
+            f"EDF/raw physio cannot be organized into {modality}/ as-is; convert with the "
+            f"Physio converter (physio batch-convert --destination {modality}) "
+            "to get BIDS _physio.tsv.gz"
+        )
 
     sub = bids.get("sub")
     ses = bids.get("ses")
@@ -427,3 +463,16 @@ def plan_rename(
             results.append({"old": source_path, "new": str(exc), "success": False})
 
     return results, warnings
+
+
+def new_filename_problem(name: str) -> str:
+    """Why `name` cannot be a new file name ('' when it can): it must be one plain, non-empty name."""
+    if not name.strip() or name in (".", ".."):
+        return "The new name is empty."
+    if "/" in name or "\\" in name:
+        return "The new name contains a folder separator (/ or \\); use the organize option to place files in folders."
+    if any(ord(ch) < 32 for ch in name):
+        return "The new name contains a control character."
+    if len(name.encode("utf-8")) > 255:
+        return "The new name is longer than 255 characters."
+    return ""

@@ -168,6 +168,26 @@ def test_generate_methods_shows_a_preview_and_offers_a_markdown_download(bare_pa
     assert download.value.suggested_filename.endswith(".md")
 
 
+def test_methods_warnings_and_word_tex_bib_downloads(bare_page, studio_url, project):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-open")
+    bare_page.fill("#existingPath", str(project))
+    bare_page.click("#loadProjectBtn")
+    expect(bare_page.locator("#methodsSectionCard")).to_be_visible()
+    bare_page.locator('[data-bs-target="#methodsSectionBody"]').click()
+    bare_page.click("#generateMethodsBtn")
+
+    expect(bare_page.locator("#methodsWarnings")).to_contain_text("sample size")
+    for button, name in (
+        ("#exportMethodsDocxBtn", "methods_section_en.docx"),
+        ("#exportMethodsTexBtn", "methods_section_en.tex"),
+        ("#exportMethodsBibBtn", "references.bib"),
+    ):
+        with bare_page.expect_download() as download:
+            bare_page.click(button)
+        assert download.value.suggested_filename == name
+
+
 def test_delete_project_needs_the_exact_name_then_removes_the_folder(bare_page, studio_url, project):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-open")

@@ -15,6 +15,7 @@ The `environment` modality captures contextual environmental information that ca
 
 - Environment TSV tables with contextual variables.
 - Matching JSON sidecars describing fields, units, and provenance.
+- Files are named `sub-<label>_ses-<label>_recording-<label>_environment.tsv` with a matching `_environment.json` sidecar.
 
 ## Validation
 

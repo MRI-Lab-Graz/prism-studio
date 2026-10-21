@@ -15,7 +15,10 @@ from flask import (
     Response,
 )
 from src.constants import DEFAULT_BIDS_VERSION
-from .projects_metadata_helpers import REQUIRED_FIELDS_SCHEMA
+from .projects_metadata_helpers import (
+    CREATION_BLOCKING_FIELDS,
+    REQUIRED_FIELDS_SCHEMA,
+)
 from src.converters.file_reader import list_excel_sheets, resolve_sheet_selection
 from src.cross_platform import normalize_path
 from src.runtime_dependencies import (
@@ -110,6 +113,10 @@ def api_config():
         "studyMetadataRequiredFields": {
             section: sorted(fields)
             for section, fields in REQUIRED_FIELDS_SCHEMA.items()
+        },
+        "creationBlockingFields": {
+            section: sorted(fields)
+            for section, fields in CREATION_BLOCKING_FIELDS.items()
         },
     })
 
@@ -1721,6 +1728,7 @@ def api_fs_browse():
 
     Query params:
       path  – absolute path to list; defaults to the user's home directory.
+      sort  – "name" (default), "size" or "modified"; order – "asc" (default) or "desc".
 
     Returns JSON:
       {
@@ -1788,7 +1796,13 @@ def api_fs_browse():
             # must not abort the whole listing.
             try:
                 if entry.is_dir():
-                    dirs.append({"name": entry.name, "path": str(entry)})
+                    dirs.append(
+                        {
+                            "name": entry.name,
+                            "path": str(entry),
+                            "modified": int(entry.stat().st_mtime),
+                        }
+                    )
                     continue
 
                 if include_files and entry.is_file():
@@ -1798,17 +1812,31 @@ def api_fs_browse():
                         and suffix not in allowed_extensions
                     ):
                         continue
+                    stat = entry.stat()
                     files.append(
                         {
                             "name": entry.name,
                             "path": str(entry),
-                            "size": entry.stat().st_size,
+                            "size": stat.st_size,
+                            "modified": int(stat.st_mtime),
                         }
                     )
             except OSError:
                 continue
     except PermissionError:
         pass
+
+    # Folders always stay above files; the chosen column orders within each group.
+    # Folders have no meaningful size, so they fall back to name order for it.
+    sort_key = request.args.get("sort", "name")
+    if sort_key not in {"name", "size", "modified"}:
+        sort_key = "name"
+    descending = request.args.get("order") == "desc"
+    for group in (dirs, files):
+        if sort_key == "name" or (sort_key == "size" and group is dirs):
+            group.sort(key=lambda e: e["name"].lower(), reverse=descending)
+        else:
+            group.sort(key=lambda e: e[sort_key], reverse=descending)
 
     project_json = current / "project.json"
     has_project_json = project_json.is_file()
@@ -1827,6 +1855,10 @@ def api_fs_browse():
         {
             "path": str(current),
             "parent": parent_path,
+            "crumbs": [
+                {"name": p.name or str(p), "path": str(p)}
+                for p in reversed([current, *current.parents])
+            ],
             "dirs": dirs,
             "files": files,
             "has_project_json": has_project_json,

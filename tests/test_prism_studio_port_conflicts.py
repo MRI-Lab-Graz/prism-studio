@@ -244,3 +244,38 @@ def test_ensure_clean_start_kills_unresponsive_prism_instance_without_force(
     prism_studio_module.ensure_clean_start("127.0.0.1", 5001)
 
     assert killed == [5001]
+
+
+def test_port_probe_has_a_short_timeout(prism_studio_module, monkeypatch):
+    # Windows retries a refused loopback connect for ~1-2 s unless a timeout
+    # cuts it off; a live local listener accepts in well under a millisecond.
+    seen = {}
+
+    class FakeSocket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def settimeout(self, value):
+            seen["timeout"] = value
+
+        def connect_ex(self, addr):
+            return 10061
+
+    monkeypatch.setattr(prism_studio_module.socket, "socket", lambda *a, **k: FakeSocket())
+
+    assert prism_studio_module.is_port_in_use("127.0.0.1", 5001) is False
+    assert 0 < seen["timeout"] <= 0.5
+
+
+def test_instance_probe_sends_no_request_to_a_closed_port(prism_studio_module, monkeypatch):
+    monkeypatch.setattr(prism_studio_module, "is_port_in_use", lambda host, port: False)
+
+    def fail(*args, **kwargs):
+        raise AssertionError("no HTTP request when nothing listens")
+
+    monkeypatch.setattr(prism_studio_module.http.client, "HTTPConnection", fail)
+
+    assert prism_studio_module.is_prism_studio_instance("127.0.0.1", 5001) is False

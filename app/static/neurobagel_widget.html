@@ -202,6 +202,17 @@
       border-color: #0d6efd;
     }
     
+    .nb-btn-danger {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+
+    .nb-btn-danger:hover {
+      background: #bb2d3b;
+      border-color: #bb2d3b;
+    }
+
     .nb-btn-primary {
       background: #0d6efd;
       color: white;
@@ -632,6 +643,8 @@ window.clearNeurobagelEnrichment = function(colName) {
 };
 
 window.removeNeurobagelVariable = async function(colName) {
+  // The short empty-state below shrinks the page; keep the viewport where it was.
+  const scrollY = window.scrollY;
   const actualColName = window.resolveNeurobagelColumnStateKey(colName);
   const removeHandler = window.removeAdditionalParticipantVariable;
   if (typeof removeHandler === 'function') {
@@ -671,6 +684,8 @@ window.removeNeurobagelVariable = async function(colName) {
   if (typeof refreshPreview === 'function') {
     refreshPreview();
   }
+  window.scrollTo(0, scrollY);
+  requestAnimationFrame(() => window.scrollTo(0, scrollY));
 };
 
 window.addNeurobagelLevel = function(colName) {
@@ -914,6 +929,8 @@ if (typeof window.fetchNeurobagelParticipants !== 'function') {
 
 window.renderNeurobagelWidget = async function() {
   console.log('🧠 renderNeurobagelWidget called');
+  // Capture what is typed in the open editor before the state is rebuilt.
+  window.syncNeurobagelActiveEditorToState?.();
   const data = await window.fetchNeurobagelParticipants();
   console.log('🧠 Fetched data:', data);
   if (!data || !data.properties) {
@@ -1020,6 +1037,7 @@ window.renderNeurobagelWidget = async function() {
       // Update with existing metadata
       if (colMeta.Description) enrichedData[colName].description = colMeta.Description;
       if (colMeta.Unit || colMeta.Units) enrichedData[colName].unit = colMeta.Unit || colMeta.Units;
+      if (colMeta.EligibilityCriterion) enrichedData[colName].eligibility_criterion = colMeta.EligibilityCriterion;
       
       // NEUROBAGEL ENRICHMENT: Load existing annotations — only for known NB concepts.
       // Synthetic "nb:<colname>" entries written by earlier saves must not be restored.
@@ -1102,25 +1120,19 @@ window.renderNeurobagelWidget = async function() {
     }
   }
   
-  // Preserve in-session enrichments that the user applied via the Map button but
-  // has not yet saved to file.  Without this, any call to renderNeurobagelWidget()
-  // (e.g. triggered by the auto-preview refresh after the mapping modal saves)
-  // silently discards the enrichment and requires the user to click Map twice.
   const prevColumns = window.neurobagelWidgetState.allColumns || {};
-  for (const [colName, newData] of Object.entries(enrichedData)) {
-    const prev = prevColumns[colName];
-    // Only carry forward if the rebuild didn't already restore it from file data.
-    if (prev && prev.standardized_variable && !newData.standardized_variable) {
-      newData.standardized_variable = prev.standardized_variable;
-      newData.term_url = prev.term_url || null;
-      newData.label = prev.label || null;
-    }
-  }
+  // Unsaved edits win over the rebuilt defaults/saved file (no Save Draft needed).
+  window.carryForwardColumnEdits?.(prevColumns, enrichedData);
 
   window.neurobagelWidgetState.allColumns = enrichedData;
   
   // Render the sidebar
   window.renderNeurobagelSidebar();
+
+  // The open editor's handlers still point at the old column objects: re-bind.
+  const openCol = window.neurobagelWidgetState.selectedColumn;
+  const openColData = openCol && window.getNeurobagelColumnState(openCol);
+  if (openColData) window.renderNeurobagelEditor(openCol, openColData);
   
   // Force widget to be visible
   const widgetContent = document.getElementById('neurobagelWidgetContent');
@@ -1298,7 +1310,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
         <span class="nb-editor-type-badge">${dataType}</span>
         ${colData.standardized_variable ? `<span class="badge bg-success ms-1" style="font-size: 10px;">Enriched: ${colData.standardized_variable}</span>` : ''}
         ${canRemoveVariable ? `
-        <button class="nb-btn ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
+        <button class="nb-btn nb-btn-danger ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
           Remove From Output
         </button>
         ` : ''}
@@ -1400,6 +1412,20 @@ window.renderNeurobagelEditor = function(colName, colData) {
     </div>
   `;
   
+  const eligibility = window.neurobagelEligibility;
+  if (eligibility && eligibility.criteria.length) {
+    const linked = eligibility.effectiveLink(colData, eligibility.criteria);
+    const options = eligibility.criterionOptionsHtml(eligibility.criteria, linked);
+    html += `
+      <div class="nb-field-group">
+        <label class="nb-field-label">Eligibility criterion (from project metadata)</label>
+        <select class="nb-field-input" id="nb-elig-${colName}"
+          style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">${options}</select>
+        <div id="nb-elig-note-${colName}" style="font-size: 12px; color: #b45309;"></div>
+      </div>
+    `;
+  }
+
   if (dataType === 'continuous') {
     // Editable unit field for continuous
     html += `
@@ -1526,6 +1552,23 @@ window.renderNeurobagelEditor = function(colName, colData) {
     field.addEventListener('input', updater);
   }
   
+  const eligField = document.getElementById(`nb-elig-${colName}`);
+  function refreshEligibilityNote() {
+    const note = document.getElementById(`nb-elig-note-${colName}`);
+    const criteria = window.neurobagelEligibility ? window.neurobagelEligibility.criteria : [];
+    const criterion = criteria.find(c => eligibilityFieldValue() === c.id);
+    note.textContent = criterion && window.neurobagelEligibility.unitMismatch(colData.unit, criterion.unit)
+      ? `Unit differs: column "${colData.unit}", criterion "${criterion.unit}".` : '';  // textContent: no HTML
+  }
+  function eligibilityFieldValue() { return eligField ? eligField.value : ''; }
+  if (eligField) {
+    refreshEligibilityNote();
+    eligField.addEventListener('change', function() {
+      colData.eligibility_criterion = this.value;
+      refreshEligibilityNote();
+    });
+  }
+
   bindLiveUpdate(descField, function() {
       colData.description = this.value;
       console.log(`Updated description for ${colName}:`, this.value);
@@ -1533,6 +1576,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
   
   bindLiveUpdate(unitField, function() {
       colData.unit = this.value;
+      if (eligField) refreshEligibilityNote();
       console.log(`Updated unit for ${colName}:`, this.value);
   });
 

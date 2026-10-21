@@ -47,6 +47,58 @@ fill in Study Metadata by hand.
 Buttons: **Preliminary Save** (saves the form without creating the project yet) and
 **Create Project**.
 
+### Checked eligibility criteria
+
+In **Study Metadata > Eligibility**, *Checked Criteria* holds limits the validator
+tests against `participants.tsv`. Choose from the **Add variable** list: a standard term (Age, Sex, Handedness,
+Group, Diagnosis, Education level) or **Other measure** (IQ, VO2max, ...), choose
+**include** or **exclude**, then give a range (numeric, inclusive, either end may
+stay empty) or the category labels. Enter the limits here only once: in the
+[Sociodemographics converter](converter_participants.md) you just link a column
+to the criterion. Participants outside a limit get a warning (`PRISM602`), never
+an error, so you can validate while data collection is still running.
+
+Rows follow the rule described under [Adding rows](#adding-rows-the-green-check-and-the-red-cross).
+Accepted criteria count towards the Core fields: an *include* criterion satisfies
+**Inclusion Criteria**, an *exclude* criterion **Exclusion Criteria**.
+
+### Adding rows: the green check and the red cross
+
+Everywhere on the Study Metadata form that you add a row (authors, funding, the
+criteria and list fields, known issues, missing files, DOIs, checked criteria) the
+same rule applies, so you always know whether a click is needed:
+
+- A **new row is a draft** with a check mark and a gray **Cancel**. The check is gray
+  and disabled while the row is empty or incomplete (for example without both author
+  names), and a short hint says what is missing. It turns green as soon as the row
+  can be accepted.
+- **Click the green check to accept the row.** Only now does it count: it is saved,
+  it feeds the badges and the readiness score, and it shows the **red cross**, which
+  deletes it. A red cross always means "delete something that is already part of the form".
+- A row with a check mark needs a click; a row without one never does.
+- **Plain list fields** (independent, dependent and control variables, quality assessment,
+  inclusion and exclusion criteria, quality control) have one input instead of rows: type
+  an entry, press Enter or click the check, and it becomes a **green chip** below the
+  input, like the CRediT roles. Click a chip to remove it; duplicates are ignored. Text
+  that is typed but not accepted blocks saving.
+- **Funding, known issues, missing files, recruitment locations and checked criteria**
+  work the same way: one entry row (the agency and grant, the file and the issue, subject
+  to detail, the location search, or the criterion), and every accepted entry becomes a
+  green chip with a short summary, for example `FWF, P12345`, `sub-002_bold.nii – Shorter
+  scan` or `Age · include 18–35 years`. To change an entry, remove its chip and add it
+  again. A checked criterion that you remove and add again in the same editing session (same
+  variable and name) gets its old id back, so a column linked to it in the Sociodemographics
+  converter stays linked. Only authors stay as cards, because each author carries many details.
+- **Errors link to their field.** In the *Dataset description issues* box, a message that
+  names a field you can fill in (Name, Authors, Keywords, Funding, Ethics) is a link: click
+  it and the page opens that section and focuses the field.
+- Rows that are already in the project when you open it are accepted.
+- The recruitment-location search works the same way: its green **Add Selected Location**
+  button accepts the place you searched for.
+- **You cannot save while a draft with content is pending.** Create Project, Preliminary
+  Save and Save are blocked, the pending rows get a yellow outline, and a message says to
+  click the green check or Cancel. A completely empty draft is simply dropped.
+
 ### What gets created
 
 ```text

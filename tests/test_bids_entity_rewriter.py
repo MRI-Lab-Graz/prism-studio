@@ -393,3 +393,31 @@ def test_renaming_another_entity_leaves_task_name_alone(tmp_path):
     BidsEntityRewriter(root).apply(modality="survey", entity="_acq", operation="rename", replacement="b")
 
     assert _read_json(folder / "sub-01_ses-1_task-wb_acq-b_survey.json")["TaskName"] == "wb"
+
+
+def test_replacement_value_is_limited_to_32_ascii_label_characters(tmp_path):
+    from src.bids_entity_rewriter import BidsEntityRewriter
+
+    for bad in ("x" * 33, "ünï"):
+        with pytest.raises(ValueError, match="Replacement values"):
+            BidsEntityRewriter._normalize_replacement(bad)
+    assert BidsEntityRewriter._normalize_replacement("x" * 32) == "x" * 32
+
+
+def test_task_can_be_removed_from_physio_files(tmp_path):
+    physio_dir = tmp_path / "project" / "sub-01" / "ses-pre" / "physio"
+    _touch_file(physio_dir / "sub-01_ses-pre_task-rest_recording-ecg_physio.tsv.gz")
+
+    rewriter = BidsEntityRewriter(tmp_path / "project")
+    rewriter.apply(modality="physio", entity="_task", operation="delete")
+
+    assert (physio_dir / "sub-01_ses-pre_recording-ecg_physio.tsv.gz").exists()
+
+
+def test_task_still_cannot_be_removed_from_survey_files(tmp_path):
+    survey_dir = tmp_path / "project" / "sub-01" / "ses-pre" / "survey"
+    _touch_file(survey_dir / "sub-01_ses-pre_task-wellbeing_survey.tsv")
+
+    rewriter = BidsEntityRewriter(tmp_path / "project")
+    with pytest.raises(ValueError, match="cannot be removed"):
+        rewriter.apply(modality="survey", entity="_task", operation="delete")

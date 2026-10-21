@@ -506,6 +506,9 @@ def handle_api_survey_convert_preview(
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+    skip_existing = SurveyWorkflowStageService.parse_prepared_workflow_flag(
+        request.form.get("skip_existing")
+    )
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -565,6 +568,7 @@ def handle_api_survey_convert_preview(
                 id_map_file=id_map_path,
                 separator=separator,
                 duplicate_handling=duplicate_handling,
+                skip_existing=skip_existing,
                 skip_participants=True,
                 fallback_project_path=str(project_path) if project_path else None,
                 template_version_overrides=effective_template_version_overrides,
@@ -593,6 +597,7 @@ def handle_api_survey_convert_preview(
                 id_map_file=id_map_path,
                 strict_levels=True if strict_levels else None,
                 duplicate_handling=duplicate_handling,
+                skip_existing=skip_existing,
                 skip_participants=True,
                 project_path=str(project_path) if project_path else None,
                 fallback_project_path=str(project_path) if project_path else None,
@@ -684,6 +689,7 @@ def handle_api_survey_convert_preview(
                         id_map_file=id_map_path,
                         separator=separator,
                         duplicate_handling=duplicate_handling,
+                        skip_existing=skip_existing,
                         skip_participants=True,
                         fallback_project_path=(
                             str(project_path) if project_path else None
@@ -714,6 +720,7 @@ def handle_api_survey_convert_preview(
                         id_map_file=id_map_path,
                         strict_levels=True if strict_levels else None,
                         duplicate_handling=duplicate_handling,
+                        skip_existing=skip_existing,
                         skip_participants=True,
                         project_path=str(project_path) if project_path else None,
                         fallback_project_path=(
@@ -757,6 +764,7 @@ def handle_api_survey_convert_preview(
                             id_map_file=id_map_path,
                             separator=separator,
                             duplicate_handling=duplicate_handling,
+                            skip_existing=skip_existing,
                             skip_participants=True,
                             fallback_project_path=(
                                 str(project_path) if project_path else None
@@ -787,6 +795,7 @@ def handle_api_survey_convert_preview(
                             id_map_file=id_map_path,
                             strict_levels=True if strict_levels else None,
                             duplicate_handling=duplicate_handling,
+                            skip_existing=skip_existing,
                             skip_participants=True,
                             project_path=str(project_path) if project_path else None,
                             fallback_project_path=(
@@ -955,6 +964,8 @@ def handle_api_survey_convert_preview(
                 }
                 for group in result.unmatched_groups
             ]
+        if getattr(result, "existing_summary", None):
+            conv_summary["existing_summary"] = result.existing_summary
         if getattr(result, "participant_registry_warning", None):
             conv_summary["participant_registry_warning"] = (
                 result.participant_registry_warning

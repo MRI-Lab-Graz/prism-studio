@@ -167,7 +167,8 @@
     font-size: clamp(1.45rem, 2.1vw, 1.9rem);
 }
 
-.studio-theme .studio-page-shell h5 {
+.studio-theme .studio-page-shell h5,
+.studio-theme .studio-page-shell .h5 {
     font-size: 1.06rem;
 }
 

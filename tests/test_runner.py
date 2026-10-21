@@ -228,7 +228,7 @@ class TestValidateDataset:
         )
 
     def test_bids_run_reports_orphan_participants_in_tsv(self, tmp_path, monkeypatch):
-        """BIDS run should error when participants.tsv contains orphan participant IDs."""
+        """BIDS run should warn (not error) when participants.tsv contains orphan participant IDs."""
         (tmp_path / "dataset_description.json").write_text(
             '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
             encoding="utf-8",
@@ -248,18 +248,16 @@ class TestValidateDataset:
             run_bids=True,
         )
 
-        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert not [i for i in issues if i[0] == "ERROR"]
         assert any(
-            "participant_id values present in participants.tsv but missing sub-* folders"
-            in msg
-            and "sub-999" in msg
-            for msg in error_messages
+            level == "WARNING" and "without a sub-* folder" in msg and "sub-999" in msg
+            for level, msg, *_rest in issues
         )
 
-    def test_bids_run_reports_both_participant_mismatch_directions(
+    def test_bids_run_splits_participant_mismatch_by_direction(
         self, tmp_path, monkeypatch
     ):
-        """BIDS run should include both mismatch directions in one error message."""
+        """A folder without a row is an error; a row without a folder (e.g. prescreened, never invited) only a warning."""
         (tmp_path / "dataset_description.json").write_text(
             '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
             encoding="utf-8",
@@ -280,14 +278,17 @@ class TestValidateDataset:
             run_bids=True,
         )
 
-        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        errors = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        warnings = [msg for level, msg, *_rest in issues if level == "WARNING"]
         assert any(
             "Subjects present as sub-* folders but missing in participants.tsv" in msg
             and "sub-002" in msg
-            and "participant_id values present in participants.tsv but missing sub-* folders"
-            in msg
-            and "sub-999" in msg
-            for msg in error_messages
+            for msg in errors
+        )
+        assert not any("sub-999" in msg for msg in errors)
+        assert any(
+            "without a sub-* folder" in msg and "1 participant" in msg and "sub-999" in msg
+            for msg in warnings
         )
 
     def test_nested_derivative_dataset_description_is_accepted(self):
@@ -745,8 +746,8 @@ class TestSurveyRecipeCoverage:
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert issues == []
 
-    def test_survey_files_without_recipes_raises_warning(self):
-        """Warning is raised when survey TSV files exist but no recipe JSON."""
+    def test_survey_files_without_recipes_raises_info_note(self):
+        """An INFO note (recipes are optional) when survey TSV files exist but no recipe JSON."""
         from runner import _check_survey_recipe_coverage
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -762,7 +763,7 @@ class TestSurveyRecipeCoverage:
 
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert len(issues) == 1
-            assert issues[0][0] == "WARNING"
+            assert issues[0][0] == "INFO"
             assert "recipe" in issues[0][1].lower()
 
     def test_survey_files_with_recipes_no_warning(self):

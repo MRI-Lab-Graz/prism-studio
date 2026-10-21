@@ -12,7 +12,8 @@ from datetime import datetime
 from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
-from src.entity_rules import load_entity_rules
+from src.entity_rules import check_entities, load_entity_rules
+from src.constants import TABULAR_MODALITIES
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -49,6 +50,23 @@ BIDS_REGEX = re.compile(
     r"(_ses-[a-zA-Z0-9]+)?"  # optional session; labels are free-form strings, no length/format coercion (e.g. ses-1, ses-01, ses-pre are all valid and distinct)
     r"(_[a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)*"  # key-value pairs; values may contain hyphens (e.g., task-bfi-s)
     r"(_[a-zA-Z0-9]+)?$"  # generic suffix (e.g., _dwi, _T1w, _bold, _physio, _events)
+)
+
+# Raw-data codes for censored assay results; accepted in biosample columns that
+# are not categorical (see validate_data_content). Exact strings only.
+BIOSAMPLE_CENSORED_CODES = frozenset({"<LOD", "<LLOQ", ">ULOQ"})
+
+# Not required by biosample.schema.json, but a template without them hides how
+# the sample was taken and measured; validate_sidecar warns once per sidecar.
+BIOSAMPLE_RECOMMENDED_TECHNICAL = (
+    "CollectionMethod",
+    "Anticoagulant",
+    "FastingRequired",
+    "ProcessingProtocol",
+    "StorageTemperature",
+    "Laboratory",
+    "AssayMethod",
+    "AssayKit",
 )
 
 MRI_SUFFIX_REGEX = re.compile(
@@ -217,6 +235,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
 
     survey_value = _extract_entity_value(stem, "survey")
     biometrics_value = _extract_entity_value(stem, "biometrics")
+    biosample_value = _extract_entity_value(stem, "biosample")
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
 
@@ -225,6 +244,8 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         label_candidates.append(("survey", survey_candidate))
     for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         label_candidates.append(("biometrics", biometrics_candidate))
+    for biosample_candidate in _value_candidates(biosample_value, acq_value):
+        label_candidates.append(("biosample", biosample_candidate))
     if task_value:
         for task_candidate in _value_candidates(task_value, acq_value):
             label_candidates.append(("task", task_candidate))
@@ -237,6 +258,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         root_dir,
         safe_path_join(root_dir, "surveys"),
         safe_path_join(root_dir, "biometrics"),
+        safe_path_join(root_dir, "biosample"),
     ]
 
     # Add library paths if provided
@@ -245,6 +267,7 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None, dir_cache=None)
         search_dirs.append(str(library_root))
         search_dirs.append(str(library_root / "survey"))
         search_dirs.append(str(library_root / "biometrics"))
+        search_dirs.append(str(library_root / "biosample"))
 
     for prefix, value in label_candidates:
         base_name = f"{prefix}-{value}"
@@ -298,16 +321,19 @@ def _find_inherited_root_sidecar(
 
     survey_value = _extract_entity_value(stem, "survey")
     biometrics_value = _extract_entity_value(stem, "biometrics")
+    biosample_value = _extract_entity_value(stem, "biosample")
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
     path_parts = set(Path(file_path).parts)
-    is_physio_context = bool(path_parts.intersection({"physio", "physiological"}))
+    is_physio_context = bool(path_parts.intersection({"physio"}))
 
     candidate_names = []
     for survey_candidate in _value_candidates(survey_value, acq_value):
         candidate_names.append(f"survey-{survey_candidate}_{suffix}.json")
     for biometrics_candidate in _value_candidates(biometrics_value, acq_value):
         candidate_names.append(f"biometrics-{biometrics_candidate}_{suffix}.json")
+    for biosample_candidate in _value_candidates(biosample_value, acq_value):
+        candidate_names.append(f"biosample-{biosample_candidate}_{suffix}.json")
     if task_value:
         for task_candidate in _value_candidates(task_value, acq_value):
             candidate_names.append(f"task-{task_candidate}_{suffix}.json")
@@ -371,7 +397,6 @@ def _find_inherited_root_sidecar(
             safe_path_join(root_abs, "surveys"),
             safe_path_join(root_abs, "biometrics"),
             safe_path_join(root_abs, "physio"),
-            safe_path_join(root_abs, "physiological"),
         ]
     )
 
@@ -493,6 +518,7 @@ class DatasetValidator:
         self._sidecar_json_cache = {}
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
+        self._biosample_warned = set()
         # One directory listing per directory for the whole run, replacing tens
         # of thousands of per-candidate stat() calls on network shares.
         self._dir_cache = {}
@@ -906,7 +932,7 @@ class DatasetValidator:
             return self._validate_environment_content(file_path)
 
         # Only validate content for tabular data modalities
-        if modality not in ["survey", "biometrics"]:
+        if modality not in TABULAR_MODALITIES:
             return issues
 
         # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
@@ -1011,6 +1037,18 @@ class DatasetValidator:
                                 value is None
                                 or value.strip() == ""
                                 or value.lower() in ("n/a", "na")
+                            ):
+                                continue
+
+                            # Censored assay results are valid raw data in
+                            # numeric biosample columns; categorical columns
+                            # (Levels/AllowedValues) still reject them.
+                            if (
+                                modality == "biosample"
+                                and value in BIOSAMPLE_CENSORED_CODES
+                                and not (
+                                    col_def.get("Levels") or col_def.get("AllowedValues")
+                                )
                             ):
                                 continue
 
@@ -1274,13 +1312,34 @@ class DatasetValidator:
         if not BIDS_REGEX.match(base):
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
 
+        rule = _ENTITY_RULES.modalities.get(modality)
+        if rule is not None and rule.allowed_entities is not None:
+            has_task = any(t.startswith("task-") for t in base.split("_")[1:])
+            is_physio_task = modality == "physio" and has_task
+            for message in check_entities(base, rule.allowed_entities, _ENTITY_RULES.entity_order):
+                if is_physio_task and message.startswith("entity 'task' "):
+                    message += (
+                        " - task-bound physio belongs next to its task: "
+                        "beh/, func/ or eeg/ (re-convert with destination beh/func/eeg "
+                        "(BIDS .tsv.gz) using the Physio converter)"
+                    )
+                issues.append(("ERROR", f"{message}: {filename}"))
+
         # Check modality pattern (strict for survey/biometrics)
-        if modality in {"survey", "biometrics"}:
+        if modality in TABULAR_MODALITIES:
             if not pattern.match(filename):
                 issues.append(
                     (
                         "ERROR",
                         f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
+                    )
+                )
+            elif modality == "biosample" and not _extract_entity_value(base, "biosample"):
+                issues.append(
+                    (
+                        "ERROR",
+                        f"Filename must contain biosample-<label> naming the assay panel "
+                        f"(e.g. sub-01_biosample-inflammation_biosample.tsv): {filename}",
                     )
                 )
         elif modality == "environment":
@@ -1335,6 +1394,39 @@ class DatasetValidator:
 
         return issues
 
+    def _check_biosample_sidecar(self, sidecar_data, sidecar_path, file_path) -> list:
+        """Filename label must equal Study.BiosampleName; warn (once per sidecar) about missing recommended Technical fields."""
+        issues = []
+        study = sidecar_data.get("Study") or {}
+        technical = sidecar_data.get("Technical") or {}
+
+        stem, _ext = split_compound_ext(os.path.basename(file_path))
+        file_label = _extract_entity_value(stem, "biosample")
+        declared = study.get("BiosampleName")
+        if file_label and declared and file_label != declared:
+            issues.append(
+                (
+                    "ERROR",
+                    f"{normalize_path(sidecar_path)}: Study.BiosampleName '{declared}' does not match "
+                    f"the biosample-{file_label} label in {os.path.basename(file_path)}",
+                )
+            )
+
+        key = normalize_path(sidecar_path)
+        if key not in self._biosample_warned:
+            self._biosample_warned.add(key)
+            missing = [
+                f for f in BIOSAMPLE_RECOMMENDED_TECHNICAL if technical.get(f) in (None, "")
+            ]
+            if missing:
+                issues.append(
+                    (
+                        "WARNING",
+                        f"{key}: recommended Technical fields missing: {', '.join(missing)}",
+                    )
+                )
+        return issues
+
     def validate_sidecar(self, file_path, modality, root_dir):
         """Validate JSON sidecar against schema (with BIDS inheritance)"""
 
@@ -1378,6 +1470,10 @@ class DatasetValidator:
                 # Version compatibility checks (only warns when explicitly specified and incompatible)
                 issues.extend(validate_schema_version(sidecar_data, schema))
                 validate(instance=sidecar_data, schema=schema)
+                if modality == "biosample":
+                    issues.extend(
+                        self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path)
+                    )
 
         except ValidationError as e:
             # Format message to be more descriptive (include field path)

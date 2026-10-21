@@ -50,6 +50,7 @@ class BiometricsConvertResult:
     tasks_included: list[str]
     unknown_columns: list[str]
     detected_sessions: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)  # skipped rows and cleaned labels, for the preview/log
 
 
 def _norm_col(s: str) -> str:
@@ -293,6 +294,26 @@ def convert_biometrics_table_to_prism_dataset(
     if collision_message:
         raise ValueError(collision_message)
 
+    from src.cleaning_notes import cleaning_note, missing_id_note
+
+    effective_session = (
+        None if session and str(session).strip().lower() == "all" else session
+    )
+
+    raw_ids = list(df[col_pid])
+    shown_ids = [(raw, sid) for raw, sid in zip(raw_ids, normalized_ids) if sid]
+    raw_sessions = (
+        [effective_session]
+        if effective_session
+        else [v for v in (df[col_ses] if col_ses else []) if str(v).strip() and str(v).strip().lower() != "nan"]
+    )
+    notes = [
+        missing_id_note([n for n, sid in enumerate(normalized_ids, 1) if not sid]),
+        cleaning_note([r for r, _ in shown_ids], [_normalize_sub_id(r) for r, _ in shown_ids], "participant ID", "sub-"),
+        cleaning_note(raw_sessions, [_normalize_ses_id(v) for v in raw_sessions], "session label", "ses-"),
+    ]
+    notes = [note for note in notes if note]
+
     # Root files
     output_root.mkdir(parents=True, exist_ok=True)
     dataset_description = {
@@ -333,9 +354,6 @@ def convert_biometrics_table_to_prism_dataset(
 
     # "all" is a sentinel meaning "auto-detect per row" (same convention as the
     # survey converter), not a literal session label.
-    effective_session = (
-        None if session and str(session).strip().lower() == "all" else session
-    )
 
     # Write inherited sidecars (dataset-level)
     for task, template in task_to_template.items():
@@ -393,10 +411,14 @@ def convert_biometrics_table_to_prism_dataset(
             if task not in tasks_included:
                 tasks_included.append(task)
 
+    from src.modality_versions import pin_after_import
+
+    pin_after_import(output_root)
     return BiometricsConvertResult(
         id_column=col_pid,
         session_column=col_ses,
         tasks_included=sorted(tasks_included),
         unknown_columns=(unknown_cols if unknown == "warn" else []),
         detected_sessions=sorted(sessions_written),
+        notes=notes,
     )

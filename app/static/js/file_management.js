@@ -32,26 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return sharedFetchWithApiFallback(url, options, fallbackMessage);
     }
 
-    const sharedPathPickerModuleUrl = new URL('./shared/path-picker.js', fileManagementScriptUrl).href;
-    let sharedPrefersServerPickerPromise = null;
-
-    function loadSharedPrefersServerPicker() {
-        if (!sharedPrefersServerPickerPromise) {
-            sharedPrefersServerPickerPromise = import(sharedPathPickerModuleUrl).then(({ prefersServerPicker }) => {
-                if (typeof prefersServerPicker !== 'function') {
-                    throw new Error('Shared path picker helper is unavailable.');
-                }
-                return prefersServerPicker;
-            });
-        }
-        return sharedPrefersServerPickerPromise;
-    }
-
-    async function prefersServerPicker() {
-        const sharedPrefersServerPicker = await loadSharedPrefersServerPicker();
-        return sharedPrefersServerPicker();
-    }
-
     function getCurrentProjectPath() {
         if (typeof window.resolveCurrentProjectPath === 'function') {
             return String(window.resolveCurrentProjectPath() || '').trim();
@@ -81,8 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Wide to Long
     // --------------------
     const wideLongFile = document.getElementById('wideLongFile');
-    const wideLongPickFileBtn = document.getElementById('wideLongPickFileBtn');
-    const wideLongBrowseServerFileBtn = document.getElementById('wideLongBrowseServerFileBtn');
+    const wideLongBrowseFileBtn = document.getElementById('wideLongBrowseFileBtn');
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
     const wideLongSourcedataQuickSelect = document.getElementById('wideLongSourcedataQuickSelect');
@@ -164,44 +143,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateOrganizeServerFilesHint() {
-        const organizeFilesServerHint = document.getElementById('organizeFilesServerPathHint');
-        const organizeClearServerFilesBtn = document.getElementById('organizeClearServerFilesBtn');
-        if (!organizeFilesServerHint || !organizeClearServerFilesBtn) {
+        const organizeFilesServerHint = document.getElementById('organizeFilesPathHint');
+        const organizeClearFilesBtn = document.getElementById('organizeClearFilesBtn');
+        if (!organizeFilesServerHint || !organizeClearFilesBtn) {
             return;
         }
 
         if (organizeServerFilePaths.length === 0) {
             organizeFilesServerHint.textContent = '';
             organizeFilesServerHint.classList.add('d-none');
-            organizeClearServerFilesBtn.classList.add('d-none');
+            organizeClearFilesBtn.classList.add('d-none');
             return;
         }
 
         const lastPath = organizeServerFilePaths[organizeServerFilePaths.length - 1];
         if (organizeServerFilePaths.length === 1) {
-            organizeFilesServerHint.textContent = `Server file: ${lastPath}`;
+            organizeFilesServerHint.textContent = `File: ${lastPath}`;
         } else {
-            organizeFilesServerHint.textContent = `Server files: ${organizeServerFilePaths.length} selected (last: ${lastPath})`;
+            organizeFilesServerHint.textContent = `Files: ${organizeServerFilePaths.length} selected (last: ${lastPath})`;
         }
         organizeFilesServerHint.classList.remove('d-none');
-        organizeClearServerFilesBtn.classList.remove('d-none');
+        organizeClearFilesBtn.classList.remove('d-none');
     }
 
     function updateRenamerServerHints() {
-        const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
-        const renamerServerFileHint = document.getElementById('renamerServerFileHint');
-        const renamerClearServerSelectionBtn = document.getElementById('renamerClearServerSelectionBtn');
+        const renamerFolderHint = document.getElementById('renamerFolderHint');
+        const renamerFileHint = document.getElementById('renamerFileHint');
+        const renamerClearSelectionBtn = document.getElementById('renamerClearSelectionBtn');
 
-        if (!renamerServerFolderHint || !renamerServerFileHint || !renamerClearServerSelectionBtn) {
+        if (!renamerFolderHint || !renamerFileHint || !renamerClearSelectionBtn) {
             return;
         }
 
         if (renamerServerFolderPath) {
-            renamerServerFolderHint.textContent = `Server folder: ${renamerServerFolderPath} (${renamerServerEntries.length} files)`;
-            renamerServerFolderHint.classList.remove('d-none');
-            renamerServerFileHint.textContent = '';
-            renamerServerFileHint.classList.add('d-none');
-            renamerClearServerSelectionBtn.classList.remove('d-none');
+            renamerFolderHint.textContent = `Folder: ${renamerServerFolderPath} (${renamerServerEntries.length} files)`;
+            renamerFolderHint.classList.remove('d-none');
+            renamerFileHint.textContent = '';
+            renamerFileHint.classList.add('d-none');
+            renamerClearSelectionBtn.classList.remove('d-none');
             return;
         }
 
@@ -209,22 +188,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const lastEntry = renamerServerEntries[renamerServerEntries.length - 1] || {};
             const lastPath = String(lastEntry.path || lastEntry.relative_path || lastEntry.name || '').trim();
             if (renamerServerEntries.length === 1) {
-                renamerServerFileHint.textContent = `Server file: ${lastPath}`;
+                renamerFileHint.textContent = `File: ${lastPath}`;
             } else {
-                renamerServerFileHint.textContent = `Server files: ${renamerServerEntries.length} selected (last: ${lastPath})`;
+                renamerFileHint.textContent = `Files: ${renamerServerEntries.length} selected (last: ${lastPath})`;
             }
-            renamerServerFileHint.classList.remove('d-none');
-            renamerServerFolderHint.textContent = '';
-            renamerServerFolderHint.classList.add('d-none');
-            renamerClearServerSelectionBtn.classList.remove('d-none');
+            renamerFileHint.classList.remove('d-none');
+            renamerFolderHint.textContent = '';
+            renamerFolderHint.classList.add('d-none');
+            renamerClearSelectionBtn.classList.remove('d-none');
             return;
         }
 
-        renamerServerFolderHint.textContent = '';
-        renamerServerFolderHint.classList.add('d-none');
-        renamerServerFileHint.textContent = '';
-        renamerServerFileHint.classList.add('d-none');
-        renamerClearServerSelectionBtn.classList.add('d-none');
+        renamerFolderHint.textContent = '';
+        renamerFolderHint.classList.add('d-none');
+        renamerFileHint.textContent = '';
+        renamerFileHint.classList.add('d-none');
+        renamerClearSelectionBtn.classList.add('d-none');
     }
 
     function getPathPicker() {
@@ -247,108 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return pathPicker.pickServerFile(options);
-    }
-
-    async function applyRemotePickerUiState() {
-        const connectedToServer = await prefersServerPicker();
-
-        const renamerInput = document.getElementById('renamerFiles');
-        const renamerLocalUploadGroup = document.getElementById('renamerLocalUploadGroup');
-        const organizeFilesInput = document.getElementById('organizeFiles');
-        const organizeFilesPickerCol = document.getElementById('organizeFilesPickerCol');
-        const organizeFolderInput = document.getElementById('organizeFolder');
-        const organizeFolderPickerCol = document.getElementById('organizeFolderPickerCol');
-        const organizeFolderLocalUploadGroup = document.getElementById('organizeFolderLocalUploadGroup');
-        const organizeFolderLabel = document.getElementById('organizeFolderLabel');
-        const wideLongInput = document.getElementById('wideLongFile');
-        const wideLongServerBtn = document.getElementById('wideLongBrowseServerFileBtn');
-        const renamerServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');
-        const renamerServerFolderBtn = document.getElementById('renamerBrowseServerFolderBtn');
-        const organizeServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');
-        const organizeServerFolderBtn = document.getElementById('organizeFolderServerBrowseBtn');
-        const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
-        const renamerServerFileHint = document.getElementById('renamerServerFileHint');
-        const organizeFilesServerHint = document.getElementById('organizeFilesServerPathHint');
-        const organizeServerHint = document.getElementById('organizeFolderServerPathHint');
-
-        if (renamerLocalUploadGroup) {
-            renamerLocalUploadGroup.classList.remove('d-none');
-        }
-        if (organizeFilesPickerCol) {
-            organizeFilesPickerCol.classList.remove('d-none');
-        }
-        if (organizeFolderPickerCol) {
-            organizeFolderPickerCol.classList.remove('col-md-12');
-            organizeFolderPickerCol.classList.add('col-md-6');
-        }
-        if (organizeFolderLocalUploadGroup) {
-            organizeFolderLocalUploadGroup.classList.remove('d-none');
-        }
-        if (organizeFolderLabel) {
-            organizeFolderLabel.textContent = 'Or Select a Folder';
-        }
-
-        if (renamerInput) {
-            renamerInput.disabled = false;
-            renamerInput.title = '';
-        }
-        if (organizeFilesInput) {
-            organizeFilesInput.disabled = false;
-            organizeFilesInput.title = '';
-        }
-        if (organizeFolderInput) {
-            organizeFolderInput.disabled = false;
-            organizeFolderInput.title = '';
-        }
-        if (wideLongInput) {
-            wideLongInput.disabled = false;
-            wideLongInput.title = '';
-        }
-        if (wideLongServerBtn) {
-            wideLongServerBtn.classList.toggle('d-none', !connectedToServer);
-        }
-        if (renamerServerFileBtn) {
-            renamerServerFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-        if (renamerServerFolderBtn) {
-            renamerServerFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-        if (organizeServerFileBtn) {
-            organizeServerFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-        if (organizeServerFolderBtn) {
-            organizeServerFolderBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (!connectedToServer) {
-            renamerServerFolderPath = '';
-            renamerServerEntries = [];
-            organizeServerFolderPath = '';
-            organizeServerFilePaths = [];
-
-            if (renamerServerFolderHint) {
-                renamerServerFolderHint.textContent = '';
-                renamerServerFolderHint.classList.add('d-none');
-            }
-            if (renamerServerFileHint) {
-                renamerServerFileHint.textContent = '';
-                renamerServerFileHint.classList.add('d-none');
-            }
-            if (organizeFilesServerHint) {
-                organizeFilesServerHint.textContent = '';
-                organizeFilesServerHint.classList.add('d-none');
-            }
-            if (organizeServerHint) {
-                organizeServerHint.textContent = '';
-                organizeServerHint.classList.add('d-none');
-            }
-        }
-
-        updateRenamerServerHints();
-        updateOrganizeServerFilesHint();
-
-        updateOrganizeBtn();
-        updateRenamerBtn();
     }
 
     function hideRawPeek() {
@@ -833,14 +710,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (wideLongPickFileBtn && wideLongFile) {
-        wideLongPickFileBtn.addEventListener('click', async () => {
-            wideLongFile.click();
-        });
-    }
-
-    if (wideLongBrowseServerFileBtn) {
-        wideLongBrowseServerFileBtn.addEventListener('click', async () => {
+    if (wideLongBrowseFileBtn) {
+        wideLongBrowseFileBtn.addEventListener('click', async () => {
             const pickedPath = await pickServerFile({
                 title: 'Select Wide Table on Server',
                 confirmLabel: 'Use This File',
@@ -1091,11 +962,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const organizeLog = document.getElementById('organizeLog');
     const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
     const organizeFolder = document.getElementById('organizeFolder');
-    const organizeBrowseServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');
-    const organizeClearServerFilesBtn = document.getElementById('organizeClearServerFilesBtn');
-    const organizeFilesServerPathHint = document.getElementById('organizeFilesServerPathHint');
-    const organizeFolderServerBrowseBtn = document.getElementById('organizeFolderServerBrowseBtn');
-    const organizeFolderServerPathHint = document.getElementById('organizeFolderServerPathHint');
+    const organizeBrowseFileBtn = document.getElementById('organizeBrowseFileBtn');
+    const organizeClearFilesBtn = document.getElementById('organizeClearFilesBtn');
+    const organizeFilesPathHint = document.getElementById('organizeFilesPathHint');
+    const organizeBrowseFolderBtn = document.getElementById('organizeBrowseFolderBtn');
+    const organizeFolderPathHint = document.getElementById('organizeFolderPathHint');
     const organizeFlatStructure = document.getElementById('organizeFlatStructure');
     const organizeTargetPrism = document.getElementById('organizeTargetPrism');
     const organizeTargetRaw = document.getElementById('organizeTargetRaw');
@@ -1194,17 +1065,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearOrganizerServerFolderSelection() {
         organizeServerFolderPath = '';
-        if (organizeFolderServerPathHint) {
-            organizeFolderServerPathHint.textContent = '';
-            organizeFolderServerPathHint.classList.add('d-none');
+        if (organizeFolderPathHint) {
+            organizeFolderPathHint.textContent = '';
+            organizeFolderPathHint.classList.add('d-none');
         }
     }
 
     function clearOrganizerServerFileSelection() {
         organizeServerFilePaths = [];
-        if (organizeFilesServerPathHint) {
-            organizeFilesServerPathHint.textContent = '';
-            organizeFilesServerPathHint.classList.add('d-none');
+        if (organizeFilesPathHint) {
+            organizeFilesPathHint.textContent = '';
+            organizeFilesPathHint.classList.add('d-none');
         }
         updateOrganizeServerFilesHint();
     }
@@ -1242,15 +1113,15 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOrganizeBtn();
     }
 
-    if (organizeClearServerFilesBtn) {
-        organizeClearServerFilesBtn.addEventListener('click', () => {
+    if (organizeClearFilesBtn) {
+        organizeClearFilesBtn.addEventListener('click', () => {
             clearOrganizerServerFileSelection();
             updateOrganizeBtn();
         });
     }
 
-    if (organizeBrowseServerFileBtn) {
-        organizeBrowseServerFileBtn.addEventListener('click', async () => {
+    if (organizeBrowseFileBtn) {
+        organizeBrowseFileBtn.addEventListener('click', async () => {
             try {
                 const startPath = organizeServerFilePaths.length > 0
                     ? getParentDirectory(organizeServerFilePaths[organizeServerFilePaths.length - 1])
@@ -1279,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateOrganizeBtn();
             } catch (error) {
                 if (organizeError) {
-                    organizeError.textContent = error.message || 'Failed to browse server file.';
+                    organizeError.textContent = error.message || 'Failed to browse for the file.';
                     organizeError.classList.remove('d-none');
                 }
             }
@@ -1354,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceLabel = usingServerFolderPath
             ? `folder ${organizeServerFolderPath}`
             : (usingServerFilePaths
-                ? `${organizeServerFilePaths.length} server file${organizeServerFilePaths.length === 1 ? '' : 's'}`
+                ? `${organizeServerFilePaths.length} file${organizeServerFilePaths.length === 1 ? '' : 's'}`
                 : `${files.length} files`);
         appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${sourceLabel}...`, 'progress');
         appendOrganizerLog(`Mode: ${dryRun ? 'preview' : 'execute'} | Modality: ${modality} | Destination: ${destRoot}${flatStructure ? ' (flat)' : ''}`, 'info');
@@ -2868,21 +2739,21 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleRepoEntityRewriteValueInput();
 
     if (organizeFolder && organizeFolder.parentElement) {
-        let serverFolderButton = organizeFolderServerBrowseBtn || document.getElementById('organizeFolderServerBrowseBtn');
+        let serverFolderButton = organizeBrowseFolderBtn || document.getElementById('organizeBrowseFolderBtn');
         if (!serverFolderButton) {
             serverFolderButton = document.createElement('button');
             serverFolderButton.type = 'button';
-            serverFolderButton.className = 'btn btn-outline-secondary btn-sm mt-2 d-none';
-            serverFolderButton.id = 'organizeFolderServerBrowseBtn';
-            serverFolderButton.innerHTML = '<i class="fas fa-server me-1"></i>Server Folder';
+            serverFolderButton.className = 'btn btn-outline-secondary btn-sm mt-2';
+            serverFolderButton.id = 'organizeBrowseFolderBtn';
+            serverFolderButton.innerHTML = '<i class="fas fa-folder-open me-1"></i>Browse folder';
             organizeFolder.parentElement.appendChild(serverFolderButton);
         }
 
-        let serverFolderHint = organizeFolderServerPathHint || document.getElementById('organizeFolderServerPathHint');
+        let serverFolderHint = organizeFolderPathHint || document.getElementById('organizeFolderPathHint');
         if (!serverFolderHint) {
             serverFolderHint = document.createElement('div');
             serverFolderHint.className = 'form-text d-none';
-            serverFolderHint.id = 'organizeFolderServerPathHint';
+            serverFolderHint.id = 'organizeFolderPathHint';
             organizeFolder.parentElement.appendChild(serverFolderHint);
         }
 
@@ -2903,7 +2774,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 organizeFolder.value = '';
             }
             if (serverFolderHint) {
-                serverFolderHint.textContent = `Server folder: ${picked}`;
+                serverFolderHint.textContent = `Folder: ${picked}`;
                 serverFolderHint.classList.remove('d-none');
             }
             updateOrganizeBtn();
@@ -2914,14 +2785,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (organizeFolder.files && organizeFolder.files.length > 0) {
                     clearOrganizerServerFolderSelection();
                 }
-            });
-        }
-
-        if (window.PrismPathPicker && typeof window.PrismPathPicker.init === 'function') {
-            window.PrismPathPicker.init().then(() => {
-                applyRemotePickerUiState();
-            }).catch(() => {
-                // Keep default host picker behavior on init failures.
             });
         }
 
@@ -2953,11 +2816,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerLogContainer = document.getElementById('renamerLogContainer');
     const renamerLog = document.getElementById('renamerLog');
     const renamerLogClearBtn = document.getElementById('renamerLogClearBtn');
-    const renamerBrowseServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');
-    const renamerBrowseServerFolderBtn = document.getElementById('renamerBrowseServerFolderBtn');
-    const renamerClearServerSelectionBtn = document.getElementById('renamerClearServerSelectionBtn');
-    const renamerServerFileHint = document.getElementById('renamerServerFileHint');
-    const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
+    const renamerBrowseFileBtn = document.getElementById('renamerBrowseFileBtn');
+    const renamerBrowseFolderBtn = document.getElementById('renamerBrowseFolderBtn');
+    const renamerClearSelectionBtn = document.getElementById('renamerClearSelectionBtn');
+    const renamerFileHint = document.getElementById('renamerFileHint');
+    const renamerFolderHint = document.getElementById('renamerFolderHint');
     const renamerOrganize = document.getElementById('renamerOrganize');
     const renamerResetBtn = document.getElementById('renamerResetBtn');
     const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
@@ -3016,16 +2879,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentExampleFile = null;
     let renamerTemplateManuallyEdited = false;
 
+    // physio/ plus the task-bound destinations: all of them name files "..._physio".
+    function isPhysioModality(modality) {
+        return ['physio', 'beh', 'func', 'eeg'].includes(modality);
+    }
+
     function updateRecordingVisibility() {
         if (!renamerModality || !renamerRecordingContainer) return;
-        const showRecording = renamerModality.value === 'physio';
+        const showRecording = isPhysioModality(renamerModality.value);
         renamerRecordingContainer.style.display = showRecording ? 'block' : 'none';
     }
 
     function updateRenamerBtn() {
         const hasFiles = (renamerFiles && renamerFiles.files && renamerFiles.files.length > 0) || renamerServerEntries.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
-        const hasTask = !!getValidatedTaskLabel();
+        const hasTask = !!getValidatedTaskLabel() || taskIsOptional();
         const hasCurrentProject = Boolean(getCurrentProjectPath());
         const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
@@ -3173,6 +3041,24 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/[^a-z0-9-]/g, '');
     }
 
+    // Physio recordings without a task are valid (they stay in physio/); other modalities need one.
+    function taskIsOptional() {
+        return !!renamerModality && renamerModality.value === 'physio';
+    }
+
+    function updateTaskRequirement() {
+        const optional = taskIsOptional();
+        if (renamerTask) renamerTask.required = !optional;
+        const badge = document.getElementById('renamerTaskBadge');
+        if (badge) {
+            badge.textContent = optional ? 'OPTIONAL' : 'REQUIRED';
+            badge.classList.toggle('bg-danger', !optional);
+            badge.classList.toggle('bg-secondary', optional);
+        }
+        const hint = document.getElementById('renamerTaskHint');
+        if (hint) hint.classList.toggle('d-none', !optional);
+    }
+
     function getValidatedTaskLabel() {
         return sanitizeTaskLabel(renamerTask && renamerTask.value ? renamerTask.value : '');
     }
@@ -3180,7 +3066,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function syncTemplateWithTaskAndRecording(templateValue) {
         const task = getValidatedTaskLabel();
         const modality = renamerModality ? renamerModality.value : 'physio';
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3191,7 +3077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updated = updated.replace(/task-[^_\.]+/g, `task-${task}`);
         }
 
-        if (modality === 'physio') {
+        if (isPhysioModality(modality)) {
             if (recording) {
                 if (/_recording-[^_]+_physio/.test(updated)) {
                     updated = updated.replace(/_recording-[^_]+_physio/g, `_recording-${recording}_physio`);
@@ -3330,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const idSource = renamerIdSource();
         const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
         const hasSession = idSource === 'folder' ? true : !!sessionValue;
-        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+        const recording = (isPhysioModality(modality) && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
 
@@ -3342,17 +3228,17 @@ document.addEventListener('DOMContentLoaded', () => {
             renamerExtension.value = sourceExt || '(none)';
         }
 
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             renamerNewExample.value = '';
             return;
         }
 
         const entities = ['sub-{subject}'];
         if (hasSession) entities.push('ses-{session}');
-        entities.push(`task-${task}`);
+        if (task) entities.push(`task-${task}`);
 
-        let suffix = modality;
-        if (modality === 'physio' && recording) {
+        let suffix = isPhysioModality(modality) ? 'physio' : modality;
+        if (isPhysioModality(modality) && recording) {
             suffix = `recording-${recording}_physio`;
         }
 
@@ -3574,7 +3460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function inferPattern() {
         if (!currentExampleFile || !renamerNewExample) return;
         const task = getValidatedTaskLabel();
-        if (!task) {
+        if (!task && !taskIsOptional()) {
             if (renamerPattern) renamerPattern.value = '';
             if (renamerReplacement) renamerReplacement.value = '';
             if (renamerPreview) renamerPreview.classList.add('d-none');
@@ -3942,13 +3828,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             isValidBids = false;
                             bidsError = 'Missing entities/suffix';
                         } else {
-                            const lastDot = res.new.lastIndexOf('.');
-                            const stem = lastDot > -1 ? res.new.slice(0, lastDot) : res.new;
+                            // compound extension .tsv.gz must go as a whole
+                            const stem = res.new.replace(/\.(tsv\.gz|[^.]*)$/i, '');
                             const suffix = stem.split('_').pop();
                             const expectedSuffixes = {
                                 physio: 'physio',
+                                beh: 'physio',
+                                func: 'physio',
+                                eeg: 'physio',
                                 biometrics: 'biometrics',
-                                events: 'events',
                                 survey: 'survey'
                             };
                             if (expectedSuffixes[selectedModality] && suffix !== expectedSuffixes[selectedModality]) {
@@ -4071,47 +3959,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (renamerFiles && renamerFiles.parentElement) {
-        let browseServerRenamerFolderBtn = renamerBrowseServerFolderBtn || document.getElementById('renamerBrowseServerFolderBtn');
+        let browseServerRenamerFolderBtn = renamerBrowseFolderBtn || document.getElementById('renamerBrowseFolderBtn');
         if (!browseServerRenamerFolderBtn) {
             browseServerRenamerFolderBtn = document.createElement('button');
             browseServerRenamerFolderBtn.type = 'button';
-            browseServerRenamerFolderBtn.className = 'btn btn-outline-secondary btn-sm d-none';
-            browseServerRenamerFolderBtn.id = 'renamerBrowseServerFolderBtn';
-            browseServerRenamerFolderBtn.innerHTML = '<i class="fas fa-server me-1"></i>Server Folder';
+            browseServerRenamerFolderBtn.className = 'btn btn-outline-secondary btn-sm';
+            browseServerRenamerFolderBtn.id = 'renamerBrowseFolderBtn';
+            browseServerRenamerFolderBtn.innerHTML = '<i class="fas fa-folder-open me-1"></i>Browse folder';
             renamerFiles.parentElement.appendChild(browseServerRenamerFolderBtn);
         }
 
-        let browseServerRenamerFileBtn = renamerBrowseServerFileBtn || document.getElementById('renamerBrowseServerFileBtn');
+        let browseServerRenamerFileBtn = renamerBrowseFileBtn || document.getElementById('renamerBrowseFileBtn');
         if (!browseServerRenamerFileBtn) {
             browseServerRenamerFileBtn = document.createElement('button');
             browseServerRenamerFileBtn.type = 'button';
-            browseServerRenamerFileBtn.className = 'btn btn-outline-secondary btn-sm d-none';
-            browseServerRenamerFileBtn.id = 'renamerBrowseServerFileBtn';
-            browseServerRenamerFileBtn.innerHTML = '<i class="fas fa-server me-1"></i>Server File';
+            browseServerRenamerFileBtn.className = 'btn btn-outline-secondary btn-sm';
+            browseServerRenamerFileBtn.id = 'renamerBrowseFileBtn';
+            browseServerRenamerFileBtn.innerHTML = '<i class="fas fa-file me-1"></i>Browse files';
             renamerFiles.parentElement.appendChild(browseServerRenamerFileBtn);
         }
 
-        let clearServerRenamerSelectionBtn = renamerClearServerSelectionBtn || document.getElementById('renamerClearServerSelectionBtn');
+        let clearServerRenamerSelectionBtn = renamerClearSelectionBtn || document.getElementById('renamerClearSelectionBtn');
         if (!clearServerRenamerSelectionBtn) {
             clearServerRenamerSelectionBtn = document.createElement('button');
             clearServerRenamerSelectionBtn.type = 'button';
             clearServerRenamerSelectionBtn.className = 'btn btn-outline-danger btn-sm d-none';
-            clearServerRenamerSelectionBtn.id = 'renamerClearServerSelectionBtn';
+            clearServerRenamerSelectionBtn.id = 'renamerClearSelectionBtn';
             clearServerRenamerSelectionBtn.innerHTML = '<i class="fas fa-xmark me-1"></i>Clear Server Selection';
             renamerFiles.parentElement.appendChild(clearServerRenamerSelectionBtn);
         }
 
-        if (!(renamerServerFolderHint || document.getElementById('renamerServerFolderHint'))) {
+        if (!(renamerFolderHint || document.getElementById('renamerFolderHint'))) {
             const createdFolderHint = document.createElement('div');
             createdFolderHint.className = 'form-text d-none';
-            createdFolderHint.id = 'renamerServerFolderHint';
+            createdFolderHint.id = 'renamerFolderHint';
             renamerFiles.parentElement.appendChild(createdFolderHint);
         }
 
-        if (!(renamerServerFileHint || document.getElementById('renamerServerFileHint'))) {
+        if (!(renamerFileHint || document.getElementById('renamerFileHint'))) {
             const createdFileHint = document.createElement('div');
             createdFileHint.className = 'form-text d-none';
-            createdFileHint.id = 'renamerServerFileHint';
+            createdFileHint.id = 'renamerFileHint';
             renamerFiles.parentElement.appendChild(createdFileHint);
         }
 
@@ -4143,7 +4031,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRenamerBtn();
             } catch (error) {
                 if (renamerError) {
-                    renamerError.textContent = error.message || 'Failed to browse server folder.';
+                    renamerError.textContent = error.message || 'Failed to browse for the folder.';
                     renamerError.classList.remove('d-none');
                 }
             }
@@ -4182,7 +4070,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRenamerBtn();
             } catch (error) {
                 if (renamerError) {
-                    renamerError.textContent = error.message || 'Failed to browse server file.';
+                    renamerError.textContent = error.message || 'Failed to browse for the file.';
                     renamerError.classList.remove('d-none');
                 }
             }
@@ -4202,17 +4090,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateRenamerBtn();
         });
 
-        if (window.PrismPathPicker && typeof window.PrismPathPicker.init === 'function') {
-            window.PrismPathPicker.init().then(() => {
-                applyRemotePickerUiState();
-            }).catch(() => {
-                // Keep host picker as fallback.
-            });
-        }
-
-        window.addEventListener('prism-library-settings-changed', () => {
-            applyRemotePickerUiState();
-        });
     }
 
     if (renamerResetBtn) {
@@ -4259,8 +4136,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
             updateRecordingVisibility();
+            updateTaskRequirement();
             buildAutoRenamerFilename();
             inferPattern();
+            updateRenamerBtn();
         });
     }
 
@@ -4363,11 +4242,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial state
     updateRecordingVisibility();
+    updateTaskRequirement();
     updateMappingVisibility();
     buildAutoRenamerFilename();
     updateRenamerBtn();
     updateRenamerStructureHint();
-    applyRemotePickerUiState();
+    updateRenamerServerHints();
+    updateOrganizeServerFilesHint();
+    updateOrganizeBtn();
     loadRepoSubjectExamples();
     loadRepoEntityRewriteOptions();
     refreshWideLongDeclaredSessions();
@@ -4700,6 +4582,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /** participants.tsv is never edited by Delete: say which deleted subjects it still lists. */
+    function participantsStillListedHtml(ids) {
+        if (!ids.length) return '';
+        const shown = ids.slice(0, 5).map((id) => `<code>${escapeHtml(id)}</code>`).join(', ');
+        return `<div class="mt-1 small"><i class="fas fa-table me-1"></i>participants.tsv still lists ${ids.length} subject(s) whose files are removed: ${shown}${ids.length > 5 ? ' …' : ''}. Remove the rows yourself if they should go.</div>`;
+    }
+
     function renderFileDeletePreviewResult(payload) {
         if (!fileDeleteResult) return;
         const fileCount = Number(payload.file_count || 0);
@@ -4730,11 +4619,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<div class="mt-1 text-warning small"><i class="fas fa-file-code me-1"></i><strong>${orphanedSidecars.length} orphaned root sidecar(s) will also be deleted</strong> (no matching data files remain): ${orphanedSidecars.map((s) => `<code>${escapeHtml(s)}</code>`).join(', ')}</div>`
             : '';
 
+        const stillListed = Array.isArray(payload.participants_still_listed) ? payload.participants_still_listed : [];
+        const participantsNote = participantsStillListedHtml(stillListed);
         fileDeleteResult.innerHTML = `
             <div class="alert alert-warning py-2 mb-0">
                 <div class="fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Preview: ${fileCount} data file(s) will be deleted.${orphanedSidecars.length > 0 ? ` + ${orphanedSidecars.length} root sidecar(s).` : ''}</div>
                 ${emptyDirNote}
                 ${sidecarNote}
+                ${participantsNote}
                 ${fileListHtml}
                 <div class="mt-2 text-danger fw-semibold">Review the list above carefully, then click <em>Delete Files</em> to proceed.</div>
             </div>
@@ -4763,6 +4655,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileDeleteResult.innerHTML = `
             <div class="alert alert-success py-2 mb-0">
                 <i class="fas fa-check-circle me-1"></i><strong>Deleted ${deleted} file(s).</strong>${sidecarNote}${dirNote}
+                ${participantsStillListedHtml(Array.isArray(payload.participants_still_listed) ? payload.participants_still_listed : [])}
                 ${dataladNote}
             </div>
         `;

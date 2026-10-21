@@ -38,6 +38,12 @@ _ENTITY_ORDER = list(load_entity_rules().entity_order)
 _REQUIRED_ENTITIES = set(load_entity_rules().default_required_entities)
 
 
+def _entity_excluded(modality: str, entity: str) -> bool:
+    """True when the modality's rule lists allowed entities and omits this one."""
+    rule = load_entity_rules().modalities.get(modality)
+    return bool(rule and rule.allowed_entities is not None and entity not in rule.allowed_entities)
+
+
 @dataclass(frozen=True)
 class _RenameOperation:
     old_path: Path
@@ -300,7 +306,9 @@ class BidsEntityRewriter:
             replacement_value = None
             if normalized_operation == "rename":
                 replacement_value = self._normalize_replacement(replacement)
-            elif normalized_entity in _REQUIRED_ENTITIES:
+            elif normalized_entity in _REQUIRED_ENTITIES and not _entity_excluded(
+                normalized_modality, normalized_entity
+            ):
                 raise ValueError(f"Part _{normalized_entity} cannot be removed.")
 
             file_ops = []
@@ -403,9 +411,9 @@ class BidsEntityRewriter:
         normalized = str(replacement or "").strip()
         if not normalized:
             raise ValueError("Enter a new value for the selected part.")
-        if not BidsEntityParser.is_valid_label(normalized):
+        if not BidsEntityParser.is_valid_label(normalized) or len(normalized) > 32:
             raise ValueError(
-                "Replacement values must contain only letters and numbers."
+                "Replacement values must contain only the letters a-z and digits 0-9, at most 32 characters."
             )
         return normalized
 

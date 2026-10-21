@@ -164,7 +164,8 @@ export async function loadSelectedTemplate(context) {
   await validateCurrent(context, { initial: true });
 }
 
-export async function loadNewTemplate(context) {
+// initial: the start-up load, which must not replace a template the user created while it was fetching.
+export async function loadNewTemplate(context, { initial = false } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
   context.clearAlert();
@@ -176,6 +177,7 @@ export async function loadNewTemplate(context) {
   const data = await context.apiGet(
     `/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schemaVersion)}`
   );
+  if (initial && context.hasExplicitTemplate) return;
   context.currentTemplate = context.stripInternalTemplateKeys(data.template);
   context.stripScoreAnnotationsInTemplate(context.currentTemplate);
   context.originalTemplate = null;
@@ -246,6 +248,14 @@ export async function validateCurrent(context, { initial = false, imported = fal
       .map((warning) => `<li><i class="fas fa-globe text-warning me-1"></i>${warning.message}${warning.details ? ` <small class="text-muted">(${warning.details})</small>` : ''}</li>`)
       .join('');
     langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
+  }
+
+  const itemWarnings = data.item_warnings || [];
+  if (itemWarnings.length > 0) {
+    const items = itemWarnings
+      .map((warning) => `<li><code>${context.escapeHtml(warning.path)}</code>: ${context.escapeHtml(warning.message)}</li>`)
+      .join('');
+    langWarnHtml += `<div class="alert alert-warning mt-2 mb-0"><strong>Item warnings:</strong><ul class="mb-0">${items}</ul></div>`;
   }
 
   if (data.ok) {
@@ -949,5 +959,5 @@ export async function initializeTemplateEditorSourceWorkflow(context) {
   context.projectTemplateSelectEl.value = '';
   context.globalTemplateSelectEl.value = '';
   context.updateLoadButtonState();
-  await loadNewTemplate(context);
+  await loadNewTemplate(context, { initial: true });
 }

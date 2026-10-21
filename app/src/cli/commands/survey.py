@@ -277,6 +277,7 @@ def cmd_survey_convert(args):
             authors=args.authors,
             alias_file=getattr(args, "alias", None),
             duplicate_handling=getattr(args, "duplicate_handling", "error"),
+            skip_existing=bool(getattr(args, "skip_existing", False)),
             skip_participants=True,
             project_path=project_path,
             template_version_overrides=template_version_overrides,

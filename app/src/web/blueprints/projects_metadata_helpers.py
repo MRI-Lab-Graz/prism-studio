@@ -2,6 +2,9 @@ import json
 import re
 from pathlib import Path
 
+from src.eligibility import usable_criteria
+from src.project_ready import REQUIRED_FIELDS
+
 from .projects_helpers import _read_tabular_dataframe
 
 
@@ -185,8 +188,29 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
         if df.empty:
             return None
 
+        # screening-only participants are listed on purpose but are not the sample
+        from src.eligibility import screening_only_ids
+
+        screened = screening_only_ids(tsv_path)
+        if screened and "participant_id" in df.columns:
+            df = df[~df["participant_id"].astype(str).str.strip().isin(screened)]
+            if df.empty:
+                return None
+
+        # participants.tsv also lists people who were pre-screened but did not take part;
+        # the sample is those with data. Until data is imported, everyone listed counts.
+        from src.environment_mri_scan import resolve_bids_rawdata_root
+
+        with_data = {p.name for p in resolve_bids_rawdata_root(project_path).glob("sub-*") if p.is_dir()}
+        if with_data and "participant_id" in df.columns:
+            df = df[df["participant_id"].astype(str).isin(with_data)]
+            if df.empty:
+                return None
+
         schema = _read_participants_schema(project_path)
         stats: dict = {"n": len(df)}
+        if screened:
+            stats["n_screened"] = len(screened)
 
         age_col = None
         for candidate in ["age", "Age", "AGE"]:
@@ -309,6 +333,7 @@ _EDITABLE_SECTIONS = (
     "MissingData",
     "References",
     "Conditions",
+    "Preregistration",
 )
 
 # Single source of truth for which fields count toward the CORE tier (blue
@@ -330,12 +355,12 @@ REQUIRED_FIELDS_SCHEMA: dict[str, set[str]] = {
 
 # REQUIRED-tier (red, creation-blocking) fields - a third tier, neither CORE
 # nor optional. Excluded from the CORE/FAIR readiness score below so they
-# don't inflate "optional_total"; mirrors creationBlockingFields in
-# metadata.js's computeLocalCompleteness.
-CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {
-    "Basics": {"Name", "Authors", "Keywords"},
-    "StudyDesign": {"Timepoints"},
-}
+# don't inflate "optional_total"; mirrors the creation-blocking list in
+# metadata.js's computeLocalCompleteness (which reads it from /api/config and
+# the study-metadata GET response). Derived from the one constant, src.project_ready.REQUIRED_FIELDS.
+CREATION_BLOCKING_FIELDS: dict[str, set[str]] = {}
+for _section, _field in REQUIRED_FIELDS:
+    CREATION_BLOCKING_FIELDS.setdefault(_section, set()).add(_field)
 
 
 def _compute_methods_completeness(
@@ -378,8 +403,13 @@ def _compute_methods_completeness(
             return len([item for item in parts if item.strip()])
         return 0
 
-    inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria"))
-    exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria"))
+    checked = usable_criteria(elig.get("Criteria"))  # structured "Checked Criteria"
+    inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria")) + sum(
+        c["mode"] == "include" for c in checked
+    )
+    exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria")) + sum(
+        c["mode"] == "exclude" for c in checked
+    )
 
     # Only fields the Study Metadata form can actually set belong here: a
     # readiness score must never be capped by something the user has no input

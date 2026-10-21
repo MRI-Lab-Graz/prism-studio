@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
+import { finishImport, loadNewTemplate, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -252,5 +252,42 @@ describe('templateStatusPrefix', () => {
         expect(templateStatusPrefix({ template_valid: false })).toBe('\u274C');
         expect(templateStatusPrefix({ template_valid: null })).toBe('\u2754');
         expect(templateStatusPrefix(undefined)).toBe('\u2754');
+    });
+});
+
+
+describe('loadNewTemplate at start-up', () => {
+    function startUpContext(onFetch) {
+        const el = { disabled: false, classList: { add() {} } };
+        const context = {
+            modalityEl: { value: 'survey' }, schemaEl: { value: 'stable' },
+            clearAlert() {}, btnDownload: el, btnSave: el, btnDelete: el,
+            refreshSchema: async () => {},
+            apiGet: async () => { onFetch(context); return { template: { Study: {} } }; },
+            stripInternalTemplateKeys: (t) => t, stripScoreAnnotationsInTemplate() {},
+            clearTemplateSelections() {}, itemKeysFromTemplate: () => [],
+            currentTemplate: { Study: { TaskName: 'typed by the user' } }, hasExplicitTemplate: false,
+            renderAll: vi.fn(), renderJsonDiff: vi.fn(),
+        };
+        return context;
+    }
+
+    it('does not replace a template the user created while it was loading', async () => {
+        const context = startUpContext((c) => { c.hasExplicitTemplate = true; });
+        await loadNewTemplate(context, { initial: true });
+        expect(context.renderAll).not.toHaveBeenCalled();
+        expect(context.currentTemplate.Study.TaskName).toBe('typed by the user');
+    });
+
+    it('still shows the blank template when the user has not created one', async () => {
+        const context = startUpContext(() => {});
+        await loadNewTemplate(context, { initial: true });
+        expect(context.renderAll).toHaveBeenCalledOnce();
+    });
+
+    it('the New button always replaces the template', async () => {
+        const context = startUpContext((c) => { c.hasExplicitTemplate = true; });
+        await loadNewTemplate(context);
+        expect(context.renderAll).toHaveBeenCalledOnce();
     });
 });

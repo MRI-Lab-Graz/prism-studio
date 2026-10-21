@@ -19,9 +19,11 @@ PRISM Studio Documentation
          <span class="prism-pill">Version-aware surveys</span>
          <span class="prism-pill">Privacy-safe export</span>
          <span class="prism-pill">Local-first</span>
+         <span class="prism-pill">Community modalities</span>
        </div>
        <a href="INSTALLATION.html" class="prism-cta">Install PRISM Studio</a>
        <a href="TUTORIAL_BEGINNER.html" class="prism-cta prism-cta--secondary">Start the Tutorial</a>
+       <a href="MODALITY_WORKFLOW.html" class="prism-cta prism-cta--secondary">Propose a modality</a>
      </div>
    </div>
 
@@ -126,10 +128,44 @@ One structure for multimodal studies
      <li><span class="prism-structure-check">&check;</span><span><code>biometrics/</code> &mdash; Fitness, strength, balance, and other assessments</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>environment/</code> &mdash; Privacy-safe contextual enrichment data</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>eyetracking/</code> &mdash; Eye tracking workflows in the same study layout</span></li>
-     <li><span class="prism-structure-check">&check;</span><span><code>physiological/</code> &mdash; Standard BIDS physio alongside PRISM extensions</span></li>
+     <li><span class="prism-structure-check">&check;</span><span><code>physio/</code> &mdash; Task-free physiological recordings (task-bound physio lives in <code>beh/</code>, <code>func/</code>, <code>eeg/</code>)</span></li>
+     <li><span class="prism-structure-check">&check;</span><span><code>your-modality/</code> &mdash; Missing a data type? <a href="MODALITY_WORKFLOW.html">Propose it</a></span></li>
    </ul>
    </div>
    </div>
+
+Missing a data type? Propose it.
+=================================
+
+PRISM is open and dynamic. If your study measures something PRISM does not
+describe yet — blood samples, skin temperature, a new instrument —
+you do not need to be a maintainer: you describe it, and it can ship in the
+next PRISM release.
+
+.. raw:: html
+
+   <div class="prism-highlight-grid">
+     <div>
+       <h4>1. Describe it</h4>
+       <p>Fill in a short workbook: the name, the filename ending (suffix), and a few example columns with units.</p>
+     </div>
+     <div>
+       <h4>2. Attach a sample</h4>
+       <p>Add a small synthetic data file in your format. No real participant data, ever.</p>
+     </div>
+     <div>
+       <h4>3. A bot checks it</h4>
+       <p>Names, columns and sample are checked automatically; if something is off, you get a comment saying what to fix.</p>
+     </div>
+     <div>
+       <h4>4. It ships</h4>
+       <p>A maintainer registers it, and your modality is part of the next release, with documentation.</p>
+     </div>
+   </div>
+   <p>
+     <a href="MODALITY_WORKFLOW.html" class="prism-cta">Propose a modality</a>
+     <a href="MODALITY_PROPOSALS.html" class="prism-cta prism-cta--secondary">What you need</a>
+   </p>
 
 .. important::
    PRISM is an add-on to BIDS, not a replacement. PRISM Studio datasets should
@@ -181,6 +217,14 @@ in the repository root for the full citation, including all authors.
 .. toctree::
    :maxdepth: 2
    :hidden:
+   :caption: Propose a Modality
+
+   MODALITY_WORKFLOW
+   MODALITY_PROPOSALS
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
    :caption: More Resources
 
    MORE_RESOURCES
@@ -216,8 +260,10 @@ in the repository root for the full citation, including all authors.
    SCHEMA_SPECIFICATIONS
    specs/survey
    specs/biometrics
+   specs/biosample
    specs/events
    specs/environment
+   specs/physio
    specs/entities
 
 .. toctree::

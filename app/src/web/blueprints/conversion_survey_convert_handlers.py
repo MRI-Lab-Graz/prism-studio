@@ -174,6 +174,7 @@ def handle_api_survey_convert(
                 return jsonify({"error": str(error)}), 400
         current_project_path = str(project_root)
     duplicate_handling = parsed_stage_fields.duplicate_handling
+    skip_existing = parsed_stage_fields.skip_existing
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -227,6 +228,7 @@ def handle_api_survey_convert(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
@@ -347,6 +349,7 @@ def handle_api_survey_convert(
                     strict_levels=strict_levels,
                     separator=separator,
                     duplicate_handling=duplicate_handling,
+                    skip_existing=skip_existing,
                     skip_participants=True,
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,

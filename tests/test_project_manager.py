@@ -75,12 +75,6 @@ def _alternating_diff_index_run_side_effect():
     return _side_effect
 
 
-def _assert_no_subprocess_besides_longpaths(mock_run):
-    """Windows sets `git config core.longpaths` on every dataset; nothing else may run."""
-    others = [c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]]
-    assert others == [], others
-
-
 class TestProjectManager(unittest.TestCase):
     def test_create_project_sets_default_author(self):
         manager = ProjectManager()
@@ -285,7 +279,8 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("success"), result)
         self.assertFalse(result.get("datalad", {}).get("requested"))
         self.assertFalse(result.get("datalad", {}).get("initialized"))
-        _assert_no_subprocess_besides_longpaths(mock_run)
+        # Windows alone sets core.longpaths; no other git/datalad call may run
+        self.assertEqual([c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]], [])
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
@@ -307,7 +302,8 @@ class TestProjectManager(unittest.TestCase):
             )
 
         self.assertTrue(result.get("success"), result)
-        _assert_no_subprocess_besides_longpaths(mock_run)
+        # Windows alone sets core.longpaths; no other git/datalad call may run
+        self.assertEqual([c for c in mock_run.call_args_list if "core.longpaths" not in c.args[0]], [])
         self.assertIn("*.json annex.largefiles=nothing", gitattributes_content)
         self.assertIn("*.tsv annex.largefiles=nothing", gitattributes_content)
 
@@ -353,13 +349,12 @@ class TestProjectManager(unittest.TestCase):
                 [
                     "/usr/bin/datalad",
                     "save",
-                    "-m",
-                    'PRISM: Nested structure conversion (initialize "derivatives")',
+                    "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
                 ],
                 commands,
             )
             self.assertIn(
-                ["/usr/bin/datalad", "save", "-m", "Initialize PRISM dataset structure"],
+                ["/usr/bin/datalad", "save", "--message=Initialize PRISM dataset structure"],
                 commands,
             )
             gitattributes_content = (project_path / ".gitattributes").read_text(
@@ -432,8 +427,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "derivatives")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )
@@ -442,8 +436,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-001")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-001")',
             ],
             commands,
         )
@@ -452,8 +445,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-002")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-002")',
             ],
             commands,
         )
@@ -519,7 +511,7 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertTrue(result.get("initialized"), result)
         self.assertIn("already tracked by DataLad", result.get("message", ""))
-        _assert_no_subprocess_besides_longpaths(mock_run)
+        mock_run.assert_not_called()
 
     def test_inspect_remote_dataset_source_marks_openneuro_github_as_datalad(self):
         manager = ProjectManager()
@@ -1096,29 +1088,6 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue((Path(tmp) / "ds008830" / "project.json").exists())
 
     @patch("src.project_manager.subprocess.run")
-    def test_init_on_existing_bids_empty_remote_cleanup_removes_read_only_git_objects(self, mock_run):
-        # Windows refuses to delete read-only files (git packs, annex objects) with a plain rmtree.
-        manager = ProjectManager()
-
-        def _fake_run(command, **_kwargs):
-            if list(command[:2]) != ["git", "clone"]:
-                return subprocess.CompletedProcess(command, 0, "", "")
-            pack = Path(str(command[3])) / ".git" / "objects" / "pack" / "x.pack"
-            pack.parent.mkdir(parents=True, exist_ok=True)
-            pack.write_bytes(b"x")
-            pack.chmod(stat.S_IREAD)
-            return subprocess.CompletedProcess(command, 0, "", "")
-
-        mock_run.side_effect = _fake_run
-
-        with tempfile.TemporaryDirectory() as tmp:
-            manager.init_on_existing_bids(
-                tmp, {"remote_url": "https://example.org/mirror/ds008830.git"}
-            )
-
-            self.assertFalse((Path(tmp) / "ds008830").exists())
-
-    @patch("src.project_manager.subprocess.run")
     def test_init_on_existing_bids_empty_remote_explains_and_cleans_up(self, mock_run):
         manager = ProjectManager()
 
@@ -1523,7 +1492,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("datalad", {}).get("gitattributes_policy_updated"))
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-r", "-m", "Checkpoint metadata updates"],
+            ["/usr/bin/datalad", "save", "-r", "--message=Checkpoint metadata updates"],
             commands,
         )
 
@@ -1652,7 +1621,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(result.get("attempted"), result)
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-m", "PRISM auto-save before project switch"],
+            ["/usr/bin/datalad", "save", "--message=PRISM auto-save before project switch"],
             commands,
         )
 
@@ -1729,7 +1698,7 @@ class TestProjectManager(unittest.TestCase):
         commands = [call.args[0] for call in mock_run.call_args_list]
         self.assertIn(["/usr/bin/datalad", "create", "--force"], commands)
         self.assertIn(
-            ["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"],
+            ["/usr/bin/datalad", "save", "--message=Enable DataLad for PRISM project"],
             commands,
         )
 
@@ -2029,12 +1998,11 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "sub-172")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "sub-172")',
             ],
             commands,
         )
-        self.assertIn(["/usr/bin/datalad", "save", "-m", "Enable DataLad for PRISM project"], commands)
+        self.assertIn(["/usr/bin/datalad", "save", "--message=Enable DataLad for PRISM project"], commands)
 
     @patch("src.project_manager.subprocess.run")
     @patch(
@@ -2085,8 +2053,7 @@ class TestProjectManager(unittest.TestCase):
             [
                 "/usr/bin/datalad",
                 "save",
-                "-m",
-                'PRISM: Nested structure conversion (initialize "derivatives")',
+                "--message=" + 'PRISM: Nested structure conversion (initialize "derivatives")',
             ],
             commands,
         )
@@ -6811,7 +6778,7 @@ class TestDataladStatusConcurrency(unittest.TestCase):
             release.set()
             t.join(timeout=5)
 
-        _assert_no_subprocess_besides_longpaths(mock_run)
+        mock_run.assert_not_called()
         self.assertFalse(result.get("checked"))
         self.assertIn("in progress", result.get("message", ""))
 

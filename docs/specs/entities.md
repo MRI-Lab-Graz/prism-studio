@@ -32,8 +32,8 @@ modality's own entry overrides them.
 
 Each entry under `modalities` has a `kind`:
 
-- **`prism`** - a PRISM-native modality (`survey`, `biometrics`,
-  `environment`, `events`, `physio`). These define their own `suffixes` and
+- **`prism`** - a PRISM-native modality (`survey`, `biometrics`, `biosample`,
+  `environment`, `physio`). These define their own `suffixes` and
   `extensions`.
 - **`bidsPassthrough`** - a standard BIDS modality PRISM validates using
   BIDS's own conventions rather than PRISM-specific suffix/extension rules
@@ -41,8 +41,10 @@ Each entry under `modalities` has a `kind`:
   `bidsPassthrough` modality that additionally constrains a PRISM-specific
   `trackedEye` entity value).
 
-An `aliases` map (`physiological` -> `physio`) lets older/alternate modality
-names resolve to their canonical entry.
+There is no `physiological` alias and no `events/` folder any more: the
+validator reports both folders as errors with a fix hint (rename
+`physiological/` to `physio/`; move each `_events.tsv` next to its task in
+`func/`, `beh/` or `eeg/`).
 
 ## Per-modality rules
 
@@ -50,9 +52,10 @@ names resolve to their canonical entry.
 | --- | --- | --- | --- | --- |
 | `survey` | prism | `survey` | `tsv`, `json` | example: `task-panas` |
 | `biometrics` | prism | `biometrics` | `tsv`, `json` | - |
+| `biosample` | prism | `biosample` | `tsv`, `json` | required `biosample` entity naming the assay panel (alphanumeric) |
 | `environment` | prism | `environment` | `tsv`, `tsv.gz`, `json` | `recording` entity required, matching `[a-zA-Z0-9]+` |
-| `events` | prism | `events` | `tsv` | - |
-| `physio` | prism | `physio` | `tsv`, `tsv.gz`, `json`, `edf` | optional `recording` entity: enum of common channel types (`ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`), plus any other alphanumeric value |
+| `events` | prism | `events` | `tsv` | no folder of its own: `_events.tsv` sits next to its task in `func/`, `beh/` or `eeg/` |
+| `physio` | prism | `physio` | `tsv`, `tsv.gz`, `json`, `edf` | task-free: a `task-` entity in `physio/` is an error (task-bound physio goes to `beh/`, `func/` or `eeg/` as BIDS `_physio.tsv.gz`); optional `recording` entity: enum of common channel types (`ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`), plus any other alphanumeric value |
 | `eyetracking` | bidsPassthrough | `eyetrack`, `eye`, `gaze` | `tsv`, `tsv.gz`, `json`, `edf`, `asc` | optional `trackedEye` entity: `left`, `right`, or `both` |
 | `anat`, `func`, `fmap`, `dwi`, `eeg`, `beh` | bidsPassthrough | (standard BIDS) | (standard BIDS) | validated per standard BIDS rules |
 

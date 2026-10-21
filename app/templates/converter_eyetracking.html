@@ -41,18 +41,17 @@
                                     </div>
                                     <div class="row g-3 align-items-end">
                                         <div class="col-12 studio-file-picker">
-                                            <label for="eyetrackingBatchFiles" class="form-label">Select Eyetracking Files</label>
+                                            <label for="eyetrackingBatchFilesName" class="form-label">Select Eyetracking Folder</label>
                                             <div class="input-group studio-picker-group">
-                                                <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple data-help-key="eyetrackingBatchFiles">
-                                                <button class="btn btn-outline-secondary d-none" type="button" id="browseServerEyetrackingFolderBtn" aria-label="Browse server eyetracking folder" title="Browse server eyetracking folder">
-                                                    <i class="fas fa-server me-1"></i>Server Folder
-                                                </button>
+                                                <input class="visually-hidden" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple tabindex="-1" aria-hidden="true">
+                                                <input class="form-control" type="text" id="eyetrackingBatchFilesName" value="No folder selected" readonly data-help-key="eyetrackingBatchFiles">
+                                                <button class="btn btn-outline-secondary studio-picker-trigger" type="button" id="browseEyetrackingFolderBtn" aria-label="Browse for eyetracking folder" title="Browse for eyetracking folder">Browse</button>
                                                 <button class="btn btn-outline-secondary d-none" type="button" id="clearEyetrackingBatchFilesBtn" aria-label="Clear selected eyetracking files" title="Clear selection">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
-                                            <div class="form-text d-none" id="eyetrackingServerFolderHint"></div>
-                                            <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
+                                            <div class="form-text d-none" id="eyetrackingFolderHint"></div>
+                                            <small class="text-muted">Choose the folder that holds the eyetracking files</small>
                                         </div>
                                     </div>
                                     <input class="d-none" type="checkbox" id="eyetrackingBatchDryRun" aria-hidden="true" tabindex="-1">
@@ -89,18 +88,6 @@
                                         <div id="eyetrackingBatchLog" class="bg-dark text-light p-3 rounded font-monospace ansi-output" 
                                              style="height: 400px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap; line-height: 1.4;"></div>
                                     </div>
-                                    <style>
-                                        .ansi-output {
-                                            background-color: #1e1e1e;
-                                        }
-                                        /* ANSI color codes - standard terminal colors */
-                                        .ansi-red { color: #ff5555; }
-                                        .ansi-yellow { color: #ffff55; }
-                                        .ansi-green { color: #55ff55; }
-                                        .ansi-blue { color: #ffffff; }
-                                        .ansi-cyan { color: #ffffff; }
-                                        .ansi-reset { color: #ffffff; }
-                                    </style>
                                 </div>
                             </div>
                         </div>

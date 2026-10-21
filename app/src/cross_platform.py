@@ -334,3 +334,14 @@ def describe_case_insensitive_id_collisions(ids, *, label="participant"):
         f"macOS/Windows): {details}. Rename one of each pair before "
         f"converting."
     )
+
+
+def ensure_user_bin_on_path() -> None:
+    """Append ~/.local/bin to PATH (where `uv tool install` puts datalad/git-annex).
+
+    Desktop launchers and terminals opened before install don't have it yet.
+    """
+    user_bin = os.path.join(os.path.expanduser("~"), ".local", "bin")
+    parts = os.environ.get("PATH", "").split(os.pathsep)
+    if os.path.isdir(user_bin) and user_bin not in parts:
+        os.environ["PATH"] = os.pathsep.join(parts + [user_bin])

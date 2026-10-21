@@ -27,6 +27,10 @@
     const selectedPathEl = document.getElementById('folderBrowserSelectedPath');
     const pathInputEl = document.getElementById('folderBrowserPathInput');
     const goBtnEl = document.getElementById('folderBrowserGoBtn');
+    const pathRowEl = document.getElementById('folderBrowserPathRow');
+    const editPathBtn = document.getElementById('folderBrowserEditPath');
+    const filterEl = document.getElementById('folderBrowserFilter');
+    const headerEl = document.getElementById('folderBrowserHeader');
 
     const state = {
         currentPath: '',
@@ -34,6 +38,8 @@
         selectedPath: '',
         selectionMode: 'folder',
         fileExtensions: '',
+        sort: 'name',
+        order: 'asc',
         resolve: null,
         modal: null
     };
@@ -55,33 +61,72 @@
         state.selectionMode = mode === 'file' ? 'file' : 'folder';
     }
 
-    function renderRoots(roots) {
-        if (!Array.isArray(roots) || !roots.length) {
-            rootsEl.innerHTML = '';
-            rootsEl.style.display = 'none';
-            return;
-        }
+    function formatSize(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        const units = ['KB', 'MB', 'GB', 'TB'];
+        let value = bytes;
+        let i = -1;
+        do { value /= 1024; i += 1; } while (value >= 1024 && i < units.length - 1);
+        return `${value.toFixed(value < 10 ? 1 : 0)} ${units[i]}`;
+    }
 
-        rootsEl.innerHTML = roots.map(root => `
-            <button type="button" class="btn btn-sm btn-outline-secondary folder-browser-root" data-path="${escHtml(root.path)}">
-                ${escHtml(root.name)}
+    function formatDate(epochSeconds) {
+        return epochSeconds ? new Date(epochSeconds * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '';
+    }
+
+    function renderPlaces(roots) {
+        const places = [];
+        const project = window.PrismPathPicker.projectRoot();
+        if (project) places.push({ name: 'Project', path: project, icon: 'fa-folder-tree' });
+        places.push({ name: 'Home', path: '', icon: 'fa-house' });
+        (roots || []).forEach(root => places.push({ name: root.name, path: root.path, icon: 'fa-hard-drive' }));
+
+        rootsEl.innerHTML = places.map(place => `
+            <button type="button" class="btn btn-sm btn-light text-start folder-browser-root" data-path="${escHtml(place.path)}">
+                <i class="fas ${place.icon} me-2 text-secondary"></i>${escHtml(place.name)}
             </button>
         `).join('');
-        rootsEl.style.display = '';
+    }
 
-        rootsEl.querySelectorAll('.folder-browser-root').forEach(button => {
-            button.addEventListener('click', () => {
-                loadFolder(button.dataset.path || '');
-            });
+    function renderCrumbs(crumbs) {
+        currentPathEl.innerHTML = (crumbs || []).map((crumb, i) => `
+            ${i ? '<i class="fas fa-chevron-right text-muted mx-1" style="font-size:.6rem"></i>' : ''}<button type="button" class="btn btn-link btn-sm folder-browser-crumb" data-path="${escHtml(crumb.path)}">${escHtml(crumb.name)}</button>
+        `).join('');
+    }
+
+    function renderSortIndicators() {
+        headerEl.querySelectorAll('button[data-sort]').forEach(button => {
+            const active = button.dataset.sort === state.sort;
+            const icon = button.querySelector('i');
+            icon.className = `fas ms-1 ${active ? (state.order === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort text-muted'}`;
         });
+    }
+
+    function applyFilter() {
+        const needle = filterEl.value.trim().toLowerCase();
+        listEl.querySelectorAll('.fb-entry').forEach(row => {
+            row.style.display = !needle || row.dataset.name.toLowerCase().includes(needle) ? '' : 'none';
+        });
+    }
+
+    function entryRow(entry, isDir) {
+        const icon = isDir ? 'fa-folder text-warning' : 'fa-file-lines text-secondary';
+        return `
+            <button type="button" class="fb-entry fb-row w-100 border-0 bg-transparent text-start ${isDir ? 'folder-browser-dir' : 'folder-browser-file'}" data-path="${escHtml(entry.path)}" data-name="${escHtml(entry.name)}">
+                <span class="fb-name"><i class="fas ${icon} me-2"></i>${escHtml(entry.name)}</span>
+                <span class="fb-modified text-muted small">${escHtml(formatDate(entry.modified))}</span>
+                <span class="text-muted small text-end">${isDir ? '' : formatSize(Number(entry.size || 0))}</span>
+            </button>
+        `;
     }
 
     async function loadFolder(path) {
         listEl.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted"><span><i class="fas fa-spinner fa-spin me-2"></i>Loading...</span></div>';
         setSelectedPath('');
+        filterEl.value = '';
 
         try {
-            const query = new URLSearchParams();
+            const query = new URLSearchParams({ sort: state.sort, order: state.order });
             if (path) {
                 query.set('path', path);
             }
@@ -92,8 +137,7 @@
                 }
             }
 
-            const url = `/api/fs/browse${query.toString() ? `?${query.toString()}` : ''}`;
-            const response = await fetch(url);
+            const response = await fetch(`/api/fs/browse?${query}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -102,10 +146,11 @@
 
             state.currentPath = data.path || '';
             state.parentPath = data.parent || '';
-            currentPathEl.textContent = state.currentPath;
-            if (pathInputEl) pathInputEl.value = state.currentPath;
+            renderCrumbs(data.crumbs);
+            pathInputEl.value = state.currentPath;
             upBtn.disabled = !state.parentPath;
-            renderRoots(data.roots || []);
+            renderPlaces(data.roots);
+            renderSortIndicators();
             if (state.selectionMode === 'folder') {
                 setSelectedPath(state.currentPath);
             }
@@ -113,27 +158,9 @@
             const dirs = Array.isArray(data.dirs) ? data.dirs : [];
             const files = Array.isArray(data.files) ? data.files : [];
 
-            const entries = [];
-            dirs.forEach((dir) => {
-                entries.push(`
-                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center folder-browser-dir" data-path="${escHtml(dir.path)}">
-                        <i class="fas fa-folder text-warning me-2"></i>
-                        <span>${escHtml(dir.name)}</span>
-                        <i class="fas fa-chevron-right ms-auto text-muted small"></i>
-                    </button>
-                `);
-            });
-
+            const entries = dirs.map(dir => entryRow(dir, true));
             if (state.selectionMode === 'file') {
-                files.forEach((file) => {
-                    entries.push(`
-                        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center folder-browser-file" data-path="${escHtml(file.path)}">
-                            <i class="fas fa-file-lines text-secondary me-2"></i>
-                            <span>${escHtml(file.name)}</span>
-                            <small class="ms-auto text-muted">${Number(file.size || 0).toLocaleString()} B</small>
-                        </button>
-                    `);
-                });
+                files.forEach(file => entries.push(entryRow(file, false)));
             }
 
             if (entries.length > 0) {
@@ -147,9 +174,13 @@
 
                 listEl.querySelectorAll('.folder-browser-file').forEach(button => {
                     button.addEventListener('click', () => {
+                        listEl.querySelectorAll('.fb-entry.selected').forEach(row => row.classList.remove('selected'));
+                        button.classList.add('selected');
                         setSelectedPath(button.dataset.path || '');
                     });
+                    button.addEventListener('dblclick', () => resolveAndHide(button.dataset.path || ''));
                 });
+                applyFilter();
             } else {
                 listEl.innerHTML = state.selectionMode === 'file'
                     ? '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>No matching entries in this location.</div>'
@@ -157,11 +188,11 @@
             }
         } catch (error) {
             console.error('Folder browser error:', error);
-            currentPathEl.textContent = '';
+            currentPathEl.innerHTML = '';
             state.currentPath = '';
             state.parentPath = '';
             upBtn.disabled = true;
-            renderRoots([]);
+            renderPlaces([]);
             setSelectedPath('');
             listEl.innerHTML = `<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>${escHtml(error.message || 'Could not load directory.')}</div>`;
         }
@@ -186,21 +217,38 @@
         }
     });
 
-    if (goBtnEl) {
-        goBtnEl.addEventListener('click', () => {
-            const typed = (pathInputEl ? pathInputEl.value : '').trim();
-            if (typed) loadFolder(typed);
-        });
+    function showPathRow(show) {
+        pathRowEl.classList.toggle('d-none', !show);
+        pathRowEl.classList.toggle('d-flex', show);
+        if (show) pathInputEl.focus();
     }
-    if (pathInputEl) {
-        pathInputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const typed = pathInputEl.value.trim();
-                if (typed) loadFolder(typed);
-            }
-        });
-    }
+    editPathBtn.addEventListener('click', () => showPathRow(pathRowEl.classList.contains('d-none')));
+    // Places and breadcrumbs are re-rendered on every load, so one listener each.
+    [rootsEl, currentPathEl].forEach(container => container.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-path]');
+        if (button) loadFolder(button.dataset.path);
+        else if (container === currentPathEl) showPathRow(true);
+    }));
+    filterEl.addEventListener('input', applyFilter);
+    headerEl.addEventListener('click', (e) => {
+        const button = e.target.closest('button[data-sort]');
+        if (!button) return;
+        state.order = state.sort === button.dataset.sort && state.order === 'asc' ? 'desc' : 'asc';
+        state.sort = button.dataset.sort;
+        loadFolder(state.currentPath);
+    });
+
+    const goToTypedPath = () => {
+        const typed = pathInputEl.value.trim();
+        if (typed) loadFolder(typed);
+    };
+    goBtnEl.addEventListener('click', goToTypedPath);
+    pathInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            goToTypedPath();
+        }
+    });
 
     selectBtn.addEventListener('click', () => {
         resolveAndHide(state.selectedPath || state.currentPath);
@@ -232,9 +280,11 @@
 
             titleEl.innerHTML = `<i class="fas fa-folder-open text-primary me-2"></i>${escHtml(title)}`;
             selectBtn.innerHTML = `<i class="fas fa-check me-1"></i>${escHtml(confirmLabel)}`;
-            currentPathEl.textContent = '';
-            if (pathInputEl) pathInputEl.value = '';
-            renderRoots([]);
+            currentPathEl.innerHTML = '';
+            pathInputEl.value = '';
+            filterEl.value = '';
+            showPathRow(false);
+            renderPlaces([]);
 
             const openPromise = new Promise(resolve => {
                 state.resolve = resolve;

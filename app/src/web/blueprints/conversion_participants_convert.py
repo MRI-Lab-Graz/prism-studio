@@ -6,6 +6,7 @@ from typing import Any
 from flask import Response, jsonify
 
 from src.participants_backend import convert_dataset_participants
+from src.participants_levels import add_missing_levels
 from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
 )
@@ -66,6 +67,7 @@ def _write_participants_outputs(
     session_column: str = "",
     session_value: str = "",
     sessions_from_date: str | None = None,
+    split_sessions: bool = False,
 ) -> dict[str, Any]:
     """Run ParticipantsConverter, write participants.tsv/json, return the
     success result payload (no "log" key -- callers merge that in)."""
@@ -82,6 +84,7 @@ def _write_participants_outputs(
         session_column=session_column or None,
         session_value=session_value or None,
         sessions_from_date=sessions_from_date,
+        split_sessions=split_sessions,
     )
 
     for msg in messages:
@@ -131,6 +134,7 @@ def _write_participants_outputs(
             col_name, f"Participant {col_name}"
         )
 
+    add_missing_levels(participants_json_data, df)
     with open(participants_json, "w", encoding="utf-8") as f:
         json.dump(participants_json_data, f, indent=2, ensure_ascii=False)
 
@@ -180,6 +184,7 @@ def _run_participants_convert_job(job_id: str, config: dict[str, Any]) -> None:
                         session_column=config.get("session_column", ""),
                         session_value=config.get("session_value", ""),
                         sessions_from_date=config.get("sessions_from_date"),
+                        split_sessions=bool(config.get("split_sessions")),
                     )
                 except ValueError as e:
                     _participants_job_store.failure(job_id, str(e) or "Conversion failed")

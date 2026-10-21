@@ -7,8 +7,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Methods section export and richer text.** `prism_tools methods generate` (and the Studio Projects page) writes the
+  Methods as Markdown, HTML, Word, TeX, or a BibTeX file of the instrument references; sections follow journal order,
+  and the text now covers acquisition parameters and session counts from the sidecars, scoring recipes and software
+  versions. Missing facts are reported as warnings, not invented. `preregistration draft` gained `--format md|html|docx|tex`.
+
+### Changed
+- **LimeSurvey imports no longer write `tool-limesurvey` files.** The per-subject `_tool-limesurvey_survey.tsv/.json`
+  files are gone; the `startdate`/`seed`/`token` fingerprint that "skip surveys already in the project" relies on now
+  lives in one `code/survey_imports.json`, outside the PRISM-checked folders. Projects imported before keep their old
+  files (the validator still ignores them); their skipped responses are matched by file name until re-imported.
+- **Skip-existing judges whole responses, and the session review lists only new data.** A response already recorded in
+  `code/survey_imports.json` is skipped even if the project lacks a file for one of the export's questionnaires. Each
+  import also remembers every response of the file, finished or not, in the state it was reviewed in. With "Skip
+  surveys already in the project" on, "Review session assignment" (and `sessions review --skip-existing`) then lists
+  only new data: responses not seen before, or unfinished ones that have changed since. Their skip marks are shown, so
+  a half-filled response can still be taken. Manual session overrides stay listed (highlighted yellow); sessions are
+  still numbered across the whole file. The first import after updating shows everything once, because earlier
+  imports did not record what they had seen.
+- **`.bidsignore` no longer hides `_physio` files.** The `*_physio.*` and `task-*_physio.json` lines are gone from the
+  rules PRISM writes, so the BIDS validator sees task-bound physio in `beh/`, `func/` and `eeg/`. Existing projects keep
+  their old `.bidsignore` line; delete `*_physio.*` (and `task-*_physio.json`) from it by hand.
+- **BREAKING: physio is task-free; `events/` and `physiological/` folders are retired.** The validator now
+  reports both folders as errors, and `task-` in a `physio/` filename or sidecar as an error naming `beh/`,
+  `func/` and `eeg/`. Fixes: rename `physiological/` to `physio/`; move each `_events.tsv` next to its task in
+  `func/`, `beh/` or `eeg/`; move task-bound physio out of `physio/` (the entity rewriter can remove `task-`).
+- **Task-bound physio conversion needs a destination.** `physio batch-convert` and `convert physio` take
+  `--destination beh|func|eeg` and write BIDS `_physio.tsv.gz` + sidecar there; files without a task go to
+  `physio/` as before. The Studio converter has a matching "Destination for files with a task" select, and the
+  file-management renamer offers `beh`/`func`/`eeg` for physio with the task optional.
+
+### Added
+- **Re-importing a LimeSurvey export only brings in what is new.** "Skip surveys already in the project"
+  (on by default for `.lsa` files; command line: `survey convert --skip-existing`) skips responses already
+  imported per subject, session and survey, flags a response stored under a different session, and reports (never
+  overwrites) a different response in an occupied slot. Choosing an `.lsa` file now also preselects "Number as
+  sessions by date".
+
+### Fixed
+- The validator no longer checks `tool-limesurvey` system-variable files against the survey schema
+  ("'Technical' is a required property").
+
+## [1.21.0] - 2026-10-19
+
+### Added
+- **Repeated rows in the Sociodemographics converter.** Several rows per participant with identical values collapse
+  quietly. When a value changes between rows (e.g. age across sessions) you choose: keep one session, or one column
+  per session (`age@ses-1`, `age@ses-2`; command line: `--session-column` with `--split-sessions`).
+- **Modality proposals.** A new modality can be proposed with a filled-in Excel workbook and a small synthetic
+  sample file: `prism_tools.py modality propose` checks names against PRISM and BIDS, checks the sample against
+  the column dictionary, and generates the schema, an example sidecar, a fixture dataset and maintainer
+  registration steps. A GitHub Issue Form and bot open a draft pull request from the same files.
+
+- **Eligibility criteria checked by the validator.** Study Metadata > Eligibility takes structured *Checked
+  Criteria* (NeuroBagel terms such as Age or Sex, or any other measure; numeric ranges and category labels;
+  include or exclude). In the Sociodemographics converter a column is linked to a criterion (chosen by you,
+  never pre-selected), and the validator warns (`PRISM602`, never an error) once per criterion with the number
+  of participants outside the limits, also on a partly collected dataset. The limits are entered once, in the project metadata.
+  New criteria are drafts until accepted with the check mark; accepted ones count towards the Core
+  Inclusion/Exclusion fields.
+- **One rule for add-a-row controls on the Projects page.** Authors, funding, the criteria and list fields,
+  known issues, missing files, DOIs, checked criteria and the location picker now behave the same: a new row
+  is a draft with a green check (and Cancel), the red cross appears only on accepted rows, and saving is
+  blocked, with the pending rows highlighted, while a draft with content is pending. The plain list fields
+  (variables, inclusion/exclusion criteria, quality control) are one input with green chips below, like the
+  CRediT roles, and so are funding, known issues, missing files, recruitment locations and checked
+  criteria (with a short summary on each chip); the Study Design fields now line up, and the
+  Dataset-description errors link to the field they name.
+
+### Changed
+- **Breaking: project tools are blocked until the required fields are set.** A project needs Name, Authors,
+  Keywords and Timepoints (single or multiple). Until they are set, the converters, recipes, validator, file
+  management, exports and publishing answer with a message that links back to the Projects page (HTTP 409 in the
+  GUI, a non-zero exit with the keys to set in `project.json` on the command line). Saving the Projects page,
+  creating/opening projects, session maps, environment commands, diagnostics and saving stay open. Projects created
+  before the Timepoints field existed are blocked until it is set once. Projects created from the command line
+  (`create_project`, `init-on-bids`, demo builders) do not set these fields yet: set them in `project.json` or on
+  the Projects page. `src/project_ready.py` is the one rule; `session_target()` is added for the importer rollout and
+  changes no import yet.
+- **One file picker.** The native operating-system file and folder dialogs and the "connected to server" switch
+  are gone; every page uses the in-app picker. Browser uploads (`<input type="file">`) are unchanged.
+- **Breaking for scores: a `sum` is empty (`n/a`) when any of its items is missing** (before, the answered items
+  were summed, so a skipped item lowered the total). A `mean` still uses the answered items. A recipe can choose per
+  score with `"Missing": "ignore"` (sum the answered items; combine with `MinValid`) or `"Missing": "require_all"`;
+  Recipe Builder's "If answers are missing" shows and saves the choice. Scores exported earlier may differ for
+  participants with skipped items: re-run the recipes.
+
+### Fixed
+- **Converter previews tell you what they change or skip.** The sociodemographics, survey and biometrics
+  previews now list rows without a participant ID (skipped), participant and session labels that were cleaned to
+  BIDS-safe form (`'P 1' → sub-P1`), and, for sociodemographics, different IDs that become the same participant.
+  Text in a numeric column and an age outside 0-120 are errors (Convert stays locked; `participants convert` refuses
+  the file). The survey preview lists every answer outside a template's scale with the participant.
+- **"Auto-detect" now finds semicolon-separated CSVs** (German Excel exports) in every tabular import; the reason
+  an empty or unreadable file fails is shown next to the ID column.
+- **Template editor.** Item IDs must be letters, digits, `_` or `-` (they become column names) and IDs differing
+  only in case are refused; Validate fails on `MinValue` above `MaxValue`, warns about odd IDs, integer items with
+  fractional bounds and templates without items, and explains the TaskName rule instead of showing a regex.
+  A template always needs a task name (taken from the file name when a library template has none), language
+  codes must be real ISO 639-1 codes (`en`, `de-AT`) wherever they are typed or stored, a language cannot be added
+  twice, bulk edit asks before changing every item, and errors inside an item name the field instead of printing the
+  whole item.
+- **File management.** The text to add in the subject/session ID rewrite and the new value in the filename-part
+  rename accept only ASCII letters and digits (no accents; at most 32 characters). Delete says which deleted subjects
+  `participants.tsv` still lists (the table is never edited silently). The file renamer's preview and copy both refuse
+  a new name that is empty or contains a folder separator instead of failing with an operating-system error.
+- **Recipes.** A scoring run now lists, next to the result, answers outside the questionnaire's scale (with the
+  participant and item), text answers (counted as missing) and sums left empty because an item is missing. The length
+  of anonymized IDs must be 4-12, and a score cannot be named like an ID column or an item of the questionnaire.
+  Excel exports now hold scores as numbers (they were stored as text), and SPSS variable names that differ only in
+  case are made unique.
+- **Environment and batch converters.** Environment rows get BIDS-safe subject and session labels (letters and
+  digits only; a participant `P/4` or `../x` no longer creates nested or escaping folders), say in the log which
+  labels were cleaned, default to `ses-1` like the other converters, and warn about slash dates that could be
+  day-first. `physio batch-convert --dry-run` (command line) no longer writes the converted files into the output
+  folder and reports new versus existing files correctly; `SUB-003`/`SES-1` in file names are written in lowercase.
+- **Survey generator exports.** Control characters pasted from Word or PDFs (vertical tab and similar) are dropped from
+  question texts, because they made the LimeSurvey `.lss` and the PsychoPy file invalid XML and made the Word export
+  fail.
+- **DataLad.** A snapshot message that starts with `-` (for example `--wip`) was read as an option and the save
+  failed; messages are passed as `--message=...` now. A server sibling name or alias must be a plain label (letters,
+  digits, `.`, `_`, `-`), so it can no longer break the remote name or place a store alias outside the store.
+- **Modality proposal example.** The shipped example is now `examples/modality_proposal/bloodwork.yml` (the
+  former `biosample` example became a real modality), so `modality propose` on it works again.
+- **Projects page.** An inverted criterion range (min above max) and an author who is already listed cannot be
+  accepted; a `|` in a known-issue text no longer splits it.
+
 ### Security
 Findings of a full security review; each fix has a regression test.
+- **Publish guard.** A project with `sourcedata/` could still be pushed to a public host written as `git+ssh://git@github.com/...` or with a trailing dot (`github.com.`); both are recognised as public now.
 - **Remote command execution via ssh options.** A host or URL starting with `-` (for example
   `-oProxyCommand=...`) reached `ssh`/`rsync`/`datalad` as an option. It was reachable from any web
   page through the DataLad doctor GET route, and from a shared project's `.prismrc.json` through
@@ -33,6 +161,7 @@ Findings of a full security review; each fix has a regression test.
   inputs, validator image runs as non-root.
 
 ### Added
+- **New `biosample` modality** (assay results on blood, serum, plasma, saliva, urine, ...): schema, validator support, `<LOD`/`<LLOQ`/`>ULOQ` codes for censored values, recommended-field warnings and an example template. Phase 1 of 5; converter and GUI follow.
 - **Windows symlink and long-path detection**: `cross_platform.windows_symlinks_supported()` and
   `windows_long_paths_enabled()` report whether this Windows machine can create symlinks (Developer
   Mode / admin rights) and whether `LongPathsEnabled` is set; the DataLad/git-annex preflight status

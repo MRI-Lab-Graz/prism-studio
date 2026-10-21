@@ -566,7 +566,7 @@ def test_recipe_builder_save_surfaces_min_valid_warning(tmp_path):
         "Kind": "survey",
         "Survey": {"TaskName": "wb"},
         "Scores": [
-            {"Name": "wb_total", "Method": "sum", "Items": ["WB01", "WB02"]},
+            {"Name": "wb_total", "Method": "sum", "Items": ["WB01", "WB02"], "Missing": "ignore"},
         ],
     }
 

@@ -47,7 +47,14 @@ def build_prism_tools_parsers(
         "--output", required=True, help="Path to output directory"
     )
     parser_physio.add_argument(
-        "--task", default="rest", help="Task name (default: rest)"
+        "--task",
+        help="Task name (optional). Without it files go to physio/ without a task- "
+        "entity; with it --destination is required for a directory input",
+    )
+    parser_physio.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task (written as BIDS .tsv.gz)",
     )
     parser_physio.add_argument(
         "--suffix",
@@ -257,6 +264,12 @@ def build_prism_tools_parsers(
         help="Longitudinal file: keep only the rows of this one session (exact label)",
     )
     parser_participants_convert.add_argument(
+        "--split-sessions",
+        action="store_true",
+        help="Longitudinal file (with --session-column, without --session): values that "
+        "differ between sessions become one column per session (age@ses-1, age@ses-2)",
+    )
+    parser_participants_convert.add_argument(
         "--sessions-from-date",
         nargs="?",
         const="startdate",
@@ -366,6 +379,15 @@ def build_prism_tools_parsers(
             "'{\"sex\": {\"action\": \"keep_both\", \"new_column\": \"sex_v2\"}}'. "
             "Actions: keep_existing (default), use_incoming, keep_both. "
             "The merge preview lists the columns that need a decision."
+        ),
+    )
+    parser_participants_merge.add_argument(
+        "--screening-only",
+        help=(
+            "Comma-separated participant ids (as in participants.tsv, e.g. sub-007) "
+            "to put in the screening-only group; they stay in participants.tsv. "
+            "Source ids not listed are released from that group; pass an empty "
+            "string to release all. Omit the flag to leave the group column alone."
         ),
     )
     parser_participants_merge.add_argument(
@@ -493,6 +515,52 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_preregistration = subparsers.add_parser(
+        "preregistration",
+        help="Preregistration draft from project.json (AsPredicted question order)",
+    )
+    preregistration_subparsers = parser_preregistration.add_subparsers(
+        dest="action", help="Action"
+    )
+    parser_preregistration_draft = preregistration_subparsers.add_parser(
+        "draft", help="Write a Markdown preregistration draft (not a registration)"
+    )
+    parser_preregistration_draft.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_preregistration_draft.add_argument(
+        "--output", help="Write the draft to this file instead of printing it"
+    )
+    parser_preregistration_draft.add_argument(
+        "--format",
+        choices=("md", "html", "docx", "tex"),
+        default="md",
+        help="Output format (docx needs --output and python-docx)",
+    )
+
+    parser_methods = subparsers.add_parser(
+        "methods", help="Methods section from project metadata"
+    )
+    methods_subparsers = parser_methods.add_subparsers(dest="action", help="Action")
+    parser_methods_generate = methods_subparsers.add_parser(
+        "generate", help="Generate the methods section"
+    )
+    parser_methods_generate.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_methods_generate.add_argument(
+        "--detail", choices=("brief", "standard", "detailed"), default="standard"
+    )
+    parser_methods_generate.add_argument(
+        "--format",
+        choices=("md", "html", "docx", "tex", "bib"),
+        default="md",
+        help="Output format (docx needs --output and python-docx)",
+    )
+    parser_methods_generate.add_argument(
+        "--output", help="Write to this file instead of printing"
+    )
+
     parser_sessions = subparsers.add_parser(
         "sessions",
         help="Review how repeated survey responses map to sessions (code/session_assignments.json)",
@@ -506,6 +574,7 @@ def build_prism_tools_parsers(
     parser_sessions_review.add_argument("--id-column", required=True, help="Participant ID column (e.g. token)")
     parser_sessions_review.add_argument("--date-column", default="startdate", help="Date column (default: startdate, falls back to datestamp)")
     parser_sessions_review.add_argument("--project", help="Project root or project.json path (applies its saved decisions)")
+    parser_sessions_review.add_argument("--skip-existing", action="store_true", help="Leave out responses already imported into --project")
     parser_sessions_review.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_sessions_set = sessions_subparsers.add_parser(
@@ -821,6 +890,15 @@ def build_prism_tools_parsers(
         ),
     )
     parser_survey_convert.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help=(
+            "Only import what is new: skip LimeSurvey responses already in the output "
+            "project (matched by their record in code/survey_imports.json) and never overwrite files "
+            "that belong to a different response"
+        ),
+    )
+    parser_survey_convert.add_argument(
         "--dry-run",
         action="store_true",
         help="Only print mapping report; do not write files",
@@ -984,6 +1062,12 @@ def build_prism_tools_parsers(
         action="store_true",
         dest="dry_run",
         help="Preview without writing files",
+    )
+    parser_physio_batch.add_argument(
+        "--destination",
+        choices=["beh", "func", "eeg"],
+        help="Folder for physio files that have a task- entity (written as BIDS .tsv.gz); "
+        "task-free physio always goes to physio/",
     )
 
     parser_recipes = subparsers.add_parser(
@@ -1666,6 +1750,63 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_modality = subparsers.add_parser(
+        "modality",
+        help="Propose a new PRISM modality",
+    )
+    modality_subparsers = parser_modality.add_subparsers(
+        dest="action", help="Modality actions"
+    )
+    parser_modality_propose = modality_subparsers.add_parser(
+        "propose",
+        help="Check a modality proposal (workbook, YAML or JSON) plus a sample "
+        "data file and generate schema, example sidecar, fixture dataset and "
+        "REGISTRATION.md",
+    )
+    parser_modality_propose.add_argument(
+        "proposal", help="Proposal file (.xlsx, .yml, .yaml or .json)"
+    )
+    parser_modality_propose.add_argument(
+        "--sample", required=True, help="Synthetic sample data file in the modality's format"
+    )
+    parser_modality_propose.add_argument(
+        "--out", help="Output folder for the generated files (required unless --check)"
+    )
+    parser_modality_propose.add_argument(
+        "--check", action="store_true", help="Validate only; write nothing"
+    )
+    parser_modality_propose.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_modality_version = subparsers.add_parser(
+        "modality-version",
+        help="Pin, list and update per-modality schema versions of a project",
+    )
+    mv_subparsers = parser_modality_version.add_subparsers(
+        dest="action", help="Modality version actions"
+    )
+    mv_actions = {
+        "status": "Show pinned versions and available updates",
+        "list": "List the available versions of one or all modalities",
+        "pin": "Pin modalities (default: those present in the project)",
+        "update": "Move one pinned modality to the latest version",
+        "freeze": "Keep one modality at its pinned version",
+    }
+    for mv_name, mv_help in mv_actions.items():
+        mv_parser = mv_subparsers.add_parser(mv_name, help=mv_help)
+        if mv_name == "list":
+            mv_parser.add_argument("name", nargs="?", help="Modality (default: all)")
+        else:
+            mv_parser.add_argument("project", help="Project folder")
+        if mv_name == "pin":
+            mv_parser.add_argument("names", nargs="*", help="Modalities to pin")
+        if mv_name in ("update", "freeze"):
+            mv_parser.add_argument("name", help="Modality name")
+        mv_parser.add_argument(
+            "--json", action="store_true", help="Emit machine-readable JSON"
+        )
+
     parser_survey_validate = survey_subparsers.add_parser(
         "validate",
         help="Validate survey library for item-key uniqueness and schema "
@@ -2330,7 +2471,8 @@ def build_prism_tools_parsers(
     parser_file_management_rename_physio.add_argument(
         "--modality",
         default="physio",
-        help="Modality label used when --organize is set (default: physio)",
+        help="Target folder when --organize is set: physio (files without task-) or "
+        "beh, func, eeg (task-bound physio); default: physio",
     )
     parser_file_management_rename_physio.add_argument(
         "--organize",
@@ -2381,6 +2523,8 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "session-map": parser_session_map,
+        "preregistration": parser_preregistration,
+        "methods": parser_methods,
         "sessions": parser_sessions,
         "publish": parser_publish,
         "save-gate": parser_save_gate,
@@ -2393,4 +2537,6 @@ def build_prism_tools_parsers(
         "recipes": parser_recipes,
         "file_management": parser_file_management,
         "json_editor": parser_json_editor,
+        "modality": parser_modality,
+        "modality-version": parser_modality_version,
     }

@@ -15,6 +15,12 @@ from src.cli.dispatch import dispatch_prism_tools
 DISPATCH_CASES = [
     (dict(command="anonymize"), "anonymize"),
     (dict(command="template-export"), "template_export"),
+    (dict(command="modality", action="propose"), "modality_propose"),
+    (dict(command="modality-version", action="status"), "modality_version_status"),
+    (dict(command="modality-version", action="list"), "modality_version_list"),
+    (dict(command="modality-version", action="pin"), "modality_version_pin"),
+    (dict(command="modality-version", action="update"), "modality_version_update"),
+    (dict(command="modality-version", action="freeze"), "modality_version_freeze"),
     (dict(command="convert", modality="physio"), "convert_physio"),
     (dict(command="wide-to-long"), "wide_to_long"),
     (dict(command="participants", action="detect-id"), "participants_detect_id"),

@@ -2,28 +2,38 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 import { isSameProjectPath } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { carryForwardColumnEdits } from './neurobagel-session-state.js';
 import { createJobRunController } from './job-run-controller.js';
+import { createAnnotationGate } from './participants-annotation-gate.js';
 import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';
 import { pollJobStatus } from '../../shared/job-polling.js';
-import { pickServerFile, prefersServerPicker } from './server-picker.js';
+import { pickServerFile } from './server-picker.js';
 import { createParticipantsSourcedataQuickSelectController } from './participants-sourcedata-quick-select.js';
 import { createParticipantsMergeConflictDownloadController } from './participants-merge-conflict-download.js';
 import {
     createSessionChoiceState,
     sessionChoiceBlockReasonForRoute,
+    sessionChoiceCardVisible,
     sessionChoiceFormFields,
     setSessionChoiceColumn,
-    setSessionChoiceLongitudinal,
+    setSessionChoiceMode,
     setSessionChoiceSession,
 } from './participants-session-choice.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createParticipantsMergePreviewRefreshController } from './participants-merge-preview-refresh.js';
+import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
 import {
     REPLACE_CONFIRMATION_MESSAGE,
     discardsExistingSchema,
     effectiveSelectedCase,
 } from './participants-replace-policy.js';
 import { createParticipantsMergeSummaryController } from './participants-merge-summary.js';
+import {
+    appendScreeningOnlyIds,
+    defaultScreeningTicks,
+    needsScreeningChoice,
+    screeningRowsHtml,
+} from './participants-screening-only.js';
 import {
     getParticipantsMergeHarmonizationDecisions as getParticipantsMergeHarmonizationDecisionsPayload,
     appendParticipantsMergeHarmonizationDecisions as appendParticipantsMergeHarmonizationDecisionsPayload,
@@ -33,6 +43,9 @@ import {
 export function initParticipants() {
     const participantsPanel = document.getElementById('participants-panel');
     if (!participantsPanel) return;
+    // null = no choice offered (the group column is left alone); else the ticked participant ids
+    let participantsScreeningTicks = null;
+
     const neurobagelWidgetUrl = participantsPanel.dataset.neurobagelWidgetUrl || '/static/neurobagel_widget.html';
 
     const neurobagelCollapseEl = document.getElementById('neurobagelCollapse');
@@ -54,6 +67,24 @@ export function initParticipants() {
     });
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
+    // Annotation is a required stage: Create/Replace stays blocked until the user confirms it.
+    const participantsAnnotationGate = createAnnotationGate();
+
+    // Result messages live below the Create/Replace button, away from the buttons that raise
+    // them (e.g. step 1): bring any message into view the moment it is shown.
+    // keepScrollY is set while a preview re-run (after removing a variable) is in flight:
+    // the re-run must not move the viewport, so message auto-scroll is paused.
+    let keepScrollY = null;
+    const participantsMessageObserver = new MutationObserver((records) => {
+        if (keepScrollY !== null) return;
+        records.forEach(({ target }) => {
+            if (!target.classList.contains('d-none')) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
+    ['participantsError', 'participantsInfo', 'participantsSuccess'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) participantsMessageObserver.observe(el, { attributes: true, attributeFilter: ['class'] });
+    });
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
@@ -187,45 +218,6 @@ export function initParticipants() {
         if (resetSourcedataSelection) {
             participantsSourcedataQuickSelectController.clearSelectedFile();
         }
-    }
-
-    function openParticipantsLocalFilePicker(fileInput) {
-        if (!(fileInput instanceof HTMLInputElement) || fileInput.disabled) {
-            return;
-        }
-
-        if (typeof fileInput.showPicker === 'function') {
-            try {
-                fileInput.showPicker();
-                return;
-            } catch (_error) {
-                // Fall back to click() for browsers that expose showPicker but reject it here.
-            }
-        }
-
-        fileInput.click();
-    }
-
-    function applyParticipantsPickerUiState() {
-        const connectedToServer = prefersServerPicker();
-        const fileInput = document.getElementById('participantsDataFile');
-        const chooseFileBtn = document.getElementById('participantsChooseFileBtn');
-        const browseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-
-        if (browseServerFileBtn) {
-            browseServerFileBtn.classList.toggle('d-none', !connectedToServer);
-        }
-
-        if (chooseFileBtn) {
-            chooseFileBtn.classList.remove('d-none');
-        }
-
-        if (fileInput) {
-            fileInput.disabled = false;
-            fileInput.title = '';
-        }
-
-        updateParticipantsButtonState();
     }
 
     function normalizeParticipantsCaseId(value) {
@@ -468,6 +460,7 @@ export function initParticipants() {
         const useMergeRoute = mode === 'file' && !participantsUsesPlainFileRoute();
         const choiceReason = sessionChoiceBlockReasonForRoute(
             { mode, useMergeRoute },
+            participantsRepeatConflicts,
             participantsSessionCandidates,
             participantsSessionChoice
         );
@@ -475,11 +468,16 @@ export function initParticipants() {
         if (participantsUsesPlainFileRoute() && participantsSessionMapPanel && participantsSessionMapPanel.isPending()) {
             return 'Map the session name first (Session mapping panel above).';
         }
+        // Errors found in the source table by the preview (the backend refuses them too).
+        const dataErrors = window.lastParticipantsPreviewData?.data_errors;
+        if (Array.isArray(dataErrors) && dataErrors.length) {
+            return 'Fix the errors in the source file (listed under the preview), then choose it again.';
+        }
         return '';
     }
 
     function canApplyParticipantsConversion() {
-        if (!participantsPreviewCompleted) {
+        if (!participantsPreviewCompleted || !participantsAnnotationGate.isConfirmed()) {
             return false;
         }
 
@@ -498,6 +496,12 @@ export function initParticipants() {
         }
 
         return true;
+    }
+
+    function participantsConvertReadyHint() {
+        return participantsAnnotationGate.isConfirmed()
+            ? getParticipantsWorkflowUiCopy().convertReadyHint
+            : 'Confirm the annotation (step 3) first';
     }
 
     function updateParticipantsMergeApplyStatusBadge(previewData = window.lastParticipantsPreviewData) {
@@ -614,7 +618,7 @@ export function initParticipants() {
                 previewLabel: '1. Choose Workflow',
                 previewHint: 'Select Replace, Modify, or Merge to continue.',
                 mappingHint: 'Choose a workflow first. Import-based options unlock additional source columns after review.',
-                convertLabel: '3. Save Participant Files',
+                convertLabel: '4. Save Participant Files',
                 convertPendingHint: 'Choose a workflow to continue',
                 convertReadyHint: 'Choose a workflow to continue',
                 workflowSummaryOutput: 'Output: choose a workflow to see how participant files will be updated',
@@ -638,7 +642,7 @@ export function initParticipants() {
                 previewLabel: '1. Preview Merge',
                 previewHint: 'Check matches, fills, new participants, and conflicts before applying the merge.',
                 mappingHint: 'Include non-core fields from the imported source file.',
-                convertLabel: '3. Apply Merge',
+                convertLabel: '4. Apply Merge',
                 convertPendingHint: 'Run step 1 to preview the merge',
                 convertReadyHint: 'Ready to apply conflict-free merge',
                 workflowSummaryOutput: 'Output: apply safe in-place merge to participants.tsv + participants.json',
@@ -650,7 +654,7 @@ export function initParticipants() {
                 previewLabel: '1. Review Replacement File',
                 previewHint: 'Check the imported columns and sample values before replacing the current participant files.',
                 mappingHint: 'Include non-core fields from the imported source file.',
-                convertLabel: '3. Replace Participant Files',
+                convertLabel: '4. Replace Participant Files',
                 convertPendingHint: 'Run step 1 to review the replacement file',
                 convertReadyHint: 'Ready to replace existing files in project',
                 workflowSummaryOutput: 'Output: replace participants.tsv + participants.json in project',
@@ -661,7 +665,7 @@ export function initParticipants() {
             previewLabel: '1. Review Participant Fields',
             previewHint: 'Check detected columns and sample values before creating participant files.',
             mappingHint: 'Include non-core fields from the imported source file.',
-            convertLabel: '3. Create Participant Files',
+            convertLabel: '4. Create Participant Files',
             convertPendingHint: 'Run step 1 first',
             convertReadyHint: 'Ready to create files in project',
             workflowSummaryOutput: 'Output: create participants.tsv + participants.json in project',
@@ -688,7 +692,7 @@ export function initParticipants() {
                 checklist: [
                     'Choose the participant source file and confirm the detected ID column.',
                     'Run the review step to confirm sample values and output columns.',
-                    'Optional: add more columns or adjust metadata.',
+                    'Add the columns you need beyond the standard ones (e.g. IQ), then adjust metadata.',
                     hasAnyParticipantFile
                         ? 'Create or rebuild the participant files from the imported source of truth.'
                         : 'Create participants.tsv and participants.json in the current project.',
@@ -750,7 +754,7 @@ export function initParticipants() {
             checklist: [
                 'Choose the participant source file and confirm the detected ID column.',
                 'Run the review step to confirm sample values and output columns.',
-                'Optional: add more columns or adjust metadata.',
+                'Add the columns you need beyond the standard ones (e.g. IQ), then adjust metadata.',
                 hasAnyParticipantFile
                     ? 'Replace the current participant files with the imported source of truth.'
                     : 'Create participants.tsv and participants.json in the current project.',
@@ -891,7 +895,6 @@ export function initParticipants() {
         const fileSection = document.getElementById('participantsFileInputSection');
         const previewActionCol = document.getElementById('participantsPreviewActionCol');
         const mappingActionCol = document.getElementById('participantsMappingActionCol');
-        const convertActionCol = document.getElementById('participantsConvertActionCol');
         const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
         const previewHint = document.getElementById('participantsPreviewHint');
         const mappingHint = document.getElementById('participantsMappingHint');
@@ -910,7 +913,7 @@ export function initParticipants() {
             mappingActionCol.classList.toggle('d-none', !showMappingAction);
         }
 
-        [previewActionCol, convertActionCol].forEach((column) => {
+        [previewActionCol].forEach((column) => {
             if (!column) {
                 return;
             }
@@ -959,7 +962,9 @@ export function initParticipants() {
     
     function resetParticipantsPanelState({ preserveImportConfig = false } = {}) {
         participantsPreviewCompleted = false;
+        participantsAnnotationGate.reset();
         if (!preserveImportConfig) {
+            participantsSessionsFromDate = false;
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
@@ -980,7 +985,7 @@ export function initParticipants() {
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
         const applyStatusBadge = document.getElementById('participantsMergeApplyStatusBadge');
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
         const previewTableHead = document.querySelector('#participantsPreviewTable thead');
         const previewTableBody = document.querySelector('#participantsPreviewTable tbody');
         const previewCount = document.getElementById('participantsPreviewCount');
@@ -1022,7 +1027,7 @@ export function initParticipants() {
             applyStatusBadge.className = 'badge d-none';
             applyStatusBadge.textContent = '';
         }
-        if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+        if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
     
         if (previewTableHead) previewTableHead.innerHTML = '';
         if (previewTableBody) previewTableBody.innerHTML = '';
@@ -1047,6 +1052,7 @@ export function initParticipants() {
         window.excludedParticipantColumns = [];
         window.participantsMergeHarmonizationDecisions = {};
         window.participantsMergeSessionResolutionDecisions = {};
+        participantsScreeningTicks = null;
         setParticipantsAdditionalVariablesEnabled(false);
     
         const widgetContainer = document.getElementById('neurobagelWidgetContainer');
@@ -1387,7 +1393,7 @@ export function initParticipants() {
             clearRememberedParticipantsIdColumn();
             setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
-            if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
+            if (idHint) idHint.textContent = error?.message || 'Automatic detection unavailable. Select the source ID column manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
     }
@@ -1401,7 +1407,7 @@ export function initParticipants() {
         
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
 
         if (!hasSelectedCase) {
             participantsExcelSheetCount = null;
@@ -1410,7 +1416,7 @@ export function initParticipants() {
 
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;
-            if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
             renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
@@ -1425,7 +1431,7 @@ export function initParticipants() {
 
             if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
             renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
@@ -1442,7 +1448,7 @@ export function initParticipants() {
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
             // Re-apply the last requested show/hide state instead of forcing it closed -
             // this runs from the convert button's `finally` block too, which previously
             // clobbered the warning right after it was shown.
@@ -1457,7 +1463,7 @@ export function initParticipants() {
             participantsSheetMetadataPending = false;
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;
-            if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = true;
             participantsPreviewCompleted = false;
             updateParticipantsInputVisibility();
         }
@@ -1487,16 +1493,9 @@ export function initParticipants() {
         participantsSourcedataQuickSelectController.initialize();
     }
     
-    const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
-    if (participantsChooseFileBtn && fileInput) {
-        participantsChooseFileBtn.addEventListener('click', function() {
-            openParticipantsLocalFilePicker(fileInput);
-        });
-    }
-
-    const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
-    if (participantsBrowseServerFileBtn) {
-        participantsBrowseServerFileBtn.addEventListener('click', async function() {
+    const participantsBrowseFileBtn = document.getElementById('participantsBrowseFileBtn');
+    if (participantsBrowseFileBtn) {
+        participantsBrowseFileBtn.addEventListener('click', async function() {
             const pickedPath = await pickServerFile({
                 title: 'Select Participants File on Server',
                 confirmLabel: 'Use This File',
@@ -1535,11 +1534,6 @@ export function initParticipants() {
         });
     }
     
-    document.getElementById('participantsSessionsFromDate')?.addEventListener('change', function() {
-        resetParticipantsPanelState({ preserveImportConfig: true });
-        updateParticipantsButtonState({ skipIdAutoDetect: true });
-    });
-
     const sheetInput = document.getElementById('participantsSheet');
     if (sheetInput) {
         sheetInput.addEventListener('change', function() {
@@ -1560,10 +1554,6 @@ export function initParticipants() {
         });
     }
 
-    window.addEventListener('prism-library-settings-changed', function() {
-        applyParticipantsPickerUiState();
-    });
-
     if (!window.__participantsProjectChangeListenerBound) {
         window.addEventListener('prism-project-changed', function() {
             pollingRunState.abortActive('Participants polling aborted due to project change.');
@@ -1572,14 +1562,6 @@ export function initParticipants() {
             participantsSourcedataQuickSelectController.refresh(resolveCurrentProjectPath());
         });
         window.__participantsProjectChangeListenerBound = true;
-    }
-
-    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
-        window.PrismFileSystemMode.init().then(() => {
-            applyParticipantsPickerUiState();
-        }).catch(() => {
-            // Keep host picker behavior on init failure.
-        });
     }
 
     const participantsCaseGuideCards = document.getElementById('participantsCaseGuideCards');
@@ -1625,7 +1607,7 @@ export function initParticipants() {
     // Run immediately
     updateParticipantsInputVisibility();
     updateParticipantsButtonState();
-    applyParticipantsPickerUiState();
+    updateParticipantsButtonState();
     setParticipantsAdditionalVariablesEnabled(false);
 
     function renderParticipantsOverwriteWarning(showWarning = false) {
@@ -1909,6 +1891,7 @@ export function initParticipants() {
             return false;
         }
 
+        keepScrollY = window.scrollY;
         window.setTimeout(() => {
             try {
                 previewBtn.click();
@@ -2474,6 +2457,17 @@ export function initParticipants() {
         refreshParticipantsWorkflowSummary();
     }
     
+    /** Names of the source columns that are not imported yet (empty when the payload has no column list). */
+    function listAvailableAdditionalParticipantColumns(previewData) {
+        const names = Array.isArray(previewData?.source_columns) ? previewData.source_columns : [];
+        const excluded = new Set([
+            ...(previewData?.columns || []),
+            ...(previewData?.questionnaire_like_columns || []),
+            previewData?.source_id_column || previewData?.id_column,
+        ].map(col => String(col || '').trim()));
+        return [...new Set(names.map(col => String(col || '').trim()).filter(col => col && !excluded.has(col)))];
+    }
+
     function countAvailableAdditionalParticipantColumns(previewData) {
         if (!previewData || typeof previewData !== 'object') {
             return 0;
@@ -2591,10 +2585,39 @@ export function initParticipants() {
 
     function renderParticipantsMergeSummary(previewData) {
         participantsMergeSummaryController.render(previewData);
+        renderParticipantsScreeningOnly(previewData);
     }
+
+    function renderParticipantsScreeningOnly(previewData) {
+        const section = document.getElementById('participantsMergeScreeningSection');
+        const body = document.getElementById('participantsMergeScreeningRows');
+        if (!section || !body) return;
+        const candidates = Array.isArray(previewData?.screening_candidates) ? previewData.screening_candidates : [];
+        const offered = Boolean(previewData?.merge_mode) && needsScreeningChoice(candidates);
+        section.classList.toggle('d-none', !offered);
+        if (!offered) {
+            participantsScreeningTicks = null;
+            return;
+        }
+        if (!participantsScreeningTicks) participantsScreeningTicks = defaultScreeningTicks(candidates);
+        body.innerHTML = screeningRowsHtml(candidates, participantsScreeningTicks);
+    }
+
+    // like the global button guard: a focus change on press re-renders above and drops the click
+    const screeningRows = document.getElementById('participantsMergeScreeningRows');
+    screeningRows?.addEventListener('mousedown', (event) => event.preventDefault());
+    screeningRows?.addEventListener('change', (event) => {
+        const id = event.target?.dataset?.screeningId;
+        if (!id || !participantsScreeningTicks) return;
+        if (event.target.checked) participantsScreeningTicks.add(id);
+        else participantsScreeningTicks.delete(id);
+    });
 
     // Longitudinal source file: the user says so and picks ONE session for everybody.
     let participantsSessionCandidates = [];
+    let participantsRepeatConflicts = [];
+    // Set from the card (files without a session column, e.g. LimeSurvey); reset with a new file.
+    let participantsSessionsFromDate = false;
     let participantsSessionChoice = createSessionChoiceState();
 
     // Longitudinal project: the user names the session being imported (nothing is filled in for them).
@@ -2629,19 +2652,34 @@ export function initParticipants() {
     function renderParticipantsSessionChoice() {
         const card = document.getElementById('participantsSessionChoiceCard');
         if (!card) return;
-        card.classList.toggle('d-none', participantsSessionCandidates.length === 0);
+        const state = participantsSessionChoice;
+        const hasSessionColumn = participantsSessionCandidates.length > 0;
+        card.classList.toggle(
+            'd-none',
+            !sessionChoiceCardVisible(participantsRepeatConflicts, participantsSessionCandidates, state)
+        );
+        const conflictText = document.getElementById('participantsSessionConflictText');
+        if (conflictText && participantsRepeatConflicts.length > 0) {
+            conflictText.textContent = `${participantsRepeatConflicts.join(', ')} differ between rows of the same participant, `
+                + 'but participants.tsv has exactly one row per participant.';
+        }
+        document.getElementById('participantsSessionDateOption')
+            ?.classList.toggle('d-none', hasSessionColumn);
+        document.getElementById('participantsSessionModeGroup')
+            ?.classList.toggle('d-none', !hasSessionColumn);
 
-        const yesBtn = document.getElementById('participantsSessionLongitudinalYes');
-        const noBtn = document.getElementById('participantsSessionLongitudinalNo');
-        [[yesBtn, true], [noBtn, false]].forEach(([button, answer]) => {
-            const chosen = participantsSessionChoice.longitudinal === answer;
+        [['participantsSessionModeOne', 'one'], ['participantsSessionModeSplit', 'split']].forEach(([id, mode]) => {
+            const button = document.getElementById(id);
+            const chosen = state.mode === mode;
             button?.classList.toggle('btn-primary', chosen);
             button?.classList.toggle('btn-outline-secondary', !chosen);
         });
-        document.getElementById('participantsSessionNoHint')
-            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== false);
         document.getElementById('participantsSessionPickers')
-            ?.classList.toggle('d-none', participantsSessionChoice.longitudinal !== true);
+            ?.classList.toggle('d-none', state.mode === '');
+        document.getElementById('participantsSessionValueGroup')
+            ?.classList.toggle('d-none', state.mode !== 'one');
+        document.getElementById('participantsSessionSplitHint')
+            ?.classList.toggle('d-none', state.mode !== 'split');
 
         const columnSelect = document.getElementById('participantsSessionColumn');
         const valueSelect = document.getElementById('participantsSessionValue');
@@ -2654,22 +2692,24 @@ export function initParticipants() {
             return el;
         };
         columnSelect.replaceChildren(
-            option('', 'Select column...', participantsSessionChoice.column === ''),
-            ...participantsSessionCandidates.map((c) => option(c.column, c.column, c.column === participantsSessionChoice.column))
+            option('', 'Select column...', state.column === ''),
+            ...participantsSessionCandidates.map((c) => option(c.column, c.column, c.column === state.column))
         );
-        const chosen = participantsSessionCandidates.find((c) => c.column === participantsSessionChoice.column);
+        const chosen = participantsSessionCandidates.find((c) => c.column === state.column);
         valueSelect.replaceChildren(
-            option('', 'Select session...', participantsSessionChoice.session === ''),
-            ...(chosen ? chosen.values : []).map((v) => option(v, v, v === participantsSessionChoice.session))
+            option('', 'Select session...', state.session === ''),
+            ...(chosen ? chosen.values : []).map((v) => option(v, v, v === state.session))
         );
     }
 
-    function updateParticipantsSessionCandidates(candidates) {
+    function updateParticipantsSessionCandidates(candidates, conflicts = []) {
         const next = Array.isArray(candidates) ? candidates : [];
         if (JSON.stringify(next) !== JSON.stringify(participantsSessionCandidates)) {
             participantsSessionCandidates = next;
             participantsSessionChoice = createSessionChoiceState();
         }
+        // After "keep one session" the preview has no conflicts left; the choice itself keeps the card.
+        participantsRepeatConflicts = Array.isArray(conflicts) ? conflicts : [];
         renderParticipantsSessionChoice();
     }
 
@@ -2690,7 +2730,7 @@ export function initParticipants() {
         const reason = participantsSessionBlockReason();
         if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
         if (convertHint && reason) convertHint.textContent = reason;
-        else if (convertHint) convertHint.textContent = getParticipantsWorkflowUiCopy().convertReadyHint;
+        else if (convertHint) convertHint.textContent = participantsConvertReadyHint();
     }
 
     function applyParticipantsSessionChoice(nextState) {
@@ -2703,15 +2743,15 @@ export function initParticipants() {
         }
     }
 
-    document.getElementById('participantsSessionLongitudinalYes')?.addEventListener('click', () => {
-        applyParticipantsSessionChoice(
-            setSessionChoiceLongitudinal(participantsSessionChoice, true, participantsSessionCandidates)
-        );
+    document.getElementById('participantsSessionModeOne')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(setSessionChoiceMode(participantsSessionChoice, 'one', participantsSessionCandidates));
     });
-    document.getElementById('participantsSessionLongitudinalNo')?.addEventListener('click', () => {
-        applyParticipantsSessionChoice(
-            setSessionChoiceLongitudinal(participantsSessionChoice, false, participantsSessionCandidates)
-        );
+    document.getElementById('participantsSessionModeSplit')?.addEventListener('click', () => {
+        applyParticipantsSessionChoice(setSessionChoiceMode(participantsSessionChoice, 'split', participantsSessionCandidates));
+    });
+    document.getElementById('participantsSessionByDateBtn')?.addEventListener('click', () => {
+        participantsSessionsFromDate = true;
+        refreshParticipantsPreviewAfterSessionChoice();
     });
     document.getElementById('participantsSessionColumn')?.addEventListener('change', (event) => {
         applyParticipantsSessionChoice(
@@ -2755,7 +2795,7 @@ export function initParticipants() {
             formData.append('id_column', idColumn);
         }
         formData.append('separator', separator);
-        if (document.getElementById('participantsSessionsFromDate')?.checked) {
+        if (participantsSessionsFromDate) {
             formData.append('sessions_from_date', 'startdate');
         }
         Object.entries(sessionChoiceFormFields(participantsSessionChoice)).forEach(([key, value]) => {
@@ -2787,6 +2827,15 @@ export function initParticipants() {
             formData,
             window.participantsMergeSessionResolutionDecisions
         );
+    }
+
+    function setNeurobagelEligibility(criteria) {
+        window.neurobagelEligibility = {
+            criteria: Array.isArray(criteria) ? criteria : [],
+            effectiveLink,
+            unitMismatch,
+            criterionOptionsHtml,
+        };
     }
 
     function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {
@@ -2835,8 +2884,10 @@ export function initParticipants() {
         
         errorDiv.classList.add('d-none');
         previewResults.classList.add('d-none');
+        participantsAnnotationGate.reset();
 
         if (!runController.tryStartRun()) {
+            keepScrollY = null;
             return;
         }
         setParticipantsPrimaryActionButtonsDisabled(true);
@@ -2865,6 +2916,7 @@ export function initParticipants() {
                 if (previewEndpoint === '/api/participants-merge') {
                     appendParticipantsMergeHarmonizationDecisions(formData);
                     appendParticipantsMergeSessionResolutionDecisions(formData);
+                    appendScreeningOnlyIds(formData, participantsScreeningTicks);
                 }
             } else {
                 if (!canModifyExistingParticipants()) {
@@ -2947,6 +2999,8 @@ export function initParticipants() {
     
             // Make participants preview available to shared mapping modal logic
             window.lastParticipantsPreviewData = data;
+            // Project eligibility criteria for the annotation panel's link select
+            setNeurobagelEligibility(data.eligibility_criteria);
             // Keep NeuroBagel editor in sync with the latest preview schema/types
             if (effectiveSchema) {
                 window.existingParticipantsData = effectiveSchema;
@@ -2967,7 +3021,9 @@ export function initParticipants() {
             setParticipantsAdditionalVariablesEnabled(hiddenColumns > 0);
     
             if (hiddenColumns > 0 && availabilityInfo && availabilityText) {
-                availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in ${sourceLabel} but not shown in this preview (survey/questionnaire columns are excluded). Use "Add Additional Variables" to select and include them.`;
+                const names = listAvailableAdditionalParticipantColumns(data);
+                const listed = names.length ? `: ${names.slice(0, 8).join(', ')}${names.length > 8 ? ', …' : ''}` : '';
+                availabilityText.textContent = `Standard sociodemographics (age, sex, handedness, …) are imported automatically. ${hiddenColumns} other column(s) in the ${sourceLabel} are NOT imported yet${listed}. Anything else you need (e.g. IQ, VO2max) has to be added with "2. Add Your Own Columns"; columns you leave out stay out of the dataset.`;
                 availabilityInfo.classList.remove('d-none');
             } else if (availabilityInfo) {
                 availabilityInfo.classList.add('d-none');
@@ -2990,6 +3046,7 @@ export function initParticipants() {
             const dataWarnings = Array.isArray(data.data_warnings)
                 ? data.data_warnings.filter(Boolean)
                 : [];
+            const dataErrors = Array.isArray(data.data_errors) ? data.data_errors.filter(Boolean) : [];
             const escapeHtml = (value) => String(value)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
@@ -2999,10 +3056,14 @@ export function initParticipants() {
             const dataWarningsHtml = dataWarnings
                 .map(message => `<div class="mt-2"><i class="fas fa-triangle-exclamation me-2"></i>${escapeHtml(message)}</div>`)
                 .join('');
-            // Warnings get the amber style; alert-info is green in this theme.
+            const dataErrorsHtml = dataErrors
+                .map(message => `<div class="mt-2"><i class="fas fa-circle-xmark me-2"></i>${escapeHtml(message)}</div>`)
+                .join('');
+            // Warnings get the amber style (alert-info is green in this theme); errors red.
             const hasWarnings = formatWarnings.length > 0 || dataWarnings.length > 0;
-            infoDiv.classList.toggle('alert-warning', hasWarnings);
-            infoDiv.classList.toggle('alert-info', !hasWarnings);
+            infoDiv.classList.toggle('alert-danger', dataErrors.length > 0);
+            infoDiv.classList.toggle('alert-warning', hasWarnings && dataErrors.length === 0);
+            infoDiv.classList.toggle('alert-info', !hasWarnings && dataErrors.length === 0);
             if (formatWarnings.length > 0) {    
                 const columnListHtml = problemColumns.length > 0
                     ? `
@@ -3026,13 +3087,15 @@ export function initParticipants() {
                         Please fix the listed columns manually in the source file before import.
                         Use one consistent format per column (recommended: all HH:MM or all numeric minutes).
                     </div>
+                    ${dataErrorsHtml}
                     ${dataWarningsHtml}
                 `;
                 infoDiv.classList.remove('d-none');
-            } else if (dataWarnings.length > 0) {
+            } else if (dataWarnings.length > 0 || dataErrors.length > 0) {
                 infoDiv.innerHTML = `
                     <i class="fas fa-circle-info me-2"></i>
                     <strong>Data check:</strong>
+                    ${dataErrorsHtml}
                     ${dataWarningsHtml}
                 `;
                 infoDiv.classList.remove('d-none');
@@ -3082,7 +3145,7 @@ export function initParticipants() {
                 previewColumnValues[cleanedName] = [...new Set(values)].slice(0, 50);
             });
             window.participantsTsvData = previewColumnValues;
-            updateParticipantsSessionCandidates(data.session_candidates);
+            updateParticipantsSessionCandidates(data.session_candidates, data.repeat_conflicts);
             updateParticipantsSessionMapPanel(data.unmapped_session_labels);
             if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
                 window.pendingAdditionalParticipantColumns.forEach((columnName) => {
@@ -3138,6 +3201,13 @@ export function initParticipants() {
         } finally {
             runController.finishRun();
             updateParticipantsButtonState({ skipIdAutoDetect: true });
+            if (keepScrollY !== null) {
+                window.scrollTo(0, keepScrollY);
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, keepScrollY);
+                    keepScrollY = null;
+                });
+            }
         }
     });
 
@@ -3166,7 +3236,9 @@ export function initParticipants() {
             convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
             if (previewData && previewData.merge_mode) {
                 const harmonizationState = assessParticipantsMergeHarmonizationState(previewData);
-                if (harmonizationState.hasInvalidKeepBoth) {
+                if (!participantsAnnotationGate.isConfirmed()) {
+                    convertHint.textContent = participantsConvertReadyHint();
+                } else if (harmonizationState.hasInvalidKeepBoth) {
                     convertHint.textContent = 'Fix Keep both column names before applying merge';
                 } else if (Boolean(previewData.session_resolution_required) && Number(previewData.conflict_count || 0) === 0) {
                     convertHint.textContent = 'Choose session resolution before applying merge';
@@ -3176,19 +3248,25 @@ export function initParticipants() {
                         : 'Resolve merge conflicts first';
                 }
             } else {
-                convertHint.textContent = participantsSessionBlockReason() || workflowUiCopy.convertReadyHint;
+                convertHint.textContent = participantsSessionBlockReason() || participantsConvertReadyHint();
             }
         }
 
         updateParticipantsMergeApplyStatusBadge(previewData);
     
-        const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
-        if (saveAnnotBtn) {
-            saveAnnotBtn.disabled = false;
+        const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
+        if (confirmAnnotBtn) {
+            confirmAnnotBtn.disabled = false;
         }
     
         refreshParticipantsWorkflowSummary();
     
+        // Annotation is the next required stage: open it as soon as step 1 completes.
+        const annotationCollapse = document.getElementById('neurobagelCollapse');
+        if (annotationCollapse) bootstrap.Collapse.getOrCreateInstance(annotationCollapse, { toggle: false }).show();
+        const confirmHint = document.getElementById('participantsAnnotationConfirmHint');
+        if (confirmHint) confirmHint.textContent = 'Check every column, then confirm to unlock step 4.';
+
         // Keep annotation view in sync with latest preview/schema as soon as step 1 completes.
         loadNeurobagelWidget();
     }
@@ -3313,6 +3391,11 @@ export function initParticipants() {
             annotatedData[targetColumnName] = {
                 Description: colData.description || colData.Description || ""
             };
+            applyLinkToSchema(
+                annotatedData,
+                targetColumnName,
+                savedLink(colData, window.neurobagelEligibility?.criteria || [])
+            );
     
             if (isCategorical && retainedLevels.length > 0) {
                 annotatedData[targetColumnName].Levels = {};
@@ -3533,6 +3616,7 @@ export function initParticipants() {
                 if (useMergeRoute) {
                     appendParticipantsMergeHarmonizationDecisions(formData);
                     appendParticipantsMergeSessionResolutionDecisions(formData);
+                    appendScreeningOnlyIds(formData, participantsScreeningTicks);
                     formData.append('apply', 'true');
                 }
             } else {
@@ -3675,79 +3759,47 @@ export function initParticipants() {
     
     // ===== NEUROBAGEL ANNOTATION HANDLERS =====
 
-    document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
-        const saveBtn = this;
-        const originalLabel = saveBtn.innerHTML;
+    // Stage 3 -> 4: the user confirms the annotation; Create/Replace unlocks below.
+    document.getElementById('participantsAnnotationConfirmBtn')?.addEventListener('click', function() {
         const errorDiv = document.getElementById('participantsError');
-    
         if (errorDiv) {
             errorDiv.classList.add('d-none');
             errorDiv.textContent = '';
         }
-    
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-    
-        try {
-            if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
-                window.syncNeurobagelActiveEditorToState();
-            }
-    
-            const annotatedData = buildAnnotatedParticipantsSchemaFromWidgetState();
-            if (!annotatedData || Object.keys(annotatedData).length === 0) {
-                throw new Error('No participant annotation data available. Run Preview Data first.');
-            }
-            const currentProjectPath = resolveCurrentProjectPath();
-            if (!currentProjectPath) {
-                throw new Error('Please select a project first from the top of the page');
-            }
-        
-            // Save to the project
-            const response = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(currentProjectPath), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    schema: annotatedData,
-                    project_path: currentProjectPath,
-                })
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                const savedSchema = (result.schema && typeof result.schema === 'object')
-                    ? result.schema
-                    : annotatedData;
-                const successDiv = document.getElementById('participantsSuccess');
-                successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
-                successDiv.classList.remove('d-none');
-    
-                window.neurobagelSchema = savedSchema;
-                window.existingParticipantsData = savedSchema;
-    
-                if (window.lastParticipantsPreviewData) {
-                    window.lastParticipantsPreviewData.neurobagel_schema = savedSchema;
-                    renderParticipantsPreviewTable(window.lastParticipantsPreviewData, savedSchema);
-                }
-    
-                displayNeurobagelSchema(savedSchema);
-                
-                // Keep the editor open so user can continue annotating
-                // document.getElementById('neurobagelSection').style.display = 'none';
-                // document.getElementById('participantsHelp').style.display = 'block';
-            } else {
-                throw new Error(result.error || 'Failed to save participants schema');
-            }
-        } catch (error) {
+
+        if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
+            window.syncNeurobagelActiveEditorToState();
+        }
+        const annotatedData = buildAnnotatedParticipantsSchemaFromWidgetState();
+        if (!annotatedData || Object.keys(annotatedData).length === 0) {
             if (errorDiv) {
-                errorDiv.textContent = `Error saving participants schema: ${error.message}`;
+                errorDiv.textContent = 'No participant annotation data available. Run step 1 first.';
                 errorDiv.classList.remove('d-none');
             }
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = originalLabel;
+            return;
         }
+        window.neurobagelSchema = annotatedData;
+        participantsAnnotationGate.confirm();
+
+        const convertBtn = document.getElementById('participantsConvertBtn');
+        const convertHint = document.getElementById('convertBtnHint');
+        const canConvert = canApplyParticipantsConversion();
+        if (convertBtn) {
+            convertBtn.disabled = !canConvert;
+            convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+            convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
+        }
+        if (convertHint) {
+            convertHint.textContent = canConvert
+                ? getParticipantsWorkflowUiCopy().convertReadyHint
+                : (participantsSessionBlockReason() || 'Resolve the items above before continuing');
+        }
+        updateParticipantsMergeApplyStatusBadge();
+        document.getElementById('participantsConvertActionCol')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
     
+    window.carryForwardColumnEdits = carryForwardColumnEdits;
+
     window.loadNeurobagelWidget = async function() {
         const container = document.getElementById('neurobagelWidgetContainer');
         if (!container) return;
@@ -3785,17 +3837,17 @@ export function initParticipants() {
         // Prefer currently saved project participants.json (important after conversion).
         // (Replace over existing files skips this: the old annotations are discarded.)
         let loadedProjectSchema = false;
-        if (!currentReplaceDiscardsSchema()) {
-            try {
-                const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
-                const schemaData = await schemaResponse.json();
-                if (schemaData.success && schemaData.exists && schemaData.schema) {
-                    window.existingParticipantsData = schemaData.schema;
-                    loadedProjectSchema = true;
-                }
-            } catch (error) {
-                console.warn('Could not load existing participants schema:', error);
+        try {
+            const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
+            const schemaData = await schemaResponse.json();
+            // The project's criteria are not annotations: Replace does not discard them.
+            if (!hasActivePreview) setNeurobagelEligibility(schemaData.eligibility_criteria);
+            if (!currentReplaceDiscardsSchema() && schemaData.success && schemaData.exists && schemaData.schema) {
+                window.existingParticipantsData = schemaData.schema;
+                loadedProjectSchema = true;
             }
+        } catch (error) {
+            console.warn('Could not load existing participants schema:', error);
         }
 
         // Fallback to current preview schema only if no saved project schema exists yet.

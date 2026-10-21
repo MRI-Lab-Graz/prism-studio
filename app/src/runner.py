@@ -17,6 +17,7 @@ from typing import Callable, Optional
 from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
+from src.modality_versions import ModalityVersionError
 from schema_manager import validate_schema_version
 from validator import (
     DatasetValidator,
@@ -101,6 +102,26 @@ def _validate_citation_cff(root_dir: str) -> list[tuple[str, str, str]]:
     ]
 
 
+def _default_schema_dir() -> str:
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
+
+
+def _load_schemas(root_dir, schema_version, modality_versions, schema_dir=None):
+    """Schemas for one run plus where each modality's version came from.
+
+    Project pins apply on the stable base only; an explicit legacy
+    --schema-version ignores them, --modality-version applies on any base.
+    """
+    from src.modality_versions import read_pins, resolve_modality_versions
+
+    schema_dir = schema_dir or _default_schema_dir()
+    pins = read_pins(root_dir)[0] if schema_version in (None, "stable") else {}
+    versions, sources = resolve_modality_versions(pins, modality_versions, schema_dir)
+    explicit = {n: v for n, v in versions.items() if sources[n] != "latest"}
+    schemas = load_all_schemas(schema_dir, version=schema_version, modality_versions=explicit or None)
+    return schemas, sources
+
+
 def validate_dataset(
     root_dir,
     verbose=False,
@@ -111,6 +132,7 @@ def validate_dataset(
     project_path: Optional[str] = None,
     progress_callback: Optional[ProgressCallback] = None,
     check_nifti_headers: bool = False,
+    modality_versions: Optional[dict] = None,
 ):
     """Main dataset validation function (refactored from prism.py)
 
@@ -124,6 +146,7 @@ def validate_dataset(
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
         check_nifti_headers: Whether the BIDS validator should read NIfTI headers.
+        modality_versions: Optional {modality: 'X.Y.Z'} overriding project.json pins.
 
     Returns: (issues, stats)
     """
@@ -160,8 +183,10 @@ def validate_dataset(
     report_progress(0, 100, "Loading schemas...")
 
     # Load schemas with specified version
-    schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
-    schemas = load_all_schemas(schema_dir, version=schema_version)
+    try:
+        schemas, schema_sources = _load_schemas(root_dir, schema_version, modality_versions)
+    except ModalityVersionError as exc:
+        return [("ERROR", f"Schema version problem: {exc}")], stats
 
     # Record which schema files actually answered this run, so callers can
     # show it and detect a schema bump between two validations of the same
@@ -185,6 +210,7 @@ def validate_dataset(
         stats.validator_info = {
             "prism_schema_tag": version_tag,
             "prism_schema_versions": schema_versions,
+            "prism_schema_sources": schema_sources,
         }
 
     if verbose:
@@ -386,6 +412,10 @@ def validate_dataset(
 
         issues.extend(check_participants_levels(root_dir))
 
+        from src.eligibility import check_eligibility
+
+        issues.extend(check_eligibility(root_dir))
+
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.
@@ -393,9 +423,13 @@ def validate_dataset(
     if run_prism and len(stats.subjects) == 0 and _subjects_expected(root_dir):
         issues.append(("ERROR", _no_subjects_message(root_dir), root_dir))
 
+    # PRISM707 is a PRISM code: report it in every mode, not only next to the BIDS run
+    issues.extend(
+        _check_participants_subject_alignment(root_dir, {name for name, _ in subject_dirs})
+    )
+
     # Run standard BIDS validator if requested
     if run_bids:
-        issues.extend(_check_participants_subject_alignment(root_dir))
         report_progress(bids_progress, 100, "Running BIDS validator...")
         bids_backend_info: dict = {}
         bids_issues = _run_bids_validator(
@@ -426,7 +460,7 @@ def _check_survey_recipe_coverage(
     project_path: Optional[str] = None,
     survey_task_ids: Optional[set[str]] = None,
 ) -> list:
-    """Warn when survey data exists but project recipe coverage is incomplete."""
+    """Note (INFO) when survey data exists but project recipe coverage is incomplete."""
     from src.recipes_surveys import (
         RECIPE_FILENAME_GLOB,
         _extract_task_from_survey_filename,
@@ -477,21 +511,13 @@ def _check_survey_recipe_coverage(
         return []
 
     recipe_dir = str(target_root / "code" / "recipes" / "survey")
-    used_display = ", ".join(sorted(required_recipe_ids))
-    missing_display = ", ".join(missing_recipe_ids)
     message = (
-        "Missing survey recipes for dataset-used surveys. "
-        f"Used surveys: {used_display}. "
-        f"Missing: {missing_display}."
+        "Missing survey recipes for dataset-used surveys: "
+        f"{', '.join(missing_recipe_ids)}."
     )
 
-    return [
-        (
-            "WARNING",
-            message,
-            recipe_dir,
-        )
-    ]
+    # INFO: recipes are optional, so this is a note, not a problem
+    return [("INFO", message, recipe_dir)]
 
 
 def _get_placeholder_files(root_dir):
@@ -564,13 +590,16 @@ def _no_subjects_message(root_dir: str) -> str:
     return f"{message} Did you point the validator at the dataset root?"
 
 
-def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str, str]]:
-    """Return explicit mismatch errors between top-level sub-* folders and participants.tsv.
+def _check_participants_subject_alignment(
+    root_dir: str, subject_ids: Optional[set[str]] = None
+) -> list[tuple[str, str, str]]:
+    """Return the mismatches between top-level sub-* folders and participants.tsv.
 
-    This check is intentionally strict and read-only. It surfaces both mismatch
-    directions so users can immediately see whether IDs are missing from
-    participants.tsv or whether participants.tsv contains orphan IDs.
+    Read-only. A sub-* folder missing from participants.tsv is an error; a
+    participants.tsv row without a folder is a warning (not everyone screened is enrolled).
     """
+    from src.eligibility import is_screening_only
+
     participants_path = Path(root_dir) / "participants.tsv"
     if not participants_path.exists() or not participants_path.is_file():
         return []
@@ -593,13 +622,15 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
     if participants_converter is None:
         return []
 
-    subject_ids = {
-        child.name
-        for child in Path(root_dir).iterdir()
-        if child.is_dir() and child.name.startswith("sub-")
-    }
+    if subject_ids is None:
+        subject_ids = {
+            child.name
+            for child in Path(root_dir).iterdir()
+            if child.is_dir() and child.name.startswith("sub-")
+        }
 
     participant_ids: set[str] = set()
+    screening_ids: set[str] = set()
     try:
         with participants_path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle, delimiter="\t")
@@ -620,6 +651,8 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
                 normalized = participants_converter._normalize_participant_id(raw_value)
                 if normalized:
                     participant_ids.add(normalized)
+                    if is_screening_only(row):
+                        screening_ids.add(normalized)
     except Exception:
         return []
 
@@ -629,7 +662,8 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
         return []
 
     missing_in_tsv = sorted(subject_ids - participant_ids)
-    missing_subject_dirs = sorted(participant_ids - subject_ids)
+    # screening-only rows are expected to have no folder
+    missing_subject_dirs = sorted(participant_ids - subject_ids - screening_ids)
 
     if not missing_in_tsv and not missing_subject_dirs:
         return []
@@ -640,25 +674,28 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
         remaining = len(values) - limit
         return f"{', '.join(values[:limit])}, +{remaining} more"
 
-    details: list[str] = []
+    found: list[tuple[str, str, str]] = []
     if missing_in_tsv:
-        details.append(
-            "Subjects present as sub-* folders but missing in participants.tsv: "
-            + _summarize(missing_in_tsv)
+        found.append(
+            (
+                "ERROR",
+                "participants.tsv mismatch with dataset subject folders. "
+                "Subjects present as sub-* folders but missing in participants.tsv: "
+                + _summarize(missing_in_tsv),
+                str(participants_path),
+            )
         )
     if missing_subject_dirs:
-        details.append(
-            "participant_id values present in participants.tsv but missing sub-* folders: "
-            + _summarize(missing_subject_dirs)
+        # Only a warning: e.g. prescreened participants who were never invited stay listed on purpose.
+        found.append(
+            (
+                "WARNING",
+                f"participants.tsv lists {len(missing_subject_dirs)} participant(s) without a sub-* folder "
+                "(for example prescreened but not enrolled): " + _summarize(missing_subject_dirs),
+                str(participants_path),
+            )
         )
-
-    return [
-        (
-            "ERROR",
-            "participants.tsv mismatch with dataset subject folders. " + " | ".join(details),
-            str(participants_path),
-        )
-    ]
+    return found
 
 
 def _run_bids_validator(
@@ -715,6 +752,21 @@ def _scan_dir(path, dir_cache=None):
     return entries
 
 
+# Folders that used to be PRISM modalities; flagged with where the files go now.
+RETIRED_FOLDERS = {
+    "events": "move each *_events.tsv next to its task data in func/, beh/ or eeg/",
+    "physiological": "rename the folder to physio/",
+}
+
+
+def _retired_folder_issue(item, item_path):
+    return (
+        "ERROR",
+        f"Folder '{item}' is not a PRISM modality: {RETIRED_FOLDERS[item]}",
+        item_path,
+    )
+
+
 def _validate_subject(
     subject_dir,
     subject_id,
@@ -739,6 +791,12 @@ def _validate_subject(
                 # standalone procedure scan this replaces.
                 stats.disk_sessions.add(item)
             elif run_bids and item in BIDS_MODALITIES and item != "func":
+                continue
+
+            # The retired-folder hint wins over "Empty directory" (even if empty).
+            if item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
                 continue
 
             # Check for empty directory
@@ -792,6 +850,7 @@ def validate_subject_only(
     *,
     schema_version=None,
     library_path=None,
+    modality_versions=None,
 ):
     """Validate one sub-* folder in isolation (what a nested-dataset commit changes).
 
@@ -800,8 +859,7 @@ def validate_subject_only(
     stay with the full validation. Returns (issues, stats).
     """
     root_dir = os.path.abspath(root_dir)
-    schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
-    schemas = load_all_schemas(schema_dir, version=schema_version)
+    schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
     validator = DatasetValidator(schemas, library_path=library_path)
     stats = DatasetStats()
     issues = _validate_subject(
@@ -885,6 +943,11 @@ def _validate_session(
                 )
                 continue
 
+            if item in RETIRED_FOLDERS:
+                if run_prism:
+                    issues.append(_retired_folder_issue(item, item_path))
+                continue
+
             if not filtered_contents:
                 if run_prism:
                     issues.append(
@@ -939,6 +1002,10 @@ def _validate_modality_dir(
 
     for fname in filtered_files:
         file_path = os.path.join(modality_dir, fname)
+        # tool-<name> files (e.g. LimeSurvey system variables) are tool
+        # exports with their own sidecar layout, not PRISM survey data.
+        if "_tool-" in fname:
+            continue
         if entries[fname].is_file():
             task = _extract_task_from_filename(fname)
 
@@ -986,7 +1053,7 @@ def _validate_modality_dir(
                         description_entity = "biometrics"
                     elif modality == "eyetracking":
                         description_entity = "eyetracking"
-                    elif modality in ["physio", "physiological"]:
+                    elif modality in ["physio"]:
                         description_entity = "physio"
                     else:
                         description_entity = "task"

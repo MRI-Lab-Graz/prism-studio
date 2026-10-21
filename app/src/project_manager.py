@@ -43,6 +43,7 @@ from typing import Callable, Dict, List, Any, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
+from src.survey_dates import IMPORT_LEDGER_PARTS, strip_survey_dates_in_tree
 from src.project_export_helpers import (
     _extract_export_task_label,
     _extract_terminal_suffix_label,
@@ -2851,6 +2852,8 @@ class ProjectManager:
         def _should_exclude_export_entry(rel_parts: tuple[str, ...], *, is_dir: bool) -> bool:
             if not rel_parts:
                 return False
+            if rel_parts == IMPORT_LEDGER_PARTS:  # response dates and LimeSurvey tokens
+                return True
 
             if rel_parts[0].startswith("sub-") and rel_parts[0] in normalized_exclude_subjects:
                 return True
@@ -3215,6 +3218,8 @@ class ProjectManager:
         if workspace_cleanup_error:
             result["error"] = workspace_cleanup_error
             return result
+
+        strip_survey_dates_in_tree(export_path)  # survey dates identify people
 
         result["success"] = True
         result["output_path"] = str(export_path)
@@ -5544,7 +5549,7 @@ git push -u origin main
             save_command.append("-r")
         if updated_only:
             save_command.append("--updated")
-        save_command.extend(["-m", normalized_message])
+        save_command.append(f"--message={normalized_message}")  # a message starting with "-" must not be read as an option
 
         head_before = self._git_head(project_path) if detect_no_changes else None
         try:
@@ -7197,6 +7202,7 @@ participants/sociodemographics import step, not at project creation.
             "MissingData": config.get("MissingData", {}),
             "References": config.get("References", ""),
             "Conditions": config.get("Conditions", {}),
+            "Preregistration": config.get("Preregistration", {}),
             "TaskDefinitions": {},
         }
 

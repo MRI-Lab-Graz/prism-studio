@@ -41,7 +41,7 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
         col_to_mapping={
             "ADS01": ColumnMapping(task="ads", run=None, base_item="ADS01")
         },
-        templates={"ads": {"json": {"ADS01": {"Levels": {"1": "low"}}}}},
+        templates={"ads": {"json": {"ADS01": {"Levels": {"3": "low", "4": "high"}}}}},
         res_id_col="participant_id",
         res_ses_col="session",
         res_run_col="run",
@@ -82,7 +82,7 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
         "missing_count": 0,
         "missing_percent": 0.0,
         "has_unexpected_values": False,
-        "expected_levels": ["1"],
+        "expected_levels": ["3", "4"],
     }
 
 
@@ -1144,3 +1144,50 @@ def test_survey_preview_tells_the_user_when_it_fell_back_to_the_official_library
     for warnings in (payload["conversion_warnings"], payload["conversion_summary"]["conversion_warnings"]):
         assert str(selected) in warnings[0] and "official library" in warnings[0]
         assert "an existing warning" in warnings
+
+
+def _preview_calls_for(tmp_path, extra_form):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def fake_runner(_converter, **kwargs):
+        calls.append(kwargs.copy())
+        return SimpleNamespace(near_match_candidates=[], near_match_applied=False)
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"ID,ADS01\n1,3\n"), "demo.csv"),
+            "id_column": "ID",
+            **extra_form,
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+        handle_api_survey_convert_preview(
+            convert_survey_file_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_runner,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            id_column_not_detected_error_cls=ValueError,
+        )
+    return calls
+
+
+def test_survey_preview_passes_skip_existing(tmp_path):
+    calls = _preview_calls_for(tmp_path, {"skip_existing": "true"})
+    assert calls and all(c["skip_existing"] is True for c in calls)
+
+
+def test_survey_preview_skip_existing_defaults_to_off(tmp_path):
+    calls = _preview_calls_for(tmp_path, {})
+    assert calls and all(c["skip_existing"] is False for c in calls)

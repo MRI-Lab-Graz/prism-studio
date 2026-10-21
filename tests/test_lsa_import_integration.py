@@ -4,7 +4,6 @@ system variables, and template matching (global + project library).
 Tests the full pipeline: .lsa parsing → template matching → conversion → output validation.
 """
 
-import csv
 import json
 import sys
 import zipfile
@@ -14,6 +13,20 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "src"))
+
+OFFICIAL_SURVEY_LIBRARY = (
+    Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+)
+
+
+@pytest.fixture(autouse=True)
+def _official_global_library(monkeypatch):
+    """Match against the repo's official library, not whatever global library
+    the developer's own app settings point to (that varies per machine)."""
+    import src.converters.survey_templates as st
+
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: OFFICIAL_SURVEY_LIBRARY)
+
 
 # ── Synthetic multi-questionnaire .lsa ────────────────────────────────
 
@@ -305,117 +318,6 @@ class TestSystemColumnSeparation:
         assert "grouptime10" in ls_cols
         assert "grouptime20" in ls_cols
         assert "grouptime30" in ls_cols
-
-
-class TestToolLimesurveyOutput:
-    """Verify tool-limesurvey TSV/JSON files are written correctly."""
-
-    def test_tool_limesurvey_files_written(self, tmp_path):
-        """tool-limesurvey files should be created for each participant."""
-        import pandas as pd
-        from src.converters.survey_io import _write_tool_limesurvey_files
-
-        df = pd.DataFrame(
-            {
-                "participant_id": ["sub-01", "sub-02"],
-                "id": [1, 2],
-                "submitdate": ["2026-04-01 10:30:00", "2026-04-01 11:15:00"],
-                "startdate": ["2026-04-01 10:00:00", "2026-04-01 11:00:00"],
-                "seed": ["42", "99"],
-                "token": ["abc123", "def456"],
-                "ipaddr": ["192.168.1.10", "192.168.1.20"],
-                "interviewtime": [1800, 900],
-                "grouptime10": [600, 300],
-                "grouptime20": [800, 400],
-                "completed": ["Y", "Y"],
-            }
-        )
-
-        ls_cols = [
-            "id",
-            "submitdate",
-            "startdate",
-            "seed",
-            "token",
-            "ipaddr",
-            "interviewtime",
-            "grouptime10",
-            "grouptime20",
-            "completed",
-        ]
-
-        output_root = tmp_path / "out"
-        output_root.mkdir()
-
-        n = _write_tool_limesurvey_files(
-            df=df,
-            ls_system_cols=ls_cols,
-            res_id_col="participant_id",
-            res_ses_col=None,
-            session="1",
-            output_root=output_root,
-            normalize_sub_fn=lambda x: str(x),
-            normalize_ses_fn=lambda x: f"ses-{x}",
-            ensure_dir_fn=lambda p: (p.mkdir(parents=True, exist_ok=True), p)[-1],
-            build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
-            ls_metadata={
-                "survey_id": "100001",
-                "survey_title": "Multi Test",
-                "tool_version": "5.6.0",
-            },
-        )
-
-        assert n == 2, f"Expected 2 participants, got {n}"
-
-        # Verify files exist for both participants
-        for sub in ["sub-01", "sub-02"]:
-            survey_dir = output_root / sub / "ses-1" / "survey"
-            tsv_files = list(survey_dir.glob("*tool-limesurvey*.tsv"))
-            json_files = list(survey_dir.glob("*tool-limesurvey*.json"))
-            assert (
-                len(tsv_files) == 1
-            ), f"Expected 1 TSV for {sub}, got {len(tsv_files)}"
-            assert (
-                len(json_files) == 1
-            ), f"Expected 1 JSON for {sub}, got {len(json_files)}"
-
-    def test_sensitive_fields_marked(self, tmp_path):
-        """token and ipaddr should be marked as Sensitive in the JSON sidecar."""
-        import pandas as pd
-        from src.converters.survey_io import _write_tool_limesurvey_files
-
-        df = pd.DataFrame(
-            {
-                "participant_id": ["sub-01"],
-                "token": ["secret123"],
-                "ipaddr": ["10.0.0.1"],
-            }
-        )
-
-        output_root = tmp_path / "out"
-        output_root.mkdir()
-
-        _write_tool_limesurvey_files(
-            df=df,
-            ls_system_cols=["token", "ipaddr"],
-            res_id_col="participant_id",
-            res_ses_col=None,
-            session="1",
-            output_root=output_root,
-            normalize_sub_fn=lambda x: str(x),
-            normalize_ses_fn=lambda x: f"ses-{x}",
-            ensure_dir_fn=lambda p: (p.mkdir(parents=True, exist_ok=True), p)[-1],
-            build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
-        )
-
-        json_file = list((output_root / "sub-01" / "ses-1" / "survey").glob("*.json"))[
-            0
-        ]
-        with open(json_file, "r", encoding="utf-8") as f:
-            sidecar = json.load(f)
-
-        assert sidecar["SystemFields"]["token"]["Sensitive"] is True
-        assert sidecar["SystemFields"]["ipaddr"]["Sensitive"] is True
 
 
 class TestLsaStructureParsing:

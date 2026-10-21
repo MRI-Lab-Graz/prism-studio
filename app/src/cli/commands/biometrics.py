@@ -85,6 +85,8 @@ def cmd_biometrics_convert(args) -> None:
     if result.unknown_columns:
         for col in result.unknown_columns:
             print(f"Warning: unknown column ignored: {col}", file=sys.stderr)
+    for note in result.notes:
+        print(f"Warning: {note}", file=sys.stderr)
 
 
 def cmd_biometrics_import_excel(args):

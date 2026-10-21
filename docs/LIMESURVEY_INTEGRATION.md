@@ -365,7 +365,7 @@ A structured overview of how survey groups were matched to templates:
 | **Template** | The matched PRISM template from the library |
 | **Confidence** | Match quality: **high** (exact match), **medium** (abbreviation/item overlap), **low** (partial) |
 
-The summary also shows **Tool-Specific Columns** — the number of LimeSurvey system columns (timestamps, tokens, timing data) that will be separated into `tool-limesurvey` files.
+The summary also shows **Tool-Specific Columns** — the number of LimeSurvey system columns (timestamps, tokens, timing data) that are kept out of the survey files.
 
 #### Validation Results
 
@@ -401,13 +401,6 @@ sub-001/ses-01/survey/
   sub-001_ses-01_task-gad7_survey.json       # Metadata sidecar (from library template)
   sub-001_ses-01_task-pss_survey.tsv         # Second questionnaire
   sub-001_ses-01_task-pss_survey.json
-```
-
-**LimeSurvey system variable files** (automatically created when system columns are detected):
-```
-sub-001/ses-01/survey/
-  sub-001_ses-01_tool-limesurvey_survey.tsv  # Timestamps, tokens, timing data
-  sub-001_ses-01_tool-limesurvey_survey.json # Field descriptions with sensitivity markers
 ```
 
 **Run-numbered files** (when the same questionnaire is administered multiple times):
@@ -451,67 +444,11 @@ If your LimeSurvey survey includes the **PRISM Sociodemographics Template** as a
 This only works when the sociodemographic group uses the PRISM Sociodemographics Template from the global library. Custom demographic questions without a matching participant template will be treated as regular survey items.
 ```
 
-## System Variables (Metadata Preservation)
+## System Variables
 
-When converting LimeSurvey data, PRISM automatically identifies and separates platform metadata from questionnaire responses. These system columns are **not** included in the survey response TSV files — instead, they are written to dedicated **tool-limesurvey** sidecar files.
+When converting LimeSurvey data, PRISM recognises LimeSurvey's own columns (response `id`, `startdate`, `submitdate`, `datestamp`, `seed`, `token`, `ipaddr`, timing columns such as `grouptime{N}` and `interviewtime`, ...) and keeps them **out of** the survey response TSV files, so those contain only questionnaire items. They are not stored anywhere else in the dataset: tokens and IP addresses stay in your original `.lsa`/export.
 
-### Why Separate System Variables?
-
-LimeSurvey stores administrative data (timestamps, tokens, IP addresses, timing) alongside response data. In PRISM/BIDS format, this metadata belongs in a separate file because:
-
-- **Clean survey data**: Response files contain only questionnaire items
-- **Privacy**: Sensitive fields (IP address, token) are isolated and clearly marked
-- **Timing analysis**: Survey duration and per-group timing are preserved for analysis
-- **Reproducibility**: Randomization seeds enable reconstruction of item order
-
-### What Gets Separated
-
-**Core system columns** (always present in LimeSurvey response table):
-
-| Column | Description |
-|--------|-------------|
-| `id` | Response ID |
-| `submitdate` | Submission timestamp (NULL if incomplete) |
-| `lastpage` | Last page viewed |
-| `startlanguage` | Language at survey start |
-| `completed` | Completion flag |
-| `seed` | Randomization seed |
-| `token` | Participant access token |
-
-**Optional columns** (only present when enabled in LimeSurvey settings):
-
-| Column | Description | Enabled via |
-|--------|-------------|-------------|
-| `startdate` | Survey start timestamp | Notifications & Data > Date stamp |
-| `datestamp` | Last action timestamp | Notifications & Data > Date stamp |
-| `ipaddr` | IP address | Notifications & Data > Save IP Address |
-| `refurl` | Referrer URL | Notifications & Data > Save Referrer URL |
-
-**Timing columns** (only present when "Save timings" is enabled):
-
-| Pattern | Description |
-|---------|-------------|
-| `interviewtime` | Total survey time (seconds) |
-| `grouptime{N}` | Time per question group (seconds) |
-| `questiontime{N}` | Time per individual question (seconds, LS 5+) |
-
-### Derived Fields
-
-PRISM computes additional fields from the raw system data:
-
-- **SurveyDuration_minutes**: Total duration calculated from `submitdate - startdate`, in minutes
-- **CompletionStatus**: `"complete"` if `submitdate` is present, `"incomplete"` if the respondent did not submit
-
-### JSON Sidecar
-
-Each `tool-limesurvey_survey.tsv` file is accompanied by a JSON sidecar (`tool-limesurvey_survey.json`) that documents:
-
-- **Metadata**: Schema version, LimeSurvey version, survey ID and title
-- **SystemFields**: Description, data type, format, and sensitivity flags for each column
-- **Timings**: Per-group and per-question timing columns with units
-- **DerivedFields**: Calculated fields with formulas and units
-
-Sensitive fields (`token`, `ipaddr`) are explicitly marked with `"Sensitive": true` in the sidecar.
+The one thing PRISM remembers is each imported response's `startdate`/`seed`/`token` fingerprint, in `code/survey_imports.json` (outside the BIDS folders PRISM validates). "Skip surveys already in the project" uses it to recognise responses on the next import, whatever session number they got. Delete the file and the check falls back to file names and says so.
 
 ## Importing Existing LimeSurvey Surveys (.lss)
 
@@ -635,7 +572,7 @@ The `.lss` export is currently only available through the web interface (Survey 
 
 **Timing data not appearing**: Ensure "Save timings" was enabled in LimeSurvey **before** data collection started. Timing data is only available if the survey was configured to record it.
 
-**System variables missing in output**: System variable separation only applies to LimeSurvey-sourced data (detected automatically). If your data was exported as plain CSV without system columns, no tool-limesurvey files will be generated.
+**System variables missing in output**: System variable separation only applies to LimeSurvey-sourced data (detected automatically). If your data was exported as plain CSV without system columns, there is nothing to separate.
 
 **Matrix grouping not working as expected**: Matrix grouping requires questions with *identical* answer scales (same codes and labels). Even small differences in scale labels will prevent grouping.
 
