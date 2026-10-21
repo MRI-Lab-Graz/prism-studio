@@ -37,10 +37,9 @@ def test_recipe_coverage_names_missing_task_ids(tmp_path) -> None:
 
     assert len(issues) == 1
     level, message, path = issues[0]
-    assert level == "WARNING"
-    assert "Missing survey recipes for dataset-used surveys" in message
-    assert "Used surveys: missingalpha, missingbeta" in message
-    assert "Missing: missingalpha, missingbeta" in message
+    assert level == "INFO"
+    assert "Missing survey recipes for dataset-used surveys: missingalpha, missingbeta" in message
+    assert "Used surveys" not in message  # the list was printed twice
     assert path.endswith("code\\recipes\\survey") or path.endswith(
         "code/recipes/survey"
     )
@@ -62,8 +61,7 @@ def test_recipe_coverage_ignores_non_prefixed_json_files(tmp_path) -> None:
     )
 
     assert len(issues) == 1
-    assert "Used surveys: ads" in issues[0][1]
-    assert "Missing: ads" in issues[0][1]
+    assert issues[0][1].endswith("dataset-used surveys: ads.")
 
 
 def test_recipe_coverage_reports_found_and_missing_from_project_folder(
@@ -85,8 +83,7 @@ def test_recipe_coverage_reports_found_and_missing_from_project_folder(
     )
 
     assert len(issues) == 1
-    assert "Used surveys: ads, phq9" in issues[0][1]
-    assert "Missing: phq9" in issues[0][1]
+    assert issues[0][1].endswith("dataset-used surveys: phq9.")
 
 
 def test_recipe_coverage_ignores_acq_variant_when_base_recipe_exists(tmp_path) -> None:

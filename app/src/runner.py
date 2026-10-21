@@ -460,7 +460,7 @@ def _check_survey_recipe_coverage(
     project_path: Optional[str] = None,
     survey_task_ids: Optional[set[str]] = None,
 ) -> list:
-    """Warn when survey data exists but project recipe coverage is incomplete."""
+    """Note (INFO) when survey data exists but project recipe coverage is incomplete."""
     from src.recipes_surveys import (
         RECIPE_FILENAME_GLOB,
         _extract_task_from_survey_filename,
@@ -511,21 +511,13 @@ def _check_survey_recipe_coverage(
         return []
 
     recipe_dir = str(target_root / "code" / "recipes" / "survey")
-    used_display = ", ".join(sorted(required_recipe_ids))
-    missing_display = ", ".join(missing_recipe_ids)
     message = (
-        "Missing survey recipes for dataset-used surveys. "
-        f"Used surveys: {used_display}. "
-        f"Missing: {missing_display}."
+        "Missing survey recipes for dataset-used surveys: "
+        f"{', '.join(missing_recipe_ids)}."
     )
 
-    return [
-        (
-            "WARNING",
-            message,
-            recipe_dir,
-        )
-    ]
+    # INFO: recipes are optional, so this is a note, not a problem
+    return [("INFO", message, recipe_dir)]
 
 
 def _get_placeholder_files(root_dir):

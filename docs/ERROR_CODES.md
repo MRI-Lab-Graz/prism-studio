@@ -112,7 +112,7 @@ sub-01/survey/sub-01_task-demo_survey.json
 | `PRISM705` | Task references undefined `TaskDefinition` | Add it to `TaskDefinitions` with at least a `modality` |
 | `PRISM706` | Sessions array is empty | Define your study procedure in `Sessions`, or convert data with save-to-project to auto-register it |
 | `PRISM707` | A `sub-*` folder has no row in `participants.tsv` (error), or `participants.tsv` lists participants without a folder, e.g. prescreened but not enrolled (warning) | Import or add the missing participants for the error; the warning needs no action |
-| `PRISM708` | A survey in the dataset has no recipe in the project (`code/recipes/survey/`) | Create or copy it with the Recipe builder |
+| `PRISM708` | A survey in the dataset has no recipe in the project (`code/recipes/survey/`). Info note only: recipes are optional and are not counted as a warning | Create or copy it with the Recipe builder if you want scores |
 | `PRISM709` | A participants column has no value labels, or its `Levels` miss a value in `participants.tsv` (warning if unlabeled and it looks like a code list, error if `Levels` exist but are incomplete) | Add every code to `Levels` in `participants.json`, or add a `Unit` if the column is a measurement |
 
 `PRISM7xx` compares what's actually on disk against `project.json`'s declared

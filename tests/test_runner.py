@@ -746,8 +746,8 @@ class TestSurveyRecipeCoverage:
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert issues == []
 
-    def test_survey_files_without_recipes_raises_warning(self):
-        """Warning is raised when survey TSV files exist but no recipe JSON."""
+    def test_survey_files_without_recipes_raises_info_note(self):
+        """An INFO note (recipes are optional) when survey TSV files exist but no recipe JSON."""
         from runner import _check_survey_recipe_coverage
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -763,7 +763,7 @@ class TestSurveyRecipeCoverage:
 
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert len(issues) == 1
-            assert issues[0][0] == "WARNING"
+            assert issues[0][0] == "INFO"
             assert "recipe" in issues[0][1].lower()
 
     def test_survey_files_with_recipes_no_warning(self):

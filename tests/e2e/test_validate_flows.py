@@ -67,10 +67,9 @@ def test_a_clean_project_is_valid_and_the_recipe_note_is_named_not_generic(app_p
     validate_current(app_page, studio_url)
 
     expect(app_page.get_by_text("Dataset is Valid!")).to_be_visible()
-    # The warning about the missing recipe has its own code, not the catch-all PRISM999.
+    # The optional-recipe note has its own code, not the catch-all PRISM999, and is not a warning.
     expect(app_page.get_by_text("PRISM708")).to_be_visible()
     assert "PRISM999" not in verdict(app_page)
-    app_page.get_by_text("PRISM708").click()
     expect(app_page.get_by_text("Missing survey recipes for dataset-used surveys")).to_be_visible()
 
 
@@ -111,7 +110,8 @@ def test_the_report_download_matches_what_the_page_says(app_page, studio_url):
 
     assert report["results"]["valid"] is True
     assert report["results"]["summary"]["total_errors"] == 0
-    assert set(report["results"]["warning_groups"]) == {"PRISM708"}
+    assert report["results"]["warning_groups"] == {}
+    assert [n["code"] for n in report["results"]["notes"]] == ["PRISM708"]
 
 
 def test_without_a_project_nothing_can_be_validated_until_a_folder_is_chosen(bare_page, studio_url):
