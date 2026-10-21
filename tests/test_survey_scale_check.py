@@ -66,7 +66,7 @@ def test_dry_run_preview_lists_the_violations_unless_a_task_offset_is_set(tmp_pa
             "--output", str(tmp_path / "out"), "--session", "1", "--dry-run",
             "--library", str(root / "official" / "library" / "survey")]
     env = {**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}
-    plain = subprocess.run(base, capture_output=True, text=True, env=env).stdout
+    plain = subprocess.run(base, capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" in plain and "P002: often" in plain
-    shifted = subprocess.run(base + ["--value-offset", "brs=1"], capture_output=True, text=True, env=env).stdout
+    shifted = subprocess.run(base + ["--value-offset", "brs=1"], capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" not in shifted

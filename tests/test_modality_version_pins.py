@@ -1,6 +1,7 @@
 import json
 import os
 import stat
+import sys
 from pathlib import Path
 
 import jsonschema
@@ -166,6 +167,7 @@ def test_project_schema_accepts_the_new_keys_and_rejects_bad_values():
     assert schema["version"] == "1.0.0"
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no 0o664 file modes")
 def test_pinning_keeps_file_mode(tmp_path, schema_dir):
     root = _project(tmp_path)
     os.chmod(root / "project.json", 0o664)

@@ -1,3 +1,4 @@
+import os
 import sys
 import io
 import tempfile
@@ -1908,4 +1909,5 @@ def test_file_input_builders_log_server_picked_path_not_placeholder():
         ):
             cmd = build(request)
         assert "<input-file>" not in cmd, build
-        assert "'/data/my study/part.xlsx'" in cmd, build
+        # Some builders normalize the path (C:\... on Windows), some keep it as sent.
+        assert any(f"'{p}'" in cmd for p in ("/data/my study/part.xlsx", os.path.abspath("/data/my study/part.xlsx"))), build
