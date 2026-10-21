@@ -26,7 +26,7 @@
 <h1>FitCog Study Metadata</h1>
 <p class="sub">Fictive study for the PRISM Studio assignment. Copy the values below into the Study Metadata form on the Projects page. The study, ethics number and grant are invented; the authors are real (you and your instructor).</p>
 
-<div class="note">Fields marked <span class="req">REQUIRED</span> block project creation. Fields marked <span class="core">CORE</span> do not block, but count towards the FAIR score. Everything under "Optional" can stay empty.</div>
+<div class="note">Fields marked <span class="req">REQUIRED</span> block project creation. Fields marked <span class="core">CORE</span> do not block, but count towards the FAIR score. Fill in <strong>everything</strong>, including all sections under "Further sections": the assignment is checked for completeness.</div>
 
 <h2>0. Project (Create New Project card)</h2>
 <table>
@@ -61,16 +61,83 @@
 <tr><th>Funding source (one row)</th><td>Agency: <span class="val">Fictive Science Fund</span><br>Grant number: <span class="val">FSF-2026-12345</span></td></tr>
 </table>
 
-<h2>2. Optional (collapsed sections, fill in if you like)</h2>
+<h3>Acknowledgements and more (Basics)</h3>
 <table>
-<tr><th>Overview</th><td>Cross-sectional study on the relationship between cardiorespiratory fitness (VO2max) and general cognitive ability (IQ) in healthy young adults.</td></tr>
-<tr><th>Study design</th><td>Cross-sectional, single session, one lab visit.</td></tr>
-<tr><th>Recruitment</th><td>Convenience sample recruited via university mailing lists and notice boards. Data collection: January to June 2026.</td></tr>
-<tr><th>Eligibility</th><td>Inclusion: age 18 to 35, normal or corrected-to-normal vision, able to run on a treadmill. Exclusion: cardiovascular disease, neurological or psychiatric disorder.</td></tr>
-<tr><th>Procedure</th><td>Participants complete an IQ test (about 60 minutes), then a graded treadmill test to exhaustion with spiroergometry to determine VO2max (about 30 minutes).</td></tr>
-<tr><th>Checked criterion</th><td>In the Eligibility section, under <em>Checked Criteria</em>, add the criterion <span class="val">Age</span>, <strong>include</strong>, min <span class="val">18</span>, max <span class="val">35</span>, unit <span class="val">years</span>. In the converter you will link the <code>age</code> column to it; the validator then warns about anyone outside 18-35.</td></tr>
-<tr><th>Sample size</th><td>300 participants</td></tr>
+<tr><th>Acknowledgements</th><td><span class="val">We thank all participants and the staff of the exercise physiology lab for their help with data collection.</span></td></tr>
 </table>
+
+<h2>2. Further sections (collapsed, fill in ALL of them)</h2>
+
+<h3>Overview</h3>
+<table>
+<tr><th>Dataset Overview</th><td>Cross-sectional study on the relationship between cardiorespiratory fitness (VO2max) and general cognitive ability (IQ) in healthy young adults.</td></tr>
+<tr><th>Independent variables</th><td><span class="val">Cardiorespiratory fitness (VO2max)</span></td></tr>
+<tr><th>Dependent variables</th><td><span class="val">IQ score</span></td></tr>
+<tr><th>Control variables</th><td><span class="val">Age, sex, handedness</span></td></tr>
+<tr><th>Quality assessment</th><td><span class="val">Spiroergometry checked against the standard criteria for a maximal test (respiratory exchange ratio above 1.10)</span></td></tr>
+</table>
+
+<h3>Study design</h3>
+<table>
+<tr><th>Study design type <span class="core">CORE</span></th><td>Cohort (closest option for a cross-sectional observational design)</td></tr>
+<tr><th>Timepoints <span class="req">REQUIRED</span></th><td>One timepoint (cross-sectional)</td></tr>
+<tr><th>Condition type</th><td>N/A (no experimental conditions)</td></tr>
+<tr><th>Type description</th><td><span class="val">Observational cross-sectional study, single lab visit, no intervention.</span></td></tr>
+<tr><th>Blinding / Randomization / Control condition</th><td>If shown: Blinding none, Randomization <span class="val">Not applicable, no intervention</span>, Control condition <span class="val">Not applicable</span></td></tr>
+</table>
+
+<h3>Recruitment</h3>
+<table>
+<tr><th>Method <span class="core">CORE</span></th><td>University mailing lists, Flyers/posters</td></tr>
+<tr><th>Location</th><td>Use <strong>Find</strong> to search for a city (e.g. Graz) and click <strong>Add Selected Location</strong>. Leave online-only unchecked.</td></tr>
+<tr><th>Period start / end</th><td>January 2026 / June 2026</td></tr>
+<tr><th>Financial compensation</th><td>Yes</td></tr>
+</table>
+
+<h3>Eligibility (age limits and criteria)</h3>
+<table>
+<tr><th>Inclusion criteria <span class="core">CORE</span></th><td>One row each: <span class="val">Age 18 to 35 years</span>, <span class="val">Normal or corrected-to-normal vision</span>, <span class="val">Able to run on a treadmill</span></td></tr>
+<tr><th>Exclusion criteria</th><td>One row each: <span class="val">Cardiovascular disease</span>, <span class="val">Neurological disorder</span>, <span class="val">Psychiatric disorder</span></td></tr>
+<tr><th>Checked criteria</th><td>Add the criterion <span class="val">Age</span>: <strong>include</strong>, min <span class="val">18</span>, max <span class="val">35</span>, unit <span class="val">years</span>. This is the machine-readable <strong>age limit</strong>: in the converter you link the <code>age</code> column to it, and the validator then warns (<code>PRISM602</code>) about anyone outside 18-35.</td></tr>
+<tr><th>Target sample size</th><td><span class="val">300</span></td></tr>
+<tr><th>Power analysis</th><td><span class="val">Fictive: a sample of 300 gives 80% power to detect a correlation of r = .16 at alpha = .05 (two-sided).</span></td></tr>
+</table>
+
+<h3>Procedure</h3>
+<table>
+<tr><th>Overview <span class="core">CORE</span></th><td>Participants complete an IQ test (about 60 minutes), then a graded treadmill test to exhaustion with spiroergometry to determine VO2max (about 30 minutes).</td></tr>
+<tr><th>Informed consent</th><td><span class="val">Written informed consent before the first test.</span></td></tr>
+<tr><th>Quality control</th><td>Add a row: <span class="val">Double data entry of the IQ test sheets</span></td></tr>
+<tr><th>Debriefing</th><td><span class="val">Participants received their individual results after the session.</span></td></tr>
+<tr><th>Additional data acquired</th><td><span class="val">Height and body weight.</span></td></tr>
+<tr><th>Notes</th><td><span class="val">All sessions took place in the morning, 08:00 to 12:00.</span></td></tr>
+</table>
+
+<h3>Preregistration</h3>
+<p>Fictive preregistration; fill in every field.</p>
+<table>
+<tr><th>Data status</th><td>Data collected, not yet looked at</td></tr>
+<tr><th>Hypotheses</th><td><span class="val">H1: Higher VO2max is associated with higher IQ scores. H2: The association remains after controlling for age and sex.</span></td></tr>
+<tr><th>Primary outcomes</th><td><span class="val">IQ score (standard scale, mean 100, SD 15)</span></td></tr>
+<tr><th>Secondary outcomes</th><td><span class="val">Group differences in IQ between low-, medium- and high-fitness tertiles</span></td></tr>
+<tr><th>Analysis plan</th><td><span class="val">Multiple linear regression: IQ predicted by VO2max, age, sex and handedness.</span></td></tr>
+<tr><th>Inference criteria</th><td><span class="val">Two-sided tests, alpha = .05, 95% confidence intervals.</span></td></tr>
+<tr><th>Exploratory analyses</th><td><span class="val">Non-linear (quadratic) effect of VO2max; interaction of VO2max and sex.</span></td></tr>
+</table>
+
+<h3>Reporting and follow-up</h3>
+<table>
+<tr><th>Dataset DOI</th><td><span class="val">10.1234/fitcog.2026</span> (fictive)</td></tr>
+<tr><th>HED version</th><td>Keep the default</td></tr>
+<tr><th>How to acknowledge</th><td><span class="val">Please cite this dataset and the FitCog study team when you use the data.</span></td></tr>
+<tr><th>Citation links</th><td>Add a link: <span class="val">https://example.org/fitcog</span></td></tr>
+<tr><th>Missing data description</th><td><span class="val">No missing data. Data entry columns were removed before sharing.</span></td></tr>
+<tr><th>Missing files / Known issues</th><td>Add one row each, e.g. <span class="val">none</span> / <span class="val">Treadmill calibration repeated in March 2026; no effect on the data.</span></td></tr>
+<tr><th>Background literature</th><td>Add DOIs: <span class="val">10.1038/nrn2298</span> and <span class="val">10.1073/pnas.1015950108</span></td></tr>
+</table>
+
+<h2>3. NeuroBagel annotation (required, in the converter)</h2>
+<div class="note">The metadata above describes the study. The <strong>participant columns</strong> must be annotated separately, in <em>Prepare Data &gt; Converter &gt; Sociodemographics &gt; Participant Annotation</em>. <strong>You must annotate for NeuroBagel</strong>: link <code>age</code>, <code>sex</code> and <code>handedness</code> to their NeuroBagel terms, harmonize the coded values to NeuroBagel labels, and give the unit for age (years). For <code>iq</code> and <code>vo2max</code> there is no NeuroBagel term: write a description and unit instead. Link <code>age</code> to the Age eligibility criterion.</div>
 
 <div class="note"><strong>Checkpoint:</strong> after <em>Create Project</em> your folder must contain <code>dataset_description.json</code>, <code>CITATION.cff</code>, <code>README.md</code>, <code>project.json</code> and the folders <code>sourcedata</code>, <code>derivatives</code>, <code>code</code>. Open <code>dataset_description.json</code> and check that the name and both authors are there.</div>
 </body>
