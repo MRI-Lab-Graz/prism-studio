@@ -16,6 +16,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Set
 
 from src.anonymizer import replace_participant_ids_in_text
+from src.survey_dates import (
+    IMPORT_LEDGER_PARTS,
+    SURVEY_DATE_COLUMN,
+    drop_survey_date_sidecar,
+    has_survey_date,
+)
 from src.git_exclude import ensure_git_excluded
 from src.cross_platform import describe_case_insensitive_id_collisions, remove_tree
 from src.project_export_helpers import (
@@ -517,6 +523,8 @@ def export_project(
                     modality=modality,
                     selected_groups=scrub_mri_json_groups,
                 )
+        if isinstance(data, dict):
+            drop_survey_date_sidecar(data)  # dates identify people; never exported
         if mask_questions and isinstance(data, dict):
             for question_num, item in enumerate(
                 get_survey_item_map(data).values(), start=1
@@ -540,9 +548,10 @@ def export_project(
 
         with open(source_file, "r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f, delimiter="\t")
-            header = list(reader.fieldnames or [])
+            header = [h for h in (reader.fieldnames or []) if h != SURVEY_DATE_COLUMN]
             rows = list(reader)
         for row in rows:
+            row.pop(SURVEY_DATE_COLUMN, None)
             for id_field in ["participant_id", "subject_id", "sub"]:
                 if id_field in row and row[id_field]:
                     row[id_field] = participant_mapping.get(
@@ -652,6 +661,9 @@ def export_project(
                 # Keep participants mapping and anonymization map out of share ZIPs.
                 if filename in ("participants_mapping.json", "anonymization_map.json"):
                     continue
+                # The import ledger holds response start dates and LimeSurvey tokens.
+                if Path(arc_prefix, *rel_parts, filename).parts == IMPORT_LEDGER_PARTS:
+                    continue
                 # Session logs record absolute paths and usernames.
                 if arc_prefix == "code" and tuple(rel_parts[:1]) == ("logs",):
                     continue
@@ -728,7 +740,10 @@ def export_project(
                     zipf.writestr(arcname, _json_bytes(resolved_source_file))
                     if participant_mapping or mask_questions:
                         stats["files_anonymized"] += 1
-                elif filename.endswith(".tsv") and anonymize and participant_mapping:
+                elif filename.endswith(".tsv") and (
+                    (anonymize and participant_mapping)
+                    or has_survey_date(resolved_source_file)
+                ):
                     zipf.writestr(arcname, _tsv_bytes(resolved_source_file))
                     stats["files_anonymized"] += 1
                 elif anonymizing and filename.lower().endswith(_TEXT_EXTS):
@@ -861,7 +876,9 @@ def export_project(
                         continue
                 if filename.endswith(".json"):
                     zipf.writestr(filename, _json_bytes(source_file))
-                elif filename.endswith(".tsv") and anonymize and participant_mapping:
+                elif filename.endswith(".tsv") and (
+                    (anonymize and participant_mapping) or has_survey_date(source_file)
+                ):
                     zipf.writestr(filename, _tsv_bytes(source_file))
                 elif filename.lower().endswith(".nii.gz") and clean_nifti_gzip_headers:
                     zipf.writestr(filename, _clean_nifti_gzip_bytes(source_file))
