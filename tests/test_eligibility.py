@@ -295,3 +295,12 @@ def test_numeric_criterion_on_a_column_with_value_labels_warns_once_instead_of_f
     root = _make(tmp_path, [AGE], sidecar, [("sub-P01", "1"), ("sub-P02", "2")])
     issues = check_eligibility(root)
     assert len(issues) == 1 and "PRISM603" in issues[0][1] and "numeric" in issues[0][1]
+
+
+def test_screening_only_group_is_not_checked(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE,
+                 [("sub-P01", "17", "control"), ("sub-P02", "40", "screening-only"),
+                  ("sub-P03", "50", "Screening-Only")],
+                 header=("participant_id", "age", "group"))
+    (line,) = check_eligibility(root)
+    assert "1 participant(s)" in line[1]
