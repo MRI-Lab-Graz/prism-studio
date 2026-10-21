@@ -190,6 +190,32 @@ def add_session_timing(project_path: Path, sessions: list[dict]) -> None:
             }
 
 
+def survey_durations(project_path: Path) -> dict[str, dict]:
+    """``{task: {"mean", "sd", "n"}}`` (minutes) from ``SurveyDuration`` in the survey TSVs; non-numeric cells are skipped."""
+    from src.environment_mri_scan import resolve_bids_rawdata_root
+
+    values: dict[str, list[float]] = {}
+    for tsv in sorted(resolve_bids_rawdata_root(project_path).glob("sub-*/**/survey/*_task-*.tsv")):
+        match = re.search(r"_task-([A-Za-z0-9]+)", tsv.name)
+        try:
+            for row in _tsv_rows(tsv):
+                try:
+                    values.setdefault(match.group(1), []).append(float(row.get("SurveyDuration") or ""))
+                except ValueError:
+                    continue
+        except (OSError, UnicodeDecodeError):
+            continue
+    return {
+        task: {
+            "mean": statistics.fmean(v),
+            "sd": statistics.stdev(v) if len(v) > 1 else None,
+            "n": len(v),
+        }
+        for task, v in values.items()
+        if v
+    }
+
+
 def _library_dirs(project_path: Path, app_root: str) -> list[Path]:
     from src.config import get_effective_template_library_path, load_app_settings
 
@@ -294,6 +320,7 @@ def build_methods(
         participant_stats=participant_stats,
         acquisition=acquisition_summary(project_path),
         processing=processing_summary(project_path),
+        survey_info=survey_durations(project_path),
         lang=lang,
         detail_level=detail_level,
         continuous=True,  # methods output is always continuous prose

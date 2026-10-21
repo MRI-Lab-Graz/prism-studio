@@ -487,3 +487,51 @@ def test_device_line_skips_non_numeric_field_strength():
     acq = {"modalities": {"func": {"n_subjects": 1, "sessions": {}, "params": {"MagneticFieldStrength": ["3T"], "Manufacturer": ["Siemens"]}}}}
     md, _ = _acq(acq=acq)
     assert "  T" not in md and " T Siemens" not in md
+
+
+def _survey_methods(technical=None, study=None, survey_info=None, detail_level="standard"):
+    tpl = {"Study": {"TaskName": {"en": "Ads"}, **(study or {})}, "Technical": technical or {}}
+    return generate_full_methods(
+        {"TaskDefinitions": {"ads": {"modality": "survey"}}},
+        None,
+        {"ads": tpl},
+        continuous=True,
+        survey_info=survey_info,
+        detail_level=detail_level,
+    )[0]
+
+
+def test_methods_states_language_version_and_administration():
+    md = _survey_methods(
+        {
+            "Language": "de",
+            "AdministrationMethod": "online",
+            "SoftwarePlatform": "LimeSurvey",
+            "SoftwareVersion": "6",
+            "Respondent": "self",
+        },
+        {"Version": "10-item", "Versions": ["10-item", "5-item"]},
+    )
+    assert "German" in md
+    assert "10-item" in md
+    assert "online" in md and "LimeSurvey" in md
+
+
+def test_methods_omits_survey_info_that_is_unknown_or_boilerplate():
+    md = _survey_methods(
+        {"SoftwarePlatform": "Other", "SoftwareVersion": "unspecified"},
+        {"Version": "1.0"},
+    )
+    assert "Other" not in md and "unspecified" not in md and "Version:" not in md
+
+
+def test_methods_states_mean_completion_time():
+    md = _survey_methods(survey_info={"ads": {"mean": 4.2, "sd": 1.1, "n": 40}})
+    assert "*M* = 4.2 minutes (*SD* = 1.1, *n* = 40)" in md
+
+
+def test_brief_detail_omits_survey_info():
+    md = _survey_methods(
+        {"Language": "de"}, survey_info={"ads": {"mean": 4.2, "sd": 1.1, "n": 40}}, detail_level="brief"
+    )
+    assert "German" not in md and "completion time" not in md

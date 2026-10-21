@@ -348,3 +348,25 @@ def test_timing_survey_dates_with_empty_cells_are_skipped(tmp_path):
     sessions = _two_sessions()
     add_session_timing(tmp_path, sessions)
     assert not any("timingRelativeToBaseline" in s for s in sessions)
+
+
+def _durations(root, sub, task, values):
+    folder = root / "rawdata" / f"sub-{sub}" / "ses-1" / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"sub-{sub}_ses-1_task-{task}_survey.tsv").write_text(
+        f"SurveyDuration\titem_01\n{values}\t1\n", encoding="utf-8"
+    )
+
+
+def test_survey_durations_mean_sd_n_skips_bad_cells(tmp_path):
+    from src.methods_project import survey_durations
+
+    _durations(tmp_path, "01", "ads", "4")
+    _durations(tmp_path, "02", "ads", "6")
+    _durations(tmp_path, "03", "ads", "")
+    _durations(tmp_path, "04", "ads", "x")
+    _durations(tmp_path, "01", "pss", "")
+    result = survey_durations(tmp_path)
+    assert result["ads"]["mean"] == 5.0 and result["ads"]["n"] == 2
+    assert round(result["ads"]["sd"], 2) == 1.41
+    assert "pss" not in result
