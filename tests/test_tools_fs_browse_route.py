@@ -131,6 +131,19 @@ class TestToolsFilesystemBrowseRoute(unittest.TestCase):
             self.assertEqual(payload["path"], str(root))
             self.assertEqual([f["name"] for f in payload["files"]], ["data.csv"])
 
+    def test_fs_mkdir_creates_folder_and_rejects_bad_names(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir).resolve()
+
+            ok = self.client.post("/api/fs/mkdir", json={"parent": str(root), "name": "study"})
+            self.assertEqual(ok.status_code, 200)
+            self.assertEqual(ok.get_json()["path"], str(root / "study"))
+            self.assertTrue((root / "study").is_dir())
+
+            bad = self.client.post("/api/fs/mkdir", json={"parent": str(root), "name": "a:b"})
+            self.assertEqual(bad.status_code, 400)
+            self.assertIn("error", bad.get_json())
+
     def test_fs_browse_missing_path_falls_back_to_existing_ancestor(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir).resolve()

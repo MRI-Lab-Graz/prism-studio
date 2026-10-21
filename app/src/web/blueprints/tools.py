@@ -1868,6 +1868,19 @@ def api_fs_browse():
     )
 
 
+@tools_bp.route("/api/fs/mkdir", methods=["POST"])
+def api_fs_mkdir():
+    """Create a sub-folder for the picker's "New folder" button."""
+    from src.folder_create import create_folder
+
+    data = request.get_json(silent=True) or {}
+    try:
+        made = create_folder(data.get("parent") or "", str(data.get("name") or ""))
+    except (ValueError, OSError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"path": str(made)})
+
+
 @tools_bp.route("/api/fs/list-files")
 def api_fs_list_files():
     """List files under a directory (recursive by default) for server-side workflows."""
