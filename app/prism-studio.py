@@ -76,6 +76,10 @@ if str(BASE_DIR) not in sys.path:
 
 os.environ.setdefault("PRISM_STARTUP_HIDE_DETAILS", "1")
 
+from src.cross_platform import ensure_user_bin_on_path
+
+ensure_user_bin_on_path()
+
 from src.dedicated_terminal import should_stream_frozen_logs_to_attached_terminal
 
 # Setup logging for compiled version (no console on Windows)
