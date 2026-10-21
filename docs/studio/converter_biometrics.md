@@ -8,7 +8,8 @@ performance measures, etc.) into a PRISM project.
 ## Step 1 — Select file and session
 
 - **Biometrics File** — accepts `.xlsx`, `.csv`, `.tsv`, `.sav`, `.rds`, `.rdata`, or
-  pick one already in your project's `sourcedata/` via the server browse option.
+  pick one already in your project's `sourcedata/` — click **Browse** for the in-app file
+  picker.
 - **Session ID \*** (required) — pick from a dropdown or type freely (e.g. `1`,
   `baseline`). A session/ses/visit column in your file lets you pick "All sessions"
   to convert them together in one pass; picking a single fixed session instead

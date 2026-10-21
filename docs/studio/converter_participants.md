@@ -117,6 +117,15 @@ python prism.py P        # PRISM602 warnings for participants outside the criter
 
 `participants preview --json` returns the project's criteria as `eligibility_criteria`.
 
+### Screening only
+
+When merging sociodemographics, a **Screening only** table lists every participant
+with a tickbox, the sub-folder (if any) and the current group. Ticked participants
+get `group` = `screening-only` (replacing any group they had), stay in
+`participants.tsv`, and are skipped by the eligibility checks and by the "no data
+folder" warning. Unticking releases them again. The generated Methods text does not
+count them in the sample and reports how many were screened only.
+
 ## Step 3 — Create Participant Files
 
 Writes `participants.tsv` and `participants.json` together — every conversion path

@@ -25,12 +25,12 @@ whole model together.
 
 ## Finding the schema itself
 
-This screen doesn't define the schema — it links out to it. For the actual field-
-by-field reference (required fields, filename patterns, schema versions), go to
-[specs/survey](../specs/survey.md), [specs/biometrics](../specs/biometrics.md),
-[specs/events](../specs/events.md), and [specs/environment](../specs/environment.md),
-or start from [Specifications and Schemas](../SPECIFICATIONS.md) for the conceptual
-overview.
+This screen doesn't define the schema — it links out to it. The bottom card has one
+button per specification page (Survey, Biometrics, Biosample, Physio, Eyetracking,
+Environment, Events, `project.json`, `dataset_description.json`, filename rules), plus
+the list of [validation errors and warnings](../ERROR_CODES.md) and the
+[specification overview](../SPECIFICATIONS.md). Each spec page ends with a field
+reference generated from the shipped schema, so it matches what the validator enforces.
 
 ## What's next
 

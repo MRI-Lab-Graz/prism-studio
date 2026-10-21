@@ -96,7 +96,7 @@
                         <div class="p-3 border rounded bg-light h-100">
                             <h5><i class="fas fa-plus text-primary me-2"></i>PRISM Enhanced</h5>
                             <p class="text-muted mb-0">
-                                PRISM adds specific schemas for surveys, biometrics, and physiological data that 
+                                PRISM adds specific schemas for surveys, biometrics, biosamples, physio, eyetracking, environment and events data that 
                                 go beyond the standard BIDS requirements to ensure high-quality metadata.
                             </p>
                         </div>
@@ -147,11 +147,21 @@
             <div class="card-body p-5 text-start">
                 <h3 class="mb-4">Detailed Schema Documentation</h3>
                 <p class="lead mb-4">
-                    For a deep dive into the specific JSON schemas and modality requirements, 
-                    please visit our dedicated documentation on ReadTheDocs.
+                    Every modality has a specification page with filename rules, required sidecar fields and a
+                    field-by-field reference generated from the shipped schema. The validator&rsquo;s errors and
+                    warnings are listed by code. Both are on ReadTheDocs.
                 </p>
-                <a href="https://prism-studio.readthedocs.io/en/latest/specs/survey.html" class="btn btn-light btn-lg" target="_blank">
-                    <i class="fas fa-external-link-alt me-2"></i>Open PRISM Schema Docs
+                {% set rtd = 'https://prism-studio.readthedocs.io/en/latest/' %}
+                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                    {% for page, label in [('survey', 'Survey'), ('biometrics', 'Biometrics'), ('biosample', 'Biosample'), ('physio', 'Physio'), ('eyetracking', 'Eyetracking'), ('environment', 'Environment'), ('events', 'Events'), ('project', 'project.json'), ('dataset_description', 'dataset_description.json'), ('entities', 'Filename rules')] %}
+                    <a href="{{ rtd }}specs/{{ page }}.html" class="btn btn-light" target="_blank" rel="noopener">{{ label }}</a>
+                    {% endfor %}
+                </div>
+                <a href="{{ rtd }}ERROR_CODES.html" class="btn btn-light btn-lg me-2" target="_blank" rel="noopener">
+                    <i class="fas fa-triangle-exclamation me-2"></i>Validation errors &amp; warnings
+                </a>
+                <a href="{{ rtd }}SPECIFICATIONS.html" class="btn btn-light btn-lg" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt me-2"></i>Specification overview
                 </a>
             </div>
         </div>

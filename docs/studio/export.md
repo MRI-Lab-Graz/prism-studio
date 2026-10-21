@@ -34,6 +34,11 @@ project's parent folder).
 **Validation mode** — PRISM+BIDS / PRISM only / BIDS only / none. Export is blocked if
 validation errors are found under the selected mode.
 
+**Survey dates are never shipped.** The `SurveyStartDate` column (and its sidecar
+entry) and the import ledger `code/survey_imports.json` (response dates, LimeSurvey
+tokens) are removed from every shared copy, because dates identify people. Your source
+project keeps them.
+
 ## Upload-Ready ZIP
 
 Same export pipeline, with a preset that strips `code/`, `derivatives/`, `analysis/`,
@@ -71,11 +76,24 @@ Protocol Descriptions (saved to `openminds_supplements.json`). **Export to
 openMINDS** writes `<project>_openminds.jsonld` (or a `<project>_openminds/`
 directory in multiple-file mode) next to the project.
 
+## Push to Server
+
+Accordion section on the same page: back up the project to a DataLad server (RIA
+store or plain SSH sibling) or an rsync destination. **Check this computer** tests Git,
+git-annex, DataLad, your SSH key and the login; **Sync now** pushes; **Publish
+(validated)** validates first and pushes only if the dataset passes; **Finalize &
+disconnect** does a last push, verifies, and removes this computer's connection (local
+files stay). `sourcedata/` travels with every push, so use the internal lab server only,
+never a public host: Studio refuses http(s) and public-host targets while `sourcedata/`
+is tracked. CLI: `prism_tools.py publish`, `datalad`, `save-gate` (see
+[DataLad](../DATALAD.md)).
+
 ## CLI equivalents
 
 ```bash
 python prism_tools.py anonymize --dataset /path/to/project --output /path/to/out --random --mask-questions
 python prism_tools.py template-export --project /path/to/project --output /path/to/out.zip
+python prism_tools.py publish --project /path/to/share/my-project --as "Name <mail@example.org>"
 python prism_tools.py recipes surveys --prism /path/to/project --format flat
 ```
 

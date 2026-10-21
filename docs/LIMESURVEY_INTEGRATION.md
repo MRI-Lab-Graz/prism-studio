@@ -446,7 +446,7 @@ This only works when the sociodemographic group uses the PRISM Sociodemographics
 
 ## System Variables
 
-When converting LimeSurvey data, PRISM recognises LimeSurvey's own columns (response `id`, `startdate`, `submitdate`, `datestamp`, `seed`, `token`, `ipaddr`, timing columns such as `grouptime{N}` and `interviewtime`, ...) and keeps them **out of** the survey response TSV files, so those contain only questionnaire items. They are not stored anywhere else in the dataset: tokens and IP addresses stay in your original `.lsa`/export.
+When converting LimeSurvey data, PRISM recognises LimeSurvey's own columns (response `id`, `startdate`, `submitdate`, `datestamp`, `seed`, `token`, `ipaddr`, timing columns such as `grouptime{N}` and `interviewtime`, ...) and keeps them **out of** the survey response TSV files, so those contain the questionnaire items plus three derived columns. Tokens and IP addresses are not stored anywhere in the dataset; they stay in your original `.lsa`/export. The derived columns are `SurveyDuration` (minutes), `SurveyStartTime` and `SurveyStartDate`; the date is used for session numbering and the Methods text, and is removed from every shared export (see [Share / Export](studio/export.md)).
 
 The one thing PRISM remembers is each imported response's `startdate`/`seed`/`token` fingerprint, in `code/survey_imports.json` (outside the BIDS folders PRISM validates). "Skip surveys already in the project" uses it to recognise responses on the next import, whatever session number they got. Delete the file and the check falls back to file names and says so.
 
