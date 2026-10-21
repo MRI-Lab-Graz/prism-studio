@@ -19,9 +19,3 @@ export function duplicateIndexes(values) {
     });
     return dupes;
 }
-
-/** Button shown at the end of a looked-up row: search until checked, then delete. */
-export function rowAction({ value, checked }) {
-    if (!String(value || '').trim()) return 'none';
-    return checked ? 'remove' : 'search';
-}
