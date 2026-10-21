@@ -471,7 +471,15 @@ def _normalize_markdownish_description(text: str) -> str:
     return re.sub(r"\s+", " ", merged).strip()
 
 
+_NO_CITATION = {"n.a.", "n.a", "n/a", "na", "none"}
+
+
 def _get_apa_citation(study: dict) -> str:
+    cit = _apa_citation(study)
+    return "" if cit.strip().lower() in _NO_CITATION else cit
+
+
+def _apa_citation(study: dict) -> str:
     """Extract a clean APA-style citation string from a template's Study block.
 
     Handles both the flat legacy format (Study.Citation) and the newer
@@ -675,6 +683,42 @@ def _processing_section(summary: dict | None, lang: str, detail_level: str) -> s
     return " ".join(out)
 
 
+_LANGUAGE_NAMES = {"en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian"}
+_UNINFORMATIVE = {"", "other", "unspecified", "n/a", "unknown"}
+
+
+def _survey_info_sentences(tpl: dict | None, durations: dict | None) -> list[str]:
+    """Language, version, administration and completion time of one instrument; unknown parts are left out."""
+    tech = (tpl or {}).get("Technical") or {}
+    study = (tpl or {}).get("Study") or {}
+
+    def known(value) -> str:
+        text = str(value or "").strip()
+        return "" if text.lower() in _UNINFORMATIVE else text
+
+    sentences: list[str] = []
+    language = known(tech.get("Language"))
+    if language:
+        sentences.append(f"Language: {_LANGUAGE_NAMES.get(language.lower(), language)}.")
+    version = known(study.get("Version"))
+    if version and len(study.get("Versions") or []) > 1:  # a lone "1.0" says nothing
+        sentences.append(f"Version: {version}.")
+    method = known(tech.get("AdministrationMethod")) or known((tech.get("ResponseType") or [""])[0])
+    platform = known(tech.get("SoftwarePlatform"))
+    if method or platform:
+        text = f"Administration was {method}" if method else "Administration"
+        if platform:
+            software_version = known(tech.get("SoftwareVersion"))
+            text += f" via {platform}" + (f" (version {software_version})" if software_version else "")
+        sentences.append(text + ".")
+    if durations:
+        sd = f"*SD* = {durations['sd']:.1f}, " if durations.get("sd") is not None else ""
+        sentences.append(
+            f"The mean completion time was *M* = {durations['mean']:.1f} minutes ({sd}*n* = {durations['n']})."
+        )
+    return sentences
+
+
 def _session_intro(sess: dict, index: int, label: str) -> str:
     """Opening words of a session's sentence. Sessions found in the dataset carry an
     ``ordered`` key; they get no enrollment claim, and no ordinal unless their order is known."""
@@ -722,6 +766,7 @@ def generate_full_methods(
     continuous: bool = False,
     acquisition: dict | None = None,
     processing: dict | None = None,
+    survey_info: dict | None = None,
 ) -> tuple[str, list[str]]:
     """Generate a publication-ready methods section from project.json metadata.
 
@@ -1151,6 +1196,7 @@ def generate_full_methods(
                     sentences.append(f"[please add: reference for {name}]")
 
                 if not is_brief:
+                    sentences.extend(_survey_info_sentences(tpl, (survey_info or {}).get(task_name)))
                     desc = (
                         _to_methods_description(study.get("Description"), lang)
                         if study
@@ -1195,7 +1241,10 @@ def generate_full_methods(
                     if subscales:
                         sentences.append(f"The instrument has the subscales: {', '.join(subscales)}.")
                     license_text = _get_i18n_text_strict(study.get("License"), lang)
-                    if license_text and not license_text.upper().startswith("NOT VERIFIED"):
+                    # converters write "Proprietary / Copyright protected. Please ensure ..." as a reminder, not a license
+                    if license_text and not license_text.upper().startswith(
+                        ("NOT VERIFIED", "PROPRIETARY / COPYRIGHT PROTECTED")
+                    ):
                         sentences.append(f"License: {license_text.rstrip('.')}.")
                 if is_detailed:
                     reliability = (

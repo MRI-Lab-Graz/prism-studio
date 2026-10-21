@@ -29,6 +29,7 @@ from typing import Any, Optional
 import pandas as pd
 
 from src.bids_entity_parser import BidsEntityParser
+from src.survey_dates import SURVEY_DATE_COLUMN
 
 _SURVEY_FILENAME_PATTERN = re.compile(
     # TaskName/VariantID allow internal hyphens (see survey.schema.json's
@@ -241,6 +242,7 @@ def collect_phenotype_bridge_files(
                 row["session_id"] = f"ses-{session_label}"
                 has_session = True
             row.update(df.iloc[0].to_dict())
+            row.pop(SURVEY_DATE_COLUMN, None)  # dates identify people
             rows.append(row)
             for column in row:
                 if column not in columns_order:

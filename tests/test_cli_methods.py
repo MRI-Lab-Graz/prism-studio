@@ -105,3 +105,9 @@ def test_cli_lists_sessions_and_placeholders(tmp_path, capsys):
     out = capsys.readouterr().out
     assert 'In session "1"' in out and 'In session "2"' in out
     assert "[please add: time between sessions]" in out
+
+
+def test_methods_generate_has_no_language_option(project):
+    with pytest.raises(SystemExit) as exc:
+        _run_cli(["methods", "generate", "--project", str(project), "--lang", "de"])
+    assert exc.value.code == 2

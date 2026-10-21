@@ -306,3 +306,87 @@ def test_timing_falls_back_to_scans_tsv(tmp_path):
     sessions = _two_sessions()
     add_session_timing(tmp_path, sessions)
     assert sessions[1]["timingRelativeToBaseline"] == {"Value": 7, "Unit": "days"}
+
+
+def _dated_survey(root, sub, ses, date):
+    folder = root / "rawdata" / f"sub-{sub}" / f"ses-{ses}" / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"sub-{sub}_ses-{ses}_task-ads_survey.tsv").write_text(
+        f"SurveyStartDate\titem_01\n{date}\t1\n", encoding="utf-8"
+    )
+
+
+def test_timing_from_survey_start_date_is_per_subject(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "2025-01-01")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    _dated_survey(tmp_path, "02", "1", "2025-01-10")
+    _dated_survey(tmp_path, "02", "2", "2025-01-24")
+    _dated_survey(tmp_path, "03", "2", "2025-03-01")  # one dated session only: no interval
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert sessions[1]["timingRelativeToBaseline"] == {"Value": 14, "Unit": "days"}
+
+
+def test_timing_survey_date_beats_sessions_tsv(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "2025-01-01")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    _sessions_tsv(tmp_path, "01", [("1", "2025-01-01T09:00:00"), ("2", "2025-04-11T09:00:00")])
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert sessions[1]["timingRelativeToBaseline"]["Value"] == 14
+
+
+def test_timing_survey_dates_with_empty_cells_are_skipped(tmp_path):
+    from src.methods_project import add_session_timing
+
+    _dated_survey(tmp_path, "01", "1", "")
+    _dated_survey(tmp_path, "01", "2", "2025-01-15")
+    sessions = _two_sessions()
+    add_session_timing(tmp_path, sessions)
+    assert not any("timingRelativeToBaseline" in s for s in sessions)
+
+
+def _durations(root, sub, task, values):
+    folder = root / "rawdata" / f"sub-{sub}" / "ses-1" / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"sub-{sub}_ses-1_task-{task}_survey.tsv").write_text(
+        f"SurveyDuration\titem_01\n{values}\t1\n", encoding="utf-8"
+    )
+
+
+def test_survey_durations_mean_sd_n_skips_bad_cells(tmp_path):
+    from src.methods_project import survey_durations
+
+    _durations(tmp_path, "01", "ads", "4")
+    _durations(tmp_path, "02", "ads", "6")
+    _durations(tmp_path, "03", "ads", "")
+    _durations(tmp_path, "04", "ads", "x")
+    _durations(tmp_path, "01", "pss", "")
+    result = survey_durations(tmp_path)
+    assert result["ads"]["mean"] == 5.0 and result["ads"]["n"] == 2
+    assert round(result["ads"]["sd"], 2) == 1.41
+    assert "pss" not in result
+
+
+def test_discover_tasks_keeps_hyphenated_task_names(tmp_path):
+    from src.methods_project import discover_tasks
+
+    folder = tmp_path / "rawdata" / "sub-01" / "ses-1" / "survey"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_ses-1_task-wellbeing-multi_acq-10-likert_survey.tsv").write_text("q1\n1\n", encoding="utf-8")
+    assert list(discover_tasks(tmp_path)) == ["wellbeing-multi"]
+
+
+def test_discover_tasks_reads_the_survey_dash_task_naming(tmp_path):
+    from src.methods_project import discover_sessions, discover_tasks, survey_durations
+
+    folder = tmp_path / "rawdata" / "sub-01" / "ses-1" / "survey"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_ses-1_survey-ads.tsv").write_text("SurveyDuration\tq1\n5\t1\n", encoding="utf-8")
+    assert discover_tasks(tmp_path) == {"ads": {"modality": "survey"}}
+    assert discover_sessions(tmp_path)[0]["tasks"] == [{"task": "ads", "n": 1}]
+    assert survey_durations(tmp_path)["ads"]["n"] == 1

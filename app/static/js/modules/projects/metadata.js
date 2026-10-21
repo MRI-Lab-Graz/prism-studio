@@ -1632,7 +1632,6 @@ function addOverviewListRow(fieldId, value = '', accepted = false) {
     });
     input.addEventListener('change', runLookup);
 
-    lookupButton.addEventListener('mousedown', (e) => e.preventDefault());
     lookupButton.addEventListener('click', runLookup);
 
     row.addEventListener('dragstart', (e) => {
@@ -1702,10 +1701,6 @@ function initOverviewListFields() {
         const addButton = document.getElementById(config.addId);
         if (addButton && !addButton.dataset.bound) {
             addButton.dataset.bound = '1';
-            // Chromium (Windows) focuses buttons on mousedown, blurring the row
-            // input first; its change-triggered re-render shifts the button and
-            // swallows the click. macOS WebKit never focuses buttons, so match it.
-            addButton.addEventListener('mousedown', (e) => e.preventDefault());
             addButton.addEventListener('click', () => {
                 addOverviewListRow(fieldId);
                 const list = document.getElementById(config.listId);

@@ -539,7 +539,6 @@ def build_prism_tools_parsers(
     parser_methods_generate.add_argument(
         "--project", required=True, help="Project root or project.json path"
     )
-    parser_methods_generate.add_argument("--lang", choices=("en", "de"), default="en")
     parser_methods_generate.add_argument(
         "--detail", choices=("brief", "standard", "detailed"), default="standard"
     )
