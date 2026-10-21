@@ -1415,8 +1415,6 @@ window.renderNeurobagelEditor = function(colName, colData) {
   const eligibility = window.neurobagelEligibility;
   if (eligibility && eligibility.criteria.length) {
     const linked = eligibility.effectiveLink(colData, eligibility.criteria);
-    // Showing a suggestion makes it the user's choice (it is what they see and confirm).
-    if (colData.eligibility_criterion === undefined && linked) colData.eligibility_criterion = linked;
     const options = eligibility.criterionOptionsHtml(eligibility.criteria, linked);
     html += `
       <div class="nb-field-group">

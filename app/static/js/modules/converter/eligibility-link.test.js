@@ -1,29 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, suggestCriterion, unitMismatch } from './eligibility-link.js';
+import { applyLinkToSchema, criterionOptionsHtml, effectiveLink, savedLink, unitMismatch } from './eligibility-link.js';
 
 const CRITERIA = [
     { id: 'age', label: 'Age', term: 'nb:Age', unit: 'years' },
     { id: 'iq', label: 'IQ', term: null, unit: 'points' },
 ];
 
-describe('suggestCriterion', () => {
-    it('matches a column mapped to the same NeuroBagel term, ignoring case', () => {
-        expect(suggestCriterion({ term_url: 'nb:age' }, CRITERIA)).toBe('age');
-    });
-    it('never suggests term-less criteria or unmapped columns', () => {
-        expect(suggestCriterion({ term_url: null }, CRITERIA)).toBe('');
-        expect(suggestCriterion({ term_url: 'nb:Sex' }, CRITERIA)).toBe('');
-    });
-});
-
 describe('effectiveLink', () => {
-    it('uses the explicit choice, including "none", before any suggestion', () => {
+    it('uses the explicit choice, including "none"', () => {
         expect(effectiveLink({ term_url: 'nb:Age', eligibility_criterion: 'iq' }, CRITERIA)).toBe('iq');
         expect(effectiveLink({ term_url: 'nb:Age', eligibility_criterion: '' }, CRITERIA)).toBe('');
     });
-    it('falls back to the suggestion when nothing was chosen', () => {
-        expect(effectiveLink({ term_url: 'nb:Age' }, CRITERIA)).toBe('age');
+    it('never picks a criterion for the user, not even for the same NeuroBagel term', () => {
+        expect(effectiveLink({ term_url: 'nb:Age' }, CRITERIA)).toBe('');
     });
     it('drops a link whose criterion no longer exists', () => {
         expect(effectiveLink({ eligibility_criterion: 'gone' }, CRITERIA)).toBe('');
@@ -31,7 +21,7 @@ describe('effectiveLink', () => {
 });
 
 describe('savedLink', () => {
-    it('saves only what the user has seen: an unconfirmed suggestion is not saved', () => {
+    it('saves only what the user chose: nothing chosen writes nothing', () => {
         expect(savedLink({ term_url: 'nb:Age' }, CRITERIA)).toBeUndefined();
     });
     it('saves an explicit choice, and an explicit "none" as an empty string', () => {

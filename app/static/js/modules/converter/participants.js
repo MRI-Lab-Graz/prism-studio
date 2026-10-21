@@ -2793,6 +2793,15 @@ export function initParticipants() {
         );
     }
 
+    function setNeurobagelEligibility(criteria) {
+        window.neurobagelEligibility = {
+            criteria: Array.isArray(criteria) ? criteria : [],
+            effectiveLink,
+            unitMismatch,
+            criterionOptionsHtml,
+        };
+    }
+
     function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {
         return projectPath
             ? `/api/projects/participants?project_path=${encodeURIComponent(projectPath)}`
@@ -2954,12 +2963,7 @@ export function initParticipants() {
             // Make participants preview available to shared mapping modal logic
             window.lastParticipantsPreviewData = data;
             // Project eligibility criteria for the annotation panel's link select
-            window.neurobagelEligibility = {
-                criteria: Array.isArray(data.eligibility_criteria) ? data.eligibility_criteria : [],
-                effectiveLink,
-                unitMismatch,
-                criterionOptionsHtml,
-            };
+            setNeurobagelEligibility(data.eligibility_criteria);
             // Keep NeuroBagel editor in sync with the latest preview schema/types
             if (effectiveSchema) {
                 window.existingParticipantsData = effectiveSchema;
@@ -3795,17 +3799,17 @@ export function initParticipants() {
         // Prefer currently saved project participants.json (important after conversion).
         // (Replace over existing files skips this: the old annotations are discarded.)
         let loadedProjectSchema = false;
-        if (!currentReplaceDiscardsSchema()) {
-            try {
-                const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
-                const schemaData = await schemaResponse.json();
-                if (schemaData.success && schemaData.exists && schemaData.schema) {
-                    window.existingParticipantsData = schemaData.schema;
-                    loadedProjectSchema = true;
-                }
-            } catch (error) {
-                console.warn('Could not load existing participants schema:', error);
+        try {
+            const schemaResponse = await fetchWithApiFallback(getParticipantsProjectSchemaUrl(projectPath));
+            const schemaData = await schemaResponse.json();
+            // The project's criteria are not annotations: Replace does not discard them.
+            if (!hasActivePreview) setNeurobagelEligibility(schemaData.eligibility_criteria);
+            if (!currentReplaceDiscardsSchema() && schemaData.success && schemaData.exists && schemaData.schema) {
+                window.existingParticipantsData = schemaData.schema;
+                loadedProjectSchema = true;
             }
+        } catch (error) {
+            console.warn('Could not load existing participants schema:', error);
         }
 
         // Fallback to current preview schema only if no saved project schema exists yet.

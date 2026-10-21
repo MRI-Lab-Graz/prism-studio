@@ -1,6 +1,7 @@
 import json
 
 from flask import jsonify, request
+from src.eligibility import load_criteria
 from src.participants_backend import (
     canonicalize_participants_schema_keys as _canonicalize_participant_schema_keys,
     merge_survey_selected_participants_schema,
@@ -33,6 +34,7 @@ def handle_get_participants_schema(get_current_project, get_bids_file_path):
                 "success": True,
                 "exists": False,
                 "schema": {},
+                "eligibility_criteria": load_criteria(str(project_path)),
                 "project_path": str(project_path),
                 "project_name": current.get("name"),
             }
@@ -48,6 +50,7 @@ def handle_get_participants_schema(get_current_project, get_bids_file_path):
                 "exists": True,
                 "schema": schema,
                 "fields": list(schema.keys()),
+                "eligibility_criteria": load_criteria(str(project_path)),
                 "project_path": str(project_path),
                 "project_name": current.get("name"),
             }

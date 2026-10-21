@@ -96,9 +96,8 @@ workflow before Review/Save unlock:
 
 If the project defines *Checked Criteria* (see [Projects](projects.md)), each column
 in the Participant Annotation panel has an **Eligibility criterion** select. A column
-mapped to the same NeuroBagel term as a criterion (e.g. Age) is pre-selected; confirm it,
-change it, or choose *none*. For measures without a NeuroBagel term (IQ, VO2max) pick
-the criterion by hand. Only the criterion id is stored in `participants.json`
+mapped to the same NeuroBagel term as a criterion (e.g. Age) is **not** pre-selected: you
+pick the criterion yourself (or leave it on *none*), and it is saved only when you do. Only the criterion id is stored in `participants.json`
 (`"EligibilityCriterion": "age"`); the limits stay in `project.json`, so changing a limit
 there changes the next validation without re-mapping. The panel warns when the column's
 unit differs from the criterion's. **Replace** discards these links together with the

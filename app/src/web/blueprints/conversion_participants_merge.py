@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Response, jsonify, request, session
 
 from src.converters.file_reader import read_tabular_file
+from src.eligibility import load_criteria
 from src.participants_levels import add_missing_levels
 from src.participants_backend import (
     merge_neurobagel_schema_for_columns as _merge_neurobagel_schema_for_columns,
@@ -359,6 +360,7 @@ def _build_existing_participants_preview_payload(
         "total_source_columns": len(source_columns),
         "extracted_columns": len(output_df.columns),
         "neurobagel_schema": neurobagel_schema,
+        "eligibility_criteria": load_criteria(str(project_root)),
         "format_warnings": [],
         "problem_columns": [],
     }

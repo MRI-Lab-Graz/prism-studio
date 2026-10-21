@@ -1,27 +1,19 @@
 /** Links a participants column to an eligibility criterion from project.json.
  *
  * Only the criterion id is stored in participants.json (EligibilityCriterion);
- * the limits stay in the project metadata. Pre-selecting a criterion by
- * NeuroBagel term is GUI state: the user confirms or changes it.
+ * the limits stay in the project metadata. The user always picks the criterion
+ * themselves: even an obvious match (Age) is never pre-selected.
  */
 
 const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 
-export function suggestCriterion(colData, criteria) {
-    if (!colData || !colData.term_url) return '';
-    const hit = (criteria || []).find((c) => c.term && same(c.term, colData.term_url));
-    return hit ? hit.id : '';
-}
-
-/** The explicit choice (even "none") wins; otherwise the suggestion. Unknown ids are dropped. */
+/** The explicit choice (even "none"); nothing chosen shows "none". Unknown ids are dropped. */
 export function effectiveLink(colData, criteria) {
     const choice = colData ? colData.eligibility_criterion : undefined;
-    if (choice === undefined) return suggestCriterion(colData, criteria);
     return (criteria || []).some((c) => c.id === choice) ? choice : '';
 }
 
-/** What gets saved: only an explicit choice. A suggestion the user never saw is not
- *  saved (the CLI would not write it either); "none" is saved as '' so a Merge can
+/** What gets saved: only an explicit choice. "none" is saved as '' so a Merge can
  *  clear an existing link. undefined = never linked, write nothing. */
 export function savedLink(colData, criteria) {
     const choice = colData ? colData.eligibility_criterion : undefined;

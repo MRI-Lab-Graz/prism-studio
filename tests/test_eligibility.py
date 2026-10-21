@@ -26,16 +26,17 @@ def _codes(issues, code):
 def test_include_range_flags_outside_values(tmp_path):
     root = _make(tmp_path, [AGE], LINK_AGE,
                  [("sub-P01", "17"), ("sub-P02", "18"), ("sub-P03", "35"), ("sub-P04", "36")])
-    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
-    assert len(warnings) == 2
-    assert all(i[0] == "WARNING" and "PRISM602" in i[1] for i in warnings)
-    assert "sub-P01" in warnings[0][1] and "17" in warnings[0][1] and "18-35" in warnings[0][1]
-    assert "sub-P04" in warnings[1][1]
+    warnings = check_eligibility(root)
+    assert len(warnings) == 1  # one line per criterion, never one per participant
+    assert warnings[0][0] == "WARNING" and "PRISM602" in warnings[0][1]
+    assert "2 participant(s)" in warnings[0][1] and "18-35" in warnings[0][1]
+    assert "sub-P0" not in warnings[0][1]
 
 
-def test_summary_line_counts_violations(tmp_path):
-    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17"), ("sub-P02", "40")])
-    assert "2 participant(s)" in check_eligibility(root)[0][1]
+def test_the_line_names_the_column_and_the_criterion(tmp_path):
+    root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17"), ("sub-P02", "40"), ("sub-P03", "20")])
+    (line,) = check_eligibility(root)
+    assert line[1] == "PRISM602 2 participant(s) with age outside the inclusion range 18-35 years (criterion: Age)"
 
 
 def test_exclude_range_flags_inside_values(tmp_path):
@@ -43,8 +44,8 @@ def test_exclude_range_flags_inside_values(tmp_path):
             "mode": "exclude", "max": 69}
     root = _make(tmp_path, [crit], {"iq": {"EligibilityCriterion": "iq"}},
                  [("sub-P01", "69"), ("sub-P02", "70")], header=("participant_id", "iq"))
-    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
-    assert len(warnings) == 1 and "sub-P01" in warnings[0][1]
+    warnings = check_eligibility(root)
+    assert len(warnings) == 1 and "1 participant(s)" in warnings[0][1]
 
 
 def test_open_ended_bounds(tmp_path):
@@ -52,8 +53,8 @@ def test_open_ended_bounds(tmp_path):
             "mode": "include", "min": 85}
     root = _make(tmp_path, [crit], {"iq": {"EligibilityCriterion": "iq"}},
                  [("sub-P01", "84"), ("sub-P02", "200")], header=("participant_id", "iq"))
-    warnings = [i for i in check_eligibility(root) if "sub-P0" in i[1]]
-    assert len(warnings) == 1 and "sub-P01" in warnings[0][1]
+    warnings = check_eligibility(root)
+    assert len(warnings) == 1 and "1 participant(s)" in warnings[0][1]
 
 
 def test_empty_na_and_non_numeric_skipped(tmp_path):
@@ -64,7 +65,7 @@ def test_empty_na_and_non_numeric_skipped(tmp_path):
 
 def test_decimal_comma(tmp_path):
     root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "17,5")])
-    assert _codes(check_eligibility(root), "sub-P01")
+    assert _codes(check_eligibility(root), "PRISM602")
 
 
 def test_unlinked_criterion_silent(tmp_path):
@@ -87,7 +88,7 @@ def test_invalid_project_json_silent(tmp_path):
 
 def test_limit_change_applies_without_touching_participants_json(tmp_path):
     root = _make(tmp_path, [AGE], LINK_AGE, [("sub-P01", "40")])
-    assert _codes(check_eligibility(root), "sub-P01")
+    assert _codes(check_eligibility(root), "PRISM602")
     wider = dict(AGE, max=50)
     (tmp_path / "project.json").write_text(json.dumps({"Eligibility": {"Criteria": [wider]}}))
     assert check_eligibility(root) == []
@@ -111,7 +112,7 @@ def test_duplicate_ids_warn_and_first_wins(tmp_path):
     second = dict(AGE, min=0, max=99)
     root = _make(tmp_path, [AGE, second], LINK_AGE, [("sub-P01", "40")])
     issues = check_eligibility(root)
-    assert _codes(issues, "PRISM603") and _codes(issues, "sub-P01")
+    assert _codes(issues, "PRISM603") and _codes(issues, "PRISM602")
 
 
 def test_linked_column_missing_from_tsv_warns_once(tmp_path):
@@ -135,19 +136,20 @@ def _sex(tmp_path, mode, values, levels=LEVELS, extra=None):
 
 
 def _flagged(issues):
-    return sorted(i[1].split()[1].rstrip(":") for i in issues if "sub-P0" in i[1])
+    """Participants per PRISM602 line (each line is one criterion)."""
+    return [int(i[1].split()[1]) for i in issues if "PRISM602" in i[1]]
 
 
 def test_exclude_label_flags_every_participant_with_that_code(tmp_path):
     root = _sex(tmp_path, "exclude", ["Male"])
     issues = check_eligibility(root)
-    assert _flagged(issues) == ["sub-P02", "sub-P04"]
-    assert "Male" in issues[1][1]
+    assert _flagged(issues) == [2]
+    assert "Male" in issues[0][1]
 
 
 def test_include_labels_flag_everyone_else(tmp_path):
     root = _sex(tmp_path, "include", ["Female", "Male"])
-    assert _flagged(check_eligibility(root)) == ["sub-P03"]
+    assert _flagged(check_eligibility(root)) == [1]
 
 
 def test_label_compare_is_exact_and_a_total_mismatch_is_reported_once(tmp_path):
@@ -166,12 +168,12 @@ def test_linked_categorical_without_levels_warns_once(tmp_path):
 def test_levels_from_annotations_are_used_when_no_plain_levels(tmp_path):
     ann = {"Annotations": {"Levels": {"2": {"TermURL": "snomed:248153007", "Label": "Male"}}}}
     root = _sex(tmp_path, "exclude", ["Male"], levels=None, extra=ann)
-    assert _flagged(check_eligibility(root)) == ["sub-P02", "sub-P04"]
+    assert _flagged(check_eligibility(root)) == [2]
 
 
 def test_code_without_label_is_outside_an_include_criterion(tmp_path):
     root = _sex(tmp_path, "include", ["Female", "Male"], levels={"1": "Female", "2": "Male"})
-    assert _flagged(check_eligibility(root)) == ["sub-P03"]
+    assert _flagged(check_eligibility(root)) == [1]
 
 
 # ---- final review: malformed criteria must never crash the validator ----
@@ -227,7 +229,7 @@ def test_neurobagel_label_in_annotations_counts_next_to_free_text_levels(tmp_pat
     ann = {"Annotations": {"Levels": {"2": {"TermURL": "snomed:248153007", "Label": "Male"}}}}
     root = _sex(tmp_path, "exclude", ["Male"], levels=levels, extra=ann)
     issues = check_eligibility(root)
-    assert _flagged(issues) == ["sub-P02", "sub-P04"]
+    assert _flagged(issues) == [2]
     assert not _codes(issues, "PRISM603")
 
 
@@ -235,7 +237,7 @@ def test_levels_given_as_dicts_without_label_fall_back_to_annotations(tmp_path):
     levels = {"1": {"Description": ""}, "2": {"Description": ""}}
     ann = {"Annotations": {"Levels": {"2": {"Label": "Male"}}}}
     root = _sex(tmp_path, "exclude", ["Male"], levels=levels, extra=ann)
-    assert _flagged(check_eligibility(root)) == ["sub-P02", "sub-P04"]
+    assert _flagged(check_eligibility(root)) == [2]
 
 
 # ---- deferred minors ----
@@ -248,14 +250,13 @@ def test_duplicate_id_warning_is_reported_once_even_with_two_linked_columns(tmp_
     assert len([i for i in check_eligibility(root) if "more than once" in i[1]]) == 1
 
 
-def test_summary_counts_distinct_participants_not_violations(tmp_path):
+def test_every_criterion_gets_its_own_line(tmp_path):
     iq = {"id": "iq", "label": "IQ", "term": None, "type": "numeric", "mode": "include", "min": 85}
     root = _make(tmp_path, [AGE, iq],
                  {"age": {"EligibilityCriterion": "age"}, "iq": {"EligibilityCriterion": "iq"}},
                  [("sub-P01", "17", "70"), ("sub-P02", "20", "100")], header=("participant_id", "age", "iq"))
     issues = check_eligibility(root)
-    assert "1 participant(s)" in issues[0][1]
-    assert len([i for i in issues if "sub-P01" in i[1]]) == 2
+    assert _flagged(issues) == [1, 1]
 
 
 def test_nan_is_not_a_number_and_is_skipped(tmp_path):
@@ -268,7 +269,7 @@ def test_large_bounds_are_not_printed_in_scientific_notation(tmp_path):
            "min": 1234567, "max": 2500000.5}
     root = _make(tmp_path, [big], {"n": {"EligibilityCriterion": "n"}}, [("sub-P01", "5")],
                  header=("participant_id", "n"))
-    assert "1234567-2500000.5" in check_eligibility(root)[1][1]
+    assert "1234567-2500000.5" in check_eligibility(root)[0][1]
 
 
 def test_non_utf8_participants_tsv_is_left_to_other_checks(tmp_path):

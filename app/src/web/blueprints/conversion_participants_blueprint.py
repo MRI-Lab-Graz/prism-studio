@@ -686,6 +686,7 @@ def api_participants_merge():
                     mapping=mapping,
                     log_callback=log_msg,
                 ),
+                "eligibility_criteria": load_criteria(str(project_root)),
                 "format_warnings": [],
                 "data_warnings": _identical_rows_warnings(
                     preview_payload.get("identical_value_rows") or []
