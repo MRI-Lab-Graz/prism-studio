@@ -471,7 +471,15 @@ def _normalize_markdownish_description(text: str) -> str:
     return re.sub(r"\s+", " ", merged).strip()
 
 
+_NO_CITATION = {"n.a.", "n.a", "n/a", "na", "none"}
+
+
 def _get_apa_citation(study: dict) -> str:
+    cit = _apa_citation(study)
+    return "" if cit.strip().lower() in _NO_CITATION else cit
+
+
+def _apa_citation(study: dict) -> str:
     """Extract a clean APA-style citation string from a template's Study block.
 
     Handles both the flat legacy format (Study.Citation) and the newer
@@ -1195,7 +1203,10 @@ def generate_full_methods(
                     if subscales:
                         sentences.append(f"The instrument has the subscales: {', '.join(subscales)}.")
                     license_text = _get_i18n_text_strict(study.get("License"), lang)
-                    if license_text and not license_text.upper().startswith("NOT VERIFIED"):
+                    # converters write "Proprietary / Copyright protected. Please ensure ..." as a reminder, not a license
+                    if license_text and not license_text.upper().startswith(
+                        ("NOT VERIFIED", "PROPRIETARY / COPYRIGHT PROTECTED")
+                    ):
                         sentences.append(f"License: {license_text.rstrip('.')}.")
                 if is_detailed:
                     reliability = (

@@ -188,6 +188,16 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
         if df.empty:
             return None
 
+        # participants.tsv also lists people who were pre-screened but did not take part;
+        # the sample is those with data. Until data is imported, everyone listed counts.
+        from src.environment_mri_scan import resolve_bids_rawdata_root
+
+        with_data = {p.name for p in resolve_bids_rawdata_root(project_path).glob("sub-*") if p.is_dir()}
+        if with_data and "participant_id" in df.columns:
+            df = df[df["participant_id"].astype(str).isin(with_data)]
+            if df.empty:
+                return None
+
         schema = _read_participants_schema(project_path)
         stats: dict = {"n": len(df)}
 

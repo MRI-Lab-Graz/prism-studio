@@ -51,7 +51,6 @@ export function createMetadataMethodsController({
         resultDiv.style.display = 'none';
         errorDiv.style.display = 'none';
 
-        const lang = document.getElementById('methodsLanguage').value;
         const detailLevel = document.getElementById('methodsDetailLevel').value;
         const continuous = true;
         const requestProjectPath = getCurrentProjectPath();
@@ -71,7 +70,7 @@ export function createMetadataMethodsController({
             const response = await fetchWithApiFallback('/api/projects/generate-methods', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })
+                body: JSON.stringify({ project_path: requestProjectPath, detail_level: detailLevel, continuous: continuous })
             });
             const data = await response.json();
             if (requestToken !== methodsRequestToken || !isSameProjectPath(requestProjectPath, getCurrentProjectPath())) {
@@ -137,12 +136,11 @@ export function createMetadataMethodsController({
     }
 
     async function exportMethods(format) {
-        const lang = document.getElementById('methodsLanguage').value;
         const detailLevel = document.getElementById('methodsDetailLevel').value;
         const response = await fetchWithApiFallback('/api/projects/export-methods', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ project_path: getCurrentProjectPath(), language: lang, detail_level: detailLevel, format }),
+            body: JSON.stringify({ project_path: getCurrentProjectPath(), detail_level: detailLevel, format }),
         });
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
@@ -154,7 +152,7 @@ export function createMetadataMethodsController({
         const url = URL.createObjectURL(await response.blob());
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = format === 'bib' ? 'references.bib' : `methods_section_${lang}.${format}`;
+        anchor.download = format === 'bib' ? 'references.bib' : `methods_section_en.${format}`;
         document.body.appendChild(anchor);
         anchor.click();
         URL.revokeObjectURL(url);

@@ -482,7 +482,7 @@ for the hook's requirements and limits.
 ### Methods section and preregistration draft
 
 ```bash
-python prism_tools.py methods generate --project /path/to/project [--lang en|de] \
+python prism_tools.py methods generate --project /path/to/project \
     [--detail brief|standard|detailed] [--format md|html|docx|tex|bib] [--output FILE]
 python prism_tools.py preregistration draft --project /path/to/project \
     [--format md|html|docx|tex] [--output FILE]

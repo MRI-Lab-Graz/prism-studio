@@ -12,7 +12,7 @@ from src.text_export import emit_document
 def cmd_methods_generate(args) -> None:
     try:
         result = build_methods(
-            Path(args.project), lang=args.lang, detail_level=args.detail
+            Path(args.project), lang="en", detail_level=args.detail
         )
     except FileNotFoundError as exc:
         print(f"Error: {exc}")
