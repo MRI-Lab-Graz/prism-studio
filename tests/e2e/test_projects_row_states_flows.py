@@ -30,27 +30,23 @@ def open_sections(page, studio_url, *targets):
 
 
 
-def test_doi_rows_keep_the_lookup_as_a_helper_next_to_the_check(app_page, studio_url):
+def test_an_accepted_doi_becomes_a_chip(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smReferences")
-    page.click("#smReferencesAdd")
-    row = page.locator("#smReferencesList .overview-list-row").last
-    row.locator(".overview-list-input").fill("10.1000/xyz123")
-    expect(row.locator('[data-f="accept"]')).to_be_enabled()
-    expect(row.locator('[data-f="remove"]')).to_have_count(0)
-    row.locator('[data-f="accept"]').click()
-    expect(row.locator('[data-f="remove"]')).to_have_count(1)
-    expect(row.locator('button[aria-label="Check DOI"]')).to_be_hidden()  # helper only for drafts
+    box = page.locator("#smReferencesList")
+    box.locator(".chip-input").fill("10.1000/xyz123")
+    expect(box.locator('[data-f="accept"]')).to_be_enabled()
+    box.locator('[data-f="accept"]').click()
+    expect(box.locator(".chip-badge")).to_have_count(1)
     assert "10.1000/xyz123" in page.input_value("#smReferencesText")
 
 
 def test_a_malformed_doi_cannot_be_accepted(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smReportingFollowupGroupBody", "#smReferences")
-    page.click("#smReferencesAdd")
-    row = page.locator("#smReferencesList .overview-list-row").last
-    row.locator(".overview-list-input").fill("not a doi")
-    expect(row.locator('[data-f="accept"]')).to_be_disabled()
+    box = page.locator("#smReferencesList")
+    box.locator(".chip-input").fill("not a doi")
+    expect(box.locator('[data-f="accept"]')).to_be_disabled()
 
 
 def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page, studio_url):
