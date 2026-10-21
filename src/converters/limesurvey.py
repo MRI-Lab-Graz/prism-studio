@@ -1549,6 +1549,34 @@ def parse_lss_xml_by_groups(xml_content):
     return out
 
 
+def add_survey_time_columns(df) -> None:
+    """Add SurveyDuration (min), SurveyStartTime (HH:MM:SS) and SurveyStartDate (YYYY-MM-DD) in place.
+
+    Duration and time need ``startdate`` and ``submitdate``. The date also falls back to
+    ``datestamp`` (exports without "Save start time"); unparsable dates become empty cells.
+    The date identifies people: ``src.survey_dates`` removes it from every shared export.
+    """
+    if "startdate" in df.columns and "submitdate" in df.columns:
+        try:
+            start = pd.to_datetime(df["startdate"], errors="coerce")
+            submit = pd.to_datetime(df["submitdate"], errors="coerce")
+            df["SurveyDuration"] = ((submit - start).dt.total_seconds() / 60.0).round(2)
+            df["SurveyStartTime"] = start.dt.strftime("%H:%M:%S")
+        except Exception as e:
+            print(f"Warning: Could not calculate duration/time: {e}")
+    source = "startdate" if "startdate" in df.columns else "datestamp"
+    if source in df.columns:
+        df["SurveyStartDate"] = (
+            pd.to_datetime(df[source], errors="coerce").dt.strftime("%Y-%m-%d").fillna("")
+        )
+
+
+SURVEY_START_DATE_SCHEMA = {
+    "Description": "Start date of the LimeSurvey session (YYYY-MM-DD)",
+    "Units": "date",
+}
+
+
 def convert_lsa_to_dataset(
     lsa_path,
     output_root,
@@ -1651,22 +1679,7 @@ def convert_lsa_to_dataset(
 
     df["session"] = session_label
 
-    # --- Calculate Survey Duration and Start Time ---
-    # LimeSurvey typically provides 'startdate' and 'submitdate'
-    if "startdate" in df.columns and "submitdate" in df.columns:
-        try:
-            start = pd.to_datetime(df["startdate"], errors="coerce")
-            submit = pd.to_datetime(df["submitdate"], errors="coerce")
-
-            # Duration in minutes
-            df["SurveyDuration"] = (submit - start).dt.total_seconds() / 60.0
-            # Round to 2 decimals
-            df["SurveyDuration"] = df["SurveyDuration"].round(2)
-
-            # Start Time (HH:MM:SS)
-            df["SurveyStartTime"] = start.dt.strftime("%H:%M:%S")
-        except Exception as e:
-            print(f"Warning: Could not calculate duration/time: {e}")
+    add_survey_time_columns(df)
 
     # --- Merge Group Timings ---
     group_duration_fields = {}
@@ -1737,6 +1750,7 @@ def convert_lsa_to_dataset(
             "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
             "Units": "hh:mm:ss",
         },
+        "SurveyStartDate": SURVEY_START_DATE_SCHEMA,
         **group_duration_fields,
     }
 
@@ -1814,6 +1828,8 @@ def convert_lsa_to_dataset(
                 "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
                 "Units": "hh:mm:ss",
             }
+
+        t_schema.setdefault("SurveyStartDate", dict(SURVEY_START_DATE_SCHEMA))
 
         # 3. Overwrite SurveyDuration with granular data if available
         if granular_col:
