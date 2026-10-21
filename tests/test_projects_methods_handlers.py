@@ -243,7 +243,7 @@ def _client(tmp_path, with_project=True):
         encoding="utf-8",
     )
     app = Flask(__name__)
-    app.secret_key = "test"
+    app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(projects_bp)
     client = app.test_client()
     if with_project:

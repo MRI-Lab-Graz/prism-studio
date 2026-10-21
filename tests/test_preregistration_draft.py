@@ -183,7 +183,7 @@ def test_gui_route_serves_the_same_markdown(tmp_path):
 
     (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
     app = Flask(__name__)
-    app.secret_key = "test"
+    app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(projects_bp)
     client = app.test_client()
     with client.session_transaction() as sess:
@@ -203,7 +203,7 @@ def test_gui_route_without_project_is_an_error():
     from src.web.blueprints.projects import projects_bp
 
     app = Flask(__name__)
-    app.secret_key = "test"
+    app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(projects_bp)
     assert (
         app.test_client().get("/api/projects/preregistration-draft").status_code == 400
@@ -249,7 +249,7 @@ def test_gui_route_format_tex_and_default_unchanged(tmp_path):
 
     (tmp_path / "project.json").write_text(json.dumps(PROJECT), encoding="utf-8")
     app = Flask(__name__)
-    app.secret_key = "test"
+    app.secret_key = "test"  # pragma: allowlist secret
     app.register_blueprint(projects_bp)
     client = app.test_client()
     with client.session_transaction() as sess:
