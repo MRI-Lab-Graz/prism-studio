@@ -22,11 +22,11 @@ import {
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
 import { checkedCriteriaCount, getEligibilityCriteria, initEligibilityCriteria, setEligibilityCriteria } from './eligibility-criteria.js';
-import { mountChipArea, mountChipList } from './chip-list.js';
+import { mountChipArea, mountChipList, normalizeChipText } from './chip-list.js';
 import { issueFieldTarget } from './issue-links.js';
 import { knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
-import { duplicateIndexes, normalizeDoi as _normalizeDoi, rowAction } from './doi-list.js';
+import { duplicateIndexes, normalizeDoi as _normalizeDoi } from './doi-list.js';
 import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { renderNotReadyBanner } from './not-ready-banner.js';
@@ -736,18 +736,6 @@ function _referencesToDoiLines(refs) {
         .join('\n');
 }
 
-// Crossref check via backend proxy -> {cls, text} for the row's feedback line.
-async function _lookupDoiStatus(value) {
-    try {
-        const res = await fetch(`/api/projects/lookup-doi?doi=${encodeURIComponent(value)}`);
-        const r = await res.json();
-        if (r.status === 'ok') return { cls: 'text-success', text: r.citation || r.doi };
-        if (r.status === 'not_found') return { cls: 'text-danger', text: 'DOI not found in Crossref.' };
-        if (r.status === 'invalid') return { cls: 'text-danger', text: 'Not a valid DOI.' };
-    } catch (_) { /* fall through */ }
-    return { cls: 'text-muted', text: 'Could not check DOI online (offline?).' };
-}
-
 function _isValidHttpUrl(value) {
     if (!value) return true;
     try {
@@ -1401,59 +1389,47 @@ export function setAuthorsList(authors) {
 
 // ===== OVERVIEW LIST FIELDS =====
 
-// `chips: true`: plain text, one input and accepted entries become green chips. Others keep rows
-// (DOI/URL lookups) and an `addId` button.
+// Plain-text list fields: one input, accepted entries become green chips.
 const OVERVIEW_LIST_FIELDS = {
     smOverviewIV: {
-        chips: true,
         listId: 'smOverviewIVList',
         placeholder: 'e.g., stimulus valence, task difficulty',
     },
     smOverviewDV: {
-        chips: true,
         listId: 'smOverviewDVList',
         placeholder: 'e.g., reaction times, BOLD signal',
     },
     smOverviewCV: {
-        chips: true,
         listId: 'smOverviewCVList',
         placeholder: 'e.g., age, sex, reading performance',
     },
     smOverviewQA: {
-        chips: true,
         listId: 'smOverviewQAList',
         placeholder: 'e.g., link to quality report or QC notes',
     },
     smEligInclusion: {
-        chips: true,
         listId: 'smEligInclusionList',
         placeholder: 'Inclusion criterion',
     },
     smEligExclusion: {
-        chips: true,
         listId: 'smEligExclusionList',
         placeholder: 'Exclusion criterion',
     },
     smProcQC: {
-        chips: true,
         listId: 'smProcQCList',
         placeholder: 'Quality control measure (e.g. attention check)',
     },
     smReferencesText: {
         listId: 'smReferencesList',
-        addId: 'smReferencesAdd',
+        placeholder: 'e.g., 10.1000/xyz123',
         validate: value => _isValidDoiFormat(value),
-        lookup: _lookupDoiStatus,
     },
     metadataReferences: {
         listId: 'metadataReferencesList',
-        addId: 'metadataReferencesAdd',
         placeholder: 'https://example.com/...',
         validate: value => _isValidHttpUrl(value),
     },
 };
-
-let _draggedListRow = null;
 
 function _parseOverviewListValue(rawValue) {
     if (Array.isArray(rawValue)) {
@@ -1475,34 +1451,18 @@ function getOverviewList(fieldId) {
     return _parseOverviewListValue(document.getElementById(fieldId)?.value || '');
 }
 
-// Flag every row repeating an earlier DOI.
-function _markDuplicateRows(list, validate) {
-    const rows = Array.from(list.querySelectorAll('.overview-list-row'));
-    const dupes = duplicateIndexes(rows.map(row => row.querySelector('.overview-list-input').value));
-    rows.forEach((row, i) => {
-        let note = row.querySelector('.overview-dup-note');
-        if (!note) {
-            note = document.createElement('div');
-            note.className = 'form-text text-danger w-100 mt-0 overview-dup-note';
-            note.textContent = 'Duplicate DOI: already listed above.';
-            row.appendChild(note);
-        }
-        note.classList.toggle('d-none', !dupes.has(i));
-        const input = row.querySelector('.overview-list-input');
-        input.classList.toggle('is-invalid', dupes.has(i) || !validate(input.value.trim()));
-    });
-}
-
 const _chipLists = {};
 
 // The chip list of a plain-text list field, mounted on first use.
 function _chipListFor(fieldId) {
     const config = OVERVIEW_LIST_FIELDS[fieldId];
     const list = document.getElementById(config?.listId || '');
-    if (!config?.chips || !list) return null;
+    if (!config || !list) return null;
     if (!_chipLists[fieldId] || !list.querySelector('.chip-input')) {
         _chipLists[fieldId] = mountChipList(list, {
             placeholder: config.placeholder || '',
+            // A chip list with `validate` only accepts valid entries (the check stays gray until then).
+            ...(config.validate && { compose: ([text]) => (config.validate(normalizeChipText(text)) ? normalizeChipText(text) : '') }),
             onChange: () => _syncOverviewListField(fieldId),
         });
     }
@@ -1515,159 +1475,13 @@ function _syncOverviewListField(fieldId) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !hiddenField || !list) return;
 
-    if (config.chips) {
-        hiddenField.value = (_chipListFor(fieldId)?.getValues() || []).join('\n');
-        try {
-            validateProjectField(fieldId);
-        } catch (_) {
-            // no-op: field may not participate in badge validation in all contexts
-        }
-        updateCreateProjectButton();
-        return;
-    }
-
-    const values = Array.from(list.querySelectorAll('.overview-list-row:not([data-row-state="draft"]) .overview-list-input'))
-        .map(input => input.value.trim())
-        .filter(Boolean);
-    hiddenField.value = values.join('\n');
-
-    if (config.lookup) _markDuplicateRows(list, config.validate);
-
-    // Keep required-badge state in sync for list-backed mandatory fields.
+    hiddenField.value = (_chipListFor(fieldId)?.getValues() || []).join('\n');
     try {
         validateProjectField(fieldId);
     } catch (_) {
         // no-op: field may not participate in badge validation in all contexts
     }
-}
-
-function addOverviewListRow(fieldId, value = '', accepted = false) {
-    const config = OVERVIEW_LIST_FIELDS[fieldId];
-    const list = document.getElementById(config?.listId || '');
-    if (!config || !list) return;
-
-    const row = document.createElement('div');
-    row.className = 'input-group input-group-sm overview-list-row';
-    row.draggable = true;
-
-    const dragHandle = document.createElement('span');
-    dragHandle.className = 'input-group-text overview-list-drag px-2';
-    dragHandle.title = 'Drag to reorder';
-    dragHandle.style.cursor = 'grab';
-    dragHandle.innerHTML = '<i class="fas fa-grip-vertical text-muted"></i>';
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-control overview-list-input';
-    input.placeholder = config.placeholder || '';
-    input.value = String(value || '');
-
-    // Looked-up rows (DOIs): an optional "check" helper while the row is a draft.
-    const lookupButton = document.createElement('button');
-    lookupButton.type = 'button';
-    lookupButton.className = 'btn btn-outline-primary btn-sm d-none';
-    lookupButton.setAttribute('aria-label', 'Check DOI');
-    lookupButton.title = 'Check DOI';
-    lookupButton.innerHTML = '<i class="fas fa-search"></i>';
-
-    const markValidity = () => {
-        if (config.validate) input.classList.toggle('is-invalid', !config.validate(input.value.trim()));
-    };
-    markValidity();
-
-    const feedback = document.createElement('div');
-    feedback.className = 'form-text w-100 mt-0 d-none';
-
-    let checked = false;
-    const updateAction = () => {
-        if (!config.lookup) return;
-        const action = rowAction({ value: input.value, checked });
-        lookupButton.classList.toggle('d-none', !(row.dataset.rowState === 'draft' && action === 'search'));
-    };
-
-    const actions = mountRowActions(row, {
-        state: accepted ? 'defined' : 'draft',
-        noun: 'item',
-        incompleteHint: config.lookup ? 'Enter a valid DOI' : 'Enter text',
-        isComplete: () => {
-            const text = input.value.trim();
-            return Boolean(text) && (!config.validate || config.validate(text));
-        },
-        hasContent: () => input.value.trim() !== '',
-        onAccept: () => {
-            updateAction();
-            _syncOverviewListField(fieldId);
-            updateCreateProjectButton();
-        },
-        onRemove: () => {
-            row.remove();
-            if (!list.querySelector('.overview-list-row')) {
-                addOverviewListRow(fieldId);
-            }
-            _syncOverviewListField(fieldId);
-            updateCreateProjectButton();
-        },
-    });
-
-    const runLookup = async () => {
-        const value = input.value.trim();
-        feedback.classList.add('d-none');
-        if (!config.lookup || !value || (config.validate && !config.validate(value))) return;
-        const { cls, text } = await config.lookup(value);
-        if (input.value.trim() !== value) return; // edited while waiting
-        feedback.className = `form-text w-100 mt-0 ${cls}`;
-        feedback.textContent = text;
-        checked = true;
-        updateAction();
-    };
-
-    input.addEventListener('input', () => {
-        markValidity();
-        feedback.classList.add('d-none');
-        checked = false;
-        updateAction();
-        actions.refresh();
-        _syncOverviewListField(fieldId);
-        updateCreateProjectButton();
-    });
-    input.addEventListener('change', runLookup);
-
-    lookupButton.addEventListener('click', runLookup);
-
-    row.addEventListener('dragstart', (e) => {
-        _draggedListRow = row;
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', '');
-        setTimeout(() => row.classList.add('opacity-50'), 0);
-    });
-
-    row.addEventListener('dragend', () => {
-        row.classList.remove('opacity-50');
-        _draggedListRow = null;
-        _syncOverviewListField(fieldId);
-        updateCreateProjectButton();
-    });
-
-    row.addEventListener('dragover', (e) => {
-        if (!_draggedListRow || _draggedListRow === row) return;
-        e.preventDefault();
-        const bounding = row.getBoundingClientRect();
-        if (e.clientY < bounding.y + bounding.height / 2) {
-            list.insertBefore(_draggedListRow, row);
-        } else {
-            list.insertBefore(_draggedListRow, row.nextSibling);
-        }
-    });
-
-    row.appendChild(dragHandle);
-    row.appendChild(input);
-    row.appendChild(lookupButton);
-    row.appendChild(actions.slot);
-    row.appendChild(feedback);
-    list.appendChild(row);
-    updateAction();
-    _syncOverviewListField(fieldId);
-    if (input.value) runLookup();
+    updateCreateProjectButton();
 }
 
 export function setOverviewList(fieldId, rawValue) {
@@ -1675,46 +1489,12 @@ export function setOverviewList(fieldId, rawValue) {
     const list = document.getElementById(config?.listId || '');
     if (!config || !list) return;
 
-    if (config.chips) {
-        _chipListFor(fieldId)?.setValues(_parseOverviewListValue(rawValue));
-        _syncOverviewListField(fieldId);
-        return;
-    }
-
-    list.innerHTML = '';
-    const values = _parseOverviewListValue(rawValue);
-    if (!values.length) {
-        addOverviewListRow(fieldId);
-        return;
-    }
-
-    values.forEach(value => addOverviewListRow(fieldId, value, true));
+    _chipListFor(fieldId)?.setValues(_parseOverviewListValue(rawValue));
     _syncOverviewListField(fieldId);
 }
 
 function initOverviewListFields() {
-    Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
-        if (config.chips) {
-            _chipListFor(fieldId);
-            return;
-        }
-        const addButton = document.getElementById(config.addId);
-        if (addButton && !addButton.dataset.bound) {
-            addButton.dataset.bound = '1';
-            addButton.addEventListener('click', () => {
-                addOverviewListRow(fieldId);
-                const list = document.getElementById(config.listId);
-                const lastInput = list?.querySelector('.overview-list-row:last-child .overview-list-input');
-                lastInput?.focus();
-                updateCreateProjectButton();
-            });
-        }
-
-        const list = document.getElementById(config.listId);
-        if (list && !list.querySelector('.overview-list-row')) {
-            addOverviewListRow(fieldId);
-        }
-    });
+    Object.keys(OVERVIEW_LIST_FIELDS).forEach(_chipListFor);
 }
 
 // ===== TWO-FIELD TABLE ROWS (Known Issues) =====
@@ -3158,9 +2938,7 @@ export function resetStudyMetadataForm() {
     document.getElementById('smEligCriteriaSelect')?.dispatchEvent(new Event('change')); // the Add button follows the select
     setTwoFieldList('smKnownIssues', ''); // chips hold their values in memory, not in the form fields
     setMissingFilesList('');
-    Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
-        if (config.chips) setOverviewList(fieldId, ''); // chips have no id either
-    });
+    Object.keys(OVERVIEW_LIST_FIELDS).forEach(fieldId => setOverviewList(fieldId, '')); // chips have no id either
     setRecMethodList([]);
     setEthicsChoice('');
     setFundingChoice('');
