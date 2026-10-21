@@ -108,6 +108,31 @@ class TestProjectsMethodsHandlers(unittest.TestCase):
         self.assertIn("Affective Distress Scale", payload.get("md", ""))
         self.assertIn("comprises 1 items", payload.get("md", ""))
 
+    def test_generate_methods_lists_sessions_found_in_dataset(self):
+        for sub, ses in (("01", "1"), ("02", "1"), ("01", "2")):
+            folder = self.project_root / "rawdata" / f"sub-{sub}" / f"ses-{ses}" / "survey"
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f"sub-{sub}_ses-{ses}_task-ads_survey.tsv").write_text("item_01\n1\n", encoding="utf-8")
+
+        with patch("src.config.load_app_settings", return_value={}):
+            with patch(
+                "src.config.get_effective_template_library_path",
+                return_value={"effective_external_path": str(self.library_root), "global_library_path": ""},
+            ):
+                with self.app.test_request_context(
+                    "/api/projects/generate-methods", method="POST", json={"language": "en"}
+                ):
+                    response = self.handle_generate_methods_section(
+                        get_current_project=lambda: {"path": str(self.project_root), "name": "demo_project"},
+                        read_project_json=lambda _p: {"StudyDesign": {"Type": "longitudinal"}},
+                        get_bids_file_path=lambda p, f: p / f,
+                        compute_participant_stats=lambda _p, lang="en": None,
+                    )
+
+        md = response.get_json()["md"]
+        self.assertIn('In session "1"', md)
+        self.assertIn("[please add: time between sessions]", md)
+
     def test_generate_methods_forces_continuous_output(self):
         project_data = {
             "StudyDesign": {"Type": "quasi-experimental"},

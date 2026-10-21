@@ -89,3 +89,19 @@ def test_methods_works_on_a_project_that_is_not_ready_yet(tmp_path, capsys):
     )
     _run_cli(["methods", "generate", "--project", str(tmp_path)])
     assert "cross sectional design" in capsys.readouterr().out
+
+
+def _two_session_dataset(root):
+    for sub, ses in (("01", "1"), ("02", "1"), ("01", "2")):
+        folder = root / "rawdata" / f"sub-{sub}" / f"ses-{ses}" / "survey"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"sub-{sub}_ses-{ses}_task-ads_survey.tsv").write_text("item_01\n1\n", encoding="utf-8")
+
+
+def test_cli_lists_sessions_and_placeholders(tmp_path, capsys):
+    (tmp_path / "project.json").write_text(json.dumps({"StudyDesign": {"Type": "longitudinal"}}), encoding="utf-8")
+    _two_session_dataset(tmp_path)
+    _run_cli(["methods", "generate", "--project", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert 'In session "1"' in out and 'In session "2"' in out
+    assert "[please add: time between sessions]" in out
