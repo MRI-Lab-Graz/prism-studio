@@ -29,7 +29,7 @@ def build_prism_tools_parsers(
         dest="modality", help="Modality to convert"
     )
 
-    _rules = load_entity_rules()
+    _rules = load_entity_rules()  # official rules at import: argparse choices exist before any project
     _physio_suffix = _rules.primary_suffix("physio")
     _default_recording = dict(_rules.modalities["physio"].optional_entity_values)[
         "recording"

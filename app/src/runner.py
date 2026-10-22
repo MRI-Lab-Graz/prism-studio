@@ -136,7 +136,9 @@ def validate_dataset(
 
     The run happens under one `Specification` (what the validator knows: modality rules, schemas, terms),
     made current for the duration of the run. Without one, the official modality rules and terms are used
-    with the schemas the project's pins select, exactly as before.
+    with the schemas the project's pins select, exactly as before. A specification passed in is used as it
+    is: `schema_version`, `modality_versions` and the project's pins then do not select schemas (the caller
+    built the schemas), and `prism_schema_sources` in the stats stays empty.
     """
     schema_sources: dict = {}
     if specification is None:
@@ -150,7 +152,7 @@ def validate_dataset(
     with use_specification(specification):
         return _validate_dataset(
             root_dir, verbose, schema_version, run_bids, run_prism, library_path, project_path,
-            progress_callback, check_nifti_headers, modality_versions,
+            progress_callback, check_nifti_headers,
             schemas=specification.schemas, schema_sources=schema_sources,
         )
 
@@ -165,11 +167,11 @@ def _validate_dataset(
     project_path: Optional[str] = None,
     progress_callback: Optional[ProgressCallback] = None,
     check_nifti_headers: bool = False,
-    modality_versions: Optional[dict] = None,
-    schemas: Optional[dict] = None,
-    schema_sources: Optional[dict] = None,
+    *,
+    schemas: dict,
+    schema_sources: dict,
 ):
-    """The validation itself (refactored from prism.py)
+    """The validation itself (refactored from prism.py); schemas and schema_sources come from validate_dataset
 
     Args:
         root_dir: Root directory of the dataset
@@ -181,7 +183,7 @@ def _validate_dataset(
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
         check_nifti_headers: Whether the BIDS validator should read NIfTI headers.
-        modality_versions: Optional {modality: 'X.Y.Z'} overriding project.json pins.
+        schemas, schema_sources: the schemas of this run and where each version came from (validate_dataset loads them).
 
     Returns: (issues, stats)
     """
@@ -215,9 +217,6 @@ def _validate_dataset(
         subject_progress_span = 70
         consistency_progress = 92
         bids_progress = 92
-
-    # schemas and where each version came from are loaded by validate_dataset (progress step 0)
-    schema_sources = schema_sources or {}
 
     # Record which schema files actually answered this run, so callers can
     # show it and detect a schema bump between two validations of the same
@@ -883,28 +882,34 @@ def validate_subject_only(
     schema_version=None,
     library_path=None,
     modality_versions=None,
+    specification: Optional[Specification] = None,
 ):
     """Validate one sub-* folder in isolation (what a nested-dataset commit changes).
 
     Same per-subject checks as `validate_dataset`'s subject loop; the cross-subject
     checks (consistency, participants alignment, procedure) need every subject and
-    stay with the full validation. Returns (issues, stats).
+    stay with the full validation. Runs under a specification like `validate_dataset`
+    (default: the project's pinned schemas with the official rules and terms).
+    Returns (issues, stats).
     """
     root_dir = os.path.abspath(root_dir)
-    schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
-    validator = DatasetValidator(schemas, library_path=library_path)
-    stats = DatasetStats()
-    issues = _validate_subject(
-        os.path.join(root_dir, subject_id),
-        subject_id,
-        validator,
-        stats,
-        root_dir,
-        run_prism=True,
-        run_bids=False,
-        need_procedure_tasks=_project_declares_sessions(root_dir),
-    )
-    return issues, stats
+    if specification is None:
+        schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
+        specification = load_specification(schemas=schemas)
+    with use_specification(specification):
+        validator = DatasetValidator(specification.schemas, library_path=library_path)
+        stats = DatasetStats()
+        issues = _validate_subject(
+            os.path.join(root_dir, subject_id),
+            subject_id,
+            validator,
+            stats,
+            root_dir,
+            run_prism=True,
+            run_bids=False,
+            need_procedure_tasks=_project_declares_sessions(root_dir),
+        )
+        return issues, stats
 
 
 def _extract_task_from_filename(fname):

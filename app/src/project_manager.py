@@ -71,7 +71,8 @@ from src.citation_cff import (
 from jsonschema import Draft7Validator
 
 # The OFFICIAL project modalities, for code without a project (and the tests that import this).
-# Project code reads current_specification().rules.project_modalities, which adds a project's local ones.
+# Project code reads current_specification().rules.project_modalities. Today that is always the official set,
+# because these readers run outside a validation run; a project's local additions arrive with phase 4.
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py) rather than hardcoded here.
 PRISM_MODALITIES = load_entity_rules().project_modalities
 

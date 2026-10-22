@@ -190,7 +190,8 @@ official specification is current. Validation-path code asks `current_specificat
 (`.rules`, `.prism_modalities`, `.bids_modalities`, `.modality_patterns`, `.terms`) and never reads
 the module constants `PRISM_MODALITIES` / `BIDS_MODALITIES` / `MODALITY_PATTERNS` / `_ENTITY_RULES`
 (they remain only as the official defaults for code without a project) and never calls
-`load_entity_rules()` itself; `tests/test_specification_boundaries.py` enforces this. A hand-written
+`load_entity_rules()` itself; `tests/test_specification_boundaries.py` enforces this for the files it lists (add a
+file to its list when it starts to need the rules). A hand-written
 list of modality names is replaced by a derived set when it means "all modalities of a kind" (that is
 how `biosample` was once forgotten in the BIDS folder list); a deliberate subset stays, with a comment
 saying what it is. Reason: a project's local additions (see

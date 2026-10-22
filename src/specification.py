@@ -21,7 +21,7 @@ from src.term_registry import load_registry
 _TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)  # compared by identity: the dict fields would make a generated __eq__/__hash__ costly or fail
 class Specification:
     rules: EntityRules
     schemas: dict

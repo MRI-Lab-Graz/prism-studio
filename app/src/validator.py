@@ -24,6 +24,9 @@ from src.cross_platform import (
     validate_filename_cross_platform,
 )
 
+# The constants below (_ENTITY_RULES, PRISM_MODALITIES, BIDS_MODALITIES, MODALITY_PATTERNS) are the OFFICIAL
+# defaults, for code without a project and for tests that import them. Validation reads
+# current_specification() instead (tests/test_specification_boundaries.py).
 _ENTITY_RULES = load_entity_rules()
 
 # PRISM-specific modalities that we validate with our schemas

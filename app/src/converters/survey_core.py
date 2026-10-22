@@ -42,7 +42,8 @@ except ImportError:
     pd = None
 
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
-# rather than hardcoded here.
+# rather than hardcoded here. Frozen at import on purpose: the suffix of an official modality, written by a
+# converter that runs without a project.
 _SURVEY_SUFFIX = load_entity_rules().primary_suffix("survey")
 
 

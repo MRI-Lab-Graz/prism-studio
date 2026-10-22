@@ -104,3 +104,32 @@ def test_the_same_holds_for_a_run_in_a_worker_thread(tmp_path):
     worker.join()
     assert any("expected pattern" in m for m in found)
     assert _skin_issues(b) == []
+
+
+# --- the second entry point: validate_subject_only ---------------------------------------------
+
+def _subject_project(root: Path) -> Path:
+    project = _project(root)
+    (project / "sub-01").mkdir()
+    return project
+
+
+def test_validate_subject_only_runs_under_the_given_specification(tmp_path, monkeypatch):
+    import runner
+
+    seen = []
+    monkeypatch.setattr(runner, "_validate_subject", lambda *a, **k: seen.append(current_specification()) or [])
+    spec = stand_in(tmp_path / "rules")
+    runner.validate_subject_only(str(_subject_project(tmp_path / "p")), "sub-01", specification=spec)
+    assert seen == [spec] and seen[0] is spec
+    assert current_specification() is official_specification()
+
+
+def test_validate_subject_only_without_one_uses_the_official_rules(tmp_path, monkeypatch):
+    import runner
+
+    seen = []
+    monkeypatch.setattr(runner, "_validate_subject", lambda *a, **k: seen.append(current_specification()) or [])
+    runner.validate_subject_only(str(_subject_project(tmp_path / "p")), "sub-01")
+    assert len(seen) == 1 and seen[0].rules is official_specification().rules
+    assert current_specification() is official_specification()

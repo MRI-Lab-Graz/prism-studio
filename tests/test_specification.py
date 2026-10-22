@@ -65,7 +65,7 @@ def test_a_new_thread_starts_with_the_official_specification(tmp_path):
         worker = threading.Thread(target=lambda: seen.append(current_specification()))
         worker.start()
         worker.join()
-    assert seen == [official_specification()]
+    assert len(seen) == 1 and seen[0] is official_specification()
 
 
 def test_load_specification_matches_what_the_runner_loads_today():
@@ -95,3 +95,9 @@ def test_derived_views_follow_the_rules_of_a_stand_in(tmp_path):
     spec = stand_in(tmp_path)
     assert "skinconductance" in spec.prism_modalities and "skinconductance" in spec.modality_patterns
     assert "skinconductance" not in official_specification().modality_patterns
+
+
+def test_a_specification_is_hashable_and_compared_by_identity(tmp_path):
+    spec = stand_in(tmp_path)
+    assert hash(spec) == hash(spec)  # dict fields made the generated __hash__ raise TypeError
+    assert spec != load_specification(rules=spec.rules)  # same content, different object: no deep dict comparison

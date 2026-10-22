@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import sys
 
@@ -7,18 +8,21 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app
 
 import validator as v  # noqa: E402
 from src.entity_rules import ModalityRule  # noqa: E402
+from src.specification import load_specification, official_specification, use_specification  # noqa: E402
 
 
 @pytest.fixture
-def strict_modality(monkeypatch):
+def strict_modality():
+    """A modality with allowedEntities, as a specification of its own: the shared official rules are not touched."""
     rule = ModalityRule.from_json(
         "bloodtest",
         {"kind": "prism", "suffixes": ["bloodchem"], "extensions": ["tsv", "json"],
          "allowedEntities": ["task", "acq", "run"]},
     )
-    monkeypatch.setitem(v._ENTITY_RULES.modalities, "bloodtest", rule)
-    monkeypatch.setitem(v.MODALITY_PATTERNS, "bloodtest", v._ENTITY_RULES.pattern_for("bloodtest"))
-    monkeypatch.setattr(v, "PRISM_MODALITIES", v.PRISM_MODALITIES | {"bloodtest"})
+    rules = official_specification().rules
+    rules = dataclasses.replace(rules, modalities={**rules.modalities, "bloodtest": rule})
+    with use_specification(load_specification(rules=rules)):
+        yield
 
 
 def _errors(name):
