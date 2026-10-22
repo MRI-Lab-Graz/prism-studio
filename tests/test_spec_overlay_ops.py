@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app
 
 from src.spec_overlay import (  # noqa: E402
     OverlayError, add_local_term, find_unknown_metrics, list_local_items, load_local_terms,
-    proposal_for_local_term, proposal_for_local_terms, write_local_terms,
+    proposal_for_local_terms, write_local_terms,
 )
 
 FORM = "https://github.com/MRI-Lab-Graz/prism-specification/issues/new"
@@ -112,7 +112,7 @@ def test_proposal_for_a_local_parent_and_child(tmp_path):
     tsv = _dataset(tmp_path / "p", DHEA)
     add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
     for term_id in ("prism:dhea-s", "prism:dhea-s.saliva"):  # a child pulls in its local parent
-        result = proposal_for_local_term(tmp_path / "p", term_id)
+        result = proposal_for_local_terms(tmp_path / "p", [term_id])
         assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:dhea-s", "prism:dhea-s.saliva"]
         assert result["problems"] == [] and result["issue_url"].startswith(FORM)
 
@@ -125,7 +125,7 @@ def _many(project, specimens=("saliva", "serum", "plasma")):
 
 def test_a_parent_with_three_local_children_is_shared_as_one_proposal(tmp_path):
     _many(tmp_path / "p")
-    result = proposal_for_local_term(tmp_path / "p", "prism:dhea-s")
+    result = proposal_for_local_terms(tmp_path / "p", ["prism:dhea-s"])
     ids = [t["TermID"] for t in result["proposal"]["terms"]]
     assert ids == ["prism:dhea-s", "prism:dhea-s.plasma", "prism:dhea-s.saliva", "prism:dhea-s.serum"]
     assert result["problems"] == [] and result["document"]["format"] == "prism-proposal/2"
@@ -134,7 +134,7 @@ def test_a_parent_with_three_local_children_is_shared_as_one_proposal(tmp_path):
 
 def test_a_child_pulls_in_its_local_parent_only(tmp_path):
     _many(tmp_path / "p")
-    ids = [t["TermID"] for t in proposal_for_local_term(tmp_path / "p", "prism:dhea-s.serum")["proposal"]["terms"]]
+    ids = [t["TermID"] for t in proposal_for_local_terms(tmp_path / "p", ["prism:dhea-s.serum"])["proposal"]["terms"]]
     assert ids == ["prism:dhea-s", "prism:dhea-s.serum"]
 
 
@@ -197,15 +197,15 @@ def test_an_unknown_id_among_several_is_an_error(tmp_path):
 def test_a_local_child_of_an_official_parent_is_proposed_alone(tmp_path):
     _dataset(tmp_path / "p", {"cortisol_hair": {"Description": "d", "Units": "pg/mg", "Term": "cortisol"}}, specimen="hair")
     add_local_term(tmp_path / "p", column="cortisol_hair", sidecar_file=str(tmp_path / "p" / "biosample-saliva_biosample.json"))
-    result = proposal_for_local_term(tmp_path / "p", "prism:cortisol.hair")
+    result = proposal_for_local_terms(tmp_path / "p", ["prism:cortisol.hair"])
     assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:cortisol.hair"] and result["problems"] == []
 
 
 def test_proposal_for_an_unknown_or_bad_id_is_an_error(tmp_path):
     with pytest.raises(OverlayError):
-        proposal_for_local_term(tmp_path / "p", "prism:nope")
+        proposal_for_local_terms(tmp_path / "p", ["prism:nope"])
     with pytest.raises(OverlayError):
-        proposal_for_local_term(tmp_path / "p", "prism:../x")
+        proposal_for_local_terms(tmp_path / "p", ["prism:../x"])
 
 
 def test_a_second_metric_can_be_added_after_the_first(tmp_path):

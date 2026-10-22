@@ -275,7 +275,8 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
             if stem is None or stem not in local:
                 raise OverlayError(f"no local term {term_id} in this project")
             if term_id in ignored:
-                skipped.append(term_id) if term_id not in skipped else None
+                if term_id not in skipped:
+                    skipped.append(term_id)
                 continue
             term = usable[stem]
             related = [
@@ -298,8 +299,3 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
         "problems": check_with_specification(document, official),
         "skipped": skipped,
     }
-
-
-def proposal_for_local_term(project_root, term_id: str, modality: str = "biosample") -> dict:
-    """The proposal that shares one local term (see `proposal_for_local_terms`)."""
-    return proposal_for_local_terms(project_root, [term_id], modality)
