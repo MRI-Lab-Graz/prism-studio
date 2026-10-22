@@ -43,21 +43,15 @@ class Specification:
         return {name: self.rules.pattern_for(name) for name, rule in self.rules.modalities.items() if rule.suffixes}
 
 
-def load_specification(
-    schema_dir: str | None = None,
-    version: str | None = None,
-    modality_versions: dict | None = None,
-    rules: EntityRules | None = None,
-    schemas: dict | None = None,
-) -> Specification:
-    """Build a specification: the official one, or with `rules` (and later phases' overlay) instead."""
-    if rules is None:  # load_entity_rules() and load_entity_rules(None) are different cache entries
-        rules = load_entity_rules(schema_dir) if schema_dir else load_entity_rules()
+def load_specification(rules: EntityRules | None = None, schemas: dict | None = None) -> Specification:
+    """Build a specification: the official one, or with other `rules` / already loaded `schemas`.
+
+    The runner passes the schemas it loaded with the project's version pins; later phases add the project's
+    own additions here.
+    """
     return Specification(
-        rules=rules,
-        # `schemas` lets the caller pass schemas it already loaded (the runner loads them with the project's pins)
-        schemas=schemas if schemas is not None else load_all_schemas(
-            schema_dir or DEFAULT_SCHEMA_DIR, version=version, modality_versions=modality_versions),
+        rules=rules if rules is not None else load_entity_rules(),
+        schemas=schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR),
         terms={modality: load_registry(modality) for modality in _TERM_MODALITIES},
     )
 
