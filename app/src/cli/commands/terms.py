@@ -14,6 +14,7 @@ from src.term_proposal import (
     build_proposal,
     check_with_specification,
     issue_url,
+    load_inherited_sidecar,
 )
 from src.term_registry import find_term, load_registry, resolve_column
 
@@ -68,12 +69,18 @@ def _fail(args, message: str, **extra) -> None:
 
 def cmd_terms_propose(args) -> None:
     """Build a proposal for a new metric from a sidecar column; send nothing unless --open."""
-    try:
-        sidecar = json.loads(Path(args.sidecar).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        _fail(args, f"cannot read the sidecar {args.sidecar}: {exc}")
-    if not isinstance(sidecar, dict):
-        _fail(args, f"the sidecar {args.sidecar} is not a JSON object")
+    if getattr(args, "data", None):
+        try:
+            sidecar, _path = load_inherited_sidecar(args.data)
+        except ProposalError as exc:
+            _fail(args, str(exc))
+    else:
+        try:
+            sidecar = json.loads(Path(args.sidecar).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            _fail(args, f"cannot read the sidecar {args.sidecar}: {exc}")
+        if not isinstance(sidecar, dict):
+            _fail(args, f"the sidecar {args.sidecar} is not a JSON object")
     registry = load_registry(args.modality)
     try:
         proposal = build_proposal(registry, sidecar, args.column, args.label, args.modality)

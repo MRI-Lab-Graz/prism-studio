@@ -38,6 +38,18 @@ def slugify(text: str) -> str:
     return slug
 
 
+def load_inherited_sidecar(data_file) -> tuple[dict, str]:
+    """The sidecar of a data file with BIDS inheritance (root-level merged with subject-level), as the validator reads it."""
+    from src.validator import _default_load_sidecar_json, _resolve_inherited_sidecar_core  # lazy: the validator is heavy
+
+    data_file = Path(data_file).resolve()
+    root = next((p for p in data_file.parents if (p / "dataset_description.json").is_file()), data_file.parent)
+    sidecar, path = _resolve_inherited_sidecar_core(str(data_file), str(root), None, _default_load_sidecar_json)
+    if not isinstance(sidecar, dict):
+        raise ProposalError(f"no sidecar found for {data_file} (looked for the subject-level and the root-level sidecar)")
+    return sidecar, path
+
+
 def _dangling_slug(col_def: dict) -> str | None:
     """Local name of a `Term` the column already uses that the registry does not know yet (prism:zonulin -> zonulin)."""
     ref = col_def.get("Term")
@@ -58,14 +70,14 @@ def build_proposal(
     if not isinstance(col_def, dict):
         raise ProposalError(
             f"column {column!r} not found in the sidecar (or it is not a column definition); "
-            "if it is defined in the root-level sidecar of the project, pass that file with --sidecar"
+            "if it is defined in the root-level sidecar of the project, use --data with a data file of the project (its inherited sidecar is read) or pass the root-level sidecar"
         )
     technical = sidecar.get("Technical")
     specimen = technical.get("SpecimenType") if isinstance(technical, dict) else None
     if not specimen:
         raise ProposalError(
-            "the sidecar has no Technical.SpecimenType; pass the sidecar that defines it "
-            "(usually the root-level one) with --sidecar"
+            "the sidecar has no Technical.SpecimenType; use --data with a data file of the project (its inherited "
+            "sidecar is read) or pass the sidecar that defines it (usually the root-level one)"
         )
 
     res = resolve_column(registry, column, col_def, specimen)

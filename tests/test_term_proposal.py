@@ -9,7 +9,9 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
-from src.term_proposal import ProposalError, build_proposal, check_with_specification, issue_url, slugify  # noqa: E402
+from src.term_proposal import (  # noqa: E402
+    ProposalError, build_proposal, check_with_specification, issue_url, load_inherited_sidecar, slugify,
+)
 from src.term_registry import load_registry  # noqa: E402
 
 
@@ -154,3 +156,36 @@ def test_specimen_mismatch_error_suggests_the_parent_term():
     with pytest.raises(ProposalError) as info:
         build_proposal(REGISTRY, sidecar, "x")
     assert "point Term at prism:cortisol" in str(info.value)
+
+
+# --- inheritance: the sidecar of a data file, resolved like the validator does -----------------
+
+def _dataset(tmp_path, root_sidecar=True, subject_sidecar=True):
+    ds = tmp_path / "ds"
+    folder = ds / "sub-01" / "ses-1" / "biosample"
+    folder.mkdir(parents=True)
+    (ds / "dataset_description.json").write_text("{}", encoding="utf-8")
+    if root_sidecar:
+        (ds / "biosample-iron_biosample.json").write_text(json.dumps(
+            {"Technical": {"SpecimenType": "serum"}, "ferr": {"Description": "d", "Units": "ug/L"}}), encoding="utf-8")
+    tsv = folder / "sub-01_ses-1_biosample-iron_biosample.tsv"
+    tsv.write_text("ferr\n1\n", encoding="utf-8")
+    if subject_sidecar:
+        tsv.with_suffix(".json").write_text(json.dumps({"Study": {"BiosampleName": "iron"}}), encoding="utf-8")
+    return tsv
+
+
+def test_load_inherited_sidecar_merges_root_and_subject_sidecars(tmp_path):
+    sidecar, path = load_inherited_sidecar(_dataset(tmp_path))
+    assert sidecar["ferr"]["Units"] == "ug/L" and sidecar["Study"]["BiosampleName"] == "iron"
+    assert path.endswith("_biosample.json")
+
+
+def test_load_inherited_sidecar_uses_the_root_sidecar_alone(tmp_path):
+    sidecar, _ = load_inherited_sidecar(_dataset(tmp_path, subject_sidecar=False))
+    assert sidecar["Technical"]["SpecimenType"] == "serum"
+
+
+def test_load_inherited_sidecar_without_any_sidecar_is_an_error(tmp_path):
+    with pytest.raises(ProposalError, match="no sidecar"):
+        load_inherited_sidecar(_dataset(tmp_path, root_sidecar=False, subject_sidecar=False))

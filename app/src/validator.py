@@ -1456,10 +1456,10 @@ class DatasetValidator:
                         f"{key}: recommended Technical fields missing: {', '.join(missing)}",
                     )
                 )
-            issues.extend(self._check_biosample_terms(sidecar_data, key))
+            issues.extend(self._check_biosample_terms(sidecar_data, key, file_path))
         return issues
 
-    def _check_biosample_terms(self, sidecar_data, key) -> list:
+    def _check_biosample_terms(self, sidecar_data, key, file_path) -> list:
         """Relate each analyte column to the term registry (spec severity table)."""
         issues = []
         specimen = _sidecar_specimen(sidecar_data)
@@ -1496,7 +1496,7 @@ class DatasetValidator:
                 issues.append(("ERROR" if res.kind == "specimen_mismatch" else "WARNING", f"{key}: {col}: {res.message}"))
             elif res.kind == "known_analyte_new_specimen":
                 issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community. Run: python prism_tools.py "
-                    f"terms propose --sidecar \"{key}\" --column \"{col}\" (add --open to send it)."))
+                    f"terms propose --data \"{normalize_path(file_path)}\" --column \"{col}\" (add --open to send it)."))
             elif res.kind == "suggestion":
                 if col not in self._terms:  # the canonical word itself needs no hint
                     issues.append(("INFO", f"{key}: {res.message}"))
@@ -1505,7 +1505,7 @@ class DatasetValidator:
                 issues.append((
                     "INFO",
                     f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
-                    f"PRISM community to make it official? Run: python prism_tools.py terms propose --sidecar \"{key}\" "
+                    f"PRISM community to make it official? Run: python prism_tools.py terms propose --data \"{normalize_path(file_path)}\" "
                     f"--column \"{col}\" (add --open to send it). The maintainers may choose a different name; "
                     "your files keep working through an alias.",
                 ))

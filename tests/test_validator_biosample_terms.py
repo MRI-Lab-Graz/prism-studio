@@ -202,7 +202,8 @@ def test_unknown_metric_notice_names_the_propose_command(tmp_path):
     issues = _sidecar_issues(tmp_path, {"salivary_cortisol": {"Description": "d", "Units": "nmol/L"}})
     notice = _msgs(issues, "INFO")[0]
     # both arguments are quoted, so a path with spaces or a column like "Cortisol (nmol/L)" can be pasted
-    assert "terms propose" in notice and '--column "salivary_cortisol"' in notice and '--sidecar "' in notice
+    # the data file is named, not a sidecar: the command resolves root + subject sidecars like the validator does
+    assert "terms propose" in notice and '--column "salivary_cortisol"' in notice and '--data "' in notice and ".tsv" in notice
 
 
 def test_alias_columns_inherit_the_term_definition(tmp_path):
