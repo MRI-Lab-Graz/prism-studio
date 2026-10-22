@@ -206,3 +206,13 @@ def test_proposal_for_an_unknown_or_bad_id_is_an_error(tmp_path):
         proposal_for_local_term(tmp_path / "p", "prism:nope")
     with pytest.raises(OverlayError):
         proposal_for_local_term(tmp_path / "p", "prism:../x")
+
+
+def test_a_second_metric_can_be_added_after_the_first(tmp_path):
+    """Regression: the registry the check sees contains the first local term, which has no Status by design."""
+    columns = {**DHEA, "ferr_ugl": {"Description": "Ferritin", "Units": "ug/L"}}
+    tsv = _dataset(tmp_path / "p", columns)
+    add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
+    second = add_local_term(tmp_path / "p", column="ferr_ugl", data_file=str(tsv), label="Ferritin")
+    assert [t["TermID"] for t in second["proposal"]["terms"]] == ["prism:ferritin", "prism:ferritin.saliva"]
+    assert set(load_local_terms(tmp_path / "p")[0]) == {"dhea-s", "dhea-s.saliva", "ferritin", "ferritin.saliva"}

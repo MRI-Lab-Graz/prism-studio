@@ -16,7 +16,7 @@ from src.spec_overlay import (
     add_local_term,
     find_unknown_metrics,
     list_local_items,
-    proposal_for_local_term,
+    proposal_for_local_terms,
     remove_local_terms,
 )
 
@@ -86,8 +86,17 @@ def propose():
     project = _project()
     if project is None:
         return _error("Open a project first")
+    body = _body()
+    if body.get("all") is True:
+        ids = None
+    elif isinstance(body.get("ids"), list) and body["ids"] and all(isinstance(i, str) and i for i in body["ids"]):
+        ids = body["ids"]
+    elif isinstance(body.get("id"), str) and body["id"]:
+        ids = [body["id"]]
+    else:
+        return _error('Give "id", a non-empty list "ids", or "all": true')
     try:
-        result = proposal_for_local_term(project, str(_body().get("id") or ""))
+        result = proposal_for_local_terms(project, ids)
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})

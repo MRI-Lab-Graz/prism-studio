@@ -1,6 +1,7 @@
 """prism_tools.py spec local list|add-term|remove and spec propose (phase 1, Task 5): thin adapters over src.spec_overlay."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -108,3 +109,68 @@ def test_propose_describes_and_saves_but_sends_nothing(tmp_path):
 def test_propose_an_unknown_term_exits_1(tmp_path):
     code, out = _run("spec", "propose", "--project", str(_project(tmp_path / "p")), "--term", "prism:nope", "--json")
     assert code == 1 and not json.loads(out)["success"]
+
+
+# --- proposal format v2: several terms in one proposal --------------------------------------------
+
+TWO = {
+    "dhea_s": {"Description": "Salivary DHEA-S", "Units": "pg/mL", "MinValue": 0},
+    "ferr_ugl": {"Description": "Ferritin", "Units": "ug/L", "MinValue": 0},
+}
+
+
+def _two_local(tmp_path: Path) -> Path:
+    project = _project(tmp_path / "p", TWO)
+    for column, label in (("dhea_s", "DHEA-S"), ("ferr_ugl", "Ferritin")):
+        assert _run("spec", "local", "add-term", "--project", str(project), "--data", _tsv(project), "--column", column, "--label", label)[0] == 0
+    return project
+
+
+def _vendored_check(proposal_file: Path, out: Path) -> str:
+    subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "specification" / "term_proposal.py"), "check",
+         "--terms", str(REPO / "official" / "library" / "terms" / "biosample"),
+         "--schema", str(REPO / "app" / "schemas" / "stable" / "biosample.schema.json"),
+         "--out", str(out), "--file", str(proposal_file)], capture_output=True, text=True)
+    return (out / "status").read_text(encoding="utf-8").strip()
+
+
+def test_propose_all_shares_every_local_term_as_one_v2_document(tmp_path):
+    project = _two_local(tmp_path)
+    out_file = tmp_path / "all.json"
+    code, out = _run("spec", "propose", "--project", str(project), "--all", "--out", str(out_file), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["skipped"] == [] and data["opened"] is False
+    assert sorted(data["document"]["files"]) == [
+        "terms/biosample/dhea-s.json", "terms/biosample/dhea-s.saliva.json",
+        "terms/biosample/ferritin.json", "terms/biosample/ferritin.saliva.json",
+    ]
+    assert json.loads(out_file.read_text(encoding="utf-8")) == data["document"] and data["document"]["format"] == "prism-proposal/2"
+    assert _vendored_check(out_file, tmp_path / "bundle") == "ok"
+
+
+def test_propose_term_can_be_repeated(tmp_path):
+    project = _two_local(tmp_path)
+    code, out = _run("spec", "propose", "--project", str(project), "--term", "prism:dhea-s", "--term", "prism:ferritin", "--json")
+    data = json.loads(out)
+    assert code == 0 and len(data["document"]["files"]) == 4
+
+
+def test_propose_needs_exactly_one_of_term_and_all(tmp_path):
+    project = _two_local(tmp_path)
+    assert _run("spec", "propose", "--project", str(project))[0] == 2
+    assert _run("spec", "propose", "--project", str(project), "--all", "--term", "prism:dhea-s")[0] == 2
+
+
+def test_propose_all_reports_what_the_official_registry_adopted(tmp_path):
+    project = _two_local(tmp_path)
+    adopted = project / "code" / "specification" / "terms" / "biosample" / "cortisol.json"  # the official registry has prism:cortisol
+    adopted.write_text(json.dumps({"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"}), encoding="utf-8")
+    code, out = _run("spec", "propose", "--project", str(project), "--all", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["skipped"] == ["prism:cortisol"] and len(data["document"]["files"]) == 4
+
+
+def test_propose_with_nothing_local_exits_1(tmp_path):
+    code, out = _run("spec", "propose", "--project", str(_project(tmp_path / "p")), "--all", "--json")
+    assert code == 1 and "nothing to share" in json.loads(out)["error"]

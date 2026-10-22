@@ -199,7 +199,9 @@ def add_local_term(
         proposal = build_proposal(registry, sidecar, column, label, modality)
     except (ProposalError, OSError, ValueError, RecursionError) as exc:
         raise OverlayError(str(exc) or type(exc).__name__) from exc
-    problems = check_with_specification(proposal, registry)
+    # the check wants a Status on every registry entry; a local term has none until the maintainers merge it
+    checked_against = {stem: term if "Status" in term else {**term, "Status": "official"} for stem, term in registry.items()}
+    problems = check_with_specification(proposal, checked_against)
     if problems:
         raise OverlayError("; ".join(problems))
     return {"proposal": proposal, "written": write_local_terms(project_root, modality, proposal["terms"])}

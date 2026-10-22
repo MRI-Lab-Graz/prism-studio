@@ -54,3 +54,23 @@ def test_a_hostile_column_name_is_shown_as_text_not_as_html(app_page, studio_url
     expect(app_page.locator("#spec-unknown")).to_contain_text("<img src=x")
     assert app_page.evaluate("window.pwned") is None
     assert app_page.locator("#spec-unknown img").count() == 0
+
+
+def test_share_all_puts_every_local_metric_in_one_proposal(app_page, studio_url, project):
+    add_biosample_data(project)
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["ferr_ugl"] = {"Description": "Ferritin", "Units": "ug/L", "MinValue": 0}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    (project / "sub-01" / "ses-1" / "biosample" / "sub-01_ses-1_biosample-saliva_biosample.tsv").write_text(
+        "sample_id\tdhea_s\tferr_ugl\nS-1\t5\t7\n", encoding="utf-8")
+    app_page.goto(f"{studio_url}/specifications/contribute")
+    for _ in range(2):
+        app_page.get_by_role("button", name="Add to this project").first.click()
+        expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
+    app_page.get_by_role("button", name="Share all local metrics").click()
+    shown = app_page.locator("#spec-propose-json")
+    expect(shown).to_contain_text("prism-proposal/2")
+    for stem in ("dhea-s.json", "dhea-s.saliva.json", "ferr-ugl.json", "ferr-ugl.saliva.json"):  # no name typed: the column name
+        expect(shown).to_contain_text(f"terms/biosample/{stem}")
+    expect(app_page.locator("#spec-propose-open")).to_be_visible()

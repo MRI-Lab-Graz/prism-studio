@@ -16,6 +16,7 @@
     const localBox = document.getElementById("spec-local");
     const message = document.getElementById("spec-message");
     const dialog = document.getElementById("spec-propose-dialog");
+    const shareAll = document.getElementById("spec-share-all");
     let currentProposal = null;
 
     function el(tag, className, text) {
@@ -80,6 +81,7 @@
 
     function renderLocal(items) {
         localBox.replaceChildren();
+        shareAll.classList.toggle("d-none", !items.some(function (item) { return item.status === "local"; }));
         if (!items.length) {
             localBox.appendChild(el("p", "text-muted small mb-0", "None yet."));
             return;
@@ -95,7 +97,7 @@
                 row.appendChild(el("span", "small text-muted", "Now official: the official definition is used; you can remove this copy."));
             }
             if (item.status === "local") {
-                row.appendChild(button("Share…", "btn-outline-primary", function () { propose(item.id); }));
+                row.appendChild(button("Share…", "btn-outline-primary", function () { propose({ id: item.id }); }));
             }
             if (item.id) {
                 row.appendChild(button("Remove", "btn-outline-danger", function () { remove(item.id); }));
@@ -135,12 +137,15 @@
         refresh();
     }
 
-    async function propose(id) {
+    async function propose(body) {
         clearMessage();
-        const { ok, data } = await call(urls.propose, { id: id });
+        const { ok, data } = await call(urls.propose, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
-        currentProposal = data.proposal;
-        document.getElementById("spec-propose-json").textContent = JSON.stringify(data.proposal, null, 2);
+        currentProposal = data.document;  // the document that is sent (proposal format v2)
+        document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
+        if (data.skipped.length) {
+            say("Left out, the official registry has these now: " + data.skipped.join(", "), "info");
+        }
         const problems = document.getElementById("spec-propose-problems");
         problems.textContent = data.problems.join("; ");
         problems.classList.toggle("d-none", !data.problems.length);
@@ -151,6 +156,7 @@
         dialog.showModal();
     }
 
+    shareAll.addEventListener("click", function () { propose({ all: true }); });
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
     document.getElementById("spec-propose-download").addEventListener("click", function () {
         if (!currentProposal) return;
