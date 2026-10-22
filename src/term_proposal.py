@@ -129,7 +129,7 @@ def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
     return url if len(url) <= limit else None
 
 
-def _specification_scripts() -> Path:
+def specification_scripts_dir() -> Path:
     """`scripts/specification` in a checkout and in the frozen build (bundled at `<_MEIPASS>/scripts`)."""
     candidates = [Path(__file__).resolve().parents[1] / "scripts" / "specification"]
     meipass = getattr(sys, "_MEIPASS", None) if getattr(sys, "frozen", False) else None
@@ -140,7 +140,7 @@ def _specification_scripts() -> Path:
 
 def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
     """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
-    spec = importlib.util.spec_from_file_location("specification_term_proposal", _specification_scripts() / "term_proposal.py")
+    spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{proposal['modality']}.schema.json"
