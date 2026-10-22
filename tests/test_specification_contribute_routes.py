@@ -49,12 +49,17 @@ def _open(client, project: Path):
 
 
 @pytest.mark.parametrize("method,url", [
-    ("get", "/api/spec/local"), ("post", "/api/spec/local/add-term"),
-    ("post", "/api/spec/local/remove"), ("post", "/api/spec/propose"),
+    ("post", "/api/spec/local/add-term"), ("post", "/api/spec/local/remove"), ("post", "/api/spec/propose"),
 ])
-def test_every_route_needs_an_open_project(client, method, url):
+def test_every_write_route_needs_an_open_project(client, method, url):
     response = getattr(client, method)(url, json={})
     assert response.status_code == 400 and response.get_json() == {"success": False, "error": "Open a project first"}
+
+
+def test_the_listing_without_a_project_is_a_message_not_an_error(client):
+    """The page can be opened without a project; a 4xx would put an error in the browser console on every visit."""
+    response = client.get("/api/spec/local")
+    assert response.status_code == 200 and response.get_json() == {"success": False, "error": "Open a project first"}
 
 
 def test_list_shows_unknown_metrics_and_local_items(client, tmp_path):
@@ -183,3 +188,28 @@ def test_propose_rejects_bad_bodies(client, tmp_path, body):
 def test_the_page_script_shows_and_downloads_the_document_that_is_sent():
     source = (REPO / "app" / "static" / "js" / "modules" / "specification" / "contribute.js").read_text(encoding="utf-8")
     assert "data.document" in source and "Share all" in (REPO / "app" / "templates" / "specifications_contribute.html").read_text(encoding="utf-8")
+
+
+_NO_PROJECT = f"""
+import importlib.util, sys
+sys.path[:0] = [{str(REPO / "app")!r}, {str(REPO)!r}]
+spec = importlib.util.spec_from_file_location("ps", {str(REPO / "app" / "prism-studio.py")!r})
+m = importlib.util.module_from_spec(spec); sys.modules["ps"] = m; spec.loader.exec_module(m)
+c = m.app.test_client()  # a fresh session: no project is open
+out = []
+for method, url in (("get", "/api/spec/local"), ("post", "/api/spec/local/add-term"), ("post", "/api/spec/local/remove"), ("post", "/api/spec/propose")):
+    r = getattr(c, method)(url, json={{}})
+    out.append((method, url, r.status_code, r.content_type.split(";")[0], r.get_json(silent=True)))
+import json
+open(sys.argv[1], "w").write(json.dumps(out))  # the app swallows stdout
+"""
+
+
+def test_without_an_open_project_the_real_app_answers_json_not_a_redirect(tmp_path):
+    """Regression: the app's project guard redirected GET /api/spec/local to the project picker (an HTML page)."""
+    result_file = tmp_path / "result.json"
+    subprocess.run([sys.executable, "-c", _NO_PROJECT, str(result_file)], cwd=REPO, check=True, capture_output=True,
+                   env={**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"})
+    for method, url, status, content_type, body in json.loads(result_file.read_text()):
+        assert (status, content_type) == (200 if method == "get" else 400, "application/json"), (method, url, status, content_type)
+        assert body == {"success": False, "error": "Open a project first"}, (url, body)

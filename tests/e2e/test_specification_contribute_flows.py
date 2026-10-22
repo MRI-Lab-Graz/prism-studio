@@ -74,3 +74,9 @@ def test_share_all_puts_every_local_metric_in_one_proposal(app_page, studio_url,
     for stem in ("dhea-s.json", "dhea-s.saliva.json", "ferr-ugl.json", "ferr-ugl.saliva.json"):  # no name typed: the column name
         expect(shown).to_contain_text(f"terms/biosample/{stem}")
     expect(app_page.locator("#spec-propose-open")).to_be_visible()
+
+
+def test_without_a_project_the_page_says_to_open_one(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    expect(bare_page.locator("#spec-message")).to_contain_text("Open a project first")
+    expect(bare_page.locator("#spec-message")).not_to_contain_text("Unexpected answer")

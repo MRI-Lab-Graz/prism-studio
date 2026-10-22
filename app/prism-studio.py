@@ -1016,6 +1016,8 @@ def ensure_project_selected_first():
         return None
     if path.startswith("/api/template-editor/"):
         return None
+    if path.startswith("/api/spec/"):  # the routes answer "Open a project first" themselves (JSON, for the page)
+        return None
 
     # Allow tool landing pages (GET) even without a project
     # This avoids the "clicking link does nothing" behavior (silent redirects)
