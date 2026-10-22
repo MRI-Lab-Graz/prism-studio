@@ -4,7 +4,7 @@ PRISM's filename/entity conventions - which entities a modality requires or
 allows, the canonical entity ordering used when rewriting filenames, and the
 suffix/extension grammar used to validate them - are expressed as data
 rather than scattered across parser code. The rules file is
-[`app/schemas/stable/entities.schema.json`](../../app/schemas/stable/entities.schema.json)
+[`schemas/stable/entities.schema.json`](../../app/schemas/stable/entities.schema.json)
 and is loaded through `schema_manager.load_schema("entities", ...)` by
 `src/entity_rules.py`, which compiles it into the validator's filename
 patterns, the entity rewriter, and the fixer's suggestion hints. Adding a new
@@ -59,5 +59,5 @@ validator reports both folders as errors with a fix hint (rename
 | `eyetracking` | bidsPassthrough | `eyetrack`, `eye`, `gaze` | `tsv`, `tsv.gz`, `json`, `edf`, `asc` | optional `trackedEye` entity: `left`, `right`, or `both` |
 | `anat`, `func`, `fmap`, `dwi`, `eeg`, `beh` | bidsPassthrough | (standard BIDS) | (standard BIDS) | validated per standard BIDS rules |
 
-See [`app/schemas/stable/entities.schema.json`](../../app/schemas/stable/entities.schema.json)
+See [`schemas/stable/entities.schema.json`](../../app/schemas/stable/entities.schema.json)
 for the authoritative, machine-readable version of this table.

@@ -60,7 +60,7 @@ Standard BIDS column definitions are supported and validated.
 
 ## Field reference (`events.schema.json`, version 1.1.0)
 
-Generated from [`app/schemas/stable/events.schema.json`](../../app/schemas/stable/events.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/events.schema.json`](../../app/schemas/stable/events.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

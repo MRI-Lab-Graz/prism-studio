@@ -123,8 +123,8 @@ Besides the modality schemas, `app/schemas/stable/` holds `dataset_description`,
 `instrument-registry` (the index of the official survey library) and `tool-limesurvey`
 (a legacy mapping that the importer no longer writes). Each spec page ends with a field
 reference generated from its schema, so the tables always match the shipped version
-(`python scripts/generate_schema_reference.py` refreshes them; a test fails when they
-are stale).
+(they are generated in the [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification)
+repository, where a test fails when they are stale).
 
 ## BIDS compatibility
 

@@ -11,7 +11,7 @@ adds FAIR expectations on top, so a PRISM project can be shared without extra cl
 | `PRISM003` | The file is not valid JSON or lacks a required field |
 | `PRISM006` | FAIR gaps: `Description` of at least 50 characters, `License`, `EthicsApprovals`, `Funding`, at least 3 `Keywords`, `Authors` with ORCID / affiliation |
 
-See [Error codes](../ERROR_CODES.md).
+See [Error codes](https://prism-studio.readthedocs.io/en/latest/ERROR_CODES.html).
 
 ## Keeping it in sync with `CITATION.cff`
 
@@ -25,7 +25,7 @@ so they cannot drift.
 
 ## Field reference (`dataset_description.schema.json`, version 1.0.0)
 
-Generated from [`app/schemas/stable/dataset_description.schema.json`](../../app/schemas/stable/dataset_description.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/dataset_description.schema.json`](../../app/schemas/stable/dataset_description.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

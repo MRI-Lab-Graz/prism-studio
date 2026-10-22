@@ -24,7 +24,7 @@ and the `events/` folder no longer exist; the validator reports both with a fix 
 | `recording` | Optional. The signal type: `ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`, or any other alphanumeric label. |
 | `physio` | **Required**. The suffix indicating the modality. |
 
-In Studio, the [Physio converter](../studio/converter_physio.md) writes either layout
+In Studio, the [Physio converter](https://prism-studio.readthedocs.io/en/latest/studio/converter_physio.html) writes either layout
 (`--destination` on the CLI) and the File Management renamer follows the same rule.
 
 ## Sidecar JSON (`*_physio.json`)
@@ -38,7 +38,7 @@ only when a `Study` block is present; `Recording`, `Channels`, `TriggerAnnotatio
 
 ## Field reference (`physio.schema.json`, version 1.2.0)
 
-Generated from [`app/schemas/stable/physio.schema.json`](../../app/schemas/stable/physio.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/physio.schema.json`](../../app/schemas/stable/physio.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

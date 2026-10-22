@@ -170,6 +170,18 @@ a different name" pattern documented in the `web/utils.py` paragraph above,
 so the manual check above is still the source of truth for anything the
 automated one can't see.
 
+## The specification is vendored: edit it in prism-specification, never here
+
+The community modality schemas (`app/schemas/stable|archive|v0.1|v0.2`, except `project`,
+`recipe.survey`, `tool-limesurvey`, `instrument-registry` and `citation_cff/`), the term
+registry (`official/library/terms/`) and the spec pages (`docs/specs/`, except `project.md`)
+are a hash-locked copy of a tagged release of
+https://github.com/MRI-Lab-Graz/prism-specification (`specification.lock.json`). Do not edit
+those files here (the CI job `Vendored specification` fails): change them in that repository,
+tag a release, then run `python scripts/sync_specification.py --tag <tag>`. A change that also
+needs validator code is two pull requests (specification first, then Studio with the new tag).
+The vendored check scripts are in `scripts/specification/`.
+
 ## Git-annex / DataLad text-file policy
 
 Text-format and small-codebook files must **never** be tracked by git-annex

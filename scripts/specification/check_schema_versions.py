@@ -2,7 +2,7 @@
 
 Usage: check_schema_versions.py <base_ref> <head_ref>
 Rules (modality schemas only; project/entities/dataset_description are not versioned this way):
-- files under app/schemas/archive/ are frozen: never modified or deleted;
+- files under schemas/archive/ are frozen: never modified or deleted;
 - a changed stable schema must carry a bumped `version`;
 - a bumped version needs the previous version archived, equal to the previous stable file.
 """
@@ -13,8 +13,8 @@ import json
 import subprocess
 import sys
 
-STABLE = "app/schemas/stable/"
-ARCHIVE = "app/schemas/archive/"
+STABLE = "schemas/stable/"
+ARCHIVE = "schemas/archive/"
 SUFFIX = ".schema.json"
 
 
@@ -84,9 +84,9 @@ def main(argv: list[str]) -> int:
         capture_output=True, text=True, check=True,
     ).stdout
     changes = parse_name_status(diff)
-    modalities = load_modalities(_git_show(head, "app/schemas/stable/entities.schema.json"))
+    modalities = load_modalities(_git_show(head, "schemas/stable/entities.schema.json"))
     if modalities is None:
-        print(f"ERROR: app/schemas/stable/entities.schema.json at {head} is missing or has no `modalities` object")
+        print(f"ERROR: schemas/stable/entities.schema.json at {head} is missing or has no `modalities` object")
         return 1
     errors = check(
         changes,
