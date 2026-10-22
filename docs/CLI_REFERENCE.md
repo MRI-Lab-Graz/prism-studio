@@ -736,6 +736,19 @@ dataset and `REGISTRATION.md`.
 Exit code 0 on success, 1 if any problem is an error, 2 if `--out` is missing
 without `--check`. See `MODALITY_PROPOSALS.md`.
 
+## terms
+
+Look up the shipped metric terms (the term registry, see the Terms section of
+`specs/biosample.md`).
+
+    python prism_tools.py terms list [--modality biosample] [--json]
+    python prism_tools.py terms show <term> [--modality biosample] [--json]
+    python prism_tools.py terms suggest <column> [--specimen saliva] [--modality biosample] [--json]
+
+- `list`: every term with its level, units and status.
+- `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown.
+- `suggest`: how the validator relates a column name to the registry (`suggestion`, `unknown`, ...) and which official terms look similar.
+
 ## modality-version
 
 Per-modality schema versions and the pins in a project's `project.json`

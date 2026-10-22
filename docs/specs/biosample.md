@@ -96,6 +96,30 @@ A missing recommended field is a **warning**, reported once per sidecar, not an 
 | `CreationDate` | **REQUIRED** | `string` | `YYYY-MM-DD`. |
 | `Creator` | OPTIONAL | `string` | Who created the template. |
 
+## Terms
+
+A column can be mapped to a shipped *term* (`official/library/terms/biosample/`) with the optional key `Term`. A term is identified by a stable, prefixed ID that never changes once released (`prism:cortisol` for the analyte, `prism:cortisol.saliva` for the analyte in one specimen); the label is only a name and may change.
+
+```json
+"cort": {"Term": "cortisol"}
+```
+
+- `Term` accepts the full ID, the local name (`cortisol`), a label, an alias or an external equivalent (for example `loinc:2143-6`). With `SpecimenType: saliva` it resolves to `prism:cortisol.saliva`.
+- The column inherits `Units`, `DataType`, `MinValue`, `MaxValue`, `WarnMinValue`, `WarnMaxValue` and `LOINC` from the term. Anything you set on the column wins. With a `Term`, `Description` and `Units` are optional.
+- Any metric may be used without a term. Nothing is blocked: a metric the registry does not know passes with an **info** that lists similar official terms (it may just be named differently) and offers to share it with the PRISM community. The maintainers may choose a different name; your files keep working through an alias. Sharing itself is not available yet.
+- A column named like an alias (`cort`) gets an info suggesting `Term`; the validator never applies a match silently and never rewrites your files.
+
+| Situation | Severity |
+| --- | --- |
+| Metric not in the registry | info (similar terms listed) |
+| Declared unit differs from the term's recommended unit | info (any declared unit is accepted) |
+| Known analyte, no term for this specimen yet | info |
+| Term for another specimen than `Technical.SpecimenType` | **error** |
+| Term is deprecated | warning, names the replacement |
+| `Term` not in the registry and no `Units` | **error** |
+
+Look terms up on the command line: `python prism_tools.py terms list|show|suggest` (see the [CLI reference](../CLI_REFERENCE.md)).
+
 ## BIDS compatibility
 
 `biosample` is PRISM-only. PRISM adds `*_biosample.*` to the generated `.bidsignore`, so standard BIDS tools skip these files.
