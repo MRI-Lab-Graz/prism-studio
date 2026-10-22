@@ -601,6 +601,11 @@ modular_blueprints = [
         "projects_remote_browse_bp",
         "projects_remote_browse",
     ),
+    (
+        "src.web.blueprints.specification_contribute",
+        "specification_contribute_bp",
+        "specification_contribute",
+    ),
 ]
 
 registered_modular_blueprints: list[str] = []
@@ -1132,6 +1137,8 @@ def specifications(slug):
     """The PRISM specifications, rendered offline from the shipped docs/"""
     from src.web.spec_docs import SPEC_GROUPS, SPEC_PAGES, render_spec_page
 
+    if slug == "contribute":  # the one page that is not a document: local metrics and sharing them
+        return render_template("specifications_contribute.html", pages=SPEC_PAGES, groups=SPEC_GROUPS, slug=slug)
     if slug not in SPEC_PAGES:
         abort(404)
     return render_template(

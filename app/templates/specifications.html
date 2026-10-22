@@ -23,11 +23,19 @@
                 {% endfor %}
             </div>
             {% endfor %}
+            <h2 class="h6 text-uppercase text-muted mt-4 mb-2">Contribute</h2>
+            <div class="list-group">
+                <a href="{{ url_for('specifications', slug='contribute') }}"
+                   class="list-group-item list-group-item-action{% if slug == 'contribute' %} active{% endif %}"
+                   {% if slug == 'contribute' %}aria-current="page"{% endif %}>Propose changes</a>
+            </div>
         </nav>
         <article class="col-md-9">
+            {% block article %}
             <div class="card">
                 <div class="card-body">{{ body|safe }}</div>
             </div>
+            {% endblock %}
         </article>
     </div>
 </div>

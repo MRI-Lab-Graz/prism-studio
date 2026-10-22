@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 PAGES = [
     "/", "/projects", "/survey-generator", "/survey-customizer", "/converter",
-    "/recipes", "/template-editor", "/specifications", "/validate",
+    "/recipes", "/template-editor", "/specifications", "/specifications/contribute", "/validate",
 ]
 
 # webkitdirectory/directory are non-standard but needed for folder pickers.
