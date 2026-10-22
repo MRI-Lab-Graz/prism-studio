@@ -104,7 +104,7 @@ A column can be mapped to a shipped *term* (`terms/biosample/`) with the optiona
 "cort": {"Term": "cortisol"}
 ```
 
-- `Term` accepts the full ID, the local name (`cortisol`), a label, an alias or an external equivalent (for example `loinc:2143-6`). With `SpecimenType: saliva` it resolves to `prism:cortisol.saliva`.
+- `Term` accepts the full ID, the local name (`cortisol`), a label, an alias or an external equivalent (for example a LOINC code written `loinc:<code>`). With `SpecimenType: saliva` it resolves to `prism:cortisol.saliva`.
 - The column inherits `Units`, `DataType`, `MinValue`, `MaxValue`, `WarnMinValue`, `WarnMaxValue` and `LOINC` from the term. Anything you set on the column wins. With a `Term`, `Description` and `Units` are optional.
 - Any metric may be used without a term. Nothing is blocked: a metric the registry does not know passes with an **info** that lists similar official terms (it may just be named differently) and offers to share it with the PRISM community. The maintainers may choose a different name; your files keep working through an alias. To share it, run `python prism_tools.py terms propose --sidecar <sidecar> --column <column> --open` in PRISM Studio: it builds the proposal from your column and opens a prefilled issue form in the specification repository, where a bot checks it and a maintainer takes it from there. Nothing is sent without `--open`.
 - A column named like an alias (`cort`) gets an info suggesting `Term`; the validator never applies a match silently and never rewrites your files.

@@ -2,7 +2,9 @@
   "TermID": "prism:crp",
   "Level": "analyte",
   "Label": "C-reactive protein",
-  "Aliases": [],
+  "Aliases": [
+    "hscrp"
+  ],
   "Description": "High-sensitivity C-reactive protein",
   "Status": "official"
 }

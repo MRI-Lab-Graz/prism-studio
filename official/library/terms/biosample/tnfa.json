@@ -2,7 +2,9 @@
   "TermID": "prism:tnfa",
   "Level": "analyte",
   "Label": "Tumor necrosis factor alpha",
-  "Aliases": [],
+  "Aliases": [
+    "tnf-alpha"
+  ],
   "Description": "Tumor necrosis factor alpha",
   "Status": "official"
 }
