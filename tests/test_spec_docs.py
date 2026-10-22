@@ -8,7 +8,7 @@ from src.web.spec_docs import SPEC_PAGES, render_spec_page
 def test_every_listed_page_renders_html():
     for slug in SPEC_PAGES:
         html = render_spec_page(slug)
-        assert "<h1" in html or "<h2" in html, slug
+        assert "<h3" in html, slug  # the document title sits below the page header (h2)
 
 
 def test_schema_field_table_is_rendered_as_table():
@@ -72,3 +72,13 @@ def test_overview_has_no_studio_guide_or_doi_placeholder():
 
 def test_the_overview_has_no_dead_offline_link_to_the_specification_repository():
     assert "github.com/MRI-Lab-Graz/prism-specification" not in render_spec_page("overview")
+
+
+def test_document_headings_sit_below_the_page_header():
+    """The page header is an h2, so the document's own headings start at h3 (no skipped or inverted levels)."""
+    import re
+
+    for slug in ("overview", "survey", "biosample", "entities"):
+        levels = [int(n) for n in re.findall(r"<h([1-6])[ >]", render_spec_page(slug))]
+        assert levels and levels[0] == 3 and min(levels) >= 3, (slug, levels)
+        assert all(b - a <= 1 for a, b in zip(levels, levels[1:])), (slug, levels)
