@@ -190,6 +190,16 @@ def _validate_dataset(
     issues = []
     stats = DatasetStats()
     spec = current_specification()  # set by validate_dataset for this run
+    # the project's own, not yet official specification: files that were skipped, copies the official registry replaced
+    issues.extend(("WARNING", f"ignored local specification file: {problem}") for problem in spec.overlay_problems)
+    issues.extend(
+        (
+            "INFO",
+            f"The local term {term_id} is now official: remove the local copy: "
+            f'python prism_tools.py spec local remove --project "{os.path.abspath(root_dir)}" {term_id}',
+        )
+        for term_id in spec.ignored_local
+    )
 
     def report_progress(
         current: int, total: int, message: str, file_path: Optional[str] = None

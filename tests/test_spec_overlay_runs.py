@@ -112,3 +112,53 @@ def test_the_wheel_carries_the_two_vendored_scripts(tmp_path):
     assert "prism_validator/scripts/specification/check_terms.py" in names
     assert "prism_validator/scripts/specification/term_proposal.py" in names
     assert "prism_validator/src/spec_overlay.py" in names
+
+
+# --- notices (phase 1, Task 3) -------------------------------------------------------------------
+
+def _infos(project: Path):
+    return _messages(project, "INFO")
+
+
+def test_a_column_using_a_local_term_says_so_once_with_the_share_command(tmp_path):
+    project = _project(tmp_path / "a", overlay=True)
+    notes = [m for m in _infos(project) if "uses the local term" in m]
+    assert len(notes) == 1
+    assert "prism:dhea-s.saliva" in notes[0] and "applies to this project only" in notes[0]
+    assert f'spec propose --project "{project}" --term prism:dhea-s.saliva' in notes[0]
+
+
+def test_official_terms_get_no_local_term_notice(tmp_path):
+    project = _project(tmp_path / "a", overlay=False)
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["dhea_s"] = {"Term": "cortisol"}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    assert not [m for m in _infos(project) if "uses the local term" in m]
+
+
+def test_a_local_term_that_became_official_is_reported_once_per_run(tmp_path):
+    project = _project(tmp_path / "a", overlay=False)
+    write_local_terms(project, "biosample", [{**PARENT, "TermID": "prism:cortisol", "Label": "mine"}])
+    notes = [m for m in _infos(project) if "is now official" in m]
+    assert len(notes) == 1 and "prism:cortisol" in notes[0]
+    assert f'spec local remove --project "{project}" prism:cortisol' in notes[0]
+
+
+def test_a_bad_overlay_file_is_a_warning(tmp_path):
+    project = _project(tmp_path / "a", overlay=False)
+    folder = project / "code" / "specification" / "terms" / "biosample"
+    folder.mkdir(parents=True)
+    (folder / "broken.json").write_text("{no", encoding="utf-8")
+    warnings = _messages(project, "WARNING")
+    assert any("ignored local specification file" in m and "broken.json" in m for m in warnings)
+
+
+def test_the_unknown_metric_notice_offers_to_use_it_here_and_to_share_it(tmp_path):
+    project = _project(tmp_path / "b", overlay=False)
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["dhea_s"] = {"Description": "d", "Units": "pg/mL"}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    note = next(m for m in _infos(project) if "is not an official metric" in m)
+    assert f'spec local add-term --project "{project}" --data "' in note and "terms propose --data" in note

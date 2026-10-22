@@ -158,3 +158,18 @@ def test_a_name_match_on_a_deprecated_term_only_suggests():
     reg["cortisol"].update(Status="deprecated", ReplacedBy="prism:hydrocortisone")
     r = resolve_column(reg, "cort", {}, "saliva")
     assert r.kind == "suggestion" and "prism:hydrocortisone" in r.message and r.similar == ("prism:hydrocortisone",)
+
+
+# --- analyte_columns: which sidecar columns the term checks look at (phase 1, Task 3) -----------
+
+def test_analyte_columns_skips_blocks_sample_columns_and_non_numeric_columns():
+    from src.term_registry import analyte_columns
+
+    sidecar = {
+        "Technical": {"SpecimenType": "saliva"}, "Study": {}, "Metadata": {},
+        "sample_id": {"Units": "n/a"}, "collection_time": {"Units": "n/a"}, "fasting": {"Units": "n/a"},
+        "visit": {"Description": "d", "Units": "n/a"},  # any column with Units n/a
+        "text": "not a column definition",
+        "cort": {"Description": "d", "Units": "nmol/L"}, "dhea_s": {"Term": "prism:dhea-s"},
+    }
+    assert [name for name, _ in analyte_columns(sidecar)] == ["cort", "dhea_s"]
