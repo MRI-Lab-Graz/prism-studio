@@ -3,8 +3,7 @@
   "Level": "analyte",
   "Label": "alpha-amylase",
   "Aliases": [
-    "amylase",
-    "aa"
+    "amylase"
   ],
   "Description": "Salivary alpha-amylase, a marker of sympathetic activity.",
   "Status": "official"

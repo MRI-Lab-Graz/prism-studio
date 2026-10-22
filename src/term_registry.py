@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[1]
@@ -104,3 +105,86 @@ def check_registry(registry: dict[str, dict]) -> list[str]:
             if owner != key:
                 problems.append(f"{key}: {name!r} is already claimed by {owner!r}")
     return problems
+
+
+@dataclass(frozen=True)
+class Resolution:
+    """How a sidecar column relates to the registry.
+
+    kind: term | specimen_mismatch | known_analyte_new_specimen | suggestion |
+    deprecated | unknown. `term` is the resolved child (or the parent when no
+    child exists for the specimen); `similar` lists term IDs worth showing.
+    """
+
+    kind: str
+    term: dict | None = None
+    similar: tuple[str, ...] = ()
+    message: str = ""
+
+
+def _names(key: str, term: dict) -> list[str]:
+    """Every string a term answers to, lowercased."""
+    names = [term.get("TermID"), key, term.get("Label")]
+    names += list(term.get("Aliases") or []) + list(term.get("Equivalents") or [])
+    return [n.lower() for n in names if isinstance(n, str)]
+
+
+def _find(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
+    """Exact full ID, then bare slug, then label/alias/equivalent (case-insensitive)."""
+    for key, term in registry.items():
+        if term.get("TermID") == name:
+            return key, term
+    if name in registry:
+        return name, registry[name]
+    lowered = name.lower()
+    for key, term in registry.items():
+        if lowered in _names(key, term):
+            return key, term
+    return None
+
+
+def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
+    """Parent terms whose name is contained in the probe or contains it (substring only)."""
+    lowered = probe.lower()
+    hits = []
+    for key, term in registry.items():
+        if term.get("Level") != "analyte":
+            continue
+        if any(len(n) >= 3 and (n in lowered or lowered in n) for n in _names(key, term)):
+            hits.append(term["TermID"])
+    return tuple(sorted(hits))
+
+
+def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specimen: str | None) -> Resolution:
+    """Resolve one sidecar column against the registry (spec: "How a sidecar column refers to a term")."""
+    ref = col_def.get("Term")
+    found = _find(registry, ref) if ref else None
+    if not found:
+        hit = None if ref else _find(registry, column)
+        if hit and hit[1].get("Status") != "deprecated":
+            tid = hit[1]["TermID"]
+            return Resolution("suggestion", hit[1], (tid,), f"{column!r} looks like {tid}; add Term to use it")
+        if not hit:
+            return Resolution("unknown", None, _similar(registry, ref or column))
+        found = hit
+
+    _key, term = found
+    if term.get("Status") == "deprecated":
+        new = term.get("ReplacedBy", "")
+        return Resolution("deprecated", term, (new,) if new else (), f"{term['TermID']} is deprecated; use {new}")
+    if term.get("Level") == "analyte-specimen":
+        if term.get("SpecimenType") == specimen:
+            return Resolution("term", term)
+        return Resolution(
+            "specimen_mismatch", term, (),
+            f"{term['TermID']} is a {term.get('SpecimenType')} term but the sidecar SpecimenType is {specimen!r}",
+        )
+    for child in registry.values():
+        if child.get("Parent") == term["TermID"] and specimen and child.get("SpecimenType") == specimen:
+            if child.get("Status") == "deprecated":
+                return Resolution("deprecated", child, (child.get("ReplacedBy", ""),), f"{child['TermID']} is deprecated")
+            return Resolution("term", child)
+    return Resolution(
+        "known_analyte_new_specimen", term, (),
+        f"{term['TermID']} is known, but not yet for specimen {specimen!r}",
+    )
