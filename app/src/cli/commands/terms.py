@@ -72,6 +72,8 @@ def cmd_terms_propose(args) -> None:
         sidecar = json.loads(Path(args.sidecar).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         _fail(args, f"cannot read the sidecar {args.sidecar}: {exc}")
+    if not isinstance(sidecar, dict):
+        _fail(args, f"the sidecar {args.sidecar} is not a JSON object")
     registry = load_registry(args.modality)
     try:
         proposal = build_proposal(registry, sidecar, args.column, args.label, args.modality)
@@ -91,6 +93,8 @@ def cmd_terms_propose(args) -> None:
     form = f"https://github.com/{ISSUE_REPO}/issues/new?template={ISSUE_TEMPLATE}"
     if opened:
         how = f"Opened the prefilled form in your browser:\n{url}"
+    elif args.open and url:
+        how = f"Could not open a browser; open this address yourself:\n{url}"
     elif url:
         how = f"To send it, run this again with --open (it opens the prefilled form):\n{url}"
     else:

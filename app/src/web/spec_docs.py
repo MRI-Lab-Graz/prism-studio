@@ -50,6 +50,7 @@ _SLUG_BY_FILE = {Path(f).name: slug for slug, (_, f) in SPEC_PAGES.items()}
 # absolute URLs; offline they are read like the relative links they replace.
 _DOCS_SITE = "https://prism-studio.readthedocs.io/en/latest/"
 _REPO_FILES = "https://github.com/MRI-Lab-Graz/prism-studio/raw/main/"
+_SPEC_REPO = "https://github.com/MRI-Lab-Graz/prism-specification"
 _HTML_PAGE = re.compile(r"\.html(?=#|$)")
 _COMMENT = re.compile(r"<!--.*?-->", re.S)
 # in-app pages state facts only: drop pointers to guides and step-by-step procedures
@@ -77,6 +78,8 @@ def _rewrite_links(tokens) -> None:
                     href = _HTML_PAGE.sub(".md", href[len(_DOCS_SITE):])
                 elif href.startswith(_REPO_FILES):
                     href = href[len(_REPO_FILES):]
+                elif href.startswith(_SPEC_REPO):
+                    href = ""  # a pointer to a site outside the app: dropped like the guides
                 if href.startswith(("http://", "https://", "#")):
                     continue
                 slug = _SLUG_BY_FILE.get(Path(href.split("#")[0]).name)

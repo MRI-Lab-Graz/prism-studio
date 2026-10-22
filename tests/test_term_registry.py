@@ -144,3 +144,17 @@ def test_deprecated_child_still_supplies_its_definition():
 def test_non_string_term_is_ignored_not_a_crash():
     for ref in (5, ["prism:cortisol"], {"a": 1}):
         assert resolve_column(_reg(), "x", {"Term": ref}, "saliva").kind == "unknown"
+
+
+# --- polish batch ---------------------------------------------------------------
+
+def test_short_probes_do_not_list_similar_terms():
+    for probe in ("a", "co"):
+        assert resolve_column(_reg(), probe, {}, "saliva").similar == (), probe
+
+
+def test_a_name_match_on_a_deprecated_term_only_suggests():
+    reg = _reg()
+    reg["cortisol"].update(Status="deprecated", ReplacedBy="prism:hydrocortisone")
+    r = resolve_column(reg, "cort", {}, "saliva")
+    assert r.kind == "suggestion" and "prism:hydrocortisone" in r.message and r.similar == ("prism:hydrocortisone",)

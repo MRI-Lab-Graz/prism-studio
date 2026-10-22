@@ -30,6 +30,8 @@ class ProposalError(ValueError):
 
 def slugify(text: str) -> str:
     """Lowercase ID slug: runs of anything but a-z0-9 become `-`; must start with a letter."""
+    if any(ch.isalpha() and not ch.isascii() for ch in str(text)):  # dropping letters would make IL-1α and IL-1β collide
+        raise ProposalError(f"cannot make an ASCII ID from {text!r}; pass --label with an ASCII name")
     slug = re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")
     if not re.match(r"[a-z]", slug):
         raise ProposalError(f"cannot make an ID from {text!r} (it must start with a letter); pass --label")
@@ -72,7 +74,11 @@ def build_proposal(
             f"{column!r} is already an official metric ({res.term['TermID']}): "
             f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
         )
-    if res.kind in ("deprecated", "specimen_mismatch"):
+    if res.kind == "specimen_mismatch":
+        parent = res.term.get("Parent")
+        hint = f"; to propose a term for this specimen point Term at {parent}" if parent else ""
+        raise ProposalError(res.message + hint)
+    if res.kind == "deprecated":
         raise ProposalError(res.message)
     if not col_def.get("Units"):
         raise ProposalError(f"column {column!r} has no Units; a proposal needs the unit")

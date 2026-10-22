@@ -48,10 +48,11 @@ STUDIO_OWNED = frozenset(
 
 _TAG = re.compile(r"^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$")
 _MAX_ARCHIVE = 64 * 1024 * 1024
+_MAX_UNPACKED = 64 * 1024 * 1024
 
 
 def archive_url(tag: str) -> str:
-    if not _TAG.match(tag):
+    if not _TAG.fullmatch(tag):
         raise ValueError(f"not a release tag like v1.0.0: {tag!r}")
     return f"https://github.com/{REPOSITORY}/archive/refs/tags/{tag}.tar.gz"
 
@@ -79,6 +80,8 @@ def extract(archive: Path, dest: Path) -> Path:
             tops.add(parts[0])
         if len(tops) != 1 or not next(iter(tops)).startswith("prism-specification-"):
             raise ValueError(f"archive must hold one folder prism-specification-*, found {sorted(tops)}")
+        if sum(m.size for m in members if m.isreg()) > _MAX_UNPACKED:
+            raise ValueError("the archive unpacks to more than 64 MB")
         top = dest / next(iter(tops))
         for m in members:
             target = dest / m.name
@@ -98,6 +101,13 @@ def _destination(rel: str) -> str | None:
         elif rel == prefix:
             return target
     return None
+
+
+def _is_vendored(rel: str) -> bool:
+    """Only paths inside the vendored folders may be deleted because an old lock listed them."""
+    if ".." in Path(rel).parts or rel.startswith("/"):
+        return False
+    return any(rel.startswith(t) if t.endswith("/") else rel == t for t in MAPPING.values())
 
 
 def _wanted(source: Path) -> dict[str, bytes]:
@@ -131,7 +141,7 @@ def sync(source: Path, studio_root: Path, tag: str) -> dict:
     lock_path = studio_root / LOCK_NAME
     old = json.loads(lock_path.read_text(encoding="utf-8"))["files"] if lock_path.is_file() else {}
     for rel in sorted(set(old) - set(wanted)):
-        if rel not in STUDIO_OWNED:
+        if rel not in STUDIO_OWNED and _is_vendored(rel):
             (studio_root / rel).unlink(missing_ok=True)
     for rel, data in wanted.items():
         target = studio_root / rel

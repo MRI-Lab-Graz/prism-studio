@@ -150,3 +150,10 @@ apply to it.** Survey templates under `official/library/survey/` carry their
 own per-instrument terms in each template's `Study.License` field. See
 [`official/library/NOTICE.md`](official/library/NOTICE.md) for provenance,
 citation requirements, and what you must check before using an instrument.
+
+**The PRISM specification is vendored from its own repository and is not AGPL-3.0.** The modality
+schemas (`app/schemas/`, except `project`, `recipe.survey`, `tool-limesurvey`, `instrument-registry` and
+`citation_cff/`), the term registry (`official/library/terms/`) and the specification pages
+(`docs/specs/`, except `project.md`) are licensed CC BY 4.0; the check scripts in `scripts/specification/`
+are MIT. See [`app/schemas/PRISM_SPECIFICATION_LICENSE`](app/schemas/PRISM_SPECIFICATION_LICENSE) and
+[prism-specification](https://github.com/MRI-Lab-Graz/prism-specification).

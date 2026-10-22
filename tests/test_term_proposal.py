@@ -78,7 +78,6 @@ def test_slugify():
     assert slugify("Ferritin (serum)") == "ferritin-serum"
     assert slugify("  IL-6 ") == "il-6"
     assert slugify("a__b") == "a-b"
-    assert slugify("µg/dL") == "g-dl"  # characters outside a-z0-9 are dropped; the maintainer picks the final ID
     for bad in ("123", "___", "", "µ"):
         with pytest.raises(ProposalError):
             slugify(bad)
@@ -139,3 +138,19 @@ def test_errors_for_a_sidecar_without_the_column_or_technical_point_at_the_root_
         build_proposal(REGISTRY, _sidecar("a", {"Units": "u"}), "b")
     with pytest.raises(ProposalError, match="root-level"):
         build_proposal(REGISTRY, _sidecar("a", {"Description": "d", "Units": "u"}, specimen=None), "a")
+
+
+# --- polish batch ---------------------------------------------------------------
+
+def test_slugify_refuses_to_drop_letters_silently():
+    for text in ("IL-1β", "β-endorphin", "µg/dL", "über"):
+        with pytest.raises(ProposalError, match="--label"):
+            slugify(text)
+    assert slugify("IL-1b") == "il-1b"
+
+
+def test_specimen_mismatch_error_suggests_the_parent_term():
+    sidecar = _sidecar("x", {"Term": "prism:cortisol.saliva", "Description": "d", "Units": "u"}, "hair")
+    with pytest.raises(ProposalError) as info:
+        build_proposal(REGISTRY, sidecar, "x")
+    assert "point Term at prism:cortisol" in str(info.value)

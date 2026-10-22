@@ -1802,7 +1802,10 @@ def build_prism_tools_parsers(
             _p.add_argument("--label", help="Name for the new term (default: the column name)")
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
-        _p.add_argument("--modality", default="biosample", help="Modality of the registry")
+        _p.add_argument(
+            "--modality", default="biosample", choices=["biosample"] if _name == "propose" else None,
+            help="Modality of the registry",
+        )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_modality_version = subparsers.add_parser(

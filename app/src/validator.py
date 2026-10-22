@@ -699,7 +699,12 @@ class DatasetValidator:
                 res = resolve_column(self._terms, k, v, specimen)
                 if res.kind in ("term", "deprecated") and res.term:
                     inherited = {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
-                    effective_defs[k] = {**inherited, **v}
+                    # the column's own values win, but null/"" must not switch an inherited check off
+                    merged = {**inherited, **{f: x for f, x in v.items() if x not in (None, "")}}
+                    effective_defs[k] = merged
+                    for alias in v.get("Aliases") or []:
+                        if isinstance(alias, str) and alias not in sidecar_data:
+                            effective_defs[alias] = merged
         return effective_defs
 
     def _is_empty_levels_label(self, label) -> bool:
@@ -1490,7 +1495,8 @@ class DatasetValidator:
             elif res.kind in ("specimen_mismatch", "deprecated"):
                 issues.append(("ERROR" if res.kind == "specimen_mismatch" else "WARNING", f"{key}: {col}: {res.message}"))
             elif res.kind == "known_analyte_new_specimen":
-                issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community"))
+                issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community. Run: python prism_tools.py "
+                    f"terms propose --sidecar \"{key}\" --column \"{col}\" (add --open to send it)."))
             elif res.kind == "suggestion":
                 if col not in self._terms:  # the canonical word itself needs no hint
                     issues.append(("INFO", f"{key}: {res.message}"))

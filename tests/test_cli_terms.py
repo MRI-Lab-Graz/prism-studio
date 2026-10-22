@@ -170,3 +170,22 @@ def test_propose_rejects_wrong_value_types_through_the_vendored_checks(tmp_path)
     code, out = _run("propose", "--sidecar", str(sidecar), "--column", "ferr_ugl", "--json")
     data = json.loads(out)
     assert code == 1 and not data["success"] and any("Units" in p for p in data["problems"])
+
+
+def test_propose_array_sidecar_exits_1_without_a_traceback(tmp_path):
+    path = tmp_path / "s.json"
+    path.write_text("[1, 2]", encoding="utf-8")
+    code, out = _run("propose", "--sidecar", str(path), "--column", "x", "--json")
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_propose_modality_is_limited_to_biosample(tmp_path):
+    code, _ = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--modality", "eeg")
+    assert code == 2  # argparse: invalid choice
+
+
+def test_propose_says_so_when_the_browser_could_not_be_opened(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(webbrowser, "open", lambda url: False)
+    _handler()(_args(_sidecar(tmp_path), open=True, json=False))
+    out = capsys.readouterr().out
+    assert "could not open" in out.lower() and "run this again" not in out.lower() and FORM in out

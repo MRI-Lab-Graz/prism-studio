@@ -203,3 +203,21 @@ def test_unknown_metric_notice_names_the_propose_command(tmp_path):
     notice = _msgs(issues, "INFO")[0]
     # both arguments are quoted, so a path with spaces or a column like "Cortisol (nmol/L)" can be pasted
     assert "terms propose" in notice and '--column "salivary_cortisol"' in notice and '--sidecar "' in notice
+
+
+def test_alias_columns_inherit_the_term_definition(tmp_path):
+    tsv = _project(tmp_path, {"cortisol_main": {"Term": "cortisol", "Aliases": ["cort"]}}, rows="cort\n-5\n")
+    issues = _validator().validate_data_content(str(tsv), "biosample", str(tmp_path))
+    assert any("less than MinValue" in m for m in _msgs(issues, "ERROR"))
+
+
+def test_null_or_empty_sidecar_values_do_not_switch_off_inherited_checks(tmp_path):
+    tsv = _project(tmp_path, {"cort": {"Term": "cortisol", "MinValue": None, "Units": ""}}, rows="cort\n-1\n")
+    issues = _validator().validate_data_content(str(tsv), "biosample", str(tmp_path))
+    assert any("less than MinValue" in m for m in _msgs(issues, "ERROR"))
+
+
+def test_known_analyte_new_specimen_notice_names_the_propose_command(tmp_path):
+    issues = _sidecar_issues(tmp_path, {"cortisol_hair": {"Description": "d", "Units": "pg/mg", "Term": "cortisol"}}, specimen="hair")
+    notice = next(m for m in _msgs(issues, "INFO") if "not yet for specimen" in m)
+    assert "terms propose" in notice and '--column "cortisol_hair"' in notice

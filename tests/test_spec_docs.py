@@ -68,3 +68,7 @@ def test_overview_has_no_studio_guide_or_doi_placeholder():
     html = render_spec_page("overview")
     for text in ("Studio Guide", "placeholder", "step-by-step"):
         assert text not in html
+
+
+def test_the_overview_has_no_dead_offline_link_to_the_specification_repository():
+    assert "github.com/MRI-Lab-Graz/prism-specification" not in render_spec_page("overview")
