@@ -67,6 +67,25 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
     return terms, problems
 
 
+def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
+    """The official registry plus the local terms that add something.
+
+    Returns (merged with official first, the TermIDs of the local terms in use, the TermIDs of the local
+    terms ignored because the official registry now has that file stem or that TermID).
+    """
+    merged = dict(official)
+    official_ids = {term.get("TermID") for term in official.values()}
+    in_use: set[str] = set()
+    ignored: list[str] = []
+    for stem, term in local.items():
+        if stem in official or term["TermID"] in official_ids:
+            ignored.append(term["TermID"])
+        else:
+            merged[stem] = term
+            in_use.add(term["TermID"])
+    return merged, frozenset(in_use), tuple(ignored)
+
+
 def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Path]:
     """Write one file per term (exactly the proposal term); every ID is checked before anything is written."""
     for term in terms:
