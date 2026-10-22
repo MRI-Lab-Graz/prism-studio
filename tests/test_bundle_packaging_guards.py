@@ -107,5 +107,5 @@ def test_ci_workflow_reports_coverage_from_the_ubuntu_pytest_run() -> None:
 
     assert "pytest tests/ --ignore=tests/e2e --cov=src --cov=app/src" in content
     assert "--cov-report=xml" in content
-    assert content.count("if: matrix.os == 'ubuntu-latest'") >= 2  # tests + upload
+    assert "os: [ubuntu-latest]" in content  # the only matrix entry, so tests + upload run there
     assert "codecov/codecov-action" in content

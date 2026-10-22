@@ -11,7 +11,6 @@ TOP_LEVEL_TEMPLATES_WITH_SHARED_HELP = [
     "template_editor.html",
     "file_management.html",
     "json_editor.html",
-    "specifications.html",
     "survey_generator.html",
     "recipes.html",
     "recipe_builder.html",
