@@ -52,8 +52,25 @@ Two levels, nested:
   recommended unit, known alternative units, plausible range
   (`MinValue`/`WarnMaxValue`), optional LOINC code, optional conversion
   factors between listed units.
-- **Identity is a stable ID**; the label is replaceable. A rename or merge
-  never breaks a file. Deprecated terms carry `ReplacedBy`.
+- **Identity is a stable, prefixed ID** (a CURIE, as Neurobagel does):
+  `prefix:local`. `prism:cortisol` (parent), `prism:cortisol.saliva` (child).
+  The local part is a readable lowercase slug, `^[a-z][a-z0-9-]*$`; a child
+  is `<parent local>.<specimen>`. **An ID is frozen once released.** A wrong
+  name is fixed by changing the label, or by deprecating the term with
+  `ReplacedBy`, never by renaming the ID. The label is replaceable, so a
+  rename or merge never breaks a file.
+- **Prefixes say where a definition comes from.** `prism:` for terms PRISM
+  defines; `bids:` when the BIDS specification already defines the concept
+  (e.g. a column such as `age`): then the term uses the BIDS name and PRISM
+  does not mint a competing identity. `bids:` is a PRISM convention (the
+  object name in the BIDS schema), not an official BIDS CURIE. BIDS `blood`
+  is a PET file suffix, not a metric or specimen, and is not reused.
+- **Equivalents:** a term may list external codes (`loinc:2143-6`,
+  `snomed:...`, `bids:...`); a column written with an equivalent resolves to
+  the term. Deprecated terms carry `ReplacedBy`.
+- **Who picks the ID:** the maintainer, at proposal review; the proposal
+  builder (phase 2) pre-fills a slug from the label. A user's own column name
+  becomes an alias, never the ID.
 - **Status** per term (parent and child separately): `official` or
   `deprecated` in the shipped registry; `local` (only in a user's sidecar) and
   `proposed` (sent, not yet merged) exist on the user side. A user may propose
