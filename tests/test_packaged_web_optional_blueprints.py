@@ -40,9 +40,18 @@ def _build_template_app() -> Flask:
     def index():
         return render_template("home.html")
 
-    @app.route("/specifications")
-    def specifications():
-        return render_template("specifications.html")
+    @app.route("/specifications", defaults={"slug": "overview"})
+    @app.route("/specifications/<slug>")
+    def specifications(slug):
+        from src.web.spec_docs import SPEC_GROUPS, SPEC_PAGES, render_spec_page
+
+        return render_template(
+            "specifications.html",
+            pages=SPEC_PAGES,
+            groups=SPEC_GROUPS,
+            slug=slug,
+            body=render_spec_page(slug),
+        )
 
     @app.route("/assets/prism-logo")
     def prism_logo():
@@ -126,4 +135,4 @@ def test_specifications_page_renders_without_tools_blueprint() -> None:
 
     assert response.status_code == 200
     assert b"PRISM Specifications" in response.data
-    assert b"Unavailable in this build" in response.data
+    assert b"Validation errors" in response.data

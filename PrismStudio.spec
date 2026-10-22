@@ -5,7 +5,7 @@ a = Analysis(
     ['app/prism-studio.py'],
     pathex=[],
     binaries=[],
-    datas=[('app/templates', 'templates'), ('app/static', 'static'), ('app/schemas', 'schemas'), ('app/src', 'src'), ('src', 'backend_bundle/src'), ('official', 'official'), ('examples', 'examples')],
+    datas=[('app/templates', 'templates'), ('app/static', 'static'), ('app/schemas', 'schemas'), ('app/src', 'src'), ('src', 'backend_bundle/src'), ('official', 'official'), ('examples', 'examples'), ('docs/specs', 'docs/specs'), ('docs/SPECIFICATIONS.md', 'docs'), ('docs/ERROR_CODES.md', 'docs')],
     hiddenimports=['jsonschema', 'xml.etree.ElementTree', 'flask'],
     hookspath=[],
     hooksconfig={},
