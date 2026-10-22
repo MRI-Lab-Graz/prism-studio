@@ -32,7 +32,7 @@ def load_registry(modality: str = "biosample", root: Path | None = None) -> dict
     """Map each term file's stem (the local part of its TermID) to the parsed term.
 
     A missing folder gives an empty registry; unreadable files are skipped
-    (check_registry is the place that reports problems).
+    (scripts/specification/check_terms.py is the place that reports problems).
     """
     folder = Path(root or terms_root()) / modality
     registry: dict[str, dict] = {}
@@ -87,6 +87,8 @@ def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
 def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
     """Parent terms whose name is contained in the probe or contains it (substring only)."""
     lowered = probe.lower()
+    if len(lowered) < 3:  # one or two letters match half the registry
+        return ()
     hits = []
     for key, term in registry.items():
         if term.get("Level") != "analyte":
@@ -103,12 +105,13 @@ def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specim
     found = find_term(registry, ref) if ref else None
     if not found:
         hit = None if ref else find_term(registry, column)
-        if hit and hit[1].get("Status") != "deprecated":
-            tid = hit[1]["TermID"]
-            return Resolution("suggestion", hit[1], (tid,), f"{column!r} looks like {tid}; add Term to use it")
         if not hit:
             return Resolution("unknown", None, _similar(registry, ref or column))
-        found = hit
+        # a name match only ever suggests, also for a deprecated term (then it points at the replacement)
+        tid, new = hit[1]["TermID"], hit[1].get("ReplacedBy")
+        if hit[1].get("Status") == "deprecated" and new:
+            return Resolution("suggestion", hit[1], (new,), f"{column!r} looks like {tid}, which is deprecated; use {new}")
+        return Resolution("suggestion", hit[1], (tid,), f"{column!r} looks like {tid}; add Term to use it")
 
     _key, term = found
     res = _by_specimen(registry, term, specimen)

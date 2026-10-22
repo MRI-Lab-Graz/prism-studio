@@ -30,10 +30,24 @@ class ProposalError(ValueError):
 
 def slugify(text: str) -> str:
     """Lowercase ID slug: runs of anything but a-z0-9 become `-`; must start with a letter."""
+    if any(ch.isalpha() and not ch.isascii() for ch in str(text)):  # dropping letters would make IL-1α and IL-1β collide
+        raise ProposalError(f"cannot make an ASCII ID from {text!r}; pass --label with an ASCII name")
     slug = re.sub(r"[^a-z0-9]+", "-", str(text).lower()).strip("-")
     if not re.match(r"[a-z]", slug):
         raise ProposalError(f"cannot make an ID from {text!r} (it must start with a letter); pass --label")
     return slug
+
+
+def load_inherited_sidecar(data_file) -> tuple[dict, str]:
+    """The sidecar of a data file with BIDS inheritance (root-level merged with subject-level), as the validator reads it."""
+    from src.validator import _default_load_sidecar_json, _resolve_inherited_sidecar_core  # lazy: the validator is heavy
+
+    data_file = Path(data_file).resolve()
+    root = next((p for p in data_file.parents if (p / "dataset_description.json").is_file()), data_file.parent)
+    sidecar, path = _resolve_inherited_sidecar_core(str(data_file), str(root), None, _default_load_sidecar_json)
+    if not isinstance(sidecar, dict):
+        raise ProposalError(f"no sidecar found for {data_file} (looked for the subject-level and the root-level sidecar)")
+    return sidecar, path
 
 
 def _dangling_slug(col_def: dict) -> str | None:
@@ -56,14 +70,14 @@ def build_proposal(
     if not isinstance(col_def, dict):
         raise ProposalError(
             f"column {column!r} not found in the sidecar (or it is not a column definition); "
-            "if it is defined in the root-level sidecar of the project, pass that file with --sidecar"
+            "if it is defined in the root-level sidecar of the project, use --data with a data file of the project (its inherited sidecar is read) or pass the root-level sidecar"
         )
     technical = sidecar.get("Technical")
     specimen = technical.get("SpecimenType") if isinstance(technical, dict) else None
     if not specimen:
         raise ProposalError(
-            "the sidecar has no Technical.SpecimenType; pass the sidecar that defines it "
-            "(usually the root-level one) with --sidecar"
+            "the sidecar has no Technical.SpecimenType; use --data with a data file of the project (its inherited "
+            "sidecar is read) or pass the sidecar that defines it (usually the root-level one)"
         )
 
     res = resolve_column(registry, column, col_def, specimen)
@@ -72,7 +86,11 @@ def build_proposal(
             f"{column!r} is already an official metric ({res.term['TermID']}): "
             f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
         )
-    if res.kind in ("deprecated", "specimen_mismatch"):
+    if res.kind == "specimen_mismatch":
+        parent = res.term.get("Parent")
+        hint = f"; to propose a term for this specimen point Term at {parent}" if parent else ""
+        raise ProposalError(res.message + hint)
+    if res.kind == "deprecated":
         raise ProposalError(res.message)
     if not col_def.get("Units"):
         raise ProposalError(f"column {column!r} has no Units; a proposal needs the unit")

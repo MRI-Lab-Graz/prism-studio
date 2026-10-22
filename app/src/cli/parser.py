@@ -1797,12 +1797,21 @@ def build_prism_tools_parsers(
             _p.add_argument("column", help="Column name as it appears in your sidecar")
             _p.add_argument("--specimen", help="Technical.SpecimenType of the sidecar")
         if _name == "propose":
-            _p.add_argument("--sidecar", required=True, help="The sidecar .json holding the column")
+            source = _p.add_mutually_exclusive_group(required=True)
+            source.add_argument("--sidecar", help="The sidecar .json holding the column")
+            source.add_argument(
+                "--data",
+                help="A data file (.tsv): its sidecar is resolved with BIDS inheritance (root-level plus "
+                "subject-level), like the validator reads it",
+            )
             _p.add_argument("--column", required=True, help="The column to propose as a new metric")
             _p.add_argument("--label", help="Name for the new term (default: the column name)")
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
-        _p.add_argument("--modality", default="biosample", help="Modality of the registry")
+        _p.add_argument(
+            "--modality", default="biosample", choices=["biosample"] if _name == "propose" else None,
+            help="Modality of the registry",
+        )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_modality_version = subparsers.add_parser(

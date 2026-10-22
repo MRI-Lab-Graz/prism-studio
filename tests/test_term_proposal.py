@@ -9,7 +9,9 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
-from src.term_proposal import ProposalError, build_proposal, check_with_specification, issue_url, slugify  # noqa: E402
+from src.term_proposal import (  # noqa: E402
+    ProposalError, build_proposal, check_with_specification, issue_url, load_inherited_sidecar, slugify,
+)
 from src.term_registry import load_registry  # noqa: E402
 
 
@@ -78,7 +80,6 @@ def test_slugify():
     assert slugify("Ferritin (serum)") == "ferritin-serum"
     assert slugify("  IL-6 ") == "il-6"
     assert slugify("a__b") == "a-b"
-    assert slugify("µg/dL") == "g-dl"  # characters outside a-z0-9 are dropped; the maintainer picks the final ID
     for bad in ("123", "___", "", "µ"):
         with pytest.raises(ProposalError):
             slugify(bad)
@@ -139,3 +140,52 @@ def test_errors_for_a_sidecar_without_the_column_or_technical_point_at_the_root_
         build_proposal(REGISTRY, _sidecar("a", {"Units": "u"}), "b")
     with pytest.raises(ProposalError, match="root-level"):
         build_proposal(REGISTRY, _sidecar("a", {"Description": "d", "Units": "u"}, specimen=None), "a")
+
+
+# --- polish batch ---------------------------------------------------------------
+
+def test_slugify_refuses_to_drop_letters_silently():
+    for text in ("IL-1β", "β-endorphin", "µg/dL", "über"):
+        with pytest.raises(ProposalError, match="--label"):
+            slugify(text)
+    assert slugify("IL-1b") == "il-1b"
+
+
+def test_specimen_mismatch_error_suggests_the_parent_term():
+    sidecar = _sidecar("x", {"Term": "prism:cortisol.saliva", "Description": "d", "Units": "u"}, "hair")
+    with pytest.raises(ProposalError) as info:
+        build_proposal(REGISTRY, sidecar, "x")
+    assert "point Term at prism:cortisol" in str(info.value)
+
+
+# --- inheritance: the sidecar of a data file, resolved like the validator does -----------------
+
+def _dataset(tmp_path, root_sidecar=True, subject_sidecar=True):
+    ds = tmp_path / "ds"
+    folder = ds / "sub-01" / "ses-1" / "biosample"
+    folder.mkdir(parents=True)
+    (ds / "dataset_description.json").write_text("{}", encoding="utf-8")
+    if root_sidecar:
+        (ds / "biosample-iron_biosample.json").write_text(json.dumps(
+            {"Technical": {"SpecimenType": "serum"}, "ferr": {"Description": "d", "Units": "ug/L"}}), encoding="utf-8")
+    tsv = folder / "sub-01_ses-1_biosample-iron_biosample.tsv"
+    tsv.write_text("ferr\n1\n", encoding="utf-8")
+    if subject_sidecar:
+        tsv.with_suffix(".json").write_text(json.dumps({"Study": {"BiosampleName": "iron"}}), encoding="utf-8")
+    return tsv
+
+
+def test_load_inherited_sidecar_merges_root_and_subject_sidecars(tmp_path):
+    sidecar, path = load_inherited_sidecar(_dataset(tmp_path))
+    assert sidecar["ferr"]["Units"] == "ug/L" and sidecar["Study"]["BiosampleName"] == "iron"
+    assert path.endswith("_biosample.json")
+
+
+def test_load_inherited_sidecar_uses_the_root_sidecar_alone(tmp_path):
+    sidecar, _ = load_inherited_sidecar(_dataset(tmp_path, subject_sidecar=False))
+    assert sidecar["Technical"]["SpecimenType"] == "serum"
+
+
+def test_load_inherited_sidecar_without_any_sidecar_is_an_error(tmp_path):
+    with pytest.raises(ProposalError, match="no sidecar"):
+        load_inherited_sidecar(_dataset(tmp_path, root_sidecar=False, subject_sidecar=False))

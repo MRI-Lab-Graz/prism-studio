@@ -211,3 +211,30 @@ def test_source_without_the_tag_is_refused(tmp_path, capsys):
     repo, studio = _checkout(tmp_path, tag=None), _studio(tmp_path / "studio")
     assert sync_mod.main(["--tag", "v1.0.0", "--source", str(repo), "--studio-root", str(studio)]) == 1
     assert "ERROR" in capsys.readouterr().out and not (studio / "specification.lock.json").exists()
+
+
+def test_old_lock_entries_outside_the_vendored_folders_are_never_deleted(tmp_path):
+    src, studio = _source(tmp_path / "src"), _studio(tmp_path / "studio")
+    sync_mod.sync(src, studio, "v1.0.0")
+    (studio / "app/src").mkdir(parents=True)
+    (studio / "app/src/foo.py").write_text("code\n", encoding="utf-8")
+    (tmp_path / "outside.txt").write_text("keep\n", encoding="utf-8")
+    lock_path = studio / "specification.lock.json"
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    lock["files"].update({"app/src/foo.py": "0" * 64, "../outside.txt": "0" * 64})
+    lock_path.write_text(json.dumps(lock), encoding="utf-8")
+    sync_mod.sync(src, studio, "v1.1.0")
+    assert (studio / "app/src/foo.py").exists() and (tmp_path / "outside.txt").exists()
+
+
+def test_unpacked_size_is_capped(tmp_path, monkeypatch):
+    monkeypatch.setattr(sync_mod, "_MAX_UNPACKED", 10)
+    arc = _tar(tmp_path / "a.tgz", [("prism-specification-1.0.0/a", "file", b"x" * 11)])
+    with pytest.raises(ValueError):
+        sync_mod.extract(arc, tmp_path / "out")
+    assert not (tmp_path / "out").exists() or not any((tmp_path / "out").rglob("*"))
+
+
+def test_a_tag_with_a_trailing_newline_is_refused():
+    with pytest.raises(ValueError):
+        sync_mod.archive_url("v1.0.0\n")

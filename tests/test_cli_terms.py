@@ -72,7 +72,7 @@ def _sidecar(tmp_path, column="ferr_ugl", definition=None, specimen="serum"):
 
 
 def _args(sidecar, column="ferr_ugl", **over):
-    values = dict(sidecar=str(sidecar), column=column, label=None, modality="biosample", open=False, json=True)
+    values = dict(sidecar=str(sidecar), data=None, column=column, label=None, modality="biosample", open=False, json=True)
     values.update(over)
     return argparse.Namespace(**values)
 
@@ -170,3 +170,47 @@ def test_propose_rejects_wrong_value_types_through_the_vendored_checks(tmp_path)
     code, out = _run("propose", "--sidecar", str(sidecar), "--column", "ferr_ugl", "--json")
     data = json.loads(out)
     assert code == 1 and not data["success"] and any("Units" in p for p in data["problems"])
+
+
+def test_propose_array_sidecar_exits_1_without_a_traceback(tmp_path):
+    path = tmp_path / "s.json"
+    path.write_text("[1, 2]", encoding="utf-8")
+    code, out = _run("propose", "--sidecar", str(path), "--column", "x", "--json")
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_propose_modality_is_limited_to_biosample(tmp_path):
+    code, _ = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--modality", "eeg")
+    assert code == 2  # argparse: invalid choice
+
+
+def test_propose_says_so_when_the_browser_could_not_be_opened(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(webbrowser, "open", lambda url: False)
+    _handler()(_args(_sidecar(tmp_path), open=True, json=False))
+    out = capsys.readouterr().out
+    assert "could not open" in out.lower() and "run this again" not in out.lower() and FORM in out
+
+
+def _inherited_dataset(tmp_path):
+    ds = tmp_path / "ds"
+    folder = ds / "sub-01" / "ses-1" / "biosample"
+    folder.mkdir(parents=True)
+    (ds / "dataset_description.json").write_text("{}", encoding="utf-8")
+    (ds / "biosample-iron_biosample.json").write_text(json.dumps(
+        {"Technical": {"SpecimenType": "serum"}, "ferr": {"Description": "Ferritin", "Units": "ug/L"}}), encoding="utf-8")
+    tsv = folder / "sub-01_ses-1_biosample-iron_biosample.tsv"
+    tsv.write_text("ferr\n1\n", encoding="utf-8")
+    tsv.with_suffix(".json").write_text(json.dumps({"Study": {"BiosampleName": "iron"}}), encoding="utf-8")  # no column here
+    return tsv
+
+
+def test_propose_data_resolves_the_inherited_sidecar(tmp_path):
+    code, out = _run("propose", "--data", str(_inherited_dataset(tmp_path)), "--column", "ferr", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["proposal"]["terms"][-1]["Units"] == "ug/L"
+
+
+def test_propose_needs_exactly_one_of_sidecar_and_data(tmp_path):
+    tsv = _inherited_dataset(tmp_path)
+    assert _run("propose", "--column", "ferr")[0] == 2
+    assert _run("propose", "--column", "ferr", "--sidecar", str(tmp_path / "s.json"), "--data", str(tsv))[0] == 2
