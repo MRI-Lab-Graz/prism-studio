@@ -78,23 +78,33 @@ code/specification/
 - The overlay is part of the project (plain git, not annexed), so a shared or published dataset carries it
   and validates the same way for others; exports keep `code/specification/`.
 
-## Validator integration (the risky part)
+## One specification per validation (phase 0, agreed in chat)
 
-Today the entity rules are loaded once (`load_entity_rules()` is cached) and the validator derives module-level
-constants from them at import (`_ENTITY_RULES`, `PRISM_MODALITIES`, `BIDS_MODALITIES`, `MODALITY_PATTERNS`,
-used in `validator.py`, `runner.py`, `fixer.py`, `project_manager.py`; 13 direct `load_entity_rules()` calls).
-A per-project overlay needs per-run rules:
+What the validator knows comes from three places today, and only one of them is built wrong for an overlay:
 
-- `load_entity_rules(schema_dir, version, overlay=None)` merges overlay entity entries (cache key includes the
-  overlay path and its files' mtimes).
-- `DatasetValidator` gets the rules of its run (official + overlay) and uses them instead of the module
-  constants; the module constants stay as the official defaults for code paths without a project.
-- Schemas: `load_all_schemas` adds overlay schemas (layer 1) and applies patches (layer 2) to copies.
-- Terms: `load_registry` merges `code/specification/terms/<modality>/` (layer 3); collisions with official
-  terms are ignored with the notice above.
-- `bids_validator.prism_only_folders()` (already derived from the rules) takes the run's rules, so a local
-  modality's folder draws no BIDS error.
-- The builder migrates call sites one at a time behind tests; this is the part that needs the most care.
+| Knowledge | Loaded today | Per project? |
+|---|---|---|
+| Schemas | once per run (`runner.py`, `load_all_schemas`) | yes |
+| Terms | when a `DatasetValidator` is created (`load_registry()`) | yes |
+| Modalities (entity rules) | frozen at import into module constants (`_ENTITY_RULES`, `PRISM_MODALITIES`, `BIDS_MODALITIES`, `MODALITY_PATTERNS`), plus 13 direct `load_entity_rules()` calls in 10 files; `load_entity_rules` is cached for the life of the process | no |
+| Hand-written copies of modality lists | e.g. `issues.py` `hinted_modalities` (misses biosample); the BIDS folder list was one until 2026-10-23 | no |
+
+Studio is one long-running process that validates one project after another, so frozen or mutated global
+rules would let project A's local modality leak into project B. Validations run one at a time, so the rules do
+not need to be passed through every function. Instead (my call, from the discussion):
+
+- `load_specification(project_root=None) -> Specification` builds what the validator knows for one project:
+  entity rules, schemas, terms; official plus the project's overlay (empty in phase 0).
+- `use_specification(spec)` makes it the current specification for one validation (a `contextvars.ContextVar`,
+  set at the start of the run and reset at the end; safe in a background thread too). `current_specification()`
+  returns it, or the official specification outside a validation, so converters and CLI tools without a project
+  behave as today.
+- Every place that reads the module constants, calls `load_entity_rules()` directly or keeps a hand-written
+  modality list asks `current_specification()` instead. The checks themselves (file names, sidecars, content,
+  BIDS) are not rewritten.
+- Phase 0 changes no behaviour: the full suite is the safety net, plus one new test that validates project A
+  (with a local modality, once phase 4 exists; a stand-in specification before that) and then project B in the
+  same process and shows that B does not see A's additions, also inside a thread.
 
 ## Detection (data first)
 
@@ -141,6 +151,8 @@ Flask route that runs the backend function of the matching `spec` command.
 
 ## Phases (each its own plan, TDD, audit before merge)
 
+0. One specification per validation: `load_specification`, `use_specification`, `current_specification`;
+   every call site and hand-written modality list migrated; no behaviour change.
 1. Overlay for layer 3: `load_registry` merges the overlay; `spec local list/add-term/remove`; notices; the
    *New metric* tab. (Smallest; proves the overlay.)
 2. Proposal format v2 and the generic bot in prism-specification (release), `spec propose`.
@@ -162,4 +174,5 @@ page routes return what the commands return.
 - Strict mode turns local-item notices into warnings.
 - Proposal format v2 = repository paths plus contents, with a per-layer path allow-list.
 - The page extends the existing Specifications page instead of a new top-level page.
-- Phase order 3 → 2 → 1 by layer (smallest and least risky first).
+- Phase 0 first; then the layers in the order 3 → 2 → 1 (smallest and least risky first).
+- The current specification is a context variable set per validation, not a parameter threaded through every call.
