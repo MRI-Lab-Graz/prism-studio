@@ -52,3 +52,19 @@ def test_prism_folders_of_the_demo_dataset_draw_no_false_not_included_errors():
     # filtering is selective: a genuinely foreign file is still reported
     assert any("/DEMO_GUIDE.md" in m for m in not_included), not_included
     assert not any(i[1].startswith("PRISM902") for i in issues)
+
+
+@needs_engine
+def test_a_biosample_folder_draws_no_false_not_included_error(tmp_path):
+    """A project Studio creates, plus hand-made biosample data: the folder is PRISM-only, not a BIDS error."""
+    (tmp_path / "dataset_description.json").write_text(
+        json.dumps({"Name": "T", "BIDSVersion": "1.10.1", "DatasetType": "raw", "Authors": ["A", "B"]})
+    )
+    (tmp_path / "participants.tsv").write_text("participant_id\nsub-01\n")
+    (tmp_path / ".bidsignore").write_text("survey/\nbiometrics/\n")  # what Studio writes for a new project
+    folder = tmp_path / "sub-01" / "ses-1" / "biosample"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_ses-1_biosample-saliva_biosample.tsv").write_text("sample_id\tcort\nS-1\t12.4\n")
+    (tmp_path / "biosample-saliva_biosample.json").write_text("{}")
+    issues = bids_validator.run_bids_validator(str(tmp_path))
+    assert not [i for i in issues if i[0] == "ERROR" and "NOT_INCLUDED" in i[1]], issues

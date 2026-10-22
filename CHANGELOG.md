@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Biosample folders no longer fail BIDS validation.** The BIDS validator reported `NOT_INCLUDED` for
+  `sub-*/ses-*/biosample/` (so "validation failed" on a project Studio had just created, once it held biosample data),
+  because the list of PRISM-only folders was hand-written and had never gained `biosample`. It is derived from the
+  entity rules now, so a newly registered modality cannot be forgotten there.
+
 ### Added
 - **Propose a metric.** `prism_tools.py terms propose --sidecar FILE --column NAME [--open]` turns an unknown biosample
   column into a proposal for the term registry and opens a prefilled "Propose a Metric" form in
