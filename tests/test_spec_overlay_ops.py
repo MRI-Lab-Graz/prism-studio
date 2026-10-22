@@ -243,3 +243,11 @@ def test_a_real_problem_with_the_new_terms_still_blocks_the_add(tmp_path):
     add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
     with pytest.raises(OverlayError):
         add_local_term(tmp_path / "p", column="dhea2", data_file=str(tsv), label="DHEA-S")  # same ID as the first
+
+
+def test_an_over_long_name_is_refused_when_adding_and_nothing_is_written(tmp_path):
+    """The vendored v1.2.1 caps IDs at 63 characters; the add must surface that (shape problems name no stem)."""
+    tsv = _dataset(tmp_path / "p", DHEA)
+    with pytest.raises(OverlayError, match="path"):
+        add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="a" * 100)
+    assert not (tmp_path / "p" / "code").exists()

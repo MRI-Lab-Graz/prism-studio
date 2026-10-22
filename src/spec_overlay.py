@@ -201,13 +201,13 @@ def add_local_term(
         raise OverlayError(str(exc) or type(exc).__name__) from exc
     # the check wants a Status on every registry entry; a local term has none until the maintainers merge it
     checked_against = {stem: term if "Status" in term else {**term, "Status": "official"} for stem, term in registry.items()}
-    new_stems = [term["TermID"].partition(":")[2] for term in proposal["terms"]]
-    new_ids = [term["TermID"] for term in proposal["terms"]]
-    # only the new terms' problems block the add: another, already broken local term must not stop an unrelated metric
+    new_stems = {term["TermID"].partition(":")[2] for term in proposal["terms"]}
+    other_stems = set(load_local_terms(project_root, modality)[0]) - new_stems  # existing local terms
+    # another, already broken local term must not stop an unrelated metric: drop only the problems that name one
+    # (the registry check prefixes its messages with the file stem); everything else blocks, the safe default
     problems = [
         p for p in check_with_specification(proposal, checked_against)
-        if any(p.startswith(f"{stem}:") for stem in new_stems) or any(tid in p for tid in new_ids)
-        or "larger than" in p
+        if not any(p.startswith(f"{stem}:") for stem in other_stems)
     ]
     if problems:
         raise OverlayError("; ".join(problems))
