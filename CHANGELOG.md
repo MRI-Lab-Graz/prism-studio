@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Local metrics.** A metric PRISM does not know yet can be used in your project right away: `prism_tools.py spec local
+  add-term` (or *Specifications → Propose changes* in Studio) stores it in the project at `code/specification/terms/`, and
+  the validator reads it together with the official registry (the official one always wins; a local metric never reaches
+  another project). The validator says when a column uses a local term, when a local term has become official, and when
+  an overlay file was skipped. `spec local list|remove` and `spec propose` (shares a local term; nothing is sent
+  without `--open`) complete the set. The unknown-metric notice now offers both "use it here now" and "share it".
+
 ### Changed
 - **Internal: the validator reads one specification per run.** What a validation uses (modality rules, schemas, terms)
   is now one object that is current for the run (`src/specification.py`); validation code no longer reads constants

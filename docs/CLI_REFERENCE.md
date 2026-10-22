@@ -751,6 +751,25 @@ Look up the shipped metric terms (the term registry, see the Terms section of
 - `suggest`: how the validator relates a column name to the registry (`suggestion`, `unknown`, ...) and which official terms look similar.
 - `propose`: builds a proposal for a new metric from a column of your sidecar (a new analyte gets a parent and a child term, a known analyte with a new specimen only a child) and checks it with the rules of the specification repository. **Nothing is sent** unless you add `--open`, which opens a prefilled "Propose a Metric" form in the [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository in your browser (if the link would be too long, the command prints the form address and you paste the proposal). A bot checks it there and a maintainer takes it from there; the maintainers may choose a different ID or name, and your column name is kept as an alias. `--label` sets the name of the new term (default: the column name, or the name of a `Term` the column already carries). `--out FILE` also saves the bare proposal, for sending to a maintainer if you do not use GitHub. Give either the sidecar that defines the column and `Technical` (`--sidecar`), or a data file (`--data`, a `.tsv`): then its sidecar is resolved with BIDS inheritance (root-level merged with subject-level), exactly as the validator reads it. The validator's "not an official metric" notice prints the matching `--data` command. Exit code 1 if the metric is already official (the message names the term to use with `Term`), the sidecar or column cannot be read, or the proposal fails the checks.
 
+## spec
+
+Your project's own, not yet official specification: metrics PRISM does not know yet, used in this project
+right away, and sharing them later. They live in the project at `code/specification/terms/<modality>/` (one
+JSON file per term, exactly the term a proposal carries) and are read by the validator together with the
+official registry; the official registry always wins, and a local term never reaches another project.
+
+    python prism_tools.py spec local list --project <project> [--json]
+    python prism_tools.py spec local add-term --project <project> (--data <file.tsv> | --sidecar <sidecar.json>) --column <column> [--label TEXT] [--json]
+    python prism_tools.py spec local remove --project <project> <term-id> [--json]
+    python prism_tools.py spec propose --project <project> --term <term-id> [--out FILE] [--open] [--json]
+
+- `local list`: every local item with its status: `local`, `now-official` (the official registry has it since; the official definition is used, remove your copy) or `invalid` (a file that was skipped, with the reason).
+- `local add-term`: makes the metric of a column a local term (a new analyte gets a parent and a child, a known analyte with a new specimen only a child), after the same checks a proposal passes. The validator uses it from the next run; a column that carries `"Term": "<id>"` inherits its unit and range. Exit code 1 for an official metric (the message names the term to use), a name an existing term owns, or an unreadable source.
+- `local remove`: removes a term; removing a parent also removes its local children.
+- `propose`: the same as `terms propose`, for a local term: it builds the proposal (the term, its local parent or its local children; at most 2 terms, otherwise share one specimen at a time), checks it with the specification repository's rules, and with `--open` opens the prefilled form. **Nothing is sent** otherwise.
+
+The validator's "not an official metric" notice prints the matching `spec local add-term` and `terms propose` commands. Studio's *Specifications → Propose changes* page does the same from a browser.
+
 ## modality-version
 
 Per-modality schema versions and the pins in a project's `project.json`
