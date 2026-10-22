@@ -14,7 +14,7 @@ from validator import DatasetValidator
 TEMPLATE = {
     "Technical": {"SpecimenType": "serum"},
     "Study": {"BiosampleName": "inflammation"},
-    "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-15"},
+    "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-15"},
     "fasting": {"Description": "fasted", "Units": "n/a", "Levels": {"0": "no", "1": "yes"}},
     "crp": {"Description": "CRP", "Units": "mg/L", "DataType": "float", "MinValue": 0, "WarnMaxValue": 10},
 }

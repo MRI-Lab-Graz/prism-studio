@@ -43,7 +43,7 @@ def _sidecar(columns, specimen="saliva"):
     return {
         "Technical": {**TECHNICAL, "SpecimenType": specimen},
         "Study": {"BiosampleName": "saliva"},
-        "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-22"},
+        "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-22"},
         **columns,
     }
 

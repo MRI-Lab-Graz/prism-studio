@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biosample/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/biosample/v1.1.0",
+  "version": "1.1.0",
   "title": "Biosample Metadata",
   "description": "Schema for assay results on biological specimens (blood, serum, plasma, saliva, urine, hair, stool, CSF). One TSV per subject/session/run, one row per sample, one column per analyte. Files are named: sub-<label>[_ses-<label>]_biosample-<label>[_run-<index>]_biosample.<tsv|json>. The <label> names the assay panel (e.g. inflammation), not the specimen. In numeric data columns the codes n/a, <LOD, <LLOQ and >ULOQ are accepted.",
   "type": "object",
