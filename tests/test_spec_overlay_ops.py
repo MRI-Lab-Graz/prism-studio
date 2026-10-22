@@ -91,14 +91,15 @@ def test_list_shows_local_now_official_and_invalid(tmp_path):
 def test_find_unknown_metrics(tmp_path):
     columns = {**DHEA, "cort": {"Description": "d", "Units": "nmol/L"}}
     _dataset(tmp_path / "p", columns, tsvs=2)
-    junk = tmp_path / "p" / "derivatives" / "x" / "sub-01_biosample-saliva_biosample.tsv"
-    junk.parent.mkdir(parents=True)
-    junk.write_text("dhea_s\n1\n", encoding="utf-8")
+    for folder in ("derivatives", "sourcedata", ".git", "code"):  # never project data
+        junk = tmp_path / "p" / folder / "x" / "sub-01_biosample-saliva_biosample.tsv"
+        junk.parent.mkdir(parents=True)
+        junk.write_text("dhea_s\n1\n", encoding="utf-8")
     found = find_unknown_metrics(tmp_path / "p")
     assert [m["column"] for m in found] == ["dhea_s"]  # cort is an alias of an official term; one entry for two TSVs
     entry = found[0]
     assert entry["specimen"] == "saliva" and entry["units"] == "pg/mL" and entry["similar"] == []
-    assert entry["data_file"].endswith("_biosample-saliva_biosample.tsv") and "derivatives" not in entry["data_file"]
+    assert entry["data_file"].endswith("_biosample-saliva_biosample.tsv") and not any(part in entry["data_file"] for part in ("derivatives", "sourcedata", ".git", "/code/"))
 
 
 def test_find_unknown_metrics_ignores_columns_that_a_local_term_covers(tmp_path):

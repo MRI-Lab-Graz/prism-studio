@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -193,9 +194,11 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
     root = Path(project_root)
     registry = merged_registry(root, modality)
     found, seen = [], set()
-    for data_file in sorted(root.rglob(f"*_{modality}.tsv")):
-        if _NOT_PROJECT_DATA & set(data_file.relative_to(root).parts):
-            continue
+    data_files = []
+    for folder, subfolders, names in os.walk(root):
+        subfolders[:] = sorted(name for name in subfolders if name not in _NOT_PROJECT_DATA)  # never descend into them
+        data_files += [Path(folder) / name for name in sorted(names) if name.endswith(f"_{modality}.tsv")]
+    for data_file in data_files:
         try:
             sidecar, sidecar_path = load_inherited_sidecar(data_file)
         except ProposalError:
