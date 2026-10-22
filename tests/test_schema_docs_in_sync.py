@@ -69,3 +69,38 @@ def test_every_schema_has_a_page_or_is_listed_elsewhere():
         for p in (REPO_ROOT / "app/schemas/stable").glob("*.schema.json")
     }
     assert schemas - set(gen.PAGES) <= gen.OTHER_DOCS, schemas - set(gen.PAGES)
+
+
+def test_default_run_is_byte_identical():
+    assert _load().main(["--check"]) == 0
+
+
+def _layout(tmp_path):
+    (tmp_path / "schemas" / "stable").mkdir(parents=True)
+    (tmp_path / "specs").mkdir()
+    (tmp_path / "schemas" / "stable" / "x.schema.json").write_text(
+        '{"version": "1.0.0", "properties": {"A": {"type": "string", "description": "a"}}}', encoding="utf-8"
+    )
+    gen = _load()
+    page = tmp_path / "specs" / "x.md"
+    page.write_text(f"# X\n\n{gen.BEGIN}\nold\n{gen.END}\n", encoding="utf-8")
+    args = [
+        "--schemas", str(tmp_path / "schemas" / "stable"), "--specs", str(tmp_path / "specs"),
+        "--link-prefix", "../schemas/stable/", "--label-prefix", "schemas/stable/", "--page", "x=x.md",
+    ]
+    return gen, page, args
+
+
+def test_custom_layout(tmp_path):
+    gen, page, args = _layout(tmp_path)
+    assert gen.main(args) == 0
+    text = page.read_text(encoding="utf-8")
+    assert "](../schemas/stable/x.schema.json)" in text and "`schemas/stable/x.schema.json`" in text
+    assert "| `A` | string | no | a |" in text
+
+
+def test_check_reports_stale_page(tmp_path, capsys):
+    gen, page, args = _layout(tmp_path)
+    assert gen.main(args + ["--check"]) == 1
+    assert "x.md" in capsys.readouterr().out
+    assert "old" in page.read_text(encoding="utf-8")  # --check writes nothing

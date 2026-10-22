@@ -1,9 +1,12 @@
 """Write the field tables in docs/specs/*.md from app/schemas/stable/*.schema.json.
 
 The schema is the one source of truth; the prose around each table stays hand-written.
-Usage: python scripts/generate_schema_reference.py
+Usage: python scripts/generate_schema_reference.py [--check] [--schemas DIR --specs DIR
+       --link-prefix STR --label-prefix STR --page NAME=FILE ...]
+The defaults are Studio's layout; other repos pass their own paths.
 """
 
+import argparse
 import json
 from pathlib import Path
 
@@ -80,15 +83,14 @@ def schema_rows(schema, prefix="", depth=0):
     return rows
 
 
-def render(name):
-    schema = json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8"))
+def render(name, schemas=SCHEMAS, link_prefix="../../app/schemas/stable/", label_prefix="app/schemas/stable/"):
+    schema = json.loads((Path(schemas) / f"{name}.schema.json").read_text(encoding="utf-8"))
     lines = [
         BEGIN,
         "",
         f"## Field reference (`{name}.schema.json`, version {schema.get('version', '?')})",
         "",
-        "Generated from [`app/schemas/stable/"
-        f"{name}.schema.json`](../../app/schemas/stable/{name}.schema.json). "
+        f"Generated from [`{label_prefix}{name}.schema.json`]({link_prefix}{name}.schema.json). "
         "Nested fields are shown as `Block.Field`; `[]` marks list items. "
         "*Required* applies within its parent block.",
         "",
@@ -100,14 +102,14 @@ def render(name):
     return "\n".join(lines)
 
 
-def sync(write=True):
+def sync(write=True, schemas=SCHEMAS, specs=SPECS, pages=None, **prefixes):
     """Replace each page's generated block; return the pages that were (or would be) changed."""
     stale = []
-    for name, page in PAGES.items():
-        path = SPECS / page
+    for name, page in (PAGES if pages is None else pages).items():
+        path = Path(specs) / page
         text = path.read_text(encoding="utf-8")
         head, rest = text.split(BEGIN, 1)
-        new = head + render(name) + rest.split(END, 1)[1]
+        new = head + render(name, schemas, **prefixes) + rest.split(END, 1)[1]
         if new != text:
             stale.append(page)
             if write:
@@ -115,5 +117,23 @@ def sync(write=True):
     return stale
 
 
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--schemas", default=SCHEMAS)
+    ap.add_argument("--specs", default=SPECS)
+    ap.add_argument("--link-prefix", default="../../app/schemas/stable/")
+    ap.add_argument("--label-prefix", default="app/schemas/stable/")
+    ap.add_argument("--page", action="append", metavar="NAME=FILE", help="replaces the built-in page list")
+    ap.add_argument("--check", action="store_true", help="write nothing; exit 1 if a page is stale")
+    args = ap.parse_args(argv)
+    pages = dict(p.split("=", 1) for p in args.page) if args.page else None
+    stale = sync(
+        write=not args.check, schemas=args.schemas, specs=args.specs, pages=pages,
+        link_prefix=args.link_prefix, label_prefix=args.label_prefix,
+    )
+    print(("stale: " if args.check else "changed: ") + (", ".join(stale) or "none"))
+    return 1 if args.check and stale else 0
+
+
 if __name__ == "__main__":
-    print("changed:", ", ".join(sync()) or "none")
+    raise SystemExit(main())
