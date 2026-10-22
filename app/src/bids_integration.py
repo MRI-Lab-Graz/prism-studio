@@ -5,7 +5,7 @@ Handles compatibility with standard BIDS tools and apps.
 
 import os
 
-from src.entity_rules import load_entity_rules
+from src.specification import current_specification
 
 # Standard BIDS modalities (folders)
 # Based on BIDS Specification v1.9.0
@@ -102,7 +102,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     # they are not in the current supported_modalities list. Sourced from
     # app/schemas/stable/entities.schema.json (see src/entity_rules.py)
     # rather than hardcoded here.
-    prism_folders = set(load_entity_rules().prism_modalities)
+    prism_folders = set(current_specification().rules.prism_modalities)
     for pf in prism_folders:
         if pf not in STANDARD_BIDS_FOLDERS and pf not in non_standard:
             non_standard.append(pf)

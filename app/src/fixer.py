@@ -23,11 +23,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
 from src.entity_rules import load_entity_rules
-from src.validator import (
-    BIDS_MODALITIES,
-    PRISM_MODALITIES,
-    resolve_inherited_sidecar,
-)
+from src.specification import current_specification
+from src.validator import resolve_inherited_sidecar
 
 # Filename substrings that identify an eyetracking file by suffix, e.g.
 # "_eyetrack"/"_eye"/"_gaze". Sourced from entities.schema.json (via
@@ -36,6 +33,7 @@ from src.validator import (
 # with no matching check here - files ending "_gaze.tsv" were silently
 # inferred as "unknown") is automatically picked up by modality inference
 # too.
+# (the official eyetracking rule at import time: a project's local additions cannot change it)
 _EYETRACKING_NAME_HINTS = tuple(
     f"_{suffix}" for suffix in load_entity_rules().modalities["eyetracking"].suffixes
 )
@@ -386,12 +384,12 @@ class DatasetFixer:
 
                 # Pass-through BIDS modalities are validated by the BIDS validator,
                 # so do not propose PRISM sidecar stubs for them.
-                if modality in BIDS_MODALITIES:
+                if modality in current_specification().bids_modalities:
                     continue
 
                 # Keep project-page auto-fix issues aligned with the validator scope:
                 # only PRISM modalities require PRISM sidecars.
-                if modality not in PRISM_MODALITIES:
+                if modality not in current_specification().prism_modalities:
                     continue
 
                 # Create stub sidecar

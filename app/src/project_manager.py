@@ -58,6 +58,7 @@ from src.cross_platform import (
 from src.datalad_doctor import explain_ssh_failures, install_command, install_hint
 from src.git_exclude import sensitive_files_warning, tracked_sensitive_files
 from src.entity_rules import load_entity_rules
+from src.specification import current_specification
 from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
@@ -69,8 +70,9 @@ from src.citation_cff import (
 )
 from jsonschema import Draft7Validator
 
-# Available PRISM modalities. Sourced from app/schemas/stable/entities.schema.json
-# (see src/entity_rules.py) rather than hardcoded here.
+# The OFFICIAL project modalities, for code without a project (and the tests that import this).
+# Project code reads current_specification().rules.project_modalities, which adds a project's local ones.
+# Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py) rather than hardcoded here.
 PRISM_MODALITIES = load_entity_rules().project_modalities
 
 # Modalities that remain available in PRISM tooling but are validated as BIDS
@@ -531,7 +533,7 @@ class ProjectManager:
         name = config.get("name") or project_path.name
         modalities = [
             modality
-            for modality in PRISM_MODALITIES
+            for modality in current_specification().rules.project_modalities
             if modality not in BIDS_PASSTHROUGH_MODALITIES
         ]
         created_files: List[str] = []
@@ -3208,7 +3210,7 @@ class ProjectManager:
 
             bidsignore_rules_added = check_and_update_bidsignore(
                 str(export_path),
-                PRISM_MODALITIES,
+                current_specification().rules.project_modalities,
             )
         except Exception as exc:
             materialization_warnings.append(
@@ -7056,7 +7058,7 @@ git push -u origin main
         lines.extend(
             f"{mod}/"
             for mod in modalities
-            if mod in PRISM_MODALITIES and mod not in BIDS_PASSTHROUGH_MODALITIES
+            if mod in current_specification().rules.project_modalities and mod not in BIDS_PASSTHROUGH_MODALITIES
         )
         return "\n".join(lines) + "\n"
 
@@ -9180,4 +9182,4 @@ participants/sociodemographics import step, not at project creation.
 
 def get_available_modalities() -> List[str]:
     """Return list of available PRISM modalities."""
-    return PRISM_MODALITIES.copy()
+    return list(current_specification().rules.project_modalities)

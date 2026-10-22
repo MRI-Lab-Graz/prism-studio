@@ -376,16 +376,16 @@ def _base_fix_hint(code: str, message: str = "") -> str:
             modality_match = re.search(r"modality '([^']+)'", message)
             if modality_match:
                 modality = modality_match.group(1)
-                from src.entity_rules import describe_modality_pattern, load_entity_rules
+                from src.entity_rules import describe_modality_pattern
+                from src.specification import current_specification
 
-                # Only the modalities with a hand-authored hint historically
-                # get one here; others fall through to the generic message
-                # below (matches the pre-entity_rules.py hardcoded dict).
+                # A deliberate subset, not "all modalities": only these have a pattern description whose generated
+                # example is valid. Others (biosample needs biosample-<label>; its own message says so) fall through
+                # to the generic message below. Hints are formatted after a run, so this sees the official rules.
                 hinted_modalities = {
                     "survey", "biometrics", "physio", "eyetracking", "events",
                 }
-                rules = load_entity_rules()
-                rule = rules.modalities.get(modality)
+                rule = current_specification().rules.modalities.get(modality)
                 if modality in hinted_modalities and rule is not None:
                     return describe_modality_pattern(rule)
                 return (

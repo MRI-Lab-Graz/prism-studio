@@ -1182,6 +1182,8 @@ def generate_full_methods(
                     opening += f" ({abbr})"
                 if apa:
                     opening += f" ({apa})"
+                # (a deliberate subset of modalities, not "all": those whose data are recorded rather than
+                # administered; the methods text does not cover biosample)
                 verb = (
                     "was recorded"
                     if modality
