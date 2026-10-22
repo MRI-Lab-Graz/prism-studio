@@ -118,6 +118,8 @@ def stage(dest: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, target)  # follows symlinks
     shutil.copytree(ROOT / "app" / "schemas", pkg / "app" / "schemas")
+    # term registry: src/term_registry.py reads <package root>/official/library/terms
+    shutil.copytree(ROOT / "official" / "library" / "terms", pkg / "official" / "library" / "terms")
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     (pkg / "cli.py").write_text(CLI, encoding="utf-8")
     src_init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")
