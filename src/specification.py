@@ -33,13 +33,16 @@ def load_specification(
     version: str | None = None,
     modality_versions: dict | None = None,
     rules: EntityRules | None = None,
+    schemas: dict | None = None,
 ) -> Specification:
     """Build a specification: the official one, or with `rules` (and later phases' overlay) instead."""
     if rules is None:  # load_entity_rules() and load_entity_rules(None) are different cache entries
         rules = load_entity_rules(schema_dir) if schema_dir else load_entity_rules()
     return Specification(
         rules=rules,
-        schemas=load_all_schemas(schema_dir or DEFAULT_SCHEMA_DIR, version=version, modality_versions=modality_versions),
+        # `schemas` lets the caller pass schemas it already loaded (the runner loads them with the project's pins)
+        schemas=schemas if schemas is not None else load_all_schemas(
+            schema_dir or DEFAULT_SCHEMA_DIR, version=version, modality_versions=modality_versions),
         terms={modality: load_registry(modality) for modality in _TERM_MODALITIES},
     )
 

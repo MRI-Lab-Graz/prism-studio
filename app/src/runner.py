@@ -18,6 +18,7 @@ from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
 from src.modality_versions import ModalityVersionError
+from src.specification import Specification, load_specification, use_specification
 from schema_manager import validate_schema_version
 from validator import (
     DatasetValidator,
@@ -133,8 +134,46 @@ def validate_dataset(
     progress_callback: Optional[ProgressCallback] = None,
     check_nifti_headers: bool = False,
     modality_versions: Optional[dict] = None,
+    specification: Optional[Specification] = None,
 ):
-    """Main dataset validation function (refactored from prism.py)
+    """Main dataset validation function; arguments as in `_validate_dataset`.
+
+    The run happens under one `Specification` (what the validator knows: modality rules, schemas, terms),
+    made current for the duration of the run. Without one, the official modality rules and terms are used
+    with the schemas the project's pins select, exactly as before.
+    """
+    schema_sources: dict = {}
+    if specification is None:
+        if progress_callback:
+            progress_callback(0, 100, "Loading schemas...", None)
+        try:
+            schemas, schema_sources = _load_schemas(os.path.abspath(root_dir), schema_version, modality_versions)
+        except ModalityVersionError as exc:
+            return [("ERROR", f"Schema version problem: {exc}")], DatasetStats()
+        specification = load_specification(schemas=schemas)
+    with use_specification(specification):
+        return _validate_dataset(
+            root_dir, verbose, schema_version, run_bids, run_prism, library_path, project_path,
+            progress_callback, check_nifti_headers, modality_versions,
+            schemas=specification.schemas, schema_sources=schema_sources,
+        )
+
+
+def _validate_dataset(
+    root_dir,
+    verbose=False,
+    schema_version=None,
+    run_bids=False,
+    run_prism=True,
+    library_path=None,
+    project_path: Optional[str] = None,
+    progress_callback: Optional[ProgressCallback] = None,
+    check_nifti_headers: bool = False,
+    modality_versions: Optional[dict] = None,
+    schemas: Optional[dict] = None,
+    schema_sources: Optional[dict] = None,
+):
+    """The validation itself (refactored from prism.py)
 
     Args:
         root_dir: Root directory of the dataset
@@ -180,13 +219,8 @@ def validate_dataset(
         consistency_progress = 92
         bids_progress = 92
 
-    report_progress(0, 100, "Loading schemas...")
-
-    # Load schemas with specified version
-    try:
-        schemas, schema_sources = _load_schemas(root_dir, schema_version, modality_versions)
-    except ModalityVersionError as exc:
-        return [("ERROR", f"Schema version problem: {exc}")], stats
+    # schemas and where each version came from are loaded by validate_dataset (progress step 0)
+    schema_sources = schema_sources or {}
 
     # Record which schema files actually answered this run, so callers can
     # show it and detect a schema bump between two validations of the same

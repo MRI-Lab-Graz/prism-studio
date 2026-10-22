@@ -14,7 +14,8 @@ from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
 from src.constants import TABULAR_MODALITIES
-from src.term_registry import load_registry, resolve_column
+from src.specification import current_specification
+from src.term_registry import resolve_column
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -533,7 +534,7 @@ class DatasetValidator:
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
         self._biosample_warned = set()
-        self._terms = load_registry()
+        self._terms = current_specification().terms.get("biosample", {})
         # One directory listing per directory for the whole run, replacing tens
         # of thousands of per-candidate stat() calls on network shares.
         self._dir_cache = {}
