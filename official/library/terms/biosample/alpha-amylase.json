@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:alpha-amylase",
+  "Level": "analyte",
+  "Label": "alpha-amylase",
+  "Aliases": [
+    "amylase",
+    "aa"
+  ],
+  "Description": "Salivary alpha-amylase, a marker of sympathetic activity.",
+  "Status": "official"
+}

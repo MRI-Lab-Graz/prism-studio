@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:il6.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:il6",
+  "SpecimenType": "serum",
+  "Units": "pg/mL",
+  "MinValue": 0,
+  "LOINC": "26881-3",
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:cortisol.saliva",
+  "Level": "analyte-specimen",
+  "Parent": "prism:cortisol",
+  "SpecimenType": "saliva",
+  "Units": "nmol/L",
+  "AlternativeUnits": [
+    "ug/dL"
+  ],
+  "MinValue": 0,
+  "Status": "official"
+}
