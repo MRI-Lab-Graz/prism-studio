@@ -293,9 +293,6 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
     chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
     if not chosen:
         raise OverlayError("nothing to share" + (f" (covered by official terms: {', '.join(skipped)})" if skipped else ""))
-    limit = _scripts()[1].MAX_FILES
-    if len(chosen) > limit:
-        raise OverlayError(f"a proposal carries at most {limit} files, found {len(chosen)}: share some of them first")
     proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"])}
     document = as_v2(proposal)
     return {

@@ -179,12 +179,12 @@ def test_nothing_to_share_is_an_error(tmp_path):
         proposal_for_local_terms(project)
 
 
-def test_more_than_forty_files_is_an_error(tmp_path):
+def test_more_than_forty_files_is_reported_by_the_specification_check(tmp_path):
     project = tmp_path / "p"
     terms = [{"TermID": f"prism:m{n}-x", "Level": "analyte", "Label": f"m{n}x", "Aliases": [], "Description": "d"} for n in range(41)]
     write_local_terms(project, "biosample", terms)
-    with pytest.raises(OverlayError, match="at most 40"):
-        proposal_for_local_terms(project)
+    result = proposal_for_local_terms(project)  # the limit is upstream's rule, reported as a problem: no second copy here
+    assert any("at most 40" in p for p in result["problems"])
     assert len(proposal_for_local_terms(project, ["prism:m0-x"])["proposal"]["terms"]) == 1
 
 
