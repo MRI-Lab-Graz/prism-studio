@@ -272,3 +272,10 @@ def test_prisms_own_root_files_are_not_bids_errors_even_without_a_bidsignore(mon
     messages = [i[1] for i in bids_validator.run_bids_validator(str(tmp_path))]
     assert not any("project.json" in m for m in messages)
     assert any("notes.docx" in m for m in messages)
+
+
+def test_prism_only_folders_follow_the_entity_rules():
+    """The folders BIDS does not know are derived from the entity rules, not a hand-written list that misses new modalities."""
+    folders = bids_validator.prism_only_folders()
+    assert {"survey", "biometrics", "biosample", "environment", "physio", "metadata"} <= folders
+    assert not folders & {"anat", "func", "dwi", "beh", "eeg", "eyetracking"}

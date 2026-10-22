@@ -87,6 +87,19 @@ def _is_prism_artifact(location: str) -> bool:
     )
 
 
+def prism_only_folders() -> Set[str]:
+    """Folders that hold PRISM modalities BIDS does not know (survey, biometrics, biosample, ...).
+
+    Derived from the entity rules, so a newly registered modality cannot be forgotten here: its
+    folder would otherwise draw a NOT_INCLUDED error from the BIDS engine. `metadata` is a PRISM
+    helper folder, not a modality.
+    """
+    from src.entity_rules import load_entity_rules
+
+    rules = load_entity_rules()
+    return (set(rules.project_modalities) - set(rules.bids_modalities)) | {"metadata"}
+
+
 def run_bids_validator(
     root_dir: str,
     verbose: bool = False,
@@ -132,13 +145,7 @@ def run_bids_validator(
     }
 
     # PRISM-only modalities that should be ignored by BIDS
-    prism_ignore_folders = {
-        "physio",
-        "survey",
-        "biometrics",
-        "metadata",
-        "environment",
-    }
+    prism_ignore_folders = prism_only_folders()
     standard_bids_folders = {
         "anat",
         "func",
