@@ -167,10 +167,11 @@ move with the vendored copy in place.
 
 - Name: `prism-specification` (owner `MRI-Lab-Graz`, like `prism-studio`;
   my assumption, not stated).
-- Licence: **CC-BY 4.0** for everything in the repository (schemas, terms,
-  spec text, check scripts), as BIDS does. Contributions are accepted under
-  it (`CONTRIBUTING.md` says so); Studio stays AGPL-3.0, and the vendored
-  copy keeps its CC-BY 4.0 `LICENSE` next to it.
+- Licence, as BIDS does: **CC-BY 4.0** for the specification (schemas,
+  terms, spec text) and **MIT** for the scripts (`scripts/`; Creative Commons
+  advises against its licences for software). `LICENSE` states the split,
+  `CONTRIBUTING.md` says contributions are accepted under it. Studio stays
+  AGPL-3.0; the vendored copy keeps the licence notice next to it.
 - Visibility: **public** from the start (needed for unauthenticated sync and
   outside pull requests), not announced until ready.
 
