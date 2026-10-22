@@ -55,6 +55,7 @@ from typing import TextIO
 from typing import Any, Dict, Optional
 from flask import (
     Flask,
+    abort,
     render_template,
     request,
     jsonify,
@@ -1002,7 +1003,7 @@ def ensure_project_selected_first():
         return None
 
     # Allow documentation/specs and embedded editor/API tools without a project.
-    if path == "/specifications":
+    if path == "/specifications" or path.startswith("/specifications/"):
         return None
     if path.startswith("/api/v1/"):
         return None
@@ -1125,10 +1126,21 @@ def prism_logo():
     )
 
 
-@app.route("/specifications")
-def specifications():
-    """Page explaining the PRISM specifications"""
-    return render_template("specifications.html")
+@app.route("/specifications", defaults={"slug": "overview"})
+@app.route("/specifications/<slug>")
+def specifications(slug):
+    """The PRISM specifications, rendered offline from the shipped docs/"""
+    from src.web.spec_docs import SPEC_GROUPS, SPEC_PAGES, render_spec_page
+
+    if slug not in SPEC_PAGES:
+        abort(404)
+    return render_template(
+        "specifications.html",
+        pages=SPEC_PAGES,
+        groups=SPEC_GROUPS,
+        slug=slug,
+        body=render_spec_page(slug),
+    )
 
 
 @app.route("/health", methods=["GET"])

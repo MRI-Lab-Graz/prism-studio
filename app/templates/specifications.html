@@ -1,179 +1,34 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header, help_panel %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Specifications{% endblock %}
 
 {% block content %}
-{% set converter_available = endpoint_exists('tools.converter') %}
-{% set file_management_available = endpoint_exists('tools.file_management') %}
-{% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
-{% set recipes_available = endpoint_exists('tools.recipes') %}
-<div class="studio-page-shell" id="specificationsRoot" data-current-project-path="{{ current_project.path or '' }}">
-        {{ page_header(
-            'fas fa-book',
-            'PRISM Specifications',
-            'Understanding the Principled Research Information & Sidecar Model'
-        ) }}
+<div class="studio-page-shell">
+    {{ page_header(
+        'fas fa-book',
+        'PRISM Specifications',
+        'Filename rules, sidecar fields and validation codes for every modality'
+    ) }}
 
-        {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
-        <div class="small">
-            <p class="mb-2"><strong>BIDS in one sentence:</strong> a shared convention for naming folders and files, so any tool (and any colleague) understands your dataset without extra explanation.</p>
-            <p class="mb-0"><strong>What PRISM adds:</strong> rules for data BIDS covers poorly, such as questionnaires, biometrics, and environment data. Standard BIDS apps keep working on PRISM datasets.</p>
-        </div>
-        {% endcall %}
-
-        <div class="card mb-4 border-primary">
-            <div class="card-body">
-                <h3 class="h4 mb-3">
-                    <i class="fas fa-columns text-primary me-2"></i>
-                    PRISM Studio: 2-Tab Model
-                </h3>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded h-100 bg-light">
-                            <h4 class="h5 mb-2 text-success">
-                                <i class="fas fa-layer-group me-2"></i>Core
-                            </h4>
-                            <p class="text-muted mb-2">Project setup and core PRISM content operations.</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-primary">Projects</a>
-                                <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success">Validator</a>
-                                {% if converter_available %}
-                                <a href="{{ url_for('tools.converter') }}" class="btn btn-sm btn-outline-warning">Converter</a>
-                                {% else %}
-                                <span class="btn btn-sm btn-outline-warning disabled" title="Unavailable in this build" aria-disabled="true">Converter</span>
-                                {% endif %}
-                                <a href="{{ url_for('tools_template_editor.template_editor') }}" class="btn btn-sm btn-outline-secondary">Template Editor</a>
-                                {% if file_management_available %}
-                                <a href="{{ url_for('tools.file_management') }}" class="btn btn-sm btn-outline-warning">File Management</a>
-                                {% else %}
-                                <span class="btn btn-sm btn-outline-warning disabled" title="Unavailable in this build" aria-disabled="true">File Management</span>
-                                {% endif %}
-                                <a href="{{ url_for('json_editor.editor_index') }}" class="btn btn-sm btn-outline-secondary">JSON Editor</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded h-100 bg-light">
-                            <h5 class="mb-2 text-warning">
-                                <i class="fas fa-project-diagram me-2"></i>Derivatives
-                            </h5>
-                            <p class="text-muted mb-2">Workflows that build on an active project.</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                <a id="specSurveyExportLink" data-enabled-url="{{ url_for('tools.survey_generator') if survey_generator_available else '' }}" data-tool-available="{{ 'true' if survey_generator_available else 'false' }}" href="{% if current_project.path and survey_generator_available %}{{ url_for('tools.survey_generator') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-info{% if not current_project.path or not survey_generator_available %} disabled{% endif %}" {% if not survey_generator_available %}title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Survey Export</a>
-                                <a id="specRecipesLink" data-enabled-url="{{ url_for('tools.recipes') if recipes_available else '' }}" data-tool-available="{{ 'true' if recipes_available else 'false' }}" href="{% if current_project.path and recipes_available %}{{ url_for('tools.recipes') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary{% if not current_project.path or not recipes_available %} disabled{% endif %}" {% if not recipes_available %}title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Recipes</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="row g-4">
+        <nav class="col-md-3" aria-label="Specification pages">
+            {% for heading, slugs in groups %}
+            {% if heading %}<h2 class="h6 text-uppercase text-muted mt-4 mb-2">{{ heading }}</h2>{% endif %}
+            <div class="list-group">
+                {% for key in slugs %}
+                <a href="{{ url_for('specifications', slug=key) }}"
+                   class="list-group-item list-group-item-action{% if key == slug %} active{% endif %}"
+                   {% if key == slug %}aria-current="page"{% endif %}>{{ pages[key][0] }}</a>
+                {% endfor %}
             </div>
-        </div>
-
-        <!-- Core Concept -->
-        <div class="card feature-card mb-5">
-            <div class="card-body p-5">
-                <h3 class="card-title mb-4">
-                    <i class="fas fa-lightbulb text-warning me-2"></i>
-                    The Core Concept
-                </h3>
-                <p class="lead">
-                    PRISM is a hybrid dataset validation tool built on an open, extensible data-and-sidecar model.
-                    It builds upon the <strong>BIDS (Brain Imaging Data Structure)</strong> standard while adding
-                    stricter metadata requirements and support for non-imaging modalities such as today's
-                    psychology-oriented survey and biometrics templates.
-                </p>
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded bg-light h-100">
-                            <h4 class="h5"><i class="fas fa-check text-success me-2"></i>BIDS Compatible</h4>
-                            <p class="text-muted mb-0">
-                                PRISM datasets remain valid BIDS datasets. Any BIDS-compatible tool (like fMRIPrep) 
-                                will still work perfectly with your PRISM-structured data.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-3 border rounded bg-light h-100">
-                            <h5><i class="fas fa-plus text-primary me-2"></i>PRISM Enhanced</h5>
-                            <p class="text-muted mb-0">
-                                PRISM adds specific schemas for surveys, biometrics, biosamples, physio, eyetracking, environment and events data that 
-                                go beyond the standard BIDS requirements to ensure high-quality metadata.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            {% endfor %}
+        </nav>
+        <article class="col-md-9">
+            <div class="card">
+                <div class="card-body">{{ body|safe }}</div>
             </div>
-        </div>
-
-        <!-- Key Principles -->
-        <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-start">
-                        <i class="fas fa-folder-tree fa-2x text-primary mb-3"></i>
-                        <h5>Standardized Structure</h5>
-                        <p class="text-muted small">
-                            Consistent naming conventions (sub-ID, ses-ID, task-ID) across all modalities.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-start">
-                        <i class="fas fa-file-code fa-2x text-primary mb-3"></i>
-                        <h5>Rich Metadata</h5>
-                        <p class="text-muted small">
-                            Every data file must have a JSON sidecar containing technical and descriptive metadata.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm">
-                    <div class="card-body text-start">
-                        <i class="fas fa-shield-halved fa-2x text-primary mb-3"></i>
-                        <h5>Validation First</h5>
-                        <p class="text-muted small">
-                            Automated checks ensure your dataset is complete and follows the specification before analysis.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Documentation Link -->
-        <div class="card bg-primary text-white mb-5">
-            <div class="card-body p-5 text-start">
-                <h3 class="mb-4">Detailed Schema Documentation</h3>
-                <p class="lead mb-4">
-                    Every modality has a specification page with filename rules, required sidecar fields and a
-                    field-by-field reference generated from the shipped schema. The validator&rsquo;s errors and
-                    warnings are listed by code. Both are on ReadTheDocs.
-                </p>
-                {% set rtd = 'https://prism-studio.readthedocs.io/en/latest/' %}
-                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                    {% for page, label in [('survey', 'Survey'), ('biometrics', 'Biometrics'), ('biosample', 'Biosample'), ('physio', 'Physio'), ('eyetracking', 'Eyetracking'), ('environment', 'Environment'), ('events', 'Events'), ('project', 'project.json'), ('dataset_description', 'dataset_description.json'), ('entities', 'Filename rules')] %}
-                    <a href="{{ rtd }}specs/{{ page }}.html" class="btn btn-light" target="_blank" rel="noopener">{{ label }}</a>
-                    {% endfor %}
-                </div>
-                <a href="{{ rtd }}ERROR_CODES.html" class="btn btn-light btn-lg me-2" target="_blank" rel="noopener">
-                    <i class="fas fa-triangle-exclamation me-2"></i>Validation errors &amp; warnings
-                </a>
-                <a href="{{ rtd }}SPECIFICATIONS.html" class="btn btn-light btn-lg" target="_blank" rel="noopener">
-                    <i class="fas fa-external-link-alt me-2"></i>Specification overview
-                </a>
-            </div>
-        </div>
-
-        <div class="text-center">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Home
-            </a>
-        </div>
+        </article>
+    </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/specifications.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

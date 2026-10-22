@@ -1,18 +1,11 @@
 # Specifications and Schemas
 
-The specification layer behind PRISM Studio: what PRISM adds to BIDS, how schemas
-are versioned, and what files/metadata the validator expects. This page is
-conceptual and reference-oriented — for step-by-step workflows, use the
-[Studio Guide](studio/index.md) instead.
+What PRISM adds to BIDS, how its schemas are versioned, and which files and
+metadata the validator expects.
 
-**Specification version:** tracks the `stable` schema version (see
-[Schema versions](#schema-versions) below) — currently the schemas under
-`app/schemas/stable/`. This document, the JSON Schemas it describes, and
-`app/schemas/stable/entities.schema.json` together form the PRISM
-Specification; it is intended to get its own archival Zenodo DOI per spec
-version, complementing (not duplicating) the software-release DOI cited by
-the JOSS paper in `paper/paper.md` — that DOI has not been minted yet, so
-this note is a placeholder until the first spec snapshot is archived.
+**Specification version:** the `stable` schema set under `app/schemas/stable/`
+(see [Schema versions](#schema-versions)). The JSON Schemas and
+`app/schemas/stable/entities.schema.json` together form the PRISM Specification.
 
 ## PRISM, BIDS, and PRISM Studio
 
@@ -25,9 +18,6 @@ operate on PRISM datasets.
 for workflows common in psychological research: surveys, biometrics, environment
 metadata, richer sidecar expectations, and some additional requirements for
 otherwise-standard BIDS data (e.g. events metadata blocks).
-
-**PRISM Studio** is the software layer that helps you work with those rules —
-import/conversion, validation, scoring/derivatives, and export.
 
 ## Schema versions
 
@@ -113,18 +103,16 @@ fields, allowed types/value shapes, and optional blocks (i18n, scoring metadata)
 
 - **`Study`** — instrument-level/scientific metadata: `OriginalName`, `ShortName`,
   `Authors`, `DOI`/`Citation`, `Construct`, `Reliability`/`Validity`. For surveys,
-  `TaskName` matters most since it ties the instrument to how it's referenced in the
-  dataset.
+  `TaskName` ties the instrument to the `task-` entity in the dataset.
 - **`Technical`** — how the data was actually collected in *this* project: software
   platform/version, language, respondent type, administration method, equipment/
-  location. Often the block that still needs project-specific completion after an
-  import or template copy.
+  location.
 - **Item-level metadata** — question/metric text, levels/response labels, units,
   hard/soft bounds, expected type, relevance logic. This is what makes survey and
   biometrics data self-documenting instead of just column names.
 - **Internationalization** — some templates support multilingual descriptive fields,
   e.g. `{"en": "Measures explosive leg power.", "de": "Misst die explosive
-  Beinkraft."}` — useful for instrument descriptions and item text.
+  Beinkraft."}`, for instrument descriptions and item text.
 
 For modality-specific semantics, see the spec pages:
 [Survey](specs/survey), [Biometrics](specs/biometrics), [Events](specs/events) (`_events.tsv` next to its task in `func/`/`beh/`/`eeg/`),
@@ -140,12 +128,9 @@ are stale).
 
 ## BIDS compatibility
 
-Keep `dataset_description.json` and `CITATION.cff` in sync (details and the field list
-are on [Dataset description](specs/dataset_description.md)): treat `CITATION.cff` as
-the citation-focused file and avoid repeating citation information in both. Drifted
-metadata leads to confusing validation results and extra cleanup before sharing. Fill
-the recommended fields, not only the required ones, and validate after each batch of
-metadata edits rather than at the end.
+`dataset_description.json` and `CITATION.cff` carry overlapping citation information
+and must agree; `CITATION.cff` is the citation-focused file. The field list is on
+[Dataset description](specs/dataset_description.md).
 
 ## FAIR compliance
 

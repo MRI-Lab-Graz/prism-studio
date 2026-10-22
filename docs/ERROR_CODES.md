@@ -1,9 +1,7 @@
 # Error Codes Reference
 
-Use this page when validation gives you a PRISM code and you need to decide what to
-fix first: identify the code range → understand whether it's structural,
-metadata-related, or system-level → decide whether auto-fix applies → re-run
-validation after the repair.
+Every issue the validator reports carries a `PRISM` code, a severity and a fix hint.
+The code range gives the category: structural, metadata-related or system-level.
 
 The registry is `app/src/issues.py`. `tests/test_error_codes_registry.py` fails if the
 validator can emit a code that is not in that registry, or if a registered code is
