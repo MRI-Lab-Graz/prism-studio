@@ -13,7 +13,15 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from src.term_proposal import specification_scripts_dir
+from src.term_proposal import (
+    ProposalError,
+    build_proposal,
+    check_with_specification,
+    issue_url,
+    load_inherited_sidecar,
+    specification_scripts_dir,
+)
+from src.term_registry import analyte_columns, load_registry, resolve_column
 
 OVERLAY_PARTS = ("code", "specification")
 
@@ -121,3 +129,109 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
     for path in doomed:
         path.unlink()
     return doomed
+
+
+# --- operations the CLI and the Contribute page share ------------------------------------------------
+
+_NOT_PROJECT_DATA = {"code", "derivatives", "sourcedata", ".git", ".datalad"}
+
+
+def merged_registry(project_root, modality: str = "biosample") -> dict[str, dict]:
+    """The official registry plus the project's local terms (the official one wins)."""
+    return merge_terms(load_registry(modality), load_local_terms(project_root, modality)[0])[0]
+
+
+def _specimen(sidecar: dict):
+    technical = sidecar.get("Technical")
+    return technical.get("SpecimenType") if isinstance(technical, dict) else None
+
+
+def add_local_term(
+    project_root, *, column: str, data_file=None, sidecar_file=None, label=None, modality: str = "biosample"
+) -> dict:
+    """Make a column's metric a local term of this project: build the proposal, check it, write the term files."""
+    if bool(data_file) == bool(sidecar_file):
+        raise OverlayError("give exactly one of a data file and a sidecar file")
+    try:
+        if data_file:
+            sidecar, _path = load_inherited_sidecar(data_file)
+        else:
+            sidecar = json.loads(Path(sidecar_file).read_text(encoding="utf-8"))
+        registry = merged_registry(project_root, modality)
+        proposal = build_proposal(registry, sidecar, column, label, modality)
+    except (ProposalError, OSError, ValueError) as exc:
+        raise OverlayError(str(exc)) from exc
+    problems = check_with_specification(proposal, registry)
+    if problems:
+        raise OverlayError("; ".join(problems))
+    return {"proposal": proposal, "written": write_local_terms(project_root, modality, proposal["terms"])}
+
+
+def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
+    """Every file of the overlay: layer, ID, and whether it is local, now official (ignored) or invalid."""
+    terms, problems = load_local_terms(project_root, modality)
+    official = load_registry(modality)
+    official_ids = {term.get("TermID") for term in official.values()}
+    folder = _terms_folder(project_root, modality)
+    items = []
+    for stem, term in terms.items():
+        now_official = stem in official or term["TermID"] in official_ids
+        items.append({
+            "layer": 3, "modality": modality, "id": term["TermID"], "label": term.get("Label") or term["TermID"],
+            "path": str(folder / f"{stem}.json"), "status": "now-official" if now_official else "local",
+        })
+    for problem in problems:
+        items.append({
+            "layer": 3, "modality": modality, "id": None, "label": None, "problem": problem,
+            "path": str(folder / problem.split(":", 1)[0]), "status": "invalid",
+        })
+    return items
+
+
+def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict]:
+    """Analyte columns of the project's data files that neither the official registry nor a local term knows."""
+    root = Path(project_root)
+    registry = merged_registry(root, modality)
+    found, seen = [], set()
+    for data_file in sorted(root.rglob(f"*_{modality}.tsv")):
+        if _NOT_PROJECT_DATA & set(data_file.relative_to(root).parts):
+            continue
+        try:
+            sidecar, sidecar_path = load_inherited_sidecar(data_file)
+        except ProposalError:
+            continue
+        specimen = _specimen(sidecar)
+        for column, definition in analyte_columns(sidecar):
+            res = resolve_column(registry, column, definition, specimen)
+            if res.kind == "unknown" and (sidecar_path, column) not in seen:
+                seen.add((sidecar_path, column))
+                found.append({
+                    "column": column, "data_file": str(data_file), "specimen": specimen,
+                    "units": definition.get("Units"), "similar": list(res.similar),
+                })
+    return found
+
+
+def proposal_for_local_term(project_root, term_id: str, modality: str = "biosample") -> dict:
+    """The proposal that shares a local term: the term, its local parent (for a child) or local children (for a parent)."""
+    stem = _local_part(term_id)
+    terms, _problems = load_local_terms(project_root, modality)
+    if stem is None or stem not in terms:
+        raise OverlayError(f"no local term {term_id} in this project")
+    term = terms[stem]
+    if term.get("Level") == "analyte-specimen":
+        parent = terms.get(str(term.get("Parent", "")).partition(":")[2])
+        chosen = ([parent] if parent else []) + [term]
+    else:
+        chosen = [term] + [t for t in terms.values() if t.get("Parent") == term["TermID"]]
+    if len(chosen) > 2:
+        raise OverlayError(
+            f"sharing {term_id} would carry {len(chosen)} terms and a proposal carries at most 2: "
+            "propose in two steps (share one specimen at a time)"
+        )
+    proposal = {"modality": modality, "terms": chosen}
+    return {
+        "proposal": proposal,
+        "issue_url": issue_url(proposal),
+        "problems": check_with_specification(proposal, load_registry(modality)),
+    }
