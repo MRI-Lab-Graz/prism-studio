@@ -144,7 +144,7 @@
         currentProposal = data.document;  // the document that is sent (proposal format v2)
         document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
         if (data.skipped.length) {
-            say("Left out, the official registry has these now: " + data.skipped.join(", "), "info");
+            say("Left out, they are covered by official terms: " + data.skipped.join(", "), "info");
         }
         const problems = document.getElementById("spec-propose-problems");
         problems.textContent = data.problems.join("; ");

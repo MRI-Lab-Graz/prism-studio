@@ -201,7 +201,14 @@ def add_local_term(
         raise OverlayError(str(exc) or type(exc).__name__) from exc
     # the check wants a Status on every registry entry; a local term has none until the maintainers merge it
     checked_against = {stem: term if "Status" in term else {**term, "Status": "official"} for stem, term in registry.items()}
-    problems = check_with_specification(proposal, checked_against)
+    new_stems = [term["TermID"].partition(":")[2] for term in proposal["terms"]]
+    new_ids = [term["TermID"] for term in proposal["terms"]]
+    # only the new terms' problems block the add: another, already broken local term must not stop an unrelated metric
+    problems = [
+        p for p in check_with_specification(proposal, checked_against)
+        if any(p.startswith(f"{stem}:") for stem in new_stems) or any(tid in p for tid in new_ids)
+        or "larger than" in p
+    ]
     if problems:
         raise OverlayError("; ".join(problems))
     return {"proposal": proposal, "written": write_local_terms(project_root, modality, proposal["terms"])}
@@ -210,12 +217,11 @@ def add_local_term(
 def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
     """Every file of the overlay: layer, ID, and whether it is local, now official (ignored) or invalid."""
     terms, problems = load_local_terms(project_root, modality)
-    official = load_registry(modality)
-    official_ids = {term.get("TermID") for term in official.values()}
+    _merged, _in_use, ignored = merge_terms(load_registry(modality), terms)  # the validator's decision, not a second one
     folder = _terms_folder(project_root, modality)
     items = []
     for stem, term in terms.items():
-        now_official = stem in official or term["TermID"] in official_ids
+        now_official = term["TermID"] in ignored
         items.append({
             "layer": 3, "modality": modality, "id": term["TermID"], "label": term.get("Label") or term["TermID"],
             "path": str(folder / f"{stem}.json"), "status": "now-official" if now_official else "local",
@@ -286,7 +292,7 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
             chosen_stems += [stem, *related]
     chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
     if not chosen:
-        raise OverlayError("nothing to share" + (f" ({', '.join(skipped)} are official now)" if skipped else ""))
+        raise OverlayError("nothing to share" + (f" (covered by official terms: {', '.join(skipped)})" if skipped else ""))
     limit = _scripts()[1].MAX_FILES
     if len(chosen) > limit:
         raise OverlayError(f"a proposal carries at most {limit} files, found {len(chosen)}: share some of them first")

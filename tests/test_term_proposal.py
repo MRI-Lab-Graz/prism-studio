@@ -264,3 +264,32 @@ def test_a_proposal_of_many_terms_passes_the_vendored_checks_as_v2():
 def test_the_issue_title_names_the_first_term_in_v2_too():
     doc = as_v2({"modality": "biosample", "terms": [{"TermID": "prism:x", "Level": "analyte", "Label": "Ferritin"}]})
     assert "Ferritin" in parse_qs(urlparse(issue_url(doc)).query)["title"][0]
+
+
+# --- review fixes: the size limit, the issue title ------------------------------------------------
+
+def test_a_proposal_above_the_size_limit_is_reported_before_anyone_pastes_it():
+    terms = [{"TermID": f"prism:m{n}-x", "Level": "analyte", "Label": f"m{n}x", "Aliases": [], "Description": "d" * 1200} for n in range(40)]
+    problems = check_with_specification({"modality": "biosample", "terms": terms}, load_registry())
+    assert any("larger than" in p and "50000" in p for p in problems), problems
+
+
+def test_the_indented_text_that_is_pasted_is_what_counts():
+    # 40 terms of ~1.2 KB: below the limit compact, above it indented (what the CLI prints and the page shows)
+    terms = [{"TermID": f"prism:m{n}-x", "Level": "analyte", "Label": f"m{n}x", "Aliases": [], "Description": "d" * 1100} for n in range(40)]
+    document = as_v2({"modality": "biosample", "terms": terms})
+    assert len(json.dumps(document, separators=(",", ":")).encode()) < 50_000 < len(json.dumps(document, indent=2).encode())
+    assert any("larger than" in p for p in check_with_specification(document, load_registry()))
+
+
+def test_the_issue_title_says_how_many_metrics_it_carries():
+    def parent(n):
+        return {"TermID": f"prism:m{n}", "Level": "analyte", "Label": f"Metric{n}"}
+    one = as_v2({"modality": "biosample", "terms": [parent(1), {"TermID": "prism:m1.serum", "Level": "analyte-specimen", "Parent": "prism:m1"}]})
+    three = as_v2({"modality": "biosample", "terms": [parent(1), parent(2), parent(3)]})
+    child_only = as_v2({"modality": "biosample", "terms": [{"TermID": "prism:m1.hair", "Level": "analyte-specimen", "Parent": "prism:m1"},
+                                                          {"TermID": "prism:m1.saliva", "Level": "analyte-specimen", "Parent": "prism:m1"}]})
+    title = lambda doc: parse_qs(urlparse(issue_url(doc)).query)["title"][0]  # noqa: E731
+    assert title(one) == "[Metric]: Metric1"
+    assert title(three) == "[Metric]: Metric1 and 2 more"
+    assert title(child_only) == "[Metric]: prism:m1.hair"  # one analyte, two specimens

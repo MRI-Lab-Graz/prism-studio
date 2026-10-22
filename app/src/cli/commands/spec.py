@@ -82,5 +82,5 @@ def cmd_spec_propose(args) -> None:
             "problems": [],
         },
         delivered["text"]
-        + (f"\nLeft out, the official registry has these now: {', '.join(result['skipped'])}" if result["skipped"] else ""),
+        + (f"\nLeft out, they are covered by official terms: {', '.join(result['skipped'])}" if result["skipped"] else ""),
     )

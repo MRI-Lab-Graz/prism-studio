@@ -216,3 +216,30 @@ def test_a_second_metric_can_be_added_after_the_first(tmp_path):
     second = add_local_term(tmp_path / "p", column="ferr_ugl", data_file=str(tsv), label="Ferritin")
     assert [t["TermID"] for t in second["proposal"]["terms"]] == ["prism:ferritin", "prism:ferritin.saliva"]
     assert set(load_local_terms(tmp_path / "p")[0]) == {"dhea-s", "dhea-s.saliva", "ferritin", "ferritin.saliva"}
+
+
+# --- review fixes: honest "official now", one broken local file does not block every add --------------
+
+def test_a_local_term_that_only_shares_an_official_name_is_not_called_official_by_id(tmp_path):
+    project = tmp_path / "p"
+    write_local_terms(project, "biosample", [{"TermID": "prism:mycort", "Level": "analyte", "Label": "Cortisol", "Aliases": [], "Description": "d"}])
+    assert [i["status"] for i in list_local_items(project)] == ["now-official"]  # its label is an official name: same decision as the validator
+    with pytest.raises(OverlayError, match="covered by official"):
+        proposal_for_local_terms(project)
+
+
+def test_one_broken_local_term_does_not_block_adding_an_unrelated_metric(tmp_path):
+    columns = {**DHEA, "ferr_ugl": {"Description": "Ferritin", "Units": "ug/L"}}
+    tsv = _dataset(tmp_path / "p", columns)
+    add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
+    (tmp_path / "p" / "code" / "specification" / "terms" / "biosample" / "dhea-s.json").unlink()  # orphans its child
+    result = add_local_term(tmp_path / "p", column="ferr_ugl", data_file=str(tsv), label="Ferritin")
+    assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:ferritin", "prism:ferritin.saliva"]
+
+
+def test_a_real_problem_with_the_new_terms_still_blocks_the_add(tmp_path):
+    columns = {**DHEA, "dhea2": {"Description": "d", "Units": "pg/mL"}}
+    tsv = _dataset(tmp_path / "p", columns)
+    add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="DHEA-S")
+    with pytest.raises(OverlayError):
+        add_local_term(tmp_path / "p", column="dhea2", data_file=str(tsv), label="DHEA-S")  # same ID as the first

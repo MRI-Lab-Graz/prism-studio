@@ -137,11 +137,14 @@ def as_v2(proposal: dict) -> dict:
 def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
     """Prefilled issue-form URL for a proposal (sent as format v2), or None when it would be longer than `limit`."""
     document = as_v2(proposal)
-    first = next(iter(document["files"].values()))
+    terms = list(document["files"].values())
+    first = terms[0]
+    analytes = {t["TermID"] if t.get("Level") == "analyte" else t.get("Parent") for t in terms}  # metrics, not files
+    more = f" and {len(analytes) - 1} more" if len(analytes) > 1 else ""
     query = urlencode(
         {
             "template": ISSUE_TEMPLATE,
-            "title": f"[Metric]: {first.get('Label') or first['TermID']}",
+            "title": f"[Metric]: {first.get('Label') or first['TermID']}{more}",
             "proposal": json.dumps(document, separators=(",", ":"), ensure_ascii=False),
         },
         quote_via=quote,
@@ -167,7 +170,12 @@ def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
     modality = next(iter(document["files"])).split("/")[1]
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{modality}.schema.json"
-    return module.check_proposal(document, registry, module.check_terms.specimen_types(schema))[1]
+    problems = module.check_proposal(document, registry, module.check_terms.specimen_types(schema))[1]
+    # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
+    size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))
+    if size > module.MAX_BYTES:
+        problems.append(f"the proposal is {size} bytes, larger than the {module.MAX_BYTES} bytes the form takes: share fewer metrics at once")
+    return problems
 
 
 def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, similar=None, alias=None) -> dict:
