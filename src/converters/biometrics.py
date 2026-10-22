@@ -29,7 +29,8 @@ from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.utils.naming import norm_key as _norm_key
 
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
-# rather than hardcoded here.
+# rather than hardcoded here. Frozen at import on purpose: the suffix of an official modality, written by a
+# converter that runs without a project.
 _BIOMETRICS_SUFFIX = load_entity_rules().primary_suffix("biometrics")
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.bids_entity_parser import BidsEntityParser
 from src.entity_rules import load_entity_rules
+from src.specification import current_specification
 from src.system_files import filter_system_files
 
 _IGNORED_DIR_NAMES = {
@@ -34,13 +35,14 @@ _TASK_LABEL = re.compile(r"(?:^|_)task-([A-Za-z0-9]+)(?=_|\.|$)")
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
 # rather than hardcoded here, so adding/reordering an entity only requires a
 # rules-file edit.
+# (the entity order is global to every modality; a project's local additions cannot change it)
 _ENTITY_ORDER = list(load_entity_rules().entity_order)
 _REQUIRED_ENTITIES = set(load_entity_rules().default_required_entities)
 
 
 def _entity_excluded(modality: str, entity: str) -> bool:
     """True when the modality's rule lists allowed entities and omits this one."""
-    rule = load_entity_rules().modalities.get(modality)
+    rule = current_specification().rules.modalities.get(modality)
     return bool(rule and rule.allowed_entities is not None and entity not in rule.allowed_entities)
 
 

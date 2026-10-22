@@ -18,12 +18,9 @@ from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
 from src.modality_versions import ModalityVersionError
+from src.specification import Specification, current_specification, load_specification, use_specification
 from schema_manager import validate_schema_version
-from validator import (
-    DatasetValidator,
-    MODALITY_PATTERNS,
-    BIDS_MODALITIES,
-)
+from validator import DatasetValidator
 from citation_cff import validate_citation_cff_file
 from cross_platform import normalize_path
 from stats import DatasetStats
@@ -133,8 +130,48 @@ def validate_dataset(
     progress_callback: Optional[ProgressCallback] = None,
     check_nifti_headers: bool = False,
     modality_versions: Optional[dict] = None,
+    specification: Optional[Specification] = None,
 ):
-    """Main dataset validation function (refactored from prism.py)
+    """Main dataset validation function; arguments as in `_validate_dataset`.
+
+    The run happens under one `Specification` (what the validator knows: modality rules, schemas, terms),
+    made current for the duration of the run. Without one, the official modality rules and terms are used
+    with the schemas the project's pins select, exactly as before. A specification passed in is used as it
+    is: `schema_version`, `modality_versions` and the project's pins then do not select schemas (the caller
+    built the schemas), and `prism_schema_sources` in the stats stays empty.
+    """
+    schema_sources: dict = {}
+    if specification is None:
+        if progress_callback:
+            progress_callback(0, 100, "Loading schemas...", None)
+        try:
+            schemas, schema_sources = _load_schemas(os.path.abspath(root_dir), schema_version, modality_versions)
+        except ModalityVersionError as exc:
+            return [("ERROR", f"Schema version problem: {exc}")], DatasetStats()
+        specification = load_specification(schemas=schemas)
+    with use_specification(specification):
+        return _validate_dataset(
+            root_dir, verbose, schema_version, run_bids, run_prism, library_path, project_path,
+            progress_callback, check_nifti_headers,
+            schemas=specification.schemas, schema_sources=schema_sources,
+        )
+
+
+def _validate_dataset(
+    root_dir,
+    verbose=False,
+    schema_version=None,
+    run_bids=False,
+    run_prism=True,
+    library_path=None,
+    project_path: Optional[str] = None,
+    progress_callback: Optional[ProgressCallback] = None,
+    check_nifti_headers: bool = False,
+    *,
+    schemas: dict,
+    schema_sources: dict,
+):
+    """The validation itself (refactored from prism.py); schemas and schema_sources come from validate_dataset
 
     Args:
         root_dir: Root directory of the dataset
@@ -146,12 +183,13 @@ def validate_dataset(
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
         check_nifti_headers: Whether the BIDS validator should read NIfTI headers.
-        modality_versions: Optional {modality: 'X.Y.Z'} overriding project.json pins.
+        schemas, schema_sources: the schemas of this run and where each version came from (validate_dataset loads them).
 
     Returns: (issues, stats)
     """
     issues = []
     stats = DatasetStats()
+    spec = current_specification()  # set by validate_dataset for this run
 
     def report_progress(
         current: int, total: int, message: str, file_path: Optional[str] = None
@@ -179,14 +217,6 @@ def validate_dataset(
         subject_progress_span = 70
         consistency_progress = 92
         bids_progress = 92
-
-    report_progress(0, 100, "Loading schemas...")
-
-    # Load schemas with specified version
-    try:
-        schemas, schema_sources = _load_schemas(root_dir, schema_version, modality_versions)
-    except ModalityVersionError as exc:
-        return [("ERROR", f"Schema version problem: {exc}")], stats
 
     # Record which schema files actually answered this run, so callers can
     # show it and detect a schema bump between two validations of the same
@@ -217,10 +247,10 @@ def validate_dataset(
         version_tag = schema_version or "stable"
         prism_modalities = [
             modality
-            for modality in MODALITY_PATTERNS.keys()
-            if modality not in BIDS_MODALITIES
+            for modality in spec.modality_patterns.keys()
+            if modality not in spec.bids_modalities
         ]
-        bids_modalities_display = ", ".join(sorted(BIDS_MODALITIES))
+        bids_modalities_display = ", ".join(sorted(spec.bids_modalities))
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Validating PRISM modalities: {prism_modalities}")
         print(
@@ -777,6 +807,7 @@ def _validate_subject(
     run_bids=False,
     need_procedure_tasks=False,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     entries = _scan_dir(subject_dir, validator._dir_cache)
@@ -790,7 +821,7 @@ def _validate_subject(
                 # folder still counts as present on disk, matching the
                 # standalone procedure scan this replaces.
                 stats.disk_sessions.add(item)
-            elif run_bids and item in BIDS_MODALITIES and item != "func":
+            elif run_bids and item in spec.bids_modalities and item != "func":
                 continue
 
             # The retired-folder hint wins over "Empty directory" (even if empty).
@@ -825,7 +856,7 @@ def _validate_subject(
                         entries=child_entries,
                     )
                 )
-            elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
+            elif item in spec.modality_patterns or item in spec.bids_modalities:
                 issues.extend(
                     _validate_modality_dir(
                         item_path,
@@ -851,28 +882,34 @@ def validate_subject_only(
     schema_version=None,
     library_path=None,
     modality_versions=None,
+    specification: Optional[Specification] = None,
 ):
     """Validate one sub-* folder in isolation (what a nested-dataset commit changes).
 
     Same per-subject checks as `validate_dataset`'s subject loop; the cross-subject
     checks (consistency, participants alignment, procedure) need every subject and
-    stay with the full validation. Returns (issues, stats).
+    stay with the full validation. Runs under a specification like `validate_dataset`
+    (default: the project's pinned schemas with the official rules and terms).
+    Returns (issues, stats).
     """
     root_dir = os.path.abspath(root_dir)
-    schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
-    validator = DatasetValidator(schemas, library_path=library_path)
-    stats = DatasetStats()
-    issues = _validate_subject(
-        os.path.join(root_dir, subject_id),
-        subject_id,
-        validator,
-        stats,
-        root_dir,
-        run_prism=True,
-        run_bids=False,
-        need_procedure_tasks=_project_declares_sessions(root_dir),
-    )
-    return issues, stats
+    if specification is None:
+        schemas, _ = _load_schemas(root_dir, schema_version, modality_versions)
+        specification = load_specification(schemas=schemas)
+    with use_specification(specification):
+        validator = DatasetValidator(specification.schemas, library_path=library_path)
+        stats = DatasetStats()
+        issues = _validate_subject(
+            os.path.join(root_dir, subject_id),
+            subject_id,
+            validator,
+            stats,
+            root_dir,
+            run_prism=True,
+            run_bids=False,
+            need_procedure_tasks=_project_declares_sessions(root_dir),
+        )
+        return issues, stats
 
 
 def _extract_task_from_filename(fname):
@@ -908,6 +945,7 @@ def _validate_session(
     need_procedure_tasks=False,
     entries=None,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     if entries is None:
@@ -917,7 +955,7 @@ def _validate_session(
     for item in filtered_items:
         item_path = os.path.join(session_dir, item)
         if entries[item].is_dir():
-            skipped_by_bids = run_bids and item in BIDS_MODALITIES and item != "func"
+            skipped_by_bids = run_bids and item in spec.bids_modalities and item != "func"
 
             # Read the directory before any modality filtering: procedure
             # validation needs the task files of *every* sub-*/ses-*/<dir>,
@@ -955,7 +993,7 @@ def _validate_session(
                     )
                 continue
 
-            if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
+            if item in spec.modality_patterns or item in spec.bids_modalities:
                 issues.extend(
                     _validate_modality_dir(
                         item_path,
@@ -986,6 +1024,7 @@ def _validate_modality_dir(
     run_bids=False,
     entries=None,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     def _effective_modality_for_file(dir_modality, filename):
@@ -1017,7 +1056,7 @@ def _validate_modality_dir(
             # events.tsv files nested in func/.
             is_prism_event = _effective_modality_for_file(modality, fname) == "events"
             should_run_prism_checks = run_prism and (
-                not run_bids or modality not in BIDS_MODALITIES or is_prism_event
+                not run_bids or modality not in spec.bids_modalities or is_prism_event
             )
             if should_run_prism_checks:
                 # Validate filename

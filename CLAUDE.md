@@ -182,6 +182,22 @@ tag a release, then run `python scripts/sync_specification.py --tag <tag>`. A ch
 needs validator code is two pull requests (specification first, then Studio with the new tag).
 The vendored check scripts are in `scripts/specification/`.
 
+## Validation reads one current specification, never frozen modality lists
+
+What the validator knows (modality rules, schemas, terms) is one `Specification`
+(`src/specification.py`), built per validation run and made current for it; outside a run the
+official specification is current. Validation-path code asks `current_specification()`
+(`.rules`, `.prism_modalities`, `.bids_modalities`, `.modality_patterns`, `.terms`) and never reads
+the module constants `PRISM_MODALITIES` / `BIDS_MODALITIES` / `MODALITY_PATTERNS` / `_ENTITY_RULES`
+(they remain only as the official defaults for code without a project) and never calls
+`load_entity_rules()` itself; `tests/test_specification_boundaries.py` enforces this for the files it lists (add a
+file to its list when it starts to need the rules). A hand-written
+list of modality names is replaced by a derived set when it means "all modalities of a kind" (that is
+how `biosample` was once forgotten in the BIDS folder list); a deliberate subset stays, with a comment
+saying what it is. Reason: a project's local additions (see
+`docs/superpowers/specs/2026-10-23-specification-contributions-design.md`) must apply to that
+project's run only and never leak into the next project validated in the same process.
+
 ## Git-annex / DataLad text-file policy
 
 Text-format and small-codebook files must **never** be tracked by git-annex

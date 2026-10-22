@@ -94,9 +94,9 @@ def prism_only_folders() -> Set[str]:
     folder would otherwise draw a NOT_INCLUDED error from the BIDS engine. `metadata` is a PRISM
     helper folder, not a modality.
     """
-    from src.entity_rules import load_entity_rules
+    from src.specification import current_specification
 
-    rules = load_entity_rules()
+    rules = current_specification().rules
     return (set(rules.project_modalities) - set(rules.bids_modalities)) | {"metadata"}
 
 

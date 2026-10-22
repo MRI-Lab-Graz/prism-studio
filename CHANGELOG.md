@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Internal: the validator reads one specification per run.** What a validation uses (modality rules, schemas, terms)
+  is now one object that is current for the run (`src/specification.py`); validation code no longer reads constants
+  frozen at import or hand-written modality lists (a test guards the files that matter). Today it holds the official
+  rules, the schemas the project's pins select, and the official terms; it is the hook for a project's own, not yet
+  official modalities, field values and metrics, which will apply to one project without leaking into another.
+  No change in what is reported.
+
 ### Fixed
 - **Biosample folders no longer fail BIDS validation.** The BIDS validator reported `NOT_INCLUDED` for
   `sub-*/ses-*/biosample/` (so "validation failed" on a project Studio had just created, once it held biosample data),
