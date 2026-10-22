@@ -13,7 +13,7 @@ def create_folder(parent, name: str) -> Path:
     if not name or name in {".", ".."}:
         raise ValueError("Enter a folder name.")
     if _BAD_CHARS.search(name):
-        raise ValueError('A folder name cannot contain \ / : * ? " < > | or control characters.')
+        raise ValueError(r'A folder name cannot contain \ / : * ? " < > | or control characters.')
     if name.endswith((".", " ")) or _WINDOWS_RESERVED.fullmatch(name):
         raise ValueError(f"'{name}' is not a valid folder name on Windows.")
     if not str(parent).strip() or not Path(parent).is_dir():

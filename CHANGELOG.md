@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-10-22
+
 ### Added
 - **Methods section export and richer text.** `prism_tools methods generate` (and the Studio Projects page) writes the
   Methods as Markdown, HTML, Word, TeX, or a BibTeX file of the instrument references; sections follow journal order,
   and the text now covers acquisition parameters and session counts from the sidecars, scoring recipes and software
   versions. Missing facts are reported as warnings, not invented. `preregistration draft` gained `--format md|html|docx|tex`.
+- **Re-importing a LimeSurvey export only brings in what is new.** "Skip surveys already in the project"
+  (on by default for `.lsa` files; command line: `survey convert --skip-existing`) skips responses already
+  imported per subject, session and survey, flags a response stored under a different session, and reports (never
+  overwrites) a different response in an occupied slot. Choosing an `.lsa` file now also preselects "Number as
+  sessions by date".
 
 ### Changed
 - **LimeSurvey imports no longer write `tool-limesurvey` files.** The per-subject `_tool-limesurvey_survey.tsv/.json`
@@ -37,13 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--destination beh|func|eeg` and write BIDS `_physio.tsv.gz` + sidecar there; files without a task go to
   `physio/` as before. The Studio converter has a matching "Destination for files with a task" select, and the
   file-management renamer offers `beh`/`func`/`eeg` for physio with the task optional.
-
-### Added
-- **Re-importing a LimeSurvey export only brings in what is new.** "Skip surveys already in the project"
-  (on by default for `.lsa` files; command line: `survey convert --skip-existing`) skips responses already
-  imported per subject, session and survey, flags a response stored under a different session, and reports (never
-  overwrites) a different response in an occupied slot. Choosing an `.lsa` file now also preselects "Number as
-  sessions by date".
 
 ### Fixed
 - The validator no longer checks `tool-limesurvey` system-variable files against the survey schema
