@@ -77,6 +77,12 @@ TERM_INHERITED_FIELDS = (
     "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",
 )
 
+def _sidecar_specimen(sidecar_data) -> str | None:
+    """Technical.SpecimenType of a sidecar, tolerating a malformed Technical block."""
+    technical = sidecar_data.get("Technical")
+    return technical.get("SpecimenType") if isinstance(technical, dict) else None
+
+
 MRI_SUFFIX_REGEX = re.compile(
     r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
 )
@@ -687,11 +693,11 @@ class DatasetValidator:
         # Third pass: columns naming a registry term inherit its definition
         # (the column's own values win). Name matches only suggest, see
         # _check_biosample_terms.
-        specimen = (sidecar_data.get("Technical") or {}).get("SpecimenType")
+        specimen = _sidecar_specimen(sidecar_data)
         for k, v in sidecar_data.items():
-            if isinstance(v, dict) and v.get("Term"):
+            if isinstance(v, dict) and isinstance(v.get("Term"), str) and v["Term"]:
                 res = resolve_column(self._terms, k, v, specimen)
-                if res.kind == "term":
+                if res.kind in ("term", "deprecated") and res.term:
                     inherited = {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
                     effective_defs[k] = {**inherited, **v}
         return effective_defs
@@ -1451,9 +1457,7 @@ class DatasetValidator:
     def _check_biosample_terms(self, sidecar_data, key) -> list:
         """Relate each analyte column to the term registry (spec severity table)."""
         issues = []
-        if not self._terms:
-            return issues  # nothing to compare against
-        specimen = (sidecar_data.get("Technical") or {}).get("SpecimenType")
+        specimen = _sidecar_specimen(sidecar_data)
         for col, col_def in sidecar_data.items():
             if (
                 col in ("Technical", "Study", "Metadata")
@@ -1463,6 +1467,16 @@ class DatasetValidator:
             ):
                 continue
             res = resolve_column(self._terms, col, col_def, specimen)
+            ref = col_def.get("Term")
+            if isinstance(ref, str) and ref and not col_def.get("Units") and not (res.term or {}).get("Units"):
+                issues.append((
+                    "ERROR",
+                    f"{key}: {col}: Term {ref!r} is not in the term registry or has no definition for "
+                    f"specimen {specimen!r}, and the column has no Units",
+                ))
+                continue
+            if not self._terms:
+                continue  # nothing to compare against
             if res.kind == "term":
                 declared, recommended = col_def.get("Units"), res.term.get("Units")
                 if declared and recommended and declared != recommended:
@@ -1480,8 +1494,6 @@ class DatasetValidator:
             elif res.kind == "suggestion":
                 if col not in self._terms:  # the canonical word itself needs no hint
                     issues.append(("INFO", f"{key}: {res.message}"))
-            elif col_def.get("Term") and not col_def.get("Units"):
-                issues.append(("ERROR", f"{key}: {col}: Term {col_def['Term']!r} is not in the term registry and the column has no Units"))
             else:
                 similar = f" Similar official terms: {', '.join(res.similar)}." if res.similar else ""
                 issues.append((

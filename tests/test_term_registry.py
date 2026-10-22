@@ -202,3 +202,32 @@ def test_deprecated_term_points_to_replacement():
     reg["cortisol"].update(Status="deprecated", ReplacedBy="prism:hydrocortisone")
     r = resolve_column(reg, "cort", {"Term": "cortisol"}, "saliva")
     assert r.kind == "deprecated" and "prism:hydrocortisone" in r.message
+
+
+# --- review fix pass -------------------------------------------------------
+
+def test_deprecated_parent_still_resolves_to_the_child():
+    reg = _reg()
+    reg["cortisol"].update(Status="deprecated", ReplacedBy="prism:hydrocortisone")
+    r = resolve_column(reg, "cort", {"Term": "cortisol"}, "saliva")
+    assert r.kind == "deprecated" and r.term["TermID"] == "prism:cortisol.saliva"
+    assert "prism:hydrocortisone" in r.message
+
+
+def test_deprecated_child_still_supplies_its_definition():
+    reg = _reg()
+    reg["cortisol.saliva"].update(Status="deprecated", ReplacedBy="prism:cortisol.serum")
+    r = resolve_column(reg, "cort", {"Term": "prism:cortisol.saliva"}, "saliva")
+    assert r.kind == "deprecated" and r.term["Units"] == "nmol/L"
+    assert "prism:cortisol.serum" in r.message
+
+
+def test_non_string_term_is_ignored_not_a_crash():
+    for ref in (5, ["prism:cortisol"], {"a": 1}):
+        assert resolve_column(_reg(), "x", {"Term": ref}, "saliva").kind == "unknown"
+
+
+def test_check_registry_flags_label_collisions():
+    a = _parent("il6", Label="Interleukin-6")
+    assert check_registry({"il6": a, "il-6": _parent("il-6", Label="interleukin-6")})
+    assert check_registry({"il6": a, "other": _parent("other", Aliases=["Interleukin-6"])})

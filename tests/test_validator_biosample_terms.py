@@ -148,3 +148,51 @@ def test_existing_inflammation_template_unchanged(tmp_path):
     tsv.parent.mkdir(parents=True)
     tsv.write_text("crp\n1\n", encoding="utf-8")
     assert _validator().validate_sidecar(str(tsv), "biosample", str(tmp_path)) == []
+
+
+def test_parent_term_without_child_and_no_units_is_error(tmp_path):
+    issues = _sidecar_issues(tmp_path, {"cort": {"Description": "x", "Term": "prism:cortisol"}}, specimen="urine")
+    assert any("Units" in m for m in _msgs(issues, "ERROR"))
+
+
+def test_parent_term_without_child_but_with_units_is_info_only(tmp_path):
+    issues = _sidecar_issues(
+        tmp_path, {"cort": {"Description": "x", "Units": "nmol/L", "Term": "prism:cortisol"}}, specimen="urine")
+    assert _msgs(issues, "ERROR") == []
+
+
+def test_deprecated_term_still_inherits_its_range(tmp_path):
+    reg = load_registry()
+    reg["cortisol.saliva"] = {**reg["cortisol.saliva"], "Status": "deprecated", "ReplacedBy": "prism:cortisol.serum"}
+    v = _validator(reg)
+    tsv = _project(tmp_path, {"cort": {"Term": "prism:cortisol.saliva"}}, rows="cort\n-5\n")
+    assert any("less than MinValue" in m for m in _msgs(v.validate_data_content(str(tsv), "biosample", str(tmp_path)), "ERROR"))
+    assert any("prism:cortisol.serum" in m for m in _msgs(v.validate_sidecar(str(tsv), "biosample", str(tmp_path)), "WARNING"))
+
+
+def test_empty_registry_still_errors_on_term_without_units(tmp_path):
+    issues = _sidecar_issues(tmp_path, {"cort": {"Term": "prism:cortisol"}}, registry={})
+    assert any("Units" in m for m in _msgs(issues, "ERROR"))
+
+
+def test_malformed_term_or_technical_does_not_abort_content_validation(tmp_path):
+    for columns, technical in (
+        ({"cort": {"Term": ["prism:cortisol"], "Description": "d", "Units": "x"}}, None),
+        ({"cort": {"Term": 5, "Description": "d", "Units": "x"}}, None),
+        ({"cort": {"Description": "d", "Units": "x"}}, "x"),
+    ):
+        side = _sidecar(columns)
+        if technical is not None:
+            side["Technical"] = technical
+        (tmp_path / "biosample-saliva_biosample.json").write_text(json.dumps(side), encoding="utf-8")
+        tsv = tmp_path / f"{BASE}.tsv"
+        tsv.parent.mkdir(parents=True, exist_ok=True)
+        tsv.write_text("cort\n1\n", encoding="utf-8")
+        issues = _validator().validate_data_content(str(tsv), "biosample", str(tmp_path))
+        assert not any("Error validating content" in m for m in _msgs(issues, "ERROR")), (columns, technical)
+
+
+def test_terms_root_points_at_the_shipped_registry():
+    from src.term_registry import terms_root
+
+    assert (terms_root() / "biosample").is_dir()

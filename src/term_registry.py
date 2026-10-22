@@ -8,12 +8,26 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[1]
-DEFAULT_TERMS_ROOT = _REPO / "official" / "library" / "terms"
 _SCHEMA = _REPO / "app" / "schemas" / "stable" / "biosample.schema.json"
+
+
+def terms_root() -> Path:
+    """`official/library/terms` in dev, in the validator image and in the frozen build.
+
+    The frozen onedir build bundles `official/` at `<_MEIPASS>/official`
+    (scripts/build/build_app.py), like the schemas.
+    """
+    candidates = [_REPO / "official" / "library" / "terms"]
+    meipass = getattr(sys, "_MEIPASS", None) if getattr(sys, "frozen", False) else None
+    if meipass:
+        candidates.append(Path(meipass).resolve() / "official" / "library" / "terms")
+    return next((c for c in candidates if c.is_dir()), candidates[0])
+
 
 ID_PREFIXES = ("prism", "bids")
 _SLUG = re.compile(r"^[a-z][a-z0-9-]*$")
@@ -27,7 +41,7 @@ def load_registry(modality: str = "biosample", root: Path | None = None) -> dict
     A missing folder gives an empty registry; unreadable files are skipped
     (check_registry is the place that reports problems).
     """
-    folder = Path(root or DEFAULT_TERMS_ROOT) / modality
+    folder = Path(root or terms_root()) / modality
     registry: dict[str, dict] = {}
     for path in sorted(folder.glob("*.json")):
         try:
@@ -100,7 +114,9 @@ def check_registry(registry: dict[str, dict]) -> list[str]:
         else:
             problems.append(f"{key}: Level must be 'analyte' or 'analyte-specimen'")
 
-        for name in list(term.get("Aliases") or []) + list(term.get("Equivalents") or []):
+        for name in [term.get("Label")] + list(term.get("Aliases") or []) + list(term.get("Equivalents") or []):
+            if not name:
+                continue
             owner = claims.setdefault(str(name).lower(), key)
             if owner != key:
                 problems.append(f"{key}: {name!r} is already claimed by {owner!r}")
@@ -131,6 +147,8 @@ def _names(key: str, term: dict) -> list[str]:
 
 def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
     """Exact full ID, then bare slug, then label/alias/equivalent (case-insensitive)."""
+    if not isinstance(name, str) or not name:
+        return None
     for key, term in registry.items():
         if term.get("TermID") == name:
             return key, term
@@ -158,6 +176,7 @@ def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
 def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specimen: str | None) -> Resolution:
     """Resolve one sidecar column against the registry (spec: "How a sidecar column refers to a term")."""
     ref = col_def.get("Term")
+    ref = ref if isinstance(ref, str) and ref else None  # anything else is not a Term
     found = find_term(registry, ref) if ref else None
     if not found:
         hit = None if ref else find_term(registry, column)
@@ -169,9 +188,18 @@ def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specim
         found = hit
 
     _key, term = found
-    if term.get("Status") == "deprecated":
-        new = term.get("ReplacedBy", "")
-        return Resolution("deprecated", term, (new,) if new else (), f"{term['TermID']} is deprecated; use {new}")
+    res = _by_specimen(registry, term, specimen)
+    # A deprecated term (itself or the child reached through it) still supplies
+    # its definition, so a rename or merge never breaks a file.
+    old = next((t for t in (term, res.term) if t and t.get("Status") == "deprecated"), None)
+    if old and res.kind in ("term", "known_analyte_new_specimen"):
+        new = old.get("ReplacedBy", "")
+        return Resolution("deprecated", res.term, (new,) if new else (), f"{old['TermID']} is deprecated; use {new}")
+    return res
+
+
+def _by_specimen(registry: dict[str, dict], term: dict, specimen: str | None) -> Resolution:
+    """Pick the child of `term` for the specimen (or check a child against it)."""
     if term.get("Level") == "analyte-specimen":
         if term.get("SpecimenType") == specimen:
             return Resolution("term", term)
@@ -181,8 +209,6 @@ def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specim
         )
     for child in registry.values():
         if child.get("Parent") == term["TermID"] and specimen and child.get("SpecimenType") == specimen:
-            if child.get("Status") == "deprecated":
-                return Resolution("deprecated", child, (child.get("ReplacedBy", ""),), f"{child['TermID']} is deprecated")
             return Resolution("term", child)
     return Resolution(
         "known_analyte_new_specimen", term, (),
