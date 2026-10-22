@@ -9,7 +9,8 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
-from src.term_proposal import ProposalError, build_proposal, issue_url, slugify  # noqa: E402
+from src.term_proposal import ProposalError, build_proposal, check_with_specification, issue_url, slugify  # noqa: E402
+from src.term_registry import load_registry  # noqa: E402
 
 
 def _term(local, **over):
@@ -96,3 +97,18 @@ def test_issue_url_encodes_unicode_and_json_and_round_trips():
 
 def test_issue_url_over_the_limit_is_none():
     assert issue_url({"modality": "biosample", "terms": [{"TermID": "prism:x"}]}, limit=50) is None
+
+
+def test_check_with_specification_accepts_a_built_proposal_and_rejects_forbidden_fields():
+    registry = load_registry()
+    sidecar = _sidecar("ferr_ugl", {"Description": "d", "Units": "ug/L"}, "serum")
+    proposal = build_proposal(registry, sidecar, "ferr_ugl")
+    assert check_with_specification(proposal, registry) == []
+    proposal["terms"][0]["Status"] = "official"
+    assert any("Status" in p for p in check_with_specification(proposal, registry))
+
+
+def test_check_with_specification_names_an_already_official_id():
+    registry = load_registry()
+    proposal = build_proposal(registry, _sidecar("weird", {"Description": "d", "Units": "u"}), "weird", label="cortisol")
+    assert any("prism:cortisol" in p and "official" in p for p in check_with_specification(proposal, registry))

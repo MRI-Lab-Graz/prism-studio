@@ -8,10 +8,14 @@ Spec: docs/superpowers/specs/2026-10-23-metric-proposal-design.md
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
+import sys
+from pathlib import Path
 from urllib.parse import quote, urlencode
 
+from src.schema_manager import DEFAULT_SCHEMA_DIR
 from src.term_registry import resolve_column
 
 ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
@@ -89,3 +93,22 @@ def issue_url(proposal: dict, repo: str = ISSUE_REPO, limit: int = URL_LIMIT) ->
     )
     url = f"https://github.com/{repo}/issues/new?{query}"
     return url if len(url) <= limit else None
+
+
+def _specification_scripts() -> Path:
+    """`scripts/specification` in dev, in the validator wheel and in the frozen build (bundled at `<_MEIPASS>/scripts`)."""
+    candidates = [Path(__file__).resolve().parents[1] / "scripts" / "specification"]
+    meipass = getattr(sys, "_MEIPASS", None) if getattr(sys, "frozen", False) else None
+    if meipass:
+        candidates.append(Path(meipass).resolve() / "scripts" / "specification")
+    return next((c for c in candidates if c.is_dir()), candidates[0])
+
+
+def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
+    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
+    spec = importlib.util.spec_from_file_location("specification_term_proposal", _specification_scripts() / "term_proposal.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{proposal['modality']}.schema.json"
+    return module.check_proposal(proposal, registry, module.check_terms.specimen_types(schema))[1]
+

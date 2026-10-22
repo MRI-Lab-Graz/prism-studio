@@ -108,7 +108,7 @@ from src.cli.commands.survey import (
     cmd_survey_validate,
 )
 from src.cli.commands.modality import cmd_modality_propose
-from src.cli.commands.terms import cmd_terms_list, cmd_terms_show, cmd_terms_suggest
+from src.cli.commands.terms import cmd_terms_list, cmd_terms_propose, cmd_terms_show, cmd_terms_suggest
 from src.cli.commands.modality_version import (
     cmd_modality_version_freeze,
     cmd_modality_version_list,
@@ -156,6 +156,7 @@ def main() -> None:
             "terms_list": cmd_terms_list,
             "terms_show": cmd_terms_show,
             "terms_suggest": cmd_terms_suggest,
+            "terms_propose": cmd_terms_propose,
             "modality_version_status": cmd_modality_version_status,
             "modality_version_list": cmd_modality_version_list,
             "modality_version_pin": cmd_modality_version_pin,

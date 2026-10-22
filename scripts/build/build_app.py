@@ -272,6 +272,8 @@ def main() -> int:
         f"{os.path.join('app', 'static')}{sep}static",
         f"{os.path.join('app', 'schemas')}{sep}schemas",
         f"{os.path.join('app', 'src')}{sep}src",
+        # the vendored prism-specification scripts (`terms propose` validates with them)
+        f"{os.path.join('scripts', 'specification')}{sep}{os.path.join('scripts', 'specification')}",
     ]
 
     if (project_root / "src").exists():

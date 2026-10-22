@@ -71,7 +71,7 @@ def dispatch_prism_tools(
         else:
             parsers["modality"].print_help()
     elif args.command == "terms":
-        if args.action in ("list", "show", "suggest"):
+        if args.action in ("list", "show", "suggest", "propose"):
             handlers[f"terms_{args.action}"](args)
         else:
             parsers["terms"].print_help()

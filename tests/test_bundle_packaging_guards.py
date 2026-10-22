@@ -109,3 +109,9 @@ def test_ci_workflow_reports_coverage_from_the_ubuntu_pytest_run() -> None:
     assert "--cov-report=xml" in content
     assert "os: [ubuntu-latest]" in content  # the only matrix entry, so tests + upload run there
     assert "codecov/codecov-action" in content
+
+
+def test_build_script_bundles_the_vendored_specification_scripts() -> None:
+    """`terms propose` validates with scripts/specification/term_proposal.py, which must exist in the frozen app."""
+    source = (Path(__file__).resolve().parents[1] / "scripts" / "build" / "build_app.py").read_text(encoding="utf-8")
+    assert "os.path.join('scripts', 'specification')" in source
