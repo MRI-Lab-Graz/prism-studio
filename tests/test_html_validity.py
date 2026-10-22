@@ -30,7 +30,7 @@ c = m.app.test_client()
 for p in {PAGES!r}:
     r = c.get(p)
     assert r.status_code == 200, (p, r.status_code)
-    open(sys.argv[1] + "/" + (p.strip("/") or "home") + ".html", "wb").write(r.data)
+    open(sys.argv[1] + "/" + (p.strip("/").replace("/", "-") or "home") + ".html", "wb").write(r.data)
 """
 
 

@@ -146,7 +146,7 @@
         problems.classList.toggle("d-none", !data.problems.length);
         const open = document.getElementById("spec-propose-open");
         open.classList.toggle("d-none", !data.issue_url || data.problems.length > 0);
-        if (data.issue_url) open.href = data.issue_url; else open.removeAttribute("href");
+        if (data.issue_url) open.href = data.issue_url;
         document.getElementById("spec-propose-paste").classList.toggle("d-none", Boolean(data.issue_url));
         dialog.showModal();
     }
