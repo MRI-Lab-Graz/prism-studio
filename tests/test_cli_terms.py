@@ -162,3 +162,11 @@ def test_propose_out_is_not_written_when_the_proposal_cannot_be_made(tmp_path):
     sidecar = _sidecar(tmp_path, "cort", {"Description": "d", "Units": "nmol/L"}, specimen="saliva")
     code, _ = _run("propose", "--sidecar", str(sidecar), "--column", "cort", "--out", str(out))
     assert code == 1 and not out.exists()
+
+
+def test_propose_rejects_wrong_value_types_through_the_vendored_checks(tmp_path):
+    """prism-specification v1.1.1 validates value types; a sidecar with Units: 5 must not become a proposal."""
+    sidecar = _sidecar(tmp_path, definition={"Description": "d", "Units": 5, "MinValue": "zero"})
+    code, out = _run("propose", "--sidecar", str(sidecar), "--column", "ferr_ugl", "--json")
+    data = json.loads(out)
+    assert code == 1 and not data["success"] and any("Units" in p for p in data["problems"])

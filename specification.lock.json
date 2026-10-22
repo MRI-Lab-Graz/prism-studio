@@ -41,10 +41,10 @@
     "official/library/terms/biosample/tnfa.json": "845389c698e30177ca9f8db99d0821d1775b2fa3cbc5e62c86771fb286556321",
     "official/library/terms/biosample/tnfa.serum.json": "8cd23ffab8b57cdf599b5faeb15e7e52c2c1113e996c7e45a0661570fb694d3a",
     "scripts/specification/check_schema_versions.py": "15d4752f333750122225d921edeb5bd7320cc675975b04043ec45f3dc56b9412",
-    "scripts/specification/check_terms.py": "717186402bbe8aec8c51eb42e55981b0d626c38637caac04ff3ff7a73aacd7ed",
+    "scripts/specification/check_terms.py": "860d7f6f2f4cd2b4b77f27dc517df484cf17e6b4ff15c0fc42023a4ebeb18af1",
     "scripts/specification/generate_schema_reference.py": "4e31266b24f949a6b75090223a4b3b9ebd4dce8244b8d4dff2c7ec5dca98f786",
-    "scripts/specification/term_proposal.py": "4181cae9cb73775248972be166bba7b22a4d6dc9b1494307c35c3c60c1bfc7a3"
+    "scripts/specification/term_proposal.py": "0b5c1133a6062adbad6967c493b262d7646b6264d6fdb830a73d6c9d96711ae6"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.1.0"
+  "tag": "v1.1.1"
 }

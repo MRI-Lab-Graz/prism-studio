@@ -1,7 +1,7 @@
 """Check and write a proposal for new terms (metrics).
 
 A proposal is one JSON document, sent through the "Propose a metric" issue form or saved
-to a file by `prism_tools.py terms propose` in PRISM Studio:
+to a file with `prism_tools.py terms propose ... --out proposal.json` in PRISM Studio:
 
   {"modality": "biosample", "terms": [<parent term>, <child term>]}
 
@@ -36,7 +36,7 @@ ALLOWED_FIELDS = frozenset(
 MODALITIES = ("biosample",)
 _LOCAL = re.compile(r"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)?$")
 _SECTION = re.compile(r"^### (.+?)\s*$", re.M)
-_FENCE = re.compile(r"```[A-Za-z]*\n(.*?)\n?```", re.S)
+_OPENING_FENCE = re.compile(r"```[A-Za-z]*\n")
 _CHECKBOX = re.compile(r"^- \[([ xX])\]", re.M)
 
 
@@ -61,16 +61,17 @@ def _sections(body: str) -> dict[str, str]:
 
 def extract_proposal(issue_body: str) -> dict:
     """Read the proposal out of an issue-form body; ProposalError says what is wrong."""
-    sections = _sections(issue_body or "")
+    sections = _sections((issue_body or "").replace("\r\n", "\n"))
     boxes = _CHECKBOX.findall(sections.get("Agreements", ""))
     if len(boxes) < 2 or any(b == " " for b in boxes):
         raise ProposalError("Both agreements (licence, no personal data) must be ticked.")
     text = sections.get("Proposal", "").strip()
-    fences = _FENCE.findall(text)
-    if len(fences) > 1:
-        raise ProposalError("The proposal field must hold exactly one JSON document.")
-    if fences:
-        text = fences[0].strip()
+    opening = _OPENING_FENCE.match(text)
+    if opening:  # the form wraps the value in one fence; backticks inside JSON strings are fine
+        text = text[opening.end():]
+        if not text.rstrip().endswith("```"):
+            raise ProposalError("The proposal field must hold exactly one JSON document.")
+        text = text.rstrip()[:-3].strip()
     if not text:
         raise ProposalError("The proposal field is empty.")
     if len(text.encode("utf-8")) > MAX_BYTES:
@@ -82,6 +83,26 @@ def extract_proposal(issue_body: str) -> dict:
     if not isinstance(proposal, dict):
         raise ProposalError("The proposal must be a JSON object.")
     return proposal
+
+
+_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC")
+_STRING_LISTS = ("Aliases", "AlternativeUnits", "Equivalents")
+_NUMBERS = ("MinValue", "WarnMaxValue")
+
+
+def _type_problems(term: dict, where: str) -> list[str]:
+    """Value types: the checks downstream assume them, and a wrong type must be a message, not a crash."""
+    problems = []
+    for key in _STRINGS:
+        if key in term and not isinstance(term[key], str):
+            problems.append(f"{where}: {key} must be a string")
+    for key in _STRING_LISTS:
+        if key in term and not (isinstance(term[key], list) and all(isinstance(v, str) for v in term[key])):
+            problems.append(f"{where}: {key} must be a list of strings")
+    for key in _NUMBERS:
+        if key in term and (isinstance(term[key], bool) or not isinstance(term[key], (int, float))):
+            problems.append(f"{where}: {key} must be a number")
+    return problems
 
 
 def _shape_problems(proposal) -> list[str]:
@@ -103,9 +124,10 @@ def _shape_problems(proposal) -> list[str]:
         for key in sorted(set(term) - ALLOWED_FIELDS):
             hint = " (set by the maintainer's merge)" if key in ("Status", "ReplacedBy") else ""
             problems.append(f"{where}: field {key!r} is not allowed in a proposal{hint}")
+        problems += _type_problems(term, where)
         tid = term.get("TermID")
         prefix, _, local = tid.partition(":") if isinstance(tid, str) else ("", "", "")
-        if prefix != "prism" or not _LOCAL.match(local):
+        if prefix != "prism" or not _LOCAL.fullmatch(local):
             problems.append(f"{where}: TermID {tid!r} must be prism:<lowercase-slug>[.<specimen>]")
     return problems
 
@@ -131,7 +153,7 @@ def check_proposal(proposal: dict, registry: dict[str, dict], specimens: list[st
 def write_terms(terms: list[dict], out_dir: Path, modality: str) -> list[Path]:
     """Write one <local>.json per term under out_dir/<modality>/; the local part is re-checked."""
     for term in terms:
-        if not _LOCAL.match(term["TermID"].partition(":")[2]):
+        if not _LOCAL.fullmatch(term["TermID"].partition(":")[2]):
             raise ProposalError(f"cannot derive a file name from {term['TermID']!r}")
     folder = Path(out_dir) / modality
     folder.mkdir(parents=True, exist_ok=True)
@@ -186,6 +208,8 @@ def _run_check(args) -> int:
         modality = proposal.get("modality", modality) if isinstance(proposal, dict) else modality
     except ProposalError as exc:
         problems.append(str(exc))
+    except Exception as exc:  # noqa: BLE001 - the bot must always leave a bundle, or the contributor hears nothing
+        problems.append(f"internal error while checking the proposal ({type(exc).__name__}); a maintainer will look at it")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "status").write_text("failed\n" if problems else "ok\n", encoding="utf-8")
