@@ -16,6 +16,7 @@ from pathlib import Path
 
 from src.term_proposal import (
     ProposalError,
+    as_v2,
     build_proposal,
     check_with_specification,
     issue_url,
@@ -251,26 +252,52 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
     return found
 
 
-def proposal_for_local_term(project_root, term_id: str, modality: str = "biosample") -> dict:
-    """The proposal that shares a local term: the term, its local parent (for a child) or local children (for a parent)."""
-    stem = _local_part(term_id)
-    terms, _problems = load_local_terms(project_root, modality)
-    if stem is None or stem not in terms:
-        raise OverlayError(f"no local term {term_id} in this project")
-    term = terms[stem]
-    if term.get("Level") == "analyte-specimen":
-        parent = terms.get(str(term.get("Parent", "")).partition(":")[2])
-        chosen = ([parent] if parent else []) + [term]
+def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, modality: str = "biosample") -> dict:
+    """The proposal that shares local terms: the named ones (default: every local term).
+
+    A named child brings its local parent and a named parent its local children, so a proposal is never
+    incomplete. Local terms the official registry has adopted since are left out and listed in `skipped`.
+    Returns {"proposal": {"modality", "terms"}, "document" (format v2), "issue_url", "problems", "skipped"}.
+    """
+    local, _problems = load_local_terms(project_root, modality)
+    official = load_registry(modality)
+    _merged, in_use, ignored = merge_terms(official, local)
+    usable = {stem: term for stem, term in local.items() if term["TermID"] in in_use}
+    if term_ids is None:
+        chosen_stems = list(usable)
+        skipped = list(ignored)
     else:
-        chosen = [term] + [t for t in terms.values() if t.get("Parent") == term["TermID"]]
-    if len(chosen) > 2:
-        raise OverlayError(
-            f"sharing {term_id} would carry {len(chosen)} terms and a proposal carries at most 2: "
-            "propose in two steps (share one specimen at a time)"
-        )
-    proposal = {"modality": modality, "terms": chosen}
+        chosen_stems, skipped = [], []
+        for term_id in term_ids:
+            stem = _local_part(term_id)
+            if stem is None or stem not in local:
+                raise OverlayError(f"no local term {term_id} in this project")
+            if term_id in ignored:
+                skipped.append(term_id) if term_id not in skipped else None
+                continue
+            term = usable[stem]
+            related = [
+                other_stem for other_stem, other in usable.items()
+                if other["TermID"] == term.get("Parent") or other.get("Parent") == term["TermID"]
+            ]
+            chosen_stems += [stem, *related]
+    chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
+    if not chosen:
+        raise OverlayError("nothing to share" + (f" ({', '.join(skipped)} are official now)" if skipped else ""))
+    limit = _scripts()[1].MAX_FILES
+    if len(chosen) > limit:
+        raise OverlayError(f"a proposal carries at most {limit} files, found {len(chosen)}: share some of them first")
+    proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"])}
+    document = as_v2(proposal)
     return {
         "proposal": proposal,
-        "issue_url": issue_url(proposal),
-        "problems": check_with_specification(proposal, load_registry(modality)),
+        "document": document,
+        "issue_url": issue_url(document),
+        "problems": check_with_specification(document, official),
+        "skipped": skipped,
     }
+
+
+def proposal_for_local_term(project_root, term_id: str, modality: str = "biosample") -> dict:
+    """The proposal that shares one local term (see `proposal_for_local_terms`)."""
+    return proposal_for_local_terms(project_root, [term_id], modality)

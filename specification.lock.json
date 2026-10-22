@@ -43,8 +43,8 @@
     "scripts/specification/check_schema_versions.py": "15d4752f333750122225d921edeb5bd7320cc675975b04043ec45f3dc56b9412",
     "scripts/specification/check_terms.py": "569fc6302eea8d58f7bcd1f7637864f4c60760e910790609934d76883e107a6b",
     "scripts/specification/generate_schema_reference.py": "4e31266b24f949a6b75090223a4b3b9ebd4dce8244b8d4dff2c7ec5dca98f786",
-    "scripts/specification/term_proposal.py": "1b48f35539a60a7eaa000b8c14879e089b7c6189adf059cbd67c1ec5f4fb5cc8"
+    "scripts/specification/term_proposal.py": "db56bfc6dda8cfe2d15197d300ecaadd024d034b230a805e29334088b466f4d0"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.1.2"
+  "tag": "v1.2.0"
 }

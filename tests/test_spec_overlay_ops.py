@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app
 
 from src.spec_overlay import (  # noqa: E402
     OverlayError, add_local_term, find_unknown_metrics, list_local_items, load_local_terms,
-    proposal_for_local_term, write_local_terms,
+    proposal_for_local_term, proposal_for_local_terms, write_local_terms,
 )
 
 FORM = "https://github.com/MRI-Lab-Graz/prism-specification/issues/new"
@@ -117,15 +117,81 @@ def test_proposal_for_a_local_parent_and_child(tmp_path):
         assert result["problems"] == [] and result["issue_url"].startswith(FORM)
 
 
-def test_proposal_above_two_terms_must_be_made_in_two_steps(tmp_path):
-    project = tmp_path / "p"
+def _many(project, specimens=("saliva", "serum", "plasma")):
     parent = {"TermID": "prism:dhea-s", "Level": "analyte", "Label": "DHEA-S", "Aliases": [], "Description": "d"}
-    child = {"TermID": "prism:dhea-s.saliva", "Level": "analyte-specimen", "Parent": "prism:dhea-s",
-             "SpecimenType": "saliva", "Units": "pg/mL"}
-    write_local_terms(project, "biosample", [parent, child, {**child, "TermID": "prism:dhea-s.serum", "SpecimenType": "serum"}])
-    with pytest.raises(OverlayError, match="two steps"):
-        proposal_for_local_term(project, "prism:dhea-s")
-    assert len(proposal_for_local_term(project, "prism:dhea-s.serum")["proposal"]["terms"]) == 2
+    kids = [{"TermID": f"prism:dhea-s.{s}", "Level": "analyte-specimen", "Parent": "prism:dhea-s", "SpecimenType": s, "Units": "pg/mL"} for s in specimens]
+    write_local_terms(project, "biosample", [parent, *kids])
+
+
+def test_a_parent_with_three_local_children_is_shared_as_one_proposal(tmp_path):
+    _many(tmp_path / "p")
+    result = proposal_for_local_term(tmp_path / "p", "prism:dhea-s")
+    ids = [t["TermID"] for t in result["proposal"]["terms"]]
+    assert ids == ["prism:dhea-s", "prism:dhea-s.plasma", "prism:dhea-s.saliva", "prism:dhea-s.serum"]
+    assert result["problems"] == [] and result["document"]["format"] == "prism-proposal/2"
+    assert sorted(result["document"]["files"]) == [f"terms/biosample/{i.partition(':')[2]}.json" for i in sorted(ids)]
+
+
+def test_a_child_pulls_in_its_local_parent_only(tmp_path):
+    _many(tmp_path / "p")
+    ids = [t["TermID"] for t in proposal_for_local_term(tmp_path / "p", "prism:dhea-s.serum")["proposal"]["terms"]]
+    assert ids == ["prism:dhea-s", "prism:dhea-s.serum"]
+
+
+def test_all_local_terms_in_one_proposal(tmp_path):
+    _many(tmp_path / "p")
+    result = proposal_for_local_terms(tmp_path / "p")
+    assert len(result["proposal"]["terms"]) == 4 and result["skipped"] == []
+    assert result["issue_url"].startswith(FORM)  # four terms still fit in a prefilled link
+
+
+def test_forty_local_terms_are_too_long_for_a_link_but_still_a_proposal(tmp_path):
+    project = tmp_path / "p"
+    terms = [{"TermID": f"prism:m{n}-x", "Level": "analyte", "Label": f"m{n}x", "Aliases": [], "Description": "d" * 300} for n in range(40)]
+    write_local_terms(project, "biosample", terms)
+    result = proposal_for_local_terms(project)
+    assert len(result["document"]["files"]) == 40 and result["problems"] == [] and result["issue_url"] is None
+
+
+def test_several_ids_are_deduplicated(tmp_path):
+    _many(tmp_path / "p")
+    result = proposal_for_local_terms(tmp_path / "p", ["prism:dhea-s.serum", "prism:dhea-s.saliva", "prism:dhea-s.serum"])
+    assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:dhea-s", "prism:dhea-s.saliva", "prism:dhea-s.serum"]
+
+
+def test_terms_the_official_registry_adopted_are_skipped_and_reported(tmp_path):
+    project = tmp_path / "p"
+    _many(project, ("saliva",))
+    write_local_terms(project, "biosample", [{"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"}])
+    result = proposal_for_local_terms(project)
+    assert [t["TermID"] for t in result["proposal"]["terms"]] == ["prism:dhea-s", "prism:dhea-s.saliva"]
+    assert result["skipped"] == ["prism:cortisol"]
+    named = proposal_for_local_terms(project, ["prism:cortisol", "prism:dhea-s"])
+    assert named["skipped"] == ["prism:cortisol"] and len(named["proposal"]["terms"]) == 2
+
+
+def test_nothing_to_share_is_an_error(tmp_path):
+    with pytest.raises(OverlayError, match="nothing to share"):
+        proposal_for_local_terms(tmp_path / "p")
+    project = tmp_path / "q"
+    write_local_terms(project, "biosample", [{"TermID": "prism:cortisol", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"}])
+    with pytest.raises(OverlayError, match="nothing to share"):
+        proposal_for_local_terms(project)
+
+
+def test_more_than_forty_files_is_an_error(tmp_path):
+    project = tmp_path / "p"
+    terms = [{"TermID": f"prism:m{n}-x", "Level": "analyte", "Label": f"m{n}x", "Aliases": [], "Description": "d"} for n in range(41)]
+    write_local_terms(project, "biosample", terms)
+    with pytest.raises(OverlayError, match="at most 40"):
+        proposal_for_local_terms(project)
+    assert len(proposal_for_local_terms(project, ["prism:m0-x"])["proposal"]["terms"]) == 1
+
+
+def test_an_unknown_id_among_several_is_an_error(tmp_path):
+    _many(tmp_path / "p")
+    with pytest.raises(OverlayError, match="prism:nope"):
+        proposal_for_local_terms(tmp_path / "p", ["prism:dhea-s", "prism:nope"])
 
 
 def test_a_local_child_of_an_official_parent_is_proposed_alone(tmp_path):

@@ -10,7 +10,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from src.term_proposal import (  # noqa: E402
-    ProposalError, build_proposal, check_with_specification, issue_url, load_inherited_sidecar, slugify,
+    ProposalError, as_v2, build_proposal, check_with_specification, issue_url, load_inherited_sidecar, slugify,
 )
 from src.term_registry import load_registry  # noqa: E402
 
@@ -92,7 +92,7 @@ def test_issue_url_encodes_unicode_and_json_and_round_trips():
     assert parts.netloc == "github.com" and parts.path == "/MRI-Lab-Graz/prism-specification/issues/new"
     query = parse_qs(parts.query)
     assert query["template"] == ["propose-metric.yml"] and query["title"][0].startswith("[Metric]: ")
-    assert json.loads(query["proposal"][0]) == proposal
+    assert json.loads(query["proposal"][0]) == as_v2(proposal)  # what is sent is format v2
     assert " " not in url and "µ" not in url
 
 
@@ -217,7 +217,8 @@ def test_deliver_writes_the_bare_proposal_and_opens_once(tmp_path, monkeypatch):
     monkeypatch.setattr(webbrowser, "open", lambda url: opened.append(url) or True)
     out = tmp_path / "p.json"
     result = deliver_proposal(_proposal_for_delivery(), out=out, open_browser=True)
-    assert json.loads(out.read_text(encoding="utf-8")) == _proposal_for_delivery() and result["saved"] == out
+    assert json.loads(out.read_text(encoding="utf-8")) == as_v2(_proposal_for_delivery()) and result["saved"] == out
+    assert result["document"] == as_v2(_proposal_for_delivery())
     assert opened == [result["issue_url"]] and result["opened"] is True
     assert "Opened the prefilled form" in result["text"] and "Saved to" in result["text"]
     assert "Similar official terms" not in result["text"]  # not asked for
@@ -240,3 +241,26 @@ def test_deliver_a_proposal_too_long_for_a_link_asks_to_paste(monkeypatch):
     long = {"modality": "biosample", "terms": [{"TermID": "prism:x", "Label": "x", "Description": "y" * 7000}]}
     result = deliver_proposal(long, open_browser=True)
     assert result["issue_url"] is None and "too long for a link" in result["text"]
+
+
+# --- format v2 on the way out (proposal format v2, Task B1) --------------------------------------------
+
+def test_as_v2_converts_v1_and_keeps_v2():
+    v1 = {"modality": "biosample", "terms": [{"TermID": "prism:x", "Level": "analyte"}, {"TermID": "prism:x.serum", "Level": "analyte-specimen"}]}
+    doc = as_v2(v1)
+    assert doc == {"format": "prism-proposal/2", "files": {
+        "terms/biosample/x.json": v1["terms"][0], "terms/biosample/x.serum.json": v1["terms"][1]}}
+    assert as_v2(doc) is doc
+
+
+def test_a_proposal_of_many_terms_passes_the_vendored_checks_as_v2():
+    registry = load_registry()
+    terms = [{"TermID": "prism:ferritin", "Level": "analyte", "Label": "ferritin", "Aliases": [], "Description": "d"}] + [
+        {"TermID": f"prism:ferritin.{s}", "Level": "analyte-specimen", "Parent": "prism:ferritin", "SpecimenType": s, "Units": "ug/L"}
+        for s in ("serum", "plasma", "saliva")]
+    assert check_with_specification({"modality": "biosample", "terms": terms}, registry) == []  # 4 terms: above the v1 cap
+
+
+def test_the_issue_title_names_the_first_term_in_v2_too():
+    doc = as_v2({"modality": "biosample", "terms": [{"TermID": "prism:x", "Level": "analyte", "Label": "Ferritin"}]})
+    assert "Ferritin" in parse_qs(urlparse(issue_url(doc)).query)["title"][0]
