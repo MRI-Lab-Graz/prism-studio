@@ -129,7 +129,7 @@ def _names(key: str, term: dict) -> list[str]:
     return [n.lower() for n in names if isinstance(n, str)]
 
 
-def _find(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
+def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
     """Exact full ID, then bare slug, then label/alias/equivalent (case-insensitive)."""
     for key, term in registry.items():
         if term.get("TermID") == name:
@@ -158,9 +158,9 @@ def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
 def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specimen: str | None) -> Resolution:
     """Resolve one sidecar column against the registry (spec: "How a sidecar column refers to a term")."""
     ref = col_def.get("Term")
-    found = _find(registry, ref) if ref else None
+    found = find_term(registry, ref) if ref else None
     if not found:
-        hit = None if ref else _find(registry, column)
+        hit = None if ref else find_term(registry, column)
         if hit and hit[1].get("Status") != "deprecated":
             tid = hit[1]["TermID"]
             return Resolution("suggestion", hit[1], (tid,), f"{column!r} looks like {tid}; add Term to use it")

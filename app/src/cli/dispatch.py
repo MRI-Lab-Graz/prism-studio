@@ -70,6 +70,11 @@ def dispatch_prism_tools(
             handlers["modality_propose"](args)
         else:
             parsers["modality"].print_help()
+    elif args.command == "terms":
+        if args.action in ("list", "show", "suggest"):
+            handlers[f"terms_{args.action}"](args)
+        else:
+            parsers["terms"].print_help()
     elif args.command == "modality-version":
         if args.action in ("status", "list", "pin", "update", "freeze"):
             handlers[f"modality_version_{args.action}"](args)
