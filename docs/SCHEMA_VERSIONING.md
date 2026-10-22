@@ -77,18 +77,26 @@ command-line `--json` report does not list them yet.
 
 ### Releasing a new modality version (maintainers)
 
-1. Copy the current `app/schemas/stable/<name>.schema.json` unchanged to
-   `app/schemas/archive/<name>/<old version>.schema.json`.
+The modality schemas are edited and released in the
+[prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository
+(see its `CONTRIBUTING.md`); this repository carries a hash-locked copy of a tagged
+release at the same paths (`app/schemas/`, `official/library/terms/`, `docs/specs/`) and
+never edits it. A release there is:
+
+1. Copy the current `schemas/stable/<name>.schema.json` unchanged to
+   `schemas/archive/<name>/<old version>.schema.json`.
 2. Edit the stable file and bump its `version` and the version suffix of its
    `$id`.
+3. Tag the repository, then run `python scripts/sync_specification.py --tag <tag>` here.
 
-The CI job `Modality schema versions` (`scripts/ci/check_schema_versions.py`)
-enforces three rules: files under `app/schemas/archive/` are
-never modified or deleted; a changed stable modality schema must carry a bumped
-`version`; and a bumped version needs the previous version archived as an exact
-copy of the previous stable file. It does not guard deleting or renaming a
-stable modality schema. The check also runs on pushes to main, and maintainers can
-run it locally before merging: `python3 scripts/ci/check_schema_versions.py origin/main HEAD`.
+The CI job `Modality schema versions` of prism-specification
+(`scripts/check_schema_versions.py`) enforces three rules: files under
+`schemas/archive/` are never modified or deleted; a changed stable modality schema
+must carry a bumped `version`; and a bumped version needs the previous version
+archived as an exact copy of the previous stable file. It does not guard deleting or
+renaming a stable modality schema. Here, the job `Vendored specification`
+(`scripts/ci/check_specification_lock.py`) fails when the copy differs from
+`specification.lock.json`.
 
 The archive ships automatically: the validator wheel copies the whole
 `app/schemas` tree and the app bundle adds the whole directory, so no extra

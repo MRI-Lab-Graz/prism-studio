@@ -3,11 +3,11 @@
 The `survey` modality is a PRISM extension for handling complex questionnaires. It treats surveys as rich data with detailed metadata, rather than simple phenotypic variables.
 
 > [!TIP]
-> **Starting a new survey?** The canonical workbook is [official/create_new_survey/survey_import_template.xlsx](../../official/create_new_survey/survey_import_template.xlsx).
-> For direct browser download on Read the Docs, you can also use [Survey Import Template](../examples/survey_import_template.xlsx).
+> **Starting a new survey?** The canonical workbook is [official/create_new_survey/survey_import_template.xlsx](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/official/create_new_survey/survey_import_template.xlsx).
+> For direct browser download on Read the Docs, you can also use [Survey Import Template](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/docs/examples/survey_import_template.xlsx).
 > For a guided, step-by-step walkthrough with worked examples, see
-> [Excel Survey Template — Basics](../EXCEL_TEMPLATE_BASICS.md) and
-> [— Multiple Versions](../EXCEL_TEMPLATE_ADVANCED.md) — this page stays the terse
+> [Excel Survey Template — Basics](https://prism-studio.readthedocs.io/en/latest/EXCEL_TEMPLATE_BASICS.html) and
+> [— Multiple Versions](https://prism-studio.readthedocs.io/en/latest/EXCEL_TEMPLATE_ADVANCED.html) — this page stays the terse
 > field-by-field reference.
 
 ## Import Template Layout
@@ -68,7 +68,7 @@ Survey data files MUST follow this naming convention:
 `sub-<label>[_ses-<label>]_task-<label>_survey.tsv`
 
 For example: `sub-002_ses-02_task-wellbeing-multi_survey.tsv`. The `task-<label>`
-entity identifies the instrument (per `app/schemas/stable/entities.schema.json`,
+entity identifies the instrument (per `schemas/stable/entities.schema.json`,
 the `survey` modality uses suffix `survey` with `task` as its example/required
 entity) — it is not a `survey-<label>` suffix.
 
@@ -278,7 +278,7 @@ Each entry in `Study.References` must specify a `Type` from the available enum, 
 
 ## Field reference (`survey.schema.json`, version 1.1.1)
 
-Generated from [`app/schemas/stable/survey.schema.json`](../../app/schemas/stable/survey.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/survey.schema.json`](../../app/schemas/stable/survey.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

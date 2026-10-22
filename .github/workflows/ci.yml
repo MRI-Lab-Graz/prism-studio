@@ -53,20 +53,15 @@ jobs:
             echo content_only=false >> "$GITHUB_OUTPUT"
           fi
 
-  schema-versions:
-    name: Modality schema versions
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000')
+  specification-lock:
+    name: Vendored specification
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
 
-      - name: Check frozen modality schema versions
-        env:
-          BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
-        run: python3 scripts/ci/check_schema_versions.py "$BASE" HEAD
+      - name: Check the vendored specification against specification.lock.json
+        run: python3 scripts/ci/check_specification_lock.py
 
   fast-pr-checks:
     name: Fast On-Demand Checks

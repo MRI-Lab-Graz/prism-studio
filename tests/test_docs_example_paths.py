@@ -12,6 +12,7 @@ REPO = Path(__file__).resolve().parent.parent
 
 # Paths under examples/, repo-relative or written relative to the doc
 # (`../examples/...`), stopping before trailing sentence punctuation.
+URL_RE = re.compile(r"https?://[^\s)>\]]+")
 PATH_RE = re.compile(r"((?:\.\./)*examples/[A-Za-z0-9_./-]*[A-Za-z0-9_/-])")
 
 
@@ -32,7 +33,8 @@ def test_example_paths_in_docs_exist():
         for lineno, line in enumerate(
             md.read_text(encoding="utf-8").splitlines(), 1
         ):
-            for hit in PATH_RE.findall(line):
+            # a URL (the vendored spec pages link to files of this repository on GitHub) is not a local path
+            for hit in PATH_RE.findall(URL_RE.sub("", line)):
                 if not ((REPO / hit).exists() or (md.parent / hit).exists()):
                     rel = md.relative_to(REPO)
                     missing.append(f"{rel}:{lineno} -> {hit}")

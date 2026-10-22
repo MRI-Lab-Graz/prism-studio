@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The specification lives in its own repository.** The modality schemas (with their archive), the term registry and
+  the specification pages are now edited and released in
+  [MRI-Lab-Graz/prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (CC BY 4.0, scripts MIT) and
+  carried here as a hash-locked copy of a tagged release (`specification.lock.json`, `v1.0.0`), at the same paths as
+  before. `python scripts/sync_specification.py --tag <tag>` is the only way the copy changes; the CI job
+  `Vendored specification` replaces `Modality schema versions` (that job now runs in prism-specification).
+  `project`, `recipe.survey`, `tool-limesurvey` and `instrument-registry` schemas and `project.md` stay here.
+
 ### Added
 - **Biosample term registry (phase 1).** Biosample columns can name a shipped term (`"cort": {"Term": "cortisol"}`;
   stable IDs such as `prism:cortisol` and `prism:cortisol.saliva`) and inherit its unit, range and LOINC code. A metric

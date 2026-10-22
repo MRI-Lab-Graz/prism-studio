@@ -3,7 +3,7 @@
 The `biometrics` modality is a PRISM extension designed for physiological assessments that do not fit into standard BIDS `beh` or `physio` categories. Examples include VO2max tests, plank tests, balance assessments, or anthropometric measurements.
 
 > [!TIP]
-> **Starting a new biometric assessment?** Use the [Biometrics Import Template](../examples/biometrics_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
+> **Starting a new biometric assessment?** Use the [Biometrics Import Template](https://github.com/MRI-Lab-Graz/prism-studio/raw/main/docs/examples/biometrics_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
 
 ## File Name Structure
 
@@ -125,7 +125,7 @@ Common fields for each metric:
 
 ## Generating Templates from Excel
 
-You can generate biometrics JSON templates from a single-sheet Excel **codebook** (no data required) using `prism_tools.py biometrics import-excel`. See [CLI Reference](../CLI_REFERENCE.md#biometrics) for the full column list and an example.
+You can generate biometrics JSON templates from a single-sheet Excel **codebook** (no data required) using `prism_tools.py biometrics import-excel`. See [CLI Reference](https://prism-studio.readthedocs.io/en/latest/CLI_REFERENCE.html#biometrics) for the full column list and an example.
 
 ## Example Sidecar
 
@@ -155,7 +155,7 @@ You can generate biometrics JSON templates from a single-sheet Excel **codebook*
 
 ## Field reference (`biometrics.schema.json`, version 1.1.1)
 
-Generated from [`app/schemas/stable/biometrics.schema.json`](../../app/schemas/stable/biometrics.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/biometrics.schema.json`](../../app/schemas/stable/biometrics.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

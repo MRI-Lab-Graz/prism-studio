@@ -29,7 +29,7 @@ Use environment data as contextual metadata. Avoid storing direct identifying te
 
 ## Field reference (`environment.schema.json`, version 1.1.0)
 
-Generated from [`app/schemas/stable/environment.schema.json`](../../app/schemas/stable/environment.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+Generated from [`schemas/stable/environment.schema.json`](../../app/schemas/stable/environment.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |

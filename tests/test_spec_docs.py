@@ -27,6 +27,14 @@ def test_links_between_docs_point_at_in_app_pages():
     assert "/specifications/errors" in html
 
 
+def test_links_to_the_docs_site_are_mapped_or_dropped_not_left_as_external_links():
+    # the specification repository cannot use relative links into Studio's docs, so its pages carry
+    # absolute Read the Docs / GitHub URLs; offline, they must behave like the old relative links
+    for slug in ("survey", "eyetracking", "biometrics", "physio"):
+        html = render_spec_page(slug)
+        assert "readthedocs.io" not in html and "MRI-Lab-Graz/prism-studio" not in html, slug
+
+
 def test_links_to_repo_files_outside_docs_are_not_clickable():
     # ../../app/schemas/... only resolves on GitHub, a dead link in the app
     assert "../../app" not in render_spec_page("entities")

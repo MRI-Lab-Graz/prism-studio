@@ -46,6 +46,11 @@ SPEC_GROUPS = [
 
 # a doc links to another doc by file name, e.g. ../ERROR_CODES.md
 _SLUG_BY_FILE = {Path(f).name: slug for slug, (_, f) in SPEC_PAGES.items()}
+# The specification repository cannot link into Studio's docs relatively, so its pages carry
+# absolute URLs; offline they are read like the relative links they replace.
+_DOCS_SITE = "https://prism-studio.readthedocs.io/en/latest/"
+_REPO_FILES = "https://github.com/MRI-Lab-Graz/prism-studio/raw/main/"
+_HTML_PAGE = re.compile(r"\.html(?=#|$)")
 _COMMENT = re.compile(r"<!--.*?-->", re.S)
 # in-app pages state facts only: drop pointers to guides and step-by-step procedures
 _TUTORIAL = re.compile(
@@ -68,6 +73,10 @@ def _rewrite_links(tokens) -> None:
         for t in inline.children:
             if t.type == "link_open":
                 href = t.attrGet("href") or ""
+                if href.startswith(_DOCS_SITE):
+                    href = _HTML_PAGE.sub(".md", href[len(_DOCS_SITE):])
+                elif href.startswith(_REPO_FILES):
+                    href = href[len(_REPO_FILES):]
                 if href.startswith(("http://", "https://", "#")):
                     continue
                 slug = _SLUG_BY_FILE.get(Path(href.split("#")[0]).name)
