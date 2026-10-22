@@ -91,6 +91,7 @@
     "type": "object",
     "description": "Column definition (one per TSV column)",
     "properties": {
+      "Term": {"type": "string", "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:cortisol; Units, ranges and LOINC are then inherited and may be omitted"},
       "Description": {"type": ["string", "object"], "description": "Description of the column"},
       "Units": {"type": "string", "description": "Unit of measurement (e.g. mg/L, pg/mL); n/a for non-numeric columns"},
       "AliasOf": {"type": "string", "description": "Column name of the canonical definition this is an alias for"},
@@ -122,6 +123,6 @@
       "IntraAssayCV": {"type": "number", "description": "Intra-assay coefficient of variation in percent"},
       "InterAssayCV": {"type": "number", "description": "Inter-assay coefficient of variation in percent"}
     },
-    "required": ["Description", "Units"]
+    "anyOf": [{"required": ["Description", "Units"]}, {"required": ["Term"]}]
   }
 }

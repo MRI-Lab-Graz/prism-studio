@@ -49,4 +49,5 @@ src/session_map.py
 src/ssh_safety.py
 src/subject_id_matching.py
 src/survey_existing.py
+src/term_registry.py
 src/validation_library_resolution.py

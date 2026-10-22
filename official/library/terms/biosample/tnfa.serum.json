@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:tnfa.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:tnfa",
+  "SpecimenType": "serum",
+  "Units": "pg/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

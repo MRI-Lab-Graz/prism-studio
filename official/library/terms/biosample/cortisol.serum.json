@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:cortisol.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:cortisol",
+  "SpecimenType": "serum",
+  "Units": "nmol/L",
+  "AlternativeUnits": [
+    "ug/dL"
+  ],
+  "MinValue": 0,
+  "Status": "official"
+}

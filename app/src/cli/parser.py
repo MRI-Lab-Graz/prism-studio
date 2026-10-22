@@ -1779,6 +1779,25 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_terms = subparsers.add_parser(
+        "terms",
+        help="List, show and look up shipped metric terms (term registry)",
+    )
+    terms_subparsers = parser_terms.add_subparsers(dest="action", help="Term actions")
+    for _name, _help in (
+        ("list", "List the shipped terms"),
+        ("show", "Show one term (ID, local name, label, alias or equivalent)"),
+        ("suggest", "Relate a column name to the registry (similar official terms)"),
+    ):
+        _p = terms_subparsers.add_parser(_name, help=_help)
+        if _name == "show":
+            _p.add_argument("term", help="Term ID, e.g. prism:cortisol, or a local name")
+        if _name == "suggest":
+            _p.add_argument("column", help="Column name as it appears in your sidecar")
+            _p.add_argument("--specimen", help="Technical.SpecimenType of the sidecar")
+        _p.add_argument("--modality", default="biosample", help="Modality of the registry")
+        _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_modality_version = subparsers.add_parser(
         "modality-version",
         help="Pin, list and update per-modality schema versions of a project",
@@ -2538,5 +2557,6 @@ def build_prism_tools_parsers(
         "file_management": parser_file_management,
         "json_editor": parser_json_editor,
         "modality": parser_modality,
+        "terms": parser_terms,
         "modality-version": parser_modality_version,
     }

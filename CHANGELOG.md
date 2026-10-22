@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Biosample term registry (phase 1).** Biosample columns can name a shipped term (`"cort": {"Term": "cortisol"}`;
+  stable IDs such as `prism:cortisol` and `prism:cortisol.saliva`) and inherit its unit, range and LOINC code. A metric
+  the registry does not know still passes, with an info that lists similar official terms. A term for another specimen
+  than the sidecar's `SpecimenType` is an error. New command `prism_tools.py terms list|show|suggest`. Design:
+  `docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md`.
+
 ## [1.22.0] - 2026-10-22
 
 ### Added

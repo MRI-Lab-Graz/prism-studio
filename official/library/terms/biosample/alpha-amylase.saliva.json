@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:alpha-amylase.saliva",
+  "Level": "analyte-specimen",
+  "Parent": "prism:alpha-amylase",
+  "SpecimenType": "saliva",
+  "Units": "U/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:cortisol",
+  "Level": "analyte",
+  "Label": "cortisol",
+  "Aliases": [
+    "cort",
+    "corts",
+    "hydrocortisone"
+  ],
+  "Description": "Cortisol, the main glucocorticoid; measured in saliva, serum and other specimens.",
+  "Status": "official"
+}
