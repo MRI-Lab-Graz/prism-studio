@@ -36,6 +36,15 @@ def slugify(text: str) -> str:
     return slug
 
 
+def _dangling_slug(col_def: dict) -> str | None:
+    """Local name of a `Term` the column already uses that the registry does not know yet (prism:zonulin -> zonulin)."""
+    ref = col_def.get("Term")
+    if not isinstance(ref, str) or not ref.strip():
+        return None
+    local = ref.partition(":")[2] if ref.startswith("prism:") else ref
+    return local.split(".")[0] or None
+
+
 def build_proposal(
     registry: dict[str, dict],
     sidecar: dict,
@@ -45,11 +54,17 @@ def build_proposal(
 ) -> dict:
     col_def = sidecar.get(column)
     if not isinstance(col_def, dict):
-        raise ProposalError(f"column {column!r} not found in the sidecar (or it is not a column definition)")
+        raise ProposalError(
+            f"column {column!r} not found in the sidecar (or it is not a column definition); "
+            "if it is defined in the root-level sidecar of the project, pass that file with --sidecar"
+        )
     technical = sidecar.get("Technical")
     specimen = technical.get("SpecimenType") if isinstance(technical, dict) else None
     if not specimen:
-        raise ProposalError("the sidecar has no Technical.SpecimenType")
+        raise ProposalError(
+            "the sidecar has no Technical.SpecimenType; pass the sidecar that defines it "
+            "(usually the root-level one) with --sidecar"
+        )
 
     res = resolve_column(registry, column, col_def, specimen)
     if res.kind in ("term", "suggestion"):
@@ -66,7 +81,8 @@ def build_proposal(
         parent_id, new_parent = res.term["TermID"], None
     else:  # unknown analyte: propose the analyte and its specimen-specific term
         name = label or column
-        parent_id = f"prism:{slugify(name)}"
+        # a Term the column already carries decides the ID, otherwise the files would not resolve after the merge
+        parent_id = f"prism:{slugify(label or _dangling_slug(col_def) or column)}"
         description = col_def.get("Description")
         new_parent = {
             "TermID": parent_id, "Level": "analyte", "Label": name, "Aliases": [column],
@@ -96,7 +112,7 @@ def issue_url(proposal: dict, repo: str = ISSUE_REPO, limit: int = URL_LIMIT) ->
 
 
 def _specification_scripts() -> Path:
-    """`scripts/specification` in dev, in the validator wheel and in the frozen build (bundled at `<_MEIPASS>/scripts`)."""
+    """`scripts/specification` in a checkout and in the frozen build (bundled at `<_MEIPASS>/scripts`)."""
     candidates = [Path(__file__).resolve().parents[1] / "scripts" / "specification"]
     meipass = getattr(sys, "_MEIPASS", None) if getattr(sys, "frozen", False) else None
     if meipass:

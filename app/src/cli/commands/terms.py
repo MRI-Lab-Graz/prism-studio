@@ -82,6 +82,10 @@ def cmd_terms_propose(args) -> None:
         _fail(args, "the proposal does not pass the specification checks: " + "; ".join(problems), proposal=proposal, problems=problems)
     column_def = sidecar[args.column]
     similar = list(resolve_column(registry, args.column, column_def, sidecar["Technical"]["SpecimenType"]).similar)
+    saved = None
+    if getattr(args, "out", None):
+        saved = Path(args.out)
+        saved.write_text(json.dumps(proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     url = issue_url(proposal)
     opened = bool(args.open and url and webbrowser.open(url))
     form = f"https://github.com/{ISSUE_REPO}/issues/new?template={ISSUE_TEMPLATE}"
@@ -96,10 +100,12 @@ def cmd_terms_propose(args) -> None:
         + json.dumps(proposal, indent=2, ensure_ascii=False)
         + f"\n\nSimilar official terms: {', '.join(similar) or 'none'} (check that none of them is what you mean)."
         + f"\nThe maintainers may choose a different ID or name; \"{args.column}\" is kept as an alias, so your files keep working."
+        + (f"\nSaved to {saved} (send this file to a maintainer if you do not use GitHub)." if saved else "")
         + f"\n{how}"
     )
     _emit(
         args,
-        {"success": True, "proposal": proposal, "issue_url": url, "opened": opened, "similar": similar, "problems": []},
+        {"success": True, "proposal": proposal, "issue_url": url, "opened": opened, "saved": str(saved) if saved else None,
+         "similar": similar, "problems": []},
         text,
     )

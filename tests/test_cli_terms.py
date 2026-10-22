@@ -139,3 +139,26 @@ def test_propose_too_long_for_a_url_falls_back_to_pasting(tmp_path, monkeypatch,
     _handler()(_args(sidecar, open=True, json=False))
     out = capsys.readouterr().out
     assert "paste" in out.lower() and FORM in out
+
+
+def test_propose_out_writes_the_bare_proposal_the_specification_check_accepts(tmp_path):
+    out = tmp_path / "proposal.json"
+    code, text = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--out", str(out))
+    assert code == 0 and out.is_file() and "proposal.json" in text
+    assert set(json.loads(out.read_text(encoding="utf-8"))) == {"modality", "terms"}
+    bundle = tmp_path / "bundle"
+    subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "specification" / "term_proposal.py"), "check",
+         "--terms", str(REPO / "official" / "library" / "terms" / "biosample"),
+         "--schema", str(REPO / "app" / "schemas" / "stable" / "biosample.schema.json"),
+         "--out", str(bundle), "--file", str(out)],
+        check=True, capture_output=True, text=True,
+    )
+    assert (bundle / "status").read_text(encoding="utf-8").strip() == "ok"
+
+
+def test_propose_out_is_not_written_when_the_proposal_cannot_be_made(tmp_path):
+    out = tmp_path / "proposal.json"
+    sidecar = _sidecar(tmp_path, "cort", {"Description": "d", "Units": "nmol/L"}, specimen="saliva")
+    code, _ = _run("propose", "--sidecar", str(sidecar), "--column", "cort", "--out", str(out))
+    assert code == 1 and not out.exists()

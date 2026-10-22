@@ -112,3 +112,30 @@ def test_check_with_specification_names_an_already_official_id():
     registry = load_registry()
     proposal = build_proposal(registry, _sidecar("weird", {"Description": "d", "Units": "u"}), "weird", label="cortisol")
     assert any("prism:cortisol" in p and "official" in p for p in check_with_specification(proposal, registry))
+
+
+# --- review fixes: a dangling Term decides the ID; errors point at the root-level sidecar -------
+
+def test_dangling_term_decides_the_id():
+    sidecar = _sidecar("zon_s", {"Term": "prism:zonulin", "Description": "d", "Units": "ng/mL"}, "serum")
+    parent, child = build_proposal(REGISTRY, sidecar, "zon_s")["terms"]
+    assert parent["TermID"] == "prism:zonulin" and parent["Aliases"] == ["zon_s"]
+    assert child["TermID"] == "prism:zonulin.serum" and child["Parent"] == "prism:zonulin"
+
+
+def test_dangling_child_style_and_bare_terms_propose_their_parent():
+    for ref in ("prism:zonulin.serum", "zonulin"):
+        sidecar = _sidecar("zon_s", {"Term": ref, "Description": "d", "Units": "ng/mL"}, "serum")
+        assert build_proposal(REGISTRY, sidecar, "zon_s")["terms"][0]["TermID"] == "prism:zonulin", ref
+
+
+def test_label_wins_over_a_dangling_term():
+    sidecar = _sidecar("zon_s", {"Term": "prism:zonulin", "Description": "d", "Units": "ng/mL"}, "serum")
+    assert build_proposal(REGISTRY, sidecar, "zon_s", label="Zonulin Z")["terms"][0]["TermID"] == "prism:zonulin-z"
+
+
+def test_errors_for_a_sidecar_without_the_column_or_technical_point_at_the_root_level_sidecar():
+    with pytest.raises(ProposalError, match="root-level"):
+        build_proposal(REGISTRY, _sidecar("a", {"Units": "u"}), "b")
+    with pytest.raises(ProposalError, match="root-level"):
+        build_proposal(REGISTRY, _sidecar("a", {"Description": "d", "Units": "u"}, specimen=None), "a")

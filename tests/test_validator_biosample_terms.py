@@ -201,4 +201,5 @@ def test_terms_root_points_at_the_shipped_registry():
 def test_unknown_metric_notice_names_the_propose_command(tmp_path):
     issues = _sidecar_issues(tmp_path, {"salivary_cortisol": {"Description": "d", "Units": "nmol/L"}})
     notice = _msgs(issues, "INFO")[0]
-    assert "terms propose" in notice and "--column salivary_cortisol" in notice and "--sidecar" in notice
+    # both arguments are quoted, so a path with spaces or a column like "Cortisol (nmol/L)" can be pasted
+    assert "terms propose" in notice and '--column "salivary_cortisol"' in notice and '--sidecar "' in notice

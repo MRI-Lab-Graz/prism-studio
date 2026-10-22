@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Propose a metric.** `prism_tools.py terms propose --sidecar FILE --column NAME [--open]` turns an unknown biosample
   column into a proposal for the term registry and opens a prefilled "Propose a Metric" form in
   [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (nothing is sent without `--open`). A bot
-  there checks it against the current registry and opens a draft pull request for a maintainer. The validator's
+  there checks it against the current registry; for trusted authors it opens a draft pull request, for everyone else a
+  maintainer takes over. The validator's
   "not an official metric" notice now names the command. Studio carries prism-specification `v1.1.0`.
 
 ### Changed
