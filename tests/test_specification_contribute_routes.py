@@ -139,3 +139,47 @@ def test_the_page_renders_and_every_specification_page_links_it(tmp_path):
     assert (tmp_path / "contribute.status").read_text() == "200" and (tmp_path / "bogus.status").read_text() == "404"
     assert "New metric" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
     assert "/specifications/contribute" in (tmp_path / "survey.html").read_text(encoding="utf-8")
+
+
+# --- proposal format v2: several terms ------------------------------------------------------------
+
+def _two_local(client, tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["ferr_ugl"] = {"Description": "Ferritin", "Units": "ug/L", "MinValue": 0}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    _open(client, project)
+    for column, label in (("dhea_s", "DHEA-S"), ("ferr_ugl", "Ferritin")):
+        assert client.post("/api/spec/local/add-term", json={"data_file": _tsv(project), "column": column, "label": label}).get_json()["success"]
+    return project
+
+
+def test_propose_all_returns_one_v2_document(client, tmp_path):
+    _two_local(client, tmp_path)
+    data = client.post("/api/spec/propose", json={"all": True}).get_json()
+    assert data["success"] and data["problems"] == [] and data["skipped"] == []
+    assert data["document"]["format"] == "prism-proposal/2" and len(data["document"]["files"]) == 4
+    assert len(data["proposal"]["terms"]) == 4
+
+
+def test_propose_accepts_a_list_of_ids(client, tmp_path):
+    _two_local(client, tmp_path)
+    data = client.post("/api/spec/propose", json={"ids": ["prism:dhea-s", "prism:ferritin"]}).get_json()
+    assert data["success"] and len(data["document"]["files"]) == 4
+    one = client.post("/api/spec/propose", json={"id": "prism:dhea-s"}).get_json()
+    assert one["success"] and len(one["document"]["files"]) == 2
+
+
+@pytest.mark.parametrize("body", [
+    {}, {"ids": []}, {"ids": "prism:dhea-s"}, {"ids": [1]}, {"ids": ["prism:../x"]}, {"all": "yes"}, {"id": 5}, {"all": False},
+])
+def test_propose_rejects_bad_bodies(client, tmp_path, body):
+    _two_local(client, tmp_path)
+    response = client.post("/api/spec/propose", json=body)
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_the_page_script_shows_and_downloads_the_document_that_is_sent():
+    source = (REPO / "app" / "static" / "js" / "modules" / "specification" / "contribute.js").read_text(encoding="utf-8")
+    assert "data.document" in source and "Share all" in (REPO / "app" / "templates" / "specifications_contribute.html").read_text(encoding="utf-8")

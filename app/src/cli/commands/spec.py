@@ -9,7 +9,7 @@ from src.spec_overlay import (
     OverlayError,
     add_local_term,
     list_local_items,
-    proposal_for_local_term,
+    proposal_for_local_terms,
     remove_local_terms,
 )
 from src.term_proposal import deliver_proposal
@@ -62,9 +62,9 @@ def cmd_spec_local_remove(args) -> None:
 
 
 def cmd_spec_propose(args) -> None:
-    """Share a local term: build its proposal and (with --open) open the prefilled form. Sends nothing itself."""
+    """Share local terms (--term, repeatable, or --all) in one proposal; --open opens the prefilled form. Sends nothing itself."""
     try:
-        result = proposal_for_local_term(args.project, args.term, args.modality)
+        result = proposal_for_local_terms(args.project, None if args.all else args.term, args.modality)
     except OverlayError as exc:
         _fail(args, str(exc))
     if result["problems"]:
@@ -76,9 +76,11 @@ def cmd_spec_propose(args) -> None:
     _emit(
         args,
         {
-            "success": True, "proposal": result["proposal"], "issue_url": delivered["issue_url"],
+            "success": True, "proposal": result["proposal"], "document": delivered["document"],
+            "skipped": result["skipped"], "issue_url": delivered["issue_url"],
             "opened": delivered["opened"], "saved": str(delivered["saved"]) if delivered["saved"] else None,
             "problems": [],
         },
-        delivered["text"],
+        delivered["text"]
+        + (f"\nLeft out, they are covered by official terms: {', '.join(result['skipped'])}" if result["skipped"] else ""),
     )

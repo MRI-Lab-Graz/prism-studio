@@ -24,18 +24,24 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 
-MAX_BYTES = 20_000
-MAX_TERMS = 2
+FORMAT_V2 = "prism-proposal/2"
+MAX_BYTES = 50_000  # a GitHub issue-form text field holds 65,536 characters
+MAX_FILES = 40  # format v2
+V1_MAX_TERMS = 2  # format v1
 MAX_PROBLEMS = 50
+MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
     "MinValue WarnMaxValue LOINC Equivalents".split()
 )
 MODALITIES = ("biosample",)
-_LOCAL = re.compile(r"^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)?$")
+_LOCAL = re.compile(r"^[a-z][a-z0-9-]{0,62}(\.[a-z][a-z0-9-]{0,62})?$")  # at most 63 characters per segment
+# The repository paths a proposal may add. Later layers (schema patches, new modalities) add theirs here.
+_TERM_PATH = re.compile(r"terms/(?P<modality>[a-z][a-z0-9]*)/(?P<stem>[a-z][a-z0-9-]{0,62}(?:\.[a-z][a-z0-9-]{0,62})?)\.json")
 _SECTION = re.compile(r"^### (.+?)\s*$", re.M)
 _OPENING_FENCE = re.compile(r"```[A-Za-z]*\n")
 _CHECKBOX = re.compile(r"^- \[([ xX])\]", re.M)
@@ -86,39 +92,82 @@ def extract_proposal(issue_body: str) -> dict:
     return proposal
 
 
-def _shape_problems(proposal) -> list[str]:
-    if not isinstance(proposal, dict):
-        return ["the proposal must be a JSON object"]
+def _term_problems(term, where: str) -> list[str]:
+    """Problems of one proposed term (allowed fields, value types, the TermID rule)."""
+    if not isinstance(term, dict):
+        return [f"{where}: must be a JSON object"]
+    problems = []
+    for key in sorted(set(term) - ALLOWED_FIELDS):
+        hint = " (set by the maintainer's merge)" if key in ("Status", "ReplacedBy") else ""
+        problems.append(f"{where}: field {key!r} is not allowed in a proposal{hint}")
+    problems += check_terms.type_problems(term, where)
+    tid = term.get("TermID")
+    prefix, _, local = tid.partition(":") if isinstance(tid, str) else ("", "", "")
+    if prefix != "prism" or not _LOCAL.fullmatch(local):
+        problems.append(f"{where}: TermID {tid!r} must be prism:<lowercase-slug>[.<specimen>]")
+    return problems
+
+
+def _normalize_v1(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
     problems = []
     if proposal.get("modality") not in MODALITIES:
         problems.append(f"modality must be one of {', '.join(MODALITIES)}")
     terms = proposal.get("terms")
     if not isinstance(terms, list) or not terms:
-        return problems + ["terms must be a non-empty list"]
-    if len(terms) > MAX_TERMS:
-        problems.append(f"a proposal has at most {MAX_TERMS} terms, found {len(terms)}")
+        return [], problems + ["terms must be a non-empty list"]
+    if len(terms) > V1_MAX_TERMS:
+        problems.append(f"a proposal has at most {V1_MAX_TERMS} terms, found {len(terms)}")
+    pairs = []
     for i, term in enumerate(terms, 1):
-        where = f"term {i}"
-        if not isinstance(term, dict):
-            problems.append(f"{where}: must be a JSON object")
+        found = _term_problems(term, f"term {i}")
+        problems += found
+        if not found and not problems:
+            pairs.append((f"terms/{proposal['modality']}/{term['TermID'].partition(':')[2]}.json", term))
+    return pairs, problems
+
+
+def _normalize_v2(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
+    problems = []
+    if proposal.get("format") != FORMAT_V2:
+        problems.append(f"format must be {FORMAT_V2!r}")
+    for key in sorted(set(proposal) - {"format", "files"}):
+        problems.append(f"field {key!r} is not allowed in a proposal")
+    files = proposal.get("files")
+    if not isinstance(files, dict) or not files:
+        return [], problems + ["files must be a non-empty object of repository path -> term"]
+    if len(files) > MAX_FILES:
+        problems.append(f"a proposal has at most {MAX_FILES} files, found {len(files)}")
+    pairs = []
+    for path, term in files.items():
+        match = _TERM_PATH.fullmatch(path) if isinstance(path, str) else None
+        if not match or match["modality"] not in MODALITIES:
+            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(MODALITIES)}>/<id>.json)")
             continue
-        for key in sorted(set(term) - ALLOWED_FIELDS):
-            hint = " (set by the maintainer's merge)" if key in ("Status", "ReplacedBy") else ""
-            problems.append(f"{where}: field {key!r} is not allowed in a proposal{hint}")
-        problems += check_terms.type_problems(term, where)
-        tid = term.get("TermID")
-        prefix, _, local = tid.partition(":") if isinstance(tid, str) else ("", "", "")
-        if prefix != "prism" or not _LOCAL.fullmatch(local):
-            problems.append(f"{where}: TermID {tid!r} must be prism:<lowercase-slug>[.<specimen>]")
-    return problems
+        found = _term_problems(term, path)
+        problems += found
+        if not found:
+            local = term["TermID"].partition(":")[2]
+            if local != match["stem"]:
+                problems.append(f"{path}: the file name {match['stem']!r} must equal the TermID local part {local!r}")
+            else:
+                pairs.append((path, term))
+    return pairs, problems
+
+
+def normalize(proposal) -> tuple[list[tuple[str, dict]], list[str]]:
+    """The (repository path, term) pairs of a v1 or v2 proposal, and the problems found."""
+    if not isinstance(proposal, dict):
+        return [], ["the proposal must be a JSON object"]
+    pairs, problems = _normalize_v2(proposal) if "files" in proposal or "format" in proposal else _normalize_v1(proposal)
+    return ([] if problems else pairs), problems
 
 
 def check_proposal(proposal: dict, registry: dict[str, dict], specimens: list[str]) -> tuple[list[dict], list[str]]:
     """Return (the new terms with Status "official", problems); checked together with the registry."""
-    problems = _shape_problems(proposal)
+    pairs, problems = normalize(proposal)
     if problems:
         return [], problems
-    terms = [{**t, "Status": "official"} for t in proposal["terms"]]
+    terms = [{**term, "Status": "official"} for _path, term in pairs]
     merged = dict(registry)
     for term in terms:
         local = term["TermID"].partition(":")[2]
@@ -175,26 +224,33 @@ def _run_check(args) -> int:
     """Always writes a bundle (status, log, terms); a bad proposal is a failed bundle, not a crash."""
     registry, problems = check_terms.load_terms(args.terms)
     terms: list[dict] = []
-    modality = "biosample"
+    modalities: list[str] = []
     try:
         proposal = _read_proposal(args.file)
         terms, found = check_proposal(proposal, registry, check_terms.specimen_types(args.schema))
         problems += found
-        modality = proposal.get("modality", modality) if isinstance(proposal, dict) else modality
+        if not found:
+            modalities = [_TERM_PATH.fullmatch(path)["modality"] for path, _term in normalize(proposal)[0]]
     except ProposalError as exc:
         problems.append(str(exc))
     except Exception as exc:  # noqa: BLE001 - the bot must always leave a bundle, or the contributor hears nothing
         problems.append(f"internal error while checking the proposal ({type(exc).__name__}); a maintainer will look at it")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    if not problems:
+        try:
+            for modality in dict.fromkeys(modalities):
+                write_terms([t for t, m in zip(terms, modalities) if m == modality], out / "terms", modality)
+        except Exception as exc:  # noqa: BLE001 - writing must never leave a half bundle that says ok
+            problems.append(f"internal error while writing the files ({type(exc).__name__}); a maintainer will look at it")
+            shutil.rmtree(out / "terms", ignore_errors=True)
     (out / "status").write_text("failed\n" if problems else "ok\n", encoding="utf-8")
-    shown = problems[:MAX_PROBLEMS]  # GitHub comments are limited to 65,536 characters
+    # a GitHub comment is limited to 65,536 characters: at most MAX_PROBLEMS lines of at most MAX_LINE characters
+    shown = [p if len(p) <= MAX_LINE else p[: MAX_LINE - 3] + "..." for p in problems[:MAX_PROBLEMS]]
     log = "".join(f"ERROR: {p}\n" for p in shown)
     if len(problems) > len(shown):
         log += f"ERROR: ... and {len(problems) - len(shown)} more problems\n"
     (out / "log").write_text(log, encoding="utf-8")
-    if not problems:
-        write_terms(terms, out / "terms", modality)
     print(log or "ok")
     return 0
 

@@ -1842,8 +1842,10 @@ def build_prism_tools_parsers(
         if _name in ("remove",):
             _parser.add_argument("term", help="Term ID, for example prism:dhea-s")
         if _name == "propose":
-            _parser.add_argument("--term", required=True, help="The local term to share, for example prism:dhea-s")
-            _parser.add_argument("--out", help="Also save the bare proposal to this file")
+            _what = _parser.add_mutually_exclusive_group(required=True)
+            _what.add_argument("--term", action="append", help="A local term to share, for example prism:dhea-s (repeatable)")
+            _what.add_argument("--all", action="store_true", help="Share every local term of the project")
+            _parser.add_argument("--out", help="Also save the proposal document (format v2) to this file")
             _parser.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
 
     parser_modality_version = subparsers.add_parser(

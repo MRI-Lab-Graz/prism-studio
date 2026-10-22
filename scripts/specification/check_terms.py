@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 ID_PREFIXES = ("prism", "bids")
-_SLUG = re.compile(r"^[a-z][a-z0-9-]*$")
+_SLUG = re.compile(r"^[a-z][a-z0-9-]{0,62}$")  # at most 63 characters per segment
 _LOINC = re.compile(r"^\d+-\d$")
 _STATUSES = ("official", "deprecated")
 

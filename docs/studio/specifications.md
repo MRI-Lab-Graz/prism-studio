@@ -42,7 +42,8 @@ where you can share it. The page works on the open project, and its **New metric
   next validation uses it. It is stored in the project at `code/specification/terms/`, and the same action is
   `prism_tools.py spec local add-term`.
 - **Local metrics in this project:** each with its status. *Share…* shows the proposal and opens a prefilled
-  form on GitHub in a new tab (or lets you download `proposal.json`). **Nothing is sent from Studio**; you
+  form on GitHub in a new tab (or lets you download `proposal.json`); *Share all local metrics…* puts every
+  local metric of the project in one proposal (up to 40 term files). **Nothing is sent from Studio**; you
   submit the form yourself, and the maintainers may choose a different ID or name. *Remove* deletes the local
   copy; a metric the official registry has since adopted is marked *now-official* and can be removed.
 

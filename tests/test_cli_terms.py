@@ -145,7 +145,7 @@ def test_propose_out_writes_the_bare_proposal_the_specification_check_accepts(tm
     out = tmp_path / "proposal.json"
     code, text = _run("propose", "--sidecar", str(_sidecar(tmp_path)), "--column", "ferr_ugl", "--out", str(out))
     assert code == 0 and out.is_file() and "proposal.json" in text
-    assert set(json.loads(out.read_text(encoding="utf-8"))) == {"modality", "terms"}
+    assert set(json.loads(out.read_text(encoding="utf-8"))) == {"format", "files"}  # the document that is sent: format v2
     bundle = tmp_path / "bundle"
     subprocess.run(
         [sys.executable, str(REPO / "scripts" / "specification" / "term_proposal.py"), "check",
