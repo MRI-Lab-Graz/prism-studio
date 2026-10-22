@@ -1,4 +1,4 @@
-# prism-schema repository (term registry phase 2) — design
+# prism-specification repository (term registry phase 2) — design
 
 Date: 2026-10-22
 Status: design agreed in chat; awaiting written-spec review. Nothing built.
@@ -20,7 +20,7 @@ gives contributors a clean place now; moving rules from Python into the schema
 
 ## Goals
 
-- A new public GitHub repository, `prism-schema` (working name), holding the
+- A new public GitHub repository, `MRI-Lab-Graz/prism-specification`, holding the
   PRISM specification: community schemas, their archive, the term registry and
   the spec pages.
 - A new metric is proposed as a data-only pull request there, prepared by
@@ -55,7 +55,7 @@ gives contributors a clean place now; moving rules from Python into the schema
 
 Moves (with history, `git filter-repo` on these paths):
 
-| From `prism-studio` | To `prism-schema` |
+| From `prism-studio` | To `prism-specification` |
 |---|---|
 | `app/schemas/stable/` community schemas: survey, biometrics, biosample, environment, events, eyetracking, physio, plus `entities` and `dataset_description` | `schemas/stable/` |
 | `app/schemas/archive/` | `schemas/archive/` |
@@ -67,7 +67,7 @@ Moves (with history, `git filter-repo` on these paths):
 | `scripts/generate_schema_reference.py` | `scripts/generate_schema_reference.py` |
 
 Spec pages link to schema files with repo-relative paths
-(`../../app/schemas/stable/...`); in `prism-schema` they point at
+(`../../app/schemas/stable/...`); in `prism-specification` they point at
 `../schemas/stable/...`, and the generator writes the new form. Studio's
 offline Specifications page must still resolve them (builder: rewrite on
 sync or resolve both forms; pick one and test it).
@@ -93,7 +93,7 @@ uses them).
   and a sha256 per vendored file.
 - **Sync:** `python scripts/sync_schema.py --tag <tag>` downloads the tagged
   source archive from GitHub (stdlib `urllib` + `tarfile`; only
-  `github.com/<org>/prism-schema` URLs), writes the files, rewrites the lock.
+  `github.com/MRI-Lab-Graz/prism-specification` URLs), writes the files, rewrites the lock.
   It is the only way the copy changes.
 - **Drift check** in Studio CI (replaces the "Modality schema versions" job):
   every vendored file matches its hash in the lock, and no unlisted file sits
@@ -113,10 +113,10 @@ uses them).
    the term file(s) from the sidecar column: parent and child, `Label` and
    alias = the user's column name, `Units`, ranges, `SpecimenType`. It shows
    the result and states again that the maintainers may change the name.
-3. It opens a prefilled "Propose a metric" issue form in `prism-schema` (issue
+3. It opens a prefilled "Propose a metric" issue form in `prism-specification` (issue
    form fields prefilled through URL parameters; no token, no API call). A
    user without a GitHub account can save the file and send it any other way.
-4. A bot in `prism-schema` turns the issue into a draft pull request with the
+4. A bot in `prism-specification` turns the issue into a draft pull request with the
    term file(s). The issue body is untrusted text: parsed only, never run,
    same rules as `scripts/ci/modality_issue_to_files.py`.
 5. CI runs `check_terms.py` and `check_schema_versions.py`; a maintainer
@@ -128,9 +128,9 @@ uses them).
 ## Modality proposals
 
 The existing "Propose a new modality" issue form and bot move to
-`prism-schema`, because their output lands in schema paths. The bot's code
+`prism-specification`, because their output lands in schema paths. The bot's code
 (`src/modality_contribution.py`, `prism_tools.py modality propose`) stays in
-Studio: the `prism-schema` workflow checks out `prism-studio` at the pinned
+Studio: the `prism-specification` workflow checks out `prism-studio` at the pinned
 release and runs that command (my call; avoids a second copy).
 
 ## Afterwards (not in this design's build)
@@ -139,7 +139,7 @@ release and runs that command (my call; avoids a second copy).
   time (candidates: biosample censored codes, recommended `Technical` fields,
   the label-must-equal-`Study.*Name` check), so the validator reads them and
   more changes need no Studio code.
-- A reader package in `prism-schema` once a second tool needs the schemas.
+- A reader package in `prism-specification` once a second tool needs the schemas.
 - Library split (separate plan) decided with its own hosting questions.
 
 ## Testing
@@ -163,6 +163,17 @@ move with the vendored copy in place.
 4. `terms propose` + the Share button + the "Propose a metric" form and bot.
 5. Move the modality-proposal form and bot.
 
+## Decided by the user
+
+- Name: `prism-specification` (owner `MRI-Lab-Graz`, like `prism-studio`;
+  my assumption, not stated).
+- Licence: **CC-BY 4.0** for everything in the repository (schemas, terms,
+  spec text, check scripts), as BIDS does. Contributions are accepted under
+  it (`CONTRIBUTING.md` says so); Studio stays AGPL-3.0, and the vendored
+  copy keeps its CC-BY 4.0 `LICENSE` next to it.
+- Visibility: **public** from the start (needed for unauthenticated sync and
+  outside pull requests), not announced until ready.
+
 ## Decisions (mine, check them)
 
 - Repository on GitHub, not the university GitLab (contributors have GitHub
@@ -170,6 +181,6 @@ move with the vendored copy in place.
 - Vendored copy + lock + drift check, not submodule or pip package.
 - Spec pages move with the schemas.
 - `entities` / `dataset_description` move, guarded by `CODEOWNERS`.
-- Release tags of `prism-schema` are semantic versions of the whole bundle
+- Release tags of `prism-specification` are semantic versions of the whole bundle
   (`v1.0.0`); per-modality `version` fields stay as they are.
 - Modality-proposal bot runs Studio's code via a checkout, not a copy.
