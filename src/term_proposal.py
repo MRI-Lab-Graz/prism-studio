@@ -96,7 +96,7 @@ def build_proposal(
     return {"modality": modality, "terms": ([new_parent] if new_parent else []) + [child]}
 
 
-def issue_url(proposal: dict, repo: str = ISSUE_REPO, limit: int = URL_LIMIT) -> str | None:
+def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
     """Prefilled issue-form URL, or None when it would be longer than `limit` characters."""
     first = proposal["terms"][0]
     query = urlencode(
@@ -107,7 +107,7 @@ def issue_url(proposal: dict, repo: str = ISSUE_REPO, limit: int = URL_LIMIT) ->
         },
         quote_via=quote,
     )
-    url = f"https://github.com/{repo}/issues/new?{query}"
+    url = f"https://github.com/{ISSUE_REPO}/issues/new?{query}"
     return url if len(url) <= limit else None
 
 
