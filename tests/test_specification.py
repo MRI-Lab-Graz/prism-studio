@@ -79,3 +79,19 @@ def test_the_stand_in_has_its_extra_modality(tmp_path):
     spec = stand_in(tmp_path)
     assert "skinconductance" in spec.rules.prism_modalities
     assert "skinconductance" not in official_specification().rules.prism_modalities
+
+
+def test_derived_views_equal_the_frozen_constants_they_replace():
+    """The official specification must answer exactly like the constants validator.py froze at import."""
+    from validator import BIDS_MODALITIES, MODALITY_PATTERNS, PRISM_MODALITIES
+
+    spec = official_specification()
+    assert spec.prism_modalities == PRISM_MODALITIES
+    assert spec.bids_modalities == BIDS_MODALITIES
+    assert spec.modality_patterns == MODALITY_PATTERNS
+
+
+def test_derived_views_follow_the_rules_of_a_stand_in(tmp_path):
+    spec = stand_in(tmp_path)
+    assert "skinconductance" in spec.prism_modalities and "skinconductance" in spec.modality_patterns
+    assert "skinconductance" not in official_specification().modality_patterns

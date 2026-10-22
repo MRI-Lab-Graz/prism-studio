@@ -11,7 +11,7 @@ from __future__ import annotations
 import contextlib
 import contextvars
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from typing import Iterator
 
 from src.entity_rules import EntityRules, load_entity_rules
@@ -26,6 +26,21 @@ class Specification:
     rules: EntityRules
     schemas: dict
     terms: dict  # modality -> {term file stem -> term}
+
+    # Derived once per specification (the rules compute them on every access); they replace the constants
+    # validator.py used to freeze at import.
+    @cached_property
+    def prism_modalities(self) -> set[str]:
+        return self.rules.prism_modalities
+
+    @cached_property
+    def bids_modalities(self) -> set[str]:
+        return self.rules.bids_modalities
+
+    @cached_property
+    def modality_patterns(self) -> dict[str, str]:
+        """Filename regex per modality that has suffixes (strict enforcement applies to PRISM modalities)."""
+        return {name: self.rules.pattern_for(name) for name, rule in self.rules.modalities.items() if rule.suffixes}
 
 
 def load_specification(

@@ -71,3 +71,36 @@ def test_schema_pins_still_select_the_same_schemas(tmp_path):
     versions = stats.validator_info["prism_schema_versions"]
     assert versions["biosample"] == "1.0.0" and versions["survey"] != "1.0.0"
     assert stats.validator_info["prism_schema_sources"]["biosample"] == "project.json"
+
+
+# --- isolation: a project's additions must not reach the next project (phase 0, Task 3) --------
+
+def _project_with_skin(root: Path) -> Path:
+    project = _project(root)
+    folder = project / "sub-01" / "skinconductance"
+    folder.mkdir(parents=True)
+    (folder / "sub-01_notskin.tsv").write_text("a\n1\n", encoding="utf-8")  # wrong name for a skinconductance file
+    return project
+
+
+def _skin_issues(project, spec=None):
+    issues, _stats = validate_dataset(str(project), specification=spec)
+    return [msg for _level, msg, *_ in issues if "skinconductance" in msg]
+
+
+def test_a_stand_in_modality_is_validated_only_in_its_own_run(tmp_path):
+    a, b = _project_with_skin(tmp_path / "a"), _project_with_skin(tmp_path / "b")
+    spec = stand_in(tmp_path / "rules")
+    assert _skin_issues(b) == []  # official: the folder is not a PRISM modality, nothing to say
+    assert any("expected pattern for modality 'skinconductance'" in m for m in _skin_issues(a, spec))
+    assert _skin_issues(b) == []  # the next project in the same process does not see it
+
+
+def test_the_same_holds_for_a_run_in_a_worker_thread(tmp_path):
+    a, b = _project_with_skin(tmp_path / "a"), _project_with_skin(tmp_path / "b")
+    spec, found = stand_in(tmp_path / "rules"), []
+    worker = threading.Thread(target=lambda: found.extend(_skin_issues(a, spec)))
+    worker.start()
+    worker.join()
+    assert any("expected pattern" in m for m in found)
+    assert _skin_issues(b) == []

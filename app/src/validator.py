@@ -356,6 +356,7 @@ def _find_inherited_root_sidecar(
         # Legacy physio compatibility: files named like *_task-rest_ecg.edf should
         # be allowed to inherit canonical root sidecars like
         # task-rest_recording-ecg_physio.json during migration.
+        # (a deliberate subset, not "all modalities": the suffixes that have their own template names)
         if is_physio_context and suffix not in {"physio", "survey", "biometrics"}:
             for task_candidate in _value_candidates(task_value, acq_value):
                 candidate_names.append(
@@ -1291,6 +1292,7 @@ class DatasetValidator:
         file_path=None,
     ):
         """Validate filename against BIDS conventions and modality patterns"""
+        spec = current_specification()
         issues = []
 
         if modality == "environment" and file_path:
@@ -1311,7 +1313,7 @@ class DatasetValidator:
 
         # For standard BIDS modalities, skip detailed validation
         # The BIDS validator handles these properly
-        if modality in BIDS_MODALITIES:
+        if modality in spec.bids_modalities:
             # Only do basic subject/session consistency checks
             if subject_id and not filename.startswith(subject_id + "_"):
                 issues.append(
@@ -1337,18 +1339,18 @@ class DatasetValidator:
             issues.append(("WARNING", issue))
 
         base, ext = split_compound_ext(filename)
-        pattern = re.compile(MODALITY_PATTERNS.get(modality, r".*"))
+        pattern = re.compile(spec.modality_patterns.get(modality, r".*"))
         is_sidecar = filename.endswith(".json")
 
         # Check BIDS naming for PRISM files
         if not BIDS_REGEX.match(base):
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
 
-        rule = _ENTITY_RULES.modalities.get(modality)
+        rule = spec.rules.modalities.get(modality)
         if rule is not None and rule.allowed_entities is not None:
             has_task = any(t.startswith("task-") for t in base.split("_")[1:])
             is_physio_task = modality == "physio" and has_task
-            for message in check_entities(base, rule.allowed_entities, _ENTITY_RULES.entity_order):
+            for message in check_entities(base, rule.allowed_entities, spec.rules.entity_order):
                 if is_physio_task and message.startswith("entity 'task' "):
                     message += (
                         " - task-bound physio belongs next to its task: "
@@ -1382,7 +1384,7 @@ class DatasetValidator:
                         f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
                     )
                 )
-        elif modality in PRISM_MODALITIES:
+        elif modality in spec.prism_modalities:
             if not is_sidecar and not pattern.match(filename):
                 issues.append(
                     (
@@ -1517,7 +1519,7 @@ class DatasetValidator:
 
         # Skip sidecar validation for standard BIDS modalities
         # The BIDS validator handles these
-        if modality in BIDS_MODALITIES:
+        if modality in current_specification().bids_modalities:
             return []
 
         issues = []

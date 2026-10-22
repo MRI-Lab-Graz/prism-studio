@@ -18,13 +18,9 @@ from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
 from src.modality_versions import ModalityVersionError
-from src.specification import Specification, load_specification, use_specification
+from src.specification import Specification, current_specification, load_specification, use_specification
 from schema_manager import validate_schema_version
-from validator import (
-    DatasetValidator,
-    MODALITY_PATTERNS,
-    BIDS_MODALITIES,
-)
+from validator import DatasetValidator
 from citation_cff import validate_citation_cff_file
 from cross_platform import normalize_path
 from stats import DatasetStats
@@ -191,6 +187,7 @@ def _validate_dataset(
     """
     issues = []
     stats = DatasetStats()
+    spec = current_specification()  # set by validate_dataset for this run
 
     def report_progress(
         current: int, total: int, message: str, file_path: Optional[str] = None
@@ -251,10 +248,10 @@ def _validate_dataset(
         version_tag = schema_version or "stable"
         prism_modalities = [
             modality
-            for modality in MODALITY_PATTERNS.keys()
-            if modality not in BIDS_MODALITIES
+            for modality in spec.modality_patterns.keys()
+            if modality not in spec.bids_modalities
         ]
-        bids_modalities_display = ", ".join(sorted(BIDS_MODALITIES))
+        bids_modalities_display = ", ".join(sorted(spec.bids_modalities))
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Validating PRISM modalities: {prism_modalities}")
         print(
@@ -811,6 +808,7 @@ def _validate_subject(
     run_bids=False,
     need_procedure_tasks=False,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     entries = _scan_dir(subject_dir, validator._dir_cache)
@@ -824,7 +822,7 @@ def _validate_subject(
                 # folder still counts as present on disk, matching the
                 # standalone procedure scan this replaces.
                 stats.disk_sessions.add(item)
-            elif run_bids and item in BIDS_MODALITIES and item != "func":
+            elif run_bids and item in spec.bids_modalities and item != "func":
                 continue
 
             # The retired-folder hint wins over "Empty directory" (even if empty).
@@ -859,7 +857,7 @@ def _validate_subject(
                         entries=child_entries,
                     )
                 )
-            elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
+            elif item in spec.modality_patterns or item in spec.bids_modalities:
                 issues.extend(
                     _validate_modality_dir(
                         item_path,
@@ -942,6 +940,7 @@ def _validate_session(
     need_procedure_tasks=False,
     entries=None,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     if entries is None:
@@ -951,7 +950,7 @@ def _validate_session(
     for item in filtered_items:
         item_path = os.path.join(session_dir, item)
         if entries[item].is_dir():
-            skipped_by_bids = run_bids and item in BIDS_MODALITIES and item != "func"
+            skipped_by_bids = run_bids and item in spec.bids_modalities and item != "func"
 
             # Read the directory before any modality filtering: procedure
             # validation needs the task files of *every* sub-*/ses-*/<dir>,
@@ -989,7 +988,7 @@ def _validate_session(
                     )
                 continue
 
-            if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
+            if item in spec.modality_patterns or item in spec.bids_modalities:
                 issues.extend(
                     _validate_modality_dir(
                         item_path,
@@ -1020,6 +1019,7 @@ def _validate_modality_dir(
     run_bids=False,
     entries=None,
 ):
+    spec = current_specification()  # the specification of the run that called this
     issues = []
 
     def _effective_modality_for_file(dir_modality, filename):
@@ -1051,7 +1051,7 @@ def _validate_modality_dir(
             # events.tsv files nested in func/.
             is_prism_event = _effective_modality_for_file(modality, fname) == "events"
             should_run_prism_checks = run_prism and (
-                not run_bids or modality not in BIDS_MODALITIES or is_prism_event
+                not run_bids or modality not in spec.bids_modalities or is_prism_event
             )
             if should_run_prism_checks:
                 # Validate filename
