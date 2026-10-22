@@ -1,0 +1,57 @@
+{% extends "specifications.html" %}
+
+{% block title %}PRISM Studio - Contribute to the specification{% endblock %}
+
+{% block article %}
+<div class="card" id="spec-contribute"
+     data-list-url="{{ url_for('specification_contribute.list_local') }}"
+     data-add-url="{{ url_for('specification_contribute.add_term') }}"
+     data-remove-url="{{ url_for('specification_contribute.remove_term') }}"
+     data-propose-url="{{ url_for('specification_contribute.propose') }}">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item"><span class="nav-link disabled" aria-disabled="true" title="Coming soon">New modality</span></li>
+            <li class="nav-item"><span class="nav-link disabled" aria-disabled="true" title="Coming soon">Addition to a modality</span></li>
+            <li class="nav-item"><span class="nav-link active" aria-current="page">New metric</span></li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            A metric PRISM does not know yet can be used in this project right away: add it here, and your data
+            validates with it. Later you can share it with the PRISM community. Nothing is sent from this page.
+        </p>
+        <div id="spec-message" class="alert d-none" role="status"></div>
+
+        <h3 class="h6 mt-4">Found in your data, not known to PRISM yet</h3>
+        <div id="spec-unknown" class="mb-4"></div>
+
+        <h3 class="h6">Local metrics in this project</h3>
+        <div id="spec-local"></div>
+    </div>
+</div>
+
+<dialog id="spec-propose-dialog" aria-labelledby="spec-propose-title" class="border rounded p-4 shadow">
+    <h3 id="spec-propose-title" class="h5">Share a metric with the PRISM community</h3>
+    <p class="small">
+        Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it
+        there. The maintainers may choose a different ID or name, and your column name stays an alias, so your files
+        keep working.
+    </p>
+    <p id="spec-propose-problems" class="text-danger d-none"></p>
+    <pre id="spec-propose-json" class="small border rounded p-2"></pre>
+    <p id="spec-propose-paste" class="small text-muted d-none">
+        The proposal is too long for a link. Open the
+        <a href="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-metric.yml" target="_blank" rel="noopener noreferrer">proposal form</a>
+        and paste the text above into the field.
+    </p>
+    <div class="d-flex flex-wrap gap-2 justify-content-end">
+        <a id="spec-propose-open" class="btn btn-primary d-none" href="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-metric.yml" target="_blank" rel="noopener noreferrer">Open the prefilled form on GitHub</a>
+        <button type="button" id="spec-propose-download" class="btn btn-outline-secondary">Download proposal.json</button>
+        <button type="button" id="spec-propose-close" class="btn btn-outline-secondary">Close</button>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/modules/specification/contribute.js', v=prism_static_asset_token) }}"></script>
+{% endblock %}

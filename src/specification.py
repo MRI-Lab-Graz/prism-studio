@@ -16,6 +16,7 @@ from typing import Iterator
 
 from src.entity_rules import EntityRules, load_entity_rules
 from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
+from src.spec_overlay import load_local_terms, merge_terms
 from src.term_registry import load_registry
 
 _TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
@@ -25,7 +26,10 @@ _TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
 class Specification:
     rules: EntityRules
     schemas: dict
-    terms: dict  # modality -> {term file stem -> term}
+    terms: dict  # modality -> {term file stem -> term}, the official registry plus the project's local terms
+    local_terms: frozenset = frozenset()  # TermIDs of the local terms in use
+    ignored_local: tuple = ()  # TermIDs of local terms the official registry now has (the official one wins)
+    overlay_problems: tuple = ()  # one message per project overlay file that was skipped
 
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
@@ -43,16 +47,31 @@ class Specification:
         return {name: self.rules.pattern_for(name) for name, rule in self.rules.modalities.items() if rule.suffixes}
 
 
-def load_specification(rules: EntityRules | None = None, schemas: dict | None = None) -> Specification:
+def load_specification(
+    rules: EntityRules | None = None, schemas: dict | None = None, project_root=None
+) -> Specification:
     """Build a specification: the official one, or with other `rules` / already loaded `schemas`.
 
-    The runner passes the schemas it loaded with the project's version pins; later phases add the project's
-    own additions here.
+    The runner passes the schemas it loaded with the project's version pins and the project's root, whose
+    code/specification/ overlay adds its own, not yet official terms (the official registry always wins).
     """
+    terms, local, ignored, problems = {}, set(), [], []
+    for modality in _TERM_MODALITIES:
+        registry = load_registry(modality)
+        if project_root is not None:
+            found, skipped = load_local_terms(project_root, modality)
+            registry, in_use, dropped = merge_terms(registry, found)
+            local |= in_use
+            ignored += dropped
+            problems += skipped
+        terms[modality] = registry
     return Specification(
         rules=rules if rules is not None else load_entity_rules(),
         schemas=schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR),
-        terms={modality: load_registry(modality) for modality in _TERM_MODALITIES},
+        terms=terms,
+        local_terms=frozenset(local),
+        ignored_local=tuple(ignored),
+        overlay_problems=tuple(problems),
     )
 
 

@@ -1814,6 +1814,38 @@ def build_prism_tools_parsers(
         )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_spec = subparsers.add_parser(
+        "spec",
+        help="Your project's own, not yet official specification (local metrics) and sharing it",
+    )
+    spec_subparsers = parser_spec.add_subparsers(dest="action", help="Specification actions")
+    parser_spec_local = spec_subparsers.add_parser("local", help="List, add and remove the project's local items")
+    spec_local_subparsers = parser_spec_local.add_subparsers(dest="local_action", help="Local actions")
+    parser_spec_propose = spec_subparsers.add_parser(
+        "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
+    )
+    for _name, _parser in (
+        ("list", spec_local_subparsers.add_parser("list", help="List the project's local specification items")),
+        ("add-term", spec_local_subparsers.add_parser("add-term", help="Make a column's metric a local term, so it validates now")),
+        ("remove", spec_local_subparsers.add_parser("remove", help="Remove a local term (and its local children)")),
+        ("propose", parser_spec_propose),
+    ):
+        _parser.add_argument("--project", required=True, help="The PRISM project folder")
+        _parser.add_argument("--modality", default="biosample", choices=["biosample"], help="Modality of the terms")
+        _parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+        if _name == "add-term":
+            _source = _parser.add_mutually_exclusive_group(required=True)
+            _source.add_argument("--sidecar", help="The sidecar .json holding the column")
+            _source.add_argument("--data", help="A data file (.tsv): its sidecar is resolved with BIDS inheritance")
+            _parser.add_argument("--column", required=True, help="The column whose metric becomes a local term")
+            _parser.add_argument("--label", help="Name for the new term (default: the column name)")
+        if _name in ("remove",):
+            _parser.add_argument("term", help="Term ID, for example prism:dhea-s")
+        if _name == "propose":
+            _parser.add_argument("--term", required=True, help="The local term to share, for example prism:dhea-s")
+            _parser.add_argument("--out", help="Also save the bare proposal to this file")
+            _parser.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+
     parser_modality_version = subparsers.add_parser(
         "modality-version",
         help="Pin, list and update per-modality schema versions of a project",
@@ -2574,5 +2606,6 @@ def build_prism_tools_parsers(
         "json_editor": parser_json_editor,
         "modality": parser_modality,
         "terms": parser_terms,
+        "spec": parser_spec,
         "modality-version": parser_modality_version,
     }

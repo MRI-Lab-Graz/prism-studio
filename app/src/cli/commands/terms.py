@@ -4,16 +4,13 @@ from __future__ import annotations
 
 import json
 import sys
-import webbrowser
 from pathlib import Path
 
 from src.term_proposal import (
-    ISSUE_REPO,
-    ISSUE_TEMPLATE,
     ProposalError,
     build_proposal,
     check_with_specification,
-    issue_url,
+    deliver_proposal,
     load_inherited_sidecar,
 )
 from src.term_registry import find_term, load_registry, resolve_column
@@ -91,29 +88,11 @@ def cmd_terms_propose(args) -> None:
         _fail(args, "the proposal does not pass the specification checks: " + "; ".join(problems), proposal=proposal, problems=problems)
     column_def = sidecar[args.column]
     similar = list(resolve_column(registry, args.column, column_def, sidecar["Technical"]["SpecimenType"]).similar)
-    saved = None
-    if getattr(args, "out", None):
-        saved = Path(args.out)
-        saved.write_text(json.dumps(proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    url = issue_url(proposal)
-    opened = bool(args.open and url and webbrowser.open(url))
-    form = f"https://github.com/{ISSUE_REPO}/issues/new?template={ISSUE_TEMPLATE}"
-    if opened:
-        how = f"Opened the prefilled form in your browser:\n{url}"
-    elif args.open and url:
-        how = f"Could not open a browser; open this address yourself:\n{url}"
-    elif url:
-        how = f"To send it, run this again with --open (it opens the prefilled form):\n{url}"
-    else:
-        how = f"The proposal is too long for a link: open {form} and paste the proposal above into the field."
-    text = (
-        "Proposal (nothing has been sent unless it says 'Opened' below):\n"
-        + json.dumps(proposal, indent=2, ensure_ascii=False)
-        + f"\n\nSimilar official terms: {', '.join(similar) or 'none'} (check that none of them is what you mean)."
-        + f"\nThe maintainers may choose a different ID or name; \"{args.column}\" is kept as an alias, so your files keep working."
-        + (f"\nSaved to {saved} (send this file to a maintainer if you do not use GitHub)." if saved else "")
-        + f"\n{how}"
+    delivered = deliver_proposal(
+        proposal, out=getattr(args, "out", None), open_browser=args.open, similar=similar, alias=args.column
     )
+    saved = delivered["saved"]
+    url, opened, text = delivered["issue_url"], delivered["opened"], delivered["text"]
     _emit(
         args,
         {"success": True, "proposal": proposal, "issue_url": url, "opened": opened, "saved": str(saved) if saved else None,

@@ -97,5 +97,8 @@ def render_spec_page(slug: str) -> str:
     text = (_docs_dir() / SPEC_PAGES[slug][1]).read_text(encoding="utf-8")
     tokens = _md.parse(_TUTORIAL.sub("", _COMMENT.sub("", text)))
     _rewrite_links(tokens)
+    for token in tokens:  # the page header is the h2: the document's h1 becomes an h3, and so on (at most h6)
+        if token.type in ("heading_open", "heading_close"):
+            token.tag = f"h{min(int(token.tag[1]) + 2, 6)}"
     html = _md.renderer.render(tokens, _md.options, {})
     return html.replace("<table>", '<table class="table table-sm">')

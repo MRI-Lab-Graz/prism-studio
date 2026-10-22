@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 PAGES = [
     "/", "/projects", "/survey-generator", "/survey-customizer", "/converter",
-    "/recipes", "/template-editor", "/specifications", "/validate",
+    "/recipes", "/template-editor", "/specifications", "/specifications/contribute", "/validate",
 ]
 
 # webkitdirectory/directory are non-standard but needed for folder pickers.
@@ -30,7 +30,7 @@ c = m.app.test_client()
 for p in {PAGES!r}:
     r = c.get(p)
     assert r.status_code == 200, (p, r.status_code)
-    open(sys.argv[1] + "/" + (p.strip("/") or "home") + ".html", "wb").write(r.data)
+    open(sys.argv[1] + "/" + (p.strip("/").replace("/", "-") or "home") + ".html", "wb").write(r.data)
 """
 
 

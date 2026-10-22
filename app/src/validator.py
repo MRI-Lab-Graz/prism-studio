@@ -15,7 +15,7 @@ from src.schema_manager import validate_schema_version, apply_schema_validation_
 from src.entity_rules import check_entities, load_entity_rules
 from src.constants import TABULAR_MODALITIES
 from src.specification import current_specification
-from src.term_registry import resolve_column
+from src.term_registry import analyte_columns, resolve_column
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -74,8 +74,6 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
     "AssayKit",
 )
 
-# Sidecar columns that describe the sample, not an analyte: never "unknown metrics".
-BIOSAMPLE_SAMPLE_COLUMNS = frozenset({"sample_id", "collection_time", "fasting"})
 # Column fields a resolved term supplies when the column does not set them.
 TERM_INHERITED_FIELDS = (
     "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",
@@ -1431,7 +1429,7 @@ class DatasetValidator:
 
         return issues
 
-    def _check_biosample_sidecar(self, sidecar_data, sidecar_path, file_path) -> list:
+    def _check_biosample_sidecar(self, sidecar_data, sidecar_path, file_path, root_dir) -> list:
         """Filename label must equal Study.BiosampleName; warn (once per sidecar) about missing recommended Technical fields."""
         issues = []
         study = sidecar_data.get("Study") or {}
@@ -1462,21 +1460,15 @@ class DatasetValidator:
                         f"{key}: recommended Technical fields missing: {', '.join(missing)}",
                     )
                 )
-            issues.extend(self._check_biosample_terms(sidecar_data, key, file_path))
+            issues.extend(self._check_biosample_terms(sidecar_data, key, file_path, root_dir))
         return issues
 
-    def _check_biosample_terms(self, sidecar_data, key, file_path) -> list:
+    def _check_biosample_terms(self, sidecar_data, key, file_path, root_dir) -> list:
         """Relate each analyte column to the term registry (spec severity table)."""
         issues = []
         specimen = _sidecar_specimen(sidecar_data)
-        for col, col_def in sidecar_data.items():
-            if (
-                col in ("Technical", "Study", "Metadata")
-                or not isinstance(col_def, dict)
-                or col in BIOSAMPLE_SAMPLE_COLUMNS
-                or col_def.get("Units") == "n/a"
-            ):
-                continue
+        local_terms = current_specification().local_terms
+        for col, col_def in analyte_columns(sidecar_data):
             res = resolve_column(self._terms, col, col_def, specimen)
             ref = col_def.get("Term")
             if isinstance(ref, str) and ref and not col_def.get("Units") and not (res.term or {}).get("Units"):
@@ -1488,6 +1480,13 @@ class DatasetValidator:
                 continue
             if not self._terms:
                 continue  # nothing to compare against
+            if res.kind in ("term", "deprecated") and res.term and res.term.get("TermID") in local_terms:
+                tid = res.term["TermID"]
+                issues.append((
+                    "INFO",
+                    f"{key}: {col}: uses the local term {tid} (not official yet; it applies to this project only). "
+                    f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid}',
+                ))
             if res.kind == "term":
                 declared, recommended = col_def.get("Units"), res.term.get("Units")
                 if declared and recommended and declared != recommended:
@@ -1511,8 +1510,10 @@ class DatasetValidator:
                 issues.append((
                     "INFO",
                     f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
-                    f"PRISM community to make it official? Run: python prism_tools.py terms propose --data \"{normalize_path(file_path)}\" "
-                    f"--column \"{col}\" (add --open to send it). The maintainers may choose a different name; "
+                    f"PRISM community to make it official? Use it in this project now: python prism_tools.py spec local "
+                    f'add-term --project "{root_dir}" --data "{normalize_path(file_path)}" --column "{col}"; '
+                    f'share it: python prism_tools.py terms propose --data "{normalize_path(file_path)}" '
+                    f'--column "{col}" (add --open to send it). The maintainers may choose a different name; '
                     "your files keep working through an alias.",
                 ))
         return issues
@@ -1562,7 +1563,7 @@ class DatasetValidator:
                 validate(instance=sidecar_data, schema=schema)
                 if modality == "biosample":
                     issues.extend(
-                        self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path)
+                        self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path, root_dir)
                     )
 
         except ValidationError as e:

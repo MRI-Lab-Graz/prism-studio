@@ -198,6 +198,16 @@ saying what it is. Reason: a project's local additions (see
 `docs/superpowers/specs/2026-10-23-specification-contributions-design.md`) must apply to that
 project's run only and never leak into the next project validated in the same process.
 
+## A project's own specification lives in `code/specification/`
+
+Local, not yet official terms are files in the project (`code/specification/terms/<modality>/<local-id>.json`,
+exactly a proposal term, no `Status`), read by `src/spec_overlay.py` and merged into the run's `Specification`
+by `load_specification(project_root=...)`; the official registry always wins. Treat those files as untrusted
+project data (they travel with shared projects): skipped and reported when invalid, never a crash, and every
+file name comes from a validated `prism:<slug>[.<specimen>]` ID (`re.fullmatch`). The `spec` commands and the
+Contribute page (`app/src/web/blueprints/specification_contribute.py`) are thin adapters over the same
+functions; the page writes project data with `textContent` only.
+
 ## Git-annex / DataLad text-file policy
 
 Text-format and small-codebook files must **never** be tracked by git-annex

@@ -16,6 +16,7 @@ PAGES = [
     "/template-editor",
     "/file-management",
     "/specifications",
+    "/specifications/contribute",
     "/editor/",
 ]
 

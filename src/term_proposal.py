@@ -12,6 +12,7 @@ import importlib.util
 import json
 import re
 import sys
+import webbrowser
 from pathlib import Path
 from urllib.parse import quote, urlencode
 
@@ -129,7 +130,7 @@ def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
     return url if len(url) <= limit else None
 
 
-def _specification_scripts() -> Path:
+def specification_scripts_dir() -> Path:
     """`scripts/specification` in a checkout and in the frozen build (bundled at `<_MEIPASS>/scripts`)."""
     candidates = [Path(__file__).resolve().parents[1] / "scripts" / "specification"]
     meipass = getattr(sys, "_MEIPASS", None) if getattr(sys, "frozen", False) else None
@@ -140,9 +141,44 @@ def _specification_scripts() -> Path:
 
 def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
     """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
-    spec = importlib.util.spec_from_file_location("specification_term_proposal", _specification_scripts() / "term_proposal.py")
+    spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{proposal['modality']}.schema.json"
     return module.check_proposal(proposal, registry, module.check_terms.specimen_types(schema))[1]
 
+
+def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, similar=None, alias=None) -> dict:
+    """What `terms propose` and `spec propose` do with a finished proposal: optionally save it, optionally open
+    the prefilled form, and describe it. Nothing is sent: opening the form is the user's browser, not an API call.
+
+    Returns {"saved": Path | None, "issue_url": str | None, "opened": bool, "text": str}.
+    """
+    saved = None
+    if out:
+        saved = Path(out)
+        saved.write_text(json.dumps(proposal, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    url = issue_url(proposal)
+    opened = bool(open_browser and url and webbrowser.open(url))
+    if opened:
+        how = f"Opened the prefilled form in your browser:\n{url}"
+    elif open_browser and url:
+        how = f"Could not open a browser; open this address yourself:\n{url}"
+    elif url:
+        how = f"To send it, run this again with --open (it opens the prefilled form):\n{url}"
+    else:
+        form = f"https://github.com/{ISSUE_REPO}/issues/new?template={ISSUE_TEMPLATE}"
+        how = f"The proposal is too long for a link: open {form} and paste the proposal above into the field."
+    renaming = f'"{alias}"' if alias else "your column name"
+    text = (
+        "Proposal (nothing has been sent unless it says 'Opened' below):\n"
+        + json.dumps(proposal, indent=2, ensure_ascii=False)
+        + (
+            f"\n\nSimilar official terms: {', '.join(similar) or 'none'} (check that none of them is what you mean)."
+            if similar is not None else ""
+        )
+        + f"\nThe maintainers may choose a different ID or name; {renaming} is kept as an alias, so your files keep working."
+        + (f"\nSaved to {saved} (send this file to a maintainer if you do not use GitHub)." if saved else "")
+        + f"\n{how}"
+    )
+    return {"saved": saved, "issue_url": url, "opened": opened, "text": text}

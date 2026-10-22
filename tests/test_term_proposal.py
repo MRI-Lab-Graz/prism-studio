@@ -189,3 +189,54 @@ def test_load_inherited_sidecar_uses_the_root_sidecar_alone(tmp_path):
 def test_load_inherited_sidecar_without_any_sidecar_is_an_error(tmp_path):
     with pytest.raises(ProposalError, match="no sidecar"):
         load_inherited_sidecar(_dataset(tmp_path, root_sidecar=False, subject_sidecar=False))
+
+
+# --- deliver_proposal: what `terms propose` and `spec propose` do with a finished proposal -----------------
+
+def _proposal_for_delivery():
+    return {"modality": "biosample", "terms": [{"TermID": "prism:x", "Level": "analyte", "Label": "x"}]}
+
+
+def test_deliver_without_out_or_open_only_describes(monkeypatch):
+    import webbrowser
+    from src.term_proposal import deliver_proposal
+
+    monkeypatch.setattr(webbrowser, "open", lambda url: (_ for _ in ()).throw(AssertionError("opened")))
+    result = deliver_proposal(_proposal_for_delivery(), similar=["prism:cortisol"], alias="dhea_s")
+    assert result["saved"] is None and result["opened"] is False and result["issue_url"].startswith("https://github.com/")
+    text = result["text"]
+    assert "nothing has been sent" in text.lower() and "run this again with --open" in text
+    assert "Similar official terms: prism:cortisol" in text and '"dhea_s" is kept as an alias' in text
+
+
+def test_deliver_writes_the_bare_proposal_and_opens_once(tmp_path, monkeypatch):
+    import webbrowser
+    from src.term_proposal import deliver_proposal
+
+    opened = []
+    monkeypatch.setattr(webbrowser, "open", lambda url: opened.append(url) or True)
+    out = tmp_path / "p.json"
+    result = deliver_proposal(_proposal_for_delivery(), out=out, open_browser=True)
+    assert json.loads(out.read_text(encoding="utf-8")) == _proposal_for_delivery() and result["saved"] == out
+    assert opened == [result["issue_url"]] and result["opened"] is True
+    assert "Opened the prefilled form" in result["text"] and "Saved to" in result["text"]
+    assert "Similar official terms" not in result["text"]  # not asked for
+
+
+def test_deliver_says_so_when_the_browser_could_not_open(monkeypatch):
+    import webbrowser
+    from src.term_proposal import deliver_proposal
+
+    monkeypatch.setattr(webbrowser, "open", lambda url: False)
+    result = deliver_proposal(_proposal_for_delivery(), open_browser=True)
+    assert result["opened"] is False and "Could not open a browser" in result["text"]
+
+
+def test_deliver_a_proposal_too_long_for_a_link_asks_to_paste(monkeypatch):
+    import webbrowser
+    from src.term_proposal import deliver_proposal
+
+    monkeypatch.setattr(webbrowser, "open", lambda url: (_ for _ in ()).throw(AssertionError("opened")))
+    long = {"modality": "biosample", "terms": [{"TermID": "prism:x", "Label": "x", "Description": "y" * 7000}]}
+    result = deliver_proposal(long, open_browser=True)
+    assert result["issue_url"] is None and "too long for a link" in result["text"]

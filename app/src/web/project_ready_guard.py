@@ -10,6 +10,7 @@ _EXEMPT_PREFIXES = (
     "/static/", "/projects", "/api/projects", "/api/settings", "/api/fs",
     "/api/v1/", "/editor", "/api/template-editor/", "/api/session-map",
     "/api/survey-customizer/",
+    "/api/spec/",  # a project's own specification is configuration, like the templates
     "/api/environment",  # like the CLI: environment commands stay open
 )
 _EXEMPT_PATHS = {

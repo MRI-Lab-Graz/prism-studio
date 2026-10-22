@@ -61,7 +61,7 @@ class Resolution:
     message: str = ""
 
 
-def _names(key: str, term: dict) -> list[str]:
+def term_names(key: str, term: dict) -> list[str]:
     """Every string a term answers to, lowercased."""
     names = [term.get("TermID"), key, term.get("Label")]
     names += list(term.get("Aliases") or []) + list(term.get("Equivalents") or [])
@@ -79,7 +79,7 @@ def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
         return name, registry[name]
     lowered = name.lower()
     for key, term in registry.items():
-        if lowered in _names(key, term):
+        if lowered in term_names(key, term):
             return key, term
     return None
 
@@ -93,7 +93,7 @@ def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
     for key, term in registry.items():
         if term.get("Level") != "analyte":
             continue
-        if any(len(n) >= 3 and (n in lowered or lowered in n) for n in _names(key, term)):
+        if any(len(n) >= 3 and (n in lowered or lowered in n) for n in term_names(key, term)):
             hits.append(term["TermID"])
     return tuple(sorted(hits))
 
@@ -140,3 +140,16 @@ def _by_specimen(registry: dict[str, dict], term: dict, specimen: str | None) ->
         "known_analyte_new_specimen", term, (),
         f"{term['TermID']} is known, but not yet for specimen {specimen!r}",
     )
+
+
+# Sidecar entries that are blocks or sample-level columns, not analytes.
+NON_ANALYTE_COLUMNS = frozenset({"Technical", "Study", "Metadata", "sample_id", "collection_time", "fasting"})
+
+
+def analyte_columns(sidecar_data: dict) -> list[tuple[str, dict]]:
+    """The columns the term checks look at (the validator's notices and the Contribute page share this)."""
+    return [
+        (name, definition)
+        for name, definition in sidecar_data.items()
+        if isinstance(definition, dict) and name not in NON_ANALYTE_COLUMNS and definition.get("Units") != "n/a"
+    ]
