@@ -24,6 +24,7 @@ def _studio(tmp_path):
         "schemas/stable/survey.schema.json": '{"version": "1.0.0"}\n',
         "terms/biosample/cortisol.json": '{"TermID": "prism:cortisol"}\n',
         "specs/survey.md": "text\n",
+        "LICENSE": "licence\n",
     }.items():
         (src / rel).parent.mkdir(parents=True, exist_ok=True)
         (src / rel).write_text(text, encoding="utf-8")
@@ -80,3 +81,11 @@ def test_main_reports_a_missing_lock(tmp_path, capsys):
 def test_main_passes_on_a_clean_tree(tmp_path):
     studio, _lock = _studio(tmp_path)
     assert check_mod.main([str(studio)]) == 0
+
+
+def test_os_junk_in_vendored_folders_is_ignored(tmp_path):
+    studio, lock = _studio(tmp_path)
+    (studio / "app/schemas/.DS_Store").write_bytes(b"\x00")
+    (studio / "official/library/terms/biosample/._cortisol.json").write_bytes(b"\x00")
+    (studio / "docs/specs/Thumbs.db").write_bytes(b"\x00")
+    assert check_mod.check(studio, lock) == []

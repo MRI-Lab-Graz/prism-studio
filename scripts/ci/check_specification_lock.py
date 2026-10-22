@@ -19,6 +19,12 @@ _spec = importlib.util.spec_from_file_location("sync_specification", _SYNC)
 sync = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(sync)
 
+# OS junk (.DS_Store, Thumbs.db, ._* ...) is not part of the specification: reuse the app's list.
+_SYSTEM = Path(__file__).resolve().parents[2] / "app" / "src" / "system_files.py"
+_sys_spec = importlib.util.spec_from_file_location("system_files", _SYSTEM)
+system_files = importlib.util.module_from_spec(_sys_spec)
+_sys_spec.loader.exec_module(system_files)
+
 FIX = "edit it in prism-specification, release a tag, then run scripts/sync_specification.py"
 
 
@@ -42,8 +48,7 @@ def check(studio_root: Path, lock: dict) -> list[str]:
             rel = path.relative_to(studio_root).as_posix()
             if (
                 path.is_file()
-                and "__pycache__" not in path.parts
-                and path.suffix != ".pyc"
+                and not any(system_files.is_system_file(part) for part in path.relative_to(base).parts)
                 and rel not in locked
                 and rel not in sync.STUDIO_OWNED
             ):

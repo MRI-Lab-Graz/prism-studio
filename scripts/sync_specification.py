@@ -17,8 +17,11 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import tarfile
+import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -120,6 +123,11 @@ def sync(source: Path, studio_root: Path, tag: str) -> dict:
     """Write the specification files into Studio and rewrite the lock; return the lock."""
     studio_root = Path(studio_root)
     wanted = _wanted(Path(source))
+    if "app/schemas/PRISM_SPECIFICATION_LICENSE" not in wanted or not any(
+        rel.startswith("app/schemas/stable/") for rel in wanted
+    ):
+        # a wrong folder would otherwise delete every vendored file and lock an empty copy
+        raise ValueError("the source has no LICENSE and no schemas/stable/: not a prism-specification release")
     lock_path = studio_root / LOCK_NAME
     old = json.loads(lock_path.read_text(encoding="utf-8"))["files"] if lock_path.is_file() else {}
     for rel in sorted(set(old) - set(wanted)):
@@ -151,20 +159,35 @@ def download(tag: str, dest: Path) -> Path:
     return extract(archive, dest / "src")
 
 
+def from_git_tag(checkout: Path, tag: str, dest: Path) -> Path:
+    """Read `tag` out of a local prism-specification checkout, never its working tree."""
+    archive = dest / "release.tar.gz"
+    try:
+        subprocess.run(
+            ["git", "-C", str(checkout), "archive", "--format=tar.gz", f"--prefix=prism-specification-{tag}/",
+             "-o", str(archive), tag],
+            check=True, capture_output=True, text=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, NotADirectoryError) as exc:
+        detail = getattr(exc, "stderr", "") or str(exc)
+        raise ValueError(f"cannot read tag {tag} from {checkout}: {detail.strip()}") from exc
+    return extract(archive, dest / "src")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--tag", required=True, help="release tag, for example v1.0.0")
-    ap.add_argument("--source", type=Path, help="local prism-specification checkout (skips the download)")
+    ap.add_argument("--source", type=Path, help="local prism-specification git checkout; the tag is read from it (skips the download)")
     ap.add_argument("--studio-root", type=Path, default=Path(__file__).resolve().parents[1])
     args = ap.parse_args(argv)
     archive_url(args.tag)  # reject odd tags before anything runs
-    if args.source:
-        lock = sync(args.source, args.studio_root, args.tag)
-    else:
-        import tempfile
-
+    try:
         with tempfile.TemporaryDirectory() as tmp:
-            lock = sync(download(args.tag, Path(tmp)), args.studio_root, args.tag)
+            source = from_git_tag(args.source, args.tag, Path(tmp)) if args.source else download(args.tag, Path(tmp))
+            lock = sync(source, args.studio_root, args.tag)
+    except (ValueError, OSError, tarfile.TarError, urllib.error.URLError) as exc:
+        print(f"ERROR: {exc}")
+        return 1
     print(f"synced {len(lock['files'])} files from {REPOSITORY} {args.tag}")
     return 0
 

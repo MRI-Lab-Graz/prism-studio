@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import subprocess
 import tarfile
 from pathlib import Path
 
@@ -158,3 +159,55 @@ def test_download_url_is_the_tagged_github_archive():
     for bad in ("../x", "v1/../../x", "main", "v1.0.0?x=1", ""):
         with pytest.raises(ValueError):
             sync_mod.archive_url(bad)
+
+
+def test_empty_or_wrong_source_is_refused_and_deletes_nothing(tmp_path):
+    src, studio = _source(tmp_path / "src"), _studio(tmp_path / "studio")
+    sync_mod.sync(src, studio, "v1.0.0")
+    before = _tree(studio)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(ValueError):
+        sync_mod.sync(empty, studio, "v1.1.0")
+    assert _tree(studio) == before
+
+
+def _git(repo, *args):
+    env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
+           "PATH": __import__("os").environ["PATH"], "HOME": str(repo)}
+    subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True, env=env)
+
+
+def _checkout(tmp_path, tag="v1.0.0"):
+    repo = _source(tmp_path / "spec")
+    _git(repo, "init", "-q")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "x")
+    if tag:
+        _git(repo, "tag", tag)
+    return repo
+
+
+def test_missing_source_returns_1_and_keeps_the_copy(tmp_path, capsys):
+    studio = _studio(tmp_path / "studio")
+    sync_mod.sync(_source(tmp_path / "src"), studio, "v1.0.0")
+    before = _tree(studio)
+    assert sync_mod.main(["--tag", "v1.0.0", "--source", str(tmp_path / "nope"), "--studio-root", str(studio)]) == 1
+    assert "ERROR" in capsys.readouterr().out and _tree(studio) == before
+
+
+def test_source_checkout_is_read_at_the_tag_not_from_the_working_tree(tmp_path):
+    repo, studio = _checkout(tmp_path), _studio(tmp_path / "studio")
+    (repo / "schemas/stable/wip.schema.json").write_text("{}\n", encoding="utf-8")  # untracked
+    (repo / "schemas/stable/survey.schema.json").write_text('{"version": "9"}\n', encoding="utf-8")  # modified
+    (repo / "schemas/.DS_Store").write_bytes(b"\x00")
+    assert sync_mod.main(["--tag", "v1.0.0", "--source", str(repo), "--studio-root", str(studio)]) == 0
+    assert not (studio / "app/schemas/stable/wip.schema.json").exists()
+    assert not (studio / "app/schemas/.DS_Store").exists()
+    assert (studio / "app/schemas/stable/survey.schema.json").read_text(encoding="utf-8") == '{"version": "1.0.0"}\n'
+
+
+def test_source_without_the_tag_is_refused(tmp_path, capsys):
+    repo, studio = _checkout(tmp_path, tag=None), _studio(tmp_path / "studio")
+    assert sync_mod.main(["--tag", "v1.0.0", "--source", str(repo), "--studio-root", str(studio)]) == 1
+    assert "ERROR" in capsys.readouterr().out and not (studio / "specification.lock.json").exists()
