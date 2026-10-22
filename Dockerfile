@@ -20,6 +20,7 @@ COPY app/prism.py ./app/prism.py
 COPY app/src/ ./app/src/
 COPY app/schemas/ ./app/schemas/
 COPY official/library/terms/ ./official/library/terms/
+COPY scripts/specification/ ./scripts/specification/
 
 ENV PRISM_SKIP_VENV_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \

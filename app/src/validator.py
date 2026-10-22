@@ -74,7 +74,6 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
     "AssayKit",
 )
 
-# Sidecar columns that describe the sample, not an analyte: never "unknown metrics".
 # Column fields a resolved term supplies when the column does not set them.
 TERM_INHERITED_FIELDS = (
     "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",

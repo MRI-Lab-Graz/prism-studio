@@ -22,7 +22,7 @@ from src.term_proposal import (
     load_inherited_sidecar,
     specification_scripts_dir,
 )
-from src.term_registry import analyte_columns, load_registry, resolve_column
+from src.term_registry import analyte_columns, load_registry, resolve_column, term_names
 
 OVERLAY_PARTS = ("code", "specification")
 
@@ -40,6 +40,16 @@ def _vendored(name: str):
     return module
 
 
+def _scripts():
+    """The vendored term rules (check_terms, term_proposal), or OverlayError when this installation lacks them."""
+    try:
+        return _vendored("check_terms"), _vendored("term_proposal")
+    except OSError as exc:
+        raise OverlayError(
+            f"the specification scripts (scripts/specification) are not installed, so local specification files are not used ({exc})"
+        ) from exc
+
+
 def overlay_root(project_root) -> Path:
     return Path(project_root).joinpath(*OVERLAY_PARTS)
 
@@ -48,28 +58,51 @@ def _terms_folder(project_root, modality: str) -> Path:
     return overlay_root(project_root) / "terms" / modality
 
 
+def _real_terms_folder(project_root, modality: str) -> Path:
+    """The terms folder for writing or removing: no part of its path inside the project may be a symbolic link.
+
+    A shared project could ship `code/specification -> /somewhere/else`; following it would write or delete
+    outside the project.
+    """
+    current = Path(project_root)
+    for part in (*OVERLAY_PARTS, "terms", modality):
+        current = current / part
+        if current.is_symlink():
+            raise OverlayError(f"{current} is a symbolic link; the specification folder of a project must be a real folder")
+    return current
+
+
 def _local_part(term_id) -> str | None:
     """The file stem of a `prism:` term ID, or None when it is not a valid local ID."""
     prefix, _, local = term_id.partition(":") if isinstance(term_id, str) else ("", "", "")
-    return local if prefix == "prism" and _vendored("term_proposal")._LOCAL.fullmatch(local) else None
+    return local if prefix == "prism" and _scripts()[1]._LOCAL.fullmatch(local) else None
 
 
 def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[str, dict], list[str]]:
     """The valid local terms (file stem -> term) and one message per file that was skipped."""
     folder = _terms_folder(project_root, modality)
+    files = sorted(folder.glob("*.json")) if folder.is_dir() else []
+    if not files:
+        return {}, []
+    try:
+        check_terms = _scripts()[0]
+    except OverlayError as exc:
+        return {}, [str(exc)]
     terms: dict[str, dict] = {}
     problems: list[str] = []
-    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+    for path in files:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError) as exc:
-            problems.append(f"{path.name}: cannot read ({exc})")
+        except (OSError, ValueError, RecursionError) as exc:  # RecursionError: absurdly nested JSON
+            problems.append(f"{path.name}: cannot read ({type(exc).__name__})")
             continue
         if not isinstance(data, dict):
             problems.append(f"{path.name}: must be a JSON object")
+        elif "Status" in data:
+            problems.append(f"{path.name}: a local term has no Status (the maintainers' merge sets it)")
         elif _local_part(data.get("TermID")) != path.stem:
             problems.append(f"{path.name}: TermID {data.get('TermID')!r} must be prism:{path.stem}")
-        elif (bad := _vendored("check_terms").type_problems(data, path.name)):
+        elif (bad := check_terms.type_problems(data, path.name)):
             problems += bad
         else:
             terms[path.stem] = data
@@ -79,15 +112,17 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
 def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
     """The official registry plus the local terms that add something.
 
-    Returns (merged with official first, the TermIDs of the local terms in use, the TermIDs of the local
-    terms ignored because the official registry now has that file stem or that TermID).
+    A local term is ignored when the official registry has its file stem, its TermID or ANY name it answers to
+    (label, alias, equivalent), so a project can never shadow an official name. Returns (merged with official
+    first, the TermIDs of the local terms in use, the TermIDs of the local terms ignored).
     """
     merged = dict(official)
     official_ids = {term.get("TermID") for term in official.values()}
+    official_names = {name for stem, term in official.items() for name in term_names(stem, term)}
     in_use: set[str] = set()
     ignored: list[str] = []
     for stem, term in local.items():
-        if stem in official or term["TermID"] in official_ids:
+        if stem in official or term["TermID"] in official_ids or official_names & set(term_names(stem, term)):
             ignored.append(term["TermID"])
         else:
             merged[stem] = term
@@ -100,14 +135,15 @@ def write_local_terms(project_root, modality: str, terms: list[dict]) -> list[Pa
     for term in terms:
         if _local_part(term.get("TermID")) is None:
             raise OverlayError(f"{term.get('TermID')!r} is not a valid local term ID (prism:<slug>[.<specimen>])")
-    folder = _terms_folder(project_root, modality)
+    folder = _real_terms_folder(project_root, modality)
+    targets = [folder / f"{_local_part(term['TermID'])}.json" for term in terms]
+    for path in targets:  # all of them first: nothing is written when one is in the way, and nothing is overwritten
+        if path.exists() or path.is_symlink():
+            raise OverlayError(f"{path.name} already exists in the project's specification folder; remove it first")
     folder.mkdir(parents=True, exist_ok=True)
-    written = []
-    for term in terms:
-        path = folder / f"{_local_part(term['TermID'])}.json"
+    for term, path in zip(terms, targets):
         path.write_text(json.dumps(term, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written.append(path)
-    return written
+    return targets
 
 
 def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
@@ -115,17 +151,17 @@ def remove_local_terms(project_root, modality: str, term_id: str) -> list[Path]:
     stem = _local_part(term_id)
     if stem is None:
         raise OverlayError(f"{term_id!r} is not a valid local term ID")
-    folder = _terms_folder(project_root, modality)
+    folder = _real_terms_folder(project_root, modality)
     target = folder / f"{stem}.json"
-    if not target.is_file():
+    if target.is_symlink() or not target.is_file():
         raise OverlayError(f"no local term {term_id} in this project")
     doomed = [target]
     for path in sorted(folder.glob("*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
             continue
-        if isinstance(data, dict) and data.get("Parent") == f"prism:{stem}" and path != target:
+        if isinstance(data, dict) and data.get("Parent") == f"prism:{stem}" and path != target and not path.is_symlink():
             doomed.append(path)
     for path in doomed:
         path.unlink()
@@ -160,8 +196,8 @@ def add_local_term(
             sidecar = json.loads(Path(sidecar_file).read_text(encoding="utf-8"))
         registry = merged_registry(project_root, modality)
         proposal = build_proposal(registry, sidecar, column, label, modality)
-    except (ProposalError, OSError, ValueError) as exc:
-        raise OverlayError(str(exc)) from exc
+    except (ProposalError, OSError, ValueError, RecursionError) as exc:
+        raise OverlayError(str(exc) or type(exc).__name__) from exc
     problems = check_with_specification(proposal, registry)
     if problems:
         raise OverlayError("; ".join(problems))

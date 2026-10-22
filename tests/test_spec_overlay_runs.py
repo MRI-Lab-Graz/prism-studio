@@ -162,3 +162,30 @@ def test_the_unknown_metric_notice_offers_to_use_it_here_and_to_share_it(tmp_pat
     sidecar.write_text(json.dumps(data), encoding="utf-8")
     note = next(m for m in _infos(project) if "is not an official metric" in m)
     assert f'spec local add-term --project "{project}" --data "' in note and "terms propose --data" in note
+
+
+# --- the official registry also wins over its NAMES (aliases, labels), not only its IDs ---------
+
+def test_a_local_term_cannot_shadow_an_official_alias(tmp_path):
+    from src.term_registry import resolve_column
+
+    project = tmp_path / "p"
+    project.mkdir()
+    write_local_terms(project, "biosample", [
+        {"TermID": "prism:cort", "Level": "analyte", "Label": "cort", "Aliases": [], "Description": "d"},
+        {"TermID": "prism:cort.saliva", "Level": "analyte-specimen", "Parent": "prism:cort", "SpecimenType": "saliva", "Units": "furlongs"},
+        {"TermID": "prism:hydrocortisone", "Level": "analyte", "Label": "mine", "Aliases": [], "Description": "d"},
+    ])
+    spec = load_specification(project_root=project)
+    assert set(spec.ignored_local) == {"prism:cort", "prism:hydrocortisone"}  # cort / hydrocortisone are official aliases
+    res = resolve_column(spec.terms["biosample"], "x", {"Term": "cort"}, "saliva")
+    assert res.term["TermID"] == "prism:cortisol.saliva" and res.term["Units"] == "nmol/L"
+    assert resolve_column(spec.terms["biosample"], "hydrocortisone", {}, "saliva").term["TermID"] == "prism:cortisol"
+    assert "prism:cort.saliva" in spec.local_terms  # an orphan child is harmless: nothing reaches it
+
+
+def test_merge_terms_ignores_a_local_term_whose_label_is_an_official_name():
+    official = {"a": {"TermID": "prism:a", "Label": "Alpha", "Aliases": ["al"]}}
+    local = {"b": {"TermID": "prism:b", "Label": "alpha", "Aliases": []}, "c": {"TermID": "prism:c", "Label": "c", "Aliases": ["AL"]}}
+    _merged, in_use, ignored = merge_terms(official, local)
+    assert in_use == frozenset() and ignored == ("prism:b", "prism:c")

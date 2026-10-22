@@ -101,3 +101,83 @@ def test_remove_cannot_leave_the_overlay_folder(tmp_path, tid):
     with pytest.raises(OverlayError):
         remove_local_terms(tmp_path, "biosample", tid)
     assert (tmp_path / "outside.json").exists()
+
+
+# --- review fixes: missing scripts, deep JSON, symlinks, Status ---------------------------------
+
+import importlib
+
+import src.spec_overlay as overlay_module
+
+
+@pytest.fixture
+def no_scripts(tmp_path, monkeypatch):
+    """The validator image without scripts/specification: the scripts directory points at an empty folder."""
+    monkeypatch.setattr(overlay_module, "specification_scripts_dir", lambda: tmp_path / "nowhere")
+    overlay_module._vendored.cache_clear()
+    yield
+    overlay_module._vendored.cache_clear()
+
+
+def test_missing_vendored_scripts_degrade_to_a_message_not_an_exception(tmp_path, no_scripts):
+    project = tmp_path / "p"
+    _put(_folder(project), "dhea-s.json", PARENT)
+    terms, problems = load_local_terms(project)
+    assert terms == {} and len(problems) == 1 and "scripts" in problems[0]
+
+
+def test_missing_vendored_scripts_are_not_noticed_without_an_overlay(tmp_path, no_scripts):
+    assert load_local_terms(tmp_path) == ({}, [])
+
+
+def test_deeply_nested_json_is_a_skipped_file_not_a_crash(tmp_path):
+    folder = _folder(tmp_path)
+    (folder / "deep.json").write_text("[" * 200000 + "]" * 200000, encoding="utf-8")
+    _put(folder, "dhea-s.json", PARENT)
+    terms, problems = load_local_terms(tmp_path)
+    assert list(terms) == ["dhea-s"] and len(problems) == 1 and "deep.json" in problems[0]
+    assert remove_local_terms(tmp_path, "biosample", "prism:dhea-s")  # scanning for children survives it too
+
+
+def test_a_local_file_may_not_set_status(tmp_path):
+    folder = _folder(tmp_path)
+    _put(folder, "dhea-s.json", {**PARENT, "Status": "deprecated", "ReplacedBy": "prism:cortisol"})
+    terms, problems = load_local_terms(tmp_path)
+    assert terms == {} and "Status" in problems[0]
+
+
+needs_symlinks = pytest.mark.skipif(os.name == "nt", reason="symbolic links need extra rights on Windows")
+
+
+@needs_symlinks
+def test_a_symlinked_file_is_never_written_through(tmp_path):
+    victim = tmp_path / "victim.rc"
+    victim.write_text("keep me\n", encoding="utf-8")
+    (_folder(tmp_path / "p") / "dhea-s.json").symlink_to(victim)
+    with pytest.raises(OverlayError, match="already exists"):
+        write_local_terms(tmp_path / "p", "biosample", [PARENT])
+    assert victim.read_text(encoding="utf-8") == "keep me\n"
+
+
+@needs_symlinks
+def test_a_symlinked_specification_folder_is_refused_for_writing_and_removing(tmp_path):
+    elsewhere = tmp_path / "elsewhere"
+    (elsewhere / "terms" / "biosample").mkdir(parents=True)
+    (elsewhere / "terms" / "biosample" / "dhea-s.json").write_text(json.dumps(PARENT), encoding="utf-8")
+    project = tmp_path / "p"
+    (project / "code").mkdir(parents=True)
+    (project / "code" / "specification").symlink_to(elsewhere)
+    with pytest.raises(OverlayError, match="symbolic link"):
+        write_local_terms(project, "biosample", [PARENT])
+    with pytest.raises(OverlayError, match="symbolic link"):
+        remove_local_terms(project, "biosample", "prism:dhea-s")
+    assert [p.name for p in (elsewhere / "terms" / "biosample").iterdir()] == ["dhea-s.json"]
+
+
+def test_an_existing_file_is_never_overwritten(tmp_path):
+    folder = _folder(tmp_path)
+    _put(folder, "dhea-s.json", "{hand edited, typo")
+    with pytest.raises(OverlayError, match="already exists"):
+        write_local_terms(tmp_path, "biosample", [PARENT, CHILD])
+    assert (folder / "dhea-s.json").read_text(encoding="utf-8") == "{hand edited, typo"
+    assert not (folder / "dhea-s.saliva.json").exists()  # nothing was written before the check
