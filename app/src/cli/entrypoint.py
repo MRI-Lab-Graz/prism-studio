@@ -108,6 +108,12 @@ from src.cli.commands.survey import (
     cmd_survey_validate,
 )
 from src.cli.commands.modality import cmd_modality_propose
+from src.cli.commands.spec import (
+    cmd_spec_local_add_term,
+    cmd_spec_local_list,
+    cmd_spec_local_remove,
+    cmd_spec_propose,
+)
 from src.cli.commands.terms import cmd_terms_list, cmd_terms_propose, cmd_terms_show, cmd_terms_suggest
 from src.cli.commands.modality_version import (
     cmd_modality_version_freeze,
@@ -153,6 +159,10 @@ def main() -> None:
             "anonymize": cmd_anonymize,
             "template_export": cmd_template_export,
             "modality_propose": cmd_modality_propose,
+            "spec_local_list": cmd_spec_local_list,
+            "spec_local_add_term": cmd_spec_local_add_term,
+            "spec_local_remove": cmd_spec_local_remove,
+            "spec_propose": cmd_spec_propose,
             "terms_list": cmd_terms_list,
             "terms_show": cmd_terms_show,
             "terms_suggest": cmd_terms_suggest,
