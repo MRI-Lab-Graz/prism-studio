@@ -134,8 +134,9 @@ not need to be passed through every function. Instead (my call, from the discuss
   repo paths are exactly the overlay paths mapped to prism-specification (`entities/<name>.json` is merged
   into `schemas/stable/entities.schema.json` by the bot). Allowed paths per layer are an allow-list; anything
   else is an error. The v1 metric format stays accepted.
-- Size: a layer-1 schema does not fit in a URL. The form gets a file attachment field for the proposal (as the
-  modality bot does today); the URL only prefills for small proposals.
+- Size: a proposal that does not fit in a URL is pasted into the form's text field (GitHub allows 65,536
+  characters; the limit here is 50,000 bytes and 40 files). No attachment, so the bot downloads nothing
+  (changed 2026-10-24, see the phase-2 plan).
 - One bot workflow in prism-specification for all layers (the two-job pattern of propose-metric): it applies
   the files, runs `check_terms.py`, `check_schema_versions.py` (layer 2 gets a minor bump and an archived
   copy, done by the bot), a schema meta-check for layer 1, and opens a draft PR for trusted authors.
