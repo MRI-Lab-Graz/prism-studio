@@ -761,12 +761,12 @@ official registry; the official registry always wins, and a local term never rea
     python prism_tools.py spec local list --project <project> [--json]
     python prism_tools.py spec local add-term --project <project> (--data <file.tsv> | --sidecar <sidecar.json>) --column <column> [--label TEXT] [--json]
     python prism_tools.py spec local remove --project <project> <term-id> [--json]
-    python prism_tools.py spec propose --project <project> --term <term-id> [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose --project <project> (--term <term-id> [--term <term-id> ...] | --all) [--out FILE] [--open] [--json]
 
 - `local list`: every local item with its status: `local`, `now-official` (the official registry has it since; the official definition is used, remove your copy) or `invalid` (a file that was skipped, with the reason).
 - `local add-term`: makes the metric of a column a local term (a new analyte gets a parent and a child, a known analyte with a new specimen only a child), after the same checks a proposal passes. The validator uses it from the next run; a column that carries `"Term": "<id>"` inherits its unit and range. Exit code 1 for an official metric (the message names the term to use), a name an existing term owns, or an unreadable source.
 - `local remove`: removes a term; removing a parent also removes its local children.
-- `propose`: the same as `terms propose`, for a local term: it builds the proposal (the term, its local parent or its local children; at most 2 terms, otherwise share one specimen at a time), checks it with the specification repository's rules, and with `--open` opens the prefilled form. **Nothing is sent** otherwise.
+- `propose`: the same as `terms propose`, for local terms: `--term` (repeatable) names the ones to share, `--all` shares every local term of the project in one proposal. A named child brings its local parent, a named parent its local children. Terms the official registry has adopted since are left out and listed (`skipped` in `--json`). The proposal is checked with the specification repository's rules and sent as a **format v2** document (`prism-proposal/2`: the files it adds, up to 40, at most 50,000 bytes); `--out FILE` saves that document, and with `--open` the prefilled form opens (a proposal too long for a link is pasted into the form's text field). **Nothing is sent** otherwise.
 
 The validator's "not an official metric" notice prints the matching `spec local add-term` and `terms propose` commands. Studio's *Specifications → Propose changes* page does the same from a browser.
 

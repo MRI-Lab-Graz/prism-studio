@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Share many metrics at once.** `prism_tools.py spec propose --all` (or `--term` repeated) and *Share all local
+  metrics…* on the Propose changes page put every local metric of a project in one proposal, in
+  [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification)'s new proposal format v2 (up to 40 term
+  files, each at its repository path; v1.2.0). Studio carries prism-specification `v1.2.0`.
 - **Local metrics.** A metric PRISM does not know yet can be used in your project right away: `prism_tools.py spec local
   add-term` (or *Specifications → Propose changes* in Studio) stores it in the project at `code/specification/terms/`, and
   the validator reads it together with the official registry (the official one always wins; a local metric never reaches
