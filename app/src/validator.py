@@ -14,6 +14,7 @@ from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
 from src.constants import TABULAR_MODALITIES
+from src.term_registry import load_registry, resolve_column
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -67,6 +68,13 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
     "Laboratory",
     "AssayMethod",
     "AssayKit",
+)
+
+# Sidecar columns that describe the sample, not an analyte: never "unknown metrics".
+BIOSAMPLE_SAMPLE_COLUMNS = frozenset({"sample_id", "collection_time", "fasting"})
+# Column fields a resolved term supplies when the column does not set them.
+TERM_INHERITED_FIELDS = (
+    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",
 )
 
 MRI_SUFFIX_REGEX = re.compile(
@@ -519,6 +527,7 @@ class DatasetValidator:
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
         self._biosample_warned = set()
+        self._terms = load_registry()
         # One directory listing per directory for the whole run, replacing tens
         # of thousands of per-candidate stat() calls on network shares.
         self._dir_cache = {}
@@ -674,6 +683,17 @@ class DatasetValidator:
                 target = v["AliasOf"]
                 if target in sidecar_data:
                     effective_defs[k] = sidecar_data[target]
+
+        # Third pass: columns naming a registry term inherit its definition
+        # (the column's own values win). Name matches only suggest, see
+        # _check_biosample_terms.
+        specimen = (sidecar_data.get("Technical") or {}).get("SpecimenType")
+        for k, v in sidecar_data.items():
+            if isinstance(v, dict) and v.get("Term"):
+                res = resolve_column(self._terms, k, v, specimen)
+                if res.kind == "term":
+                    inherited = {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
+                    effective_defs[k] = {**inherited, **v}
         return effective_defs
 
     def _is_empty_levels_label(self, label) -> bool:
@@ -1425,6 +1445,51 @@ class DatasetValidator:
                         f"{key}: recommended Technical fields missing: {', '.join(missing)}",
                     )
                 )
+            issues.extend(self._check_biosample_terms(sidecar_data, key))
+        return issues
+
+    def _check_biosample_terms(self, sidecar_data, key) -> list:
+        """Relate each analyte column to the term registry (spec severity table)."""
+        issues = []
+        if not self._terms:
+            return issues  # nothing to compare against
+        specimen = (sidecar_data.get("Technical") or {}).get("SpecimenType")
+        for col, col_def in sidecar_data.items():
+            if (
+                col in ("Technical", "Study", "Metadata")
+                or not isinstance(col_def, dict)
+                or col in BIOSAMPLE_SAMPLE_COLUMNS
+                or col_def.get("Units") == "n/a"
+            ):
+                continue
+            res = resolve_column(self._terms, col, col_def, specimen)
+            if res.kind == "term":
+                declared, recommended = col_def.get("Units"), res.term.get("Units")
+                if declared and recommended and declared != recommended:
+                    known = declared in (res.term.get("AlternativeUnits") or [])
+                    issues.append((
+                        "INFO",
+                        f"{key}: {col}: unit {declared!r} differs from the recommended "
+                        f"{recommended!r} of {res.term['TermID']}"
+                        f"{' (a listed alternative)' if known else ''}",
+                    ))
+            elif res.kind in ("specimen_mismatch", "deprecated"):
+                issues.append(("ERROR" if res.kind == "specimen_mismatch" else "WARNING", f"{key}: {col}: {res.message}"))
+            elif res.kind == "known_analyte_new_specimen":
+                issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community"))
+            elif res.kind == "suggestion":
+                if col not in self._terms:  # the canonical word itself needs no hint
+                    issues.append(("INFO", f"{key}: {res.message}"))
+            elif col_def.get("Term") and not col_def.get("Units"):
+                issues.append(("ERROR", f"{key}: {col}: Term {col_def['Term']!r} is not in the term registry and the column has no Units"))
+            else:
+                similar = f" Similar official terms: {', '.join(res.similar)}." if res.similar else ""
+                issues.append((
+                    "INFO",
+                    f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
+                    "PRISM community to make it official? The maintainers may choose a different name; "
+                    "your files keep working through an alias.",
+                ))
         return issues
 
     def validate_sidecar(self, file_path, modality, root_dir):
