@@ -14,7 +14,7 @@
     "BiosampleName": "inflammation",
     "Description": "Serum markers of low-grade systemic inflammation (example template)."
   },
-  "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-15"},
+  "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-15"},
   "sample_id": {"Description": "Lab tube ID (pseudonymous)", "Units": "n/a", "DataType": "string"},
   "collection_time": {"Description": "Clock time of the blood draw, hh:mm only (never a date)", "Units": "hh:mm", "DataType": "string"},
   "fasting": {"Description": "Participant fasted for at least 8 h", "Units": "n/a", "Levels": {"0": "no", "1": "yes"}},

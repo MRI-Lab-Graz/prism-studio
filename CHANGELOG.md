@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the registry does not know still passes, with an info that lists similar official terms. A term for another specimen
   than the sidecar's `SpecimenType` is an error. New command `prism_tools.py terms list|show|suggest`. Design:
   `docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md`.
+  The biosample schema is now `1.1.0` (a column may use `Term` instead of `Description` and `Units`); `1.0.0` is archived
+  in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ## [1.22.0] - 2026-10-22
 

@@ -27,7 +27,7 @@ def _template(technical, name="inflammation"):
     return {
         "Technical": technical,
         "Study": {"BiosampleName": name},
-        "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-15"},
+        "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-15"},
         "crp": {"Description": "CRP", "Units": "mg/L"},
     }
 

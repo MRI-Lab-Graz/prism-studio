@@ -49,7 +49,7 @@ def test_only_minimal_set_is_required(schema):
     minimal = {
         "Technical": {"SpecimenType": "saliva"},
         "Study": {"BiosampleName": "cortisol"},
-        "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-10-15"},
+        "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-15"},
         "cortisol": {"Description": "Cortisol", "Units": "nmol/L"},
     }
     validate(instance=minimal, schema=schema)
@@ -122,3 +122,9 @@ def test_file_without_biosample_label_does_not_crash_lookup(tmp_path):
     data = _touch(root / "sub-01" / "biosample" / "sub-01_biosample.tsv", "")
     assert resolve_sidecar_path(str(data), str(root), None) == str(data.with_suffix(".json"))
     assert _find_inherited_root_sidecar(str(data), str(root)) is None
+
+
+def test_example_template_carries_the_current_schema_version(schema):
+    """Official templates carry the schema version (as survey/biometrics do), else every run warns."""
+    template = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    assert template["Metadata"]["SchemaVersion"] == schema["version"]
