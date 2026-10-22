@@ -1788,6 +1788,7 @@ def build_prism_tools_parsers(
         ("list", "List the shipped terms"),
         ("show", "Show one term (ID, local name, label, alias or equivalent)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
+        ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):
         _p = terms_subparsers.add_parser(_name, help=_help)
         if _name == "show":
@@ -1795,6 +1796,12 @@ def build_prism_tools_parsers(
         if _name == "suggest":
             _p.add_argument("column", help="Column name as it appears in your sidecar")
             _p.add_argument("--specimen", help="Technical.SpecimenType of the sidecar")
+        if _name == "propose":
+            _p.add_argument("--sidecar", required=True, help="The sidecar .json holding the column")
+            _p.add_argument("--column", required=True, help="The column to propose as a new metric")
+            _p.add_argument("--label", help="Name for the new term (default: the column name)")
+            _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+            _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument("--modality", default="biosample", help="Modality of the registry")
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 

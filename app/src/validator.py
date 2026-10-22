@@ -1499,7 +1499,8 @@ class DatasetValidator:
                 issues.append((
                     "INFO",
                     f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
-                    "PRISM community to make it official? The maintainers may choose a different name; "
+                    f"PRISM community to make it official? Run: python prism_tools.py terms propose --sidecar \"{key}\" "
+                    f"--column \"{col}\" (add --open to send it). The maintainers may choose a different name; "
                     "your files keep working through an alias.",
                 ))
         return issues

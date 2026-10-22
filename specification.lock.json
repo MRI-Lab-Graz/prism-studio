@@ -21,7 +21,7 @@
     "app/schemas/v0.2/physio.schema.json": "16c7217c030766092a2d73cd79365579dc977952ffc45747f04273d0ac5fd312",
     "app/schemas/v0.2/survey.schema.json": "2ee7b7e611ff2c532e2b95b088e4d6503ba86320b60045671935763270e10222",
     "docs/specs/biometrics.md": "58e8ebe99d66b6b7266e023f00855e2f4d829dc2a0c7eacc79554c9c48aa982e",
-    "docs/specs/biosample.md": "1c5964542db4c8f109d5dfaef6eb17dc576954047095833ab0e8804d772349cf",
+    "docs/specs/biosample.md": "873f2ca9c55aed5a85e8f55c88fcbc5960a30d42f482b7b6ec417781287bb9f1",
     "docs/specs/dataset_description.md": "66bc0b5806f9b21eadf707091b4ced42e7aebc128eabb55cd543b7aa1bd4bbe9",
     "docs/specs/entities.md": "46e46a2b18a2cfab66642dec4645b6c283239fdabb3a566933c4cc1e86ee117c",
     "docs/specs/environment.md": "61161402208b88928219ed296d604e33bed5578e30399a2477e5337e0617e865",
@@ -41,9 +41,10 @@
     "official/library/terms/biosample/tnfa.json": "845389c698e30177ca9f8db99d0821d1775b2fa3cbc5e62c86771fb286556321",
     "official/library/terms/biosample/tnfa.serum.json": "8cd23ffab8b57cdf599b5faeb15e7e52c2c1113e996c7e45a0661570fb694d3a",
     "scripts/specification/check_schema_versions.py": "15d4752f333750122225d921edeb5bd7320cc675975b04043ec45f3dc56b9412",
-    "scripts/specification/check_terms.py": "df5d27902d3dcb3287b66207b231c7eb473d9164cae64917905cd814655919e4",
-    "scripts/specification/generate_schema_reference.py": "4e31266b24f949a6b75090223a4b3b9ebd4dce8244b8d4dff2c7ec5dca98f786"
+    "scripts/specification/check_terms.py": "860d7f6f2f4cd2b4b77f27dc517df484cf17e6b4ff15c0fc42023a4ebeb18af1",
+    "scripts/specification/generate_schema_reference.py": "4e31266b24f949a6b75090223a4b3b9ebd4dce8244b8d4dff2c7ec5dca98f786",
+    "scripts/specification/term_proposal.py": "0b5c1133a6062adbad6967c493b262d7646b6264d6fdb830a73d6c9d96711ae6"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.0.0"
+  "tag": "v1.1.1"
 }

@@ -744,10 +744,12 @@ Look up the shipped metric terms (the term registry, see the Terms section of
     python prism_tools.py terms list [--modality biosample] [--json]
     python prism_tools.py terms show <term> [--modality biosample] [--json]
     python prism_tools.py terms suggest <column> [--specimen saliva] [--modality biosample] [--json]
+    python prism_tools.py terms propose --sidecar <sidecar.json> --column <column> [--label TEXT] [--open] [--out FILE] [--modality biosample] [--json]
 
 - `list`: every term with its level, units and status.
 - `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown.
 - `suggest`: how the validator relates a column name to the registry (`suggestion`, `unknown`, ...) and which official terms look similar.
+- `propose`: builds a proposal for a new metric from a column of your sidecar (a new analyte gets a parent and a child term, a known analyte with a new specimen only a child) and checks it with the rules of the specification repository. **Nothing is sent** unless you add `--open`, which opens a prefilled "Propose a Metric" form in the [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) repository in your browser (if the link would be too long, the command prints the form address and you paste the proposal). A bot checks it there and a maintainer takes it from there; the maintainers may choose a different ID or name, and your column name is kept as an alias. `--label` sets the name of the new term (default: the column name, or the name of a `Term` the column already carries). `--out FILE` also saves the bare proposal, for sending to a maintainer if you do not use GitHub. Pass the sidecar that defines the column and `Technical` (in a project with a root-level sidecar, that file). Exit code 1 if the metric is already official (the message names the term to use with `Term`), the sidecar or column cannot be read, or the proposal fails the checks.
 
 ## modality-version
 

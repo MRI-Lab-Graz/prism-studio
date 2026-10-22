@@ -67,12 +67,12 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str]) -> list
                 problems.append(f"{key}: deprecated term needs ReplacedBy")
             elif replaced not in full_ids:
                 problems.append(f"{key}: ReplacedBy {replaced!r} is not a term of this registry")
-        if "LOINC" in term and not _LOINC.match(str(term["LOINC"])):
+        if "LOINC" in term and not _LOINC.fullmatch(str(term["LOINC"])):
             problems.append(f"{key}: LOINC {term['LOINC']!r} does not look like 2143-6")
 
         level = term.get("Level")
         if level == "analyte":
-            if not _SLUG.match(local.split(".")[0] or "") or "." in local:
+            if not _SLUG.fullmatch(local.split(".")[0] or "") or "." in local:
                 problems.append(f"{key}: parent ID local part {local!r} must match {_SLUG.pattern}")
             if not term.get("Label"):
                 problems.append(f"{key}: parent term needs a Label")
@@ -101,15 +101,19 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str]) -> list
     return problems
 
 
+def specimen_types(schema_file: Path) -> list[str]:
+    """The Technical.SpecimenType enum of a modality schema."""
+    schema = json.loads(Path(schema_file).read_text(encoding="utf-8"))
+    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--terms", required=True, type=Path)
     ap.add_argument("--schema", required=True, type=Path)
     args = ap.parse_args(argv)
-    schema = json.loads(args.schema.read_text(encoding="utf-8"))
-    specimens = schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
     registry, problems = load_terms(args.terms)
-    problems += check_registry(registry, specimens)
+    problems += check_registry(registry, specimen_types(args.schema))
     for problem in problems:
         print(problem)
     return 1 if problems else 0

@@ -19,6 +19,7 @@ DISPATCH_CASES = [
     (dict(command="terms", action="list"), "terms_list"),
     (dict(command="terms", action="show"), "terms_show"),
     (dict(command="terms", action="suggest"), "terms_suggest"),
+    (dict(command="terms", action="propose"), "terms_propose"),
     (dict(command="modality-version", action="status"), "modality_version_status"),
     (dict(command="modality-version", action="list"), "modality_version_list"),
     (dict(command="modality-version", action="pin"), "modality_version_pin"),
