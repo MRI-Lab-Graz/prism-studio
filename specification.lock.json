@@ -21,7 +21,7 @@
     "app/schemas/v0.2/physio.schema.json": "16c7217c030766092a2d73cd79365579dc977952ffc45747f04273d0ac5fd312",
     "app/schemas/v0.2/survey.schema.json": "2ee7b7e611ff2c532e2b95b088e4d6503ba86320b60045671935763270e10222",
     "docs/specs/biometrics.md": "58e8ebe99d66b6b7266e023f00855e2f4d829dc2a0c7eacc79554c9c48aa982e",
-    "docs/specs/biosample.md": "873f2ca9c55aed5a85e8f55c88fcbc5960a30d42f482b7b6ec417781287bb9f1",
+    "docs/specs/biosample.md": "613ab4c060b0ac4bb1975b81c095eaa516428f9a0a421a7b01f94a22348eedf9",
     "docs/specs/dataset_description.md": "66bc0b5806f9b21eadf707091b4ced42e7aebc128eabb55cd543b7aa1bd4bbe9",
     "docs/specs/entities.md": "46e46a2b18a2cfab66642dec4645b6c283239fdabb3a566933c4cc1e86ee117c",
     "docs/specs/environment.md": "61161402208b88928219ed296d604e33bed5578e30399a2477e5337e0617e865",
@@ -34,17 +34,17 @@
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
     "official/library/terms/biosample/cortisol.saliva.json": "baddebbe74b37edf140daf42a0607a1b51ac38b96c2782564e7d5e63fc2274a7",
     "official/library/terms/biosample/cortisol.serum.json": "46981543939e26fff3d409eca985e23ac223a8d1c869d3cb990ef1405cf3e369",
-    "official/library/terms/biosample/crp.json": "35aef61ee7ee2af5ba19687981d351c2bbf6ffdeb61d6926dd082573053399b4",
+    "official/library/terms/biosample/crp.json": "1533b6bdd9dfbdbf537b2855e0ba8ab7489c1de00dc3d47bfc4a4100b52e843f",
     "official/library/terms/biosample/crp.serum.json": "a6713e05e3c3a8ae9e39c09dbe4950ded2872702bd5a02748037a554e5e0cec3",
-    "official/library/terms/biosample/il6.json": "dd72c3682eb5f7a075ba0c20f2cb6e7adc327e1cc489a409722e5a2e2369a61f",
+    "official/library/terms/biosample/il6.json": "8cce9072de5e39cf791960b51f9a34adc9fa58c5fd2cec600b50bf20c2fc8f14",
     "official/library/terms/biosample/il6.serum.json": "bd4c7773fcd9cc215b5fa6013e0d5b33c8fac3da1438dfeedc21a323160a964c",
-    "official/library/terms/biosample/tnfa.json": "845389c698e30177ca9f8db99d0821d1775b2fa3cbc5e62c86771fb286556321",
+    "official/library/terms/biosample/tnfa.json": "23591c75cf85b7dc35020329bb0d6e318ddb4ab7cec2805a717759a4a3de1fcd",
     "official/library/terms/biosample/tnfa.serum.json": "8cd23ffab8b57cdf599b5faeb15e7e52c2c1113e996c7e45a0661570fb694d3a",
     "scripts/specification/check_schema_versions.py": "15d4752f333750122225d921edeb5bd7320cc675975b04043ec45f3dc56b9412",
-    "scripts/specification/check_terms.py": "860d7f6f2f4cd2b4b77f27dc517df484cf17e6b4ff15c0fc42023a4ebeb18af1",
+    "scripts/specification/check_terms.py": "569fc6302eea8d58f7bcd1f7637864f4c60760e910790609934d76883e107a6b",
     "scripts/specification/generate_schema_reference.py": "4e31266b24f949a6b75090223a4b3b9ebd4dce8244b8d4dff2c7ec5dca98f786",
-    "scripts/specification/term_proposal.py": "0b5c1133a6062adbad6967c493b262d7646b6264d6fdb830a73d6c9d96711ae6"
+    "scripts/specification/term_proposal.py": "1b48f35539a60a7eaa000b8c14879e089b7c6189adf059cbd67c1ec5f4fb5cc8"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.1.1"
+  "tag": "v1.1.2"
 }

@@ -2,7 +2,9 @@
   "TermID": "prism:il6",
   "Level": "analyte",
   "Label": "Interleukin-6",
-  "Aliases": [],
+  "Aliases": [
+    "il-6"
+  ],
   "Description": "Interleukin-6",
   "Status": "official"
 }

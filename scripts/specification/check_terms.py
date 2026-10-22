@@ -23,6 +23,26 @@ _LOINC = re.compile(r"^\d+-\d$")
 _STATUSES = ("official", "deprecated")
 
 
+_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC")
+_STRING_LISTS = ("Aliases", "AlternativeUnits", "Equivalents")
+_NUMBERS = ("MinValue", "WarnMaxValue")
+
+
+def type_problems(term: dict, where: str) -> list[str]:
+    """Value types: the checks assume them, and a wrong type must be a message, not a crash."""
+    problems = []
+    for key in _STRINGS:
+        if key in term and not isinstance(term[key], str):
+            problems.append(f"{where}: {key} must be a string")
+    for key in _STRING_LISTS:
+        if key in term and not (isinstance(term[key], list) and all(isinstance(v, str) for v in term[key])):
+            problems.append(f"{where}: {key} must be a list of strings")
+    for key in _NUMBERS:
+        if key in term and (isinstance(term[key], bool) or not isinstance(term[key], (int, float))):
+            problems.append(f"{where}: {key} must be a number")
+    return problems
+
+
 def load_terms(folder: Path) -> tuple[dict[str, dict], list[str]]:
     """Map each file stem to its parsed term; unreadable files become problems."""
     registry: dict[str, dict] = {}
@@ -53,6 +73,10 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str]) -> list
                 claims.setdefault(name.lower(), key)
 
     for key, term in registry.items():
+        bad_types = type_problems(term, key)
+        if bad_types:  # everything below assumes the types
+            problems += bad_types
+            continue
         tid = term.get("TermID")
         prefix, _, local = tid.partition(":") if isinstance(tid, str) else ("", "", "")
         if prefix not in ID_PREFIXES:
