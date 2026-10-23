@@ -239,7 +239,10 @@ def _project_specimens(project_root, modality: str) -> list[str] | None:
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
 
     schema = _vendored("schema_patch").apply_patch(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), patch)[0]
-    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+    try:
+        return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+    except KeyError:  # a kind of data without sample types (survey, ...): callers use the official ones
+        return None
 
 
 def add_local_term(

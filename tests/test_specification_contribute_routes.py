@@ -351,7 +351,20 @@ def test_propose_metric_official_name_is_an_error(client):
     {}, dict(_METRIC, name=3), dict(_METRIC, aliases="x"), dict(_METRIC, aliases=[1]), dict(_METRIC, modality=[]),
 ])
 def test_propose_metric_rejects_bad_body(client, body):
-    assert client.post("/api/spec/propose-metric", json=body).status_code == 400
+    response = client.post("/api/spec/propose-metric", json=body)
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_propose_metric_for_a_kind_a_project_patched_is_a_400_not_a_500(client, tmp_path):
+    project = _project(tmp_path / "p")
+    patch = project / "code" / "specification" / "patches" / "survey.json"
+    patch.parent.mkdir(parents=True)
+    patch.write_text(json.dumps({"operations": [
+        {"op": "add_enum_values", "path": "Technical.StimulusType", "values": ["interview"]}]}), encoding="utf-8")
+    _open(client, project)
+    response = client.post("/api/spec/propose-metric", json=dict(_METRIC, modality="survey"))
+    data = response.get_json()
+    assert response.status_code == 400 and data["success"] is False and "biosample" in data["error"]
 
 
 def test_new_routes_pass_the_project_gate():
@@ -361,4 +374,4 @@ def test_new_routes_pass_the_project_gate():
 
 def test_oversized_proposal_reports_problems(client):
     data = client.post("/api/spec/propose-metric", json=dict(_METRIC, description="x" * 200000)).get_json()
-    assert data["success"] is True and data["problems"]
+    assert data["success"] is True and any("bytes" in p for p in data["problems"])
