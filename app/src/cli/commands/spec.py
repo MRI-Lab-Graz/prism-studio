@@ -10,6 +10,7 @@ from src.spec_overlay import (
     add_local_term,
     add_local_values,
     list_local_items,
+    load_local_patches,
     proposal_for_local_terms,
     remove_local_terms,
     remove_local_values,
@@ -98,9 +99,15 @@ def cmd_spec_local_remove_values(args) -> None:
 
 
 def cmd_spec_propose(args) -> None:
-    """Share local terms (--term, repeatable, or --all) in one proposal; --open opens the prefilled form. Sends nothing itself."""
+    """Share local terms (--term, repeatable, or --all) and schema additions (--patch) in one proposal; --open opens the prefilled form. Sends nothing itself."""
+    if not (args.all or args.term or args.patch):
+        _fail(args, "say what to share: --term <id> (repeatable), --patch or --all")
     try:
-        result = proposal_for_local_terms(args.project, None if args.all else args.term, args.modality)
+        if args.patch and not load_local_patches(args.project, args.modality)[0]:
+            raise OverlayError("this project has no schema additions to share (see: spec local add-values)")
+        result = proposal_for_local_terms(
+            args.project, None if args.all else args.term or [], args.modality, include_patch=args.patch or args.all
+        )
     except OverlayError as exc:
         _fail(args, str(exc))
     if result["problems"]:

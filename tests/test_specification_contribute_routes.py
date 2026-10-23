@@ -183,3 +183,27 @@ def test_propose_rejects_bad_bodies(client, tmp_path, body):
 def test_the_page_script_shows_and_downloads_the_document_that_is_sent():
     source = (REPO / "app" / "static" / "js" / "modules" / "specification" / "contribute.js").read_text(encoding="utf-8")
     assert "data.document" in source and "Share all" in (REPO / "app" / "templates" / "specifications_contribute.html").read_text(encoding="utf-8")
+
+
+def test_propose_shares_the_patch(client, tmp_path):
+    from src.spec_overlay import add_local_values
+
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    add_local_values(project, "Technical.SpecimenType", ["sweat"])
+    alone = client.post("/api/spec/propose", json={"patch": True}).get_json()
+    assert alone["success"] and list(alone["document"]["files"]) == ["patches/biosample.json"] and alone["problems"] == []
+    everything = client.post("/api/spec/propose", json={"all": True}).get_json()
+    assert everything["success"] and "patches/biosample.json" in everything["document"]["files"]
+
+
+def test_propose_patch_without_additions_is_a_400(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    response = client.post("/api/spec/propose", json={"patch": True})
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+@pytest.mark.parametrize("value", ["yes", 1, None])
+def test_propose_rejects_a_non_boolean_patch(client, tmp_path, value):
+    _two_local(client, tmp_path)
+    assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "patch": value}).status_code == 400

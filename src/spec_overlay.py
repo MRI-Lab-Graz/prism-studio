@@ -453,8 +453,13 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
     return found
 
 
-def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, modality: str = "biosample") -> dict:
+def proposal_for_local_terms(
+    project_root, term_ids: list[str] | None = None, modality: str = "biosample", include_patch: bool = False
+) -> dict:
     """The proposal that shares local terms: the named ones (default: every local term).
+
+    `include_patch` adds the project's schema additions (patches/<modality>.json); a chosen term on a specimen
+    that only the patch adds brings the patch along, so a proposal is never incomplete.
 
     A named child brings its local parent and a named parent its local children, so a proposal is never
     incomplete. Local terms the official registry has adopted since are left out and listed in `skipped`.
@@ -484,9 +489,15 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
             ]
             chosen_stems += [stem, *related]
     chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
-    if not chosen:
+    patch, patch_messages = load_local_patches(project_root, modality)
+    added = {v for op in (patch or {}).get("operations", []) if op.get("path") == "Technical.SpecimenType" for v in op.get("values", [])}
+    if patch and (include_patch or any(t.get("SpecimenType") in added for t in chosen)):
+        skipped += [m.partition(": ")[2] for m in patch_messages if m.endswith(" is already official")]
+    else:
+        patch = None
+    if not chosen and not patch:
         raise OverlayError("nothing to share" + (f" (covered by official terms: {', '.join(skipped)})" if skipped else ""))
-    proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"])}
+    proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"]), **({"patch": patch} if patch else {})}
     document = as_v2(proposal)
     return {
         "proposal": proposal,
