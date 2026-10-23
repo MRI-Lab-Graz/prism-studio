@@ -121,10 +121,8 @@ def stage(dest: Path) -> None:
     # term registry: src/term_registry.py reads <package root>/official/library/terms
     shutil.copytree(ROOT / "official" / "library" / "terms", pkg / "official" / "library" / "terms")
     # project overlay: src/spec_overlay.py checks local terms with the vendored prism-specification scripts
-    scripts = pkg / "scripts" / "specification"
-    scripts.mkdir(parents=True)
-    for name in ("check_terms.py", "term_proposal.py"):
-        shutil.copy2(ROOT / "scripts" / "specification" / name, scripts / name)
+    # (the whole folder: the scripts load each other by path, term_proposal.py needs schema_patch.py and release_patch.py)
+    shutil.copytree(ROOT / "scripts" / "specification", pkg / "scripts" / "specification", ignore=shutil.ignore_patterns("__pycache__"))
     (pkg / "__init__.py").write_text("", encoding="utf-8")
     (pkg / "cli.py").write_text(CLI, encoding="utf-8")
     src_init = (ROOT / "src" / "__init__.py").read_text(encoding="utf-8")

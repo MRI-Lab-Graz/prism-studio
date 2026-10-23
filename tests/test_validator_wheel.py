@@ -60,6 +60,12 @@ def test_wheel_has_validator_entry_and_schemas(wheel):
     assert "prism_validator/app/schemas/citation_cff/schema.json" in names
 
 
+def test_wheel_carries_every_vendored_specification_script(wheel):
+    """term_proposal.py loads schema_patch.py and release_patch.py by path at import; a missing one breaks every project overlay."""
+    names = {Path(n).name for n in zipfile.ZipFile(wheel).namelist() if "/scripts/specification/" in n}
+    assert {p.name for p in (ROOT / "scripts" / "specification").glob("*.py")} <= names
+
+
 def test_wheel_contains_no_studio_only_files(wheel):
     names = zipfile.ZipFile(wheel).namelist()
     leaked = [n for n in names if any(s in n for s in STUDIO_ONLY)]

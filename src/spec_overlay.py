@@ -110,6 +110,43 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
     return terms, problems
 
 
+def _patch_file(project_root, modality: str) -> Path:
+    return overlay_root(project_root) / "patches" / f"{modality}.json"
+
+
+def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict | None, list[str]]:
+    """The project's schema patch for `modality` (operations the official schema already has are dropped) and messages.
+
+    Invalid, unreadable or symlinked files are a message, never an exception; None when nothing is left to add.
+    """
+    path = _patch_file(project_root, modality)
+    if not path.is_file():
+        return None, []
+    current = Path(project_root)
+    for part in (*OVERLAY_PARTS, "patches"):
+        current = current / part
+        if current.is_symlink():
+            return None, [f"{path.name}: {current} is a symbolic link, not used"]
+    if path.is_symlink():
+        return None, [f"{path.name}: is a symbolic link, not used"]
+    try:
+        schema_patch = _vendored("schema_patch")
+        from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this module
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+        adds, notes = schema_patch.additions(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), data)
+    except OSError as exc:
+        return None, [f"{path.name}: cannot be used ({type(exc).__name__}; the specification scripts may not be installed)"]
+    except (ValueError, RecursionError) as exc:  # PatchError is a ValueError (but a different class per loaded copy)
+        return None, [f"{path.name}: {exc}" if isinstance(exc, ValueError) else f"{path.name}: cannot read ({type(exc).__name__})"]
+    operations = [
+        {"op": "add_enum_values", "path": a["path"], "values": a["values"]} if a["kind"] == "enum"
+        else {"op": "add_optional_properties", "path": a["path"], "properties": a["properties"]}
+        for a in adds
+    ]
+    return {"operations": operations}, [f"{path.name}: {note}" for note in notes]
+
+
 def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
     """The official registry plus the local terms that add something.
 

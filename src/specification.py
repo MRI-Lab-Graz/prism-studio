@@ -16,7 +16,7 @@ from typing import Iterator
 
 from src.entity_rules import EntityRules, load_entity_rules
 from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
-from src.spec_overlay import load_local_terms, merge_terms
+from src.spec_overlay import _vendored, load_local_patches, load_local_terms, merge_terms
 from src.term_registry import load_registry
 
 _TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
@@ -30,6 +30,7 @@ class Specification:
     local_terms: frozenset = frozenset()  # TermIDs of the local terms in use
     ignored_local: tuple = ()  # TermIDs of local terms the official registry now has (the official one wins)
     overlay_problems: tuple = ()  # one message per project overlay file that was skipped
+    local_patches: tuple = ()  # modalities whose schema carries the project's patch
 
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
@@ -56,6 +57,8 @@ def load_specification(
     code/specification/ overlay adds its own, not yet official terms (the official registry always wins).
     """
     terms, local, ignored, problems = {}, set(), [], []
+    schemas = schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR)
+    patched = []
     for modality in _TERM_MODALITIES:
         registry = load_registry(modality)
         if project_root is not None:
@@ -64,14 +67,23 @@ def load_specification(
             local |= in_use
             ignored += dropped
             problems += skipped
+            patch, notes = load_local_patches(project_root, modality)
+            problems += notes
+            if patch and isinstance(schemas.get(modality), dict):
+                try:
+                    schemas = {**schemas, modality: _vendored("schema_patch").apply_patch(schemas[modality], patch)[0]}
+                    patched.append(modality)
+                except ValueError as exc:  # the run's (version-pinned) schema may not fit the patch
+                    problems.append(f"patches/{modality}.json: {exc}")
         terms[modality] = registry
     return Specification(
         rules=rules if rules is not None else load_entity_rules(),
-        schemas=schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR),
+        schemas=schemas,
         terms=terms,
         local_terms=frozenset(local),
         ignored_local=tuple(ignored),
         overlay_problems=tuple(problems),
+        local_patches=tuple(patched),
     )
 
 
