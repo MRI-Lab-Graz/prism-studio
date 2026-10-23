@@ -15,7 +15,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import proposal_for_values, spec_catalog
+from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal
 
 
@@ -151,6 +151,17 @@ def cmd_spec_propose_values(args) -> None:
     """Propose missing choices in a list (for example a new SpecimenType); needs no project. Sends nothing itself."""
     try:
         result = proposal_for_values(args.modality, args.field, args.value)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _deliver_result(args, result)
+
+
+def cmd_spec_propose_metric(args) -> None:
+    """Propose a missing measurement (analyte plus its sample-type term); needs no project. Sends nothing itself."""
+    try:
+        result = proposal_for_new_metric(
+            args.name, args.description, args.units, args.specimen, args.alias, args.modality
+        )
     except OverlayError as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)

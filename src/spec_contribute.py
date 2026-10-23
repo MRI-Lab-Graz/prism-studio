@@ -6,8 +6,8 @@ import re
 
 from src.spec_overlay import OverlayError, _enum_of, _official_schema, _vendored_or_error
 from src.specification import current_specification
-from src.term_proposal import as_v2, check_with_specification, issue_url
-from src.term_registry import load_registry
+from src.term_proposal import ProposalError, as_v2, check_with_specification, issue_url, slugify
+from src.term_registry import find_term, load_registry
 
 _VALUE = re.compile(r"[a-z0-9][a-z0-9-]*")
 
@@ -82,4 +82,44 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
         "issue_url": issue_url(document),
         "problems": check_with_specification(document, load_registry(modality)),
         "skipped": [v for v in values if v not in new],
+    }
+
+
+def proposal_for_new_metric(
+    name: str, description: str, units: str, specimen: str,
+    aliases: list[str] | None = None, modality: str = "biosample", specimens: list[str] | None = None,
+) -> dict:
+    """The proposal for one missing measurement (its analyte term and the specimen-specific child); needs no project.
+
+    `specimens` replaces the allowed sample types for the check (a project's own additions).
+    Same result shape as `proposal_for_values`; nothing is written.
+    """
+    kinds = [m["name"] for m in spec_catalog()["modalities"]]
+    if modality not in kinds:
+        raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
+    registry = load_registry(modality)
+    if not registry:
+        raise OverlayError(f"{modality} has no known measurements")
+    fields = {"name": name, "description": description, "units": units, "specimen": specimen}
+    if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
+        raise OverlayError(f"missing: {', '.join(empty)}")
+    aliases = [a for a in aliases or [] if a]
+    for text in [name, *aliases]:
+        # ponytail: a known measurement for a new sample type is not offered yet; add when the page needs it
+        if found := find_term(registry, text):
+            raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
+    try:
+        parent_id = f"prism:{slugify(name)}"
+    except ProposalError as exc:
+        raise OverlayError(str(exc)) from exc
+    parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
+    child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
+    proposal = {"modality": modality, "terms": [parent, child]}
+    document = as_v2(proposal)
+    return {
+        "proposal": proposal,
+        "document": document,
+        "issue_url": issue_url(document),
+        "problems": check_with_specification(document, registry, specimens),
+        "skipped": [],
     }

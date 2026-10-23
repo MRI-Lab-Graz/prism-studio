@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.spec_contribute import proposal_for_values, spec_catalog
+from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.spec_overlay import OverlayError
 
 
@@ -84,3 +84,52 @@ def test_values_write_nothing(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     proposal_for_values("biosample", "Technical.SpecimenType", ["sweat"])
     assert list(tmp_path.iterdir()) == []
+
+
+def test_metric_proposal_builds_parent_and_child():
+    r = proposal_for_new_metric("DHEA", "Steroid hormone, a marker of adrenal activity.", "pg/mL", "saliva", ["dehydroepiandrosterone"])
+    assert set(r["document"]["files"]) == {"terms/biosample/dhea.json", "terms/biosample/dhea.saliva.json"}
+    assert r["problems"] == []
+    parent, child = r["proposal"]["terms"]
+    assert parent["Aliases"] == ["dehydroepiandrosterone"] and child["Parent"] == "prism:dhea"
+    assert child["SpecimenType"] == "saliva" and child["Units"] == "pg/mL"
+
+
+def test_metric_without_aliases_omits_the_field():
+    r = proposal_for_new_metric("DHEA", "Steroid hormone.", "pg/mL", "saliva")
+    assert "Aliases" not in r["proposal"]["terms"][0]
+
+
+@pytest.mark.parametrize("name", ["cortisol", "hscrp"])  # hscrp: official alias of prism:crp
+def test_metric_matching_an_official_term_is_refused(name):
+    with pytest.raises(OverlayError, match="prism:(cortisol|crp)"):
+        proposal_for_new_metric(name, "x", "pg/mL", "saliva")
+
+
+def test_metric_alias_matching_an_official_term_is_refused():
+    with pytest.raises(OverlayError, match="prism:crp"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL", "saliva", ["hscrp"])
+
+
+@pytest.mark.parametrize(
+    "args",
+    [("", "d", "u", "saliva"), ("1abc", "d", "u", "saliva"), ("schweiß", "d", "u", "saliva"),
+     ("DHEA", "d", "", "saliva"), ("DHEA", "d", "u", ""), ("DHEA", "", "u", "saliva")],
+)
+def test_metric_bad_input(args):
+    with pytest.raises(OverlayError):
+        proposal_for_new_metric(*args)
+
+
+def test_metric_unknown_specimen_is_a_problem_not_a_crash():
+    assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat")["problems"]
+
+
+def test_metric_accepts_extra_specimens():
+    official = spec_catalog()["specimens"]
+    assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat", specimens=[*official, "sweat"])["problems"] == []
+
+
+def test_metric_for_a_kind_not_in_the_catalog_is_refused():
+    with pytest.raises(OverlayError, match="biosample"):
+        proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality="survey")

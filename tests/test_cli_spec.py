@@ -190,3 +190,18 @@ def test_spec_propose_values_json():
 def test_spec_propose_values_bad_value_exits_1():
     code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "Sweat", "--json")
     assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_metric_json():
+    code, out = _run(
+        "spec", "propose-metric", "--name", "DHEA", "--description", "Steroid hormone.", "--units", "pg/mL",
+        "--specimen", "saliva", "--alias", "dehydroepiandrosterone", "--json",
+    )
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["issue_url"].startswith(FORM)
+    assert "terms/biosample/dhea.saliva.json" in data["document"]["files"]
+
+
+def test_spec_propose_metric_official_exits_1():
+    code, out = _run("spec", "propose-metric", "--name", "cortisol", "--description", "d", "--units", "u", "--specimen", "saliva", "--json")
+    assert code == 1 and "prism:cortisol" in json.loads(out)["error"]
