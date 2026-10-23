@@ -8,9 +8,11 @@ import sys
 from src.spec_overlay import (
     OverlayError,
     add_local_term,
+    add_local_values,
     list_local_items,
     proposal_for_local_terms,
     remove_local_terms,
+    remove_local_values,
 )
 from src.term_proposal import deliver_proposal
 
@@ -59,6 +61,40 @@ def cmd_spec_local_remove(args) -> None:
         _fail(args, str(exc))
     paths = [str(path) for path in removed]
     _emit(args, {"success": True, "removed": paths}, "Removed:\n  " + "\n  ".join(paths))
+
+
+def cmd_spec_local_add_values(args) -> None:
+    """Allow new values of a sidecar field (for example a new SpecimenType) in this project, so it validates now."""
+    try:
+        result = add_local_values(args.project, args.field, args.value, args.modality)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    written = str(result["written"]) if result["written"] else None
+    skipped = f"\nAlready official, left out: {', '.join(result['skipped'])}" if result["skipped"] else ""
+    _emit(
+        args,
+        {"success": True, "written": written, "skipped": result["skipped"], "patch": result["patch"]},
+        (f"Added to this project: {args.field} = {', '.join(v for v in args.value if v not in result['skipped'])}\n  {written}"
+         f'\nThe validator uses it from now on. To share it with the PRISM community: '
+         f'python prism_tools.py spec propose --project "{args.project}" --patch' if written
+         else "Nothing to add: every value is already official.")
+        + skipped,
+    )
+
+
+def cmd_spec_local_remove_values(args) -> None:
+    """Remove values added with add-values."""
+    try:
+        result = remove_local_values(args.project, args.field, args.value, args.modality)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    written = str(result["written"]) if result["written"] else None
+    _emit(
+        args,
+        {"success": True, "removed": result["removed"], "written": written},
+        f"Removed from this project: {args.field} = {', '.join(result['removed'])}"
+        + ("" if written else " (no additions left: the patch file was removed)"),
+    )
 
 
 def cmd_spec_propose(args) -> None:

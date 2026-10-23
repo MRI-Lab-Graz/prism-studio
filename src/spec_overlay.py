@@ -59,18 +59,22 @@ def _terms_folder(project_root, modality: str) -> Path:
     return overlay_root(project_root) / "terms" / modality
 
 
-def _real_terms_folder(project_root, modality: str) -> Path:
-    """The terms folder for writing or removing: no part of its path inside the project may be a symbolic link.
+def _real_overlay_folder(project_root, *parts: str) -> Path:
+    """A folder under code/specification for writing or removing: no part of its path inside the project may be a symbolic link.
 
     A shared project could ship `code/specification -> /somewhere/else`; following it would write or delete
     outside the project.
     """
     current = Path(project_root)
-    for part in (*OVERLAY_PARTS, "terms", modality):
+    for part in (*OVERLAY_PARTS, *parts):
         current = current / part
         if current.is_symlink():
             raise OverlayError(f"{current} is a symbolic link; the specification folder of a project must be a real folder")
     return current
+
+
+def _real_terms_folder(project_root, modality: str) -> Path:
+    return _real_overlay_folder(project_root, "terms", modality)
 
 
 def _local_part(term_id) -> str | None:
@@ -279,7 +283,148 @@ def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
             "layer": 3, "modality": modality, "id": None, "label": None, "problem": problem,
             "path": str(folder / problem.split(":", 1)[0]), "status": "invalid",
         })
+    items += _patch_items(project_root, modality)
     return items
+
+
+def _patch_items(project_root, modality: str) -> list[dict]:
+    """Layer 2 items of the overlay: one per added value or property, with the status the validator would give it."""
+    patch, messages = load_local_patches(project_root, modality)
+    path = str(_patch_file(project_root, modality))
+    items = []
+    for op in (patch or {}).get("operations", []):
+        for name in op.get("values") or op["properties"]:
+            ident = f"{op['path']}: {name}"
+            items.append({"layer": 2, "modality": modality, "id": ident, "label": ident, "path": path, "status": "local"})
+    for message in messages:
+        official = message.endswith(" is already official")
+        items.append({
+            "layer": 2, "modality": modality, "id": message.partition(": ")[2].removesuffix(" is already official") if official else None,
+            "label": None, "path": path, "status": "now-official" if official else "invalid",
+            **({} if official else {"problem": message}),
+        })
+    return items
+
+
+def _official_schema(modality: str) -> dict:
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this module
+
+    return load_schema(modality, DEFAULT_SCHEMA_DIR, "stable")
+
+
+def _patch_scripts():
+    try:
+        return _vendored("schema_patch")
+    except OSError as exc:
+        raise OverlayError(f"the specification scripts (scripts/specification) are not installed ({exc})") from exc
+
+
+def _existing_patch(project_root, modality: str) -> tuple[Path, dict]:
+    """The patch file for changing (symlinks refused) and its raw content; a broken file is an error, never overwritten."""
+    path = _real_overlay_folder(project_root, "patches") / f"{modality}.json"
+    if path.is_symlink():
+        raise OverlayError(f"{path} is a symbolic link; the specification folder of a project must be a real folder")
+    if not path.exists():
+        return path, {"operations": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, RecursionError) as exc:
+        raise OverlayError(f"{path.name} cannot be read ({type(exc).__name__}); fix or remove it first") from exc
+    if not (isinstance(data, dict) and isinstance(data.get("operations"), list)):
+        raise OverlayError(f"{path.name} is not a schema patch; fix or remove it first")
+    return path, data
+
+
+def _write_patch(path: Path, patch: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _enum_op(patch: dict, field: str) -> dict | None:
+    return next((op for op in patch["operations"] if isinstance(op, dict) and op.get("op") == "add_enum_values" and op.get("path") == field), None)
+
+
+def add_local_values(project_root, field: str, values: list[str], modality: str = "biosample") -> dict:
+    """Add enum values (for example a new SpecimenType) to this project's patch: {"patch", "written", "skipped"}.
+
+    Values the official schema has are skipped; when nothing is left nothing is written. The patch is checked by
+    the vendored schema_patch.py (which also decides which fields may be extended) before anything is written.
+    """
+    sp = _patch_scripts()
+    schema = _official_schema(modality)
+    path, patch = _existing_patch(project_root, modality)
+    values = list(values) if isinstance(values, (list, tuple)) else values
+    try:
+        adds, _ = sp.additions(schema, {"operations": [{"op": "add_enum_values", "path": field, "values": values}]})
+    except ValueError as exc:  # PatchError, a different class per loaded copy of the script
+        if str(exc).startswith("nothing to add"):
+            return {"patch": patch if patch["operations"] else None, "written": None, "skipped": list(values)}
+        raise OverlayError(str(exc)) from exc
+    new = adds[0]["values"]
+    op = _enum_op(patch, field)
+    if op is None:
+        patch["operations"].append({"op": "add_enum_values", "path": field, "values": new})
+    else:
+        op["values"] = [*op["values"], *(v for v in new if v not in op["values"])]
+    problems = sp.validate_patch(patch, schema)
+    if problems:
+        raise OverlayError("; ".join(problems))
+    _write_patch(path, patch)
+    return {"patch": patch, "written": path, "skipped": [v for v in values if v not in new]}
+
+
+def remove_local_values(project_root, field: str, values: list[str], modality: str = "biosample") -> dict:
+    """Remove enum values from this project's patch; the last one removes the file: {"removed", "written"}."""
+    path, patch = _existing_patch(project_root, modality)
+    op = _enum_op(patch, field)
+    missing = [v for v in values if op is None or v not in op["values"]]
+    if missing:
+        raise OverlayError(f"{', '.join(map(str, missing))}: not in this project's additions to {field}")
+    op["values"] = [v for v in op["values"] if v not in values]
+    patch["operations"] = [o for o in patch["operations"] if o is not op or op["values"]]
+    if patch["operations"]:
+        _write_patch(path, patch)
+        return {"removed": list(values), "written": path}
+    path.unlink()
+    return {"removed": list(values), "written": None}
+
+
+def _enum_of(schema: dict, field: str):
+    node = schema
+    for part in field.split("."):
+        node = (node.get("properties") or {}).get(part, {}) if isinstance(node, dict) else {}
+    return node.get("enum") if isinstance(node, dict) else None
+
+
+def _value_at(data, field: str):
+    for part in field.split("."):
+        data = data.get(part) if isinstance(data, dict) else None
+    return data
+
+
+def find_unknown_values(project_root, modality: str = "biosample") -> list[dict]:
+    """Sidecar values outside the (patched) enums that could be added: {"field", "value", "sidecar"}, once per sidecar and value."""
+    from src.specification import load_specification  # lazy: specification imports this module
+
+    root = Path(project_root)
+    spec = load_specification(project_root=root)
+    schema = spec.schemas.get(modality) or {}
+    sp = _patch_scripts()
+    found = []
+    for folder, subfolders, names in os.walk(root):
+        subfolders[:] = sorted(name for name in subfolders if name not in _NOT_PROJECT_DATA)
+        for name in sorted(n for n in names if n.endswith(f"_{modality}.json")):
+            path = Path(folder) / name
+            try:
+                sidecar = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, RecursionError):
+                continue
+            for field in spec.patchable_fields(modality):
+                value = _value_at(sidecar, field)
+                op = {"operations": [{"op": "add_enum_values", "path": field, "values": [value]}]}
+                if isinstance(value, str) and value not in _enum_of(schema, field) and not sp.validate_patch(op, schema):
+                    found.append({"field": field, "value": value, "sidecar": str(path)})
+    return found
 
 
 def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict]:

@@ -110,8 +110,10 @@ from src.cli.commands.survey import (
 from src.cli.commands.modality import cmd_modality_propose
 from src.cli.commands.spec import (
     cmd_spec_local_add_term,
+    cmd_spec_local_add_values,
     cmd_spec_local_list,
     cmd_spec_local_remove,
+    cmd_spec_local_remove_values,
     cmd_spec_propose,
 )
 from src.cli.commands.terms import cmd_terms_list, cmd_terms_propose, cmd_terms_show, cmd_terms_suggest
@@ -162,6 +164,8 @@ def main() -> None:
             "spec_local_list": cmd_spec_local_list,
             "spec_local_add_term": cmd_spec_local_add_term,
             "spec_local_remove": cmd_spec_local_remove,
+            "spec_local_add_values": cmd_spec_local_add_values,
+            "spec_local_remove_values": cmd_spec_local_remove_values,
             "spec_propose": cmd_spec_propose,
             "terms_list": cmd_terms_list,
             "terms_show": cmd_terms_show,
