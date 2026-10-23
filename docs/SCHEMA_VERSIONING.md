@@ -6,7 +6,7 @@ same way until you decide to move it. The older whole-schema bundles (`v0.1`,
 
 ## Per-modality versions
 
-Every modality (survey, biometrics, eyetracking, ...) has its own
+Every modality (survey, biometrics, biosample, ...) has its own
 `major.minor.patch` version, stored as `version` in its schema file. A modality
 proposal starts at `1.0.0`. By default a validation uses the latest version of
 every modality.

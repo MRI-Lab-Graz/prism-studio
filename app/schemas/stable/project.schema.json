@@ -278,7 +278,7 @@
                     },
                     "converter": {
                       "type": "string",
-                      "enum": ["survey-xlsx", "survey-lsa", "biometrics", "physio", "eyetracking", "manual"],
+                      "enum": ["survey-xlsx", "survey-lsa", "biometrics", "physio", "manual"],
                       "description": "Which converter produced the data"
                     },
                     "convertedAt": {
@@ -307,7 +307,7 @@
           },
           "modality": {
             "type": "string",
-            "enum": ["survey", "biometrics", "physio", "eeg", "eyetracking", "func", "anat", "other"],
+            "enum": ["survey", "biometrics", "physio", "eeg", "func", "anat", "other"],
             "description": "BIDS/PRISM modality"
           },
           "description": {

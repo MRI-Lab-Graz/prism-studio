@@ -61,7 +61,7 @@ class TestValidateDataset:
         """Test that demo dataset stats include modalities"""
         issues, stats = validate_dataset(str(DEMO_PRISM_DATASET), verbose=False)
 
-        # Demo has eyetrack and physio
+        # Demo has physio
         assert len(stats.modalities) > 0
 
     def test_validate_nonexistent_dataset(self):

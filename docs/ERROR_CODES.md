@@ -67,7 +67,7 @@ that still needs to be moved or renamed.
 | Code | Meaning | Fix |
 |---|---|---|
 | `PRISM101` | Invalid BIDS filename format | Follow `sub-<label>[_ses-<label>]_task-<label>_<suffix>.<ext>`. Valid: `sub-01_task-faces_bold.nii.gz`. Invalid: `subject01_task-faces.nii.gz` |
-| `PRISM102` | Filename doesn't match expected pattern for modality | Use the correct suffix: `_survey`, `_physio`, `_eyetrack`, `_biometrics`, `_events` |
+| `PRISM102` | Filename doesn't match expected pattern for modality | Use the correct suffix: `_survey`, `_physio`, `_biometrics`, `_events` |
 | `PRISM103` | Subject ID mismatch | `sub-<label>` in the filename must match the parent directory |
 | `PRISM104` | Session ID mismatch | `ses-<label>` in the filename must match the parent directory |
 

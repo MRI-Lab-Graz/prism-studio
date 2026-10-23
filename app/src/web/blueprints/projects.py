@@ -774,7 +774,7 @@ def get_sourcedata_files():
 
     Query params:
         kind: optional converter kind filter (survey, biometrics, environment,
-              participants, physio, eyetracking, all). Defaults to survey.
+              participants, physio, all). Defaults to survey.
 
     Returns files matching converter-supported extensions found in the
     sourcedata/ directory recursively (includes subdirectories such as

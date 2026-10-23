@@ -10,7 +10,6 @@ CONVERTER_SURVEY_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_survey.
 CONVERTER_BIOMETRICS_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_biometrics.html"
 CONVERTER_ENVIRONMENT_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_environment.html"
 CONVERTER_PHYSIO_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_physio.html"
-CONVERTER_EYETRACKING_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_eyetracking.html"
 VALIDATOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "index.html"
 PROJECT_SETTINGS_TEMPLATE = REPO_ROOT / "app" / "templates" / "includes" / "projects" / "settings_section.html"
 PROJECT_EXPORT_TEMPLATE = REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
@@ -48,7 +47,6 @@ class TestFilePickerResponsiveWiring(unittest.TestCase):
             CONVERTER_BIOMETRICS_TEMPLATE: ["biometricsDataFile"],
             CONVERTER_ENVIRONMENT_TEMPLATE: ["envDataFile"],
             CONVERTER_PHYSIO_TEMPLATE: ["physioBatchFolder"],
-            CONVERTER_EYETRACKING_TEMPLATE: ["eyetrackingBatchFiles"],
             VALIDATOR_TEMPLATE: ["selectedFolderPath", "library_path"],
             PROJECT_SETTINGS_TEMPLATE: ["globalLibraryPath", "globalRecipesPath"],
             PROJECT_EXPORT_TEMPLATE: ["exportOutputFolder"],

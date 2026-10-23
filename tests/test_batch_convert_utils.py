@@ -22,13 +22,11 @@ from src.batch_convert import (
     _line_svg,
     _hist_svg,
     _create_physio_sidecar,
-    _create_eyetracking_sidecar,
     _find_physio_sidecar,
     _extract_edf_metadata,
     _detect_r_peaks,
     _generate_physio_html_report,
     convert_physio_file,
-    convert_eyetracking_file,
     convert_generic_file,
     batch_convert_folder,
     create_dataset_description,
@@ -354,38 +352,6 @@ class TestCreatePhysioSidecar:
         assert data["Channels"]["eda_signal"]["Type"] == "EDA"
         assert data["Channels"]["ppg_ch"]["Type"] == "PPG"
         assert data["Channels"]["marker_1"]["Type"] == "TRIGGER"
-
-
-# ---------------------------------------------------------------------------
-# _create_eyetracking_sidecar
-# ---------------------------------------------------------------------------
-
-class TestCreateEyetrackingSidecar:
-    def test_creates_json_file(self, tmp_path):
-        src = tmp_path / "file.edf"
-        src.write_bytes(b"data")
-        out = tmp_path / "et.json"
-        _create_eyetracking_sidecar(src, out, task_name="task-gaze")
-        assert out.exists()
-        data = _json.loads(out.read_text())
-        assert "Technical" in data
-
-    def test_task_name_stored(self, tmp_path):
-        src = tmp_path / "file.edf"
-        src.write_bytes(b"x")
-        out = tmp_path / "et.json"
-        _create_eyetracking_sidecar(src, out, task_name="task-gaze")
-        data = _json.loads(out.read_text())
-        assert data["Study"]["TaskName"] == "gaze"
-
-    def test_sampling_rate_from_extra_meta(self, tmp_path):
-        src = tmp_path / "file.edf"
-        src.write_bytes(b"x")
-        out = tmp_path / "et.json"
-        _create_eyetracking_sidecar(src, out, task_name="gaze",
-                                     extra_meta={"SamplingFrequency": 500})
-        data = _json.loads(out.read_text())
-        assert data["Technical"]["SamplingRate"] == 500
 
 
 # ---------------------------------------------------------------------------
@@ -874,54 +840,6 @@ class TestConvertPhysioFile:
 
 
 # ---------------------------------------------------------------------------
-# convert_eyetracking_file
-# ---------------------------------------------------------------------------
-
-class TestConvertEyetrackingFile:
-    def test_copies_edf_and_creates_sidecar(self, tmp_path):
-        src = tmp_path / "sub-001_ses-1_task-gaze.edf"
-        src.write_bytes(b"fake edf data")
-        out_dir = tmp_path / "output"
-        parsed = parse_bids_filename(src.name)
-        assert parsed is not None
-
-        result = convert_eyetracking_file(src, out_dir, parsed=parsed)
-
-        assert result.success
-        assert result.subject == "sub-001"
-        assert result.session == "ses-1"
-        assert result.task == "task-gaze"
-        assert result.modality == "eyetracking"
-        edf_out = next((f for f in result.output_files if f.suffix == ".edf"), None)
-        json_out = next((f for f in result.output_files if f.suffix == ".json"), None)
-        assert edf_out is not None and edf_out.exists()
-        assert json_out is not None and json_out.exists()
-
-    def test_no_session(self, tmp_path):
-        src = tmp_path / "sub-002_task-read.edf"
-        src.write_bytes(b"x")
-        out_dir = tmp_path / "out"
-        parsed = parse_bids_filename(src.name)
-        assert parsed is not None
-
-        result = convert_eyetracking_file(src, out_dir, parsed=parsed)
-
-        assert result.success
-        assert result.session is None
-
-    def test_missing_source_returns_failed(self, tmp_path):
-        src = tmp_path / "sub-001_task-gaze.edf"
-        # Don't create the file
-        out_dir = tmp_path / "out"
-        parsed = parse_bids_filename(src.name)
-        assert parsed is not None
-
-        result = convert_eyetracking_file(src, out_dir, parsed=parsed)
-
-        assert not result.success
-
-
-# ---------------------------------------------------------------------------
 # convert_generic_file
 # ---------------------------------------------------------------------------
 
@@ -1085,32 +1003,7 @@ class TestBatchConvertFolder:
 
         assert len(logs) > 0
 
-    def test_modality_filter_eyetracking_converts_tsv(self, tmp_path):
-        # .tsv/.tsv.gz are pre-processed eyetracking trial-summary tables (e.g.
-        # exported from EyeLink Data Viewer) and are explicitly advertised/accepted
-        # by the Studio eyetracking converter tab -- an eyetracking-scoped batch
-        # job must actually convert them, not silently skip them.
-        src = tmp_path / "source"
-        src.mkdir()
-        (src / "sub-001_task-reading_eyetracking.tsv").write_text("x")
-        out = tmp_path / "output"
-
-        result = batch_convert_folder(src, out, modality_filter="eyetracking")
-
-        assert result.success_count == 1
-        converted = result.converted[0]
-        assert converted.modality == "eyetracking"
-        output_names = {f.name for f in converted.output_files}
-        assert "sub-001_task-reading_eyetrack.tsv" in output_names
-        assert "sub-001_task-reading_eyetrack.json" in output_names
-        # The .tsv content must be preserved verbatim, not mangled into a fake .edf
-        saved_tsv = next(f for f in converted.output_files if f.suffix == ".tsv")
-        assert saved_tsv.read_text() == "x"
-
-    def test_modality_filter_eyetracking_leaves_other_extensions_alone(self, tmp_path):
-        # In "all" mode, .tsv stays ambiguous/generic -- the eyetracking-specific
-        # override only applies when the batch job is explicitly scoped to
-        # modality_filter="eyetracking".
+    def test_modality_filter_physio_leaves_generic_extensions_alone(self, tmp_path):
         src = tmp_path / "source"
         src.mkdir()
         (src / "sub-001_task-survey.tsv").write_text("x")

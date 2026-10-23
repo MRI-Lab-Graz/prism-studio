@@ -60,16 +60,6 @@
         }
       }
     },
-    "eyetracking": {
-      "kind": "bidsPassthrough",
-      "suffixes": ["eyetrack", "eye", "gaze"],
-      "extensions": ["tsv", "tsv.gz", "json", "edf", "asc"],
-      "optionalEntityValues": {
-        "trackedEye": {
-          "enum": ["left", "right", "both"]
-        }
-      }
-    },
     "anat": {"kind": "bidsPassthrough"},
     "func": {"kind": "bidsPassthrough"},
     "fmap": {"kind": "bidsPassthrough"},

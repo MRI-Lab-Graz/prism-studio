@@ -1234,7 +1234,7 @@ def _build_physio_convert_terminal_command(req) -> str:
 
 
 def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
-    """Build a CLI command for batch physio/eyetracking conversion.
+    """Build a CLI command for batch physio conversion.
 
     When a server-side folder_path is present, emit a real prism_tools command.
     Fall back to curl when files were uploaded without a local folder reference.

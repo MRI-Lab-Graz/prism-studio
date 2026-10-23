@@ -76,10 +76,6 @@ from jsonschema import Draft7Validator
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py) rather than hardcoded here.
 PRISM_MODALITIES = load_entity_rules().project_modalities
 
-# Modalities that remain available in PRISM tooling but are validated as BIDS
-# pass-through instead of PRISM-specific extensions.
-BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
-
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
@@ -532,11 +528,7 @@ class ProjectManager:
         add_log("Validated existing BIDS dataset root.", "step")
 
         name = config.get("name") or project_path.name
-        modalities = [
-            modality
-            for modality in current_specification().rules.project_modalities
-            if modality not in BIDS_PASSTHROUGH_MODALITIES
-        ]
+        modalities = list(current_specification().rules.project_modalities)
         created_files: List[str] = []
         datalad_result: Optional[Dict[str, Any]] = None
         phenotype_import_result: Optional[Dict[str, Any]] = None
@@ -7059,7 +7051,7 @@ git push -u origin main
         lines.extend(
             f"{mod}/"
             for mod in modalities
-            if mod in current_specification().rules.project_modalities and mod not in BIDS_PASSTHROUGH_MODALITIES
+            if mod in current_specification().rules.project_modalities
         )
         return "\n".join(lines) + "\n"
 

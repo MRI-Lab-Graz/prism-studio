@@ -104,7 +104,6 @@ def strip_temp_path(
                 "func",
                 "survey",
                 "environment",
-                "eyetracking",
                 "dwi",
                 "fmap",
             ]:

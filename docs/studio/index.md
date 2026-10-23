@@ -52,11 +52,6 @@ and where, and common failures.
     <span class="prism-chapter-title">Environment</span>
     <span class="prism-chapter-outcome">Timestamped contextual data alongside a study</span>
   </a>
-  <a class="prism-chapter-card" href="converter_eyetracking.html">
-    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-    <span class="prism-chapter-title">Eyetracking</span>
-    <span class="prism-chapter-outcome">Batch-converts SR Research EyeLink recordings to BIDS-style eyetracking</span>
-  </a>
   <a class="prism-chapter-card" href="converter_physio.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg></span>
     <span class="prism-chapter-title">Physio</span>
@@ -131,7 +126,6 @@ converter_survey
 converter_participants
 converter_biometrics
 converter_environment
-converter_eyetracking
 converter_physio
 validator
 json_editor

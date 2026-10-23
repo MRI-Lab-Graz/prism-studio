@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **The `eyetracking` modality.** Eye tracking is BIDS physio (`PhysioType: eyetrack`, BIDS 1.11), so PRISM no longer has
+  its own folder, schema, converter tab or `convert physio --modality eyetracking`. Studio carries prism-specification
+  v1.2.3. An `eyetracking/` folder is reported by the validator with the way forward (eye2bids, then the datatype folder
+  of the task). A converter around eye2bids is parked in `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`.
+
 ### Added
 - **Additions to a modality.** A value an existing schema does not allow yet (for example a new `Technical.SpecimenType`
   such as `sweat`) can be used in your project right away: `prism_tools.py spec local add-values|remove-values` or the

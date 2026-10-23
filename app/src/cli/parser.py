@@ -1037,7 +1037,7 @@ def build_prism_tools_parsers(
 
     parser_physio_batch = physio_subparsers.add_parser(
         "batch-convert",
-        help="Batch convert physio/eyetracking files in a flat source folder",
+        help="Batch convert physio files in a flat source folder",
     )
     parser_physio_batch.add_argument(
         "--input", required=True, help="Path to source folder containing raw files"
@@ -1048,7 +1048,7 @@ def build_prism_tools_parsers(
     parser_physio_batch.add_argument(
         "--modality",
         default="all",
-        choices=["all", "physio", "eyetracking"],
+        choices=["all", "physio"],
         help="Modality filter (default: all)",
     )
     parser_physio_batch.add_argument(
@@ -2479,7 +2479,7 @@ def build_prism_tools_parsers(
 
     parser_file_management_rename_physio = file_management_subparsers.add_parser(
         "rename-physio",
-        help="Preview or apply a regex-based batch rename of physio/eyetracking files. "
+        help="Preview or apply a regex-based batch rename of physio files. "
         "Matches the Studio GUI's Converter -> Physio Renamer action.",
     )
     parser_file_management_rename_physio.add_argument(

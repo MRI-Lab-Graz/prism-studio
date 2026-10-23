@@ -22,21 +22,8 @@ from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
-from src.entity_rules import load_entity_rules
 from src.specification import current_specification
 from src.validator import resolve_inherited_sidecar
-
-# Filename substrings that identify an eyetracking file by suffix, e.g.
-# "_eyetrack"/"_eye"/"_gaze". Sourced from entities.schema.json (via
-# src/entity_rules.py) instead of hardcoded here, so a suffix added there
-# (the entities.schema.json eyetracking suffix list previously had "gaze"
-# with no matching check here - files ending "_gaze.tsv" were silently
-# inferred as "unknown") is automatically picked up by modality inference
-# too.
-# (the official eyetracking rule at import time: a project's local additions cannot change it)
-_EYETRACKING_NAME_HINTS = tuple(
-    f"_{suffix}" for suffix in load_entity_rules().modalities["eyetracking"].suffixes
-)
 
 
 @dataclass
@@ -478,10 +465,6 @@ class DatasetFixer:
             return "biometrics"
         elif "/physio/" in path_lower or "_physio" in name_lower:
             return "physio"
-        elif "/eyetrack" in path_lower or any(
-            hint in name_lower for hint in _EYETRACKING_NAME_HINTS
-        ):
-            return "eyetracking"
         elif (
             "/beh/" in path_lower
             or name_lower.endswith("_beh.tsv")
@@ -525,17 +508,6 @@ class DatasetFixer:
                     "SamplingFrequency": 1000,
                     "Columns": ["TODO: column names"],
                 },
-                "Study": {"TaskName": "TODO"},
-                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
-            }
-        elif modality == "eyetracking":
-            return {
-                "Technical": {
-                    "SamplingFrequency": 1000,
-                    "Manufacturer": "TODO",
-                    "RecordedEye": "both",
-                },
-                "Screen": {"ScreenResolution": [1920, 1080], "ScreenDistance": 60},
                 "Study": {"TaskName": "TODO"},
                 "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }

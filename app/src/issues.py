@@ -138,7 +138,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     },
     "PRISM102": {
         "message": "Filename doesn't match expected pattern for modality",
-        "fix_hint": "Ensure the filename follows the correct suffix for this modality. Use '_survey', '_physio', '_eyetrack', '_biometrics', or '_events' as appropriate.",
+        "fix_hint": "Ensure the filename follows the correct suffix for this modality. Use '_survey', '_physio', '_biometrics', or '_events' as appropriate.",
     },
     "PRISM103": {
         "message": "Subject ID mismatch",
@@ -383,7 +383,7 @@ def _base_fix_hint(code: str, message: str = "") -> str:
                 # example is valid. Others (biosample needs biosample-<label>; its own message says so) fall through
                 # to the generic message below. Hints are formatted after a run, so this sees the official rules.
                 hinted_modalities = {
-                    "survey", "biometrics", "physio", "eyetracking", "events",
+                    "survey", "biometrics", "physio", "events",
                 }
                 rule = current_specification().rules.modalities.get(modality)
                 if modality in hinted_modalities and rule is not None:

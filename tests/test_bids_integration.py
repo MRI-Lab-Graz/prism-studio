@@ -45,19 +45,6 @@ def test_check_and_update_bidsignore_is_idempotent() -> None:
         assert first == second
 
 
-def test_check_and_update_bidsignore_keeps_eyetracking_visible_to_bids() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        dataset_root = Path(tmp)
-
-        check_and_update_bidsignore(str(dataset_root), ["survey", "eyetracking"])
-
-        content = (dataset_root / ".bidsignore").read_text(encoding="utf-8")
-        assert "eyetracking/" not in content
-        assert "**/eyetracking/" not in content
-        assert "*_eyetrack.*" not in content
-        assert "task-*_eyetrack.json" not in content
-
-
 def test_check_and_update_bidsignore_adds_all_prism_modality_folders() -> None:
     """prism_folders is now derived from src/entity_rules.py's
     prism_modalities (survey, biometrics, environment, physio,

@@ -81,7 +81,7 @@ def test_extension_with_a_free_suffix_has_no_errors():
 
 
 def test_extension_suffix_that_is_taken_is_still_rejected():
-    assert "PRISM suffix 'eyetrack'" in _messages(check_proposal(_ext(suffix="eyetrack")))
+    assert "PRISM modality 'physio'" in _messages(check_proposal(_ext(suffix="physio")))
     assert "BIDS suffix 'blood'" in _messages(check_proposal(_ext(suffix="blood")))
 
 
@@ -93,7 +93,6 @@ def test_extension_cannot_carry_entity_suggestions():
 def test_bids_and_passthrough_names_are_refused_with_advice():
     assert "BIDS" in _messages(check_proposal(_proposal(modality="anat")))
     assert "BIDS datatype 'phenotype'" in _messages(check_proposal(_proposal(modality="phenotype")))
-    assert "upstream" in _messages(check_proposal(_proposal(modality="eyetracking")))
 
 
 import json  # noqa: E402

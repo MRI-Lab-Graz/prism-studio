@@ -22,7 +22,7 @@ def test_unknown_page_raises_keyerror_not_path_traversal():
 
 
 def test_links_between_docs_point_at_in_app_pages():
-    html = render_spec_page("eyetracking")
+    html = render_spec_page("dataset_description")
     assert "ERROR_CODES.md" not in html
     assert "/specifications/errors" in html
 
@@ -30,7 +30,7 @@ def test_links_between_docs_point_at_in_app_pages():
 def test_links_to_the_docs_site_are_mapped_or_dropped_not_left_as_external_links():
     # the specification repository cannot use relative links into Studio's docs, so its pages carry
     # absolute Read the Docs / GitHub URLs; offline, they must behave like the old relative links
-    for slug in ("survey", "eyetracking", "biometrics", "physio"):
+    for slug in ("survey", "biometrics", "physio"):
         html = render_spec_page(slug)
         assert "readthedocs.io" not in html and "MRI-Lab-Graz/prism-studio" not in html, slug
 

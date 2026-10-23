@@ -89,7 +89,6 @@ def capture_converter_shots(page: Page, base_url: str) -> None:
         ("survey-tab", "prism-studio-converter-survey.png"),
         ("biometrics-tab", "prism-studio-converter-biometrics.png"),
         ("physio-tab", "prism-studio-converter-physio.png"),
-        ("eyetracking-tab", "prism-studio-converter-eyetracking.png"),
         ("environment-tab", "prism-studio-converter-environment.png"),
     ]
     for tab_id, filename in tabs:

@@ -1,4 +1,4 @@
-"""Shared physio/eyetracking batch-rename logic.
+"""Shared physio batch-rename logic.
 
 Extracted from app/src/web/blueprints/conversion_physio_handlers.py's
 api_physio_rename (the Studio GUI's Converter -> Physio Renamer / File

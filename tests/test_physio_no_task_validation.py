@@ -1,4 +1,4 @@
-"""physio is task-free; the events/ and physiological/ folders are retired."""
+"""physio is task-free; the events/, physiological/ and eyetracking/ folders are retired."""
 
 import json
 import os
@@ -38,6 +38,11 @@ def test_physiological_folder_is_flagged(tmp_path):
         _validate(tmp_path, ["sub-01/physiological/sub-01_recording-ecg_physio.edf"])
     )
     assert any("physiological" in m and "physio/" in m for m in errs), errs
+
+
+def test_eyetracking_folder_is_flagged(tmp_path):
+    errs = _errors(_validate(tmp_path, ["sub-01/eyetracking/sub-01_task-x_eyetrack.tsv"]))
+    assert any("eyetracking" in m and "eye2bids" in m and "physio" in m for m in errs), errs
 
 
 def test_task_in_physio_filename_is_error(tmp_path):
@@ -106,13 +111,13 @@ def test_physiological_folder_at_session_level_is_flagged(tmp_path):
 import pytest  # noqa: E402
 
 
-@pytest.mark.parametrize("folder", ["events", "physiological"])
+@pytest.mark.parametrize("folder", ["events", "physiological", "eyetracking"])
 @pytest.mark.parametrize("level", ["sub-01", "sub-01/ses-pre"])
 def test_empty_retired_folder_gets_retired_hint(tmp_path, folder, level):
     (tmp_path / level / folder).mkdir(parents=True)
     errs = _errors(_validate(tmp_path, []))
     assert not any("Empty directory" in m and folder in m for m in errs), errs
-    hint = "func" if folder == "events" else "physio/"
+    hint = {"events": "func", "physiological": "physio/", "eyetracking": "eye2bids"}[folder]
     assert any(folder in m and hint in m for m in errs), errs
 
 

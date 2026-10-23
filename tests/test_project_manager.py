@@ -4255,14 +4255,6 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn("parent folder", result.get("error", ""))
             self.assertIn("Open Existing Project", result.get("error", ""))
 
-    def test_create_bidsignore_excludes_eyetracking_passthrough(self):
-        manager = ProjectManager()
-
-        content = manager._create_bidsignore(["survey", "eyetracking"])
-
-        self.assertIn("survey/", content)
-        self.assertNotIn("eyetracking/", content)
-
     def test_create_citation_cff_includes_demo_author_fields_when_empty(self):
         manager = ProjectManager()
 

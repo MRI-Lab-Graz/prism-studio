@@ -2,7 +2,6 @@ import { initSurveyConvert } from './modules/converter/survey-convert.js';
 import { initParticipants } from './modules/converter/participants.js';
 import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
-import { initEyetracking } from './modules/converter/eyetracking.js';
 import { initEnvironment } from './modules/converter/environment.js';
 import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';
 import { createConverterSessionPickerController, getSessionInputValue } from './modules/converter/session-picker.js';
@@ -54,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const participantsDataFile = document.getElementById('participantsDataFile');
     const biometricsDataFile = document.getElementById('biometricsDataFile');
     const physioBatchFiles = document.getElementById('physioBatchFiles');
-    const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
 
     // Bind registerSessionInProject to the local populateSessionPickers
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
@@ -192,26 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (eyetrackingBatchFiles) {
-        initEyetracking({
-            eyetrackingBatchFiles,
-            browseEyetrackingFolderBtn: document.getElementById('browseEyetrackingFolderBtn'),
-            clearEyetrackingBatchFilesBtn: document.getElementById('clearEyetrackingBatchFilesBtn'),
-            eyetrackingBatchDatasetName: document.getElementById('eyetrackingBatchDatasetName'),
-            eyetrackingBatchPreviewBtn: document.getElementById('eyetrackingBatchPreviewBtn'),
-            eyetrackingBatchConvertBtn: document.getElementById('eyetrackingBatchConvertBtn'),
-            eyetrackingBatchCancelBtn: document.getElementById('eyetrackingBatchCancelBtn'),
-            eyetrackingBatchError: document.getElementById('eyetrackingBatchError'),
-            eyetrackingBatchInfo: document.getElementById('eyetrackingBatchInfo'),
-            eyetrackingBatchProgress: document.getElementById('eyetrackingBatchProgress'),
-            eyetrackingBatchLogContainer: document.getElementById('eyetrackingBatchLogContainer'),
-            eyetrackingBatchLog: document.getElementById('eyetrackingBatchLog'),
-            eyetrackingBatchLogClearBtn: document.getElementById('eyetrackingBatchLogClearBtn'),
-            eyetrackingBatchDryRunCheckbox: document.getElementById('eyetrackingBatchDryRun'),
-            eyetrackingFolderHint: document.getElementById('eyetrackingFolderHint'),
-            downloadBase64Zip
-        });
-    }
 
     const envDataFile = document.getElementById('envDataFile');
     if (envDataFile) {

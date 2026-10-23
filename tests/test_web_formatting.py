@@ -177,7 +177,6 @@ class TestFormatValidationResults:
             beh_tasks = {"demographics"}
             func_tasks = set()
             eeg_tasks = set()
-            eyetracking = set()
             physio = set()
             surveys = set()
             biometrics = set()

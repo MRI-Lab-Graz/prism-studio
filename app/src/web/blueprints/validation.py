@@ -826,9 +826,6 @@ def show_results(result_id):
                 },
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
                 "beh_tasks": sorted(getattr(stats_obj, "beh_tasks", set()) or set()),
-                "eyetracking": sorted(
-                    getattr(stats_obj, "eyetracking", set()) or set()
-                ),
                 "physio": sorted(getattr(stats_obj, "physio", set()) or set()),
                 "surveys": sorted(getattr(stats_obj, "surveys", set()) or set()),
                 "biometrics": sorted(getattr(stats_obj, "biometrics", set()) or set()),

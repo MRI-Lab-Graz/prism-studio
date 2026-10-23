@@ -26,7 +26,7 @@ whole model together.
 ## Finding the schema itself
 
 This screen doesn't define the schema — it links out to it. The bottom card has one
-button per specification page (Survey, Biometrics, Biosample, Physio, Eyetracking,
+button per specification page (Survey, Biometrics, Biosample, Physio,
 Environment, Events, `project.json`, `dataset_description.json`, filename rules), plus
 the list of [validation errors and warnings](../ERROR_CODES.md) and the
 [specification overview](../SPECIFICATIONS.md). Each spec page ends with a field

@@ -88,14 +88,11 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
 
     bidsignore_path = os.path.join(dataset_root, ".bidsignore")
 
-    # Modalities we keep available in PRISM but treat as BIDS-pass-through.
-    bids_passthrough_modalities = {"eyetracking"}
-
     # Determine which modalities are non-standard PRISM extensions.
     non_standard = [
         m
         for m in supported_modalities
-        if m not in STANDARD_BIDS_FOLDERS and m not in bids_passthrough_modalities
+        if m not in STANDARD_BIDS_FOLDERS
     ]
 
     # Always ensure we include these common PRISM/non-BIDS folders just in case
