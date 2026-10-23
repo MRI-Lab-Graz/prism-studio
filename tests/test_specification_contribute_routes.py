@@ -143,7 +143,7 @@ def test_the_page_renders_and_every_specification_page_links_it(tmp_path):
                    env={**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}, capture_output=True)
     contribute = (tmp_path / "contribute.html").read_text(encoding="utf-8")
     assert (tmp_path / "contribute.status").read_text() == "200" and (tmp_path / "bogus.status").read_text() == "404"
-    assert "New metric" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
+    assert "A missing measurement" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
     assert "/specifications/contribute" in (tmp_path / "survey.html").read_text(encoding="utf-8")
 
 

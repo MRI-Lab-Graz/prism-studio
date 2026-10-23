@@ -65,21 +65,71 @@
             </div>
         </div>
 
-        <!-- Task 6 replaces this panel (the old "New metric" panel, working unchanged until then). -->
         <div id="spec-panel-metric" hidden>
             <p class="text-muted">
-                A metric PRISM does not know yet can be used in this project right away: add it here, and your data
-                validates with it. Later you can share it with the PRISM community. Nothing is sent from this page.
+                Your data uses a measurement PRISM does not list yet. Check the list first; if it is missing, describe it
+                and share it with the PRISM community. Nothing is sent from this page.
             </p>
-
-            <h3 class="h6 mt-4">Found in your data, not known to PRISM yet</h3>
-            <div id="spec-unknown" class="mb-4"></div>
-
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <h3 class="h6 mb-0">Local metrics in this project</h3>
-                <button type="button" id="spec-share-all" class="btn btn-sm btn-outline-primary d-none">Share all local metrics…</button>
+            <div class="mb-3">
+                <label class="form-label" for="spec-m-modality">Kind of data</label>
+                <select id="spec-m-modality" class="form-select w-auto"></select>
             </div>
-            <div id="spec-local" class="mt-2"></div>
+            <p class="small">Measurements PRISM knows today: <span id="spec-m-known"></span></p>
+
+            <div id="spec-m-project" hidden class="mb-3">
+                <h3 class="h6">Found in your data, not known to PRISM yet</h3>
+                <div id="spec-m-found"></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="spec-m-listed">Is your measurement in this list?</label>
+                <select id="spec-m-listed" class="form-select w-auto">
+                    <option value="" selected>Choose…</option>
+                    <option value="yes">Yes, it is there</option>
+                    <option value="no">No, it is still missing</option>
+                </select>
+            </div>
+            <p id="spec-m-yes" class="alert alert-info" hidden>
+                Nothing to propose: it is already in PRISM. Use its name for your column instead of proposing it.
+            </p>
+            <form id="spec-m-form" class="mb-4" hidden>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label small mb-0" for="spec-m-name">Name of the measurement</label>
+                        <input id="spec-m-name" type="text" class="form-control form-control-sm" autocomplete="off">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small mb-0" for="spec-m-aliases">Other names, separated by commas (optional)</label>
+                        <input id="spec-m-aliases" type="text" class="form-control form-control-sm" autocomplete="off">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-0" for="spec-m-description">Description, one sentence</label>
+                        <input id="spec-m-description" type="text" class="form-control form-control-sm" autocomplete="off">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small mb-0" for="spec-m-units">Unit</label>
+                        <select id="spec-m-units" class="form-select form-select-sm"></select>
+                        <input id="spec-m-units-other" type="text" class="form-control form-control-sm mt-1" aria-label="Your unit" autocomplete="off" hidden>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small mb-0" for="spec-m-specimen">Sample type</label>
+                        <select id="spec-m-specimen" class="form-select form-select-sm"></select>
+                        <div class="form-text">Not in the list? Add it under "A missing choice in a list".</div>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" id="spec-m-share" class="btn btn-sm btn-primary">Share with the PRISM community…</button>
+                    <button type="button" id="spec-m-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>
+                </div>
+            </form>
+
+            <div id="spec-m-local" hidden>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h3 class="h6 mb-0">Local measurements in this project</h3>
+                    <button type="button" id="spec-share-all" class="btn btn-sm btn-outline-primary d-none">Share all local measurements…</button>
+                </div>
+                <div id="spec-local" class="mt-2"></div>
+            </div>
         </div>
     </div>
 </div>

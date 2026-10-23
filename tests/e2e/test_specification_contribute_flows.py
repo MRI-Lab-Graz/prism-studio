@@ -22,11 +22,12 @@ def test_an_unknown_metric_is_added_shared_and_removed(app_page, studio_url, pro
     app_page.goto(f"{studio_url}/specifications/contribute")
     app_page.locator("#spec-what").select_option("metric")
 
-    expect(app_page.locator("#spec-unknown")).to_contain_text("dhea_s")
-    app_page.get_by_role("button", name="Add to this project").click()
+    expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    app_page.locator("#spec-m-use").click()
     expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
     expect(app_page.locator("#spec-local")).to_contain_text("prism:dhea-s.saliva")
-    expect(app_page.locator("#spec-unknown")).to_contain_text("Nothing")
+    expect(app_page.locator("#spec-m-found")).to_contain_text("Nothing")
     assert (project / "code" / "specification" / "terms" / "biosample" / "dhea-s.json").is_file()
 
     app_page.get_by_role("button", name="Share…").first.click()
@@ -55,12 +56,12 @@ def test_a_hostile_column_name_is_shown_as_text_not_as_html(app_page, studio_url
     sidecar.write_text(json.dumps(data), encoding="utf-8")
     app_page.goto(f"{studio_url}/specifications/contribute")
     app_page.locator("#spec-what").select_option("metric")
-    expect(app_page.locator("#spec-unknown")).to_contain_text("<img src=x")
+    expect(app_page.locator("#spec-m-found")).to_contain_text("<img src=x")
     assert app_page.evaluate("window.pwned") is None
-    assert app_page.locator("#spec-unknown img").count() == 0
+    assert app_page.locator("#spec-m-found img").count() == 0
 
 
-def test_share_all_puts_every_local_metric_in_one_proposal(app_page, studio_url, project):
+def test_share_all_puts_every_local_measurement_in_one_proposal(app_page, studio_url, project):
     add_biosample_data(project)
     sidecar = project / "biosample-saliva_biosample.json"
     data = json.loads(sidecar.read_text(encoding="utf-8"))
@@ -71,9 +72,10 @@ def test_share_all_puts_every_local_metric_in_one_proposal(app_page, studio_url,
     app_page.goto(f"{studio_url}/specifications/contribute")
     app_page.locator("#spec-what").select_option("metric")
     for _ in range(2):
-        app_page.get_by_role("button", name="Add to this project").first.click()
+        app_page.locator("#spec-m-found").get_by_role("button").first.click()
+        app_page.locator("#spec-m-use").click()
         expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
-    app_page.get_by_role("button", name="Share all local metrics").click()
+    app_page.get_by_role("button", name="Share all local measurements").click()
     shown = app_page.locator("#spec-propose-json")
     expect(shown).to_contain_text("prism-proposal/2")
     for stem in ("dhea-s.json", "dhea-s.saliva.json", "ferr-ugl.json", "ferr-ugl.saliva.json"):  # no name typed: the column name
@@ -171,3 +173,94 @@ def test_already_allowed_value_is_explained(bare_page, studio_url):
     add_choice(bare_page, "saliva")
     expect(bare_page.locator("#spec-message")).to_contain_text("already allowed")
     expect(bare_page.locator("#spec-v-mine")).not_to_contain_text("saliva")
+
+
+def choose_measurement(page, studio_url, answer="No, it is still missing"):
+    page.goto(f"{studio_url}/specifications/contribute")
+    page.locator("#spec-what").select_option("metric")
+    page.locator("#spec-m-modality").select_option("biosample")
+    if answer:
+        page.locator("#spec-m-listed").select_option(label=answer)
+
+
+def fill_measurement(page, name="DHEA", units="pg/mL", description="Dehydroepiandrosterone in saliva."):
+    page.locator("#spec-m-name").fill(name)
+    page.locator("#spec-m-description").fill(description)
+    page.locator("#spec-m-units").select_option(label=units)
+    page.locator("#spec-m-specimen").select_option("saliva")
+
+
+def test_a_missing_measurement_without_a_project(bare_page, studio_url):
+    choose_measurement(bare_page, studio_url, answer=None)
+    expect(bare_page.locator("#spec-m-known")).to_contain_text("cortisol")
+    expect(bare_page.locator("#spec-m-yes")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-form")).to_be_hidden()
+    bare_page.locator("#spec-m-listed").select_option(label="Yes, it is there")
+    expect(bare_page.locator("#spec-m-yes")).to_be_visible()
+    expect(bare_page.locator("#spec-m-form")).to_be_hidden()
+    bare_page.locator("#spec-m-listed").select_option(label="No, it is still missing")
+    expect(bare_page.locator("#spec-m-yes")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-use")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-found")).to_be_hidden()
+    expect(bare_page.locator("body")).not_to_contain_text("Open a project first")
+    fill_measurement(bare_page)
+    bare_page.locator("#spec-m-aliases").fill("dhea_s, DHEAS")
+    bare_page.locator("#spec-m-share").click()
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("prism:dhea.saliva")
+    expect(bare_page.locator("#spec-propose-title")).to_have_text("Share a measurement with the PRISM community")
+    href = bare_page.locator("#spec-propose-open").get_attribute("href")
+    assert href.startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
+
+
+def test_only_kinds_with_a_measurement_list_are_selectable(bare_page, studio_url):
+    choose_measurement(bare_page, studio_url, answer=None)
+    options = bare_page.locator("#spec-m-modality option")
+    for index in range(options.count()):
+        option = options.nth(index)
+        if option.get_attribute("value") and not option.is_disabled():
+            assert option.get_attribute("value") == "biosample"
+    expect(bare_page.locator("#spec-m-known")).not_to_have_text("")
+
+
+def test_official_name_is_refused(bare_page, studio_url):
+    bare_page.allowed_http[400] = "/api/spec/propose-metric"
+    choose_measurement(bare_page, studio_url)
+    fill_measurement(bare_page, name="cortisol")
+    bare_page.locator("#spec-m-share").click()
+    expect(bare_page.locator("#spec-message")).to_contain_text("prism:cortisol")
+    expect(bare_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
+    expect(bare_page.locator("#spec-propose-dialog")).not_to_be_visible()
+
+
+def test_unit_other_is_free_text(bare_page, studio_url):
+    choose_measurement(bare_page, studio_url)
+    expect(bare_page.locator("#spec-m-units-other")).to_be_hidden()
+    bare_page.locator("#spec-m-units").select_option(label="Other…")
+    expect(bare_page.locator("#spec-m-units-other")).to_be_visible()
+    fill_measurement(bare_page, units="Other…")
+    bare_page.locator("#spec-m-units-other").fill("ng/dL")
+    bare_page.locator("#spec-m-share").click()
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("ng/dL")
+
+
+def test_a_missing_measurement_with_a_project(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_measurement(app_page, studio_url)
+    expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-name")).to_have_value("dhea_s")
+    expect(app_page.locator("#spec-m-units")).to_have_value("pg/mL")
+    expect(app_page.locator("#spec-m-specimen")).to_have_value("saliva")
+    app_page.locator("#spec-m-use").click()
+    expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
+    assert (project / "code" / "specification" / "terms" / "biosample" / "dhea-s.json").is_file()
+
+
+def test_hostile_name_and_description_are_text(bare_page, studio_url):
+    choose_measurement(bare_page, studio_url)
+    fill_measurement(bare_page, name="<b>x</b>", description="<b>y</b> is bold")
+    bare_page.locator("#spec-m-share").click()
+    expect(bare_page.locator("#spec-propose-dialog")).to_contain_text("<b>x</b>")
+    assert bare_page.locator("#spec-contribute b, #spec-propose-dialog b").count() == 0
