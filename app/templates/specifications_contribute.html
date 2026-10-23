@@ -9,66 +9,83 @@
      data-remove-url="{{ url_for('specification_contribute.remove_term') }}"
      data-add-values-url="{{ url_for('specification_contribute.add_values') }}"
      data-remove-values-url="{{ url_for('specification_contribute.remove_values') }}"
-     data-propose-url="{{ url_for('specification_contribute.propose') }}">
-    <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs" role="tablist">
-            <li class="nav-item"><span class="nav-link disabled" aria-disabled="true" title="Coming soon">New modality</span></li>
-            <li class="nav-item" role="presentation"><button type="button" role="tab" class="nav-link" id="spec-tab-values" aria-controls="spec-panel-values" aria-selected="false">Addition to a modality</button></li>
-            <li class="nav-item" role="presentation"><button type="button" role="tab" class="nav-link active" id="spec-tab-metric" aria-controls="spec-panel-metric" aria-selected="true">New metric</button></li>
-        </ul>
-    </div>
+     data-propose-url="{{ url_for('specification_contribute.propose') }}"
+     data-catalog-url="{{ url_for('specification_contribute.catalog') }}"
+     data-propose-values-url="{{ url_for('specification_contribute.propose_values') }}"
+     data-propose-metric-url="{{ url_for('specification_contribute.propose_metric') }}">
     <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label" for="spec-what">What is missing in PRISM?</label>
+            <select id="spec-what" class="form-select w-auto">
+                <option value="" selected>Choose what is missing…</option>
+                <option value="new-modality" disabled>A whole new kind of data (coming soon)</option>
+                <option value="values">A missing choice in a list</option>
+                <option value="metric">A missing measurement</option>
+            </select>
+        </div>
         <div id="spec-message" class="alert d-none" role="status"></div>
-        <div id="spec-panel-metric" role="tabpanel" aria-labelledby="spec-tab-metric">
-        <p class="text-muted">
-            A metric PRISM does not know yet can be used in this project right away: add it here, and your data
-            validates with it. Later you can share it with the PRISM community. Nothing is sent from this page.
-        </p>
 
-        <h3 class="h6 mt-4">Found in your data, not known to PRISM yet</h3>
-        <div id="spec-unknown" class="mb-4"></div>
-
-        <div class="d-flex flex-wrap align-items-center gap-2">
-            <h3 class="h6 mb-0">Local metrics in this project</h3>
-            <button type="button" id="spec-share-all" class="btn btn-sm btn-outline-primary d-none">Share all local metrics…</button>
-        </div>
-        <div id="spec-local" class="mt-2"></div>
-        </div>
-
-        <div id="spec-panel-values" role="tabpanel" aria-labelledby="spec-tab-values" hidden>
+        <div id="spec-panel-values" hidden>
             <p class="text-muted">
-                Sometimes your data uses a value an existing modality does not allow yet, for example a new specimen
-                type. Add it here, and your data validates with it right away. Later you can share it with the PRISM
-                community. Nothing is sent from this page.
+                Your data uses a choice a list in PRISM does not offer yet, for example a new specimen type. Collect it
+                here, then share it with the PRISM community. Nothing is sent from this page.
+            </p>
+            <div class="d-flex flex-wrap align-items-end gap-2 mb-2">
+                <div>
+                    <label class="form-label small mb-0" for="spec-v-modality">Kind of data</label>
+                    <select id="spec-v-modality" class="form-select form-select-sm"></select>
+                </div>
+                <div>
+                    <label class="form-label small mb-0" for="spec-v-list">List</label>
+                    <select id="spec-v-list" class="form-select form-select-sm"></select>
+                </div>
+            </div>
+            <p class="small mb-3">Allowed today: <span id="spec-v-allowed"></span></p>
+            <form id="spec-v-form" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                <div>
+                    <label class="form-label small mb-0" for="spec-v-input">New choice</label>
+                    <input id="spec-v-input" type="text" class="form-control form-control-sm" placeholder="for example sweat" autocomplete="off">
+                </div>
+                <button type="submit" id="spec-v-add" class="btn btn-sm btn-primary">Add</button>
+            </form>
+            <div id="spec-v-mine" class="mb-3"></div>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button type="button" id="spec-v-share" class="btn btn-sm btn-primary d-none">Share with the PRISM community…</button>
+                <button type="button" id="spec-v-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>
+            </div>
+
+            <div id="spec-values-project" hidden>
+                <h3 class="h6">Found in your data, not allowed by PRISM yet</h3>
+                <div id="spec-values-unknown" class="mb-4"></div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h3 class="h6 mb-0">Additions in this project</h3>
+                    <button type="button" id="spec-share-values" class="btn btn-sm btn-outline-primary d-none">Share additions…</button>
+                </div>
+                <div id="spec-values-local" class="mt-2"></div>
+            </div>
+        </div>
+
+        <!-- Task 6 replaces this panel (the old "New metric" panel, working unchanged until then). -->
+        <div id="spec-panel-metric" hidden>
+            <p class="text-muted">
+                A metric PRISM does not know yet can be used in this project right away: add it here, and your data
+                validates with it. Later you can share it with the PRISM community. Nothing is sent from this page.
             </p>
 
-            <h3 class="h6 mt-4">Found in your data, not allowed by PRISM yet</h3>
-            <div id="spec-values-unknown" class="mb-4"></div>
-
-            <h3 class="h6">Add a value by hand</h3>
-            <form id="spec-values-form" class="d-flex flex-wrap align-items-end gap-2 mb-4">
-                <div>
-                    <label class="form-label small mb-0" for="spec-values-field">Field</label>
-                    <select id="spec-values-field" class="form-select form-select-sm"></select>
-                </div>
-                <div>
-                    <label class="form-label small mb-0" for="spec-values-value">Value</label>
-                    <input id="spec-values-value" type="text" class="form-control form-control-sm" placeholder="for example sweat" autocomplete="off">
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary">Add value</button>
-            </form>
+            <h3 class="h6 mt-4">Found in your data, not known to PRISM yet</h3>
+            <div id="spec-unknown" class="mb-4"></div>
 
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <h3 class="h6 mb-0">Additions in this project</h3>
-                <button type="button" id="spec-share-values" class="btn btn-sm btn-outline-primary d-none">Share additions…</button>
+                <h3 class="h6 mb-0">Local metrics in this project</h3>
+                <button type="button" id="spec-share-all" class="btn btn-sm btn-outline-primary d-none">Share all local metrics…</button>
             </div>
-            <div id="spec-values-local" class="mt-2"></div>
+            <div id="spec-local" class="mt-2"></div>
         </div>
     </div>
 </div>
 
 <dialog id="spec-propose-dialog" aria-labelledby="spec-propose-title" class="border rounded p-4 shadow">
-    <h3 id="spec-propose-title" class="h5">Share a metric with the PRISM community</h3>
+    <h3 id="spec-propose-title" class="h5">Share with the PRISM community</h3>
     <p class="small">
         Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it
         there. The maintainers may choose a different ID or name, and your column name stays an alias, so your files

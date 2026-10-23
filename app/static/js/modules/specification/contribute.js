@@ -1,4 +1,4 @@
-// The Contribute page: local metrics of the open project. Presentation only: every action is a call to
+// The Propose changes page: one choice of what is missing, then its panel. Presentation only: every action is a call to
 // /api/spec/..., which runs the same functions as `prism_tools.py spec ...`. Project data (column names,
 // paths, messages) is only ever written with textContent, never as HTML.
 (function () {
@@ -13,6 +13,8 @@
         addValues: root.dataset.addValuesUrl,
         removeValues: root.dataset.removeValuesUrl,
         propose: root.dataset.proposeUrl,
+        catalog: root.dataset.catalogUrl,
+        proposeValues: root.dataset.proposeValuesUrl,
     };
     const unknownBox = document.getElementById("spec-unknown");
     const localBox = document.getElementById("spec-local");
@@ -22,7 +24,16 @@
     const valuesUnknownBox = document.getElementById("spec-values-unknown");
     const valuesLocalBox = document.getElementById("spec-values-local");
     const shareValues = document.getElementById("spec-share-values");
-    const fieldSelect = document.getElementById("spec-values-field");
+    const what = document.getElementById("spec-what");
+    const panels = { values: document.getElementById("spec-panel-values"), metric: document.getElementById("spec-panel-metric") };
+    const modalitySelect = document.getElementById("spec-v-modality");
+    const listSelect = document.getElementById("spec-v-list");
+    const allowedText = document.getElementById("spec-v-allowed");
+    const mineBox = document.getElementById("spec-v-mine");
+    const shareMine = document.getElementById("spec-v-share");
+    const useMine = document.getElementById("spec-v-use");
+    let catalog = { modalities: [], project_open: false };
+    let mine = [];  // the choices collected on this page, not yet shared or used
     let currentProposal = null;
 
     function el(tag, className, text) {
@@ -96,7 +107,7 @@
             row.appendChild(el("code", "", found.field));
             row.appendChild(el("code", "", found.value));
             row.appendChild(el("span", "text-muted small", found.sidecar.split(/[\\/]/).pop()));
-            row.appendChild(button("Add to this project", "btn-primary", function () { addValue(found.field, found.value); }));
+            row.appendChild(button("Add to this project", "btn-primary", function () { addValues(found.field, [found.value]); }));
             valuesUnknownBox.appendChild(row);
         });
     }
@@ -122,17 +133,6 @@
             }
             valuesLocalBox.appendChild(row);
         });
-    }
-
-    function renderFields(fields) {
-        const chosen = fieldSelect.value;
-        fieldSelect.replaceChildren();
-        fields.forEach(function (field) {
-            const option = el("option", "", field);
-            option.value = field;
-            fieldSelect.appendChild(option);
-        });
-        if (chosen) fieldSelect.value = chosen;
     }
 
     function renderLocal(items) {
@@ -163,6 +163,7 @@
     }
 
     async function refresh() {
+        if (!catalog.project_open) return;
         const { ok, data } = await call(urls.list);
         if (!ok) {
             unknownBox.replaceChildren();
@@ -176,7 +177,6 @@
         renderLocal(data.items.filter(function (item) { return item.layer === 3; }));
         renderUnknownValues(data.unknown_values);
         renderLocalValues(data.items.filter(function (item) { return item.layer === 2; }));
-        renderFields(data.fields);
     }
 
     async function add(metric, label) {
@@ -189,9 +189,9 @@
         refresh();
     }
 
-    async function addValue(field, value) {
+    async function addValues(field, values) {
         clearMessage();
-        const { ok, data } = await call(urls.addValues, { field: field, values: [value] });
+        const { ok, data } = await call(urls.addValues, { field: field, values: values });
         if (!ok) { say(data.error || "Could not add the value", "danger"); return false; }
         say(data.skipped.length ? "Already official: nothing to add." : "Added to this project. Validate again to see it used.", data.skipped.length ? "info" : "success");
         refresh();
@@ -216,9 +216,9 @@
         refresh();
     }
 
-    async function propose(body) {
+    async function propose(body, url) {
         clearMessage();
-        const { ok, data } = await call(urls.propose, body);
+        const { ok, data } = await call(url || urls.propose, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
         currentProposal = data.document;  // the document that is sent (proposal format v2)
         document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
@@ -237,27 +237,78 @@
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
     shareValues.addEventListener("click", function () { propose({ patch: true }); });
-    document.getElementById("spec-values-form").addEventListener("submit", async function (event) {
+
+    function currentModality() {
+        return catalog.modalities.find(function (m) { return m.name === modalitySelect.value; });
+    }
+
+    function currentList() {
+        const modality = currentModality();
+        return modality && modality.lists.find(function (l) { return l.field === listSelect.value; });
+    }
+
+    function renderMine() {
+        mineBox.replaceChildren();
+        mine.forEach(function (value) {
+            const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-1");
+            row.appendChild(el("code", "", value));
+            row.appendChild(button("Remove", "btn-outline-danger", function () {
+                mine = mine.filter(function (other) { return other !== value; });
+                renderMine();
+            }));
+            mineBox.appendChild(row);
+        });
+        shareMine.classList.toggle("d-none", !mine.length);
+        useMine.classList.toggle("d-none", !mine.length || !catalog.project_open);
+    }
+
+    function showList() {
+        const list = currentList();
+        allowedText.textContent = list ? list.values.join(", ") : "";
+        mine = [];
+        renderMine();
+    }
+
+    function showLists() {
+        const modality = currentModality();
+        listSelect.replaceChildren();
+        (modality ? modality.lists : []).forEach(function (list) {
+            const option = el("option", "", list.label);
+            option.value = list.field;
+            listSelect.appendChild(option);
+        });
+        showList();
+    }
+
+    modalitySelect.addEventListener("change", showLists);
+    listSelect.addEventListener("change", showList);
+    document.getElementById("spec-v-form").addEventListener("submit", function (event) {
         event.preventDefault();
-        const input = document.getElementById("spec-values-value");
-        if (await addValue(fieldSelect.value, input.value.trim())) input.value = "";
+        const input = document.getElementById("spec-v-input");
+        const value = input.value.trim();
+        const list = currentList();
+        if (!value || !list) return;
+        if (list.values.indexOf(value) !== -1) {
+            say(value + " is already allowed in this list.", "info");
+        } else {
+            clearMessage();
+            if (mine.indexOf(value) === -1) mine.push(value);
+            renderMine();
+        }
+        input.value = "";
+    });
+    shareMine.addEventListener("click", function () {
+        propose({ modality: modalitySelect.value, field: listSelect.value, values: mine }, urls.proposeValues);
+    });
+    useMine.addEventListener("click", async function () {
+        if (await addValues(listSelect.value, mine)) { mine = []; renderMine(); }
     });
 
-    const tabs = [
-        [document.getElementById("spec-tab-metric"), document.getElementById("spec-panel-metric")],
-        [document.getElementById("spec-tab-values"), document.getElementById("spec-panel-values")],
-    ];
-    tabs.forEach(function (pair) {
-        pair[0].addEventListener("click", function () {
-            clearMessage();
-            tabs.forEach(function (other) {
-                const active = other === pair;
-                other[0].classList.toggle("active", active);
-                other[0].setAttribute("aria-selected", String(active));
-                other[1].hidden = !active;
-            });
-        });
+    what.addEventListener("change", function () {
+        clearMessage();
+        Object.keys(panels).forEach(function (key) { panels[key].hidden = what.value !== key; });
     });
+
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
     document.getElementById("spec-propose-download").addEventListener("click", function () {
         if (!currentProposal) return;
@@ -269,5 +320,18 @@
         URL.revokeObjectURL(link.href);
     });
 
-    refresh();
+    (async function start() {
+        const { ok, data } = await call(urls.catalog);
+        if (!ok) { say(data.error || "Could not load the specification", "danger"); return; }
+        catalog = data;
+        modalitySelect.replaceChildren();
+        catalog.modalities.forEach(function (modality) {
+            const option = el("option", "", modality.label);
+            option.value = modality.name;
+            modalitySelect.appendChild(option);
+        });
+        showLists();
+        document.getElementById("spec-values-project").hidden = !catalog.project_open;
+        refresh();
+    }());
 }());

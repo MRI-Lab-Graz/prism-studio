@@ -35,7 +35,7 @@ reference generated from the shipped schema, so it matches what the validator en
 ## Propose changes (local metrics)
 
 *Specifications → Propose changes* is where a metric PRISM does not know yet becomes usable in your project, and
-where you can share it. The page works on the open project, and its **New metric** tab does two things:
+where you can share it. The page works on the open project, and you first choose what is missing (a choice in a list, or a measurement). The measurement panel does two things:
 
 - **Found in your data:** columns of your biosample files that neither the official registry nor your project
   knows. *Add to this project* makes the metric a local term (optionally with a name of your choice), so the
