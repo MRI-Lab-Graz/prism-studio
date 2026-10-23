@@ -103,15 +103,24 @@ def proposal_for_new_metric(
     fields = {"name": name, "description": description, "units": units, "specimen": specimen}
     if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
         raise OverlayError(f"missing: {', '.join(empty)}")
-    aliases = [a for a in aliases or [] if a]
-    for text in [name, *aliases]:
-        # ponytail: a known measurement for a new sample type is not offered yet; add when the page needs it
-        if found := find_term(registry, text):
-            raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
+    name, description, units, specimen = (v.strip() for v in fields.values())
+    if not _VALUE.fullmatch(specimen):
+        raise OverlayError(f"{specimen!r}: use lowercase letters, digits and - for the sample type")
+    seen = {name.lower()}
+    cleaned = []
+    for a in (a.strip() for a in aliases or [] if isinstance(a, str)):
+        if a and a.lower() not in seen:
+            seen.add(a.lower())
+            cleaned.append(a)
+    aliases = cleaned
     try:
         parent_id = f"prism:{slugify(name)}"
     except ProposalError as exc:
         raise OverlayError(str(exc)) from exc
+    # ponytail: a known measurement for a new sample type is not offered yet; add when the page needs it
+    for text in [name, *aliases, parent_id]:
+        if found := find_term(registry, text):
+            raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
     parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
     proposal = {"modality": modality, "terms": [parent, child]}

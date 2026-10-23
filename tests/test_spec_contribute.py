@@ -121,6 +121,45 @@ def test_metric_bad_input(args):
         proposal_for_new_metric(*args)
 
 
+@pytest.mark.parametrize("name,term", [("Cortisol!", "cortisol"), ("_cortisol_", "cortisol"), ("Alpha Amylase", "alpha-amylase")])
+def test_metric_whose_id_is_an_official_term_is_refused(name, term):
+    with pytest.raises(OverlayError, match=f"prism:{term}"):
+        proposal_for_new_metric(name, "d", "u", "saliva")
+
+
+def test_metric_specimen_is_trimmed():
+    r = proposal_for_new_metric("DHEA", "d", "pg/mL", " saliva ")
+    assert r["proposal"]["terms"][1]["TermID"] == "prism:dhea.saliva" and r["problems"] == []
+
+
+@pytest.mark.parametrize("specimen", ["Sa liva", "saliva/x"])
+def test_metric_bad_specimen_text_is_refused(specimen):
+    with pytest.raises(OverlayError):
+        proposal_for_new_metric("DHEA", "d", "pg/mL", specimen)
+
+
+def test_metric_inputs_are_trimmed():
+    r = proposal_for_new_metric(" DHEA ", " d ", " pg/mL ", "saliva")
+    parent, child = r["proposal"]["terms"]
+    assert parent["Label"] == "DHEA" and parent["Description"] == "d" and child["Units"] == "pg/mL"
+
+
+def test_metric_whitespace_only_name_is_refused():
+    with pytest.raises(OverlayError):
+        proposal_for_new_metric("   ", "d", "u", "saliva")
+
+
+def test_metric_aliases_are_cleaned():
+    r = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", ["DHEA", "dhea", "x", "x", " "])
+    assert r["proposal"]["terms"][0]["Aliases"] == ["x"]
+
+
+def test_metric_writes_nothing(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva")
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_metric_unknown_specimen_is_a_problem_not_a_crash():
     assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat")["problems"]
 
