@@ -60,16 +60,17 @@ right away, before the community has decided:
   It is stored in the project at `code/specification/terms/`, and the same action is
   `prism_tools.py spec local add-term`. A measurement typed by hand can be shared, but using it in a project
   needs a column found in your data.
-- **Found in your data** (list): values in your biosample files outside the allowed ones. *Use in my open
+- **Found in your data** (list): values in your biosample files outside the allowed ones. *Add to this
   project* allows the value for this project (stored in `code/specification/patches/biosample.json`, the same
   action as `prism_tools.py spec local add-values`), so the next validation accepts it.
 - **Local metrics** and **additions in this project** list what the project carries, each with its status.
-  *Share…* proposes one, *Share all…* puts every local item in one proposal (up to 40 term files), and *Remove*
+  *Share…* proposes one, *Share all local measurements…* puts every local measurement in one proposal (up to 40 term files), and
+  *Share additions…* does the same for the list values, and *Remove*
   deletes the local copy. An item the official registry has since adopted is marked *now-official* and can be
   removed. A schema addition is reviewed by a maintainer and gets a new minor version.
 
 The same steps without a browser: `prism_tools.py spec catalog`, `spec propose-values` and `spec propose-metric`
-(see the [CLI reference](../CLI_REFERENCE.md)).
+(see the [CLI reference](../CLI_REFERENCE.md)); `spec propose-metric --project <folder>` also accepts the sample types your project added.
 
 ## What's next
 

@@ -20,6 +20,7 @@ GUARDED = [
     "app/src/issues.py",
     "app/src/reporting.py",
     "src/bids_entity_rewriter.py",
+    "src/spec_contribute.py",
 ]
 # Import-time constants built from rules no project can change (the global entity order); each is commented where it is defined.
 OFFICIAL_AT_IMPORT = {

@@ -1842,6 +1842,7 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--specimen", required=True, help="Sample type, for example saliva")
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
+    parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")
     parser_spec_metric.add_argument("--out", help="Also save the proposal document (format v2) to this file")
     parser_spec_metric.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
     parser_spec_metric.add_argument("--json", action="store_true", help="Emit machine-readable JSON")

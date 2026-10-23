@@ -13,7 +13,6 @@ from flask import Blueprint, jsonify, request, session
 
 from src.spec_overlay import (
     OverlayError,
-    _project_specimens,
     add_local_term,
     add_local_values,
     find_unknown_metrics,
@@ -144,10 +143,8 @@ def propose_metric():
     texts = [body.get(k) for k in ("name", "description", "units", "specimen")]
     if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts)):
         return _error('Give "name", "description", "units" and "specimen" as text and "aliases" as a list of text')
-    project = _project()
     try:
-        specimens = _project_specimens(project, modality) if project else None
-        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, specimens=specimens)
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project())
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})

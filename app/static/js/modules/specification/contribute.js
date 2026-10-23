@@ -187,6 +187,7 @@
         const { ok, data } = await call(urls.add, body);
         if (!ok) { say(data.error || "Could not add the measurement", "danger"); return; }
         say("Added to this project. Validate again to see it used.", "success");
+        forgetFound();
         refresh();
     }
 
@@ -322,7 +323,7 @@
     });
 
     const m = {};
-    ["modality", "known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "project", "local"]
+    ["modality", "known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function metricKind() {
@@ -345,9 +346,16 @@
         m.known.textContent = kind && kind.metrics ? kind.metrics.map(function (x) { return x.label; }).join(", ") : "";
     }
 
+    function forgetFound() {
+        foundColumn = null;
+        m.use.classList.add("d-none");
+        m["use-hint"].classList.add("d-none");
+    }
+
     function showListed() {
         m.yes.hidden = m.listed.value !== "yes";
         m.form.hidden = m.listed.value !== "no";
+        if (m.listed.value === "yes") forgetFound();
     }
 
     function pickFound(metric) {
@@ -355,17 +363,18 @@
         m.listed.value = "no";
         showListed();
         m.name.value = metric.column;
-        if (metric.units) {
-            const known = Array.from(m.units.options).some(function (o) { return o.value === metric.units; });
-            m.units.value = known ? metric.units : "";
-            m["units-other"].value = known ? "" : metric.units;
-        }
+        const known = Array.from(m.units.options).some(function (o) { return o.value === metric.units; });
+        m.units.value = known ? metric.units : "";
+        m["units-other"].value = metric.units && !known ? metric.units : "";
         if (metric.specimen && Array.from(m.specimen.options).some(function (o) { return o.value === metric.specimen; })) {
             m.specimen.value = metric.specimen;
+        } else {
+            m.specimen.selectedIndex = 0;
         }
         m.units.dispatchEvent(new Event("change"));
         // ponytail: a hand-typed measurement can only be shared; "Use in my open project" needs a data column, so it shows only after one was picked
         m.use.classList.toggle("d-none", !catalog.project_open);
+        m["use-hint"].classList.toggle("d-none", !catalog.project_open);
     }
 
     function startMetric() {
@@ -390,7 +399,8 @@
         m.local.hidden = !catalog.project_open;
     }
 
-    m.modality.addEventListener("change", showKnown);
+    m.modality.addEventListener("change", function () { showKnown(); forgetFound(); });
+    m.name.addEventListener("input", forgetFound);
     m.listed.addEventListener("change", showListed);
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== ""; });
     m.share.addEventListener("click", function () {

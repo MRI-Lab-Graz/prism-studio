@@ -367,6 +367,15 @@ def test_propose_metric_for_a_kind_a_project_patched_is_a_400_not_a_500(client, 
     assert response.status_code == 400 and data["success"] is False and "biosample" in data["error"]
 
 
+@pytest.mark.parametrize("modality", ["../../../../evil", "x" * 5000])
+def test_propose_metric_with_a_project_checks_the_kind_first(client, tmp_path, modality):
+    _open(client, _project(tmp_path / "p"))
+    (tmp_path / "evil.json").write_text("not json", encoding="utf-8")  # decoy outside the project
+    response = client.post("/api/spec/propose-metric", json=dict(_METRIC, modality=modality))
+    assert response.status_code == 400 and response.get_json()["success"] is False
+    assert "unknown kind" in response.get_json()["error"]
+
+
 def test_new_routes_pass_the_project_gate():
     assert is_gate_exempt("/api/spec/catalog", "GET")
     assert is_gate_exempt("/api/spec/propose-values", "POST") and is_gate_exempt("/api/spec/propose-metric", "POST")

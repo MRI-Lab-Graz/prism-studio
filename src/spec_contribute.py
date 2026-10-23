@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from src.spec_overlay import OverlayError, _enum_of, _official_schema, _vendored_or_error
+from src.spec_overlay import OverlayError, _enum_of, _project_specimens, _official_schema, _vendored_or_error
 from src.specification import current_specification
 from src.term_proposal import ProposalError, as_v2, check_with_specification, issue_url, slugify
 from src.term_registry import find_term, load_registry
@@ -57,6 +57,7 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
     if field not in kinds[modality]:
         raise OverlayError(f"unknown list {field!r} for {modality}; choose one of: {', '.join(kinds[modality])}")
+    values = list(dict.fromkeys(values))
     if not values:
         raise OverlayError("say which values to propose")
     for value in values:
@@ -87,11 +88,11 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
 
 def proposal_for_new_metric(
     name: str, description: str, units: str, specimen: str,
-    aliases: list[str] | None = None, modality: str = "biosample", specimens: list[str] | None = None,
+    aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
 ) -> dict:
     """The proposal for one missing measurement (its analyte term and the specimen-specific child); needs no project.
 
-    `specimens` replaces the allowed sample types for the check (a project's own additions).
+    `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
     kinds = [m["name"] for m in spec_catalog()["modalities"]]
@@ -100,6 +101,7 @@ def proposal_for_new_metric(
     registry = load_registry(modality)
     if not registry:
         raise OverlayError(f"{modality} has no known measurements")
+    specimens = _project_specimens(project_root, modality) if project_root else None
     fields = {"name": name, "description": description, "units": units, "specimen": specimen}
     if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
         raise OverlayError(f"missing: {', '.join(empty)}")

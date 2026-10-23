@@ -205,3 +205,20 @@ def test_spec_propose_metric_json():
 def test_spec_propose_metric_official_exits_1():
     code, out = _run("spec", "propose-metric", "--name", "cortisol", "--description", "d", "--units", "u", "--specimen", "saliva", "--json")
     assert code == 1 and "prism:cortisol" in json.loads(out)["error"]
+
+
+def test_spec_propose_metric_with_project_knows_its_sample_types(tmp_path):
+    project = _project(tmp_path / "p")
+    code, _ = _run("spec", "local", "add-values", "--project", str(project), "--field", "Technical.SpecimenType", "--value", "sweat")
+    assert code == 0
+    args = ["spec", "propose-metric", "--name", "DHEA", "--description", "d", "--units", "pg/mL", "--specimen", "sweat", "--json"]
+    code, out = _run(*args, "--project", str(project))
+    assert code == 0 and json.loads(out)["problems"] == []
+    code, out = _run(*args)
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_values_repeated_value_works():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType",
+                     "--value", "sweat", "--value", "sweat", "--json")
+    assert code == 0 and json.loads(out)["success"]

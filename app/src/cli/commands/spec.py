@@ -157,10 +157,11 @@ def cmd_spec_propose_values(args) -> None:
 
 
 def cmd_spec_propose_metric(args) -> None:
-    """Propose a missing measurement (analyte plus its sample-type term); needs no project. Sends nothing itself."""
+    """Propose a missing measurement (analyte plus its sample-type term); needs no project (--project adds its own sample types). Sends nothing itself."""
     try:
         result = proposal_for_new_metric(
-            args.name, args.description, args.units, args.specimen, args.alias, args.modality
+            args.name, args.description, args.units, args.specimen, args.alias, args.modality,
+            project_root=args.project,
         )
     except OverlayError as exc:
         _fail(args, str(exc))

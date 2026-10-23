@@ -271,3 +271,44 @@ def test_the_docs_menu_leads_to_the_propose_page(bare_page, studio_url):
     bare_page.locator("#docsDropdown").click()
     bare_page.get_by_role("link", name="Propose changes").click()
     expect(bare_page.locator("#spec-what")).to_be_visible()
+
+
+def add_two_columns(project):
+    """dhea_s has a unit, zzz_x has none."""
+    add_biosample_data(project)
+    path = project / "biosample-saliva_biosample.json"
+    sidecar = json.loads(path.read_text(encoding="utf-8"))
+    sidecar["zzz_x"] = {"Description": "Something without a unit"}
+    path.write_text(json.dumps(sidecar), encoding="utf-8")
+    tsv = project / "sub-01" / "ses-1" / "biosample" / "sub-01_ses-1_biosample-saliva_biosample.tsv"
+    tsv.write_text("sample_id\tdhea_s\tzzz_x\nS-1\t5\t1\n", encoding="utf-8")
+
+
+def test_picking_a_column_without_a_unit_clears_the_unit_of_the_one_before(app_page, studio_url, project):
+    add_two_columns(project)
+    choose_measurement(app_page, studio_url)
+    found = app_page.locator("#spec-m-found")
+    found.get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-units")).to_have_value("pg/mL")
+    found.get_by_role("button", name="zzz_x").click()
+    expect(app_page.locator("#spec-m-units")).not_to_have_value("pg/mL")
+    expect(app_page.locator("#spec-m-units-other")).to_have_value("")
+
+
+def test_use_in_my_open_project_is_hidden_after_adding(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_measurement(app_page, studio_url)
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-use")).to_be_visible()
+    app_page.locator("#spec-m-use").click()
+    expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+
+
+def test_editing_the_name_after_picking_a_column_hides_use_in_my_open_project(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_measurement(app_page, studio_url)
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-use")).to_be_visible()
+    app_page.locator("#spec-m-name").fill("Something else")
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()

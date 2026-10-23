@@ -1,5 +1,7 @@
 """The Propose-changes catalog: what can be proposed, without any project."""
 
+import json
+
 import pytest
 
 from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
@@ -164,9 +166,28 @@ def test_metric_unknown_specimen_is_a_problem_not_a_crash():
     assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat")["problems"]
 
 
-def test_metric_accepts_extra_specimens():
-    official = spec_catalog()["specimens"]
-    assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat", specimens=[*official, "sweat"])["problems"] == []
+def _sweat_project(root):
+    patch = root / "code" / "specification" / "patches" / "biosample.json"
+    patch.parent.mkdir(parents=True)
+    patch.write_text(json.dumps({"operations": [
+        {"op": "add_enum_values", "path": "Technical.SpecimenType", "values": ["sweat"]}]}), encoding="utf-8")
+    return root
+
+
+def test_metric_accepts_the_projects_own_specimens(tmp_path):
+    project = _sweat_project(tmp_path)
+    assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat", project_root=project)["problems"] == []
+
+
+def test_metric_checks_the_kind_before_reading_the_project(tmp_path):
+    for bad in ("../../../../evil", "x" * 5000):
+        with pytest.raises(OverlayError, match="unknown kind"):
+            proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality=bad, project_root=tmp_path)
+
+
+def test_values_are_deduplicated_keeping_order():
+    r = proposal_for_values("biosample", "Technical.SpecimenType", ["sweat", "tears", "sweat"])
+    assert r["proposal"]["patch"]["operations"][0]["values"] == ["sweat", "tears"]
 
 
 def test_metric_for_a_kind_not_in_the_catalog_is_refused():
