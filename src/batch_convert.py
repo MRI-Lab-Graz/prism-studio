@@ -1686,7 +1686,7 @@ if __name__ == "__main__":
 
     # The summary below prints emoji; piped output on Windows is cp1252 and would crash.
     for _stream in (sys.stdout, sys.stderr):
-        _stream.reconfigure(encoding="utf-8")
+        cast(io.TextIOWrapper, _stream).reconfigure(encoding="utf-8")
 
     parser = argparse.ArgumentParser(
         description="Batch convert physio/eyetracking data from flat folder to PRISM format"

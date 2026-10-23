@@ -1488,13 +1488,14 @@ class DatasetValidator:
                     f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid}',
                 ))
             if res.kind == "term":
-                declared, recommended = col_def.get("Units"), res.term.get("Units")
+                term = res.term or {}
+                declared, recommended = col_def.get("Units"), term.get("Units")
                 if declared and recommended and declared != recommended:
-                    known = declared in (res.term.get("AlternativeUnits") or [])
+                    known = declared in (term.get("AlternativeUnits") or [])
                     issues.append((
                         "INFO",
                         f"{key}: {col}: unit {declared!r} differs from the recommended "
-                        f"{recommended!r} of {res.term['TermID']}"
+                        f"{recommended!r} of {term['TermID']}"
                         f"{' (a listed alternative)' if known else ''}",
                     ))
             elif res.kind in ("specimen_mismatch", "deprecated"):

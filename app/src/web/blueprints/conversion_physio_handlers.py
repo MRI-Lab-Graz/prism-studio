@@ -489,19 +489,18 @@ create_dataset_description: Any = None
 parse_bids_filename: Any = None
 
 
-class PhysioDestinationError(ValueError):  # placeholder if src.batch_convert is missing
-    pass
+PhysioDestinationError: Any = type("PhysioDestinationError", (ValueError,), {})  # placeholder if src.batch_convert is missing
 
 
 try:
-    from src.batch_convert import (
-        PhysioDestinationError,
-        batch_convert_folder,
-        check_physio_destination,
-        create_dataset_description,
-        parse_bids_filename,
-    )
-except ImportError:
+    from src import batch_convert as _batch_convert
+
+    PhysioDestinationError = _batch_convert.PhysioDestinationError
+    batch_convert_folder = _batch_convert.batch_convert_folder
+    check_physio_destination = _batch_convert.check_physio_destination
+    create_dataset_description = _batch_convert.create_dataset_description
+    parse_bids_filename = _batch_convert.parse_bids_filename
+except (ImportError, AttributeError):
     pass
 
 

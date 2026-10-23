@@ -24,7 +24,7 @@ def build_customizer_groups(
     """Build customizer groups from ``files`` entries
     (``{"path", "includeQuestions", "runNumber"}``). Unreadable or missing
     files are skipped; returns an empty list when nothing usable was found."""
-    groups = []
+    groups: list = []
 
     for file_config in files:
         file_path = file_config.get("path")

@@ -946,7 +946,7 @@ def cmd_survey_export_lss(args) -> None:
     the CLI equivalent of the Studio GUI's Survey Generator "Quick Export"
     action (src.limesurvey_exporter.generate_lss). See
     docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2."""
-    files = [str(Path(f).resolve()) for f in args.files]
+    files: list = [str(Path(f).resolve()) for f in args.files]
     missing = [f for f in files if not Path(f).exists()]
     if missing:
         print(f"Error: file(s) not found: {', '.join(missing)}")

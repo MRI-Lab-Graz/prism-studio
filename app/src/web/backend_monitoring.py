@@ -12,6 +12,7 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 from pathlib import PureWindowsPath
+from typing import Any, Callable
 
 from flask import session
 
@@ -1765,7 +1766,7 @@ def _survey_workflow_terminal_command(req) -> str:
 _survey_dry_run = partial(_build_survey_convert_terminal_command, dry_run=True)
 _deface = partial(_build_projects_defacing_terminal_command, run_defacing=True)
 
-_TERMINAL_COMMAND_BUILDERS = {
+_TERMINAL_COMMAND_BUILDERS: dict[str, Callable[[Any], str]] = {
     "validation.validate_folder": _build_validate_folder_terminal_command,
     "conversion.api_biometrics_detect": _build_biometrics_detect_terminal_command,
     "conversion.api_biometrics_convert": _build_biometrics_convert_terminal_command,

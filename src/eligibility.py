@@ -171,11 +171,11 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
 
     by_id: dict[str, dict] = {}
     duplicates: set[str] = set()
-    for crit in criteria:
-        if crit["id"] in by_id:
-            duplicates.add(crit["id"])
+    for entry in criteria:
+        if entry["id"] in by_id:
+            duplicates.add(entry["id"])
         else:
-            by_id[crit["id"]] = crit
+            by_id[entry["id"]] = entry
 
     links = {
         col: spec[LINK_KEY]
@@ -247,7 +247,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
                 continue
             expected = f"range {_range_text(crit)}"
 
-            def violates(raw, crit=crit):
+            def violates(raw, labels=None, wanted=None, crit=crit):
                 return _numeric_violation(raw, crit)
 
         values = ((row.get(col) or "").strip() for row in rows if not is_screening_only(row))

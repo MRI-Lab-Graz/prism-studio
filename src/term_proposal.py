@@ -82,13 +82,14 @@ def build_proposal(
         )
 
     res = resolve_column(registry, column, col_def, specimen)
+    term = res.term or {}
     if res.kind in ("term", "suggestion"):
         raise ProposalError(
-            f"{column!r} is already an official metric ({res.term['TermID']}): "
-            f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
+            f"{column!r} is already an official metric ({term['TermID']}): "
+            f'add "Term": "{term["TermID"]}" to the column instead of proposing it'
         )
     if res.kind == "specimen_mismatch":
-        parent = res.term.get("Parent")
+        parent = term.get("Parent")
         hint = f"; to propose a term for this specimen point Term at {parent}" if parent else ""
         raise ProposalError(res.message + hint)
     if res.kind == "deprecated":
@@ -97,7 +98,7 @@ def build_proposal(
         raise ProposalError(f"column {column!r} has no Units; a proposal needs the unit")
 
     if res.kind == "known_analyte_new_specimen":
-        parent_id, new_parent = res.term["TermID"], None
+        parent_id, new_parent = term["TermID"], None
     else:  # unknown analyte: propose the analyte and its specimen-specific term
         name = label or column
         # a Term the column already carries decides the ID, otherwise the files would not resolve after the merge
@@ -165,6 +166,8 @@ def specification_scripts_dir() -> Path:
 def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
     """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
     spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
+    if spec is None or spec.loader is None:
+        raise ImportError("prism-specification's term_proposal.py cannot be loaded")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40

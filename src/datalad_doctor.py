@@ -183,7 +183,7 @@ def run_doctor(
         results.append(_result(tool, True, (out.strip().splitlines() or [path])[0]))
 
     if results[0]["ok"]:  # git found
-        results.append(_check_git_identity(which("git"), run))
+        results.append(_check_git_identity(which("git") or "git", run))
 
     key_path, pubkey = _find_key(ssh_dir)
     if key_path:

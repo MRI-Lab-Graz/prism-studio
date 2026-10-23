@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import cast
+from typing import Mapping, cast
 
 import pandas as pd
 
@@ -49,7 +49,7 @@ def _resolve_project_root(project_arg: str | None) -> Path:
     return project_path
 
 
-def _emit_json(payload: dict[str, object]) -> None:
+def _emit_json(payload: Mapping[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
@@ -373,9 +373,9 @@ def cmd_participants_preview(args) -> None:
         print(f"ID col:  {id_column}")
         print(f"Rows:    {len(df)}")
         print(f"Columns: {', '.join(output_columns)}")
-        for warning in payload["data_warnings"]:
+        for warning in cast(list, payload["data_warnings"]):
             print(f"Warning: {warning}")
-        for error in payload["data_errors"]:
+        for error in cast(list, payload["data_errors"]):
             print(f"Error: {error}")
 
 

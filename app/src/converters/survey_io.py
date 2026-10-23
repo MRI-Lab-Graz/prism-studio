@@ -907,8 +907,8 @@ def _generate_dry_run_preview(
 
     notes = [
         ("missing_id", missing_id_note(missing_id_rows)),
-        ("id_cleaned", cleaning_note(*zip(*id_pairs), "participant ID", "sub-") if id_pairs else ""),
-        ("session_cleaned", cleaning_note(*zip(*ses_pairs), "session label", "ses-") if ses_pairs else ""),
+        ("id_cleaned", cleaning_note([r for r, _ in id_pairs], [c for _, c in id_pairs], "participant ID", "sub-") if id_pairs else ""),
+        ("session_cleaned", cleaning_note([r for r, _ in ses_pairs], [c for _, c in ses_pairs], "session label", "ses-") if ses_pairs else ""),
     ]
     issues.extend({"type": kind, "severity": "warning", "message": text} for kind, text in notes if text)
 

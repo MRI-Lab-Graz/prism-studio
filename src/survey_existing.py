@@ -66,7 +66,9 @@ def record_imports(
     responses = _load_ledger(project_root)
     for sub, ses, fp in entries:
         responses.setdefault(sub, {})[ses] = list(fp)
-    all_seen = data.get("seen") if isinstance(data.get("seen"), dict) else {}
+    all_seen = data.get("seen")
+    if not isinstance(all_seen, dict):
+        all_seen = {}
     if seen:
         all_seen.setdefault(survey_id, {}).update(seen)
     path = Path(output_root) / LEDGER
@@ -142,7 +144,7 @@ class ExistingPolicy:
 
     def summary(self) -> dict:
         """Responses by outcome: new, already_imported, conflict, moved (+ unverified)."""
-        out = dict.fromkeys(("new", "already_imported", "conflict", "moved", "unverified"), 0)
+        out: dict = dict.fromkeys(("new", "already_imported", "conflict", "moved", "unverified"), 0)
         details: list[dict] = []
         for (sub, ses, fp), verdicts in self._verdicts.items():
             if "conflict" in verdicts:

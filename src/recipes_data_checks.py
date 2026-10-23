@@ -28,7 +28,8 @@ def _scores(recipe: dict) -> list[dict]:
 def _scale(template: dict, item: str) -> tuple[float, float] | None:
     levels = (template.get(item) or {}).get("Levels") if isinstance(template.get(item), dict) else None
     numbers = [_number(k) for k in levels] if isinstance(levels, dict) and levels else []
-    return (min(numbers), max(numbers)) if numbers and None not in numbers else None
+    values = [n for n in numbers if n is not None]
+    return (min(values), max(values)) if values and len(values) == len(numbers) else None
 
 
 def recipe_data_warnings(

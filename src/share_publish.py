@@ -16,6 +16,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from src.datalad_execution import (
     is_datalad_dataset,
@@ -119,7 +120,7 @@ def _is_public_target(url: str) -> bool:
     if url.lower().startswith(("http://", "https://", "git://")):
         return True
     target = parse_ssh_target(url)
-    return bool(target) and target[1].lower().rstrip(".").endswith(_PUBLIC_HOSTS)  # "github.com." is github.com
+    return target is not None and target[1].lower().rstrip(".").endswith(_PUBLIC_HOSTS)  # "github.com." is github.com
 
 
 def has_sibling(project_root, sibling_name: str) -> bool:
@@ -233,7 +234,7 @@ def publish_to_server(
     root = Path(project_root)
     sibling = _sibling_for(root, sibling_name)
     identity = identity or resolve_identity()
-    outcome = {"success": False, "reason": "", "errors": [], "message": "", "push": None, "verify": None}
+    outcome: dict[str, Any] = {"success": False, "reason": "", "errors": [], "message": "", "push": None, "verify": None}
 
     def finish(reason: str, message: str, *, audit_result: str, errors=()) -> dict:
         outcome.update(reason=reason, message=message, errors=list(errors))

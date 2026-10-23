@@ -17,4 +17,4 @@ _CODE = re.compile(r"([a-z]{2})(-[A-Z]{2})?")
 
 def is_language_code(code: object) -> bool:
     match = _CODE.fullmatch(code) if isinstance(code, str) else None
-    return bool(match) and match.group(1) in ISO_639_1
+    return match is not None and match.group(1) in ISO_639_1

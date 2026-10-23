@@ -102,14 +102,14 @@ _survey_workflow_stage_service = SurveyWorkflowStageService(
 )
 
 try:
-    from src.converters.survey import (
-        MissingIdMappingError,
-        _NON_ITEM_TOPLEVEL_KEYS,
-        convert_survey_lsa_to_prism_dataset,
-        convert_survey_file_to_prism_dataset,
-        infer_lsa_metadata,
-    )
-except ImportError:
+    from src.converters import survey as _survey
+
+    MissingIdMappingError = _survey.MissingIdMappingError
+    _NON_ITEM_TOPLEVEL_KEYS = _survey._NON_ITEM_TOPLEVEL_KEYS
+    convert_survey_lsa_to_prism_dataset = _survey.convert_survey_lsa_to_prism_dataset
+    convert_survey_file_to_prism_dataset = _survey.convert_survey_file_to_prism_dataset
+    infer_lsa_metadata = _survey.infer_lsa_metadata
+except (ImportError, AttributeError):
     pass
 
 try:

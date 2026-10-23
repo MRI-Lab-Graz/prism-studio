@@ -55,7 +55,10 @@ def load_specification(
     The runner passes the schemas it loaded with the project's version pins and the project's root, whose
     code/specification/ overlay adds its own, not yet official terms (the official registry always wins).
     """
-    terms, local, ignored, problems = {}, set(), [], []
+    terms: dict = {}
+    local: set = set()
+    ignored: list = []
+    problems: list = []
     for modality in _TERM_MODALITIES:
         registry = load_registry(modality)
         if project_root is not None:
