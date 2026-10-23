@@ -15,6 +15,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
+from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal
 
 
@@ -25,6 +26,18 @@ def _emit(args, payload: dict, text: str) -> None:
 def _fail(args, message: str, **extra) -> None:
     _emit(args, {"success": False, "error": message, **extra}, f"Error: {message}")
     sys.exit(1)
+
+
+def cmd_spec_catalog(args) -> None:
+    """Print what can be proposed (kinds of data, lists, known measurements); needs no project."""
+    catalog = spec_catalog()
+    lines = []
+    for m in catalog["modalities"]:
+        lines.append(m["label"])
+        lines += [f"  {x['label']} ({x['field']}): {', '.join(x['values'])}" for x in m["lists"]]
+        if m["metrics"]:
+            lines.append("  Known measurements: " + ", ".join(t["label"] for t in m["metrics"]))
+    _emit(args, {"success": True, **catalog}, "\n".join(lines))
 
 
 def cmd_spec_local_list(args) -> None:
@@ -110,6 +123,11 @@ def cmd_spec_propose(args) -> None:
         )
     except OverlayError as exc:
         _fail(args, str(exc))
+    _deliver_result(args, result)
+
+
+def _deliver_result(args, result: dict) -> None:
+    """Fail on problems, else save/open/print a proposal result (--out, --open, --json)."""
     if result["problems"]:
         _fail(
             args, "the proposal does not pass the specification checks: " + "; ".join(result["problems"]),
@@ -127,3 +145,24 @@ def cmd_spec_propose(args) -> None:
         delivered["text"]
         + (f"\nLeft out, they are covered by official terms: {', '.join(result['skipped'])}" if result["skipped"] else ""),
     )
+
+
+def cmd_spec_propose_values(args) -> None:
+    """Propose missing choices in a list (for example a new SpecimenType); needs no project. Sends nothing itself."""
+    try:
+        result = proposal_for_values(args.modality, args.field, args.value)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _deliver_result(args, result)
+
+
+def cmd_spec_propose_metric(args) -> None:
+    """Propose a missing measurement (analyte plus its sample-type term); needs no project (--project adds its own sample types). Sends nothing itself."""
+    try:
+        result = proposal_for_new_metric(
+            args.name, args.description, args.units, args.specimen, args.alias, args.modality,
+            project_root=args.project,
+        )
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _deliver_result(args, result)

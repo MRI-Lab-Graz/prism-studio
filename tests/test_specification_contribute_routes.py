@@ -143,7 +143,7 @@ def test_the_page_renders_and_every_specification_page_links_it(tmp_path):
                    env={**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}, capture_output=True)
     contribute = (tmp_path / "contribute.html").read_text(encoding="utf-8")
     assert (tmp_path / "contribute.status").read_text() == "200" and (tmp_path / "bogus.status").read_text() == "404"
-    assert "New metric" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
+    assert "A missing measurement" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
     assert "/specifications/contribute" in (tmp_path / "survey.html").read_text(encoding="utf-8")
 
 
@@ -247,13 +247,12 @@ def _sweat(project: Path) -> None:
     sidecar.write_text(json.dumps(data), encoding="utf-8")
 
 
-def test_list_shows_unknown_values_and_the_extendable_fields(client, tmp_path):
+def test_list_shows_unknown_values(client, tmp_path):
     project = _project(tmp_path / "p")
     _sweat(project)
     _open(client, project)
     data = client.get("/api/spec/local").get_json()
     assert [(v["field"], v["value"]) for v in data["unknown_values"]] == [("Technical.SpecimenType", "sweat")]
-    assert "Technical.SpecimenType" in data["fields"]
 
 
 def test_add_values_list_remove_values_round_trip(client, tmp_path):
@@ -288,3 +287,102 @@ def test_remove_values_rejects_what_is_not_there(client, tmp_path):
     _open(client, _project(tmp_path / "p"))
     response = client.post("/api/spec/local/remove-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]})
     assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+# --- the propose page: routes that need no project ---
+
+_METRIC = {"name": "Zzzquux", "description": "A made up measurement", "units": "pg/mL", "specimen": "saliva"}
+
+
+def test_catalog_without_a_project(client):
+    response = client.get("/api/spec/catalog")
+    data = response.get_json()
+    assert response.status_code == 200 and data["success"] is True and data["project_open"] is False
+    assert "biosample" in [m["name"] for m in data["modalities"]]
+
+
+def test_catalog_with_a_project(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    assert client.get("/api/spec/catalog").get_json()["project_open"] is True
+
+
+def test_propose_values_without_a_project(client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    data = client.post("/api/spec/propose-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]}).get_json()
+    assert data["success"] is True and data["issue_url"].startswith(FORM)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("body", [
+    {"field": "Technical.SpecimenType", "values": "sweat"}, {"values": ["sweat"]}, {"field": 3, "values": ["sweat"]},
+    {"field": "Technical.SpecimenType", "values": [1]}, {"modality": 5, "field": "Technical.SpecimenType", "values": ["sweat"]},
+])
+def test_propose_values_rejects_bad_body(client, body):
+    response = client.post("/api/spec/propose-values", json=body)
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_propose_values_already_allowed_is_an_error_message(client):
+    response = client.post("/api/spec/propose-values", json={"field": "Technical.SpecimenType", "values": ["saliva"]})
+    assert response.status_code == 400 and "already allowed" in response.get_json()["error"]
+
+
+def test_propose_metric_without_a_project(client):
+    data = client.post("/api/spec/propose-metric", json=_METRIC).get_json()
+    assert data["success"] is True and data["issue_url"].startswith(FORM)
+
+
+def test_propose_metric_uses_the_projects_own_specimens(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    assert client.post("/api/spec/local/add-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]}).get_json()["success"]
+    sweat = dict(_METRIC, specimen="sweat")
+    assert client.post("/api/spec/propose-metric", json=sweat).get_json()["problems"] == []
+    client.post("/api/spec/local/remove-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]})
+    assert client.post("/api/spec/propose-metric", json=sweat).get_json()["problems"] != []
+
+
+def test_propose_metric_official_name_is_an_error(client):
+    response = client.post("/api/spec/propose-metric", json=dict(_METRIC, name="Cortisol"))
+    assert response.status_code == 400 and "official" in response.get_json()["error"]
+
+
+@pytest.mark.parametrize("body", [
+    {}, dict(_METRIC, name=3), dict(_METRIC, aliases="x"), dict(_METRIC, aliases=[1]), dict(_METRIC, modality=[]),
+])
+def test_propose_metric_rejects_bad_body(client, body):
+    response = client.post("/api/spec/propose-metric", json=body)
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_propose_metric_for_a_kind_a_project_patched_is_a_400_not_a_500(client, tmp_path):
+    project = _project(tmp_path / "p")
+    patch = project / "code" / "specification" / "patches" / "survey.json"
+    patch.parent.mkdir(parents=True)
+    patch.write_text(json.dumps({"operations": [
+        {"op": "add_enum_values", "path": "Technical.StimulusType", "values": ["interview"]}]}), encoding="utf-8")
+    _open(client, project)
+    response = client.post("/api/spec/propose-metric", json=dict(_METRIC, modality="survey"))
+    data = response.get_json()
+    assert response.status_code == 400 and data["success"] is False and "biosample" in data["error"]
+
+
+@pytest.mark.parametrize("modality", ["../../../../evil", "x" * 5000])
+def test_propose_metric_with_a_project_checks_the_kind_first(client, tmp_path, modality, monkeypatch):
+    reads = []
+    monkeypatch.setattr("src.spec_contribute._project_specimens", lambda *a: reads.append(a))
+    _open(client, _project(tmp_path / "p"))
+    (tmp_path / "evil.json").write_text("not json", encoding="utf-8")  # decoy outside the project
+    response = client.post("/api/spec/propose-metric", json=dict(_METRIC, modality=modality))
+    assert response.status_code == 400 and response.get_json()["success"] is False
+    assert "unknown kind" in response.get_json()["error"]
+    assert reads == []  # nothing outside the kinds list led to reading the project
+
+
+def test_new_routes_pass_the_project_gate():
+    assert is_gate_exempt("/api/spec/catalog", "GET")
+    assert is_gate_exempt("/api/spec/propose-values", "POST") and is_gate_exempt("/api/spec/propose-metric", "POST")
+
+
+def test_oversized_proposal_reports_problems(client):
+    data = client.post("/api/spec/propose-metric", json=dict(_METRIC, description="x" * 200000)).get_json()
+    assert data["success"] is True and any("bytes" in p for p in data["problems"])

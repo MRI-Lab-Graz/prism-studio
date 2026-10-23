@@ -32,6 +32,12 @@
         </nav>
         <article class="col-md-9">
             {% block article %}
+            {% if slug == 'overview' %}
+            <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <span><strong>Missing something in PRISM?</strong> A value, a list choice or a measurement your data needs: tell the community.</span>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('specifications', slug='contribute') }}">Propose changes</a>
+            </div>
+            {% endif %}
             <div class="card">
                 <div class="card-body">{{ body|safe }}</div>
             </div>

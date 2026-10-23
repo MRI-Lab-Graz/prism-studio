@@ -1821,6 +1821,31 @@ def build_prism_tools_parsers(
     spec_subparsers = parser_spec.add_subparsers(dest="action", help="Specification actions")
     parser_spec_local = spec_subparsers.add_parser("local", help="List, add and remove the project's local items")
     spec_local_subparsers = parser_spec_local.add_subparsers(dest="local_action", help="Local actions")
+    spec_subparsers.add_parser(
+        "catalog", help="List what can be proposed (kinds of data, lists, known measurements)"
+    ).add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_values = spec_subparsers.add_parser(
+        "propose-values", help="Propose missing choices in a list, without a project (sends nothing unless --open)"
+    )
+    parser_spec_values.add_argument("--modality", required=True, help="The kind of data, for example biosample")
+    parser_spec_values.add_argument("--field", required=True, help="The list, for example Technical.SpecimenType")
+    parser_spec_values.add_argument("--value", action="append", required=True, help="A value to propose (repeatable)")
+    parser_spec_values.add_argument("--out", help="Also save the proposal document (format v2) to this file")
+    parser_spec_values.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+    parser_spec_values.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_metric = spec_subparsers.add_parser(
+        "propose-metric", help="Propose a missing measurement, without a project (sends nothing unless --open)"
+    )
+    parser_spec_metric.add_argument("--name", required=True, help="Name of the measurement, for example DHEA")
+    parser_spec_metric.add_argument("--description", required=True, help="What it measures")
+    parser_spec_metric.add_argument("--units", required=True, help="Unit, for example pg/mL")
+    parser_spec_metric.add_argument("--specimen", required=True, help="Sample type, for example saliva")
+    parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
+    parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
+    parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")
+    parser_spec_metric.add_argument("--out", help="Also save the proposal document (format v2) to this file")
+    parser_spec_metric.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+    parser_spec_metric.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )

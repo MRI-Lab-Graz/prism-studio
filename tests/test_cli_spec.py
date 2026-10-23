@@ -174,3 +174,51 @@ def test_propose_all_reports_what_the_official_registry_adopted(tmp_path):
 def test_propose_with_nothing_local_exits_1(tmp_path):
     code, out = _run("spec", "propose", "--project", str(_project(tmp_path / "p")), "--all", "--json")
     assert code == 1 and "nothing to share" in json.loads(out)["error"]
+
+def test_spec_catalog_json_runs_without_a_project():
+    code, out = _run("spec", "catalog", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and "biosample" in [m["name"] for m in data["modalities"]]
+
+
+def test_spec_propose_values_json():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["issue_url"].startswith(FORM)
+
+
+def test_spec_propose_values_bad_value_exits_1():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "Sweat", "--json")
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_metric_json():
+    code, out = _run(
+        "spec", "propose-metric", "--name", "DHEA", "--description", "Steroid hormone.", "--units", "pg/mL",
+        "--specimen", "saliva", "--alias", "dehydroepiandrosterone", "--json",
+    )
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["issue_url"].startswith(FORM)
+    assert "terms/biosample/dhea.saliva.json" in data["document"]["files"]
+
+
+def test_spec_propose_metric_official_exits_1():
+    code, out = _run("spec", "propose-metric", "--name", "cortisol", "--description", "d", "--units", "u", "--specimen", "saliva", "--json")
+    assert code == 1 and "prism:cortisol" in json.loads(out)["error"]
+
+
+def test_spec_propose_metric_with_project_knows_its_sample_types(tmp_path):
+    project = _project(tmp_path / "p")
+    code, _ = _run("spec", "local", "add-values", "--project", str(project), "--field", "Technical.SpecimenType", "--value", "sweat")
+    assert code == 0
+    args = ["spec", "propose-metric", "--name", "DHEA", "--description", "d", "--units", "pg/mL", "--specimen", "sweat", "--json"]
+    code, out = _run(*args, "--project", str(project))
+    assert code == 0 and json.loads(out)["problems"] == []
+    code, out = _run(*args)
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_values_repeated_value_works():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType",
+                     "--value", "sweat", "--value", "sweat", "--json")
+    assert code == 0 and json.loads(out)["success"]

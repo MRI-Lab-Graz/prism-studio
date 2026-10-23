@@ -1,4 +1,4 @@
-// The Contribute page: local metrics of the open project. Presentation only: every action is a call to
+// The Propose changes page: one choice of what is missing, then its panel. Presentation only: every action is a call to
 // /api/spec/..., which runs the same functions as `prism_tools.py spec ...`. Project data (column names,
 // paths, messages) is only ever written with textContent, never as HTML.
 (function () {
@@ -13,8 +13,11 @@
         addValues: root.dataset.addValuesUrl,
         removeValues: root.dataset.removeValuesUrl,
         propose: root.dataset.proposeUrl,
+        catalog: root.dataset.catalogUrl,
+        proposeValues: root.dataset.proposeValuesUrl,
+        proposeMetric: root.dataset.proposeMetricUrl,
     };
-    const unknownBox = document.getElementById("spec-unknown");
+    const unknownBox = document.getElementById("spec-m-found");
     const localBox = document.getElementById("spec-local");
     const message = document.getElementById("spec-message");
     const dialog = document.getElementById("spec-propose-dialog");
@@ -22,7 +25,18 @@
     const valuesUnknownBox = document.getElementById("spec-values-unknown");
     const valuesLocalBox = document.getElementById("spec-values-local");
     const shareValues = document.getElementById("spec-share-values");
-    const fieldSelect = document.getElementById("spec-values-field");
+    const what = document.getElementById("spec-what");
+    const panels = { values: document.getElementById("spec-panel-values"), metric: document.getElementById("spec-panel-metric") };
+    const modalitySelect = document.getElementById("spec-v-modality");
+    const listSelect = document.getElementById("spec-v-list");
+    const allowedText = document.getElementById("spec-v-allowed");
+    const mineBox = document.getElementById("spec-v-mine");
+    const shareMine = document.getElementById("spec-v-share");
+    const useMine = document.getElementById("spec-v-use");
+    let catalog = { modalities: [], project_open: false };
+    let projectSpecimens = [];  // sample types this project added itself
+    let foundColumn = null;  // the "Found in your data" column the form was filled from
+    let mine = [];  // the choices collected on this page, not yet shared or used
     let currentProposal = null;
 
     function el(tag, className, text) {
@@ -64,23 +78,17 @@
     function renderUnknown(metrics) {
         unknownBox.replaceChildren();
         if (!metrics.length) {
-            unknownBox.appendChild(el("p", "text-muted small mb-0", "Nothing: every metric in your data is known."));
+            unknownBox.appendChild(el("p", "text-muted small mb-0", "Nothing: every measurement in your data is known."));
             return;
         }
         metrics.forEach(function (metric) {
             const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-2");
-            row.appendChild(el("code", "", metric.column));
+            row.appendChild(button(metric.column, "btn-outline-primary", function () { pickFound(metric); }));
             const detail = [metric.specimen, metric.units].filter(Boolean).join(", ");
             if (detail) row.appendChild(el("span", "text-muted small", detail));
             if (metric.similar.length) {
                 row.appendChild(el("span", "small", "Similar official terms: " + metric.similar.join(", ")));
             }
-            const name = el("input", "form-control form-control-sm w-auto");
-            name.type = "text";
-            name.placeholder = "Name (optional)";
-            name.setAttribute("aria-label", "Name for " + metric.column);
-            row.appendChild(name);
-            row.appendChild(button("Add to this project", "btn-primary", function () { add(metric, name.value.trim()); }));
             unknownBox.appendChild(row);
         });
     }
@@ -96,7 +104,7 @@
             row.appendChild(el("code", "", found.field));
             row.appendChild(el("code", "", found.value));
             row.appendChild(el("span", "text-muted small", found.sidecar.split(/[\\/]/).pop()));
-            row.appendChild(button("Add to this project", "btn-primary", function () { addValue(found.field, found.value); }));
+            row.appendChild(button("Add to this project", "btn-primary", function () { addValues(found.field, [found.value]); }));
             valuesUnknownBox.appendChild(row);
         });
     }
@@ -122,17 +130,6 @@
             }
             valuesLocalBox.appendChild(row);
         });
-    }
-
-    function renderFields(fields) {
-        const chosen = fieldSelect.value;
-        fieldSelect.replaceChildren();
-        fields.forEach(function (field) {
-            const option = el("option", "", field);
-            option.value = field;
-            fieldSelect.appendChild(option);
-        });
-        if (chosen) fieldSelect.value = chosen;
     }
 
     function renderLocal(items) {
@@ -163,6 +160,7 @@
     }
 
     async function refresh() {
+        if (!catalog.project_open) return;
         const { ok, data } = await call(urls.list);
         if (!ok) {
             unknownBox.replaceChildren();
@@ -173,10 +171,13 @@
             return;
         }
         renderUnknown(data.unknown_metrics);
+        projectSpecimens = data.items.filter(function (item) {
+            return item.layer === 2 && item.status === "local" && item.field === "Technical.SpecimenType";
+        }).map(function (item) { return item.value; });
+        fillSpecimens();
         renderLocal(data.items.filter(function (item) { return item.layer === 3; }));
         renderUnknownValues(data.unknown_values);
         renderLocalValues(data.items.filter(function (item) { return item.layer === 2; }));
-        renderFields(data.fields);
     }
 
     async function add(metric, label) {
@@ -184,14 +185,15 @@
         const body = { data_file: metric.data_file, column: metric.column };
         if (label) body.label = label;
         const { ok, data } = await call(urls.add, body);
-        if (!ok) { say(data.error || "Could not add the metric", "danger"); return; }
+        if (!ok) { say(data.error || "Could not add the measurement", "danger"); return; }
         say("Added to this project. Validate again to see it used.", "success");
+        forgetFound();
         refresh();
     }
 
-    async function addValue(field, value) {
+    async function addValues(field, values) {
         clearMessage();
-        const { ok, data } = await call(urls.addValues, { field: field, values: [value] });
+        const { ok, data } = await call(urls.addValues, { field: field, values: values });
         if (!ok) { say(data.error || "Could not add the value", "danger"); return false; }
         say(data.skipped.length ? "Already official: nothing to add." : "Added to this project. Validate again to see it used.", data.skipped.length ? "info" : "success");
         refresh();
@@ -208,7 +210,7 @@
     }
 
     async function remove(id) {
-        if (!window.confirm("Remove the local metric " + id + " from this project?")) return;
+        if (!window.confirm("Remove the local measurement " + id + " from this project?")) return;
         clearMessage();
         const { ok, data } = await call(urls.remove, { id: id });
         if (!ok) { say(data.error || "Could not remove it", "danger"); return; }
@@ -216,10 +218,24 @@
         refresh();
     }
 
-    async function propose(body) {
+    const shareCopy = {
+        measurement: {
+            title: "Share a measurement with the PRISM community",
+            text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it there. The maintainers may choose a different ID or name, and your column name stays an alias, so your files keep working.",
+        },
+        choice: {
+            title: "Share a choice with the PRISM community",
+            text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it there. A maintainer reviews the new choice and may adjust it.",
+        },
+    };
+
+    async function propose(body, url, kind) {
         clearMessage();
-        const { ok, data } = await call(urls.propose, body);
+        const { ok, data } = await call(url || urls.propose, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
+        const copy = shareCopy[kind || "measurement"];
+        document.getElementById("spec-propose-title").textContent = copy.title;
+        document.getElementById("spec-propose-text").textContent = copy.text;
         currentProposal = data.document;  // the document that is sent (proposal format v2)
         document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
         if (data.skipped.length) {
@@ -236,28 +252,173 @@
     }
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
-    shareValues.addEventListener("click", function () { propose({ patch: true }); });
-    document.getElementById("spec-values-form").addEventListener("submit", async function (event) {
+    shareValues.addEventListener("click", function () { propose({ patch: true }, undefined, "choice"); });
+
+    function currentModality() {
+        return catalog.modalities.find(function (m) { return m.name === modalitySelect.value; });
+    }
+
+    function currentList() {
+        const modality = currentModality();
+        return modality && modality.lists.find(function (l) { return l.field === listSelect.value; });
+    }
+
+    function renderMine() {
+        mineBox.replaceChildren();
+        mine.forEach(function (value) {
+            const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-1");
+            row.appendChild(el("code", "", value));
+            const remove = button("Remove", "btn-outline-danger", function () {
+                mine = mine.filter(function (other) { return other !== value; });
+                renderMine();
+            });
+            remove.setAttribute("aria-label", "Remove " + value);
+            row.appendChild(remove);
+            mineBox.appendChild(row);
+        });
+        shareMine.classList.toggle("d-none", !mine.length);
+        useMine.classList.toggle("d-none", !mine.length || !catalog.project_open);
+    }
+
+    function showList() {
+        const list = currentList();
+        allowedText.textContent = list ? list.values.join(", ") : "";
+        mine = [];
+        renderMine();
+    }
+
+    function showLists() {
+        const modality = currentModality();
+        listSelect.replaceChildren();
+        (modality ? modality.lists : []).forEach(function (list) {
+            const option = el("option", "", list.label);
+            option.value = list.field;
+            listSelect.appendChild(option);
+        });
+        showList();
+    }
+
+    modalitySelect.addEventListener("change", showLists);
+    listSelect.addEventListener("change", showList);
+    document.getElementById("spec-v-form").addEventListener("submit", function (event) {
         event.preventDefault();
-        const input = document.getElementById("spec-values-value");
-        if (await addValue(fieldSelect.value, input.value.trim())) input.value = "";
+        const input = document.getElementById("spec-v-input");
+        const value = input.value.trim();
+        const list = currentList();
+        if (!value || !list) return;
+        if (list.values.indexOf(value) !== -1) {
+            say(value + " is already allowed in this list.", "info");
+        } else {
+            clearMessage();
+            if (mine.indexOf(value) === -1) mine.push(value);
+            renderMine();
+        }
+        input.value = "";
+    });
+    shareMine.addEventListener("click", function () {
+        propose({ modality: modalitySelect.value, field: listSelect.value, values: mine }, urls.proposeValues, "choice");
+    });
+    useMine.addEventListener("click", async function () {
+        if (await addValues(listSelect.value, mine)) { mine = []; renderMine(); }
     });
 
-    const tabs = [
-        [document.getElementById("spec-tab-metric"), document.getElementById("spec-panel-metric")],
-        [document.getElementById("spec-tab-values"), document.getElementById("spec-panel-values")],
-    ];
-    tabs.forEach(function (pair) {
-        pair[0].addEventListener("click", function () {
-            clearMessage();
-            tabs.forEach(function (other) {
-                const active = other === pair;
-                other[0].classList.toggle("active", active);
-                other[0].setAttribute("aria-selected", String(active));
-                other[1].hidden = !active;
-            });
+    const m = {};
+    ["modality", "known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
+        .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
+
+    function metricKind() {
+        return catalog.modalities.find(function (entry) { return entry.name === m.modality.value; });
+    }
+
+    function fillSpecimens() {
+        const keep = m.specimen.value;
+        m.specimen.replaceChildren();
+        (catalog.specimens || []).concat(projectSpecimens).forEach(function (name) {
+            const option = el("option", "", name);
+            option.value = name;
+            m.specimen.appendChild(option);
         });
+        if (keep) m.specimen.value = keep;
+    }
+
+    function showKnown() {
+        const kind = metricKind();
+        m.known.textContent = kind && kind.metrics ? kind.metrics.map(function (x) { return x.label; }).join(", ") : "";
+    }
+
+    function forgetFound() {
+        foundColumn = null;
+        m.use.classList.add("d-none");
+        m["use-hint"].classList.add("d-none");
+    }
+
+    function showListed() {
+        m.yes.hidden = m.listed.value !== "yes";
+        m.form.hidden = m.listed.value !== "no";
+        if (m.listed.value === "yes") forgetFound();
+    }
+
+    function pickFound(metric) {
+        foundColumn = metric;
+        m.listed.value = "no";
+        showListed();
+        m.name.value = metric.column;
+        const known = Array.from(m.units.options).some(function (o) { return o.value === metric.units; });
+        m.units.value = known ? metric.units : "";
+        m["units-other"].value = metric.units && !known ? metric.units : "";
+        if (metric.specimen && Array.from(m.specimen.options).some(function (o) { return o.value === metric.specimen; })) {
+            m.specimen.value = metric.specimen;
+        } else {
+            m.specimen.selectedIndex = 0;
+        }
+        m.units.dispatchEvent(new Event("change"));
+        // ponytail: a hand-typed measurement can only be shared; "Use in my open project" needs a data column, so it shows only after one was picked
+        m.use.classList.toggle("d-none", !catalog.project_open);
+        m["use-hint"].classList.toggle("d-none", !catalog.project_open);
+    }
+
+    function startMetric() {
+        m.modality.replaceChildren();
+        catalog.modalities.forEach(function (entry) {
+            const option = el("option", "", entry.metrics ? entry.label : entry.label + " (no measurement list yet)");
+            option.value = entry.name;
+            option.disabled = !entry.metrics;
+            m.modality.appendChild(option);
+        });
+        const usable = catalog.modalities.find(function (entry) { return entry.metrics; });
+        if (usable) m.modality.value = usable.name;
+        showKnown();
+        m.units.replaceChildren();
+        (catalog.units || []).concat(["Other…"]).forEach(function (unit, index, all) {
+            const option = el("option", "", unit);
+            option.value = index === all.length - 1 ? "" : unit;
+            m.units.appendChild(option);
+        });
+        fillSpecimens();
+        m.project.hidden = !catalog.project_open;
+        m.local.hidden = !catalog.project_open;
+    }
+
+    m.modality.addEventListener("change", function () { showKnown(); forgetFound(); });
+    m.name.addEventListener("input", forgetFound);
+    m.listed.addEventListener("change", showListed);
+    m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== ""; });
+    m.share.addEventListener("click", function () {
+        propose({
+            name: m.name.value, description: m.description.value,
+            units: m.units.value || m["units-other"].value, specimen: m.specimen.value,
+            aliases: m.aliases.value.split(","), modality: m.modality.value,
+        }, urls.proposeMetric, "measurement");
     });
+    m.use.addEventListener("click", function () {
+        if (foundColumn) add(foundColumn, m.name.value.trim());
+    });
+
+    what.addEventListener("change", function () {
+        clearMessage();
+        Object.keys(panels).forEach(function (key) { panels[key].hidden = what.value !== key; });
+    });
+
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
     document.getElementById("spec-propose-download").addEventListener("click", function () {
         if (!currentProposal) return;
@@ -269,5 +430,19 @@
         URL.revokeObjectURL(link.href);
     });
 
-    refresh();
+    (async function start() {
+        const { ok, data } = await call(urls.catalog);
+        if (!ok) { say(data.error || "Could not load the specification", "danger"); return; }
+        catalog = data;
+        modalitySelect.replaceChildren();
+        catalog.modalities.forEach(function (modality) {
+            const option = el("option", "", modality.label);
+            option.value = modality.name;
+            modalitySelect.appendChild(option);
+        });
+        showLists();
+        startMetric();
+        document.getElementById("spec-values-project").hidden = !catalog.project_open;
+        refresh();
+    }());
 }());

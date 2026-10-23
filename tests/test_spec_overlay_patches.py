@@ -173,3 +173,10 @@ def test_a_local_term_on_a_local_specimen_needs_the_patch(tmp_path):
         add_local_term(project, column="zonulin", sidecar_file=sidecar)
     _write(project, PATCH)
     assert add_local_term(project, column="zonulin", sidecar_file=sidecar)["written"]
+
+
+def test_project_specimens_is_none_for_a_patch_of_a_kind_without_specimen_types(tmp_path):
+    from src.spec_overlay import _project_specimens
+
+    _write(tmp_path, {"operations": [{"op": "add_enum_values", "path": "Technical.StimulusType", "values": ["interview"]}]}, "survey")
+    assert _project_specimens(tmp_path, "survey") is None

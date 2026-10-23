@@ -23,7 +23,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.specification import current_specification
+from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -52,7 +52,6 @@ def list_local():
         "items": list_local_items(project),
         "unknown_metrics": find_unknown_metrics(project),
         "unknown_values": find_unknown_values(project),
-        "fields": current_specification().patchable_fields("biosample"),
     })
 
 
@@ -112,6 +111,41 @@ def add_values():
 @specification_contribute_bp.route("/api/spec/local/remove-values", methods=["POST"])
 def remove_values():
     return _values_change(remove_local_values)
+
+
+@specification_contribute_bp.route("/api/spec/catalog", methods=["GET"])
+def catalog():
+    return jsonify({"success": True, **spec_catalog(), "project_open": _project() is not None})
+
+
+def _strings(value) -> bool:
+    return isinstance(value, list) and all(isinstance(v, str) for v in value)
+
+
+@specification_contribute_bp.route("/api/spec/propose-values", methods=["POST"])
+def propose_values():
+    body = _body()
+    modality, field, values = body.get("modality", "biosample"), body.get("field"), body.get("values")
+    if not (isinstance(modality, str) and isinstance(field, str) and field and _strings(values)):
+        return _error('Give "field" and a list "values" of strings')
+    try:
+        return jsonify({"success": True, **proposal_for_values(modality, field, values)})
+    except OverlayError as exc:
+        return _error(str(exc))
+
+
+@specification_contribute_bp.route("/api/spec/propose-metric", methods=["POST"])
+def propose_metric():
+    body = _body()
+    modality, aliases = body.get("modality", "biosample"), body.get("aliases", [])
+    texts = [body.get(k) for k in ("name", "description", "units", "specimen")]
+    if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts)):
+        return _error('Give "name", "description", "units" and "specimen" as text and "aliases" as a list of text')
+    try:
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project())
+    except OverlayError as exc:
+        return _error(str(exc))
+    return jsonify({"success": True, **result})
 
 
 @specification_contribute_bp.route("/api/spec/propose", methods=["POST"])
