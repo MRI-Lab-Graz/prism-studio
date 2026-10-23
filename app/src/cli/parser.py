@@ -1828,6 +1828,8 @@ def build_prism_tools_parsers(
         ("list", spec_local_subparsers.add_parser("list", help="List the project's local specification items")),
         ("add-term", spec_local_subparsers.add_parser("add-term", help="Make a column's metric a local term, so it validates now")),
         ("remove", spec_local_subparsers.add_parser("remove", help="Remove a local term (and its local children)")),
+        ("add-values", spec_local_subparsers.add_parser("add-values", help="Allow new values of a field in this project (for example a new SpecimenType)")),
+        ("remove-values", spec_local_subparsers.add_parser("remove-values", help="Remove values added with add-values")),
         ("propose", parser_spec_propose),
     ):
         _parser.add_argument("--project", required=True, help="The PRISM project folder")
@@ -1839,12 +1841,16 @@ def build_prism_tools_parsers(
             _source.add_argument("--data", help="A data file (.tsv): its sidecar is resolved with BIDS inheritance")
             _parser.add_argument("--column", required=True, help="The column whose metric becomes a local term")
             _parser.add_argument("--label", help="Name for the new term (default: the column name)")
+        if _name in ("add-values", "remove-values"):
+            _parser.add_argument("--field", required=True, help="The sidecar field, for example Technical.SpecimenType")
+            _parser.add_argument("--value", action="append", required=True, help="A value to allow (repeatable)")
         if _name in ("remove",):
             _parser.add_argument("term", help="Term ID, for example prism:dhea-s")
         if _name == "propose":
-            _what = _parser.add_mutually_exclusive_group(required=True)
+            _what = _parser.add_mutually_exclusive_group()
             _what.add_argument("--term", action="append", help="A local term to share, for example prism:dhea-s (repeatable)")
-            _what.add_argument("--all", action="store_true", help="Share every local term of the project")
+            _what.add_argument("--all", action="store_true", help="Share every local term and the schema additions of the project")
+            _parser.add_argument("--patch", action="store_true", help="Share the project's schema additions (alone, or with --term)")
             _parser.add_argument("--out", help="Also save the proposal document (format v2) to this file")
             _parser.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
 

@@ -7,20 +7,23 @@
      data-list-url="{{ url_for('specification_contribute.list_local') }}"
      data-add-url="{{ url_for('specification_contribute.add_term') }}"
      data-remove-url="{{ url_for('specification_contribute.remove_term') }}"
+     data-add-values-url="{{ url_for('specification_contribute.add_values') }}"
+     data-remove-values-url="{{ url_for('specification_contribute.remove_values') }}"
      data-propose-url="{{ url_for('specification_contribute.propose') }}">
     <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
             <li class="nav-item"><span class="nav-link disabled" aria-disabled="true" title="Coming soon">New modality</span></li>
-            <li class="nav-item"><span class="nav-link disabled" aria-disabled="true" title="Coming soon">Addition to a modality</span></li>
-            <li class="nav-item"><span class="nav-link active" aria-current="page">New metric</span></li>
+            <li class="nav-item" role="presentation"><button type="button" role="tab" class="nav-link" id="spec-tab-values" aria-controls="spec-panel-values" aria-selected="false">Addition to a modality</button></li>
+            <li class="nav-item" role="presentation"><button type="button" role="tab" class="nav-link active" id="spec-tab-metric" aria-controls="spec-panel-metric" aria-selected="true">New metric</button></li>
         </ul>
     </div>
     <div class="card-body">
+        <div id="spec-message" class="alert d-none" role="status"></div>
+        <div id="spec-panel-metric" role="tabpanel" aria-labelledby="spec-tab-metric">
         <p class="text-muted">
             A metric PRISM does not know yet can be used in this project right away: add it here, and your data
             validates with it. Later you can share it with the PRISM community. Nothing is sent from this page.
         </p>
-        <div id="spec-message" class="alert d-none" role="status"></div>
 
         <h3 class="h6 mt-4">Found in your data, not known to PRISM yet</h3>
         <div id="spec-unknown" class="mb-4"></div>
@@ -30,6 +33,37 @@
             <button type="button" id="spec-share-all" class="btn btn-sm btn-outline-primary d-none">Share all local metrics…</button>
         </div>
         <div id="spec-local" class="mt-2"></div>
+        </div>
+
+        <div id="spec-panel-values" role="tabpanel" aria-labelledby="spec-tab-values" hidden>
+            <p class="text-muted">
+                Sometimes your data uses a value an existing modality does not allow yet, for example a new specimen
+                type. Add it here, and your data validates with it right away. Later you can share it with the PRISM
+                community. Nothing is sent from this page.
+            </p>
+
+            <h3 class="h6 mt-4">Found in your data, not allowed by PRISM yet</h3>
+            <div id="spec-values-unknown" class="mb-4"></div>
+
+            <h3 class="h6">Add a value by hand</h3>
+            <form id="spec-values-form" class="d-flex flex-wrap align-items-end gap-2 mb-4">
+                <div>
+                    <label class="form-label small mb-0" for="spec-values-field">Field</label>
+                    <select id="spec-values-field" class="form-select form-select-sm"></select>
+                </div>
+                <div>
+                    <label class="form-label small mb-0" for="spec-values-value">Value</label>
+                    <input id="spec-values-value" type="text" class="form-control form-control-sm" placeholder="for example sweat" autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary">Add value</button>
+            </form>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <h3 class="h6 mb-0">Additions in this project</h3>
+                <button type="button" id="spec-share-values" class="btn btn-sm btn-outline-primary d-none">Share additions…</button>
+            </div>
+            <div id="spec-values-local" class="mt-2"></div>
+        </div>
     </div>
 </div>
 

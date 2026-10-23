@@ -50,6 +50,7 @@ def _open(client, project: Path):
 
 @pytest.mark.parametrize("method,url", [
     ("post", "/api/spec/local/add-term"), ("post", "/api/spec/local/remove"), ("post", "/api/spec/propose"),
+    ("post", "/api/spec/local/add-values"), ("post", "/api/spec/local/remove-values"),
 ])
 def test_every_write_route_needs_an_open_project(client, method, url):
     response = getattr(client, method)(url, json={})
@@ -213,3 +214,77 @@ def test_without_an_open_project_the_real_app_answers_json_not_a_redirect(tmp_pa
     for method, url, status, content_type, body in json.loads(result_file.read_text()):
         assert (status, content_type) == (200 if method == "get" else 400, "application/json"), (method, url, status, content_type)
         assert body == {"success": False, "error": "Open a project first"}, (url, body)
+
+
+def test_propose_shares_the_patch(client, tmp_path):
+    from src.spec_overlay import add_local_values
+
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    add_local_values(project, "Technical.SpecimenType", ["sweat"])
+    alone = client.post("/api/spec/propose", json={"patch": True}).get_json()
+    assert alone["success"] and list(alone["document"]["files"]) == ["patches/biosample.json"] and alone["problems"] == []
+    everything = client.post("/api/spec/propose", json={"all": True}).get_json()
+    assert everything["success"] and "patches/biosample.json" in everything["document"]["files"]
+
+
+def test_propose_patch_without_additions_is_a_400(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    response = client.post("/api/spec/propose", json={"patch": True})
+    assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+@pytest.mark.parametrize("value", ["yes", 1, None])
+def test_propose_rejects_a_non_boolean_patch(client, tmp_path, value):
+    _two_local(client, tmp_path)
+    assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "patch": value}).status_code == 400
+
+
+def _sweat(project: Path) -> None:
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["Technical"]["SpecimenType"] = "sweat"
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+
+
+def test_list_shows_unknown_values_and_the_extendable_fields(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _sweat(project)
+    _open(client, project)
+    data = client.get("/api/spec/local").get_json()
+    assert [(v["field"], v["value"]) for v in data["unknown_values"]] == [("Technical.SpecimenType", "sweat")]
+    assert "Technical.SpecimenType" in data["fields"]
+
+
+def test_add_values_list_remove_values_round_trip(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _sweat(project)
+    _open(client, project)
+    body = {"field": "Technical.SpecimenType", "values": ["sweat"]}
+    added = client.post("/api/spec/local/add-values", json=body).get_json()
+    assert added["success"] and added["skipped"] == []
+    data = client.get("/api/spec/local").get_json()
+    assert data["unknown_values"] == []
+    assert [(i["layer"], i["field"], i["value"], i["status"]) for i in data["items"]] == [(2, "Technical.SpecimenType", "sweat", "local")]
+    assert client.post("/api/spec/local/remove-values", json=body).get_json()["success"]
+    assert client.get("/api/spec/local").get_json()["items"] == []
+
+
+@pytest.mark.parametrize("body", [
+    {}, {"field": "Technical.SpecimenType"}, {"values": ["sweat"]}, {"field": 5, "values": ["sweat"]},
+    {"field": "Technical.SpecimenType", "values": "sweat"}, {"field": "Technical.SpecimenType", "values": [1]},
+    {"field": "Technical.SpecimenType", "values": []}, {"field": "../../etc", "values": ["x"]},
+    {"field": "Technical.Nope", "values": ["x"]}, {"field": "Technical.SpecimenType", "values": ["Bad Value"]},
+])
+def test_add_values_rejects_bad_bodies_and_writes_nothing(client, tmp_path, body):
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    response = client.post("/api/spec/local/add-values", json=body)
+    assert response.status_code == 400 and response.get_json()["success"] is False
+    assert not (project / "code").exists()
+
+
+def test_remove_values_rejects_what_is_not_there(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    response = client.post("/api/spec/local/remove-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]})
+    assert response.status_code == 400 and response.get_json()["success"] is False

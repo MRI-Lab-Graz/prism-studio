@@ -43,14 +43,19 @@ def _vendored(name: str):
     return module
 
 
-def _scripts():
-    """The vendored term rules (check_terms, term_proposal), or OverlayError when this installation lacks them."""
+def _vendored_or_error(name: str):
+    """A vendored script, or OverlayError when this installation lacks it."""
     try:
-        return _vendored("check_terms"), _vendored("term_proposal")
+        return _vendored(name)
     except OSError as exc:
         raise OverlayError(
             f"the specification scripts (scripts/specification) are not installed, so local specification files are not used ({exc})"
         ) from exc
+
+
+def _scripts():
+    """The vendored term rules (check_terms, term_proposal), or OverlayError when this installation lacks them."""
+    return _vendored_or_error("check_terms"), _vendored_or_error("term_proposal")
 
 
 def overlay_root(project_root) -> Path:
@@ -61,18 +66,22 @@ def _terms_folder(project_root, modality: str) -> Path:
     return overlay_root(project_root) / "terms" / modality
 
 
-def _real_terms_folder(project_root, modality: str) -> Path:
-    """The terms folder for writing or removing: no part of its path inside the project may be a symbolic link.
+def _real_overlay_folder(project_root, *parts: str) -> Path:
+    """A folder under code/specification for writing or removing: no part of its path inside the project may be a symbolic link.
 
     A shared project could ship `code/specification -> /somewhere/else`; following it would write or delete
     outside the project.
     """
     current = Path(project_root)
-    for part in (*OVERLAY_PARTS, "terms", modality):
+    for part in (*OVERLAY_PARTS, *parts):
         current = current / part
         if current.is_symlink():
             raise OverlayError(f"{current} is a symbolic link; the specification folder of a project must be a real folder")
     return current
+
+
+def _real_terms_folder(project_root, modality: str) -> Path:
+    return _real_overlay_folder(project_root, "terms", modality)
 
 
 def _local_part(term_id) -> str | None:
@@ -110,6 +119,42 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
         else:
             terms[path.stem] = data
     return terms, problems
+
+
+def _patch_file(project_root, modality: str) -> Path:
+    return overlay_root(project_root) / "patches" / f"{modality}.json"
+
+
+def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict | None, list[str]]:
+    """The project's schema patch for `modality` (operations the official schema already has are dropped) and messages.
+
+    Invalid, unreadable or symlinked files are a message, never an exception; None when nothing is left to add.
+    """
+    path = _patch_file(project_root, modality)
+    if not path.is_file():
+        return None, []
+    try:
+        _real_overlay_folder(project_root, "patches")
+    except OverlayError as exc:
+        return None, [f"{path.name}: {exc}"]
+    if path.is_symlink():
+        return None, [f"{path.name}: is a symbolic link, not used"]
+    try:
+        schema_patch = _vendored("schema_patch")
+        from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this module
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+        adds, notes = schema_patch.additions(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), data)
+    except OSError as exc:
+        return None, [f"{path.name}: cannot be used ({type(exc).__name__}; the specification scripts may not be installed)"]
+    except (ValueError, RecursionError) as exc:  # PatchError is a ValueError (but a different class per loaded copy)
+        return None, [f"{path.name}: {exc}" if isinstance(exc, ValueError) else f"{path.name}: cannot read ({type(exc).__name__})"]
+    operations = [
+        {"op": "add_enum_values", "path": a["path"], "values": a["values"]} if a["kind"] == "enum"
+        else {"op": "add_optional_properties", "path": a["path"], "properties": a["properties"]}
+        for a in adds
+    ]
+    return {"operations": operations}, [f"{path.name}: {note}" for note in notes]
 
 
 def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
@@ -186,6 +231,17 @@ def _specimen(sidecar: dict):
     return technical.get("SpecimenType") if isinstance(technical, dict) else None
 
 
+def _project_specimens(project_root, modality: str) -> list[str] | None:
+    """The SpecimenType values of the official schema plus the project's patch; None when there is no patch."""
+    patch, _ = load_local_patches(project_root, modality)
+    if patch is None:
+        return None
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
+
+    schema = _vendored("schema_patch").apply_patch(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), patch)[0]
+    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+
+
 def add_local_term(
     project_root, *, column: str, data_file=None, sidecar_file=None, label=None, modality: str = "biosample"
 ) -> dict:
@@ -208,7 +264,7 @@ def add_local_term(
     # another, already broken local term must not stop an unrelated metric: drop only the problems that name one
     # (the registry check prefixes its messages with the file stem); everything else blocks, the safe default
     problems = [
-        p for p in check_with_specification(proposal, checked_against)
+        p for p in check_with_specification(proposal, checked_against, _project_specimens(project_root, modality))
         if not any(p.startswith(f"{stem}:") for stem in other_stems)
     ]
     if problems:
@@ -233,7 +289,144 @@ def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
             "layer": 3, "modality": modality, "id": None, "label": None, "problem": problem,
             "path": str(folder / problem.split(":", 1)[0]), "status": "invalid",
         })
+    items += _patch_items(project_root, modality)
     return items
+
+
+def _patch_items(project_root, modality: str) -> list[dict]:
+    """Layer 2 items of the overlay: one per added value or property, with the status the validator would give it."""
+    patch, messages = load_local_patches(project_root, modality)
+    path = str(_patch_file(project_root, modality))
+    items = []
+    for op in (patch or {}).get("operations", []):
+        for name in op.get("values") or op["properties"]:
+            ident = f"{op['path']}: {name}"
+            items.append({
+                "layer": 2, "modality": modality, "id": ident, "label": ident, "path": path, "status": "local",
+                **({"field": op["path"], "value": name} if op["op"] == "add_enum_values" else {}),
+            })
+    for message in messages:
+        official = message.endswith(" is already official")
+        items.append({
+            "layer": 2, "modality": modality, "id": message.partition(": ")[2].removesuffix(" is already official") if official else None,
+            "label": None, "path": path, "status": "now-official" if official else "invalid",
+            **({} if official else {"problem": message}),
+        })
+    return items
+
+
+def _official_schema(modality: str) -> dict:
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this module
+
+    return load_schema(modality, DEFAULT_SCHEMA_DIR, "stable")
+
+
+def _existing_patch(project_root, modality: str) -> tuple[Path, dict]:
+    """The patch file for changing (symlinks refused) and its raw content; a broken file is an error, never overwritten."""
+    path = _real_overlay_folder(project_root, "patches") / f"{modality}.json"
+    if path.is_symlink():
+        raise OverlayError(f"{path} is a symbolic link; the specification folder of a project must be a real folder")
+    if not path.exists():
+        return path, {"operations": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, RecursionError) as exc:
+        raise OverlayError(f"{path.name} cannot be read ({type(exc).__name__}); fix or remove it first") from exc
+    if not (isinstance(data, dict) and isinstance(data.get("operations"), list)):
+        raise OverlayError(f"{path.name} is not a schema patch; fix or remove it first")
+    return path, data
+
+
+def _write_patch(path: Path, patch: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def _enum_op(patch: dict, field: str) -> dict | None:
+    return next((op for op in patch["operations"] if isinstance(op, dict) and op.get("op") == "add_enum_values" and op.get("path") == field), None)
+
+
+def add_local_values(project_root, field: str, values: list[str], modality: str = "biosample") -> dict:
+    """Add enum values (for example a new SpecimenType) to this project's patch: {"patch", "written", "skipped"}.
+
+    Values the official schema has are skipped; when nothing is left nothing is written. The patch is checked by
+    the vendored schema_patch.py (which also decides which fields may be extended) before anything is written.
+    """
+    sp = _vendored_or_error("schema_patch")
+    schema = _official_schema(modality)
+    path, patch = _existing_patch(project_root, modality)
+    values = list(values) if isinstance(values, (list, tuple)) else values
+    try:
+        adds, _ = sp.additions(schema, {"operations": [{"op": "add_enum_values", "path": field, "values": values}]})
+    except ValueError as exc:  # PatchError, a different class per loaded copy of the script
+        if str(exc).startswith("nothing to add"):
+            return {"patch": patch if patch["operations"] else None, "written": None, "skipped": list(values)}
+        raise OverlayError(str(exc)) from exc
+    new = adds[0]["values"]
+    op = _enum_op(patch, field)
+    if op is None:
+        patch["operations"].append({"op": "add_enum_values", "path": field, "values": new})
+    else:
+        op["values"] = [*op["values"], *(v for v in new if v not in op["values"])]
+    problems = sp.validate_patch(patch, schema)
+    if problems:
+        raise OverlayError("; ".join(problems))
+    _write_patch(path, patch)
+    return {"patch": patch, "written": path, "skipped": [v for v in values if v not in new]}
+
+
+def remove_local_values(project_root, field: str, values: list[str], modality: str = "biosample") -> dict:
+    """Remove enum values from this project's patch; the last one removes the file: {"removed", "written"}."""
+    path, patch = _existing_patch(project_root, modality)
+    op = _enum_op(patch, field)
+    missing = [v for v in values if op is None or v not in op["values"]]
+    if missing:
+        raise OverlayError(f"{', '.join(map(str, missing))}: not in this project's additions to {field}")
+    op["values"] = [v for v in op["values"] if v not in values]
+    patch["operations"] = [o for o in patch["operations"] if o is not op or op["values"]]
+    if patch["operations"]:
+        _write_patch(path, patch)
+        return {"removed": list(values), "written": path}
+    path.unlink()
+    return {"removed": list(values), "written": None}
+
+
+def _enum_of(schema: dict, field: str):
+    node = schema
+    for part in field.split("."):
+        node = (node.get("properties") or {}).get(part, {}) if isinstance(node, dict) else {}
+    return node.get("enum") if isinstance(node, dict) else None
+
+
+def _value_at(data, field: str):
+    for part in field.split("."):
+        data = data.get(part) if isinstance(data, dict) else None
+    return data
+
+
+def find_unknown_values(project_root, modality: str = "biosample") -> list[dict]:
+    """Sidecar values outside the (patched) enums that could be added: {"field", "value", "sidecar"}, once per sidecar and value."""
+    from src.specification import load_specification  # lazy: specification imports this module
+
+    root = Path(project_root)
+    spec = load_specification(project_root=root)
+    schema = spec.schemas.get(modality) or {}
+    sp = _vendored_or_error("schema_patch")
+    found = []
+    for folder, subfolders, names in os.walk(root):
+        subfolders[:] = sorted(name for name in subfolders if name not in _NOT_PROJECT_DATA)
+        for name in sorted(n for n in names if n.endswith(f"_{modality}.json")):
+            path = Path(folder) / name
+            try:
+                sidecar = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, RecursionError):
+                continue
+            for field in spec.patchable_fields(modality):
+                value = _value_at(sidecar, field)
+                op = {"operations": [{"op": "add_enum_values", "path": field, "values": [value]}]}
+                if isinstance(value, str) and value not in _enum_of(schema, field) and not sp.validate_patch(op, schema):
+                    found.append({"field": field, "value": value, "sidecar": str(path)})
+    return found
 
 
 def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict]:
@@ -262,8 +455,13 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
     return found
 
 
-def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, modality: str = "biosample") -> dict:
+def proposal_for_local_terms(
+    project_root, term_ids: list[str] | None = None, modality: str = "biosample", include_patch: bool = False
+) -> dict:
     """The proposal that shares local terms: the named ones (default: every local term).
+
+    `include_patch` adds the project's schema additions (patches/<modality>.json); a chosen term on a specimen
+    that only the patch adds brings the patch along, so a proposal is never incomplete.
 
     A named child brings its local parent and a named parent its local children, so a proposal is never
     incomplete. Local terms the official registry has adopted since are left out and listed in `skipped`.
@@ -293,9 +491,15 @@ def proposal_for_local_terms(project_root, term_ids: list[str] | None = None, mo
             ]
             chosen_stems += [stem, *related]
     chosen = [usable[stem] for stem in dict.fromkeys(chosen_stems)]
-    if not chosen:
+    patch, patch_messages = load_local_patches(project_root, modality)
+    added = {v for op in (patch or {}).get("operations", []) if op.get("path") == "Technical.SpecimenType" for v in op.get("values", [])}
+    if patch and (include_patch or any(t.get("SpecimenType") in added for t in chosen)):
+        skipped += [m.partition(": ")[2] for m in patch_messages if m.endswith(" is already official")]
+    else:
+        patch = None
+    if not chosen and not patch:
         raise OverlayError("nothing to share" + (f" (covered by official terms: {', '.join(skipped)})" if skipped else ""))
-    proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"])}
+    proposal = {"modality": modality, "terms": sorted(chosen, key=lambda t: t["TermID"]), **({"patch": patch} if patch else {})}
     document = as_v2(proposal)
     return {
         "proposal": proposal,

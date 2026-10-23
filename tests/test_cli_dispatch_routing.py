@@ -23,6 +23,8 @@ DISPATCH_CASES = [
     (dict(command="spec", action="local", local_action="list"), "spec_local_list"),
     (dict(command="spec", action="local", local_action="add-term"), "spec_local_add_term"),
     (dict(command="spec", action="local", local_action="remove"), "spec_local_remove"),
+    (dict(command="spec", action="local", local_action="add-values"), "spec_local_add_values"),
+    (dict(command="spec", action="local", local_action="remove-values"), "spec_local_remove_values"),
     (dict(command="spec", action="propose"), "spec_propose"),
     (dict(command="modality-version", action="status"), "modality_version_status"),
     (dict(command="modality-version", action="list"), "modality_version_list"),

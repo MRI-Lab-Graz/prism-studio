@@ -71,7 +71,7 @@ def dispatch_prism_tools(
         else:
             parsers["modality"].print_help()
     elif args.command == "spec":
-        if args.action == "local" and getattr(args, "local_action", None) in ("list", "add-term", "remove"):
+        if args.action == "local" and getattr(args, "local_action", None) in ("list", "add-term", "remove", "add-values", "remove-values"):
             handlers[f"spec_local_{args.local_action.replace('-', '_')}"](args)
         elif args.action == "propose":
             handlers["spec_propose"](args)

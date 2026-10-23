@@ -127,25 +127,35 @@ def as_v2(proposal: dict) -> dict:
     """
     if "files" in proposal:
         return proposal
-    return {
-        "format": FORMAT_V2,
-        "files": {
-            f"terms/{proposal['modality']}/{term['TermID'].partition(':')[2]}.json": term for term in proposal["terms"]
-        },
+    files = {
+        f"terms/{proposal['modality']}/{term['TermID'].partition(':')[2]}.json": term for term in proposal["terms"]
     }
+    if proposal.get("patch"):  # a schema addition: the same file the project keeps in code/specification/patches/
+        files[f"patches/{proposal['modality']}.json"] = proposal["patch"]
+    return {"format": FORMAT_V2, "files": files}
+
+
+def _modality_of(document: dict) -> str:
+    """The modality of a v2 document: its terms/<modality>/... or patches/<modality>.json paths."""
+    first = next(iter(document["files"])).split("/")
+    return first[1].removesuffix(".json")
 
 
 def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
     """Prefilled issue-form URL for a proposal (sent as format v2), or None when it would be longer than `limit`."""
     document = as_v2(proposal)
-    terms = list(document["files"].values())
-    first = terms[0]
-    analytes = {t["TermID"] if t.get("Level") == "analyte" else t.get("Parent") for t in terms}  # metrics, not files
-    more = f" and {len(analytes) - 1} more" if len(analytes) > 1 else ""
+    terms = [t for path, t in document["files"].items() if path.startswith("terms/")]
+    if terms:
+        first = terms[0]
+        analytes = {t["TermID"] if t.get("Level") == "analyte" else t.get("Parent") for t in terms}  # metrics, not files
+        more = f" and {len(analytes) - 1} more" if len(analytes) > 1 else ""
+        title = f"[Metric]: {first.get('Label') or first['TermID']}{more}"
+    else:
+        title = f"[Metric]: schema addition to {_modality_of(document)}"
     query = urlencode(
         {
             "template": ISSUE_TEMPLATE,
-            "title": f"[Metric]: {first.get('Label') or first['TermID']}{more}",
+            "title": title,
             "proposal": json.dumps(document, separators=(",", ":"), ensure_ascii=False),
         },
         quote_via=quote,
@@ -163,17 +173,22 @@ def specification_scripts_dir() -> Path:
     return next((c for c in candidates if c.is_dir()), candidates[0])
 
 
-def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
-    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
+def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
+    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
+
+    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
     spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     if spec is None or spec.loader is None:
         raise ImportError("prism-specification's term_proposal.py cannot be loaded")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
-    modality = next(iter(document["files"])).split("/")[1]
+    modality = _modality_of(document)
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{modality}.schema.json"
-    problems = module.check_proposal(document, registry, module.check_terms.specimen_types(schema))[1]
+    problems = module.check_proposal(
+        document, registry, specimens or module.check_terms.specimen_types(schema),
+        json.loads(schema.read_text(encoding="utf-8")),  # a patch in the document is checked against it
+    )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))
     if size > module.MAX_BYTES:

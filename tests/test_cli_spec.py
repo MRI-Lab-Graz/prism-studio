@@ -156,9 +156,9 @@ def test_propose_term_can_be_repeated(tmp_path):
     assert code == 0 and len(data["document"]["files"]) == 4
 
 
-def test_propose_needs_exactly_one_of_term_and_all(tmp_path):
+def test_propose_needs_term_all_or_patch_but_not_term_with_all(tmp_path):
     project = _two_local(tmp_path)
-    assert _run("spec", "propose", "--project", str(project))[0] == 2
+    assert _run("spec", "propose", "--project", str(project))[0] == 1
     assert _run("spec", "propose", "--project", str(project), "--all", "--term", "prism:dhea-s")[0] == 2
 
 

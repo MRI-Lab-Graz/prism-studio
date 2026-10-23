@@ -671,6 +671,21 @@ class DatasetValidator:
         )
         return apply_schema_validation_profile(schema, profile=profile)
 
+    @staticmethod
+    def _enum_addition_hint(modality: str, error, root_dir: str) -> str:
+        """For a value outside an enum that a project may extend, the exact command that adds it to the project."""
+        field = ".".join(str(p) for p in error.path)
+        if modality != "biosample" or error.validator != "enum" or not isinstance(error.instance, str):
+            return ""
+        if not 1 <= len(error.path) <= 2 or field not in current_specification().patchable_fields(modality):
+            return ""
+        if not re.fullmatch(r"[a-z][a-z0-9-]{0,62}", error.instance):
+            return ""
+        return (
+            f'. If this is a real addition, add it to this project: python prism_tools.py spec local add-values '
+            f'--project "{root_dir}" --field {field} --value {error.instance}'
+        )
+
     def _build_effective_defs(self, sidecar_data: dict) -> dict:
         """Resolve AliasOf and Aliases in sidecar data to build a flat definition table."""
         effective_defs = {}
@@ -1574,7 +1589,8 @@ class DatasetValidator:
             issues.append(
                 (
                     "ERROR",
-                    f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}",
+                    f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}"
+                    + self._enum_addition_hint(modality, e, root_dir),
                 )
             )
         except json.JSONDecodeError as e:

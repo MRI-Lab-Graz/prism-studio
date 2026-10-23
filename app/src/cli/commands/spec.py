@@ -8,9 +8,12 @@ import sys
 from src.spec_overlay import (
     OverlayError,
     add_local_term,
+    add_local_values,
     list_local_items,
+    load_local_patches,
     proposal_for_local_terms,
     remove_local_terms,
+    remove_local_values,
 )
 from src.term_proposal import deliver_proposal
 
@@ -61,10 +64,50 @@ def cmd_spec_local_remove(args) -> None:
     _emit(args, {"success": True, "removed": paths}, "Removed:\n  " + "\n  ".join(paths))
 
 
-def cmd_spec_propose(args) -> None:
-    """Share local terms (--term, repeatable, or --all) in one proposal; --open opens the prefilled form. Sends nothing itself."""
+def cmd_spec_local_add_values(args) -> None:
+    """Allow new values of a sidecar field (for example a new SpecimenType) in this project, so it validates now."""
     try:
-        result = proposal_for_local_terms(args.project, None if args.all else args.term, args.modality)
+        result = add_local_values(args.project, args.field, args.value, args.modality)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    written = str(result["written"]) if result["written"] else None
+    skipped = f"\nAlready official, left out: {', '.join(result['skipped'])}" if result["skipped"] else ""
+    _emit(
+        args,
+        {"success": True, "written": written, "skipped": result["skipped"], "patch": result["patch"]},
+        (f"Added to this project: {args.field} = {', '.join(v for v in args.value if v not in result['skipped'])}\n  {written}"
+         f'\nThe validator uses it from now on. To share it with the PRISM community: '
+         f'python prism_tools.py spec propose --project "{args.project}" --patch' if written
+         else "Nothing to add: every value is already official.")
+        + skipped,
+    )
+
+
+def cmd_spec_local_remove_values(args) -> None:
+    """Remove values added with add-values."""
+    try:
+        result = remove_local_values(args.project, args.field, args.value, args.modality)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    written = str(result["written"]) if result["written"] else None
+    _emit(
+        args,
+        {"success": True, "removed": result["removed"], "written": written},
+        f"Removed from this project: {args.field} = {', '.join(result['removed'])}"
+        + ("" if written else " (no additions left: the patch file was removed)"),
+    )
+
+
+def cmd_spec_propose(args) -> None:
+    """Share local terms (--term, repeatable, or --all) and schema additions (--patch) in one proposal; --open opens the prefilled form. Sends nothing itself."""
+    if not (args.all or args.term or args.patch):
+        _fail(args, "say what to share: --term <id> (repeatable), --patch or --all")
+    try:
+        if args.patch and not load_local_patches(args.project, args.modality)[0]:
+            raise OverlayError("this project has no schema additions to share (see: spec local add-values)")
+        result = proposal_for_local_terms(
+            args.project, None if args.all else args.term or [], args.modality, include_patch=args.patch or args.all
+        )
     except OverlayError as exc:
         _fail(args, str(exc))
     if result["problems"]:

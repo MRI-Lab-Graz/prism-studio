@@ -1,6 +1,7 @@
 """Contribute page: an unknown metric in the open project is added locally, shared (preview only) and removed."""
 
 import json
+import re
 
 from playwright.sync_api import expect
 
@@ -80,3 +81,45 @@ def test_without_a_project_the_page_says_to_open_one(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
     expect(bare_page.locator("#spec-message")).to_contain_text("Open a project first")
     expect(bare_page.locator("#spec-message")).not_to_contain_text("Unexpected answer")
+
+
+def test_a_new_specimen_is_found_added_shared_and_removed(app_page, studio_url, project):
+    add_biosample_data(project)
+    sidecar = project / "biosample-saliva_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["Technical"]["SpecimenType"] = "sweat"
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    patch = project / "code" / "specification" / "patches" / "biosample.json"
+    app_page.goto(f"{studio_url}/specifications/contribute")
+
+    app_page.get_by_role("tab", name="Addition to a modality").click()
+    expect(app_page.locator("#spec-values-unknown")).to_contain_text("Technical.SpecimenType")
+    expect(app_page.locator("#spec-values-unknown")).to_contain_text("sweat")
+    app_page.get_by_role("button", name="Add to this project").click()
+    expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
+    expect(app_page.locator("#spec-values-local")).to_contain_text("sweat")
+    expect(app_page.locator("#spec-values-unknown")).to_contain_text("Nothing")
+    assert json.loads(patch.read_text(encoding="utf-8"))["operations"][0]["values"] == ["sweat"]
+
+    app_page.get_by_role("button", name="Share additions").click()
+    expect(app_page.locator("#spec-propose-json")).to_contain_text("patches/biosample.json")
+    app_page.locator("#spec-propose-close").click()
+
+    app_page.once("dialog", lambda confirm: confirm.accept())
+    app_page.get_by_role("button", name="Remove").first.click()
+    expect(app_page.locator("#spec-values-local")).to_contain_text("None yet")
+    assert not patch.exists()
+
+
+def test_a_value_can_be_added_by_hand_and_a_bad_one_is_refused(app_page, studio_url, project):
+    add_biosample_data(project)
+    app_page.goto(f"{studio_url}/specifications/contribute")
+    app_page.allowed_http[400] = "/api/spec/local/add-values"
+    app_page.get_by_role("tab", name="Addition to a modality").click()
+    app_page.get_by_label("Value", exact=True).fill("Bad Value")
+    app_page.get_by_role("button", name="Add value").click()
+    expect(app_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
+    app_page.get_by_label("Value", exact=True).fill("tears")
+    app_page.get_by_role("button", name="Add value").click()
+    expect(app_page.locator("#spec-values-local")).to_contain_text("tears")
+
