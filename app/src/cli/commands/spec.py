@@ -15,6 +15,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
+from src.spec_contribute import spec_catalog
 from src.term_proposal import deliver_proposal
 
 
@@ -25,6 +26,18 @@ def _emit(args, payload: dict, text: str) -> None:
 def _fail(args, message: str, **extra) -> None:
     _emit(args, {"success": False, "error": message, **extra}, f"Error: {message}")
     sys.exit(1)
+
+
+def cmd_spec_catalog(args) -> None:
+    """Print what can be proposed (kinds of data, lists, known measurements); needs no project."""
+    catalog = spec_catalog()
+    lines = []
+    for m in catalog["modalities"]:
+        lines.append(m["label"])
+        lines += [f"  {x['label']} ({x['field']}): {', '.join(x['values'])}" for x in m["lists"]]
+        if m["metrics"]:
+            lines.append("  Known measurements: " + ", ".join(t["label"] for t in m["metrics"]))
+    _emit(args, {"success": True, **catalog}, "\n".join(lines))
 
 
 def cmd_spec_local_list(args) -> None:

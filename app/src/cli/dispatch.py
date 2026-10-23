@@ -75,6 +75,8 @@ def dispatch_prism_tools(
             handlers[f"spec_local_{args.local_action.replace('-', '_')}"](args)
         elif args.action == "propose":
             handlers["spec_propose"](args)
+        elif args.action == "catalog":
+            handlers["spec_catalog"](args)
         else:
             parsers["spec"].print_help()
     elif args.command == "terms":

@@ -1821,6 +1821,9 @@ def build_prism_tools_parsers(
     spec_subparsers = parser_spec.add_subparsers(dest="action", help="Specification actions")
     parser_spec_local = spec_subparsers.add_parser("local", help="List, add and remove the project's local items")
     spec_local_subparsers = parser_spec_local.add_subparsers(dest="local_action", help="Local actions")
+    spec_subparsers.add_parser(
+        "catalog", help="List what can be proposed (kinds of data, lists, known measurements)"
+    ).add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )
