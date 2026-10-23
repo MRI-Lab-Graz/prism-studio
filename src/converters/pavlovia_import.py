@@ -109,8 +109,8 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
             "Study": {},
             "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": _utc_creation_date(), "Creator": "pavlovia_import.py"},
         }
-        notes = [page.get("description"), *(el.get("description") for el in els)]
-        notes = list(dict.fromkeys(n for n in notes if n))  # unique, in order
+        raw_notes = [page.get("description"), *(el.get("description") for el in els)]
+        notes = list(dict.fromkeys(n for n in raw_notes if n))  # unique, in order
         base = task = _task_name(name)
         n = 1
         while task in used:  # pages whose names sanitize alike get base-2, base-3, ...

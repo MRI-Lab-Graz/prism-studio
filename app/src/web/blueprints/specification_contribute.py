@@ -40,8 +40,8 @@ def _body() -> dict:
 @specification_contribute_bp.route("/api/spec/local", methods=["GET"])
 def list_local():
     project = _project()
-    if project is None:
-        return _error("Open a project first")
+    if project is None:  # a message, not a 4xx: the page is opened without a project all the time
+        return jsonify({"success": False, "error": "Open a project first"})
     return jsonify({
         "success": True,
         "items": list_local_items(project),

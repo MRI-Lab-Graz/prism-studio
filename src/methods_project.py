@@ -317,8 +317,10 @@ def build_methods(
 
     if compute_participant_stats is None:
         from src.web.blueprints.projects_metadata_helpers import (
-            _compute_participant_stats as compute_participant_stats,
+            _compute_participant_stats,
         )
+
+        compute_participant_stats = _compute_participant_stats
 
     participant_stats = compute_participant_stats(project_path, lang=lang)
     md, sections_used = generate_full_methods(

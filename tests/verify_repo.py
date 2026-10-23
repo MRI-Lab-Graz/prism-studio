@@ -436,6 +436,7 @@ def check_secrets(repo_path, fix=False):
             r"docs/CLI_REFERENCE\.md",
             r"tests/test_projects_library_settings_api\.py",
             r"tests/test_convert_get_json_hash\.py",
+            r"specification\.lock\.json",  # sha256 file hashes, not secrets
         ]
         known_false_positive_regex = "|".join(known_false_positive_paths)
         exclude_arg = (

@@ -183,7 +183,7 @@ def best_library_match(template: dict, project_path=None) -> dict | None:
             template_file=Path(tdata["path"]).name,
         )
         rank = (_RANK[found["confidence"]], found["mean_similarity"], source == "project")
-        if best is None or rank > best_rank:
+        if best is None or best_rank is None or rank > best_rank:
             best, best_rank = found, rank
     return best
 

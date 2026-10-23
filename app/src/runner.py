@@ -187,7 +187,7 @@ def _validate_dataset(
 
     Returns: (issues, stats)
     """
-    issues = []
+    issues: list = []
     stats = DatasetStats()
     spec = current_specification()  # set by validate_dataset for this run
     # the project's own, not yet official specification: files that were skipped, copies the official registry replaced
@@ -515,13 +515,12 @@ def _check_survey_recipe_coverage(
         # Direct callers without an existing validation inventory retain the
         # standalone filesystem scan.
         survey_task_ids = {
-            _extract_task_from_survey_filename(path)
-            for path in root.glob("sub-*/**/*_survey.tsv")
+            task
+            for pattern in ("sub-*/**/*_survey.tsv", "sub-*/**/*_survey.json")
+            for path in root.glob(pattern)
             if path.is_file()
-        } | {
-            _extract_task_from_survey_filename(path)
-            for path in root.glob("sub-*/**/*_survey.json")
-            if path.is_file()
+            for task in [_extract_task_from_survey_filename(path)]
+            if task
         }
 
     required_recipe_ids = {

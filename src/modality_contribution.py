@@ -23,6 +23,7 @@ import zlib
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 
 def write_minimal_dataset(
@@ -194,7 +195,7 @@ def _finish_proposal(base: dict, rows: list[dict], types=None, entities=None) ->
         raise ProposalError("'extensions' must be a list or a comma-separated string")
     if isinstance(exts, str):
         exts = exts.split(",")
-    proposal = {
+    proposal: dict[str, Any] = {
         key: str(base.get(key) or "").strip()
         for key in ("modality", "suffix", "description")
     }
@@ -312,13 +313,13 @@ def read_proposal(path) -> dict:
         rows = raw.get("columns") or []
         if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
             raise ProposalError(f"{path.name}: 'columns' must be a list of mappings")
-        types = raw.get("types")
-        if types is not None and not isinstance(types, list):
+        raw_types = raw.get("types")
+        if raw_types is not None and not isinstance(raw_types, list):
             raise ProposalError(f"{path.name}: 'types' must be a list")
-        entities = raw.get("entities")
-        if entities is not None and not isinstance(entities, list):
+        raw_entities = raw.get("entities")
+        if raw_entities is not None and not isinstance(raw_entities, list):
             raise ProposalError(f"{path.name}: 'entities' must be a list")
-        return _finish_proposal(raw, rows, types, entities)
+        return _finish_proposal(raw, rows, raw_types, raw_entities)
     raise ProposalError(
         f"unsupported proposal file type '{path.suffix}' (use .xlsx, .yml, .yaml or .json)"
     )
@@ -690,7 +691,7 @@ def _column_definition(col: dict) -> dict:
 def build_schema(proposal: dict) -> dict:
     """The modality schema: PRISM envelope plus the column-definition shape."""
     name, suffix, exts = proposal["modality"], proposal["suffix"], proposal["extensions"]
-    schema = {
+    schema: dict[str, Any] = {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "$id": f"https://prism.org/schemas/{name}/v1.0.0",
         "version": "1.0.0",
@@ -908,7 +909,7 @@ def _fit_sidecar(sidecar: dict, schema: dict, label: str) -> dict:
                 continue
             if prop.get("enum"):
                 sidecar[block][key] = prop["enum"][0]
-            elif "string" in (prop.get("type") if isinstance(prop.get("type"), list) else [prop.get("type")]) \
+            elif "string" in (prop_type if isinstance(prop_type := prop.get("type"), list) else [prop_type]) \
                     and re.search(prop.get("pattern", ""), label):
                 sidecar[block][key] = label
             # anything else stays missing, so check_extension_fit names it instead of a wrong value
@@ -1004,7 +1005,7 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
     out.mkdir(parents=True, exist_ok=True)
     sample, source = Path(sample_path), Path(proposal_path)
     name, suffix = proposal["modality"], proposal["suffix"]
-    ext = sample_extension(sample, proposal["extensions"])
+    ext = sample_extension(sample, proposal["extensions"]) or ""
     is_new = proposal_kind(proposal) == "new"
     existing = None if is_new else _entities_schema(None)["modalities"][name]
 
@@ -1026,7 +1027,7 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
         extension=ext,
         sidecar=sidecar,
         data_content=sample.read_bytes(),
-        task_name=None if is_new else (existing.get("example", {}).get("task") or suffix),
+        task_name=None if is_new else ((existing or {}).get("example", {}).get("task") or suffix),
     )
     docs = out / "docs"
     docs.mkdir(exist_ok=True)

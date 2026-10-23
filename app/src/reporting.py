@@ -612,7 +612,7 @@ def _acquisition_section(summary: dict | None, lang: str, detail_level: str) -> 
         return ""
     de = lang == "de"
     out: list[str] = []
-    for modality, info in summary["modalities"].items():
+    for modality, info in (summary or {})["modalities"].items():
         label = _ACQ_LABELS.get(modality, (modality, modality))[1 if de else 0]
         n = info.get("n_subjects", 0)
         sessions = ", ".join(f"{k} (*n* = {v})" for k, v in (info.get("sessions") or {}).items())
@@ -919,7 +919,7 @@ def generate_full_methods(
     # --- Study Design ---
     sd = project_data.get("StudyDesign") or {}
     if sd:
-        parts: list[str] = []
+        parts = []
         sd_type = sd.get("Type", "")
         sd_desc = sd.get("TypeDescription", "")
         if sd_type:

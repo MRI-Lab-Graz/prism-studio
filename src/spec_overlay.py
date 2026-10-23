@@ -36,6 +36,8 @@ class OverlayError(ValueError):
 def _vendored(name: str):
     """A prism-specification script (scripts/specification/<name>.py): the rules for terms live there once."""
     spec = importlib.util.spec_from_file_location(f"overlay_{name}", specification_scripts_dir() / f"{name}.py")
+    if spec is None or spec.loader is None:
+        raise ImportError(f"prism-specification script {name}.py cannot be loaded")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

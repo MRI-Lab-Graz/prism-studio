@@ -49,7 +49,7 @@ def find_scale_violations(
             continue
         number = _number(text)
         label = f"{str(pid).strip()}: {text}"
-        if number is not None and low is not None and not low <= number <= high:
+        if number is not None and low is not None and high is not None and not low <= number <= high:
             out_of_range.append(label)
         else:
             unexpected.append(label)

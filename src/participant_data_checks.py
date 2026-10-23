@@ -56,11 +56,11 @@ def find_participant_data_problems(
         typed = str(value).strip()
         if prism_id and typed not in typed_by_id.setdefault(prism_id, []):
             typed_by_id[prism_id].append(typed)
-    for prism_id, typed in typed_by_id.items():
-        if len(typed) > 1:
+    for prism_id, variants in typed_by_id.items():
+        if len(variants) > 1:
             warnings.append(
                 f"Different IDs in the source become the same participant {prism_id}: "
-                f"{', '.join(repr(t) for t in typed)}. Their rows will be merged - check that they are one person."
+                f"{', '.join(repr(t) for t in variants)}. Their rows will be merged - check that they are one person."
             )
 
     for col in (columns if columns is not None else df.columns):

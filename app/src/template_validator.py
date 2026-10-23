@@ -1063,7 +1063,7 @@ class TemplateValidator:
                 alias_of = item.get("AliasOf")
                 if isinstance(alias_of, str) and alias_of and alias_of not in items:
                     add(item_id, "warning", f"AliasOf '{alias_of}' is not an item of this template")
-                for key, label in (item.get("Levels").items() if isinstance(item.get("Levels"), dict) else []):
+                for key, label in (item["Levels"].items() if isinstance(item.get("Levels"), dict) else []):
                     if isinstance(label, dict) and blank(label):
                         add(f"{item_id}/Levels/{key}", "warning", f"Level {key} of {item_id} has no label text")
                 check_texts(f"{item_id}/Description", item.get("Description"))
