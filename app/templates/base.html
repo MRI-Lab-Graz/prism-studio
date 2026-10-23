@@ -368,7 +368,8 @@
     {% set share_available = endpoint_exists('projects.share_page') %}
     {% set share_enabled = current_project.path and current_project.has_data and share_available %}
     {% set share_active = request_path.startswith('/projects/share') %}
-    {% set docs_active = request_path.startswith('/specifications') or request.endpoint in ['specifications'] %}
+    {% set propose_active = request_path.rstrip('/') == '/specifications/contribute' %}
+    {% set docs_active = (request_path.startswith('/specifications') or request.endpoint in ['specifications']) and not propose_active %}
     {% set current_project_datalad = current_project.datalad if current_project is defined and current_project.datalad is defined else {
         'enabled': false,
         'available': false,
@@ -546,6 +547,12 @@
                         </ul>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link{% if propose_active %} active{% endif %}" href="{{ url_for('specifications', slug='contribute') }}"{% if propose_active %} aria-current="page"{% endif %} title="Tell the PRISM community what is missing in PRISM">
+                            <i class="fas fa-lightbulb me-1"></i>Propose changes
+                        </a>
+                    </li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle{% if docs_active %} active{% endif %}" href="#" id="docsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-book-open me-1"></i>Docs
@@ -558,10 +565,6 @@
                             <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('specifications') }}" title="Review PRISM specifications and expected file conventions">
                                 <span class="navbar-flow-item-title"><i class="fas fa-book me-2 text-secondary"></i>Specs</span>
                                 <span class="navbar-flow-item-hint">Reference rules and examples used across workflows</span>
-                            </a></li>
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('specifications', slug='contribute') }}" title="Propose a missing choice, value or measurement to the PRISM community">
-                                <span class="navbar-flow-item-title"><i class="fas fa-lightbulb me-2 text-warning"></i>Propose changes</span>
-                                <span class="navbar-flow-item-hint">Tell the PRISM community what is missing</span>
                             </a></li>
                         </ul>
                     </li>

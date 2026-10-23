@@ -33,12 +33,25 @@ class TestSpecificationsWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("{{ page_header(", template_content)
 
-    def test_docs_menu_links_to_propose_changes(self):
+    def test_navbar_has_a_propose_changes_entry(self):
         html = render("/")
         menu = html.split('aria-labelledby="docsDropdown"', 1)[1].split("</ul>", 1)[0]
+        self.assertNotIn("Propose changes", menu)
         self.assertRegex(
-            menu, r'href="/specifications/contribute"[^>]*>\s*<span[^>]*>(?:<i[^>]*></i>)?\s*Propose changes'
+            html,
+            r'<li class="nav-item">\s*<a class="nav-link[^"]*"[^>]*href="/specifications/contribute"[^>]*>\s*<i[^>]*></i>Propose changes',
         )
+
+    def test_propose_entry_is_active_only_on_its_page(self):
+        link = r'<a class="nav-link( active)?"[^>]*href="/specifications/contribute"([^>]*)>'
+        docs = r'<a class="nav-link dropdown-toggle( active)?" href="#" id="docsDropdown"'
+        on = render("/specifications/contribute")
+        m = re.search(link, on)
+        self.assertTrue(m.group(1) and 'aria-current="page"' in m.group(2))
+        self.assertIsNone(re.search(docs, on).group(1))
+        off = render("/specifications/biosample")
+        self.assertIsNone(re.search(link, off).group(1))
+        self.assertTrue(re.search(docs, off).group(1))
 
     def test_overview_has_a_call_to_action(self):
         html = render("/specifications")

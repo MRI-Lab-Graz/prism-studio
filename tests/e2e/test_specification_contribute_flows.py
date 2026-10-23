@@ -266,10 +266,9 @@ def test_hostile_name_and_description_are_text(bare_page, studio_url):
     assert bare_page.locator("#spec-contribute b, #spec-propose-dialog b").count() == 0
 
 
-def test_the_docs_menu_leads_to_the_propose_page(bare_page, studio_url):
+def test_the_navbar_entry_leads_to_the_propose_page(bare_page, studio_url):
     bare_page.goto(studio_url)
-    bare_page.locator("#docsDropdown").click()
-    bare_page.get_by_role("link", name="Propose changes").click()
+    bare_page.locator("nav").get_by_role("link", name="Propose changes").click()
     expect(bare_page.locator("#spec-what")).to_be_visible()
 
 

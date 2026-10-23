@@ -34,8 +34,8 @@ reference generated from the shipped schema, so it matches what the validator en
 
 ## Propose changes
 
-*Specifications → Propose changes* is where you tell the PRISM community what is missing. Find it in the **Docs**
-menu (*Propose changes*), in the sidebar of this screen, or through the call-to-action on the overview page. It
+*Specifications → Propose changes* is where you tell the PRISM community what is missing. Find it as the
+**Propose changes** entry in the navbar, in the sidebar of this screen, or through the call-to-action on the overview page. It
 works with **no project open**: the page starts with one question, *What is missing in PRISM?*, and you choose:
 
 - **A missing choice in a list**, for example a specimen type PRISM does not list (`sweat`). Pick the kind of
