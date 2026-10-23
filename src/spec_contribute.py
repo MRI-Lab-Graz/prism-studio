@@ -30,7 +30,7 @@ def spec_catalog() -> dict:
         modalities.append({
             "name": name,
             "label": name.capitalize(),
-            "lists": [{"field": f, "label": _list_label(f), "values": list(_enum_of(schema, f) or [])} for f in fields],
+            "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
             "metrics": [
                 {"id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units")}
                 for t in registry.values() if t.get("Level") == "analyte"

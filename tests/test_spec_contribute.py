@@ -15,6 +15,10 @@ def test_catalog_lists_biosample_with_specimen_types():
     assert biosample["metrics"] and all(m["id"].startswith("prism:") for m in biosample["metrics"])
 
 
+def test_catalog_values_have_no_empty_strings():
+    assert all("" not in x["values"] for m in spec_catalog()["modalities"] for x in m["lists"])
+
+
 def test_catalog_has_no_modality_without_lists():
     assert _entry("events") is None
 

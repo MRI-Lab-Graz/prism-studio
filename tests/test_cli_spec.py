@@ -175,13 +175,6 @@ def test_propose_with_nothing_local_exits_1(tmp_path):
     code, out = _run("spec", "propose", "--project", str(_project(tmp_path / "p")), "--all", "--json")
     assert code == 1 and "nothing to share" in json.loads(out)["error"]
 
-
-def test_spec_catalog_json_runs_without_a_project():
-    code, out = _run("spec", "catalog", "--json")
-    data = json.loads(out)
-    assert code == 0 and data["success"] and "biosample" in [m["name"] for m in data["modalities"]]
-
-
 def test_spec_catalog_json_runs_without_a_project():
     code, out = _run("spec", "catalog", "--json")
     data = json.loads(out)
