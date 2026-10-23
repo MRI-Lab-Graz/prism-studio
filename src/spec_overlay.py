@@ -295,7 +295,10 @@ def _patch_items(project_root, modality: str) -> list[dict]:
     for op in (patch or {}).get("operations", []):
         for name in op.get("values") or op["properties"]:
             ident = f"{op['path']}: {name}"
-            items.append({"layer": 2, "modality": modality, "id": ident, "label": ident, "path": path, "status": "local"})
+            items.append({
+                "layer": 2, "modality": modality, "id": ident, "label": ident, "path": path, "status": "local",
+                **({"field": op["path"], "value": name} if op["op"] == "add_enum_values" else {}),
+            })
     for message in messages:
         official = message.endswith(" is already official")
         items.append({

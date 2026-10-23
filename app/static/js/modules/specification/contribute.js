@@ -10,6 +10,8 @@
         list: root.dataset.listUrl,
         add: root.dataset.addUrl,
         remove: root.dataset.removeUrl,
+        addValues: root.dataset.addValuesUrl,
+        removeValues: root.dataset.removeValuesUrl,
         propose: root.dataset.proposeUrl,
     };
     const unknownBox = document.getElementById("spec-unknown");
@@ -17,6 +19,10 @@
     const message = document.getElementById("spec-message");
     const dialog = document.getElementById("spec-propose-dialog");
     const shareAll = document.getElementById("spec-share-all");
+    const valuesUnknownBox = document.getElementById("spec-values-unknown");
+    const valuesLocalBox = document.getElementById("spec-values-local");
+    const shareValues = document.getElementById("spec-share-values");
+    const fieldSelect = document.getElementById("spec-values-field");
     let currentProposal = null;
 
     function el(tag, className, text) {
@@ -79,6 +85,56 @@
         });
     }
 
+    function renderUnknownValues(values) {
+        valuesUnknownBox.replaceChildren();
+        if (!values.length) {
+            valuesUnknownBox.appendChild(el("p", "text-muted small mb-0", "Nothing: every value in your data is allowed."));
+            return;
+        }
+        values.forEach(function (found) {
+            const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-2");
+            row.appendChild(el("code", "", found.field));
+            row.appendChild(el("code", "", found.value));
+            row.appendChild(el("span", "text-muted small", found.sidecar.split(/[\\/]/).pop()));
+            row.appendChild(button("Add to this project", "btn-primary", function () { addValue(found.field, found.value); }));
+            valuesUnknownBox.appendChild(row);
+        });
+    }
+
+    function renderLocalValues(items) {
+        valuesLocalBox.replaceChildren();
+        shareValues.classList.toggle("d-none", !items.some(function (item) { return item.status === "local"; }));
+        if (!items.length) {
+            valuesLocalBox.appendChild(el("p", "text-muted small mb-0", "None yet."));
+            return;
+        }
+        const badge = { "local": "bg-success", "now-official": "bg-info", "invalid": "bg-warning text-dark" };
+        items.forEach(function (item) {
+            const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-2");
+            row.appendChild(el("span", "badge " + (badge[item.status] || "bg-secondary"), item.status));
+            row.appendChild(el("code", "", item.id || item.path));
+            if (item.problem) row.appendChild(el("span", "small text-danger", item.problem));
+            if (item.status === "now-official") {
+                row.appendChild(el("span", "small text-muted", "Now official: edit " + item.path + " to remove it."));
+            }
+            if (item.field && item.value) {
+                row.appendChild(button("Remove", "btn-outline-danger", function () { removeValue(item.field, item.value); }));
+            }
+            valuesLocalBox.appendChild(row);
+        });
+    }
+
+    function renderFields(fields) {
+        const chosen = fieldSelect.value;
+        fieldSelect.replaceChildren();
+        fields.forEach(function (field) {
+            const option = el("option", "", field);
+            option.value = field;
+            fieldSelect.appendChild(option);
+        });
+        if (chosen) fieldSelect.value = chosen;
+    }
+
     function renderLocal(items) {
         localBox.replaceChildren();
         shareAll.classList.toggle("d-none", !items.some(function (item) { return item.status === "local"; }));
@@ -111,11 +167,16 @@
         if (!ok) {
             unknownBox.replaceChildren();
             localBox.replaceChildren();
+            valuesUnknownBox.replaceChildren();
+            valuesLocalBox.replaceChildren();
             say(data.error || "Could not read the project", "warning");
             return;
         }
         renderUnknown(data.unknown_metrics);
-        renderLocal(data.items);
+        renderLocal(data.items.filter(function (item) { return item.layer === 3; }));
+        renderUnknownValues(data.unknown_values);
+        renderLocalValues(data.items.filter(function (item) { return item.layer === 2; }));
+        renderFields(data.fields);
     }
 
     async function add(metric, label) {
@@ -125,6 +186,24 @@
         const { ok, data } = await call(urls.add, body);
         if (!ok) { say(data.error || "Could not add the metric", "danger"); return; }
         say("Added to this project. Validate again to see it used.", "success");
+        refresh();
+    }
+
+    async function addValue(field, value) {
+        clearMessage();
+        const { ok, data } = await call(urls.addValues, { field: field, values: [value] });
+        if (!ok) { say(data.error || "Could not add the value", "danger"); return false; }
+        say(data.skipped.length ? "Already official: nothing to add." : "Added to this project. Validate again to see it used.", data.skipped.length ? "info" : "success");
+        refresh();
+        return true;
+    }
+
+    async function removeValue(field, value) {
+        if (!window.confirm("Remove " + value + " from the additions to " + field + " in this project?")) return;
+        clearMessage();
+        const { ok, data } = await call(urls.removeValues, { field: field, values: [value] });
+        if (!ok) { say(data.error || "Could not remove it", "danger"); return; }
+        say("Removed.", "success");
         refresh();
     }
 
@@ -157,6 +236,28 @@
     }
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
+    shareValues.addEventListener("click", function () { propose({ patch: true }); });
+    document.getElementById("spec-values-form").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const input = document.getElementById("spec-values-value");
+        if (await addValue(fieldSelect.value, input.value.trim())) input.value = "";
+    });
+
+    const tabs = [
+        [document.getElementById("spec-tab-metric"), document.getElementById("spec-panel-metric")],
+        [document.getElementById("spec-tab-values"), document.getElementById("spec-panel-values")],
+    ];
+    tabs.forEach(function (pair) {
+        pair[0].addEventListener("click", function () {
+            clearMessage();
+            tabs.forEach(function (other) {
+                const active = other === pair;
+                other[0].classList.toggle("active", active);
+                other[0].setAttribute("aria-selected", String(active));
+                other[1].hidden = !active;
+            });
+        });
+    });
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
     document.getElementById("spec-propose-download").addEventListener("click", function () {
         if (!currentProposal) return;

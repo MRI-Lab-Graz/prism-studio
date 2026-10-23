@@ -14,12 +14,16 @@ from flask import Blueprint, jsonify, request, session
 from src.spec_overlay import (
     OverlayError,
     add_local_term,
+    add_local_values,
     find_unknown_metrics,
+    find_unknown_values,
     list_local_items,
     load_local_patches,
     proposal_for_local_terms,
     remove_local_terms,
+    remove_local_values,
 )
+from src.specification import current_specification
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -47,6 +51,8 @@ def list_local():
         "success": True,
         "items": list_local_items(project),
         "unknown_metrics": find_unknown_metrics(project),
+        "unknown_values": find_unknown_values(project),
+        "fields": current_specification().patchable_fields("biosample"),
     })
 
 
@@ -80,6 +86,32 @@ def remove_term():
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, "removed": [str(p) for p in removed]})
+
+
+def _values_change(operation):
+    """Add or remove values of one field: both routes take {"field": str, "values": [str, ...]}."""
+    project = _project()
+    if project is None:
+        return _error("Open a project first")
+    body = _body()
+    field, values = body.get("field"), body.get("values")
+    if not (isinstance(field, str) and field and isinstance(values, list) and values and all(isinstance(v, str) for v in values)):
+        return _error('Give "field" and a non-empty list "values" of strings')
+    try:
+        result = operation(project, field, values)
+    except OverlayError as exc:
+        return _error(str(exc))
+    return jsonify({"success": True, "written": str(result["written"]) if result["written"] else None, "skipped": result.get("skipped", [])})
+
+
+@specification_contribute_bp.route("/api/spec/local/add-values", methods=["POST"])
+def add_values():
+    return _values_change(add_local_values)
+
+
+@specification_contribute_bp.route("/api/spec/local/remove-values", methods=["POST"])
+def remove_values():
+    return _values_change(remove_local_values)
 
 
 @specification_contribute_bp.route("/api/spec/propose", methods=["POST"])
