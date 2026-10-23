@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
+
 ### Removed
 - **The `eyetracking` modality.** Eye tracking is BIDS physio (`PhysioType: eyetrack`, BIDS 1.11), so PRISM no longer has
   its own folder, schema, converter tab or `convert physio --modality eyetracking`. Studio carries prism-specification

@@ -1,0 +1,7 @@
+# Opt-in: converts eye-tracking recordings to BIDS (https://github.com/bids-standard/eye2bids, MIT).
+# Not on PyPI, so it is installed from GitHub, pinned to a commit. Not part of requirements.txt or any
+# extra: a git URL cannot go into a PyPI package and most projects have no eye-tracking data.
+#   pip install -r requirements-eyetrack.txt
+# EyeLink .edf files also need SR Research's EyeLink Developers Kit (`edf2asc`), a separate install:
+# https://github.com/bids-standard/eye2bids#installation
+eye2bids @ git+https://github.com/bids-standard/eye2bids.git@c0a50241debbe9512a450cd32027d791c7fff854

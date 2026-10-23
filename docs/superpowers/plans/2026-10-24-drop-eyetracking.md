@@ -124,6 +124,8 @@ each: does BIDS already specify this? Then layer 1 of the specification contribu
 ## Later: eyetracking converter (spike findings 2026-10-23)
 
 Do this only when someone has real `.edf` files. The old B3 text above is the design.
+- **Install is prepared:** `pip install -r requirements-eyetrack.txt` (pinned commit, verified in a fresh venv; reports `eye2bids --version`
+  0.1.dev129). Not in any default install or extra (`tests/test_requirements_eyetrack.py`). The converter itself is still to do.
 - eye2bids (https://github.com/bids-standard/eye2bids, MIT) is **not on PyPI**: `pip install eye2bids` fails. Install is
   `pip install git+https://github.com/bids-standard/eye2bids.git` (awkward for the frozen/bundled Studio).
 - Converting EyeLink `.edf` needs the proprietary **EyeLink Developers Kit** (`edf2asc`); README gives an apt route for
