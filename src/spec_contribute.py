@@ -17,6 +17,23 @@ def _list_label(field: str) -> str:
     return words[:1].upper() + words[1:]
 
 
+def _kinds() -> dict[str, list[str]]:
+    """Each kind of data in the catalog with the fields of its extendable lists."""
+    return {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"]}
+
+
+def _result(proposal: dict, registry: dict, specimens=None, skipped=()) -> dict:
+    """The result both builders return; nothing is written."""
+    document = as_v2(proposal)
+    return {
+        "proposal": proposal,
+        "document": document,
+        "issue_url": issue_url(document),
+        "problems": check_with_specification(document, registry, specimens),
+        "skipped": list(skipped),
+    }
+
+
 def spec_catalog() -> dict:
     """Modalities with extendable lists, their known measurements, units and specimens."""
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this package
@@ -52,7 +69,7 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
 
     Returns {"proposal", "document" (format v2), "issue_url", "problems", "skipped"}; `skipped` are values already official.
     """
-    kinds = {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"]}
+    kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
     if field not in kinds[modality]:
@@ -75,15 +92,7 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
     patch = {"operations": [{"op": "add_enum_values", "path": field, "values": new}]}
     if problems := sp.validate_patch(patch, schema):
         raise OverlayError("; ".join(problems))
-    proposal = {"modality": modality, "terms": [], "patch": patch}
-    document = as_v2(proposal)
-    return {
-        "proposal": proposal,
-        "document": document,
-        "issue_url": issue_url(document),
-        "problems": check_with_specification(document, load_registry(modality)),
-        "skipped": [v for v in values if v not in new],
-    }
+    return _result({"modality": modality, "terms": [], "patch": patch}, load_registry(modality), skipped=[v for v in values if v not in new])
 
 
 def proposal_for_new_metric(
@@ -95,7 +104,7 @@ def proposal_for_new_metric(
     `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
-    kinds = [m["name"] for m in spec_catalog()["modalities"]]
+    kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
     registry = load_registry(modality)
@@ -125,12 +134,4 @@ def proposal_for_new_metric(
             raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
     parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
-    proposal = {"modality": modality, "terms": [parent, child]}
-    document = as_v2(proposal)
-    return {
-        "proposal": proposal,
-        "document": document,
-        "issue_url": issue_url(document),
-        "problems": check_with_specification(document, registry, specimens),
-        "skipped": [],
-    }
+    return _result({"modality": modality, "terms": [parent, child]}, registry, specimens)

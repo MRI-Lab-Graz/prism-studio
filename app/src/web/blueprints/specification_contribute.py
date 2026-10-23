@@ -24,7 +24,6 @@ from src.spec_overlay import (
     remove_local_values,
 )
 from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
-from src.specification import current_specification
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -53,7 +52,6 @@ def list_local():
         "items": list_local_items(project),
         "unknown_metrics": find_unknown_metrics(project),
         "unknown_values": find_unknown_values(project),
-        "fields": current_specification().patchable_fields("biosample"),
     })
 
 

@@ -247,13 +247,12 @@ def _sweat(project: Path) -> None:
     sidecar.write_text(json.dumps(data), encoding="utf-8")
 
 
-def test_list_shows_unknown_values_and_the_extendable_fields(client, tmp_path):
+def test_list_shows_unknown_values(client, tmp_path):
     project = _project(tmp_path / "p")
     _sweat(project)
     _open(client, project)
     data = client.get("/api/spec/local").get_json()
     assert [(v["field"], v["value"]) for v in data["unknown_values"]] == [("Technical.SpecimenType", "sweat")]
-    assert "Technical.SpecimenType" in data["fields"]
 
 
 def test_add_values_list_remove_values_round_trip(client, tmp_path):
