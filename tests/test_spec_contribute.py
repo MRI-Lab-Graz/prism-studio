@@ -179,7 +179,11 @@ def test_metric_accepts_the_projects_own_specimens(tmp_path):
     assert proposal_for_new_metric("DHEA", "d", "pg/mL", "sweat", project_root=project)["problems"] == []
 
 
-def test_metric_checks_the_kind_before_reading_the_project(tmp_path):
+def test_metric_checks_the_kind_before_reading_the_project(tmp_path, monkeypatch):
+    def read(*args):
+        raise AssertionError("the project was read for an unknown kind of data")
+
+    monkeypatch.setattr("src.spec_contribute._project_specimens", read)
     for bad in ("../../../../evil", "x" * 5000):
         with pytest.raises(OverlayError, match="unknown kind"):
             proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality=bad, project_root=tmp_path)
