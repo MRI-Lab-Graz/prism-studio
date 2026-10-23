@@ -1824,6 +1824,15 @@ def build_prism_tools_parsers(
     spec_subparsers.add_parser(
         "catalog", help="List what can be proposed (kinds of data, lists, known measurements)"
     ).add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_values = spec_subparsers.add_parser(
+        "propose-values", help="Propose missing choices in a list, without a project (sends nothing unless --open)"
+    )
+    parser_spec_values.add_argument("--modality", required=True, help="The kind of data, for example biosample")
+    parser_spec_values.add_argument("--field", required=True, help="The list, for example Technical.SpecimenType")
+    parser_spec_values.add_argument("--value", action="append", required=True, help="A value to propose (repeatable)")
+    parser_spec_values.add_argument("--out", help="Also save the proposal document (format v2) to this file")
+    parser_spec_values.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+    parser_spec_values.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )

@@ -179,3 +179,14 @@ def test_spec_catalog_json_runs_without_a_project():
     code, out = _run("spec", "catalog", "--json")
     data = json.loads(out)
     assert code == 0 and data["success"] and "biosample" in [m["name"] for m in data["modalities"]]
+
+
+def test_spec_propose_values_json():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["issue_url"].startswith(FORM)
+
+
+def test_spec_propose_values_bad_value_exits_1():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "Sweat", "--json")
+    assert code == 1 and not json.loads(out)["success"]

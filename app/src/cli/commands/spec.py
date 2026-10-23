@@ -15,7 +15,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import spec_catalog
+from src.spec_contribute import proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal
 
 
@@ -123,6 +123,11 @@ def cmd_spec_propose(args) -> None:
         )
     except OverlayError as exc:
         _fail(args, str(exc))
+    _deliver_result(args, result)
+
+
+def _deliver_result(args, result: dict) -> None:
+    """Fail on problems, else save/open/print a proposal result (--out, --open, --json)."""
     if result["problems"]:
         _fail(
             args, "the proposal does not pass the specification checks: " + "; ".join(result["problems"]),
@@ -140,3 +145,12 @@ def cmd_spec_propose(args) -> None:
         delivered["text"]
         + (f"\nLeft out, they are covered by official terms: {', '.join(result['skipped'])}" if result["skipped"] else ""),
     )
+
+
+def cmd_spec_propose_values(args) -> None:
+    """Propose missing choices in a list (for example a new SpecimenType); needs no project. Sends nothing itself."""
+    try:
+        result = proposal_for_values(args.modality, args.field, args.value)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _deliver_result(args, result)

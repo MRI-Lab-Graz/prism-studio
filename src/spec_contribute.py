@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import re
 
+from src.spec_overlay import OverlayError, _enum_of, _official_schema, _vendored_or_error
 from src.specification import current_specification
+from src.term_proposal import as_v2, check_with_specification, issue_url
 from src.term_registry import load_registry
+
+_VALUE = re.compile(r"[a-z0-9][a-z0-9-]*")
 
 
 def _list_label(field: str) -> str:
@@ -16,13 +20,15 @@ def _list_label(field: str) -> str:
 def spec_catalog() -> dict:
     """Modalities with extendable lists, their known measurements, units and specimens."""
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this package
-    from src.spec_overlay import _enum_of
 
     spec = current_specification()
     modalities, units = [], set()
     for name in sorted(spec.prism_modalities):
         fields = spec.patchable_fields(name)
-        if not fields:
+        # The vendored check (scripts/specification/check_terms.py `specimen_types`, term_proposal.py `_specimens_of`)
+        # assumes a Technical.SpecimenType enum, so other kinds of data would crash on share. Widen once
+        # prism-specification tolerates schemas without it (upstream change, tag, scripts/sync_specification.py).
+        if "Technical.SpecimenType" not in fields:
             continue
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable")
         registry = load_registry(name)
@@ -39,3 +45,41 @@ def spec_catalog() -> dict:
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
     specimens = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}
+
+
+def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
+    """The proposal for new choices in one list of a kind of data; needs no project and writes nothing.
+
+    Returns {"proposal", "document" (format v2), "issue_url", "problems", "skipped"}; `skipped` are values already official.
+    """
+    kinds = {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"]}
+    if modality not in kinds:
+        raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
+    if field not in kinds[modality]:
+        raise OverlayError(f"unknown list {field!r} for {modality}; choose one of: {', '.join(kinds[modality])}")
+    if not values:
+        raise OverlayError("say which values to propose")
+    for value in values:
+        if not isinstance(value, str) or not _VALUE.fullmatch(value):
+            raise OverlayError(f"{value!r}: use lowercase letters, digits and - (starting with a letter or digit)")
+    sp = _vendored_or_error("schema_patch")
+    schema = _official_schema(modality)
+    try:
+        adds, _ = sp.additions(schema, {"operations": [{"op": "add_enum_values", "path": field, "values": list(values)}]})
+    except ValueError as exc:  # PatchError, a different class per loaded copy of the script
+        if str(exc).startswith("nothing to add"):
+            raise OverlayError(f"already allowed in {field}: {', '.join(values)}") from exc
+        raise OverlayError(str(exc)) from exc
+    new = adds[0]["values"]
+    patch = {"operations": [{"op": "add_enum_values", "path": field, "values": new}]}
+    if problems := sp.validate_patch(patch, schema):
+        raise OverlayError("; ".join(problems))
+    proposal = {"modality": modality, "terms": [], "patch": patch}
+    document = as_v2(proposal)
+    return {
+        "proposal": proposal,
+        "document": document,
+        "issue_url": issue_url(document),
+        "problems": check_with_specification(document, load_registry(modality)),
+        "skipped": [v for v in values if v not in new],
+    }
