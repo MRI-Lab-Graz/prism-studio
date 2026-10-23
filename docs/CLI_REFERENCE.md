@@ -776,6 +776,19 @@ official registry; the official registry always wins, and a local term never rea
 
 The validator's "not an official metric" notice prints the matching `spec local add-term` and `terms propose` commands. Studio's *Specifications → Propose changes* page does the same from a browser.
 
+### Propose without a project
+
+These three need no project and send nothing unless you add `--open`; they are what *Specifications → Propose changes* runs.
+
+    python prism_tools.py spec catalog [--json]
+    python prism_tools.py spec propose-values --modality <modality> --field <field> --value <value> [--value <value> ...] [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample] [--out FILE] [--open] [--json]
+
+- `catalog`: what can be proposed: the kinds of data, their lists with the values they allow, and the measurements PRISM already knows.
+- `propose-values`: proposes missing choices in a list, for example `--modality biosample --field Technical.SpecimenType --value sweat`. A value the list already has is reported and left out.
+- `propose-metric`: proposes a missing measurement (`--name`, what it measures, `--units`, the `--specimen` it is taken from; `--alias` adds other names). A measurement PRISM already has is reported with the term to use.
+- `--out FILE` also saves the proposal document (format v2); `--open` opens the prefilled form on GitHub. Today only `biosample` is offered as a kind of data.
+
 ## modality-version
 
 Per-modality schema versions and the pins in a project's `project.json`
