@@ -20,7 +20,6 @@ PARAM_FIELDS = {
     "fmap": _MRI,
     "eeg": _REC,
     "physio": _REC,
-    "eyetracking": _REC,
 }
 
 

@@ -92,7 +92,7 @@ Generated from [`app/schemas/stable/project.schema.json`](../../app/schemas/stab
 | `Sessions[].tasks[].executionGroup` | integer | no | Execution order within session. Tasks with same group run simultaneously. Lower groups run first. |
 | `Sessions[].tasks[].source` | object | no | Provenance: which conversion produced this task's data |
 | `Sessions[].tasks[].source.file` | string | no | Source filename |
-| `Sessions[].tasks[].source.converter` | string | no | Which converter produced the data Allowed: `survey-xlsx`, `survey-lsa`, `biometrics`, `physio`, `eyetracking`, `manual`. |
+| `Sessions[].tasks[].source.converter` | string | no | Which converter produced the data Allowed: `survey-xlsx`, `survey-lsa`, `biometrics`, `physio`, `manual`. |
 | `Sessions[].tasks[].source.convertedAt` | string | no | ISO date of conversion |
 | `TaskDefinitions` | object | yes | Definitions of tasks used in the study. Keys are task identifiers used in Sessions. |
 | `Conditions` | object | no | Experimental conditions/groups (for experimental designs) |

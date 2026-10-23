@@ -127,7 +127,6 @@ One structure for multimodal studies
      <li><span class="prism-structure-check">&check;</span><span><code>survey/</code> &mdash; Questionnaires, scoring inputs, and behavioral responses</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>biometrics/</code> &mdash; Fitness, strength, balance, and other assessments</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>environment/</code> &mdash; Privacy-safe contextual enrichment data</span></li>
-     <li><span class="prism-structure-check">&check;</span><span><code>eyetracking/</code> &mdash; Eye tracking workflows in the same study layout</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>physio/</code> &mdash; Task-free physiological recordings (task-bound physio lives in <code>beh/</code>, <code>func/</code>, <code>eeg/</code>)</span></li>
      <li><span class="prism-structure-check">&check;</span><span><code>your-modality/</code> &mdash; Missing a data type? <a href="MODALITY_WORKFLOW.html">Propose it</a></span></li>
    </ul>
@@ -264,7 +263,6 @@ in the repository root for the full citation, including all authors.
    specs/events
    specs/environment
    specs/physio
-   specs/eyetracking
    specs/project
    specs/dataset_description
    specs/entities

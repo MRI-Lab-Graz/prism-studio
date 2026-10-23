@@ -598,7 +598,6 @@ _ACQ_LABELS = {
     "fmap": ("Field map", "Feldkarten"),
     "eeg": ("EEG", "EEG-Daten"),
     "physio": ("Physiological", "Physiologische Daten"),
-    "eyetracking": ("Eye-tracking", "Eyetracking-Daten"),
 }
 
 
@@ -1085,7 +1084,6 @@ def generate_full_methods(
             "biometrics": "Biometric Measures",
             "physio": "Physiological Measures",
             "eeg": "Electroencephalography (EEG)",
-            "eyetracking": "Eye Tracking",
             "func": "Functional Neuroimaging",
             "anat": "Structural Neuroimaging",
             "other": "Other Measures",
@@ -1128,7 +1126,6 @@ def generate_full_methods(
             "biometrics",
             "physio",
             "eeg",
-            "eyetracking",
             "func",
             "anat",
             "other",
@@ -1187,7 +1184,7 @@ def generate_full_methods(
                 verb = (
                     "was recorded"
                     if modality
-                    in {"biometrics", "physio", "eeg", "eyetracking", "func", "anat"}
+                    in {"biometrics", "physio", "eeg", "func", "anat"}
                     else "was administered"
                 )
                 details = []

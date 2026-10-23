@@ -25,7 +25,6 @@ PAGES = {
     "events": "events.md",
     "environment": "environment.md",
     "physio": "physio.md",
-    "eyetracking": "eyetracking.md",
     "dataset_description": "dataset_description.md",
 }
 # Schemas documented elsewhere (grammar, recipes, internal index).

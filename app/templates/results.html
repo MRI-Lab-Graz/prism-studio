@@ -613,7 +613,7 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between mb-1">
                             <span>
-                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality == 'physio' else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'cloud-sun' if modality == 'environment' else 'brain' }} me-2 text-secondary modality-icon"></i>
+                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality == 'physio' else 'cloud-sun' if modality == 'environment' else 'brain' }} me-2 text-secondary modality-icon"></i>
                                 {{ modality|capitalize }}
                             </span>
                             <span class="badge bg-light text-dark border">{{ count }}</span>
@@ -625,10 +625,6 @@
                                 {% for s in dataset_stats.surveys %}
                                 {% set variants = dataset_stats.survey_variants.get(s, []) if dataset_stats.survey_variants else [] %}
                                 <span class="badge bg-secondary x-small">{{ s }}{% if variants %} (acq-{{ variants | join(', acq-') }}){% endif %}</span>
-                                {% endfor %}
-                            {% elif modality in ['eyetracking', 'eyetrack'] and dataset_stats.eyetracking %}
-                                {% for e in dataset_stats.eyetracking %}
-                                <span class="badge bg-primary x-small">{{ e }}</span>
                                 {% endfor %}
                             {% elif modality == 'physio' and dataset_stats.physio %}
                                 {% for p in dataset_stats.physio %}

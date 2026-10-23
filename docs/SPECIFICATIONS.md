@@ -43,7 +43,6 @@ my_study/
 │       ├── survey/              sub-001_ses-1_task-ads_survey.tsv + .json
 │       ├── biometrics/          sub-001_ses-1_task-grip_biometrics.tsv + .json
 │       ├── physio/              sub-001_ses-1_recording-ecg_physio.edf + .json
-│       ├── eyetracking/         sub-001_ses-1_task-find_eyetrack.edf + .json
 │       ├── beh/ func/ eeg/ ... standard BIDS (events and task-bound physio live here)
 ├── sourcedata/                  raw input; internal lab server only
 ├── code/library/, code/recipes/ project copies of templates and scoring recipes
@@ -62,7 +61,6 @@ higher up). The sidecar carries the metadata that makes the file self-describing
 | Biosample | `biosample/` | `_biosample` | [Biosample](specs/biosample.md) |
 | Environment | `environment/` | `_environment` | [Environment](specs/environment.md) |
 | Physio (task-free) | `physio/` | `_physio` | [Physio](specs/physio.md) |
-| Eyetracking | `eyetracking/` | `_eyetrack` (also `_eye`, `_gaze`) | [Eyetracking](specs/eyetracking.md) |
 | Events | next to its task in `func/`, `beh/`, `eeg/` | `_events` | [Events](specs/events.md) |
 | Standard BIDS (`anat`, `func`, `fmap`, `dwi`, `eeg`, `beh`) | as in BIDS | as in BIDS | validated by the BIDS validator |
 

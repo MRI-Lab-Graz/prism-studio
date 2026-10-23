@@ -497,7 +497,6 @@ class ReadmeGenerator:
                                 "survey",
                                 "biometrics",
                                 "physio",
-                                "eyetracking",
                                 "eeg",
                                 "func",
                                 "anat",

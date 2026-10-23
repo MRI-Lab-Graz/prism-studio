@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # A deliberate subset, not all modalities: the folders the methods text knows how to describe.
-_MODALITY_DIRS = ("survey", "biometrics", "physio", "eeg", "eyetracking", "func", "anat")
+_MODALITY_DIRS = ("survey", "biometrics", "physio", "eeg", "func", "anat")
 
 
 @dataclass

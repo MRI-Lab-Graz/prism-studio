@@ -13,7 +13,6 @@ JOB_POLLING_MODULE = (
 SESSION_REGISTER = (
     REPO_ROOT / "app" / "static" / "js" / "shared" / "session-register.js"
 )
-EYETRACKING_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_eyetracking.html"
 BIOMETRICS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "biometrics.js"
 )
@@ -317,9 +316,6 @@ SURVEY_VALUE_OFFSET_EDITOR_ADAPTER_MODULE = (
 PHYSIO_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
 )
-EYETRACKING_MODULE = (
-    REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "eyetracking.js"
-)
 ENVIRONMENT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "environment.js"
 )
@@ -467,7 +463,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             BIOMETRICS_MODULE: "sourcedata-files?kind=biometrics&project_path=${encodeURIComponent(effectiveProjectPath)}",
             ENVIRONMENT_MODULE: "sourcedata-files?kind=environment&project_path=${encodeURIComponent(effectiveProjectPath)}",
             PHYSIO_MODULE: "sourcedata-files?kind=physio&project_path=${encodeURIComponent(effectiveProjectPath)}",
-            EYETRACKING_MODULE: "sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}",
         }
 
         for module_path, list_snippet in module_expectations.items():
@@ -638,12 +633,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("await sleepWithAbort(intervalMs, signal, abortErrorMessage);", content)
         self.assertIn("if (consecutiveErrors >= maxConsecutiveErrors) {", content)
 
-    def test_environment_physio_eyetracking_polling_cadence_perf_smoke(self):
+    def test_environment_physio_polling_cadence_perf_smoke(self):
         environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
         physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
-        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
 
-        for content in (environment_content, physio_content, eyetracking_content):
+        for content in (environment_content, physio_content):
             self.assertIn("const STATUS_POLL_INTERVAL_MS = 500;", content)
             self.assertIn("const STATUS_POLL_TIMEOUT_MS = 5 * 60 * 1000;", content)
             self.assertIn("const MAX_STATUS_POLL_ERRORS = 4;", content)
@@ -791,11 +785,10 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("onLogs: (newLogs) => {", helper_block)
         self.assertIn("appendBiometricsLogEntries(newLogs);", helper_block)
 
-    def test_physio_and_eyetracking_modules_reset_stale_state_and_send_project_path(
+    def test_physio_module_resets_stale_state_and_send_project_path(
         self,
     ):
         physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
-        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
 
         self.assertIn(
             "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
@@ -858,68 +851,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("line.textContent = String(message);", physio_content)
         self.assertNotIn("physioBatchLog.innerHTML +=", physio_content)
 
-        self.assertIn(
-            "import { resolveCurrentProjectPath } from '../../shared/project-state.js';",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "import { createPollingRunState, isPollingAbortError } from './polling-run-state.js';",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "import { pickServerFolder } from './server-picker.js';",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "import { createJobRunController } from './job-run-controller.js';",
-            eyetracking_content,
-        )
-        self.assertIn("const pollingRunState = createPollingRunState();", eyetracking_content)
-        self.assertIn("const runController = createJobRunController();", eyetracking_content)
-        self.assertIn("if (!runController.tryStartRun()) {", eyetracking_content)
-        self.assertIn("runController.setActiveJobId(jobId);", eyetracking_content)
-        self.assertIn("runController.cancelActiveJob({", eyetracking_content)
-        self.assertIn("runController.finishRun();", eyetracking_content)
-        self.assertIn(
-            "pollingRunState.abortActive('Eyetracking polling aborted due to project change.');",
-            eyetracking_content,
-        )
-        self.assertIn("signal: activePollController.signal,", eyetracking_content)
-        self.assertIn(
-            "function resetEyetrackingWorkflowState({ clearLog = true } = {}) {",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "eyetrackingBatchFiles.addEventListener('change', function() {",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "window.addEventListener('prism-project-changed', function() {",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "sourcedata-files?kind=eyetracking&project_path=${encodeURIComponent(effectiveProjectPath)}",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "refreshEyetrackingSourcedataQuickSelect();",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "formData.append('project_path', currentProjectPath);", eyetracking_content
-        )
-        self.assertIn(
-            "Please select a project first from the top of the page",
-            eyetracking_content,
-        )
-        self.assertIn(
-            "function appendEyetrackingBatchLogLine(message, colorClass = 'ansi-reset') {",
-            eyetracking_content,
-        )
-        self.assertIn("const line = document.createElement('span');", eyetracking_content)
-        self.assertIn("line.textContent = String(message);", eyetracking_content)
-        self.assertNotIn("eyetrackingBatchLog.innerHTML +=", eyetracking_content)
-
     def test_environment_handler_block_uses_run_lock_and_single_job_lifecycle(self):
         environment_content = ENVIRONMENT_MODULE.read_text(encoding="utf-8")
 
@@ -961,36 +892,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn(end_marker, physio_content)
 
         handler_block = physio_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
-
-        self.assertIn("if (!runController.tryStartRun()) {", handler_block)
-        self.assertIn("if (!isDryRun && !currentProjectPath) {", handler_block)
-        self.assertIn("runController.finishRun();", handler_block)
-        self.assertIn("runController.setActiveJobId(jobId);", handler_block)
-        self.assertIn("await runController.cancelActiveJob({", handler_block)
-        self.assertIn("finally {", handler_block)
-        self.assertIn(
-            "buildCancelUrl: (activeJobId) => `/api/batch-convert-cancel/${encodeURIComponent(activeJobId)}`",
-            handler_block,
-        )
-        self.assertIn(
-            "const statusResponse = await fetchWithApiFallback(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);",
-            handler_block,
-        )
-
-    def test_eyetracking_handler_block_uses_run_lock_and_releases_on_replay_paths(
-        self,
-    ):
-        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
-
-        start_marker = "async function runEyetrackingBatchConversion(dryRunMode) {"
-        end_marker = "if (eyetrackingBatchPreviewBtn) {"
-
-        self.assertIn(start_marker, eyetracking_content)
-        self.assertIn(end_marker, eyetracking_content)
-
-        handler_block = (
-            eyetracking_content.split(start_marker, 1)[1].split(end_marker, 1)[0]
-        )
 
         self.assertIn("if (!runController.tryStartRun()) {", handler_block)
         self.assertIn("if (!isDryRun && !currentProjectPath) {", handler_block)
@@ -1598,16 +1499,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             "`/api/participants-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`",
             helper_block,
         )
-
-    def test_eyetracking_template_references_bids_modality(self):
-        content = EYETRACKING_TEMPLATE.read_text(encoding="utf-8")
-
-        self.assertIn("PRISM/BIDS-style eyetracking outputs", content)
-        self.assertIn(
-            "Eyetracking stays available because BIDS defines an eyetracking modality.",
-            content,
-        )
-        self.assertIn("Uses the BIDS eyetracking suffix", content)
 
     def test_session_registration_uses_visible_project_path(self):
         content = SESSION_REGISTER.read_text(encoding="utf-8")
@@ -3419,7 +3310,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
             encoding="utf-8"
         )
         physio_content = PHYSIO_MODULE.read_text(encoding="utf-8")
-        eyetracking_content = EYETRACKING_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("project_output_path", biometrics_content)
         self.assertIn("project_output_paths", biometrics_content)
@@ -3432,10 +3322,6 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("result.project_output_path", physio_content)
         self.assertIn("result.project_output_paths", physio_content)
         self.assertNotIn("project dataset root", physio_content)
-
-        self.assertIn("result.project_output_path", eyetracking_content)
-        self.assertIn("result.project_output_paths", eyetracking_content)
-        self.assertNotIn("Files also saved to project.", eyetracking_content)
 
 
 if __name__ == "__main__":

@@ -34,11 +34,6 @@ grammar that ties them together.
     <span class="prism-chapter-title">Physio</span>
     <span class="prism-chapter-outcome">Physiological recordings such as ECG, EDA, respiration</span>
   </a>
-  <a class="prism-chapter-card" href="specs/eyetracking.html">
-    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-    <span class="prism-chapter-title">Eyetracking</span>
-    <span class="prism-chapter-outcome">Gaze recordings (EyeLink EDF or tables) with a required sidecar</span>
-  </a>
   <a class="prism-chapter-card" href="specs/project.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
     <span class="prism-chapter-title">Project metadata</span>

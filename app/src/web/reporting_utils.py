@@ -331,7 +331,6 @@ def format_validation_results(
                 "beh_tasks": sorted(list(getattr(dataset_stats, "beh_tasks", []))),
                 "func_tasks": sorted(list(getattr(dataset_stats, "func_tasks", []))),
                 "eeg_tasks": sorted(list(getattr(dataset_stats, "eeg_tasks", []))),
-                "eyetracking": sorted(list(getattr(dataset_stats, "eyetracking", []))),
                 "physio": sorted(list(getattr(dataset_stats, "physio", []))),
                 "surveys": sorted(list(getattr(dataset_stats, "surveys", []))),
                 "biometrics": sorted(list(getattr(dataset_stats, "biometrics", []))),

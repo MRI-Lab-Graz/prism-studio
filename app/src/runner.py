@@ -812,6 +812,10 @@ def _scan_dir(path, dir_cache=None):
 RETIRED_FOLDERS = {
     "events": "move each *_events.tsv next to its task data in func/, beh/ or eeg/",
     "physiological": "rename the folder to physio/",
+    "eyetracking": (
+        "eye tracking is BIDS physio (PhysioType eyetrack): convert EyeLink .edf with "
+        "eye2bids and store it in the datatype folder of its task (func/, beh/ or eeg/)"
+    ),
 }
 
 
@@ -1116,8 +1120,6 @@ def _validate_modality_dir(
                         description_entity = "survey"
                     elif modality == "biometrics":
                         description_entity = "biometrics"
-                    elif modality == "eyetracking":
-                        description_entity = "eyetracking"
                     elif modality in ["physio"]:
                         description_entity = "physio"
                     else:

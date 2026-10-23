@@ -20,13 +20,6 @@ def test_primary_suffix_for_known_modalities():
     assert rules.primary_suffix("physio") == "physio"
 
 
-def test_primary_suffix_prefers_first_of_multiple_suffixes():
-    rules = load_entity_rules()
-    # eyetracking has three accepted suffixes for validation; writers should
-    # get the primary one.
-    assert rules.primary_suffix("eyetracking") == "eyetrack"
-
-
 def test_primary_suffix_raises_for_unknown_modality():
     rules = load_entity_rules()
     with pytest.raises(KeyError):

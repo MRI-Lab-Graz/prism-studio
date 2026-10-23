@@ -51,5 +51,4 @@ appear once running.
 
 ## What's next
 
-- [Converter — Eyetracking](converter_eyetracking.md)
 - [Validator](validator.md)

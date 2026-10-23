@@ -54,12 +54,6 @@ _SOURCEDATA_KIND_EXTENSIONS: dict[str, set[str]] = {
         ".csv",
         ".tsv",
     },
-    "eyetracking": {
-        ".edf",
-        ".asc",
-        ".tsv",
-        ".tsv.gz",
-    },
 }
 
 

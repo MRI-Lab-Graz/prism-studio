@@ -12,7 +12,7 @@
     {{ page_header(
         'fas fa-exchange-alt',
         'PRISM Converter',
-        'Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.',
+        'Convert Survey, Biometrics, and Physio inputs to PRISM/BIDS-style outputs.',
         'PRISM extends BIDS with additional scientific schemas (e.g., survey and physiological metadata) while preserving compatibility with standard BIDS tools.'
     ) }}
 
@@ -61,13 +61,6 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="eyetracking-tab" data-bs-toggle="pill" data-bs-target="#eyetracking-panel" type="button" role="tab" aria-controls="eyetracking-panel" aria-selected="false" title="Open Eye-tracking converter" aria-label="Open Eye-tracking converter">
-                            <i class="fas fa-eye fa-lg d-block"></i>
-                            <span class="converter-icon-label">Eye-tracking</span>
-                            <span class="visually-hidden">Eyetracking Recordings</span>
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
                         <button class="nav-link" id="environment-tab" data-bs-toggle="pill" data-bs-target="#environment-panel" type="button" role="tab" aria-controls="environment-panel" aria-selected="false" title="Open Environment converter" aria-label="Open Environment converter">
                             <i class="fas fa-globe fa-lg d-block"></i>
                             <span class="converter-icon-label">Environment</span>
@@ -85,8 +78,6 @@
                 {% include 'converter_biometrics.html' %}
 
                 {% include 'converter_physio.html' %}
-
-                {% include 'converter_eyetracking.html' %}
 
                 {% include 'converter_environment.html' %}
 

@@ -1,4 +1,4 @@
-"""Batch conversion utilities for physiological and eyetracking data.
+"""Batch conversion utilities for physiological data.
 
 This module provides utilities for batch converting raw data files from a flat folder
 structure into PRISM/BIDS-style datasets. The input files must follow the naming convention:
@@ -7,11 +7,9 @@ structure into PRISM/BIDS-style datasets. The input files must follow the naming
 
 Example:
     sub-003_ses-1_task-rest.raw     → physio data
-    sub-003_ses-1_task-find.edf     → eyetracking data
 
 Supported formats:
 - Physio: .raw, .vpd (Varioport devices) → converted to .edf + .json
-- Eyetracking: .edf (SR Research EyeLink) → copied + .json sidecar generated
 """
 
 from __future__ import annotations
@@ -46,7 +44,6 @@ BIDS_FILENAME_PATTERN = re.compile(
 
 # Modality detection by extension
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
-EYETRACKING_EXTENSIONS = {".edf"}
 
 
 class PhysioDestinationError(ValueError):
@@ -64,12 +61,6 @@ def physio_target_folder(task: str | None, destination: str | None) -> str:
     return destination
 
 
-# Pre-processed eyetracking trial-summary tables (e.g. exported from EyeLink Data
-# Viewer). Kept separate from EYETRACKING_EXTENSIONS/detect_modality() because
-# .tsv/.tsv.gz are ambiguous in general (they're also GENERIC_EXTENSIONS) — these
-# are only treated as eyetracking when a batch job is explicitly scoped to the
-# eyetracking modality (modality_filter == "eyetracking"), not in "all" mode.
-EYETRACKING_TABULAR_EXTENSIONS = {".tsv", ".tsv.gz"}
 GENERIC_EXTENSIONS = {
     ".tsv",
     ".tsv.gz",
@@ -164,8 +155,6 @@ def detect_modality(ext: str) -> str | None:
 
     if ext_lower in PHYSIO_EXTENSIONS:
         return "physio"
-    elif ext_lower in EYETRACKING_EXTENSIONS:
-        return "eyetracking"
     elif ext_lower in GENERIC_EXTENSIONS:
         return "generic"
     return None
@@ -295,37 +284,6 @@ def _create_physio_sidecar(
         sidecar.setdefault("Acquisition", {})["AcquisitionDuration"] = extra_meta.get(
             "RecordingDuration"
         )
-
-    with open(output_json, "w", encoding="utf-8") as f:
-        json.dump(sidecar, f, indent=2, ensure_ascii=False)
-
-
-def _create_eyetracking_sidecar(
-    source_path: Path,
-    output_json: Path,
-    *,
-    task_name: str,
-    extra_meta: dict | None = None,
-) -> None:
-    """Create a PRISM-compliant JSON sidecar for eyetracking data."""
-    extra_meta = extra_meta or {}
-    sidecar = {
-        "Technical": {
-            "SamplingRate": extra_meta.get("SamplingFrequency") or "unknown",
-            "Manufacturer": "SR Research",
-            "DeviceSerialNumber": "unknown",
-            "EyeTrackingMethod": "video-based",
-            "RecordedEye": "unknown",
-        },
-        "Study": {
-            "TaskName": task_name.replace("task-", ""),
-        },
-        "Metadata": {
-            "SourceFile": source_path.name,
-        },
-        "ScreenDistance": "unknown",
-        "ScreenSize": "unknown",
-    }
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
@@ -1094,114 +1052,6 @@ def convert_physio_file(
         )
 
 
-def convert_eyetracking_file(
-    source_path: Path,
-    output_dir: Path,
-    *,
-    parsed: dict,
-) -> ConvertedFile:
-    """Convert a single eyetracking file to PRISM format.
-
-    Two input kinds are supported:
-    - EyeLink `.edf` recordings: copied as-is, with EDF header metadata
-      (sampling frequency, duration) extracted into the sidecar when pyedflib
-      is available.
-    - Pre-processed trial-summary tables (`.tsv`/`.tsv.gz`, e.g. exported from
-      EyeLink Data Viewer): copied as-is with a plain sidecar; EDF-specific
-      metadata extraction is skipped since there is no EDF header to read.
-
-    In both cases the source file's own extension is preserved on output —
-    a `.tsv` input never gets written out as a `.edf` file.
-    """
-    sub = parsed["sub"]
-    ses = parsed["ses"]
-    task = parsed["task"]
-
-    source_name_lower = source_path.name.lower()
-    if source_name_lower.endswith(".tsv.gz"):
-        out_ext = ".tsv.gz"
-    else:
-        out_ext = source_path.suffix.lower()
-
-    # Build output path: output_dir/sub-XXX/[ses-YYY/]eyetracking/
-    if ses:
-        out_folder = output_dir / sub / ses / "eyetracking"
-    else:
-        out_folder = output_dir / sub / "eyetracking"
-    out_folder.mkdir(parents=True, exist_ok=True)
-
-    # Build BIDS filename
-    parts = [sub]
-    if ses:
-        parts.append(ses)
-    parts.append(task)
-    parts.append("eyetrack")
-    base_name = "_".join(parts)
-
-    out_data = out_folder / f"{base_name}{out_ext}"
-    out_json = out_folder / f"{base_name}.json"
-
-    output_files = []
-
-    try:
-        # Copy the data file, preserving its original extension/format
-        shutil.copy2(source_path, out_data)
-        output_files.append(out_data)
-
-        # EDF header metadata only applies to actual .edf recordings
-        edf_meta = _extract_edf_metadata(source_path) if out_ext == ".edf" else {}
-        _create_eyetracking_sidecar(
-            source_path, out_json, task_name=task, extra_meta=edf_meta
-        )
-        output_files.append(out_json)
-
-        # Try to enrich sidecar with EDF header info if pyedflib is available
-        if out_ext == ".edf":
-            try:
-                import pyedflib
-
-                with pyedflib.EdfReader(str(source_path)) as f:
-                    with open(out_json, "r", encoding="utf-8") as jf:
-                        sidecar = json.load(jf)
-
-                    if "Technical" not in sidecar:
-                        sidecar["Technical"] = {}
-
-                    # Extract sampling rate (from first signal)
-                    if f.signals_in_file > 0:
-                        sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
-
-                    # Extract duration
-                    sidecar["Technical"]["Duration"] = f.getFileDuration()
-
-                    with open(out_json, "w", encoding="utf-8") as jf:
-                        json.dump(sidecar, jf, indent=2)
-            except (ImportError, Exception):
-                pass
-
-        return ConvertedFile(
-            source_path=source_path,
-            output_files=output_files,
-            modality="eyetracking",
-            subject=sub,
-            session=ses,
-            task=task,
-            success=True,
-        )
-
-    except Exception as e:
-        return ConvertedFile(
-            source_path=source_path,
-            output_files=[],
-            modality="eyetracking",
-            subject=sub,
-            session=ses,
-            task=task,
-            success=False,
-            error=str(e),
-        )
-
-
 def convert_generic_file(
     source_path: Path,
     output_dir: Path,
@@ -1249,7 +1099,6 @@ def convert_generic_file(
         "survey": "survey",
         "biometrics": "biometrics",
         "physio": "physio",
-        "eyetracking": "eyetrack",
         "anat": "T1w",
         "func": "bold",
     }
@@ -1355,7 +1204,7 @@ def batch_convert_folder(
         output_folder: Path to output PRISM dataset folder
         physio_sampling_rate: Optional sampling rate override for physio files
         generate_physio_reports: Generate per subject/session HTML physio reports
-        modality_filter: Which modalities to process ("all", "physio", or "eyetracking")
+        modality_filter: Which modalities to process ("all" or "physio")
         log_callback: Optional callback for logging messages: log_callback(message, level)
                       where level is "info", "success", "warning", or "error"
         physio_destination: "beh", "func" or "eeg"; required when a physio file has a task-
@@ -1388,18 +1237,11 @@ def batch_convert_folder(
     all_extensions = set()
     if modality_filter in ("all", "physio"):
         all_extensions.update(PHYSIO_EXTENSIONS)
-    if modality_filter in ("all", "eyetracking"):
-        all_extensions.update(EYETRACKING_EXTENSIONS)
-    if modality_filter == "eyetracking":
-        # Only when eyetracking is explicitly selected -- in "all" mode these
-        # extensions stay ambiguous/generic.
-        all_extensions.update(EYETRACKING_TABULAR_EXTENSIONS)
-    if modality_filter not in ("all", "physio", "eyetracking"):
-        # If a specific modality is requested that isn't physio/eyetracking,
+    if modality_filter not in ("all", "physio"):
+        # If a specific modality is requested that isn't physio,
         # we assume it's a generic copy operation
         all_extensions.update(GENERIC_EXTENSIONS)
         all_extensions.update(PHYSIO_EXTENSIONS)
-        all_extensions.update(EYETRACKING_EXTENSIONS)
 
     # Collect files first to get total count
     files_to_process = []
@@ -1414,11 +1256,7 @@ def batch_convert_folder(
             ext = ".tsv.gz"
 
         if modality_filter == "all":
-            if (
-                ext in PHYSIO_EXTENSIONS
-                or ext in EYETRACKING_EXTENSIONS
-                or ext in GENERIC_EXTENSIONS
-            ):
+            if ext in PHYSIO_EXTENSIONS or ext in GENERIC_EXTENSIONS:
                 files_to_process.append(file_path)
         elif ext in all_extensions:
             files_to_process.append(file_path)
@@ -1469,17 +1307,9 @@ def batch_convert_folder(
 
         # Override modality if filter is specific and not 'all'
         target_modality: str
-        if modality_filter not in ("all", "physio", "eyetracking"):
+        if modality_filter not in ("all", "physio"):
             modality = "generic"
             target_modality = modality_filter
-        elif modality_filter == "eyetracking" and (
-            ext in EYETRACKING_TABULAR_EXTENSIONS or ext in EYETRACKING_EXTENSIONS
-        ):
-            # .tsv/.tsv.gz are generic-by-default and .edf is physio-by-default
-            # (see detect_modality), but an eyetracking-scoped batch job should
-            # route them to the eyetracking converter.
-            modality = "eyetracking"
-            target_modality = "eyetracking"
         else:
             target_modality = modality if modality is not None else "generic"
 
@@ -1503,17 +1333,7 @@ def batch_convert_folder(
                 log_callback=log_callback,
                 destination=physio_destination,
             )
-        elif target_modality == "eyetracking":
-            converted = convert_eyetracking_file(
-                file_path,
-                work_folder,
-                parsed=parsed,
-            )
-        elif modality == "generic" or modality_filter not in (
-            "all",
-            "physio",
-            "eyetracking",
-        ):
+        elif modality == "generic" or modality_filter not in ("all", "physio"):
             converted = convert_generic_file(
                 file_path,
                 work_folder,
@@ -1653,7 +1473,7 @@ def create_dataset_description(
     output_folder: Path,
     *,
     name: str = "Converted Dataset",
-    description: str = "Dataset converted from raw physio/eyetracking files",
+    description: str = "Dataset converted from raw physio files",
 ) -> Path:
     """Create a dataset_description.json file for the output dataset following BIDS v1.10.1."""
     desc = {
@@ -1666,7 +1486,7 @@ def create_dataset_description(
             {
                 "Name": "PRISM Batch Converter",
                 "Version": "1.1.1",
-                "Description": "Automated conversion from raw physiological/eyetracking files to BIDS/PRISM structure.",
+                "Description": "Automated conversion from raw physiological files to BIDS/PRISM structure.",
             }
         ],
         "HEDVersion": "8.2.0",
@@ -1689,7 +1509,7 @@ if __name__ == "__main__":
         cast(io.TextIOWrapper, _stream).reconfigure(encoding="utf-8")
 
     parser = argparse.ArgumentParser(
-        description="Batch convert physio/eyetracking data from flat folder to PRISM format"
+        description="Batch convert physio data from flat folder to PRISM format"
     )
     parser.add_argument(
         "source",
@@ -1708,7 +1528,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--modality",
-        choices=["all", "physio", "eyetracking"],
+        choices=["all", "physio"],
         default="all",
         help="Which modalities to convert (default: all)",
     )

@@ -44,7 +44,6 @@ class DatasetStats:
         self.surveys = set()
         self.survey_variants = {}  # survey task -> set of acq- values
         self.biometrics = set()
-        self.eyetracking = set()
         self.physio = set()
         self.environment = set()
         self.descriptions = {}  # type -> name -> description
@@ -113,7 +112,6 @@ class DatasetStats:
         if task and modality not in [
             "survey",
             "biometrics",
-            "eyetracking",
             "physio",
             "environment",
             "beh",
@@ -146,15 +144,6 @@ class DatasetStats:
             match = re.search(r"_survey-([a-zA-Z0-9]+)", filename)
             if match:
                 self.surveys.add(match.group(1))
-
-        elif modality in ["eyetracking", "eyetrack"]:
-            if task:
-                self.eyetracking.add(task)
-            else:
-                # Fallback task extraction
-                match = re.search(r"_task-([a-zA-Z0-9]+)", filename)
-                if match:
-                    self.eyetracking.add(match.group(1))
 
         elif modality in ["physio"]:
             if task:

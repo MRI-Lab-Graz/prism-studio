@@ -9,7 +9,6 @@ Available version folders include `stable`, `v0.1`, and `v0.2`. The `v0.2` surve
 - **[Survey](stable/survey.schema.json)**: Metadata for questionnaires and surveys.
 - **[Biometrics](stable/biometrics.schema.json)**: Metadata for physical performance and biometric assessments.
 - **[Events](stable/events.schema.json)**: Metadata for task events.
-- **[Eyetracking](stable/eyetracking.schema.json)**: Metadata for eyetracking data.
 - **[Physio](stable/physio.schema.json)**: Metadata for physiological recordings.
 
 ## Practical Templates

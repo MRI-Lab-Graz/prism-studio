@@ -94,7 +94,7 @@ def api_physio_convert():
 
 @conversion_bp.route("/api/batch-convert", methods=["POST"])
 def api_batch_convert():
-    """Batch convert physio/eyetracking files from a flat folder structure."""
+    """Batch convert physio files from a flat folder structure."""
     return _api_batch_convert()
 
 

@@ -398,7 +398,7 @@ class TestSchemaManager:
         assert len(schemas) > 0
         assert "survey" in schemas
         assert "dataset_description" in schemas
-        for name in ("biometrics", "environment", "events", "physio", "eyetracking"):
+        for name in ("biometrics", "environment", "events", "physio"):
             assert name in schemas
         assert "physiological" not in schemas
 

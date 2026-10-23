@@ -300,34 +300,6 @@ def test_sourcedata_files_kind_filter_physio(tmp_path):
     assert names == {"recording.raw", "recording.vpd"}
 
 
-def test_sourcedata_files_kind_filter_eyetracking_supports_tsv_gz(tmp_path):
-    project_root = tmp_path / "project"
-    sourcedata = project_root / "sourcedata"
-    sourcedata.mkdir(parents=True)
-
-    for name in (
-        "gaze.edf",
-        "gaze.tsv.gz",
-        "gaze.tsv",
-        "gaze.csv",
-    ):
-        (sourcedata / name).write_text("placeholder", encoding="utf-8")
-
-    app = _build_app(str(project_root))
-
-    with app.test_client() as client:
-        response = client.get(
-            "/api/projects/sourcedata-files",
-            query_string={"kind": "eyetracking"},
-        )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    names = {entry["name"] for entry in payload.get("files", [])}
-    assert {"gaze.edf", "gaze.tsv.gz", "gaze.tsv"} <= names
-    assert "gaze.csv" not in names
-
-
 def test_sourcedata_kind_filters_smoke_for_converter_tabs(tmp_path):
     project_root = tmp_path / "project"
     sourcedata = project_root / "sourcedata"
@@ -345,9 +317,6 @@ def test_sourcedata_kind_filters_smoke_for_converter_tabs(tmp_path):
         "survey_only.lss",
         "physio_only.raw",
         "physio_only.vpd",
-        "eye_only.edf",
-        "eye_only.asc",
-        "eye_only.tsv.gz",
     }
     for name in supported_files | {"ignore.txt"}:
         (sourcedata / name).write_text("placeholder", encoding="utf-8")
@@ -395,12 +364,6 @@ def test_sourcedata_kind_filters_smoke_for_converter_tabs(tmp_path):
         "physio": {
             "physio_only.raw",
             "physio_only.vpd",
-        },
-        "eyetracking": {
-            "eye_only.edf",
-            "eye_only.asc",
-            "eye_only.tsv.gz",
-            "tabular.tsv",
         },
         "all": supported_files,
     }

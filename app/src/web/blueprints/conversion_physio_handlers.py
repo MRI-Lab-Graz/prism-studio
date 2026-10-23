@@ -1,5 +1,5 @@
 """
-Physio/Eyetracking conversion logic for the Prism Web UI.
+Physio conversion logic for the Prism Web UI.
 Extracted from conversion.py to reduce module size.
 """
 
@@ -620,7 +620,7 @@ def api_physio_convert():
 
 
 def api_batch_convert():
-    """Batch convert physio/eyetracking files from a flat folder structure."""
+    """Batch convert physio files from a flat folder structure."""
     if not batch_convert_folder:
         return jsonify({"error": "Batch conversion not available"}), 500
 

@@ -550,7 +550,7 @@ python prism_tools.py environment convert --input mri_scan.tsv --project /path/t
   --timestamp-col timestamp
 ```
 
-### Physio and eyetracking
+### Physio
 
 **`convert physio`** — Varioport (`.raw`/`.vpd`) recordings from a `sourcedata`
 directory or single file:
@@ -559,7 +559,7 @@ directory or single file:
 python prism_tools.py convert physio --input ./sourcedata --output ./rawdata --task rest --suffix ecg --sampling-rate 256
 ```
 
-**`physio batch-convert`** — batch-convert physio/eyetracking files sitting in a
+**`physio batch-convert`** — batch-convert physio files sitting in a
 flat source folder (distinct from `convert physio` above):
 
 ```bash
@@ -636,7 +636,7 @@ dataset copy instead.
 **`file-management delete-files`** / **`remove-scans-tsv`** / **`rename-physio`** —
 preview or delete project files matching BIDS entity filters, delete every
 `*_scans.tsv` file across a project (DataLad-aware where applicable), or
-regex-rename a folder of physio/eyetracking files (with optional
+regex-rename a folder of physio files (with optional
 `{subject}`/`{session}` folder-path placeholders and BIDS-organized output) —
 the CLI equivalents of Studio's File Management -> Delete Files / "Delete all
 scans.tsv" / Physio Renamer actions. Also runnable as `prism.py

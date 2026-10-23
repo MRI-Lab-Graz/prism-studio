@@ -201,7 +201,7 @@ def _scan_input_folder(input_root: Path) -> list[tuple[str, str]]:
 
 
 def cmd_file_management_rename_physio(args) -> None:
-    """Preview or apply a regex-based batch rename of physio/eyetracking
+    """Preview or apply a regex-based batch rename of physio
     files — the CLI equivalent of the Studio GUI's File Management /
     Converter -> Physio Renamer action (src.physio_renamer.plan_rename)."""
     as_json = bool(getattr(args, "json", False))

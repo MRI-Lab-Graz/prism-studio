@@ -21,10 +21,8 @@ GUARDED = [
     "app/src/reporting.py",
     "src/bids_entity_rewriter.py",
 ]
-# Import-time constants built from rules no project can change (the official eyetracking suffixes, the global
-# entity order); each is commented where it is defined.
+# Import-time constants built from rules no project can change (the global entity order); each is commented where it is defined.
 OFFICIAL_AT_IMPORT = {
-    "app/src/fixer.py": {"_EYETRACKING_NAME_HINTS"},
     "src/bids_entity_rewriter.py": {"_ENTITY_ORDER", "_REQUIRED_ENTITIES"},
 }
 

@@ -58,7 +58,6 @@ RESTRICTED_FOLDER_NAMES = {
     "movie",
     "survey",
     "environment",
-    "eyetracking",
     "physio",
     "eeg",
     "func",

@@ -82,9 +82,9 @@ def test_dry_run_task_bound_writes_nothing(tmp_path, make_edf):
 def test_non_physio_file_without_task_is_skipped_with_message(tmp_path, make_edf):
     src = tmp_path / "src"
     src.mkdir()
-    (src / "sub-01_ses-pre.tsv").write_text("a\tb\n")  # eyetracking trial table
+    (src / "sub-01_ses-pre.tsv").write_text("a\tb\n")  # generic table
     out = tmp_path / "out"
-    result = batch_convert_folder(src, out, modality_filter="eyetracking")
+    result = batch_convert_folder(src, out, modality_filter="all")
     assert result.converted == []
     assert [(p.name, "task" in why) for p, why in result.skipped] == [("sub-01_ses-pre.tsv", True)]
 
@@ -200,19 +200,6 @@ def test_task_free_raw_gets_no_bids_base_and_lands_in_physio(tmp_path, monkeypat
     assert (out / "sub-01/physio/sub-01_recording-ecg_physio.edf").exists()
     assert (out / "sub-01/physio/sub-01_recording-ecg_physio.json").exists()
     assert result.converted[0].target_folder == "physio"
-
-
-def test_eyetracking_filter_routes_task_bound_edf_to_eyetracking(tmp_path, make_edf):
-    """An EyeLink .edf with a task is not physio: no destination needed, eyetracking converter handles it."""
-    src = _src(tmp_path, make_edf, "sub-01_task-reading_eyetrack.edf")
-    out = tmp_path / "out"
-    result = batch_convert_folder(src, out, modality_filter="eyetracking")
-    assert [c.modality for c in result.converted] == ["eyetracking"]
-    assert result.skipped == [] and result.converted[0].success
-    assert [f for f in _rel(out) if f.startswith("sub-")] == [
-        "sub-01/eyetracking/sub-01_task-reading_eyetrack.edf",
-        "sub-01/eyetracking/sub-01_task-reading_eyetrack.json",
-    ]
 
 
 def _converted(**kw):
@@ -351,5 +338,5 @@ def test_check_physio_destination_is_public_and_filters(tmp_path, make_edf):
     with pytest.raises(PhysioDestinationError, match="sub-01_task-stroop_recording-ecg.edf"):
         check_physio_destination(src, "all", None)
     check_physio_destination(src, "all", "beh")  # destination given: fine
-    check_physio_destination(src, "eyetracking", None)  # not physio: nothing to check
+    check_physio_destination(src, "survey", None)  # not physio: nothing to check
     assert not (tmp_path / "out").exists()

@@ -96,9 +96,7 @@ class EntityRules:
         """Modality identities with their own filename-suffix grammar (i.e.
         excludes alias names, modalities without a folder (events) and pure-BIDS-passthrough
         entries with no PRISM suffix data like anat/func). This is the set
-        PRISM offers/manages a folder for at the project level - it includes
-        eyetracking, which has suffix data even though it's validated as
-        BIDS-passthrough (see bids_modalities)."""
+        PRISM offers/manages a folder for at the project level."""
         return [
             name
             for name, rule in self.modalities.items()
@@ -114,9 +112,8 @@ class EntityRules:
     def primary_suffix(self, modality: str) -> str:
         """The canonical suffix to use when *writing* a file for this
         modality (the first entry in its suffixes list). Modalities with
-        multiple accepted suffixes (e.g. eyetracking's eyetrack/eye/gaze)
-        are for validation only here - writers always emit the primary
-        one."""
+        multiple accepted suffixes are for validation only here - writers
+        always emit the primary one."""
         rule = self.modalities.get(modality)
         if rule is None or not rule.suffixes:
             raise KeyError(f"No suffix defined for modality '{modality}'")

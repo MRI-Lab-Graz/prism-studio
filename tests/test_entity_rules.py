@@ -23,7 +23,6 @@ _EXPECTED_PATTERNS = {
     "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
-    "eyetracking": r".+(_trackedEye-(left|right|both))?_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
 }
 
 # Copied verbatim from app/src/issues.py's get_fix_hint() modality_hints dict.
@@ -31,7 +30,6 @@ _EXPECTED_HINTS = {
     "survey": "Ensure the filename ends with '_survey.tsv' or '_survey.json' (e.g., sub-001_task-panas_survey.tsv)",
     "biometrics": "Ensure the filename ends with '_biometrics.tsv' or '_biometrics.json' (e.g., sub-001_task-rest_biometrics.tsv)",
     "physio": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
-    "eyetracking": "Ensure the filename ends with '_eyetrack.<ext>' or '_eye.<ext>' or '_gaze.<ext>' where <ext> is tsv, tsv.gz, json, edf, or asc (e.g., sub-001_task-rest_trackedEye-left_eyetrack.tsv)",
     "events": "Ensure the filename ends with '_events.tsv' (e.g., sub-001_task-rest_events.tsv)",
 }
 
@@ -75,7 +73,7 @@ def test_prism_modalities_matches_hardcoded_constant():
 def test_bids_modalities_matches_hardcoded_constant():
     rules = load_entity_rules()
     assert rules.bids_modalities == {
-        "anat", "func", "fmap", "dwi", "eeg", "beh", "eyetracking",
+        "anat", "func", "fmap", "dwi", "eeg", "beh",
     }
 
 
@@ -108,7 +106,7 @@ def test_project_modalities_matches_project_manager_hardcoded_list():
     6 names (order differs, which is harmless - nothing depends on it)."""
     rules = load_entity_rules()
     assert set(rules.project_modalities) == {
-        "survey", "biometrics", "biosample", "environment", "physio", "eyetracking",
+        "survey", "biometrics", "biosample", "environment", "physio",
     }
 
 

@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates"
-CONVERTERS = ["survey", "participants", "biometrics", "environment", "physio", "eyetracking"]
+CONVERTERS = ["survey", "participants", "biometrics", "environment", "physio"]
 # One entry per picker: id of its (hidden) native input and of its Browse button.
 BROWSE_BUTTONS = {
     "survey": ["browseSurveyFileBtn"],
@@ -15,7 +15,6 @@ BROWSE_BUTTONS = {
     "biometrics": ["browseBiometricsFileBtn"],
     "environment": ["browseEnvFileBtn"],
     "physio": ["browsePhysioFolderBtn"],
-    "eyetracking": ["browseEyetrackingFolderBtn"],
 }
 
 
@@ -108,7 +107,7 @@ def test_page_scripts_have_no_server_mode_leftovers():
     ]
     scripts = ["index.js", "file_management.js"] + [
         f"modules/converter/{name}.js"
-        for name in ("survey-convert", "participants", "biometrics", "environment", "physio", "eyetracking")
+        for name in ("survey-convert", "participants", "biometrics", "environment", "physio")
     ]
     found = [
         f"{name}: {token}"

@@ -35,7 +35,6 @@
         biometricsDataFile: 'Expected shape: one row per participant (and session), one column per measure, e.g. height, weight, grip strength.',
         physioBatchFiles: 'Use the raw recordings as they came off the Varioport device. Your source files are only read, never modified.',
         physioBatchFolder: 'Handy when all recordings sit in one folder (e.g. sourcedata/physio). Only compatible files are picked up.',
-        eyetrackingBatchFiles: '.edf is the raw EyeLink format. .tsv / .tsv.gz are already-exported sample tables. Use whichever your lab has.',
         renamerFiles: 'Nothing is renamed until you confirm. You will see a preview of every new filename first.',
         organizeFiles: 'Your originals stay untouched because PRISM copies them. Filenames should already follow the sub-XX_... pattern. If they don\'t, use the Renamer first.',
         wideLongFile: 'Wide = one row per participant, time points in separate columns (score_t1, score_t2). Long = one row per participant per time point. Mixed models in R/Python usually want long.',
