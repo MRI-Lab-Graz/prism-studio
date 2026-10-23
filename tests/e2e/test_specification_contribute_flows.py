@@ -33,6 +33,7 @@ def test_an_unknown_metric_is_added_shared_and_removed(app_page, studio_url, pro
     dialog = app_page.locator("#spec-propose-dialog")
     expect(dialog).to_be_visible()
     expect(app_page.locator("#spec-propose-json")).to_contain_text("prism:dhea-s.saliva")
+    expect(app_page.locator("#spec-propose-dialog")).to_contain_text("column name stays an alias")
     link = app_page.locator("#spec-propose-open")
     expect(link).to_be_visible()
     assert link.get_attribute("href").startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
@@ -106,10 +107,14 @@ def test_a_missing_choice_without_a_project(bare_page, studio_url):
     expect(bare_page.locator("#spec-v-allowed")).to_contain_text("saliva")
     add_choice(bare_page, "sweat")
     expect(bare_page.locator("#spec-v-mine")).to_contain_text("sweat")
+    expect(bare_page.get_by_role("button", name="Remove sweat")).to_be_visible()
     expect(bare_page.locator("#spec-v-use")).to_be_hidden()
     expect(bare_page.locator("body")).not_to_contain_text("Open a project first")
     bare_page.locator("#spec-v-share").click()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("sweat")
+    expect(bare_page.locator("#spec-propose-title")).to_have_text("Share a choice with the PRISM community")
+    dialog_text = bare_page.locator("#spec-propose-dialog").inner_text().lower()
+    assert "column name" not in dialog_text and "alias" not in dialog_text
     href = bare_page.locator("#spec-propose-open").get_attribute("href")
     assert href.startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
     bare_page.locator("#spec-propose-close").click()
@@ -150,13 +155,15 @@ def test_a_value_found_in_the_data_is_added_to_the_project(app_page, studio_url,
 def test_hostile_value_is_text(app_page, studio_url):
     app_page.allowed_http[400] = "/api/spec/propose-values"
     choose_values(app_page, studio_url)
-    app_page.on("dialog", lambda d: (_ for _ in ()).throw(AssertionError("dialog opened")))
+    opened = []
+    app_page.on("dialog", lambda d: opened.append(d.message))
     add_choice(app_page, '<img src=x onerror="window.pwned=1">')
     expect(app_page.locator("#spec-v-mine")).to_contain_text("<img src=x")
     app_page.locator("#spec-v-share").click()
     expect(app_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
     assert app_page.locator("#spec-contribute img").count() == 0
     assert app_page.evaluate("window.pwned") is None
+    assert opened == []
 
 
 def test_already_allowed_value_is_explained(bare_page, studio_url):

@@ -216,10 +216,24 @@
         refresh();
     }
 
-    async function propose(body, url) {
+    const shareCopy = {
+        measurement: {
+            title: "Share a measurement with the PRISM community",
+            text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it there. The maintainers may choose a different ID or name, and your column name stays an alias, so your files keep working.",
+        },
+        choice: {
+            title: "Share a choice with the PRISM community",
+            text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab; you submit it there. A maintainer reviews the new choice and may adjust it.",
+        },
+    };
+
+    async function propose(body, url, kind) {
         clearMessage();
         const { ok, data } = await call(url || urls.propose, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
+        const copy = shareCopy[kind || "measurement"];
+        document.getElementById("spec-propose-title").textContent = copy.title;
+        document.getElementById("spec-propose-text").textContent = copy.text;
         currentProposal = data.document;  // the document that is sent (proposal format v2)
         document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
         if (data.skipped.length) {
@@ -236,7 +250,7 @@
     }
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
-    shareValues.addEventListener("click", function () { propose({ patch: true }); });
+    shareValues.addEventListener("click", function () { propose({ patch: true }, undefined, "choice"); });
 
     function currentModality() {
         return catalog.modalities.find(function (m) { return m.name === modalitySelect.value; });
@@ -252,10 +266,12 @@
         mine.forEach(function (value) {
             const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-1");
             row.appendChild(el("code", "", value));
-            row.appendChild(button("Remove", "btn-outline-danger", function () {
+            const remove = button("Remove", "btn-outline-danger", function () {
                 mine = mine.filter(function (other) { return other !== value; });
                 renderMine();
-            }));
+            });
+            remove.setAttribute("aria-label", "Remove " + value);
+            row.appendChild(remove);
             mineBox.appendChild(row);
         });
         shareMine.classList.toggle("d-none", !mine.length);
@@ -298,7 +314,7 @@
         input.value = "";
     });
     shareMine.addEventListener("click", function () {
-        propose({ modality: modalitySelect.value, field: listSelect.value, values: mine }, urls.proposeValues);
+        propose({ modality: modalitySelect.value, field: listSelect.value, values: mine }, urls.proposeValues, "choice");
     });
     useMine.addEventListener("click", async function () {
         if (await addValues(listSelect.value, mine)) { mine = []; renderMine(); }
