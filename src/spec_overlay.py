@@ -380,8 +380,8 @@ def remove_local_values(project_root, field: str, values: list[str], modality: s
     path, patch = _existing_patch(project_root, modality)
     op = _enum_op(patch, field)
     missing = [v for v in values if op is None or v not in op["values"]]
-    if missing:
-        raise OverlayError(f"{', '.join(map(str, missing))}: not in this project's additions to {field}")
+    if op is None or missing:
+        raise OverlayError(f"{', '.join(map(str, missing or values))}: not in this project's additions to {field}")
     op["values"] = [v for v in op["values"] if v not in values]
     patch["operations"] = [o for o in patch["operations"] if o is not op or op["values"]]
     if patch["operations"]:
