@@ -2,13 +2,11 @@
 # Ignores custom modalities to ensure BIDS-App compatibility
 **/biometrics/
 **/environment/
-**/eyetracking/
 **/metadata/
 **/physio/
 **/survey/
 *_biometrics.*
 *_environment.*
-*_eyetrack.*
 *_physio.*
 *_report_*.txt
 *_survey.*
@@ -22,7 +20,6 @@ code/recipes/
 contributors.json
 derivatives/
 environment/
-eyetracking/
 library/
 metadata/
 physio/
@@ -34,7 +31,6 @@ recording-weather_environment.json
 survey/
 task-*_biometrics.json
 task-*_environment.json
-task-*_eyetrack.json
 task-*_physio.json
 task-*_survey.json
 validation_report.json
