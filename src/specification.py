@@ -31,9 +31,17 @@ class Specification:
     ignored_local: tuple = ()  # TermIDs of local terms the official registry now has (the official one wins)
     overlay_problems: tuple = ()  # one message per project overlay file that was skipped
     local_patches: tuple = ()  # modalities whose schema carries the project's patch
+    ignored_patch_items: tuple = ()  # additions of a patch the official schema now has (the official one wins)
 
     # Derived once per specification (the rules compute them on every access); they replace the constants
     # validator.py used to freeze at import.
+    def patchable_fields(self, modality: str) -> list[str]:
+        """Dotted paths of the enum fields of `modality` a project may extend (none when the scripts are missing)."""
+        try:
+            return _vendored("schema_patch").enum_fields(self.schemas.get(modality) or {})
+        except OSError:
+            return []
+
     @cached_property
     def prism_modalities(self) -> set[str]:
         return self.rules.prism_modalities
@@ -58,7 +66,7 @@ def load_specification(
     """
     terms, local, ignored, problems = {}, set(), [], []
     schemas = schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR)
-    patched = []
+    patched, official_now = [], []
     for modality in _TERM_MODALITIES:
         registry = load_registry(modality)
         if project_root is not None:
@@ -68,7 +76,8 @@ def load_specification(
             ignored += dropped
             problems += skipped
             patch, notes = load_local_patches(project_root, modality)
-            problems += notes
+            official_now += [n for n in notes if n.endswith(" is already official")]
+            problems += [n for n in notes if n not in official_now]
             if patch and isinstance(schemas.get(modality), dict):
                 try:
                     schemas = {**schemas, modality: _vendored("schema_patch").apply_patch(schemas[modality], patch)[0]}
@@ -84,6 +93,7 @@ def load_specification(
         ignored_local=tuple(ignored),
         overlay_problems=tuple(problems),
         local_patches=tuple(patched),
+        ignored_patch_items=tuple(official_now),
     )
 
 

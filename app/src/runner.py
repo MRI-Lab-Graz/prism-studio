@@ -200,6 +200,23 @@ def _validate_dataset(
         )
         for term_id in spec.ignored_local
     )
+    project_arg = f'--project "{os.path.abspath(root_dir)}"'
+    issues.extend(
+        (
+            "INFO",
+            f"This project adds to the {modality} schema locally (code/specification/patches/{modality}.json); "
+            f"to share it with the PRISM community: python prism_tools.py spec propose {project_arg} --patch",
+        )
+        for modality in spec.local_patches
+    )
+    issues.extend(
+        (
+            "INFO",
+            f"Local schema addition now official ({item}): remove it from the project's patch: "
+            f"python prism_tools.py spec local remove-values {project_arg} --field <field> --value <value>",
+        )
+        for item in spec.ignored_patch_items
+    )
 
     def report_progress(
         current: int, total: int, message: str, file_path: Optional[str] = None

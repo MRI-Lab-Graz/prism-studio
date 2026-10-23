@@ -122,3 +122,54 @@ def test_missing_scripts_give_a_message_not_a_crash(tmp_path, monkeypatch):
     _write(tmp_path, PATCH)
     patch, problems = load_local_patches(tmp_path)
     assert patch is None and len(problems) == 1
+
+
+# --- B2: hints and notices ------------------------------------------------------------------------------
+
+def _issues(project: Path, level: str):
+    issues, _stats = validate_dataset(str(project))
+    return [m for lvl, m, *_ in issues if lvl == level]
+
+
+def test_the_enum_error_names_the_exact_command(tmp_path):
+    project = _project(tmp_path / "p")
+    hint = f'python prism_tools.py spec local add-values --project "{project}" --field Technical.SpecimenType --value sweat'
+    assert any(hint in m for m in _enum_errors(project))
+
+
+def test_no_hint_for_a_field_that_cannot_be_patched(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = project / "biosample-sweat_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["Technical"]["SpecimenType"] = "saliva"
+    data["Technical"]["CollectionMethod"] = "x" * 100  # not a lowercase value, so no command would be valid
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    assert not any("add-values" in m for m in _issues(project, "ERROR"))
+
+
+def test_a_project_with_a_local_addition_gets_one_info_naming_the_share_command(tmp_path):
+    project = _project(tmp_path / "p", PATCH)
+    infos = [m for m in _issues(project, "INFO") if "biosample" in m and "patches" in m]
+    assert len(infos) == 1 and f'spec propose --project "{project}" --patch' in infos[0]
+
+
+def test_an_addition_that_became_official_is_an_info_not_a_warning(tmp_path):
+    project = _project(tmp_path / "p", {"operations": [
+        {"op": "add_enum_values", "path": "Technical.SpecimenType", "values": ["saliva", "sweat"]}]})
+    assert any("saliva" in m and "official" in m and "remove-values" in m for m in _issues(project, "INFO"))
+    assert not any("saliva" in m for m in _issues(project, "WARNING"))
+
+
+def test_a_local_term_on_a_local_specimen_needs_the_patch(tmp_path):
+    from src.spec_overlay import OverlayError, add_local_term
+    import pytest
+
+    project = _project(tmp_path / "p")
+    sidecar = project / "biosample-sweat_biosample.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["zonulin"] = {"Description": "Zonulin", "Units": "ng/mL", "DataType": "float"}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(OverlayError, match="sweat"):
+        add_local_term(project, column="zonulin", sidecar_file=sidecar)
+    _write(project, PATCH)
+    assert add_local_term(project, column="zonulin", sidecar_file=sidecar)["written"]

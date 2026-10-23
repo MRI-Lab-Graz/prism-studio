@@ -221,6 +221,17 @@ def _specimen(sidecar: dict):
     return technical.get("SpecimenType") if isinstance(technical, dict) else None
 
 
+def _project_specimens(project_root, modality: str) -> list[str] | None:
+    """The SpecimenType values of the official schema plus the project's patch; None when there is no patch."""
+    patch, _ = load_local_patches(project_root, modality)
+    if patch is None:
+        return None
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema
+
+    schema = _vendored("schema_patch").apply_patch(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), patch)[0]
+    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+
+
 def add_local_term(
     project_root, *, column: str, data_file=None, sidecar_file=None, label=None, modality: str = "biosample"
 ) -> dict:
@@ -243,7 +254,7 @@ def add_local_term(
     # another, already broken local term must not stop an unrelated metric: drop only the problems that name one
     # (the registry check prefixes its messages with the file stem); everything else blocks, the safe default
     problems = [
-        p for p in check_with_specification(proposal, checked_against)
+        p for p in check_with_specification(proposal, checked_against, _project_specimens(project_root, modality))
         if not any(p.startswith(f"{stem}:") for stem in other_stems)
     ]
     if problems:

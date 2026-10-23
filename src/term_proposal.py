@@ -162,15 +162,17 @@ def specification_scripts_dir() -> Path:
     return next((c for c in candidates if c.is_dir()), candidates[0])
 
 
-def check_with_specification(proposal: dict, registry: dict[str, dict]) -> list[str]:
-    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py)."""
+def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
+    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
+
+    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
     spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
     modality = next(iter(document["files"])).split("/")[1]
     schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{modality}.schema.json"
-    problems = module.check_proposal(document, registry, module.check_terms.specimen_types(schema))[1]
+    problems = module.check_proposal(document, registry, specimens or module.check_terms.specimen_types(schema))[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))
     if size > module.MAX_BYTES:
