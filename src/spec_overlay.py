@@ -41,14 +41,19 @@ def _vendored(name: str):
     return module
 
 
-def _scripts():
-    """The vendored term rules (check_terms, term_proposal), or OverlayError when this installation lacks them."""
+def _vendored_or_error(name: str):
+    """A vendored script, or OverlayError when this installation lacks it."""
     try:
-        return _vendored("check_terms"), _vendored("term_proposal")
+        return _vendored(name)
     except OSError as exc:
         raise OverlayError(
             f"the specification scripts (scripts/specification) are not installed, so local specification files are not used ({exc})"
         ) from exc
+
+
+def _scripts():
+    """The vendored term rules (check_terms, term_proposal), or OverlayError when this installation lacks them."""
+    return _vendored_or_error("check_terms"), _vendored_or_error("term_proposal")
 
 
 def overlay_root(project_root) -> Path:
@@ -126,11 +131,10 @@ def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict 
     path = _patch_file(project_root, modality)
     if not path.is_file():
         return None, []
-    current = Path(project_root)
-    for part in (*OVERLAY_PARTS, "patches"):
-        current = current / part
-        if current.is_symlink():
-            return None, [f"{path.name}: {current} is a symbolic link, not used"]
+    try:
+        _real_overlay_folder(project_root, "patches")
+    except OverlayError as exc:
+        return None, [f"{path.name}: {exc}"]
     if path.is_symlink():
         return None, [f"{path.name}: is a symbolic link, not used"]
     try:
@@ -315,13 +319,6 @@ def _official_schema(modality: str) -> dict:
     return load_schema(modality, DEFAULT_SCHEMA_DIR, "stable")
 
 
-def _patch_scripts():
-    try:
-        return _vendored("schema_patch")
-    except OSError as exc:
-        raise OverlayError(f"the specification scripts (scripts/specification) are not installed ({exc})") from exc
-
-
 def _existing_patch(project_root, modality: str) -> tuple[Path, dict]:
     """The patch file for changing (symlinks refused) and its raw content; a broken file is an error, never overwritten."""
     path = _real_overlay_folder(project_root, "patches") / f"{modality}.json"
@@ -353,7 +350,7 @@ def add_local_values(project_root, field: str, values: list[str], modality: str 
     Values the official schema has are skipped; when nothing is left nothing is written. The patch is checked by
     the vendored schema_patch.py (which also decides which fields may be extended) before anything is written.
     """
-    sp = _patch_scripts()
+    sp = _vendored_or_error("schema_patch")
     schema = _official_schema(modality)
     path, patch = _existing_patch(project_root, modality)
     values = list(values) if isinstance(values, (list, tuple)) else values
@@ -412,7 +409,7 @@ def find_unknown_values(project_root, modality: str = "biosample") -> list[dict]
     root = Path(project_root)
     spec = load_specification(project_root=root)
     schema = spec.schemas.get(modality) or {}
-    sp = _patch_scripts()
+    sp = _vendored_or_error("schema_patch")
     found = []
     for folder, subfolders, names in os.walk(root):
         subfolders[:] = sorted(name for name in subfolders if name not in _NOT_PROJECT_DATA)

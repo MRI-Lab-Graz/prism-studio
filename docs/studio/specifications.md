@@ -47,7 +47,17 @@ where you can share it. The page works on the open project, and its **New metric
   submit the form yourself, and the maintainers may choose a different ID or name. *Remove* deletes the local
   copy; a metric the official registry has since adopted is marked *now-official* and can be removed.
 
-The tabs *New modality* and *Addition to a modality* are announced and not available yet.
+The **Addition to a modality** tab does the same for a value an existing modality does not allow yet, for
+example a specimen type PRISM does not list (`sweat`):
+
+- **Found in your data:** values in your biosample files outside the allowed ones. *Add to this project* allows
+  the value for this project (stored in `code/specification/patches/biosample.json`, the same action as
+  `prism_tools.py spec local add-values`), so the next validation accepts it.
+- **Add a value by hand:** pick a field, type the value (lowercase letters, digits and `-`).
+- **Additions in this project:** *Share additions…* puts them in a proposal (a maintainer reviews the schema
+  change, which gets a new minor version); *Remove* takes a value out.
+
+Nothing is sent from Studio here either. The tab *New modality* is announced and not available yet.
 
 ## What's next
 

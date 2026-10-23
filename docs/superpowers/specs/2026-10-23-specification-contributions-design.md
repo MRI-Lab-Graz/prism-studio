@@ -1,7 +1,7 @@
 # Specification contributions: local overlay and the Propose page — design
 
 Date: 2026-10-23
-Status: workflow agreed in chat ("great workflow"); awaiting written-spec review. Nothing built.
+Status: layers 3 (metrics) and 2 (additions to a modality) are built (prism-specification v1.2.2); layer 1 (new modality) is not.
 Builds on: `2026-10-22-biosample-term-registry-design.md`, `2026-10-22-prism-specification-repo-design.md`,
 `2026-10-23-metric-proposal-design.md` (layer 3, built and released as prism-specification v1.1.x).
 

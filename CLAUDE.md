@@ -206,7 +206,11 @@ by `load_specification(project_root=...)`; the official registry always wins. Tr
 project data (they travel with shared projects): skipped and reported when invalid, never a crash, and every
 file name comes from a validated `prism:<slug>[.<specimen>]` ID (`re.fullmatch`). The `spec` commands and the
 Contribute page (`app/src/web/blueprints/specification_contribute.py`) are thin adapters over the same
-functions; the page writes project data with `textContent` only.
+functions; the page writes project data with `textContent` only. Additions to an existing schema are the same
+kind of project data: `code/specification/patches/<modality>.json`, validated by the vendored `schema_patch.py`
+(the only code that decides what a patch may add) and applied to a copy of the run's schemas
+(`Specification.schemas`), never to the files on disk. The wheel, the Docker image and the frozen build carry the
+whole `scripts/specification/` folder, because those scripts load each other by path.
 
 ## Git-annex / DataLad text-file policy
 

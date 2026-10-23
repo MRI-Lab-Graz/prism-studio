@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Additions to a modality.** A value an existing schema does not allow yet (for example a new `Technical.SpecimenType`
+  such as `sweat`) can be used in your project right away: `prism_tools.py spec local add-values|remove-values` or the
+  *Addition to a modality* tab store a schema patch in `code/specification/patches/biosample.json`, which the validator
+  applies to a copy of the schemas for that project's run only. The enum error now prints the exact command, and the
+  validator says when a project uses local additions or when one has become official. `spec propose --patch` (and
+  `--all`) share them: the bot in prism-specification applies the patch and prepares the schema release (archive,
+  minor version, spec tables) for a maintainer. Studio carries prism-specification `v1.2.2`.
 - **Share many metrics at once.** `prism_tools.py spec propose --all` (or `--term` repeated) and *Share all local
   metrics…* on the Propose changes page put every local metric of a project in one proposal, in
   [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification)'s new proposal format v2 (up to 40 term
