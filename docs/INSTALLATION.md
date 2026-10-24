@@ -91,8 +91,9 @@ python prism-studio.py
 
 On Linux, `install.sh` first offers to install the OS packages Studio needs
 (`python3-tk` for the folder picker, `git`, `curl`) with one `sudo` command, and
-then DataLad/git-annex. It also puts a **PRISM Studio** shortcut (with the app icon) on the
-Desktop — double-click it for later sessions. Recreate it with
+then DataLad/git-annex. It also adds **PRISM Studio** (with the app icon) to your applications
+menu, and a copy to the Desktop when your desktop shows one (GNOME, e.g. Fedora, shows no Desktop
+icons: search for "PRISM Studio" in Activities). Recreate it with
 `bash scripts/setup/create_desktop_shortcut.sh`.
 
 </div>

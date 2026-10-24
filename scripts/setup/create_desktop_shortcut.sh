@@ -4,7 +4,9 @@
 # (macOS/Linux counterpart of create_desktop_shortcut.ps1).
 #
 #   macOS: "PRISM Studio.command" (opens in Terminal), icon from PrismStudio.icns
-#   Linux: "prism-studio.desktop" launcher, icon from MRI_Lab_Logo.png
+#   Linux: "prism-studio.desktop" launcher in the app menu (~/.local/share/applications),
+#          plus a copy on the Desktop when there is one; icon from MRI_Lab_Logo.png.
+#          GNOME (e.g. Fedora Workstation) shows no Desktop icons, so the menu entry is the one that works.
 #
 # Runs prism-studio.py from the repository's .venv, so the shortcut keeps
 # working after updates. Re-running this overwrites the existing shortcut.
@@ -16,12 +18,12 @@ if [ ! -x "$REPO_ROOT/.venv/bin/python" ]; then
     echo "ERROR: $REPO_ROOT/.venv not found. Run install.sh first." >&2
     exit 1
 fi
-if [ ! -d "$DESKTOP" ]; then
-    echo "WARNING: Desktop folder '$DESKTOP' not found; no shortcut created." >&2
-    exit 1
-fi
 
 if [ "$(uname)" = "Darwin" ]; then
+    if [ ! -d "$DESKTOP" ]; then
+        echo "WARNING: Desktop folder '$DESKTOP' not found; no shortcut created." >&2
+        exit 1
+    fi
     LINK="$DESKTOP/PRISM Studio.command"
     cat > "$LINK" <<EOF
 #!/bin/bash
@@ -41,8 +43,10 @@ function run(argv) {
 }
 JXA
         echo "WARNING: Could not set the shortcut icon." >&2
+    echo "Desktop shortcut created: $LINK"
 else
-    LINK="$DESKTOP/prism-studio.desktop"
+    LINK="${XDG_DATA_HOME:-$HOME/.local/share}/applications/prism-studio.desktop"
+    mkdir -p "$(dirname "$LINK")"
     cat > "$LINK" <<EOF
 [Desktop Entry]
 Type=Application
@@ -55,8 +59,11 @@ Terminal=true
 Categories=Science;
 EOF
     chmod +x "$LINK"
-    # GNOME refuses to launch untrusted .desktop files from the Desktop.
-    gio set "$LINK" metadata::trusted true >/dev/null 2>&1 || true
+    if [ -d "$DESKTOP" ]; then
+        cp "$LINK" "$DESKTOP/prism-studio.desktop"
+        # GNOME refuses to launch untrusted .desktop files from the Desktop.
+        gio set "$DESKTOP/prism-studio.desktop" metadata::trusted true >/dev/null 2>&1 || true
+        echo "Desktop shortcut created: $DESKTOP/prism-studio.desktop"
+    fi
+    echo "App menu entry created: $LINK"
 fi
-
-echo "Desktop shortcut created: $LINK"
