@@ -525,9 +525,14 @@ def infer_code_from_message(message: str) -> str:
         "consistency" in msg_lower
         or "mislabeled" in msg_lower
         or "mixed session" in msg_lower
+        or re.match(r"session \S+ appears only in ", msg_lower)
         or re.match(r"session \S+ missing for ", msg_lower)
     ):
         return "PRISM601"
+    elif "not a valid tsv" in msg_lower:
+        return "PRISM401"
+    elif "is not a valid integer" in msg_lower or "is not numeric but has" in msg_lower:
+        return "PRISM402"
     elif "empty" in msg_lower:
         if "tsv" in msg_lower:
             return "PRISM401"
