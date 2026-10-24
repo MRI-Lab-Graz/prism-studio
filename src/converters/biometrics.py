@@ -24,6 +24,7 @@ from src.converters.file_reader import (
     read_tabular_file as _read_tabular_file,
 )
 from src.entity_rules import load_entity_rules
+from src.participants_sessions import session_label
 from src.session_map import resolve_import_session
 from src.subject_id_matching import build_subject_id_matcher
 from src.utils.io import read_json as _read_json, write_json as _write_json
@@ -161,11 +162,6 @@ def detect_biometrics_in_table(
             detected_tasks.append(task)
 
     return sorted(detected_tasks)
-
-
-def _label_of(value: Any) -> str:
-    text = "" if value is None else str(value).strip()
-    return "" if text.lower() == "nan" else text
 
 
 def _project_session_ids(
@@ -324,9 +320,9 @@ def convert_biometrics_table_to_prism_dataset(
     )
 
     if effective_session:
-        row_labels = [_label_of(effective_session)]
+        row_labels = [session_label(effective_session)]
     elif col_ses:
-        row_labels = [_label_of(v) for v in df[col_ses]]
+        row_labels = [session_label(v) for v in df[col_ses]]
     else:
         row_labels = [""]
     session_ids, session_warnings = _project_session_ids(output_root, row_labels, default_session)
@@ -341,7 +337,7 @@ def convert_biometrics_table_to_prism_dataset(
     notes = [
         missing_id_note([n for n, sid in enumerate(normalized_ids, 1) if not sid]),
         cleaning_note([r for r, _ in shown_ids], [_normalize_sub_id(r) for r, _ in shown_ids], "participant ID", "sub-"),
-        cleaning_note(raw_sessions, [session_ids[_label_of(v)] for v in raw_sessions], "session label", "ses-"),
+        cleaning_note(raw_sessions, [session_ids[session_label(v)] for v in raw_sessions], "session label", "ses-"),
         *session_warnings,
     ]
     notes = [note for note in notes if note]
@@ -399,7 +395,7 @@ def convert_biometrics_table_to_prism_dataset(
         if not sub_id:
             continue
 
-        ses_id = session_ids[row_labels[0] if effective_session or not col_ses else _label_of(row.get(col_ses))]
+        ses_id = session_ids[row_labels[0] if effective_session or not col_ses else session_label(row.get(col_ses))]
         if ses_id not in sessions_written:
             sessions_written.append(ses_id)
 

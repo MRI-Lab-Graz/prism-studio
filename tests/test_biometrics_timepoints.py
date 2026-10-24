@@ -65,3 +65,10 @@ def test_multiple_project_blocks_an_unmapped_label_before_writing(tmp_path):
 def test_no_project_json_keeps_the_label(tmp_path):
     out, _ = _convert(tmp_path, ROWS, None)
     assert _sessions(out) == ["ses-post", "ses-pre"]
+
+
+def test_a_numeric_session_column_is_the_label_1_not_1_0(tmp_path):
+    rows = [{"participant_id": "sub-01", "session": 1, "grip_strength": 40},
+            {"participant_id": "sub-02", "session": 2, "grip_strength": 41}]
+    out, _ = _convert(tmp_path, rows, "multiple", {"1": "1", "2": "2"})
+    assert _sessions(out) == ["ses-1", "ses-2"]
