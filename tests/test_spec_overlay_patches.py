@@ -246,3 +246,12 @@ def test_add_and_remove_values_refuse_a_modality_that_is_not_a_kind_of_data(tmp_
     with pytest.raises(OverlayError, match="not a kind of data"):
         add_local_values(project, "Study.LicenseID", ["z-z"], modality=modality)
     assert json.loads(target.read_text(encoding="utf-8"))["operations"][0]["values"] == ["x-y"]
+
+
+def test_the_share_and_remove_hints_of_a_survey_addition_name_the_modality(tmp_path):
+    project = _project(tmp_path / "p")
+    _write(project, {"operations": [{"op": "add_enum_values", "path": "Technical.Respondent", "values": ["sibling", "parent"]}]}, "survey")
+    infos = _issues(project, "INFO")
+    share = [m for m in infos if "patches/survey.json" in m]
+    assert len(share) == 1 and f'spec propose --project "{project}" --patch --modality survey' in share[0]
+    assert any("remove-values" in m and "--modality survey" in m for m in infos)
