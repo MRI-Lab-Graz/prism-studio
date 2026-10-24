@@ -69,8 +69,8 @@ Survey data files MUST follow this naming convention:
 
 For example: `sub-002_ses-02_task-wellbeing-multi_survey.tsv`. The `task-<label>`
 entity identifies the instrument (per `schemas/stable/entities.schema.json`,
-the `survey` modality uses suffix `survey` with `task` as its example/required
-entity) — it is not a `survey-<label>` suffix.
+the `survey` modality uses suffix `survey` and **requires** the `task` entity: a file name
+without `task-<label>` is rejected) — it is not a `survey-<label>` suffix.
 
 *Note: Legacy formats `_task-<label>_beh.tsv` and `_survey-<label>_beh.tsv` are
 also recognized for backward compatibility but are not the current convention.*

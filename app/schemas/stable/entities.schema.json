@@ -21,6 +21,13 @@
       "kind": "prism",
       "suffixes": ["survey"],
       "extensions": ["tsv", "json"],
+      "requiredEntityValues": {
+        "task": {"pattern": "[a-zA-Z0-9-]+"}
+      },
+      "optionalEntityValues": {
+        "acq": {"pattern": "[a-zA-Z0-9-]+"},
+        "run": {"pattern": "[a-zA-Z0-9]+"}
+      },
       "example": {"task": "panas"}
     },
     "biometrics": {

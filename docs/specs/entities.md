@@ -49,7 +49,7 @@ validator reports both folders as errors with a fix hint (rename
 
 | Modality | Kind | Suffixes | Extensions | Notable entity constraints |
 | --- | --- | --- | --- | --- |
-| `survey` | prism | `survey` | `tsv`, `json` | example: `task-panas` |
+| `survey` | prism | `survey` | `tsv`, `json` | required: `task` (e.g. `task-panas`) |
 | `biometrics` | prism | `biometrics` | `tsv`, `json` | - |
 | `biosample` | prism | `biosample` | `tsv`, `json` | required `biosample` entity naming the assay panel (alphanumeric) |
 | `environment` | prism | `environment` | `tsv`, `tsv.gz`, `json` | `recording` entity required, matching `[a-zA-Z0-9]+` |

@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Fixed
+- **A survey file name must carry the task entity** (`sub-01_task-brs_survey.tsv`; `acq` and `run` stay optional): a survey without a task
+  could not be matched to its template or sidecar, and used to pass filename validation. Studio carries prism-specification v1.2.4.
 - `prism.py` (and the Validate page) now report a missing `project.json` (`PRISM010`), a missing `participants.tsv` next to subject
   folders (`PRISM004`) and PRISM folders absent from `.bidsignore` (`PRISM501`), as warnings; the Projects page check always did.
   The `.bidsignore` check follows the specification's modality list (it used to know only survey, biometrics, physio and events).
