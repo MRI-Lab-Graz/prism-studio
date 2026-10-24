@@ -104,9 +104,12 @@ jobs:
         if: needs.scope.outputs.content_only == 'true'
         run: python -m pytest tests/test_modality_proposal_fixtures.py -q
 
+      - name: Modality conventions (vendored specification script)
+        run: python scripts/specification/check_modalities.py --entities app/schemas/stable/entities.schema.json --schemas app/schemas/stable
+
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,import-boundaries,dual-tree-drift,modality-docs,library-uniqueness,unsafe-patterns,pytest-modularity,linting,ruff,ruff-security,mypy --no-fix
 
   # No pytest here: nightly.yml already runs the full suite every night.
   nightly-deep-checks:
@@ -142,7 +145,7 @@ jobs:
 
       - name: Nightly repository verification
         run: |
-          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-schema-conventions,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,linting,ruff,mypy,testing,todos,documentation --no-fix
+          python tests/verify_repo.py --check git-status,entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,dual-tree-drift,modality-docs,library-uniqueness,python-security,unsafe-patterns,ruff-security,secrets,secrets-history,actions-security,dependencies,pip-audit,linting,ruff,mypy,testing,todos,documentation --no-fix
 
   # One system on purpose: Windows and macOS run the full suite nightly (nightly.yml).
   cross-platform-tests:

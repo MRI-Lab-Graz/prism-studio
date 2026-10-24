@@ -129,13 +129,15 @@ The output folder (and the pull request) contains:
 
 ### 6. Maintainer steps
 
-The maintainer follows `REGISTRATION.md`: copy the schema, add the modality to
-`entities.schema.json`, add the name to `COMMUNITY_MODALITY_SCHEMAS` in
-`tests/verify_repo.py`, add the generated docs (spec page, toctree entry, card,
-`entities` table row), run the schema checks and `modality-docs`
-(`python tests/verify_repo.py --check modality-docs`, which fails CI when a
-registered modality lacks any of these) and validate `fixture/` with
-`python prism.py <folder>/fixture`. Units, ranges and the sample are reviewed by
+The maintainer follows `REGISTRATION.md`: in the **prism-specification**
+repository add the schema, the `entities.schema.json` entry and `specs/<name>.md`,
+run its `python scripts/check_modalities.py` and tests, and tag a release; then
+in Studio run `python scripts/sync_specification.py --tag <tag>`, add the
+generated docs (toctree entry, card, `entities` table row), run
+`python tests/verify_repo.py --check modality-docs` (fails CI when a registered
+modality lacks any of these) and validate `fixture/` with
+`python prism.py <folder>/fixture`. CI runs the vendored
+`scripts/specification/check_modalities.py` on Studio's copy. Units, ranges and the sample are reviewed by
 hand. GitHub does not start CI from the bot's own push, so a maintainer starts
 it. A pull request that only adds `proposals/` files gets a reduced CI run and
 its fixture test stays red until the modality is registered; the registration

@@ -112,5 +112,6 @@ page, toctree entry, card, `entities` table row or suffix mention.
   `.tsv`/`.yml` attachments, the artifact handoff between the two jobs works and
   the draft PR is created. That run also showed that a *private* organisation
   membership makes the author an outsider (no automatic PR).
-- Registration also means adding the name to `COMMUNITY_MODALITY_SCHEMAS` in
-  `tests/verify_repo.py` (the generated `REGISTRATION.md` lists this step).
+- Registration happens in the prism-specification repository (schema, entities
+  entry, `specs/<name>.md`), then a Studio sync (the generated `REGISTRATION.md`
+  lists the steps).

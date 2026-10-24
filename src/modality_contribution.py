@@ -791,7 +791,8 @@ def registration_entry(proposal: dict, existing: dict | None = None) -> dict:
         entry["extensions"] = list(dict.fromkeys([*existing.get("extensions", []), *proposal["extensions"]]))
         return entry
     exts = list(dict.fromkeys([*proposal["extensions"], "json"]))
-    entry = {"kind": "prism", "suffixes": [proposal["suffix"]], "extensions": exts,
+    entry = {"kind": "prism", "description": proposal["description"], "suffixes": [proposal["suffix"]],
+             "extensions": exts, "describedColumns": "tsv" in proposal["extensions"],
              "allowedEntities": list(FIXED_ENTITIES)}
     values: dict[str, list[str]] = {}
     for e in proposal.get("entities") or []:
@@ -938,28 +939,31 @@ def build_registration_md(proposal: dict, existing: dict | None = None) -> str:
 existing one under another name, and whether the sample holds any real
 participant data.
 """
+    spec_steps = f"""PRISM does not register suffixes or modalities automatically. The specification
+lives in the prism-specification repository (https://github.com/MRI-Lab-Graz/prism-specification);
+Studio vendors a tagged release of it and must not be edited by hand."""
+    run_check = """   Run `python scripts/check_modalities.py` and the tests there."""
+    studio_steps = """   In Studio: `python scripts/sync_specification.py --tag <tag>`."""
     if existing is not None:
         return f"""# Adding the `_{suffix}` suffix to the `{name}` modality (maintainer steps)
 
-PRISM does not register suffixes automatically. Do these steps by hand in the
-pull request, then let CI validate the fixture in this folder.
+{spec_steps}
 
-1. In `app/schemas/stable/entities.schema.json`, replace the `"{name}"` entry
-   under `"modalities"` with this one (the suffix and any new extensions are
-   appended):
+1. In **prism-specification**, replace the `"{name}"` entry under `"modalities"`
+   in `entities.schema.json` with this one (the suffix and any new extensions
+   are appended), and add the section from `docs/{name}-{suffix}.md` to
+   `specs/{name}.md` (the page must mention `_{suffix}`):
 
 ```json
 {snippet}
 ```
 
-2. Documentation (CI check `modality-docs` fails without it): add the section
-   from `docs/{name}-{suffix}.md` to `docs/specs/{name}.md` (the page must
-   mention `_{suffix}`), and add `{suffix}` to the Suffixes column of the
-   `{name}` row in `docs/specs/entities.md`.
-3. Check the registration:
-   `python tests/verify_repo.py --check schema-sync` and
-   `python tests/verify_repo.py --check modality-docs`.
-4. Validate the generated dataset: from the repository root, run
+2. {run_check.strip()}
+3. Tag a release there.
+4. {studio_steps.strip()}
+5. In Studio, add `{suffix}` to the Suffixes column of the `{name}` row in
+   `docs/specs/entities.md` (CI check `modality-docs`).
+6. Validate the generated dataset: from the Studio repository root, run
    `python prism.py <this folder>/fixture`. It must pass without errors.
 
 The example sidecar uses the `{name}` modality's own schema; keys that schema
@@ -969,28 +973,27 @@ example.
 {review}"""
     return f"""# Registering the `{name}` modality (maintainer steps)
 
-PRISM does not register modalities automatically. Do these steps by hand in the
-pull request, then let CI validate the fixture in this folder.
+{spec_steps}
 
-1. Copy `{name}.schema.json` to `app/schemas/stable/{name}.schema.json`.
-2. In `app/schemas/stable/entities.schema.json`, add this entry under
-   `"modalities"`:
+1. In **prism-specification**, add `{name}.schema.json` (copy it from this
+   folder) as the modality schema.
+2. In its `entities.schema.json`, add this entry under `"modalities"`:
 
 ```json
 {snippet}
 ```
 
-3. Add `"{name}"` to `COMMUNITY_MODALITY_SCHEMAS` in `tests/verify_repo.py`.
-4. Documentation (CI check `modality-docs` fails without it):
-   - copy `docs/{name}.md` to `docs/specs/{name}.md`;
+3. Copy `docs/{name}.md` to `specs/{name}.md` there.
+4. {run_check.strip()}
+5. Tag a release there.
+6. {studio_steps.strip()}
+7. Documentation in Studio (CI check `modality-docs` fails without it):
    - add `   specs/{name}` to the "Schema Specifications" toctree in `docs/index.rst`;
    - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`;
    - add the row from `docs/snippets.md` to the table in `docs/specs/entities.md`.
-5. Check the registration:
-   `python tests/verify_repo.py --check schema-sync`,
-   `python tests/verify_repo.py --check modality-schema-conventions` and
+8. Check the registration: `python tests/verify_repo.py --check schema-sync` and
    `python tests/verify_repo.py --check modality-docs`.
-6. Validate the generated dataset: from the repository root, run
+9. Validate the generated dataset: from the Studio repository root, run
    `python prism.py <this folder>/fixture`. It must pass without errors.
 
 {review}"""
