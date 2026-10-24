@@ -177,6 +177,16 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 - **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
   default (it has no wheels for Python 3.13+). Only EDF output needs it:
   `pip install pyedflib` inside the activated `.venv`.
+- **Defacing structural MRI on export** — not installed by default. Without it,
+  structural images are **not defaced**: deface them before you share the data
+  (the export warns "not ready for public sharing"). To deface from Studio,
+  install [FSL](https://fsl.fmrib.ox.ac.uk/fsl/docs/#/install/index) and then
+  `pip install pydeface` inside the activated `.venv`. Defacing is a long
+  computation (minutes per scan).
+- **Source install on ARM Linux (aarch64) fails while building a package** — some
+  dependencies have no prebuilt ARM wheel and need a C compiler: install one
+  (`sudo dnf install gcc` / `sudo apt install build-essential`) and run
+  `install.sh` again. Please open an issue if this happens, naming the package.
 - **Python or package errors during source install** — use the prebuilt release
   unless you specifically need source; if you do need source, make sure `.venv` is
   activated before running any commands.
