@@ -184,8 +184,6 @@ DEFECTS: list[Defect] = [
 # Defects the validator does not report with the catalogue's code (found by running this matrix).
 # A defect leaves this list when the validator catches it; the test fails until it does.
 KNOWN_GAPS: dict[str, str] = {
-    "filename_without_task": "survey file names are only matched as '.+_survey.<ext>', so the required task entity is not "
-    "enforced (defaultRequiredEntities is read but unused); the file is only reported as lacking a sidecar (PRISM201)",
     "stray_file_at_root": "only the BIDS validator (run_bids) reports files outside the specification; this matrix runs PRISM checks only",
 }
 

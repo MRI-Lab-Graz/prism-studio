@@ -6,7 +6,7 @@
     "app/schemas/stable/biometrics.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
     "app/schemas/stable/biosample.schema.json": "5a9419f426514ad0550f350f8043a18db74eed12fddf055386a2a3168b7a60ec",
     "app/schemas/stable/dataset_description.schema.json": "5e9eed8c5092cb4cf5e902d714d76e0db27f946330fe3254c724ca13cb249b22",
-    "app/schemas/stable/entities.schema.json": "172bea0cae1f34ca3b63b142463b8fc78e313f07e92532658088c64e1887b4ff",
+    "app/schemas/stable/entities.schema.json": "16dd5f3a3c89e9ed34f40cb696026bb95e32b27931ccd3910aed3cdb077493f6",
     "app/schemas/stable/environment.schema.json": "0fa935735bcd4ba8ab5e8b7451aef6630133d159707e44f4bc5849138314846d",
     "app/schemas/stable/events.schema.json": "70a92270b1b4b503dd242bf297a10c5ceb3293e4974797659e01b279a55ff7bb",
     "app/schemas/stable/physio.schema.json": "16c7217c030766092a2d73cd79365579dc977952ffc45747f04273d0ac5fd312",
@@ -22,11 +22,11 @@
     "docs/specs/biometrics.md": "58e8ebe99d66b6b7266e023f00855e2f4d829dc2a0c7eacc79554c9c48aa982e",
     "docs/specs/biosample.md": "613ab4c060b0ac4bb1975b81c095eaa516428f9a0a421a7b01f94a22348eedf9",
     "docs/specs/dataset_description.md": "66bc0b5806f9b21eadf707091b4ced42e7aebc128eabb55cd543b7aa1bd4bbe9",
-    "docs/specs/entities.md": "af107cc88529168859e1aee69e1679c4f2c63b2bc324fb21dd7c8aaad84b3b8e",
+    "docs/specs/entities.md": "5e4d77252dc5b19492f2c9d2b6db8cd8f43a3a628070ba823b0a07dc644a1cb3",
     "docs/specs/environment.md": "61161402208b88928219ed296d604e33bed5578e30399a2477e5337e0617e865",
     "docs/specs/events.md": "0388bfd77423fd940eb3644edcb6f9e64d1d9641922c4b7927c21a3eaf6e98e0",
     "docs/specs/physio.md": "732fb67b22ee9744369e925670deee8c57036ab1b67569d5663219e015cc41c4",
-    "docs/specs/survey.md": "ae0113f49f4474274a8395264d02c7c0b6bf8dfa2e11d5f6436ace4e6d145444",
+    "docs/specs/survey.md": "4000a5e8a884a727745a82ab584caeb89110833748dd3c1d173a2f147ed458dc",
     "official/library/terms/biosample/alpha-amylase.json": "c462439429983971303d497f4f0e58ceccb9254f766b5d251253cda35d295021",
     "official/library/terms/biosample/alpha-amylase.saliva.json": "21e0747cb45b93decf735d518ca53a4168829778fc860ecb30324a2b66f08646",
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
@@ -46,5 +46,5 @@
     "scripts/specification/term_proposal.py": "9de569860bd8911469f0867a0c6b648e0fa961cbe1e31b5ab7aac3a34acf21c9"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.2.3"
+  "tag": "v1.2.4"
 }
