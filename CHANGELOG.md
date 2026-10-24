@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **One timepoint means `ses-1`.** In a project with `Timepoints: single`, the survey, participants, biometrics, physio batch
+  and environment importers always write `ses-1`, report any other label they replaced, and project registration records
+  `ses-1`. In a `multiple` project the biometrics, physio batch and environment importers now use the session map too.
+- `session-map suggest`: proposes defaults 1, 2, 3 for unmapped labels (pre-filled and editable in the session map panel;
+  never saved unasked).
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Removed

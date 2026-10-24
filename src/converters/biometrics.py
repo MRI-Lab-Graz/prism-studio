@@ -24,6 +24,8 @@ from src.converters.file_reader import (
     read_tabular_file as _read_tabular_file,
 )
 from src.entity_rules import load_entity_rules
+from src.participants_sessions import session_label
+from src.session_map import resolve_import_session
 from src.subject_id_matching import build_subject_id_matcher
 from src.utils.io import read_json as _read_json, write_json as _write_json
 from src.utils.naming import norm_key as _norm_key
@@ -160,6 +162,22 @@ def detect_biometrics_in_table(
             detected_tasks.append(task)
 
     return sorted(detected_tasks)
+
+
+def _project_session_ids(
+    project_root: Path, labels: list[str], default_session: str
+) -> tuple[dict[str, str], list[str]]:
+    """Session folder per source label under the project's Timepoints rule (single: ses-1,
+    multiple: the session map, raises for an unmapped label); without a project.json
+    the label is only cleaned, as before. Also returns the warnings to report."""
+    ids: dict[str, str] = {}
+    warnings: list[str] = []
+    for label in dict.fromkeys(labels):
+        target, warning = resolve_import_session(project_root, label)
+        ids[label] = f"ses-{target}" if target is not None else _normalize_ses_id(label, default_session=default_session)
+        if warning:
+            warnings.append(warning)
+    return ids, warnings
 
 
 def convert_biometrics_table_to_prism_dataset(
@@ -301,6 +319,14 @@ def convert_biometrics_table_to_prism_dataset(
         None if session and str(session).strip().lower() == "all" else session
     )
 
+    if effective_session:
+        row_labels = [session_label(effective_session)]
+    elif col_ses:
+        row_labels = [session_label(v) for v in df[col_ses]]
+    else:
+        row_labels = [""]
+    session_ids, session_warnings = _project_session_ids(output_root, row_labels, default_session)
+
     raw_ids = list(df[col_pid])
     shown_ids = [(raw, sid) for raw, sid in zip(raw_ids, normalized_ids) if sid]
     raw_sessions = (
@@ -311,7 +337,8 @@ def convert_biometrics_table_to_prism_dataset(
     notes = [
         missing_id_note([n for n, sid in enumerate(normalized_ids, 1) if not sid]),
         cleaning_note([r for r, _ in shown_ids], [_normalize_sub_id(r) for r, _ in shown_ids], "participant ID", "sub-"),
-        cleaning_note(raw_sessions, [_normalize_ses_id(v) for v in raw_sessions], "session label", "ses-"),
+        cleaning_note(raw_sessions, [session_ids[session_label(v)] for v in raw_sessions], "session label", "ses-"),
+        *session_warnings,
     ]
     notes = [note for note in notes if note]
 
@@ -368,12 +395,7 @@ def convert_biometrics_table_to_prism_dataset(
         if not sub_id:
             continue
 
-        if effective_session:
-            ses_id = _normalize_ses_id(effective_session)
-        else:
-            ses_id = _normalize_ses_id(
-                row.get(col_ses) if col_ses else None, default_session=default_session
-            )
+        ses_id = session_ids[row_labels[0] if effective_session or not col_ses else session_label(row.get(col_ses))]
         if ses_id not in sessions_written:
             sessions_written.append(ses_id)
 

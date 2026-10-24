@@ -134,11 +134,6 @@ def test_undeclared_project_is_refused_with_the_declare_message(tmp_path, librar
         convert(tmp_path, library, LONG, project(tmp_path, timepoints=None))
 
 
-def test_single_timepoint_project_keeps_todays_behaviour(tmp_path, library):
-    out = convert(tmp_path, library, LONG, project(tmp_path, "single"))
-    assert sessions(out, "sub-P001") == ["ses-post", "ses-pre"]
-
-
 def test_without_a_project_nothing_changes(tmp_path, library):
     out = convert(tmp_path, library, LONG, proj=None)
     assert sessions(out, "sub-P001") == ["ses-post", "ses-pre"]

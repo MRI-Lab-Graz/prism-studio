@@ -85,3 +85,14 @@ def test_two_labels_that_would_name_the_same_column_are_rejected():
 
     with pytest.raises(ValueError, match="same column"):
         split_columns_by_session(df, labels, ["age"])
+
+
+def test_split_sessions_is_refused_in_a_one_timepoint_project(tmp_path):
+    import json
+
+    (tmp_path / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "single"}}))
+
+    success, df, messages = _convert(tmp_path, session_column="session", split_sessions=True)
+
+    assert not success
+    assert any("one timepoint" in m for m in messages)

@@ -1,6 +1,7 @@
 /**
- * Session mapping panel: lists source session labels next to EMPTY inputs.
- * Nothing is suggested or pre-filled; the user types every session name.
+ * Session mapping panel: lists source session labels next to editable inputs.
+ * The backend proposes 1, 2, 3 ... as defaults (`suggest`); nothing is written
+ * until the user presses Save, so saving is the confirmation.
  */
 
 export function validSessionName(text) {
@@ -15,7 +16,17 @@ export function canSaveSessionMap(labels, typed) {
     return toMap.length > 0 && toMap.every((label) => validSessionName(typed[label]));
 }
 
-/** Only what the user actually typed (trimmed, non-empty), never for a blank label. */
+/** Suggested names for inputs the user has not typed in; what was typed always wins. */
+export function withDefaults(labels, typed, suggested) {
+    const out = {};
+    for (const label of mappable(labels)) {
+        const value = typed[label] || suggested?.[label];
+        if (value) out[label] = value;
+    }
+    return out;
+}
+
+/** The names that will be saved (trimmed, non-empty), never for a blank label. */
 export function entriesToSave(labels, typed) {
     const entries = {};
     for (const label of mappable(labels)) {
@@ -43,7 +54,7 @@ export function numericTwinLabels(labels) {
  * Thin DOM wrapper. `root` holds elements with data-role="rows" | "save" | "status".
  * `save(entries)` POSTs to /api/session-map and resolves on success; `onSaved()` re-runs detection.
  */
-export function createSessionMapPanel({ root, save, onSaved, onChange }) {
+export function createSessionMapPanel({ root, save, onSaved, onChange, suggest }) {
     const rows = root.querySelector('[data-role="rows"]');
     const saveBtn = root.querySelector('[data-role="save"]');
     const status = root.querySelector('[data-role="status"]');
@@ -96,6 +107,23 @@ export function createSessionMapPanel({ root, save, onSaved, onChange }) {
         );
         status.textContent = '';
         root.classList.remove('d-none');
+        refresh();
+        if (suggest) prefill(labels);
+    }
+
+    async function prefill(shown) {
+        let suggested;
+        try {
+            suggested = await suggest(shown);
+        } catch {
+            return; // defaults are a convenience; the user can still type every name
+        }
+        if (shown !== labels) return; // the list changed while we waited
+        Object.assign(typed, withDefaults(shown, typed, suggested));
+        rows.querySelectorAll('input').forEach((input, index) => {
+            const label = shown.filter((l) => l !== '')[index];
+            if (label !== undefined) input.value = typed[label] ?? '';
+        });
         refresh();
     }
 

@@ -32,6 +32,7 @@ import requests
 
 from src.bids_integration import check_and_update_bidsignore
 from src.cleaning_notes import cleaning_note
+from src.session_map import resolve_import_session
 from src.converters.file_reader import (
     expected_delimiter_for_suffix,
     infer_tabular_kind,
@@ -833,6 +834,17 @@ def preview_environment_file(input_path: Path, separator_option: str) -> dict[st
     }
 
 
+def _project_session_id(project_path, label, cache, warnings):
+    """ses-<n> the project's Timepoints rule gives a source label, None without a project.json
+    (the caller keeps its legacy naming). An unmapped label raises before anything is written."""
+    if label not in cache:
+        target, warning = resolve_import_session(project_path, label) if project_path else (None, None)
+        cache[label] = None if target is None else f"ses-{target}"
+        if warning:
+            warnings.append(warning)
+    return cache[label]
+
+
 def perform_environment_conversion(
     *,
     input_path: Path,
@@ -897,6 +909,8 @@ def perform_environment_conversion(
         log_callback=log_callback,
     )
 
+    project_sessions: dict[str, str | None] = {}
+    session_warnings: list[str] = []
     rows_out: list[dict] = []
     skipped = 0
     fallback_idx = 1
@@ -1017,8 +1031,14 @@ def perform_environment_conversion(
         fallback_idx += 1
 
         if session_col and session_col in df.columns:
-            raw_ses = str(row.get(session_col, "")).strip()
-            session_id = _bids_label(raw_ses or session_override or "1", "ses") or "ses-1"
+            session_label = str(row.get(session_col, "")).strip() or session_override or ""
+        else:
+            session_label = session_override or ""
+        project_session = _project_session_id(project_path, session_label, project_sessions, session_warnings)
+        if project_session is not None:  # the project's Timepoints decide
+            session_id = project_session
+        elif session_col and session_col in df.columns:
+            session_id = _bids_label(session_label or "1", "ses") or "ses-1"
         elif session_override:
             session_id = _bids_label(session_override, "ses")
         else:
@@ -1108,6 +1128,7 @@ def perform_environment_conversion(
         for note in (
             cleaning_note([r for r, _ in id_pairs], [c for _, c in id_pairs], "participant ID", "sub-"),
             cleaning_note([r for r, _ in ses_pairs], [c for _, c in ses_pairs], "session label", "ses-"),
+            *session_warnings,
         ):
             if note:
                 log_callback(note, "warning")

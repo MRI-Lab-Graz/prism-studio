@@ -136,7 +136,7 @@ def test_what_registration_stored_is_valid_for_the_next_conversion(tmp_path):
     assert acq[("wellbeing-multi", "ses-1", None)] == "7-likert"
 
 
-def test_single_timepoint_project_registers_exactly_as_before(tmp_path):
+def test_single_timepoint_project_registers_ses_1(tmp_path):
     root = project(tmp_path, "single")
 
     register_session_in_project(
@@ -144,4 +144,4 @@ def test_single_timepoint_project_registers_exactly_as_before(tmp_path):
         template_version_overrides={"wellbeing-multi": "7-likert"},
     )
 
-    assert stored_selections(root)[0]["session"] == "ses-pre"
+    assert stored_selections(root)[0]["session"] == "ses-1"  # the importers wrote ses-1

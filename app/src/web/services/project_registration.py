@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 from src.participants_sessions import session_label
-from src.session_map import SessionMapError, session_map_for_conversion
+from src.session_map import SINGLE_SESSION, SessionMapError, project_timepoints, session_map_for_conversion
 from src.utils.naming import sanitize_id
 
 
@@ -46,12 +46,14 @@ def _normalize_session_id(session_id: str | None) -> str | None:
 def _output_session_id_fn(project_path: Path):
     """Raw session label -> the ``ses-*`` folder it was written to.
 
-    In a longitudinal project that is the user's map (``pre`` -> ``ses-1``), so
+    In a one-timepoint project that is always ``ses-1``; in a longitudinal project it is the user's map (``pre`` -> ``ses-1``), so
     project.json records sessions that exist on disk. Labels the map does not
     know (other converters, already-mapped ``ses-1``) fall back to plain
     normalization, exactly as before.
     """
     try:
+        if project_timepoints(project_path) == "single":
+            return lambda raw: f"ses-{SINGLE_SESSION}"  # what the importers wrote
         session_map = session_map_for_conversion(project_path)
     except SessionMapError:
         session_map = None

@@ -43,3 +43,21 @@ def test_undeclared_raises(tmp_path):
 def test_single_warning_only_when_label_replaced():
     assert single_session_warning("pre") and "ses-1" in single_session_warning("pre")
     assert single_session_warning("1") is None and single_session_warning("") is None
+
+
+def test_import_session_warns_only_for_a_single_project(tmp_path):
+    from src.session_map import resolve_import_session
+
+    single = tmp_path / "s"
+    single.mkdir()
+    target, warning = resolve_import_session(_p(single, "single"), "pre")
+    assert target == "1" and "ses-1" in warning and "'pre'" in warning
+
+    multi = tmp_path / "m"
+    multi.mkdir()
+    save_session_map(_p(multi, "multiple"), {"pre": "1"})
+    assert resolve_import_session(multi, "pre") == ("1", None)
+
+    none = tmp_path / "n"
+    none.mkdir()
+    assert resolve_import_session(none, "pre") == (None, None)

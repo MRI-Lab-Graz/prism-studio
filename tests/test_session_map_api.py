@@ -45,3 +45,20 @@ def test_post_rejects_an_invalid_target_and_writes_nothing(client):
 def test_post_without_entries_is_a_400(client):
     http, root = client
     assert http.post("/api/session-map", json={"project_path": str(root)}).status_code == 400
+
+
+def test_get_with_labels_proposes_defaults_without_saving(client):
+    http, root = client
+    body = http.get(
+        "/api/session-map",
+        query_string={"project_path": str(root), "label": ["pre", "post"]},
+    ).get_json()
+    assert body["suggested"] == {"pre": "1", "post": "2"}
+    assert body["map"] == {}
+    assert not (root / "code" / "session_map.json").exists()
+
+
+def test_get_without_labels_has_no_suggestions(client):
+    http, root = client
+    body = http.get("/api/session-map", query_string={"project_path": str(root)}).get_json()
+    assert "suggested" not in body

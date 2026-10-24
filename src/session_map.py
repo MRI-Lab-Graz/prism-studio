@@ -163,6 +163,22 @@ def unmapped_labels(labels: Iterable[object], mapping: Mapping[str, str]) -> lis
     return missing
 
 
+def suggest_session_map(labels: Iterable[object], mapping: Mapping[str, str]) -> dict[str, str]:
+    """Editable defaults for unmapped labels: 1, 2, 3 ... in order of first appearance.
+    Only a proposal: nothing is written until the user confirms."""
+    used = set(mapping.values())
+    out: dict[str, str] = {}
+    n = 1
+    for label in unmapped_labels(labels, mapping):
+        if label == "":
+            continue
+        while str(n) in used:
+            n += 1
+        out[label] = str(n)
+        used.add(str(n))
+    return out
+
+
 def apply_session_map(label: object, mapping: Mapping[str, str]) -> str:
     key = session_label(label)
     if key in mapping:
@@ -185,6 +201,17 @@ def session_target(project_path, label: object) -> str | None:
     if state == "single":
         return SINGLE_SESSION
     return apply_session_map(label, load_session_map(project_path))
+
+
+def resolve_import_session(project_path, label: object) -> tuple[str | None, str | None]:
+    """What an importer writes for a source session label, and a warning to report.
+
+    (None, None): not a PRISM project, keep the label. Raises like ``session_target``
+    for an unmapped label in a multiple-timepoint project."""
+    target = session_target(project_path, label)
+    if target is None or project_timepoints(project_path) != "single":
+        return target, None
+    return target, single_session_warning(label)
 
 
 def single_session_warning(label: object) -> str | None:

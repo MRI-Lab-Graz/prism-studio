@@ -401,11 +401,18 @@ python prism_tools.py participants fix-bids --file /absolute/path/to/my-project/
 
 ### Session map
 
-In a project whose study metadata says `Timepoints: multiple` (Study Design, Projects page),
-every session label in an import must be mapped by you in `code/session_map.json`. PRISM
-never suggests, orders or fills in session names: `1`, `01` and `pre` are three different
+**One timepoint (`Timepoints: single`):** every import writes `ses-1`, whatever session label the
+data carries; a label other than `1` is reported ("session label 'pre' was written as ses-1"), and
+two labels for one participant meet the normal duplicate check. This is a project rule you chose on the
+Projects page, not label normalization. It covers `survey convert`, the participants importer,
+`biometrics convert`, `convert physio` batch import and the environment importer.
+
+**Several timepoints (`Timepoints: multiple`):** every session label in an import must be mapped by you
+in `code/session_map.json`. Labels stay exact strings: `1`, `01` and `pre` are three different
 labels, and even `1 -> 1` has to be written down once. Several source labels may map to one
-session (`T0 -> 1` and `pre -> 1`). Existing converted data is never rewritten.
+session (`T0 -> 1` and `pre -> 1`). PRISM only *proposes* defaults `1, 2, 3` in order of appearance
+(`session-map suggest`, pre-filled and editable in the Studio panel); nothing is saved until you save
+or pass `--apply`. Existing converted data is never rewritten.
 
 ```bash
 # Show the declaration and the map
@@ -414,6 +421,9 @@ python prism_tools.py session-map show --project /absolute/path/to/my-project --
 # Map one source label (exactly as it appears in the data) to a session name (letters and digits)
 python prism_tools.py session-map set --project /absolute/path/to/my-project --label pre --target 1
 python prism_tools.py session-map set --project /absolute/path/to/my-project --label T0 --target 1
+
+# Propose defaults 1, 2, 3 for labels without an entry (add --apply to save them)
+python prism_tools.py session-map suggest --project /absolute/path/to/my-project --label pre --label post
 
 # Remove a mistyped entry (exact label)
 python prism_tools.py session-map unset --project /absolute/path/to/my-project --label pree
@@ -424,7 +434,7 @@ they are all in the map. In a longitudinal project `survey convert` imports ever
 a file with a session column (it never silently picks "the first one"); use
 `--session <label>` to import one session, or to label a file that has no session column
 (the label must be in the map). If `--project` is omitted but `--output` is a PRISM project,
-that project's rules apply. Projects with `Timepoints: single` behave as before.
+that project's rules apply.
 
 **`sessions review|set|unset`** — repeated LimeSurvey responses (one row per start, no
 session column). Sessions come from *completed* responses (`submitdate` filled), numbered

@@ -2620,7 +2620,7 @@ export function initParticipants() {
     let participantsSessionsFromDate = false;
     let participantsSessionChoice = createSessionChoiceState();
 
-    // Longitudinal project: the user names the session being imported (nothing is filled in for them).
+    // Longitudinal project: the user names the session being imported (default 1, 2, 3 pre-filled and editable).
     const participantsSessionMapPanelEl = document.getElementById('participantsSessionMapPanel');
     const participantsSessionMapPanel = participantsSessionMapPanelEl
         ? createSessionMapPanel({
@@ -2633,6 +2633,12 @@ export function initParticipants() {
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(data.error || 'Could not save the session map.');
+            },
+            suggest: async (labels) => {
+                const query = new URLSearchParams({ project_path: resolveCurrentProjectPath() || '' });
+                labels.forEach((label) => query.append('label', label));
+                const response = await fetchWithApiFallback(`/api/session-map?${query}`);
+                return (await response.json().catch(() => ({}))).suggested;
             },
             onSaved: () => document.getElementById('participantsPreviewBtn')?.click(),
             onChange: () => refreshParticipantsConvertButtonForSessionChoice(),
