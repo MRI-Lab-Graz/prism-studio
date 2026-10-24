@@ -91,8 +91,9 @@ python prism-studio.py
 
 On Linux, `install.sh` first offers to install the OS packages Studio needs
 (`python3-tk` for the folder picker, `git`, `curl`) with one `sudo` command, and
-then DataLad/git-annex. It also puts a **PRISM Studio** shortcut (with the app icon) on the
-Desktop — double-click it for later sessions. Recreate it with
+then DataLad/git-annex. It also adds **PRISM Studio** (with the app icon) to your applications
+menu, and a copy to the Desktop when your desktop shows one (GNOME, e.g. Fedora, shows no Desktop
+icons: search for "PRISM Studio" in Activities). Recreate it with
 `bash scripts/setup/create_desktop_shortcut.sh`.
 
 </div>
@@ -176,6 +177,16 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 - **`Writing EDF output requires pyedflib`** — `pyedflib` is not installed by
   default (it has no wheels for Python 3.13+). Only EDF output needs it:
   `pip install pyedflib` inside the activated `.venv`.
+- **Defacing structural MRI on export** — not installed by default. Without it,
+  structural images are **not defaced**: deface them before you share the data
+  (the export warns "not ready for public sharing"). To deface from Studio,
+  install [FSL](https://fsl.fmrib.ox.ac.uk/fsl/docs/#/install/index) and then
+  `pip install pydeface` inside the activated `.venv`. Defacing is a long
+  computation (minutes per scan).
+- **Source install on ARM Linux (aarch64) fails while building a package** — some
+  dependencies have no prebuilt ARM wheel and need a C compiler: install one
+  (`sudo dnf install gcc` / `sudo apt install build-essential`) and run
+  `install.sh` again. Please open an issue if this happens, naming the package.
 - **Python or package errors during source install** — use the prebuilt release
   unless you specifically need source; if you do need source, make sure `.venv` is
   activated before running any commands.
