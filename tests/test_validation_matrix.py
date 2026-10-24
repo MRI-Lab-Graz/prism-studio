@@ -2,13 +2,15 @@
 
 import pytest
 
-from src.validation_matrix import DEFECTS, KNOWN_GAPS, build_clean_project, classify, matrix_problems, run_matrix
+from src.validation_matrix import ANY, DEFECTS, NONE, KNOWN_GAPS, build_clean_project, classify, matrix_problems, run_matrix
 
 
 def test_classify():
     assert classify("PRISM201", ["PRISM201", "PRISM708"]) == "detected"
     assert classify("PRISM201", ["PRISM301"]) == "wrong_code"
     assert classify("PRISM201", []) == "missed"
+    assert classify(ANY, ["PRISM999"]) == "detected" and classify(ANY, []) == "missed"
+    assert classify(NONE, []) == "detected" and classify(NONE, ["PRISM402"]) == "false_positive"
 
 
 def test_defects_are_unique_and_expect_codes_of_the_catalogue():
@@ -16,7 +18,7 @@ def test_defects_are_unique_and_expect_codes_of_the_catalogue():
 
     ids = [d.id for d in DEFECTS]
     assert len(ids) == len(set(ids))
-    assert {d.expect for d in DEFECTS} <= set(ERROR_CODES)
+    assert {d.expect for d in DEFECTS} - {ANY, NONE} <= set(ERROR_CODES)
     assert set(KNOWN_GAPS) <= set(ids)
 
 

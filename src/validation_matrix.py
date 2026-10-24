@@ -20,6 +20,9 @@ from typing import Callable
 REPO = Path(__file__).resolve().parents[1]
 SURVEY_TEMPLATE = REPO / "official" / "library" / "survey" / "survey-brs.json"
 
+ANY = "ANY"  # the catalogue has no code for it: any new error or warning counts
+NONE = "NONE"  # messy but legal: the validator must stay quiet
+
 DATA = "sub-01/ses-1/survey/sub-01_ses-1_task-brs_survey.tsv"
 SIDECAR = "task-brs_survey.json"
 
@@ -86,6 +89,34 @@ def _coded_participants_column(root: Path) -> None:
     path.write_text("\n".join([rows[0] + "\tgroup"] + [f"{r}\t{i % 2 + 1}" for i, r in enumerate(rows[1:])]) + "\n", encoding="utf-8")
 
 
+def _data_text(text: str) -> Callable[[Path], None]:
+    return _write(DATA, text)
+
+
+def _copy_subject(src: str, dst: str) -> Callable[[Path], None]:
+    """Copy sub-<src> as sub-<dst> (files renamed) and list it in participants.tsv."""
+    def mutate(root: Path) -> None:
+        _participants_row(f"sub-{dst}\t33\n")(root)
+        shutil.copytree(root / f"sub-{src}", root / f"sub-{dst}")
+        for path in (root / f"sub-{dst}").rglob(f"sub-{src}_*"):
+            path.rename(path.with_name(path.name.replace(f"sub-{src}_", f"sub-{dst}_", 1)))
+    return mutate
+
+
+def _participants_row(row: str) -> Callable[[Path], None]:
+    return lambda root: (root / "participants.tsv").open("a", encoding="utf-8").write(row)
+
+
+def _mixed_session_padding(root: Path) -> None:
+    """sub-02 uses ses-01 while everybody else uses ses-1."""
+    shutil.move(root / "sub-02" / "ses-1", root / "sub-02" / "ses-01")
+    (root / "sub-02/ses-01/survey/sub-02_ses-1_task-brs_survey.tsv").rename(root / "sub-02/ses-01/survey/sub-02_ses-01_task-brs_survey.tsv")
+
+
+def _stray_file(root: Path) -> None:
+    (root / "notes from the lab.docx").write_bytes(b"PK")
+
+
 DEFECTS: list[Defect] = [
     Defect("missing_dataset_description", "dataset_description.json is absent", "PRISM001", _remove("dataset_description.json")),
     Defect("dataset_description_not_json", "dataset_description.json is not valid JSON", "PRISM202",
@@ -129,6 +160,28 @@ DEFECTS: list[Defect] = [
            _coded_participants_column),
     Defect("session_seen_for_one_subject", "ses-2 exists for one subject only (likely a typo)", "PRISM601",
            _second_session_for_one_subject),
+
+    # messy files a real study produces
+    Defect("ragged_row", "a data row has fewer cells than the header", ANY, _data_text("BRS01\tBRS02\tBRS03\n3\t4\n")),
+    Defect("extra_column_not_in_sidecar", "a data column the sidecar does not describe", ANY,
+           _data_text("BRS01\tBRS02\tBRS03\tBRS99\n3\t4\t2\t1\n")),
+    Defect("header_with_trailing_space", "a column name ends with a space", ANY, _data_text("BRS01 \tBRS02\tBRS03\n3\t4\t2\n")),
+    Defect("decimal_comma_answer", "an answer written 3,5 (decimal comma)", ANY, _data_text("BRS01\tBRS02\tBRS03\n3,5\t4\t2\n")),
+    Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _data_text("BRS01;BRS02;BRS03\n3;4;2\n")),
+    Defect("nan_in_sidecar", "NaN written into a JSON sidecar", ANY, lambda root: _write(SIDECAR, (root / SIDECAR).read_text(encoding="utf-8").replace('"Reversed": false', '"Reversed": NaN', 1))(root)),
+    Defect("participants_tsv_duplicate_id", "the same participant twice in participants.tsv", ANY, _participants_row("sub-01\t31\n")),
+    Defect("participants_row_without_folder", "participants.tsv lists a participant that has no folder", "PRISM707", _participants_row("sub-99\t50\n")),
+    Defect("non_ascii_subject_label", "sub-Müller is not a valid BIDS label", ANY, _copy_subject("03", "Müller")),
+    Defect("session_padding_differs_between_subjects", "ses-1 for most subjects, ses-01 for one", "PRISM601", _mixed_session_padding),
+    Defect("stray_file_at_root", "a word-processor file in the dataset root", ANY, _stray_file),
+    # messy but legal: no issue may be reported
+    Defect("benign_bom_and_crlf", "a data file saved by Excel (BOM, CRLF line endings)", NONE,
+           lambda root: (root / DATA).write_bytes("\ufeffBRS01\tBRS02\tBRS03\r\n3\t4\t2\r\n".encode("utf-8"))),
+    Defect("benign_sidecar_describes_more_items", "a file holds fewer items than the shared sidecar describes", NONE,
+           _data_text("BRS01\tBRS02\n3\t4\n")),
+    Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _data_text("BRS01\tBRS02\tBRS03\nn/a\t4\t2\n")),
+    Defect("benign_long_subject_label", "a 40-character alphanumeric participant label", NONE,
+           _copy_subject("03", "x" * 40)),
 ]
 
 
@@ -139,6 +192,13 @@ KNOWN_GAPS: dict[str, str] = {
     "enforced (defaultRequiredEntities is read but unused); the file is only reported as lacking a sidecar (PRISM201)",
     "sidecar_empty": "PRISM203 is in the catalogue but never emitted; an empty sidecar is reported as invalid JSON (PRISM202)",
     "sidecar_field_wrong_type": "PRISM302 is in the catalogue but never emitted; a wrong field type is a schema error (PRISM301)",
+    "ragged_row": "a row with fewer cells than the header is accepted silently",
+    "extra_column_not_in_sidecar": "columns that the sidecar does not describe are not reported",
+    "header_with_trailing_space": "same root as extra_column_not_in_sidecar: 'BRS01 ' matches no item and nothing says so",
+    "semicolon_separated_tsv": "same root: the header parses as one undescribed column and nothing says so",
+    "nan_in_sidecar": "NaN is not valid JSON (Python reads it anyway); the BIDS validator would object, PRISM does not",
+    "participants_tsv_duplicate_id": "the same participant listed twice in participants.tsv is accepted silently",
+    "stray_file_at_root": "only the BIDS validator (run_bids) reports files outside the specification; this matrix runs PRISM checks only",
 }
 
 
@@ -202,6 +262,10 @@ def _key(issue: dict, root: Path) -> tuple[str, str, str]:
 
 
 def classify(expected: str, new_codes: list[str]) -> str:
+    if expected == NONE:
+        return "detected" if not new_codes else "false_positive"
+    if expected == ANY:
+        return "detected" if new_codes else "missed"
     if expected in new_codes:
         return "detected"
     return "wrong_code" if new_codes else "missed"
@@ -228,7 +292,8 @@ def run_matrix(clean: Path, defects: list[Defect] | None = None) -> dict:
             defect.mutate(copy)
             new = {way: [i for i in found if (way, _key(i, copy)) not in base_keys]
                    for way, found in _validate(copy).items()}
-            codes = sorted({i["code"] for found in new.values() for i in found})
+            codes = sorted({i["code"] for found in new.values() for i in found
+                            if defect.expect not in (ANY, NONE) or str(i.get("severity", "ERROR")).upper() in ("ERROR", "WARNING")})
             by = [way for way, found in new.items() if any(i["code"] == defect.expect for i in found)]
             rows.append({"id": defect.id, "rule": defect.rule, "expected": defect.expect, "got": codes,
                          "by": by, "status": classify(defect.expect, codes)})
