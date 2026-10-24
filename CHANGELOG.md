@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Fixed
+- Participants import: numbers with padded decimal zeros (LimeSurvey exports ages as `23.0000000000`) are read as `23`;
+  `44.50` becomes `44.5`. The value is the same number, so the preview and `participants.tsv` show it without the zeros.
 - **Linux launcher in the applications menu.** `install.sh` now writes `prism-studio.desktop` to `~/.local/share/applications`
   (and a copy on the Desktop when that folder exists). On GNOME (Fedora Workstation) there are no Desktop icons and `.desktop`
   files cannot be started from a folder, so the Desktop-only shortcut never appeared.
