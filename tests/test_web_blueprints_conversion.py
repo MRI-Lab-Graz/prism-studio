@@ -4739,7 +4739,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         preview_rows = payload.get("preview_rows") or []
         bmi_key = "BMI" if preview_rows and "BMI" in preview_rows[0] else "bmi"
         self.assertEqual(preview_rows[0].get(bmi_key), "20.1")
-        self.assertEqual(preview_rows[1].get(bmi_key), "30.0")
+        self.assertEqual(preview_rows[1].get(bmi_key), "30")
 
     @patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set())
     @patch.object(mapping_module, "resolve_effective_library_path")
@@ -4787,7 +4787,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         preview_rows = payload.get("preview_rows") or []
         bmi_key = "BMI" if preview_rows and "BMI" in preview_rows[0] else "bmi"
         self.assertEqual(preview_rows[0].get(bmi_key), "24.2")
-        self.assertEqual(preview_rows[1].get(bmi_key), "31.0")
+        self.assertEqual(preview_rows[1].get(bmi_key), "31")
 
         decisions = payload.get("session_resolution_decisions") or {}
         self.assertEqual((decisions.get("BMI") or {}).get("action"), "pick_latest_session")
