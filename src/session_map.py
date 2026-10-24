@@ -203,6 +203,17 @@ def session_target(project_path, label: object) -> str | None:
     return apply_session_map(label, load_session_map(project_path))
 
 
+def resolve_import_session(project_path, label: object) -> tuple[str | None, str | None]:
+    """What an importer writes for a source session label, and a warning to report.
+
+    (None, None): not a PRISM project, keep the label. Raises like ``session_target``
+    for an unmapped label in a multiple-timepoint project."""
+    target = session_target(project_path, label)
+    if target is None or project_timepoints(project_path) != "single":
+        return target, None
+    return target, single_session_warning(label)
+
+
 def single_session_warning(label: object) -> str | None:
     shown = session_label(label)
     if shown in ("", SINGLE_SESSION):

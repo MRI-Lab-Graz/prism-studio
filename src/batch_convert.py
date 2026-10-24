@@ -31,6 +31,7 @@ from typing import Any, Callable, cast
 import numpy as np
 
 from src.physio_renamer import PHYSIO_TASK_DESTINATIONS
+from src.session_map import SessionMapError, resolve_import_session
 
 # Pattern for BIDS-like filenames: sub-XXX[_ses-YYY][_task-ZZZ][_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
@@ -108,6 +109,7 @@ class BatchConvertResult:
     output_folder: Path
     converted: list[ConvertedFile] = field(default_factory=list)
     skipped: list[tuple[Path, str]] = field(default_factory=list)  # (path, reason)
+    warnings: list[str] = field(default_factory=list)
     conflicts: list[FileConflict] = field(default_factory=list)  # File conflicts
     existing_files: int = 0  # Count of files that already exist (for dry-run reporting)
     new_files: int = 0  # Count of files that would be created (for dry-run reporting)
@@ -1293,6 +1295,21 @@ def batch_convert_folder(
                 "warning",
             )
             continue
+
+        raw_session = parsed.get("ses") or ""
+        try:  # the project's Timepoints decide the session name
+            target, warning = resolve_import_session(
+                output_folder, raw_session[4:] if raw_session.startswith("ses-") else raw_session
+            )
+        except SessionMapError as exc:
+            result.skipped.append((file_path, str(exc)))
+            log(f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {exc}", "warning")
+            continue
+        if target is not None:
+            parsed = {**parsed, "ses": f"ses-{target}"}
+        if warning:
+            result.warnings.append(f"{file_path.name}: {warning}")
+            log(f"⚠️  {file_path.name}: {warning}", "warning")
 
         subject_label = parsed.get("sub", "unknown")
         session_label = parsed.get("ses") or "nosession"
