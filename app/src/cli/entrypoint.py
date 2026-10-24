@@ -81,6 +81,7 @@ from src.cli.commands.preregistration import cmd_preregistration_draft
 from src.cli.commands.session_map import (
     cmd_session_map_set,
     cmd_session_map_show,
+    cmd_session_map_suggest,
     cmd_session_map_unset,
 )
 from src.cli.commands.recipes import (
@@ -215,6 +216,7 @@ def main() -> None:
             "methods_generate": cmd_methods_generate,
             "session_map_show": cmd_session_map_show,
             "session_map_set": cmd_session_map_set,
+            "session_map_suggest": cmd_session_map_suggest,
             "session_map_unset": cmd_session_map_unset,
             "sessions_review": cmd_sessions_review,
             "sessions_set": cmd_sessions_set,

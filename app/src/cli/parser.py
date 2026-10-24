@@ -515,6 +515,26 @@ def build_prism_tools_parsers(
         "--label", required=True, help="Source label to remove, exactly as mapped"
     )
 
+    parser_session_map_suggest = session_map_subparsers.add_parser(
+        "suggest",
+        help="Propose defaults 1, 2, 3 for source labels without an entry",
+    )
+    parser_session_map_suggest.add_argument(
+        "--project", required=True, help="Project root or project.json path"
+    )
+    parser_session_map_suggest.add_argument(
+        "--label",
+        action="append",
+        required=True,
+        help="Source label exactly as in the data (repeat for each label)",
+    )
+    parser_session_map_suggest.add_argument(
+        "--apply", action="store_true", help="Save the proposal to the session map"
+    )
+    parser_session_map_suggest.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_preregistration = subparsers.add_parser(
         "preregistration",
         help="Preregistration draft from project.json (AsPredicted question order)",

@@ -7,6 +7,7 @@ from src.session_map import (
     load_session_map,
     project_timepoints,
     set_session_entries,
+    suggest_session_map,
 )
 
 from .tools_helpers import _resolve_requested_or_current_project_root
@@ -20,13 +21,12 @@ def api_get_session_map():
     if root is None:
         return jsonify({"error": "No project selected"}), 400
     try:
-        return jsonify(
-            {
-                "ok": True,
-                "timepoints": project_timepoints(root),
-                "map": load_session_map(root),
-            }
-        )
+        mapping = load_session_map(root)
+        body = {"ok": True, "timepoints": project_timepoints(root), "map": mapping}
+        labels = request.args.getlist("label")
+        if labels:  # a proposal only; nothing is written until the user saves
+            body["suggested"] = suggest_session_map(labels, mapping)
+        return jsonify(body)
     except SessionMapError as exc:
         return jsonify({"error": str(exc)}), 400
 

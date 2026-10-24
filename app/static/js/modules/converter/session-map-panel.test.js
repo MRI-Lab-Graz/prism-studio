@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canSaveSessionMap, entriesToSave, numericTwinLabels, validSessionName } from './session-map-panel.js';
+import { canSaveSessionMap, entriesToSave, numericTwinLabels, validSessionName, withDefaults } from './session-map-panel.js';
 
 describe('session map panel rules', () => {
     it('accepts letters and digits only', () => {
@@ -36,5 +36,11 @@ describe('session map panel rules', () => {
         expect(numericTwinLabels(['12345678901234567890', '012345678901234567890'])).toEqual([
             ['12345678901234567890', '012345678901234567890'],
         ]);
+    });
+
+    it('pre-fills suggested names for empty inputs only, never over what the user typed', () => {
+        const typed = { pre: 'T0' };
+        expect(withDefaults(['pre', 'post', ''], typed, { pre: '1', post: '2', '': '3' })).toEqual({ pre: 'T0', post: '2' });
+        expect(withDefaults(['pre'], {}, undefined)).toEqual({});
     });
 });

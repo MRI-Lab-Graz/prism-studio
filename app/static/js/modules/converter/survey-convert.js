@@ -133,7 +133,7 @@ export function initSurveyConvert(elements) {
     const surveyVersionWizardCount = document.getElementById('surveyVersionWizardCount');
     const surveyVersionWizardStatus = document.getElementById('surveyVersionWizardStatus');
     const surveyVersionWizardApplyBtn = document.getElementById('surveyVersionWizardApplyBtn');
-    // Longitudinal projects: the user maps every session label (nothing is filled in for them).
+    // Longitudinal projects: the user maps every session label (defaults 1, 2, 3 are pre-filled and editable).
     const sessionMapPanelEl = document.getElementById('sessionMapPanel');
     const sessionMapPanel = sessionMapPanelEl
         ? createSessionMapPanel({
@@ -146,6 +146,12 @@ export function initSurveyConvert(elements) {
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(data.error || 'Could not save the session map.');
+            },
+            suggest: async (labels) => {
+                const query = new URLSearchParams({ project_path: resolveCurrentProjectPath() || '' });
+                labels.forEach((label) => query.append('label', label));
+                const response = await fetchWithApiFallback(`/api/session-map?${query}`);
+                return (await response.json().catch(() => ({}))).suggested;
             },
             onSaved: () => syncVersionWizardContext(),
             onChange: () => updateConvertBtn(),

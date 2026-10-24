@@ -11,6 +11,7 @@ from src.session_map import (
     project_timepoints,
     remove_session_entries,
     set_session_entries,
+    suggest_session_map,
 )
 
 
@@ -51,3 +52,21 @@ def cmd_session_map_unset(args) -> None:
         print(f"Error: {exc}")
         sys.exit(2)
     print(f"Removed {args.label!r} from the session map")
+
+
+def cmd_session_map_suggest(args) -> None:
+    try:
+        suggested = suggest_session_map(args.label, load_session_map(args.project))
+        if args.apply and suggested:
+            set_session_entries(args.project, suggested)
+    except SessionMapError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
+    if getattr(args, "json", False):
+        print(json.dumps({"suggested": suggested}, indent=2, ensure_ascii=False))
+        return
+    verb = "Mapped" if args.apply else "Suggested (not saved, add --apply)"
+    for label, target in suggested.items():
+        print(f"  {verb}: {label!r} -> {target}")
+    if not suggested:
+        print("  (every label already has an entry)")

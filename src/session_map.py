@@ -163,6 +163,22 @@ def unmapped_labels(labels: Iterable[object], mapping: Mapping[str, str]) -> lis
     return missing
 
 
+def suggest_session_map(labels: Iterable[object], mapping: Mapping[str, str]) -> dict[str, str]:
+    """Editable defaults for unmapped labels: 1, 2, 3 ... in order of first appearance.
+    Only a proposal: nothing is written until the user confirms."""
+    used = set(mapping.values())
+    out: dict[str, str] = {}
+    n = 1
+    for label in unmapped_labels(labels, mapping):
+        if label == "":
+            continue
+        while str(n) in used:
+            n += 1
+        out[label] = str(n)
+        used.add(str(n))
+    return out
+
+
 def apply_session_map(label: object, mapping: Mapping[str, str]) -> str:
     key = session_label(label)
     if key in mapping:
