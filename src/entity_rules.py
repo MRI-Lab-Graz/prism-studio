@@ -50,6 +50,8 @@ class ModalityRule:
     example_task: str = "rest"
     allowed_entities: tuple[str, ...] | None = None
     folder: bool = True
+    described_columns: bool = False
+    description: str = ""
 
     @classmethod
     def from_json(cls, name: str, data: dict) -> "ModalityRule":
@@ -71,6 +73,8 @@ class ModalityRule:
                 tuple(data["allowedEntities"]) if "allowedEntities" in data else None
             ),
             folder=bool(data.get("folder", True)),
+            described_columns=bool(data.get("describedColumns", False)),
+            description=data.get("description", ""),
         )
 
 
@@ -84,6 +88,14 @@ class EntityRules:
     @property
     def prism_modalities(self) -> set[str]:
         return {name for name, rule in self.modalities.items() if rule.kind == "prism"}
+
+    @property
+    def described_columns_modalities(self) -> set[str]:
+        return {
+            name
+            for name, rule in self.modalities.items()
+            if rule.kind == "prism" and rule.described_columns
+        }
 
     @property
     def bids_modalities(self) -> set[str]:

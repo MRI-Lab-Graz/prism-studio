@@ -9,6 +9,7 @@ hope.
 from __future__ import annotations
 
 from src.entity_rules import (
+    ModalityRule,
     compile_modality_regex,
     describe_modality_pattern,
     load_entity_rules,
@@ -174,3 +175,16 @@ def test_events_pin_still_resolves():
     from src.modality_versions import modality_names
 
     assert "events" in modality_names()
+
+
+def test_official_rules_describe_columns_of_exactly_three_modalities():
+    assert load_entity_rules().described_columns_modalities == {
+        "survey",
+        "biometrics",
+        "biosample",
+    }
+
+
+def test_a_rule_without_the_key_does_not_describe_columns():
+    rule = ModalityRule.from_json("x", {"kind": "prism", "suffixes": ["x"], "extensions": ["tsv"]})
+    assert rule.described_columns is False and rule.description == ""

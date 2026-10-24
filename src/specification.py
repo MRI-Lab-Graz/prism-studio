@@ -47,6 +47,10 @@ class Specification:
         return self.rules.prism_modalities
 
     @cached_property
+    def described_columns(self) -> set[str]:
+        return self.rules.described_columns_modalities
+
+    @cached_property
     def bids_modalities(self) -> set[str]:
         return self.rules.bids_modalities
 
