@@ -143,7 +143,9 @@ to JOSS; see [`paper/paper.md`](paper/paper.md) in the meantime.
 
 ## License
 
-See `LICENSE` (AGPL-3.0) for the software.
+Copyright (C) 2026 PRISM contributors. The software is licensed under the GNU Affero General Public
+License v3.0, see `LICENSE`; it was relicensed to AGPL-3.0 on 2026-02-06 with the consent of all
+contributors (see `RELICENSE_AGREEMENT.md`).
 
 **The bundled instrument library is content, not code, and AGPL-3.0 does not
 apply to it.** Survey templates under `official/library/survey/` carry their
