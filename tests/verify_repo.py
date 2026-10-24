@@ -124,9 +124,21 @@ DOCS_BUILD_WARNING_BASELINE = 16
 # macOS PyInstaller build the same way reverted in commit 00213061. Remove
 # this entry once cryptography restores an Intel-mac wheel and the pin in
 # requirements-runtime.txt can move to >=50.
+#
+# filelock 4.1.0 (CVE-2026-112906/112907/112913/112914/112937/112940, fixed in
+# 4.2.1): the fix needs Python >= 3.11, and we still support 3.10, which is also
+# the Python the nightly audit runs on. Python >= 3.11 already resolves to 4.2.4.
+# filelock only comes in through nipype (requirements-optional.txt), so it is not
+# in the release lock. Remove these entries once Python 3.10 support ends.
 PIP_AUDIT_IGNORED_ADVISORIES = {
     "GHSA-5239-wwwm-4pmq",
     "PYSEC-2026-3552",
+    "CVE-2026-112906",
+    "CVE-2026-112907",
+    "CVE-2026-112913",
+    "CVE-2026-112914",
+    "CVE-2026-112937",
+    "CVE-2026-112940",
 }
 
 # Curated flake8-bandit (ruff "S") rules for the `ruff-security` check.
