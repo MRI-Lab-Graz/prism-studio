@@ -123,3 +123,14 @@ def test_non_mri_domains_excludes_environment_mri() -> None:
 
     assert "environment_mri" not in NON_MRI_DOMAINS
     assert NON_MRI_DOMAINS == ALL_DOMAINS - {"environment_mri"}
+
+
+def test_the_hostile_project_is_ready_for_tools(tmp_path):
+    """Like a project a user finished: required fields set, sessions declared and mapped exactly."""
+    from src.project_ready import missing_required_fields
+    from src.session_map import load_session_map
+
+    result = generate_hostile_dataset(tmp_path / "hd", domains={"sociodemo"})
+
+    assert missing_required_fields(result.project_root) == []
+    assert load_session_map(result.project_root) == {"1": "1", "01": "01", "pre": "pre"}

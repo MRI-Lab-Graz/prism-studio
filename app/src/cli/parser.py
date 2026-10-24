@@ -1483,6 +1483,20 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_ds_matrix = dataset_subparsers.add_parser(
+        "validation-matrix",
+        help="Inject known defects one at a time into a clean control project and show what "
+        "the validator reported (detected / wrong code / missed)",
+    )
+    parser_ds_matrix.add_argument(
+        "--output",
+        required=True,
+        help="Folder for the clean control project (must be empty or non-existent)",
+    )
+    parser_ds_matrix.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_dataset_cleanup = dataset_subparsers.add_parser(
         "cleanup-project-metadata",
         help="Remove legacy converter-written session metadata from project.json",

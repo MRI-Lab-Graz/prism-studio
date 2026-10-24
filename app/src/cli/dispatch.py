@@ -253,6 +253,8 @@ def dispatch_prism_tools(
             handlers["dataset_undo"](args)
         elif args.action == "build-hostile-demo":
             handlers["dataset_build_hostile_demo"](args)
+        elif args.action == "validation-matrix":
+            handlers["dataset_validation_matrix"](args)
         else:
             parsers["dataset"].print_help()
     elif args.command == "file-management":

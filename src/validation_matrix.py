@@ -237,6 +237,15 @@ def run_matrix(clean: Path, defects: list[Defect] | None = None) -> dict:
         shutil.rmtree(work, ignore_errors=True)
 
 
+def matrix_problems(result: dict) -> list[str]:
+    """What should fail a run: a noisy control, a newly missed defect, or a gap that is now closed."""
+    undetected = {r["id"] for r in result["rows"] if r["status"] != "detected"}
+    problems = [f"control project: {p['code']} {str(p.get('message'))[:100]}" for p in result["control_problems"]]
+    problems += [f"newly undetected: {i}" for i in sorted(undetected - set(KNOWN_GAPS))]
+    problems += [f"now detected, remove from KNOWN_GAPS: {i}" for i in sorted(set(KNOWN_GAPS) - undetected)]
+    return problems
+
+
 def format_matrix(result: dict) -> str:
     counts: dict[str, int] = {}
     for row in result["rows"]:

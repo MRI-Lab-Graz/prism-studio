@@ -529,8 +529,8 @@ def test_full_non_mri_sweep_with_and_without_datalad(tmp_path: Path, use_datalad
 
     pd.DataFrame(
         [
-            {"participant_id": "sub-100", "resting_hr": 65, "grip_strength_left": 35},
-            {"participant_id": "sub-101", "resting_hr": 70, "grip_strength_left": 38},
+            {"participant_id": "sub-100", "session": "1", "resting_hr": 65, "grip_strength_left": 35},
+            {"participant_id": "sub-101", "session": "1", "resting_hr": 70, "grip_strength_left": 38},
         ]
     ).to_csv(biometrics_csv, index=False)
     biometrics_result = _run_pipeline_stage(

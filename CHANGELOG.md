@@ -8,12 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `dataset validation-matrix`: injects known defects one at a time into a clean control project and reports, per defect,
+  whether the validator caught it with the catalogue's code (and through `prism.py`, the Projects page check, or both).
+  Documented gaps are pinned in `src/validation_matrix.py`.
 - **One timepoint means `ses-1`.** In a project with `Timepoints: single`, the survey, participants, biometrics, physio batch
   and environment importers always write `ses-1`, report any other label they replaced, and project registration records
   `ses-1`. In a `multiple` project the biometrics, physio batch and environment importers now use the session map too.
 - `session-map suggest`: proposes defaults 1, 2, 3 for unmapped labels (pre-filled and editable in the session map panel;
   never saved unasked).
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
+
+### Fixed
+- Data problems were reported as `PRISM901` (internal error): a TSV without a header (now `PRISM401`), a value that is not
+  a number where the template expects one (`PRISM402`) and "session appears only in N subjects" (`PRISM601`).
+- The hostile demo project is now a finished project (required fields set, sessions `1`, `01` and `pre` mapped one-to-one).
 
 ### Removed
 - **The `eyetracking` modality.** Eye tracking is BIDS physio (`PhysioType: eyetrack`, BIDS 1.11), so PRISM no longer has

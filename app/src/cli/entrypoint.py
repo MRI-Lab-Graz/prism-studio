@@ -38,6 +38,7 @@ from src.cli.commands.file_management import (
 )
 from src.cli.commands.json_editor import cmd_json_editor_save
 from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
+from src.cli.commands.validation_matrix import cmd_dataset_validation_matrix
 from src.cli.commands.environment import (
     cmd_environment_convert,
     cmd_environment_preview,
@@ -253,6 +254,7 @@ def main() -> None:
             "file_management_rename_physio": cmd_file_management_rename_physio,
             "json_editor_save": cmd_json_editor_save,
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
+            "dataset_validation_matrix": cmd_dataset_validation_matrix,
             "recipes_surveys": cmd_recipes_surveys,
             "recipes_biometrics": cmd_recipes_biometrics,
             "recipes_validate_file": cmd_recipes_validate_file,

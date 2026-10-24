@@ -1,6 +1,7 @@
 """skip_existing: re-importing a LimeSurvey export only brings in what is new."""
 
 from src.converters.survey import convert_survey_lsa_to_prism_dataset
+from src.session_map import save_session_map
 from tests.lsa_fixtures import REAL_PATTERN, make_library, make_lsa
 
 NEW = ["7", "a", "2026-10-01 10:00:00", "2026-10-01 10:20:00", "5", "1", "2", "3"]
@@ -78,7 +79,8 @@ def test_default_still_overwrites(tmp_path):
 def test_existing_responses_are_looked_up_in_the_project_not_the_temp_output(tmp_path):
     _convert(tmp_path, REAL_PATTERN)  # the project: tmp_path / "out"
     project = tmp_path / "out"
-    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "multiple"}}')
+    save_session_map(project, {str(n): str(n) for n in range(1, 5)})
 
     result = convert_survey_lsa_to_prism_dataset(
         input_path=make_lsa(tmp_path, REAL_PATTERN + [NEW]),

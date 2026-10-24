@@ -616,12 +616,27 @@ DataLad-aware (one commit per subject where tracked). Less common maintenance
 operations — run `python prism_tools.py dataset <action> --help` for full flags.
 
 ```bash
-python prism_tools.py dataset build-hostile-demo --output /tmp/prism_hostile_demo
+python prism_tools.py dataset build-hostile-demo --output /tmp/prism_hostile_demo   # a finished project: required fields set, sessions 1 / 01 / pre mapped one-to-one
 python prism_tools.py dataset cleanup-project-metadata --project /path/to/project
 python prism_tools.py dataset rename-subjects --project /path/to/project --mode last3 --dry-run
 python prism_tools.py dataset rewrite-entities --project /path/to/project --list-modalities
 python prism_tools.py dataset rewrite-entities --project /path/to/project \
   --modality func --entity task --replacement rest --dry-run
+```
+
+**`dataset validation-matrix`** — how well does the validator catch real mistakes? It builds a
+small clean control project (three participants, one survey, required fields set), applies about
+thirty known defects **one at a time** to fresh copies (missing or broken files, bad names, wrong
+values, undeclared tasks, a participants.tsv that misses a subject, ...) and runs the validator on
+each. Every defect names the PRISM code the issue catalogue promises; the output says per defect
+`detected`, `wrong_code` (other issues reported instead) or `missed`, and which of the two ways of
+validating reported it (`validate` is what `prism.py` runs; `project` is the Projects page check,
+which also covers project.json, participants.tsv and .bidsignore). The control project is kept in
+`--output` so you can run the validator on it yourself. Exit code 1 when the control is noisy, a
+defect is newly missed, or a documented gap (`KNOWN_GAPS` in `src/validation_matrix.py`) is now closed.
+
+```bash
+python prism_tools.py dataset validation-matrix --output /tmp/prism_matrix [--json]
 ```
 
 **`dataset rename-sessions`** / **`renumber-runs`** / **`undo`** — the CLI equivalents

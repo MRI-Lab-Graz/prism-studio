@@ -1614,6 +1614,19 @@ def assert_text_files_never_annexed(root: Path) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _declare_study(root: Path, name: str) -> None:
+    """Finish the project the way a user would: required fields set, several timepoints, and the
+    hostile session labels mapped one-to-one (``1``, ``01`` and ``pre`` stay three sessions)."""
+    from src.session_map import save_session_map
+
+    path = root / "project.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["Basics"] = {"Name": name, "Authors": ["Hostile Demo Generator"], "Keywords": ["validation", "edge cases", "demo"]}
+    data["StudyDesign"] = {"Timepoints": "multiple"}
+    write_json(path, data)
+    save_session_map(root, {"1": "1", "01": "01", "pre": "pre"})
+
+
 def generate_hostile_dataset(
     output_root: Path,
     *,
@@ -1635,6 +1648,7 @@ def generate_hostile_dataset(
             f"{create_result.get('error')}"
         )
 
+    _declare_study(output_root, name)
     result = HostileGenerationResult(project_root=output_root)
 
     if "sociodemo" in selected:
