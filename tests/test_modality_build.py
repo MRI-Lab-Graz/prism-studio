@@ -44,8 +44,10 @@ def test_registration_steps_point_to_prism_specification() -> None:
     p = read_proposal(PROPOSAL)
     for text in (build_registration_md(p), build_registration_md(p, {"suffixes": ["x"], "extensions": ["tsv"]})):
         assert "prism-specification" in text and "sync_specification.py --tag" in text
-        assert "check_modalities.py" in text
+        assert "check_modalities.py" in text and "schemas/stable/entities.schema.json" in text
         assert "app/schemas/stable/entities.schema.json" not in text
+    new = build_registration_md(p)
+    assert "schemas/stable/bloodwork.schema.json" in new and "specs/bloodwork.md" in new
 
 
 def test_example_sidecar_validates_against_generated_schema() -> None:

@@ -145,8 +145,9 @@ push runs the full CI.
 
 A new modality is registered at version `1.0.0`. Later changes to it release a
 new version: bump `version` in the stable schema and first copy the previous
-file to `app/schemas/archive/<name>/`, as described in
-[Schema versioning](SCHEMA_VERSIONING.md). CI enforces this.
+file to the archive folder, both in prism-specification (its schema-versions CI
+checks this, see [Schema versioning](SCHEMA_VERSIONING.md)); then tag a release
+and run `python scripts/sync_specification.py --tag <tag>` in Studio.
 
 ### After the pull request
 

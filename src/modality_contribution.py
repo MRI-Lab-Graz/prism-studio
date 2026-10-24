@@ -939,18 +939,16 @@ def build_registration_md(proposal: dict, existing: dict | None = None) -> str:
 existing one under another name, and whether the sample holds any real
 participant data.
 """
-    spec_steps = f"""PRISM does not register suffixes or modalities automatically. The specification
+    spec_steps = """PRISM does not register suffixes or modalities automatically. The specification
 lives in the prism-specification repository (https://github.com/MRI-Lab-Graz/prism-specification);
 Studio vendors a tagged release of it and must not be edited by hand."""
-    run_check = """   Run `python scripts/check_modalities.py` and the tests there."""
-    studio_steps = """   In Studio: `python scripts/sync_specification.py --tag <tag>`."""
     if existing is not None:
         return f"""# Adding the `_{suffix}` suffix to the `{name}` modality (maintainer steps)
 
 {spec_steps}
 
 1. In **prism-specification**, replace the `"{name}"` entry under `"modalities"`
-   in `entities.schema.json` with this one (the suffix and any new extensions
+   in `schemas/stable/entities.schema.json` with this one (the suffix and any new extensions
    are appended), and add the section from `docs/{name}-{suffix}.md` to
    `specs/{name}.md` (the page must mention `_{suffix}`):
 
@@ -958,9 +956,9 @@ Studio vendors a tagged release of it and must not be edited by hand."""
 {snippet}
 ```
 
-2. {run_check.strip()}
+2. Run `python scripts/check_modalities.py` and the tests there.
 3. Tag a release there.
-4. {studio_steps.strip()}
+4. In Studio: `python scripts/sync_specification.py --tag <tag>`.
 5. In Studio, add `{suffix}` to the Suffixes column of the `{name}` row in
    `docs/specs/entities.md` (CI check `modality-docs`).
 6. Validate the generated dataset: from the Studio repository root, run
@@ -976,17 +974,18 @@ example.
 {spec_steps}
 
 1. In **prism-specification**, add `{name}.schema.json` (copy it from this
-   folder) as the modality schema.
-2. In its `entities.schema.json`, add this entry under `"modalities"`:
+   folder) as `schemas/stable/{name}.schema.json`.
+2. In `schemas/stable/entities.schema.json`, add this entry under `"modalities"`
+   (`description` and `describedColumns` are required by the entry schema):
 
 ```json
 {snippet}
 ```
 
 3. Copy `docs/{name}.md` to `specs/{name}.md` there.
-4. {run_check.strip()}
+4. Run `python scripts/check_modalities.py` and the tests there.
 5. Tag a release there.
-6. {studio_steps.strip()}
+6. In Studio: `python scripts/sync_specification.py --tag <tag>`.
 7. Documentation in Studio (CI check `modality-docs` fails without it):
    - add `   specs/{name}` to the "Schema Specifications" toctree in `docs/index.rst`;
    - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`;
