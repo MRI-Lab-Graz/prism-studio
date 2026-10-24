@@ -251,3 +251,15 @@ def test_an_over_long_name_is_refused_when_adding_and_nothing_is_written(tmp_pat
     with pytest.raises(OverlayError, match="path"):
         add_local_term(tmp_path / "p", column="dhea_s", data_file=str(tsv), label="a" * 100)
     assert not (tmp_path / "p" / "code").exists()
+
+
+def test_a_survey_list_addition_is_shared_without_problems():
+    from src.spec_contribute import proposal_for_values
+    result = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"])
+    assert result["problems"] == [] and result["issue_url"]
+
+
+def test_the_catalog_lists_every_modality_with_a_list():
+    from src.spec_contribute import spec_catalog
+    names = {m["name"] for m in spec_catalog()["modalities"]}
+    assert {"biosample", "survey", "biometrics", "physio", "environment"} <= names and "events" not in names

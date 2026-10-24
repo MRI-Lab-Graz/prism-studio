@@ -183,11 +183,15 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
-    modality = _modality_of(document)
-    schema = Path(DEFAULT_SCHEMA_DIR) / "stable" / f"{modality}.schema.json"
+    stable = Path(DEFAULT_SCHEMA_DIR) / "stable"
+    paths = list(document["files"])
+    patched = {m for p in paths if (m := re.fullmatch(r"patches/([a-z][a-z0-9]*)\.json", p))}
+    schemas = {m[1]: json.loads((stable / f"{m[1]}.schema.json").read_text(encoding="utf-8")) for m in patched}
+    # the term modality (and so the specimen types) comes from the terms/<m>/ paths; a patch-only document has none
+    term_modality = next((p.split("/")[1] for p in paths if p.startswith("terms/")), "biosample")
     problems = module.check_proposal(
-        document, registry, specimens or module.check_terms.specimen_types(schema),
-        json.loads(schema.read_text(encoding="utf-8")),  # a patch in the document is checked against it
+        document, registry, specimens or module.check_terms.specimen_types(stable / f"{term_modality}.schema.json"),
+        schemas=schemas,
     )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))

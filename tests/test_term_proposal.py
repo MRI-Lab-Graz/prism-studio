@@ -293,3 +293,22 @@ def test_the_issue_title_says_how_many_metrics_it_carries():
     assert title(one) == "[Metric]: Metric1"
     assert title(three) == "[Metric]: Metric1 and 2 more"
     assert title(child_only) == "[Metric]: prism:m1.hair"  # one analyte, two specimens
+
+
+# --- a document may mix term files and patches of other modalities --------------------------------------
+
+def _biosample_term_files(analyte, specimen):
+    return {
+        f"terms/biosample/{analyte}.json": {"TermID": f"prism:{analyte}", "Level": "analyte", "Label": analyte, "Aliases": [], "Description": "d"},
+        f"terms/biosample/{analyte}.{specimen}.json": {
+            "TermID": f"prism:{analyte}.{specimen}", "Level": "analyte-specimen", "Parent": f"prism:{analyte}",
+            "SpecimenType": specimen, "Units": "ug/L"},
+    }
+
+
+def test_a_mixed_proposal_is_checked_whole():
+    doc = {"format": "prism-proposal/2", "files": {
+        **_biosample_term_files("dhea-s", "saliva"),
+        "patches/survey.json": {"operations": [{"op": "add_enum_values", "path": "Study.LicenseID", "values": ["cc-by-nc-local"]}]},
+    }}
+    assert check_with_specification(doc, load_registry("biosample")) == []
