@@ -126,9 +126,9 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str]) -> list
 
 
 def specimen_types(schema_file: Path) -> list[str]:
-    """The Technical.SpecimenType enum of a modality schema."""
+    """The Technical.SpecimenType enum of a modality schema ([] when it has none)."""
     schema = json.loads(Path(schema_file).read_text(encoding="utf-8"))
-    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+    return schema.get("properties", {}).get("Technical", {}).get("properties", {}).get("SpecimenType", {}).get("enum", [])
 
 
 def main(argv: list[str] | None = None) -> int:

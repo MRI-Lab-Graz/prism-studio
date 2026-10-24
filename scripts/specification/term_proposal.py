@@ -97,6 +97,31 @@ def extract_proposal(issue_body: str) -> dict:
     return proposal
 
 
+def sample_problems(sample: str) -> list[str]:
+    """What is wrong with a pasted sample file (measured without the form's code fence, with \\n line ends)."""
+    text = (sample or "").replace("\r\n", "\n").strip()
+    opening = _OPENING_FENCE.match(text)
+    if opening and text.endswith("```"):
+        text = text[opening.end():-3].strip()
+    if not text:
+        return ["the sample is empty"]
+    n = len(text.encode("utf-8"))
+    return [f"the sample is {n} bytes, larger than {MAX_BYTES} bytes"] if n > MAX_BYTES else []
+
+
+def check_new_kind(issue_body: str) -> list[str]:
+    """Problems of a 'propose a new kind of data' issue; the closest kind is optional and not checked."""
+    sections = _sections((issue_body or "").replace("\r\n", "\n"))
+    boxes = _CHECKBOX.findall(sections.get("Agreements", ""))
+    problems = []
+    if len(boxes) < 2 or any(b == " " for b in boxes):
+        problems.append("Both agreements (licence, made-up sample) must be ticked.")
+    description = sections.get("Description", "").strip()
+    if not description or description == "_No response_":
+        problems.append("The description is empty.")
+    return problems + sample_problems(sections.get("Sample file", ""))
+
+
 def _term_problems(term, where: str) -> list[str]:
     """Problems of one proposed term (allowed fields, value types, the TermID rule)."""
     if not isinstance(term, dict):
@@ -146,8 +171,8 @@ def _normalize_v2(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
     for path, term in files.items():
         patch_match = _PATCH_PATH.fullmatch(path) if isinstance(path, str) else None
         match = patch_match or (_TERM_PATH.fullmatch(path) if isinstance(path, str) else None)
-        if not match or match["modality"] not in MODALITIES:
-            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(MODALITIES)}>/<id>.json or patches/<{'|'.join(MODALITIES)}>.json)")
+        if not match or (not patch_match and match["modality"] not in MODALITIES):
+            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(MODALITIES)}>/<id>.json or patches/<modality>.json)")
             continue
         if patch_match:  # the patch is validated against the schema it targets, in check_proposal
             if isinstance(term, dict):
@@ -180,31 +205,39 @@ def split(pairs: list[tuple[str, dict]]) -> tuple[list[tuple[str, dict]], list[t
 
 
 def _specimens_of(schema: dict) -> list[str]:
-    return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
+    return schema.get("properties", {}).get("Technical", {}).get("properties", {}).get("SpecimenType", {}).get("enum", [])
 
 
 def check_proposal(
-    proposal: dict, registry: dict[str, dict], specimens: list[str], schema: dict | None = None
+    proposal: dict, registry: dict[str, dict], specimens: list[str], schema: dict | None = None,
+    *, schemas: dict[str, dict] | None = None,
 ) -> tuple[list[dict], list[str]]:
     """Return (the new terms with Status "official", problems); checked together with the registry.
 
     A proposal may carry a schema patch (`patches/<modality>.json`); then `schema`, the schema it targets, is
-    required, and the terms are checked against the specimen types of the PATCHED schema.
+    required, and the terms are checked against the specimen types of the PATCHED schema. With `schemas`
+    (modality -> schema) each patch is checked against its own modality's schema; the specimen types are
+    taken from a patched schema only when it is a term modality (MODALITIES). Without `schemas`, the positional
+    `schema` serves only patches of modalities in MODALITIES; a patch of any other modality needs `schemas`.
     """
     pairs, problems = normalize(proposal)
     if problems:
         return [], problems
     term_pairs, patch_pairs = split(pairs)
     for path, patch in patch_pairs:
-        if schema is None:
-            problems.append(f"{path}: the schema the patch targets is needed to check it")
+        modality = _PATCH_PATH.fullmatch(path)["modality"]
+        target = schemas.get(modality) if schemas is not None else (schema if modality in MODALITIES else None)
+        if target is None:
+            hint = "" if modality in MODALITIES else f" (pass `schemas` with the {modality} schema)"
+            problems.append(f"{path}: the schema the patch targets is needed to check it{hint}")
             continue
         try:
-            patched, _notes = schema_patch.apply_patch(schema, patch)
+            patched, _notes = schema_patch.apply_patch(target, patch)
         except ValueError as exc:  # PatchError; scripts load each other by path, so the class is not shared
             problems.append(f"{path}: {exc}")
             continue
-        specimens = _specimens_of(patched)
+        if modality in MODALITIES:
+            specimens = _specimens_of(patched)
     if problems:
         return [], problems
     terms = [{**term, "Status": "official"} for _path, term in term_pairs]
@@ -268,6 +301,14 @@ def _read_proposal(file: Path | None) -> dict:
         raise ProposalError(f"The proposal is not valid JSON: {exc}") from exc
 
 
+def _capped(problems: list[str]) -> list[str]:
+    """At most MAX_PROBLEMS lines of at most MAX_LINE characters (a GitHub comment holds 65,536 characters)."""
+    shown = [p if len(p) <= MAX_LINE else p[: MAX_LINE - 3] + "..." for p in problems[:MAX_PROBLEMS]]
+    if len(problems) > len(shown):
+        shown.append(f"... and {len(problems) - len(shown)} more problems")
+    return shown
+
+
 def _run_check(args) -> int:
     """Always writes a bundle (status, log, files/<repository path>); a bad proposal is a failed bundle, not a crash."""
     registry, problems = check_terms.load_terms(args.terms)
@@ -277,7 +318,16 @@ def _run_check(args) -> int:
     try:
         proposal = _read_proposal(args.file)
         schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
-        terms, found = check_proposal(proposal, registry, check_terms.specimen_types(args.schema), schema)
+        schemas, missing = {}, []
+        for path, _patch in split(normalize(proposal)[0])[1]:
+            modality = _PATCH_PATH.fullmatch(path)["modality"]
+            file = Path(args.repo) / "schemas" / "stable" / f"{modality}.schema.json"
+            if file.is_file():
+                schemas[modality] = json.loads(file.read_text(encoding="utf-8"))
+            else:
+                missing.append(f"{path}: no modality {modality} in schemas/stable")
+        terms, found = check_proposal(proposal, registry, check_terms.specimen_types(args.schema), schema, schemas=schemas)
+        found = missing or found
         problems += found
         if not found:
             term_pairs, patches = split(normalize(proposal)[0])
@@ -303,10 +353,7 @@ def _run_check(args) -> int:
             shutil.rmtree(files, ignore_errors=True)
     (out / "status").write_text("failed\n" if problems else "ok\n", encoding="utf-8")
     # a GitHub comment is limited to 65,536 characters: at most MAX_PROBLEMS lines of at most MAX_LINE characters
-    shown = [p if len(p) <= MAX_LINE else p[: MAX_LINE - 3] + "..." for p in problems[:MAX_PROBLEMS]]
-    log = "".join(f"ERROR: {p}\n" for p in shown)
-    if len(problems) > len(shown):
-        log += f"ERROR: ... and {len(problems) - len(shown)} more problems\n"
+    log = "".join(f"ERROR: {p}\n" for p in _capped(problems))
     (out / "log").write_text(log, encoding="utf-8")
     print(log or "ok")
     return 0
@@ -323,10 +370,15 @@ def main(argv: list[str] | None = None) -> int:
     check.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1],
                        help="the checkout a schema release is prepared from (default: the repository of this script)")
     sub.add_parser("pr-body")
+    sub.add_parser("check-new-kind")
     args = ap.parse_args(argv)
     if args.command == "pr-body":
         print(pr_body(int(os.environ["ISSUE_NUMBER"]), schema_release=os.environ.get("SCHEMA_RELEASE") == "1"))
         return 0
+    if args.command == "check-new-kind":
+        problems = _capped(check_new_kind(os.environ.get("ISSUE_BODY", "")))
+        print("\n".join(problems), end="\n" if problems else "")
+        return 1 if problems else 0
     return _run_check(args)
 
 

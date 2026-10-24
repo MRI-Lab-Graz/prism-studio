@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never saved unasked).
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
+### Changed
+- Studio carries prism-specification v1.3.0 (modalities described as data, proposals for every modality).
+
 ### Fixed
 - **Linux launcher in the applications menu.** `install.sh` now writes `prism-studio.desktop` to `~/.local/share/applications`
   (and a copy on the Desktop when that folder exists). On GNOME (Fedora Workstation) there are no Desktop icons and `.desktop`
