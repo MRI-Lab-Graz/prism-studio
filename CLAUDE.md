@@ -259,6 +259,16 @@ subject labels (alphanumeric-only, no padding/coercion). Do not reintroduce
 numeric session normalization anywhere in this codebase — any session
 matching/comparison logic must be an exact string comparison.
 
+One deliberate exception (project-level rule, 2026-10-15): in a project that
+declares `StudyDesign.Timepoints = single`, the one session is always `ses-1`
+whatever label the data carries. It is reported ("session label 'pre' was
+written as ses-1"), implemented once in `src/session_map.py`
+(`session_target` / `resolve_import_session`), and is not label normalization.
+In `multiple` projects labels stay exact strings, mapped by the user; the
+defaults 1, 2, 3 (`suggest_session_map`) are only pre-filled, never applied
+unasked. Every importer that writes `ses-` names must go through that rule or be
+listed with a reason in `tests/test_importers_use_session_policy.py`.
+
 ## Prefer extracting functions out of monolithic scripts
 
 When touching a large monolithic script (e.g. `app/prism-studio.py`), prefer

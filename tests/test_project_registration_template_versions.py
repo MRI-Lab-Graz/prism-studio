@@ -176,3 +176,24 @@ def test_register_session_keeps_numeric_like_session_strings_distinct(tmp_path: 
     }
     assert selection_map[("wellbeing", "ses-1", None)] == "v1"
     assert selection_map[("wellbeing", "ses-01", None)] == "v01"
+
+
+def test_register_session_records_ses_1_in_a_one_timepoint_project(tmp_path: Path):
+    """The importers wrote ses-1 whatever the label was; the project must say the same."""
+    _write_project_json(
+        tmp_path,
+        {"Sessions": [], "TaskDefinitions": {}, "StudyDesign": {"Timepoints": "single"}},
+    )
+
+    register_session_in_project(
+        project_path=tmp_path,
+        session_id="pre",
+        tasks=["wellbeing"],
+        modality="survey",
+        source_file="responses.xlsx",
+        converter="survey-xlsx",
+        template_version_overrides=[{"task": "wellbeing", "session": "post", "version": "10-vas"}],
+    )
+
+    selections = _read_project_json(tmp_path)["TemplateVersionSelections"]
+    assert [entry["session"] for entry in selections] == ["ses-1"]
