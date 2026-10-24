@@ -1646,6 +1646,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     if _res_ses_override:
         res_ses_col = _res_ses_override
         session = "all"  # the generated sessions win over a typed Session ID
+        if timepoints == "single" and df[res_ses_col].nunique() > 1:
+            raise ValueError(
+                "This project has one timepoint, but the repeated responses would be numbered "
+                "into several sessions. Declare several timepoints on the Projects page, "
+                "or keep one response per participant."
+            )
         if session_map is not None:
             require_sessions_mapped(session_map, df[res_ses_col].astype(str).tolist())
     elif (

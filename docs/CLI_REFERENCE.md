@@ -466,7 +466,9 @@ them automatically.
 
 The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a different,
 older per-import rename of LimeSurvey archives. It is refused when the output folder is a
-project with several timepoints (use `survey convert`, which enforces the session map).
+PRISM project (one or several timepoints): use `survey convert`, which enforces the project's
+session rule. In a one-timepoint project, `survey convert` with repeated responses that would be
+numbered into several sessions stops with a message; declare several timepoints first.
 
 ### Publish
 

@@ -155,6 +155,24 @@ def test_limesurvey_batch_is_refused_in_a_longitudinal_project(tmp_path, proj, c
     assert not called
 
 
+def test_limesurvey_batch_is_refused_in_a_one_timepoint_project(tmp_path, capsys, monkeypatch):
+    """Its own t1:ses-1,t2:ses-2 names would write several sessions into a one-timepoint project."""
+    from src.cli.commands import survey as survey_cmds
+
+    called = []
+    monkeypatch.setattr(survey_cmds, "batch_convert_lsa", lambda *a, **k: called.append(1))
+    single = tmp_path / "single"
+    single.mkdir()
+    (single / "project.json").write_text(json.dumps({"StudyDesign": {"Timepoints": "single"}}))
+
+    with pytest.raises(SystemExit) as info:
+        survey_cmds.cmd_survey_import_limesurvey_batch(batch_args(tmp_path, single))
+
+    assert info.value.code == 2
+    assert "survey convert" in capsys.readouterr().out
+    assert not called
+
+
 def test_limesurvey_batch_into_a_plain_folder_behaves_as_before(tmp_path, monkeypatch):
     from src.cli.commands import survey as survey_cmds
 

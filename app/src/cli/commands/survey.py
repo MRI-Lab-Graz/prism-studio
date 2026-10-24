@@ -781,16 +781,16 @@ def cmd_survey_import_limesurvey_batch(args):
     input_dir = str(Path(args.input_dir).resolve())
     output_dir = str(Path(args.output_dir).resolve())
     try:
-        from src.session_map import session_map_for_conversion
+        from src.session_map import project_timepoints
 
-        gated = session_map_for_conversion(output_dir) is not None
-    except ValueError as exc:  # SessionMapError, e.g. Timepoints not declared
+        gated = project_timepoints(output_dir) is not None  # any project, declared or not
+    except ValueError as exc:  # SessionMapError, e.g. an unreadable project.json
         print(f"Error: {exc}")
         sys.exit(2)
     if gated:
         print(
-            "Error: this project has several timepoints, so its session names come "
-            "from code/session_map.json. The legacy --session-map (t1:ses-1) would "
+            "Error: this project's session names follow its timepoint rule (one timepoint: "
+            "ses-1; several: code/session_map.json). The legacy --session-map (t1:ses-1) would "
             "bypass it. Use `prism_tools.py survey convert` (one file per run; "
             "--session or a session column) instead."
         )

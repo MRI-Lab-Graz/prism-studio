@@ -28,9 +28,10 @@ def run(tmp_path, library, csv_text, **kwargs):
     src = tmp_path / "in.csv"
     src.write_text(csv_text)
     out = tmp_path / "out"
+    kwargs.setdefault("session_column", "session")
+    kwargs.setdefault("session", "all")
     result = convert_survey_file_to_prism_dataset(
-        input_path=src, library_dir=library, output_root=out, name="t",
-        session_column="session", session="all", project_path=root, **kwargs,
+        input_path=src, library_dir=library, output_root=out, name="t", project_path=root, **kwargs,
     )
     return out, result
 
@@ -57,3 +58,22 @@ def test_a_label_of_1_is_not_reported(tmp_path, library):
     out, result = run(tmp_path, library, "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\n")
     assert sessions(out, "sub-P001") == ["ses-1"]
     assert not any("ses-1" in w and "one timepoint" in w for w in result.conversion_warnings)
+
+
+REPEATED = (
+    "participant_id,startdate,BRS01,BRS02,BRS03\n"
+    "P001,2026-09-01 10:00:00,4,4,3\n"
+    "P001,2026-03-01 10:00:00,3,4,2\n"
+)
+
+
+def test_numbering_repeats_by_date_cannot_make_several_sessions_in_a_one_timepoint_project(tmp_path, library):
+    with pytest.raises(ValueError, match="one timepoint"):
+        run(tmp_path, library, REPEATED, session_column=None, session=None, duplicate_handling="sessions")
+    assert not (tmp_path / "out" / "sub-P001").exists()
+
+
+def test_numbering_unique_responses_by_date_is_fine_in_a_one_timepoint_project(tmp_path, library):
+    csv_text = "participant_id,startdate,BRS01,BRS02,BRS03\nP001,2026-03-01 10:00:00,3,4,2\n"
+    out, _ = run(tmp_path, library, csv_text, session_column=None, session=None, duplicate_handling="sessions")
+    assert sessions(out, "sub-P001") == ["ses-1"]

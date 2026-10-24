@@ -4,6 +4,7 @@ import pytest
 
 from src.converters.survey import convert_survey_lsa_to_prism_dataset
 from src.session_assignments import set_assignment
+from src.session_map import save_session_map
 from tests.lsa_fixtures import make_library, make_lsa
 
 
@@ -57,7 +58,8 @@ def test_project_decisions_are_applied(tmp_path):
 def test_decisions_saved_for_another_survey_drop_nothing(tmp_path):
     project = tmp_path / "proj"
     project.mkdir()
-    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "single"}}')
+    (project / "project.json").write_text('{"StudyDesign": {"Timepoints": "multiple"}}')
+    save_session_map(project, {"1": "1", "2": "2"})
     set_assignment(project, "2", survey_id="123", skip=True)
 
     _convert(tmp_path, project=project)

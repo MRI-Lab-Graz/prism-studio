@@ -30,9 +30,11 @@ EXEMPT = {  # writes ses- names, but not from the data being imported
     "app/src/cli/commands/dataset.py": "smoketest dataset builder",
 }
 
-KNOWN_GAPS = {  # follow-up: these still use their own session handling
-    "app/src/converters/csv.py": "LimeSurvey tool (limesurvey_to_prism): session names come from its own t1:ses-1 option",
-}
+KNOWN_GAPS: dict[str, str] = {}  # importers that still use their own session handling
+
+EXEMPT["app/src/converters/csv.py"] = (
+    "legacy LimeSurvey batch (survey import-limesurvey-batch): refused in any project, so only plain folders reach it"
+)
 
 WRITES_SESSIONS = re.compile(r'f"ses-\{|"ses-" \+|f\'ses-\{')
 
