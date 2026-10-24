@@ -228,3 +228,21 @@ def test_add_values_refuses_an_unknown_modality_and_a_field_it_does_not_list(tmp
         add_local_values(tmp_path, "Study.LicenseID", ["x-y"], modality="nomodality")
     with pytest.raises(OverlayError, match="Study.NoSuchField"):
         add_local_values(tmp_path, "Study.NoSuchField", ["x-y"], modality="survey")
+
+
+@pytest.mark.parametrize("modality", ["../../../../outside", "../x", "Survey", "unknown"])
+def test_add_and_remove_values_refuse_a_modality_that_is_not_a_kind_of_data(tmp_path, modality):
+    """A caller-supplied modality names a file: `../..` must never reach outside the project (remove-values deleted it)."""
+    from src.spec_overlay import OverlayError, add_local_values, remove_local_values
+
+    project = tmp_path / "a" / "b" / "c" / "p"
+    patches = project / "code" / "specification" / "patches"
+    patches.mkdir(parents=True)
+    target = Path(os.path.normpath(patches / f"{modality}.json"))  # the file a missing check would touch
+    target.write_text(json.dumps({"operations": [
+        {"op": "add_enum_values", "path": "Study.LicenseID", "values": ["x-y"]}]}), encoding="utf-8")
+    with pytest.raises(OverlayError, match="not a kind of data"):
+        remove_local_values(project, "Study.LicenseID", ["x-y"], modality=modality)
+    with pytest.raises(OverlayError, match="not a kind of data"):
+        add_local_values(project, "Study.LicenseID", ["z-z"], modality=modality)
+    assert json.loads(target.read_text(encoding="utf-8"))["operations"][0]["values"] == ["x-y"]

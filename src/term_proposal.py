@@ -19,6 +19,8 @@ from urllib.parse import quote, urlencode
 from src.schema_manager import DEFAULT_SCHEMA_DIR
 from src.term_registry import resolve_column
 
+MODALITY_NAME = r"[a-z][a-z0-9]*"  # a kind of data names a file (patches/<modality>.json), so nothing else is allowed
+
 ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
 ISSUE_TEMPLATE = "propose-metric.yml"
 URL_LIMIT = 6000
@@ -185,7 +187,7 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
     stable = Path(DEFAULT_SCHEMA_DIR) / "stable"
     paths = list(document["files"])
-    patched = {m for p in paths if (m := re.fullmatch(r"patches/([a-z][a-z0-9]*)\.json", p))}
+    patched = {m for p in paths if (m := re.fullmatch(rf"patches/({MODALITY_NAME})\.json", p))}
     schemas = {m[1]: json.loads((stable / f"{m[1]}.schema.json").read_text(encoding="utf-8")) for m in patched}
     # the term modality (and so the specimen types) comes from the terms/<m>/ paths; a patch-only document has none
     term_modality = next((p.split("/")[1] for p in paths if p.startswith("terms/")), "biosample")
