@@ -436,13 +436,25 @@ def _find_inherited_root_sidecar(
     return None
 
 
+_EMPTY_SIDECAR = "empty sidecar"
+
+
+def _reject_json_constant(name: str):
+    """json accepts NaN/Infinity; they are not JSON (the BIDS validator rejects them too)."""
+    raise json.JSONDecodeError(f"{name} is not valid JSON", name, 0)
+
+
+def _strict_loads(content: str):
+    return json.loads(content, parse_constant=_reject_json_constant)
+
+
 def _default_load_sidecar_json(sidecar_path: str | None) -> dict | None:
     """Uncached read+parse of a sidecar JSON file; None if absent or unparseable."""
     if not sidecar_path or not os.path.exists(sidecar_path):
         return None
     try:
         content = CrossPlatformFile.read_text(sidecar_path)
-        return json.loads(content)
+        return _strict_loads(content)
     except (json.JSONDecodeError, Exception):
         return None
 
@@ -587,7 +599,11 @@ class DatasetValidator:
         parsed = None
         try:
             content = CrossPlatformFile.read_text(sidecar_path)
-            parsed = json.loads(content)
+            if not content.strip():
+                self._sidecar_json_error_cache[normalized_path] = _EMPTY_SIDECAR
+                self._sidecar_json_cache[normalized_path] = None
+                return None
+            parsed = _strict_loads(content)
         except json.JSONDecodeError as e:
             # Record the parse failure distinctly from "file not found" so
             # validate_sidecar() can report a precise error instead of
@@ -1033,7 +1049,7 @@ class DatasetValidator:
                             excluded_columns.add(col)
 
             # Read TSV file
-            with open(file_path, "r", newline="", encoding="utf-8") as tsvfile:
+            with open(file_path, "r", newline="", encoding="utf-8-sig") as tsvfile:
                 reader = csv.DictReader(tsvfile, delimiter="\t")
 
                 if not reader.fieldnames:
@@ -1044,11 +1060,37 @@ class DatasetValidator:
                         )
                     ]
 
+                undescribed = [c for c in reader.fieldnames if c not in effective_defs]
+                if undescribed:
+                    shown = ", ".join(repr(c) for c in undescribed[:8])
+                    more = f" (+{len(undescribed) - 8} more)" if len(undescribed) > 8 else ""
+                    issues.append(
+                        (
+                            "WARNING",
+                            f"{file_name}: column(s) not described in the sidecar: {shown}{more}. "
+                            "Check the column names (a trailing space or the wrong separator hides items) "
+                            "or add them to the sidecar.",
+                        )
+                    )
+
                 row_count = 0
                 for row_idx, row in enumerate(
                     reader, start=2
                 ):  # start=2 for 1-based line number (header is 1)
                     row_count += 1
+
+                    extra_cells = len(row.get(None) or [])
+                    missing_cells = sum(1 for f in reader.fieldnames if row.get(f) is None)
+                    if extra_cells or missing_cells:
+                        cells = len(reader.fieldnames) - missing_cells + extra_cells
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: row has {cells} cells but the header has "
+                                f"{len(reader.fieldnames)}.",
+                            )
+                        )
+                        continue
 
                     # Check for completely empty row (all values are empty strings)
                     if all(v is None or v.strip() == "" for v in row.values()):
@@ -1561,6 +1603,8 @@ class DatasetValidator:
             )
             for candidate_path in (subject_sidecar_path, root_sidecar_path):
                 parse_error = self._sidecar_json_error(candidate_path)
+                if parse_error == _EMPTY_SIDECAR:
+                    return [("ERROR", f"{normalize_path(candidate_path)} is an empty sidecar file")]
                 if parse_error:
                     return [
                         (

@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Fixed
+- The validator now reports what it used to accept silently: a data row with more or fewer cells than the header, columns the
+  sidecar does not describe (a trailing space or the wrong separator hides items), NaN/Infinity in a sidecar (not JSON), an empty
+  sidecar file (`PRISM203`), a wrong field type (`PRISM302`) and a participant listed twice in participants.tsv. A data file saved
+  with a byte-order mark no longer loses its first column to the check.
 - Data problems were reported as `PRISM901` (internal error): a TSV without a header (now `PRISM401`), a value that is not
   a number where the template expects one (`PRISM402`) and "session appears only in N subjects" (`PRISM601`).
 - The hostile demo project is now a finished project (required fields set, sessions `1`, `01` and `pre` mapped one-to-one).

@@ -466,6 +466,18 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM201"
     elif "citation.cff" in msg_lower:
         return "PRISM303"
+    elif "empty sidecar" in msg_lower:
+        return "PRISM203"
+    elif "cells but the header has" in msg_lower:
+        return "PRISM401"
+    elif "not described in the sidecar" in msg_lower:
+        return "PRISM301"
+    elif (
+        "schema error" in msg_lower
+        and "is not of type" in msg_lower
+        and "dataset_description.json" not in msg_lower
+    ):
+        return "PRISM302"
     elif "schema error" in msg_lower or "schema validation failed" in msg_lower:
         return "PRISM301"
     elif "not found in allowed levels" in msg_lower:

@@ -687,6 +687,7 @@ def _check_participants_subject_alignment(
 
     participant_ids: set[str] = set()
     screening_ids: set[str] = set()
+    row_counts: dict[str, int] = {}
     try:
         with participants_path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle, delimiter="\t")
@@ -707,22 +708,35 @@ def _check_participants_subject_alignment(
                 normalized = participants_converter._normalize_participant_id(raw_value)
                 if normalized:
                     participant_ids.add(normalized)
+                    row_counts[normalized] = row_counts.get(normalized, 0) + 1
                     if is_screening_only(row):
                         screening_ids.add(normalized)
     except Exception:
         return []
 
+    repeated = sorted(pid for pid, count in row_counts.items() if count > 1)
+    found: list[tuple[str, str, str]] = []
+    if repeated:
+        found.append(
+            (
+                "ERROR",
+                "Consistency: participants.tsv has one row per participant, but these participant_id values "
+                "appear more than once: " + ", ".join(repeated[:20]) + (f", +{len(repeated) - 20} more" if len(repeated) > 20 else ""),
+                str(participants_path),
+            )
+        )
+
     if not subject_ids:
         # No sub-* folders at all is a different, deeper problem than a
         # mismatch; it is reported once as "No subjects found in dataset".
-        return []
+        return found
 
     missing_in_tsv = sorted(subject_ids - participant_ids)
     # screening-only rows are expected to have no folder
     missing_subject_dirs = sorted(participant_ids - subject_ids - screening_ids)
 
     if not missing_in_tsv and not missing_subject_dirs:
-        return []
+        return found
 
     def _summarize(values: list[str], limit: int = 20) -> str:
         if len(values) <= limit:
@@ -730,7 +744,6 @@ def _check_participants_subject_alignment(
         remaining = len(values) - limit
         return f"{', '.join(values[:limit])}, +{remaining} more"
 
-    found: list[tuple[str, str, str]] = []
     if missing_in_tsv:
         found.append(
             (

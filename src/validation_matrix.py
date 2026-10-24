@@ -190,14 +190,6 @@ DEFECTS: list[Defect] = [
 KNOWN_GAPS: dict[str, str] = {
     "filename_without_task": "survey file names are only matched as '.+_survey.<ext>', so the required task entity is not "
     "enforced (defaultRequiredEntities is read but unused); the file is only reported as lacking a sidecar (PRISM201)",
-    "sidecar_empty": "PRISM203 is in the catalogue but never emitted; an empty sidecar is reported as invalid JSON (PRISM202)",
-    "sidecar_field_wrong_type": "PRISM302 is in the catalogue but never emitted; a wrong field type is a schema error (PRISM301)",
-    "ragged_row": "a row with fewer cells than the header is accepted silently",
-    "extra_column_not_in_sidecar": "columns that the sidecar does not describe are not reported",
-    "header_with_trailing_space": "same root as extra_column_not_in_sidecar: 'BRS01 ' matches no item and nothing says so",
-    "semicolon_separated_tsv": "same root: the header parses as one undescribed column and nothing says so",
-    "nan_in_sidecar": "NaN is not valid JSON (Python reads it anyway); the BIDS validator would object, PRISM does not",
-    "participants_tsv_duplicate_id": "the same participant listed twice in participants.tsv is accepted silently",
     "stray_file_at_root": "only the BIDS validator (run_bids) reports files outside the specification; this matrix runs PRISM checks only",
 }
 
