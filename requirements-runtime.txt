@@ -12,6 +12,9 @@ requests>=2.33.0
 # bomb via redirect handling in the streaming API) is fixed in 2.6.3; pinning
 # here stops a resolver from settling on an older, vulnerable urllib3.
 urllib3>=2.8.0
+# Direct floor for a transitive dependency: filelock 4.1.0 has six CVEs
+# (CVE-2026-112906/112907/112913/112914/112937/112940), fixed in 4.2.1.
+filelock>=4.2.1
 # The BIDS check runs by default and needs this engine; the PyPI package `deno` it depends on
 # ships the Deno runtime as a wheel for these platforms only, so the requirement is skipped on other
 # architectures (e.g. Windows ARM64: install succeeds, a run reports PRISM902 and the --no-bids hint).
