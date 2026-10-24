@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.validation_matrix import DEFECTS, KNOWN_GAPS, build_clean_project, classify, run_matrix
+from src.validation_matrix import DEFECTS, KNOWN_GAPS, build_clean_project, classify, matrix_problems, run_matrix
 
 
 def test_classify():
@@ -27,16 +27,8 @@ def matrix(tmp_path_factory):
     return run_matrix(root)
 
 
-def test_the_clean_control_has_no_errors_or_warnings(matrix):
-    assert matrix["control_problems"] == []
-
-
-def test_every_defect_is_detected_or_a_documented_gap(matrix):
-    undetected = {r["id"] for r in matrix["rows"] if r["status"] != "detected"}
-    assert undetected == set(KNOWN_GAPS), (
-        f"newly missed: {sorted(undetected - set(KNOWN_GAPS))}; "
-        f"now caught, remove from KNOWN_GAPS: {sorted(set(KNOWN_GAPS) - undetected)}"
-    )
+def test_control_is_clean_and_every_defect_is_detected_or_a_documented_gap(matrix):
+    assert matrix_problems(matrix) == []
 
 
 def test_data_problems_are_never_reported_as_internal_errors(matrix):
