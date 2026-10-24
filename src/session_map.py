@@ -208,6 +208,8 @@ def resolve_import_session(project_path, label: object) -> tuple[str | None, str
 
     (None, None): not a PRISM project, keep the label. Raises like ``session_target``
     for an unmapped label in a multiple-timepoint project."""
+    if session_label(label) == "" and project_timepoints(project_path) == "undeclared":
+        return None, None  # nothing to decide yet; the Projects-page gate asks for the declaration
     target = session_target(project_path, label)
     if target is None or project_timepoints(project_path) != "single":
         return target, None

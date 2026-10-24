@@ -61,3 +61,14 @@ def test_import_session_warns_only_for_a_single_project(tmp_path):
     none = tmp_path / "n"
     none.mkdir()
     assert resolve_import_session(none, "pre") == (None, None)
+
+
+def test_import_session_of_an_undeclared_project_is_refused_only_when_sessions_are_in_play(tmp_path):
+    import pytest
+
+    from src.session_map import TimepointsNotDeclaredError, resolve_import_session
+
+    p = _p(tmp_path, None)
+    assert resolve_import_session(p, "") == (None, None)  # a session-less import runs as before
+    with pytest.raises(TimepointsNotDeclaredError):
+        resolve_import_session(p, "pre")
