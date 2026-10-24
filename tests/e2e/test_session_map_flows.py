@@ -24,7 +24,7 @@ def select_file(page, tmp_path):
     page.set_input_files("#convertSurveyFile", str(data))
 
 
-def test_unmapped_labels_show_empty_inputs_and_block_preview(app_page, studio_url, tmp_path, project):
+def test_unmapped_labels_show_prefilled_defaults_and_block_preview_until_saved(app_page, studio_url, tmp_path, project):
     app_page.allowed_http[409] = DETECT  # unmapped labels are the point of this test
     make_longitudinal(project)
     open_survey_tab(app_page, studio_url)
@@ -34,10 +34,11 @@ def test_unmapped_labels_show_empty_inputs_and_block_preview(app_page, studio_ur
     expect(app_page.locator("#sessionMapPanel")).to_be_visible(timeout=30000)
     inputs = app_page.locator("#sessionMapRows input")
     expect(inputs).to_have_count(2)
-    for index in range(2):
-        expect(inputs.nth(index)).to_have_value("")  # never pre-filled
-    expect(app_page.locator("#previewBtn")).to_be_disabled()
-    expect(app_page.locator("#sessionMapSaveBtn")).to_be_disabled()
+    for index, default in enumerate(["1", "2"]):
+        expect(inputs.nth(index)).to_have_value(default)  # proposed 1, 2, ... in order of appearance; editable
+    expect(app_page.locator("#previewBtn")).to_be_disabled()  # nothing is saved until the user presses Save
+    assert not (project / "code" / "session_map.json").exists()
+    expect(app_page.locator("#sessionMapSaveBtn")).to_be_enabled()
 
 
 def test_mapping_the_labels_unlocks_preview_and_convert_uses_the_names(app_page, studio_url, tmp_path, project):
@@ -95,8 +96,8 @@ def test_participants_panel_asks_for_the_chosen_sessions_name_and_blocks_convert
     expect(panel).to_be_visible(timeout=30000)
     inputs = panel.locator("input")
     expect(inputs).to_have_count(1)  # only the session being imported ('pre'), not 'post'
-    expect(inputs).to_have_value("")  # never pre-filled
-    expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()
+    expect(inputs).to_have_value("1")  # the proposed default, editable
+    expect(app_page.locator("#participantsConvertBtn")).to_be_disabled()  # until the user saves it
     expect(app_page.locator("#convertBtnHint")).to_contain_text("Map the session")
 
 
@@ -183,5 +184,5 @@ def test_labels_that_differ_only_by_leading_zeros_get_a_warning_but_are_never_me
 
     expect(app_page.locator("#sessionMapRows")).to_contain_text("different session labels", timeout=30000)
     expect(app_page.locator("#sessionMapRows input")).to_have_count(2)  # each is mapped separately
-    for index in range(2):
-        expect(app_page.locator("#sessionMapRows input").nth(index)).to_have_value("")
+    for index, default in enumerate(["1", "2"]):
+        expect(app_page.locator("#sessionMapRows input").nth(index)).to_have_value(default)

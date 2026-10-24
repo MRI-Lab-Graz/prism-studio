@@ -44,3 +44,9 @@ exist.
 - [Converter — Participants](converter_participants.md) if you haven't imported
   sociodemographics yet
 - [Recipe Builder](recipe_builder.md) to score imported biometrics
+
+```{note}
+In a project whose Study Design says **one timepoint** (cross-sectional), the session controls on this page are
+greyed out (**ONE TIMEPOINT**): every import is written as `ses-1`, and a session label other than `1` in the
+file is reported in the log. Declare several timepoints on the Projects page to choose or map sessions.
+```

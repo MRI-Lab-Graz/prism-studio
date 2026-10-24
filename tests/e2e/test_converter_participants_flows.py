@@ -5,6 +5,8 @@ import re
 
 from playwright.sync_api import expect
 
+from tests.e2e.test_session_map_flows import make_longitudinal
+
 PEOPLE = "participant_id,age,sex\nP001,21,f\nP002,34,m\n"
 
 
@@ -132,6 +134,7 @@ def test_longitudinal_yes_imports_the_one_chosen_session_for_everybody(app_page,
 
 
 def test_longitudinal_split_keeps_every_sessions_value_in_its_own_column(app_page, studio_url, tmp_path, project):
+    make_longitudinal(project)  # a one-timepoint project cannot keep values per session
     preview_longitudinal(app_page, studio_url, tmp_path)
 
     app_page.click("#participantsSessionModeSplit")

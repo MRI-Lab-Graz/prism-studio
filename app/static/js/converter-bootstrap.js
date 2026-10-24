@@ -12,6 +12,7 @@ import { escapeHtml } from './shared/dom.js';
 import { createSessionRegistrar } from './shared/session-register.js';
 import { installApiFetchFallback } from './shared/api.js';
 import { resolveCurrentProjectPath } from './shared/project-state.js';
+import { lockSessionControls, refreshTimepoints } from './modules/converter/single-timepoint.js';
 
 installApiFetchFallback();
 
@@ -57,10 +58,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bind registerSessionInProject to the local populateSessionPickers
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
 
+    // A cross-sectional project writes ses-1: grey out the session controls of the other converters
+    // (the survey page does it in its own session-mode code, next to the "from dates" mode).
+    window.addEventListener('prism-timepoints-changed', function(event) {
+        const locked = Boolean(event.detail && event.detail.single);
+        const byId = (id) => document.getElementById(id);
+        lockSessionControls({
+            controls: [byId('biometricsSessionSelect'), byId('biometricsSessionCustom')],
+            badge: byId('biometricsSessionBadge'), hint: byId('biometricsSessionHint'), label: byId('biometricsSessionLabel'),
+        }, locked);
+        lockSessionControls({
+            controls: [byId('envSessionCol'), byId('envSessionOverride')],
+            badge: byId('envSessionBadge'), hint: byId('envSessionHint'),
+        }, locked);
+        const override = byId('envSessionOverride');
+        if (override && locked) {  // the environment page wants a session; the backend writes ses-1 anyway
+            override.value = override.value || '1';
+            override.dataset.autofilled = '1';
+            override.dispatchEvent(new Event('input'));
+        } else if (override && override.dataset.autofilled) {
+            override.value = '';
+            delete override.dataset.autofilled;
+            override.dispatchEvent(new Event('input'));
+        }
+        const split = byId('participantsSessionModeSplit');
+        if (split) {
+            split.disabled = locked;
+            split.title = locked ? 'This project has one timepoint, so values cannot be kept per session.' : '';
+        }
+    });
     populateSessionPickers();
     activateConverterTabFromQuery();
+    refreshTimepoints();
     window.addEventListener('prism-project-changed', function() {
         populateSessionPickers();
+        refreshTimepoints();
     });
     window.addEventListener('prism-session-register-failed', function(event) {
         const detail = event && event.detail ? event.detail : {};

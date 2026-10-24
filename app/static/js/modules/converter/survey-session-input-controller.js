@@ -1,4 +1,5 @@
 import { getSessionInputValue } from './session-picker.js';
+import { isSingleTimepoint } from './single-timepoint.js';
 
 export function createSurveySessionInputController({
     convertSessionSelect = null,
@@ -7,6 +8,8 @@ export function createSurveySessionInputController({
     biometricsSessionCustom = null,
 } = {}) {
     function getSessionValue(selectEl, customEl) {
+        // a cross-sectional project writes ses-1 whatever the file says: "all" lets the backend decide
+        if (isSingleTimepoint()) return 'all';
         return getSessionInputValue(selectEl, customEl);
     }
 

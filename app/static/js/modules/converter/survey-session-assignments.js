@@ -1,4 +1,5 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
+import { SINGLE_BADGE, SINGLE_HINT, isSingleTimepoint } from './single-timepoint.js';
 
 /** Review request body: the uploaded file, or the path picked with Browse. Null until both inputs exist. */
 export function reviewFormData({ file, serverPath, idColumn, skipExisting = false }) {
@@ -45,17 +46,18 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         const hint = document.getElementById('convertSessionHint');
         const badge = document.getElementById('convertSessionBadge');
         if (!group) return;
-        group.classList.toggle('session-derived', derived);
+        const single = isSingleTimepoint();  // a cross-sectional project: ses-1, nothing to choose
+        group.classList.toggle('session-derived', derived || single);
         [select, custom].forEach((el) => {
             if (!el) return;
-            el.disabled = derived;
+            el.disabled = derived || single;
             if (derived) el.value = '';
         });
         if (hint) {
             if (hint.dataset.original === undefined) hint.dataset.original = hint.firstChild?.textContent || '';
-            if (hint.firstChild) hint.firstChild.textContent = derived ? DERIVED_HINT : hint.dataset.original;
+            if (hint.firstChild) hint.firstChild.textContent = derived ? DERIVED_HINT : single ? SINGLE_HINT : hint.dataset.original;
         }
-        if (badge) badge.textContent = derived ? 'FROM DATES' : 'REQUIRED';
+        if (badge) badge.textContent = derived ? 'FROM DATES' : single ? SINGLE_BADGE : 'REQUIRED';
         document.getElementById('sessionAssignmentsCard')?.classList.toggle('d-none', !derived);
     }
 
@@ -139,6 +141,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
 
     function initialize() {
         document.getElementById('convertDuplicateHandling')?.addEventListener('change', applyMode);
+        window.addEventListener('prism-timepoints-changed', applyMode);
         const body = document.getElementById('sessionAssignmentsBody');
         const toggleBtn = document.getElementById('sessionAssignmentsBtn');
         toggleBtn?.addEventListener('click', () => {

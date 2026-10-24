@@ -54,3 +54,9 @@ sub-<label>/ses-<label>/environment/sub-<label>_ses-<label>_recording-weather_en
 
 - [Converter — Participants](converter_participants.md)
 - [Validator](validator.md)
+
+```{note}
+In a project whose Study Design says **one timepoint** (cross-sectional), the session controls on this page are
+greyed out (**ONE TIMEPOINT**): every import is written as `ses-1`, and a session label other than `1` in the
+file is reported in the log. Declare several timepoints on the Projects page to choose or map sessions.
+```

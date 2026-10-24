@@ -22,7 +22,8 @@ for LimeSurvey-specific export steps upstream of this screen.
 - **Participant ID Column** — defaults to "Auto-detect (PRISM surveys only)".
 - **Session Column (optional)** / **Run Column (optional)** — pick *source* columns
   that carry session/run info, if your file has them.
-- **Session ID \*** (required) — the *output* session label for this run, picked from
+- **Session ID \*** (required; greyed out as **ONE TIMEPOINT** in a project whose Study Design says
+  `single`: every import is written as `ses-1`, whatever the file says) — the *output* session label for this run, picked from
   a list or typed freely (e.g. `1`, `baseline`). Without a session column, every row
   gets this one label, so a file with several sessions needs one Convert pass per
   session — or use **Repeated participant IDs** below to number them by date.

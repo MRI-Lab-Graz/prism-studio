@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Session controls grey out in a one-timepoint project.** When Study Design says `single`, the Survey, Biometrics and
+  Environment pages show the session as **ONE TIMEPOINT** (greyed, `ses-1`), the Sociodemographics page cannot split values
+  by session, and the pages no longer ask for a session. The Survey page keeps its "from dates" grey for LimeSurvey archives.
 - `dataset validation-matrix`: injects known defects one at a time into a clean control project and reports, per defect,
   whether the validator caught it with the catalogue's code (and through `prism.py`, the Projects page check, or both).
   Documented gaps are pinned in `src/validation_matrix.py`.

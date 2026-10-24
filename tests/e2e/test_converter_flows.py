@@ -1,9 +1,23 @@
 """Converter page: convert real input files the way a user does."""
 
+import json
+
 import pytest
 from playwright.sync_api import expect
 
+from src.session_map import save_session_map
+
 BRS_CSV = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\nP002,1,0,2\n"
+
+
+@pytest.fixture
+def longitudinal(project):
+    """Choosing and typing a session is what a project with several timepoints offers (a one-timepoint
+    project greys the session out: see test_single_timepoint_session_ui.py). Labels map to themselves."""
+    meta = json.loads((project / "project.json").read_text())
+    meta["StudyDesign"] = {"Timepoints": "multiple"}
+    (project / "project.json").write_text(json.dumps(meta))
+    save_session_map(project, {label: label for label in ("1", "01", "2", "3", "pre", "post")})
 
 
 def open_survey_tab(page, studio_url):
@@ -48,6 +62,7 @@ def written_files(project):
 
 
 @pytest.mark.parametrize("session", ["1", "01", "pre"])
+@pytest.mark.usefixtures("longitudinal")
 def test_survey_convert_writes_prism_files_in_the_session_exactly_as_typed(app_page, studio_url, tmp_path, project, session):
     open_survey_tab(app_page, studio_url)
 
@@ -58,12 +73,17 @@ def test_survey_convert_writes_prism_files_in_the_session_exactly_as_typed(app_p
         assert any(f"{participant}/ses-{session}/" in p and p.endswith(".tsv") for p in written), written
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_survey_convert_without_a_session_asks_for_one_and_writes_nothing(app_page, studio_url, tmp_path, project):
+    app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # a longitudinal project wants a session
+    app_page.allowed_http[500] = "/api/survey-workflow-command"
     open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path)
 
-    convert_survey(app_page, tmp_path, session="")
+    app_page.click("#previewBtn")
 
-    expect(app_page.locator("#convertError")).to_contain_text("session ID")
+    expect(app_page.locator("#convertBtn")).to_be_disabled()  # no preview, so nothing to convert
+    expect(app_page.locator("#convertError")).to_contain_text("session", timeout=30000)
     assert written_files(project) == []
 
 
@@ -86,6 +106,7 @@ def _session_label_is_green(page):
     return g > r
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_session_id_label_turns_green_once_a_session_is_chosen(app_page, studio_url):
     open_survey_tab(app_page, studio_url)
     assert not _session_label_is_green(app_page)
@@ -105,6 +126,7 @@ REPEATED_CSV = (
 )
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, studio_url, tmp_path, project):
     open_survey_tab(app_page, studio_url)
     app_page.select_option("#convertDuplicateHandling", "sessions")
@@ -125,7 +147,6 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
     app_page.set_input_files("#convertSurveyFile", str(_lsa_with_two_questionnaires(tmp_path)))
     app_page.select_option("#convertIdColumn", "token")
     app_page.select_option("#convertDuplicateHandling", "error")  # a .lsa defaults to sessions-from-dates
-    app_page.fill("#convertSessionCustom", "1")
 
     app_page.click("#previewBtn")
 
@@ -133,6 +154,7 @@ def test_questionnaire_without_template_is_offered_for_saving_and_does_not_block
     expect(app_page.locator("#convertBtn")).to_be_enabled()  # the matched questionnaire still converts
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studio_url):
     open_survey_tab(app_page, studio_url)
     app_page.fill("#convertSessionCustom", "pre")
@@ -149,6 +171,7 @@ def test_dates_mode_disables_the_session_id_box_and_explains_why(app_page, studi
     expect(app_page.locator("#convertSessionCustom")).to_have_value("")
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_dates_mode_converts_without_a_typed_session_id(app_page, studio_url, tmp_path, project):
     from tests.lsa_fixtures import make_library, make_lsa
     import shutil
@@ -198,6 +221,7 @@ def test_dates_mode_refreshes_the_session_map_panel_with_the_real_labels(app_pag
     expect(app_page.locator("#sessionMapRows input")).to_have_count(2)
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_page, studio_url, tmp_path, project):
     from tests.lsa_fixtures import make_library, make_lsa
     import shutil
@@ -223,6 +247,7 @@ def test_review_table_shows_the_responses_and_a_skip_changes_the_preview(app_pag
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"2": {"skip": True}}}}}
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_page, studio_url, tmp_path, project):
     from tests.lsa_fixtures import make_library, make_lsa
     import json
@@ -249,6 +274,7 @@ def test_review_table_pre_skips_incomplete_rows_and_unticking_includes_them(app_
     assert saved == {"version": 2, "surveys": {"999999": {"responses": {"1": {"include": True}}}}}
 
 
+@pytest.mark.usefixtures("longitudinal")
 def test_review_session_assignment_button_folds_the_table_back_in(app_page, studio_url, tmp_path, project):
     from tests.lsa_fixtures import make_library, make_lsa
     import shutil
@@ -273,7 +299,6 @@ def test_review_session_assignment_button_folds_the_table_back_in(app_page, stud
 def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
     select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,-1,0,2\nP003,often,1,1\n")
-    app_page.fill("#convertSessionCustom", "1")
     app_page.click("#previewBtn")
     log = app_page.locator("#conversionLog")
     expect(log).to_contain_text("outside the scale 0-4", timeout=30000)
@@ -293,9 +318,7 @@ def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, 
 def test_preview_warns_about_skipped_rows_and_cleaned_labels(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
     select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
-    app_page.fill("#convertSessionCustom", "pre test")
-    app_page.click("#previewBtn")
+    app_page.click("#previewBtn")  # a one-timepoint project asks for no session
     log = app_page.locator("#conversionLog")
     expect(log).to_contain_text("no participant ID", timeout=30000)
     expect(log).to_contain_text("'P 1' → sub-P1")
-    expect(log).to_contain_text("'pre test' → ses-pretest")
