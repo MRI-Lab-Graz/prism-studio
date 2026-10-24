@@ -311,3 +311,23 @@ def test_editing_the_name_after_picking_a_column_hides_use_in_my_open_project(ap
     expect(app_page.locator("#spec-m-use")).to_be_visible()
     app_page.locator("#spec-m-name").fill("Something else")
     expect(app_page.locator("#spec-m-use")).to_be_hidden()
+
+
+def test_use_in_my_open_project_is_offered_for_biosample_only_and_other_kinds_get_the_command(app_page, studio_url, project):
+    choose_values(app_page, studio_url)
+    note = app_page.locator("#spec-v-use-note")
+    expect(note).to_be_hidden()
+    app_page.locator("#spec-v-modality").select_option("survey")
+    add_choice(app_page, "sibling")
+    expect(app_page.locator("#spec-v-use")).to_be_hidden()
+    expect(note).to_be_visible()
+    expect(note).to_contain_text("spec local add-values --project")
+    expect(note).to_contain_text("--modality survey")
+    expect(app_page.locator("#spec-v-share")).to_be_visible()
+    command = note.inner_text()[note.inner_text().index("python prism_tools.py"):]  # the command itself has to say --modality
+    text = app_page.locator("#spec-panel-values").inner_text().replace(command, "").lower()
+    assert not any(word in text for word in ("modality", "patch", "enum", "schema"))
+    app_page.locator("#spec-v-modality").select_option("biosample")
+    add_choice(app_page, "sweat")
+    expect(note).to_be_hidden()
+    expect(app_page.locator("#spec-v-use")).to_be_enabled()

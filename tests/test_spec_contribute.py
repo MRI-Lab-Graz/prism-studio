@@ -193,6 +193,6 @@ def test_values_are_deduplicated_keeping_order():
     assert r["proposal"]["patch"]["operations"][0]["values"] == ["sweat", "tears"]
 
 
-def test_metric_for_a_kind_not_in_the_catalog_is_refused():
+def test_metric_for_a_kind_without_measurements_is_refused():
     with pytest.raises(OverlayError, match="no known measurements"):
         proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality="survey")
