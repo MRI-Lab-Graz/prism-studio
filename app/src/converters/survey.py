@@ -44,6 +44,7 @@ from ..session_map import (
     load_session_map,
     project_timepoints,
     require_sessions_mapped,
+    single_session_warning,
 )
 from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
@@ -794,6 +795,19 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         allow_near_item_match=allow_near_item_match,
         near_match_tasks=near_match_tasks,
     )
+
+
+def _collapse_to_single_session(df, res_ses_col):
+    """One-timepoint project: every row is session 1 whatever its label says.
+
+    Returns the table with the session column set to "1" and a warning for each
+    label that was replaced. Rows that now share participant and session are
+    caught by the normal duplicate check."""
+    if not (res_ses_col and res_ses_col in df.columns):
+        return df, []
+    labels = list(dict.fromkeys(df[res_ses_col].astype(str).str.strip()))
+    warnings = [w for w in map(single_session_warning, labels) if w]
+    return df.assign(**{res_ses_col: "1"}), warnings
 
 
 def convert_survey_file_to_prism_dataset(
@@ -1567,6 +1581,10 @@ def _convert_survey_dataframe_to_prism_dataset(
         duplicate_handling=duplicate_handling,
         detected_sessions=detected_sessions,
     )
+
+    if timepoints == "single":
+        df, single_warnings = _collapse_to_single_session(df, res_ses_col)
+        conversion_warnings.extend(single_warnings)
 
     # A project that never said one-or-several timepoints is only asked to declare it
     # when this import actually carries sessions; a session-less import runs as before.

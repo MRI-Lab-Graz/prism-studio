@@ -456,6 +456,15 @@ class ParticipantsConverter:
             messages.append(f"✗ Failed to load source file: {e}")
             return False, None, messages
 
+        if split_sessions and _session_map.project_timepoints(self.dataset_path) == "single":
+            error = (
+                "This project has one timepoint, so values per session cannot be kept. "
+                "Choose one session, or declare several timepoints on the Projects page."
+            )
+            self._log("ERROR", error)
+            messages.append(f"✗ {error}")
+            return False, None, messages
+
         if split_sessions and (not session_column or session_value or session_column not in df.columns):
             error = (
                 "Splitting by session needs the session column of the file "
