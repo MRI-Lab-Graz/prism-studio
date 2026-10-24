@@ -466,6 +466,12 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM201"
     elif "citation.cff" in msg_lower:
         return "PRISM303"
+    elif "missing project.json" in msg_lower:
+        return "PRISM010"
+    elif "missing participants.tsv" in msg_lower:
+        return "PRISM004"
+    elif ".bidsignore" in msg_lower:
+        return "PRISM501"
     elif "empty sidecar" in msg_lower:
         return "PRISM203"
     elif "cells but the header has" in msg_lower:

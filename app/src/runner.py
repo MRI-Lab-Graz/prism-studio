@@ -485,6 +485,9 @@ def _validate_dataset(
         _check_participants_subject_alignment(root_dir, {name for name, _ in subject_dirs})
     )
 
+    if run_prism:
+        issues.extend(_check_project_files(root_dir, bool(subject_dirs), stats.modalities))
+
     # Run standard BIDS validator if requested
     if run_bids:
         report_progress(bids_progress, 100, "Running BIDS validator...")
@@ -644,6 +647,36 @@ def _no_subjects_message(root_dir: str) -> str:
             "(e.g. Survey) to create the sub-* folders."
         )
     return f"{message} Did you point the validator at the dataset root?"
+
+
+def _check_project_files(root_dir: str, has_subjects: bool, modalities) -> list[tuple[str, str, str]]:
+    """PRISM010 / PRISM004 / PRISM501: the project-level files, as warnings.
+
+    The Projects page check always listed them; `prism.py` stayed silent. Warnings, not errors:
+    a dataset can be valid without a PRISM Studio project.json, participants.tsv is only
+    recommended by BIDS, and a missing .bidsignore only matters for the BIDS validator run.
+    ``modalities`` are the folder names the scan already found, so nothing is walked again."""
+    root = Path(root_dir)
+    found: list[tuple[str, str, str]] = []
+    if not (root / "project.json").exists():
+        found.append(("WARNING", "Missing project.json at project root", str(root)))
+    if has_subjects and not (root / "participants.tsv").exists():
+        found.append(("WARNING", "Missing participants.tsv although subject folders exist", str(root)))
+
+    present = sorted(m for m in modalities if m in current_specification().prism_modalities)
+    ignore_path = root / ".bidsignore"
+    rules: set[str] = set()
+    if ignore_path.exists():
+        rules = {
+            line.strip()
+            for line in ignore_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            if line.strip() and not line.startswith("#")
+        }
+    missing = [f"{m}/" for m in present if f"{m}/" not in rules]
+    if missing:
+        what = "Add PRISM folders to .bidsignore" if ignore_path.exists() else "Create .bidsignore with PRISM folders"
+        found.append(("WARNING", f"{what}: {', '.join(missing)}", str(ignore_path)))
+    return found
 
 
 def _check_participants_subject_alignment(

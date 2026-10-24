@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Fixed
+- `prism.py` (and the Validate page) now report a missing `project.json` (`PRISM010`), a missing `participants.tsv` next to subject
+  folders (`PRISM004`) and PRISM folders absent from `.bidsignore` (`PRISM501`), as warnings; the Projects page check always did.
+  The `.bidsignore` check follows the specification's modality list (it used to know only survey, biometrics, physio and events).
 - The validator now reports what it used to accept silently: a data row with more or fewer cells than the header, columns the
   sidecar does not describe (a trailing space or the wrong separator hides items), NaN/Infinity in a sidecar (not JSON), an empty
   sidecar file (`PRISM203`), a wrong field type (`PRISM302`) and a participant listed twice in participants.tsv. A data file saved

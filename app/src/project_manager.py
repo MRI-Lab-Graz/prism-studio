@@ -1338,6 +1338,8 @@ class ProjectManager:
                     file_path = str(runner_issue[2])
 
                 code = infer_code_from_message(message)
+                if code in ("PRISM004", "PRISM010", "PRISM501"):
+                    continue  # this check reports these itself (above, and through the fixer below)
 
                 if level == "WARNING":
                     warning_key = (code, message, file_path)

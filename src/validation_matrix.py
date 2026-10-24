@@ -89,10 +89,6 @@ def _coded_participants_column(root: Path) -> None:
     path.write_text("\n".join([rows[0] + "\tgroup"] + [f"{r}\t{i % 2 + 1}" for i, r in enumerate(rows[1:])]) + "\n", encoding="utf-8")
 
 
-def _data_text(text: str) -> Callable[[Path], None]:
-    return _write(DATA, text)
-
-
 def _copy_subject(src: str, dst: str) -> Callable[[Path], None]:
     """Copy sub-<src> as sub-<dst> (files renamed) and list it in participants.tsv."""
     def mutate(root: Path) -> None:
@@ -162,12 +158,12 @@ DEFECTS: list[Defect] = [
            _second_session_for_one_subject),
 
     # messy files a real study produces
-    Defect("ragged_row", "a data row has fewer cells than the header", ANY, _data_text("BRS01\tBRS02\tBRS03\n3\t4\n")),
+    Defect("ragged_row", "a data row has fewer cells than the header", ANY, _write(DATA, "BRS01\tBRS02\tBRS03\n3\t4\n")),
     Defect("extra_column_not_in_sidecar", "a data column the sidecar does not describe", ANY,
-           _data_text("BRS01\tBRS02\tBRS03\tBRS99\n3\t4\t2\t1\n")),
-    Defect("header_with_trailing_space", "a column name ends with a space", ANY, _data_text("BRS01 \tBRS02\tBRS03\n3\t4\t2\n")),
-    Defect("decimal_comma_answer", "an answer written 3,5 (decimal comma)", ANY, _data_text("BRS01\tBRS02\tBRS03\n3,5\t4\t2\n")),
-    Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _data_text("BRS01;BRS02;BRS03\n3;4;2\n")),
+           _write(DATA, "BRS01\tBRS02\tBRS03\tBRS99\n3\t4\t2\t1\n")),
+    Defect("header_with_trailing_space", "a column name ends with a space", ANY, _write(DATA, "BRS01 \tBRS02\tBRS03\n3\t4\t2\n")),
+    Defect("decimal_comma_answer", "an answer written 3,5 (decimal comma)", ANY, _write(DATA, "BRS01\tBRS02\tBRS03\n3,5\t4\t2\n")),
+    Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _write(DATA, "BRS01;BRS02;BRS03\n3;4;2\n")),
     Defect("nan_in_sidecar", "NaN written into a JSON sidecar", ANY, lambda root: _write(SIDECAR, (root / SIDECAR).read_text(encoding="utf-8").replace('"Reversed": false', '"Reversed": NaN', 1))(root)),
     Defect("participants_tsv_duplicate_id", "the same participant twice in participants.tsv", ANY, _participants_row("sub-01\t31\n")),
     Defect("participants_row_without_folder", "participants.tsv lists a participant that has no folder", "PRISM707", _participants_row("sub-99\t50\n")),
@@ -178,8 +174,8 @@ DEFECTS: list[Defect] = [
     Defect("benign_bom_and_crlf", "a data file saved by Excel (BOM, CRLF line endings)", NONE,
            lambda root: (root / DATA).write_bytes("\ufeffBRS01\tBRS02\tBRS03\r\n3\t4\t2\r\n".encode("utf-8"))),
     Defect("benign_sidecar_describes_more_items", "a file holds fewer items than the shared sidecar describes", NONE,
-           _data_text("BRS01\tBRS02\n3\t4\n")),
-    Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _data_text("BRS01\tBRS02\tBRS03\nn/a\t4\t2\n")),
+           _write(DATA, "BRS01\tBRS02\n3\t4\n")),
+    Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _write(DATA, "BRS01\tBRS02\tBRS03\nn/a\t4\t2\n")),
     Defect("benign_long_subject_label", "a 40-character alphanumeric participant label", NONE,
            _copy_subject("03", "x" * 40)),
 ]
