@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Fixed
+- **Linux launcher in the applications menu.** `install.sh` now writes `prism-studio.desktop` to `~/.local/share/applications`
+  (and a copy on the Desktop when that folder exists). On GNOME (Fedora Workstation) there are no Desktop icons and `.desktop`
+  files cannot be started from a folder, so the Desktop-only shortcut never appeared.
+- **`LICENSE` is the plain AGPL-3.0 text again**, so GitHub detects the license (the custom header made it report "Other").
+  The copyright line and the relicensing note moved to the README.
+- **`pydeface` is no longer installed by default**: it needs FSL, pulls in nipype and slows every install (and needs a C compiler on
+  ARM Linux). Without it structural images are not defaced; `docs/INSTALLATION.md` says how to add it.
 - **A survey file name must carry the task entity** (`sub-01_task-brs_survey.tsv`; `acq` and `run` stay optional): a survey without a task
   could not be matched to its template or sidecar, and used to pass filename validation. Studio carries prism-specification v1.2.4.
 - `prism.py` (and the Validate page) now report a missing `project.json` (`PRISM010`), a missing `participants.tsv` next to subject
