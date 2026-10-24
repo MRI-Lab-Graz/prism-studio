@@ -17,13 +17,18 @@ def test_bids_label_keeps_ascii_letters_and_digits_only(raw, prefix, expected):
     assert env._bids_label(raw, prefix) == expected
 
 
-def _convert(tmp_path, monkeypatch, rows, **kw):
+def _convert(tmp_path, monkeypatch, rows, project_json=None, mapping=None, **kw):
     for name in ("_fetch_environment_day", "_fetch_environment_hour"):
         monkeypatch.setattr(env, name, lambda *a, **k: {})
     monkeypatch.setattr(env, "_geocode_location", lambda *a, **k: None)
     project = tmp_path / "p"
     project.mkdir()
-    (project / "project.json").write_text("{}")
+    if project_json is not None:
+        (project / "project.json").write_text(project_json)
+    if mapping:
+        from src.session_map import save_session_map
+
+        save_session_map(project, mapping)
     src = tmp_path / "env.csv"
     src.write_text("pid,ses,ts,lat,lon\n" + "".join(",".join(f'"{c}"' for c in r) + "\n" for r in rows))
     logs: list[str] = []
