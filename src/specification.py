@@ -16,7 +16,7 @@ from typing import Iterator
 
 from src.entity_rules import EntityRules, load_entity_rules
 from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
-from src.spec_overlay import _vendored, load_local_patches, load_local_terms, merge_terms
+from src.spec_overlay import _vendored, load_local_patches, load_local_terms, local_patch_modalities, merge_terms
 from src.term_registry import load_registry
 
 _TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
@@ -83,6 +83,11 @@ def load_specification(
             local |= in_use
             ignored += dropped
             problems += skipped
+        terms[modality] = registry
+    if project_root is not None:
+        names, skipped = local_patch_modalities(project_root, schemas)
+        problems += skipped
+        for modality in names:
             patch, notes = load_local_patches(project_root, modality)
             official_now += [n for n in notes if n.endswith(" is already official")]
             problems += [n for n in notes if n not in official_now]
@@ -92,7 +97,6 @@ def load_specification(
                     patched.append(modality)
                 except ValueError as exc:  # the run's (version-pinned) schema may not fit the patch
                     problems.append(f"patches/{modality}.json: {exc}")
-        terms[modality] = registry
     return Specification(
         rules=rules if rules is not None else load_entity_rules(),
         schemas=schemas,

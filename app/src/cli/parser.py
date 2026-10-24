@@ -1892,7 +1892,7 @@ def build_prism_tools_parsers(
         ("propose", parser_spec_propose),
     ):
         _parser.add_argument("--project", required=True, help="The PRISM project folder")
-        _parser.add_argument("--modality", default="biosample", choices=["biosample"], help="Modality of the terms")
+        _parser.add_argument("--modality", default="biosample", choices=None if _name in ("add-values", "remove-values") else ["biosample"], help="Modality of the terms or schema")
         _parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
         if _name == "add-term":
             _source = _parser.add_mutually_exclusive_group(required=True)

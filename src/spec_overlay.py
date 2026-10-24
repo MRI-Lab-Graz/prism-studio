@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -157,6 +158,22 @@ def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict 
     return {"operations": operations}, [f"{path.name}: {note}" for note in notes]
 
 
+def local_patch_modalities(project_root, schemas: dict) -> tuple[list[str], list[str]]:
+    """The modalities that have a patch file in the project, and one message per file that is not a kind of data of this run."""
+    try:
+        folder = _real_overlay_folder(project_root, "patches")
+    except OverlayError as exc:
+        return [], [f"patches: {exc}"]
+    found: list[str] = []
+    problems: list[str] = []
+    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        if re.fullmatch(r"[a-z][a-z0-9]*", path.stem) and path.stem in schemas:
+            found.append(path.stem)
+        else:
+            problems.append(f"patches/{path.name}: not a kind of data of this run")
+    return found, problems
+
+
 def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
     """The official registry plus the local terms that add something.
 
@@ -241,7 +258,7 @@ def _project_specimens(project_root, modality: str) -> list[str] | None:
     schema = _vendored("schema_patch").apply_patch(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), patch)[0]
     try:
         return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
-    except KeyError:  # a kind of data without sample types (survey, ...): callers use the official ones
+    except (KeyError, TypeError):  # a kind of data without sample types (survey, ...): callers use the official ones
         return None
 
 
@@ -356,7 +373,9 @@ def add_local_values(project_root, field: str, values: list[str], modality: str 
     the vendored schema_patch.py (which also decides which fields may be extended) before anything is written.
     """
     sp = _vendored_or_error("schema_patch")
-    schema = _official_schema(modality)
+    schema = _official_schema(modality) if re.fullmatch(r"[a-z][a-z0-9]*", str(modality)) else None
+    if not isinstance(schema, dict):
+        raise OverlayError(f"{modality}: not a kind of data of this specification")
     path, patch = _existing_patch(project_root, modality)
     values = list(values) if isinstance(values, (list, tuple)) else values
     try:
