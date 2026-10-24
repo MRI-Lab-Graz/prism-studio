@@ -168,7 +168,12 @@ def describe_modality_pattern(rule: ModalityRule) -> str:
     if not rule.suffixes or not rule.extensions:
         return f"Ensure the filename ends with '_{rule.name}.<ext>' appropriate for this modality"
 
-    entity_values = rule.required_entity_values + rule.optional_entity_values
+    # task is shown through example_task; the example names the first other required entity, or an optional one with fixed values
+    entity_values = [
+        (key, value_rule)
+        for key, value_rule in rule.required_entity_values + rule.optional_entity_values
+        if key != "task" and (value_rule.enum or (key, value_rule) in rule.required_entity_values)
+    ]
     entity_token = ""
     if entity_values:
         key, value_rule = entity_values[0]

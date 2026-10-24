@@ -17,7 +17,7 @@ from src.entity_rules import (
 # Copied verbatim from app/src/validator.py's MODALITY_PATTERNS as it stood
 # before the entities.json migration.
 _EXPECTED_PATTERNS = {
-    "survey": r".+_survey\.(tsv|json)$",
+    "survey": r".+_task-[a-zA-Z0-9-]+(_acq-([a-zA-Z0-9-]+))?(_run-([a-zA-Z0-9]+))?_survey\.(tsv|json)$",  # task required since 2026-10-24
     "biometrics": r".+_biometrics\.(tsv|json)$",
     "biosample": r".+_biosample\.(tsv|json)$",
     "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
