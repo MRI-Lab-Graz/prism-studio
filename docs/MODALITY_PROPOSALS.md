@@ -86,9 +86,9 @@ be used instead of the workbook (see `examples/modality_proposal/`).
 ## What happens next
 
 A maintainer follows `REGISTRATION.md` (add the schema, the entities entry and
-`specs/<name>.md` in prism-specification, tag a release, run
-`python scripts/sync_specification.py --tag <tag>` in Studio, add the docs
-card/toctree/row and run the checks including `modality-docs`) and reviews units, ranges and the
+`specs/<name>.md` and the `specs/entities.md` row in prism-specification, tag a
+release, run `python scripts/sync_specification.py --tag <tag>` in Studio, add
+the docs card and toctree entry and run the checks including `modality-docs`) and reviews units, ranges and the
 sample. After the merge the modality is available in the next PRISM release.
 GitHub does not start CI from the bot's own push; a maintainer starts it by
 approving the run or pushing. While the pull request only adds files under

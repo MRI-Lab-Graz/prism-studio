@@ -950,7 +950,8 @@ Studio vendors a tagged release of it and must not be edited by hand."""
 1. In **prism-specification**, replace the `"{name}"` entry under `"modalities"`
    in `schemas/stable/entities.schema.json` with this one (the suffix and any new extensions
    are appended), and add the section from `docs/{name}-{suffix}.md` to
-   `specs/{name}.md` (the page must mention `_{suffix}`):
+   `specs/{name}.md` (the page must mention `_{suffix}`), and add `{suffix}` to
+   the Suffixes column of the `{name}` row in `specs/entities.md`:
 
 ```json
 {snippet}
@@ -959,8 +960,8 @@ Studio vendors a tagged release of it and must not be edited by hand."""
 2. Run `python scripts/check_modalities.py` and the tests there.
 3. Tag a release there.
 4. In Studio: `python scripts/sync_specification.py --tag <tag>`.
-5. In Studio, add `{suffix}` to the Suffixes column of the `{name}` row in
-   `docs/specs/entities.md` (CI check `modality-docs`).
+5. Check the registration: `python tests/verify_repo.py --check schema-sync` and
+   `python tests/verify_repo.py --check modality-docs`.
 6. Validate the generated dataset: from the Studio repository root, run
    `python prism.py <this folder>/fixture`. It must pass without errors.
 
@@ -982,14 +983,14 @@ example.
 {snippet}
 ```
 
-3. Copy `docs/{name}.md` to `specs/{name}.md` there.
+3. Copy `docs/{name}.md` to `specs/{name}.md` there, and add the row from
+   `docs/snippets.md` to the table in `specs/entities.md`.
 4. Run `python scripts/check_modalities.py` and the tests there.
 5. Tag a release there.
 6. In Studio: `python scripts/sync_specification.py --tag <tag>`.
 7. Documentation in Studio (CI check `modality-docs` fails without it):
    - add `   specs/{name}` to the "Schema Specifications" toctree in `docs/index.rst`;
-   - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`;
-   - add the row from `docs/snippets.md` to the table in `docs/specs/entities.md`.
+   - add the card from `docs/snippets.md` to `docs/SCHEMA_SPECIFICATIONS.md`.
 8. Check the registration: `python tests/verify_repo.py --check schema-sync` and
    `python tests/verify_repo.py --check modality-docs`.
 9. Validate the generated dataset: from the Studio repository root, run
@@ -1041,7 +1042,7 @@ def build_modality_artifacts(proposal: dict, sample_path, proposal_path, out_dir
         snippets_path.write_text(
             f"# Docs snippets for `{name}`\n\n"
             f"Toctree line for docs/index.rst:\n\n```\n{s['toctree']}\n```\n\n"
-            f"Row for the table in docs/specs/entities.md:\n\n```\n{s['entities_row']}\n```\n\n"
+            f"Row for the table in specs/entities.md (prism-specification):\n\n```\n{s['entities_row']}\n```\n\n"
             f"Card for docs/SCHEMA_SPECIFICATIONS.md:\n\n```html\n{s['card']}\n```\n",
             encoding="utf-8",
         )

@@ -130,10 +130,11 @@ The output folder (and the pull request) contains:
 ### 6. Maintainer steps
 
 The maintainer follows `REGISTRATION.md`: in the **prism-specification**
-repository add the schema, the `entities.schema.json` entry and `specs/<name>.md`,
+repository add the schema, the `entities.schema.json` entry, `specs/<name>.md`
+and the `specs/entities.md` row,
 run its `python scripts/check_modalities.py` and tests, and tag a release; then
 in Studio run `python scripts/sync_specification.py --tag <tag>`, add the
-generated docs (toctree entry, card, `entities` table row), run
+generated docs (toctree entry, card), run
 `python tests/verify_repo.py --check modality-docs` (fails CI when a registered
 modality lacks any of these) and validate `fixture/` with
 `python prism.py <folder>/fixture`. CI runs the vendored
