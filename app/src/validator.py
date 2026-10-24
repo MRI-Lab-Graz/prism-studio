@@ -13,7 +13,6 @@ from typing import Callable
 from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
-from src.constants import TABULAR_MODALITIES
 from src.specification import current_specification
 from src.term_registry import analyte_columns, resolve_column
 from src.converters.survey_core import get_allowed_values
@@ -997,7 +996,7 @@ class DatasetValidator:
             return self._validate_environment_content(file_path)
 
         # Only validate content for tabular data modalities
-        if modality not in TABULAR_MODALITIES:
+        if modality not in current_specification().described_columns:
             return issues
 
         # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
@@ -1417,8 +1416,8 @@ class DatasetValidator:
                     )
                 issues.append(("ERROR", f"{message}: {filename}"))
 
-        # Check modality pattern (strict for survey/biometrics)
-        if modality in TABULAR_MODALITIES:
+        # Check modality pattern (strict for modalities with describedColumns)
+        if modality in spec.described_columns:
             if not pattern.match(filename):
                 issues.append(
                     (

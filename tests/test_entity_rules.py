@@ -135,12 +135,6 @@ def test_biosample_is_registered_with_tsv_json_suffix():
     assert rules.pattern_for("biosample") == r".+_biosample\.(tsv|json)$"
 
 
-def test_tabular_modalities_constant_includes_biosample():
-    from src.constants import TABULAR_MODALITIES
-
-    assert TABULAR_MODALITIES == ("survey", "biometrics", "biosample")
-
-
 def test_physiological_alias_is_gone():
     assert load_entity_rules().aliases == {}
 
