@@ -19,7 +19,7 @@
                 {% set validator_info = results.get('validator_info') if results else none %}
                 {% set results_header_note = '' %}
                 {% if validator_info %}
-                    {% set schema_versions = validator_info.get('prism_schema_versions') or {} %}
+                    {% set schema_versions = validator_info.get('prism_schemas_in_use') or validator_info.get('prism_schema_versions') or {} %}
                     {% if schema_versions %}
                         {% set version_parts = schema_versions.items()|sort|map('join', ' ')|join(', ') %}
                         {% set results_header_note = 'PRISM schema: ' ~ version_parts %}

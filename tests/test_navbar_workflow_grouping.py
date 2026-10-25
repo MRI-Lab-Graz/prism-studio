@@ -35,6 +35,24 @@ class TestNavbarWorkflowGrouping(unittest.TestCase):
         self.assertIn('4. Share &amp; Archive', workflow_section)
         self.assertIn('id="shareArchiveLink"', workflow_section)
 
+    def test_validator_has_its_own_top_level_nav_item(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('{% set validator_active =', content)
+        before_docs = content.split('id="docsDropdown"', 1)[0]
+        workflow_section = before_docs.split('id="workflowDropdown"', 1)[1]
+        # Validator sits after the Workflow dropdown, not inside it.
+        self.assertNotIn("url_for('validation.validate_dataset')", workflow_section.split("</li>\n\n", 1)[0])
+        self.assertEqual(content.count("url_for('validation.validate_dataset')"), 1)
+        self.assertLess(
+            content.index('id="workflowDropdown"'),
+            content.index("url_for('validation.validate_dataset')"),
+        )
+        self.assertLess(
+            content.index("url_for('validation.validate_dataset')"),
+            content.index('id="docsDropdown"'),
+        )
+
     def test_workflow_item_subtitles_present(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
@@ -76,6 +94,7 @@ class TestNavbarWorkflowGrouping(unittest.TestCase):
         self.assertIn("request_path.startswith('/template-editor')", content)
 
         self.assertIn('{% set modify_active =', content)
+        self.assertIn('{% set validator_active =', content)
         self.assertIn("request_path.startswith('/validate')", content)
         self.assertIn("request_path.startswith('/file-management')", content)
         self.assertIn("request_path.startswith('/editor')", content)

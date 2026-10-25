@@ -363,7 +363,8 @@
     {% set derivatives_enabled = current_project.path and derivatives_available %}
     {% set request_path = request.path or '' %}
     {% set prepare_active = request_path.startswith('/converter') or request_path.startswith('/template-editor') or request_path.startswith('/recipe-builder') or request.endpoint in ['tools.converter', 'tools_template_editor.template_editor', 'tools.recipe_builder'] %}
-    {% set modify_active = request_path.startswith('/validate') or request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['validation', 'json_editor'] or request.endpoint in ['tools.file_management'] %}
+    {% set validator_active = request_path.startswith('/validate') or request.blueprint == 'validation' %}
+    {% set modify_active = request_path.startswith('/file-management') or request_path.startswith('/editor') or request.blueprint in ['json_editor'] or request.endpoint in ['tools.file_management'] %}
     {% set export_active = request_path.startswith('/survey-generator') or request_path.startswith('/recipes') or request.endpoint in ['tools.survey_generator', 'tools.recipes'] %}
     {% set share_available = endpoint_exists('projects.share_page') %}
     {% set share_enabled = current_project.path and current_project.has_data and share_available %}
@@ -500,10 +501,6 @@
                             <li><hr class="dropdown-divider"></li>
 
                             <li><h6 class="dropdown-header">2. Modify in PRISM</h6></li>
-                            <li><a class="dropdown-item navbar-flow-item" href="{{ url_for('validation.validate_dataset') }}" title="Run PRISM/BIDS checks and inspect issues before export">
-                                <span class="navbar-flow-item-title"><i class="fas fa-check-circle me-2 text-success"></i>Validator</span>
-                                <span class="navbar-flow-item-hint">Check completeness, consistency, and standard compliance</span>
-                            </a></li>
                             <li><a class="dropdown-item navbar-flow-item{% if not current_project.path or not file_management_available %} disabled{% endif %}" href="{% if current_project.path and file_management_available %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}"{% if file_management_available %} data-target-url="{{ url_for('tools.file_management') }}"{% endif %} id="fileManagementLink"{% if not file_management_available %} title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %} title="Please load a project first"{% else %} title="Restructure, rename, and relocate files inside the active PRISM project"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-file-import me-2 text-warning"></i>File Management</span>
                                 <span class="navbar-flow-item-hint">Move, rename, and align files with project conventions</span>
@@ -545,6 +542,12 @@
                                 <span class="navbar-flow-item-hint">Export, push to a DataLad server, or back up the project</span>
                             </a></li>
                         </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link{% if validator_active %} active{% endif %}" href="{{ url_for('validation.validate_dataset') }}"{% if validator_active %} aria-current="page"{% endif %} title="Run PRISM/BIDS checks and inspect issues before export">
+                            <i class="fas fa-check-circle me-1 text-success"></i>Validator
+                        </a>
                     </li>
 
                     <li class="nav-item">

@@ -264,9 +264,13 @@ def _validate_dataset(
             ),
             schema_version or "stable",
         )
+        from src.modality_versions import present_modalities
+
+        used = {"dataset_description", *present_modalities(root_dir, _default_schema_dir())}
         stats.validator_info = {
             "prism_schema_tag": version_tag,
             "prism_schema_versions": schema_versions,
+            "prism_schemas_in_use": {n: v for n, v in schema_versions.items() if n in used},
             "prism_schema_sources": schema_sources,
         }
 

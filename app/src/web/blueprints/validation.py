@@ -605,8 +605,18 @@ def validate_dataset():
     project_path = session.get("current_project_path")
     default_library_path = _get_default_validation_library_path(project_path)
 
+    project_schemas = None
+    if project_path:
+        try:
+            from src.modality_versions import project_schema_summary
+
+            project_schemas = project_schema_summary(project_path, schema_dir)
+        except Exception as e:  # the summary is decoration; never block the page
+            print(f"Warning: Could not summarize project schemas: {e}")
+
     return render_template(
         "index.html",
+        project_schemas=project_schemas,
         schema_versions=available_versions,
         default_library_path=default_library_path,
     )

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header, section_card, help_panel %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - Dataset Validation{% endblock %}
 
@@ -51,7 +51,7 @@
         {{ page_header(
             'fas fa-check-circle',
             'Dataset Validation',
-            'Validate your dataset structure and metadata against PRISM and BIDS rules'
+            'Check structure, filenames and metadata against PRISM and BIDS rules. Runs locally; nothing is uploaded.'
         ) }}
 
         {% call help_panel('Quick Guide', 'info', true, 'fas fa-circle-info', 'py-2', 'mb-3') %}
@@ -63,33 +63,53 @@
         {% endcall %}
 
         <!-- Main Upload Card -->
-        {% call section_card('Dataset Validation', 'fas fa-check-circle', 'text-success', 'feature-card mb-4 border-success', 'p-5', 'card-title text-start mb-4') %}
-
-                <p class="text-start text-muted mb-4">
-                    The PRISM Validator ensures your dataset follows the PRISM structure and BIDS standards.
-                    It checks for required files, naming conventions, and validates metadata against JSON schemas.
-                </p>
+        <div class="card feature-card mb-4 border-success">
+            <div class="card-body p-4">
 
                 <!-- File Upload Section -->
                 <div class="mb-4">
-                        <!-- 1. Select Dataset -->
                                 <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
                                     <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
                                     <input type="hidden" id="currentProjectName" value="{{ current_project.name | default('Current Project') }}">
                         <div class="mb-4">
-                            <h4 class="h5 mb-3">
-                                <i class="fas fa-folder-open text-success me-2"></i>
-                                1. Select Dataset
-                            </h4>
-                            
-                            <!-- Browser Support Warning -->
-                            <div class="alert alert-info alert-dismissible fade show" role="alert" id="browserWarning" style="display: none;">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Folder upload requires a modern browser.</strong> 
-                                Please use a modern browser like Chrome, Firefox, or Edge.
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            {% if current_project.path %}
+                            <div class="border border-success rounded p-3 bg-light d-flex flex-wrap align-items-center justify-content-between gap-3" id="currentProjectSummary">
+                                <img src="{{ url_for('static', filename='img/prism_logo_960.webp') }}" alt="PRISM" height="44" class="flex-shrink-0">
+                                <div class="flex-grow-1">
+                                    <span class="fw-bold">Validating the current project</span>
+                                    <br>
+                                    <small class="text-muted" id="currentProjectTargetDetails" title="{{ current_project.path | default('') }}" aria-label="{{ current_project.path | default('') }}">{{ current_project.name }} · {{ current_project.path }}</small>
+                                    {% if project_schemas and project_schemas.schemas %}
+                                    <div class="small mt-2" id="currentProjectSchemas">
+                                        <span class="text-muted">Schemas in use:</span>
+                                        {% for schema in project_schemas.schemas %}
+                                        <span class="badge bg-white text-dark border border-success fw-normal" title="{% if schema.pinned %}Pinned in project.json{% else %}Latest version{% endif %}">{{ schema.name }} {{ schema.version }}{% if schema.pinned %} <i class="fas fa-thumbtack"></i>{% endif %}</span>
+                                        {% endfor %}
+                                        {% if project_schemas.local_additions %}
+                                        <span class="badge bg-warning text-dark fw-normal" title="Local terms and additions in code/specification/">+{{ project_schemas.local_additions }} local</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-exchange-alt me-1"></i>Change Project
+                                </a>
                             </div>
+                            {% else %}
+                            <div class="alert alert-warning py-2 mb-0" role="alert">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                No current project is selected. Choose a dataset folder under Advanced Options below.
+                            </div>
+                            {% endif %}
+                        </div>
 
+                        <!-- Advanced Options (disabled by default) -->
+                        <details class="mb-4"{% if not current_project.path %} open{% endif %}>
+                            <summary class="fw-bold text-success">
+                                <i class="fas fa-sliders-h me-2"></i>Advanced Options
+                                <span class="small text-muted ms-1">(other folder, NIfTI headers, BIDS mode, schemas)</span>
+                            </summary>
+                            <div class="mt-3">
                             <div class="border border-success rounded p-3 bg-light" id="uploadArea">
 
                                 <div class="mb-3 pb-3 border-bottom border-success-subtle">
@@ -100,20 +120,7 @@
                                         <input class="form-check-input" type="radio" name="validation_target" id="targetCurrentProject" value="current" data-project-path="{{ current_project.path | default('') }}" checked>
                                         <label class="form-check-label" for="targetCurrentProject">
                                             <span class="fw-bold">Default: Validate current project</span>
-                                            <br>
-                                            <small class="text-muted" id="currentProjectTargetDetails" title="{{ current_project.path | default('') }}" aria-label="{{ current_project.path | default('') }}">{{ current_project.name }} · {{ current_project.path }}</small>
                                         </label>
-                                    </div>
-
-                                    <div class="ms-4 mt-2">
-                                        <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary btn-sm">
-                                            <i class="fas fa-exchange-alt me-1"></i>Change Project
-                                        </a>
-                                    </div>
-                                    {% else %}
-                                    <div class="alert alert-warning py-2 mb-3" role="alert">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>
-                                        No current project is selected. Choose another dataset folder below.
                                     </div>
                                     {% endif %}
 
@@ -139,21 +146,14 @@
 
                                 <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
                             </div>
-                        </div>
 
-                        <div class="form-check form-switch mb-4">
-                            <input class="form-check-input" type="checkbox" id="check_nifti_headers" name="check_nifti_headers" value="true">
-                            <label class="form-check-label" for="check_nifti_headers">
-                                Run deep NIfTI header checks (off by default; headers are ignored)
-                            </label>
-                        </div>
-
-                        <!-- Advanced Options (disabled by default) -->
-                        <details class="mb-4">
-                            <summary class="fw-bold text-success">
-                                <i class="fas fa-sliders-h me-2"></i>Advanced Options
-                                <span class="small text-muted ms-1">(BIDS mode, warnings, schemas)</span>
-                            </summary>
+                                <div class="form-check form-switch my-3">
+                                    <input class="form-check-input" type="checkbox" id="check_nifti_headers" name="check_nifti_headers" value="true">
+                                    <label class="form-check-label" for="check_nifti_headers">
+                                        Run deep NIfTI header checks (off by default; headers are ignored)
+                                    </label>
+                                </div>
+                            </div>
                             <div class="mt-3 p-3 border border-success rounded bg-light">
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="advancedOptionsToggle">
@@ -226,7 +226,7 @@
                             </div>
                         </details>
                         
-                        <div class="mt-5 text-center">
+                        <div class="mt-4 text-center">
                             <button type="submit" class="btn btn-success btn-lg px-5" id="uploadBtn" {% if not current_project.path %}disabled{% endif %}>
                                 <i class="fas fa-check-circle me-2"></i>Start Validation
                             </button>
@@ -277,14 +277,7 @@
                         </div>
                     </form>
                 </div>
-        {% endcall %}
-
-        <!-- Local validation note -->
-        <div class="text-center text-muted">
-            <small>
-                <i class="fas fa-info-circle me-1"></i>
-                Note: Dataset validation is performed locally. Files are never uploaded to external servers.
-            </small>
+            </div>
         </div>
 </div>
 {% endblock %}

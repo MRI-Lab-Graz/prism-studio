@@ -223,3 +223,18 @@ def format_pending_hint(pending) -> list[str]:
             "Decide with: prism_tools modality-version update <project> <name> | freeze <project> <name>"
         )
     return lines
+
+
+def project_schema_summary(project_root, schema_dir=None) -> dict:
+    """What validation applies to this project: version per modality it has data for, and its local additions."""
+    from src.spec_overlay import list_all_local_items  # lazy: spec_overlay imports the specification
+
+    pins, _ = read_pins(project_root)
+    versions, sources = resolve_modality_versions(pins, schema_dir=schema_dir)
+    return {
+        "schemas": [
+            {"name": n, "version": versions[n], "pinned": sources[n] == "project.json"}
+            for n in present_modalities(project_root, schema_dir)
+        ],
+        "local_additions": len(list_all_local_items(project_root)),
+    }
