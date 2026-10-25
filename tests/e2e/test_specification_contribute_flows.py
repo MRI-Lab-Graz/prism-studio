@@ -563,3 +563,47 @@ def test_editing_the_name_after_picking_a_column_hides_use_in_my_open_project(ap
     expect(app_page.locator("#spec-m-use")).to_be_visible()
     app_page.locator("#spec-m-name").fill("Something else")
     expect(app_page.locator("#spec-m-use")).to_be_hidden()
+
+
+def test_each_share_names_its_own_download(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "sweat")
+    bare_page.locator("#spec-share-buttons").get_by_role("button").click()
+    expect(bare_page.locator("#spec-propose-download")).to_have_text("Download proposal.json")
+    expect(bare_page.locator("#spec-propose-open")).to_have_text("Open the prefilled form on GitHub")
+    bare_page.locator("#spec-propose-close").click()
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    bare_page.locator("#spec-nk-description").fill("Skin temperature from a wrist sensor.")
+    bare_page.locator("#spec-nk-sample").fill("time,temp\n0,36.5\n")
+    bare_page.locator("#spec-nk-share").click()
+    expect(bare_page.locator("#spec-propose-download")).to_have_text("Download new-kind-of-data.txt")
+
+
+def test_a_new_kind_too_long_for_a_link_says_what_to_paste(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    bare_page.locator("#spec-nk-description").fill("A wrist sensor. " * 450)  # about 7,200 characters
+    bare_page.locator("#spec-nk-sample").fill("time,temp\n0,zzsample-123\n")
+    bare_page.locator("#spec-nk-share").click()
+    open_link = bare_page.locator("#spec-propose-open")
+    expect(open_link).to_have_text("Open the form on GitHub")
+    href = open_link.get_attribute("href")
+    assert href == bare_page.locator("#spec-contribute").get_attribute("data-new-kind-form-url")
+    assert "zzsample" not in href
+    text = bare_page.locator("#spec-propose-text")
+    expect(text).to_contain_text("Paste the description, the closest kind of data and the sample from the download into their fields of the form.")
+    expect(text).not_to_contain_text("prefilled")
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("zzsample-123")
+
+
+def test_a_measurement_without_a_unit_is_refused(bare_page, studio_url):
+    bare_page.allowed_http[400] = "/api/spec/propose-metric"
+    choose_measurement(bare_page, studio_url)
+    bare_page.locator("#spec-m-name").fill("DHEA")
+    bare_page.locator("#spec-m-description").fill("Dehydroepiandrosterone in saliva.")
+    bare_page.locator("#spec-m-specimen").select_option("saliva")
+    expect(bare_page.locator("#spec-m-units option:checked")).to_have_text("Choose…")
+    bare_page.locator("#spec-m-share").click()
+    expect(bare_page.locator("#spec-message")).to_contain_text("units")
+    expect(bare_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
+    expect(bare_page.locator("#spec-propose-dialog")).not_to_be_visible()

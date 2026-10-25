@@ -253,7 +253,9 @@
         problemBox.classList.toggle("d-none", !problems.length);
         const open = document.getElementById("spec-propose-open");
         open.classList.toggle("d-none", !url || problems.length > 0);
+        open.textContent = copy.open || "Open the prefilled form on GitHub";
         if (url) open.href = url;
+        document.getElementById("spec-propose-download").textContent = "Download " + saved.name;
         document.getElementById("spec-propose-paste").classList.toggle("d-none", !pasteNote);
         download = saved;
         dialog.showModal();
@@ -313,9 +315,7 @@
         if (entry.values) {
             const select = el("select", "form-select form-select-sm");
             select.id = id;
-            const choose = option("Choose…", "");
-            choose.disabled = true;
-            select.appendChild(choose);
+            choose(select);
             entry.values.forEach(function (value) { select.appendChild(option(value, value)); });
             if (listed) select.appendChild(option("Missing: add a value…", "", "missing"));  // only lists PRISM can extend
             select.appendChild(option("Unknown", "", "unknown"));
@@ -544,6 +544,13 @@
         text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab. "
             + "Paste your sample into its \"Sample file\" field there (it is not in the link), then submit it.",
     };
+    const newKindTooLong = {  // the description does not fit in a link: the button opens the blank form
+        title: newKindCopy.title,
+        text: "Nothing is sent from this page. Your description is too long to go into the link, so the first button opens "
+            + "the empty form on GitHub in a new tab. Paste the description, the closest kind of data and the sample "
+            + "from the download into their fields of the form.",
+        open: "Open the form on GitHub",
+    };
 
     nk.file.addEventListener("change", async function () {
         const file = nk.file.files[0];
@@ -561,7 +568,7 @@
         const body = { description: nk.description.value, sample: nk.sample.value, closest: nk.closest.value || null };
         const { ok, data } = await call(urls.proposeNewKind, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
-        const copy = data.note ? { title: newKindCopy.title, text: newKindCopy.text + " The description is " + data.note + "." } : newKindCopy;
+        const copy = data.note ? newKindTooLong : newKindCopy;
         showDialog(copy, data.text, null, data.problems, data.issue_url || urls.newKindForm, false,
             { name: "new-kind-of-data.txt", type: "text/plain", text: data.text });
     });
