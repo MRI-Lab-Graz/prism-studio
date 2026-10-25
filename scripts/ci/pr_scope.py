@@ -1,6 +1,8 @@
-"""Tell CI whether a pull request is a bare modality proposal from the bot.
+"""Tell CI whether a pull request is a bare modality proposal from the retired bot.
 
-Such a PR only adds content under proposals/ (schema, sidecar, fixture); the
+The bot was retired in favour of prism-specification's "Propose a new kind of data"
+form, so content_only is now always false. Follow-up: remove this script and the CI
+`scope` job together. Such a PR only added content under proposals/ (schema, sidecar, fixture); the
 heavy code-oriented jobs have nothing to check there. Prints content_only=true|false.
 Usage: pr_scope.py <head_branch> <base_ref> <head_ref>
 """
@@ -10,7 +12,7 @@ from __future__ import annotations
 import subprocess
 import sys
 
-BOT_BRANCH_PREFIX = "modality/issue-"  # written by .github/workflows/propose-modality.yml
+BOT_BRANCH_PREFIX = "modality/issue-"  # inert: the bot that wrote these branches is retired; removed together with this script
 
 
 def content_only(branch: str, changed_files: list[str]) -> bool:
