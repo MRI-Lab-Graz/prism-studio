@@ -1,10 +1,13 @@
 """prism_tools.py spec local list|add-term|remove and spec propose (phase 1, Task 5): thin adapters over src.spec_overlay."""
 
+import argparse
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 FORM = "https://github.com/MRI-Lab-Graz/prism-specification/issues/new"
@@ -241,3 +244,139 @@ def test_a_term_request_for_a_kind_without_terms_is_a_clear_error(tmp_path):
     assert code == 1 and "prism:x" in json.loads(out)["error"]
     code, out = _run("spec", "local", "list", "--project", str(tmp_path / "p"), "--modality", "../x", "--json")
     assert code == 1 and "not a kind of data" in json.loads(out)["error"]
+
+
+def test_spec_example_json():
+    code, out = _run("spec", "example", "--modality", "biosample", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["template"] == "biosample-inflammation" and data["entries"]
+
+
+def test_spec_example_text_and_bad_modality():
+    code, out = _run("spec", "example", "--modality", "biosample")
+    assert code == 0 and "Technical.SpecimenType" in out and "serum" in out
+    code, _ = _run("spec", "example", "--modality", "../x", "--json")
+    assert code == 1
+
+
+def test_spec_propose_values_carries_not_sure_and_entries_into_the_url():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat",
+                     "--not-sure", "--closest", "biosample", "--entry", "Technical.Laboratory=Unknown", "--json")
+    data = json.loads(out)
+    assert code == 0 and "context=Not%20sure" in data["issue_url"] and "Technical.Laboratory%3A%20Unknown" in data["issue_url"]
+
+
+def test_spec_propose_entry_without_equals_exits_1():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat",
+                     "--entry", "oops", "--json")
+    assert code == 1 and not json.loads(out)["success"]
+
+
+_PV = ("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat")
+
+
+def _long_entries():
+    return [x for i in range(40) for x in ("--entry", f"F{i}=" + "x" * 190)]
+
+
+def test_json_result_keeps_the_context_when_the_url_is_too_long():
+    code, out = _run(*_PV, *_long_entries(), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["issue_url"] is None and data["context"].count("\n") == 39 and "F39: " in data["context"]
+
+
+def test_text_result_prints_the_context_when_the_url_is_too_long():
+    code, out = _run(*_PV, *_long_entries())
+    assert code == 0 and "Context field" in out and "F39: " in out
+
+
+def test_a_repeated_entry_field_exits_1():
+    code, out = _run(*_PV, "--entry", "A=1", "--entry", "A=2", "--json")
+    assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_new_kind_json_and_out(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_text("time\ttemp\n0\t33.1\n", encoding="utf-8")
+    out = tmp_path / "proposal.txt"
+    code, text = _run("spec", "propose-new-kind", "--description", "Skin temperature", "--sample", str(sample),
+                      "--closest", "physio", "--out", str(out), "--json")
+    data = json.loads(text)
+    assert code == 0 and data["success"] and data["problems"] == [] and data["issue_url"].startswith(FORM)
+    assert out.read_text(encoding="utf-8") == data["text"] and "Sample file:\ntime" in data["text"]
+
+
+def test_spec_propose_new_kind_refuses_an_oversize_sample_and_an_empty_description(tmp_path):
+    sample = tmp_path / "big.tsv"
+    sample.write_text("x" * 50_001, encoding="utf-8")
+    code, text = _run("spec", "propose-new-kind", "--description", " ", "--sample", str(sample), "--json")
+    data = json.loads(text)
+    assert code == 1 and not data["success"] and "the description is empty" in data["problems"] and data["issue_url"] is None
+    binary = tmp_path / "b.bin"
+    binary.write_bytes(b"\xff\xfe\x00")
+    code, text = _run("spec", "propose-new-kind", "--description", "d", "--sample", str(binary), "--json")
+    assert code == 1 and "UTF-8" in json.loads(text)["error"]
+
+
+def _kind_args(sample, description="Skin temperature", *extra):
+    return ["spec", "propose-new-kind", "--description", description, "--sample", str(sample), "--json", *extra]
+
+
+def test_spec_propose_new_kind_refuses_a_sample_cut_inside_a_character(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_bytes(("a" * 49_998 + "é" * 5).encode("utf-8"))  # 50,008 bytes; the read limit falls inside an é
+    code, text = _run(*_kind_args(sample))
+    data = json.loads(text)
+    assert code == 1 and any("larger than" in p for p in data["problems"])
+
+
+def test_spec_propose_new_kind_accepts_a_multibyte_sample_at_the_limit(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_bytes(("a" * 49_998 + "é").encode("utf-8"))  # exactly 50,000 bytes
+    code, text = _run(*_kind_args(sample))
+    assert code == 0 and json.loads(text)["problems"] == []
+
+
+@pytest.fixture
+def opened(monkeypatch):
+    monkeypatch.syspath_prepend(str(REPO / "app"))
+    monkeypatch.syspath_prepend(str(REPO))
+    from src.cli.commands import spec as spec_commands
+
+    calls = []
+    monkeypatch.setattr(spec_commands.webbrowser, "open", lambda url: calls.append(url) or True)
+    return spec_commands, calls
+
+
+def _call(spec_commands, tmp_path, description, sample_text="t\tv\n0\t1\n", open_=True):
+    sample = tmp_path / "s.tsv"
+    sample.write_text(sample_text, encoding="utf-8")
+    args = argparse.Namespace(description=description, sample=str(sample), closest=None, out=None, open=open_, json=True)
+    try:
+        spec_commands.cmd_spec_propose_new_kind(args)
+    except SystemExit as exc:
+        return exc.code
+
+
+def test_open_opens_the_form_once_on_success(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, "Skin temperature") is None
+    assert len(calls) == 1 and calls[0].startswith(FORM)
+
+
+def test_open_is_not_called_when_there_are_problems(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, " ") == 1 and calls == []
+
+
+def test_open_is_not_called_when_the_link_is_too_long(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, "long " * 2000) is None and calls == []
+
+
+def test_propose_patch_names_a_bad_kind_of_data_as_such(tmp_path):
+    project = str(_project(tmp_path / "p"))
+    code, out = _run("spec", "propose", "--project", project, "--patch", "--modality", "../x", "--json")
+    assert code == 1 and "not a kind of data" in json.loads(out)["error"]
+    code, out = _run("spec", "propose", "--project", project, "--patch", "--json")
+    assert code == 1 and "no schema additions" in json.loads(out)["error"]

@@ -125,9 +125,17 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
 
 def _checked_modality(modality) -> str:
     """`modality` when it is a kind of data with an official stable schema; every caller-supplied name that becomes a path passes here."""
-    if not (isinstance(modality, str) and re.fullmatch(MODALITY_NAME, modality) and isinstance(_official_schema(modality), dict)):
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    if not (
+        isinstance(modality, str) and re.fullmatch(MODALITY_NAME, modality)
+        and modality in current_specification().prism_modalities and isinstance(_official_schema(modality), dict)
+    ):
         raise OverlayError(f"{modality}: not a kind of data of this specification")
     return modality
+
+
+check_modality = _checked_modality  # the one public name: routes and commands refuse a bad name before they look for files
 
 
 def _patch_file(project_root, modality: str) -> Path:
@@ -321,6 +329,17 @@ def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
             "path": str(folder / problem.split(":", 1)[0]), "status": "invalid",
         })
     items += _patch_items(project_root, modality)
+    return items
+
+
+def list_all_local_items(project_root) -> list[dict]:
+    """The Propose page's list: biosample's terms and additions, plus the additions of every other kind of data."""
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    items = list_local_items(project_root, "biosample")
+    for modality in local_patch_modalities(project_root, current_specification().schemas)[0]:
+        if modality != "biosample":
+            items += _patch_items(project_root, modality)
     return items
 
 

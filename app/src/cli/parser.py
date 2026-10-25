@@ -1858,12 +1858,21 @@ def build_prism_tools_parsers(
     spec_subparsers.add_parser(
         "catalog", help="List what can be proposed (kinds of data, lists, known measurements)"
     ).add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_example = spec_subparsers.add_parser(
+        "example", help="Show what a kind of data accepts, with the example of a library template"
+    )
+    parser_spec_example.add_argument("--modality", required=True, help="The kind of data, for example biosample")
+    parser_spec_example.add_argument("--template", help="Library template stem (default: the first)")
+    parser_spec_example.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_values = spec_subparsers.add_parser(
         "propose-values", help="Propose missing choices in a list, without a project (sends nothing unless --open)"
     )
     parser_spec_values.add_argument("--modality", required=True, help="The kind of data, for example biosample")
     parser_spec_values.add_argument("--field", required=True, help="The list, for example Technical.SpecimenType")
     parser_spec_values.add_argument("--value", action="append", required=True, help="A value to propose (repeatable)")
+    parser_spec_values.add_argument("--not-sure", action="store_true", help="Say you are not sure which kind of data this belongs to")
+    parser_spec_values.add_argument("--closest", help="With --not-sure: the closest kind of data")
+    parser_spec_values.add_argument("--entry", action="append", help="A field you filled in, as FIELD=VALUE (repeatable)")
     parser_spec_values.add_argument("--out", help="Also save the proposal document (format v2) to this file")
     parser_spec_values.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
     parser_spec_values.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
@@ -1877,9 +1886,21 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
     parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")
+    parser_spec_metric.add_argument("--not-sure", action="store_true", help="Say you are not sure which kind of data this belongs to")
+    parser_spec_metric.add_argument("--closest", help="With --not-sure: the closest kind of data")
+    parser_spec_metric.add_argument("--entry", action="append", help="A field you filled in, as FIELD=VALUE (repeatable)")
     parser_spec_metric.add_argument("--out", help="Also save the proposal document (format v2) to this file")
     parser_spec_metric.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
     parser_spec_metric.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_kind = spec_subparsers.add_parser(
+        "propose-new-kind", help="Propose a whole new kind of data, without a project (sends nothing unless --open)"
+    )
+    parser_spec_kind.add_argument("--description", required=True, help="What the data is and how it is recorded")
+    parser_spec_kind.add_argument("--sample", required=True, help="A sample data file (UTF-8 text), pasted into the form by you")
+    parser_spec_kind.add_argument("--closest", help="The closest existing kind of data")
+    parser_spec_kind.add_argument("--out", help="Also save the proposal text to this file")
+    parser_spec_kind.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+    parser_spec_kind.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )

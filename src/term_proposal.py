@@ -23,6 +23,7 @@ MODALITY_NAME = r"[a-z][a-z0-9]*"  # a kind of data names a file (patches/<modal
 
 ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
 ISSUE_TEMPLATE = "propose-metric.yml"
+ISSUE_NEW_KIND_TEMPLATE = "propose-new-kind-of-data.yml"
 URL_LIMIT = 6000
 _OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue", "LOINC")
 
@@ -143,8 +144,10 @@ def _modality_of(document: dict) -> str:
     return first[1].removesuffix(".json")
 
 
-def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
-    """Prefilled issue-form URL for a proposal (sent as format v2), or None when it would be longer than `limit`."""
+def issue_url(proposal: dict, limit: int = URL_LIMIT, context: str | None = None) -> str | None:
+    """Prefilled issue-form URL for a proposal (sent as format v2), or None when it would be longer than `limit`.
+
+    `context` (optional) fills the form's Context field."""
     document = as_v2(proposal)
     terms = [t for path, t in document["files"].items() if path.startswith("terms/")]
     if terms:
@@ -159,6 +162,7 @@ def issue_url(proposal: dict, limit: int = URL_LIMIT) -> str | None:
             "template": ISSUE_TEMPLATE,
             "title": title,
             "proposal": json.dumps(document, separators=(",", ":"), ensure_ascii=False),
+            **({"context": context} if context else {}),
         },
         quote_via=quote,
     )
@@ -175,15 +179,21 @@ def specification_scripts_dir() -> Path:
     return next((c for c in candidates if c.is_dir()), candidates[0])
 
 
-def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
-    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
-
-    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
+def vendored_term_proposal():
+    """prism-specification's own term_proposal.py (vendored in scripts/specification/), loaded by path."""
     spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     if spec is None or spec.loader is None:
         raise ImportError("prism-specification's term_proposal.py cannot be loaded")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
+    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
+
+    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
+    module = vendored_term_proposal()
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
     stable = Path(DEFAULT_SCHEMA_DIR) / "stable"
     paths = list(document["files"])
@@ -202,7 +212,7 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     return problems
 
 
-def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, similar=None, alias=None) -> dict:
+def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, similar=None, alias=None, context: str | None = None) -> dict:
     """What `terms propose` and `spec propose` do with a finished proposal: optionally save it, optionally open
     the prefilled form, and describe it. Nothing is sent: opening the form is the user's browser, not an API call.
 
@@ -214,7 +224,7 @@ def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, si
     if out:
         saved = Path(out)
         saved.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    url = issue_url(proposal)
+    url = issue_url(proposal, context=context)
     opened = bool(open_browser and url and webbrowser.open(url))
     if opened:
         how = f"Opened the prefilled form in your browser:\n{url}"
@@ -225,6 +235,8 @@ def deliver_proposal(proposal: dict, *, out=None, open_browser: bool = False, si
     else:
         form = f"https://github.com/{ISSUE_REPO}/issues/new?template={ISSUE_TEMPLATE}"
         how = f"The proposal is too long for a link: open {form} and paste the proposal above into the field."
+        if context:
+            how += f"\nAnd this into the Context field:\n{context}"
     renaming = f'"{alias}"' if alias else "your column name"
     text = (
         "Proposal (nothing has been sent unless it says 'Opened' below):\n"

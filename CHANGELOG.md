@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The Propose page is a drill-down.** Pick the kind of data, then see the accepted example beside your proposal, with "Missing..." and
+  "Unknown" pull-downs for what you cannot fill in, then the measurements. "Nothing fits: a new kind of data" starts a new kind instead.
+- **A "Not sure" tick and the chosen entries travel with a proposal** as context for the maintainer.
+- **Propose a new kind of data** (page and `spec propose-new-kind`): a description plus a made-up sample. The sample is never put in the
+  link. Nothing validates until the maintainer merges it and a release carries it.
+- `spec example`: shows a kind of data and its accepted example.
+- `spec propose-values` and `spec propose-metric` take `--not-sure`, `--entry` and `--closest`.
 - **Added values can be shared for every modality.** `spec propose-values` drafts a proposal for any modality's list, and the Propose page
   lists every modality that has a list (it used to offer biosample only).
 - **Session controls grey out in a one-timepoint project.** When Study Design says `single`, the Survey, Biometrics and
@@ -24,13 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
 
 ### Changed
+- **Sharing additions refuses a bad kind-of-data name by name**, and list labels keep acronyms whole (DOI, License ID).
+- **Studio's own "Propose a New Modality" issue form and bot are retired.** prism-specification takes new kinds of data; `modality propose`
+  stays as the maintainer's drafting tool.
 - Studio carries prism-specification v1.3.0 (modalities described as data, proposals for every modality).
 - **The validator's column checks follow the specification.** Column-value checks and the strict file-name check read each modality's
   `describedColumns` from the specification instead of a hand-written list (`TABULAR_MODALITIES` is gone), so a new kind of data added in
   prism-specification is checked without a Studio code change.
 - **A project's added values validate for every modality.** `spec local add-values --modality <any>` now applies to every modality's
   value lists in that project's validation, not only biosample's; `spec local list` and `spec propose --patch` take `--modality` too.
-  The Propose page's "Use in my open project" stays biosample-only for now and shows the command for the other kinds of data.
+  "Use in my open project" and the additions list on the Propose page work for every kind of data.
 - **Modality schema conventions are checked by the vendored `scripts/specification/check_modalities.py`** in CI; Studio's own check is removed.
 - **`modality propose` drafts the entities entry** with `description` and `describedColumns`, and its `REGISTRATION.md` points to prism-specification.
 

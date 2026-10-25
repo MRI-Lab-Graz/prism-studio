@@ -4,19 +4,22 @@ from __future__ import annotations
 
 import json
 import sys
+import webbrowser
+from pathlib import Path
 
 from src.spec_overlay import (
     OverlayError,
     add_local_term,
     add_local_values,
+    check_modality,
     list_local_items,
     load_local_patches,
     proposal_for_local_terms,
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
-from src.term_proposal import deliver_proposal
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.term_proposal import deliver_proposal, vendored_term_proposal
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -38,6 +41,16 @@ def cmd_spec_catalog(args) -> None:
         if m["metrics"]:
             lines.append("  Known measurements: " + ", ".join(t["label"] for t in m["metrics"]))
     _emit(args, {"success": True, **catalog}, "\n".join(lines))
+
+
+def cmd_spec_example(args) -> None:
+    """Print each field of a kind of data with the example value of a library template; needs no project."""
+    try:
+        result = example_entries(args.modality, args.template)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    lines = [f"{e['field']}\t{e['example'] if e['example'] is not None else ''}" for e in result["entries"]]
+    _emit(args, {"success": True, **result}, "\n".join(lines) or "no fields")
 
 
 def cmd_spec_local_list(args) -> None:
@@ -119,6 +132,7 @@ def cmd_spec_propose(args) -> None:
     if not (args.all or args.term or args.patch):
         _fail(args, "say what to share: --term <id> (repeatable), --patch or --all")
     try:
+        check_modality(args.modality)
         if args.patch and not load_local_patches(args.project, args.modality)[0]:
             raise OverlayError("this project has no schema additions to share (see: spec local add-values)")
         result = proposal_for_local_terms(
@@ -136,12 +150,12 @@ def _deliver_result(args, result: dict) -> None:
             args, "the proposal does not pass the specification checks: " + "; ".join(result["problems"]),
             proposal=result["proposal"], problems=result["problems"],
         )
-    delivered = deliver_proposal(result["proposal"], out=args.out, open_browser=args.open)
+    delivered = deliver_proposal(result["proposal"], out=args.out, open_browser=args.open, context=result.get("context"))
     _emit(
         args,
         {
             "success": True, "proposal": result["proposal"], "document": delivered["document"],
-            "skipped": result["skipped"], "issue_url": delivered["issue_url"],
+            "skipped": result["skipped"], "context": result.get("context"), "issue_url": delivered["issue_url"],
             "opened": delivered["opened"], "saved": str(delivered["saved"]) if delivered["saved"] else None,
             "problems": [],
         },
@@ -150,10 +164,25 @@ def _deliver_result(args, result: dict) -> None:
     )
 
 
+def _cli_entries(args) -> dict[str, str]:
+    """`--entry FIELD=VALUE` (repeatable) as an ordered dict; split on the first `=`."""
+    entries = {}
+    for item in args.entry or []:
+        field, sep, value = item.partition("=")
+        if not sep or not field:
+            _fail(args, f"--entry {item!r}: use FIELD=VALUE")
+        if field in entries:
+            _fail(args, f"--entry {field!r} is given twice")
+        entries[field] = value
+    return entries
+
+
 def cmd_spec_propose_values(args) -> None:
     """Propose missing choices in a list (for example a new SpecimenType); needs no project. Sends nothing itself."""
     try:
-        result = proposal_for_values(args.modality, args.field, args.value)
+        result = proposal_for_values(
+            args.modality, args.field, args.value, entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest
+        )
     except OverlayError as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)
@@ -165,7 +194,43 @@ def cmd_spec_propose_metric(args) -> None:
         result = proposal_for_new_metric(
             args.name, args.description, args.units, args.specimen, args.alias, args.modality,
             project_root=args.project,
+            entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest,
         )
     except OverlayError as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)
+
+
+def cmd_spec_propose_new_kind(args) -> None:
+    """Propose a whole new kind of data from a description and a sample file; needs no project. Sends nothing itself."""
+    limit = vendored_term_proposal().MAX_BYTES
+    try:
+        with open(args.sample, "rb") as handle:
+            raw = handle.read(limit + 1)  # an oversize file is refused without reading all of it
+    except OSError as exc:
+        _fail(args, f"cannot read the sample file: {exc}")
+    try:
+        # over the limit the read was cut, maybe inside a character: decode loosely, the size check refuses it anyway
+        sample = raw.decode("utf-8", errors="replace" if len(raw) > limit else "strict")
+    except UnicodeDecodeError:
+        _fail(args, f"the sample file {args.sample} is not UTF-8 text")
+    try:
+        result = proposal_for_new_kind(args.description, sample, args.closest)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    problems, url = result["problems"], result["issue_url"]
+    if args.out:
+        Path(args.out).write_text(result["text"], encoding="utf-8")
+    opened = bool(args.open and not problems and url and webbrowser.open(url))
+    how = (
+        f"Opened the prefilled form in your browser; paste the sample file into its field:\n{url}" if opened
+        else f"To send it, run this again with --open (it opens the prefilled form; paste the sample file into its field):\n{url}" if url and not problems
+        else result["note"] or ""
+    )
+    _emit(
+        args,
+        {"success": not problems, "problems": problems, "issue_url": url, "text": result["text"], "note": result["note"], "opened": opened},
+        "\n".join(["Problems:", *(f"- {p}" for p in problems)]) if problems else f"{result['text']}\n{how}",
+    )
+    if problems:
+        sys.exit(1)

@@ -259,7 +259,7 @@ def test_a_survey_list_addition_is_shared_without_problems():
     assert result["problems"] == [] and result["issue_url"]
 
 
-def test_the_catalog_lists_every_modality_with_a_list():
+def test_the_catalog_lists_every_modality_with_a_list_among_others():
     from src.spec_contribute import spec_catalog
     names = {m["name"] for m in spec_catalog()["modalities"]}
-    assert {"biosample", "survey", "biometrics", "physio", "environment"} <= names and "events" not in names
+    assert {"biosample", "survey", "biometrics", "physio", "environment"} <= names

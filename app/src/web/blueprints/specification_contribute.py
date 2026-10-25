@@ -15,15 +15,16 @@ from src.spec_overlay import (
     OverlayError,
     add_local_term,
     add_local_values,
+    check_modality,
     find_unknown_metrics,
     find_unknown_values,
-    list_local_items,
+    list_all_local_items,
     load_local_patches,
     proposal_for_local_terms,
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -47,9 +48,12 @@ def list_local():
     project = _project()
     if project is None:  # a message, not a 4xx: the page is opened without a project all the time
         return jsonify({"success": False, "error": "Open a project first"})
+    items = list_all_local_items(project)
+    if "modality" in request.args:
+        items = [i for i in items if i["modality"] == request.args["modality"]]
     return jsonify({
         "success": True,
-        "items": list_local_items(project),
+        "items": items,
         "unknown_metrics": find_unknown_metrics(project),
         "unknown_values": find_unknown_values(project),
     })
@@ -96,8 +100,11 @@ def _values_change(operation):
     field, values = body.get("field"), body.get("values")
     if not (isinstance(field, str) and field and isinstance(values, list) and values and all(isinstance(v, str) for v in values)):
         return _error('Give "field" and a non-empty list "values" of strings')
+    modality = body.get("modality", "biosample")
+    if not isinstance(modality, str):
+        return _error('"modality" must be text')
     try:
-        result = operation(project, field, values)
+        result = operation(project, field, values, modality=modality)
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, "written": str(result["written"]) if result["written"] else None, "skipped": result.get("skipped", [])})
@@ -122,6 +129,11 @@ def _strings(value) -> bool:
     return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
 
+def _context_options(body: dict) -> dict:
+    """The "not sure" / entries / closest options of a propose request; spec_contribute validates them."""
+    return {"not_sure": body.get("not_sure", False), "entries": body.get("entries"), "closest": body.get("closest")}
+
+
 @specification_contribute_bp.route("/api/spec/propose-values", methods=["POST"])
 def propose_values():
     body = _body()
@@ -129,7 +141,7 @@ def propose_values():
     if not (isinstance(modality, str) and isinstance(field, str) and field and _strings(values)):
         return _error('Give "field" and a list "values" of strings')
     try:
-        return jsonify({"success": True, **proposal_for_values(modality, field, values)})
+        return jsonify({"success": True, **proposal_for_values(modality, field, values, **_context_options(body))})
     except OverlayError as exc:
         return _error(str(exc))
 
@@ -142,9 +154,21 @@ def propose_metric():
     if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts)):
         return _error('Give "name", "description", "units" and "specimen" as text and "aliases" as a list of text')
     try:
-        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project())
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), **_context_options(body))
     except OverlayError as exc:
         return _error(str(exc))
+    return jsonify({"success": True, **result})
+
+
+@specification_contribute_bp.route("/api/spec/propose-new-kind", methods=["POST"])
+def propose_new_kind():
+    body = _body()
+    try:
+        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"))
+    except OverlayError as exc:
+        return _error(str(exc))
+    if result["problems"]:
+        return jsonify({"success": False, "error": "; ".join(result["problems"]), **result}), 400
     return jsonify({"success": True, **result})
 
 
@@ -157,6 +181,9 @@ def propose():
     patch = body.get("patch", False)
     if not isinstance(patch, bool):
         return _error('"patch" must be true or false')
+    modality = body.get("modality", "biosample")
+    if not isinstance(modality, str):
+        return _error('"modality" must be text')
     if body.get("all") is True:
         ids = None
     elif patch and not any(k in body for k in ("id", "ids")):
@@ -168,9 +195,18 @@ def propose():
     else:
         return _error('Give "id", a non-empty list "ids", "all": true, or "patch": true')
     try:
-        if patch and not load_local_patches(project)[0]:
+        check_modality(modality)
+        if patch and not load_local_patches(project, modality)[0]:
             return _error("This project has no schema additions to share")
-        result = proposal_for_local_terms(project, ids, include_patch=patch or body.get("all") is True)
+        result = proposal_for_local_terms(project, ids, modality=modality, include_patch=patch or body.get("all") is True)
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})
+
+
+@specification_contribute_bp.route("/api/spec/example", methods=["GET"])
+def example():
+    try:
+        return jsonify({"success": True, **example_entries(request.args.get("modality", ""), request.args.get("template") or None)})
+    except OverlayError as exc:
+        return _error(str(exc))

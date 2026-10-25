@@ -4,7 +4,8 @@ import json
 
 import pytest
 
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_overlay import add_local_values
 from src.spec_overlay import OverlayError
 
 
@@ -16,7 +17,7 @@ def test_catalog_lists_biosample_with_specimen_types():
     biosample = _entry("biosample")
     specimen = next(x for x in biosample["lists"] if x["field"] == "Technical.SpecimenType")
     assert specimen["label"] == "Specimen type" and "saliva" in specimen["values"]
-    assert biosample["label"] == "Biosample"
+    assert biosample["label"].startswith("Lab results")
     assert biosample["metrics"] and all(m["id"].startswith("prism:") for m in biosample["metrics"])
 
 
@@ -24,13 +25,48 @@ def test_catalog_values_have_no_empty_strings():
     assert all("" not in x["values"] for m in spec_catalog()["modalities"] for x in m["lists"])
 
 
-def test_catalog_has_no_modality_without_lists():
-    assert _entry("events") is None
+def test_the_catalog_lists_every_kind_of_data_with_a_description():
+    mods = {m["name"]: m for m in spec_catalog()["modalities"]}
+    assert {"biosample", "survey", "physio", "events", "anat"} <= set(mods)
+    assert mods["anat"]["kind"] == "bids" and mods["anat"]["lists"] == []
+    assert mods["biosample"]["label"].startswith("Lab results")
+    assert "biosample-inflammation" in mods["biosample"]["templates"]
 
 
-def test_catalog_lists_every_modality_with_a_list():
-    modalities = spec_catalog()["modalities"]
-    assert modalities and all(m["lists"] for m in modalities)
+def test_example_entries_fill_the_example_from_the_library_template():
+    ex = example_entries("biosample")
+    by = {e["field"]: e for e in ex["entries"]}
+    assert ex["template"] == "biosample-inflammation"
+    assert by["Technical.SpecimenType"]["example"] == "serum" and "saliva" in by["Technical.SpecimenType"]["values"]
+    assert by["Technical.Laboratory"]["values"] is None
+    assert by["Technical.FastingRequired"]["example"] == "yes"
+    assert by["Technical.StorageTemperature"]["example"] == "-80"
+    assert not any(e["field"].startswith("Metadata") for e in ex["entries"])
+
+
+def test_a_kind_without_a_library_example_still_lists_its_entries():
+    ex = example_entries("physio")
+    assert ex["template"] is None and ex["entries"] and all(e["example"] is None for e in ex["entries"])
+
+
+def test_a_bids_kind_has_no_entries():
+    assert example_entries("anat")["entries"] == []
+
+
+@pytest.mark.parametrize("bad", ["../x", "Survey-AAI", "a/b"])
+def test_a_bad_template_name_is_refused(bad):
+    with pytest.raises(OverlayError):
+        example_entries("survey", bad)
+
+
+def test_an_unknown_kind_is_refused_for_the_example():
+    with pytest.raises(OverlayError):
+        example_entries("../x")
+
+
+def test_project_writes_accept_only_prism_kinds(tmp_path):
+    with pytest.raises(OverlayError):
+        add_local_values(tmp_path, "Name", ["x"], modality="project")
 
 
 def test_catalog_units_sorted_and_unique():
@@ -196,3 +232,105 @@ def test_values_are_deduplicated_keeping_order():
 def test_metric_for_a_kind_without_measurements_is_refused():
     with pytest.raises(OverlayError, match="no known measurements"):
         proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality="survey")
+
+
+def test_context_lists_not_sure_and_the_entries_in_order():
+    from src.spec_contribute import proposal_context
+    text = proposal_context({"Technical.SpecimenType": "sweat", "Technical.Laboratory": "Unknown"}, not_sure=True, closest="biosample")
+    assert text.splitlines() == ["Not sure which kind of data this belongs to (closest: biosample)",
+                                 "Technical.SpecimenType: sweat", "Technical.Laboratory: Unknown"]
+    assert proposal_context() is None
+
+
+@pytest.mark.parametrize("entries", [{"a": 1}, {1: "a"}, {"a": "x" * 201}, {str(i): "v" for i in range(101)}])
+def test_context_rejects_bad_entries(entries):
+    from src.spec_contribute import proposal_context
+    with pytest.raises(OverlayError):
+        proposal_context(entries)
+
+
+def test_the_issue_url_carries_the_context():
+    url = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], entries={"Study.Category": "Unknown"})["issue_url"]
+    assert "context=Study.Category%3A%20Unknown" in url
+
+
+def test_a_context_too_long_for_the_url_gives_no_url_but_keeps_the_context():
+    entries = {f"Field{i}": "x" * 200 for i in range(40)}  # 8,000 characters, over the 6,000 of a link
+    result = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], entries=entries)
+    assert result["issue_url"] is None and "Field39: " + "x" * 200 in result["context"]
+
+
+def test_the_metric_proposal_carries_the_context_too():
+    result = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", entries={"Technical.Laboratory": "Unknown"})
+    assert result["context"] == "Technical.Laboratory: Unknown" and "context=" in result["issue_url"]
+
+
+def test_the_context_is_built_from_the_entries_only():
+    import inspect
+
+    for builder in (proposal_for_values, proposal_for_new_metric):
+        assert "context" not in inspect.signature(builder).parameters, builder.__name__
+
+
+@pytest.mark.parametrize("entries", [{"a": "x\nFake: y"}, {"a\nb": "x"}, {"a": "x\ty"}, {"a": "x\x00"}])
+def test_context_rejects_control_characters(entries):
+    from src.spec_contribute import proposal_context
+    with pytest.raises(OverlayError):
+        proposal_context(entries)
+
+
+def test_a_new_kind_proposal_prefills_the_form_but_not_the_sample():
+    result = proposal_for_new_kind("Skin temperature from a wrist sensor\nOne file per session.", "time\ttemp\n0\t33.1\n", "physio")
+    assert result["problems"] == []
+    url = result["issue_url"]
+    assert "template=propose-new-kind-of-data.yml" in url and "closest_kind=physio" in url and "33.1" not in url
+    assert "title=%5BNew%20kind%20of%20data%5D%3A%20Skin%20temperature" in url
+    assert "Sample file:\ntime\ttemp" in result["text"] and "Closest kind of data: physio" in result["text"]
+
+
+def test_an_empty_description_and_a_huge_sample_are_problems():
+    result = proposal_for_new_kind("  ", "x" * 50_001)
+    assert "the description is empty" in result["problems"] and any("larger than" in p for p in result["problems"])
+    assert result["issue_url"] is None
+
+
+@pytest.mark.parametrize("args", [("x", "a\tb\n", "../x"), (1, "a", None), ("x", None, None), ("x", "a", 5)])
+def test_a_new_kind_proposal_refuses_a_bad_closest_or_non_text(args):
+    with pytest.raises(OverlayError):
+        proposal_for_new_kind(*args)
+
+
+def test_a_too_long_link_says_why_without_a_problem():
+    result = proposal_for_new_kind("long " * 2000, "a\tb\n")
+    assert result["issue_url"] is None and result["problems"] == [] and "too long for a link" in result["note"]
+    assert proposal_for_new_kind("short", "a\tb\n")["note"] is None
+
+
+def test_the_title_stops_at_a_windows_line_end():
+    url = proposal_for_new_kind("Skin temp\r\nsecond line", "a\tb\n")["issue_url"]
+    assert "title=%5BNew%20kind%20of%20data%5D%3A%20Skin%20temp&" in url
+
+
+@pytest.mark.parametrize("field, label", [
+    ("Study.DOI", "DOI"), ("Study.LicenseID", "License ID"), ("Study.LicenseURL", "License URL"),
+    ("StimulusPresentation.SoftwareRRID", "Software RRID"), ("Technical.SpecimenType", "Specimen type"),
+    ("Technical.FileFormat", "File format"), ("I18n.TranslationMethod", "Translation method"),
+    ("Privacy.IncludesExactGeo", "Includes exact geo"),
+])
+def test_labels_keep_acronyms_whole(field, label):
+    from src.spec_contribute import _list_label
+
+    assert _list_label(field) == label
+
+
+def test_yes_no_entries_offer_yes_and_no():
+    by = {e["field"]: e for e in example_entries("biosample")["entries"]}
+    assert by["Technical.FastingRequired"]["values"] == ["yes", "no"]
+    physio = {e["field"]: e for e in example_entries("physio")["entries"]}
+    assert physio["Acquisition.EyesOpen"]["values"] == ["yes", "no"]
+
+
+def test_an_empty_example_counts_as_no_example():
+    from src.spec_contribute import _example_text
+
+    assert _example_text("") is None and _example_text(False) == "no" and _example_text(0) == "0"

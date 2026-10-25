@@ -112,7 +112,9 @@ from src.cli.commands.survey import (
 from src.cli.commands.modality import cmd_modality_propose
 from src.cli.commands.spec import (
     cmd_spec_catalog,
+    cmd_spec_example,
     cmd_spec_propose_metric,
+    cmd_spec_propose_new_kind,
     cmd_spec_propose_values,
     cmd_spec_local_add_term,
     cmd_spec_local_add_values,
@@ -173,8 +175,10 @@ def main() -> None:
             "spec_local_remove_values": cmd_spec_local_remove_values,
             "spec_propose": cmd_spec_propose,
             "spec_catalog": cmd_spec_catalog,
+            "spec_example": cmd_spec_example,
             "spec_propose_values": cmd_spec_propose_values,
             "spec_propose_metric": cmd_spec_propose_metric,
+            "spec_propose_new_kind": cmd_spec_propose_new_kind,
             "terms_list": cmd_terms_list,
             "terms_show": cmd_terms_show,
             "terms_suggest": cmd_terms_suggest,

@@ -77,10 +77,14 @@ def dispatch_prism_tools(
             handlers["spec_propose"](args)
         elif args.action == "catalog":
             handlers["spec_catalog"](args)
+        elif args.action == "example":
+            handlers["spec_example"](args)
         elif args.action == "propose-values":
             handlers["spec_propose_values"](args)
         elif args.action == "propose-metric":
             handlers["spec_propose_metric"](args)
+        elif args.action == "propose-new-kind":
+            handlers["spec_propose_new_kind"](args)
         else:
             parsers["spec"].print_help()
     elif args.command == "terms":

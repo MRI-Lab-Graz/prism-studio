@@ -255,3 +255,14 @@ def test_the_share_and_remove_hints_of_a_survey_addition_name_the_modality(tmp_p
     share = [m for m in infos if "patches/survey.json" in m]
     assert len(share) == 1 and f'spec propose --project "{project}" --patch --modality survey' in share[0]
     assert any("remove-values" in m and "--modality survey" in m for m in infos)
+
+
+def test_list_all_local_items_covers_every_kind_of_data_with_a_patch(tmp_path):
+    from src.spec_overlay import add_local_values, list_all_local_items
+
+    project = _project(tmp_path / "p")
+    assert {i["modality"] for i in list_all_local_items(project)} <= {"biosample"}
+    add_local_values(project, "Technical.SpecimenType", ["sweat2"], modality="biosample")
+    add_local_values(project, "Study.LicenseID", ["cc-by-nc-local"], modality="survey")
+    pairs = {(i["modality"], i["layer"]) for i in list_all_local_items(project)}
+    assert {("biosample", 2), ("survey", 2)} <= pairs and {m for m, _ in pairs} == {"biosample", "survey"}

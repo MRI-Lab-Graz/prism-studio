@@ -143,7 +143,7 @@ def test_the_page_renders_and_every_specification_page_links_it(tmp_path):
                    env={**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}, capture_output=True)
     contribute = (tmp_path / "contribute.html").read_text(encoding="utf-8")
     assert (tmp_path / "contribute.status").read_text() == "200" and (tmp_path / "bogus.status").read_text() == "404"
-    assert "A missing measurement" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
+    assert "What kind of data?" in contribute and 'id="spec-contribute"' in contribute and "contribute.js" in contribute
     assert "/specifications/contribute" in (tmp_path / "survey.html").read_text(encoding="utf-8")
 
 
@@ -386,3 +386,96 @@ def test_new_routes_pass_the_project_gate():
 def test_oversized_proposal_reports_problems(client):
     data = client.post("/api/spec/propose-metric", json=dict(_METRIC, description="x" * 200000)).get_json()
     assert data["success"] is True and any("bytes" in p for p in data["problems"])
+
+
+def test_the_example_route_returns_the_entries(client):
+    data = client.get("/api/spec/example?modality=biosample").get_json()
+    assert data["success"] and data["template"] == "biosample-inflammation" and data["entries"]
+
+
+def test_the_example_route_refuses_a_bad_name(client):
+    response = client.get("/api/spec/example?modality=../x")
+    assert response.status_code == 400 and not response.get_json()["success"]
+
+
+def test_propose_values_carries_not_sure_and_entries(client):
+    body = {"field": "Technical.SpecimenType", "values": ["sweat"], "not_sure": True, "closest": "biosample", "entries": {"Technical.Laboratory": "Unknown"}}
+    data = client.post("/api/spec/propose-values", json=body).get_json()
+    assert data["context"].splitlines() == ["Not sure which kind of data this belongs to (closest: biosample)", "Technical.Laboratory: Unknown"]
+    assert "context=" in data["issue_url"]
+
+
+def test_propose_metric_carries_entries(client):
+    data = client.post("/api/spec/propose-metric", json=dict(_METRIC, entries={"Technical.Laboratory": "Unknown"})).get_json()
+    assert data["context"] == "Technical.Laboratory: Unknown"
+
+
+@pytest.mark.parametrize("extra", [{"not_sure": "yes"}, {"entries": ["a"]}, {"entries": {"a": 1}}, {"closest": 5}, {"not_sure": True, "closest": "nope"}])
+def test_propose_rejects_bad_context(client, extra):
+    for url, body in (("propose-values", {"field": "Technical.SpecimenType", "values": ["sweat"]}), ("propose-metric", _METRIC)):
+        response = client.post(f"/api/spec/{url}", json=dict(body, **extra))
+        assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_propose_new_kind_without_a_project(client):
+    data = client.post("/api/spec/propose-new-kind", json={"description": "Skin temperature", "sample": "t\tv\n0\t1\n", "closest": "physio"}).get_json()
+    assert data["success"] and data["problems"] == [] and data["issue_url"].startswith(FORM)
+    assert "Sample file:" in data["text"]
+
+
+@pytest.mark.parametrize("body", [
+    {"description": "d", "sample": 5}, {"description": "d", "sample": "x" * 50_001}, {"description": " ", "sample": "a"},
+    {"description": "d", "sample": "a", "closest": "../x"},
+])
+def test_propose_new_kind_refuses_bad_requests(client, body):
+    response = client.post("/api/spec/propose-new-kind", json=body)
+    data = response.get_json()
+    assert response.status_code == 400 and not data["success"] and data["error"]
+
+
+def test_propose_new_kind_route_explains_a_too_long_link(client):
+    data = client.post("/api/spec/propose-new-kind", json={"description": "long " * 2000, "sample": "a\tb\n"}).get_json()
+    assert data["success"] and data["issue_url"] is None and "too long for a link" in data["note"]
+
+
+def test_the_local_list_shows_a_survey_addition(client, tmp_path):
+    from src.spec_overlay import add_local_values
+
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    add_local_values(project, "Study.LicenseID", ["cc-by-nc-local"], modality="survey")
+    items = client.get("/api/spec/local").get_json()["items"]
+    assert any(i["modality"] == "survey" and "cc-by-nc-local" in str(i) for i in items)
+    only = client.get("/api/spec/local?modality=survey").get_json()["items"]
+    assert only and all(i["modality"] == "survey" for i in only)
+
+
+def _tree(root: Path) -> list:
+    return sorted((str(p), p.read_bytes()) for p in root.rglob("*") if p.is_file())
+
+
+def test_add_and_remove_values_honour_the_kind_of_data(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
+    assert client.post("/api/spec/local/add-values", json=body).status_code == 200
+    assert client.post("/api/spec/local/remove-values", json=body).status_code == 200
+    before = _tree(project)
+    for bad in ("../x", "Survey", 5):
+        assert client.post("/api/spec/local/add-values", json={**body, "modality": bad}).status_code == 400
+    assert _tree(project) == before
+
+
+def test_propose_takes_the_kind_of_data(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
+    client.post("/api/spec/local/add-values", json=body)
+    assert client.post("/api/spec/propose", json={"patch": True, "modality": "survey"}).status_code == 200
+    before = _tree(project)
+    for bad in ("../x", "Survey"):
+        r = client.post("/api/spec/propose", json={"patch": True, "modality": bad})
+        assert r.status_code == 400 and "not a kind of data" in r.get_json()["error"]
+    assert _tree(project) == before
+    assert "no schema additions" in client.post("/api/spec/propose", json={"patch": True, "modality": "physio"}).get_json()["error"]
+    assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "modality": "survey"}).status_code == 400

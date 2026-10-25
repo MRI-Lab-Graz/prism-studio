@@ -65,12 +65,9 @@ not already be used by PRISM or BIDS. `blood` for example is a BIDS suffix
 
 ## Submit it
 
-**On GitHub:** open a *Propose a New Modality* issue, drag in the workbook and
-the sample file, tick the privacy box. A bot is meant to check both and open a
-draft pull request (automatically only when the issue author is an owner,
-member or collaborator of the repository; otherwise a maintainer takes it from
-here), or comment what to fix (then open a new issue with the corrected files). A
-*private* organisation membership is seen as an outsider; make it public.
+**On GitHub:** use the Propose page in Studio, or open the
+[Propose a new kind of data](https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-new-kind-of-data.yml)
+form in prism-specification. A maintainer takes it from there.
 
 **From the command line:**
 
@@ -90,8 +87,7 @@ A maintainer follows `REGISTRATION.md` (add the schema, the entities entry and
 release, run `python scripts/sync_specification.py --tag <tag>` in Studio, add
 the docs card and toctree entry and run the checks including `modality-docs`) and reviews units, ranges and the
 sample. After the merge the modality is available in the next PRISM release.
-GitHub does not start CI from the bot's own push; a maintainer starts it by
-approving the run or pushing. While the pull request only adds files under
+While the pull request only adds files under
 `proposals/`, CI runs a reduced set (repo checks plus
 `tests/test_modality_proposal_fixtures.py`) and skips the docs build and the
 cross-platform tests. The fixture test stays red until the modality is
@@ -101,18 +97,8 @@ page, toctree entry, card, `entities` table row or suffix mention.
 
 ## For maintainers
 
-- The label `type: new-modality` must exist in the repository (the issue form
-  applies it; if it is missing the bot never starts).
-- The repository setting "Allow GitHub Actions to create and approve pull
-  requests" must be on for the bot to open PRs; otherwise open the PR by hand
-  from the pushed branch.
-- PRs are opened automatically only for OWNER, MEMBER and COLLABORATOR authors.
 - Do not open a contributor's original `.xlsx` in desktop Excel (formulas or
   external links); review the generated JSON instead.
-- The bot has run on real issues (#179-#181, draft PR #182): GitHub accepts
-  `.tsv`/`.yml` attachments, the artifact handoff between the two jobs works and
-  the draft PR is created. That run also showed that a *private* organisation
-  membership makes the author an outsider (no automatic PR).
 - Registration happens in the prism-specification repository (schema, entities
   entry, `specs/<name>.md`), then a Studio sync (the generated `REGISTRATION.md`
   lists the steps).
