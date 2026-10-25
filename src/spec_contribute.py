@@ -236,7 +236,7 @@ def proposal_for_new_metric(
 def proposal_for_new_kind(description: str, sample: str, closest: str | None = None) -> dict:
     """The proposal for a whole new kind of data (a description and a pasted sample file); needs no project.
 
-    Returns {"issue_url", "text", "problems"}. The form is prefilled with the description and the closest kind;
+    Returns {"issue_url", "text", "problems", "note"} (`note` says why there is no link when it would be too long). The form is prefilled with the description and the closest kind;
     the sample is never in the link (the user pastes it), `text` is the download with everything.
     """
     for name, value in (("description", description), ("sample", sample), ("closest", closest)):
@@ -248,14 +248,16 @@ def proposal_for_new_kind(description: str, sample: str, closest: str | None = N
         raise OverlayError(f"unknown kind of data {closest!r}; choose one of: {', '.join(current_specification().rules.modalities)}")
     description = description.strip()
     problems = (["the description is empty"] if not description else []) + vendored_term_proposal().sample_problems(sample)
-    title = "[New kind of data]: " + description.partition("\n")[0][:60]
+    title = "[New kind of data]: " + (description.splitlines() or [""])[0][:60]
     query = urlencode(
         {"template": ISSUE_NEW_KIND_TEMPLATE, "title": title, "description": description, **({"closest_kind": closest} if closest else {})},
         quote_via=quote,
     )
     url = f"https://github.com/{ISSUE_REPO}/issues/new?{query}"
+    too_long = not problems and len(url) > URL_LIMIT
     return {
-        "issue_url": url if not problems and len(url) <= URL_LIMIT else None,
+        "issue_url": url if not problems and not too_long else None,
+        "note": "too long for a link: use the download and paste it into the form" if too_long else None,
         "text": f"Description:\n{description}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{sample}\n",
         "problems": problems,
     }

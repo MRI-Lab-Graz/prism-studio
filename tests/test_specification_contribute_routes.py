@@ -431,3 +431,8 @@ def test_propose_new_kind_refuses_bad_requests(client, body):
     response = client.post("/api/spec/propose-new-kind", json=body)
     data = response.get_json()
     assert response.status_code == 400 and not data["success"] and data["error"]
+
+
+def test_propose_new_kind_route_explains_a_too_long_link(client):
+    data = client.post("/api/spec/propose-new-kind", json={"description": "long " * 2000, "sample": "a\tb\n"}).get_json()
+    assert data["success"] and data["issue_url"] is None and "too long for a link" in data["note"]

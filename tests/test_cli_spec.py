@@ -1,10 +1,13 @@
 """prism_tools.py spec local list|add-term|remove and spec propose (phase 1, Task 5): thin adapters over src.spec_overlay."""
 
+import argparse
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 FORM = "https://github.com/MRI-Lab-Graz/prism-specification/issues/new"
@@ -313,3 +316,59 @@ def test_spec_propose_new_kind_refuses_an_oversize_sample_and_an_empty_descripti
     binary.write_bytes(b"\xff\xfe\x00")
     code, text = _run("spec", "propose-new-kind", "--description", "d", "--sample", str(binary), "--json")
     assert code == 1 and "UTF-8" in json.loads(text)["error"]
+
+
+def _kind_args(sample, description="Skin temperature", *extra):
+    return ["spec", "propose-new-kind", "--description", description, "--sample", str(sample), "--json", *extra]
+
+
+def test_spec_propose_new_kind_refuses_a_sample_cut_inside_a_character(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_bytes(("a" * 49_998 + "é" * 5).encode("utf-8"))  # 50,008 bytes; the read limit falls inside an é
+    code, text = _run(*_kind_args(sample))
+    data = json.loads(text)
+    assert code == 1 and any("larger than" in p for p in data["problems"])
+
+
+def test_spec_propose_new_kind_accepts_a_multibyte_sample_at_the_limit(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_bytes(("a" * 49_998 + "é").encode("utf-8"))  # exactly 50,000 bytes
+    code, text = _run(*_kind_args(sample))
+    assert code == 0 and json.loads(text)["problems"] == []
+
+
+@pytest.fixture
+def opened(monkeypatch):
+    monkeypatch.syspath_prepend(str(REPO / "app"))
+    monkeypatch.syspath_prepend(str(REPO))
+    from src.cli.commands import spec as spec_commands
+
+    calls = []
+    monkeypatch.setattr(spec_commands.webbrowser, "open", lambda url: calls.append(url) or True)
+    return spec_commands, calls
+
+
+def _call(spec_commands, tmp_path, description, sample_text="t\tv\n0\t1\n", open_=True):
+    sample = tmp_path / "s.tsv"
+    sample.write_text(sample_text, encoding="utf-8")
+    args = argparse.Namespace(description=description, sample=str(sample), closest=None, out=None, open=open_, json=True)
+    try:
+        spec_commands.cmd_spec_propose_new_kind(args)
+    except SystemExit as exc:
+        return exc.code
+
+
+def test_open_opens_the_form_once_on_success(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, "Skin temperature") is None
+    assert len(calls) == 1 and calls[0].startswith(FORM)
+
+
+def test_open_is_not_called_when_there_are_problems(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, " ") == 1 and calls == []
+
+
+def test_open_is_not_called_when_the_link_is_too_long(opened, tmp_path):
+    spec_commands, calls = opened
+    assert _call(spec_commands, tmp_path, "long " * 2000) is None and calls == []

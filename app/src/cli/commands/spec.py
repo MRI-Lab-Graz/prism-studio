@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import sys
+import webbrowser
+from pathlib import Path
 
 from src.spec_overlay import (
     OverlayError,
@@ -16,9 +18,6 @@ from src.spec_overlay import (
     remove_local_values,
 )
 from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
-import webbrowser
-from pathlib import Path
-
 from src.term_proposal import deliver_proposal, vendored_term_proposal
 
 
@@ -209,12 +208,10 @@ def cmd_spec_propose_new_kind(args) -> None:
     except OSError as exc:
         _fail(args, f"cannot read the sample file: {exc}")
     try:
-        sample = raw.decode("utf-8")
+        # over the limit the read was cut, maybe inside a character: decode loosely, the size check refuses it anyway
+        sample = raw.decode("utf-8", errors="replace" if len(raw) > limit else "strict")
     except UnicodeDecodeError:
-        if len(raw) > limit:  # cut mid-character: it is too big anyway
-            sample = raw.decode("utf-8", errors="ignore")
-        else:
-            _fail(args, f"the sample file {args.sample} is not UTF-8 text")
+        _fail(args, f"the sample file {args.sample} is not UTF-8 text")
     try:
         result = proposal_for_new_kind(args.description, sample, args.closest)
     except OverlayError as exc:
@@ -226,11 +223,11 @@ def cmd_spec_propose_new_kind(args) -> None:
     how = (
         f"Opened the prefilled form in your browser; paste the sample file into its field:\n{url}" if opened
         else f"To send it, run this again with --open (it opens the prefilled form; paste the sample file into its field):\n{url}" if url and not problems
-        else ""
+        else result["note"] or ""
     )
     _emit(
         args,
-        {"success": not problems, "problems": problems, "issue_url": url, "text": result["text"], "opened": opened},
+        {"success": not problems, "problems": problems, "issue_url": url, "text": result["text"], "note": result["note"], "opened": opened},
         "\n".join(["Problems:", *(f"- {p}" for p in problems)]) if problems else f"{result['text']}\n{how}",
     )
     if problems:

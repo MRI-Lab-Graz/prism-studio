@@ -290,3 +290,14 @@ def test_an_empty_description_and_a_huge_sample_are_problems():
 def test_a_new_kind_proposal_refuses_a_bad_closest_or_non_text(args):
     with pytest.raises(OverlayError):
         proposal_for_new_kind(*args)
+
+
+def test_a_too_long_link_says_why_without_a_problem():
+    result = proposal_for_new_kind("long " * 2000, "a\tb\n")
+    assert result["issue_url"] is None and result["problems"] == [] and "too long for a link" in result["note"]
+    assert proposal_for_new_kind("short", "a\tb\n")["note"] is None
+
+
+def test_the_title_stops_at_a_windows_line_end():
+    url = proposal_for_new_kind("Skin temp\r\nsecond line", "a\tb\n")["issue_url"]
+    assert "title=%5BNew%20kind%20of%20data%5D%3A%20Skin%20temp&" in url
