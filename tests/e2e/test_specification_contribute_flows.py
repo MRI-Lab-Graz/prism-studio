@@ -136,14 +136,16 @@ def test_a_missing_value_is_shared_with_the_rest_as_context(bare_page, studio_ur
     proposal_entry(bare_page, "Collection method").select_option("swab")
     proposal_entry(bare_page, "Anticoagulant").select_option(label="Unknown")
     proposal_entry(bare_page, "Laboratory").fill("Our lab")
+    bare_page.get_by_label("Unknown: Assay method").check()
     bare_page.locator("#spec-share-buttons").get_by_role("button").click()
     expect(bare_page.locator("#spec-propose-dialog")).to_be_visible()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("sweat")
     expect(bare_page.locator("#spec-propose-json")).not_to_contain_text("swab")  # context only, not proposed
     context = bare_page.locator("#spec-propose-context")
     expect(context).to_contain_text("Technical.CollectionMethod: swab")
-    expect(context).to_contain_text("Technical.Anticoagulant: unknown")
+    expect(context).to_contain_text("Technical.Anticoagulant: Unknown")
     expect(context).to_contain_text("Technical.Laboratory: Our lab")
+    expect(context).to_contain_text("Technical.AssayMethod: Unknown")
     expect(context).to_contain_text("closest: biosample")
     href = bare_page.locator("#spec-propose-open").get_attribute("href")
     assert href.startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
@@ -607,3 +609,13 @@ def test_a_measurement_without_a_unit_is_refused(bare_page, studio_url):
     expect(bare_page.locator("#spec-message")).to_contain_text("units")
     expect(bare_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
     expect(bare_page.locator("#spec-propose-dialog")).not_to_be_visible()
+
+
+def test_the_open_measurement_form_follows_a_new_sample_type(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    pick_specimen(bare_page, "saliva")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    expect(bare_page.locator("#spec-m-specimen")).to_have_value("saliva")
+    pick_specimen(bare_page, "serum")
+    expect(bare_page.locator("#spec-m-pick")).to_have_value("missing")
+    expect(bare_page.locator("#spec-m-specimen")).to_have_value("serum")

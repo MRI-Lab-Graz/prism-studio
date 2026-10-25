@@ -250,18 +250,26 @@ def test_context_rejects_bad_entries(entries):
 
 
 def test_the_issue_url_carries_the_context():
-    url = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], context="Study.Category: Unknown")["issue_url"]
+    url = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], entries={"Study.Category": "Unknown"})["issue_url"]
     assert "context=Study.Category%3A%20Unknown" in url
 
 
 def test_a_context_too_long_for_the_url_gives_no_url_but_keeps_the_context():
-    result = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], context="x" * 7000)
-    assert result["issue_url"] is None and result["context"] == "x" * 7000
+    entries = {f"Field{i}": "x" * 200 for i in range(40)}  # 8,000 characters, over the 6,000 of a link
+    result = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], entries=entries)
+    assert result["issue_url"] is None and "Field39: " + "x" * 200 in result["context"]
 
 
 def test_the_metric_proposal_carries_the_context_too():
-    result = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", context="Technical.Laboratory: Unknown")
+    result = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", entries={"Technical.Laboratory": "Unknown"})
     assert result["context"] == "Technical.Laboratory: Unknown" and "context=" in result["issue_url"]
+
+
+def test_the_context_is_built_from_the_entries_only():
+    import inspect
+
+    for builder in (proposal_for_values, proposal_for_new_metric):
+        assert "context" not in inspect.signature(builder).parameters, builder.__name__
 
 
 @pytest.mark.parametrize("entries", [{"a": "x\nFake: y"}, {"a\nb": "x"}, {"a": "x\ty"}, {"a": "x\x00"}])

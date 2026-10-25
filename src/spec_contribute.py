@@ -54,12 +54,6 @@ def proposal_context(entries: dict[str, str] | None = None, not_sure: bool = Fal
     return "\n".join(lines) or None
 
 
-def _context(context, entries, not_sure, closest) -> str | None:
-    """An explicit `context` text followed by the one built from `entries` / `not_sure` / `closest` (either may be empty)."""
-    built = proposal_context(entries, not_sure, closest)
-    return "\n".join(t for t in (context, built) if t) or None
-
-
 def _result(proposal: dict, registry: dict, specimens=None, skipped=(), context: str | None = None) -> dict:
     """The result both builders return; nothing is written."""
     document = as_v2(proposal)
@@ -160,14 +154,14 @@ def example_entries(modality: str, template: str | None = None) -> dict:
 
 
 def proposal_for_values(
-    modality: str, field: str, values: list[str], context: str | None = None,
+    modality: str, field: str, values: list[str],
     entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
 ) -> dict:
     """The proposal for new choices in one list of a kind of data; needs no project and writes nothing.
 
     Returns {"proposal", "document" (format v2), "context", "issue_url", "problems", "skipped"}; `skipped` are values already official.
     """
-    context = _context(context, entries, not_sure, closest)
+    context = proposal_context(entries, not_sure, closest)
     kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
@@ -197,14 +191,14 @@ def proposal_for_values(
 def proposal_for_new_metric(
     name: str, description: str, units: str, specimen: str,
     aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
-    context: str | None = None, entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
+    entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
 ) -> dict:
     """The proposal for one missing measurement (its analyte term and the specimen-specific child); needs no project.
 
     `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
-    context = _context(context, entries, not_sure, closest)
+    context = proposal_context(entries, not_sure, closest)
     kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")

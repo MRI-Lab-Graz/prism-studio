@@ -329,7 +329,7 @@
                 entry: entry, row: row, read: function () {
                     const kind = select.selectedOptions[0].dataset.kind;
                     if (kind === "missing") return { missing: missing.value.trim() };
-                    return { value: kind === "unknown" ? "unknown" : select.value };
+                    return { value: kind === "unknown" ? "Unknown" : select.value };
                 },
             };
         }
@@ -347,7 +347,7 @@
         unknown.addEventListener("change", function () { text.disabled = unknown.checked; });
         unknownBox.append(unknown, unknownLabel);
         row.append(text, unknownBox);
-        return { entry: entry, row: row, read: function () { return { value: unknown.checked ? "unknown" : text.value.trim() }; } };
+        return { entry: entry, row: row, read: function () { return { value: unknown.checked ? "Unknown" : text.value.trim() }; } };
     }
 
     function missingLists() {
@@ -447,7 +447,7 @@
     function chosenSpecimen() {
         const answer = answers.find(function (a) { return a.entry.field === "Technical.SpecimenType"; });
         const read = answer ? answer.read() : {};
-        return read.value === "unknown" ? {} : read;
+        return read.value === "Unknown" ? {} : read;
     }
 
     // Step 3: the official measurements (only those of the chosen sample type, if one is chosen), then "Missing".
@@ -523,7 +523,11 @@
         showPick();
         if (m.pick.value === "missing") prefillSpecimen();
     });
-    proposalBox.addEventListener("change", function () { if (currentKind() && currentKind().metrics) fillPick(); });
+    proposalBox.addEventListener("change", function () {
+        if (!currentKind() || !currentKind().metrics) return;
+        fillPick();
+        if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
+    });
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
     m.share.addEventListener("click", function () {
         propose({
