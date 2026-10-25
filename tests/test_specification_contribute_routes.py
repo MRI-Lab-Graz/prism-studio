@@ -433,6 +433,13 @@ def test_propose_new_kind_refuses_bad_requests(client, body):
     assert response.status_code == 400 and not data["success"] and data["error"]
 
 
+def test_propose_new_kind_takes_a_free_name_and_refuses_a_bids_name(client):
+    body = {"description": "Skin temperature", "sample": "t\tv\n0\t1\n"}
+    assert "Suggested name: skintemp" in client.post("/api/spec/propose-new-kind", json={**body, "name": "skintemp"}).get_json()["text"]
+    response = client.post("/api/spec/propose-new-kind", json={**body, "name": "func"})
+    assert response.status_code == 400 and "already taken" in response.get_json()["error"]
+
+
 def test_propose_new_kind_route_explains_a_too_long_link(client):
     data = client.post("/api/spec/propose-new-kind", json={"description": "long " * 2000, "sample": "a\tb\n"}).get_json()
     assert data["success"] and data["issue_url"] is None and "too long for a link" in data["note"]

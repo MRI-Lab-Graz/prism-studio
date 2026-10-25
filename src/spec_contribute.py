@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from urllib.parse import quote, urlencode
 
 from src.spec_overlay import OverlayError, _enum_of, _value_at, _project_specimens, _official_schema, _vendored_or_error
@@ -80,17 +81,16 @@ def spec_catalog() -> dict:
     spec = current_specification()
     rules = spec.rules
     modalities, units = [], set()
-    for name in sorted(n for n in rules.modalities if n not in rules.aliases):
+    # BIDS kinds are left out: PRISM passes them through and cannot change the BIDS schemas.
+    for name in sorted(n for n in rules.modalities if n not in rules.aliases and rules.modalities[n].kind == "prism"):
         rule = rules.modalities[name]
-        is_prism = rule.kind == "prism"
-        fields = spec.patchable_fields(name) if is_prism else []
+        fields = spec.patchable_fields(name)
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable") if fields else {}
-        registry = load_registry(name) if is_prism else {}
+        registry = load_registry(name)
         units.update(t["Units"] for t in registry.values() if t.get("Units"))
         modalities.append({
             "name": name,
             "label": rule.description or name,
-            "kind": "prism" if is_prism else "bids",
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
             "metrics": [
                 {
@@ -106,6 +106,26 @@ def spec_catalog() -> dict:
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}
 
 
+# Plain titles for the schema's sections (the same names recur across kinds of data); others are spelled out from their name.
+_SECTION_TITLES = {
+    "Study": "About the measure", "Technical": "How the data is collected", "I18n": "Languages", "Scoring": "Scoring",
+    "Normative": "Norms and reference values", "Recording": "Signal type", "TriggerAnnotations": "Triggers",
+    "Acquisition": "Recording conditions", "Processing": "Processing", "Privacy": "Privacy", "Provenance": "Data source",
+    "StimulusPresentation": "Stimulus presentation",
+}
+
+
+def _section(name: str, labels: list[str], proposable: bool) -> dict:
+    """A section's plain title, a summary naming its first entries, and whether it holds a list that can be extended."""
+    if name in _SECTION_TITLES:
+        title = _SECTION_TITLES[name]
+    elif name.islower():  # events: one section per column of the events file
+        title = f'The "{name}" column'
+    else:
+        title = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", name).capitalize()
+    return {"title": title, "summary": ", ".join(labels[:4]) + (", …" if len(labels) > 4 else ""), "proposable": proposable}
+
+
 def _example_text(value) -> str | None:
     if value is None or value == "" or isinstance(value, (dict, list)):
         return None
@@ -115,7 +135,9 @@ def _example_text(value) -> str | None:
 def example_entries(modality: str, template: str | None = None) -> dict:
     """What a kind of data accepts, field by field, with the value a library template gives as example.
 
-    Entries are the leaf properties two levels down (section.field) of the schema, except `Metadata`.
+    Entries are the leaf properties two levels down (section.field) of the schema, except `Metadata`; `sections` maps each
+    section to a plain title, a summary of its entries and `proposable` (it holds a list that can be extended; the page
+    shows only those sections, the others could only ever be context).
     """
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this package
 
@@ -125,8 +147,6 @@ def example_entries(modality: str, template: str | None = None) -> dict:
     templates = current["templates"]
     if template is not None and template not in templates:
         raise OverlayError(f"unknown template {template!r} for {modality}; choose one of: {', '.join(templates) or 'none'}")
-    if current["kind"] != "prism":
-        return {"modality": modality, "template": None, "templates": [], "entries": []}
     template = template or (templates[0] if templates else None)
     data = {}
     if template:
@@ -135,7 +155,7 @@ def example_entries(modality: str, template: str | None = None) -> dict:
         except (OSError, ValueError):
             data = {}
     schema = load_schema(modality, DEFAULT_SCHEMA_DIR, "stable") or {}
-    entries = []
+    entries, labels = [], {}
     for section, node in (schema.get("properties") or {}).items():
         if section == "Metadata" or not isinstance(node, dict):
             continue
@@ -149,8 +169,16 @@ def example_entries(modality: str, template: str | None = None) -> dict:
             entries.append({
                 "field": field, "label": _list_label(field),
                 "example": _example_text(_value_at(data, field)), "values": values or None,
+                "description": child.get("description"),
             })
-    return {"modality": modality, "template": template, "templates": templates, "entries": entries}
+    lists, proposable = {x["field"] for x in current["lists"]}, set()
+    for entry in entries:
+        section = entry["field"].split(".")[0]
+        labels.setdefault(section, []).append(entry["label"])
+        if entry["field"] in lists:
+            proposable.add(section)
+    sections = {name: _section(name, names, name in proposable) for name, names in labels.items()}
+    return {"modality": modality, "template": template, "templates": templates, "entries": entries, "sections": sections}
 
 
 def proposal_for_values(
@@ -232,22 +260,44 @@ def proposal_for_new_metric(
     return _result({"modality": modality, "terms": [parent, child]}, registry, specimens, context=context)
 
 
-def proposal_for_new_kind(description: str, sample: str, closest: str | None = None) -> dict:
+@lru_cache(maxsize=1)
+def _bids_names() -> frozenset[str]:
+    """Every name the BIDS schema uses (data types, suffixes, entities with their short names, root files), lowercase."""
+    from bidsschematools.schema import load_schema  # lazy: only the new-kind proposal needs the BIDS schema
+
+    objects = load_schema().objects
+    names = {*objects.datatypes, *objects.suffixes, *objects.files, *objects.entities}
+    names.update(entity["name"] for entity in objects.entities.values())
+    return frozenset(n.lower() for n in names)
+
+
+def check_new_kind_name(name: str) -> str:
+    """A suggested name for a new kind of data: a short lowercase label, not used by BIDS (which PRISM cannot change) or by PRISM."""
+    if isinstance(name, str) and (name.lower() in _bids_names() or name.lower() in current_specification().rules.modalities):
+        raise OverlayError(f"name {name!r} is already taken by BIDS or PRISM; choose another")
+    if not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9]{1,31}", name):
+        raise OverlayError("name must be 2 to 32 lowercase letters and digits, starting with a letter")
+    return name
+
+
+def proposal_for_new_kind(description: str, sample: str, closest: str | None = None, name: str | None = None) -> dict:
     """The proposal for a whole new kind of data (a description and a pasted sample file); needs no project.
 
     Returns {"issue_url", "text", "problems", "note"} (`note` says why there is no link when it would be too long). The form is prefilled with the description and the closest kind;
     the sample is never in the link (the user pastes it), `text` is the download with everything.
     """
-    for name, value in (("description", description), ("sample", sample), ("closest", closest)):
+    for label, value in (("description", description), ("sample", sample), ("closest", closest)):
         if value is not None and not isinstance(value, str):
-            raise OverlayError(f"{name} must be text")
+            raise OverlayError(f"{label} must be text")
     if description is None or sample is None:
         raise OverlayError("description and sample must be text")
     if closest is not None and closest not in current_specification().rules.modalities:
         raise OverlayError(f"unknown kind of data {closest!r}; choose one of: {', '.join(current_specification().rules.modalities)}")
+    if name is not None:
+        name = check_new_kind_name(name)
     description = description.strip()
     problems = (["the description is empty"] if not description else []) + vendored_term_proposal().sample_problems(sample)
-    title = "[New kind of data]: " + (description.splitlines() or [""])[0][:60]
+    title = "[New kind of data]" + (f" {name}" if name else "") + ": " + (description.splitlines() or [""])[0][:60]
     query = urlencode(
         {"template": ISSUE_NEW_KIND_TEMPLATE, "title": title, "description": description, **({"closest_kind": closest} if closest else {})},
         quote_via=quote,
@@ -257,6 +307,6 @@ def proposal_for_new_kind(description: str, sample: str, closest: str | None = N
     return {
         "issue_url": url if not problems and not too_long else None,
         "note": "too long for a link: use the download and paste it into the form" if too_long else None,
-        "text": f"Description:\n{description}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{sample}\n",
+        "text": f"Description:\n{description}\n\nSuggested name: {name or 'not given'}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{sample}\n",
         "problems": problems,
     }

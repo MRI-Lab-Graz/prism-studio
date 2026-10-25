@@ -27,10 +27,13 @@ def test_catalog_values_have_no_empty_strings():
 
 def test_the_catalog_lists_every_kind_of_data_with_a_description():
     mods = {m["name"]: m for m in spec_catalog()["modalities"]}
-    assert {"biosample", "survey", "physio", "events", "anat"} <= set(mods)
-    assert mods["anat"]["kind"] == "bids" and mods["anat"]["lists"] == []
+    assert {"biosample", "survey", "physio", "events"} <= set(mods)
     assert mods["biosample"]["label"].startswith("Lab results")
     assert "biosample-inflammation" in mods["biosample"]["templates"]
+
+
+def test_the_catalog_has_no_bids_kinds():
+    assert not {"anat", "func", "dwi", "eeg", "fmap", "beh"} & {m["name"] for m in spec_catalog()["modalities"]}
 
 
 def test_example_entries_fill_the_example_from_the_library_template():
@@ -44,13 +47,35 @@ def test_example_entries_fill_the_example_from_the_library_template():
     assert not any(e["field"].startswith("Metadata") for e in ex["entries"])
 
 
+def test_example_entries_carry_the_schema_descriptions_for_the_info_icons():
+    ex = example_entries("biosample")
+    by = {e["field"]: e for e in ex["entries"]}
+    assert by["Technical.SpecimenType"]["description"]
+    assert set(ex["sections"]) == {"Technical", "Study"}
+
+
+def test_sections_have_plain_titles_and_say_what_they_hold():
+    sections = example_entries("biosample")["sections"]
+    assert sections["Technical"]["title"] == "How the data is collected"
+    assert sections["Technical"]["summary"] == "Specimen type, Collection method, Anticoagulant, Fasting required, …"
+    assert sections["Study"]["title"] == "About the measure"
+    assert example_entries("events")["sections"]["onset"]["title"] == 'The "onset" column'
+
+
+def test_only_sections_with_a_list_to_extend_are_proposable():
+    assert {k: v["proposable"] for k, v in example_entries("biosample")["sections"].items()} == {"Technical": True, "Study": False}
+    assert example_entries("survey")["sections"]["Study"]["proposable"] is True  # the license lists
+    assert not any(v["proposable"] for v in example_entries("events")["sections"].values())
+
+
 def test_a_kind_without_a_library_example_still_lists_its_entries():
     ex = example_entries("physio")
     assert ex["template"] is None and ex["entries"] and all(e["example"] is None for e in ex["entries"])
 
 
-def test_a_bids_kind_has_no_entries():
-    assert example_entries("anat")["entries"] == []
+def test_a_bids_kind_is_not_a_kind_of_this_page():
+    with pytest.raises(OverlayError, match="not a kind of data"):
+        example_entries("anat")
 
 
 @pytest.mark.parametrize("bad", ["../x", "Survey-AAI", "a/b"])
@@ -334,3 +359,25 @@ def test_an_empty_example_counts_as_no_example():
     from src.spec_contribute import _example_text
 
     assert _example_text("") is None and _example_text(False) == "no" and _example_text(0) == "0"
+
+
+@pytest.mark.parametrize("name", ["anat", "MEG", "bold", "T1w", "events", "physio", "task", "ses", "acquisition", "participants", "survey", "biosample"])
+def test_a_new_kind_name_taken_by_bids_or_prism_is_refused(name):
+    with pytest.raises(OverlayError, match="already taken"):
+        proposal_for_new_kind("Skin temperature", "a\tb\n", name=name)
+
+
+@pytest.mark.parametrize("name", ["", "skin temp", "1skin", "x", "skin-temp", "a" * 40])
+def test_a_new_kind_name_must_be_a_short_lowercase_label(name):
+    with pytest.raises(OverlayError, match="name"):
+        proposal_for_new_kind("Skin temperature", "a\tb\n", name=name)
+
+
+def test_a_free_new_kind_name_goes_into_the_title_and_the_text():
+    result = proposal_for_new_kind("Skin temperature from a wrist sensor", "a\tb\n", name="skintemp")
+    assert "title=%5BNew%20kind%20of%20data%5D%20skintemp%3A%20Skin%20temperature" in result["issue_url"]
+    assert "Suggested name: skintemp" in result["text"]
+
+
+def test_a_new_kind_without_a_name_is_still_accepted():
+    assert "Suggested name: not given" in proposal_for_new_kind("Skin temperature", "a\tb\n")["text"]

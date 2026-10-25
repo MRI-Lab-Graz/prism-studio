@@ -38,15 +38,17 @@ reference generated from the shipped schema, so it matches what the validator en
 **Propose changes** entry in the navbar, in the sidebar of this screen, or through the call-to-action on the overview page. It
 works with **no project open** and asks one thing at a time:
 
-1. **What kind of data?** Every kind of data of the current specification, then *Nothing fits: a new kind of
+1. **What kind of data?** Every PRISM kind of data of the current specification (BIDS kinds are not listed: PRISM cannot change the BIDS schemas), then *Nothing fits: a new kind of
    data*. Tick **Not sure** when you only picked the closest one; the maintainer then decides where it belongs.
-   Kinds marked *(BIDS, passed through)* are handed to BIDS unchanged, so there is nothing to add for them.
-2. **An accepted example beside your proposal.** On the left, an official library template of that kind of
+2. **An accepted example beside your proposal**, in closed sections such as *How the data is collected*, each listing what it holds. Only sections with a list you can
+   extend are shown; the others could only ever be context. open one
+   to see the example and your entry side by side, row by row. The *i* next to an entry explains it. On the left, an official library template of that kind of
    data with every entry filled (a pull-down switches between templates when there are several). On the right,
    the same entries for your data: a pull-down for every list of allowed values, ending with *Missing: add a
    value…* (a text box for your new value, lowercase letters, digits and `-`) and *Unknown*; a text box with an
-   *Unknown* tick for free-text entries. Only the *Missing* entries are proposed; your filled and *Unknown*
-   entries and the *Not sure* tick go along as context for the maintainer. When several lists have a missing
+   *Unknown* tick for free-text entries. **Only fill in what is missing:** only the *Missing* entries are proposed. Everything else is optional; your filled
+   and *Unknown* entries and the *Not sure* tick only go along as context for the maintainer, and add nothing to the
+   specification. A line beside the share button always says what you propose and what goes along as context. When several lists have a missing
    value, each gets its own *Share the new …* button and the other new values appear in its context.
 3. **Measurements**, for kinds of data with a measurement list (today biosample): a pull-down of the
    measurements PRISM knows, with ID and unit. When a specimen type is chosen in step 2, only that sample type's
@@ -55,7 +57,9 @@ works with **no project open** and asks one thing at a time:
    sends your step-2 entries and the *Not sure* tick along as context.
 4. **Nothing fits: a new kind of data** opens a short form: a description (what is measured, how, with which device
    or lab, what one file holds), a sample file (pasted or picked as a text file; made-up data only, never real
-   participant data) and, optionally, the closest kind of data (prefilled with your step-1 choice). PRISM cannot
+   participant data) and, optionally, a suggested name and the closest kind of data (prefilled with your step-1 choice). The name is
+   lowercase letters and digits; names BIDS already uses (data types such as `func`, suffixes such as `bold`, entities such as `task`)
+   and names of existing PRISM kinds are refused. On the command line: `spec propose-new-kind --name`. PRISM cannot
    validate such files until the maintainer has added the new kind of data and it is in a PRISM release, so plan for
    this before your study starts. *Share…* opens a prefilled form with the description and closest kind; the sample
    is not in the link: paste it into the form's *Sample file* field. *Download* saves everything as one text file.

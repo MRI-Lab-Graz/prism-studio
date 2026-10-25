@@ -215,7 +215,7 @@ def cmd_spec_propose_new_kind(args) -> None:
     except UnicodeDecodeError:
         _fail(args, f"the sample file {args.sample} is not UTF-8 text")
     try:
-        result = proposal_for_new_kind(args.description, sample, args.closest)
+        result = proposal_for_new_kind(args.description, sample, args.closest, args.name)
     except OverlayError as exc:
         _fail(args, str(exc))
     problems, url = result["problems"], result["issue_url"]
