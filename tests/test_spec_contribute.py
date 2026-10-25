@@ -262,3 +262,10 @@ def test_a_context_too_long_for_the_url_gives_no_url_but_keeps_the_context():
 def test_the_metric_proposal_carries_the_context_too():
     result = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", context="Technical.Laboratory: Unknown")
     assert result["context"] == "Technical.Laboratory: Unknown" and "context=" in result["issue_url"]
+
+
+@pytest.mark.parametrize("entries", [{"a": "x\nFake: y"}, {"a\nb": "x"}, {"a": "x\ty"}, {"a": "x\x00"}])
+def test_context_rejects_control_characters(entries):
+    from src.spec_contribute import proposal_context
+    with pytest.raises(OverlayError):
+        proposal_context(entries)

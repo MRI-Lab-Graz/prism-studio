@@ -151,7 +151,7 @@ def _deliver_result(args, result: dict) -> None:
         args,
         {
             "success": True, "proposal": result["proposal"], "document": delivered["document"],
-            "skipped": result["skipped"], "issue_url": delivered["issue_url"],
+            "skipped": result["skipped"], "context": result.get("context"), "issue_url": delivered["issue_url"],
             "opened": delivered["opened"], "saved": str(delivered["saved"]) if delivered["saved"] else None,
             "problems": [],
         },
@@ -167,6 +167,8 @@ def _cli_entries(args) -> dict[str, str]:
         field, sep, value = item.partition("=")
         if not sep or not field:
             _fail(args, f"--entry {item!r}: use FIELD=VALUE")
+        if field in entries:
+            _fail(args, f"--entry {field!r} is given twice")
         entries[field] = value
     return entries
 

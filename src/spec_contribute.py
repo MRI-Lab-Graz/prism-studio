@@ -36,6 +36,8 @@ def proposal_context(entries: dict[str, str] | None = None, not_sure: bool = Fal
         raise OverlayError("entries must be text")
     if long := [k for k, v in entries.items() if len(v) > 200]:
         raise OverlayError(f"value too long (at most 200 characters): {', '.join(long)}")
+    if bad := [k for k, v in entries.items() if not (k + v).isprintable()]:
+        raise OverlayError(f"no line breaks or control characters allowed in: {', '.join(map(repr, bad))}")
     lines = []
     if not_sure:
         if closest and closest not in {m["name"] for m in spec_catalog()["modalities"]}:
@@ -46,7 +48,7 @@ def proposal_context(entries: dict[str, str] | None = None, not_sure: bool = Fal
 
 
 def _context(context, entries, not_sure, closest) -> str | None:
-    """An explicit `context` text, else the one built from `entries` / `not_sure` / `closest`."""
+    """An explicit `context` text followed by the one built from `entries` / `not_sure` / `closest` (either may be empty)."""
     built = proposal_context(entries, not_sure, closest)
     return "\n".join(t for t in (context, built) if t) or None
 

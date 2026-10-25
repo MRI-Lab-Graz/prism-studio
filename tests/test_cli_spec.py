@@ -267,3 +267,26 @@ def test_spec_propose_entry_without_equals_exits_1():
     code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat",
                      "--entry", "oops", "--json")
     assert code == 1 and not json.loads(out)["success"]
+
+
+_PV = ("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat")
+
+
+def _long_entries():
+    return [x for i in range(40) for x in ("--entry", f"F{i}=" + "x" * 190)]
+
+
+def test_json_result_keeps_the_context_when_the_url_is_too_long():
+    code, out = _run(*_PV, *_long_entries(), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["issue_url"] is None and data["context"].count("\n") == 39 and "F39: " in data["context"]
+
+
+def test_text_result_prints_the_context_when_the_url_is_too_long():
+    code, out = _run(*_PV, *_long_entries())
+    assert code == 0 and "Context field" in out and "F39: " in out
+
+
+def test_a_repeated_entry_field_exits_1():
+    code, out = _run(*_PV, "--entry", "A=1", "--entry", "A=2", "--json")
+    assert code == 1 and not json.loads(out)["success"]
