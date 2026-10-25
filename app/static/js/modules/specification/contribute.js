@@ -17,6 +17,8 @@
         proposeValues: root.dataset.proposeValuesUrl,
         proposeMetric: root.dataset.proposeMetricUrl,
         example: root.dataset.exampleUrl,
+        proposeNewKind: root.dataset.proposeNewKindUrl,
+        newKindForm: root.dataset.newKindFormUrl,
     };
     const unknownBox = document.getElementById("spec-m-found");
     const localBox = document.getElementById("spec-local");
@@ -39,7 +41,8 @@
     let projectSpecimens = [];  // sample types this project added itself
     let foundColumn = null;  // the "Found in your data" column the form was filled from
     let answers = [];  // step 2: one {entry, read()} per entry of the chosen kind of data
-    let currentProposal = null;
+    let download = null;  // {name, type, text}: what "Download" saves
+    let lastKind = "";  // the last kind of data chosen in step 1, the closest kind for "Nothing fits"
 
     function el(tag, className, text) {
         const node = document.createElement(tag);
@@ -238,28 +241,34 @@
         },
     };
 
+    // The share dialog: what is sent, the link to the prefilled form (`url`, or none) and what "Download" saves.
+    function showDialog(copy, shown, context, problems, url, pasteNote, saved) {
+        document.getElementById("spec-propose-title").textContent = copy.title;
+        document.getElementById("spec-propose-text").textContent = copy.text;
+        document.getElementById("spec-propose-json").textContent = shown;
+        document.getElementById("spec-propose-context").textContent = context || "";
+        document.getElementById("spec-propose-context-box").hidden = !context;
+        const problemBox = document.getElementById("spec-propose-problems");
+        problemBox.textContent = problems.join("; ");
+        problemBox.classList.toggle("d-none", !problems.length);
+        const open = document.getElementById("spec-propose-open");
+        open.classList.toggle("d-none", !url || problems.length > 0);
+        if (url) open.href = url;
+        document.getElementById("spec-propose-paste").classList.toggle("d-none", !pasteNote);
+        download = saved;
+        dialog.showModal();
+    }
+
     async function propose(body, url, kind) {
         clearMessage();
         const { ok, data } = await call(url || urls.propose, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
-        const copy = shareCopy[kind || "measurement"];
-        document.getElementById("spec-propose-title").textContent = copy.title;
-        document.getElementById("spec-propose-text").textContent = copy.text;
-        currentProposal = data.document;  // the document that is sent (proposal format v2)
-        document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
-        document.getElementById("spec-propose-context").textContent = data.context || "";
-        document.getElementById("spec-propose-context-box").hidden = !data.context;
         if (data.skipped.length) {
             say("Left out, they are covered by official terms: " + data.skipped.join(", "), "info");
         }
-        const problems = document.getElementById("spec-propose-problems");
-        problems.textContent = data.problems.join("; ");
-        problems.classList.toggle("d-none", !data.problems.length);
-        const open = document.getElementById("spec-propose-open");
-        open.classList.toggle("d-none", !data.issue_url || data.problems.length > 0);
-        if (data.issue_url) open.href = data.issue_url;
-        document.getElementById("spec-propose-paste").classList.toggle("d-none", Boolean(data.issue_url));
-        dialog.showModal();
+        const text = JSON.stringify(data.document, null, 2);  // the document that is sent (proposal format v2)
+        showDialog(shareCopy[kind || "measurement"], text, data.context, data.problems, data.issue_url, !data.issue_url,
+            { name: "proposal.json", type: "application/json", text: text + "\n" });
     }
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
@@ -384,6 +393,8 @@
     async function chooseKind() {
         clearMessage();
         const kind = currentKind();
+        if (kind) lastKind = kind.name;
+        if (kindSelect.value === "new-kind") nk.closest.value = lastKind;
         document.getElementById("spec-bids-note").hidden = !kind || kind.kind !== "bids";
         document.getElementById("spec-new-kind").hidden = kindSelect.value !== "new-kind";
         step2.hidden = true;
@@ -392,7 +403,6 @@
         proposalBox.replaceChildren();
         showActions();
         if (!kind || kind.kind !== "prism") return;
-        if (kind.metrics) showKnown();
         const data = await loadExample();
         if (!data) return;
         const listed = kind.lists.map(function (list) { return list.field; });
@@ -403,6 +413,7 @@
         answers = data.entries.map(function (entry, index) { return proposalEntry(entry, index, listed.indexOf(entry.field) !== -1); });
         answers.forEach(function (answer) { proposalBox.appendChild(answer.row); });
         step2.hidden = !answers.length;
+        if (kind.metrics) fillPick();
     }
 
     kindSelect.addEventListener("change", chooseKind);
@@ -414,23 +425,55 @@
     });
 
     const m = {};
-    ["known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
+    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
+
+    function choose(select) {
+        const node = option("Choose…", "");
+        node.disabled = true;
+        select.appendChild(node);
+    }
 
     function fillSpecimens() {
         const keep = m.specimen.value;
         m.specimen.replaceChildren();
-        (catalog.specimens || []).concat(projectSpecimens).forEach(function (name) {
-            const option = el("option", "", name);
-            option.value = name;
-            m.specimen.appendChild(option);
-        });
-        if (keep) m.specimen.value = keep;
+        choose(m.specimen);
+        (catalog.specimens || []).concat(projectSpecimens).forEach(function (name) { m.specimen.appendChild(option(name, name)); });
+        m.specimen.value = keep;
+        if (m.specimen.selectedIndex < 0) m.specimen.selectedIndex = 0;
     }
 
-    function showKnown() {
-        const kind = currentKind();
-        m.known.textContent = kind && kind.metrics ? kind.metrics.map(function (x) { return x.label; }).join(", ") : "";
+    // The sample type chosen in step 2: {value} for one of the list, {missing} for a typed one, or {} (none or "Unknown").
+    function chosenSpecimen() {
+        const answer = answers.find(function (a) { return a.entry.field === "Technical.SpecimenType"; });
+        const read = answer ? answer.read() : {};
+        return read.value === "unknown" ? {} : read;
+    }
+
+    // Step 3: the official measurements (only those of the chosen sample type, if one is chosen), then "Missing".
+    function fillPick() {
+        const keep = m.pick.value;
+        const specimen = chosenSpecimen().value;
+        m.pick.replaceChildren();
+        choose(m.pick);
+        (currentKind().metrics || []).filter(function (metric) {
+            return !specimen || metric.specimens.indexOf(specimen) !== -1;
+        }).forEach(function (metric) {
+            m.pick.appendChild(option(metric.label + " (" + [metric.id, metric.units].filter(Boolean).join(", ") + ")", metric.id));
+        });
+        m.pick.appendChild(option("Missing: add a measurement…", "missing"));
+        m.pick.value = keep;
+        if (m.pick.selectedIndex < 0) m.pick.selectedIndex = 0;
+        showPick();
+    }
+
+    function prefillSpecimen() {
+        const chosen = chosenSpecimen();
+        const specimen = chosen.value || chosen.missing || "";
+        if (specimen && !Array.from(m.specimen.options).some(function (o) { return o.value === specimen; })) {
+            m.specimen.appendChild(option(specimen, specimen));  // a sample type typed in step 2
+        }
+        m.specimen.value = specimen;
     }
 
     function forgetFound() {
@@ -439,19 +482,19 @@
         m["use-hint"].classList.add("d-none");
     }
 
-    function showListed() {
-        m.yes.hidden = m.listed.value !== "yes";
-        m.form.hidden = m.listed.value !== "no";
-        if (m.listed.value === "yes") forgetFound();
+    function showPick() {
+        m.yes.hidden = !m.pick.value || m.pick.value === "missing";
+        m.form.hidden = m.pick.value !== "missing";
+        if (m.pick.value !== "missing") forgetFound();
     }
 
     function pickFound(metric) {
         foundColumn = metric;
-        m.listed.value = "no";
-        showListed();
+        m.pick.value = "missing";
+        showPick();
         m.name.value = metric.column;
-        const known = Array.from(m.units.options).some(function (o) { return o.value === metric.units; });
-        m.units.value = known ? metric.units : "";
+        const known = Array.from(m.units.options).some(function (o) { return o.value && o.value === metric.units; });
+        m.units.value = known ? metric.units : (metric.units ? "other" : "");
         m["units-other"].value = metric.units && !known ? metric.units : "";
         if (metric.specimen && Array.from(m.specimen.options).some(function (o) { return o.value === metric.specimen; })) {
             m.specimen.value = metric.specimen;
@@ -466,23 +509,26 @@
 
     function startMetric() {
         m.units.replaceChildren();
-        (catalog.units || []).concat(["Other…"]).forEach(function (unit, index, all) {
-            const option = el("option", "", unit);
-            option.value = index === all.length - 1 ? "" : unit;
-            m.units.appendChild(option);
-        });
+        choose(m.units);
+        (catalog.units || []).forEach(function (unit) { m.units.appendChild(option(unit, unit)); });
+        m.units.appendChild(option("Other…", "other"));
+        m.units.selectedIndex = 0;
         fillSpecimens();
         m.project.hidden = !catalog.project_open;
         m.local.hidden = !catalog.project_open;
     }
 
     m.name.addEventListener("input", forgetFound);
-    m.listed.addEventListener("change", showListed);
-    m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== ""; });
+    m.pick.addEventListener("change", function () {
+        showPick();
+        if (m.pick.value === "missing") prefillSpecimen();
+    });
+    proposalBox.addEventListener("change", function () { if (currentKind() && currentKind().metrics) fillPick(); });
+    m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
     m.share.addEventListener("click", function () {
         propose({
             name: m.name.value, description: m.description.value,
-            units: m.units.value || m["units-other"].value, specimen: m.specimen.value,
+            units: m.units.value === "other" ? m["units-other"].value : m.units.value, specimen: m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
@@ -491,13 +537,42 @@
         if (foundColumn) add(foundColumn, m.name.value.trim());
     });
 
+    const nk = {};
+    ["description", "sample", "file", "closest", "share"].forEach(function (key) { nk[key] = document.getElementById("spec-nk-" + key); });
+    const newKindCopy = {
+        title: "Share a new kind of data with the PRISM community",
+        text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab. "
+            + "Paste your sample into its \"Sample file\" field there (it is not in the link), then submit it.",
+    };
+
+    nk.file.addEventListener("change", async function () {
+        const file = nk.file.files[0];
+        if (!file) return;
+        if (file.size > 200 * 1024) {  // the backend decides the real limit; this only avoids reading a huge file
+            say("This file is larger than 200 KB. Use a shorter sample.", "warning");
+            nk.file.value = "";
+            return;
+        }
+        clearMessage();
+        nk.sample.value = await file.text();
+    });
+    nk.share.addEventListener("click", async function () {
+        clearMessage();
+        const body = { description: nk.description.value, sample: nk.sample.value, closest: nk.closest.value || null };
+        const { ok, data } = await call(urls.proposeNewKind, body);
+        if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
+        const copy = data.note ? { title: newKindCopy.title, text: newKindCopy.text + " The description is " + data.note + "." } : newKindCopy;
+        showDialog(copy, data.text, null, data.problems, data.issue_url || urls.newKindForm, false,
+            { name: "new-kind-of-data.txt", type: "text/plain", text: data.text });
+    });
+
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
     document.getElementById("spec-propose-download").addEventListener("click", function () {
-        if (!currentProposal) return;
-        const blob = new Blob([JSON.stringify(currentProposal, null, 2) + "\n"], { type: "application/json" });
+        if (!download) return;
+        const blob = new Blob([download.text], { type: download.type });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "proposal.json";
+        link.download = download.name;
         link.click();
         URL.revokeObjectURL(link.href);
     });
@@ -507,7 +582,10 @@
         if (!ok) { say(data.error || "Could not load the specification", "danger"); return; }
         catalog = data;
         const nothingFits = kindSelect.lastElementChild;
-        catalog.modalities.forEach(function (kind) { kindSelect.insertBefore(option(kind.label, kind.name), nothingFits); });
+        catalog.modalities.forEach(function (kind) {
+            kindSelect.insertBefore(option(kind.label, kind.name), nothingFits);
+            nk.closest.appendChild(option(kind.label, kind.name));
+        });
         startMetric();
         document.getElementById("spec-values-project").hidden = !catalog.project_open;
         refresh();

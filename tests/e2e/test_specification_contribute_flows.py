@@ -183,11 +183,125 @@ def test_a_bids_kind_is_passed_through(bare_page, studio_url):
     expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
 
 
-def test_nothing_fits_shows_the_new_kind_placeholder(bare_page, studio_url):
-    bare_page.goto(f"{studio_url}/specifications/contribute")
-    bare_page.locator("#spec-kind").select_option(label="Nothing fits: a new kind of data")
-    expect(bare_page.locator("#spec-new-kind")).to_be_visible()
+NOTHING_FITS = "Nothing fits: a new kind of data"
+
+
+def test_nothing_fits_shows_the_new_kind_form(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "physio")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    form = bare_page.locator("#spec-new-kind")
+    expect(form).to_be_visible()
     expect(bare_page.locator("#spec-step2")).to_be_hidden()
+    expect(form).to_contain_text("Until it is merged and in a PRISM release, PRISM cannot validate these files.")
+    expect(form).to_contain_text("Use made-up data only")
+    expect(bare_page.locator("#spec-nk-closest")).to_have_value("physio")  # the step-1 choice before "Nothing fits"
+
+
+def test_a_new_kind_without_a_description_is_refused(bare_page, studio_url):
+    bare_page.allowed_http[400] = "/api/spec/propose-new-kind"
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    expect(bare_page.locator("#spec-nk-closest")).to_have_value("")
+    bare_page.locator("#spec-nk-sample").fill("time,value\n0,1\n")
+    bare_page.locator("#spec-nk-share").click()
+    expect(bare_page.locator("#spec-message")).to_contain_text("the description is empty")
+    expect(bare_page.locator("#spec-propose-dialog")).not_to_be_visible()
+
+
+def test_a_new_kind_opens_the_prefilled_form_without_the_sample(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    bare_page.locator("#spec-nk-description").fill("Skin temperature from a wrist sensor, one file per night.")
+    bare_page.locator("#spec-nk-sample").fill("time,temp\n0,zzsample-123\n")
+    bare_page.locator("#spec-nk-closest").select_option("physio")
+    bare_page.locator("#spec-nk-share").click()
+    dialog = bare_page.locator("#spec-propose-dialog")
+    expect(dialog).to_be_visible()
+    expect(dialog).to_contain_text('"Sample file"')
+    href = bare_page.locator("#spec-propose-open").get_attribute("href")
+    assert "propose-new-kind-of-data.yml" in href and "Skin" in href
+    assert "zzsample" not in href
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("zzsample-123")  # the download text has it
+    with bare_page.expect_download() as download:
+        bare_page.locator("#spec-propose-download").click()
+    assert download.value.suggested_filename.endswith(".txt")
+
+
+def test_a_new_kind_sample_can_be_picked_from_a_file(bare_page, studio_url, tmp_path):
+    sample = tmp_path / "sample.csv"
+    sample.write_text("time,temp\n0,36.5\n", encoding="utf-8")
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    bare_page.locator("#spec-nk-file").set_input_files(str(sample))
+    expect(bare_page.locator("#spec-nk-sample")).to_have_value("time,temp\n0,36.5\n")
+
+
+def test_a_hostile_new_kind_description_is_text(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
+    bare_page.locator("#spec-nk-description").fill('<img src=x onerror="window.pwned=1">')
+    bare_page.locator("#spec-nk-sample").fill("a,b\n1,2\n")
+    bare_page.locator("#spec-nk-share").click()
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("<img src=x")
+    assert bare_page.locator("#spec-contribute img, #spec-propose-dialog img").count() == 0
+    assert bare_page.evaluate("window.pwned") is None
+
+
+def pick_specimen(page, value):
+    proposal_entry(page, "Specimen type").select_option(value)
+
+
+def measurement_options(page):
+    return page.locator("#spec-m-pick option").all_inner_texts()
+
+
+def test_the_measurements_follow_the_chosen_specimen(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    expect(bare_page.locator("#spec-m-pick option:checked")).to_have_text("Choose…")
+    expect(bare_page.locator("#spec-m-pick")).to_contain_text("C-reactive protein")
+    pick_specimen(bare_page, "saliva")
+    expect(bare_page.locator("#spec-m-pick")).not_to_contain_text("C-reactive protein")
+    texts = " ".join(measurement_options(bare_page))
+    assert "cortisol" in texts and "alpha-amylase" in texts and "prism:cortisol" in texts
+    assert measurement_options(bare_page)[-1] == "Missing: add a measurement…"
+    bare_page.locator("#spec-m-pick").select_option(label=next(t for t in measurement_options(bare_page) if "cortisol" in t))
+    expect(bare_page.locator("#spec-m-yes")).to_be_visible()
+    expect(bare_page.locator("#spec-m-form")).to_be_hidden()
+
+
+def test_a_missing_measurement_starts_with_the_chosen_sample_type(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    pick_specimen(bare_page, "saliva")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-specimen")).to_have_value("saliva")
+    expect(bare_page.locator("#spec-m-units option:checked")).to_have_text("Choose…")
+
+
+def test_a_missing_measurement_starts_with_a_typed_sample_type(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "sweat")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    expect(bare_page.locator("#spec-m-specimen")).to_have_value("sweat")
+
+
+def test_without_a_sample_type_the_measurement_form_starts_on_choose(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    expect(bare_page.locator("#spec-m-specimen option:checked")).to_have_text("Choose…")
+
+
+def test_a_missing_measurement_carries_the_context(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    bare_page.get_by_label("Not sure").check()
+    pick_specimen(bare_page, "saliva")
+    proposal_entry(bare_page, "Laboratory").fill("Our lab")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    fill_measurement(bare_page)
+    bare_page.locator("#spec-m-share").click()
+    context = bare_page.locator("#spec-propose-context")
+    expect(context).to_contain_text("Technical.Laboratory: Our lab")
+    expect(context).to_contain_text("closest: biosample")
 
 
 def test_a_kind_without_measurements_hides_the_measurement_part(bare_page, studio_url):
@@ -222,7 +336,7 @@ def test_use_is_hidden_without_a_project(bare_page, studio_url):
 def test_no_page_text_uses_technical_words(app_page, studio_url, project):
     add_biosample_data(project)
     app_page.goto(f"{studio_url}/specifications/contribute")
-    for kind in (None, "biosample", "survey", "anat"):
+    for kind in (None, "biosample", "survey", "anat", "new-kind"):
         if kind:
             app_page.locator("#spec-kind").select_option(kind)
             expect(app_page.locator("#spec-kind")).to_have_value(kind)
@@ -329,10 +443,10 @@ def test_already_allowed_value_is_explained(bare_page, studio_url):
     expect(bare_page.locator("#spec-message")).to_contain_text("already allowed")
 
 
-def choose_measurement(page, studio_url, answer="No, it is still missing"):
+def choose_measurement(page, studio_url, answer="Missing: add a measurement…"):
     choose_kind(page, studio_url, "biosample")
     if answer:
-        page.locator("#spec-m-listed").select_option(label=answer)
+        page.locator("#spec-m-pick").select_option(label=answer)
 
 
 def fill_measurement(page, name="DHEA", units="pg/mL", description="Dehydroepiandrosterone in saliva."):
@@ -344,13 +458,9 @@ def fill_measurement(page, name="DHEA", units="pg/mL", description="Dehydroepian
 
 def test_a_missing_measurement_without_a_project(bare_page, studio_url):
     choose_measurement(bare_page, studio_url, answer=None)
-    expect(bare_page.locator("#spec-m-known")).to_contain_text("cortisol")
     expect(bare_page.locator("#spec-m-yes")).to_be_hidden()
     expect(bare_page.locator("#spec-m-form")).to_be_hidden()
-    bare_page.locator("#spec-m-listed").select_option(label="Yes, it is there")
-    expect(bare_page.locator("#spec-m-yes")).to_be_visible()
-    expect(bare_page.locator("#spec-m-form")).to_be_hidden()
-    bare_page.locator("#spec-m-listed").select_option(label="No, it is still missing")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
     expect(bare_page.locator("#spec-m-yes")).to_be_hidden()
     expect(bare_page.locator("#spec-m-form")).to_be_visible()
     expect(bare_page.locator("#spec-m-use")).to_be_hidden()

@@ -48,10 +48,17 @@ works with **no project open** and asks one thing at a time:
    *Unknown* tick for free-text entries. Only the *Missing* entries are proposed; your filled and *Unknown*
    entries and the *Not sure* tick go along as context for the maintainer. When several lists have a missing
    value, each gets its own *Share the new …* button and the other new values appear in its context.
-3. **Measurements** (biosample): below step 2 for kinds of data with a measurement list. Say whether it is really
-   missing, then give its name, what it measures, its unit and the sample type. *Share…* shows the proposal.
-
-*Nothing fits: a new kind of data* is announced and not available on this page yet.
+3. **Measurements**, for kinds of data with a measurement list (today biosample): a pull-down of the
+   measurements PRISM knows, with ID and unit. When a specimen type is chosen in step 2, only that sample type's
+   measurements are listed. The last entry, *Missing: add a measurement…*, opens the measurement form with the sample
+   type from step 2 already filled in. Give its name, what it measures and its unit; *Share…* shows the proposal and
+   sends your step-2 entries and the *Not sure* tick along as context.
+4. **Nothing fits: a new kind of data** opens a short form: a description (what is measured, how, with which device
+   or lab, what one file holds), a sample file (pasted or picked as a text file; made-up data only, never real
+   participant data) and, optionally, the closest kind of data (prefilled with your step-1 choice). PRISM cannot
+   validate such files until the maintainer has added the new kind of data and it is in a PRISM release, so plan for
+   this before your study starts. *Share…* opens a prefilled form with the description and closest kind; the sample
+   is not in the link: paste it into the form's *Sample file* field. *Download* saves everything as one text file.
 
 **Nothing is sent from Studio.** *Share…* shows the proposal and opens a prefilled form on GitHub in a new tab
 (or lets you download `proposal.json`); you submit the form yourself, and the maintainers may choose a different

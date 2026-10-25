@@ -13,7 +13,9 @@
      data-catalog-url="{{ url_for('specification_contribute.catalog') }}"
      data-propose-values-url="{{ url_for('specification_contribute.propose_values') }}"
      data-propose-metric-url="{{ url_for('specification_contribute.propose_metric') }}"
-     data-example-url="{{ url_for('specification_contribute.example') }}">
+     data-example-url="{{ url_for('specification_contribute.example') }}"
+     data-propose-new-kind-url="{{ url_for('specification_contribute.propose_new_kind') }}"
+     data-new-kind-form-url="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-new-kind-of-data.yml">
     <div class="card-body">
         <p class="text-muted">
             Your data is not fully known to PRISM yet? Choose the kind of data, compare it with an accepted example
@@ -36,9 +38,34 @@
         <p id="spec-bids-note" class="alert alert-info" hidden>
             PRISM passes this kind of data to BIDS unchanged, so there is nothing to add here.
         </p>
-        <p id="spec-new-kind" class="alert alert-info" hidden>
-            Describing a whole new kind of data comes in the next version of this page.
-        </p>
+        <div id="spec-new-kind" class="mb-4" hidden>
+            <p class="text-muted">
+                Describe your data in your own words and give a short sample file; the maintainer builds the new kind of
+                data from it.
+            </p>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-description">What is measured, how, with which device or lab, and what one file holds</label>
+                <textarea id="spec-nk-description" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-sample">A sample file, as your device or lab writes it</label>
+                <textarea id="spec-nk-sample" class="form-control font-monospace" rows="6"></textarea>
+                <div class="form-text">Use made-up data only — no real participant data.</div>
+                <label class="form-label small mt-2 mb-0" for="spec-nk-file">Or pick a text file</label>
+                <input id="spec-nk-file" type="file" class="form-control form-control-sm" accept=".txt,.csv,.tsv,.json,text/*">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-closest">Closest kind of data (optional)</label>
+                <select id="spec-nk-closest" class="form-select w-auto">
+                    <option value="" selected>Not given</option>
+                </select>
+            </div>
+            <p class="alert alert-warning">
+                A new kind of data is added by the maintainer. Until it is merged and in a PRISM release, PRISM cannot
+                validate these files. Plan for this before your study starts.
+            </p>
+            <button type="button" id="spec-nk-share" class="btn btn-sm btn-primary">Share with the PRISM community…</button>
+        </div>
 
         <div id="spec-step2" hidden>
             <div class="row g-4 mb-3">
@@ -83,10 +110,9 @@
         <div id="spec-panel-metric" hidden>
             <h3 class="h6">Measurements</h3>
             <p class="text-muted">
-                Your data uses a measurement PRISM does not list yet. Check the list first; if it is missing, describe it
-                and share it with the PRISM community. Nothing is sent from this page.
+                Look for your measurement among the ones PRISM knows (for the sample type chosen above, if any). If it is
+                missing, describe it and share it with the PRISM community. Nothing is sent from this page.
             </p>
-            <p class="small">Measurements PRISM knows today: <span id="spec-m-known"></span></p>
 
             <div id="spec-m-project" hidden class="mb-3">
                 <h3 class="h6">Found in your data, not known to PRISM yet</h3>
@@ -94,12 +120,8 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="spec-m-listed">Is your measurement in this list?</label>
-                <select id="spec-m-listed" class="form-select w-auto">
-                    <option value="" selected>Choose…</option>
-                    <option value="yes">Yes, it is there</option>
-                    <option value="no">No, it is still missing</option>
-                </select>
+                <label class="form-label" for="spec-m-pick">Your measurement</label>
+                <select id="spec-m-pick" class="form-select w-auto"></select>
             </div>
             <p id="spec-m-yes" class="alert alert-info" hidden>
                 Nothing to propose: it is already in PRISM. Use its name for your column instead of proposing it.
