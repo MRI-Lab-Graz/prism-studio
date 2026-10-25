@@ -106,7 +106,7 @@
             row.appendChild(el("code", "", found.field));
             row.appendChild(el("code", "", found.value));
             row.appendChild(el("span", "text-muted small", found.sidecar.split(/[\\/]/).pop()));
-            row.appendChild(button("Add to this project", "btn-primary", function () { addValues(found.modality, found.field, [found.value]); }));
+            row.appendChild(button("Add to this project", "btn-primary", function () { addValues("biosample", found.field, [found.value]); }));
             valuesUnknownBox.appendChild(row);
         });
     }
@@ -116,7 +116,7 @@
         shareValues.replaceChildren();
         const kinds = items.filter(function (item) { return item.status === "local"; }).map(function (item) { return item.modality; });
         Array.from(new Set(kinds)).forEach(function (kind) {
-            shareValues.appendChild(button("Share additions (" + kind + ")…", "btn-outline-primary", function () {
+            shareValues.appendChild(button("Share additions (" + kindLabel(kind) + ")…", "btn-outline-primary", function () {
                 propose({ patch: true, modality: kind }, undefined, "choice");
             }));
         });
@@ -128,7 +128,7 @@
         items.forEach(function (item) {
             const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-2");
             row.appendChild(el("span", "badge " + (badge[item.status] || "bg-secondary"), item.status));
-            row.appendChild(el("span", "small text-muted", item.modality));
+            row.appendChild(el("span", "small text-muted", kindLabel(item.modality)));
             row.appendChild(el("code", "", item.id || item.path));
             if (item.problem) row.appendChild(el("span", "small text-danger", item.problem));
             if (item.status === "now-official") {
@@ -264,6 +264,11 @@
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
 
+    function kindLabel(name) {
+        const kind = catalog.modalities.find(function (entry) { return entry.name === name; });
+        return kind ? kind.label : name;
+    }
+
     function currentKind() {
         return catalog.modalities.find(function (kind) { return kind.name === kindSelect.value; });
     }
@@ -327,6 +332,7 @@
         const unknown = el("input", "form-check-input");
         unknown.type = "checkbox";
         unknown.id = id + "-unknown";
+        unknown.setAttribute("aria-label", "Unknown: " + entry.label);
         const unknownLabel = el("label", "form-check-label", "Unknown");
         unknownLabel.htmlFor = unknown.id;
         unknown.addEventListener("change", function () { text.disabled = unknown.checked; });
@@ -365,8 +371,10 @@
     }
 
     async function loadExample(template) {
-        const query = "?modality=" + encodeURIComponent(kindSelect.value) + (template ? "&template=" + encodeURIComponent(template) : "");
+        const chosen = kindSelect.value;
+        const query = "?modality=" + encodeURIComponent(chosen) + (template ? "&template=" + encodeURIComponent(template) : "");
         const { ok, data } = await call(urls.example + query);
+        if (kindSelect.value !== chosen || (template && templateSelect.value !== template)) return null;  // an answer for an earlier choice
         if (!ok) { say(data.error || "Could not load the example", "danger"); return null; }
         renderExample(data.entries);
         document.getElementById("spec-no-example").hidden = Boolean(data.template);
@@ -385,9 +393,8 @@
         showActions();
         if (!kind || kind.kind !== "prism") return;
         if (kind.metrics) showKnown();
-        const chosen = kind.name;
         const data = await loadExample();
-        if (!data || kindSelect.value !== chosen) return;
+        if (!data) return;
         const listed = kind.lists.map(function (list) { return list.field; });
         templateSelect.replaceChildren();
         data.templates.forEach(function (name) { templateSelect.appendChild(option(name, name)); });

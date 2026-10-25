@@ -28,7 +28,7 @@ SPEC_PAGES = {
 SPEC_GROUPS = [
     (None, ["overview"]),
     (
-        "Kinds of data",
+        "Modalities",
         [
             "survey",
             "biometrics",

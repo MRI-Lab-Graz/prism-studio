@@ -95,13 +95,14 @@ def add_missing(page, label, value):
 
 
 def page_words(page):
-    """The page text without command literals in code elements."""
-    return page.evaluate("""() => {
-        const copy = document.body.cloneNode(true);
-        copy.querySelectorAll("code, script, style").forEach(n => n.remove());
-        document.body.appendChild(copy); copy.hidden = false;
+    """The visible text of the page card and the open dialog, without code elements and the proposal document."""
+    return page.evaluate("""() => ["#spec-contribute", "#spec-propose-dialog"].map(selector => {
+        const copy = document.querySelector(selector).cloneNode(true);
+        copy.querySelectorAll("code, #spec-propose-json").forEach(n => n.remove());
+        copy.removeAttribute("id");
+        document.body.appendChild(copy);
         const text = copy.innerText; copy.remove(); return text;
-    }""").lower()
+    }).join(" ")""").lower()
 
 
 def test_nothing_but_the_kind_of_data_is_shown_at_first(bare_page, studio_url):
@@ -204,7 +205,7 @@ def test_use_adds_a_survey_value_shown_with_its_kind_and_removed(app_page, studi
     assert json.loads(patch.read_text(encoding="utf-8"))["operations"][0]["values"] == ["sibling"]
     local = app_page.locator("#spec-values-local")
     expect(local).to_contain_text("sibling")
-    expect(local).to_contain_text("survey")
+    expect(local).to_contain_text("Questionnaires and rating scales")
     app_page.once("dialog", lambda confirm: confirm.accept())
     local.get_by_role("button", name="Remove").first.click()
     expect(local).to_contain_text("None yet")
@@ -227,7 +228,69 @@ def test_no_page_text_uses_technical_words(app_page, studio_url, project):
             expect(app_page.locator("#spec-kind")).to_have_value(kind)
             app_page.wait_for_load_state("networkidle")
         words = page_words(app_page)
-        assert not [w for w in ("modalit", "patch", "enum", "schema", "termid") if w in words], kind
+        assert not [w for w in TECHNICAL_WORDS if w in words], kind
+    app_page.locator("#spec-kind").select_option("survey")
+    add_missing(app_page, "Respondent", "sibling")
+    app_page.locator("#spec-use").click()
+    expect(app_page.locator("#spec-values-local")).to_contain_text("sibling")
+    app_page.locator("#spec-share-buttons").get_by_role("button").click()
+    expect(app_page.locator("#spec-propose-dialog")).to_be_visible()
+    words = page_words(app_page)
+    assert "share a choice with the prism community" in words  # the dialog's text is part of the check
+    assert not [w for w in TECHNICAL_WORDS if w in words]
+
+
+TECHNICAL_WORDS = ("modalit", "patch", "enum", "schema", "termid")
+
+
+def test_yes_no_entries_are_pull_downs_without_missing(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    fasting = proposal_entry(bare_page, "Fasting required")
+    expect(fasting).to_have_js_property("tagName", "SELECT")
+    expect(fasting.locator("option", has_text="Unknown")).to_have_count(1)
+    expect(fasting.locator("option", has_text="yes")).to_have_count(1)
+    expect(fasting.locator("option", has_text="Missing")).to_have_count(0)
+
+
+def test_free_text_unknown_ticks_are_named_after_their_entry(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    bare_page.get_by_label("Unknown: Laboratory").check()
+    expect(proposal_entry(bare_page, "Laboratory")).to_be_disabled()
+
+
+def test_a_slow_example_of_an_earlier_choice_does_not_replace_the_newer_one(bare_page, studio_url):
+    held = []
+    bare_page.route(re.compile(r".*/api/spec/example\?modality=biosample.*"), lambda route: held.append(route))
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option("biosample")
+    for _ in range(100):  # until the biosample request is held
+        if held:
+            break
+        bare_page.wait_for_timeout(50)
+    bare_page.locator("#spec-kind").select_option("survey")
+    expect(proposal_entry(bare_page, "Respondent")).to_be_visible()
+    assert held, "the biosample example request was not held"
+    held[0].continue_()
+    bare_page.wait_for_timeout(500)
+    expect(bare_page.locator("#spec-example")).not_to_contain_text("serum")
+    expect(proposal_entry(bare_page, "Respondent")).to_be_visible()
+
+
+def test_an_addition_made_outside_the_page_is_shown_with_its_kind_and_removed(app_page, studio_url, project):
+    from src.spec_overlay import add_local_values
+
+    add_local_values(project, "Technical.Respondent", ["sibling"], modality="survey")
+    patch = project / "code" / "specification" / "patches" / "survey.json"
+    assert patch.is_file()
+    choose_kind(app_page, studio_url, "survey")
+    local = app_page.locator("#spec-values-local")
+    expect(local).to_contain_text("sibling")
+    expect(local).to_contain_text("Questionnaires and rating scales")  # the kind's label, not its name
+    expect(app_page.get_by_role("button", name=re.compile(r"Share additions \(Questionnaires"))).to_be_visible()
+    app_page.once("dialog", lambda confirm: confirm.accept())
+    local.get_by_role("button", name="Remove").first.click()
+    expect(local).to_contain_text("None yet")
+    assert not patch.exists() or "sibling" not in patch.read_text(encoding="utf-8")
 
 
 def test_a_value_found_in_the_data_is_added_to_the_project(app_page, studio_url, project):
