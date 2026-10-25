@@ -32,6 +32,7 @@ except ImportError:
 from ..cross_platform import describe_case_insensitive_id_collisions
 from ..utils.io import (
     ensure_dir as _ensure_dir,
+    project_name_keywords as _project_name_keywords,
     read_json as _read_json,
     write_json as _write_json,
 )
@@ -2025,14 +2026,16 @@ def _write_survey_description(
 
     from src import __version__ as prism_version
 
+    project_name, project_keywords = _project_name_keywords(output_root)
+
     dataset_description = {
-        "Name": name or "PRISM Survey Dataset",
+        "Name": name or project_name or "PRISM Survey Dataset",
         "BIDSVersion": DEFAULT_BIDS_VERSION,
         "DatasetType": "raw",
         "Authors": authors or ["prism-studio"],
         "Acknowledgements": "This dataset was created using the PRISM framework.",
         "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
-        "Keywords": ["psychology", "survey", "PRISM"],
+        "Keywords": project_keywords or ["psychology", "survey", "PRISM"],
         "GeneratedBy": [
             {
                 "Name": "PRISM Survey Converter",

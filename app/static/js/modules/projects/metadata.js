@@ -1132,12 +1132,12 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepte
                 <label class="form-check-label small text-muted" style="white-space: nowrap;">Corresponding author</label>
             </div>
         </div>
-        <div class="d-flex gap-2 align-items-center mb-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
             <button type="button" class="btn btn-outline-secondary btn-sm author-drag-handle" title="Drag to reorder authors" aria-label="Drag to reorder authors">
                 <i class="fas fa-grip-vertical"></i>
             </button>
-            <input type="text" class="form-control form-control-sm author-first" placeholder="First name" value="${escapedFirst}" title="Author first name" required>
-            <input type="text" class="form-control form-control-sm author-last" placeholder="Last name" value="${escapedLast}" title="Author last name" required>
+            <input type="text" class="form-control form-control-sm author-first" style="flex:1 1 12rem;min-width:10rem;width:auto" placeholder="First name" value="${escapedFirst}" title="Author first name" required>
+            <input type="text" class="form-control form-control-sm author-last" style="flex:1 1 12rem;min-width:10rem;width:auto" placeholder="Last name" value="${escapedLast}" title="Author last name" required>
             <button type="button" class="btn btn-outline-secondary btn-sm move-author-up" title="Move author up" aria-label="Move author up">
                 <i class="fas fa-arrow-up"></i>
             </button>
@@ -1211,6 +1211,10 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}, accepte
             updateCreateProjectButton();
             validateAuthorsBadge();
             _updateAuthorRowLabels();
+            // Both names are set (the check is enabled): look the ORCID up unless one is entered.
+            if (!row.querySelector('.author-orcid')?.value.trim()) {
+                metadataOrcidController.lookupOrcidForAuthorRow(row);
+            }
         },
         onRemove: () => {
             row.remove();

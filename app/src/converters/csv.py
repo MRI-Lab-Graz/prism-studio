@@ -11,6 +11,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from src.constants import DEFAULT_BIDS_VERSION
+from src.utils.io import project_name_keywords
 
 try:
     from .survey_core import load_survey_library as load_schemas, get_allowed_values
@@ -153,8 +154,9 @@ def process_dataframe(
     # Ensure dataset_description.json exists
     desc_path = os.path.join(output_root, "dataset_description.json")
     if not os.path.exists(desc_path):
+        project_name, project_keywords = project_name_keywords(output_root)
         dataset_description = {
-            "Name": "PRISM Dataset",
+            "Name": project_name or "PRISM Dataset",
             "BIDSVersion": DEFAULT_BIDS_VERSION,
             "DatasetType": "raw",
             "License": "CC0",
@@ -167,6 +169,8 @@ def process_dataframe(
             "GeneratedBy": [{"Name": "PRISM CSV Converter", "Version": "1.1.1"}],
             "HEDVersion": "8.2.0",
         }
+        if project_keywords:
+            dataset_description["Keywords"] = project_keywords
         with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(dataset_description, f, indent=2)
 

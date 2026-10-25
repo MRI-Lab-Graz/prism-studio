@@ -27,7 +27,11 @@ from src.entity_rules import load_entity_rules
 from src.participants_sessions import session_label
 from src.session_map import resolve_import_session
 from src.subject_id_matching import build_subject_id_matcher
-from src.utils.io import read_json as _read_json, write_json as _write_json
+from src.utils.io import (
+    project_name_keywords as _project_name_keywords,
+    read_json as _read_json,
+    write_json as _write_json,
+)
 from src.utils.naming import norm_key as _norm_key
 
 # Sourced from app/schemas/stable/entities.schema.json (see src/entity_rules.py)
@@ -344,12 +348,13 @@ def convert_biometrics_table_to_prism_dataset(
 
     # Root files
     output_root.mkdir(parents=True, exist_ok=True)
+    project_name, project_keywords = _project_name_keywords(output_root)
     dataset_description = {
-        "Name": name or "PRISM Biometrics Dataset",
+        "Name": name or project_name or "PRISM Biometrics Dataset",
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
         "Authors": authors or ["prism-studio"],
-        "Keywords": ["psychology", "biometrics", "PRISM"],
+        "Keywords": project_keywords or ["psychology", "biometrics", "PRISM"],
         "GeneratedBy": [
             {
                 "Name": "PRISM Biometrics Converter",
