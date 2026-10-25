@@ -65,8 +65,6 @@
         <!-- Main Upload Card -->
         <div class="card feature-card mb-4 border-success">
             <div class="card-body p-4">
-
-                <!-- File Upload Section -->
                 <div class="mb-4">
                                 <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
                                     <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
@@ -132,17 +130,13 @@
                                     </div>
                                 </div>
 
-                                <label for="selectedFolderPath" class="form-label mb-2">Dataset folder to validate (only for alternative option)</label>
+                                <label for="selectedFolderPath" class="form-label mb-2">Dataset folder to validate</label>
                                 <div class="input-group studio-picker-group">
                                     <input type="text" class="form-control border-success" id="selectedFolderPath" value="No folder selected" readonly>
                                     <button type="button" class="btn btn-outline-success" id="folderBtn">
                                         <i class="fas fa-folder-open me-2"></i>Browse Folder
                                     </button>
                                 </div>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Select one dataset root folder only when using the alternative option.
-                                </small>
 
                                 <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
                             </div>

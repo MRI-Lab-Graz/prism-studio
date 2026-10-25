@@ -22,3 +22,12 @@ def test_a_pinned_version_wins_and_is_marked(tmp_path):
 
     assert summary["schemas"] == [{"name": "survey", "version": "1.0.0", "pinned": True}]
 
+
+
+def test_invalid_overlay_files_are_not_counted_as_local_additions(tmp_path):
+    project = _project(tmp_path)
+    terms = project / "code" / "specification" / "terms" / "biosample"
+    terms.mkdir(parents=True)
+    (terms / "broken.json").write_text("{not json", encoding="utf-8")
+
+    assert project_schema_summary(project)["local_additions"] == 0

@@ -236,5 +236,5 @@ def project_schema_summary(project_root, schema_dir=None) -> dict:
             {"name": n, "version": versions[n], "pinned": sources[n] == "project.json"}
             for n in present_modalities(project_root, schema_dir)
         ],
-        "local_additions": len(list_all_local_items(project_root)),
+        "local_additions": sum(item["status"] == "local" for item in list_all_local_items(project_root)),
     }
