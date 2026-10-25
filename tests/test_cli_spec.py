@@ -322,6 +322,15 @@ def _kind_args(sample, description="Skin temperature", *extra):
     return ["spec", "propose-new-kind", "--description", description, "--sample", str(sample), "--json", *extra]
 
 
+def test_spec_propose_new_kind_takes_a_name_and_refuses_a_bids_name(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_text("time\ttemp\n0\t33.1\n", encoding="utf-8")
+    code, text = _run(*_kind_args(sample, "Skin temperature", "--name", "skintemp"))
+    assert code == 0 and "Suggested name: skintemp" in json.loads(text)["text"]
+    code, text = _run(*_kind_args(sample, "Skin temperature", "--name", "eeg"))
+    assert code == 1 and "already taken" in json.loads(text)["error"]
+
+
 def test_spec_propose_new_kind_refuses_a_sample_cut_inside_a_character(tmp_path):
     sample = tmp_path / "s.tsv"
     sample.write_bytes(("a" * 49_998 + "é" * 5).encode("utf-8"))  # 50,008 bytes; the read limit falls inside an é
@@ -351,7 +360,7 @@ def opened(monkeypatch):
 def _call(spec_commands, tmp_path, description, sample_text="t\tv\n0\t1\n", open_=True):
     sample = tmp_path / "s.tsv"
     sample.write_text(sample_text, encoding="utf-8")
-    args = argparse.Namespace(description=description, sample=str(sample), closest=None, out=None, open=open_, json=True)
+    args = argparse.Namespace(description=description, sample=str(sample), closest=None, name=None, out=None, open=open_, json=True)
     try:
         spec_commands.cmd_spec_propose_new_kind(args)
     except SystemExit as exc:

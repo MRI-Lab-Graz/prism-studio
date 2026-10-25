@@ -26,7 +26,7 @@
                 <label class="form-label" for="spec-kind">What kind of data?</label>
                 <select id="spec-kind" class="form-select w-auto">
                     <option value="" selected disabled>Choose the kind of data…</option>
-                    <option value="new-kind">Nothing fits: a new kind of data</option>
+                    <option value="new-kind">➕ Nothing fits: a new kind of data</option>
                 </select>
             </div>
             <div class="form-check mb-2">
@@ -35,9 +35,6 @@
             </div>
         </div>
         <div id="spec-message" class="alert d-none" role="status"></div>
-        <p id="spec-bids-note" class="alert alert-info" hidden>
-            PRISM passes this kind of data to BIDS unchanged, so there is nothing to add here.
-        </p>
         <div id="spec-new-kind" class="mb-4" hidden>
             <p class="text-muted">
                 Describe your data in your own words and give a short sample file; the maintainer builds the new kind of
@@ -55,6 +52,11 @@
                 <input id="spec-nk-file" type="file" class="form-control form-control-sm" accept=".txt,.csv,.tsv,.json,text/*">
             </div>
             <div class="mb-3">
+                <label class="form-label" for="spec-nk-name">Suggested name (optional)</label>
+                <input id="spec-nk-name" type="text" class="form-control w-auto" maxlength="32" autocomplete="off" spellcheck="false">
+                <div class="form-text">Lowercase letters and digits, e.g. skintemp. Names BIDS or PRISM already use are refused.</div>
+            </div>
+            <div class="mb-3">
                 <label class="form-label" for="spec-nk-closest">Closest kind of data (optional)</label>
                 <select id="spec-nk-closest" class="form-select w-auto">
                     <option value="" selected>Not given</option>
@@ -68,29 +70,26 @@
         </div>
 
         <div id="spec-step2" hidden>
-            <div class="row g-4 mb-3">
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100 bg-body-tertiary">
+            <div id="spec-step2-rule" class="alert alert-primary">
+                <strong>Only fill in what is missing.</strong> On the list where your value is not offered, pick
+                <em>Missing: add a value…</em> and type it. That value is all that gets proposed. Everything else is
+                optional: what you fill in is not proposed, it only shows the maintainer what your data looks like.
+            </div>
+            <div class="border rounded p-3 mb-3">
+                <div class="row g-3 pb-2 mb-2 border-bottom">
+                    <div class="col-md-6">
                         <h3 class="h6">Accepted example</h3>
                         <div id="spec-template-box" class="mb-2" hidden>
                             <label class="form-label small mb-0" for="spec-template">Example</label>
                             <select id="spec-template" class="form-select form-select-sm w-auto"></select>
                         </div>
-                        <p id="spec-no-example" class="small text-muted" hidden>No accepted example yet for this kind of data.</p>
-                        <dl id="spec-example" class="mb-0"></dl>
+                        <p id="spec-no-example" class="small text-muted mb-0" hidden>No accepted example yet for this kind of data.</p>
                     </div>
+                    <div class="col-md-6"><h3 class="h6">Your proposal</h3></div>
                 </div>
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h3 class="h6">Your proposal</h3>
-                        <div id="spec-proposal"></div>
-                    </div>
-                </div>
+                <div id="spec-sections"></div>
             </div>
-            <p class="small text-muted">
-                What gets proposed: only the "Missing" entries. Your filled and "Unknown" entries, and the "Not sure"
-                tick, are shown to the maintainer as context.
-            </p>
+            <p id="spec-summary" class="mb-2" role="status" aria-live="polite"></p>
             <div class="d-flex flex-wrap gap-2 mb-4">
                 <div id="spec-share-buttons" class="d-flex flex-wrap gap-2"></div>
                 <button type="button" id="spec-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>

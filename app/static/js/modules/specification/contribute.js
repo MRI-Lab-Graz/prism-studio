@@ -32,14 +32,14 @@
     const notSure = document.getElementById("spec-not-sure");
     const step2 = document.getElementById("spec-step2");
     const metricPanel = document.getElementById("spec-panel-metric");
-    const exampleBox = document.getElementById("spec-example");
     const templateSelect = document.getElementById("spec-template");
-    const proposalBox = document.getElementById("spec-proposal");
+    const sectionsBox = document.getElementById("spec-sections");
     const shareButtons = document.getElementById("spec-share-buttons");
     const useButton = document.getElementById("spec-use");
     let catalog = { modalities: [], project_open: false };
     let projectSpecimens = [];  // sample types this project added itself
     let foundColumn = null;  // the "Found in your data" column the form was filled from
+    const exampleCells = new Map();  // step 2: field -> the example cell beside that entry, refilled when another template is chosen
     let answers = [];  // step 2: one {entry, read()} per entry of the chosen kind of data
     let download = null;  // {name, type, text}: what "Download" saves
     let lastKind = "";  // the last kind of data chosen in step 1, the closest kind for "Nothing fits"
@@ -284,6 +284,10 @@
         return catalog.modalities.find(function (kind) { return kind.name === kindSelect.value; });
     }
 
+    // A native <option> holds only text, so the icons are emoji standing in for the converter's icons.
+    const KIND_ICONS = { survey: "📋", biometrics: "⚖️", biosample: "🧪", physio: "💓", environment: "🌍", events: "⏱️" };
+    const kindIcon = function (name) { return (KIND_ICONS[name] || "📄") + " "; };
+
     function option(text, value, kind) {
         const node = el("option", "", text);
         node.value = value;
@@ -291,12 +295,89 @@
         return node;
     }
 
-    function renderExample(entries) {
-        exampleBox.replaceChildren();
-        entries.forEach(function (entry) {
-            exampleBox.appendChild(el("dt", "small text-muted fw-normal", entry.label));
-            exampleBox.appendChild(el("dd", entry.example === null ? "text-muted fst-italic" : "", entry.example === null ? "no example yet" : entry.example));
+    // The "i" next to a label: the schema's own description as a tooltip (a button, so the keyboard reaches it).
+    function infoIcon(text, subject) {
+        const node = el("button", "btn btn-link btn-sm p-0 ms-1 text-muted align-baseline");
+        node.type = "button";
+        node.title = text;
+        node.setAttribute("aria-label", "About " + subject + ": " + text);
+        node.appendChild(el("i", "fas fa-circle-info"));
+        if (window.bootstrap) new window.bootstrap.Tooltip(node);
+        return node;
+    }
+
+    // One collapsible section, drawn like the sections of the project page; closed at first.
+    const SECTION_ICONS = {
+        Study: "fa-book", Technical: "fa-gear", I18n: "fa-language", Scoring: "fa-calculator", Normative: "fa-chart-line",
+        Recording: "fa-wave-square", TriggerAnnotations: "fa-bolt", Acquisition: "fa-sliders", Processing: "fa-filter",
+        Privacy: "fa-user-shield", Provenance: "fa-database", StimulusPresentation: "fa-display",
+    };
+
+    function sectionFold(name, section, body, count) {
+        const bodyId = "spec-section-" + sectionsBox.children.length;
+        const wrap = el("div", "mb-2");
+        wrap.dataset.section = name;
+        const toggle = el("button", "btn btn-sm btn-outline-secondary w-100 text-start sm-section-toggle");
+        toggle.type = "button";
+        toggle.dataset.bsToggle = "collapse";
+        toggle.dataset.bsTarget = "#" + bodyId;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-controls", bodyId);
+        const title = el("span", "sm-section-toggle__title");
+        title.append(el("i", "fas " + (SECTION_ICONS[name] || "fa-table-columns") + " me-1"), document.createTextNode(" " + section.title));
+        const titleline = el("span", "sm-section-toggle__titleline");
+        titleline.append(title, el("span", "sm-section-toggle__badge badge rounded-pill text-bg-secondary", count + (count === 1 ? " entry" : " entries")));
+        toggle.append(titleline, el("span", "sm-section-toggle__summary", section.summary));
+        const card = el("div", "card card-body border-0 bg-light mt-1");
+        card.appendChild(body);
+        const collapse = el("div", "collapse");
+        collapse.id = bodyId;
+        collapse.appendChild(card);
+        wrap.append(toggle, collapse);
+        return wrap;
+    }
+
+    // items grouped by the section of their field ("Technical.SpecimenType" -> "Technical"), in order.
+    function bySection(items, fieldOf) {
+        const groups = new Map();
+        items.forEach(function (item) {
+            const section = fieldOf(item).split(".")[0];
+            if (!groups.has(section)) groups.set(section, []);
+            groups.get(section).push(item);
         });
+        return groups;
+    }
+
+    function fillExamples(entries) {
+        entries.forEach(function (entry) {
+            if (!exampleCells.has(entry.field)) return;  // a section with nothing to propose is not shown
+            exampleCells.get(entry.field).replaceChildren(
+                el("div", "small mb-0 text-muted spec-example-label", entry.label),
+                el("div", entry.example === null ? "text-muted fst-italic" : "", entry.example === null ? "no example yet" : entry.example),
+            );
+        });
+    }
+
+    // Step 2: one fold per section, one row per entry with the example on the left and the user's own entry on the right.
+    function renderSections(data, listed) {
+        sectionsBox.replaceChildren();
+        exampleCells.clear();
+        const shown = data.entries.filter(function (entry) { return data.sections[entry.field.split(".")[0]].proposable; });
+        answers = shown.map(function (entry, index) { return proposalEntry(entry, index, listed.indexOf(entry.field) !== -1); });
+        bySection(answers, function (answer) { return answer.entry.field; }).forEach(function (group, section) {
+            const body = el("div", "pb-2");
+            group.forEach(function (answer) {
+                const left = el("div", "col-md-6");
+                const right = el("div", "col-md-6");
+                right.appendChild(answer.row);
+                exampleCells.set(answer.entry.field, left);
+                const pair = el("div", "row g-3 mb-2");
+                pair.append(left, right);
+                body.appendChild(pair);
+            });
+            sectionsBox.appendChild(sectionFold(section, data.sections[section], body, group.length));
+        });
+        fillExamples(data.entries);
     }
 
     // One entry of the user's proposal: a pull-down for a list (values, "Missing: add a value…", "Unknown"), a text box otherwise.
@@ -305,7 +386,10 @@
         const id = "spec-entry-" + index;
         const label = el("label", "form-label small mb-0", entry.label);
         label.htmlFor = id;
-        row.appendChild(label);
+        const heading = el("div", "d-flex align-items-start");
+        heading.appendChild(label);
+        if (entry.description) heading.appendChild(infoIcon(entry.description, entry.label));
+        row.appendChild(heading);
         const missing = el("input", "form-control form-control-sm mt-1");
         missing.type = "text";
         missing.autocomplete = "off";
@@ -366,8 +450,26 @@
         return { entries: entries, not_sure: notSure.checked, closest: kindSelect.value };
     }
 
+    // What sharing would send, said in words: the "Missing" values are proposed, every other filled entry is only context.
+    function showSummary(lists) {
+        const summary = document.getElementById("spec-summary");
+        const context = answers.filter(function (answer) { return answer.read().value; })
+            .map(function (answer) { return answer.entry.label; });
+        const typing = answers.find(function (answer) { return answer.read().missing === ""; });
+        if (!lists.length) {
+            summary.textContent = typing ? "Type your new value for " + typing.entry.label + "."
+                : "Nothing to propose yet: pick “Missing: add a value…” on the list where your value is not offered.";
+            return;
+        }
+        summary.replaceChildren(
+            el("strong", "", "You propose: " + lists.map(function (item) { return item.entry.label + ": " + item.value; }).join("; ") + "."),
+            document.createTextNode(" " + (context.length ? "Goes along only as context (not proposed): " + context.join(", ") + "." : "Nothing else goes along.")),
+        );
+    }
+
     function showActions() {
         const lists = missingLists();
+        showSummary(lists);
         shareButtons.replaceChildren();
         lists.forEach(function (item) {
             const text = lists.length === 1 ? "Share with the PRISM community…" : "Share the new " + item.entry.label + "…";
@@ -385,7 +487,7 @@
         const { ok, data } = await call(urls.example + query);
         if (kindSelect.value !== chosen || (template && templateSelect.value !== template)) return null;  // an answer for an earlier choice
         if (!ok) { say(data.error || "Could not load the example", "danger"); return null; }
-        renderExample(data.entries);
+        if (template) fillExamples(data.entries);  // another template of the same kind of data; the first one is drawn by renderSections
         document.getElementById("spec-no-example").hidden = Boolean(data.template);
         return data;
     }
@@ -395,14 +497,13 @@
         const kind = currentKind();
         if (kind) lastKind = kind.name;
         if (kindSelect.value === "new-kind") nk.closest.value = lastKind;
-        document.getElementById("spec-bids-note").hidden = !kind || kind.kind !== "bids";
         document.getElementById("spec-new-kind").hidden = kindSelect.value !== "new-kind";
         step2.hidden = true;
         metricPanel.hidden = !(kind && kind.metrics);
         answers = [];
-        proposalBox.replaceChildren();
+        sectionsBox.replaceChildren();
         showActions();
-        if (!kind || kind.kind !== "prism") return;
+        if (!kind) return;
         const data = await loadExample();
         if (!data) return;
         const listed = kind.lists.map(function (list) { return list.field; });
@@ -410,8 +511,7 @@
         data.templates.forEach(function (name) { templateSelect.appendChild(option(name, name)); });
         templateSelect.value = data.template || "";
         document.getElementById("spec-template-box").hidden = data.templates.length < 2;
-        answers = data.entries.map(function (entry, index) { return proposalEntry(entry, index, listed.indexOf(entry.field) !== -1); });
-        answers.forEach(function (answer) { proposalBox.appendChild(answer.row); });
+        renderSections(data, listed);
         step2.hidden = !answers.length;
         if (kind.metrics) fillPick();
     }
@@ -523,7 +623,8 @@
         showPick();
         if (m.pick.value === "missing") prefillSpecimen();
     });
-    proposalBox.addEventListener("change", function () {
+    sectionsBox.addEventListener("input", showActions);  // free-text entries and "Unknown" ticks change the summary too
+    sectionsBox.addEventListener("change", function () {
         if (!currentKind() || !currentKind().metrics) return;
         fillPick();
         if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
@@ -542,7 +643,7 @@
     });
 
     const nk = {};
-    ["description", "sample", "file", "closest", "share"].forEach(function (key) { nk[key] = document.getElementById("spec-nk-" + key); });
+    ["description", "sample", "file", "name", "closest", "share"].forEach(function (key) { nk[key] = document.getElementById("spec-nk-" + key); });
     const newKindCopy = {
         title: "Share a new kind of data with the PRISM community",
         text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab. "
@@ -569,7 +670,7 @@
     });
     nk.share.addEventListener("click", async function () {
         clearMessage();
-        const body = { description: nk.description.value, sample: nk.sample.value, closest: nk.closest.value || null };
+        const body = { description: nk.description.value, sample: nk.sample.value, closest: nk.closest.value || null, name: nk.name.value.trim() || null };
         const { ok, data } = await call(urls.proposeNewKind, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
         const copy = data.note ? newKindTooLong : newKindCopy;
@@ -594,8 +695,8 @@
         catalog = data;
         const nothingFits = kindSelect.lastElementChild;
         catalog.modalities.forEach(function (kind) {
-            kindSelect.insertBefore(option(kind.label, kind.name), nothingFits);
-            nk.closest.appendChild(option(kind.label, kind.name));
+            kindSelect.insertBefore(option(kindIcon(kind.name) + kind.label, kind.name), nothingFits);
+            nk.closest.appendChild(option(kindIcon(kind.name) + kind.label, kind.name));
         });
         startMetric();
         document.getElementById("spec-values-project").hidden = !catalog.project_open;

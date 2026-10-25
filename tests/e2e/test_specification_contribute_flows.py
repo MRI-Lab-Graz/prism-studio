@@ -85,13 +85,19 @@ def choose_kind(page, studio_url, kind):
     page.locator("#spec-kind").select_option(kind)
 
 
+def open_all_sections(page):
+    page.locator("#spec-sections .collapse").first.wait_for(state="attached")  # the example arrives after the kind is chosen
+    page.evaluate("document.querySelectorAll('#spec-sections .collapse').forEach(c => c.classList.add('show'))")
+
+
 def proposal_entry(page, label):
-    return page.locator("#spec-proposal").get_by_label(label, exact=True)
+    open_all_sections(page)
+    return page.locator("#spec-sections").get_by_label(label, exact=True)
 
 
 def add_missing(page, label, value):
     proposal_entry(page, label).select_option(label="Missing: add a value…")
-    page.locator("#spec-proposal").get_by_label(f"New value for {label}").fill(value)
+    page.locator("#spec-sections").get_by_label(f"New value for {label}").fill(value)
 
 
 def page_words(page):
@@ -110,8 +116,7 @@ def test_nothing_but_the_kind_of_data_is_shown_at_first(bare_page, studio_url):
     kind = bare_page.locator("#spec-kind")
     expect(kind).to_be_visible()
     expect(kind.locator("option:checked")).to_have_text("Choose the kind of data…")
-    expect(kind.locator("option").last).to_have_text("Nothing fits: a new kind of data")
-    expect(kind.locator("option", has_text="Structural MRI (BIDS, passed through)")).to_have_count(1)
+    expect(kind.locator("option").last).to_have_text("➕ Nothing fits: a new kind of data")
     expect(bare_page.get_by_label("Not sure")).to_be_visible()
     expect(bare_page.locator("#spec-step2")).to_be_hidden()
     expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
@@ -119,13 +124,13 @@ def test_nothing_but_the_kind_of_data_is_shown_at_first(bare_page, studio_url):
 
 def test_biosample_shows_the_accepted_example_beside_the_proposal(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "biosample")
-    expect(bare_page.locator("#spec-example")).to_contain_text("serum")
+    expect(bare_page.locator("#spec-sections")).to_contain_text("serum")
     specimen = proposal_entry(bare_page, "Specimen type")
     expect(specimen.locator("option:checked")).to_have_text("Choose…")
     expect(specimen.locator("option", has_text="saliva")).to_have_count(1)
     expect(specimen.locator("option", has_text="Missing: add a value…")).to_have_count(1)
     expect(specimen.locator("option", has_text="Unknown")).to_have_count(1)
-    expect(bare_page.locator("#spec-proposal").get_by_label("New value for Specimen type")).to_be_hidden()
+    expect(bare_page.locator("#spec-sections").get_by_label("New value for Specimen type")).to_be_hidden()
     expect(bare_page.locator("#spec-panel-metric")).to_be_visible()  # biosample has measurements
 
 
@@ -167,7 +172,8 @@ def test_several_missing_lists_are_shared_one_at_a_time(bare_page, studio_url):
 def test_a_too_long_proposal_shows_the_text_to_paste(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "biosample")
     add_missing(bare_page, "Specimen type", "sweat")
-    boxes = bare_page.locator("#spec-proposal input[type=text]:visible:not([aria-label])")  # the free-text entries
+    open_all_sections(bare_page)
+    boxes = bare_page.locator("#spec-sections input[type=text]:visible:not([aria-label])")  # the free-text entries
     for index in range(boxes.count()):
         boxes.nth(index).fill("ä" * 200)
     bare_page.locator("#spec-share-buttons").get_by_role("button").click()
@@ -176,16 +182,66 @@ def test_a_too_long_proposal_shows_the_text_to_paste(bare_page, studio_url):
     expect(bare_page.locator("#spec-propose-context")).to_contain_text("ää")
 
 
-def test_a_bids_kind_is_passed_through(bare_page, studio_url):
+def test_step_two_is_folded_like_the_project_page_with_plain_titles(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    toggles = bare_page.locator("#spec-sections .sm-section-toggle")
+    expect(toggles).to_have_count(1)  # "About the measure" has no list to extend, so it is not shown
+    expect(toggles.first).to_contain_text("How the data is collected")
+    expect(toggles.first).to_contain_text("9 entries")
+    summary = toggles.first.locator(".sm-section-toggle__summary")
+    expect(summary).to_contain_text("Specimen type, Collection method")
+    expect(summary).to_have_css("text-align", "left")
+    expect(bare_page.locator("#spec-sections .collapse.show")).to_have_count(0)  # every section starts closed
+    toggles.first.click()
+    expect(toggles.first).to_have_attribute("aria-expanded", "true")
+    expect(bare_page.locator("#spec-sections .collapse.show")).to_have_count(1)
+    expect(bare_page.locator("#spec-step2 button[aria-label^='About Specimen type']")).to_have_count(1)
+
+
+def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "survey")
+    expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="About the measure")).to_have_count(1)
+    expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Norms")).to_have_count(0)
+    bare_page.locator("#spec-kind").select_option("events")
+    bare_page.wait_for_load_state("networkidle")
+    expect(bare_page.locator("#spec-step2")).to_be_hidden()  # no list of task events can be extended
+
+
+def test_example_and_proposal_stay_level_row_by_row(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    open_all_sections(bare_page)
+    for label in ("Specimen type", "Laboratory", "Assay kit"):
+        proposal = bare_page.locator("#spec-step2 label", has_text=label).bounding_box()
+        example = bare_page.locator("#spec-step2 .spec-example-label", has_text=label).bounding_box()
+        assert abs(proposal["y"] - example["y"]) < 3, label
+
+
+def test_step_two_says_only_the_missing_value_is_needed(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    rule = bare_page.locator("#spec-step2-rule")
+    expect(rule).to_be_visible()
+    expect(rule).to_contain_text("Only fill in what is missing")
+    expect(rule).to_contain_text("Missing: add a value…")
+
+
+def test_the_summary_says_what_is_proposed_and_what_is_only_context(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    summary = bare_page.locator("#spec-summary")
+    expect(summary).to_contain_text("Nothing to propose yet")
+    add_missing(bare_page, "Specimen type", "sweat")
+    expect(summary).to_contain_text("You propose: Specimen type: sweat")
+    expect(summary).to_contain_text("Nothing else goes along")
+    proposal_entry(bare_page, "Collection method").select_option("swab")
+    proposal_entry(bare_page, "Laboratory").fill("Our lab")
+    expect(summary).to_contain_text("Goes along only as context (not proposed): Collection method, Laboratory")
+
+
+def test_no_bids_kind_is_offered(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
-    bare_page.locator("#spec-kind").select_option(label="Structural MRI (BIDS, passed through)")
-    expect(bare_page.locator("#spec-bids-note")).to_be_visible()
-    expect(bare_page.locator("#spec-bids-note")).to_contain_text("passes")
-    expect(bare_page.locator("#spec-step2")).to_be_hidden()
-    expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
+    expect(bare_page.locator("#spec-kind option", has_text="BIDS")).to_have_count(0)
 
 
-NOTHING_FITS = "Nothing fits: a new kind of data"
+NOTHING_FITS = "➕ Nothing fits: a new kind of data"
 
 
 def test_nothing_fits_shows_the_new_kind_form(bare_page, studio_url):
@@ -338,7 +394,7 @@ def test_use_is_hidden_without_a_project(bare_page, studio_url):
 def test_no_page_text_uses_technical_words(app_page, studio_url, project):
     add_biosample_data(project)
     app_page.goto(f"{studio_url}/specifications/contribute")
-    for kind in (None, "biosample", "survey", "anat", "new-kind"):
+    for kind in (None, "biosample", "survey", "new-kind"):
         if kind:
             app_page.locator("#spec-kind").select_option(kind)
             expect(app_page.locator("#spec-kind")).to_have_value(kind)
@@ -370,8 +426,9 @@ def test_yes_no_entries_are_pull_downs_without_missing(bare_page, studio_url):
 
 def test_free_text_unknown_ticks_are_named_after_their_entry(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "biosample")
+    laboratory = proposal_entry(bare_page, "Laboratory")  # opens the folds
     bare_page.get_by_label("Unknown: Laboratory").check()
-    expect(proposal_entry(bare_page, "Laboratory")).to_be_disabled()
+    expect(laboratory).to_be_disabled()
 
 
 def test_a_slow_example_of_an_earlier_choice_does_not_replace_the_newer_one(bare_page, studio_url):
@@ -388,7 +445,7 @@ def test_a_slow_example_of_an_earlier_choice_does_not_replace_the_newer_one(bare
     assert held, "the biosample example request was not held"
     held[0].continue_()
     bare_page.wait_for_timeout(500)
-    expect(bare_page.locator("#spec-example")).not_to_contain_text("serum")
+    expect(bare_page.locator("#spec-sections")).not_to_contain_text("serum")
     expect(proposal_entry(bare_page, "Respondent")).to_be_visible()
 
 

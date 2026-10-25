@@ -626,3 +626,63 @@
         min-height: auto;
     }
 }
+
+/* Collapsible section toggles (the project page and the Propose changes page) */
+.sm-section-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border-color: #cfdbe2;
+    background: #f8fafb;
+}
+
+.sm-section-toggle:hover,
+.sm-section-toggle:focus {
+    background: #eef4f7;
+    border-color: #b8cad5;
+}
+
+.sm-section-toggle__titleline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.sm-section-toggle__title {
+    font-weight: 700;
+    color: #1f8b5c;
+}
+
+.sm-section-toggle:hover .sm-section-toggle__title,
+.sm-section-toggle:focus .sm-section-toggle__title,
+.sm-section-toggle[aria-expanded="true"] .sm-section-toggle__title {
+    color: #176845;
+}
+
+.sm-section-toggle__badge {
+    flex-shrink: 0;
+}
+
+.sm-section-toggle__summary {
+    display: block;
+    text-align: left;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    color: #5d6d79;
+    white-space: normal;
+}
+
+@media (max-width: 767.98px) {
+    .sm-section-toggle {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .sm-section-toggle__titleline {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

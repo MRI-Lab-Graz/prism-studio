@@ -1897,6 +1897,7 @@ def build_prism_tools_parsers(
     )
     parser_spec_kind.add_argument("--description", required=True, help="What the data is and how it is recorded")
     parser_spec_kind.add_argument("--sample", required=True, help="A sample data file (UTF-8 text), pasted into the form by you")
+    parser_spec_kind.add_argument("--name", help="A suggested name (lowercase letters and digits; names BIDS or PRISM already use are refused)")
     parser_spec_kind.add_argument("--closest", help="The closest existing kind of data")
     parser_spec_kind.add_argument("--out", help="Also save the proposal text to this file")
     parser_spec_kind.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")

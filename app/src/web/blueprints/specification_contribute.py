@@ -164,7 +164,7 @@ def propose_metric():
 def propose_new_kind():
     body = _body()
     try:
-        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"))
+        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"), body.get("name"))
     except OverlayError as exc:
         return _error(str(exc))
     if result["problems"]:
