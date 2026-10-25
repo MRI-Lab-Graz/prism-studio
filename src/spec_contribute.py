@@ -91,7 +91,6 @@ def spec_catalog() -> dict:
         modalities.append({
             "name": name,
             "label": rule.description or name,
-            "kind": "prism",
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
             "metrics": [
                 {
@@ -148,8 +147,6 @@ def example_entries(modality: str, template: str | None = None) -> dict:
     templates = current["templates"]
     if template is not None and template not in templates:
         raise OverlayError(f"unknown template {template!r} for {modality}; choose one of: {', '.join(templates) or 'none'}")
-    if current["kind"] != "prism":
-        return {"modality": modality, "template": None, "templates": [], "entries": [], "sections": {}}
     template = template or (templates[0] if templates else None)
     data = {}
     if template:
@@ -158,7 +155,7 @@ def example_entries(modality: str, template: str | None = None) -> dict:
         except (OSError, ValueError):
             data = {}
     schema = load_schema(modality, DEFAULT_SCHEMA_DIR, "stable") or {}
-    entries, sections = [], {}
+    entries, labels = [], {}
     for section, node in (schema.get("properties") or {}).items():
         if section == "Metadata" or not isinstance(node, dict):
             continue
@@ -174,13 +171,13 @@ def example_entries(modality: str, template: str | None = None) -> dict:
                 "example": _example_text(_value_at(data, field)), "values": values or None,
                 "description": child.get("description"),
             })
+    lists, proposable = {x["field"] for x in current["lists"]}, set()
     for entry in entries:
-        sections.setdefault(entry["field"].split(".")[0], []).append(entry["label"])
-    lists = {x["field"] for x in current["lists"]}
-    sections = {
-        name: _section(name, labels, any(e["field"] in lists for e in entries if e["field"].split(".")[0] == name))
-        for name, labels in sections.items()
-    }
+        section = entry["field"].split(".")[0]
+        labels.setdefault(section, []).append(entry["label"])
+        if entry["field"] in lists:
+            proposable.add(section)
+    sections = {name: _section(name, names, name in proposable) for name, names in labels.items()}
     return {"modality": modality, "template": template, "templates": templates, "entries": entries, "sections": sections}
 
 

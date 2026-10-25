@@ -33,7 +33,6 @@ def test_the_catalog_lists_every_kind_of_data_with_a_description():
 
 
 def test_the_catalog_has_no_bids_kinds():
-    assert {m["kind"] for m in spec_catalog()["modalities"]} == {"prism"}
     assert not {"anat", "func", "dwi", "eeg", "fmap", "beh"} & {m["name"] for m in spec_catalog()["modalities"]}
 
 
