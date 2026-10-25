@@ -1,5 +1,5 @@
-// The Propose changes page: one choice of what is missing, then its panel. Presentation only: every action is a call to
-// /api/spec/..., which runs the same functions as `prism_tools.py spec ...`. Project data (column names,
+// The Propose changes page: step 1 the kind of data, step 2 an accepted example beside the user's proposal.
+// Presentation only: every action is a call to /api/spec/..., which runs the same functions as `prism_tools.py spec ...`. Project data (column names,
 // paths, messages) is only ever written with textContent, never as HTML.
 (function () {
     "use strict";
@@ -16,6 +16,7 @@
         catalog: root.dataset.catalogUrl,
         proposeValues: root.dataset.proposeValuesUrl,
         proposeMetric: root.dataset.proposeMetricUrl,
+        example: root.dataset.exampleUrl,
     };
     const unknownBox = document.getElementById("spec-m-found");
     const localBox = document.getElementById("spec-local");
@@ -25,19 +26,19 @@
     const valuesUnknownBox = document.getElementById("spec-values-unknown");
     const valuesLocalBox = document.getElementById("spec-values-local");
     const shareValues = document.getElementById("spec-share-values");
-    const what = document.getElementById("spec-what");
-    const panels = { values: document.getElementById("spec-panel-values"), metric: document.getElementById("spec-panel-metric") };
-    const modalitySelect = document.getElementById("spec-v-modality");
-    const listSelect = document.getElementById("spec-v-list");
-    const allowedText = document.getElementById("spec-v-allowed");
-    const mineBox = document.getElementById("spec-v-mine");
-    const shareMine = document.getElementById("spec-v-share");
-    const useMine = document.getElementById("spec-v-use");
-    const useNote = document.getElementById("spec-v-use-note");
+    const kindSelect = document.getElementById("spec-kind");
+    const notSure = document.getElementById("spec-not-sure");
+    const step2 = document.getElementById("spec-step2");
+    const metricPanel = document.getElementById("spec-panel-metric");
+    const exampleBox = document.getElementById("spec-example");
+    const templateSelect = document.getElementById("spec-template");
+    const proposalBox = document.getElementById("spec-proposal");
+    const shareButtons = document.getElementById("spec-share-buttons");
+    const useButton = document.getElementById("spec-use");
     let catalog = { modalities: [], project_open: false };
     let projectSpecimens = [];  // sample types this project added itself
     let foundColumn = null;  // the "Found in your data" column the form was filled from
-    let mine = [];  // the choices collected on this page, not yet shared or used
+    let answers = [];  // step 2: one {entry, read()} per entry of the chosen kind of data
     let currentProposal = null;
 
     function el(tag, className, text) {
@@ -105,14 +106,20 @@
             row.appendChild(el("code", "", found.field));
             row.appendChild(el("code", "", found.value));
             row.appendChild(el("span", "text-muted small", found.sidecar.split(/[\\/]/).pop()));
-            row.appendChild(button("Add to this project", "btn-primary", function () { addValues(found.field, [found.value]); }));
+            row.appendChild(button("Add to this project", "btn-primary", function () { addValues(found.modality, found.field, [found.value]); }));
             valuesUnknownBox.appendChild(row);
         });
     }
 
     function renderLocalValues(items) {
         valuesLocalBox.replaceChildren();
-        shareValues.classList.toggle("d-none", !items.some(function (item) { return item.status === "local"; }));
+        shareValues.replaceChildren();
+        const kinds = items.filter(function (item) { return item.status === "local"; }).map(function (item) { return item.modality; });
+        Array.from(new Set(kinds)).forEach(function (kind) {
+            shareValues.appendChild(button("Share additions (" + kind + ")…", "btn-outline-primary", function () {
+                propose({ patch: true, modality: kind }, undefined, "choice");
+            }));
+        });
         if (!items.length) {
             valuesLocalBox.appendChild(el("p", "text-muted small mb-0", "None yet."));
             return;
@@ -121,13 +128,14 @@
         items.forEach(function (item) {
             const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-2");
             row.appendChild(el("span", "badge " + (badge[item.status] || "bg-secondary"), item.status));
+            row.appendChild(el("span", "small text-muted", item.modality));
             row.appendChild(el("code", "", item.id || item.path));
             if (item.problem) row.appendChild(el("span", "small text-danger", item.problem));
             if (item.status === "now-official") {
                 row.appendChild(el("span", "small text-muted", "Now official: edit " + item.path + " to remove it."));
             }
             if (item.field && item.value) {
-                row.appendChild(button("Remove", "btn-outline-danger", function () { removeValue(item.field, item.value); }));
+                row.appendChild(button("Remove", "btn-outline-danger", function () { removeValue(item.modality, item.field, item.value); }));
             }
             valuesLocalBox.appendChild(row);
         });
@@ -192,19 +200,19 @@
         refresh();
     }
 
-    async function addValues(field, values) {
+    async function addValues(modality, field, values) {
         clearMessage();
-        const { ok, data } = await call(urls.addValues, { field: field, values: values });
+        const { ok, data } = await call(urls.addValues, { modality: modality, field: field, values: values });
         if (!ok) { say(data.error || "Could not add the value", "danger"); return false; }
         say(data.skipped.length ? "Already official: nothing to add." : "Added to this project. Validate again to see it used.", data.skipped.length ? "info" : "success");
         refresh();
         return true;
     }
 
-    async function removeValue(field, value) {
+    async function removeValue(modality, field, value) {
         if (!window.confirm("Remove " + value + " from the additions to " + field + " in this project?")) return;
         clearMessage();
-        const { ok, data } = await call(urls.removeValues, { field: field, values: [value] });
+        const { ok, data } = await call(urls.removeValues, { modality: modality, field: field, values: [value] });
         if (!ok) { say(data.error || "Could not remove it", "danger"); return; }
         say("Removed.", "success");
         refresh();
@@ -239,6 +247,8 @@
         document.getElementById("spec-propose-text").textContent = copy.text;
         currentProposal = data.document;  // the document that is sent (proposal format v2)
         document.getElementById("spec-propose-json").textContent = JSON.stringify(data.document, null, 2);
+        document.getElementById("spec-propose-context").textContent = data.context || "";
+        document.getElementById("spec-propose-context-box").hidden = !data.context;
         if (data.skipped.length) {
             say("Left out, they are covered by official terms: " + data.skipped.join(", "), "info");
         }
@@ -253,89 +263,152 @@
     }
 
     shareAll.addEventListener("click", function () { propose({ all: true }); });
-    shareValues.addEventListener("click", function () { propose({ patch: true }, undefined, "choice"); });
 
-    function currentModality() {
-        return catalog.modalities.find(function (m) { return m.name === modalitySelect.value; });
+    function currentKind() {
+        return catalog.modalities.find(function (kind) { return kind.name === kindSelect.value; });
     }
 
-    function currentList() {
-        const modality = currentModality();
-        return modality && modality.lists.find(function (l) { return l.field === listSelect.value; });
+    function option(text, value, kind) {
+        const node = el("option", "", text);
+        node.value = value;
+        if (kind) node.dataset.kind = kind;
+        return node;
     }
 
-    function renderMine() {
-        mineBox.replaceChildren();
-        mine.forEach(function (value) {
-            const row = el("div", "d-flex flex-wrap align-items-center gap-2 border-bottom py-1");
-            row.appendChild(el("code", "", value));
-            const remove = button("Remove", "btn-outline-danger", function () {
-                mine = mine.filter(function (other) { return other !== value; });
-                renderMine();
+    function renderExample(entries) {
+        exampleBox.replaceChildren();
+        entries.forEach(function (entry) {
+            exampleBox.appendChild(el("dt", "small text-muted fw-normal", entry.label));
+            exampleBox.appendChild(el("dd", entry.example === null ? "text-muted fst-italic" : "", entry.example === null ? "no example yet" : entry.example));
+        });
+    }
+
+    // One entry of the user's proposal: a pull-down for a list (values, "Missing: add a value…", "Unknown"), a text box otherwise.
+    function proposalEntry(entry, index, listed) {
+        const row = el("div", "mb-2");
+        const id = "spec-entry-" + index;
+        const label = el("label", "form-label small mb-0", entry.label);
+        label.htmlFor = id;
+        row.appendChild(label);
+        const missing = el("input", "form-control form-control-sm mt-1");
+        missing.type = "text";
+        missing.autocomplete = "off";
+        missing.hidden = true;
+        missing.setAttribute("aria-label", "New value for " + entry.label);
+        missing.addEventListener("input", showActions);
+        if (entry.values) {
+            const select = el("select", "form-select form-select-sm");
+            select.id = id;
+            const choose = option("Choose…", "");
+            choose.disabled = true;
+            select.appendChild(choose);
+            entry.values.forEach(function (value) { select.appendChild(option(value, value)); });
+            if (listed) select.appendChild(option("Missing: add a value…", "", "missing"));  // only lists PRISM can extend
+            select.appendChild(option("Unknown", "", "unknown"));
+            select.selectedIndex = 0;
+            select.addEventListener("change", function () {
+                missing.hidden = select.selectedOptions[0].dataset.kind !== "missing";
+                showActions();
             });
-            remove.setAttribute("aria-label", "Remove " + value);
-            row.appendChild(remove);
-            mineBox.appendChild(row);
-        });
-        shareMine.classList.toggle("d-none", !mine.length);
-        // until phase C the page adds choices to the open project for Biosample only; the command line does every kind
-        const projectUse = modalitySelect.value === "biosample";
-        useMine.classList.toggle("d-none", !mine.length || !catalog.project_open || !projectUse);
-        useNote.hidden = !catalog.project_open || projectUse;
-        useNote.textContent = "Using a new choice in your own project is available for Biosample here; for other kinds of data use the command line: "
-            + "python prism_tools.py spec local add-values --project <project> --modality " + modalitySelect.value
-            + " --field " + listSelect.value + " --value " + (mine[0] || "<value>");
-    }
-
-    function showList() {
-        const list = currentList();
-        allowedText.textContent = list ? list.values.join(", ") : "";
-        mine = [];
-        renderMine();
-    }
-
-    function showLists() {
-        const modality = currentModality();
-        listSelect.replaceChildren();
-        (modality ? modality.lists : []).forEach(function (list) {
-            const option = el("option", "", list.label);
-            option.value = list.field;
-            listSelect.appendChild(option);
-        });
-        showList();
-    }
-
-    modalitySelect.addEventListener("change", showLists);
-    listSelect.addEventListener("change", showList);
-    document.getElementById("spec-v-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-        const input = document.getElementById("spec-v-input");
-        const value = input.value.trim();
-        const list = currentList();
-        if (!value || !list) return;
-        if (list.values.indexOf(value) !== -1) {
-            say(value + " is already allowed in this list.", "info");
-        } else {
-            clearMessage();
-            if (mine.indexOf(value) === -1) mine.push(value);
-            renderMine();
+            row.append(select, missing);
+            return {
+                entry: entry, row: row, read: function () {
+                    const kind = select.selectedOptions[0].dataset.kind;
+                    if (kind === "missing") return { missing: missing.value.trim() };
+                    return { value: kind === "unknown" ? "unknown" : select.value };
+                },
+            };
         }
-        input.value = "";
-    });
-    shareMine.addEventListener("click", function () {
-        propose({ modality: modalitySelect.value, field: listSelect.value, values: mine }, urls.proposeValues, "choice");
-    });
-    useMine.addEventListener("click", async function () {
-        if (await addValues(listSelect.value, mine)) { mine = []; renderMine(); }
+        const text = el("input", "form-control form-control-sm");
+        text.type = "text";
+        text.id = id;
+        text.autocomplete = "off";
+        const unknownBox = el("div", "form-check form-check-inline small mt-1");
+        const unknown = el("input", "form-check-input");
+        unknown.type = "checkbox";
+        unknown.id = id + "-unknown";
+        const unknownLabel = el("label", "form-check-label", "Unknown");
+        unknownLabel.htmlFor = unknown.id;
+        unknown.addEventListener("change", function () { text.disabled = unknown.checked; });
+        unknownBox.append(unknown, unknownLabel);
+        row.append(text, unknownBox);
+        return { entry: entry, row: row, read: function () { return { value: unknown.checked ? "unknown" : text.value.trim() }; } };
+    }
+
+    function missingLists() {
+        return answers.map(function (answer) { return { entry: answer.entry, value: answer.read().missing }; })
+            .filter(function (item) { return item.value; });
+    }
+
+    // The context for the maintainer: every filled or "Unknown" entry, and the other lists' new values (shared on their own).
+    function contextFor(shared) {
+        const entries = {};
+        answers.forEach(function (answer) {
+            const read = answer.read();
+            if (read.value) entries[answer.entry.field] = read.value;
+            else if (read.missing && answer.entry !== shared) entries[answer.entry.field] = read.missing + " (also proposed)";
+        });
+        return { entries: entries, not_sure: notSure.checked, closest: kindSelect.value };
+    }
+
+    function showActions() {
+        const lists = missingLists();
+        shareButtons.replaceChildren();
+        lists.forEach(function (item) {
+            const text = lists.length === 1 ? "Share with the PRISM community…" : "Share the new " + item.entry.label + "…";
+            shareButtons.appendChild(button(text, "btn-primary", function () {
+                propose(Object.assign({ modality: kindSelect.value, field: item.entry.field, values: [item.value] }, contextFor(item.entry)),
+                    urls.proposeValues, "choice");
+            }));
+        });
+        useButton.classList.toggle("d-none", !lists.length || !catalog.project_open);
+    }
+
+    async function loadExample(template) {
+        const query = "?modality=" + encodeURIComponent(kindSelect.value) + (template ? "&template=" + encodeURIComponent(template) : "");
+        const { ok, data } = await call(urls.example + query);
+        if (!ok) { say(data.error || "Could not load the example", "danger"); return null; }
+        renderExample(data.entries);
+        document.getElementById("spec-no-example").hidden = Boolean(data.template);
+        return data;
+    }
+
+    async function chooseKind() {
+        clearMessage();
+        const kind = currentKind();
+        document.getElementById("spec-bids-note").hidden = !kind || kind.kind !== "bids";
+        document.getElementById("spec-new-kind").hidden = kindSelect.value !== "new-kind";
+        step2.hidden = true;
+        metricPanel.hidden = !(kind && kind.metrics);
+        answers = [];
+        proposalBox.replaceChildren();
+        showActions();
+        if (!kind || kind.kind !== "prism") return;
+        if (kind.metrics) showKnown();
+        const chosen = kind.name;
+        const data = await loadExample();
+        if (!data || kindSelect.value !== chosen) return;
+        const listed = kind.lists.map(function (list) { return list.field; });
+        templateSelect.replaceChildren();
+        data.templates.forEach(function (name) { templateSelect.appendChild(option(name, name)); });
+        templateSelect.value = data.template || "";
+        document.getElementById("spec-template-box").hidden = data.templates.length < 2;
+        answers = data.entries.map(function (entry, index) { return proposalEntry(entry, index, listed.indexOf(entry.field) !== -1); });
+        answers.forEach(function (answer) { proposalBox.appendChild(answer.row); });
+        step2.hidden = !answers.length;
+    }
+
+    kindSelect.addEventListener("change", chooseKind);
+    templateSelect.addEventListener("change", function () { loadExample(templateSelect.value); });
+    useButton.addEventListener("click", async function () {
+        for (const item of missingLists()) {
+            if (!(await addValues(kindSelect.value, item.entry.field, [item.value]))) return;
+        }
     });
 
     const m = {};
-    ["modality", "known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
+    ["known", "listed", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
-
-    function metricKind() {
-        return catalog.modalities.find(function (entry) { return entry.name === m.modality.value; });
-    }
 
     function fillSpecimens() {
         const keep = m.specimen.value;
@@ -349,7 +422,7 @@
     }
 
     function showKnown() {
-        const kind = metricKind();
+        const kind = currentKind();
         m.known.textContent = kind && kind.metrics ? kind.metrics.map(function (x) { return x.label; }).join(", ") : "";
     }
 
@@ -385,16 +458,6 @@
     }
 
     function startMetric() {
-        m.modality.replaceChildren();
-        catalog.modalities.forEach(function (entry) {
-            const option = el("option", "", entry.metrics ? entry.label : entry.label + " (no measurement list yet)");
-            option.value = entry.name;
-            option.disabled = !entry.metrics;
-            m.modality.appendChild(option);
-        });
-        const usable = catalog.modalities.find(function (entry) { return entry.metrics; });
-        if (usable) m.modality.value = usable.name;
-        showKnown();
         m.units.replaceChildren();
         (catalog.units || []).concat(["Other…"]).forEach(function (unit, index, all) {
             const option = el("option", "", unit);
@@ -406,7 +469,6 @@
         m.local.hidden = !catalog.project_open;
     }
 
-    m.modality.addEventListener("change", function () { showKnown(); forgetFound(); });
     m.name.addEventListener("input", forgetFound);
     m.listed.addEventListener("change", showListed);
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== ""; });
@@ -414,16 +476,12 @@
         propose({
             name: m.name.value, description: m.description.value,
             units: m.units.value || m["units-other"].value, specimen: m.specimen.value,
-            aliases: m.aliases.value.split(","), modality: m.modality.value,
+            aliases: m.aliases.value.split(","), modality: kindSelect.value,
+            entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
     });
     m.use.addEventListener("click", function () {
         if (foundColumn) add(foundColumn, m.name.value.trim());
-    });
-
-    what.addEventListener("change", function () {
-        clearMessage();
-        Object.keys(panels).forEach(function (key) { panels[key].hidden = what.value !== key; });
     });
 
     document.getElementById("spec-propose-close").addEventListener("click", function () { dialog.close(); });
@@ -441,13 +499,8 @@
         const { ok, data } = await call(urls.catalog);
         if (!ok) { say(data.error || "Could not load the specification", "danger"); return; }
         catalog = data;
-        modalitySelect.replaceChildren();
-        catalog.modalities.forEach(function (modality) {
-            const option = el("option", "", modality.label);
-            option.value = modality.name;
-            modalitySelect.appendChild(option);
-        });
-        showLists();
+        const nothingFits = kindSelect.lastElementChild;
+        catalog.modalities.forEach(function (kind) { kindSelect.insertBefore(option(kind.label, kind.name), nothingFits); });
         startMetric();
         document.getElementById("spec-values-project").hidden = !catalog.project_open;
         refresh();

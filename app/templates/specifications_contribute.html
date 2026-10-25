@@ -12,69 +12,80 @@
      data-propose-url="{{ url_for('specification_contribute.propose') }}"
      data-catalog-url="{{ url_for('specification_contribute.catalog') }}"
      data-propose-values-url="{{ url_for('specification_contribute.propose_values') }}"
-     data-propose-metric-url="{{ url_for('specification_contribute.propose_metric') }}">
+     data-propose-metric-url="{{ url_for('specification_contribute.propose_metric') }}"
+     data-example-url="{{ url_for('specification_contribute.example') }}">
     <div class="card-body">
-        <div class="mb-3">
-            <label class="form-label" for="spec-what">What is missing in PRISM?</label>
-            <select id="spec-what" class="form-select w-auto">
-                <option value="" selected>Choose what is missing…</option>
-                <option value="new-modality" disabled>A whole new kind of data (coming soon)</option>
-                <option value="values">A missing choice in a list</option>
-                <option value="metric">A missing measurement</option>
-            </select>
+        <p class="text-muted">
+            Your data is not fully known to PRISM yet? Choose the kind of data, compare it with an accepted example
+            and say what is missing, then share it with the PRISM community. Nothing is sent from this page.
+        </p>
+        <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+            <div>
+                <label class="form-label" for="spec-kind">What kind of data?</label>
+                <select id="spec-kind" class="form-select w-auto">
+                    <option value="" selected disabled>Choose the kind of data…</option>
+                    <option value="new-kind">Nothing fits: a new kind of data</option>
+                </select>
+            </div>
+            <div class="form-check mb-2">
+                <input id="spec-not-sure" class="form-check-input" type="checkbox">
+                <label class="form-check-label" for="spec-not-sure">Not sure</label>
+            </div>
         </div>
         <div id="spec-message" class="alert d-none" role="status"></div>
+        <p id="spec-bids-note" class="alert alert-info" hidden>
+            PRISM passes this kind of data to BIDS unchanged, so there is nothing to add here.
+        </p>
+        <p id="spec-new-kind" class="alert alert-info" hidden>
+            Describing a whole new kind of data comes in the next version of this page.
+        </p>
 
-        <div id="spec-panel-values" hidden>
-            <p class="text-muted">
-                Your data uses a choice a list in PRISM does not offer yet, for example a new specimen type. Collect it
-                here, then share it with the PRISM community. Nothing is sent from this page.
+        <div id="spec-step2" hidden>
+            <div class="row g-4 mb-3">
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100 bg-body-tertiary">
+                        <h3 class="h6">Accepted example</h3>
+                        <div id="spec-template-box" class="mb-2" hidden>
+                            <label class="form-label small mb-0" for="spec-template">Example</label>
+                            <select id="spec-template" class="form-select form-select-sm w-auto"></select>
+                        </div>
+                        <p id="spec-no-example" class="small text-muted" hidden>No accepted example yet for this kind of data.</p>
+                        <dl id="spec-example" class="mb-0"></dl>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border rounded p-3 h-100">
+                        <h3 class="h6">Your proposal</h3>
+                        <div id="spec-proposal"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="small text-muted">
+                What gets proposed: only the "Missing" entries. Your filled and "Unknown" entries, and the "Not sure"
+                tick, are shown to the maintainer as context.
             </p>
-            <div class="d-flex flex-wrap align-items-end gap-2 mb-2">
-                <div>
-                    <label class="form-label small mb-0" for="spec-v-modality">Kind of data</label>
-                    <select id="spec-v-modality" class="form-select form-select-sm"></select>
-                </div>
-                <div>
-                    <label class="form-label small mb-0" for="spec-v-list">List</label>
-                    <select id="spec-v-list" class="form-select form-select-sm"></select>
-                </div>
-            </div>
-            <p class="small mb-3">Allowed today: <span id="spec-v-allowed"></span></p>
-            <form id="spec-v-form" class="d-flex flex-wrap align-items-end gap-2 mb-3">
-                <div>
-                    <label class="form-label small mb-0" for="spec-v-input">New choice</label>
-                    <input id="spec-v-input" type="text" class="form-control form-control-sm" placeholder="for example sweat" autocomplete="off">
-                </div>
-                <button type="submit" id="spec-v-add" class="btn btn-sm btn-primary">Add</button>
-            </form>
-            <div id="spec-v-mine" class="mb-3"></div>
             <div class="d-flex flex-wrap gap-2 mb-4">
-                <button type="button" id="spec-v-share" class="btn btn-sm btn-primary d-none">Share with the PRISM community…</button>
-                <button type="button" id="spec-v-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>
+                <div id="spec-share-buttons" class="d-flex flex-wrap gap-2"></div>
+                <button type="button" id="spec-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>
             </div>
-            <p id="spec-v-use-note" class="small text-muted" hidden></p>
 
             <div id="spec-values-project" hidden>
                 <h3 class="h6">Found in your data, not allowed by PRISM yet</h3>
                 <div id="spec-values-unknown" class="mb-4"></div>
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <h3 class="h6 mb-0">Additions in this project</h3>
-                    <button type="button" id="spec-share-values" class="btn btn-sm btn-outline-primary d-none">Share additions…</button>
+                    <div id="spec-share-values" class="d-flex flex-wrap gap-2"></div>
                 </div>
-                <div id="spec-values-local" class="mt-2"></div>
+                <div id="spec-values-local" class="mt-2 mb-4"></div>
             </div>
         </div>
 
         <div id="spec-panel-metric" hidden>
+            <h3 class="h6">Measurements</h3>
             <p class="text-muted">
                 Your data uses a measurement PRISM does not list yet. Check the list first; if it is missing, describe it
                 and share it with the PRISM community. Nothing is sent from this page.
             </p>
-            <div class="mb-3">
-                <label class="form-label" for="spec-m-modality">Kind of data</label>
-                <select id="spec-m-modality" class="form-select w-auto"></select>
-            </div>
             <p class="small">Measurements PRISM knows today: <span id="spec-m-known"></span></p>
 
             <div id="spec-m-project" hidden class="mb-3">
@@ -115,7 +126,7 @@
                     <div class="col-md-4">
                         <label class="form-label small mb-0" for="spec-m-specimen">Sample type</label>
                         <select id="spec-m-specimen" class="form-select form-select-sm"></select>
-                        <div class="form-text">Not in the list? Add it under "A missing choice in a list".</div>
+                        <div class="form-text">Not in the list? Choose "Missing: add a value…" for Specimen type above.</div>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mt-3">
@@ -141,10 +152,14 @@
     <p id="spec-propose-text" class="small"></p>
     <p id="spec-propose-problems" class="text-danger d-none"></p>
     <pre id="spec-propose-json" class="small border rounded p-2"></pre>
+    <div id="spec-propose-context-box" hidden>
+        <p class="small mb-1">Context for the maintainer:</p>
+        <pre id="spec-propose-context" class="small border rounded p-2"></pre>
+    </div>
     <p id="spec-propose-paste" class="small text-muted d-none">
         The proposal is too long for a link. Open the
         <a href="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-metric.yml" target="_blank" rel="noopener noreferrer">proposal form</a>
-        and paste the text above into the field.
+        and paste the proposal and the context above into their fields.
     </p>
     <div class="d-flex flex-wrap gap-2 justify-content-end">
         <a id="spec-propose-open" class="btn btn-primary d-none" href="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-metric.yml" target="_blank" rel="noopener noreferrer">Open the prefilled form on GitHub</a>

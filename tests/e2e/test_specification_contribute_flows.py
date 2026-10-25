@@ -19,8 +19,7 @@ def add_biosample_data(project):
 
 def test_an_unknown_metric_is_added_shared_and_removed(app_page, studio_url, project):
     add_biosample_data(project)
-    app_page.goto(f"{studio_url}/specifications/contribute")
-    app_page.locator("#spec-what").select_option("metric")
+    choose_kind(app_page, studio_url, "biosample")
 
     expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
     app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
@@ -54,8 +53,7 @@ def test_a_hostile_column_name_is_shown_as_text_not_as_html(app_page, studio_url
     data = json.loads(sidecar.read_text(encoding="utf-8"))
     data['<img src=x onerror="window.pwned=1">'] = {"Description": "x", "Units": "pg/mL"}
     sidecar.write_text(json.dumps(data), encoding="utf-8")
-    app_page.goto(f"{studio_url}/specifications/contribute")
-    app_page.locator("#spec-what").select_option("metric")
+    choose_kind(app_page, studio_url, "biosample")
     expect(app_page.locator("#spec-m-found")).to_contain_text("<img src=x")
     assert app_page.evaluate("window.pwned") is None
     assert app_page.locator("#spec-m-found img").count() == 0
@@ -69,8 +67,7 @@ def test_share_all_puts_every_local_measurement_in_one_proposal(app_page, studio
     sidecar.write_text(json.dumps(data), encoding="utf-8")
     (project / "sub-01" / "ses-1" / "biosample" / "sub-01_ses-1_biosample-saliva_biosample.tsv").write_text(
         "sample_id\tdhea_s\tferr_ugl\nS-1\t5\t7\n", encoding="utf-8")
-    app_page.goto(f"{studio_url}/specifications/contribute")
-    app_page.locator("#spec-what").select_option("metric")
+    choose_kind(app_page, studio_url, "biosample")
     for _ in range(2):
         app_page.locator("#spec-m-found").get_by_role("button").first.click()
         app_page.locator("#spec-m-use").click()
@@ -83,59 +80,154 @@ def test_share_all_puts_every_local_measurement_in_one_proposal(app_page, studio
     expect(app_page.locator("#spec-propose-open")).to_be_visible()
 
 
-def choose_values(page, studio_url):
+def choose_kind(page, studio_url, kind):
     page.goto(f"{studio_url}/specifications/contribute")
-    page.locator("#spec-what").select_option("values")
-    page.locator("#spec-v-modality").select_option("biosample")
-    page.locator("#spec-v-list").select_option(label="Specimen type")
+    page.locator("#spec-kind").select_option(kind)
 
 
-def add_choice(page, text):
-    page.locator("#spec-v-input").fill(text)
-    page.locator("#spec-v-add").click()
+def proposal_entry(page, label):
+    return page.locator("#spec-proposal").get_by_label(label, exact=True)
 
 
-def test_nothing_but_the_choice_is_shown_at_first(bare_page, studio_url):
+def add_missing(page, label, value):
+    proposal_entry(page, label).select_option(label="Missing: add a value…")
+    page.locator("#spec-proposal").get_by_label(f"New value for {label}").fill(value)
+
+
+def page_words(page):
+    """The page text without command literals in code elements."""
+    return page.evaluate("""() => {
+        const copy = document.body.cloneNode(true);
+        copy.querySelectorAll("code, script, style").forEach(n => n.remove());
+        document.body.appendChild(copy); copy.hidden = false;
+        const text = copy.innerText; copy.remove(); return text;
+    }""").lower()
+
+
+def test_nothing_but_the_kind_of_data_is_shown_at_first(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
-    expect(bare_page.locator("#spec-what")).to_be_visible()
-    expect(bare_page.locator("#spec-panel-values")).to_be_hidden()
+    kind = bare_page.locator("#spec-kind")
+    expect(kind).to_be_visible()
+    expect(kind.locator("option:checked")).to_have_text("Choose the kind of data…")
+    expect(kind.locator("option").last).to_have_text("Nothing fits: a new kind of data")
+    expect(kind.locator("option", has_text="Structural MRI (BIDS, passed through)")).to_have_count(1)
+    expect(bare_page.get_by_label("Not sure")).to_be_visible()
+    expect(bare_page.locator("#spec-step2")).to_be_hidden()
     expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
-    expect(bare_page.locator("#spec-what option[value=new-modality]")).to_be_disabled()
-    expect(bare_page.locator("#spec-what option[value=new-modality]")).to_have_text("A whole new kind of data (coming soon)")
 
 
-def test_a_missing_choice_without_a_project(bare_page, studio_url):
-    choose_values(bare_page, studio_url)
-    expect(bare_page.locator("#spec-v-allowed")).to_contain_text("saliva")
-    add_choice(bare_page, "sweat")
-    expect(bare_page.locator("#spec-v-mine")).to_contain_text("sweat")
-    expect(bare_page.get_by_role("button", name="Remove sweat")).to_be_visible()
-    expect(bare_page.locator("#spec-v-use")).to_be_hidden()
-    expect(bare_page.locator("body")).not_to_contain_text("Open a project first")
-    bare_page.locator("#spec-v-share").click()
+def test_biosample_shows_the_accepted_example_beside_the_proposal(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    expect(bare_page.locator("#spec-example")).to_contain_text("serum")
+    specimen = proposal_entry(bare_page, "Specimen type")
+    expect(specimen.locator("option:checked")).to_have_text("Choose…")
+    expect(specimen.locator("option", has_text="saliva")).to_have_count(1)
+    expect(specimen.locator("option", has_text="Missing: add a value…")).to_have_count(1)
+    expect(specimen.locator("option", has_text="Unknown")).to_have_count(1)
+    expect(bare_page.locator("#spec-proposal").get_by_label("New value for Specimen type")).to_be_hidden()
+    expect(bare_page.locator("#spec-panel-metric")).to_be_visible()  # biosample has measurements
+
+
+def test_a_missing_value_is_shared_with_the_rest_as_context(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    bare_page.get_by_label("Not sure").check()
+    add_missing(bare_page, "Specimen type", "sweat")
+    proposal_entry(bare_page, "Collection method").select_option("swab")
+    proposal_entry(bare_page, "Anticoagulant").select_option(label="Unknown")
+    proposal_entry(bare_page, "Laboratory").fill("Our lab")
+    bare_page.locator("#spec-share-buttons").get_by_role("button").click()
+    expect(bare_page.locator("#spec-propose-dialog")).to_be_visible()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("sweat")
-    expect(bare_page.locator("#spec-propose-title")).to_have_text("Share a choice with the PRISM community")
-    dialog_text = bare_page.locator("#spec-propose-dialog").inner_text().lower()
-    assert "column name" not in dialog_text and "alias" not in dialog_text
+    expect(bare_page.locator("#spec-propose-json")).not_to_contain_text("swab")  # context only, not proposed
+    context = bare_page.locator("#spec-propose-context")
+    expect(context).to_contain_text("Technical.CollectionMethod: swab")
+    expect(context).to_contain_text("Technical.Anticoagulant: unknown")
+    expect(context).to_contain_text("Technical.Laboratory: Our lab")
+    expect(context).to_contain_text("closest: biosample")
     href = bare_page.locator("#spec-propose-open").get_attribute("href")
     assert href.startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
-    bare_page.locator("#spec-propose-close").click()
-    bare_page.locator("#spec-v-mine").get_by_role("button", name="Remove").click()
-    expect(bare_page.locator("#spec-v-mine")).not_to_contain_text("sweat")
+    assert "sweat" in href and "context=" in href
 
 
-def test_a_missing_choice_with_a_project(app_page, studio_url, project):
-    choose_values(app_page, studio_url)
-    add_choice(app_page, "sweat")
-    app_page.locator("#spec-v-use").click()
+def test_several_missing_lists_are_shared_one_at_a_time(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "sweat")
+    add_missing(bare_page, "Collection method", "patch-collector")
+    buttons = bare_page.locator("#spec-share-buttons").get_by_role("button")
+    expect(buttons).to_have_count(2)
+    buttons.nth(1).click()
+    expect(bare_page.locator("#spec-propose-json")).to_contain_text("patch-collector")
+    expect(bare_page.locator("#spec-propose-json")).not_to_contain_text("sweat")
+    expect(bare_page.locator("#spec-propose-context")).to_contain_text("Technical.SpecimenType: sweat (also proposed)")
+
+
+def test_a_too_long_proposal_shows_the_text_to_paste(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "sweat")
+    boxes = bare_page.locator("#spec-proposal input[type=text]:visible:not([aria-label])")  # the free-text entries
+    for index in range(boxes.count()):
+        boxes.nth(index).fill("ä" * 200)
+    bare_page.locator("#spec-share-buttons").get_by_role("button").click()
+    expect(bare_page.locator("#spec-propose-open")).to_be_hidden()
+    expect(bare_page.locator("#spec-propose-paste")).to_be_visible()
+    expect(bare_page.locator("#spec-propose-context")).to_contain_text("ää")
+
+
+def test_a_bids_kind_is_passed_through(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label="Structural MRI (BIDS, passed through)")
+    expect(bare_page.locator("#spec-bids-note")).to_be_visible()
+    expect(bare_page.locator("#spec-bids-note")).to_contain_text("passes")
+    expect(bare_page.locator("#spec-step2")).to_be_hidden()
+    expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
+
+
+def test_nothing_fits_shows_the_new_kind_placeholder(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/specifications/contribute")
+    bare_page.locator("#spec-kind").select_option(label="Nothing fits: a new kind of data")
+    expect(bare_page.locator("#spec-new-kind")).to_be_visible()
+    expect(bare_page.locator("#spec-step2")).to_be_hidden()
+
+
+def test_a_kind_without_measurements_hides_the_measurement_part(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "survey")
+    expect(proposal_entry(bare_page, "Respondent")).to_be_visible()
+    expect(bare_page.locator("#spec-panel-metric")).to_be_hidden()
+
+
+def test_use_adds_a_survey_value_shown_with_its_kind_and_removed(app_page, studio_url, project):
+    choose_kind(app_page, studio_url, "survey")
+    add_missing(app_page, "Respondent", "sibling")
+    app_page.locator("#spec-use").click()
     expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
-    patch = project / "code" / "specification" / "patches" / "biosample.json"
-    assert json.loads(patch.read_text(encoding="utf-8"))["operations"][0]["values"] == ["sweat"]
-    expect(app_page.locator("#spec-values-local")).to_contain_text("sweat")
+    patch = project / "code" / "specification" / "patches" / "survey.json"
+    assert json.loads(patch.read_text(encoding="utf-8"))["operations"][0]["values"] == ["sibling"]
+    local = app_page.locator("#spec-values-local")
+    expect(local).to_contain_text("sibling")
+    expect(local).to_contain_text("survey")
     app_page.once("dialog", lambda confirm: confirm.accept())
-    app_page.locator("#spec-values-local").get_by_role("button", name="Remove").first.click()
-    expect(app_page.locator("#spec-values-local")).to_contain_text("None yet")
-    assert not patch.exists()
+    local.get_by_role("button", name="Remove").first.click()
+    expect(local).to_contain_text("None yet")
+    assert not patch.exists() or "sibling" not in patch.read_text(encoding="utf-8")
+
+
+def test_use_is_hidden_without_a_project(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "sweat")
+    expect(bare_page.locator("#spec-use")).to_be_hidden()
+    expect(bare_page.locator("body")).not_to_contain_text("Open a project first")
+
+
+def test_no_page_text_uses_technical_words(app_page, studio_url, project):
+    add_biosample_data(project)
+    app_page.goto(f"{studio_url}/specifications/contribute")
+    for kind in (None, "biosample", "survey", "anat"):
+        if kind:
+            app_page.locator("#spec-kind").select_option(kind)
+            expect(app_page.locator("#spec-kind")).to_have_value(kind)
+            app_page.wait_for_load_state("networkidle")
+        words = page_words(app_page)
+        assert not [w for w in ("modalit", "patch", "enum", "schema", "termid") if w in words], kind
 
 
 def test_a_value_found_in_the_data_is_added_to_the_project(app_page, studio_url, project):
@@ -144,8 +236,7 @@ def test_a_value_found_in_the_data_is_added_to_the_project(app_page, studio_url,
     data = json.loads(sidecar.read_text(encoding="utf-8"))
     data["Technical"]["SpecimenType"] = "sweat"
     sidecar.write_text(json.dumps(data), encoding="utf-8")
-    app_page.goto(f"{studio_url}/specifications/contribute")
-    app_page.locator("#spec-what").select_option("values")
+    choose_kind(app_page, studio_url, "biosample")
     expect(app_page.locator("#spec-values-unknown")).to_contain_text("sweat")
     app_page.locator("#spec-values-unknown").get_by_role("button", name="Add to this project").click()
     expect(app_page.locator("#spec-message")).to_contain_text("Added to this project")
@@ -156,12 +247,11 @@ def test_a_value_found_in_the_data_is_added_to_the_project(app_page, studio_url,
 
 def test_hostile_value_is_text(app_page, studio_url):
     app_page.allowed_http[400] = "/api/spec/propose-values"
-    choose_values(app_page, studio_url)
+    choose_kind(app_page, studio_url, "biosample")
     opened = []
     app_page.on("dialog", lambda d: opened.append(d.message))
-    add_choice(app_page, '<img src=x onerror="window.pwned=1">')
-    expect(app_page.locator("#spec-v-mine")).to_contain_text("<img src=x")
-    app_page.locator("#spec-v-share").click()
+    add_missing(app_page, "Specimen type", '<img src=x onerror="window.pwned=1">')
+    app_page.locator("#spec-share-buttons").get_by_role("button").click()
     expect(app_page.locator("#spec-message")).to_have_class(re.compile("alert-danger"))
     assert app_page.locator("#spec-contribute img").count() == 0
     assert app_page.evaluate("window.pwned") is None
@@ -169,16 +259,15 @@ def test_hostile_value_is_text(app_page, studio_url):
 
 
 def test_already_allowed_value_is_explained(bare_page, studio_url):
-    choose_values(bare_page, studio_url)
-    add_choice(bare_page, "saliva")
+    bare_page.allowed_http[400] = "/api/spec/propose-values"
+    choose_kind(bare_page, studio_url, "biosample")
+    add_missing(bare_page, "Specimen type", "saliva")
+    bare_page.locator("#spec-share-buttons").get_by_role("button").click()
     expect(bare_page.locator("#spec-message")).to_contain_text("already allowed")
-    expect(bare_page.locator("#spec-v-mine")).not_to_contain_text("saliva")
 
 
 def choose_measurement(page, studio_url, answer="No, it is still missing"):
-    page.goto(f"{studio_url}/specifications/contribute")
-    page.locator("#spec-what").select_option("metric")
-    page.locator("#spec-m-modality").select_option("biosample")
+    choose_kind(page, studio_url, "biosample")
     if answer:
         page.locator("#spec-m-listed").select_option(label=answer)
 
@@ -211,16 +300,6 @@ def test_a_missing_measurement_without_a_project(bare_page, studio_url):
     expect(bare_page.locator("#spec-propose-title")).to_have_text("Share a measurement with the PRISM community")
     href = bare_page.locator("#spec-propose-open").get_attribute("href")
     assert href.startswith("https://github.com/MRI-Lab-Graz/prism-specification/issues/new")
-
-
-def test_only_kinds_with_a_measurement_list_are_selectable(bare_page, studio_url):
-    choose_measurement(bare_page, studio_url, answer=None)
-    options = bare_page.locator("#spec-m-modality option")
-    for index in range(options.count()):
-        option = options.nth(index)
-        if option.get_attribute("value") and not option.is_disabled():
-            assert option.get_attribute("value") == "biosample"
-    expect(bare_page.locator("#spec-m-known")).not_to_have_text("")
 
 
 def test_official_name_is_refused(bare_page, studio_url):
@@ -269,7 +348,7 @@ def test_hostile_name_and_description_are_text(bare_page, studio_url):
 def test_the_navbar_entry_leads_to_the_propose_page(bare_page, studio_url):
     bare_page.goto(studio_url)
     bare_page.locator("nav").get_by_role("link", name="Propose changes").click()
-    expect(bare_page.locator("#spec-what")).to_be_visible()
+    expect(bare_page.locator("#spec-kind")).to_be_visible()
 
 
 def add_two_columns(project):
@@ -311,23 +390,3 @@ def test_editing_the_name_after_picking_a_column_hides_use_in_my_open_project(ap
     expect(app_page.locator("#spec-m-use")).to_be_visible()
     app_page.locator("#spec-m-name").fill("Something else")
     expect(app_page.locator("#spec-m-use")).to_be_hidden()
-
-
-def test_use_in_my_open_project_is_offered_for_biosample_only_and_other_kinds_get_the_command(app_page, studio_url, project):
-    choose_values(app_page, studio_url)
-    note = app_page.locator("#spec-v-use-note")
-    expect(note).to_be_hidden()
-    app_page.locator("#spec-v-modality").select_option("survey")
-    add_choice(app_page, "sibling")
-    expect(app_page.locator("#spec-v-use")).to_be_hidden()
-    expect(note).to_be_visible()
-    expect(note).to_contain_text("spec local add-values --project")
-    expect(note).to_contain_text("--modality survey")
-    expect(app_page.locator("#spec-v-share")).to_be_visible()
-    command = note.inner_text()[note.inner_text().index("python prism_tools.py"):]  # the command itself has to say --modality
-    text = app_page.locator("#spec-panel-values").inner_text().replace(command, "").lower()
-    assert not any(word in text for word in ("modality", "patch", "enum", "schema"))
-    app_page.locator("#spec-v-modality").select_option("biosample")
-    add_choice(app_page, "sweat")
-    expect(note).to_be_hidden()
-    expect(app_page.locator("#spec-v-use")).to_be_enabled()
