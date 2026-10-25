@@ -23,13 +23,42 @@ def _kinds() -> dict[str, list[str]]:
     return {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"] if m["lists"]}
 
 
-def _result(proposal: dict, registry: dict, specimens=None, skipped=()) -> dict:
+def proposal_context(entries: dict[str, str] | None = None, not_sure: bool = False, closest: str | None = None) -> str | None:
+    """The text for the form's Context field: "not sure" (with the closest kind of data), then one `field: value` line per entry."""
+    if not isinstance(not_sure, bool) or not (closest is None or isinstance(closest, str)):
+        raise OverlayError('"not_sure" must be true or false and "closest" text')
+    if entries is not None and not isinstance(entries, dict):
+        raise OverlayError('"entries" must be an object of text')
+    entries = entries or {}
+    if len(entries) > 100:
+        raise OverlayError("at most 100 entries")
+    if not all(isinstance(k, str) and isinstance(v, str) for k, v in entries.items()):
+        raise OverlayError("entries must be text")
+    if long := [k for k, v in entries.items() if len(v) > 200]:
+        raise OverlayError(f"value too long (at most 200 characters): {', '.join(long)}")
+    lines = []
+    if not_sure:
+        if closest and closest not in {m["name"] for m in spec_catalog()["modalities"]}:
+            raise OverlayError(f"unknown kind of data {closest!r}")
+        lines.append("Not sure which kind of data this belongs to" + (f" (closest: {closest})" if closest else ""))
+    lines += [f"{k}: {v}" for k, v in entries.items()]
+    return "\n".join(lines) or None
+
+
+def _context(context, entries, not_sure, closest) -> str | None:
+    """An explicit `context` text, else the one built from `entries` / `not_sure` / `closest`."""
+    built = proposal_context(entries, not_sure, closest)
+    return "\n".join(t for t in (context, built) if t) or None
+
+
+def _result(proposal: dict, registry: dict, specimens=None, skipped=(), context: str | None = None) -> dict:
     """The result both builders return; nothing is written."""
     document = as_v2(proposal)
     return {
         "proposal": proposal,
         "document": document,
-        "issue_url": issue_url(document),
+        "context": context,
+        "issue_url": issue_url(document, context=context),
         "problems": check_with_specification(document, registry, specimens),
         "skipped": list(skipped),
     }
@@ -119,11 +148,15 @@ def example_entries(modality: str, template: str | None = None) -> dict:
     return {"modality": modality, "template": template, "templates": templates, "entries": entries}
 
 
-def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
+def proposal_for_values(
+    modality: str, field: str, values: list[str], context: str | None = None,
+    entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
+) -> dict:
     """The proposal for new choices in one list of a kind of data; needs no project and writes nothing.
 
-    Returns {"proposal", "document" (format v2), "issue_url", "problems", "skipped"}; `skipped` are values already official.
+    Returns {"proposal", "document" (format v2), "context", "issue_url", "problems", "skipped"}; `skipped` are values already official.
     """
+    context = _context(context, entries, not_sure, closest)
     kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
@@ -147,18 +180,20 @@ def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:
     patch = {"operations": [{"op": "add_enum_values", "path": field, "values": new}]}
     if problems := sp.validate_patch(patch, schema):
         raise OverlayError("; ".join(problems))
-    return _result({"modality": modality, "terms": [], "patch": patch}, load_registry(modality), skipped=[v for v in values if v not in new])
+    return _result({"modality": modality, "terms": [], "patch": patch}, load_registry(modality), skipped=[v for v in values if v not in new], context=context)
 
 
 def proposal_for_new_metric(
     name: str, description: str, units: str, specimen: str,
     aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
+    context: str | None = None, entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
 ) -> dict:
     """The proposal for one missing measurement (its analyte term and the specimen-specific child); needs no project.
 
     `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
+    context = _context(context, entries, not_sure, closest)
     kinds = _kinds()
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
@@ -189,4 +224,4 @@ def proposal_for_new_metric(
             raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
     parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
-    return _result({"modality": modality, "terms": [parent, child]}, registry, specimens)
+    return _result({"modality": modality, "terms": [parent, child]}, registry, specimens, context=context)

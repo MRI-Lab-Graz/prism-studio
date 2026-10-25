@@ -396,3 +396,22 @@ def test_the_example_route_returns_the_entries(client):
 def test_the_example_route_refuses_a_bad_name(client):
     response = client.get("/api/spec/example?modality=../x")
     assert response.status_code == 400 and not response.get_json()["success"]
+
+
+def test_propose_values_carries_not_sure_and_entries(client):
+    body = {"field": "Technical.SpecimenType", "values": ["sweat"], "not_sure": True, "closest": "biosample", "entries": {"Technical.Laboratory": "Unknown"}}
+    data = client.post("/api/spec/propose-values", json=body).get_json()
+    assert data["context"].splitlines() == ["Not sure which kind of data this belongs to (closest: biosample)", "Technical.Laboratory: Unknown"]
+    assert "context=" in data["issue_url"]
+
+
+def test_propose_metric_carries_entries(client):
+    data = client.post("/api/spec/propose-metric", json=dict(_METRIC, entries={"Technical.Laboratory": "Unknown"})).get_json()
+    assert data["context"] == "Technical.Laboratory: Unknown"
+
+
+@pytest.mark.parametrize("extra", [{"not_sure": "yes"}, {"entries": ["a"]}, {"entries": {"a": 1}}, {"closest": 5}, {"not_sure": True, "closest": "nope"}])
+def test_propose_rejects_bad_context(client, extra):
+    for url, body in (("propose-values", {"field": "Technical.SpecimenType", "values": ["sweat"]}), ("propose-metric", _METRIC)):
+        response = client.post(f"/api/spec/{url}", json=dict(body, **extra))
+        assert response.status_code == 400 and response.get_json()["success"] is False

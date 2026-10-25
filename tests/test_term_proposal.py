@@ -312,3 +312,9 @@ def test_a_mixed_proposal_is_checked_whole():
         "patches/survey.json": {"operations": [{"op": "add_enum_values", "path": "Study.LicenseID", "values": ["cc-by-nc-local"]}]},
     }}
     assert check_with_specification(doc, load_registry("biosample")) == []
+
+
+def test_issue_url_without_context_has_no_context_parameter():
+    from src.term_proposal import issue_url
+    proposal = {"modality": "survey", "terms": [], "patch": {"operations": [{"op": "add_enum_values", "path": "Study.LicenseID", "values": ["cc-by-nc-local"]}]}}
+    assert "context=" not in issue_url(proposal) and "context=hi" in issue_url(proposal, context="hi")

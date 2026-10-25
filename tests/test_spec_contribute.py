@@ -232,3 +232,33 @@ def test_values_are_deduplicated_keeping_order():
 def test_metric_for_a_kind_without_measurements_is_refused():
     with pytest.raises(OverlayError, match="no known measurements"):
         proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality="survey")
+
+
+def test_context_lists_not_sure_and_the_entries_in_order():
+    from src.spec_contribute import proposal_context
+    text = proposal_context({"Technical.SpecimenType": "sweat", "Technical.Laboratory": "Unknown"}, not_sure=True, closest="biosample")
+    assert text.splitlines() == ["Not sure which kind of data this belongs to (closest: biosample)",
+                                 "Technical.SpecimenType: sweat", "Technical.Laboratory: Unknown"]
+    assert proposal_context() is None
+
+
+@pytest.mark.parametrize("entries", [{"a": 1}, {1: "a"}, {"a": "x" * 201}, {str(i): "v" for i in range(101)}])
+def test_context_rejects_bad_entries(entries):
+    from src.spec_contribute import proposal_context
+    with pytest.raises(OverlayError):
+        proposal_context(entries)
+
+
+def test_the_issue_url_carries_the_context():
+    url = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], context="Study.Category: Unknown")["issue_url"]
+    assert "context=Study.Category%3A%20Unknown" in url
+
+
+def test_a_context_too_long_for_the_url_gives_no_url_but_keeps_the_context():
+    result = proposal_for_values("survey", "Study.LicenseID", ["cc-by-nc-local"], context="x" * 7000)
+    assert result["issue_url"] is None and result["context"] == "x" * 7000
+
+
+def test_the_metric_proposal_carries_the_context_too():
+    result = proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", context="Technical.Laboratory: Unknown")
+    assert result["context"] == "Technical.Laboratory: Unknown" and "context=" in result["issue_url"]

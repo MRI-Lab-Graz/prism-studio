@@ -254,3 +254,16 @@ def test_spec_example_text_and_bad_modality():
     assert code == 0 and "Technical.SpecimenType" in out and "serum" in out
     code, _ = _run("spec", "example", "--modality", "../x", "--json")
     assert code == 1
+
+
+def test_spec_propose_values_carries_not_sure_and_entries_into_the_url():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat",
+                     "--not-sure", "--closest", "biosample", "--entry", "Technical.Laboratory=Unknown", "--json")
+    data = json.loads(out)
+    assert code == 0 and "context=Not%20sure" in data["issue_url"] and "Technical.Laboratory%3A%20Unknown" in data["issue_url"]
+
+
+def test_spec_propose_entry_without_equals_exits_1():
+    code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType", "--value", "sweat",
+                     "--entry", "oops", "--json")
+    assert code == 1 and not json.loads(out)["success"]

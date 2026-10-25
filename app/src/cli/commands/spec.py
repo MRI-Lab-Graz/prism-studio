@@ -146,7 +146,7 @@ def _deliver_result(args, result: dict) -> None:
             args, "the proposal does not pass the specification checks: " + "; ".join(result["problems"]),
             proposal=result["proposal"], problems=result["problems"],
         )
-    delivered = deliver_proposal(result["proposal"], out=args.out, open_browser=args.open)
+    delivered = deliver_proposal(result["proposal"], out=args.out, open_browser=args.open, context=result.get("context"))
     _emit(
         args,
         {
@@ -160,10 +160,23 @@ def _deliver_result(args, result: dict) -> None:
     )
 
 
+def _cli_entries(args) -> dict[str, str]:
+    """`--entry FIELD=VALUE` (repeatable) as an ordered dict; split on the first `=`."""
+    entries = {}
+    for item in args.entry or []:
+        field, sep, value = item.partition("=")
+        if not sep or not field:
+            _fail(args, f"--entry {item!r}: use FIELD=VALUE")
+        entries[field] = value
+    return entries
+
+
 def cmd_spec_propose_values(args) -> None:
     """Propose missing choices in a list (for example a new SpecimenType); needs no project. Sends nothing itself."""
     try:
-        result = proposal_for_values(args.modality, args.field, args.value)
+        result = proposal_for_values(
+            args.modality, args.field, args.value, entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest
+        )
     except OverlayError as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)
@@ -175,6 +188,7 @@ def cmd_spec_propose_metric(args) -> None:
         result = proposal_for_new_metric(
             args.name, args.description, args.units, args.specimen, args.alias, args.modality,
             project_root=args.project,
+            entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest,
         )
     except OverlayError as exc:
         _fail(args, str(exc))

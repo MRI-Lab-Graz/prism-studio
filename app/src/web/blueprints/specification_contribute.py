@@ -122,6 +122,11 @@ def _strings(value) -> bool:
     return isinstance(value, list) and all(isinstance(v, str) for v in value)
 
 
+def _context_options(body: dict) -> dict:
+    """The "not sure" / entries / closest options of a propose request; spec_contribute validates them."""
+    return {"not_sure": body.get("not_sure", False), "entries": body.get("entries"), "closest": body.get("closest")}
+
+
 @specification_contribute_bp.route("/api/spec/propose-values", methods=["POST"])
 def propose_values():
     body = _body()
@@ -129,7 +134,7 @@ def propose_values():
     if not (isinstance(modality, str) and isinstance(field, str) and field and _strings(values)):
         return _error('Give "field" and a list "values" of strings')
     try:
-        return jsonify({"success": True, **proposal_for_values(modality, field, values)})
+        return jsonify({"success": True, **proposal_for_values(modality, field, values, **_context_options(body))})
     except OverlayError as exc:
         return _error(str(exc))
 
@@ -142,7 +147,7 @@ def propose_metric():
     if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts)):
         return _error('Give "name", "description", "units" and "specimen" as text and "aliases" as a list of text')
     try:
-        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project())
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), **_context_options(body))
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})
