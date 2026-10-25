@@ -301,3 +301,28 @@ def test_a_too_long_link_says_why_without_a_problem():
 def test_the_title_stops_at_a_windows_line_end():
     url = proposal_for_new_kind("Skin temp\r\nsecond line", "a\tb\n")["issue_url"]
     assert "title=%5BNew%20kind%20of%20data%5D%3A%20Skin%20temp&" in url
+
+
+@pytest.mark.parametrize("field, label", [
+    ("Study.DOI", "DOI"), ("Study.LicenseID", "License ID"), ("Study.LicenseURL", "License URL"),
+    ("StimulusPresentation.SoftwareRRID", "Software RRID"), ("Technical.SpecimenType", "Specimen type"),
+    ("Technical.FileFormat", "File format"), ("I18n.TranslationMethod", "Translation method"),
+    ("Privacy.IncludesExactGeo", "Includes exact geo"),
+])
+def test_labels_keep_acronyms_whole(field, label):
+    from src.spec_contribute import _list_label
+
+    assert _list_label(field) == label
+
+
+def test_yes_no_entries_offer_yes_and_no():
+    by = {e["field"]: e for e in example_entries("biosample")["entries"]}
+    assert by["Technical.FastingRequired"]["values"] == ["yes", "no"]
+    physio = {e["field"]: e for e in example_entries("physio")["entries"]}
+    assert physio["Acquisition.EyesOpen"]["values"] == ["yes", "no"]
+
+
+def test_an_empty_example_counts_as_no_example():
+    from src.spec_contribute import _example_text
+
+    assert _example_text("") is None and _example_text(False) == "no" and _example_text(0) == "0"

@@ -18,8 +18,11 @@ _VALUE = re.compile(r"[a-z0-9][a-z0-9-]*")
 
 
 def _list_label(field: str) -> str:
-    words = re.sub(r"(?<!^)(?=[A-Z])", " ", field.rsplit(".", 1)[-1]).lower()
-    return words[:1].upper() + words[1:]
+    """"Technical.SpecimenType" -> "Specimen type"; a run of capitals stays one word ("LicenseID" -> "License ID")."""
+    words = re.findall(r"[A-Z]+(?![a-z])|[A-Z]?[a-z0-9]+", field.rsplit(".", 1)[-1])
+    words = [w if len(w) > 1 and w.isupper() else w.lower() for w in words]
+    text = " ".join(words)
+    return text[:1].upper() + text[1:]
 
 
 def _kinds() -> dict[str, list[str]]:
@@ -110,7 +113,7 @@ def spec_catalog() -> dict:
 
 
 def _example_text(value) -> str | None:
-    if value is None or isinstance(value, (dict, list)):
+    if value is None or value == "" or isinstance(value, (dict, list)):
         return None
     return ("yes" if value else "no") if isinstance(value, bool) else str(value)
 
@@ -147,6 +150,8 @@ def example_entries(modality: str, template: str | None = None) -> dict:
                 continue
             field = f"{section}.{name}"
             values = [v for v in _enum_of(schema, field) or [] if v != ""]
+            if "boolean" in (child.get("type") if isinstance(child.get("type"), list) else [child.get("type")]):
+                values = ["yes", "no"]  # as _example_text prints them; not an extendable list
             entries.append({
                 "field": field, "label": _list_label(field),
                 "example": _example_text(_value_at(data, field)), "values": values or None,
