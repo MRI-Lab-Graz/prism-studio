@@ -372,3 +372,11 @@ def test_open_is_not_called_when_there_are_problems(opened, tmp_path):
 def test_open_is_not_called_when_the_link_is_too_long(opened, tmp_path):
     spec_commands, calls = opened
     assert _call(spec_commands, tmp_path, "long " * 2000) is None and calls == []
+
+
+def test_propose_patch_names_a_bad_kind_of_data_as_such(tmp_path):
+    project = str(_project(tmp_path / "p"))
+    code, out = _run("spec", "propose", "--project", project, "--patch", "--modality", "../x", "--json")
+    assert code == 1 and "not a kind of data" in json.loads(out)["error"]
+    code, out = _run("spec", "propose", "--project", project, "--patch", "--json")
+    assert code == 1 and "no schema additions" in json.loads(out)["error"]

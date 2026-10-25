@@ -135,6 +135,9 @@ def _checked_modality(modality) -> str:
     return modality
 
 
+check_modality = _checked_modality  # the one public name: routes and commands refuse a bad name before they look for files
+
+
 def _patch_file(project_root, modality: str) -> Path:
     return overlay_root(project_root) / "patches" / f"{_checked_modality(modality)}.json"
 

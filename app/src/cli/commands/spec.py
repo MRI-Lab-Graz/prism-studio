@@ -11,6 +11,7 @@ from src.spec_overlay import (
     OverlayError,
     add_local_term,
     add_local_values,
+    check_modality,
     list_local_items,
     load_local_patches,
     proposal_for_local_terms,
@@ -131,6 +132,7 @@ def cmd_spec_propose(args) -> None:
     if not (args.all or args.term or args.patch):
         _fail(args, "say what to share: --term <id> (repeatable), --patch or --all")
     try:
+        check_modality(args.modality)
         if args.patch and not load_local_patches(args.project, args.modality)[0]:
             raise OverlayError("this project has no schema additions to share (see: spec local add-values)")
         result = proposal_for_local_terms(

@@ -450,13 +450,20 @@ def test_the_local_list_shows_a_survey_addition(client, tmp_path):
     assert only and all(i["modality"] == "survey" for i in only)
 
 
+def _tree(root: Path) -> list:
+    return sorted((str(p), p.read_bytes()) for p in root.rglob("*") if p.is_file())
+
+
 def test_add_and_remove_values_honour_the_kind_of_data(client, tmp_path):
-    _open(client, _project(tmp_path / "p"))
+    project = _project(tmp_path / "p")
+    _open(client, project)
     body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
     assert client.post("/api/spec/local/add-values", json=body).status_code == 200
     assert client.post("/api/spec/local/remove-values", json=body).status_code == 200
-    assert client.post("/api/spec/local/add-values", json={**body, "modality": "../x"}).status_code == 400
-    assert client.post("/api/spec/local/add-values", json={**body, "modality": 5}).status_code == 400
+    before = _tree(project)
+    for bad in ("../x", "Survey", 5):
+        assert client.post("/api/spec/local/add-values", json={**body, "modality": bad}).status_code == 400
+    assert _tree(project) == before
 
 
 def test_propose_takes_the_kind_of_data(client, tmp_path):
@@ -465,5 +472,10 @@ def test_propose_takes_the_kind_of_data(client, tmp_path):
     body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
     client.post("/api/spec/local/add-values", json=body)
     assert client.post("/api/spec/propose", json={"patch": True, "modality": "survey"}).status_code == 200
-    assert client.post("/api/spec/propose", json={"patch": True, "modality": "../x"}).status_code == 400
+    before = _tree(project)
+    for bad in ("../x", "Survey"):
+        r = client.post("/api/spec/propose", json={"patch": True, "modality": bad})
+        assert r.status_code == 400 and "not a kind of data" in r.get_json()["error"]
+    assert _tree(project) == before
+    assert "no schema additions" in client.post("/api/spec/propose", json={"patch": True, "modality": "physio"}).get_json()["error"]
     assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "modality": "survey"}).status_code == 400

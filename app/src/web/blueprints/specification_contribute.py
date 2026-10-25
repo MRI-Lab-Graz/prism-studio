@@ -15,6 +15,7 @@ from src.spec_overlay import (
     OverlayError,
     add_local_term,
     add_local_values,
+    check_modality,
     find_unknown_metrics,
     find_unknown_values,
     list_all_local_items,
@@ -194,6 +195,7 @@ def propose():
     else:
         return _error('Give "id", a non-empty list "ids", "all": true, or "patch": true')
     try:
+        check_modality(modality)
         if patch and not load_local_patches(project, modality)[0]:
             return _error("This project has no schema additions to share")
         result = proposal_for_local_terms(project, ids, modality=modality, include_patch=patch or body.get("all") is True)
