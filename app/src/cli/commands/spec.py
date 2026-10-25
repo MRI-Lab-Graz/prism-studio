@@ -15,7 +15,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal
 
 
@@ -38,6 +38,16 @@ def cmd_spec_catalog(args) -> None:
         if m["metrics"]:
             lines.append("  Known measurements: " + ", ".join(t["label"] for t in m["metrics"]))
     _emit(args, {"success": True, **catalog}, "\n".join(lines))
+
+
+def cmd_spec_example(args) -> None:
+    """Print each field of a kind of data with the example value of a library template; needs no project."""
+    try:
+        result = example_entries(args.modality, args.template)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    lines = [f"{e['field']}\t{e['example'] if e['example'] is not None else ''}" for e in result["entries"]]
+    _emit(args, {"success": True, **result}, "\n".join(lines) or "no fields")
 
 
 def cmd_spec_local_list(args) -> None:

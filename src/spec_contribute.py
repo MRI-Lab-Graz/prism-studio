@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import re
 
-from src.spec_overlay import OverlayError, _enum_of, _project_specimens, _official_schema, _vendored_or_error
+from src.spec_overlay import OverlayError, _enum_of, _value_at, _project_specimens, _official_schema, _vendored_or_error
 from src.specification import current_specification
 from src.term_proposal import ProposalError, as_v2, check_with_specification, issue_url, slugify
-from src.term_registry import find_term, load_registry
+from src.term_registry import find_term, load_registry, terms_root
 
 _VALUE = re.compile(r"[a-z0-9][a-z0-9-]*")
 
@@ -19,7 +20,7 @@ def _list_label(field: str) -> str:
 
 def _kinds() -> dict[str, list[str]]:
     """Each kind of data in the catalog with the fields of its extendable lists."""
-    return {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"]}
+    return {m["name"]: [x["field"] for x in m["lists"]] for m in spec_catalog()["modalities"] if m["lists"]}
 
 
 def _result(proposal: dict, registry: dict, specimens=None, skipped=()) -> dict:
@@ -34,31 +35,88 @@ def _result(proposal: dict, registry: dict, specimens=None, skipped=()) -> dict:
     }
 
 
+def _templates(modality: str) -> list[str]:
+    """Stems of the library templates of a kind of data (`official/library/<modality>/`, next to the term registry)."""
+    folder = terms_root().parent / modality
+    return sorted(p.stem for p in folder.glob("*.json") if p.stem != "index") if folder.is_dir() else []
+
+
 def spec_catalog() -> dict:
-    """Modalities with extendable lists, their known measurements, units and specimens."""
+    """Every kind of data with its extendable lists, known measurements, units and library templates."""
     from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this package
 
     spec = current_specification()
+    rules = spec.rules
     modalities, units = [], set()
-    for name in sorted(spec.prism_modalities):
-        fields = spec.patchable_fields(name)
-        if not fields:  # e.g. events: nothing to extend
-            continue
-        schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable")
-        registry = load_registry(name)
+    for name in sorted(n for n in rules.modalities if n not in rules.aliases):
+        rule = rules.modalities[name]
+        is_prism = rule.kind == "prism"
+        fields = spec.patchable_fields(name) if is_prism else []
+        schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable") if fields else {}
+        registry = load_registry(name) if is_prism else {}
         units.update(t["Units"] for t in registry.values() if t.get("Units"))
         modalities.append({
             "name": name,
-            "label": name.capitalize(),
+            "label": rule.description or name,
+            "kind": "prism" if is_prism else "bids",
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
             "metrics": [
-                {"id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units")}
+                {
+                    "id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units"),
+                    "specimens": sorted(c["SpecimenType"] for c in registry.values() if c.get("Parent") == t["TermID"] and c.get("SpecimenType")),
+                }
                 for t in registry.values() if t.get("Level") == "analyte"
             ] if registry else None,
+            "templates": _templates(name),
         })
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
     specimens = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}
+
+
+def _example_text(value) -> str | None:
+    if value is None or isinstance(value, (dict, list)):
+        return None
+    return ("yes" if value else "no") if isinstance(value, bool) else str(value)
+
+
+def example_entries(modality: str, template: str | None = None) -> dict:
+    """What a kind of data accepts, field by field, with the value a library template gives as example.
+
+    Entries are the leaf properties two levels down (section.field) of the schema, except `Metadata`.
+    """
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy: specification imports this package
+
+    current = next((m for m in spec_catalog()["modalities"] if m["name"] == modality), None) if isinstance(modality, str) else None
+    if current is None:
+        raise OverlayError(f"{modality}: not a kind of data of this specification")
+    templates = current["templates"]
+    if template is not None and template not in templates:
+        raise OverlayError(f"unknown template {template!r} for {modality}; choose one of: {', '.join(templates) or 'none'}")
+    if current["kind"] != "prism":
+        return {"modality": modality, "template": None, "templates": [], "entries": []}
+    template = template or (templates[0] if templates else None)
+    data = {}
+    if template:
+        try:
+            data = json.loads((terms_root().parent / modality / f"{template}.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+    schema = load_schema(modality, DEFAULT_SCHEMA_DIR, "stable") or {}
+    entries = []
+    for section, node in (schema.get("properties") or {}).items():
+        if section == "Metadata" or not isinstance(node, dict):
+            continue
+        for name, child in (node.get("properties") or {}).items():
+            if not isinstance(child, dict) or child.get("properties"):
+                continue
+            field = f"{section}.{name}"
+            values = [v for v in _enum_of(schema, field) or [] if v != ""]
+            entries.append({
+                "field": field, "label": _list_label(field),
+                "example": _example_text(_value_at(data, field)), "values": values or None,
+            })
+    return {"modality": modality, "template": template, "templates": templates, "entries": entries}
 
 
 def proposal_for_values(modality: str, field: str, values: list[str]) -> dict:

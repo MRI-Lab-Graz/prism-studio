@@ -1858,6 +1858,12 @@ def build_prism_tools_parsers(
     spec_subparsers.add_parser(
         "catalog", help="List what can be proposed (kinds of data, lists, known measurements)"
     ).add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_example = spec_subparsers.add_parser(
+        "example", help="Show what a kind of data accepts, with the example of a library template"
+    )
+    parser_spec_example.add_argument("--modality", required=True, help="The kind of data, for example biosample")
+    parser_spec_example.add_argument("--template", help="Library template stem (default: the first)")
+    parser_spec_example.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_values = spec_subparsers.add_parser(
         "propose-values", help="Propose missing choices in a list, without a project (sends nothing unless --open)"
     )

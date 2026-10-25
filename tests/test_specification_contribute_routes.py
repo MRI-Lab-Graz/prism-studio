@@ -386,3 +386,13 @@ def test_new_routes_pass_the_project_gate():
 def test_oversized_proposal_reports_problems(client):
     data = client.post("/api/spec/propose-metric", json=dict(_METRIC, description="x" * 200000)).get_json()
     assert data["success"] is True and any("bytes" in p for p in data["problems"])
+
+
+def test_the_example_route_returns_the_entries(client):
+    data = client.get("/api/spec/example?modality=biosample").get_json()
+    assert data["success"] and data["template"] == "biosample-inflammation" and data["entries"]
+
+
+def test_the_example_route_refuses_a_bad_name(client):
+    response = client.get("/api/spec/example?modality=../x")
+    assert response.status_code == 400 and not response.get_json()["success"]

@@ -241,3 +241,16 @@ def test_a_term_request_for_a_kind_without_terms_is_a_clear_error(tmp_path):
     assert code == 1 and "prism:x" in json.loads(out)["error"]
     code, out = _run("spec", "local", "list", "--project", str(tmp_path / "p"), "--modality", "../x", "--json")
     assert code == 1 and "not a kind of data" in json.loads(out)["error"]
+
+
+def test_spec_example_json():
+    code, out = _run("spec", "example", "--modality", "biosample", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["template"] == "biosample-inflammation" and data["entries"]
+
+
+def test_spec_example_text_and_bad_modality():
+    code, out = _run("spec", "example", "--modality", "biosample")
+    assert code == 0 and "Technical.SpecimenType" in out and "serum" in out
+    code, _ = _run("spec", "example", "--modality", "../x", "--json")
+    assert code == 1

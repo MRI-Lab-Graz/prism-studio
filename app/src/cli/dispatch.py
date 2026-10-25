@@ -77,6 +77,8 @@ def dispatch_prism_tools(
             handlers["spec_propose"](args)
         elif args.action == "catalog":
             handlers["spec_catalog"](args)
+        elif args.action == "example":
+            handlers["spec_example"](args)
         elif args.action == "propose-values":
             handlers["spec_propose_values"](args)
         elif args.action == "propose-metric":

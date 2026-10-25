@@ -4,7 +4,8 @@ import json
 
 import pytest
 
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_overlay import add_local_values
 from src.spec_overlay import OverlayError
 
 
@@ -16,7 +17,7 @@ def test_catalog_lists_biosample_with_specimen_types():
     biosample = _entry("biosample")
     specimen = next(x for x in biosample["lists"] if x["field"] == "Technical.SpecimenType")
     assert specimen["label"] == "Specimen type" and "saliva" in specimen["values"]
-    assert biosample["label"] == "Biosample"
+    assert biosample["label"].startswith("Lab results")
     assert biosample["metrics"] and all(m["id"].startswith("prism:") for m in biosample["metrics"])
 
 
@@ -24,13 +25,48 @@ def test_catalog_values_have_no_empty_strings():
     assert all("" not in x["values"] for m in spec_catalog()["modalities"] for x in m["lists"])
 
 
-def test_catalog_has_no_modality_without_lists():
-    assert _entry("events") is None
+def test_the_catalog_lists_every_kind_of_data_with_a_description():
+    mods = {m["name"]: m for m in spec_catalog()["modalities"]}
+    assert {"biosample", "survey", "physio", "events", "anat"} <= set(mods)
+    assert mods["anat"]["kind"] == "bids" and mods["anat"]["lists"] == []
+    assert mods["biosample"]["label"].startswith("Lab results")
+    assert "biosample-inflammation" in mods["biosample"]["templates"]
 
 
-def test_catalog_lists_every_modality_with_a_list():
-    modalities = spec_catalog()["modalities"]
-    assert modalities and all(m["lists"] for m in modalities)
+def test_example_entries_fill_the_example_from_the_library_template():
+    ex = example_entries("biosample")
+    by = {e["field"]: e for e in ex["entries"]}
+    assert ex["template"] == "biosample-inflammation"
+    assert by["Technical.SpecimenType"]["example"] == "serum" and "saliva" in by["Technical.SpecimenType"]["values"]
+    assert by["Technical.Laboratory"]["values"] is None
+    assert by["Technical.FastingRequired"]["example"] == "yes"
+    assert by["Technical.StorageTemperature"]["example"] == "-80"
+    assert not any(e["field"].startswith("Metadata") for e in ex["entries"])
+
+
+def test_a_kind_without_a_library_example_still_lists_its_entries():
+    ex = example_entries("physio")
+    assert ex["template"] is None and ex["entries"] and all(e["example"] is None for e in ex["entries"])
+
+
+def test_a_bids_kind_has_no_entries():
+    assert example_entries("anat")["entries"] == []
+
+
+@pytest.mark.parametrize("bad", ["../x", "Survey-AAI", "a/b"])
+def test_a_bad_template_name_is_refused(bad):
+    with pytest.raises(OverlayError):
+        example_entries("survey", bad)
+
+
+def test_an_unknown_kind_is_refused_for_the_example():
+    with pytest.raises(OverlayError):
+        example_entries("../x")
+
+
+def test_project_writes_accept_only_prism_kinds(tmp_path):
+    with pytest.raises(OverlayError):
+        add_local_values(tmp_path, "Name", ["x"], modality="project")
 
 
 def test_catalog_units_sorted_and_unique():

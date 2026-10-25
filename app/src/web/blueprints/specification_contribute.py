@@ -23,7 +23,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -174,3 +174,11 @@ def propose():
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})
+
+
+@specification_contribute_bp.route("/api/spec/example", methods=["GET"])
+def example():
+    try:
+        return jsonify({"success": True, **example_entries(request.args.get("modality", ""), request.args.get("template") or None)})
+    except OverlayError as exc:
+        return _error(str(exc))
