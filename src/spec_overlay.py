@@ -329,6 +329,17 @@ def list_local_items(project_root, modality: str = "biosample") -> list[dict]:
     return items
 
 
+def list_all_local_items(project_root) -> list[dict]:
+    """The Propose page's list: biosample's terms and additions, plus the additions of every other kind of data."""
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    items = list_local_items(project_root, "biosample")
+    for modality in local_patch_modalities(project_root, current_specification().schemas)[0]:
+        if modality != "biosample":
+            items += _patch_items(project_root, modality)
+    return items
+
+
 def _patch_items(project_root, modality: str) -> list[dict]:
     """Layer 2 items of the overlay: one per added value or property, with the status the validator would give it."""
     patch, messages = load_local_patches(project_root, modality)

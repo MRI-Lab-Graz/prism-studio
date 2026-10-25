@@ -436,3 +436,34 @@ def test_propose_new_kind_refuses_bad_requests(client, body):
 def test_propose_new_kind_route_explains_a_too_long_link(client):
     data = client.post("/api/spec/propose-new-kind", json={"description": "long " * 2000, "sample": "a\tb\n"}).get_json()
     assert data["success"] and data["issue_url"] is None and "too long for a link" in data["note"]
+
+
+def test_the_local_list_shows_a_survey_addition(client, tmp_path):
+    from src.spec_overlay import add_local_values
+
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    add_local_values(project, "Study.LicenseID", ["cc-by-nc-local"], modality="survey")
+    items = client.get("/api/spec/local").get_json()["items"]
+    assert any(i["modality"] == "survey" and "cc-by-nc-local" in str(i) for i in items)
+    only = client.get("/api/spec/local?modality=survey").get_json()["items"]
+    assert only and all(i["modality"] == "survey" for i in only)
+
+
+def test_add_and_remove_values_honour_the_kind_of_data(client, tmp_path):
+    _open(client, _project(tmp_path / "p"))
+    body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
+    assert client.post("/api/spec/local/add-values", json=body).status_code == 200
+    assert client.post("/api/spec/local/remove-values", json=body).status_code == 200
+    assert client.post("/api/spec/local/add-values", json={**body, "modality": "../x"}).status_code == 400
+    assert client.post("/api/spec/local/add-values", json={**body, "modality": 5}).status_code == 400
+
+
+def test_propose_takes_the_kind_of_data(client, tmp_path):
+    project = _project(tmp_path / "p")
+    _open(client, project)
+    body = {"modality": "survey", "field": "Study.LicenseID", "values": ["cc-by-nc-local"]}
+    client.post("/api/spec/local/add-values", json=body)
+    assert client.post("/api/spec/propose", json={"patch": True, "modality": "survey"}).status_code == 200
+    assert client.post("/api/spec/propose", json={"patch": True, "modality": "../x"}).status_code == 400
+    assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "modality": "survey"}).status_code == 400
