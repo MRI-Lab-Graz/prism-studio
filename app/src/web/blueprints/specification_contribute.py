@@ -23,7 +23,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -150,6 +150,18 @@ def propose_metric():
         result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), **_context_options(body))
     except OverlayError as exc:
         return _error(str(exc))
+    return jsonify({"success": True, **result})
+
+
+@specification_contribute_bp.route("/api/spec/propose-new-kind", methods=["POST"])
+def propose_new_kind():
+    body = _body()
+    try:
+        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"))
+    except OverlayError as exc:
+        return _error(str(exc))
+    if result["problems"]:
+        return jsonify({"success": False, "error": "; ".join(result["problems"]), **result}), 400
     return jsonify({"success": True, **result})
 
 

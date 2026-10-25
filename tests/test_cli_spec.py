@@ -290,3 +290,26 @@ def test_text_result_prints_the_context_when_the_url_is_too_long():
 def test_a_repeated_entry_field_exits_1():
     code, out = _run(*_PV, "--entry", "A=1", "--entry", "A=2", "--json")
     assert code == 1 and not json.loads(out)["success"]
+
+
+def test_spec_propose_new_kind_json_and_out(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_text("time\ttemp\n0\t33.1\n", encoding="utf-8")
+    out = tmp_path / "proposal.txt"
+    code, text = _run("spec", "propose-new-kind", "--description", "Skin temperature", "--sample", str(sample),
+                      "--closest", "physio", "--out", str(out), "--json")
+    data = json.loads(text)
+    assert code == 0 and data["success"] and data["problems"] == [] and data["issue_url"].startswith(FORM)
+    assert out.read_text(encoding="utf-8") == data["text"] and "Sample file:\ntime" in data["text"]
+
+
+def test_spec_propose_new_kind_refuses_an_oversize_sample_and_an_empty_description(tmp_path):
+    sample = tmp_path / "big.tsv"
+    sample.write_text("x" * 50_001, encoding="utf-8")
+    code, text = _run("spec", "propose-new-kind", "--description", " ", "--sample", str(sample), "--json")
+    data = json.loads(text)
+    assert code == 1 and not data["success"] and "the description is empty" in data["problems"] and data["issue_url"] is None
+    binary = tmp_path / "b.bin"
+    binary.write_bytes(b"\xff\xfe\x00")
+    code, text = _run("spec", "propose-new-kind", "--description", "d", "--sample", str(binary), "--json")
+    assert code == 1 and "UTF-8" in json.loads(text)["error"]

@@ -1892,6 +1892,15 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--out", help="Also save the proposal document (format v2) to this file")
     parser_spec_metric.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
     parser_spec_metric.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_kind = spec_subparsers.add_parser(
+        "propose-new-kind", help="Propose a whole new kind of data, without a project (sends nothing unless --open)"
+    )
+    parser_spec_kind.add_argument("--description", required=True, help="What the data is and how it is recorded")
+    parser_spec_kind.add_argument("--sample", required=True, help="A sample data file (UTF-8 text), pasted into the form by you")
+    parser_spec_kind.add_argument("--closest", help="The closest existing kind of data")
+    parser_spec_kind.add_argument("--out", help="Also save the proposal text to this file")
+    parser_spec_kind.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
+    parser_spec_kind.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )

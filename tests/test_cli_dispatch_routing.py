@@ -30,6 +30,7 @@ DISPATCH_CASES = [
     (dict(command="spec", action="example"), "spec_example"),
     (dict(command="spec", action="propose-values"), "spec_propose_values"),
     (dict(command="spec", action="propose-metric"), "spec_propose_metric"),
+    (dict(command="spec", action="propose-new-kind"), "spec_propose_new_kind"),
     (dict(command="modality-version", action="status"), "modality_version_status"),
     (dict(command="modality-version", action="list"), "modality_version_list"),
     (dict(command="modality-version", action="pin"), "modality_version_pin"),

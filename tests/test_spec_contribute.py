@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.spec_overlay import add_local_values
 from src.spec_overlay import OverlayError
 
@@ -269,3 +269,24 @@ def test_context_rejects_control_characters(entries):
     from src.spec_contribute import proposal_context
     with pytest.raises(OverlayError):
         proposal_context(entries)
+
+
+def test_a_new_kind_proposal_prefills_the_form_but_not_the_sample():
+    result = proposal_for_new_kind("Skin temperature from a wrist sensor\nOne file per session.", "time\ttemp\n0\t33.1\n", "physio")
+    assert result["problems"] == []
+    url = result["issue_url"]
+    assert "template=propose-new-kind-of-data.yml" in url and "closest_kind=physio" in url and "33.1" not in url
+    assert "title=%5BNew%20kind%20of%20data%5D%3A%20Skin%20temperature" in url
+    assert "Sample file:\ntime\ttemp" in result["text"] and "Closest kind of data: physio" in result["text"]
+
+
+def test_an_empty_description_and_a_huge_sample_are_problems():
+    result = proposal_for_new_kind("  ", "x" * 50_001)
+    assert "the description is empty" in result["problems"] and any("larger than" in p for p in result["problems"])
+    assert result["issue_url"] is None
+
+
+@pytest.mark.parametrize("args", [("x", "a\tb\n", "../x"), (1, "a", None), ("x", None, None), ("x", "a", 5)])
+def test_a_new_kind_proposal_refuses_a_bad_closest_or_non_text(args):
+    with pytest.raises(OverlayError):
+        proposal_for_new_kind(*args)

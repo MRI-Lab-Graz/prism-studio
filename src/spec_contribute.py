@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import json
 import re
+from urllib.parse import quote, urlencode
 
 from src.spec_overlay import OverlayError, _enum_of, _value_at, _project_specimens, _official_schema, _vendored_or_error
 from src.specification import current_specification
-from src.term_proposal import ProposalError, as_v2, check_with_specification, issue_url, slugify
+from src.term_proposal import (
+    ISSUE_NEW_KIND_TEMPLATE, ISSUE_REPO, ProposalError, URL_LIMIT, as_v2, check_with_specification, issue_url,
+    slugify, vendored_term_proposal,
+)
 from src.term_registry import find_term, load_registry, terms_root
 
 _VALUE = re.compile(r"[a-z0-9][a-z0-9-]*")
@@ -227,3 +231,31 @@ def proposal_for_new_metric(
     parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
     return _result({"modality": modality, "terms": [parent, child]}, registry, specimens, context=context)
+
+
+def proposal_for_new_kind(description: str, sample: str, closest: str | None = None) -> dict:
+    """The proposal for a whole new kind of data (a description and a pasted sample file); needs no project.
+
+    Returns {"issue_url", "text", "problems"}. The form is prefilled with the description and the closest kind;
+    the sample is never in the link (the user pastes it), `text` is the download with everything.
+    """
+    for name, value in (("description", description), ("sample", sample), ("closest", closest)):
+        if value is not None and not isinstance(value, str):
+            raise OverlayError(f"{name} must be text")
+    if description is None or sample is None:
+        raise OverlayError("description and sample must be text")
+    if closest is not None and closest not in current_specification().rules.modalities:
+        raise OverlayError(f"unknown kind of data {closest!r}; choose one of: {', '.join(current_specification().rules.modalities)}")
+    description = description.strip()
+    problems = (["the description is empty"] if not description else []) + vendored_term_proposal().sample_problems(sample)
+    title = "[New kind of data]: " + description.partition("\n")[0][:60]
+    query = urlencode(
+        {"template": ISSUE_NEW_KIND_TEMPLATE, "title": title, "description": description, **({"closest_kind": closest} if closest else {})},
+        quote_via=quote,
+    )
+    url = f"https://github.com/{ISSUE_REPO}/issues/new?{query}"
+    return {
+        "issue_url": url if not problems and len(url) <= URL_LIMIT else None,
+        "text": f"Description:\n{description}\n\nClosest kind of data: {closest or 'not given'}\n\nSample file:\n{sample}\n",
+        "problems": problems,
+    }

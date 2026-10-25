@@ -415,3 +415,19 @@ def test_propose_rejects_bad_context(client, extra):
     for url, body in (("propose-values", {"field": "Technical.SpecimenType", "values": ["sweat"]}), ("propose-metric", _METRIC)):
         response = client.post(f"/api/spec/{url}", json=dict(body, **extra))
         assert response.status_code == 400 and response.get_json()["success"] is False
+
+
+def test_propose_new_kind_without_a_project(client):
+    data = client.post("/api/spec/propose-new-kind", json={"description": "Skin temperature", "sample": "t\tv\n0\t1\n", "closest": "physio"}).get_json()
+    assert data["success"] and data["problems"] == [] and data["issue_url"].startswith(FORM)
+    assert "Sample file:" in data["text"]
+
+
+@pytest.mark.parametrize("body", [
+    {"description": "d", "sample": 5}, {"description": "d", "sample": "x" * 50_001}, {"description": " ", "sample": "a"},
+    {"description": "d", "sample": "a", "closest": "../x"},
+])
+def test_propose_new_kind_refuses_bad_requests(client, body):
+    response = client.post("/api/spec/propose-new-kind", json=body)
+    data = response.get_json()
+    assert response.status_code == 400 and not data["success"] and data["error"]

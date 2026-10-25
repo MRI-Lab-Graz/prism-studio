@@ -15,8 +15,11 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import example_entries, proposal_for_new_metric, proposal_for_values, spec_catalog
-from src.term_proposal import deliver_proposal
+from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+import webbrowser
+from pathlib import Path
+
+from src.term_proposal import deliver_proposal, vendored_term_proposal
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -195,3 +198,40 @@ def cmd_spec_propose_metric(args) -> None:
     except OverlayError as exc:
         _fail(args, str(exc))
     _deliver_result(args, result)
+
+
+def cmd_spec_propose_new_kind(args) -> None:
+    """Propose a whole new kind of data from a description and a sample file; needs no project. Sends nothing itself."""
+    limit = vendored_term_proposal().MAX_BYTES
+    try:
+        with open(args.sample, "rb") as handle:
+            raw = handle.read(limit + 1)  # an oversize file is refused without reading all of it
+    except OSError as exc:
+        _fail(args, f"cannot read the sample file: {exc}")
+    try:
+        sample = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        if len(raw) > limit:  # cut mid-character: it is too big anyway
+            sample = raw.decode("utf-8", errors="ignore")
+        else:
+            _fail(args, f"the sample file {args.sample} is not UTF-8 text")
+    try:
+        result = proposal_for_new_kind(args.description, sample, args.closest)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    problems, url = result["problems"], result["issue_url"]
+    if args.out:
+        Path(args.out).write_text(result["text"], encoding="utf-8")
+    opened = bool(args.open and not problems and url and webbrowser.open(url))
+    how = (
+        f"Opened the prefilled form in your browser; paste the sample file into its field:\n{url}" if opened
+        else f"To send it, run this again with --open (it opens the prefilled form; paste the sample file into its field):\n{url}" if url and not problems
+        else ""
+    )
+    _emit(
+        args,
+        {"success": not problems, "problems": problems, "issue_url": url, "text": result["text"], "opened": opened},
+        "\n".join(["Problems:", *(f"- {p}" for p in problems)]) if problems else f"{result['text']}\n{how}",
+    )
+    if problems:
+        sys.exit(1)

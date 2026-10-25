@@ -23,6 +23,7 @@ MODALITY_NAME = r"[a-z][a-z0-9]*"  # a kind of data names a file (patches/<modal
 
 ISSUE_REPO = "MRI-Lab-Graz/prism-specification"
 ISSUE_TEMPLATE = "propose-metric.yml"
+ISSUE_NEW_KIND_TEMPLATE = "propose-new-kind-of-data.yml"
 URL_LIMIT = 6000
 _OPTIONAL_CHILD_FIELDS = ("MinValue", "WarnMaxValue", "LOINC")
 
@@ -178,15 +179,21 @@ def specification_scripts_dir() -> Path:
     return next((c for c in candidates if c.is_dir()), candidates[0])
 
 
-def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
-    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
-
-    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
+def vendored_term_proposal():
+    """prism-specification's own term_proposal.py (vendored in scripts/specification/), loaded by path."""
     spec = importlib.util.spec_from_file_location("specification_term_proposal", specification_scripts_dir() / "term_proposal.py")
     if spec is None or spec.loader is None:
         raise ImportError("prism-specification's term_proposal.py cannot be loaded")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    return module
+
+
+def check_with_specification(proposal: dict, registry: dict[str, dict], specimens: list[str] | None = None) -> list[str]:
+    """Problems found by prism-specification's own checks (the vendored scripts/specification/term_proposal.py).
+
+    `specimens` replaces the official SpecimenType values (a project's schema patch may add some)."""
+    module = vendored_term_proposal()
     document = as_v2(proposal)  # a format-v1 proposal carries at most two terms; v2 up to 40
     stable = Path(DEFAULT_SCHEMA_DIR) / "stable"
     paths = list(document["files"])
