@@ -805,15 +805,20 @@ The validator's "not an official metric" notice prints the matching `spec local 
 
 ### Propose without a project
 
-These three need no project and send nothing unless you add `--open`; they are what *Specifications → Propose changes* runs.
+These need no project and send nothing unless you add `--open`; they are what *Specifications → Propose changes* runs.
 
     python prism_tools.py spec catalog [--json]
-    python prism_tools.py spec propose-values --modality <modality> --field <field> --value <value> [--value <value> ...] [--out FILE] [--open] [--json]
-    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample] [--project <folder>] [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose-values --modality <modality> --field <field> --value <value> [--value <value> ...] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample] [--project <folder>] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
+    python prism_tools.py spec example --modality <modality> [--template <stem>] [--json]
+    python prism_tools.py spec propose-new-kind --description <text> --sample <file> [--closest <name>] [--out FILE] [--open] [--json]
 
 - `catalog`: what can be proposed: the kinds of data, their lists with the values they allow, and the measurements PRISM already knows.
 - `propose-values`: proposes missing choices in a list, for example `--modality biosample --field Technical.SpecimenType --value sweat`. A value the list already has is reported and left out.
 - `propose-metric`: proposes a missing measurement (`--name`, what it measures, `--units`, the `--specimen` it is taken from; `--alias` adds other names). `--project` also accepts the sample types that project added. A measurement PRISM already has is reported with the term to use.
+- `example`: prints an example of a kind of data from its library template (`--template` picks one by stem, default the first), so you can see what an entry looks like before proposing.
+- `propose-new-kind`: proposes a kind of data PRISM does not have: `--description` says what the data is and how it is recorded, `--sample` is a sample data file (UTF-8 text) that you paste into the form yourself, `--closest` names the closest existing kind. `--out FILE` saves the proposal text; `--open` opens the prefilled prism-specification form.
+- `--not-sure` (on `propose-values` and `propose-metric`) says you do not know which kind of data this belongs to; `--closest` then names the nearest one. `--entry FIELD=VALUE` (repeatable) adds a field you filled in.
 - `--out FILE` also saves the proposal document (format v2); `--open` opens the prefilled form on GitHub. Today only `biosample` is offered as a kind of data.
 
 ## modality-version

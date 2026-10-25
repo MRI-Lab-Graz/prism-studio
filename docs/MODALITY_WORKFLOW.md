@@ -5,29 +5,29 @@ know yet" to "it ships in the next release". The reference for the workbook
 fields is [Proposing a New Modality](MODALITY_PROPOSALS.md).
 
 PRISM is open and dynamic: anyone can propose a new modality or a new filename
-ending (suffix) for an existing one. You describe it in a short workbook, a bot
-checks it, and a maintainer registers it, so it can be part of the next release.
+ending (suffix) for an existing one. Propose it on the **Propose** page in
+Studio (Specifications), or with the
+[Propose a new kind of data](https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-new-kind-of-data.yml)
+form in prism-specification, and a maintainer registers it, so it can be part of
+the next release. This page covers the maintainer's drafting tool,
+`python prism_tools.py modality propose`, which turns a workbook into the files
+a registration needs.
 
 ## How it works
 
 ```
- you                         GitHub bot                    maintainer
- ---                         ----------                    ----------
- fill workbook  ─┐
- make sample    ─┼─ issue ──► checks names, columns,
- tick privacy   ─┘            sample data
-                                 │ problems? ──► comment: what to fix
-                                 ▼
-                              draft pull request ───────► follows REGISTRATION.md,
-                              (schema, example sidecar,    reviews units / ranges,
-                               test dataset, notes)        merges
-                                                              │
-                                                              ▼
-                                                      modality in next release
+ you                         maintainer
+ ---                         ----------
+ propose on the Propose page
+ or the prism-specification  ─► drafts the files with
+ form (description + sample)    `modality propose`, follows REGISTRATION.md,
+                                reviews units / ranges, merges
+                                       │
+                                       ▼
+                               modality in next release
 ```
 
-Nothing is registered automatically. The bot only prepares a pull request; a
-person always decides.
+Nothing is registered automatically; a person always decides.
 
 ## What you need
 
@@ -35,10 +35,10 @@ person always decides.
 |---|---|
 | The workbook | `official/create_new_modality/modality_proposal_template.xlsx` (Excel, LibreOffice or Numbers). YAML or JSON also work, see `examples/modality_proposal/`. |
 | A sample data file | Same format as your real data, **synthetic**, at most 50 rows and 1 MB, header identical to the `Columns` sheet. |
-| A GitHub account | Only for the issue route. The command-line route needs none. |
+| A GitHub account | Only to submit the form. The command-line route needs none. |
 | A name and suffix | Lowercase letters and digits, starting with a letter, not already used by PRISM or BIDS (`blood` is taken by BIDS, for example). |
 
-You do not need to install PRISM to submit through GitHub.
+You do not need to install PRISM to submit through the prism-specification form.
 
 ## Step by step
 
@@ -96,19 +96,12 @@ ERROR: my_sample.tsv row 1 column 'crp': 'abc' is not a number
 
 ### 4. Submit it
 
-**Via GitHub (no install):** open a
-[Propose a New Modality](https://github.com/MRI-Lab-Graz/prism-studio/issues/new?template=propose-modality.yml)
-issue, drag in the workbook and the sample file, tick the
-privacy box and submit. The bot answers on the issue:
+**Via GitHub (no install):** open the
+[Propose a new kind of data](https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-new-kind-of-data.yml)
+form in prism-specification, or use the Propose page in Studio, which fills it
+in for you.
 
-- **Problems found**: a comment says what to fix. Open a *new* issue with the
-  corrected files.
-- **All good**: a draft pull request appears (automatically only when you are
-  an owner, member or collaborator of the repository; otherwise a maintainer
-  takes it from the issue).
-
-**From the command line:** generate the same package yourself and attach it to a
-pull request or send it to a maintainer:
+**From the command line:** maintainers draft the package from a workbook:
 
 ```bash
 python prism_tools.py modality propose my_proposal.xlsx --sample my_sample.tsv --out my_modality
@@ -139,8 +132,7 @@ generated docs (toctree entry, card), run
 modality lacks any of these) and validate `fixture/` with
 `python prism.py <folder>/fixture`. CI runs the vendored
 `scripts/specification/check_modalities.py` on Studio's copy. Units, ranges and the sample are reviewed by
-hand. GitHub does not start CI from the bot's own push, so a maintainer starts
-it. A pull request that only adds `proposals/` files gets a reduced CI run and
+hand. A pull request that only adds `proposals/` files gets a reduced CI run and
 its fixture test stays red until the modality is registered; the registration
 push runs the full CI.
 
@@ -156,18 +148,12 @@ and run `python scripts/sync_specification.py --tag <tag>` in Studio.
 2. Push; the full CI runs.
 3. Review by hand (units, ranges, no real participant data), then run
    `ponytail:ponytail-audit`.
-4. Mark the PR ready and merge; the issue closes automatically (`Closes #N`).
+4. Mark the PR ready and merge.
 5. The modality ships in the next release; project pages pick it up from
    `entities.schema.json`.
 
-## Maintainer setup (once)
+## Maintainer notes
 
-- The label `type: new-modality` must exist, otherwise the bot never starts.
-- Enable "Allow GitHub Actions to create and approve pull requests" in the
-  repository settings, or open the PR by hand from the pushed branch.
-- Make your organization membership **public**. The bot reads the issue author's
-  role from the event; a private member is seen as an outsider and gets no
-  automatic pull request.
 - Do not open a contributor's `.xlsx` in desktop Excel; review the generated
   JSON instead.
 
