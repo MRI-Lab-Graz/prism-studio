@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedFolderPath = document.getElementById('selectedFolderPath');
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadInfo = document.getElementById('uploadInfo');
-    const browserWarning = document.getElementById('browserWarning');
     const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
     const browseLibraryBtn = document.getElementById('browseLibraryBtn');
     const libraryPathInput = document.getElementById('library_path');
@@ -967,7 +966,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             uploadInfo.innerHTML = hasCurrentProject
-                ? '<i class="fas fa-check-circle me-1 text-success"></i>Target: current project (default)'
+                ? ''  // the summary box above already names the project
                 : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Select another dataset folder to continue';
 
             if (folderBtn) {
@@ -1010,9 +1009,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     syncCurrentProjectTargetDetails();
     refreshDefaultLibraryPath();
-    if (browserWarning) {
-        browserWarning.style.display = 'none';
-    }
     updateTargetState();
 
     function applyAdvancedOptionsState() {

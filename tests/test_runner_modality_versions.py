@@ -95,3 +95,14 @@ def test_validator_info_records_where_each_version_came_from(tmp_path, monkeypat
     _, stats = runner.validate_dataset(str(root), run_bids=False)
     assert stats.validator_info["prism_schema_sources"]["survey"] == "project.json"
     assert stats.validator_info["prism_schema_versions"]["survey"] == "0.9.0"
+
+
+def test_validator_info_names_only_the_schemas_this_dataset_uses(tmp_path, monkeypatch, schema_dir):
+    sdir, _ = schema_dir
+    monkeypatch.setattr(runner, "_default_schema_dir", lambda: sdir)
+    root = _project(tmp_path, {"survey": "0.9.0"})
+    (root / "sub-01" / "survey").mkdir(parents=True)
+    (root / "sub-01" / "survey" / "sub-01_task-x_survey.tsv").write_text("a\n")
+    _, stats = runner.validate_dataset(str(root), run_bids=False)
+    in_use = stats.validator_info["prism_schemas_in_use"]
+    assert in_use == {"dataset_description": in_use["dataset_description"], "survey": "0.9.0"}
