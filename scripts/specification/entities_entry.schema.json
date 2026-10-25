@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "One modality entry of entities.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "description"],
+  "properties": {
+    "kind": {"enum": ["prism", "bidsPassthrough"]},
+    "description": {"type": "string", "minLength": 1},
+    "describedColumns": {"type": "boolean"},
+    "suffixes": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "extensions": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "folder": {"type": "boolean"},
+    "allowedEntities": {"type": "array", "items": {"type": "string"}},
+    "requiredEntityValues": {"type": "object"},
+    "optionalEntityValues": {"type": "object"},
+    "example": {"type": "object"}
+  },
+  "if": {"properties": {"kind": {"const": "prism"}}, "required": ["kind"]},
+  "then": {"required": ["suffixes", "extensions", "describedColumns"]}
+}

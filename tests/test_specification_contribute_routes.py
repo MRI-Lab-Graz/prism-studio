@@ -363,7 +363,7 @@ def test_propose_metric_for_a_kind_a_project_patched_is_a_400_not_a_500(client, 
     _open(client, project)
     response = client.post("/api/spec/propose-metric", json=dict(_METRIC, modality="survey"))
     data = response.get_json()
-    assert response.status_code == 400 and data["success"] is False and "biosample" in data["error"]
+    assert response.status_code == 400 and data["success"] is False and "no known measurements" in data["error"]
 
 
 @pytest.mark.parametrize("modality", ["../../../../evil", "x" * 5000])

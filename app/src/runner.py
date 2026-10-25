@@ -205,7 +205,7 @@ def _validate_dataset(
         (
             "INFO",
             f"This project adds to the {modality} schema locally (code/specification/patches/{modality}.json); "
-            f"to share it with the PRISM community: python prism_tools.py spec propose {project_arg} --patch",
+            f"to share it with the PRISM community: python prism_tools.py spec propose {project_arg} --patch --modality {modality}",
         )
         for modality in spec.local_patches
     )
@@ -213,7 +213,7 @@ def _validate_dataset(
         (
             "INFO",
             f"Local schema addition now official ({item}): remove it from the project's patch: "
-            f"python prism_tools.py spec local remove-values {project_arg} --field <field> --value <value>",
+            f"python prism_tools.py spec local remove-values {project_arg} --modality {item.partition('.json')[0]} --field <field> --value <value>",
         )
         for item in spec.ignored_patch_items
     )

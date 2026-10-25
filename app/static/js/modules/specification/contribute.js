@@ -33,6 +33,7 @@
     const mineBox = document.getElementById("spec-v-mine");
     const shareMine = document.getElementById("spec-v-share");
     const useMine = document.getElementById("spec-v-use");
+    const useNote = document.getElementById("spec-v-use-note");
     let catalog = { modalities: [], project_open: false };
     let projectSpecimens = [];  // sample types this project added itself
     let foundColumn = null;  // the "Found in your data" column the form was filled from
@@ -277,7 +278,13 @@
             mineBox.appendChild(row);
         });
         shareMine.classList.toggle("d-none", !mine.length);
-        useMine.classList.toggle("d-none", !mine.length || !catalog.project_open);
+        // until phase C the page adds choices to the open project for Biosample only; the command line does every kind
+        const projectUse = modalitySelect.value === "biosample";
+        useMine.classList.toggle("d-none", !mine.length || !catalog.project_open || !projectUse);
+        useNote.hidden = !catalog.project_open || projectUse;
+        useNote.textContent = "Using a new choice in your own project is available for Biosample here; for other kinds of data use the command line: "
+            + "python prism_tools.py spec local add-values --project <project> --modality " + modalitySelect.value
+            + " --field " + listSelect.value + " --value " + (mine[0] || "<value>");
     }
 
     function showList() {

@@ -53,9 +53,10 @@ def test_snippets_name_the_pages_the_gate_checks():
 
 def test_registration_md_lists_the_docs_steps():
     md = build_registration_md(P)
-    for needle in ("docs/specs/bloodwork.md", "docs/index.rst", "docs/SCHEMA_SPECIFICATIONS.md",
-                   "docs/specs/entities.md", "modality-docs"):
+    for needle in ("specs/bloodwork.md", "docs/index.rst", "docs/SCHEMA_SPECIFICATIONS.md",
+                   "specs/entities.md", "modality-docs"):
         assert needle in md
+    assert "docs/specs/" not in md
 
 
 def test_docs_page_shows_example_sidecar_types_and_guide_link():

@@ -85,9 +85,10 @@ be used instead of the workbook (see `examples/modality_proposal/`).
 
 ## What happens next
 
-A maintainer follows `REGISTRATION.md` (copy the schema, add the modality to
-`entities.schema.json`, add the generated docs, run the checks including
-`modality-docs`) and reviews units, ranges and the
+A maintainer follows `REGISTRATION.md` (add the schema, the entities entry and
+`specs/<name>.md` and the `specs/entities.md` row in prism-specification, tag a
+release, run `python scripts/sync_specification.py --tag <tag>` in Studio, add
+the docs card and toctree entry and run the checks including `modality-docs`) and reviews units, ranges and the
 sample. After the merge the modality is available in the next PRISM release.
 GitHub does not start CI from the bot's own push; a maintainer starts it by
 approving the run or pushing. While the pull request only adds files under
@@ -112,5 +113,6 @@ page, toctree entry, card, `entities` table row or suffix mention.
   `.tsv`/`.yml` attachments, the artifact handoff between the two jobs works and
   the draft PR is created. That run also showed that a *private* organisation
   membership makes the author an outsider (no automatic PR).
-- Registration also means adding the name to `COMMUNITY_MODALITY_SCHEMAS` in
-  `tests/verify_repo.py` (the generated `REGISTRATION.md` lists this step).
+- Registration happens in the prism-specification repository (schema, entities
+  entry, `specs/<name>.md`), then a Studio sync (the generated `REGISTRATION.md`
+  lists the steps).

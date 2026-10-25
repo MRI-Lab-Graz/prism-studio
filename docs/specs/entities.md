@@ -57,5 +57,14 @@ validator reports both folders as errors with a fix hint (rename
 | `physio` | prism | `physio` | `tsv`, `tsv.gz`, `json`, `edf` | task-free: a `task-` entity in `physio/` is an error (task-bound physio goes to `beh/`, `func/` or `eeg/` as BIDS `_physio.tsv.gz`); optional `recording` entity: enum of common channel types (`ecg`, `cardiac`, `puls`, `resp`, `eda`, `ppg`, `emg`, `temp`, `bp`, `spo2`, `trigger`), plus any other alphanumeric value |
 | `anat`, `func`, `fmap`, `dwi`, `eeg`, `beh` | bidsPassthrough | (standard BIDS) | (standard BIDS) | validated per standard BIDS rules |
 
+Every entry carries two keys besides its kind:
+
+- `description`: one plain-language line (at most 120 characters) saying what kind of data the
+  entry is for. Tools show it to users choosing a kind of data.
+- `describedColumns` (`kind: prism` entries only): `true` when the sidecar JSON describes the
+  columns of the entry's TSV files, so validators check the column values against the sidecar and
+  apply the strict file-name check. `false` when the columns are not described that way (`physio`,
+  `events`, `environment`), so neither check runs.
+
 See [`schemas/stable/entities.schema.json`](../../app/schemas/stable/entities.schema.json)
 for the authoritative, machine-readable version of this table.

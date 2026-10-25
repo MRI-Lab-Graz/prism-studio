@@ -101,3 +101,7 @@ def test_a_specification_is_hashable_and_compared_by_identity(tmp_path):
     spec = stand_in(tmp_path)
     assert hash(spec) == hash(spec)  # dict fields made the generated __hash__ raise TypeError
     assert spec != load_specification(rules=spec.rules)  # same content, different object: no deep dict comparison
+
+
+def test_the_specification_exposes_the_described_columns_set():
+    assert official_specification().described_columns == {"survey", "biometrics", "biosample"}

@@ -11,10 +11,12 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 
 from src.term_proposal import (
+    MODALITY_NAME,
     ProposalError,
     as_v2,
     build_proposal,
@@ -63,7 +65,7 @@ def overlay_root(project_root) -> Path:
 
 
 def _terms_folder(project_root, modality: str) -> Path:
-    return overlay_root(project_root) / "terms" / modality
+    return overlay_root(project_root) / "terms" / _checked_modality(modality)
 
 
 def _real_overlay_folder(project_root, *parts: str) -> Path:
@@ -81,7 +83,7 @@ def _real_overlay_folder(project_root, *parts: str) -> Path:
 
 
 def _real_terms_folder(project_root, modality: str) -> Path:
-    return _real_overlay_folder(project_root, "terms", modality)
+    return _real_overlay_folder(project_root, "terms", _checked_modality(modality))
 
 
 def _local_part(term_id) -> str | None:
@@ -121,8 +123,15 @@ def load_local_terms(project_root, modality: str = "biosample") -> tuple[dict[st
     return terms, problems
 
 
+def _checked_modality(modality) -> str:
+    """`modality` when it is a kind of data with an official stable schema; every caller-supplied name that becomes a path passes here."""
+    if not (isinstance(modality, str) and re.fullmatch(MODALITY_NAME, modality) and isinstance(_official_schema(modality), dict)):
+        raise OverlayError(f"{modality}: not a kind of data of this specification")
+    return modality
+
+
 def _patch_file(project_root, modality: str) -> Path:
-    return overlay_root(project_root) / "patches" / f"{modality}.json"
+    return overlay_root(project_root) / "patches" / f"{_checked_modality(modality)}.json"
 
 
 def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict | None, list[str]]:
@@ -130,7 +139,10 @@ def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict 
 
     Invalid, unreadable or symlinked files are a message, never an exception; None when nothing is left to add.
     """
-    path = _patch_file(project_root, modality)
+    try:
+        path = _patch_file(project_root, modality)
+    except OverlayError as exc:
+        return None, [str(exc)]
     if not path.is_file():
         return None, []
     try:
@@ -155,6 +167,22 @@ def load_local_patches(project_root, modality: str = "biosample") -> tuple[dict 
         for a in adds
     ]
     return {"operations": operations}, [f"{path.name}: {note}" for note in notes]
+
+
+def local_patch_modalities(project_root, schemas: dict) -> tuple[list[str], list[str]]:
+    """The modalities that have a patch file in the project, and one message per file that is not a kind of data of this run."""
+    try:
+        folder = _real_overlay_folder(project_root, "patches")
+    except OverlayError as exc:
+        return [], [f"patches: {exc}"]
+    found: list[str] = []
+    problems: list[str] = []
+    for path in sorted(folder.glob("*.json")) if folder.is_dir() else []:
+        if re.fullmatch(MODALITY_NAME, path.stem) and path.stem in schemas:
+            found.append(path.stem)
+        else:
+            problems.append(f"patches/{path.name}: not a kind of data of this run")
+    return found, problems
 
 
 def merge_terms(official: dict[str, dict], local: dict[str, dict]) -> tuple[dict, frozenset[str], tuple[str, ...]]:
@@ -241,7 +269,7 @@ def _project_specimens(project_root, modality: str) -> list[str] | None:
     schema = _vendored("schema_patch").apply_patch(load_schema(modality, DEFAULT_SCHEMA_DIR, "stable"), patch)[0]
     try:
         return schema["properties"]["Technical"]["properties"]["SpecimenType"]["enum"]
-    except KeyError:  # a kind of data without sample types (survey, ...): callers use the official ones
+    except (KeyError, TypeError):  # a kind of data without sample types (survey, ...): callers use the official ones
         return None
 
 
@@ -326,7 +354,7 @@ def _official_schema(modality: str) -> dict:
 
 def _existing_patch(project_root, modality: str) -> tuple[Path, dict]:
     """The patch file for changing (symlinks refused) and its raw content; a broken file is an error, never overwritten."""
-    path = _real_overlay_folder(project_root, "patches") / f"{modality}.json"
+    path = _real_overlay_folder(project_root, "patches") / f"{_checked_modality(modality)}.json"
     if path.is_symlink():
         raise OverlayError(f"{path} is a symbolic link; the specification folder of a project must be a real folder")
     if not path.exists():
@@ -356,8 +384,8 @@ def add_local_values(project_root, field: str, values: list[str], modality: str 
     the vendored schema_patch.py (which also decides which fields may be extended) before anything is written.
     """
     sp = _vendored_or_error("schema_patch")
-    schema = _official_schema(modality)
     path, patch = _existing_patch(project_root, modality)
+    schema = _official_schema(modality)
     values = list(values) if isinstance(values, (list, tuple)) else values
     try:
         adds, _ = sp.additions(schema, {"operations": [{"op": "add_enum_values", "path": field, "values": values}]})

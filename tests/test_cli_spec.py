@@ -222,3 +222,22 @@ def test_spec_propose_values_repeated_value_works():
     code, out = _run("spec", "propose-values", "--modality", "biosample", "--field", "Technical.SpecimenType",
                      "--value", "sweat", "--value", "sweat", "--json")
     assert code == 0 and json.loads(out)["success"]
+
+
+def test_a_survey_list_addition_is_listed_and_shared_from_the_command_line(tmp_path):
+    project = str(_project(tmp_path / "p"))
+    code, out = _run("spec", "local", "add-values", "--project", project, "--modality", "survey",
+                     "--field", "Study.LicenseID", "--value", "cc-by-nc-local")
+    assert code == 0 and "--modality survey" in out
+    code, out = _run("spec", "local", "list", "--project", project, "--modality", "survey", "--json")
+    assert code == 0 and [i["value"] for i in json.loads(out)["items"]] == ["cc-by-nc-local"]
+    code, out = _run("spec", "propose", "--project", project, "--patch", "--modality", "survey", "--json")
+    result = json.loads(out)
+    assert code == 0 and result["success"] and result["proposal"]["patch"]["operations"][0]["values"] == ["cc-by-nc-local"]
+
+
+def test_a_term_request_for_a_kind_without_terms_is_a_clear_error(tmp_path):
+    code, out = _run("spec", "propose", "--project", str(_project(tmp_path / "p")), "--term", "prism:x", "--modality", "survey", "--json")
+    assert code == 1 and "prism:x" in json.loads(out)["error"]
+    code, out = _run("spec", "local", "list", "--project", str(tmp_path / "p"), "--modality", "../x", "--json")
+    assert code == 1 and "not a kind of data" in json.loads(out)["error"]

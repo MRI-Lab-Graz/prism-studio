@@ -200,3 +200,16 @@ def test_dispatch_prism_tools_falls_back_to_help(extra_args, expected_parser_key
         handler.assert_not_called()
 
 
+
+
+def test_cli_add_values_accepts_another_modality_but_add_term_does_not():
+    from pathlib import Path
+
+    from src.cli.parser import build_prism_tools_parsers
+
+    parser = build_prism_tools_parsers(Path("."))[0]
+    args = parser.parse_args(["spec", "local", "add-values", "--project", "P", "--modality", "survey",
+                                      "--field", "Study.LicenseID", "--value", "cc-by-nc-local"])
+    assert args.modality == "survey"
+    with pytest.raises(SystemExit):
+        parser.parse_args(["spec", "local", "remove", "--project", "P", "--modality", "survey", "prism:x"])

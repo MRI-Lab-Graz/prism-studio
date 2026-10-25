@@ -42,7 +42,10 @@ def cmd_spec_catalog(args) -> None:
 
 def cmd_spec_local_list(args) -> None:
     """List the project's local specification items."""
-    items = list_local_items(args.project, args.modality)
+    try:
+        items = list_local_items(args.project, args.modality)
+    except OverlayError as exc:
+        _fail(args, str(exc))
     lines = [f"{i['status']}\t{i['id'] or i['path']}\t{i.get('label') or i.get('problem', '')}" for i in items]
     _emit(args, {"success": True, "items": items}, "\n".join(lines) or "no local specification items")
 
@@ -90,7 +93,7 @@ def cmd_spec_local_add_values(args) -> None:
         {"success": True, "written": written, "skipped": result["skipped"], "patch": result["patch"]},
         (f"Added to this project: {args.field} = {', '.join(v for v in args.value if v not in result['skipped'])}\n  {written}"
          f'\nThe validator uses it from now on. To share it with the PRISM community: '
-         f'python prism_tools.py spec propose --project "{args.project}" --patch' if written
+         f'python prism_tools.py spec propose --project "{args.project}" --patch --modality {args.modality}' if written
          else "Nothing to add: every value is already official.")
         + skipped,
     )

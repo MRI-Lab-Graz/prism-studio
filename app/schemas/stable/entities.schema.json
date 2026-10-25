@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Declarative BIDS/PRISM filename and entity rules: which entities are required/optional per modality, entity ordering for rewrites, and the suffix/extension grammar used to validate filenames. Consumed by src/entity_rules.py; do not hand-edit MODALITY_PATTERNS-style regexes in Python instead of this file.",
   "entityOrder": [
     "sub",
@@ -19,6 +19,8 @@
   "modalities": {
     "survey": {
       "kind": "prism",
+      "description": "Questionnaires and rating scales answered by participants",
+      "describedColumns": true,
       "suffixes": ["survey"],
       "extensions": ["tsv", "json"],
       "requiredEntityValues": {
@@ -32,16 +34,22 @@
     },
     "biometrics": {
       "kind": "prism",
+      "description": "Measured body values (weight, blood pressure, fitness tests, ...)",
+      "describedColumns": true,
       "suffixes": ["biometrics"],
       "extensions": ["tsv", "json"]
     },
     "biosample": {
       "kind": "prism",
+      "description": "Lab results from biological samples (blood, saliva, urine, ...)",
+      "describedColumns": true,
       "suffixes": ["biosample"],
       "extensions": ["tsv", "json"]
     },
     "environment": {
       "kind": "prism",
+      "description": "Surroundings during a session (weather, light, noise, ...)",
+      "describedColumns": false,
       "suffixes": ["environment"],
       "extensions": ["tsv", "tsv.gz", "json"],
       "requiredEntityValues": {
@@ -50,12 +58,16 @@
     },
     "events": {
       "kind": "prism",
+      "description": "Timed stimulus and response events of a task",
+      "describedColumns": false,
       "suffixes": ["events"],
       "extensions": ["tsv"],
       "folder": false
     },
     "physio": {
       "kind": "prism",
+      "description": "Continuous physiological recordings (ECG, respiration, skin conductance, ...)",
+      "describedColumns": false,
       "suffixes": ["physio"],
       "extensions": ["tsv", "tsv.gz", "json", "edf"],
       "allowedEntities": ["acq", "run", "recording"],
@@ -67,11 +79,11 @@
         }
       }
     },
-    "anat": {"kind": "bidsPassthrough"},
-    "func": {"kind": "bidsPassthrough"},
-    "fmap": {"kind": "bidsPassthrough"},
-    "dwi": {"kind": "bidsPassthrough"},
-    "eeg": {"kind": "bidsPassthrough"},
-    "beh": {"kind": "bidsPassthrough"}
+    "anat": {"kind": "bidsPassthrough", "description": "Structural MRI (BIDS, passed through)"},
+    "func": {"kind": "bidsPassthrough", "description": "Functional MRI (BIDS, passed through)"},
+    "fmap": {"kind": "bidsPassthrough", "description": "Field maps for MRI correction (BIDS, passed through)"},
+    "dwi": {"kind": "bidsPassthrough", "description": "Diffusion MRI (BIDS, passed through)"},
+    "eeg": {"kind": "bidsPassthrough", "description": "EEG recordings (BIDS, passed through)"},
+    "beh": {"kind": "bidsPassthrough", "description": "Behavioral task data (BIDS, passed through)"}
   }
 }

@@ -2459,96 +2459,6 @@ def check_index_json_freshness(repo_path, fix=False):
         print_error(f"  Out of date in index.json (library file changed): {sorted(changed)}")
 
 
-def check_modality_schema_conventions(repo_path, fix=False):
-    """Validate community-extensible modality schemas are well-formed.
-
-    Checks only the schemas contributors are expected to touch
-    (COMMUNITY_MODALITY_SCHEMAS) -- app-internal schemas like
-    entities.schema.json have a different, unrelated shape and are
-    deliberately not held to this envelope.
-    """
-    print_header("Checking Modality Schema Conventions")
-
-    schema_dir = Path(repo_path) / "app" / "schemas" / "stable"
-    if not schema_dir.is_dir():
-        print_success(
-            "Modality schema conventions check skipped (app/schemas/stable not found)."
-        )
-        return
-
-    import jsonschema
-
-    checked_any = False
-    for name in sorted(COMMUNITY_MODALITY_SCHEMAS):
-        schema_path = schema_dir / f"{name}.schema.json"
-        if not schema_path.is_file():
-            continue
-        checked_any = True
-
-        try:
-            schema = json.loads(schema_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as e:
-            print_error(f"{schema_path.name}: not valid JSON ({e}).")
-            continue
-
-        if not isinstance(schema, dict):
-            print_error(
-                f"{schema_path.name}: top-level JSON must be an object, "
-                f"got {type(schema).__name__}."
-            )
-            continue
-
-        for required_key in (
-            "$schema",
-            "$id",
-            "version",
-            "title",
-            "description",
-            "type",
-            "properties",
-            "required",
-        ):
-            if required_key not in schema:
-                print_error(f"{schema_path.name}: missing top-level '{required_key}'.")
-
-        if schema.get("type") != "object":
-            print_error(
-                f"{schema_path.name}: top-level 'type' must be 'object', "
-                f"got {schema.get('type')!r}."
-            )
-
-        properties = schema.get("properties")
-        required = schema.get("required")
-        if isinstance(properties, dict) and isinstance(required, list):
-            missing = [key for key in required if key not in properties]
-            if missing:
-                print_error(
-                    f"{schema_path.name}: required field(s) "
-                    f"{missing} not declared in 'properties'."
-                )
-
-        version = schema.get("version")
-        schema_id = schema.get("$id")
-        if isinstance(version, str) and isinstance(schema_id, str):
-            if not schema_id.endswith(f"/v{version}"):
-                print_error(
-                    f"{schema_path.name}: '$id' ({schema_id}) does not match "
-                    f"'version' ({version}); expected it to end with /v{version}."
-                )
-
-        try:
-            jsonschema.Draft7Validator.check_schema(schema)
-        except jsonschema.exceptions.SchemaError as e:
-            print_error(f"{schema_path.name}: not a valid JSON Schema draft-07 ({e.message}).")
-
-    if not checked_any:
-        print_success(
-            "Modality schema conventions check skipped (no community modality schemas found)."
-        )
-    elif CURRENT_CHECK_ERRORS == 0:
-        print_success("All community modality schemas follow PRISM conventions.")
-
-
 def check_modality_docs(repo_path, fix=False):
     """Every PRISM modality registered in entities.schema.json must be documented."""
     print_header("Checking Modality Documentation")
@@ -2610,7 +2520,6 @@ CHECKS = {
     "dual-tree-drift": check_dual_tree_drift,
     "library-uniqueness": check_library_uniqueness,
     "index-json-freshness": check_index_json_freshness,
-    "modality-schema-conventions": check_modality_schema_conventions,
     "modality-docs": check_modality_docs,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
@@ -2686,22 +2595,6 @@ CHECKS_SUPPORT_FIX = {
     "todos",
     "documentation",
 }
-
-# Modality schemas contributors are expected to add to or extend via PR
-# (spec: docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md
-# section 1.1). Every other file under app/schemas/stable/ defines app
-# behavior (filename grammar, project/dataset-description structure) and
-# is intentionally excluded here (the modality-schema-conventions check only
-# covers the names listed below).
-COMMUNITY_MODALITY_SCHEMAS = {
-    "survey",
-    "biometrics",
-    "environment",
-    "physio",
-    "eyetracking",
-    "events",
-}
-
 
 NON_BLOCKING_WARNING_CHECKS = {
     "git-status",

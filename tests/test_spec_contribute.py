@@ -28,10 +28,9 @@ def test_catalog_has_no_modality_without_lists():
     assert _entry("events") is None
 
 
-def test_catalog_lists_only_kinds_the_vendored_check_supports():
+def test_catalog_lists_every_modality_with_a_list():
     modalities = spec_catalog()["modalities"]
-    assert modalities and all("Technical.SpecimenType" in [x["field"] for x in m["lists"]] for m in modalities)
-    assert _entry("survey") is None and _entry("events") is None
+    assert modalities and all(m["lists"] for m in modalities)
 
 
 def test_catalog_units_sorted_and_unique():
@@ -55,7 +54,7 @@ def test_values_proposal_builds_a_patch_document():
 
 def test_values_for_a_kind_not_in_the_catalog_is_refused():
     with pytest.raises(OverlayError, match="biosample"):
-        proposal_for_values("survey", "Technical.Respondent", ["caregiver-report"])
+        proposal_for_values("events", "Technical.Respondent", ["caregiver-report"])
 
 
 def test_values_already_official_are_skipped():
@@ -194,6 +193,6 @@ def test_values_are_deduplicated_keeping_order():
     assert r["proposal"]["patch"]["operations"][0]["values"] == ["sweat", "tears"]
 
 
-def test_metric_for_a_kind_not_in_the_catalog_is_refused():
-    with pytest.raises(OverlayError, match="biosample"):
+def test_metric_for_a_kind_without_measurements_is_refused():
+    with pytest.raises(OverlayError, match="no known measurements"):
         proposal_for_new_metric("DHEA", "d", "pg/mL", "saliva", modality="survey")

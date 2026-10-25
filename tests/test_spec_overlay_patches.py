@@ -6,6 +6,8 @@ import sys
 import threading
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from runner import validate_dataset  # noqa: E402
@@ -180,3 +182,76 @@ def test_project_specimens_is_none_for_a_patch_of_a_kind_without_specimen_types(
 
     _write(tmp_path, {"operations": [{"op": "add_enum_values", "path": "Technical.StimulusType", "values": ["interview"]}]}, "survey")
     assert _project_specimens(tmp_path, "survey") is None
+
+
+def _enum(schema, field):
+    node = schema
+    for part in field.split("."):
+        node = node["properties"][part]
+    return node["enum"]
+
+
+def test_a_survey_patch_validates_its_new_value(tmp_path):
+    from src.spec_overlay import add_local_values
+
+    project = _project(tmp_path / "p")
+    add_local_values(project, "Study.LicenseID", ["cc-by-nc-local"], modality="survey")
+    spec = load_specification(project_root=project)
+    assert "cc-by-nc-local" in _enum(spec.schemas["survey"], "Study.LicenseID") and "survey" in spec.local_patches
+
+
+def test_patch_files_that_are_not_a_kind_of_data_are_skipped_and_reported(tmp_path):
+    for name in ("Survey.json", "unknown.json", "x.y.json"):
+        _write(tmp_path, {"operations": []}, name[:-5])
+    spec = load_specification(project_root=tmp_path)
+    assert {p.split(":")[0] for p in spec.overlay_problems} >= {"patches/Survey.json", "patches/unknown.json", "patches/x.y.json"}
+
+
+def test_a_survey_patch_does_not_leak_into_the_next_project(tmp_path):
+    from src.spec_overlay import add_local_values
+
+    a, b = _project(tmp_path / "a"), _project(tmp_path / "b")
+    add_local_values(a, "Study.LicenseID", ["cc-by-nc-local"], modality="survey")
+    load_specification(project_root=a)
+    assert "cc-by-nc-local" not in _enum(load_specification(project_root=b).schemas["survey"], "Study.LicenseID")
+
+
+def test_a_patch_that_does_not_fit_the_runs_schema_is_a_problem_not_a_crash(tmp_path):
+    _write(tmp_path, {"operations": [{"op": "add_enum_values", "path": "Study.NoSuchField", "values": ["x"]}]}, "survey")
+    assert any("survey.json" in p for p in load_specification(project_root=tmp_path).overlay_problems)
+
+
+def test_add_values_refuses_an_unknown_modality_and_a_field_it_does_not_list(tmp_path):
+    from src.spec_overlay import OverlayError, add_local_values
+
+    with pytest.raises(OverlayError, match="nomodality"):
+        add_local_values(tmp_path, "Study.LicenseID", ["x-y"], modality="nomodality")
+    with pytest.raises(OverlayError, match="Study.NoSuchField"):
+        add_local_values(tmp_path, "Study.NoSuchField", ["x-y"], modality="survey")
+
+
+@pytest.mark.parametrize("modality", ["../../../../outside", "../x", "Survey", "unknown"])
+def test_add_and_remove_values_refuse_a_modality_that_is_not_a_kind_of_data(tmp_path, modality):
+    """A caller-supplied modality names a file: `../..` must never reach outside the project (remove-values deleted it)."""
+    from src.spec_overlay import OverlayError, add_local_values, remove_local_values
+
+    project = tmp_path / "a" / "b" / "c" / "p"
+    patches = project / "code" / "specification" / "patches"
+    patches.mkdir(parents=True)
+    target = Path(os.path.normpath(patches / f"{modality}.json"))  # the file a missing check would touch
+    target.write_text(json.dumps({"operations": [
+        {"op": "add_enum_values", "path": "Study.LicenseID", "values": ["x-y"]}]}), encoding="utf-8")
+    with pytest.raises(OverlayError, match="not a kind of data"):
+        remove_local_values(project, "Study.LicenseID", ["x-y"], modality=modality)
+    with pytest.raises(OverlayError, match="not a kind of data"):
+        add_local_values(project, "Study.LicenseID", ["z-z"], modality=modality)
+    assert json.loads(target.read_text(encoding="utf-8"))["operations"][0]["values"] == ["x-y"]
+
+
+def test_the_share_and_remove_hints_of_a_survey_addition_name_the_modality(tmp_path):
+    project = _project(tmp_path / "p")
+    _write(project, {"operations": [{"op": "add_enum_values", "path": "Technical.Respondent", "values": ["sibling", "parent"]}]}, "survey")
+    infos = _issues(project, "INFO")
+    share = [m for m in infos if "patches/survey.json" in m]
+    assert len(share) == 1 and f'spec propose --project "{project}" --patch --modality survey' in share[0]
+    assert any("remove-values" in m and "--modality survey" in m for m in infos)

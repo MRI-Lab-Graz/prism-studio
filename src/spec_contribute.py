@@ -42,10 +42,7 @@ def spec_catalog() -> dict:
     modalities, units = [], set()
     for name in sorted(spec.prism_modalities):
         fields = spec.patchable_fields(name)
-        # The vendored check (scripts/specification/check_terms.py `specimen_types`, term_proposal.py `_specimens_of`)
-        # assumes a Technical.SpecimenType enum, so other kinds of data would crash on share. Widen once
-        # prism-specification tolerates schemas without it (upstream change, tag, scripts/sync_specification.py).
-        if "Technical.SpecimenType" not in fields:
+        if not fields:  # e.g. events: nothing to extend
             continue
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable")
         registry = load_registry(name)

@@ -9,6 +9,7 @@ hope.
 from __future__ import annotations
 
 from src.entity_rules import (
+    ModalityRule,
     compile_modality_regex,
     describe_modality_pattern,
     load_entity_rules,
@@ -134,12 +135,6 @@ def test_biosample_is_registered_with_tsv_json_suffix():
     assert rules.pattern_for("biosample") == r".+_biosample\.(tsv|json)$"
 
 
-def test_tabular_modalities_constant_includes_biosample():
-    from src.constants import TABULAR_MODALITIES
-
-    assert TABULAR_MODALITIES == ("survey", "biometrics", "biosample")
-
-
 def test_physiological_alias_is_gone():
     assert load_entity_rules().aliases == {}
 
@@ -174,3 +169,16 @@ def test_events_pin_still_resolves():
     from src.modality_versions import modality_names
 
     assert "events" in modality_names()
+
+
+def test_official_rules_describe_columns_of_exactly_three_modalities():
+    assert load_entity_rules().described_columns_modalities == {
+        "survey",
+        "biometrics",
+        "biosample",
+    }
+
+
+def test_a_rule_without_the_key_does_not_describe_columns():
+    rule = ModalityRule.from_json("x", {"kind": "prism", "suffixes": ["x"], "extensions": ["tsv"]})
+    assert rule.described_columns is False and rule.description == ""

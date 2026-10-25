@@ -184,7 +184,7 @@ def test_extension_fixture_keeps_a_task_entity(tmp_path):
 
 def test_extension_registration_md_mentions_the_entities_table_row():
     md = (build_registration_md(read_proposal(EXT), {"kind": "prism", "suffixes": ["biometrics"], "extensions": ["tsv"]}))
-    assert "docs/specs/entities.md" in md and "Suffixes" in md
+    assert "specs/entities.md" in md and "docs/specs/entities.md" not in md and "Suffixes" in md
 
 
 def test_numeric_entity_value_is_refused(tmp_path):

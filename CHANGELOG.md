@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Added values can be shared for every modality.** `spec propose-values` drafts a proposal for any modality's list, and the Propose page
+  lists every modality that has a list (it used to offer biosample only).
 - **Session controls grey out in a one-timepoint project.** When Study Design says `single`, the Survey, Biometrics and
   Environment pages show the session as **ONE TIMEPOINT** (greyed, `ses-1`), the Sociodemographics page cannot split values
   by session, and the pages no longer ask for a session. The Survey page keeps its "from dates" grey for LimeSurvey archives.
@@ -20,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `session-map suggest`: proposes defaults 1, 2, 3 for unmapped labels (pre-filled and editable in the session map panel;
   never saved unasked).
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
+
+### Changed
+- Studio carries prism-specification v1.3.0 (modalities described as data, proposals for every modality).
+- **The validator's column checks follow the specification.** Column-value checks and the strict file-name check read each modality's
+  `describedColumns` from the specification instead of a hand-written list (`TABULAR_MODALITIES` is gone), so a new kind of data added in
+  prism-specification is checked without a Studio code change.
+- **A project's added values validate for every modality.** `spec local add-values --modality <any>` now applies to every modality's
+  value lists in that project's validation, not only biosample's; `spec local list` and `spec propose --patch` take `--modality` too.
+  The Propose page's "Use in my open project" stays biosample-only for now and shows the command for the other kinds of data.
+- **Modality schema conventions are checked by the vendored `scripts/specification/check_modalities.py`** in CI; Studio's own check is removed.
+- **`modality propose` drafts the entities entry** with `description` and `describedColumns`, and its `REGISTRATION.md` points to prism-specification.
 
 ### Fixed
 - Participants import: numbers with padded decimal zeros (LimeSurvey exports ages as `23.0000000000`) are read as `23`;

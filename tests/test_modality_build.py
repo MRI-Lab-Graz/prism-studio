@@ -22,27 +22,32 @@ PROPOSAL = EXAMPLE_DIR / "bloodwork.yml"
 SAMPLE = EXAMPLE_DIR / "bloodwork_sample.tsv"
 
 
-def _load_verify_repo_module():
-    module_path = Path(__file__).with_name("verify_repo.py")
-    spec = importlib.util.spec_from_file_location("verify_repo", module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+STABLE = Path(__file__).resolve().parents[1] / "app" / "schemas" / "stable"
 
 
-def test_generated_schema_passes_the_modality_conventions_check(tmp_path: Path, capsys) -> None:
+def test_the_vendored_conventions_check_passes_on_studios_copy() -> None:
+    from src.spec_overlay import _vendored
+
+    assert _vendored("check_modalities").main(
+        ["--entities", str(STABLE / "entities.schema.json"), "--schemas", str(STABLE)]
+    ) == 0
+
+
+def test_registration_entry_carries_description_and_described_columns() -> None:
     p = read_proposal(PROPOSAL)
-    schema_dir = tmp_path / "app" / "schemas" / "stable"
-    schema_dir.mkdir(parents=True)
-    (schema_dir / "bloodwork.schema.json").write_text(json.dumps(build_schema(p)), encoding="utf-8")
+    entry = registration_entry({**p, "extensions": ["tsv"], "description": "Venous blood samples"})
+    assert entry["description"] == "Venous blood samples" and entry["describedColumns"] is True
+    assert registration_entry({**p, "extensions": ["json"]})["describedColumns"] is False
 
-    verify_repo = _load_verify_repo_module()
-    verify_repo.COMMUNITY_MODALITY_SCHEMAS = {"bloodwork"}
-    verify_repo.check_modality_schema_conventions(str(tmp_path))
-    out = capsys.readouterr().out
 
-    assert "[✗]" not in out
-    assert "follow PRISM conventions" in out
+def test_registration_steps_point_to_prism_specification() -> None:
+    p = read_proposal(PROPOSAL)
+    for text in (build_registration_md(p), build_registration_md(p, {"suffixes": ["x"], "extensions": ["tsv"]})):
+        assert "prism-specification" in text and "sync_specification.py --tag" in text
+        assert "check_modalities.py" in text and "schemas/stable/entities.schema.json" in text
+        assert "app/schemas/stable/entities.schema.json" not in text and "docs/specs/entities.md" not in text
+    new = build_registration_md(p)
+    assert "schemas/stable/bloodwork.schema.json" in new and "specs/bloodwork.md" in new
 
 
 def test_example_sidecar_validates_against_generated_schema() -> None:
@@ -84,6 +89,8 @@ def test_registration_entry_and_markdown() -> None:
     p = read_proposal(PROPOSAL)
     assert registration_entry(p) == {
         "kind": "prism",
+        "description": p["description"],
+        "describedColumns": True,
         "suffixes": ["bloodchem"],
         "extensions": ["tsv", "json"],
         "allowedEntities": ["task", "acq", "run"],
@@ -92,9 +99,7 @@ def test_registration_entry_and_markdown() -> None:
         },
     }
     md = build_registration_md(p)
-    assert "app/schemas/stable/bloodwork.schema.json" in md
-    assert "entities.schema.json" in md
-    assert "COMMUNITY_MODALITY_SCHEMAS" in md
+    assert "bloodwork.schema.json" in md and "entities.schema.json" in md
     assert '"bloodwork"' in md and '"bloodchem"' in md
     assert "fixture" in md
 

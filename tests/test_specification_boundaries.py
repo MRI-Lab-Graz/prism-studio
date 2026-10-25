@@ -9,7 +9,7 @@ import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN = {"_ENTITY_RULES", "PRISM_MODALITIES", "BIDS_MODALITIES", "MODALITY_PATTERNS"}
+FROZEN = {"_ENTITY_RULES", "PRISM_MODALITIES", "BIDS_MODALITIES", "MODALITY_PATTERNS", "TABULAR_MODALITIES"}
 GUARDED = [
     "app/src/validator.py",
     "app/src/runner.py",
