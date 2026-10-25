@@ -231,3 +231,13 @@ def update_participants_tsv(
         write_json(participants_json, minimal_json)
         if log_fn:
             log_fn("[INFO] Created minimal participants.json")
+
+
+def project_name_keywords(root: Path) -> tuple[str | None, list]:
+    """Name and keywords already set in the project's project.json (the one place they are edited)."""
+    try:
+        project = read_json(Path(root) / "project.json")
+    except (OSError, ValueError):
+        return None, []
+    basics = project.get("Basics") or {}
+    return project.get("name") or basics.get("Name"), basics.get("Keywords") or []

@@ -260,6 +260,22 @@ def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_u
     expect(row.locator('[data-f="accept"]')).to_be_enabled()  # the helper filled what was missing
 
 
+def test_accepting_an_author_searches_the_orcid_when_it_is_empty(app_page, studio_url):
+    page = app_page
+    page.route("**/api/projects/orcid/search*", lambda route: route.fulfill(
+        status=200, content_type="application/json",
+        body=json.dumps({"success": True, "candidates": [{
+            "orcid_id": "0000-0002-1825-0097", "orcid": "https://orcid.org/0000-0002-1825-0097",
+            "given_names": "Ada", "family_name": "Lovelace", "affiliation": "Analytical Engines"}]})))
+    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    row = page.locator("#metadataAuthorsList .author-row").first
+    row.locator(".author-first").fill("Ada")
+    row.locator(".author-last").fill("Lovelace")
+    expect(row.locator(".author-orcid")).to_have_value("")  # typing the names alone searches nothing
+    row.locator('[data-f="accept"]').click()
+    expect(row.locator(".author-orcid")).to_have_value(re.compile("0000-0002-1825-0097"))
+
+
 def test_new_project_starts_without_the_previous_projects_criteria(app_page, studio_url, project):
     meta = json.loads((project / "project.json").read_text())
     meta["Eligibility"] = {"Criteria": [{"id": "age", "label": "Age", "term": "nb:Age", "type": "numeric",

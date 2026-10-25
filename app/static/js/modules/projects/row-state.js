@@ -24,7 +24,7 @@ export function rowActionsHtml(model, noun = '', hint = '') {
     const label = (verb) => `${verb}${noun ? ` ${noun}` : ''}`;
     const out = [];
     if (hint && model.accept.visible && model.accept.disabled) {
-        out.push(`<small class="text-warning align-self-center mx-2 text-nowrap" data-f="hint">${escapeText(hint)}</small>`);
+        out.push(`<small class="text-warning order-last w-100" data-f="hint">${escapeText(hint)}</small>`);
     }
     if (model.accept.visible) {
         // Gray while nothing (or not enough) is set, green once the row can be accepted.
