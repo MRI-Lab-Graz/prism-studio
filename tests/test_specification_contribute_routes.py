@@ -68,6 +68,7 @@ def test_list_shows_unknown_metrics_and_local_items(client, tmp_path):
     _open(client, project)
     data = client.get("/api/spec/local").get_json()
     assert data["success"] and data["items"] == [] and [m["column"] for m in data["unknown_metrics"]] == ["dhea_s"]
+    assert {m["modality"] for m in data["unknown_metrics"]} == {"biosample"} and data["metric_modalities"] == ["biosample"]
 
 
 def test_add_term_then_list_then_propose_then_remove(client, tmp_path):

@@ -428,3 +428,16 @@ def test_units_or_levels_required():
 def test_biosample_metric_without_specimen_is_refused_clearly():
     with pytest.raises(OverlayError, match="specimen|sample type"):
         proposal_for_new_metric("DHEA", "x", "pg/mL")
+
+
+def test_two_level_kind_refuses_levels_and_cf_standard_name():
+    with pytest.raises(OverlayError, match="levels"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL", "saliva", levels={"a": "b"})
+    with pytest.raises(OverlayError, match="CF standard name"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL", "saliva", cf_standard_name="air_temperature")
+
+
+def test_catalog_levels_variable_metric_lists_levels():
+    from src.spec_contribute import spec_catalog
+    metrics = _entry("environment")["metrics"]
+    assert all("levels" in m for m in metrics)

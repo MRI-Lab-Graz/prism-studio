@@ -494,7 +494,7 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
             if res.kind == "unknown" and (sidecar_path, column) not in seen:
                 seen.add((sidecar_path, column))
                 found.append({
-                    "column": column, "data_file": str(data_file), "specimen": specimen,
+                    "modality": modality, "column": column, "data_file": str(data_file), "specimen": specimen,
                     "units": definition.get("Units"), "similar": list(res.similar),
                 })
     return found

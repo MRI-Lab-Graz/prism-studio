@@ -228,13 +228,13 @@ def proposal_for_new_metric(
     Same result shape as `proposal_for_values`; nothing is written.
     """
     context = proposal_context(entries, not_sure, closest)
-    kinds = {m["name"]: m for m in spec_catalog()["modalities"]}
+    kinds = [m["name"] for m in spec_catalog()["modalities"]]
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
     registry = load_registry(modality)
     if not registry:
         raise OverlayError(f"{modality} has no known measurements")
-    two_level = kinds[modality]["specimen_level"]
+    two_level = "contextField" in current_specification().term_modalities.get(modality, {})
     specimens = _project_specimens(project_root, modality) if project_root and two_level else None
     fields = {"name": name, "description": description, **({"units": units, "specimen": specimen} if two_level else {})}
     if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
@@ -242,6 +242,8 @@ def proposal_for_new_metric(
     fields = {k: v.strip() for k, v in fields.items()}
     name, description = fields["name"], fields["description"]
     if two_level:
+        if levels or cf_standard_name:
+            raise OverlayError(f"{modality} takes a unit and a sample type; levels and a CF standard name are for kinds without sample type")
         units, specimen = fields["units"], fields["specimen"]
         if not _VALUE.fullmatch(specimen):
             raise OverlayError(f"{specimen!r}: use lowercase letters, digits and - for the sample type")

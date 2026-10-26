@@ -567,6 +567,15 @@ def test_unit_other_is_free_text(bare_page, studio_url):
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("ng/dL")
 
 
+def test_found_columns_show_only_for_their_own_kind(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_kind(app_page, studio_url, "environment")
+    expect(app_page.locator("#spec-m-found")).to_be_hidden()
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+    app_page.locator("#spec-kind").select_option("biosample")
+    expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
+
+
 def test_a_missing_measurement_with_a_project(app_page, studio_url, project):
     add_biosample_data(project)
     choose_measurement(app_page, studio_url)

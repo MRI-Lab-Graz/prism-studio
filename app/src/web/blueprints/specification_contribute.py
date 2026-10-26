@@ -55,6 +55,7 @@ def list_local():
         "success": True,
         "items": items,
         "unknown_metrics": find_unknown_metrics(project),
+        "metric_modalities": ["biosample"],  # the kinds whose data columns are searched for unknown metrics
         "unknown_values": find_unknown_values(project),
     })
 
