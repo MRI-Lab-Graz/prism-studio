@@ -202,13 +202,21 @@ def test_step_two_is_folded_like_the_project_page_with_plain_titles(bare_page, s
     expect(bare_page.locator("#spec-step2 button[aria-label^='About Specimen type']")).to_have_count(1)
 
 
-@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 7")
 def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "survey")
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="About the measure")).to_have_count(1)
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Norms")).to_have_count(0)
     expect(bare_page.locator("#spec-kind option[value='events']")).to_have_count(0)  # nothing of task events can be proposed
     expect(bare_page.locator("#spec-kind option[value='environment']")).to_have_count(1)
+
+
+def test_environment_has_no_privacy_section_and_a_form_without_sample_type(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Privacy")).to_have_count(0)
+    bare_page.locator("#spec-m-pick").select_option("missing")
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-specimen")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-units")).to_be_visible()
 
 
 def test_example_and_proposal_stay_level_row_by_row(bare_page, studio_url):

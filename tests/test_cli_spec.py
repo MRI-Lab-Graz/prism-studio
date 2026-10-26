@@ -205,6 +205,26 @@ def test_spec_propose_metric_json():
     assert "terms/biosample/dhea.saliva.json" in data["document"]["files"]
 
 
+def test_cli_propose_metric_environment():
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "noise level",
+                     "--description", "Sound pressure level", "--units", "dB", "--json")
+    assert code == 0, out
+    assert json.loads(out)["proposal"]["terms"][0]["TermID"] == "prism:noise-level"
+
+
+def test_cli_propose_metric_environment_with_levels():
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "sky state", "--description", "d",
+                     "--level", "c=clear", "--level", "o=overcast", "--cf-standard-name", "cloud_area_fraction", "--json")
+    assert code == 0, out
+    term = json.loads(out)["proposal"]["terms"][0]
+    assert term["Levels"] == {"c": "clear", "o": "overcast"} and term["CFStandardName"] == "cloud_area_fraction"
+
+
+def test_cli_propose_metric_biosample_without_specimen_exits_1():
+    code, out = _run("spec", "propose-metric", "--name", "DHEA", "--description", "d", "--units", "pg/mL", "--json")
+    assert code == 1 and "sample type" in out
+
+
 def test_spec_propose_metric_official_exits_1():
     code, out = _run("spec", "propose-metric", "--name", "cortisol", "--description", "d", "--units", "u", "--specimen", "saliva", "--json")
     assert code == 1 and "prism:cortisol" in json.loads(out)["error"]

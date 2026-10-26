@@ -151,10 +151,12 @@ def propose_metric():
     body = _body()
     modality, aliases = body.get("modality", "biosample"), body.get("aliases", [])
     texts = [body.get(k) for k in ("name", "description", "units", "specimen")]
-    if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts)):
-        return _error('Give "name", "description", "units" and "specimen" as text and "aliases" as a list of text')
+    levels, cf = body.get("levels"), body.get("cf_standard_name")
+    if not (isinstance(modality, str) and _strings(aliases) and all(isinstance(t, str) for t in texts[:2])
+            and all(t is None or isinstance(t, str) for t in texts[2:]) and isinstance(levels, (dict, type(None))) and isinstance(cf, (str, type(None)))):
+        return _error('Give "name" and "description" as text, "units" and "specimen" as text if used, "levels" as an object and "aliases" as a list of text')
     try:
-        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), **_context_options(body))
+        result = proposal_for_new_metric(*texts, aliases=aliases, modality=modality, project_root=_project(), levels=levels or None, cf_standard_name=cf or None, **_context_options(body))
     except OverlayError as exc:
         return _error(str(exc))
     return jsonify({"success": True, **result})

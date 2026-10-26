@@ -525,7 +525,7 @@
     });
 
     const m = {};
-    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
+    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -552,6 +552,10 @@
 
     // Step 3: the official measurements (only those of the chosen sample type, if one is chosen), then "Missing".
     function fillPick() {
+        const twoLevel = currentKind().specimen_level !== false;  // a kind like environment has no sample type: unit or levels instead
+        m["specimen-box"].hidden = !twoLevel;
+        m["levels-box"].hidden = twoLevel;
+        m["cf-box"].hidden = twoLevel;
         const keep = m.pick.value;
         const specimen = chosenSpecimen().value;
         m.pick.replaceChildren();
@@ -630,10 +634,21 @@
         if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
     });
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
+    // "CODE=LABEL" lines as {code: label}; a line without "=" is sent as a code with an empty label, the backend refuses it
+    function readLevels() {
+        const levels = {};
+        m.levels.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (line) {
+            const at = line.indexOf("=");
+            levels[at < 0 ? line : line.slice(0, at).trim()] = at < 0 ? "" : line.slice(at + 1).trim();
+        });
+        return Object.keys(levels).length ? levels : null;
+    }
     m.share.addEventListener("click", function () {
+        const oneLevel = currentKind().specimen_level === false;
         propose({
+            levels: oneLevel ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
-            units: m.units.value === "other" ? m["units-other"].value : m.units.value, specimen: m.specimen.value,
+            units: (m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
