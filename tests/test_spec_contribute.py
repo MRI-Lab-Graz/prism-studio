@@ -66,7 +66,7 @@ def test_sections_have_plain_titles_and_say_what_they_hold():
     assert sections["Technical"]["title"] == "How the data is collected"
     assert sections["Technical"]["summary"] == "Specimen type, Collection method, Anticoagulant, Fasting required, …"
     assert sections["Study"]["title"] == "About the measure"
-    assert _section("onset", ["Long name"], False)["title"] == 'The "onset" column'  # events: a section per column
+    assert _section("SomeNewPart", ["A"], False)["title"] == "Some new part"  # a section without a plain title is spelled out
 
 
 def test_only_sections_with_a_list_to_extend_are_proposable():
