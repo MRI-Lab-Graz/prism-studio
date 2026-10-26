@@ -19,8 +19,6 @@ from src.schema_manager import DEFAULT_SCHEMA_DIR, load_all_schemas
 from src.spec_overlay import _vendored, load_local_patches, load_local_terms, local_patch_modalities, merge_terms
 from src.term_registry import load_registry
 
-_TERM_MODALITIES = ("biosample",)  # the modalities that have a term registry
-
 
 @dataclass(frozen=True, eq=False)  # compared by identity: the dict fields would make a generated __eq__/__hash__ costly or fail
 class Specification:
@@ -45,6 +43,10 @@ class Specification:
     @cached_property
     def prism_modalities(self) -> set[str]:
         return self.rules.prism_modalities
+
+    @cached_property
+    def term_modalities(self) -> dict[str, dict]:
+        return self.rules.term_modalities
 
     @cached_property
     def described_columns(self) -> set[str]:
@@ -75,7 +77,8 @@ def load_specification(
     schemas = schemas if schemas is not None else load_all_schemas(DEFAULT_SCHEMA_DIR)
     patched: list = []
     official_now: list = []
-    for modality in _TERM_MODALITIES:
+    rules = rules if rules is not None else load_entity_rules()
+    for modality in rules.term_modalities:
         registry = load_registry(modality)
         if project_root is not None:
             found, skipped = load_local_terms(project_root, modality)
@@ -98,7 +101,7 @@ def load_specification(
                 except ValueError as exc:  # the run's (version-pinned) schema may not fit the patch
                     problems.append(f"patches/{modality}.json: {exc}")
     return Specification(
-        rules=rules if rules is not None else load_entity_rules(),
+        rules=rules,
         schemas=schemas,
         terms=terms,
         local_terms=frozenset(local),

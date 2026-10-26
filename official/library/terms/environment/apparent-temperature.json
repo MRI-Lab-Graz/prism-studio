@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:apparent-temperature",
+  "Level": "variable",
+  "Label": "apparent temperature",
+  "Aliases": [
+    "apparent_temp_c"
+  ],
+  "Description": "Perceived air temperature, combining temperature, humidity and wind.",
+  "Units": "degC",
+  "Status": "official"
+}

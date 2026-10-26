@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:uv-index",
+  "Level": "variable",
+  "Label": "UV index",
+  "Aliases": [
+    "uv_index"
+  ],
+  "Description": "Ultraviolet radiation index.",
+  "Units": "1",
+  "CFStandardName": "ultraviolet_index",
+  "Status": "official"
+}

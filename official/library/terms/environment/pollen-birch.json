@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:pollen-birch",
+  "Level": "variable",
+  "Label": "birch pollen",
+  "Aliases": [
+    "pollen_birch"
+  ],
+  "Description": "Concentration of birch pollen in air.",
+  "Units": "grains/m3",
+  "Status": "official"
+}

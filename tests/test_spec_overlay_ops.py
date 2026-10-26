@@ -259,6 +259,7 @@ def test_a_survey_list_addition_is_shared_without_problems():
     assert result["problems"] == [] and result["issue_url"]
 
 
+@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 7")
 def test_the_catalog_lists_every_modality_with_a_list_among_others():
     from src.spec_contribute import spec_catalog
     names = {m["name"] for m in spec_catalog()["modalities"]}

@@ -1,0 +1,17 @@
+{
+  "TermID": "prism:heat-status",
+  "Level": "variable",
+  "Label": "heat status",
+  "Aliases": [
+    "heatwave_status"
+  ],
+  "Description": "Heat class of the day.",
+  "Levels": {
+    "normal": "maximum below 25 degC",
+    "warm_day": "maximum 25 degC or more",
+    "hot_day": "maximum 30 degC or more",
+    "heatwave": "maximum 30 degC or more on the day and the 2 days before",
+    "unknown": "unknown"
+  },
+  "Status": "official"
+}

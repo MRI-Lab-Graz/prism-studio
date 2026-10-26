@@ -318,3 +318,10 @@ def test_issue_url_without_context_has_no_context_parameter():
     from src.term_proposal import issue_url
     proposal = {"modality": "survey", "terms": [], "patch": {"operations": [{"op": "add_enum_values", "path": "Study.LicenseID", "values": ["cc-by-nc-local"]}]}}
     assert "context=" not in issue_url(proposal) and "context=hi" in issue_url(proposal, context="hi")
+
+
+def test_a_one_level_environment_proposal_has_no_problems():
+    term = {"TermID": "prism:gust-test", "Level": "variable", "Label": "Gust test", "Aliases": [],
+            "Description": "d", "Units": "m/s"}
+    doc = {"format": "prism-proposal/2", "files": {"terms/environment/gust-test.json": term}}
+    assert check_with_specification(doc, load_registry("environment")) == []

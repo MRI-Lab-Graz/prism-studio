@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:precipitation",
+  "Level": "variable",
+  "Label": "precipitation",
+  "Aliases": [
+    "precip_mm"
+  ],
+  "Description": "Amount of precipitation (rain, snow, other) as liquid water thickness.",
+  "Units": "mm",
+  "CFStandardName": "lwe_thickness_of_precipitation_amount",
+  "Status": "official"
+}

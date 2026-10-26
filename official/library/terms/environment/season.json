@@ -1,0 +1,17 @@
+{
+  "TermID": "prism:season",
+  "Level": "variable",
+  "Label": "season",
+  "Aliases": [
+    "season_code"
+  ],
+  "Description": "Season of the year.",
+  "Levels": {
+    "spring": "spring",
+    "summer": "summer",
+    "autumn": "autumn",
+    "winter": "winter",
+    "unknown": "unknown"
+  },
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:air-temperature",
+  "Level": "variable",
+  "Label": "air temperature",
+  "Aliases": [
+    "temp_c"
+  ],
+  "Description": "Air temperature near the surface.",
+  "Units": "degC",
+  "CFStandardName": "air_temperature",
+  "Status": "official"
+}

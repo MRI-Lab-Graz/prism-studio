@@ -1,0 +1,17 @@
+{
+  "TermID": "prism:pollen-risk",
+  "Level": "variable",
+  "Label": "pollen risk",
+  "Aliases": [
+    "pollen_risk_bin"
+  ],
+  "Description": "Pollen risk class.",
+  "Levels": {
+    "low": "low",
+    "medium": "medium",
+    "high": "high",
+    "very_high": "very high",
+    "unknown": "unknown"
+  },
+  "Status": "official"
+}

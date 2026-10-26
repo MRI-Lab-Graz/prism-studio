@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:pm10",
+  "Level": "variable",
+  "Label": "PM10",
+  "Aliases": [
+    "pm10_ug_m3"
+  ],
+  "Description": "Mass concentration of particulate matter up to 10 micrometres in air.",
+  "Units": "ug/m3",
+  "CFStandardName": "mass_concentration_of_pm10_ambient_aerosol_particles_in_air",
+  "Status": "official"
+}

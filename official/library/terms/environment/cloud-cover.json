@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:cloud-cover",
+  "Level": "variable",
+  "Label": "cloud cover",
+  "Aliases": [
+    "cloud_cover_pct"
+  ],
+  "Description": "Fraction of the sky covered by clouds.",
+  "Units": "%",
+  "CFStandardName": "cloud_area_fraction",
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:elevation",
+  "Level": "variable",
+  "Label": "elevation",
+  "Aliases": [
+    "elevation_m"
+  ],
+  "Description": "Height of the location above mean sea level.",
+  "Units": "m",
+  "CFStandardName": "height_above_mean_sea_level",
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:surface-air-pressure",
+  "Level": "variable",
+  "Label": "surface air pressure",
+  "Aliases": [
+    "pressure_hpa"
+  ],
+  "Description": "Atmospheric pressure at the surface.",
+  "Units": "hPa",
+  "CFStandardName": "surface_air_pressure",
+  "Status": "official"
+}

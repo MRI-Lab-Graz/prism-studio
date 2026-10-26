@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:shortwave-radiation",
+  "Level": "variable",
+  "Label": "shortwave radiation",
+  "Aliases": [
+    "shortwave_radiation_wm2"
+  ],
+  "Description": "Downwelling shortwave solar radiation at the surface.",
+  "Units": "W/m2",
+  "CFStandardName": "surface_downwelling_shortwave_flux_in_air",
+  "Status": "official"
+}

@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:daylight-duration",
+  "Level": "variable",
+  "Label": "daylight duration",
+  "Aliases": [
+    "sun_hours_today"
+  ],
+  "Description": "Hours of daylight on the day.",
+  "Units": "h",
+  "Status": "official"
+}

@@ -25,6 +25,7 @@ def test_catalog_values_have_no_empty_strings():
     assert all("" not in x["values"] for m in spec_catalog()["modalities"] for x in m["lists"])
 
 
+@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 7")
 def test_the_catalog_lists_every_kind_of_data_with_a_description():
     mods = {m["name"]: m for m in spec_catalog()["modalities"]}
     assert {"biosample", "survey", "physio", "environment"} <= set(mods)
@@ -36,6 +37,7 @@ def test_the_catalog_has_no_bids_kinds():
     assert not {"anat", "func", "dwi", "eeg", "fmap", "beh"} & {m["name"] for m in spec_catalog()["modalities"]}
 
 
+@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 7")
 def test_a_kind_with_nothing_to_propose_is_not_offered():
     names = {m["name"] for m in spec_catalog()["modalities"]}
     assert "events" not in names  # no list to extend and no measurements

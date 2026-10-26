@@ -52,6 +52,7 @@ class ModalityRule:
     folder: bool = True
     described_columns: bool = False
     description: str = ""
+    terms: dict | None = None  # {"nonTermColumns": [...], "contextField"?: "Section.Field"} for a term modality
 
     @classmethod
     def from_json(cls, name: str, data: dict) -> "ModalityRule":
@@ -75,6 +76,7 @@ class ModalityRule:
             folder=bool(data.get("folder", True)),
             described_columns=bool(data.get("describedColumns", False)),
             description=data.get("description", ""),
+            terms=data.get("terms"),
         )
 
 
@@ -96,6 +98,11 @@ class EntityRules:
             for name, rule in self.modalities.items()
             if rule.kind == "prism" and rule.described_columns
         }
+
+    @property
+    def term_modalities(self) -> dict[str, dict]:
+        """Modalities whose columns point to registry terms, with their `terms` declaration."""
+        return {name: rule.terms for name, rule in self.modalities.items() if rule.terms is not None}
 
     @property
     def bids_modalities(self) -> set[str]:

@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:pollen-grass",
+  "Level": "variable",
+  "Label": "grass pollen",
+  "Aliases": [
+    "pollen_grass"
+  ],
+  "Description": "Concentration of grass pollen in air.",
+  "Units": "grains/m3",
+  "Status": "official"
+}

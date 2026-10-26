@@ -1,0 +1,20 @@
+{
+  "TermID": "prism:moon-phase",
+  "Level": "variable",
+  "Label": "moon phase",
+  "Aliases": [
+    "moon_phase"
+  ],
+  "Description": "Phase of the moon.",
+  "Levels": {
+    "new_moon": "new moon",
+    "waxing_crescent": "waxing crescent",
+    "first_quarter": "first quarter",
+    "waxing_gibbous": "waxing gibbous",
+    "full_moon": "full moon",
+    "waning_gibbous": "waning gibbous",
+    "last_quarter": "last quarter",
+    "waning_crescent": "waning crescent"
+  },
+  "Status": "official"
+}

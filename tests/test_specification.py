@@ -104,4 +104,12 @@ def test_a_specification_is_hashable_and_compared_by_identity(tmp_path):
 
 
 def test_the_specification_exposes_the_described_columns_set():
-    assert official_specification().described_columns == {"survey", "biometrics", "biosample"}
+    assert official_specification().described_columns == {"survey", "biometrics", "biosample", "environment"}
+
+
+def test_specification_loads_environment_terms():
+    from src.specification import load_specification
+
+    spec = load_specification()
+    assert "air-temperature" in spec.terms["environment"]
+    assert set(spec.term_modalities) == {"biosample", "environment"}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:dew-point-temperature",
+  "Level": "variable",
+  "Label": "dew point temperature",
+  "Aliases": [
+    "dew_point_c"
+  ],
+  "Description": "Temperature at which the air becomes saturated with water vapour.",
+  "Units": "degC",
+  "CFStandardName": "dew_point_temperature",
+  "Status": "official"
+}

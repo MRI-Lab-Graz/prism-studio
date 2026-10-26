@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:pollen-ragweed",
+  "Level": "variable",
+  "Label": "ragweed pollen",
+  "Aliases": [
+    "pollen_ragweed"
+  ],
+  "Description": "Concentration of ragweed pollen in air.",
+  "Units": "grains/m3",
+  "Status": "official"
+}

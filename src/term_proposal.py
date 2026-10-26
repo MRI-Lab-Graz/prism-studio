@@ -201,9 +201,14 @@ def check_with_specification(proposal: dict, registry: dict[str, dict], specimen
     schemas = {m[1]: json.loads((stable / f"{m[1]}.schema.json").read_text(encoding="utf-8")) for m in patched}
     # the term modality (and so the specimen types) comes from the terms/<m>/ paths; a patch-only document has none
     term_modality = next((p.split("/")[1] for p in paths if p.startswith("terms/")), "biosample")
+    from src.specification import current_specification  # local: specification imports spec_overlay imports this module
+
+    modalities = current_specification().term_modalities
+    if specimens is None and "contextField" in modalities.get(term_modality, {}):
+        specimens = module.check_terms.specimen_types(stable / f"{term_modality}.schema.json")
+    # a one-level modality (no contextField) gets specimens=None, never [] (that would apply two-level rules)
     problems = module.check_proposal(
-        document, registry, specimens or module.check_terms.specimen_types(stable / f"{term_modality}.schema.json"),
-        schemas=schemas,
+        document, registry, specimens or None, schemas=schemas, modalities=modalities,
     )[1]
     # the form's size limit, on the indented text that is printed, shown and pasted (extract_proposal measures that)
     size = len(json.dumps(document, indent=2, ensure_ascii=False).encode("utf-8"))

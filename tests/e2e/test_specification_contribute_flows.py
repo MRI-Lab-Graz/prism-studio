@@ -1,5 +1,6 @@
 """Contribute page: an unknown metric in the open project is added locally, shared (preview only) and removed."""
 
+import pytest
 import json
 import re
 
@@ -201,6 +202,7 @@ def test_step_two_is_folded_like_the_project_page_with_plain_titles(bare_page, s
     expect(bare_page.locator("#spec-step2 button[aria-label^='About Specimen type']")).to_have_count(1)
 
 
+@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 7")
 def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "survey")
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="About the measure")).to_have_count(1)

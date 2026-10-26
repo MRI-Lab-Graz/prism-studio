@@ -14,7 +14,16 @@
     "allowedEntities": {"type": "array", "items": {"type": "string"}},
     "requiredEntityValues": {"type": "object"},
     "optionalEntityValues": {"type": "object"},
-    "example": {"type": "object"}
+    "example": {"type": "object"},
+    "terms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonTermColumns"],
+      "properties": {
+        "nonTermColumns": {"type": "array", "items": {"type": "string"}},
+        "contextField": {"type": "string", "pattern": "^[A-Z][A-Za-z]*\\.[A-Z][A-Za-z]*$"}
+      }
+    }
   },
   "if": {"properties": {"kind": {"const": "prism"}}, "required": ["kind"]},
   "then": {"required": ["suffixes", "extensions", "describedColumns"]}
