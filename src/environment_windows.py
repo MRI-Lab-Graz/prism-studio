@@ -54,28 +54,36 @@ def window_column_name(spec: WindowSpec) -> str:
     return f"{spec.column}_{spec.statistic}_{spec.duration.lower()}"
 
 
-def _window_hours(end: datetime, spec: WindowSpec) -> list[str]:
-    """Hour keys of the half-open window (end - duration, end], end taken at the session's hour."""
+def _bounds(end: datetime, spec: WindowSpec) -> tuple[datetime, datetime]:
+    """The half-open window (start, last]: last = the session's hour, start = last - duration."""
     last = end.replace(tzinfo=None, minute=0, second=0, microsecond=0)
-    start = last - duration_to_timedelta(spec.duration)
-    hours, t = [], last
-    while t > start:
-        hours.append(t.strftime("%Y-%m-%dT%H:00"))
-        t -= timedelta(hours=1)
-    return hours
+    return last - duration_to_timedelta(spec.duration), last
 
 
 def missing_hours(hourly: dict[str, float | None], end: datetime, spec: WindowSpec) -> int:
-    """Hours of the window the provider did not return at all (no history that far back, a failed fetch);
-    an hour present with None is a gap, not a missing hour."""
-    return sum(1 for hour in _window_hours(end, spec) if hour not in hourly)
+    """Hours of the window without a value: hours with None, plus the in-window hours of days the provider
+    returned nothing for (a failed fetch, no history that far back). Expected hours of a day that has data are
+    the provider's own timeline, so a local hour that does not exist (spring DST) is not missing."""
+    start, last = _bounds(end, spec)
+    missing, days_with_data = 0, set()
+    for key, value in hourly.items():
+        days_with_data.add(key[:10])
+        if value is None and start < datetime.fromisoformat(key) <= last:
+            missing += 1
+    t = last
+    while t > start:  # wall-clock hours, only for days without any provider data
+        if t.strftime("%Y-%m-%d") not in days_with_data:
+            missing += 1
+        t -= timedelta(hours=1)
+    return missing
 
 
 def compute_window(hourly: dict[str, float | None], end: datetime, spec: WindowSpec) -> float | None:
-    """The statistic over the hours in (end - duration, end] (session hour in, start hour out), gaps skipped;
-    None when nothing is left. Hours are local wall-clock time (Open-Meteo timezone=auto, like the session
-    timestamp), so a P1D window spanning a DST change covers 23 or 25 real hours."""
-    values = [float(v) for hour in _window_hours(end, spec) if (v := hourly.get(hour)) is not None]
+    """The statistic over the hours in (end - duration, end] (session hour in, start hour out), gaps and
+    missing hours skipped; None when nothing is left. Hours are local wall-clock time (Open-Meteo
+    timezone=auto, like the session timestamp), so a P1D window spanning a DST change covers 23 or 25 real hours."""
+    start, last = _bounds(end, spec)
+    values = [float(v) for key, v in hourly.items() if v is not None and start < datetime.fromisoformat(key) <= last]
     if not values:
         return None
     if spec.statistic == "count":

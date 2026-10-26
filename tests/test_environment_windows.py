@@ -89,10 +89,22 @@ def test_missing_hours_counts_the_whole_window():
     hourly = _series(datetime(2025, 6, 1), 4 * 24, lambda h: 1.0)
     for h in range(24):  # a failed middle day
         del hourly[f"2025-06-02T{h:02d}:00"]
-    hourly["2025-06-03T05:00"] = None  # a gap is not a missing hour
+    hourly["2025-06-03T05:00"] = None  # a None value is missing too
     end = datetime(2025, 6, 4, 10)
-    assert missing_hours(hourly, end, WindowSpec("temp_c", "P3D", "mean")) == 24
+    assert missing_hours(hourly, end, WindowSpec("temp_c", "P3D", "mean")) == 25
     assert missing_hours(hourly, end, WindowSpec("temp_c", "PT6H", "mean")) == 0
+    # a failed day at the window's edge counts only its hours inside the window: (06-01 22:00, 06-02 10:00]
+    assert missing_hours(hourly, datetime(2025, 6, 2, 10), WindowSpec("temp_c", "PT12H", "mean")) == 11
+
+
+def test_spring_forward_hour_is_not_missing():
+    # 2025-03-30: local clocks jump 02:00 -> 03:00, so the provider timeline has no 02:00 that day
+    hourly = _series(datetime(2025, 3, 29), 3 * 24, lambda h: 1.0)
+    del hourly["2025-03-30T02:00"]
+    end = datetime(2025, 3, 30, 10)
+    spec = WindowSpec("temp_c", "P1D", "count")
+    assert missing_hours(hourly, end, spec) == 0
+    assert compute_window(hourly, end, spec) == 23
 
 
 def test_window_crosses_midnight():
@@ -189,27 +201,43 @@ def test_window_all_missing_is_empty_with_warning(tmp_path, monkeypatch):
     assert result["window_problems"] == [{"column": "temp_c_mean_p1d", "empty_rows": 1, "partial_rows": 0}]
 
 
-def test_window_beyond_provider_history_warns(tmp_path, monkeypatch):
+def test_window_beyond_provider_history_is_partial(tmp_path, monkeypatch):
     fetch = _stub_fetch([], air_ok=lambda day: day == date(2025, 6, 4))
     _, out, _, logs, result = _convert(
         tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("pm25_ug_m3:P2D:mean")], fetch
     )
-    assert out["sub-P1"]["pm25_ug_m3_mean_p2d"] == ""
-    assert out["sub-P1"]["pm25_ug_m3"] == "1.0"  # the session hour itself is still there
+    assert out["sub-P1"]["pm25_ug_m3_mean_p2d"] == "1.0"  # computed from the hours that are there
     assert any(level == "warning" and "pm25_ug_m3" in msg and "P2D" in msg for level, msg in logs), logs
-    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 1, "partial_rows": 1}]
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 0, "partial_rows": 1}]
+
+
+def test_failed_middle_day_keeps_the_value_and_counts_partial(tmp_path, monkeypatch):
+    fetch = _stub_fetch([], value=lambda var, ts: float(ts[8:10]), air_ok=lambda day: day != date(2025, 6, 3))
+    _, out, _, _, result = _convert(
+        tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("pm25_ug_m3:P3D:max")], fetch
+    )
+    assert out["sub-P1"]["pm25_ug_m3_max_p3d"] == "4.0"
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_max_p3d", "empty_rows": 0, "partial_rows": 1}]
+
+
+def test_all_days_failed_is_empty(tmp_path, monkeypatch):
+    fetch = _stub_fetch([], air_ok=lambda day: False)
+    _, out, _, _, result = _convert(
+        tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("pm25_ug_m3:P3D:mean")], fetch
+    )
+    assert out["sub-P1"]["pm25_ug_m3_mean_p3d"] == ""
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p3d", "empty_rows": 1, "partial_rows": 0}]
 
 
 def test_window_problems_are_totals_one_line_per_column(tmp_path, monkeypatch):
-    # P1: middle day 06-03 failed; P2: its own session day 06-06 failed (not "that far back"); P3 complete
-    fetch = _stub_fetch([], air_ok=lambda day: day not in (date(2025, 6, 3), date(2025, 6, 6)))
-    rows = [("P1", "2025-06-04 10:00"), ("P2", "2025-06-06 10:00"), ("P3", "2025-06-10 10:00")]
+    # P1: middle day 06-03 failed; P2: its own session day 06-06 failed; P3 complete; P4: every day failed
+    fetch = _stub_fetch([], air_ok=lambda day: day not in (date(2025, 6, 3), date(2025, 6, 6)) and day.month == 6)
+    rows = [("P1", "2025-06-04 10:00"), ("P2", "2025-06-06 10:00"), ("P3", "2025-06-10 10:00"), ("P4", "2025-07-10 10:00")]
     _, out, _, logs, result = _convert(tmp_path, monkeypatch, rows, [parse_window("pm25_ug_m3:P2D:mean")], fetch)
-    assert [out[s]["pm25_ug_m3_mean_p2d"] for s in ("sub-P1", "sub-P2", "sub-P3")] == ["", "", "1.0"]
-    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 2, "partial_rows": 2}]
+    assert [out[s]["pm25_ug_m3_mean_p2d"] for s in ("sub-P1", "sub-P2", "sub-P3", "sub-P4")] == ["1.0", "1.0", "1.0", ""]
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 1, "partial_rows": 2}]
     lines = [msg for level, msg in logs if "pm25_ug_m3_mean_p2d" in msg]
-    assert len(lines) == 1 and "2 row(s)" in lines[0], lines
-    assert "that far back" not in lines[0] or "failed" in lines[0]
+    assert len(lines) == 1 and "1 row(s) left empty" in lines[0] and "2 row(s)" in lines[0], lines
 
 
 def test_no_window_problems_when_complete(tmp_path, monkeypatch):

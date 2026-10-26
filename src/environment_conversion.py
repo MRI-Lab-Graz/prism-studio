@@ -1035,11 +1035,11 @@ def perform_environment_conversion(
             for spec in windows:
                 name = window_column_name(spec)
                 series = handle_hourly_series(days, spec.column)
-                # A statistic over part of the window is not the declared window: missing hours -> empty.
-                partial = missing_hours(series, dt, spec) > 0
-                base_row[name] = None if partial else compute_window(series, dt, spec)
-                window_problems[name]["partial_rows"] += partial
-                window_problems[name]["empty_rows"] += base_row[name] is None
+                base_row[name] = compute_window(series, dt, spec)
+                if base_row[name] is None:
+                    window_problems[name]["empty_rows"] += 1
+                elif missing_hours(series, dt, spec):
+                    window_problems[name]["partial_rows"] += 1
         rows_out.append(base_row)
 
     if rows_out:
@@ -1058,11 +1058,12 @@ def perform_environment_conversion(
             )
         for spec in windows:
             problem = window_problems[window_column_name(spec)]
-            if problem["empty_rows"]:
+            if problem["empty_rows"] or problem["partial_rows"]:
                 log_callback(
-                    f"{problem['column']} ({spec.column} over {spec.duration}): {problem['empty_rows']} row(s) left empty "
-                    f"({problem['partial_rows']} with hours the provider did not return - not available that far "
-                    f"back or a failed fetch; {problem['empty_rows'] - problem['partial_rows']} with no values in the window)",
+                    f"{problem['column']} ({spec.column} over {spec.duration}): "
+                    f"{problem['empty_rows']} row(s) left empty (no value in the window), "
+                    f"{problem['partial_rows']} row(s) computed from a partial window (hours missing: not available "
+                    "that far back, a failed fetch or gaps)",
                     "warning",
                 )
         log_callback(f"Processed {len(rows_out)} rows ({skipped} skipped)", "success")
