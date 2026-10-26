@@ -20,6 +20,7 @@ from src.environment_windows import (
     WindowSpec,
     compute_window,
     duration_to_timedelta,
+    missing_hours,
     parse_window,
     window_column_name,
 )
@@ -64,19 +65,41 @@ def test_compute_window_max():
     hourly["2025-06-01T09:00"] = 99.0  # before the 3-day window
     end = datetime(2025, 6, 4, 10, 0)
     assert compute_window(hourly, end, WindowSpec("temp_c", "P3D", "max")) == 40.0
-    assert compute_window(hourly, end, WindowSpec("temp_c", "PT3H", "count")) == 4
-    assert compute_window(hourly, end, WindowSpec("temp_c", "PT2H", "sum")) == 8.0 + 9.0 + 10.0
-    assert compute_window(hourly, end, WindowSpec("temp_c", "PT2H", "min")) == 8.0
-    assert compute_window(hourly, end, WindowSpec("temp_c", "PT2H", "mean")) == 9.0
+    assert compute_window(hourly, end, WindowSpec("temp_c", "PT2H", "min")) == 9.0
+    assert compute_window(hourly, end, WindowSpec("temp_c", "PT2H", "mean")) == 9.5
     aware = end.replace(tzinfo=timezone(timedelta(hours=2)))  # provider hours are local wall-clock
-    assert compute_window(hourly, aware, WindowSpec("temp_c", "PT2H", "mean")) == 9.0
+    assert compute_window(hourly, aware, WindowSpec("temp_c", "PT2H", "mean")) == 9.5
+
+
+# The window is half-open (end - duration, end] on the session's hour: start hour out, session hour in.
+@pytest.mark.parametrize("minute", [0, 30])
+def test_p1d_window_holds_exactly_24_hours(minute):
+    hourly = _series(datetime(2025, 6, 1), 3 * 24, lambda h: 1.0)
+    end = datetime(2025, 6, 2, 10, minute)
+    assert compute_window(hourly, end, WindowSpec("temp_c", "P1D", "count")) == 24
+    assert missing_hours(hourly, end, WindowSpec("temp_c", "P1D", "count")) == 0
+
+
+def test_pt3h_sum_on_the_hour_sums_three_values():
+    hourly = _series(datetime(2025, 6, 1), 24, lambda h: float(h))
+    assert compute_window(hourly, datetime(2025, 6, 1, 10), WindowSpec("temp_c", "PT3H", "sum")) == 8.0 + 9.0 + 10.0
+
+
+def test_missing_hours_counts_the_whole_window():
+    hourly = _series(datetime(2025, 6, 1), 4 * 24, lambda h: 1.0)
+    for h in range(24):  # a failed middle day
+        del hourly[f"2025-06-02T{h:02d}:00"]
+    hourly["2025-06-03T05:00"] = None  # a gap is not a missing hour
+    end = datetime(2025, 6, 4, 10)
+    assert missing_hours(hourly, end, WindowSpec("temp_c", "P3D", "mean")) == 24
+    assert missing_hours(hourly, end, WindowSpec("temp_c", "PT6H", "mean")) == 0
 
 
 def test_window_crosses_midnight():
     hourly = _series(datetime(2025, 6, 1, 20), 8, lambda h: float(h))  # 20:00 .. 03:00
     hourly["2025-06-02T00:00"] = None  # a gap is skipped
     end = datetime(2025, 6, 2, 1, 30)
-    # 22:30 -> 01:30 covers 23:00 (3.0), 00:00 (gap), 01:00 (5.0)
+    # (22:00, 01:00] covers 23:00 (3.0), 00:00 (gap), 01:00 (5.0)
     assert compute_window(hourly, end, WindowSpec("temp_c", "PT3H", "mean")) == 4.0
 
 
@@ -88,13 +111,13 @@ def test_compute_window_nothing_left_is_none():
 # ── Through the converter (provider fetch stubbed, counted) ───────────────────
 
 
-def _stub_fetch(calls: list, *, value=lambda var, ts: 1.0, air_only_session_day: date | None = None):
+def _stub_fetch(calls: list, *, value=lambda var, ts: 1.0, air_ok=lambda day: True):
     def fetch(url, params, timeout):
         calls.append((url, params["start_date"], params["end_date"], params["hourly"]))
         start = datetime.fromisoformat(params["start_date"])
         end = datetime.fromisoformat(params["end_date"]) + timedelta(days=1)
         variables = params["hourly"].split(",")
-        if air_only_session_day and "pm2_5" in variables and start.date() != air_only_session_day:
+        if "pm2_5" in variables and not air_ok(start.date()):
             return {"hourly": {"time": [], **{v: [] for v in variables}}}
         times = []
         t = start
@@ -116,7 +139,7 @@ def _convert(tmp_path, monkeypatch, rows, windows, fetch):
     src = src_dir / "env.csv"
     src.write_text("pid,ts\n" + "".join(f"{p},{t}\n" for p, t in rows), encoding="utf-8")
     logs: list[tuple[str, str]] = []
-    ec.perform_environment_conversion(
+    result = ec.perform_environment_conversion(
         input_path=src, filename="env.csv", suffix=".csv", separator_option="comma", timestamp_col="ts",
         participant_col="pid", participant_override=None, session_col=None, session_override="1",
         location_col=None, lat_col=None, lon_col=None, location_label_override="", lat_manual=47.07,
@@ -128,13 +151,13 @@ def _convert(tmp_path, monkeypatch, rows, windows, fetch):
         with tsv.open(encoding="utf-8") as fh:
             out[tsv.name.split("_")[0]] = next(csv.DictReader(fh, delimiter="\t"))
     sidecar = json.loads((project / "recording-weather_environment.json").read_text(encoding="utf-8"))
-    return project, out, sidecar, logs
+    return project, out, sidecar, logs, result
 
 
 def test_window_column_and_sidecar_entry(tmp_path, monkeypatch):
     calls: list = []
     fetch = _stub_fetch(calls, value=lambda var, ts: float(ts[8:10]))  # the day of month
-    project, out, sidecar, _ = _convert(
+    project, out, sidecar, _, _ = _convert(
         tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("temp_c:P3D:max")], fetch
     )
     assert out["sub-P1"]["temp_c_max_p3d"] == "4.0"
@@ -158,21 +181,42 @@ def test_window_column_and_sidecar_entry(tmp_path, monkeypatch):
 
 def test_window_all_missing_is_empty_with_warning(tmp_path, monkeypatch):
     fetch = _stub_fetch([], value=lambda var, ts: None if var == "temperature_2m" else 1.0)
-    _, out, _, logs = _convert(
+    _, out, _, logs, result = _convert(
         tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("temp_c:P1D:mean")], fetch
     )
     assert out["sub-P1"]["temp_c_mean_p1d"] == ""
     assert any(level == "warning" and "temp_c_mean_p1d" in msg for level, msg in logs), logs
+    assert result["window_problems"] == [{"column": "temp_c_mean_p1d", "empty_rows": 1, "partial_rows": 0}]
 
 
 def test_window_beyond_provider_history_warns(tmp_path, monkeypatch):
-    fetch = _stub_fetch([], air_only_session_day=date(2025, 6, 4))
-    _, out, _, logs = _convert(
+    fetch = _stub_fetch([], air_ok=lambda day: day == date(2025, 6, 4))
+    _, out, _, logs, result = _convert(
         tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("pm25_ug_m3:P2D:mean")], fetch
     )
     assert out["sub-P1"]["pm25_ug_m3_mean_p2d"] == ""
     assert out["sub-P1"]["pm25_ug_m3"] == "1.0"  # the session hour itself is still there
     assert any(level == "warning" and "pm25_ug_m3" in msg and "P2D" in msg for level, msg in logs), logs
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 1, "partial_rows": 1}]
+
+
+def test_window_problems_are_totals_one_line_per_column(tmp_path, monkeypatch):
+    # P1: middle day 06-03 failed; P2: its own session day 06-06 failed (not "that far back"); P3 complete
+    fetch = _stub_fetch([], air_ok=lambda day: day not in (date(2025, 6, 3), date(2025, 6, 6)))
+    rows = [("P1", "2025-06-04 10:00"), ("P2", "2025-06-06 10:00"), ("P3", "2025-06-10 10:00")]
+    _, out, _, logs, result = _convert(tmp_path, monkeypatch, rows, [parse_window("pm25_ug_m3:P2D:mean")], fetch)
+    assert [out[s]["pm25_ug_m3_mean_p2d"] for s in ("sub-P1", "sub-P2", "sub-P3")] == ["", "", "1.0"]
+    assert result["window_problems"] == [{"column": "pm25_ug_m3_mean_p2d", "empty_rows": 2, "partial_rows": 2}]
+    lines = [msg for level, msg in logs if "pm25_ug_m3_mean_p2d" in msg]
+    assert len(lines) == 1 and "2 row(s)" in lines[0], lines
+    assert "that far back" not in lines[0] or "failed" in lines[0]
+
+
+def test_no_window_problems_when_complete(tmp_path, monkeypatch):
+    *_, result = _convert(
+        tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("temp_c:P1D:sum")], _stub_fetch([])
+    )
+    assert result["window_problems"] == []
 
 
 def test_window_days_fetched_once(tmp_path, monkeypatch):

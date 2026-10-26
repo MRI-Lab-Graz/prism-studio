@@ -22,6 +22,7 @@ import math
 import random
 import re
 import unicodedata
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from time import perf_counter, sleep
@@ -59,8 +60,8 @@ from src.environment_windows import (
     WindowSpec,
     compute_window,
     duration_to_timedelta,
+    missing_hours,
     window_column_name,
-    window_covered,
 )
 from src.environment_temporal import (
     estimate_daylight_hours as _shared_estimate_daylight_hours,
@@ -650,7 +651,7 @@ def _build_environment_preview(rows_out: list[dict], window_columns: list[str] =
     }
 
 
-def _build_environment_sidecar(windows: list[WindowSpec] = ()) -> dict[str, Any]:
+def _build_environment_sidecar(windows: Sequence[WindowSpec] = ()) -> dict[str, Any]:
     """environment 2.0.0: every value column points to its official term (looked up by alias)."""
     registry = load_registry("environment")
     sidecar: dict[str, Any] = {
@@ -696,7 +697,7 @@ def _write_environment_tsv(rows: list[dict], path: Path, columns: list[str] = OU
             writer.writerow(row)
 
 
-def _write_environment_sidecar(path: Path, windows: list[WindowSpec] = ()) -> None:
+def _write_environment_sidecar(path: Path, windows: Sequence[WindowSpec] = ()) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     sidecar_payload = _build_environment_sidecar(windows)
     path.write_text(json.dumps(sidecar_payload, indent=2), encoding="utf-8")
@@ -759,7 +760,7 @@ def perform_environment_conversion(
     log_callback,
     progress_callback=None,
     cancel_check=None,
-    windows: list[WindowSpec] = (),
+    windows: Sequence[WindowSpec] = (),
 ) -> dict:
     def should_cancel() -> bool:
         return bool(cancel_check is not None and cancel_check())
@@ -914,6 +915,9 @@ def perform_environment_conversion(
                 }
         return env_day_cache[day_key]
 
+    window_problems = {
+        window_column_name(w): {"column": window_column_name(w), "empty_rows": 0, "partial_rows": 0} for w in windows
+    }
     longest_window = max((duration_to_timedelta(w.duration) for w in windows), default=timedelta(0))
     id_pairs: list[tuple[str, str]] = []
     ses_pairs: list[tuple[str, str]] = []
@@ -1022,6 +1026,8 @@ def perform_environment_conversion(
         base_row.update(_extract_environment_hour(dt, day_payloads(dt, row_lat, row_lon, row_idx)))
         if windows:
             first_day = (dt - longest_window).date()
+            # ponytail: each day's weather request reaches 2 days back (heat status), so neighbouring window
+            # days download overlapping hours; fetch the whole range in one request if volume matters.
             days = [
                 day_payloads(datetime.combine(first_day + timedelta(days=n), dt.time()), row_lat, row_lon, row_idx)
                 for n in range((dt.date() - first_day).days + 1)
@@ -1029,14 +1035,11 @@ def perform_environment_conversion(
             for spec in windows:
                 name = window_column_name(spec)
                 series = handle_hourly_series(days, spec.column)
-                covered = window_covered(series, dt, spec)
-                base_row[name] = compute_window(series, dt, spec) if covered else None
-                if base_row[name] is None:
-                    reason = "no values in the window" if covered else "the provider returned no data that far back"
-                    log_callback(
-                        f"Row {row_idx + 1}: {name} left empty ({spec.column} over {spec.duration}: {reason})",
-                        "warning",
-                    )
+                # A statistic over part of the window is not the declared window: missing hours -> empty.
+                partial = missing_hours(series, dt, spec) > 0
+                base_row[name] = None if partial else compute_window(series, dt, spec)
+                window_problems[name]["partial_rows"] += partial
+                window_problems[name]["empty_rows"] += base_row[name] is None
         rows_out.append(base_row)
 
     if rows_out:
@@ -1053,6 +1056,15 @@ def perform_environment_conversion(
                 "write them as 2025-04-03 or 03.04.2025 if they are day-first.",
                 "warning",
             )
+        for spec in windows:
+            problem = window_problems[window_column_name(spec)]
+            if problem["empty_rows"]:
+                log_callback(
+                    f"{problem['column']} ({spec.column} over {spec.duration}): {problem['empty_rows']} row(s) left empty "
+                    f"({problem['partial_rows']} with hours the provider did not return - not available that far "
+                    f"back or a failed fetch; {problem['empty_rows'] - problem['partial_rows']} with no values in the window)",
+                    "warning",
+                )
         log_callback(f"Processed {len(rows_out)} rows ({skipped} skipped)", "success")
     else:
         log_callback(f"No rows processed ({skipped} skipped)", "warning")
@@ -1102,6 +1114,7 @@ def perform_environment_conversion(
         "row_count": len(rows_out),
         "skipped": skipped,
         "provider_failures": sorted(provider_failures),
+        "window_problems": [p for p in window_problems.values() if p["empty_rows"] or p["partial_rows"]],
         "project_environment_path": (
             written_project_paths[0] if written_project_paths else ""
         ),

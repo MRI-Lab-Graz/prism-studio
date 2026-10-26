@@ -87,6 +87,7 @@ def test_cli_window_option(tmp_path: Path) -> None:
     sidecar = json.loads((project / "recording-weather_environment.json").read_text(encoding="utf-8"))
     assert sidecar["temp_c_max_p3d"]["Window"] == {"Start": "P3D", "End": "PT0S"}
     assert sidecar["temp_c_max_p3d"]["Statistic"] == "max"
+    assert json.loads(result.stdout)["window_problems"] == []
 
 
 def test_cli_window_option_refuses_a_bad_value(tmp_path: Path) -> None:
