@@ -88,7 +88,7 @@ def spec_catalog() -> dict:
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable") if fields else {}
         registry = load_registry(name)
         units.update(t["Units"] for t in registry.values() if t.get("Units"))
-        modalities.append({
+        kind = {
             "name": name,
             "label": rule.description or name,
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
@@ -100,7 +100,9 @@ def spec_catalog() -> dict:
                 for t in registry.values() if t.get("Level") == "analyte"
             ] if registry else None,
             "templates": _templates(name),
-        })
+        }
+        if kind["lists"] or kind["metrics"]:  # a kind with no list to extend and no measurements has nothing to propose
+            modalities.append(kind)
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
     specimens = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}

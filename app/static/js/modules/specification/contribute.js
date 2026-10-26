@@ -326,7 +326,7 @@
         const title = el("span", "sm-section-toggle__title");
         title.append(el("i", "fas " + (SECTION_ICONS[name] || "fa-table-columns") + " me-1"), document.createTextNode(" " + section.title));
         const titleline = el("span", "sm-section-toggle__titleline");
-        titleline.append(title, el("span", "sm-section-toggle__badge badge rounded-pill text-bg-secondary", count + (count === 1 ? " entry" : " entries")));
+        titleline.append(title, el("span", "sm-section-toggle__badge badge rounded-pill bg-secondary", count + (count === 1 ? " entry" : " entries")));
         toggle.append(titleline, el("span", "sm-section-toggle__summary", section.summary));
         const card = el("div", "card card-body border-0 bg-light mt-1");
         card.appendChild(body);

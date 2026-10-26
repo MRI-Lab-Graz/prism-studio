@@ -38,7 +38,7 @@ reference generated from the shipped schema, so it matches what the validator en
 **Propose changes** entry in the navbar, in the sidebar of this screen, or through the call-to-action on the overview page. It
 works with **no project open** and asks one thing at a time:
 
-1. **What kind of data?** Every PRISM kind of data of the current specification (BIDS kinds are not listed: PRISM cannot change the BIDS schemas), then *Nothing fits: a new kind of
+1. **What kind of data?** Every PRISM kind of data of the current specification (BIDS kinds are not listed: PRISM cannot change the BIDS schemas; a kind with nothing to propose yet, such as timed task events, is not listed either), then *Nothing fits: a new kind of
    data*. Tick **Not sure** when you only picked the closest one; the maintainer then decides where it belongs.
 2. **An accepted example beside your proposal**, in closed sections such as *How the data is collected*, each listing what it holds. Only sections with a list you can
    extend are shown; the others could only ever be context. open one
