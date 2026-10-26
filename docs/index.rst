@@ -231,6 +231,7 @@ in the repository root for the full citation, including all authors.
    EXAMPLES
    EXCEL_TEMPLATE_BASICS
    EXCEL_TEMPLATE_ADVANCED
+   AI_USAGE
 
 .. toctree::
    :maxdepth: 2

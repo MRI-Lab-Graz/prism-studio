@@ -123,6 +123,9 @@ for both.
 
 Full documentation is on [ReadTheDocs](https://prism-studio.readthedocs.io).
 
+AI coding assistants help with development; the ideas, design and review are
+human work. See the [AI usage statement](docs/AI_USAGE.md).
+
 ## Report an Issue
 
 Use the `Issues` tab to report bugs or request features:
