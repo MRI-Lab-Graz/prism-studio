@@ -46,7 +46,7 @@
 
 - [ ] **Step 1: Write the failing tests:** `test_term_modalities_from_entities` (both entries, exact dicts above); `test_specification_loads_environment_terms` (`"air-temperature" in load_specification().terms["environment"]`).
 - [ ] **Step 2: Run** `pytest tests/test_entity_rules.py tests/test_specification.py -q` — FAIL.
-- [ ] **Step 3: Sync and implement** as in Interfaces. The sync will also break the environment tests that assert the 1.1.0 format; leave them red for Tasks 3-4 only if they are about environment content, otherwise fix here.
+- [ ] **Step 3: Sync and implement** as in Interfaces. Studio's own `src/term_proposal.py::check_with_specification` calls the vendored `check_proposal`: pass `modalities=current_specification().term_modalities` and, for a modality without `contextField`, `specimens=None` (never `[]`, which would apply biosample's two-level rules to environment). The vendored scripts sit in `scripts/specification/` with no `schemas/` beside them, so they must never be asked to read the repository layout: Studio passes everything explicitly. Add a test: a one-level environment proposal through `check_with_specification` has no problems. The sync will also break the environment tests that assert the 1.1.0 format; leave them red for Tasks 3-4 only if they are about environment content, otherwise fix here.
 - [ ] **Step 4: Run** `pytest tests/test_entity_rules.py tests/test_specification.py tests/test_check_terms.py -q` — PASS.
 - [ ] **Step 5: Commit** `feat: sync specification v1.4.0; term modalities come from entities`.
 
