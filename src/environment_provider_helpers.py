@@ -270,9 +270,9 @@ def handle_extract_environment_hour(
     weather_regime = "frontal"
     if pressure is not None:
         if pressure >= 1020.0:
-            weather_regime = "hochdruck"
+            weather_regime = "high-pressure"
         elif pressure <= 1000.0:
-            weather_regime = "tiefdruck"
+            weather_regime = "low-pressure"
 
     birch = hourly_value(pollen, "birch_pollen", hour_iso)
     grass = hourly_value(pollen, "grass_pollen", hour_iso)

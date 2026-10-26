@@ -32,6 +32,7 @@ import requests
 
 from src.bids_integration import check_and_update_bidsignore
 from src.cleaning_notes import cleaning_note
+from src.term_registry import find_term, load_registry
 from src.session_map import resolve_import_session
 from src.converters.file_reader import (
     expected_delimiter_for_suffix,
@@ -81,8 +82,6 @@ PROVIDER_RETRY_BACKOFF_SECONDS = 0.75
 OUTPUT_COLUMNS = [
     "subject_id",
     "session_id",
-    "filename",
-    "relative_time",
     "hour_bin",
     "season_code",
     "sun_phase",
@@ -220,7 +219,6 @@ def _compute_row(
     dt: datetime,
     subject_id: str,
     session_id: str,
-    filename: str,
     lat: float | None,
 ) -> dict:
     doy = dt.timetuple().tm_yday
@@ -231,8 +229,6 @@ def _compute_row(
     return {
         "subject_id": subject_id,
         "session_id": session_id,
-        "filename": filename,
-        "relative_time": f"{dt.year}-DOY{doy:03d}-H{hour:02d}",
         "hour_bin": _hour_bin(hour),
         "season_code": _season_code(doy),
         "sun_phase": _sun_phase(hour, daylight),
@@ -623,7 +619,6 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
     preview_columns = [
         "subject_id",
         "session_id",
-        "relative_time",
         "elevation_m",
         "heatwave_status",
         "temp_c",
@@ -647,152 +642,34 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
 
 
 def _build_environment_sidecar() -> dict[str, Any]:
-    return {
-        "Metadata": {
-            "SchemaVersion": "1.1.0",
-            "CreationDate": datetime.now(timezone.utc).date().isoformat(),
-            "Creator": "PRISM Environment Converter",
-        },
-        "Privacy": {
-            "AnchorField": "season_code",
-            "IncludesRawDatetime": False,
-            "IncludesExactGeo": False,
-            "Derivation": "Derived from privacy-safe temporal anchors and approximate location context.",
-        },
-        "Provenance": {
-            "Builder": "PRISM Environment Converter",
-            "BuilderVersion": "1.1.0",
-            "Providers": ["weather", "air_quality", "pollen"],
+    """environment 2.0.0: every value column points to its official term (looked up by alias)."""
+    registry = load_registry("environment")
+    sidecar: dict[str, Any] = {
+        "Technical": {
+            "Source": "open-meteo",
             "SpatialResolution": "city",
             "TemporalResolution": "hourly",
         },
-        "Columns": {
-            "subject_id": {"Description": "BIDS subject identifier"},
-            "session_id": {"Description": "BIDS session identifier"},
-            "filename": {"Description": "Source filename from survey export"},
-            "relative_time": {"Description": "Privacy-safe temporal token"},
-            "hour_bin": {
-                "Description": "Binned hour derived from temporal anchor",
-                "Levels": {
-                    "night": "00-05",
-                    "morning": "06-11",
-                    "afternoon": "12-17",
-                    "evening": "18-23",
-                    "unknown": "not derivable",
-                },
-            },
-            "season_code": {"Description": "Season bin derived from day-of-year"},
-            "sun_phase": {"Description": "Solar phase at acquisition"},
-            "sun_hours_today": {
-                "Description": "Estimated daylight duration",
-                "Units": "hours",
-            },
-            "hours_since_sun": {
-                "Description": "Hours since last sunlight",
-                "Units": "hours",
-            },
-            "elevation_m": {
-                "Description": "Approximate elevation at resolved coordinate",
-                "Units": "m",
-                "Source": "weather",
-            },
-            "heatwave_status": {
-                "Description": "Derived heat status from daily max temperatures over current and previous two days",
-                "Source": "weather",
-            },
-            "moon_phase": {"Description": "Moon phase at acquisition"},
-            "moon_illumination_pct": {
-                "Description": "Estimated moon illumination",
-                "Units": "percent",
-            },
-            "temp_c": {
-                "Description": "Ambient temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "apparent_temp_c": {
-                "Description": "Apparent temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "dew_point_c": {
-                "Description": "Dew point temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "humidity_pct": {
-                "Description": "Relative humidity",
-                "Units": "percent",
-                "Source": "weather",
-            },
-            "pressure_hpa": {
-                "Description": "Surface pressure",
-                "Units": "hPa",
-                "Source": "weather",
-            },
-            "precip_mm": {
-                "Description": "Precipitation",
-                "Units": "mm",
-                "Source": "weather",
-            },
-            "wind_speed_ms": {
-                "Description": "Wind speed",
-                "Units": "m/s",
-                "Source": "weather",
-            },
-            "cloud_cover_pct": {
-                "Description": "Cloud cover",
-                "Units": "percent",
-                "Source": "weather",
-            },
-            "uv_index": {"Description": "UV index", "Source": "weather"},
-            "shortwave_radiation_wm2": {
-                "Description": "Shortwave radiation",
-                "Units": "W/m2",
-                "Source": "weather",
-            },
-            "weather_regime": {
-                "Description": "Derived weather regime",
-                "Source": "weather",
-            },
-            "aqi": {"Description": "Air quality index", "Source": "air_quality"},
-            "pm25_ug_m3": {
-                "Description": "PM2.5",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "pm10_ug_m3": {
-                "Description": "PM10",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "no2_ug_m3": {
-                "Description": "Nitrogen dioxide",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "o3_ug_m3": {
-                "Description": "Ozone",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "pollen_birch": {"Description": "Birch pollen index", "Source": "pollen"},
-            "pollen_grass": {"Description": "Grass pollen index", "Source": "pollen"},
-            "pollen_mugwort": {
-                "Description": "Mugwort pollen index",
-                "Source": "pollen",
-            },
-            "pollen_ragweed": {
-                "Description": "Ragweed pollen index",
-                "Source": "pollen",
-            },
-            "pollen_total": {"Description": "Total pollen index", "Source": "pollen"},
-            "pollen_risk_bin": {
-                "Description": "Derived pollen risk bin",
-                "Source": "pollen",
-            },
+        "Study": {
+            "EnvironmentName": "weather",
+            "Description": "Weather, air quality, pollen and sun/moon context at each session (Open-Meteo)",
         },
+        "Metadata": {
+            "SchemaVersion": "2.0.0",
+            "CreationDate": datetime.now(timezone.utc).date().isoformat(),
+            "Creator": "PRISM Environment Converter",
+        },
+        "subject_id": {"Description": "BIDS subject identifier", "Units": "n/a"},
+        "session_id": {"Description": "BIDS session identifier", "Units": "n/a"},
     }
+    for column in OUTPUT_COLUMNS:
+        if column in sidecar:
+            continue
+        found = find_term(registry, column)
+        if found is None:
+            raise ValueError(f"environment column {column!r} has no official term")
+        sidecar[column] = {"Term": found[1]["TermID"]}
+    return sidecar
 
 
 def _write_environment_tsv(rows: list[dict], path: Path) -> None:
@@ -1080,7 +957,6 @@ def perform_environment_conversion(
             dt=dt,
             subject_id=subject_id,
             session_id=session_id,
-            filename=filename,
             lat=row_lat,
         )
 

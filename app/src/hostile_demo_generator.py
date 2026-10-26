@@ -719,8 +719,6 @@ def build_hostile_environment_mri_tree(root: Path, seed: int) -> list[HostileCas
         {
             "subject_id": "sub-env08",
             "session_id": "ses-01",
-            "filename": "sub-env08_ses-01_T1w.nii.gz",
-            "relative_time": 0,
             "temp_c": -89.2,
             "apparent_temp_c": -95.0,
             "humidity_pct": 100,
@@ -732,8 +730,6 @@ def build_hostile_environment_mri_tree(root: Path, seed: int) -> list[HostileCas
         {
             "subject_id": "sub-env08",
             "session_id": "ses-02",
-            "filename": "sub-env08_ses-02_T1w.nii.gz",
-            "relative_time": 1,
             "temp_c": 56.7,
             "apparent_temp_c": 60.0,
             "humidity_pct": 0,
