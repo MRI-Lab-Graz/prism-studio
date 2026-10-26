@@ -22,7 +22,7 @@ import math
 import random
 import re
 import unicodedata
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from time import perf_counter, sleep
 from typing import Any
@@ -47,6 +47,7 @@ from src.environment_provider_helpers import (
     handle_extract_environment_hour,
     handle_fetch_environment_day,
     handle_fetch_environment_hour,
+    handle_hourly_series,
     handle_hourly_value,
     handle_load_environment_provider_cache,
     handle_payload_has_hourly_data,
@@ -54,6 +55,13 @@ from src.environment_provider_helpers import (
     handle_save_environment_provider_cache,
 )
 from src.environment_result_helpers import handle_persist_environment_outputs
+from src.environment_windows import (
+    WindowSpec,
+    compute_window,
+    duration_to_timedelta,
+    window_column_name,
+    window_covered,
+)
 from src.environment_temporal import (
     estimate_daylight_hours as _shared_estimate_daylight_hours,
     hour_to_bin as _shared_hour_to_bin,
@@ -615,7 +623,7 @@ def _load_environment_dataframe(
     return result.df
 
 
-def _build_environment_preview(rows_out: list[dict]) -> dict:
+def _build_environment_preview(rows_out: list[dict], window_columns: list[str] = ()) -> dict:
     preview_columns = [
         "subject_id",
         "session_id",
@@ -630,6 +638,7 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
         "o3_ug_m3",
         "pollen_total",
         "pollen_risk_bin",
+        *window_columns,
     ]
     preview_rows = [
         [_preview_value(row.get(col)) for col in preview_columns]
@@ -641,7 +650,7 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
     }
 
 
-def _build_environment_sidecar() -> dict[str, Any]:
+def _build_environment_sidecar(windows: list[WindowSpec] = ()) -> dict[str, Any]:
     """environment 2.0.0: every value column points to its official term (looked up by alias)."""
     registry = load_registry("environment")
     sidecar: dict[str, Any] = {
@@ -669,21 +678,27 @@ def _build_environment_sidecar() -> dict[str, Any]:
         if found is None:
             raise ValueError(f"environment column {column!r} has no official term")
         sidecar[column] = {"Term": found[1]["TermID"]}
+    for spec in windows:
+        sidecar[window_column_name(spec)] = {
+            "Term": sidecar[spec.column]["Term"],
+            "Window": {"Start": spec.duration, "End": "PT0S"},
+            "Statistic": spec.statistic,
+        }
     return sidecar
 
 
-def _write_environment_tsv(rows: list[dict], path: Path) -> None:
+def _write_environment_tsv(rows: list[dict], path: Path, columns: list[str] = OUTPUT_COLUMNS) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=OUTPUT_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(fh, fieldnames=columns, delimiter="\t")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
 
 
-def _write_environment_sidecar(path: Path) -> None:
+def _write_environment_sidecar(path: Path, windows: list[WindowSpec] = ()) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    sidecar_payload = _build_environment_sidecar()
+    sidecar_payload = _build_environment_sidecar(windows)
     path.write_text(json.dumps(sidecar_payload, indent=2), encoding="utf-8")
 
 
@@ -744,6 +759,7 @@ def perform_environment_conversion(
     log_callback,
     progress_callback=None,
     cancel_check=None,
+    windows: list[WindowSpec] = (),
 ) -> dict:
     def should_cancel() -> bool:
         return bool(cancel_check is not None and cancel_check())
@@ -856,6 +872,49 @@ def perform_environment_conversion(
     inherited_sidecar_path: Path | None = None
     provider_failures: set[str] = set()
 
+    def day_payloads(day: datetime, lat: float, lon: float, row_idx) -> dict[str, dict]:
+        """Provider data of one day at one place; each day is fetched once per location (memory + project cache)."""
+        nonlocal cache_hits, persistent_cache_dirty
+        date_str = day.strftime("%Y-%m-%d")
+        day_key = (date_str, round(lat, 4), round(lon, 4))
+        if day_key not in env_day_cache:
+            try:
+                cache_key = _cache_key_for_day(date_str, lat, lon)
+                cached_payloads = persistent_cache.get(cache_key)
+                if cached_payloads:
+                    cache_hits += 1
+                provider_payloads, env_warnings = _fetch_environment_day(
+                    day,
+                    lat,
+                    lon,
+                    cached_payloads=cached_payloads,
+                )
+                env_day_cache[day_key] = provider_payloads
+                if not cached_payloads or provider_payloads != cached_payloads:
+                    persistent_cache[cache_key] = provider_payloads
+                    persistent_cache_dirty = True
+                for warning in env_warnings:
+                    # Extract provider name from warning string for summary tracking
+                    provider_failures.add(
+                        warning.split(" API")[0] if " API" in warning else "unknown"
+                    )
+                    log_callback(
+                        f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
+                        "warning",
+                    )
+            except Exception as exc:
+                log_callback(
+                    f"Row {row_idx + 1}: environment enrichment failed unexpectedly ({exc}) — keeping core temporal fields",
+                    "warning",
+                )
+                env_day_cache[day_key] = {
+                    "weather": {},
+                    "air": {},
+                    "pollen": {},
+                }
+        return env_day_cache[day_key]
+
+    longest_window = max((duration_to_timedelta(w.duration) for w in windows), default=timedelta(0))
     id_pairs: list[tuple[str, str]] = []
     ses_pairs: list[tuple[str, str]] = []
     day_first_unsure = 0
@@ -960,44 +1019,24 @@ def perform_environment_conversion(
             lat=row_lat,
         )
 
-        date_str = dt.strftime("%Y-%m-%d")
-        day_key = (date_str, round(row_lat, 4), round(row_lon, 4))
-        if day_key not in env_day_cache:
-            try:
-                cache_key = _cache_key_for_day(date_str, row_lat, row_lon)
-                cached_payloads = persistent_cache.get(cache_key)
-                if cached_payloads:
-                    cache_hits += 1
-                provider_payloads, env_warnings = _fetch_environment_day(
-                    dt,
-                    row_lat,
-                    row_lon,
-                    cached_payloads=cached_payloads,
-                )
-                env_day_cache[day_key] = provider_payloads
-                if not cached_payloads or provider_payloads != cached_payloads:
-                    persistent_cache[cache_key] = provider_payloads
-                    persistent_cache_dirty = True
-                for warning in env_warnings:
-                    # Extract provider name from warning string for summary tracking
-                    provider_failures.add(
-                        warning.split(" API")[0] if " API" in warning else "unknown"
-                    )
+        base_row.update(_extract_environment_hour(dt, day_payloads(dt, row_lat, row_lon, row_idx)))
+        if windows:
+            first_day = (dt - longest_window).date()
+            days = [
+                day_payloads(datetime.combine(first_day + timedelta(days=n), dt.time()), row_lat, row_lon, row_idx)
+                for n in range((dt.date() - first_day).days + 1)
+            ]
+            for spec in windows:
+                name = window_column_name(spec)
+                series = handle_hourly_series(days, spec.column)
+                covered = window_covered(series, dt, spec)
+                base_row[name] = compute_window(series, dt, spec) if covered else None
+                if base_row[name] is None:
+                    reason = "no values in the window" if covered else "the provider returned no data that far back"
                     log_callback(
-                        f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
+                        f"Row {row_idx + 1}: {name} left empty ({spec.column} over {spec.duration}: {reason})",
                         "warning",
                     )
-            except Exception as exc:
-                log_callback(
-                    f"Row {row_idx + 1}: environment enrichment failed unexpectedly ({exc}) — keeping core temporal fields",
-                    "warning",
-                )
-                env_day_cache[day_key] = {
-                    "weather": {},
-                    "air": {},
-                    "pollen": {},
-                }
-        base_row.update(_extract_environment_hour(dt, env_day_cache[day_key]))
         rows_out.append(base_row)
 
     if rows_out:
@@ -1031,13 +1070,14 @@ def perform_environment_conversion(
         )
 
     raise_if_cancelled()
+    window_columns = [window_column_name(spec) for spec in windows]
     project_root_path = resolve_active_project_root()
     written_project_paths, inherited_sidecar_path = handle_persist_environment_outputs(
         input_path=input_path,
         rows_out=rows_out,
         project_root_path=project_root_path,
-        write_environment_tsv=_write_environment_tsv,
-        write_environment_sidecar=_write_environment_sidecar,
+        write_environment_tsv=lambda rows, path: _write_environment_tsv(rows, path, OUTPUT_COLUMNS + window_columns),
+        write_environment_sidecar=lambda path: _write_environment_sidecar(path, windows),
         environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
         check_and_update_bidsignore=check_and_update_bidsignore,
         log_callback=log_callback,
@@ -1067,7 +1107,7 @@ def perform_environment_conversion(
         ),
         "project_environment_paths": written_project_paths,
         "project_environment_sidecar_path": str(inherited_sidecar_path),
-        "output_preview": _build_environment_preview(rows_out),
+        "output_preview": _build_environment_preview(rows_out, window_columns),
         "pilot_mode": pilot_random_subject,
         "pilot_subject": pilot_subject_label,
         "elapsed_seconds": round(elapsed_seconds, 2),

@@ -794,6 +794,14 @@ def build_prism_tools_parsers(
     parser_environment_convert.add_argument("--lat", help="Global fallback latitude")
     parser_environment_convert.add_argument("--lon", help="Global fallback longitude")
     parser_environment_convert.add_argument(
+        "--window",
+        action="append",
+        default=[],
+        metavar="VAR:DURATION:STAT",
+        help="Add a column with a statistic (mean|min|max|sum|count) over an ISO 8601 duration "
+        "before the session, e.g. temp_c:P3D:max (repeatable)",
+    )
+    parser_environment_convert.add_argument(
         "--pilot-random-subject",
         action="store_true",
         help="Run pilot conversion for one random subject and estimate full runtime",

@@ -11,6 +11,48 @@ import requests
 from src.environment_temporal import pollen_risk_bin as _shared_pollen_risk_bin
 
 
+# Converter column -> (provider payload, Open-Meteo hourly variable): the numeric hourly columns.
+HOURLY_PROVIDER_COLUMNS: dict[str, tuple[str, str]] = {
+    "temp_c": ("weather", "temperature_2m"),
+    "apparent_temp_c": ("weather", "apparent_temperature"),
+    "dew_point_c": ("weather", "dew_point_2m"),
+    "humidity_pct": ("weather", "relative_humidity_2m"),
+    "pressure_hpa": ("weather", "surface_pressure"),
+    "precip_mm": ("weather", "precipitation"),
+    "wind_speed_ms": ("weather", "wind_speed_10m"),
+    "cloud_cover_pct": ("weather", "cloud_cover"),
+    "uv_index": ("weather", "uv_index"),
+    "shortwave_radiation_wm2": ("weather", "shortwave_radiation"),
+    "aqi": ("air", "european_aqi"),
+    "pm25_ug_m3": ("air", "pm2_5"),
+    "pm10_ug_m3": ("air", "pm10"),
+    "no2_ug_m3": ("air", "nitrogen_dioxide"),
+    "o3_ug_m3": ("air", "ozone"),
+    "pollen_birch": ("pollen", "birch_pollen"),
+    "pollen_grass": ("pollen", "grass_pollen"),
+    "pollen_mugwort": ("pollen", "mugwort_pollen"),
+    "pollen_ragweed": ("pollen", "ragweed_pollen"),
+}
+
+
+def _hourly_variables(payload_key: str) -> str:
+    return ",".join(var for key, var in HOURLY_PROVIDER_COLUMNS.values() if key == payload_key)
+
+
+def handle_hourly_series(payloads_by_day: list[dict[str, dict]], column: str) -> dict[str, float | None]:
+    """Hour ("YYYY-MM-DDTHH:00") -> value of one converter column, merged over several days' payloads."""
+    payload_key, variable = HOURLY_PROVIDER_COLUMNS[column]
+    series: dict[str, float | None] = {}
+    for payloads in payloads_by_day:
+        hourly = (payloads.get(payload_key) or {}).get("hourly") or {}
+        for ts, value in zip(hourly.get("time") or [], hourly.get(variable) or []):
+            try:
+                series[str(ts)] = None if value is None else float(value)
+            except (TypeError, ValueError):
+                series[str(ts)] = None
+    return series
+
+
 def handle_hourly_value(payload: dict, key: str, timestamp_iso: str) -> float | None:
     hourly = payload.get("hourly") or {}
     times = hourly.get("time") or []
@@ -110,20 +152,7 @@ def handle_fetch_environment_day(
         "longitude": lon,
         "start_date": weather_start_date,
         "end_date": date_str,
-        "hourly": ",".join(
-            [
-                "temperature_2m",
-                "apparent_temperature",
-                "dew_point_2m",
-                "relative_humidity_2m",
-                "surface_pressure",
-                "precipitation",
-                "wind_speed_10m",
-                "cloud_cover",
-                "uv_index",
-                "shortwave_radiation",
-            ]
-        ),
+        "hourly": _hourly_variables("weather"),
         "timezone": "auto",
     }
     air_params = {
@@ -131,9 +160,7 @@ def handle_fetch_environment_day(
         "longitude": lon,
         "start_date": date_str,
         "end_date": date_str,
-        "hourly": ",".join(
-            ["european_aqi", "pm2_5", "pm10", "nitrogen_dioxide", "ozone"]
-        ),
+        "hourly": _hourly_variables("air"),
         "timezone": "auto",
     }
     pollen_params = {
@@ -141,9 +168,7 @@ def handle_fetch_environment_day(
         "longitude": lon,
         "start_date": date_str,
         "end_date": date_str,
-        "hourly": ",".join(
-            ["birch_pollen", "grass_pollen", "mugwort_pollen", "ragweed_pollen"]
-        ),
+        "hourly": _hourly_variables("pollen"),
         "timezone": "auto",
     }
     provider_payloads: dict[str, dict] = {
@@ -214,8 +239,6 @@ def handle_extract_environment_hour(
 ) -> dict:
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
     weather = provider_payloads.get("weather") or {}
-    air = provider_payloads.get("air") or {}
-    pollen = provider_payloads.get("pollen") or {}
 
     def _daily_max_temp(date_key: str) -> float | None:
         hourly = weather.get("hourly") or {}
@@ -266,7 +289,12 @@ def handle_extract_environment_hour(
         except (TypeError, ValueError):
             elevation_m = None
 
-    pressure = hourly_value(weather, "surface_pressure", hour_iso)
+    values = {
+        column: hourly_value(provider_payloads.get(payload_key) or {}, variable, hour_iso)
+        for column, (payload_key, variable) in HOURLY_PROVIDER_COLUMNS.items()
+    }
+
+    pressure = values["pressure_hpa"]
     weather_regime = "frontal"
     if pressure is not None:
         if pressure >= 1020.0:
@@ -274,39 +302,16 @@ def handle_extract_environment_hour(
         elif pressure <= 1000.0:
             weather_regime = "low-pressure"
 
-    birch = hourly_value(pollen, "birch_pollen", hour_iso)
-    grass = hourly_value(pollen, "grass_pollen", hour_iso)
-    mugwort = hourly_value(pollen, "mugwort_pollen", hour_iso)
-    ragweed = hourly_value(pollen, "ragweed_pollen", hour_iso)
-
-    pollen_vals = [value for value in (birch, grass, mugwort, ragweed) if value is not None]
+    pollen_vals = [
+        values[c] for c in ("pollen_birch", "pollen_grass", "pollen_mugwort", "pollen_ragweed") if values[c] is not None
+    ]
     pollen_total = float(sum(pollen_vals)) if pollen_vals else None
 
     return {
-        "temp_c": hourly_value(weather, "temperature_2m", hour_iso),
-        "apparent_temp_c": hourly_value(weather, "apparent_temperature", hour_iso),
-        "dew_point_c": hourly_value(weather, "dew_point_2m", hour_iso),
-        "humidity_pct": hourly_value(weather, "relative_humidity_2m", hour_iso),
-        "pressure_hpa": pressure,
-        "precip_mm": hourly_value(weather, "precipitation", hour_iso),
-        "wind_speed_ms": hourly_value(weather, "wind_speed_10m", hour_iso),
-        "cloud_cover_pct": hourly_value(weather, "cloud_cover", hour_iso),
-        "uv_index": hourly_value(weather, "uv_index", hour_iso),
-        "shortwave_radiation_wm2": hourly_value(
-            weather, "shortwave_radiation", hour_iso
-        ),
+        **values,
         "weather_regime": weather_regime,
         "elevation_m": elevation_m,
         "heatwave_status": heatwave_status,
-        "aqi": hourly_value(air, "european_aqi", hour_iso),
-        "pm25_ug_m3": hourly_value(air, "pm2_5", hour_iso),
-        "pm10_ug_m3": hourly_value(air, "pm10", hour_iso),
-        "no2_ug_m3": hourly_value(air, "nitrogen_dioxide", hour_iso),
-        "o3_ug_m3": hourly_value(air, "ozone", hour_iso),
-        "pollen_birch": birch,
-        "pollen_grass": grass,
-        "pollen_mugwort": mugwort,
-        "pollen_ragweed": ragweed,
         "pollen_total": pollen_total,
         "pollen_risk_bin": pollen_risk_bin(pollen_total),
     }
