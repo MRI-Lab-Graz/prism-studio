@@ -190,7 +190,10 @@ def test_step_two_is_folded_like_the_project_page_with_plain_titles(bare_page, s
     expect(toggles.first).to_contain_text("9 entries")
     summary = toggles.first.locator(".sm-section-toggle__summary")
     expect(summary).to_contain_text("Specimen type, Collection method")
-    expect(summary).to_have_css("text-align", "left")
+    title = toggles.first.locator(".sm-section-toggle__title")
+    assert abs(summary.bounding_box()["x"] - title.bounding_box()["x"]) < 2  # starts under the title, not centred
+    badge = toggles.first.locator(".sm-section-toggle__badge")
+    assert badge.evaluate("b => getComputedStyle(b).backgroundColor") not in ("rgba(0, 0, 0, 0)", "transparent")
     expect(bare_page.locator("#spec-sections .collapse.show")).to_have_count(0)  # every section starts closed
     toggles.first.click()
     expect(toggles.first).to_have_attribute("aria-expanded", "true")
@@ -202,9 +205,8 @@ def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url
     choose_kind(bare_page, studio_url, "survey")
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="About the measure")).to_have_count(1)
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Norms")).to_have_count(0)
-    bare_page.locator("#spec-kind").select_option("events")
-    bare_page.wait_for_load_state("networkidle")
-    expect(bare_page.locator("#spec-step2")).to_be_hidden()  # no list of task events can be extended
+    expect(bare_page.locator("#spec-kind option[value='events']")).to_have_count(0)  # nothing of task events can be proposed
+    expect(bare_page.locator("#spec-kind option[value='environment']")).to_have_count(1)
 
 
 def test_example_and_proposal_stay_level_row_by_row(bare_page, studio_url):

@@ -88,7 +88,7 @@ def spec_catalog() -> dict:
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable") if fields else {}
         registry = load_registry(name)
         units.update(t["Units"] for t in registry.values() if t.get("Units"))
-        modalities.append({
+        kind = {
             "name": name,
             "label": rule.description or name,
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
@@ -100,7 +100,9 @@ def spec_catalog() -> dict:
                 for t in registry.values() if t.get("Level") == "analyte"
             ] if registry else None,
             "templates": _templates(name),
-        })
+        }
+        if kind["lists"] or kind["metrics"]:  # a kind with no list to extend and no measurements has nothing to propose
+            modalities.append(kind)
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
     specimens = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}
@@ -111,18 +113,12 @@ _SECTION_TITLES = {
     "Study": "About the measure", "Technical": "How the data is collected", "I18n": "Languages", "Scoring": "Scoring",
     "Normative": "Norms and reference values", "Recording": "Signal type", "TriggerAnnotations": "Triggers",
     "Acquisition": "Recording conditions", "Processing": "Processing", "Privacy": "Privacy", "Provenance": "Data source",
-    "StimulusPresentation": "Stimulus presentation",
 }
 
 
 def _section(name: str, labels: list[str], proposable: bool) -> dict:
     """A section's plain title, a summary naming its first entries, and whether it holds a list that can be extended."""
-    if name in _SECTION_TITLES:
-        title = _SECTION_TITLES[name]
-    elif name.islower():  # events: one section per column of the events file
-        title = f'The "{name}" column'
-    else:
-        title = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", name).capitalize()
+    title = _SECTION_TITLES.get(name) or re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", name).capitalize()
     return {"title": title, "summary": ", ".join(labels[:4]) + (", …" if len(labels) > 4 else ""), "proposable": proposable}
 
 

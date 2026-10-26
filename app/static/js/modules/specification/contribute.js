@@ -310,7 +310,7 @@
     const SECTION_ICONS = {
         Study: "fa-book", Technical: "fa-gear", I18n: "fa-language", Scoring: "fa-calculator", Normative: "fa-chart-line",
         Recording: "fa-wave-square", TriggerAnnotations: "fa-bolt", Acquisition: "fa-sliders", Processing: "fa-filter",
-        Privacy: "fa-user-shield", Provenance: "fa-database", StimulusPresentation: "fa-display",
+        Privacy: "fa-user-shield", Provenance: "fa-database",
     };
 
     function sectionFold(name, section, body, count) {
@@ -324,9 +324,9 @@
         toggle.setAttribute("aria-expanded", "false");
         toggle.setAttribute("aria-controls", bodyId);
         const title = el("span", "sm-section-toggle__title");
-        title.append(el("i", "fas " + (SECTION_ICONS[name] || "fa-table-columns") + " me-1"), document.createTextNode(" " + section.title));
+        title.append(el("i", "fas " + (SECTION_ICONS[name] || "fa-list") + " me-1"), document.createTextNode(" " + section.title));
         const titleline = el("span", "sm-section-toggle__titleline");
-        titleline.append(title, el("span", "sm-section-toggle__badge badge rounded-pill text-bg-secondary", count + (count === 1 ? " entry" : " entries")));
+        titleline.append(title, el("span", "sm-section-toggle__badge badge rounded-pill bg-secondary", count + (count === 1 ? " entry" : " entries")));
         toggle.append(titleline, el("span", "sm-section-toggle__summary", section.summary));
         const card = el("div", "card card-body border-0 bg-light mt-1");
         card.appendChild(body);

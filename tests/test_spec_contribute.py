@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import _section, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.spec_overlay import add_local_values
 from src.spec_overlay import OverlayError
 
@@ -27,13 +27,20 @@ def test_catalog_values_have_no_empty_strings():
 
 def test_the_catalog_lists_every_kind_of_data_with_a_description():
     mods = {m["name"]: m for m in spec_catalog()["modalities"]}
-    assert {"biosample", "survey", "physio", "events"} <= set(mods)
+    assert {"biosample", "survey", "physio", "environment"} <= set(mods)
     assert mods["biosample"]["label"].startswith("Lab results")
     assert "biosample-inflammation" in mods["biosample"]["templates"]
 
 
 def test_the_catalog_has_no_bids_kinds():
     assert not {"anat", "func", "dwi", "eeg", "fmap", "beh"} & {m["name"] for m in spec_catalog()["modalities"]}
+
+
+def test_a_kind_with_nothing_to_propose_is_not_offered():
+    names = {m["name"] for m in spec_catalog()["modalities"]}
+    assert "events" not in names  # no list to extend and no measurements
+    assert "environment" in names  # it has a list to extend
+    assert all(m["lists"] or m["metrics"] for m in spec_catalog()["modalities"])
 
 
 def test_example_entries_fill_the_example_from_the_library_template():
@@ -59,13 +66,12 @@ def test_sections_have_plain_titles_and_say_what_they_hold():
     assert sections["Technical"]["title"] == "How the data is collected"
     assert sections["Technical"]["summary"] == "Specimen type, Collection method, Anticoagulant, Fasting required, …"
     assert sections["Study"]["title"] == "About the measure"
-    assert example_entries("events")["sections"]["onset"]["title"] == 'The "onset" column'
+    assert _section("SomeNewPart", ["A"], False)["title"] == "Some new part"  # a section without a plain title is spelled out
 
 
 def test_only_sections_with_a_list_to_extend_are_proposable():
     assert {k: v["proposable"] for k, v in example_entries("biosample")["sections"].items()} == {"Technical": True, "Study": False}
     assert example_entries("survey")["sections"]["Study"]["proposable"] is True  # the license lists
-    assert not any(v["proposable"] for v in example_entries("events")["sections"].values())
 
 
 def test_a_kind_without_a_library_example_still_lists_its_entries():
