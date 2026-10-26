@@ -504,6 +504,9 @@
     async function chooseKind() {
         clearMessage();
         const kind = currentKind();
+        if (foundColumn) m.name.value = "";  // a column picked under another kind must not follow into this one
+        forgetFound();
+        renderUnknown();
         if (kind) lastKind = kind.name;
         if (kindSelect.value === "new-kind") nk.closest.value = lastKind;
         document.getElementById("spec-new-kind").hidden = kindSelect.value !== "new-kind";
@@ -524,7 +527,7 @@
         step2.hidden = !answers.length;
         if (kind.metrics) fillPick();
     }
-    kindSelect.addEventListener("change", function () { renderUnknown(); });
+
 
     kindSelect.addEventListener("change", chooseKind);
     templateSelect.addEventListener("change", function () { loadExample(templateSelect.value); });

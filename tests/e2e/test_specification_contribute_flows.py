@@ -576,6 +576,16 @@ def test_found_columns_show_only_for_their_own_kind(app_page, studio_url, projec
     expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
 
 
+def test_a_picked_found_column_is_forgotten_when_the_kind_changes(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_kind(app_page, studio_url, "biosample")
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-use")).to_be_visible()
+    app_page.locator("#spec-kind").select_option("environment")
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+    expect(app_page.locator("#spec-m-name")).not_to_have_value("dhea_s")
+
+
 def test_a_missing_measurement_with_a_project(app_page, studio_url, project):
     add_biosample_data(project)
     choose_measurement(app_page, studio_url)

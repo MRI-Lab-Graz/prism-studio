@@ -43,6 +43,9 @@ def _body() -> dict:
     return data if isinstance(data, dict) else {}
 
 
+_METRIC_SCAN = ("biosample",)  # the kinds whose data columns are searched for unknown metrics (and told to the page)
+
+
 @specification_contribute_bp.route("/api/spec/local", methods=["GET"])
 def list_local():
     project = _project()
@@ -54,8 +57,8 @@ def list_local():
     return jsonify({
         "success": True,
         "items": items,
-        "unknown_metrics": find_unknown_metrics(project),
-        "metric_modalities": ["biosample"],  # the kinds whose data columns are searched for unknown metrics
+        "unknown_metrics": [m for kind in _METRIC_SCAN for m in find_unknown_metrics(project, kind)],
+        "metric_modalities": list(_METRIC_SCAN),
         "unknown_values": find_unknown_values(project),
     })
 

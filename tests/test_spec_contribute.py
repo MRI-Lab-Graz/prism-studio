@@ -438,6 +438,5 @@ def test_two_level_kind_refuses_levels_and_cf_standard_name():
 
 
 def test_catalog_levels_variable_metric_lists_levels():
-    from src.spec_contribute import spec_catalog
     metrics = _entry("environment")["metrics"]
     assert all("levels" in m for m in metrics)
