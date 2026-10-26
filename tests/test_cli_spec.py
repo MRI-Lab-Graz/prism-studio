@@ -389,3 +389,13 @@ def test_propose_patch_names_a_bad_kind_of_data_as_such(tmp_path):
     assert code == 1 and "not a kind of data" in json.loads(out)["error"]
     code, out = _run("spec", "propose", "--project", project, "--patch", "--json")
     assert code == 1 and "no schema additions" in json.loads(out)["error"]
+
+
+def test_add_term_accepts_the_environment_modality(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = tmp_path / "env.json"
+    sidecar.write_text(json.dumps({"Technical": {}, "noise_db": {"Description": "Noise", "Units": "dB"}}), encoding="utf-8")
+    code, out = _run("spec", "local", "add-term", "--project", str(project), "--sidecar", str(sidecar),
+                     "--column", "noise_db", "--modality", "environment", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and [t["TermID"] for t in data["proposal"]["terms"]] == ["prism:noise-db"]

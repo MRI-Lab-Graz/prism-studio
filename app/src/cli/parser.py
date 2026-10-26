@@ -1843,7 +1843,7 @@ def build_prism_tools_parsers(
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument(
-            "--modality", default="biosample", choices=["biosample"] if _name == "propose" else None,
+            "--modality", default="biosample", choices=sorted(_rules.term_modalities) if _name == "propose" else None,
             help="Modality of the registry",
         )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
@@ -1914,7 +1914,7 @@ def build_prism_tools_parsers(
         ("propose", parser_spec_propose),
     ):
         _parser.add_argument("--project", required=True, help="The PRISM project folder")
-        _parser.add_argument("--modality", default="biosample", choices=["biosample"] if _name in ("add-term", "remove") else None, help="Modality of the terms or schema")
+        _parser.add_argument("--modality", default="biosample", choices=sorted(_rules.term_modalities) if _name in ("add-term", "remove") else None, help="Modality of the terms or schema")
         _parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
         if _name == "add-term":
             _source = _parser.add_mutually_exclusive_group(required=True)

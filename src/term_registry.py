@@ -157,13 +157,18 @@ def _declaration(modality: str) -> dict:
 def term_columns(sidecar_data: dict, modality: str) -> list[tuple[str, dict]]:
     """The columns the term checks look at (the validator's notices and the Contribute page share this).
 
-    Skips sidecar blocks (an upper-case key holding an object), the modality's `nonTermColumns` and Units "n/a".
+    Skips the sidecar blocks (the top-level properties of the modality's schema), the modality's
+    `nonTermColumns` and Units "n/a".
     """
-    skip = set(_declaration(modality).get("nonTermColumns", ()))
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    spec = current_specification()
+    blocks = (spec.schemas.get(modality) or {}).get("properties") or {}
+    skip = set(spec.term_modalities.get(modality, {}).get("nonTermColumns", ())) | set(blocks)
     return [
         (name, definition)
         for name, definition in sidecar_data.items()
-        if isinstance(definition, dict) and not name[:1].isupper() and name not in skip and definition.get("Units") != "n/a"
+        if isinstance(definition, dict) and name not in skip and definition.get("Units") != "n/a"
     ]
 
 

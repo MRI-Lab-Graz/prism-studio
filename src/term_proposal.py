@@ -100,8 +100,8 @@ def build_proposal(
         )
     from src.specification import current_specification  # lazy: it imports the term registry
 
-    declaration = current_specification().term_modalities.get(modality, {})
-    if modality in current_specification().term_modalities and "contextField" not in declaration:
+    term_modalities = current_specification().term_modalities
+    if modality in term_modalities and "contextField" not in term_modalities[modality]:
         return _build_variable_proposal(registry, column, col_def, label, modality)
     specimen = context_value(sidecar, modality)
     if not specimen:

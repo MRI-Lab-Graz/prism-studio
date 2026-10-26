@@ -214,3 +214,18 @@ def test_propose_needs_exactly_one_of_sidecar_and_data(tmp_path):
     tsv = _inherited_dataset(tmp_path)
     assert _run("propose", "--column", "ferr")[0] == 2
     assert _run("propose", "--column", "ferr", "--sidecar", str(tmp_path / "s.json"), "--data", str(tsv))[0] == 2
+
+
+def test_propose_environment_column_from_data_file(tmp_path):
+    (tmp_path / "dataset_description.json").write_text(json.dumps({"Name": "T", "BIDSVersion": "1.10.1"}), encoding="utf-8")
+    (tmp_path / "environment-site_environment.json").write_text(json.dumps({
+        "Technical": {}, "noise_db": {"Description": "Noise level", "Units": "dB"}}), encoding="utf-8")
+    folder = tmp_path / "sub-01" / "ses-1" / "environment"
+    folder.mkdir(parents=True)
+    tsv = folder / "sub-01_ses-1_environment-site_environment.tsv"
+    tsv.write_text("subject_id\tsession_id\tnoise_db\nsub-01\tses-1\t40\n", encoding="utf-8")
+    code, out = _run("propose", "--data", str(tsv), "--column", "noise_db", "--modality", "environment", "--json")
+    data = json.loads(out)
+    assert code == 0, out
+    (term,) = data["proposal"]["terms"]
+    assert term["Level"] == "variable" and term["Units"] == "dB" and term["TermID"] == "prism:noise-db"

@@ -160,7 +160,7 @@ def test_a_name_match_on_a_deprecated_term_only_suggests():
     assert r.kind == "suggestion" and "prism:hydrocortisone" in r.message and r.similar == ("prism:hydrocortisone",)
 
 
-# --- term_columns: which sidecar columns the term checks look at (phase 1, Task 3) -----------
+# --- term_columns: which sidecar columns the term checks look at -----------
 
 def test_term_columns_skips_blocks_sample_columns_and_non_numeric_columns():
     from src.term_registry import term_columns
@@ -219,3 +219,10 @@ def test_alias_suggests_variable():
 def test_similar_returns_variable_terms():
     r = resolve_column({"air-temperature": _AIR}, "temp_c_mean", {}, None)
     assert r.kind == "unknown" and r.similar == ("prism:air-temperature",)
+
+
+def test_term_columns_keeps_upper_case_analyte_columns():
+    from src.term_registry import term_columns
+
+    sidecar = {"Technical": {}, "Study": {}, "Metadata": {}, "CRP": {"Units": "mg/L"}, "IL6": {"Term": "prism:il-6"}}
+    assert [n for n, _ in term_columns(sidecar, "biosample")] == ["CRP", "IL6"]
