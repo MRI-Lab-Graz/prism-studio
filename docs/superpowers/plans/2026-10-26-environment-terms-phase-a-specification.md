@@ -37,12 +37,12 @@
 
 **Files:**
 - Modify: `scripts/entities_entry.schema.json` (add optional `terms`)
-- Modify: `schemas/stable/entities.schema.json` (biosample and environment entries; `version` 1.1.0 → 1.2.0; environment `describedColumns: true`, description `"Environmental conditions linked to a session (temperature, UV, noise, ...)"`)
+- Modify: `schemas/stable/entities.schema.json` (the biosample entry gets `terms`; `version` 1.1.0 → 1.2.0; the environment entry is changed in Tasks 4 and 5, not here, so every commit stays green)
 - Modify: `scripts/check_modalities.py`
 - Test: `tests/test_check_modalities.py`
 
 **Interfaces:**
-- Produces: entry field `terms` = `{"nonTermColumns": [str, ...], "contextField": "Section.Field"}` (`contextField` optional; absent = one-level terms). Values: biosample `{"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"}`; environment `{"nonTermColumns": ["subject_id", "session_id"]}`.
+- Produces: entry field `terms` = `{"nonTermColumns": [str, ...], "contextField": "Section.Field"}` (`contextField` optional; absent = one-level terms). Value for biosample: `{"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"}`. (Environment's `{"nonTermColumns": ["subject_id", "session_id"]}` arrives in Task 5 together with `terms/environment/`.)
 - Produces: `check_modalities.check(entities: dict, schema_dir: Path, terms_dir: Path | None = None) -> list[str]`.
 
 - [ ] **Step 1: Write the failing tests** in `tests/test_check_modalities.py`:
@@ -50,7 +50,7 @@
   - `test_context_field_must_be_an_enum`: entry with `"contextField": "Technical.Nope"` → problem naming `Technical.Nope`.
   - `test_shipped_entities_pass`: `check(real entities, schemas/stable, terms)` == `[]`.
 - [ ] **Step 2: Run** `python3 -m pytest tests/test_check_modalities.py -q` — expect the three new tests to FAIL.
-- [ ] **Step 3: Implement.** Entry schema: `"terms": {"type": "object", "additionalProperties": false, "required": ["nonTermColumns"], "properties": {"nonTermColumns": {"type": "array", "items": {"type": "string"}}, "contextField": {"type": "string", "pattern": "^[A-Z][A-Za-z]*\\.[A-Z][A-Za-z]*$"}}}`. `check()` gains the folder/declaration agreement and the "contextField resolves to an `enum` in the modality schema" rule; `main()` passes `REPO / "terms"`. Update both entities entries and the version.
+- [ ] **Step 3: Implement.** Entry schema: `"terms": {"type": "object", "additionalProperties": false, "required": ["nonTermColumns"], "properties": {"nonTermColumns": {"type": "array", "items": {"type": "string"}}, "contextField": {"type": "string", "pattern": "^[A-Z][A-Za-z]*\\.[A-Z][A-Za-z]*$"}}}`. `check()` gains the folder/declaration agreement and the "contextField resolves to an `enum` in the modality schema" rule; `main()` passes `REPO / "terms"`. Update the biosample entry and the version.
 - [ ] **Step 4: Run** `python3 -m pytest -q` — all PASS (other tests reading entities must still pass).
 - [ ] **Step 5: Commit** `feat: modalities declare their terms (non-term columns, optional second level)`.
 
@@ -64,6 +64,7 @@
 **Interfaces:**
 - Consumes: Task 1 `terms` declaration.
 - Produces: `check_registry(registry: dict[str, dict], specimen_types: list[str] | None) -> list[str]` — `None` means a one-level registry (only `Level: "variable"` allowed); a list (possibly empty) keeps today's two-level biosample rules unchanged.
+- Produces: `term_modalities(repo: Path) -> dict[str, dict]` (modality → its `terms` declaration, read from `repo/schemas/stable/entities.schema.json`); the one definition, reused by Task 3 and the CI loop.
 - Produces: `context_values(schema_file: Path, field: str | None) -> list[str] | None` (the enum at `field`, `None` when `field` is `None`); `specimen_types(schema_file)` stays as `context_values(schema_file, "Technical.SpecimenType") or []` for old callers.
 - Produces: CLI `python scripts/check_terms.py --modality NAME [--repo DIR]` (reads `DIR/schemas/stable/entities.schema.json`, `DIR/terms/NAME`, `DIR/schemas/stable/NAME.schema.json`); the old `--terms DIR --schema FILE` form keeps working as before.
 - Produces: new term fields: `Levels` (object, string keys → string values), `CFStandardName` (string matching `^[a-z][a-z0-9_]*$`).
@@ -92,7 +93,7 @@
 
 **Interfaces:**
 - Consumes: Task 1 declaration, Task 2 `check_registry(..., None)` and `context_values`.
-- Produces: `term_modalities(repo: Path) -> dict[str, dict]` (modality → its `terms` declaration), replacing the constant `MODALITIES`.
+- Consumes: `check_terms.term_modalities(repo)` (Task 2) in place of the constant `MODALITIES`; define no second reader of the declaration. A modality without `contextField` gets `specimens = None` (one-level), never `[]`.
 - Produces: `check` subcommand where `--terms`/`--schema` are optional; when omitted, registry and schema come from `--repo` for the one term modality the proposal names. `ALLOWED_FIELDS` gains `Levels`, `CFStandardName`.
 - Produces: `check_proposal(proposal, registry, specimens: list[str] | None, schema=None, *, schemas=None)` — `None` = one-level.
 
@@ -112,6 +113,7 @@
 **Files:**
 - Create: `schemas/archive/environment/1.1.0.schema.json` (byte-identical copy of today's stable file)
 - Modify: `schemas/stable/environment.schema.json`
+- Modify: `schemas/stable/entities.schema.json` (environment entry: `describedColumns: true`, description `"Environmental conditions linked to a session (temperature, UV, noise, ...)"`)
 - Modify: `specs/environment.md` (prose; regenerate the table with `python scripts/generate_schema_reference.py`)
 - Test: `tests/test_environment_schema.py` (new)
 
@@ -137,6 +139,7 @@
 
 **Files:**
 - Create: `terms/environment/<id>.json` for each row below (`Level: "variable"`, `Status: "official"`, `Label`, `Description`, `Aliases` = the converter column name)
+- Modify: `schemas/stable/entities.schema.json` (environment entry gets `"terms": {"nonTermColumns": ["subject_id", "session_id"]}`; declaration and folder arrive together)
 - Modify: `CONTRIBUTING.md` (proposing a variable for a one-level kind of data: no sample type, `Units` or `Levels`, optional `CFStandardName`)
 - Test: covered by `check_terms.py --modality environment` in CI; add `tests/test_environment_terms.py::test_converter_columns_all_have_terms` asserting the alias set equals the converter list below.
 
