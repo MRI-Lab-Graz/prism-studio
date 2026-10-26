@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: environment format 1.1.0 is retired (environment 2.0.0, specification v1.4.0).** Environment sidecars now have
+  `Technical`/`Study`/`Metadata` blocks (no `Privacy` block), the columns point to official terms (weather, air quality, pollen,
+  sun and moon, season, time of day, heat status, weather regime with the codes `high-pressure`, `low-pressure`, `frontal`) and the
+  `filename`/`relative_time` columns are gone. The validator reports a 1.1.0 file with the fix: re-run
+  `python prism_tools.py environment convert ...` on your source data. The validator checks environment like biosample
+  (term notices are INFO, any declared unit is accepted, values outside a term's levels are WARNING).
+
 ### Added
+- **Environment time windows.** `environment convert --window VAR:DURATION:STAT` (repeatable, e.g. `temp_c:P3D:max`) summarises a
+  variable over an ISO 8601 duration before the session (mean, min, max, sum, count; windows are half-open, years and months are
+  refused). The Environment page has a "Time windows" list. Rows left empty and rows from a partial window are reported in the
+  conversion summary and as `window_problems` in the CLI JSON.
+- **Environment variables can be proposed** (Propose page, `spec propose-metric --modality environment --name ... --description ... --units dB`
+  or `--level CODE=LABEL`, optional `--cf-standard-name`); `terms propose --modality environment` works too.
 - **The Propose page is a drill-down.** Pick the kind of data, then see the accepted example beside your proposal, with "Missing..." and
   "Unknown" pull-downs for what you cannot fill in, then the measurements. "Nothing fits: a new kind of data" starts a new kind instead.
 - **A "Not sure" tick and the chosen entries travel with a proposal** as context for the maintainer.
