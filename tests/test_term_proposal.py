@@ -325,3 +325,12 @@ def test_a_one_level_environment_proposal_has_no_problems():
             "Description": "d", "Units": "m/s"}
     doc = {"format": "prism-proposal/2", "files": {"terms/environment/gust-test.json": term}}
     assert check_with_specification(doc, load_registry("environment")) == []
+
+
+def test_propose_unknown_environment_column():
+    sidecar = {"Technical": {}, "noise_db": {"Description": "Noise level", "Units": "dB"}}
+    p = build_proposal({}, sidecar, "noise_db", modality="environment")
+    (term,) = p["terms"]
+    assert term == {"TermID": "prism:noise-db", "Level": "variable", "Label": "noise_db", "Aliases": ["noise_db"],
+                    "Description": "Noise level", "Units": "dB"}
+    assert check_with_specification(p, {}) == []

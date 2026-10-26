@@ -14,7 +14,7 @@ from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
 from src.specification import current_specification
-from src.term_registry import analyte_columns, resolve_column
+from src.term_registry import context_value, resolve_column, term_columns
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -77,12 +77,6 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
 TERM_INHERITED_FIELDS = (
     "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",
 )
-
-def _sidecar_specimen(sidecar_data) -> str | None:
-    """Technical.SpecimenType of a sidecar, tolerating a malformed Technical block."""
-    technical = sidecar_data.get("Technical")
-    return technical.get("SpecimenType") if isinstance(technical, dict) else None
-
 
 MRI_SUFFIX_REGEX = re.compile(
     r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
@@ -726,7 +720,7 @@ class DatasetValidator:
         # Third pass: columns naming a registry term inherit its definition
         # (the column's own values win). Name matches only suggest, see
         # _check_biosample_terms.
-        specimen = _sidecar_specimen(sidecar_data)
+        specimen = context_value(sidecar_data, "biosample")
         for k, v in sidecar_data.items():
             if isinstance(v, dict) and isinstance(v.get("Term"), str) and v["Term"]:
                 res = resolve_column(self._terms, k, v, specimen)
@@ -1522,9 +1516,9 @@ class DatasetValidator:
     def _check_biosample_terms(self, sidecar_data, key, file_path, root_dir) -> list:
         """Relate each analyte column to the term registry (spec severity table)."""
         issues = []
-        specimen = _sidecar_specimen(sidecar_data)
+        specimen = context_value(sidecar_data, "biosample")
         local_terms = current_specification().local_terms
-        for col, col_def in analyte_columns(sidecar_data):
+        for col, col_def in term_columns(sidecar_data, "biosample"):
             res = resolve_column(self._terms, col, col_def, specimen)
             ref = col_def.get("Term")
             if isinstance(ref, str) and ref and not col_def.get("Units") and not (res.term or {}).get("Units"):

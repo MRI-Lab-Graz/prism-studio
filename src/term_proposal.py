@@ -17,7 +17,7 @@ from pathlib import Path
 from urllib.parse import quote, urlencode
 
 from src.schema_manager import DEFAULT_SCHEMA_DIR
-from src.term_registry import resolve_column
+from src.term_registry import context_value, resolve_column
 
 MODALITY_NAME = r"[a-z][a-z0-9]*"  # a kind of data names a file (patches/<modality>.json), so nothing else is allowed
 
@@ -63,6 +63,28 @@ def _dangling_slug(col_def: dict) -> str | None:
     return local.split(".")[0] or None
 
 
+def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: str | None, modality: str) -> dict:
+    """One-level modality (environment): an unknown column becomes one `variable` term."""
+    res = resolve_column(registry, column, col_def, None)
+    if res.kind in ("term", "suggestion"):
+        raise ProposalError(
+            f"{column!r} is already an official variable ({res.term['TermID']}): "
+            f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
+        )
+    if res.kind == "deprecated":
+        raise ProposalError(res.message)
+    if not col_def.get("Units") and not col_def.get("Levels"):
+        raise ProposalError(f"column {column!r} has no Units or Levels; a proposal needs one of them")
+    description = col_def.get("Description")
+    term = {
+        "TermID": f"prism:{slugify(label or _dangling_slug(col_def) or column)}", "Level": "variable",
+        "Label": label or column, "Aliases": [column],
+        "Description": description if isinstance(description, str) else label or column,
+    }
+    term.update({f: col_def[f] for f in ("Units", "Levels") if col_def.get(f)})
+    return {"modality": modality, "terms": [term]}
+
+
 def build_proposal(
     registry: dict[str, dict],
     sidecar: dict,
@@ -76,8 +98,12 @@ def build_proposal(
             f"column {column!r} not found in the sidecar (or it is not a column definition); "
             "if it is defined in the root-level sidecar of the project, use --data with a data file of the project (its inherited sidecar is read) or pass the root-level sidecar"
         )
-    technical = sidecar.get("Technical")
-    specimen = technical.get("SpecimenType") if isinstance(technical, dict) else None
+    from src.specification import current_specification  # lazy: it imports the term registry
+
+    declaration = current_specification().term_modalities.get(modality, {})
+    if modality in current_specification().term_modalities and "contextField" not in declaration:
+        return _build_variable_proposal(registry, column, col_def, label, modality)
+    specimen = context_value(sidecar, modality)
     if not specimen:
         raise ProposalError(
             "the sidecar has no Technical.SpecimenType; use --data with a data file of the project (its inherited "
