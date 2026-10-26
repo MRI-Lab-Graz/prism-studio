@@ -7,6 +7,8 @@ from typing import Any
 from flask import request, session
 from werkzeug.utils import secure_filename
 
+from src.environment_windows import parse_window
+
 
 def handle_build_environment_conversion_config_from_request(
     *,
@@ -45,6 +47,11 @@ def handle_build_environment_conversion_config_from_request(
     convert_in_background = form_bool(
         request.form.get("convert_in_background"), default=False
     )
+
+    # Each row is the CLI's VAR:DURATION:STAT; parse_window gives the one error message.
+    windows = [text.strip() for text in request.form.getlist("windows") if text.strip()]
+    for text in windows:
+        parse_window(text)
 
     if not timestamp_col:
         raise ValueError("Timestamp column is required")
@@ -97,5 +104,6 @@ def handle_build_environment_conversion_config_from_request(
         "project_path": str(project_root),
         "pilot_random_subject": pilot_random_subject,
         "convert_in_background": convert_in_background,
+        "windows": windows,
     }
     return config, None

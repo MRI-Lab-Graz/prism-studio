@@ -45,6 +45,9 @@ export function initEnvironment(elements) {
         envCancelBtn,
         envError,
         envInfo,
+        envWindowList,
+        envAddWindowBtn,
+        envWindowProblems,
         envProgressContainer,
         envProgressBar,
         envProgressText,
@@ -310,6 +313,89 @@ export function initEnvironment(elements) {
 
     // ── UI helpers ────────────────────────────────────────────────────────────
 
+    // Time windows: rows of (variable, duration, statistic). The server owns the variable and statistic
+    // lists and validates each row (VAR:DURATION:STAT); this only collects and renders.
+    let windowOptionsPromise = null;
+    function loadWindowOptions() {
+        if (!windowOptionsPromise) {
+            windowOptionsPromise = fetchWithApiFallback('/api/environment-window-options')
+                .then(r => r.json());
+        }
+        return windowOptionsPromise;
+    }
+
+    function fillSelect(select, values, label) {
+        select.setAttribute('aria-label', label);
+        values.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            select.appendChild(opt);
+        });
+    }
+
+    async function addWindowRow() {
+        if (!envWindowList) return;
+        let options;
+        try {
+            options = await loadWindowOptions();
+        } catch (err) {
+            windowOptionsPromise = null;
+            if (envError) {
+                envError.textContent = `Could not load the time window options: ${err.message}`;
+                envError.classList.remove('d-none');
+            }
+            return;
+        }
+        const row = document.createElement('div');
+        row.className = 'input-group env-window-row';
+        const variable = document.createElement('select');
+        variable.className = 'form-select env-window-variable';
+        fillSelect(variable, options.columns || [], 'Variable');
+        const duration = document.createElement('input');
+        duration.type = 'text';
+        duration.className = 'form-control env-window-duration';
+        duration.placeholder = 'e.g. P3D';
+        duration.setAttribute('aria-label', 'Duration');
+        const statistic = document.createElement('select');
+        statistic.className = 'form-select env-window-statistic';
+        fillSelect(statistic, options.statistics || [], 'Statistic');
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'btn btn-outline-danger env-window-remove';
+        remove.setAttribute('aria-label', 'Remove time window');
+        remove.textContent = '\u00d7';
+        remove.addEventListener('click', () => row.remove());
+        row.append(variable, duration, statistic, remove);
+        envWindowList.appendChild(row);
+    }
+
+    function appendWindowsToFormData(formData) {
+        if (!envWindowList) return;
+        envWindowList.querySelectorAll('.env-window-row').forEach(row => {
+            const value = [
+                row.querySelector('.env-window-variable').value,
+                row.querySelector('.env-window-duration').value.trim(),
+                row.querySelector('.env-window-statistic').value,
+            ].join(':');
+            formData.append('windows', value);
+        });
+    }
+
+    function renderWindowProblems(problems) {
+        if (!envWindowProblems) return;
+        envWindowProblems.textContent = '';
+        const list = Array.isArray(problems) ? problems : [];
+        list.forEach(p => {
+            const line = document.createElement('div');
+            line.textContent = `\u26a0 ${p.column}: ${p.empty_rows} row(s) left empty, ${p.partial_rows} row(s) computed from a partial window`;
+            envWindowProblems.appendChild(line);
+        });
+        envWindowProblems.classList.toggle('d-none', list.length === 0);
+    }
+
+    envAddWindowBtn?.addEventListener('click', addWindowRow);
+
     function resetUI() {
         if (envColumnMapping) envColumnMapping.classList.add('d-none');
         if (envDataPreview) envDataPreview.classList.add('d-none');
@@ -317,6 +403,7 @@ export function initEnvironment(elements) {
         if (envOutputPreview) envOutputPreview.classList.add('d-none');
         if (envError) { envError.classList.add('d-none'); envError.textContent = ''; }
         if (envInfo) { envInfo.classList.add('d-none'); envInfo.textContent = ''; }
+        renderWindowProblems([]);
         if (envProgressContainer) envProgressContainer.classList.add('d-none');
         if (progressAnimationTimer) {
             window.clearInterval(progressAnimationTimer);
@@ -1010,6 +1097,7 @@ export function initEnvironment(elements) {
         fd.append('pilot_random_subject', pilotMode ? 'true' : 'false');
         fd.append('convert_in_background', envConvertBackground?.checked ? 'true' : 'false');
         fd.append('save_to_project', 'true');
+        appendWindowsToFormData(fd);
 
         envConvertBtn.disabled = true;
         if (envPilotRunBtn) envPilotRunBtn.disabled = true;
@@ -1138,6 +1226,7 @@ export function initEnvironment(elements) {
                     envInfo.classList.remove('d-none');
                 }
                 renderOutputPreview(data.output_preview || null);
+                renderWindowProblems(data.window_problems);
                 const providerFailures = Array.isArray(data.provider_failures) ? data.provider_failures : [];
                 const providerNote = providerFailures.length
                     ? ` ⚠️ Partial enrichment — API failures: ${providerFailures.join(', ')}.`

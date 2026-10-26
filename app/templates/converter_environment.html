@@ -183,6 +183,19 @@
                     </div>
                 </div>
 
+                <!-- Time windows -->
+                <div class="mb-3" id="envWindows">
+                    <label class="form-label">Time windows <span class="text-muted">(optional)</span></label>
+                    <div id="envWindowList" class="d-grid gap-2"></div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="envAddWindowBtn">
+                        <i class="fas fa-plus me-1"></i>Add time window
+                    </button>
+                    <small class="form-text text-muted d-block mt-1">
+                        Adds a column with a statistic over the period before the session, as an ISO 8601 duration:
+                        PT30M, PT6H, P1D, P3D, P1W. Years and months are not allowed.
+                    </small>
+                </div>
+
                 <!-- Data preview table -->
                 <div id="envDataPreview" class="d-none mb-3">
                     <h6 class="mb-2">
@@ -229,6 +242,7 @@
             <!-- Error / info alerts -->
             <div id="envError" class="alert alert-danger d-none mt-3"></div>
             <div id="envInfo" class="alert alert-info d-none mt-3"></div>
+            <div id="envWindowProblems" class="alert alert-warning d-none mt-3" role="status"></div>
 
             <!-- Conversion progress (normal convert only) -->
             <div id="envProgressContainer" class="alert alert-info d-none mt-3" role="status" aria-live="polite">

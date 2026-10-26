@@ -28,6 +28,7 @@ from src.environment_conversion import (
     _coerce_coord,
     perform_environment_conversion as _perform_environment_conversion,
 )
+from src.environment_windows import STATISTICS, WINDOW_COLUMNS
 from src.environment_mri_scan import (
     build_mri_acquisition_table,
     resolve_bids_rawdata_root,
@@ -347,6 +348,11 @@ def api_environment_rescan_mri():
         )
 
     return jsonify({"success": True, "job_id": job_id})
+
+
+def api_environment_window_options():
+    """The window-capable columns and statistics, from the backend (the pull-downs of the Time windows list)."""
+    return jsonify({"columns": list(WINDOW_COLUMNS), "statistics": list(STATISTICS)})
 
 
 def api_environment_preview():

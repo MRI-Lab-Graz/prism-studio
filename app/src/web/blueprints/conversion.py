@@ -35,6 +35,7 @@ from .conversion_physio_handlers import (
 )
 from .conversion_environment_handlers import (
     api_environment_preview as _api_environment_preview,
+    api_environment_window_options as _api_environment_window_options,
     api_environment_convert_start as _api_environment_convert_start,
     api_environment_convert_status as _api_environment_convert_status,
     api_environment_convert_cancel as _api_environment_convert_cancel,
@@ -132,6 +133,11 @@ def api_physio_rename():
 def api_environment_preview():
     """Read uploaded tabular file and return column names + sample rows."""
     return _api_environment_preview()
+
+
+@conversion_bp.route("/api/environment-window-options", methods=["GET"])
+def api_environment_window_options():
+    return _api_environment_window_options()
 
 
 @conversion_bp.route("/api/environment-location-search", methods=["GET"])
