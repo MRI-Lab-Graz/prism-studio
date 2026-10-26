@@ -19,6 +19,11 @@ def handle_build_environment_conversion_config_from_request(
     coerce_coord,
     require_existing_project_root,
 ) -> tuple[dict[str, Any], tempfile.TemporaryDirectory | None]:
+    # Each row is the CLI's VAR:DURATION:STAT; parse_window gives the one error message.
+    windows = [text.strip() for text in request.form.getlist("windows") if text.strip()]
+    for text in windows:
+        parse_window(text)
+
     uploaded, upload_error = resolve_uploaded_or_source_file(field_names=("file",))
     if uploaded is None or not getattr(uploaded, "filename", ""):
         raise ValueError(upload_error or "No file provided")
@@ -47,11 +52,6 @@ def handle_build_environment_conversion_config_from_request(
     convert_in_background = form_bool(
         request.form.get("convert_in_background"), default=False
     )
-
-    # Each row is the CLI's VAR:DURATION:STAT; parse_window gives the one error message.
-    windows = [text.strip() for text in request.form.getlist("windows") if text.strip()]
-    for text in windows:
-        parse_window(text)
 
     if not timestamp_col:
         raise ValueError("Timestamp column is required")

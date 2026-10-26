@@ -72,3 +72,18 @@ def test_route_bad_window_message(client):
 def test_window_options_route_lists_the_backend_columns(client):
     payload = client.get("/api/environment-window-options").get_json()
     assert payload == {"columns": list(WINDOW_COLUMNS), "statistics": list(STATISTICS)}
+
+
+def test_detached_job_passes_windows_to_the_cli(tmp_path):
+    from src.web.blueprints.conversion_environment_job_handlers import handle_start_environment_detached_job
+
+    config = {
+        "project_path": str(tmp_path), "input_path": tmp_path / "e.csv", "separator_option": "comma",
+        "timestamp_col": "timestamp", "participant_col": "participant_id", "windows": ["temp_c:P3D:max"],
+    }
+    with patch("subprocess.Popen") as popen:
+        popen.return_value.pid = 1
+        handle_start_environment_detached_job(config=config, environment_detached_jobs_lock=__import__("threading").Lock(),
+                                              environment_detached_jobs={})
+    command = popen.call_args.args[0]
+    assert command[command.index("--window") + 1] == "temp_c:P3D:max"
