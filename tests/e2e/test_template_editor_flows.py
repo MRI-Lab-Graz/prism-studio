@@ -307,3 +307,21 @@ def test_bulk_edit_asks_before_changing_every_item_and_a_bad_hint_is_named(page)
     expect(alert).to_contain_text("SessionHint")
     expect(alert).to_contain_text("ses-<label>")
     expect(alert).not_to_contain_text("is not valid under any of the given schemas")
+
+
+LOSSY_TYPES = Path(__file__).parents[1] / "data" / "limesurvey_import_notes.lss"
+
+
+def test_limesurvey_import_lists_what_it_could_not_represent(page):
+    page.click("label[for=modeCreate]")
+    page.set_input_files("#templateImportInput", str(LOSSY_TYPES))
+    expect(page.locator("#excelGroupPickerRow")).to_be_visible()
+    page.click("#btnLoadExcelGroup")
+
+    # the notes sit in the alert that validation shows after the import, not only in the one it replaces
+    expect(page.locator("#alertArea")).to_contain_text("Not found in your file")
+    notes = page.locator("#alertArea .alert-warning.mt-2", has_text="Check after import")
+    expect(notes).to_contain_text("boxes: unchecked options are empty")
+    expect(notes).to_contain_text("edu: has an \"Other\" text field")
+    expect(notes).to_contain_text("mystery: question type Z is not known")
+    expect(page.locator('option[value="agree"]')).to_have_count(1)  # the questionnaire itself loaded
