@@ -69,6 +69,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **Quick Export and the Survey Customizer export use one LimeSurvey builder.** Quick Export (`generate_lss`) was a
+  second ~900-line copy of the Customizer's export; it now feeds the same builder from the template files, so the two
+  cannot drift apart again. Checked against the old Quick Export on 555 cases (all library templates in single-language,
+  matrix and multilingual modes, several files, `include`, runs, per-file matrix options, the participants template and
+  templates imported from LimeSurvey): the surveys are the same except for two harmless additions (empty survey URL and
+  policy fields, as in LimeSurvey's own exports; no `sid` on matrix-row texts). The Customizer export now also writes
+  the group name and survey title in each language, and the Customizer loader orders questions by the template's own
+  `DisplayOrder` when it has one.
 - **BREAKING: environment format 1.1.0 is retired (environment 2.0.0, specification v1.4.0).** Environment sidecars now have
   `Technical`/`Study`/`Metadata` blocks (no `Privacy` block), the columns point to official terms (weather, air quality, pollen,
   sun and moon, season, time of day, heat status, weather regime with the codes `high-pressure`, `low-pressure`, `frontal`) and the

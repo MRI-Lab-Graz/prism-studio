@@ -292,6 +292,30 @@ def _text_in_language(texts: dict, lang, path=None):
     return texts[fallback_lang]
 
 
+def _text_in(obj, lang, i18n_data=None, path=None):
+    """
+    Get localized text.
+    1. Checks i18n_data[lang] using the provided path (e.g. "age.Description")
+    2. If not found, checks if obj is a dict (inline translation)
+    3. Otherwise returns obj as string
+    """
+    if i18n_data and lang in i18n_data and path:
+        parts = path.split(".")
+        curr = i18n_data[lang]
+        for p in parts:
+            if isinstance(curr, dict) and p in curr:
+                curr = curr[p]
+            else:
+                curr = None
+                break
+        if curr:
+            return str(curr)
+
+    if isinstance(obj, dict):
+        return _text_in_language(obj, lang, path)
+    return str(obj) if obj else ""
+
+
 def _ls_settings(q_data) -> dict:
     """The item's LimeSurvey settings (what the Template Editor and a LimeSurvey import write)."""
     ls = q_data.get("LimeSurvey") if isinstance(q_data, dict) else None
@@ -711,6 +735,25 @@ def _strip_invalid_xml_chars(root) -> None:
             element.attrib[key] = strip_invalid_xml_chars(value)
 
 
+def _group_texts(template_path, languages):
+    """Group name and description of a template file in each language (Study.OriginalName /
+    Study.Description, translations from I18n); {} when the file cannot be read."""
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    study, i18n = data.get("Study", {}), data.get("I18n", {})
+    fallback_name = data.get("TaskName", os.path.splitext(os.path.basename(template_path))[0])
+    return {
+        lang: {
+            "name": _text_in(study.get("OriginalName", fallback_name), lang, i18n, "Study.OriginalName"),
+            "description": _text_in(study.get("Description", ""), lang, i18n, "Study.Description"),
+        }
+        for lang in languages
+    }
+
+
 def generate_lss(
     json_files,
     output_path=None,
@@ -720,812 +763,60 @@ def generate_lss(
     matrix_mode=True,
     matrix_global=True,
 ):
-    """
-    Generate a LimeSurvey Structure (.lss) file from a list of Prism JSON sidecars.
+    """Generate a LimeSurvey Structure (.lss) file from PRISM template files (Quick Export).
+
+    The same builder as the Survey Customizer's export (generate_lss_from_customization), fed
+    from the files by the Customizer's own loader, so both give the same structure for the
+    same data.
 
     Args:
-        json_files (list): List of paths to JSON files, or dicts with:
-            - path (str): Path to JSON file
-            - include (list, optional): Keys to include from the file
-            - matrix (bool, optional): Enable matrix grouping for this file.
-              Defaults to the function-level `matrix_mode` argument.
-            - matrix_global (bool, optional): Group all questions with same
-              levels, not just consecutive ones, for this file. Defaults to
-              the function-level `matrix_global` argument.
-            - run (int, optional): Run number for multi-run surveys.
-              If run > 1, appends "_run-NN" to question codes.
-              Example: "PANAS_1" with run=2 becomes "PANAS_1_run-02"
+        json_files (list): Paths, or dicts with:
+            - path (str): the template file
+            - include (list, optional): the keys to export (default: all)
+            - matrix / matrix_global (bool, optional): override the function-level values for this file
+            - run (int, optional): run number for multi-run surveys; codes get a "run02"
+              style suffix from run 2 on
+            Unreadable files are skipped. Several files get the survey title "Combined Survey".
         output_path (str, optional): Path to write the .lss file. If None, returns the XML string.
-        language (str): The language to use for the export (backward compatible).
-        languages (list, optional): List of language codes to include. If None, uses [language].
-        base_language (str, optional): Base language code. If None, uses languages[0] or language.
-        matrix_mode (bool): Group questions with identical Levels into a single
-            LimeSurvey array/matrix question instead of one question each.
-            Default True — matches generate_lss_from_customization's default,
-            so Quick Export and Customizer Export produce the same structure
-            for the same data unless overridden. Per-file "matrix" in
-            json_files takes precedence when given.
-        matrix_global (bool): When matrix_mode is True, group ALL questions
-            sharing identical Levels rather than only consecutive ones.
-            Default True. Per-file "matrix_global" in json_files takes
-            precedence when given.
+        language, languages, base_language: as in generate_lss_from_customization.
+        matrix_mode, matrix_global (bool): matrix grouping defaults (Customizer defaults: on).
 
     Returns:
-        str: The XML content if output_path is None, else None.
+        str: The XML content if output_path is None, else the output path.
     """
-    # Normalize language parameters
+    from src.survey_customizer import build_customizer_groups
+
     if languages is None:
         languages = [language]
-    if base_language is None:
-        base_language = languages[0] if languages else language
-    # Ensure base_language is first in the list
-    if base_language in languages:
-        languages = [base_language] + [l for l in languages if l != base_language]
-    additional_languages = [l for l in languages if l != base_language]
-
-    def get_text(obj, lang, i18n_data=None, path=None):
-        """
-        Get localized text.
-        1. Checks i18n_data[lang] using the provided path (e.g. "age.Description")
-        2. If not found, checks if obj is a dict (inline translation)
-        3. Otherwise returns obj as string
-        """
-        if i18n_data and lang in i18n_data and path:
-            parts = path.split(".")
-            curr = i18n_data[lang]
-            for p in parts:
-                if isinstance(curr, dict) and p in curr:
-                    curr = curr[p]
-                else:
-                    curr = None
-                    break
-            if curr:
-                return str(curr)
-
-        if isinstance(obj, dict):
-            return _text_in_language(obj, lang, path)
-        return str(obj)
-
-    # DBVersion must match LimeSurvey's expected schema version
-    # (415 = LimeSurvey 5.x/6.x, widely compatible)
-    db_version = "415"
-
-    # IDs
-    sid = "123456"  # Dummy Survey ID
-
-    # Root element
-    root = ET.Element("document")
-    ET.SubElement(root, "LimeSurveyDocType").text = "Survey"
-    ET.SubElement(root, "DBVersion").text = db_version
-
-    # Languages — one <language> per language
-    langs_elem = ET.SubElement(root, "languages")
-    for lang_code in languages:
-        ET.SubElement(langs_elem, "language").text = lang_code
-
-    # Sections
-    answers_elem = ET.SubElement(root, "answers")
-    answers_rows = ET.SubElement(answers_elem, "rows")
-
-    questions_elem = ET.SubElement(root, "questions")
-    questions_rows = ET.SubElement(questions_elem, "rows")
-
-    groups_elem = ET.SubElement(root, "groups")
-    groups_rows = ET.SubElement(groups_elem, "rows")
-
-    subquestions_elem = ET.SubElement(root, "subquestions")
-    subquestions_rows = ET.SubElement(subquestions_elem, "rows")
-
-    # Localization tables
-    answer_l10ns_elem = ET.SubElement(root, "answer_l10ns")
-    answer_l10ns_rows = ET.SubElement(answer_l10ns_elem, "rows")
-
-    question_l10ns_elem = ET.SubElement(root, "question_l10ns")
-    question_l10ns_rows = ET.SubElement(question_l10ns_elem, "rows")
-
-    group_l10ns_elem = ET.SubElement(root, "group_l10ns")
-    group_l10ns_rows = ET.SubElement(group_l10ns_elem, "rows")
-
-    surveys_elem = ET.SubElement(root, "surveys")
-    surveys_rows = ET.SubElement(surveys_elem, "rows")
-
-    surveys_lang_elem = ET.SubElement(root, "surveys_languagesettings")
-    surveys_lang_rows = ET.SubElement(surveys_lang_elem, "rows")
-
-    # Question attributes section (for minimum, maximum, hidden, etc.)
-    question_attributes_elem = ET.SubElement(root, "question_attributes")
-    question_attributes_rows = ET.SubElement(question_attributes_elem, "rows")
-
-    # Counters
-    gid_counter = 10
-    qid_counter = 100
-    group_sort_order = 0
-    qaid_counter = 1  # Question attribute ID counter
-    l10n_id_counter = 1  # Localization row ID counter
-    aid_counter = 1  # Answer ID counter (links answers <-> answer_l10ns)
-
-    # --- Process Each JSON as a Group ---
-    # Snapshot the function-level defaults before the loop starts reusing these
-    # names per-item below.
-    _default_matrix_mode = matrix_mode
-    _default_matrix_global = matrix_global
+    groups = []
     for item in json_files:
-        # Determine path, filter, and run number
-        if isinstance(item, str):
-            json_path = item
-            include_keys = None
-            matrix_mode = _default_matrix_mode
-            matrix_global = _default_matrix_global
-            run_number = None
-        elif isinstance(item, dict):
-            json_path = item.get("path")
-            include_keys = item.get("include")
-            matrix_mode = item.get("matrix", _default_matrix_mode)
-            matrix_global = item.get("matrix_global", _default_matrix_global)
-            run_number = item.get("run")  # Run number for multi-run surveys
-        else:
+        entry = {"path": item} if isinstance(item, str) else item
+        if not isinstance(entry, dict) or not entry.get("path"):
             continue
-
-        try:
-            with open(json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                i18n_data = data.get("I18n", {})
-        except Exception as e:
-            print(f"Error reading {json_path}: {e}")
-            continue
-
-        # Filter out metadata keys to get questions
-        # These are structural/metadata keys that should never appear as questions
-        METADATA_KEYS = {
-            "@context",
-            "Technical",
-            "Study",
-            "Metadata",
-            "Categories",
-            "TaskName",
-            "I18n",
-            "Scoring",
-            "Normative",
-        }
-
-        if "Questions" in data and isinstance(data["Questions"], dict):
-            all_questions = data["Questions"]
-        else:
-            all_questions = {
-                k: v
-                for k, v in data.items()
-                if k not in METADATA_KEYS
-                and isinstance(v, dict)
-                and "Description" in v
-                and not v.get("_exclude", False)  # Respect _exclude flag
-            }
-
-        # Apply inclusion filter if provided
-        if include_keys is not None:
-            questions_data = {
-                k: v for k, v in all_questions.items() if k in include_keys
-            }
-        else:
-            questions_data = all_questions
-
-        # Sort questions by DisplayOrder if available
-        def get_display_order(item):
-            return item[1].get("DisplayOrder", 999)
-
-        questions_data = dict(sorted(questions_data.items(), key=get_display_order))
-
-        gid = str(gid_counter)
-        gid_counter += 1
-        group_sort_order += 1
-
-        study_info = data.get("Study", {})
-        group_name = get_text(
-            study_info.get(
-                "OriginalName",
-                data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0]),
-            ),
-            language,
-            i18n_data,
-            "Study.OriginalName",
-        )
-        group_desc = get_text(
-            study_info.get("Description", ""), language, i18n_data, "Study.Description"
-        )
-
-        # Add Group — name and description go in l10ns rows, one per language
-        group_data = {
-            "gid": gid,
-            "sid": sid,
-            "group_order": str(group_sort_order),
-            "randomization_group": "",
-            "grelevance": "",
-        }
-        add_row(groups_rows, group_data)
-
-        for lang in languages:
-            g_name = get_text(
-                study_info.get(
-                    "OriginalName",
-                    data.get(
-                        "TaskName", os.path.splitext(os.path.basename(json_path))[0]
-                    ),
-                ),
-                lang,
-                i18n_data,
-                "Study.OriginalName",
-            )
-            g_desc = get_text(
-                study_info.get("Description", ""),
-                lang,
-                i18n_data,
-                "Study.Description",
-            )
-            add_row(
-                group_l10ns_rows,
-                {
-                    "id": str(l10n_id_counter),
-                    "gid": gid,
-                    "group_name": g_name,
-                    "description": g_desc,
-                    "language": lang,
-                    "sid": sid,
-                },
-            )
-            l10n_id_counter += 1
-        # --- Add hidden metadata question for this questionnaire ---
-        file_metadata = _extract_single_file_metadata(json_path, base_language)
-        meta_cells = []  # filled by _fill_metadata_cells after the questions
-        code_map = {}  # original PRISM code -> LimeSurvey column it is written to
-        metadata_kwargs = {}
-        if file_metadata:
-            meta_qid = str(qid_counter)
-            qid_counter += 1
-            # Unique code per group: PRISMMETAg1, PRISMMETAg2, etc.
-            meta_q_code = f"PRISMMETAg{group_sort_order}"
-
-            # Detect participants group for authoritative PRISMMETA signal
-            is_participants_file = "participants" in os.path.basename(json_path).lower()
-            participant_var_codes = (
-                list(questions_data.keys()) if is_participants_file else None
-            )
-
-            metadata_kwargs = {
-                "meta": file_metadata,
-                "is_participants": is_participants_file,
-                "participant_variables": participant_var_codes,
-            }
-
-            meta_q_data = {
-                "qid": meta_qid,
-                "parent_qid": "0",
-                "sid": sid,
-                "gid": gid,
-                "type": "*",
-                "title": meta_q_code,
-                "preg": "",
-                "other": "N",
-                "mandatory": "N",
-                "encrypted": "N",
-                "question_order": "0",
-                "scale_id": "0",
-                "same_default": "0",
-                "relevance": "0",
-                "question_theme_name": "equation",
-                "modulename": "",
-            }
-            add_row(questions_rows, meta_q_data)
-
-            # Store metadata HTML as equation value so it persists in response data
-            meta_cells.append(add_row(
-                question_attributes_rows,
-                {
-                    "qaid": str(qaid_counter),
-                    "qid": meta_qid,
-                    "attribute": "equation",
-                    "value": "",
-                    "language": "",
-                },
-            ).find("value"))
-            qaid_counter += 1
-
-            for lang in languages:
-                meta_cells.append(add_row(
-                    question_l10ns_rows,
-                    {
-                        "id": str(l10n_id_counter),
-                        "qid": meta_qid,
-                        "question": "",
-                        "help": "",
-                        "language": lang,
-                    },
-                ).find("question"))
-                l10n_id_counter += 1
-        # Prepare Groups of Questions
-        grouped_questions = []
-        if matrix_mode:
-            if matrix_global:
-                # Global grouping: group all questions with identical levels
-                # BUT skip grouping for dropdown questions or questions with many levels
-                groups = []
-                level_to_group_idx = {}
-
-                for q_code, q_data in questions_data.items():
-                    if not isinstance(q_data, dict):
-                        continue
-
-                    levels = q_data.get("Levels")
-                    input_type = q_data.get("InputType", "").lower()
-
-                    # Check for template-level MatrixGrouping flag
-                    technical = data.get("Technical", {})
-                    matrix_grouping_disabled = technical.get("MatrixGrouping") is False
-                    has_other = item_has_other(q_data)
-
-                    # Don't group: dropdown, numerical, text, calculated, questions with Other option,
-                    # or if template disables grouping
-                    should_not_group = (
-                        matrix_grouping_disabled
-                        or input_type == "dropdown"
-                        or input_type == "numerical"
-                        or input_type == "text"
-                        or input_type == "calculated"
-                        or has_other
-                    )
-
-                    if should_not_group:
-                        groups.append([(q_code, q_data)])
-                    elif levels and isinstance(levels, dict) and len(levels) > 0:
-                        l_str = json.dumps(levels, sort_keys=True)
-                        if l_str in level_to_group_idx:
-                            groups[level_to_group_idx[l_str]].append((q_code, q_data))
-                        else:
-                            level_to_group_idx[l_str] = len(groups)
-                            groups.append([(q_code, q_data)])
-                    else:
-                        groups.append([(q_code, q_data)])
-                grouped_questions = groups
-            else:
-                # Consecutive grouping only
-                # BUT skip grouping for dropdown questions or questions with many levels
-                current_group = []
-                last_levels_str = None
-
-                for q_code, q_data in questions_data.items():
-                    if not isinstance(q_data, dict):
-                        continue
-
-                    levels = q_data.get("Levels")
-                    input_type = q_data.get("InputType", "").lower()
-
-                    # Check for template-level MatrixGrouping flag
-                    technical = data.get("Technical", {})
-                    matrix_grouping_disabled = technical.get("MatrixGrouping") is False
-                    has_other = item_has_other(q_data)
-
-                    # Don't group: dropdown, numerical, text, calculated, questions with Other option,
-                    # or if template disables grouping
-                    should_not_group = (
-                        matrix_grouping_disabled
-                        or input_type == "dropdown"
-                        or input_type == "numerical"
-                        or input_type == "text"
-                        or input_type == "calculated"
-                        or has_other
-                    )
-
-                    levels_str = (
-                        json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
-                    )
-
-                    if should_not_group:
-                        # Force this question to be standalone
-                        if current_group:
-                            grouped_questions.append(current_group)
-                            current_group = []
-                        grouped_questions.append([(q_code, q_data)])
-                        last_levels_str = None
-                    elif not current_group:
-                        current_group.append((q_code, q_data))
-                        last_levels_str = levels_str
-                    else:
-                        if levels and levels_str == last_levels_str:
-                            current_group.append((q_code, q_data))
-                        else:
-                            grouped_questions.append(current_group)
-                            current_group = [(q_code, q_data)]
-                            last_levels_str = levels_str
-                if current_group:
-                    grouped_questions.append(current_group)
-        else:
-            # No grouping
-            for q_code, q_data in questions_data.items():
-                if isinstance(q_data, dict):
-                    grouped_questions.append([(q_code, q_data)])
-
-        # Process Questions in this Group
-        q_sort_order = 0
-        for group in grouped_questions:
-            # group is a list of (q_code, q_data)
-
-            first_code, first_data = group[0]
-            levels = first_data.get("Levels", {})
-            is_matrix = len(group) > 1
-
-            qid = str(qid_counter)
-            qid_counter += 1
-            q_sort_order += 1
-
-            # Logic / Relevance - use new helper function
-            relevance = _build_relevance_equation(first_data)
-
-            if is_matrix:
-                # Matrix Question (Array)
-                q_type = "F"
-
-                any_mandatory = any(
-                    item_is_mandatory(data_item) for _code, data_item in group
-                )
-
-                matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
-
-                # Matrix parent question text: prefer Study.Instructions, fall back to generic
-                _fallback_texts = {
-                    "en": "Please answer the following questions:",
-                    "de": "Bitte beantworten Sie die folgenden Fragen:",
-                }
-                study_instructions = data.get("Study", {}).get("Instructions", {})
-
-                def _get_matrix_text(lang):
-                    if isinstance(study_instructions, dict) and study_instructions:
-                        text = get_text(
-                            study_instructions, lang, i18n_data, "Study.Instructions"
-                        )
-                        if text:
-                            return text
-                    elif isinstance(study_instructions, str) and study_instructions:
-                        return study_instructions
-                    return _fallback_texts.get(lang, _fallback_texts["en"])
-
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": matrix_title,
-                    "other": "N",
-                    "mandatory": "Y" if any_mandatory else "N",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
-                add_row(questions_rows, q_data_row)
-
-                for lang in languages:
-                    m_text = _get_matrix_text(lang)
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": str(l10n_id_counter),
-                            "qid": qid,
-                            "question": m_text,
-                            "help": "",
-                            "language": lang,
-                            "sid": sid,
-                        },
-                    )
-                    l10n_id_counter += 1
-                # Add Subquestions
-                sub_sort = 0
-                used_subq_codes = set()  # Track codes within this matrix
-                for code, data_item in group:
-                    sub_sort += 1
-                    sub_qid = str(qid_counter)
-                    qid_counter += 1
-
-                    # Sanitize subquestion code to fit 5-char limit
-                    sub_q_code = _sanitize_subquestion_code(
-                        code, used_subq_codes, run_number, sub_sort
-                    )
-                    used_subq_codes.add(sub_q_code)
-                    code_map[code] = f"{matrix_title}[{sub_q_code}]"
-
-                    sub_q_row = {
-                        "qid": sub_qid,
-                        "parent_qid": qid,
-                        "sid": sid,
-                        "gid": gid,
-                        "type": "T",
-                        "title": sub_q_code,
-                        "question_order": str(sub_sort),
-                        "scale_id": "0",
-                        "same_default": "0",
-                        "relevance": "1",
-                    }
-                    add_row(subquestions_rows, sub_q_row)
-
-                    for lang in languages:
-                        sq_text = get_text(
-                            data_item.get("Description", code),
-                            lang,
-                            i18n_data,
-                            f"{code}.Description",
-                        )
-                        add_row(
-                            question_l10ns_rows,
-                            {
-                                "id": str(l10n_id_counter),
-                                "qid": sub_qid,
-                                "question": sq_text,
-                                "help": "",
-                                "language": lang,
-                                "sid": sid,
-                            },
-                        )
-                        l10n_id_counter += 1
-                # Add Answers (only once per matrix parent)
-                if levels:
-                    sort_ans = 0
-                    used_answer_codes = set()
-                    for code, answer_text in levels.items():
-                        sort_ans += 1
-                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
-                        used_answer_codes.add(sanitized_code)
-
-                        ans_row = {
-                            "aid": str(aid_counter),
-                            "qid": qid,
-                            "code": sanitized_code,
-                            "sortorder": str(sort_ans),
-                            "assessment_value": "0",
-                            "scale_id": "0",
-                        }
-                        add_row(answers_rows, ans_row)
-
-                        for lang in languages:
-                            a_text = sanitize_answer_text(
-                                get_text(
-                                    answer_text,
-                                    lang,
-                                    i18n_data,
-                                    f"{first_code}.Levels.{code}",
-                                )
-                            )
-                            add_row(
-                                answer_l10ns_rows,
-                                {
-                                    "id": str(l10n_id_counter),
-                                    "aid": str(aid_counter),
-                                    "answer": a_text,
-                                    "language": lang,
-                                },
-                            )
-                            l10n_id_counter += 1
-                        aid_counter += 1
-            else:
-                # Single Question (with run suffix if applicable)
-                q_code = _apply_run_suffix(first_code, run_number)
-                code_map[first_code] = q_code
-                q_data = first_data
-                is_mandatory = item_is_mandatory(q_data)
-
-                # Determine Type using helper function
-                q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
-
-                # Check for OtherOption
-                has_other = item_has_other(q_data)
-
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": q_code,
-                    "other": "Y" if has_other else "N",
-                    "mandatory": "Y" if is_mandatory else "N",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
-                add_row(questions_rows, q_data_row)
-
-                for lang in languages:
-                    desc = get_text(
-                        q_data.get("Description", first_code),
-                        lang,
-                        i18n_data,
-                        f"{first_code}.Description",
-                    )
-                    desc = _apply_ls_styling(desc)
-                    h_text = get_text(
-                        item_help(q_data),
-                        lang,
-                        i18n_data,
-                        f"{first_code}.Help",
-                    )
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": str(l10n_id_counter),
-                            "qid": qid,
-                            "question": desc,
-                            "help": h_text,
-                            "language": lang,
-                            "sid": sid,
-                        },
-                    )
-                    l10n_id_counter += 1
-                # Add question attributes (minimum, maximum, hidden, etc.)
-                for attr_key, attr_val in extra_attrs.items():
-                    add_row(
-                        question_attributes_rows,
-                        {
-                            "qaid": str(qaid_counter),
-                            "qid": qid,
-                            "attribute": attr_key,
-                            "value": str(attr_val),
-                            "language": "",
-                        },
-                    )
-                    qaid_counter += 1
-
-                # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
-                if q_type in LS_FIXED_ANSWER_TYPES:
-                    pass  # LimeSurvey defines these options itself
-                elif levels:
-                    sort_ans = 0
-                    used_answer_codes = set()
-                    for code, answer_text in levels.items():
-                        if code.lower() == "other" and has_other:
-                            continue
-                        sort_ans += 1
-                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
-                        used_answer_codes.add(sanitized_code)
-
-                        ans_row = {
-                            "aid": str(aid_counter),
-                            "qid": qid,
-                            "code": sanitized_code,
-                            "sortorder": str(sort_ans),
-                            "assessment_value": "0",
-                            "scale_id": "0",
-                        }
-                        add_row(answers_rows, ans_row)
-
-                        for lang in languages:
-                            a_text = sanitize_answer_text(
-                                get_text(
-                                    answer_text,
-                                    lang,
-                                    i18n_data,
-                                    f"{first_code}.Levels.{code}",
-                                )
-                            )
-                            add_row(
-                                answer_l10ns_rows,
-                                {
-                                    "id": str(l10n_id_counter),
-                                    "aid": str(aid_counter),
-                                    "answer": a_text,
-                                    "language": lang,
-                                },
-                            )
-                            l10n_id_counter += 1
-                        aid_counter += 1
-        _fill_metadata_cells(meta_cells, metadata_kwargs, code_map)
-
-    # --- Survey Settings ---
-    survey_settings = {
-        "sid": sid,
-        "owner_id": "1",
-        "admin": "Administrator",
-        "active": "N",
-        "anonymized": "N",
-        "format": "G",  # Group by Group
-        "savetimings": "Y",
-        "template": "vanilla",
-        "language": base_language,
-        "assessments": "N",  # Disable assessment mode to avoid {score=N} badges on answers
-    }
-    if additional_languages:
-        survey_settings["additional_languages"] = " ".join(additional_languages)
-    add_row(surveys_rows, survey_settings)
-
-    # --- Survey Language Settings ---
-    survey_title_base = "Combined Survey"
-    if len(json_files) == 1:
-        try:
-            f_item = json_files[0]
-            f_path = f_item if isinstance(f_item, str) else f_item.get("path")
-            with open(f_path, "r", encoding="utf-8") as f:
-                d = json.load(f)
-                s_info = d.get("Study", {})
-                i_data = d.get("I18n", {})
-                survey_title_base = get_text(
-                    s_info.get("OriginalName", d.get("TaskName", "Combined Survey")),
-                    base_language,
-                    i_data,
-                    "Study.OriginalName",
-                )
-        except Exception:
-            pass
-
-    # One language settings row per language
-    for lang in languages:
-        title_for_lang = survey_title_base
-        if len(json_files) == 1:
-            try:
-                f_item = json_files[0]
-                f_path = f_item if isinstance(f_item, str) else f_item.get("path")
-                with open(f_path, "r", encoding="utf-8") as f:
-                    d = json.load(f)
-                    s_info = d.get("Study", {})
-                    i_data = d.get("I18n", {})
-                    title_for_lang = get_text(
-                        s_info.get(
-                            "OriginalName", d.get("TaskName", "Combined Survey")
-                        ),
-                        lang,
-                        i_data,
-                        "Study.OriginalName",
-                    )
-            except Exception:
-                pass
-
-        add_row(
-            surveys_lang_rows,
-            {
-                "surveyls_survey_id": sid,
-                "surveyls_language": lang,
-                "surveyls_title": title_for_lang,
-                "surveyls_description": "",
-                "surveyls_welcometext": "",
-                "surveyls_endtext": "",
-            },
-        )
-
-    # --- Themes (required by LimeSurvey) ---
-    themes_elem = ET.SubElement(root, "themes")
-    themes_rows = ET.SubElement(themes_elem, "rows")
-
-    add_row(
-        themes_rows,
-        {
-            "sid": sid,
-            "template_name": "vanilla",
-            "config": '{"options":{"ajaxmode":"on","brandlogo":"on","container":"on","hideprivacyinfo":"off","brandlogofile":"./files/logo.png","font":"noto","showpopups":"1"}}',
-        },
+        include = entry.get("include")
+        if include is not None and not include:
+            continue  # nothing ticked for this file: nothing to export
+        for group in build_customizer_groups(
+            [{"path": entry["path"], "includeQuestions": include or []}], language
+        ):
+            group["order"] = len(groups)
+            group["matrix"] = entry.get("matrix", matrix_mode)
+            group["matrixGlobal"] = entry.get("matrix_global", matrix_global)
+            if entry.get("run"):
+                for question in group["questions"]:
+                    question["runNumber"] = entry["run"]
+            group["texts"] = _group_texts(entry["path"], languages)
+            groups.append(group)
+    return generate_lss_from_customization(
+        groups,
+        output_path,
+        language=language,
+        languages=languages,
+        base_language=base_language,
+        matrix_mode=matrix_mode,
+        matrix_global=matrix_global,
+        survey_title="Combined Survey" if len(json_files) > 1 else None,
     )
-
-    # --- Themes Inherited (required by LimeSurvey) ---
-    themes_inh_elem = ET.SubElement(root, "themes_inherited")
-    themes_inh_rows = ET.SubElement(themes_inh_elem, "rows")
-
-    add_row(
-        themes_inh_rows,
-        {
-            "sid": sid,
-            "template_name": "vanilla",
-            "config": '{"options":{"ajaxmode":"on","brandlogo":"on","container":"on","hideprivacyinfo":"off","brandlogofile":"./files/logo.png","font":"noto","showpopups":"1"}}',
-        },
-    )
-
-    # Generate XML
-    _strip_invalid_xml_chars(root)
-    tree = ET.ElementTree(root)
-    if hasattr(ET, "indent"):
-        ET.indent(tree, space="  ", level=0)
-
-    if output_path:
-        tree.write(output_path, encoding="UTF-8", xml_declaration=True)
-        return output_path
-    else:
-        f = io.BytesIO()
-        tree.write(f, encoding="UTF-8", xml_declaration=True)
-        return f.getvalue().decode("utf-8")
 
 
 def generate_lss_from_customization(
@@ -1623,29 +914,6 @@ def generate_lss_from_customization(
     l10n_id_counter = 1
     aid_counter = 1
 
-    def get_text(obj, lang, i18n_data=None, path=None):
-        """
-        Get localized text.
-        1. Checks i18n_data[lang] using the provided path (e.g. "age.Description")
-        2. If not found, checks if obj is a dict (inline translation)
-        3. Otherwise returns obj as string
-        """
-        if i18n_data and lang in i18n_data and path:
-            parts = path.split(".")
-            curr = i18n_data[lang]
-            for p in parts:
-                if isinstance(curr, dict) and p in curr:
-                    curr = curr[p]
-                else:
-                    curr = None
-                    break
-            if curr:
-                return str(curr)
-
-        if isinstance(obj, dict):
-            return _text_in_language(obj, lang, path)
-        return str(obj) if obj else ""
-
     # Sort groups by order
     sorted_groups = sorted(groups, key=lambda g: g.get("order", 0))
 
@@ -1680,8 +948,8 @@ def generate_lss_from_customization(
                 {
                     "id": str(l10n_id_counter),
                     "gid": gid,
-                    "group_name": group_name,
-                    "description": group_desc,
+                    "group_name": group.get("texts", {}).get(lang, {}).get("name", group_name),
+                    "description": group.get("texts", {}).get(lang, {}).get("description", group_desc),
                     "language": lang,
                     "sid": sid,
                 },
@@ -1779,7 +1047,6 @@ def generate_lss_from_customization(
             """Check if a question should NOT be grouped into a matrix."""
             orig = q.get("originalData", {})
             input_type = orig.get("InputType", "").lower()
-            levels = q.get("levels") or orig.get("Levels", {})
             has_other = item_has_other(orig)
 
             # Check for template-level MatrixGrouping flag (passed from loader)
@@ -1800,8 +1067,8 @@ def generate_lss_from_customization(
                 or has_other  # Questions with "Other" option shouldn't be grouped
             )
 
-        if matrix_mode:
-            if matrix_global:
+        if group.get("matrix", matrix_mode):
+            if group.get("matrixGlobal", matrix_global):
                 # Global grouping: group all questions with identical levels
                 level_groups = []
                 level_to_idx = {}
@@ -1976,7 +1243,7 @@ def generate_lss_from_customization(
                     if custom_matrix_text:
                         return str(custom_matrix_text)
                     if isinstance(study_instructions, dict) and study_instructions:
-                        text = get_text(
+                        text = _text_in(
                             study_instructions, lang, source_i18n, "Study.Instructions"
                         )
                         if text:
@@ -2057,7 +1324,7 @@ def generate_lss_from_customization(
                     add_row(subquestions_rows, sub_q_row)
 
                     for lang in languages:
-                        sq_desc = get_text(
+                        sq_desc = _text_in(
                             sub_orig.get("Description", q_code),
                             lang,
                             sub_i18n,
@@ -2099,7 +1366,7 @@ def generate_lss_from_customization(
 
                         for lang in languages:
                             a_text = sanitize_answer_text(
-                                get_text(
+                                _text_in(
                                     answer_text,
                                     lang,
                                     matrix_i18n,
@@ -2192,7 +1459,7 @@ def generate_lss_from_customization(
                 add_row(questions_rows, q_data_row)
 
                 for lang in languages:
-                    desc = tool_ov.get("questionText") or get_text(
+                    desc = tool_ov.get("questionText") or _text_in(
                         orig.get("Description", q_code),
                         lang,
                         i18n_data,
@@ -2201,7 +1468,7 @@ def generate_lss_from_customization(
                     if not desc:
                         desc = q.get("description", q_code)
                     desc = _apply_ls_styling(desc)
-                    h_text = tool_ov.get("helpText") or get_text(
+                    h_text = tool_ov.get("helpText") or _text_in(
                         item_help(orig), lang, i18n_data, f"{q_code}.Help"
                     )
                     add_row(
@@ -2255,7 +1522,7 @@ def generate_lss_from_customization(
 
                         for lang in languages:
                             a_text = sanitize_answer_text(
-                                get_text(
+                                _text_in(
                                     answer_text,
                                     lang,
                                     i18n_data,
@@ -2318,16 +1585,17 @@ def generate_lss_from_customization(
     add_row(surveys_rows, survey_settings)
 
     # --- Survey Language Settings ---
-    if not survey_title:
-        survey_title = "Custom Survey"
-        if sorted_groups:
-            survey_title = sorted_groups[0].get("name", "Custom Survey")
+    first_group = sorted_groups[0] if sorted_groups else {}
+
+    def title_in(lang):
+        return survey_title or first_group.get("texts", {}).get(lang, {}).get("name") \
+            or first_group.get("name", "Custom Survey")
 
     for lang in languages:
         lang_row = {
             "surveyls_survey_id": sid,
             "surveyls_language": lang,
-            "surveyls_title": survey_title,
+            "surveyls_title": title_in(lang),
             "surveyls_description": "",
             "surveyls_welcometext": (
                 ls_settings.get("welcomeText", "") if ls_settings else ""

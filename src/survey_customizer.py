@@ -92,6 +92,11 @@ def build_customizer_groups(
             }
         else:
             filtered_questions = all_questions
+        # the template's own DisplayOrder decides (stable: items without one keep file order, last)
+        filtered_questions = dict(sorted(
+            filtered_questions.items(),
+            key=lambda kv: kv[1].get("DisplayOrder", 999) if isinstance(kv[1], dict) else 999,
+        ))
 
         for current_run in range(1, max_run_number + 1):
             questions = []
