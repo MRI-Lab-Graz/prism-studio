@@ -12,7 +12,7 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
-from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
+from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES, LS_ROW_TYPES
 from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
@@ -336,17 +336,17 @@ def _parse_answers_into_questions(root, questions_map, get_text):
         if not answer and get_text(row, "aid") in answer_l10ns:
             pairs = answer_l10ns[get_text(row, "aid")]
 
-        for lang, answer in pairs:
-            # code -> answer text (possibly multilingual)
-            if lang and lang.strip():
-                if code not in questions_map[qid]["levels"]:
-                    questions_map[qid]["levels"][code] = {}
-                if isinstance(questions_map[qid]["levels"][code], dict):
-                    questions_map[qid]["levels"][code][lang] = answer
+        # all scales together, and apart (the two scales of a dual-scale array share their codes)
+        scale_levels = questions_map[qid]["levels_by_scale"].setdefault(get_text(row, "scale_id") or "0", {})
+        for levels in (questions_map[qid]["levels"], scale_levels):
+            for lang, answer in pairs:
+                # code -> answer text (possibly multilingual)
+                if lang and lang.strip():
+                    if not isinstance(levels.get(code), dict):
+                        levels[code] = {}
+                    levels[code][lang] = answer
                 else:
-                    questions_map[qid]["levels"][code] = {lang: answer}
-            else:
-                questions_map[qid]["levels"][code] = answer
+                    levels[code] = answer
 
 
 # Answer options LimeSurvey defines itself (no <answers> rows): stored code -> label in
@@ -368,20 +368,25 @@ _FIXED_ANSWERS = {
 }
 
 
-def _add_fixed_answer_levels(questions_map, languages):
-    """Give the fixed-option types their LimeSurvey answer options as levels, labelled in
-    each of ``languages`` (German variants like de-informal included); numbers label themselves."""
+def _builtin_levels(options, languages):
+    """``options`` (code -> labels per language) as levels in each of ``languages``."""
     # ponytail: en/de labels only; other languages are left out, and with none of the two
     # the English label goes under "en", never under another language's key. Add languages
     # from LimeSurvey's locale/<lang>.mo when needed.
     keys = {lang: lang.split("-")[0] for lang in languages if lang.split("-")[0] in ("en", "de")} or {"en": "en"}
+    return {
+        code: {key: labels.get(base, labels.get("en", code)) for key, base in keys.items()}
+        for code, labels in options.items()
+    }
+
+
+def _add_fixed_answer_levels(questions_map, languages):
+    """Give the fixed-option types their LimeSurvey answer options as levels, labelled in
+    each of ``languages`` (German variants like de-informal included); numbers label themselves."""
     for q in questions_map.values():
         options = _FIXED_ANSWERS.get(q["type"])
         if options and not q["levels"]:
-            q["levels"] = {
-                code: {key: labels.get(base, labels.get("en", code)) for key, base in keys.items()}
-                for code, labels in options.items()
-            }
+            q["levels"] = _builtin_levels(options, languages)
 
 
 def _base_language(root):
@@ -595,6 +600,7 @@ def _parse_lss_structure(root, get_text):
                     "parent_qid": parent_qid,
                     "gid": gid,
                     "levels": {},
+                    "levels_by_scale": {},
                     "subquestions": subquestions_map.get(qid, []),
                     "attributes": attributes_map.get(qid, {}),
                     "other": other.upper() == "Y" if other else False,
@@ -623,6 +629,83 @@ def _array_item_id(parent_code, row_code, taken):
     if _ITEM_ID_RE.match(row_code) and row_code not in taken:
         return row_code
     return f"{parent_code}_{row_code}"
+
+
+def _multilingual(levels, language):
+    """Levels with plain strings turned into {language: text}."""
+    return {
+        code: text if isinstance(text, dict) else {language: str(text) if text else ""}
+        for code, text in levels.items()
+    }
+
+
+def _texts(sq, fallback_language):
+    """{language: text} of a subquestion."""
+    return dict(sq.get("text_i18n") or {fallback_language: sq.get("text", "")})
+
+
+def _join_texts(first, second, template):
+    """Per language ``template`` filled with both texts; a language one side lacks uses that side's first text."""
+    def pick(texts, lang):
+        return texts.get(lang) or next(iter(texts.values()), "")
+
+    return {lang: template.format(pick(first, lang), pick(second, lang)) for lang in dict.fromkeys([*first, *second])}
+
+
+def _row_items(q_data, ls_props, languages, language):
+    """The items of a question that is several response columns, as (LimeSurvey column suffix,
+    item ID hint, item): matrix rows, checkbox options (with comments), ranking positions,
+    row x column cells of the text/number arrays, row x scale of the dual-scale array.
+    Empty when the question has no rows, so it stays one item."""
+    q_type, subs = q_data["type"], q_data.get("subquestions", [])
+    stem = dict(q_data.get("question_i18n") or {language: q_data.get("question", "")})
+    levels = _multilingual(q_data.get("levels", {}), language)
+
+    def item(texts, extra_levels=None, **props):
+        entry = {"Description": texts, "LimeSurvey": {**ls_props, **props}}
+        if extra_levels:
+            entry["Levels"] = extra_levels
+        return entry
+
+    def as_type(code):  # a cell of the array is a plain text/number item for LimeSurvey
+        return {"questionType": code, "questionTypeName": _get_question_type_name(code)}
+
+    rows = [sq for sq in subs if sq["scale_id"] == 0]
+    if q_type == "R":
+        return [
+            (str(n), str(n), item({lang: f"{text} ({n})" for lang, text in stem.items()}, levels))
+            for n in range(1, len(levels) + 1)
+        ]
+    if not subs:
+        return []
+    if q_type in ("M", "P"):
+        checked = _builtin_levels({"Y": _YES}, languages)
+        out = []
+        for sq in subs:
+            out.append((sq["code"], sq["code"], item(_texts(sq, language), checked)))
+            if q_type == "P":
+                comment = item(_join_texts(_texts(sq, language), {}, "{0} (comment)"), mandatory=False, **as_type("T"))
+                out.append((f"{sq['code']}comment", f"{sq['code']}_comment", comment))
+        return out
+    if q_type in (";", ":"):
+        columns = [sq for sq in subs if sq["scale_id"] == 1]
+        cell = as_type("S" if q_type == ";" else "N")
+        return [
+            (f"{r['code']}_{c['code']}", f"{r['code']}_{c['code']}",
+             {**item(_join_texts(_texts(r, language), _texts(c, language), "{0} / {1}"), **cell),
+              "DataType": "string" if q_type == ";" else "float"})
+            for r in rows for c in columns
+        ]
+    if q_type == "1":
+        by_scale = q_data.get("levels_by_scale", {})
+        return [
+            (f"{r['code']}#{scale}", f"{r['code']}_scale{scale + 1}",
+             item(_join_texts(_texts(r, language), {}, "{0} (" + str(scale + 1) + ")"),
+                  _multilingual(by_scale.get(str(scale), {}), language)))
+            for r in rows for scale in (0, 1)
+        ]
+    # matrix rows (F, A, B, C, E, H): all rows share the question's answer options
+    return [(sq["code"], sq["code"], item(_texts(sq, language) if sq.get("text") else stem, levels)) for sq in subs]
 
 
 def _build_prism_template_from_parsed(
@@ -720,33 +803,12 @@ def _build_prism_template_from_parsed(
                 except (ValueError, TypeError):
                     ls_props["validation"][vk] = None
 
-        if q_type in LS_ARRAY_TYPES and subquestions:
-            # Matrix question: flatten subquestions to individual items
-            multilingual_levels = {}
-            for code, answer_text in levels.items():
-                if isinstance(answer_text, dict):
-                    multilingual_levels[code] = answer_text
-                else:
-                    multilingual_levels[code] = {
-                        default_language: str(answer_text) if answer_text else ""
-                    }
-
-            for sq in subquestions:
-                sq_code = sq.get("code", "")
-                sq_text = sq.get("text", "")
-
-                full_desc = sq_text if sq_text else question_text
-                entry = {
-                    "Description": dict(
-                        sq.get("text_i18n") or q_data.get("question_i18n") or {default_language: full_desc}
-                    ),
-                    "LimeSurvey": dict(ls_props),  # Copy for each subquestion
-                }
-                if multilingual_levels:
-                    entry["Levels"] = multilingual_levels
-
-                entry["LimeSurvey"]["columnName"] = f"{title}[{sq_code}]"
-                prism_questions[_array_item_id(title, sq_code, prism_questions)] = entry
+        columns = _row_items(q_data, ls_props, languages, default_language) if q_type in LS_ROW_TYPES else []
+        if columns:
+            # Several response columns: one item per column, named after LimeSurvey's column
+            for suffix, id_hint, entry in columns:
+                entry["LimeSurvey"]["columnName"] = f"{title}[{suffix}]"
+                prism_questions[_array_item_id(title, id_hint, prism_questions)] = entry
         else:
             # Non-matrix question: single entry
             entry = {
@@ -755,15 +817,7 @@ def _build_prism_template_from_parsed(
             }
 
             if levels:
-                multilingual_levels = {}
-                for code, answer_text in levels.items():
-                    if isinstance(answer_text, dict):
-                        multilingual_levels[code] = answer_text
-                    else:
-                        multilingual_levels[code] = {
-                            default_language: str(answer_text) if answer_text else ""
-                        }
-                entry["Levels"] = multilingual_levels
+                entry["Levels"] = _multilingual(levels, default_language)
 
             prism_questions[title] = entry
 
@@ -774,9 +828,9 @@ def _build_prism_template_from_parsed(
         ls = entry.get("LimeSurvey", {})
         qt = ls.get("questionType", "")
         if qt in numeric_types:
-            entry["DataType"] = "integer"
+            entry.setdefault("DataType", "integer")
         elif qt in text_types:
-            entry["DataType"] = "string"
+            entry.setdefault("DataType", "string")
 
     # Determine task name from groups or questions
     task_name = ""
@@ -1002,25 +1056,14 @@ def _questionnaire_template(parsed, part):
     return template, _apply_prismmeta(template, part["prismmeta"])
 
 
-# What a question type with rows becomes in the import, for the notes that report it.
-_LOSSY_SUBQUESTION_TYPES = {
-    "M": "its checkbox options are not imported as items",
-    "P": "its checkbox options and comments are not imported as items",
-    "R": "its ranking positions are not imported as items",
-    ";": "it is a two-dimensional text array, imported as one item per row",
-    ":": "it is a two-dimensional number array, imported as one item per row",
-    "1": "it is a dual-scale array, imported as one item per row with only the first scale's options",
-}
-
-
 def _import_notes(part_name, questions, languages):
     """What the import of these questions cannot represent, one readable line each."""
     notes = []
     for q in questions:
         where = f"{part_name} / {q['title']}"
-        if q["type"] in _LOSSY_SUBQUESTION_TYPES and q["subquestions"]:
-            notes.append(f"{where}: type {q['type']} ({q['type_name']}): {_LOSSY_SUBQUESTION_TYPES[q['type']]}; "
-                         "check the items by hand")
+        if q["type"] in ("M", "P") and q["subquestions"]:
+            notes.append(f"{where}: unchecked options are empty in LimeSurvey's data and import as missing (n/a), "
+                         "not as \"not selected\"")
         if q["type_name"].startswith("Unknown"):
             notes.append(f"{where}: question type {q['type']} is not known, imported as a single item")
         if q["other"]:
@@ -1119,12 +1162,13 @@ def lsa_column_names(fieldnames, lss_xml):
         for qid, q in questions:
             if q["gid"] != gid or not rest.startswith(qid):
                 continue
-            code = rest[len(qid):]
-            rows = {sq["code"] for sq in q["subquestions"]}
-            if code in ("", "other", "comment") or code in rows or (
-                code.endswith("comment") and code[: -len("comment")] in rows
+            suffix = rest[len(qid):]
+            name = f"{q['title']}[{suffix}]" if suffix else q["title"]
+            # a column of an item, an "Other" text, a comment (of the question or of a checkbox row)
+            if name in item_of or suffix in ("other", "comment") or (
+                suffix.endswith("comment") and f"{q['title']}[{suffix[:-7]}]" in item_of
             ):
-                found.add(f"{q['title']}[{code}]" if code else q["title"])
+                found.add(name)
         if len(found) != 1:
             return field  # no question (or more than one) fits: leave it as LimeSurvey named it
         name = found.pop()

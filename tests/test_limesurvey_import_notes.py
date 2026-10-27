@@ -57,10 +57,15 @@ def _about(notes, title):
     return [n for n in notes if f" / {title}:" in n]
 
 
-@pytest.mark.parametrize("title", ["boxes", "boxcom", "rank", "textarr", "dual"])
-def test_lossy_types_with_rows_are_reported(title):
+@pytest.mark.parametrize("title", ["boxes", "boxcom"])
+def test_checkbox_lists_report_that_unchecked_options_are_missing(title):
     [note] = _about(_notes(), title)
-    assert note.startswith("Lossy / ")
+    assert note.startswith("Lossy / ") and "unchecked" in note
+
+
+@pytest.mark.parametrize("title", ["rank", "textarr", "dual"])
+def test_types_imported_as_items_need_no_note(title):
+    assert _about(_notes(), title) == []
 
 
 def test_other_field_is_reported():
