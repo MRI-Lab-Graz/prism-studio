@@ -107,7 +107,8 @@ def build_proposal(
     if not specimen:
         raise ProposalError(
             "the sidecar has no Technical.SpecimenType; use --data with a data file of the project (its inherited "
-            "sidecar is read) or pass the sidecar that defines it (usually the root-level one)"
+            "sidecar is read) or pass the sidecar that defines it (usually the root-level one); if the column is not "
+            f"{modality} data, name its kind with --modality (for example --modality environment)"
         )
 
     res = resolve_column(registry, column, col_def, specimen)

@@ -151,3 +151,41 @@ def test_retired_sidecar_detection():
     assert is_retired_environment_sidecar({"Columns": {}})
     assert is_retired_environment_sidecar({"Metadata": {"SchemaVersion": "1.1.0"}})
     assert not is_retired_environment_sidecar(_sidecar(V2_COLUMNS))
+
+
+def test_unknown_column_commands_name_the_modality(tmp_path):
+    issues = _v2(tmp_path, {"noise_db": {"Description": "Street noise", "Units": "dB"}}, {"noise_db": "55"})
+    note = next(m for m in _msgs(issues, "INFO") if "noise_db" in m and "not an official" in m)
+    assert note.count("--modality environment") == 2, note  # spec local add-term and terms propose
+
+
+def test_local_term_share_command_names_the_modality(tmp_path):
+    folder = tmp_path / "code" / "specification" / "terms" / "environment"
+    folder.mkdir(parents=True)
+    (folder / "noise-level.json").write_text(json.dumps({
+        "TermID": "prism:noise-level", "Level": "variable", "Label": "noise level",
+        "Aliases": ["noise_db"], "Description": "Sound pressure level at the site.", "Units": "dB",
+    }), encoding="utf-8")
+    issues = _v2(tmp_path, {"noise_db": {"Term": "prism:noise-level"}}, {"noise_db": "55"})
+    note = next(m for m in _msgs(issues, "INFO") if "uses the local term" in m)
+    assert "--term prism:noise-level --modality environment" in note, note
+
+
+def test_retired_sidecar_is_reported_once_for_all_its_data_files(tmp_path):
+    old = {
+        "Technical": {"Source": "open-meteo"},
+        "Study": {"EnvironmentName": "weather"},
+        "Privacy": {"AnchorField": "relative_time"},
+        "Columns": {"temp_c": {"Description": "Temperature", "Units": "degC"}},
+        "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2025-01-01"},
+    }
+    first = _project(tmp_path, old, ["subject_id"], ["sub-01"])
+    second = tmp_path / (BASE.replace("01", "02") + ".tsv")
+    second.parent.mkdir(parents=True)
+    second.write_text("subject_id\nsub-02\n", encoding="utf-8")
+    with use_specification(load_specification(project_root=tmp_path)):
+        v = DatasetValidator(load_all_schemas(str(SCHEMA_DIR)))
+        issues = v.validate_sidecar(str(first), "environment", str(tmp_path)) + v.validate_sidecar(
+            str(second), "environment", str(tmp_path)
+        )
+    assert len([m for m in _msgs(issues, "ERROR") if "retired" in m]) == 1, issues

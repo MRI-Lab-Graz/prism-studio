@@ -79,7 +79,7 @@ def cmd_spec_local_add_term(args) -> None:
         {"success": True, "proposal": result["proposal"], "written": written},
         f"Added to this project: {', '.join(ids)}\n  " + "\n  ".join(written)
         + f'\nThe validator uses it from now on. To share it with the PRISM community: '
-        f'python prism_tools.py spec propose --project "{args.project}" --term {ids[0]}',
+        f'python prism_tools.py spec propose --project "{args.project}" --term {ids[0]} --modality {args.modality}',
     )
 
 

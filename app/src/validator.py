@@ -1365,7 +1365,7 @@ class DatasetValidator:
                 issues.append((
                     "INFO",
                     f"{key}: {col}: uses the local term {tid} (not official yet; it applies to this project only). "
-                    f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid}',
+                    f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid} --modality {modality}',
                 ))
             if res.kind == "term":
                 term = res.term or {}
@@ -1382,7 +1382,7 @@ class DatasetValidator:
                 issues.append(("ERROR" if res.kind == "specimen_mismatch" else "WARNING", f"{key}: {col}: {res.message}"))
             elif res.kind == "known_analyte_new_specimen":
                 issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community. Run: python prism_tools.py "
-                    f"terms propose --data \"{normalize_path(file_path)}\" --column \"{col}\" (add --open to send it)."))
+                    f"terms propose --data \"{normalize_path(file_path)}\" --column \"{col}\" --modality {modality} (add --open to send it)."))
             elif res.kind == "suggestion":
                 if col not in registry:  # the canonical word itself needs no hint
                     issues.append(("INFO", f"{key}: {res.message}"))
@@ -1392,9 +1392,9 @@ class DatasetValidator:
                     "INFO",
                     f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
                     f"PRISM community to make it official? Use it in this project now: python prism_tools.py spec local "
-                    f'add-term --project "{root_dir}" --data "{normalize_path(file_path)}" --column "{col}"; '
+                    f'add-term --project "{root_dir}" --data "{normalize_path(file_path)}" --column "{col}" --modality {modality}; '
                     f'share it: python prism_tools.py terms propose --data "{normalize_path(file_path)}" '
-                    f'--column "{col}" (add --open to send it). The maintainers may choose a different name; '
+                    f'--column "{col}" --modality {modality} (add --open to send it). The maintainers may choose a different name; '
                     "your files keep working through an alias.",
                 ))
         return issues
@@ -1439,7 +1439,11 @@ class DatasetValidator:
 
         try:
             if modality == "environment" and is_retired_environment_sidecar(sidecar_data):
-                return [("ERROR", f"{normalize_path(sidecar_path)}: {ENV_RETIRED_MESSAGE}")]
+                key = normalize_path(sidecar_path)
+                if ("retired", key) in self._terms_checked:
+                    return []  # reported once per sidecar, not once per data file
+                self._terms_checked.add(("retired", key))
+                return [("ERROR", f"{key}: {ENV_RETIRED_MESSAGE}")]
             # Validate against schema if available (PRISM modalities only)
             schema = self._schema_for_sidecar(modality, sidecar_path)
             if schema:
