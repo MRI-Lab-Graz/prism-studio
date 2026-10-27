@@ -16,6 +16,12 @@ from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
 
 
+def _get_text(element, tag):
+    """Text of a child element, "" when the child or its text is missing."""
+    child = element.find(tag)
+    return (child.text if child is not None else "") or ""
+
+
 def _utc_creation_date() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -158,13 +164,8 @@ def parse_lsa_responses(lsa_path):
 
     lss_root = ET.fromstring(xml_lss)
 
-    # Helper to find text of a child element
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
 
-    questions_map, groups_map = _parse_lss_structure(lss_root, get_text)
+    questions_map, groups_map = _parse_lss_structure(lss_root, _get_text)
 
     # Parse once; both the fieldname list and the row data come from this tree.
     resp_root = ET.fromstring(xml_resp)
@@ -463,11 +464,6 @@ def _parse_lss_structure(root, get_text):
                 "help": get_text(row, "help"),
             }
 
-    _answer_l10ns = {}  # aid -> answer text  (for LS 6.x)
-    for row in root.findall(".//answer_l10ns/rows/row"):
-        aid = get_text(row, "aid")
-        if aid and aid not in _answer_l10ns:
-            _answer_l10ns[aid] = get_text(row, "answer")
     # Temporary map for question attributes: qid -> {attribute_name: value}
     attributes_map = {}
 
@@ -861,70 +857,30 @@ def _build_prism_template_from_parsed(
     return template
 
 
-def parse_lsq_xml(xml_content):
-    """Parse a .lsq (LimeSurvey single question export) into a PRISM template dict.
-
-    .lsq files contain: <questions>, <subquestions>, <answers>, <question_attributes>
-    but no <groups> or <surveys> sections.
-
-    Args:
-        xml_content: XML content as bytes or string
-
-    Returns:
-        dict: PRISM template with per-item LimeSurvey properties, or None on error
-    """
+def _parse_lsq_lsg_xml(xml_content, source_type):
+    """Parse a .lsq (one question: <questions>, <subquestions>, <answers>,
+    <question_attributes>) or .lsg (the same plus <groups>) export into a PRISM
+    template dict with per-item LimeSurvey properties, or None on invalid XML."""
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
-        print(f"Error parsing .lsq XML: {e}")
+        print(f"Error parsing .{source_type} XML: {e}")
         return None
 
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
-
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
-
-    languages, default_language = _detect_languages(root, get_text)
-
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
+    _parse_answers_into_questions(root, questions_map, _get_text)
+    languages, default_language = _detect_languages(root, _get_text)
     return _build_prism_template_from_parsed(
-        questions_map, groups_map, languages, default_language, source_type="lsq"
+        questions_map, groups_map, languages, default_language, source_type=source_type
     )
+
+
+def parse_lsq_xml(xml_content):
+    return _parse_lsq_lsg_xml(xml_content, "lsq")
 
 
 def parse_lsg_xml(xml_content):
-    """Parse a .lsg (LimeSurvey question group export) into a PRISM template dict.
-
-    .lsg files contain: <groups>, <questions>, <subquestions>, <answers>,
-    <question_attributes> but no <surveys> section.
-
-    Args:
-        xml_content: XML content as bytes or string
-
-    Returns:
-        dict: PRISM template with per-item LimeSurvey properties, or None on error
-    """
-    try:
-        root = ET.fromstring(xml_content)
-    except ET.ParseError as e:
-        print(f"Error parsing .lsg XML: {e}")
-        return None
-
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
-
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
-
-    languages, default_language = _detect_languages(root, get_text)
-
-    return _build_prism_template_from_parsed(
-        questions_map, groups_map, languages, default_language, source_type="lsg"
-    )
+    return _parse_lsq_lsg_xml(xml_content, "lsg")
 
 
 SPLIT_MODES = ("group", "question", "survey")
@@ -981,21 +937,18 @@ def _parse_lss_for_questionnaires(xml_content):
     except ET.ParseError as exc:
         raise ValueError(f"Invalid LimeSurvey XML: {exc}") from exc
 
-    def get_text(element, tag):
-        child = element.find(tag)
-        return (child.text if child is not None else "") or ""
 
-    languages, default_language = _detect_languages(root, get_text)
-    _drop_other_language_rows(root, get_text)
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
+    languages, default_language = _detect_languages(root, _get_text)
+    _drop_other_language_rows(root, _get_text)
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
+    _parse_answers_into_questions(root, questions_map, _get_text)
     return {
         "questions": questions_map,
         "groups": groups_map,
         "languages": languages,
         "default_language": default_language,
-        "title": _parse_survey_metadata(root, get_text).get("title") or "survey",
-        "db_version": get_text(root, "DBVersion"),
+        "title": _parse_survey_metadata(root, _get_text).get("title") or "survey",
+        "db_version": _get_text(root, "DBVersion"),
     }
 
 
@@ -1273,16 +1226,11 @@ def parse_lss_xml(
         print(f"Error parsing XML: {e}")
         return None
 
-    # Helper to find text of a child element
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
 
     # Get survey-level metadata
-    survey_meta = _parse_survey_metadata(root, get_text)
+    survey_meta = _parse_survey_metadata(root, _get_text)
 
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
 
     # Initialize item registry for collision detection
     item_registry = None
@@ -1317,9 +1265,9 @@ def parse_lss_xml(
         rows = answers_section.find("rows")
         if rows is not None:
             for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
+                qid = _get_text(row, "qid")
+                code = _get_text(row, "code")
+                answer = _get_text(row, "answer")
 
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
@@ -1841,9 +1789,6 @@ def convert_lsa_to_dataset(
                     granular_col = col
                     break
 
-        if t_name == "ads" and not granular_col:
-            pass
-
         # 2. Inject SurveyDuration/SurveyStartTime into schema if missing
         # This ensures every task gets these columns as requested
         if "SurveyDuration" not in t_schema:
@@ -1870,8 +1815,6 @@ def convert_lsa_to_dataset(
             ] = f"Duration for task {t_name} (derived from group timing)"
             task_df["SurveyDuration"] = task_df[granular_col]
 
-            # Debug: Compare durations
-            pass
 
         # 4. Process this single task
         # print(f"DEBUG: Processing task {t_name}")
