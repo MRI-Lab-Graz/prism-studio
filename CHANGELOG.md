@@ -113,6 +113,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **LimeSurvey export keeps the Template Editor's LimeSurvey settings.** Required, show-condition (relevance), help
+  text (per language), the "Other" option and text-box rows set in the Template Editor, or brought in by a LimeSurvey
+  import, were dropped on export: the exporters read other keys (`Relevance`, `Help`, `Mandatory`, `OtherOption`).
+  Both exporters and the Survey Customizer now read both; a relevance of `1` (always shown) no longer hides a
+  `ConditionalDisplay` condition.
 - **LimeSurvey questions with built-in answers get their Levels.** Yes/No, Gender, 5-point choice and the arrays
   5-point, 10-point, Yes/Uncertain/No and Increase/Same/Decrease have no answer rows in the `.lss`, so they were
   imported without Levels (type `5` was even "Unknown"). They now get LimeSurvey's stored codes (`Y`/`N`, `F`/`M`,
