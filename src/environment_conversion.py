@@ -682,6 +682,8 @@ def _build_environment_sidecar(windows: Sequence[WindowSpec] = ()) -> dict[str, 
     for spec in windows:
         sidecar[window_column_name(spec)] = {
             "Term": sidecar[spec.column]["Term"],
+            # a count is a number of hours, not a value in the term's unit
+            **({"Units": "1"} if spec.statistic == "count" else {}),
             "Window": {"Start": spec.duration, "End": "PT0S"},
             "Statistic": spec.statistic,
         }

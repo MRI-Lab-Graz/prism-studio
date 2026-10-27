@@ -226,3 +226,27 @@ def test_a_gzipped_described_columns_file_is_read_and_validated(tmp_path, modali
         )
     errors = _msgs(issues, "ERROR")
     assert len(errors) == 1 and "'c'" in errors[0], issues  # the value inside the gz file was read and checked
+
+
+def test_count_window_inherits_nothing_from_its_term(tmp_path):
+    """A count of hours must not take the term's unit or ranges (a humidity count of 168 is not above 100 %)."""
+    sidecar = _sidecar({
+        "humidity_count_3d": {
+            "Term": "prism:relative-humidity", "Units": "1", "Window": {"Start": "P3D", "End": "PT0S"},
+            "Statistic": "count",
+        },
+    })
+    tsv = _project(tmp_path, sidecar, ["subject_id", "session_id", "humidity_count_3d"], ["sub-01", "ses-1", "168"])
+    with use_specification(load_specification(project_root=tmp_path)):
+        v = DatasetValidator(load_all_schemas(str(SCHEMA_DIR)))
+        v._registries["environment"]["relative-humidity"] = {
+            **v._registries["environment"]["relative-humidity"], "MaxValue": 100, "DataType": "float",
+        }
+        issues = v.validate_sidecar(str(tsv), "environment", str(tmp_path)) + v.validate_data_content(
+            str(tsv), "environment", str(tmp_path)
+        )
+        effective = v._build_effective_defs(sidecar, "environment")
+    assert effective["humidity_count_3d"].get("MaxValue") is None
+    assert effective["humidity_count_3d"]["Units"] == "1"
+    assert not [i for i in issues if i[0] in ("ERROR", "WARNING")], issues
+    assert not [i for i in issues if "differs from the recommended" in i[1]], issues

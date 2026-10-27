@@ -191,6 +191,30 @@ def test_window_column_and_sidecar_entry(tmp_path, monkeypatch):
     assert not [i for i in issues if i[0] == "ERROR"], issues
 
 
+def test_count_window_is_unitless_and_validates_without_notice(tmp_path, monkeypatch):
+    calls: list = []
+    fetch = _stub_fetch(calls, value=lambda var, ts: 1.0)
+    project, out, sidecar, _, _ = _convert(
+        tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], [parse_window("temp_c:P3D:count")], fetch
+    )
+    assert sidecar["temp_c_count_p3d"]["Units"] == "1"  # a count of hours, not degrees
+    assert float(out["sub-P1"]["temp_c_count_p3d"]) == 72
+
+    from schema_manager import load_all_schemas
+    from validator import DatasetValidator
+
+    from src.specification import load_specification, use_specification
+
+    tsv = next(project.glob("sub-*/ses-*/environment/*_environment.tsv"))
+    with use_specification(load_specification(project_root=project)):
+        v = DatasetValidator(load_all_schemas(str(REPO / "app" / "schemas")))
+        issues = v.validate_sidecar(str(tsv), "environment", str(project)) + v.validate_data_content(
+            str(tsv), "environment", str(project)
+        )
+    assert not [i for i in issues if i[0] in ("ERROR", "WARNING")], issues
+    assert not [i for i in issues if "differs from the recommended" in i[1]], issues
+
+
 def test_window_all_missing_is_empty_with_warning(tmp_path, monkeypatch):
     fetch = _stub_fetch([], value=lambda var, ts: None if var == "temperature_2m" else 1.0)
     _, out, _, logs, result = _convert(
