@@ -254,3 +254,13 @@ def test_window_days_fetched_once(tmp_path, monkeypatch):
     _convert(tmp_path, monkeypatch, rows, windows, _stub_fetch(calls))
     # days 06-01 .. 06-05 (longest window P3D before 06-04 and 06-05), three providers each, each once
     assert len(calls) == len(set(calls)) == 5 * 3
+
+
+def test_a_repeated_window_is_written_once(tmp_path, monkeypatch):
+    windows = [parse_window("temp_c:P3D:max"), parse_window("temp_c:p3d:max"), parse_window("temp_c:P3D:max")]
+    project, out, sidecar, _, _ = _convert(
+        tmp_path, monkeypatch, [("P1", "2025-06-04 10:00")], windows, _stub_fetch([])
+    )
+    tsv = next(project.glob("sub-*/ses-*/environment/*_environment.tsv"))
+    header = tsv.read_text(encoding="utf-8").splitlines()[0].split("\t")
+    assert header.count("temp_c_max_p3d") == 1, header

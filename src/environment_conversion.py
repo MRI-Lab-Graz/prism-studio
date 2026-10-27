@@ -795,6 +795,7 @@ def perform_environment_conversion(
             log_callback("⏹️ Conversion cancelled by user", "warning")
             raise EnvironmentConversionCancelledError(message)
 
+    windows = tuple(dict.fromkeys(windows))  # a repeated window (parse_window upper-cases the duration) is one column
     conversion_started_at = perf_counter()
     df = _load_environment_dataframe(
         input_path,
