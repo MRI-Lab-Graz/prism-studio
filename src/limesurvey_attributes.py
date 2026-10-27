@@ -1,11 +1,13 @@
 """LimeSurvey constants the importer and the exporters share (this module must stay free of
 heavy imports such as pandas).
 
-LS_ARRAY_TYPES: question types that are a matrix. LS_DESIGN_ATTRIBUTES: the question attributes
+LS_ARRAY_TYPES: question types that are a matrix; LS_ROW_TYPES: those plus checkbox lists and ranking. LS_DESIGN_ATTRIBUTES: the question attributes
 (design options) a template keeps and the exporters write back, LimeSurvey attribute name ->
 the Survey Customizer's override name for it."""
 
 LS_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+# Every type that is several response columns (matrices, checkbox lists, ranking).
+LS_ROW_TYPES = LS_ARRAY_TYPES | {"M", "P", "R"}
 
 LS_DESIGN_ATTRIBUTES = {
     "cssclass": "cssClass",

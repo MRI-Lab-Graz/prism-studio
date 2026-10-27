@@ -26,7 +26,7 @@ def test_ls6_answer_labels_come_from_answer_l10ns():
           </rows></answer_l10ns>
         </document>"""
     )
-    questions_map = {"1": {"levels": {}}}
+    questions_map = {"1": {"levels": {}, "levels_by_scale": {}}}
 
     _parse_answers_into_questions(root, questions_map, _get_text)
 
@@ -267,5 +267,5 @@ def test_checkbox_question_with_subquestions_is_reported():
     _template, notes = limesurvey_questionnaire(xml, "g1")
 
     [note] = notes
-    assert note.startswith("Boxes / CB: type M (")
-    assert "checkbox options are not imported as items" in note
+    assert note.startswith("Boxes / CB: unchecked options are empty")
+    assert "unchecked options are empty" in note

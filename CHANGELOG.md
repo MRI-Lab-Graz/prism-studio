@@ -113,6 +113,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **Checkbox lists, ranking and the special arrays import as items, and their answers convert.** Multiple choice
+  (`M`, with comments `P`), ranking (`R`), the text and number arrays (`;`, `:`) and the dual-scale array (`1`) were
+  imported as one plain item or dropped their rows, so their response columns stayed unconverted. Now each checkbox
+  option, comment, ranking position, array cell (row x column) and array row x scale is an item named after
+  LimeSurvey's column (`SQ001`, `SQ001comment`, `rank[2]`, `T1_K1`, `D1#0`), dual-scale rows keep their own answer
+  options per scale, and response columns are matched to the template items themselves. Unchecked boxes are empty in
+  LimeSurvey's data and import as missing; the import notes say so. When exporting such items one by one, the
+  Customizer path now also turns a lone matrix row, checkbox option or ranking position into a list with its options
+  (before, only Quick Export did).
 - **The LimeSurvey import reports what it cannot represent.** Multiple choice, ranking and the two-dimensional and
   dual-scale arrays (their options or second scale are not items), "Other" and comment fields, unknown question
   types, and built-in answer labels in a language other than English/German were only noted in the terminal. They are

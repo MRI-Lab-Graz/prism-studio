@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import io
 
-from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
+from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES, LS_ROW_TYPES
 from src.text_sanitizer import sanitize_answer_text, strip_invalid_xml_chars
 from src.survey_template_metadata import get_study_short_name
 
@@ -388,8 +388,8 @@ def _determine_ls_question_type(q_data, has_levels):
     # If LimeSurvey section has explicit questionType, use it
     if ls_config.get("questionType"):
         q_type = ls_config["questionType"]
-        if q_type in LS_ARRAY_TYPES:
-            q_type = "L"  # a lone array row: a list keeps its answer options
+        if q_type in LS_ROW_TYPES:
+            q_type = "L"  # a lone matrix row, checkbox option or ranking position: a list keeps its options
 
         # Apply LimeSurvey-specific validation settings
         ls_validation = ls_config.get("validation", {})
@@ -2134,7 +2134,7 @@ def generate_lss_from_customization(
 
                 # Determine Type — use toolOverride first, then auto-detect
                 if tool_ov.get("questionType"):
-                    q_type = tool_ov["questionType"]
+                    q_type = "L" if tool_ov["questionType"] in LS_ROW_TYPES else tool_ov["questionType"]
                     extra_attrs = {}
                 else:
                     q_type, extra_attrs = _determine_ls_question_type(
