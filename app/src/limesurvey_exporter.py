@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import io
 
-from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES
+from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
 from src.text_sanitizer import sanitize_answer_text, strip_invalid_xml_chars
 from src.survey_template_metadata import get_study_short_name
 
@@ -53,8 +53,6 @@ LS_SUBQUESTION_CODE_MAX_LENGTH = 5
 
 # Types whose answer options LimeSurvey defines itself: an <answers> row would not be used.
 LS_FIXED_ANSWER_TYPES = {"Y", "G", "5"}
-# Array types: as one question on its own they would be an array without rows.
-LS_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 
 
 def _sanitize_answer_code(

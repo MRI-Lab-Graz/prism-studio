@@ -12,7 +12,7 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
-from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES
+from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
 from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
@@ -720,7 +720,7 @@ def _build_prism_template_from_parsed(
                 except (ValueError, TypeError):
                     ls_props["validation"][vk] = None
 
-        if q_type in _ARRAY_TYPES and subquestions:
+        if q_type in LS_ARRAY_TYPES and subquestions:
             # Matrix question: flatten subquestions to individual items
             multilingual_levels = {}
             for code, answer_text in levels.items():
@@ -856,7 +856,6 @@ def parse_lsg_xml(xml_content):
 
 
 SPLIT_MODES = ("group", "question", "survey")
-_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 # Text, equation and display questions: no answer options of their own.
 _HELPER_TYPES = {"S", "T", "U", "Q", "*", "X"}
 
@@ -991,7 +990,7 @@ def _questionnaire_template(parsed, part):
     stems = [
         q.get("question_i18n") or {lang: q["question"]}
         for q in questions.values()
-        if q["type"] in _ARRAY_TYPES and q["subquestions"] and q["question"]
+        if q["type"] in LS_ARRAY_TYPES and q["subquestions"] and q["question"]
     ]
     instructions = {
         language: "\n\n".join(stem[language] for stem in stems if stem.get(language))
@@ -1072,7 +1071,7 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
                     q["type"] in _HELPER_TYPES and not q["levels"] and not q["subquestions"]
                     for q in questions
                 ),
-                "arrays": [q["title"] for q in questions if q["type"] in _ARRAY_TYPES and q["subquestions"]],
+                "arrays": [q["title"] for q in questions if q["type"] in LS_ARRAY_TYPES and q["subquestions"]],
                 "restored": restored,
                 "notes": _import_notes(part["name"], questions, parsed["languages"]),
             },
