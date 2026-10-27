@@ -1231,62 +1231,6 @@ def _read_table_as_dataframe(
 
     if kind == "lsa":
 
-        def _normalize_lsa_columns(
-            cols: list[str], questions_map: dict | None = None
-        ) -> list[str]:
-            """Normalize LimeSurvey export column names using QID lookup.
-
-            Args:
-                cols: List of column names from LSR responses
-                questions_map: Optional dict mapping qid -> {title, question}
-
-            Returns:
-                List of normalized column names with QIDs replaced by question codes
-            """
-            # Pattern to match: _SurveyIDXGroupIDXQuestionID[suffix]
-            pattern = re.compile(r"^_?(\d+)X(\d+)X(\d+)(.*)$")
-
-            # Build qid_to_title lookup if questions_map is available
-            qid_to_title = {}
-            if questions_map:
-                qid_to_title = {
-                    qid: info["title"] for qid, info in questions_map.items()
-                }
-
-            used: set[str] = set()
-            out_cols: list[str] = []
-
-            for c in cols:
-                s = str(c).strip()
-                m = pattern.match(s)
-                candidate = s
-
-                if m:
-                    # Extract QID and suffix
-                    qid = m.group(3)
-                    suffix = (m.group(4) or "").strip()
-
-                    # If suffix exists, use it
-                    if suffix:
-                        candidate = suffix
-                    # Otherwise, try QID lookup
-                    elif qid in qid_to_title:
-                        candidate = qid_to_title[qid]
-                    # Fallback: use QID as-is
-                    else:
-                        candidate = qid
-
-                # Avoid collisions
-                base_candidate = candidate
-                counter = 1
-                while candidate in used:
-                    candidate = f"{base_candidate}_{counter}"
-                    counter += 1
-                used.add(candidate)
-                out_cols.append(candidate)
-
-            return out_cols
-
         def _find_responses_member(zf: zipfile.ZipFile) -> str:
             matches = [
                 name for name in zf.namelist() if name.endswith("_responses.lsr")
@@ -1343,6 +1287,8 @@ def _read_table_as_dataframe(
                     xml_bytes = zf.read(member)
                 except Exception as e:
                     raise ValueError(f"Failed to read member '{member}' from LSA: {e}")
+                lss_names = [n for n in zf.namelist() if n.lower().endswith(".lss")]
+                lss_bytes = zf.read(lss_names[0]) if lss_names else None
         except zipfile.BadZipFile as e:
             raise ValueError(f"Invalid .lsa archive (not a valid zip file): {e}") from e
         except Exception as e:
@@ -1366,8 +1312,11 @@ def _read_table_as_dataframe(
         # Extract questions_map for metadata lookup BEFORE normalizing columns
         questions_map = _extract_lsa_questions_map(input_path)
 
-        # Normalize columns using questions_map for QID lookup
-        df.columns = _normalize_lsa_columns([str(c) for c in df.columns], questions_map)
+        # Name columns after the template items, using the survey's own question ids
+        if lss_bytes:
+            from src.converters.limesurvey import lsa_column_names
+
+            df.columns = lsa_column_names([str(c) for c in df.columns], lss_bytes)
 
         # Return tuple of (df, questions_map) for LSA files
         return (df, questions_map)

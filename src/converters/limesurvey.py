@@ -4,6 +4,7 @@ import re
 import sys
 import unicodedata
 import zipfile
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -149,17 +150,6 @@ def _get_question_type_name(type_code):
     return LIMESURVEY_QUESTION_TYPES.get(type_code, f"Unknown ({type_code})")
 
 
-def _map_field_to_code(fieldname, qid_to_title):
-    m = re.match(r"(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
-    if not m:
-        return fieldname
-    qid = m.group(3)
-    suffix = m.group(4)
-    if suffix:
-        return suffix
-    return qid_to_title.get(qid, fieldname)
-
-
 def parse_lsa_responses(lsa_path):
     """Return (dataframe, qid->title mapping, groups_map) extracted from a LimeSurvey .lsa file."""
     with zipfile.ZipFile(lsa_path, "r") as z:
@@ -176,16 +166,6 @@ def parse_lsa_responses(lsa_path):
 
     questions_map, groups_map = _parse_lss_structure(lss_root, get_text)
 
-    # Build simple qid->title map for column renaming
-    qid_to_title = {qid: d["title"] for qid, d in questions_map.items()}
-
-    # Also include subquestions in qid_to_title if needed?
-    # The original code did this:
-    for row in lss_root.findall(".//subquestions/rows/row"):
-        qid = row.find("qid").text
-        title = row.find("title").text
-        qid_to_title[qid] = title
-
     # Parse once; both the fieldname list and the row data come from this tree.
     resp_root = ET.fromstring(xml_resp)
     fieldnames = [el.text or "" for el in resp_root.findall(".//fieldname")]
@@ -200,7 +180,7 @@ def parse_lsa_responses(lsa_path):
 
     df = pd.DataFrame(records)
 
-    rename_map = {f: _map_field_to_code(f, qid_to_title) for f in fieldnames}
+    rename_map = dict(zip(fieldnames, lsa_column_names(fieldnames, xml_lss)))
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
     return df, questions_map, groups_map
@@ -1080,8 +1060,12 @@ def _apply_prismmeta(template, html):
         study["Authors"] = [fields["authors"]]
         restored.append("Authors")
     codemap = parse_prismmeta_codemap(fields)
-    if any(code in template for code in codemap):
-        renamed = {codemap.get(k, k): v for k, v in template.items()}
+
+    def column(key, entry):  # a matrix row's CodeMap entry names its column, MPHQ901[PHQ01]
+        return (entry.get("LimeSurvey") or {}).get("columnName", key) if isinstance(entry, dict) else key
+
+    if any(column(k, v) in codemap for k, v in template.items()):
+        renamed = {codemap.get(column(k, v), k): v for k, v in template.items()}
         template.clear()
         template.update(renamed)
         restored.append("CodeMap")
@@ -1172,6 +1156,50 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
         used.add(name)
         study["TaskName"] = name
     return parsed, results
+
+
+def lsa_column_names(fieldnames, lss_xml):
+    """Name each LimeSurvey response field (``{sid}X{gid}X{qid}{code}``) after the item the
+    template import makes for it, so every answer reaches its own item.
+
+    The question id is looked up among the survey's questions, never read off the digits
+    (qid 38486 + row "1" is the field ``...X384861``). A field without an item of its own
+    (an "Other" text, or a row whose item ID two arrays share) keeps LimeSurvey's notation
+    ``title[code]`` and so shows up as an unconverted column instead of feeding another item.
+    """
+    parsed, results = _build_questionnaires(lss_xml, "group", keep_prismmeta=True)
+    item_of = {}  # LimeSurvey column -> item ID
+    for _info, template in results:
+        for key, entry in template.items():
+            if key not in TEMPLATE_SECTIONS and isinstance(entry, dict):
+                item_of[entry.get("LimeSurvey", {}).get("columnName", key)] = key
+    shared = {item for item, n in Counter(item_of.values()).items() if n > 1}
+    questions = [
+        (qid, q) for qid, q in parsed["questions"].items() if q.get("parent_qid") in (None, "", "0")
+    ]
+
+    def column(field):
+        m = re.fullmatch(r"_?\d+X(\d+)X(\d+.*)", field)
+        if not m:
+            return field
+        gid, rest = m.groups()
+        found = set()
+        for qid, q in questions:
+            if q["gid"] != gid or not rest.startswith(qid):
+                continue
+            code = rest[len(qid):]
+            rows = {sq["code"] for sq in q["subquestions"]}
+            if code in ("", "other", "comment") or code in rows or (
+                code.endswith("comment") and code[: -len("comment")] in rows
+            ):
+                found.add(f"{q['title']}[{code}]" if code else q["title"])
+        if len(found) != 1:
+            return field  # no question (or more than one) fits: leave it as LimeSurvey named it
+        name = found.pop()
+        item = item_of.get(name)
+        return item if item and item not in shared else name
+
+    return [column(f) for f in fieldnames]
 
 
 def list_limesurvey_questionnaires(

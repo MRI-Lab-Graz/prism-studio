@@ -11,7 +11,6 @@ from src.converters.limesurvey import (
     batch_convert_lsa,
     convert_lsa_to_dataset,
     _get_question_type_name,
-    _map_field_to_code,
     _extract_media_urls,
     _clean_html_preserve_info,
     parse_lsa_responses,
@@ -42,29 +41,6 @@ class TestGetQuestionTypeName:
         for code in LIMESURVEY_QUESTION_TYPES:
             result = _get_question_type_name(code)
             assert result == LIMESURVEY_QUESTION_TYPES[code]
-
-
-# ---------------------------------------------------------------------------
-# _map_field_to_code
-# ---------------------------------------------------------------------------
-
-class TestMapFieldToCode:
-    def test_maps_known_qid(self):
-        result = _map_field_to_code("123X456X789", {"789": "q_mood"})
-        assert result == "q_mood"
-
-    def test_returns_suffix_if_present(self):
-        result = _map_field_to_code("123X456X789SQ001", {"789": "q_mood"})
-        assert result == "SQ001"
-
-    def test_returns_fieldname_if_no_match(self):
-        result = _map_field_to_code("someRandomField", {})
-        assert result == "someRandomField"
-
-    def test_unknown_qid_returns_fieldname(self):
-        # When qid not in map, returns original fieldname (not just the qid)
-        result = _map_field_to_code("1X2X999", {})
-        assert result == "1X2X999"
 
 
 # ---------------------------------------------------------------------------
@@ -486,7 +462,7 @@ def _build_lsa_archive(tmp_path, *, lss_xml: str, responses_xml: str, timings_xm
     return archive_path
 
 
-def test_parse_lsa_responses_maps_question_titles_and_suffixes(tmp_path):
+def test_parse_lsa_responses_maps_question_titles_keeps_unknown_fields(tmp_path):
     from tests.test_limesurvey_structure import _MINIMAL_LSS
 
     responses_xml = """<document>
@@ -514,9 +490,9 @@ def test_parse_lsa_responses_maps_question_titles_and_suffixes(tmp_path):
 
     df, questions_map, groups_map = parse_lsa_responses(str(archive))
     assert "AGE" in df.columns
-    assert "SQ001" in df.columns
+    # AGE (qid 10) has no row SQ001: the field keeps its LimeSurvey name, never a guessed one
+    assert "1X1X10SQ001" in df.columns
     assert df.loc[0, "AGE"] == "2"
-    assert df.loc[0, "SQ001"] == "alpha"
     assert isinstance(questions_map, dict)
     assert isinstance(groups_map, dict)
 

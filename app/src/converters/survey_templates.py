@@ -1124,6 +1124,30 @@ def _add_ls_code_aliases(
             reverse_aliases.setdefault(lib_key, []).append(imp_code)
 
 
+def _add_codemap_aliases(sidecar: dict, prism_json: dict) -> None:
+    """Register the PRISMMETA CodeMap of an imported group as aliases: it records how
+    PRISM's export renamed each item, which normalization alone cannot reverse."""
+    codemap = parse_prismmeta_codemap(_extract_prismmeta(prism_json))
+    if not codemap:
+        return
+    aliases = sidecar.setdefault("_aliases", {})
+    reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
+    # A matrix row's CodeMap entry names its LimeSurvey column (MPHQ901[PHQ01]);
+    # the alias must be the item ID that column was imported as (PHQ01).
+    item_of_column = {
+        entry["LimeSurvey"]["columnName"]: key
+        for key, entry in prism_json.items()
+        if isinstance(entry, dict)
+        and isinstance(entry.get("LimeSurvey"), dict)
+        and entry["LimeSurvey"].get("columnName")
+    }
+    for column, original in codemap.items():
+        imported = item_of_column.get(column, column)
+        if original in sidecar and imported != original and imported not in aliases:
+            aliases[imported] = original
+            reverse_aliases.setdefault(original, []).append(imported)
+
+
 def _add_matched_template(
     templates: dict[str, dict],
     item_to_task: dict[str, str],
@@ -1141,6 +1165,7 @@ def _add_matched_template(
             group_info["item_codes"],
             non_item_keys=non_item_keys,
         )
+        _add_codemap_aliases(templates[task_key]["json"], group_info.get("prism_json", {}))
         # Update mapping for any new aliases
         for code in group_info["item_codes"]:
             if code not in item_to_task:
@@ -1193,20 +1218,7 @@ def _add_matched_template(
             sidecar, group_info["item_codes"], non_item_keys=non_item_keys
         )
 
-        # Use PRISMMETA CodeMap for authoritative alias mapping.
-        # This handles cases where sanitization changed codes in ways that
-        # _add_ls_code_aliases (which uses normalization) cannot reverse.
-        prism_json = group_info.get("prism_json", {})
-        meta_fields = _extract_prismmeta(prism_json)
-        codemap = parse_prismmeta_codemap(meta_fields)
-        if codemap:
-            aliases = sidecar.setdefault("_aliases", {})
-            reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
-            for sanitized, original in codemap.items():
-                if original in sidecar and sanitized != original:
-                    if sanitized not in aliases:
-                        aliases[sanitized] = original
-                        reverse_aliases.setdefault(original, []).append(sanitized)
+        _add_codemap_aliases(sidecar, group_info.get("prism_json", {}))
 
         templates[task_key] = {
             "path": template_path,

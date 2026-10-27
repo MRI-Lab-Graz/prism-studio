@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.converters.limesurvey import (
     _get_question_type_name,
-    _map_field_to_code,
     _extract_media_urls,
     _clean_html_preserve_info,
     _parse_survey_metadata,

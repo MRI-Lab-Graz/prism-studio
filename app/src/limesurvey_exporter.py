@@ -18,6 +18,16 @@ def add_row(parent, data):
     for key, value in data.items():
         child = ET.SubElement(row, key)
         child.text = str(value)
+    return row
+
+
+def _fill_metadata_cells(cells, metadata_kwargs, code_map):
+    """Write the PRISMMETA HTML once the group's questions are laid out, so its
+    CodeMap holds the LimeSurvey column each item was really written to."""
+    if cells:
+        html = _format_single_metadata_html(**metadata_kwargs, code_map=code_map)
+        for cell in cells:
+            cell.text = html
 
 
 # LimeSurvey question code limits:
@@ -912,6 +922,9 @@ def generate_lss(
             l10n_id_counter += 1
         # --- Add hidden metadata question for this questionnaire ---
         file_metadata = _extract_single_file_metadata(json_path, base_language)
+        meta_cells = []  # filled by _fill_metadata_cells after the questions
+        code_map = {}  # original PRISM code -> LimeSurvey column it is written to
+        metadata_kwargs = {}
         if file_metadata:
             meta_qid = str(qid_counter)
             qid_counter += 1
@@ -924,19 +937,11 @@ def generate_lss(
                 list(questions_data.keys()) if is_participants_file else None
             )
 
-            # Build code map: original PRISM code → sanitized LS code.
-            # This allows re-import to reverse the sanitization.
-            export_code_map = {}
-            for orig_code in questions_data:
-                sanitized = _sanitize_question_code(orig_code)
-                export_code_map[orig_code] = sanitized
-
-            metadata_html = _format_single_metadata_html(
-                file_metadata,
-                is_participants=is_participants_file,
-                participant_variables=participant_var_codes,
-                code_map=export_code_map,
-            )
+            metadata_kwargs = {
+                "meta": file_metadata,
+                "is_participants": is_participants_file,
+                "participant_variables": participant_var_codes,
+            }
 
             meta_q_data = {
                 "qid": meta_qid,
@@ -959,29 +964,29 @@ def generate_lss(
             add_row(questions_rows, meta_q_data)
 
             # Store metadata HTML as equation value so it persists in response data
-            add_row(
+            meta_cells.append(add_row(
                 question_attributes_rows,
                 {
                     "qaid": str(qaid_counter),
                     "qid": meta_qid,
                     "attribute": "equation",
-                    "value": metadata_html,
+                    "value": "",
                     "language": "",
                 },
-            )
+            ).find("value"))
             qaid_counter += 1
 
             for lang in languages:
-                add_row(
+                meta_cells.append(add_row(
                     question_l10ns_rows,
                     {
                         "id": str(l10n_id_counter),
                         "qid": meta_qid,
-                        "question": metadata_html,
+                        "question": "",
                         "help": "",
                         "language": lang,
                     },
-                )
+                ).find("question"))
                 l10n_id_counter += 1
         # Prepare Groups of Questions
         grouped_questions = []
@@ -1176,6 +1181,7 @@ def generate_lss(
                         code, used_subq_codes, run_number, sub_sort
                     )
                     used_subq_codes.add(sub_q_code)
+                    code_map[code] = f"{matrix_title}[{sub_q_code}]"
 
                     sub_q_row = {
                         "qid": sub_qid,
@@ -1252,6 +1258,7 @@ def generate_lss(
             else:
                 # Single Question (with run suffix if applicable)
                 q_code = _apply_run_suffix(first_code, run_number)
+                code_map[first_code] = q_code
                 q_data = first_data
                 is_mandatory = q_data.get("Mandatory", True)
 
@@ -1360,6 +1367,8 @@ def generate_lss(
                             )
                             l10n_id_counter += 1
                         aid_counter += 1
+        _fill_metadata_cells(meta_cells, metadata_kwargs, code_map)
+
     # --- Survey Settings ---
     survey_settings = {
         "sid": sid,
@@ -1631,6 +1640,9 @@ def generate_lss_from_customization(
             )
             l10n_id_counter += 1
         # --- Add hidden metadata question for this questionnaire ---
+        meta_cells = []  # filled by _fill_metadata_cells after the questions
+        code_map = {}  # original PRISM code -> LimeSurvey column it is written to
+        metadata_kwargs = {}
         source_file = None
         if enabled_questions:
             source_file = enabled_questions[0].get("sourceFile")
@@ -1656,19 +1668,11 @@ def generate_lss_from_customization(
                     else None
                 )
 
-                # Build code map for customization export
-                custom_code_map = {}
-                for q in enabled_questions:
-                    orig = q.get("questionCode", "")
-                    if orig:
-                        custom_code_map[orig] = _sanitize_question_code(orig)
-
-                metadata_html = _format_single_metadata_html(
-                    file_metadata,
-                    is_participants=is_participants_group,
-                    participant_variables=participant_var_codes,
-                    code_map=custom_code_map,
-                )
+                metadata_kwargs = {
+                    "meta": file_metadata,
+                    "is_participants": is_participants_group,
+                    "participant_variables": participant_var_codes,
+                }
 
                 meta_q_data = {
                     "qid": meta_qid,
@@ -1691,29 +1695,29 @@ def generate_lss_from_customization(
                 add_row(questions_rows, meta_q_data)
 
                 # Store metadata HTML as equation value so it persists in response data
-                add_row(
+                meta_cells.append(add_row(
                     question_attributes_rows,
                     {
                         "qaid": str(qaid_counter),
                         "qid": meta_qid,
                         "attribute": "equation",
-                        "value": metadata_html,
+                        "value": "",
                         "language": "",
                     },
-                )
+                ).find("value"))
                 qaid_counter += 1
 
                 for lang in languages:
-                    add_row(
+                    meta_cells.append(add_row(
                         question_l10ns_rows,
                         {
                             "id": str(l10n_id_counter),
                             "qid": meta_qid,
-                            "question": metadata_html,
+                            "question": "",
                             "help": "",
                             "language": lang,
                         },
-                    )
+                    ).find("question"))
                     l10n_id_counter += 1
         # Sort questions by displayOrder
         sorted_questions = sorted(
@@ -1982,6 +1986,7 @@ def generate_lss_from_customization(
                         q_code, used_subq_codes, run_num, sub_sort
                     )
                     used_subq_codes.add(sub_q_code)
+                    code_map[q_code] = f"{matrix_title}[{sub_q_code}]"
 
                     sub_source_data = _get_question_from_source(q)
                     sub_orig = (
@@ -2072,6 +2077,7 @@ def generate_lss_from_customization(
                 q_code = q.get("questionCode", f"Q{q_sort_order}")
                 run_num = q.get("runNumber")
                 final_code = _apply_run_suffix(q_code, run_num)
+                code_map[q_code] = final_code
 
                 orig = source_q_data if source_q_data else q.get("originalData", {})
                 i18n_data = _get_i18n_from_source(q)
@@ -2240,6 +2246,8 @@ def generate_lss_from_customization(
                         aid_counter += 1
                 else:
                     logger.warning("No levels for %s", final_code)
+
+        _fill_metadata_cells(meta_cells, metadata_kwargs, code_map)
 
     # --- Survey Settings ---
     survey_settings = {
