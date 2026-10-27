@@ -7,14 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **BREAKING: environment format 1.1.0 is retired (environment 2.0.0, specification v1.4.0).** Environment sidecars now have
-  `Technical`/`Study`/`Metadata` blocks (no `Privacy` block), the columns point to official terms (weather, air quality, pollen,
-  sun and moon, season, time of day, heat status, weather regime with the codes `high-pressure`, `low-pressure`, `frontal`) and the
-  `filename`/`relative_time` columns are gone. The validator reports a 1.1.0 file with the fix: re-run
-  `python prism_tools.py environment convert ...` on your source data. The validator checks environment like biosample
-  (term notices are INFO, any declared unit is accepted, values outside a term's levels are WARNING).
-
 ### Added
 - **Environment time windows.** `environment convert --window VAR:DURATION:STAT` (repeatable, e.g. `temp_c:P3D:max`) summarises a
   variable over an ISO 8601 duration before the session (mean, min, max, sum, count; windows are half-open, years and months are
@@ -43,8 +35,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `session-map suggest`: proposes defaults 1, 2, 3 for unmapped labels (pre-filled and editable in the session map panel;
   never saved unasked).
 - `requirements-eyetrack.txt`: opt-in install of eye2bids from GitHub (pinned commit), for converting eye-tracking recordings to BIDS.
+- **Additions to a modality.** A value an existing schema does not allow yet (for example a new `Technical.SpecimenType`
+  such as `sweat`) can be used in your project right away: `prism_tools.py spec local add-values|remove-values` or the
+  *Addition to a modality* tab store a schema patch in `code/specification/patches/biosample.json`, which the validator
+  applies to a copy of the schemas for that project's run only. The enum error now prints the exact command, and the
+  validator says when a project uses local additions or when one has become official. `spec propose --patch` (and
+  `--all`) share them: the bot in prism-specification applies the patch and prepares the schema release (archive,
+  minor version, spec tables) for a maintainer. Studio carries prism-specification `v1.2.2`.
+- **Share many metrics at once.** `prism_tools.py spec propose --all` (or `--term` repeated) and *Share all local
+  metrics…* on the Propose changes page put every local metric of a project in one proposal, in
+  [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification)'s new proposal format v2 (up to 40 term
+  files, each at its repository path; v1.2.0 and v1.2.1). Studio carries prism-specification `v1.2.1`.
+- **Local metrics.** A metric PRISM does not know yet can be used in your project right away: `prism_tools.py spec local
+  add-term` (or *Specifications → Propose changes* in Studio) stores it in the project at `code/specification/terms/`, and
+  the validator reads it together with the official registry (the official one always wins; a local metric never reaches
+  another project). The validator says when a column uses a local term, when a local term has become official, and when
+  an overlay file was skipped. `spec local list|remove` and `spec propose` (shares a local term; nothing is sent
+  without `--open`) complete the set. The unknown-metric notice now offers both "use it here now" and "share it".
+- **Propose a metric.** `prism_tools.py terms propose --sidecar FILE --column NAME [--open]` turns an unknown biosample
+  column into a proposal for the term registry and opens a prefilled "Propose a Metric" form in
+  [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (nothing is sent without `--open`). A bot
+  there checks it against the current registry; for trusted authors it opens a draft pull request, for everyone else a
+  maintainer takes over. The validator's
+  "not an official metric" notice now names the command. Studio carries prism-specification `v1.1.0`.
+- **Biosample term registry (phase 1).** Biosample columns can name a shipped term (`"cort": {"Term": "cortisol"}`;
+  stable IDs such as `prism:cortisol` and `prism:cortisol.saliva`) and inherit its unit, range and LOINC code. A metric
+  the registry does not know still passes, with an info that lists similar official terms. A term for another specimen
+  than the sidecar's `SpecimenType` is an error. New command `prism_tools.py terms list|show|suggest`. Design:
+  `docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md`.
+  The biosample schema is now `1.1.0` (a column may use `Term` instead of `Description` and `Units`); `1.0.0` is archived
+  in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **BREAKING: environment format 1.1.0 is retired (environment 2.0.0, specification v1.4.0).** Environment sidecars now have
+  `Technical`/`Study`/`Metadata` blocks (no `Privacy` block), the columns point to official terms (weather, air quality, pollen,
+  sun and moon, season, time of day, heat status, weather regime with the codes `high-pressure`, `low-pressure`, `frontal`) and the
+  `filename`/`relative_time` columns are gone. The validator reports a 1.1.0 file with the fix: re-run
+  `python prism_tools.py environment convert ...` on your source data. The validator checks environment like biosample
+  (term notices are INFO, any declared unit is accepted, values outside a term's levels are WARNING).
 - **Sharing additions refuses a bad kind-of-data name by name**, and list labels keep acronyms whole (DOI, License ID).
 - **Studio's own "Propose a New Modality" issue form and bot are retired.** prism-specification takes new kinds of data; `modality propose`
   stays as the maintainer's drafting tool.
@@ -57,6 +85,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Use in my open project" and the additions list on the Propose page work for every kind of data.
 - **Modality schema conventions are checked by the vendored `scripts/specification/check_modalities.py`** in CI; Studio's own check is removed.
 - **`modality propose` drafts the entities entry** with `description` and `describedColumns`, and its `REGISTRATION.md` points to prism-specification.
+- **Internal: the validator reads one specification per run.** What a validation uses (modality rules, schemas, terms)
+  is now one object that is current for the run (`src/specification.py`); validation code no longer reads constants
+  frozen at import or hand-written modality lists (a test guards the files that matter). Today it holds the official
+  rules, the schemas the project's pins select, and the official terms; it is the hook for a project's own, not yet
+  official modalities, field values and metrics, which will apply to one project without leaking into another.
+  No change in what is reported.
+- **The specification lives in its own repository.** The modality schemas (with their archive), the term registry and
+  the specification pages are now edited and released in
+  [MRI-Lab-Graz/prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (CC BY 4.0, scripts MIT) and
+  carried here as a hash-locked copy of a tagged release (`specification.lock.json`, `v1.0.0`), at the same paths as
+  before. `python scripts/sync_specification.py --tag <tag>` is the only way the copy changes; the CI job
+  `Vendored specification` replaces `Modality schema versions` (that job now runs in prism-specification).
+  `project`, `recipe.survey`, `tool-limesurvey` and `instrument-registry` schemas and `project.md` stay here.
+
+### Removed
+- **The `eyetracking` modality.** Eye tracking is BIDS physio (`PhysioType: eyetrack`, BIDS 1.11), so PRISM no longer has
+  its own folder, schema, converter tab or `convert physio --modality eyetracking`. Studio carries prism-specification
+  v1.2.3. An `eyetracking/` folder is reported by the validator with the way forward (eye2bids, then the datatype folder
+  of the task). A converter around eye2bids is parked in `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`.
 
 ### Fixed
 - Participants import: numbers with padded decimal zeros (LimeSurvey exports ages as `23.0000000000`) are read as `23`;
@@ -80,71 +127,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data problems were reported as `PRISM901` (internal error): a TSV without a header (now `PRISM401`), a value that is not
   a number where the template expects one (`PRISM402`) and "session appears only in N subjects" (`PRISM601`).
 - The hostile demo project is now a finished project (required fields set, sessions `1`, `01` and `pre` mapped one-to-one).
-
-### Removed
-- **The `eyetracking` modality.** Eye tracking is BIDS physio (`PhysioType: eyetrack`, BIDS 1.11), so PRISM no longer has
-  its own folder, schema, converter tab or `convert physio --modality eyetracking`. Studio carries prism-specification
-  v1.2.3. An `eyetracking/` folder is reported by the validator with the way forward (eye2bids, then the datatype folder
-  of the task). A converter around eye2bids is parked in `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`.
-
-### Added
-- **Additions to a modality.** A value an existing schema does not allow yet (for example a new `Technical.SpecimenType`
-  such as `sweat`) can be used in your project right away: `prism_tools.py spec local add-values|remove-values` or the
-  *Addition to a modality* tab store a schema patch in `code/specification/patches/biosample.json`, which the validator
-  applies to a copy of the schemas for that project's run only. The enum error now prints the exact command, and the
-  validator says when a project uses local additions or when one has become official. `spec propose --patch` (and
-  `--all`) share them: the bot in prism-specification applies the patch and prepares the schema release (archive,
-  minor version, spec tables) for a maintainer. Studio carries prism-specification `v1.2.2`.
-- **Share many metrics at once.** `prism_tools.py spec propose --all` (or `--term` repeated) and *Share all local
-  metrics…* on the Propose changes page put every local metric of a project in one proposal, in
-  [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification)'s new proposal format v2 (up to 40 term
-  files, each at its repository path; v1.2.0 and v1.2.1). Studio carries prism-specification `v1.2.1`.
-- **Local metrics.** A metric PRISM does not know yet can be used in your project right away: `prism_tools.py spec local
-  add-term` (or *Specifications → Propose changes* in Studio) stores it in the project at `code/specification/terms/`, and
-  the validator reads it together with the official registry (the official one always wins; a local metric never reaches
-  another project). The validator says when a column uses a local term, when a local term has become official, and when
-  an overlay file was skipped. `spec local list|remove` and `spec propose` (shares a local term; nothing is sent
-  without `--open`) complete the set. The unknown-metric notice now offers both "use it here now" and "share it".
-
-### Changed
-- **Internal: the validator reads one specification per run.** What a validation uses (modality rules, schemas, terms)
-  is now one object that is current for the run (`src/specification.py`); validation code no longer reads constants
-  frozen at import or hand-written modality lists (a test guards the files that matter). Today it holds the official
-  rules, the schemas the project's pins select, and the official terms; it is the hook for a project's own, not yet
-  official modalities, field values and metrics, which will apply to one project without leaking into another.
-  No change in what is reported.
-
-### Fixed
 - **Biosample folders no longer fail BIDS validation.** The BIDS validator reported `NOT_INCLUDED` for
   `sub-*/ses-*/biosample/` (so "validation failed" on a project Studio had just created, once it held biosample data),
   because the list of PRISM-only folders was hand-written and had never gained `biosample`. It is derived from the
   entity rules now, so a newly registered modality cannot be forgotten there.
-
-### Added
-- **Propose a metric.** `prism_tools.py terms propose --sidecar FILE --column NAME [--open]` turns an unknown biosample
-  column into a proposal for the term registry and opens a prefilled "Propose a Metric" form in
-  [prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (nothing is sent without `--open`). A bot
-  there checks it against the current registry; for trusted authors it opens a draft pull request, for everyone else a
-  maintainer takes over. The validator's
-  "not an official metric" notice now names the command. Studio carries prism-specification `v1.1.0`.
-
-### Changed
-- **The specification lives in its own repository.** The modality schemas (with their archive), the term registry and
-  the specification pages are now edited and released in
-  [MRI-Lab-Graz/prism-specification](https://github.com/MRI-Lab-Graz/prism-specification) (CC BY 4.0, scripts MIT) and
-  carried here as a hash-locked copy of a tagged release (`specification.lock.json`, `v1.0.0`), at the same paths as
-  before. `python scripts/sync_specification.py --tag <tag>` is the only way the copy changes; the CI job
-  `Vendored specification` replaces `Modality schema versions` (that job now runs in prism-specification).
-  `project`, `recipe.survey`, `tool-limesurvey` and `instrument-registry` schemas and `project.md` stay here.
-
-### Added
-- **Biosample term registry (phase 1).** Biosample columns can name a shipped term (`"cort": {"Term": "cortisol"}`;
-  stable IDs such as `prism:cortisol` and `prism:cortisol.saliva`) and inherit its unit, range and LOINC code. A metric
-  the registry does not know still passes, with an info that lists similar official terms. A term for another specimen
-  than the sidecar's `SpecimenType` is an error. New command `prism_tools.py terms list|show|suggest`. Design:
-  `docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md`.
-  The biosample schema is now `1.1.0` (a column may use `Term` instead of `Description` and `Units`); `1.0.0` is archived
-  in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ## [1.22.0] - 2026-10-22
 

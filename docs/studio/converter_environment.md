@@ -44,6 +44,10 @@ The **Time windows** list summarises a variable over a period before each sessio
 `temp_c`, `P3D`, `max` for the highest temperature in the three days before. Pick the variable, an ISO 8601 duration
 (`PT12H`, `P3D`; years and months are not accepted) and a statistic (mean, min, max, sum, count). Windows are half-open
 (session - duration, session]. Rows left empty or built from a partial window are listed in the conversion summary.
+Each window becomes a column named `<var>_<stat>_<duration lowercased>`, for example `temp_c_max_p3d` or
+`temp_c_sum_p1dt12h`.
+Each run rewrites the root sidecar with its own window set: re-run all sessions with the same windows (files from
+earlier runs with other windows get "undescribed column" warnings).
 Command line: `environment convert --window VAR:DURATION:STAT`.
 
 ## Step 4 — Convert

@@ -558,6 +558,9 @@ python prism_tools.py environment convert --input environment.xlsx --project my-
 
 The converter writes environment format 2.0.0 (term columns, no `Privacy` block). Windows are half-open
 (session - duration, session]; rows left empty or built from a partial window are listed as `window_problems` in the `--json` result.
+Each window becomes a column named `<var>_<stat>_<duration lowercased>`, for example `temp_c_max_p3d` or
+`precip_mm_sum_pt12h`; a repeated window is written once. A project still pinned to environment 1.1.0 is moved to the
+current version (`environment schema pin 1.1.0 -> 2.0.0` in the log and as `schema_pin_change` in the result).
 
 **`environment scan-mri`** — scan a project's rawdata for MRI acquisition
 timestamps/scanner-site location from existing BIDS JSON sidecars, writing a TSV
