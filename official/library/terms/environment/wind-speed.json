@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:wind-speed",
+  "Level": "variable",
+  "Label": "wind speed",
+  "Aliases": [
+    "wind_speed_ms"
+  ],
+  "Description": "Wind speed near the surface.",
+  "Units": "m/s",
+  "CFStandardName": "wind_speed",
+  "Status": "official"
+}

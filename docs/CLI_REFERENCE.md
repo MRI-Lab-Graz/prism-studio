@@ -549,7 +549,18 @@ python prism_tools.py environment preview --input /absolute/path/to/environment.
 python prism_tools.py environment convert \
   --input /absolute/path/to/environment.xlsx \
   --project /absolute/path/to/my-project --timestamp-col collected_at
+
+# Summarise a variable over a time window before the session (repeatable):
+# VAR:DURATION:STAT, STAT is mean|min|max|sum|count, DURATION is ISO 8601 (P3D, PT12H; no years/months)
+python prism_tools.py environment convert --input environment.xlsx --project my-project \
+  --timestamp-col collected_at --window temp_c:P3D:max --window precip_mm:PT12H:sum
 ```
+
+The converter writes environment format 2.0.0 (term columns, no `Privacy` block). Windows are half-open
+(session - duration, session]; rows left empty or built from a partial window are listed as `window_problems` in the `--json` result.
+Each window becomes a column named `<var>_<stat>_<duration lowercased>`, for example `temp_c_max_p3d` or
+`precip_mm_sum_pt12h`; a repeated window is written once. A project still pinned to environment 1.1.0 is moved to the
+current version (`environment schema pin 1.1.0 -> 2.0.0` in the log and as `schema_pin_change` in the result).
 
 **`environment scan-mri`** — scan a project's rawdata for MRI acquisition
 timestamps/scanner-site location from existing BIDS JSON sidecars, writing a TSV
@@ -809,17 +820,17 @@ These need no project and send nothing unless you add `--open`; they are what *S
 
     python prism_tools.py spec catalog [--json]
     python prism_tools.py spec propose-values --modality <modality> --field <field> --value <value> [--value <value> ...] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
-    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample] [--project <folder>] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
+    python prism_tools.py spec propose-metric --name <name> --description <text> --units <units> --specimen <specimen> [--alias <name> ...] [--modality biosample|environment] [--level CODE=LABEL ...] [--cf-standard-name <name>] [--project <folder>] [--not-sure] [--closest <name>] [--entry FIELD=VALUE ...] [--out FILE] [--open] [--json]
     python prism_tools.py spec example --modality <modality> [--template <stem>] [--json]
     python prism_tools.py spec propose-new-kind --description <text> --sample <file> [--closest <name>] [--out FILE] [--open] [--json]
 
 - `catalog`: what can be proposed: the kinds of data, their lists with the values they allow, and the measurements PRISM already knows.
 - `propose-values`: proposes missing choices in a list, for example `--modality biosample --field Technical.SpecimenType --value sweat`. A value the list already has is reported and left out.
-- `propose-metric`: proposes a missing measurement (`--name`, what it measures, `--units`, the `--specimen` it is taken from; `--alias` adds other names). `--project` also accepts the sample types that project added. A measurement PRISM already has is reported with the term to use.
+- `propose-metric`: proposes a missing measurement (`--name`, what it measures, `--units`, the `--specimen` it is taken from; `--alias` adds other names). `--project` also accepts the sample types that project added. A measurement PRISM already has is reported with the term to use. For `--modality environment` there is no sample type: give `--units` (for example `dB`) or `--level CODE=LABEL` (repeatable), and optionally `--cf-standard-name`.
 - `example`: prints an example of a kind of data from its library template (`--template` picks one by stem, default the first), so you can see what an entry looks like before proposing.
 - `propose-new-kind`: proposes a kind of data PRISM does not have: `--description` says what the data is and how it is recorded, `--sample` is a sample data file (UTF-8 text) that you paste into the form yourself, `--closest` names the closest existing kind. `--out FILE` saves the proposal text; `--open` opens the prefilled prism-specification form.
 - `--not-sure` (on `propose-values` and `propose-metric`) says you do not know which kind of data this belongs to; `--closest` then names the nearest one. `--entry FIELD=VALUE` (repeatable) adds a field you filled in.
-- `--out FILE` also saves the proposal document (format v2); `--open` opens the prefilled form on GitHub. Today only `biosample` is offered as a kind of data.
+- `--out FILE` also saves the proposal document (format v2); `--open` opens the prefilled form on GitHub. `biosample` and `environment` can be proposed as measurements.
 
 ## modality-version
 

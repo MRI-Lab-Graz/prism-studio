@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:ozone",
+  "Level": "variable",
+  "Label": "ozone",
+  "Aliases": [
+    "o3_ug_m3"
+  ],
+  "Description": "Mass concentration of ozone in air.",
+  "Units": "ug/m3",
+  "CFStandardName": "mass_concentration_of_ozone_in_air",
+  "Status": "official"
+}

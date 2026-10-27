@@ -35,7 +35,7 @@ BASE = "sub-01/ses-1/biosample/sub-01_ses-1_biosample-saliva_biosample"
 def _validator(registry=None):
     v = DatasetValidator(load_all_schemas(str(SCHEMA_DIR)))
     if registry is not None:
-        v._terms = registry
+        v._registries = {"biosample": registry}
     return v
 
 

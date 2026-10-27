@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:pm25",
+  "Level": "variable",
+  "Label": "PM2.5",
+  "Aliases": [
+    "pm25_ug_m3"
+  ],
+  "Description": "Mass concentration of particulate matter up to 2.5 micrometres in air.",
+  "Units": "ug/m3",
+  "CFStandardName": "mass_concentration_of_pm2p5_ambient_aerosol_particles_in_air",
+  "Status": "official"
+}

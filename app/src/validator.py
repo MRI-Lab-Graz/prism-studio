@@ -14,7 +14,7 @@ from jsonschema import validate, ValidationError
 from src.schema_manager import validate_schema_version, apply_schema_validation_profile
 from src.entity_rules import check_entities, load_entity_rules
 from src.specification import current_specification
-from src.term_registry import analyte_columns, resolve_column
+from src.term_registry import context_value, resolve_column, term_columns
 from src.converters.survey_core import get_allowed_values
 from src.cross_platform import (
     normalize_path,
@@ -75,14 +75,8 @@ BIOSAMPLE_RECOMMENDED_TECHNICAL = (
 
 # Column fields a resolved term supplies when the column does not set them.
 TERM_INHERITED_FIELDS = (
-    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC",
+    "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "LOINC", "Levels",
 )
-
-def _sidecar_specimen(sidecar_data) -> str | None:
-    """Technical.SpecimenType of a sidecar, tolerating a malformed Technical block."""
-    technical = sidecar_data.get("Technical")
-    return technical.get("SpecimenType") if isinstance(technical, dict) else None
-
 
 MRI_SUFFIX_REGEX = re.compile(
     r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
@@ -91,34 +85,7 @@ MRI_SUFFIX_REGEX = re.compile(
 # File extensions that need special handling
 COMPOUND_EXTS = (".nii.gz", ".tsv.gz", ".edf.gz")
 
-ENV_REQUIRED_COLUMNS = {
-    "subject_id",
-    "session_id",
-    "filename",
-    "relative_time",
-    "hour_bin",
-    "season_code",
-    "sun_phase",
-    "sun_hours_today",
-    "hours_since_sun",
-    "temp_c",
-    "humidity_pct",
-    "pressure_hpa",
-    "precip_mm",
-    "wind_speed_ms",
-    "cloud_cover_pct",
-    "weather_regime",
-    "aqi",
-    "pm25_ug_m3",
-    "pm10_ug_m3",
-    "no2_ug_m3",
-    "o3_ug_m3",
-    "pollen_total",
-    "pollen_birch",
-    "pollen_grass",
-    "pollen_risk_bin",
-}
-
+# Columns that once broke the 1.1.0 privacy rules; now a WARNING (they can identify a session).
 ENV_FORBIDDEN_COLUMNS = {
     "date",
     "datetime",
@@ -137,25 +104,31 @@ ENV_FORBIDDEN_COLUMNS = {
     "source_pollen",
 }
 
-ENV_NUMERIC_COLUMNS = {
-    "sun_hours_today",
-    "hours_since_sun",
-    "elevation_m",
-    "temp_c",
-    "humidity_pct",
-    "pressure_hpa",
-    "precip_mm",
-    "wind_speed_ms",
-    "cloud_cover_pct",
-    "aqi",
-    "pm25_ug_m3",
-    "pm10_ug_m3",
-    "no2_ug_m3",
-    "o3_ug_m3",
-    "pollen_total",
-    "pollen_birch",
-    "pollen_grass",
-}
+ENV_RETIRED_MESSAGE = (
+    "environment format 1.1.0 is retired; re-create it with: python prism_tools.py environment convert ..."
+)
+
+
+def is_retired_environment_sidecar(sidecar_data: dict) -> bool:
+    """A 1.1.0 environment sidecar: a Privacy or Columns block, or Metadata.SchemaVersion 1.x."""
+    version = (sidecar_data.get("Metadata") or {}).get("SchemaVersion")
+    return (
+        "Privacy" in sidecar_data
+        or "Columns" in sidecar_data
+        or (isinstance(version, str) and version.startswith("1."))
+    )
+
+
+def _environment_forbidden_columns(fieldnames, file_name: str) -> list:
+    """WARNING for columns that can identify when or where a session took place."""
+    found = sorted({str(c).strip().lower() for c in fieldnames if c} & ENV_FORBIDDEN_COLUMNS)
+    if not found:
+        return []
+    return [(
+        "WARNING",
+        f"{file_name}: column(s) that can identify the time or place of a session: {', '.join(found)}. "
+        "Check that the dataset may carry them before sharing it.",
+    )]
 
 
 def split_compound_ext(filename):
@@ -547,7 +520,8 @@ class DatasetValidator:
         self._sidecar_json_error_cache = {}
         self._original_name_cache = {}
         self._biosample_warned = set()
-        self._terms = current_specification().terms.get("biosample", {})
+        self._terms_checked = set()
+        self._registries = current_specification().terms  # one registry per term modality
         # One directory listing per directory for the whole run, replacing tens
         # of thousands of per-candidate stat() calls on network shares.
         self._dir_cache = {}
@@ -701,8 +675,11 @@ class DatasetValidator:
             f'--project "{root_dir}" --field {field} --value {error.instance}'
         )
 
-    def _build_effective_defs(self, sidecar_data: dict) -> dict:
-        """Resolve AliasOf and Aliases in sidecar data to build a flat definition table."""
+    def _build_effective_defs(self, sidecar_data: dict, modality: str, term_levels: set | None = None) -> dict:
+        """Resolve AliasOf and Aliases in sidecar data to build a flat definition table.
+
+        Columns whose Levels come from a registry term (not the sidecar) are added to `term_levels`.
+        """
         effective_defs = {}
         # First pass: identify canonical items and their direct aliases
         for k, v in sidecar_data.items():
@@ -725,19 +702,22 @@ class DatasetValidator:
 
         # Third pass: columns naming a registry term inherit its definition
         # (the column's own values win). Name matches only suggest, see
-        # _check_biosample_terms.
-        specimen = _sidecar_specimen(sidecar_data)
+        # _check_terms.
+        registry = self._registries.get(modality) or {}
+        specimen = context_value(sidecar_data, modality)
         for k, v in sidecar_data.items():
             if isinstance(v, dict) and isinstance(v.get("Term"), str) and v["Term"]:
-                res = resolve_column(self._terms, k, v, specimen)
+                res = resolve_column(registry, k, v, specimen)
                 if res.kind in ("term", "deprecated") and res.term:
                     inherited = {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
                     # the column's own values win, but null/"" must not switch an inherited check off
-                    merged = {**inherited, **{f: x for f, x in v.items() if x not in (None, "")}}
-                    effective_defs[k] = merged
-                    for alias in v.get("Aliases") or []:
-                        if isinstance(alias, str) and alias not in sidecar_data:
-                            effective_defs[alias] = merged
+                    own = {f: x for f, x in v.items() if x not in (None, "")}
+                    merged = {**inherited, **own}
+                    names = [k] + [a for a in v.get("Aliases") or [] if isinstance(a, str) and a not in sidecar_data]
+                    for name in names:
+                        effective_defs[name] = merged
+                    if term_levels is not None and "Levels" in inherited and "Levels" not in own:
+                        term_levels.update(names)
         return effective_defs
 
     def _is_empty_levels_label(self, label) -> bool:
@@ -778,9 +758,9 @@ class DatasetValidator:
         return issues
 
     def _check_allowed_values(
-        self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int
+        self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int, severity: str = "ERROR"
     ) -> list:
-        """Checks if a value is within the allowed values or levels."""
+        """Checks if a value is within the allowed values or levels (WARNING for Levels a term supplies)."""
         allowed = get_allowed_values(col_def)
         if not allowed or value in allowed:
             return []
@@ -795,7 +775,7 @@ class DatasetValidator:
 
         return [
             (
-                "ERROR",
+                severity,
                 f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not in allowed values: {allowed}",
             )
         ]
@@ -992,9 +972,6 @@ class DatasetValidator:
         """Validate data content against constraints in sidecar (with BIDS inheritance)"""
         issues = []
 
-        if modality == "environment":
-            return self._validate_environment_content(file_path)
-
         # Only validate content for tabular data modalities
         if modality not in current_specification().described_columns:
             return issues
@@ -1004,8 +981,8 @@ class DatasetValidator:
             file_path, root_dir
         )
 
-        if sidecar_data is None:
-            # Missing sidecar is already reported by validate_sidecar
+        if sidecar_data is None or (modality == "environment" and is_retired_environment_sidecar(sidecar_data)):
+            # Missing or retired sidecar is already reported by validate_sidecar
             return issues
 
         try:
@@ -1021,7 +998,8 @@ class DatasetValidator:
             # sidecar_data is already loaded and merged by resolve_inherited_sidecar
 
             # Build flat lookup table for validation, resolving AliasOf and Aliases
-            effective_defs = self._build_effective_defs(sidecar_data)
+            term_levels: set[str] = set()
+            effective_defs = self._build_effective_defs(sidecar_data, modality, term_levels)
 
             # Metadata quality checks: warn when Levels contain empty labels.
             file_name = os.path.basename(file_path)
@@ -1048,7 +1026,8 @@ class DatasetValidator:
                             excluded_columns.add(col)
 
             # Read TSV file
-            with open(file_path, "r", newline="", encoding="utf-8-sig") as tsvfile:
+            opener = gzip.open if file_path.endswith(".gz") else open
+            with opener(file_path, "rt", newline="", encoding="utf-8-sig") as tsvfile:
                 reader = csv.DictReader(tsvfile, delimiter="\t")
 
                 if not reader.fieldnames:
@@ -1058,6 +1037,9 @@ class DatasetValidator:
                             f"File {file_name} is not a valid TSV (no header found).",
                         )
                     ]
+
+                if modality == "environment":
+                    issues.extend(_environment_forbidden_columns(reader.fieldnames, file_name))
 
                 undescribed = [c for c in reader.fieldnames if c not in effective_defs]
                 if undescribed:
@@ -1145,7 +1127,8 @@ class DatasetValidator:
                             # Apply validation helpers
                             issues.extend(
                                 self._check_allowed_values(
-                                    value, col_name, col_def, file_name, row_idx
+                                    value, col_name, col_def, file_name, row_idx,
+                                    "WARNING" if col_name in term_levels else "ERROR",
                                 )
                             )
                             issues.extend(
@@ -1172,169 +1155,6 @@ class DatasetValidator:
                 (
                     "ERROR",
                     f"Error validating content of {os.path.basename(file_path)}: {str(e)}",
-                )
-            )
-
-        return issues
-
-    def _validate_environment_content(self, file_path):
-        issues = []
-        file_name = os.path.basename(file_path)
-
-        try:
-            if os.path.getsize(file_path) == 0:
-                return [
-                    (
-                        "ERROR",
-                        f"File {file_name} is empty. If data is missing, please delete the file.",
-                    )
-                ]
-
-            opener = gzip.open if file_path.endswith(".tsv.gz") else open
-            with opener(file_path, "rt", newline="", encoding="utf-8") as tsvfile:
-                reader = csv.DictReader(tsvfile, delimiter="\t")
-                if not reader.fieldnames:
-                    return [
-                        (
-                            "ERROR",
-                            f"File {file_name} is not a valid TSV (no header found).",
-                        )
-                    ]
-
-                headers = [h.strip() for h in reader.fieldnames if h]
-                header_set = set(headers)
-                header_lower = {h.lower() for h in header_set}
-
-                missing = sorted(ENV_REQUIRED_COLUMNS - header_set)
-                if missing:
-                    issues.append(
-                        (
-                            "ERROR",
-                            f"{file_name}: Missing required environment columns: {', '.join(missing)}",
-                        )
-                    )
-
-                forbidden = sorted(header_lower.intersection(ENV_FORBIDDEN_COLUMNS))
-                if forbidden:
-                    issues.append(
-                        (
-                            "ERROR",
-                            f"{file_name}: Forbidden privacy-sensitive columns found: {', '.join(forbidden)}",
-                        )
-                    )
-
-                row_count = 0
-                for row_idx, row in enumerate(reader, start=2):
-                    row_count += 1
-
-                    if all(v is None or str(v).strip() == "" for v in row.values()):
-                        issues.append(
-                            (
-                                "WARNING",
-                                f"{file_name} line {row_idx}: Row contains only empty values.",
-                            )
-                        )
-                        continue
-
-                    hour_bin = (row.get("hour_bin") or "").strip()
-                    if hour_bin and hour_bin not in {
-                        "night",
-                        "morning",
-                        "afternoon",
-                        "evening",
-                        "unknown",
-                    }:
-                        issues.append(
-                            (
-                                "ERROR",
-                                f"{file_name} line {row_idx}: Invalid hour_bin '{hour_bin}'",
-                            )
-                        )
-
-                    season = (row.get("season_code") or "").strip()
-                    if season and season not in {
-                        "spring",
-                        "summer",
-                        "autumn",
-                        "winter",
-                        "unknown",
-                    }:
-                        issues.append(
-                            (
-                                "ERROR",
-                                f"{file_name} line {row_idx}: Invalid season_code '{season}'",
-                            )
-                        )
-
-                    pollen_risk = (row.get("pollen_risk_bin") or "").strip()
-                    if pollen_risk and pollen_risk not in {
-                        "low",
-                        "medium",
-                        "high",
-                        "very_high",
-                    }:
-                        issues.append(
-                            (
-                                "ERROR",
-                                f"{file_name} line {row_idx}: Invalid pollen_risk_bin '{pollen_risk}'",
-                            )
-                        )
-
-                    weather_regime = (row.get("weather_regime") or "").strip()
-                    if weather_regime and weather_regime not in {
-                        "hochdruck",
-                        "tiefdruck",
-                        "frontal",
-                    }:
-                        issues.append(
-                            (
-                                "ERROR",
-                                f"{file_name} line {row_idx}: Invalid weather_regime '{weather_regime}'",
-                            )
-                        )
-
-                    heatwave_status = (row.get("heatwave_status") or "").strip()
-                    if heatwave_status and heatwave_status not in {
-                        "normal",
-                        "warm_day",
-                        "hot_day",
-                        "heatwave",
-                        "unknown",
-                    }:
-                        issues.append(
-                            (
-                                "ERROR",
-                                f"{file_name} line {row_idx}: Invalid heatwave_status '{heatwave_status}'",
-                            )
-                        )
-
-                    for column_name in ENV_NUMERIC_COLUMNS:
-                        value = (row.get(column_name) or "").strip()
-                        if not value:
-                            continue
-                        try:
-                            float(value)
-                        except ValueError:
-                            issues.append(
-                                (
-                                    "ERROR",
-                                    f"{file_name} line {row_idx}: Column '{column_name}' must be numeric (got '{value}')",
-                                )
-                            )
-
-                if row_count == 0:
-                    issues.append(
-                        (
-                            "WARNING",
-                            f"File {file_name} contains no data rows. If data is missing, please delete the file.",
-                        )
-                    )
-
-        except Exception as e:
-            issues.append(
-                (
-                    "ERROR",
-                    f"Error validating content of {file_name}: {str(e)}",
                 )
             )
 
@@ -1516,32 +1336,36 @@ class DatasetValidator:
                         f"{key}: recommended Technical fields missing: {', '.join(missing)}",
                     )
                 )
-            issues.extend(self._check_biosample_terms(sidecar_data, key, file_path, root_dir))
         return issues
 
-    def _check_biosample_terms(self, sidecar_data, key, file_path, root_dir) -> list:
-        """Relate each analyte column to the term registry (spec severity table)."""
+    def _check_terms(self, sidecar_data, key, file_path, root_dir, modality) -> list:
+        """Relate each term column to the modality's term registry (spec severity table)."""
         issues = []
-        specimen = _sidecar_specimen(sidecar_data)
+        registry = self._registries.get(modality) or {}
+        has_context = bool(current_specification().term_modalities.get(modality, {}).get("contextField"))
+        specimen = context_value(sidecar_data, modality)
         local_terms = current_specification().local_terms
-        for col, col_def in analyte_columns(sidecar_data):
-            res = resolve_column(self._terms, col, col_def, specimen)
+        for col, col_def in term_columns(sidecar_data, modality):
+            res = resolve_column(registry, col, col_def, specimen)
             ref = col_def.get("Term")
-            if isinstance(ref, str) and ref and not col_def.get("Units") and not (res.term or {}).get("Units"):
+            term = res.term or {}
+            if isinstance(ref, str) and ref and not col_def.get("Units") and not term.get("Units") and not (
+                res.kind == "term" and term.get("Levels")
+            ):
+                where = f" or has no definition for specimen {specimen!r}" if has_context else ""
                 issues.append((
                     "ERROR",
-                    f"{key}: {col}: Term {ref!r} is not in the term registry or has no definition for "
-                    f"specimen {specimen!r}, and the column has no Units",
+                    f"{key}: {col}: Term {ref!r} is not in the term registry{where}, and the column has no Units",
                 ))
                 continue
-            if not self._terms:
+            if not registry:
                 continue  # nothing to compare against
             if res.kind in ("term", "deprecated") and res.term and res.term.get("TermID") in local_terms:
                 tid = res.term["TermID"]
                 issues.append((
                     "INFO",
                     f"{key}: {col}: uses the local term {tid} (not official yet; it applies to this project only). "
-                    f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid}',
+                    f'Share it: python prism_tools.py spec propose --project "{root_dir}" --term {tid} --modality {modality}',
                 ))
             if res.kind == "term":
                 term = res.term or {}
@@ -1558,9 +1382,9 @@ class DatasetValidator:
                 issues.append(("ERROR" if res.kind == "specimen_mismatch" else "WARNING", f"{key}: {col}: {res.message}"))
             elif res.kind == "known_analyte_new_specimen":
                 issues.append(("INFO", f"{key}: {col}: {res.message}; you can share this specimen with the PRISM community. Run: python prism_tools.py "
-                    f"terms propose --data \"{normalize_path(file_path)}\" --column \"{col}\" (add --open to send it)."))
+                    f"terms propose --data \"{normalize_path(file_path)}\" --column \"{col}\" --modality {modality} (add --open to send it)."))
             elif res.kind == "suggestion":
-                if col not in self._terms:  # the canonical word itself needs no hint
+                if col not in registry:  # the canonical word itself needs no hint
                     issues.append(("INFO", f"{key}: {res.message}"))
             else:
                 similar = f" Similar official terms: {', '.join(res.similar)}." if res.similar else ""
@@ -1568,9 +1392,9 @@ class DatasetValidator:
                     "INFO",
                     f"{key}: {col} is not an official metric.{similar} Do you want to share it with the "
                     f"PRISM community to make it official? Use it in this project now: python prism_tools.py spec local "
-                    f'add-term --project "{root_dir}" --data "{normalize_path(file_path)}" --column "{col}"; '
+                    f'add-term --project "{root_dir}" --data "{normalize_path(file_path)}" --column "{col}" --modality {modality}; '
                     f'share it: python prism_tools.py terms propose --data "{normalize_path(file_path)}" '
-                    f'--column "{col}" (add --open to send it). The maintainers may choose a different name; '
+                    f'--column "{col}" --modality {modality} (add --open to send it). The maintainers may choose a different name; '
                     "your files keep working through an alias.",
                 ))
         return issues
@@ -1614,6 +1438,12 @@ class DatasetValidator:
             return [("ERROR", f"Missing sidecar for {normalize_path(file_path)}")]
 
         try:
+            if modality == "environment" and is_retired_environment_sidecar(sidecar_data):
+                key = normalize_path(sidecar_path)
+                if ("retired", key) in self._terms_checked:
+                    return []  # reported once per sidecar, not once per data file
+                self._terms_checked.add(("retired", key))
+                return [("ERROR", f"{key}: {ENV_RETIRED_MESSAGE}")]
             # Validate against schema if available (PRISM modalities only)
             schema = self._schema_for_sidecar(modality, sidecar_path)
             if schema:
@@ -1624,6 +1454,10 @@ class DatasetValidator:
                     issues.extend(
                         self._check_biosample_sidecar(sidecar_data, sidecar_path, file_path, root_dir)
                     )
+                key = normalize_path(sidecar_path)
+                if modality in current_specification().term_modalities and (modality, key) not in self._terms_checked:
+                    self._terms_checked.add((modality, key))
+                    issues.extend(self._check_terms(sidecar_data, key, file_path, root_dir, modality))
 
         except ValidationError as e:
             # Format message to be more descriptive (include field path)

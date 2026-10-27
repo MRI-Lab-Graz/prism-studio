@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:moon-illumination",
+  "Level": "variable",
+  "Label": "moon illumination",
+  "Aliases": [
+    "moon_illumination_pct"
+  ],
+  "Description": "Illuminated fraction of the moon.",
+  "Units": "%",
+  "Status": "official"
+}

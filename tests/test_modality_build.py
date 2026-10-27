@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -25,12 +26,27 @@ SAMPLE = EXAMPLE_DIR / "bloodwork_sample.tsv"
 STABLE = Path(__file__).resolve().parents[1] / "app" / "schemas" / "stable"
 
 
-def test_the_vendored_conventions_check_passes_on_studios_copy() -> None:
+TERMS = STABLE.parents[2] / "official" / "library" / "terms"
+
+
+def _conventions_problems(terms_dir: Path) -> list[str]:
+    """The vendored check, given Studio's terms folder (its main() looks for <repo>/terms: Ruling 13)."""
     from src.spec_overlay import _vendored
 
-    assert _vendored("check_modalities").main(
-        ["--entities", str(STABLE / "entities.schema.json"), "--schemas", str(STABLE)]
-    ) == 0
+    entities = json.loads((STABLE / "entities.schema.json").read_text(encoding="utf-8"))
+    return _vendored("check_modalities").check(entities, STABLE, terms_dir)
+
+
+def test_the_vendored_conventions_check_passes_on_studios_copy() -> None:
+    assert TERMS.is_dir() and _conventions_problems(TERMS) == []
+
+
+def test_the_conventions_check_sees_a_terms_folder_without_a_declaration(tmp_path) -> None:
+    shutil.copytree(TERMS, tmp_path / "terms")
+    (tmp_path / "terms" / "survey").mkdir()
+    shutil.rmtree(tmp_path / "terms" / "environment")
+    problems = _conventions_problems(tmp_path / "terms")
+    assert any(p.startswith("survey:") for p in problems) and any(p.startswith("environment:") for p in problems)
 
 
 def test_registration_entry_carries_description_and_described_columns() -> None:

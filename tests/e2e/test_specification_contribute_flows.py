@@ -1,5 +1,6 @@
 """Contribute page: an unknown metric in the open project is added locally, shared (preview only) and removed."""
 
+import pytest
 import json
 import re
 
@@ -207,6 +208,15 @@ def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Norms")).to_have_count(0)
     expect(bare_page.locator("#spec-kind option[value='events']")).to_have_count(0)  # nothing of task events can be proposed
     expect(bare_page.locator("#spec-kind option[value='environment']")).to_have_count(1)
+
+
+def test_environment_has_no_privacy_section_and_a_form_without_sample_type(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Privacy")).to_have_count(0)
+    bare_page.locator("#spec-m-pick").select_option("missing")
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-specimen")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-units")).to_be_visible()
 
 
 def test_example_and_proposal_stay_level_row_by_row(bare_page, studio_url):
@@ -555,6 +565,25 @@ def test_unit_other_is_free_text(bare_page, studio_url):
     bare_page.locator("#spec-m-units-other").fill("ng/dL")
     bare_page.locator("#spec-m-share").click()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("ng/dL")
+
+
+def test_found_columns_show_only_for_their_own_kind(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_kind(app_page, studio_url, "environment")
+    expect(app_page.locator("#spec-m-found")).to_be_hidden()
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+    app_page.locator("#spec-kind").select_option("biosample")
+    expect(app_page.locator("#spec-m-found")).to_contain_text("dhea_s")
+
+
+def test_a_picked_found_column_is_forgotten_when_the_kind_changes(app_page, studio_url, project):
+    add_biosample_data(project)
+    choose_kind(app_page, studio_url, "biosample")
+    app_page.locator("#spec-m-found").get_by_role("button", name="dhea_s").click()
+    expect(app_page.locator("#spec-m-use")).to_be_visible()
+    app_page.locator("#spec-kind").select_option("environment")
+    expect(app_page.locator("#spec-m-use")).to_be_hidden()
+    expect(app_page.locator("#spec-m-name")).not_to_have_value("dhea_s")
 
 
 def test_a_missing_measurement_with_a_project(app_page, studio_url, project):

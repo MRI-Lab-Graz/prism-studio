@@ -38,13 +38,29 @@ def _schema_problems(name: str, schema_dir: Path) -> list[str]:
     return problems
 
 
-def check(entities: dict, schema_dir: Path) -> list[str]:
+def _terms_problems(name: str, entry: dict, schema_dir: Path, terms_dir: Path | None) -> list[str]:
+    problems = []
+    if terms_dir is not None and (terms_dir / name).is_dir() != ("terms" in entry):
+        problems.append(f"{name}: the terms/{name}/ folder and the entry's terms declaration must both exist or both be absent")
+    context = entry.get("terms", {}).get("contextField")
+    if context:
+        path = schema_dir / f"{name}.schema.json"
+        node = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        for part in context.split("."):
+            node = node.get("properties", {}).get(part, {})
+        if "enum" not in node:
+            problems.append(f"{name}: terms.contextField {context} is not an enum in the {name} schema")
+    return problems
+
+
+def check(entities: dict, schema_dir: Path, terms_dir: Path | None = None) -> list[str]:
     entry_validator = Draft7Validator(json.loads(ENTRY_SCHEMA.read_text(encoding="utf-8")))
     problems = []
     for name, entry in entities["modalities"].items():
         problems += [f"{name}: {e.message}" for e in entry_validator.iter_errors(entry)]
         if entry.get("kind") == "prism" and "suffixes" in entry:
             problems += _schema_problems(name, schema_dir)
+        problems += _terms_problems(name, entry, schema_dir, terms_dir)
     return problems
 
 
@@ -55,7 +71,7 @@ def main(argv=None) -> int:
     parser.add_argument("--schemas", type=Path, default=stable)
     args = parser.parse_args(argv)
     entities = json.loads(args.entities.read_text(encoding="utf-8"))
-    problems = check(entities, args.schemas)
+    problems = check(entities, args.schemas, REPO / "terms")
     for p in problems:
         print(p)
     return 1 if problems else 0

@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:hours-since-daylight",
+  "Level": "variable",
+  "Label": "hours since daylight",
+  "Aliases": [
+    "hours_since_sun"
+  ],
+  "Description": "Hours since the last daylight period.",
+  "Units": "h",
+  "Status": "official"
+}

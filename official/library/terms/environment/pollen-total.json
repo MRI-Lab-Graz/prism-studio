@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:pollen-total",
+  "Level": "variable",
+  "Label": "total pollen",
+  "Aliases": [
+    "pollen_total"
+  ],
+  "Description": "Total concentration of pollen in air.",
+  "Units": "grains/m3",
+  "Status": "official"
+}

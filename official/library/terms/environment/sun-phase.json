@@ -1,0 +1,16 @@
+{
+  "TermID": "prism:sun-phase",
+  "Level": "variable",
+  "Label": "sun phase",
+  "Aliases": [
+    "sun_phase"
+  ],
+  "Description": "Position of the sun relative to the horizon.",
+  "Levels": {
+    "night": "night",
+    "dawn": "dawn",
+    "day": "day",
+    "dusk": "dusk"
+  },
+  "Status": "official"
+}

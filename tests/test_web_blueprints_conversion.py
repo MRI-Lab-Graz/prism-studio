@@ -5594,7 +5594,7 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
             )
 
         self.assertEqual(data["temp_c"], 3.2)
-        self.assertEqual(data["weather_regime"], "hochdruck")
+        self.assertEqual(data["weather_regime"], "high-pressure")
         self.assertIsNone(data["aqi"])
         self.assertEqual(data["pollen_birch"], 10.0)
         self.assertEqual(data["pollen_total"], 30.0)

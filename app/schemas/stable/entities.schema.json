@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Declarative BIDS/PRISM filename and entity rules: which entities are required/optional per modality, entity ordering for rewrites, and the suffix/extension grammar used to validate filenames. Consumed by src/entity_rules.py; do not hand-edit MODALITY_PATTERNS-style regexes in Python instead of this file.",
   "entityOrder": [
     "sub",
@@ -44,17 +44,19 @@
       "description": "Lab results from biological samples (blood, saliva, urine, ...)",
       "describedColumns": true,
       "suffixes": ["biosample"],
-      "extensions": ["tsv", "json"]
+      "extensions": ["tsv", "json"],
+      "terms": {"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"}
     },
     "environment": {
       "kind": "prism",
-      "description": "Surroundings during a session (weather, light, noise, ...)",
-      "describedColumns": false,
+      "description": "Environmental conditions linked to a session (temperature, UV, noise, ...)",
+      "describedColumns": true,
       "suffixes": ["environment"],
       "extensions": ["tsv", "tsv.gz", "json"],
       "requiredEntityValues": {
         "recording": {"pattern": "[a-zA-Z0-9]+"}
-      }
+      },
+      "terms": {"nonTermColumns": ["subject_id", "session_id"]}
     },
     "events": {
       "kind": "prism",

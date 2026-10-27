@@ -10,7 +10,9 @@ is checked against an allow-list before anything is written. File names are deri
 from IDs that passed the slug rule. Stdlib only; reuses scripts/check_terms.py.
 
 Usage:
-  term_proposal.py check --terms DIR --schema FILE --out DIR [--file proposal.json] [--repo DIR]
+  term_proposal.py check [--terms DIR --schema FILE] --out DIR [--file proposal.json] [--repo DIR]
+      --repo (the bot) needs the checkout's schemas/stable/entities.schema.json; --terms/--schema without --repo
+      also work where no schemas/ folder is beside the script (biosample only, as vendored in PRISM Studio)
       reads $ISSUE_BODY unless --file; writes DIR/status, DIR/log and, if ok, DIR/files/<repository path>
       for every file the proposal adds or changes (terms; for a schema patch the archive, the stable
       schema and the spec page of the release)
@@ -38,9 +40,13 @@ MAX_PROBLEMS = 50
 MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
-    "MinValue WarnMaxValue LOINC Equivalents".split()
+    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName".split()
 )
-MODALITIES = ("biosample",)
+REPO = Path(__file__).resolve().parents[1]
+# The term modalities before they were declared in entities.schema.json. PRISM Studio vendors these scripts
+# without schemas/ beside them and calls them with explicit --terms/--schema; then this declaration applies.
+LEGACY_MODALITIES = {"biosample": {"nonTermColumns": ["sample_id", "collection_time", "fasting"],
+                                   "contextField": "Technical.SpecimenType"}}
 _LOCAL = re.compile(r"^[a-z][a-z0-9-]{0,62}(\.[a-z][a-z0-9-]{0,62})?$")  # at most 63 characters per segment
 _PATCH_PATH = re.compile(r"patches/(?P<modality>[a-z][a-z0-9]*)\.json")
 # The repository paths a proposal may add. Later layers (schema patches, new modalities) add theirs here.
@@ -138,10 +144,21 @@ def _term_problems(term, where: str) -> list[str]:
     return problems
 
 
-def _normalize_v1(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
+def _declared(modalities: dict | None) -> dict[str, dict]:
+    """The term modalities a proposal may name: the given ones, else this repository's declaration (LEGACY_MODALITIES
+    when the script runs without schemas/ beside it, as vendored in PRISM Studio)."""
+    if modalities is not None:
+        return modalities
+    if not (REPO / "schemas" / "stable" / "entities.schema.json").is_file():
+        return LEGACY_MODALITIES
+    return check_terms.term_modalities(REPO)
+
+
+def _normalize_v1(proposal: dict, modalities=None) -> tuple[list[tuple[str, dict]], list[str]]:
     problems = []
-    if proposal.get("modality") not in MODALITIES:
-        problems.append(f"modality must be one of {', '.join(MODALITIES)}")
+    declared = _declared(modalities)
+    if proposal.get("modality") not in declared:
+        problems.append(f"modality must be one of {', '.join(declared)}")
     terms = proposal.get("terms")
     if not isinstance(terms, list) or not terms:
         return [], problems + ["terms must be a non-empty list"]
@@ -156,8 +173,9 @@ def _normalize_v1(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
     return pairs, problems
 
 
-def _normalize_v2(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
+def _normalize_v2(proposal: dict, modalities=None) -> tuple[list[tuple[str, dict]], list[str]]:
     problems = []
+    declared = _declared(modalities)
     if proposal.get("format") != FORMAT_V2:
         problems.append(f"format must be {FORMAT_V2!r}")
     for key in sorted(set(proposal) - {"format", "files"}):
@@ -171,8 +189,8 @@ def _normalize_v2(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
     for path, term in files.items():
         patch_match = _PATCH_PATH.fullmatch(path) if isinstance(path, str) else None
         match = patch_match or (_TERM_PATH.fullmatch(path) if isinstance(path, str) else None)
-        if not match or (not patch_match and match["modality"] not in MODALITIES):
-            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(MODALITIES)}>/<id>.json or patches/<modality>.json)")
+        if not match or (not patch_match and match["modality"] not in declared):
+            problems.append(f"path {path!r} is not allowed (terms/<{'|'.join(declared)}>/<id>.json or patches/<modality>.json)")
             continue
         if patch_match:  # the patch is validated against the schema it targets, in check_proposal
             if isinstance(term, dict):
@@ -188,14 +206,28 @@ def _normalize_v2(proposal: dict) -> tuple[list[tuple[str, dict]], list[str]]:
                 problems.append(f"{path}: the file name {match['stem']!r} must equal the TermID local part {local!r}")
             else:
                 pairs.append((path, term))
+    if len(_kinds(pairs, declared)) > 1:
+        problems.append("one kind of data per proposal: the term files and term-modality patches name more than one modality")
     return pairs, problems
 
 
-def normalize(proposal) -> tuple[list[tuple[str, dict]], list[str]]:
+def _kinds(pairs: list[tuple[str, dict]], declared: dict) -> list[str]:
+    """The term modalities a proposal touches: those of its term files and of its patches of term modalities."""
+    kinds = []
+    for path, _obj in pairs:
+        term = _TERM_PATH.fullmatch(path)
+        modality = (term or _PATCH_PATH.fullmatch(path))["modality"]
+        if term or modality in declared:
+            kinds.append(modality)
+    return list(dict.fromkeys(kinds))
+
+
+def normalize(proposal, modalities=None) -> tuple[list[tuple[str, dict]], list[str]]:
     """The (repository path, term) pairs of a v1 or v2 proposal, and the problems found."""
     if not isinstance(proposal, dict):
         return [], ["the proposal must be a JSON object"]
-    pairs, problems = _normalize_v2(proposal) if "files" in proposal or "format" in proposal else _normalize_v1(proposal)
+    v2 = "files" in proposal or "format" in proposal
+    pairs, problems = (_normalize_v2 if v2 else _normalize_v1)(proposal, modalities)
     return ([] if problems else pairs), problems
 
 
@@ -204,31 +236,38 @@ def split(pairs: list[tuple[str, dict]]) -> tuple[list[tuple[str, dict]], list[t
     return [(p, o) for p, o in pairs if p.startswith("terms/")], [(p, o) for p, o in pairs if p.startswith("patches/")]
 
 
+# ponytail: hard-coded Technical.SpecimenType; right while biosample is the only term modality with a contextField
+# (one kind of data per proposal makes a patched term modality the terms' own). Read the declared contextField
+# when a second contextField modality arrives.
 def _specimens_of(schema: dict) -> list[str]:
     return schema.get("properties", {}).get("Technical", {}).get("properties", {}).get("SpecimenType", {}).get("enum", [])
 
 
 def check_proposal(
-    proposal: dict, registry: dict[str, dict], specimens: list[str], schema: dict | None = None,
-    *, schemas: dict[str, dict] | None = None,
+    proposal: dict, registry: dict[str, dict], specimens: list[str] | None, schema: dict | None = None,
+    *, schemas: dict[str, dict] | None = None, modalities=None,
 ) -> tuple[list[dict], list[str]]:
     """Return (the new terms with Status "official", problems); checked together with the registry.
 
     A proposal may carry a schema patch (`patches/<modality>.json`); then `schema`, the schema it targets, is
     required, and the terms are checked against the specimen types of the PATCHED schema. With `schemas`
     (modality -> schema) each patch is checked against its own modality's schema; the specimen types are
-    taken from a patched schema only when it is a term modality (MODALITIES). Without `schemas`, the positional
-    `schema` serves only patches of modalities in MODALITIES; a patch of any other modality needs `schemas`.
+    taken from a patched schema only when it is a term modality with a contextField. Without `schemas`, the
+    positional `schema` serves only patches of term modalities; a patch of any other modality needs `schemas`.
+    `specimens` None = a one-level registry (no context field). `modalities` = modality -> `terms`
+    declaration (default: those of this repository, LEGACY_MODALITIES without schemas/ beside the script).
+    One kind of data per proposal: the term files and the patches of term modalities name one modality.
     """
-    pairs, problems = normalize(proposal)
+    declared = _declared(modalities)
+    pairs, problems = normalize(proposal, declared)
     if problems:
         return [], problems
     term_pairs, patch_pairs = split(pairs)
     for path, patch in patch_pairs:
         modality = _PATCH_PATH.fullmatch(path)["modality"]
-        target = schemas.get(modality) if schemas is not None else (schema if modality in MODALITIES else None)
+        target = schemas.get(modality) if schemas is not None else (schema if modality in declared else None)
         if target is None:
-            hint = "" if modality in MODALITIES else f" (pass `schemas` with the {modality} schema)"
+            hint = "" if modality in declared else f" (pass `schemas` with the {modality} schema)"
             problems.append(f"{path}: the schema the patch targets is needed to check it{hint}")
             continue
         try:
@@ -236,7 +275,7 @@ def check_proposal(
         except ValueError as exc:  # PatchError; scripts load each other by path, so the class is not shared
             problems.append(f"{path}: {exc}")
             continue
-        if modality in MODALITIES:
+        if declared.get(modality, {}).get("contextField"):
             specimens = _specimens_of(patched)
     if problems:
         return [], problems
@@ -311,26 +350,43 @@ def _capped(problems: list[str]) -> list[str]:
 
 def _run_check(args) -> int:
     """Always writes a bundle (status, log, files/<repository path>); a bad proposal is a failed bundle, not a crash."""
-    registry, problems = check_terms.load_terms(args.terms)
+    problems: list[str] = []
+    registry: dict[str, dict] = {}
     terms: list[dict] = []
     term_modalities: list[str] = []
     patches: list[tuple[str, dict]] = []
+    repo = args.repo or REPO
     try:
         proposal = _read_proposal(args.file)
-        schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
+        # --repo (the bot) reads the checkout's declaration and fails without it; explicit --terms/--schema
+        # without --repo (PRISM Studio's vendored copy) falls back to LEGACY_MODALITIES
+        modalities = check_terms.term_modalities(args.repo) if args.repo is not None else _declared(None)
+        pairs = normalize(proposal, modalities)[0]
+        term_pairs, patch_pairs = split(pairs)
+        kind = next(iter(_kinds(pairs, modalities)), None)  # more than one is refused by normalize
+        if args.terms is not None:  # explicit registry and schema (biosample, as before)
+            schema_file, terms_dir = args.schema, args.terms
+        else:
+            schema_file = Path(repo) / "schemas" / "stable" / f"{kind}.schema.json"
+            terms_dir = Path(repo) / "terms" / str(kind)
+        registry, problems = check_terms.load_terms(terms_dir) if kind or args.terms else ({}, [])
+        has_schema = bool(kind or args.schema)  # a schema that should be there but is not is an error bundle
+        schema = json.loads(Path(schema_file).read_text(encoding="utf-8")) if has_schema else None
+        context = modalities.get(kind, {}).get("contextField") if kind else "Technical.SpecimenType"
+        specimens = check_terms.context_values(schema_file, context) if has_schema else ([] if context else None)
         schemas, missing = {}, []
-        for path, _patch in split(normalize(proposal)[0])[1]:
+        for path, _patch in patch_pairs:
             modality = _PATCH_PATH.fullmatch(path)["modality"]
-            file = Path(args.repo) / "schemas" / "stable" / f"{modality}.schema.json"
+            file = Path(repo) / "schemas" / "stable" / f"{modality}.schema.json"
             if file.is_file():
                 schemas[modality] = json.loads(file.read_text(encoding="utf-8"))
             else:
                 missing.append(f"{path}: no modality {modality} in schemas/stable")
-        terms, found = check_proposal(proposal, registry, check_terms.specimen_types(args.schema), schema, schemas=schemas)
+        terms, found = check_proposal(proposal, registry, specimens, schema, schemas=schemas, modalities=modalities)
         found = missing or found
         problems += found
         if not found:
-            term_pairs, patches = split(normalize(proposal)[0])
+            patches = patch_pairs
             term_modalities = [_TERM_PATH.fullmatch(path)["modality"] for path, _term in term_pairs]
     except ProposalError as exc:
         problems.append(str(exc))
@@ -344,7 +400,7 @@ def _run_check(args) -> int:
             for modality in dict.fromkeys(term_modalities):
                 write_terms([t for t, m in zip(terms, term_modalities) if m == modality], files / "terms", modality)
             for path, patch in patches:
-                release_patch.release(args.repo, files, _PATCH_PATH.fullmatch(path)["modality"], patch)
+                release_patch.release(repo, files, _PATCH_PATH.fullmatch(path)["modality"], patch)
         except ValueError as exc:  # PatchError / ReleaseError: the proposal cannot be released, and the message says why
             problems.append(str(exc))
             shutil.rmtree(files, ignore_errors=True)
@@ -363,12 +419,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="command", required=True)
     check = sub.add_parser("check")
-    check.add_argument("--terms", required=True, type=Path)
-    check.add_argument("--schema", required=True, type=Path)
+    check.add_argument("--terms", type=Path, help="the registry folder (default: terms/<modality> of --repo)")
+    check.add_argument("--schema", type=Path, help="the modality schema (default: schemas/stable/<modality>.schema.json of --repo)")
     check.add_argument("--out", required=True, type=Path)
     check.add_argument("--file", type=Path)
-    check.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1],
-                       help="the checkout a schema release is prepared from (default: the repository of this script)")
+    check.add_argument("--repo", type=Path, help="a complete checkout (the bot passes it): its schemas/stable/entities.schema.json, "
+                       "terms and schemas are read and a schema release is prepared from it; without --repo, "
+                       "--terms and --schema are required (biosample only)")
     sub.add_parser("pr-body")
     sub.add_parser("check-new-kind")
     args = ap.parse_args(argv)

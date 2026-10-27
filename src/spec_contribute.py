@@ -92,12 +92,13 @@ def spec_catalog() -> dict:
             "name": name,
             "label": rule.description or name,
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
+            "specimen_level": "contextField" in spec.term_modalities.get(name, {}),  # False: terms are one-level variables, no sample type
             "metrics": [
                 {
-                    "id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units"),
+                    "id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units"), "levels": t.get("Levels"),
                     "specimens": sorted(c["SpecimenType"] for c in registry.values() if c.get("Parent") == t["TermID"] and c.get("SpecimenType")),
                 }
-                for t in registry.values() if t.get("Level") == "analyte"
+                for t in registry.values() if t.get("Level") in ("analyte", "variable")
             ] if registry else None,
             "templates": _templates(name),
         }
@@ -112,7 +113,7 @@ def spec_catalog() -> dict:
 _SECTION_TITLES = {
     "Study": "About the measure", "Technical": "How the data is collected", "I18n": "Languages", "Scoring": "Scoring",
     "Normative": "Norms and reference values", "Recording": "Signal type", "TriggerAnnotations": "Triggers",
-    "Acquisition": "Recording conditions", "Processing": "Processing", "Privacy": "Privacy", "Provenance": "Data source",
+    "Acquisition": "Recording conditions", "Processing": "Processing",
 }
 
 
@@ -213,29 +214,48 @@ def proposal_for_values(
 
 
 def proposal_for_new_metric(
-    name: str, description: str, units: str, specimen: str,
+    name: str, description: str, units: str | None = None, specimen: str | None = None,
     aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
     entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
+    levels: dict[str, str] | None = None, cf_standard_name: str | None = None,
 ) -> dict:
-    """The proposal for one missing measurement (its analyte term and the specimen-specific child); needs no project.
+    """The proposal for one missing measurement; needs no project.
 
+    A two-level kind (biosample) gets its analyte term and the specimen-specific child (`units` and `specimen` needed).
+    A one-level kind (environment) gets one `variable` term with exactly one of `units` / `levels` (CODE -> label)
+    and an optional `cf_standard_name`; it refuses a `specimen`.
     `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
     context = proposal_context(entries, not_sure, closest)
-    kinds = _kinds()
+    kinds = [m["name"] for m in spec_catalog()["modalities"]]
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
     registry = load_registry(modality)
     if not registry:
         raise OverlayError(f"{modality} has no known measurements")
-    specimens = _project_specimens(project_root, modality) if project_root else None
-    fields = {"name": name, "description": description, "units": units, "specimen": specimen}
+    two_level = "contextField" in current_specification().term_modalities.get(modality, {})
+    specimens = _project_specimens(project_root, modality) if project_root and two_level else None
+    fields = {"name": name, "description": description, **({"units": units, "specimen": specimen} if two_level else {})}
     if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
-        raise OverlayError(f"missing: {', '.join(empty)}")
-    name, description, units, specimen = (v.strip() for v in fields.values())
-    if not _VALUE.fullmatch(specimen):
-        raise OverlayError(f"{specimen!r}: use lowercase letters, digits and - for the sample type")
+        raise OverlayError(f"missing: {', '.join('specimen (the sample type)' if k == 'specimen' else k for k in empty)}")
+    fields = {k: v.strip() for k, v in fields.items()}
+    name, description = fields["name"], fields["description"]
+    if two_level:
+        if levels or cf_standard_name:
+            raise OverlayError(f"{modality} takes a unit and a sample type; levels and a CF standard name are for kinds without sample type")
+        units, specimen = fields["units"], fields["specimen"]
+        if not _VALUE.fullmatch(specimen):
+            raise OverlayError(f"{specimen!r}: use lowercase letters, digits and - for the sample type")
+    else:
+        if specimen:
+            raise OverlayError(f"{modality} has no sample type; leave the sample type out")
+        if (units is None or not str(units).strip()) == (not levels):
+            raise OverlayError("give exactly one of a unit or levels (code=label pairs)")
+        if levels and not (isinstance(levels, dict) and all(isinstance(k, str) and k.strip() and isinstance(v, str) and v.strip() for k, v in levels.items())):
+            raise OverlayError("levels must be code=label pairs of text")
+        if cf_standard_name is not None and not (isinstance(cf_standard_name, str) and re.fullmatch(r"[a-z][a-z0-9_]*", cf_standard_name.strip())):
+            raise OverlayError("the CF standard name is lowercase letters, digits and _")
     seen = {name.lower()}
     cleaned = []
     for a in (a.strip() for a in aliases or [] if isinstance(a, str)):
@@ -251,7 +271,13 @@ def proposal_for_new_metric(
     for text in [name, *aliases, parent_id]:
         if found := find_term(registry, text):
             raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
-    parent = {"TermID": parent_id, "Level": "analyte", "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
+    base = {"TermID": parent_id, "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
+    if not two_level:
+        extra = {"Levels": {k.strip(): v.strip() for k, v in levels.items()}} if levels else {"Units": units.strip()}
+        if cf_standard_name and cf_standard_name.strip():
+            extra["CFStandardName"] = cf_standard_name.strip()
+        return _result({"modality": modality, "terms": [{**base, "Level": "variable", **extra}]}, registry, None, context=context)
+    parent = {**base, "Level": "analyte"}
     child = {"TermID": f"{parent_id}.{specimen}", "Level": "analyte-specimen", "Parent": parent_id, "SpecimenType": specimen, "Units": units}
     return _result({"modality": modality, "terms": [parent, child]}, registry, specimens, context=context)
 

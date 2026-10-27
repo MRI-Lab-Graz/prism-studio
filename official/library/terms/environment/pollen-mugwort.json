@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:pollen-mugwort",
+  "Level": "variable",
+  "Label": "mugwort pollen",
+  "Aliases": [
+    "pollen_mugwort"
+  ],
+  "Description": "Concentration of mugwort pollen in air.",
+  "Units": "grains/m3",
+  "Status": "official"
+}

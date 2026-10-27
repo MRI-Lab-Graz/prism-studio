@@ -794,6 +794,14 @@ def build_prism_tools_parsers(
     parser_environment_convert.add_argument("--lat", help="Global fallback latitude")
     parser_environment_convert.add_argument("--lon", help="Global fallback longitude")
     parser_environment_convert.add_argument(
+        "--window",
+        action="append",
+        default=[],
+        metavar="VAR:DURATION:STAT",
+        help="Add a column with a statistic (mean|min|max|sum|count) over an ISO 8601 duration "
+        "before the session, e.g. temp_c:P3D:max (repeatable)",
+    )
+    parser_environment_convert.add_argument(
         "--pilot-random-subject",
         action="store_true",
         help="Run pilot conversion for one random subject and estimate full runtime",
@@ -1843,7 +1851,7 @@ def build_prism_tools_parsers(
             _p.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
             _p.add_argument("--out", help="Also save the proposal to this file (to send it to a maintainer without GitHub)")
         _p.add_argument(
-            "--modality", default="biosample", choices=["biosample"] if _name == "propose" else None,
+            "--modality", default="biosample", choices=sorted(_rules.term_modalities) if _name == "propose" else None,
             help="Modality of the registry",
         )
         _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
@@ -1881,8 +1889,10 @@ def build_prism_tools_parsers(
     )
     parser_spec_metric.add_argument("--name", required=True, help="Name of the measurement, for example DHEA")
     parser_spec_metric.add_argument("--description", required=True, help="What it measures")
-    parser_spec_metric.add_argument("--units", required=True, help="Unit, for example pg/mL")
-    parser_spec_metric.add_argument("--specimen", required=True, help="Sample type, for example saliva")
+    parser_spec_metric.add_argument("--units", help="Unit, for example pg/mL or dB (a variable has a unit or --level, not both)")
+    parser_spec_metric.add_argument("--specimen", help="Sample type, for example saliva (kinds with a sample type, such as biosample)")
+    parser_spec_metric.add_argument("--level", action="append", help="A level as CODE=LABEL instead of a unit (repeatable; kinds without sample type)")
+    parser_spec_metric.add_argument("--cf-standard-name", help="Optional CF standard name, for example air_temperature (kinds without sample type)")
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")
     parser_spec_metric.add_argument("--project", help="A project whose own sample types are accepted too (optional)")
@@ -1914,7 +1924,7 @@ def build_prism_tools_parsers(
         ("propose", parser_spec_propose),
     ):
         _parser.add_argument("--project", required=True, help="The PRISM project folder")
-        _parser.add_argument("--modality", default="biosample", choices=["biosample"] if _name in ("add-term", "remove") else None, help="Modality of the terms or schema")
+        _parser.add_argument("--modality", default="biosample", choices=sorted(_rules.term_modalities) if _name in ("add-term", "remove") else None, help="Modality of the terms or schema")
         _parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
         if _name == "add-term":
             _source = _parser.add_mutually_exclusive_group(required=True)

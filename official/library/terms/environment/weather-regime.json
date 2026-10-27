@@ -1,0 +1,15 @@
+{
+  "TermID": "prism:weather-regime",
+  "Level": "variable",
+  "Label": "weather regime",
+  "Aliases": [
+    "weather_regime"
+  ],
+  "Description": "Large-scale weather situation.",
+  "Levels": {
+    "high-pressure": "high pressure",
+    "low-pressure": "low pressure",
+    "frontal": "frontal"
+  },
+  "Status": "official"
+}

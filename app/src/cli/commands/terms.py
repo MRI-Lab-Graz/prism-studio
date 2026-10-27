@@ -13,7 +13,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
-from src.term_registry import find_term, load_registry, resolve_column
+from src.term_registry import context_value, find_term, load_registry, resolve_column
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -87,7 +87,7 @@ def cmd_terms_propose(args) -> None:
     if problems:
         _fail(args, "the proposal does not pass the specification checks: " + "; ".join(problems), proposal=proposal, problems=problems)
     column_def = sidecar[args.column]
-    similar = list(resolve_column(registry, args.column, column_def, sidecar["Technical"]["SpecimenType"]).similar)
+    similar = list(resolve_column(registry, args.column, column_def, context_value(sidecar, args.modality)).similar)
     delivered = deliver_proposal(
         proposal, out=getattr(args, "out", None), open_browser=args.open, similar=similar, alias=args.column
     )

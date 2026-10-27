@@ -7,6 +7,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from src.environment_windows import parse_window
+
 
 def handle_start_environment_detached_job(
     *,
@@ -71,6 +73,8 @@ def handle_start_environment_detached_job(
         command.extend(["--lat", str(config["lat_manual"])])
     if config.get("lon_manual") is not None:
         command.extend(["--lon", str(config["lon_manual"])])
+    for window in config.get("windows") or []:
+        command.extend(["--window", window])
     if bool(config.get("pilot_random_subject", False)):
         command.append("--pilot-random-subject")
 
@@ -144,6 +148,7 @@ def handle_run_environment_job(
             lon_manual=config["lon_manual"],
             project_path=config["project_path"],
             pilot_random_subject=bool(config.get("pilot_random_subject", False)),
+            windows=[parse_window(text) for text in config.get("windows") or []],
             log_callback=lambda message, level="info": append_environment_job_log(
                 job_id, message, level
             ),

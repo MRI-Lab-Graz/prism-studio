@@ -1,8 +1,9 @@
 # Converter — Environment
 
 Imports timestamped data (a survey export, a scan log, anything with a timestamp
-column) and enriches it into privacy-safe environment metadata: season, sun phase,
-moon phase, and location — without exporting raw addresses or coordinates.
+column) and enriches it into environment metadata (format 2.0.0): weather, air quality, pollen, season,
+sun and moon, time of day, heat status and weather regime. Each column points to an official term;
+raw addresses are not exported.
 
 ![PRISM Studio Environment converter tab](../_static/screenshots/prism-studio-converter-environment.png)
 
@@ -37,6 +38,18 @@ Columns** to reveal the mapping section below.
 
 A preview table shows the first 5 rows once columns are mapped.
 
+## Step 3b — Time windows (optional)
+
+The **Time windows** list summarises a variable over a period before each session, for example
+`temp_c`, `P3D`, `max` for the highest temperature in the three days before. Pick the variable, an ISO 8601 duration
+(`PT12H`, `P3D`; years and months are not accepted) and a statistic (mean, min, max, sum, count). Windows are half-open
+(session - duration, session]. Rows left empty or built from a partial window are listed in the conversion summary.
+Each window becomes a column named `<var>_<stat>_<duration lowercased>`, for example `temp_c_max_p3d` or
+`temp_c_sum_p1dt12h`.
+Each run rewrites the root sidecar with its own window set: re-run all sessions with the same windows (files from
+earlier runs with other windows get "undescribed column" warnings).
+Command line: `environment convert --window VAR:DURATION:STAT`.
+
 ## Step 4 — Convert
 
 Optionally check **Convert in background (nohup-style)** for long-running jobs, then
@@ -49,6 +62,8 @@ either **Pilot Run (1 random subject)** to sanity-check the mapping quickly, or
 ```text
 sub-<label>/ses-<label>/environment/sub-<label>_ses-<label>_recording-weather_environment.tsv
 ```
+
+Environment files from format 1.1.0 are retired: the validator asks you to re-create them with the converter.
 
 ## What's next
 

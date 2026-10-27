@@ -171,14 +171,22 @@ def test_events_pin_still_resolves():
     assert "events" in modality_names()
 
 
-def test_official_rules_describe_columns_of_exactly_three_modalities():
+def test_official_rules_describe_columns_of_exactly_these_modalities():
     assert load_entity_rules().described_columns_modalities == {
         "survey",
         "biometrics",
         "biosample",
+        "environment",
     }
 
 
 def test_a_rule_without_the_key_does_not_describe_columns():
     rule = ModalityRule.from_json("x", {"kind": "prism", "suffixes": ["x"], "extensions": ["tsv"]})
     assert rule.described_columns is False and rule.description == ""
+
+
+def test_term_modalities_from_entities():
+    assert load_entity_rules().term_modalities == {
+        "biosample": {"nonTermColumns": ["sample_id", "collection_time", "fasting"], "contextField": "Technical.SpecimenType"},
+        "environment": {"nonTermColumns": ["subject_id", "session_id"]},
+    }

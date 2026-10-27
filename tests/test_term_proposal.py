@@ -318,3 +318,19 @@ def test_issue_url_without_context_has_no_context_parameter():
     from src.term_proposal import issue_url
     proposal = {"modality": "survey", "terms": [], "patch": {"operations": [{"op": "add_enum_values", "path": "Study.LicenseID", "values": ["cc-by-nc-local"]}]}}
     assert "context=" not in issue_url(proposal) and "context=hi" in issue_url(proposal, context="hi")
+
+
+def test_a_one_level_environment_proposal_has_no_problems():
+    term = {"TermID": "prism:gust-test", "Level": "variable", "Label": "Gust test", "Aliases": [],
+            "Description": "d", "Units": "m/s"}
+    doc = {"format": "prism-proposal/2", "files": {"terms/environment/gust-test.json": term}}
+    assert check_with_specification(doc, load_registry("environment")) == []
+
+
+def test_propose_unknown_environment_column():
+    sidecar = {"Technical": {}, "noise_db": {"Description": "Noise level", "Units": "dB"}}
+    p = build_proposal({}, sidecar, "noise_db", modality="environment")
+    (term,) = p["terms"]
+    assert term == {"TermID": "prism:noise-db", "Level": "variable", "Label": "noise_db", "Aliases": ["noise_db"],
+                    "Description": "Noise level", "Units": "dB"}
+    assert check_with_specification(p, {}) == []

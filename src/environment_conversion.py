@@ -22,7 +22,8 @@ import math
 import random
 import re
 import unicodedata
-from datetime import datetime, timezone
+from collections.abc import Sequence
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from time import perf_counter, sleep
 from typing import Any
@@ -32,6 +33,7 @@ import requests
 
 from src.bids_integration import check_and_update_bidsignore
 from src.cleaning_notes import cleaning_note
+from src.term_registry import find_term, load_registry
 from src.session_map import resolve_import_session
 from src.converters.file_reader import (
     expected_delimiter_for_suffix,
@@ -46,6 +48,7 @@ from src.environment_provider_helpers import (
     handle_extract_environment_hour,
     handle_fetch_environment_day,
     handle_fetch_environment_hour,
+    handle_hourly_series,
     handle_hourly_value,
     handle_load_environment_provider_cache,
     handle_payload_has_hourly_data,
@@ -53,6 +56,13 @@ from src.environment_provider_helpers import (
     handle_save_environment_provider_cache,
 )
 from src.environment_result_helpers import handle_persist_environment_outputs
+from src.environment_windows import (
+    WindowSpec,
+    compute_window,
+    duration_to_timedelta,
+    missing_hours,
+    window_column_name,
+)
 from src.environment_temporal import (
     estimate_daylight_hours as _shared_estimate_daylight_hours,
     hour_to_bin as _shared_hour_to_bin,
@@ -81,8 +91,6 @@ PROVIDER_RETRY_BACKOFF_SECONDS = 0.75
 OUTPUT_COLUMNS = [
     "subject_id",
     "session_id",
-    "filename",
-    "relative_time",
     "hour_bin",
     "season_code",
     "sun_phase",
@@ -220,7 +228,6 @@ def _compute_row(
     dt: datetime,
     subject_id: str,
     session_id: str,
-    filename: str,
     lat: float | None,
 ) -> dict:
     doy = dt.timetuple().tm_yday
@@ -231,8 +238,6 @@ def _compute_row(
     return {
         "subject_id": subject_id,
         "session_id": session_id,
-        "filename": filename,
-        "relative_time": f"{dt.year}-DOY{doy:03d}-H{hour:02d}",
         "hour_bin": _hour_bin(hour),
         "season_code": _season_code(doy),
         "sun_phase": _sun_phase(hour, daylight),
@@ -619,11 +624,10 @@ def _load_environment_dataframe(
     return result.df
 
 
-def _build_environment_preview(rows_out: list[dict]) -> dict:
+def _build_environment_preview(rows_out: list[dict], window_columns: list[str] = ()) -> dict:
     preview_columns = [
         "subject_id",
         "session_id",
-        "relative_time",
         "elevation_m",
         "heatwave_status",
         "temp_c",
@@ -635,6 +639,7 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
         "o3_ug_m3",
         "pollen_total",
         "pollen_risk_bin",
+        *window_columns,
     ]
     preview_rows = [
         [_preview_value(row.get(col)) for col in preview_columns]
@@ -646,167 +651,55 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
     }
 
 
-def _build_environment_sidecar() -> dict[str, Any]:
-    return {
-        "Metadata": {
-            "SchemaVersion": "1.1.0",
-            "CreationDate": datetime.now(timezone.utc).date().isoformat(),
-            "Creator": "PRISM Environment Converter",
-        },
-        "Privacy": {
-            "AnchorField": "season_code",
-            "IncludesRawDatetime": False,
-            "IncludesExactGeo": False,
-            "Derivation": "Derived from privacy-safe temporal anchors and approximate location context.",
-        },
-        "Provenance": {
-            "Builder": "PRISM Environment Converter",
-            "BuilderVersion": "1.1.0",
-            "Providers": ["weather", "air_quality", "pollen"],
+def _build_environment_sidecar(windows: Sequence[WindowSpec] = ()) -> dict[str, Any]:
+    """environment 2.0.0: every value column points to its official term (looked up by alias)."""
+    registry = load_registry("environment")
+    sidecar: dict[str, Any] = {
+        "Technical": {
+            "Source": "open-meteo",
             "SpatialResolution": "city",
             "TemporalResolution": "hourly",
         },
-        "Columns": {
-            "subject_id": {"Description": "BIDS subject identifier"},
-            "session_id": {"Description": "BIDS session identifier"},
-            "filename": {"Description": "Source filename from survey export"},
-            "relative_time": {"Description": "Privacy-safe temporal token"},
-            "hour_bin": {
-                "Description": "Binned hour derived from temporal anchor",
-                "Levels": {
-                    "night": "00-05",
-                    "morning": "06-11",
-                    "afternoon": "12-17",
-                    "evening": "18-23",
-                    "unknown": "not derivable",
-                },
-            },
-            "season_code": {"Description": "Season bin derived from day-of-year"},
-            "sun_phase": {"Description": "Solar phase at acquisition"},
-            "sun_hours_today": {
-                "Description": "Estimated daylight duration",
-                "Units": "hours",
-            },
-            "hours_since_sun": {
-                "Description": "Hours since last sunlight",
-                "Units": "hours",
-            },
-            "elevation_m": {
-                "Description": "Approximate elevation at resolved coordinate",
-                "Units": "m",
-                "Source": "weather",
-            },
-            "heatwave_status": {
-                "Description": "Derived heat status from daily max temperatures over current and previous two days",
-                "Source": "weather",
-            },
-            "moon_phase": {"Description": "Moon phase at acquisition"},
-            "moon_illumination_pct": {
-                "Description": "Estimated moon illumination",
-                "Units": "percent",
-            },
-            "temp_c": {
-                "Description": "Ambient temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "apparent_temp_c": {
-                "Description": "Apparent temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "dew_point_c": {
-                "Description": "Dew point temperature",
-                "Units": "degC",
-                "Source": "weather",
-            },
-            "humidity_pct": {
-                "Description": "Relative humidity",
-                "Units": "percent",
-                "Source": "weather",
-            },
-            "pressure_hpa": {
-                "Description": "Surface pressure",
-                "Units": "hPa",
-                "Source": "weather",
-            },
-            "precip_mm": {
-                "Description": "Precipitation",
-                "Units": "mm",
-                "Source": "weather",
-            },
-            "wind_speed_ms": {
-                "Description": "Wind speed",
-                "Units": "m/s",
-                "Source": "weather",
-            },
-            "cloud_cover_pct": {
-                "Description": "Cloud cover",
-                "Units": "percent",
-                "Source": "weather",
-            },
-            "uv_index": {"Description": "UV index", "Source": "weather"},
-            "shortwave_radiation_wm2": {
-                "Description": "Shortwave radiation",
-                "Units": "W/m2",
-                "Source": "weather",
-            },
-            "weather_regime": {
-                "Description": "Derived weather regime",
-                "Source": "weather",
-            },
-            "aqi": {"Description": "Air quality index", "Source": "air_quality"},
-            "pm25_ug_m3": {
-                "Description": "PM2.5",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "pm10_ug_m3": {
-                "Description": "PM10",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "no2_ug_m3": {
-                "Description": "Nitrogen dioxide",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "o3_ug_m3": {
-                "Description": "Ozone",
-                "Units": "ug/m3",
-                "Source": "air_quality",
-            },
-            "pollen_birch": {"Description": "Birch pollen index", "Source": "pollen"},
-            "pollen_grass": {"Description": "Grass pollen index", "Source": "pollen"},
-            "pollen_mugwort": {
-                "Description": "Mugwort pollen index",
-                "Source": "pollen",
-            },
-            "pollen_ragweed": {
-                "Description": "Ragweed pollen index",
-                "Source": "pollen",
-            },
-            "pollen_total": {"Description": "Total pollen index", "Source": "pollen"},
-            "pollen_risk_bin": {
-                "Description": "Derived pollen risk bin",
-                "Source": "pollen",
-            },
+        "Study": {
+            "EnvironmentName": "weather",
+            "Description": "Weather, air quality, pollen and sun/moon context at each session (Open-Meteo)",
         },
+        "Metadata": {
+            "SchemaVersion": "2.0.0",
+            "CreationDate": datetime.now(timezone.utc).date().isoformat(),
+            "Creator": "PRISM Environment Converter",
+        },
+        "subject_id": {"Description": "BIDS subject identifier", "Units": "n/a"},
+        "session_id": {"Description": "BIDS session identifier", "Units": "n/a"},
     }
+    for column in OUTPUT_COLUMNS:
+        if column in sidecar:
+            continue
+        found = find_term(registry, column)
+        if found is None:
+            raise ValueError(f"environment column {column!r} has no official term")
+        sidecar[column] = {"Term": found[1]["TermID"]}
+    for spec in windows:
+        sidecar[window_column_name(spec)] = {
+            "Term": sidecar[spec.column]["Term"],
+            "Window": {"Start": spec.duration, "End": "PT0S"},
+            "Statistic": spec.statistic,
+        }
+    return sidecar
 
 
-def _write_environment_tsv(rows: list[dict], path: Path) -> None:
+def _write_environment_tsv(rows: list[dict], path: Path, columns: list[str] = OUTPUT_COLUMNS) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=OUTPUT_COLUMNS, delimiter="\t")
+        writer = csv.DictWriter(fh, fieldnames=columns, delimiter="\t")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
 
 
-def _write_environment_sidecar(path: Path) -> None:
+def _write_environment_sidecar(path: Path, windows: Sequence[WindowSpec] = ()) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    sidecar_payload = _build_environment_sidecar()
+    sidecar_payload = _build_environment_sidecar(windows)
     path.write_text(json.dumps(sidecar_payload, indent=2), encoding="utf-8")
 
 
@@ -845,6 +738,24 @@ def _project_session_id(project_path, label, cache, warnings):
     return cache[label]
 
 
+def _move_retired_environment_pin(project_root, log_callback) -> str | None:
+    """A pin below 2.0.0 names the retired format this run just replaced: move it to the current version (Ruling 14)."""
+    from src.modality_versions import read_pins, update_modality
+    from src.schema_manager import parse_version
+
+    try:
+        pinned = read_pins(project_root)[0].get("environment")
+        if not pinned or parse_version(pinned) >= parse_version("2.0.0"):
+            return None
+        message = f"environment schema pin {pinned} -> {update_modality(project_root, 'environment')}"
+    except Exception as exc:  # noqa: BLE001 - the data is written; say what is left to do
+        log_callback(f"Could not update the environment schema pin in project.json: {exc}; run: "
+                     "prism_tools modality-version update <project> environment", "warning")
+        return None
+    log_callback(message, "info")
+    return message
+
+
 def perform_environment_conversion(
     *,
     input_path: Path,
@@ -867,6 +778,7 @@ def perform_environment_conversion(
     log_callback,
     progress_callback=None,
     cancel_check=None,
+    windows: Sequence[WindowSpec] = (),
 ) -> dict:
     def should_cancel() -> bool:
         return bool(cancel_check is not None and cancel_check())
@@ -883,6 +795,7 @@ def perform_environment_conversion(
             log_callback("⏹️ Conversion cancelled by user", "warning")
             raise EnvironmentConversionCancelledError(message)
 
+    windows = tuple(dict.fromkeys(windows))  # a repeated window (parse_window upper-cases the duration) is one column
     conversion_started_at = perf_counter()
     df = _load_environment_dataframe(
         input_path,
@@ -979,6 +892,52 @@ def perform_environment_conversion(
     inherited_sidecar_path: Path | None = None
     provider_failures: set[str] = set()
 
+    def day_payloads(day: datetime, lat: float, lon: float, row_idx) -> dict[str, dict]:
+        """Provider data of one day at one place; each day is fetched once per location (memory + project cache)."""
+        nonlocal cache_hits, persistent_cache_dirty
+        date_str = day.strftime("%Y-%m-%d")
+        day_key = (date_str, round(lat, 4), round(lon, 4))
+        if day_key not in env_day_cache:
+            try:
+                cache_key = _cache_key_for_day(date_str, lat, lon)
+                cached_payloads = persistent_cache.get(cache_key)
+                if cached_payloads:
+                    cache_hits += 1
+                provider_payloads, env_warnings = _fetch_environment_day(
+                    day,
+                    lat,
+                    lon,
+                    cached_payloads=cached_payloads,
+                )
+                env_day_cache[day_key] = provider_payloads
+                if not cached_payloads or provider_payloads != cached_payloads:
+                    persistent_cache[cache_key] = provider_payloads
+                    persistent_cache_dirty = True
+                for warning in env_warnings:
+                    # Extract provider name from warning string for summary tracking
+                    provider_failures.add(
+                        warning.split(" API")[0] if " API" in warning else "unknown"
+                    )
+                    log_callback(
+                        f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
+                        "warning",
+                    )
+            except Exception as exc:
+                log_callback(
+                    f"Row {row_idx + 1}: environment enrichment failed unexpectedly ({exc}) — keeping core temporal fields",
+                    "warning",
+                )
+                env_day_cache[day_key] = {
+                    "weather": {},
+                    "air": {},
+                    "pollen": {},
+                }
+        return env_day_cache[day_key]
+
+    window_problems = {
+        window_column_name(w): {"column": window_column_name(w), "empty_rows": 0, "partial_rows": 0} for w in windows
+    }
+    longest_window = max((duration_to_timedelta(w.duration) for w in windows), default=timedelta(0))
     id_pairs: list[tuple[str, str]] = []
     ses_pairs: list[tuple[str, str]] = []
     day_first_unsure = 0
@@ -1080,48 +1039,26 @@ def perform_environment_conversion(
             dt=dt,
             subject_id=subject_id,
             session_id=session_id,
-            filename=filename,
             lat=row_lat,
         )
 
-        date_str = dt.strftime("%Y-%m-%d")
-        day_key = (date_str, round(row_lat, 4), round(row_lon, 4))
-        if day_key not in env_day_cache:
-            try:
-                cache_key = _cache_key_for_day(date_str, row_lat, row_lon)
-                cached_payloads = persistent_cache.get(cache_key)
-                if cached_payloads:
-                    cache_hits += 1
-                provider_payloads, env_warnings = _fetch_environment_day(
-                    dt,
-                    row_lat,
-                    row_lon,
-                    cached_payloads=cached_payloads,
-                )
-                env_day_cache[day_key] = provider_payloads
-                if not cached_payloads or provider_payloads != cached_payloads:
-                    persistent_cache[cache_key] = provider_payloads
-                    persistent_cache_dirty = True
-                for warning in env_warnings:
-                    # Extract provider name from warning string for summary tracking
-                    provider_failures.add(
-                        warning.split(" API")[0] if " API" in warning else "unknown"
-                    )
-                    log_callback(
-                        f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
-                        "warning",
-                    )
-            except Exception as exc:
-                log_callback(
-                    f"Row {row_idx + 1}: environment enrichment failed unexpectedly ({exc}) — keeping core temporal fields",
-                    "warning",
-                )
-                env_day_cache[day_key] = {
-                    "weather": {},
-                    "air": {},
-                    "pollen": {},
-                }
-        base_row.update(_extract_environment_hour(dt, env_day_cache[day_key]))
+        base_row.update(_extract_environment_hour(dt, day_payloads(dt, row_lat, row_lon, row_idx)))
+        if windows:
+            first_day = (dt - longest_window).date()
+            # ponytail: each day's weather request reaches 2 days back (heat status), so neighbouring window
+            # days download overlapping hours; fetch the whole range in one request if volume matters.
+            days = [
+                day_payloads(datetime.combine(first_day + timedelta(days=n), dt.time()), row_lat, row_lon, row_idx)
+                for n in range((dt.date() - first_day).days + 1)
+            ]
+            for spec in windows:
+                name = window_column_name(spec)
+                series = handle_hourly_series(days, spec.column)
+                base_row[name] = compute_window(series, dt, spec)
+                if base_row[name] is None:
+                    window_problems[name]["empty_rows"] += 1
+                elif missing_hours(series, dt, spec):
+                    window_problems[name]["partial_rows"] += 1
         rows_out.append(base_row)
 
     if rows_out:
@@ -1138,6 +1075,16 @@ def perform_environment_conversion(
                 "write them as 2025-04-03 or 03.04.2025 if they are day-first.",
                 "warning",
             )
+        for spec in windows:
+            problem = window_problems[window_column_name(spec)]
+            if problem["empty_rows"] or problem["partial_rows"]:
+                log_callback(
+                    f"{problem['column']} ({spec.column} over {spec.duration}): "
+                    f"{problem['empty_rows']} row(s) left empty (no value in the window), "
+                    f"{problem['partial_rows']} row(s) computed from a partial window (hours missing: not available "
+                    "that far back, a failed fetch or gaps)",
+                    "warning",
+                )
         log_callback(f"Processed {len(rows_out)} rows ({skipped} skipped)", "success")
     else:
         log_callback(f"No rows processed ({skipped} skipped)", "warning")
@@ -1155,13 +1102,14 @@ def perform_environment_conversion(
         )
 
     raise_if_cancelled()
+    window_columns = [window_column_name(spec) for spec in windows]
     project_root_path = resolve_active_project_root()
     written_project_paths, inherited_sidecar_path = handle_persist_environment_outputs(
         input_path=input_path,
         rows_out=rows_out,
         project_root_path=project_root_path,
-        write_environment_tsv=_write_environment_tsv,
-        write_environment_sidecar=_write_environment_sidecar,
+        write_environment_tsv=lambda rows, path: _write_environment_tsv(rows, path, OUTPUT_COLUMNS + window_columns),
+        write_environment_sidecar=lambda path: _write_environment_sidecar(path, windows),
         environment_conversion_cancelled_error_cls=EnvironmentConversionCancelledError,
         check_and_update_bidsignore=check_and_update_bidsignore,
         log_callback=log_callback,
@@ -1172,6 +1120,7 @@ def perform_environment_conversion(
     from src.modality_versions import pin_after_import
 
     pin_after_import(project_root_path)
+    schema_pin_change = _move_retired_environment_pin(project_root_path, log_callback)
 
     elapsed_seconds = max(0.0, perf_counter() - conversion_started_at)
     estimated_total_seconds = None
@@ -1186,15 +1135,17 @@ def perform_environment_conversion(
         "row_count": len(rows_out),
         "skipped": skipped,
         "provider_failures": sorted(provider_failures),
+        "window_problems": [p for p in window_problems.values() if p["empty_rows"] or p["partial_rows"]],
         "project_environment_path": (
             written_project_paths[0] if written_project_paths else ""
         ),
         "project_environment_paths": written_project_paths,
         "project_environment_sidecar_path": str(inherited_sidecar_path),
-        "output_preview": _build_environment_preview(rows_out),
+        "output_preview": _build_environment_preview(rows_out, window_columns),
         "pilot_mode": pilot_random_subject,
         "pilot_subject": pilot_subject_label,
         "elapsed_seconds": round(elapsed_seconds, 2),
         "estimated_total_seconds": estimated_total_seconds,
         "source_row_count": int(len(source_df)),
+        "schema_pin_change": schema_pin_change,
     }

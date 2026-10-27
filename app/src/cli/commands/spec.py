@@ -79,7 +79,7 @@ def cmd_spec_local_add_term(args) -> None:
         {"success": True, "proposal": result["proposal"], "written": written},
         f"Added to this project: {', '.join(ids)}\n  " + "\n  ".join(written)
         + f'\nThe validator uses it from now on. To share it with the PRISM community: '
-        f'python prism_tools.py spec propose --project "{args.project}" --term {ids[0]}',
+        f'python prism_tools.py spec propose --project "{args.project}" --term {ids[0]} --modality {args.modality}',
     )
 
 
@@ -190,11 +190,18 @@ def cmd_spec_propose_values(args) -> None:
 
 def cmd_spec_propose_metric(args) -> None:
     """Propose a missing measurement (analyte plus its sample-type term); needs no project (--project adds its own sample types). Sends nothing itself."""
+    levels = {}
+    for item in args.level or []:
+        code, sep, label = item.partition("=")
+        if not sep or not code:
+            _fail(args, f"--level {item!r}: use CODE=LABEL")
+        levels[code] = label
     try:
         result = proposal_for_new_metric(
             args.name, args.description, args.units, args.specimen, args.alias, args.modality,
             project_root=args.project,
             entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest,
+            levels=levels or None, cf_standard_name=args.cf_standard_name,
         )
     except OverlayError as exc:
         _fail(args, str(exc))

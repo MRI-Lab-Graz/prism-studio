@@ -160,10 +160,10 @@ def test_a_name_match_on_a_deprecated_term_only_suggests():
     assert r.kind == "suggestion" and "prism:hydrocortisone" in r.message and r.similar == ("prism:hydrocortisone",)
 
 
-# --- analyte_columns: which sidecar columns the term checks look at (phase 1, Task 3) -----------
+# --- term_columns: which sidecar columns the term checks look at -----------
 
-def test_analyte_columns_skips_blocks_sample_columns_and_non_numeric_columns():
-    from src.term_registry import analyte_columns
+def test_term_columns_skips_blocks_sample_columns_and_non_numeric_columns():
+    from src.term_registry import term_columns
 
     sidecar = {
         "Technical": {"SpecimenType": "saliva"}, "Study": {}, "Metadata": {},
@@ -172,4 +172,57 @@ def test_analyte_columns_skips_blocks_sample_columns_and_non_numeric_columns():
         "text": "not a column definition",
         "cort": {"Description": "d", "Units": "nmol/L"}, "dhea_s": {"Term": "prism:dhea-s"},
     }
-    assert [name for name, _ in analyte_columns(sidecar)] == ["cort", "dhea_s"]
+    assert [name for name, _ in term_columns(sidecar, "biosample")] == ["cort", "dhea_s"]
+
+
+def test_term_columns_biosample_unchanged():
+    from src.term_registry import term_columns
+
+    sidecar = {"Technical": {}, "sample_id": {"Units": "n/a"}, "cort": {"Units": "nmol/L"}, "dhea_s": {"Term": "prism:dhea-s"}}
+    assert [n for n, _ in term_columns(sidecar, "biosample")] == ["cort", "dhea_s"]
+
+
+def test_term_columns_environment_skips_ids():
+    from src.term_registry import term_columns
+
+    sidecar = {
+        "Technical": {"X": 1}, "Study": {}, "Metadata": {},
+        "subject_id": {"Description": "d"}, "session_id": {"Description": "d"},
+        "temp_c": {"Units": "degC"},
+    }
+    assert [n for n, _ in term_columns(sidecar, "environment")] == ["temp_c"]
+
+
+def test_context_value():
+    from src.term_registry import context_value
+
+    sidecar = {"Technical": {"SpecimenType": "saliva"}}
+    assert context_value(sidecar, "biosample") == "saliva"
+    assert context_value({"Technical": "bad"}, "biosample") is None
+    assert context_value(sidecar, "environment") is None
+
+
+_AIR = {"TermID": "prism:air-temperature", "Status": "official", "Level": "variable", "Label": "air temperature",
+        "Aliases": ["temp_c"], "Units": "degC"}
+
+
+def test_variable_term_resolves_without_specimen():
+    r = resolve_column({"air-temperature": _AIR}, "temp_c", {"Term": "prism:air-temperature"}, None)
+    assert r.kind == "term" and r.term["TermID"] == "prism:air-temperature"
+
+
+def test_alias_suggests_variable():
+    r = resolve_column({"air-temperature": _AIR}, "temp_c", {}, None)
+    assert r.kind == "suggestion" and "prism:air-temperature" in r.message
+
+
+def test_similar_returns_variable_terms():
+    r = resolve_column({"air-temperature": _AIR}, "temp_c_mean", {}, None)
+    assert r.kind == "unknown" and r.similar == ("prism:air-temperature",)
+
+
+def test_term_columns_keeps_upper_case_analyte_columns():
+    from src.term_registry import term_columns
+
+    sidecar = {"Technical": {}, "Study": {}, "Metadata": {}, "CRP": {"Units": "mg/L"}, "IL6": {"Term": "prism:il-6"}}
+    assert [n for n, _ in term_columns(sidecar, "biosample")] == ["CRP", "IL6"]

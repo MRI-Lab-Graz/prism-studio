@@ -144,10 +144,18 @@
                         <select id="spec-m-units" class="form-select form-select-sm"></select>
                         <input id="spec-m-units-other" type="text" class="form-control form-control-sm mt-1" aria-label="Your unit" autocomplete="off" hidden>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" id="spec-m-specimen-box">
                         <label class="form-label small mb-0" for="spec-m-specimen">Sample type</label>
                         <select id="spec-m-specimen" class="form-select form-select-sm"></select>
                         <div class="form-text">Not in the list? Choose "Missing: add a value…" for Specimen type above.</div>
+                    </div>
+                    <div class="col-md-8" id="spec-m-levels-box" hidden>
+                        <label class="form-label small mb-0" for="spec-m-levels">Or levels instead of a unit: one CODE=LABEL per line</label>
+                        <textarea id="spec-m-levels" class="form-control form-control-sm" rows="3" placeholder="c=clear"></textarea>
+                    </div>
+                    <div class="col-md-6" id="spec-m-cf-box" hidden>
+                        <label class="form-label small mb-0" for="spec-m-cf">CF standard name (optional)</label>
+                        <input id="spec-m-cf" type="text" class="form-control form-control-sm" autocomplete="off" placeholder="air_temperature">
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mt-3">

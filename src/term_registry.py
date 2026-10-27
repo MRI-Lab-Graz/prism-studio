@@ -91,7 +91,7 @@ def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
         return ()
     hits = []
     for key, term in registry.items():
-        if term.get("Level") != "analyte":
+        if term.get("Level") not in ("analyte", "variable"):
             continue
         if any(len(n) >= 3 and (n in lowered or lowered in n) for n in term_names(key, term)):
             hits.append(term["TermID"])
@@ -114,6 +114,12 @@ def resolve_column(registry: dict[str, dict], column: str, col_def: dict, specim
         return Resolution("suggestion", hit[1], (tid,), f"{column!r} looks like {tid}; add Term to use it")
 
     _key, term = found
+    if term.get("Level") == "variable":  # one-level term: no specimen involved
+        res = Resolution("term", term)
+        if term.get("Status") == "deprecated":
+            new = term.get("ReplacedBy", "")
+            return Resolution("deprecated", term, (new,) if new else (), f"{term['TermID']} is deprecated; use {new}")
+        return res
     res = _by_specimen(registry, term, specimen)
     # A deprecated term (itself or the child reached through it) still supplies
     # its definition, so a rename or merge never breaks a file.
@@ -142,14 +148,34 @@ def _by_specimen(registry: dict[str, dict], term: dict, specimen: str | None) ->
     )
 
 
-# Sidecar entries that are blocks or sample-level columns, not analytes.
-NON_ANALYTE_COLUMNS = frozenset({"Technical", "Study", "Metadata", "sample_id", "collection_time", "fasting"})
+def _declaration(modality: str) -> dict:
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    return current_specification().term_modalities.get(modality, {})
 
 
-def analyte_columns(sidecar_data: dict) -> list[tuple[str, dict]]:
-    """The columns the term checks look at (the validator's notices and the Contribute page share this)."""
+def term_columns(sidecar_data: dict, modality: str) -> list[tuple[str, dict]]:
+    """The columns the term checks look at (the validator's notices and the Contribute page share this).
+
+    Skips the sidecar blocks (the top-level properties of the modality's schema), the modality's
+    `nonTermColumns` and Units "n/a".
+    """
+    from src.specification import current_specification  # lazy: specification imports this module
+
+    spec = current_specification()
+    blocks = (spec.schemas.get(modality) or {}).get("properties") or {}
+    skip = set(spec.term_modalities.get(modality, {}).get("nonTermColumns", ())) | set(blocks)
     return [
         (name, definition)
         for name, definition in sidecar_data.items()
-        if isinstance(definition, dict) and name not in NON_ANALYTE_COLUMNS and definition.get("Units") != "n/a"
+        if isinstance(definition, dict) and name not in skip and definition.get("Units") != "n/a"
     ]
+
+
+def context_value(sidecar_data: dict, modality: str) -> str | None:
+    """The value at the modality's `contextField` (biosample: Technical.SpecimenType); None when it has none."""
+    field = _declaration(modality).get("contextField")
+    node = sidecar_data
+    for part in field.split(".") if field else ():
+        node = node.get(part) if isinstance(node, dict) else None
+    return node if field and isinstance(node, str) else None

@@ -1,0 +1,17 @@
+{
+  "TermID": "prism:time-of-day",
+  "Level": "variable",
+  "Label": "time of day",
+  "Aliases": [
+    "hour_bin"
+  ],
+  "Description": "Part of the day.",
+  "Levels": {
+    "night": "00-05",
+    "morning": "06-11",
+    "afternoon": "12-17",
+    "evening": "18-23",
+    "unknown": "unknown"
+  },
+  "Status": "official"
+}

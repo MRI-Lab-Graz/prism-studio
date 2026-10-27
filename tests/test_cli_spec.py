@@ -205,6 +205,26 @@ def test_spec_propose_metric_json():
     assert "terms/biosample/dhea.saliva.json" in data["document"]["files"]
 
 
+def test_cli_propose_metric_environment():
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "noise level",
+                     "--description", "Sound pressure level", "--units", "dB", "--json")
+    assert code == 0, out
+    assert json.loads(out)["proposal"]["terms"][0]["TermID"] == "prism:noise-level"
+
+
+def test_cli_propose_metric_environment_with_levels():
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "sky state", "--description", "d",
+                     "--level", "c=clear", "--level", "o=overcast", "--cf-standard-name", "cloud_area_fraction", "--json")
+    assert code == 0, out
+    term = json.loads(out)["proposal"]["terms"][0]
+    assert term["Levels"] == {"c": "clear", "o": "overcast"} and term["CFStandardName"] == "cloud_area_fraction"
+
+
+def test_cli_propose_metric_biosample_without_specimen_exits_1():
+    code, out = _run("spec", "propose-metric", "--name", "DHEA", "--description", "d", "--units", "pg/mL", "--json")
+    assert code == 1 and "sample type" in out
+
+
 def test_spec_propose_metric_official_exits_1():
     code, out = _run("spec", "propose-metric", "--name", "cortisol", "--description", "d", "--units", "u", "--specimen", "saliva", "--json")
     assert code == 1 and "prism:cortisol" in json.loads(out)["error"]
@@ -389,3 +409,81 @@ def test_propose_patch_names_a_bad_kind_of_data_as_such(tmp_path):
     assert code == 1 and "not a kind of data" in json.loads(out)["error"]
     code, out = _run("spec", "propose", "--project", project, "--patch", "--json")
     assert code == 1 and "no schema additions" in json.loads(out)["error"]
+
+
+def test_add_term_accepts_the_environment_modality(tmp_path):
+    project = _project(tmp_path / "p")
+    sidecar = tmp_path / "env.json"
+    sidecar.write_text(json.dumps({"Technical": {}, "noise_db": {"Description": "Noise", "Units": "dB"}}), encoding="utf-8")
+    code, out = _run("spec", "local", "add-term", "--project", str(project), "--sidecar", str(sidecar),
+                     "--column", "noise_db", "--modality", "environment", "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and [t["TermID"] for t in data["proposal"]["terms"]] == ["prism:noise-db"]
+
+
+# --- environment: every suggested command works as printed (final review I1) --------------------
+
+def _env_project(root: Path) -> tuple[Path, Path]:
+    root.mkdir(parents=True)
+    (root / "dataset_description.json").write_text(
+        json.dumps({"Name": "T", "BIDSVersion": "1.10.1", "DatasetType": "raw", "Authors": ["A", "B"]}), encoding="utf-8")
+    (root / "participants.tsv").write_text("participant_id\nsub-01\n", encoding="utf-8")
+    (root / "recording-weather_environment.json").write_text(json.dumps({
+        "Technical": {"Source": "open-meteo"}, "Study": {"EnvironmentName": "weather"},
+        "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": "2026-10-26"},
+        "subject_id": {"Description": "Participant", "Units": "n/a"},
+        "session_id": {"Description": "Session", "Units": "n/a"},
+        "noise_db": {"Description": "Street noise", "Units": "dB"}}), encoding="utf-8")
+    folder = root / "sub-01" / "ses-1" / "environment"
+    folder.mkdir(parents=True)
+    tsv = folder / "sub-01_ses-1_recording-weather_environment.tsv"
+    tsv.write_text("subject_id\tsession_id\tnoise_db\nsub-01\tses-1\t55\n", encoding="utf-8")
+    return root, tsv
+
+
+def _suggested(text: str, subcommand: str) -> list[str]:
+    import re
+    import shlex
+
+    match = re.search(r"python prism_tools\.py (" + subcommand + r" .+?)(?:;| \(add --open|$)", text)
+    assert match, text
+    return shlex.split(match.group(1))
+
+
+def _infos(project: Path) -> list[str]:
+    sys.path.insert(0, str(REPO / "app" / "src"))
+    from runner import validate_dataset
+
+    issues, _stats = validate_dataset(str(project))
+    return [m for lvl, m, *_ in issues if lvl == "INFO"]
+
+
+def test_environment_suggested_commands_work_as_printed(tmp_path):
+    project, _tsv_file = _env_project(tmp_path / "p")
+    note = next(m for m in _infos(project) if "noise_db" in m and "not an official" in m)
+    code, out = _run(*_suggested(note, "terms propose"), "--json")
+    assert code == 0 and json.loads(out)["success"], out
+    code, out = _run(*_suggested(note, "spec local add-term"))
+    assert code == 0, out
+    code, out = _run(*_suggested(out, "spec propose"), "--json")  # the add-term success hint
+    assert code == 0 and json.loads(out)["success"], out
+
+
+def test_environment_local_term_share_command_works_as_printed(tmp_path):
+    project, tsv = _env_project(tmp_path / "p")
+    code, out = _run("spec", "local", "add-term", "--project", str(project), "--data", str(tsv),
+                     "--column", "noise_db", "--modality", "environment", "--json")
+    term = json.loads(out)["proposal"]["terms"][0]["TermID"]
+    sidecar = project / "recording-weather_environment.json"
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    data["noise_db"] = {"Term": term}
+    sidecar.write_text(json.dumps(data), encoding="utf-8")
+    note = next(m for m in _infos(project) if "uses the local term" in m)
+    code, out = _run(*_suggested(note, "spec propose"), "--json")
+    assert code == 0 and json.loads(out)["success"], out
+
+
+def test_a_biosample_worded_failure_names_modality_as_the_fix(tmp_path):
+    project, tsv = _env_project(tmp_path / "p")
+    code, out = _run("terms", "propose", "--data", str(tsv), "--column", "noise_db")  # default biosample
+    assert code == 1 and "--modality" in out, out

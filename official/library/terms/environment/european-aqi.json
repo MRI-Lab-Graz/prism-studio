@@ -1,0 +1,11 @@
+{
+  "TermID": "prism:european-aqi",
+  "Level": "variable",
+  "Label": "European air quality index",
+  "Aliases": [
+    "aqi"
+  ],
+  "Description": "European air quality index, combining the main pollutants.",
+  "Units": "1",
+  "Status": "official"
+}

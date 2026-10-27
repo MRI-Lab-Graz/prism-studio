@@ -25,7 +25,7 @@ from src.term_proposal import (
     load_inherited_sidecar,
     specification_scripts_dir,
 )
-from src.term_registry import analyte_columns, load_registry, resolve_column, term_names
+from src.term_registry import context_value, load_registry, term_columns, resolve_column, term_names
 
 OVERLAY_PARTS = ("code", "specification")
 
@@ -262,11 +262,6 @@ def merged_registry(project_root, modality: str = "biosample") -> dict[str, dict
     return merge_terms(load_registry(modality), load_local_terms(project_root, modality)[0])[0]
 
 
-def _specimen(sidecar: dict):
-    technical = sidecar.get("Technical")
-    return technical.get("SpecimenType") if isinstance(technical, dict) else None
-
-
 def _project_specimens(project_root, modality: str) -> list[str] | None:
     """The SpecimenType values of the official schema plus the project's patch; None when there is no patch."""
     patch, _ = load_local_patches(project_root, modality)
@@ -493,13 +488,13 @@ def find_unknown_metrics(project_root, modality: str = "biosample") -> list[dict
             sidecar, sidecar_path = load_inherited_sidecar(data_file)
         except ProposalError:
             continue
-        specimen = _specimen(sidecar)
-        for column, definition in analyte_columns(sidecar):
+        specimen = context_value(sidecar, modality)
+        for column, definition in term_columns(sidecar, modality):
             res = resolve_column(registry, column, definition, specimen)
             if res.kind == "unknown" and (sidecar_path, column) not in seen:
                 seen.add((sidecar_path, column))
                 found.append({
-                    "column": column, "data_file": str(data_file), "specimen": specimen,
+                    "modality": modality, "column": column, "data_file": str(data_file), "specimen": specimen,
                     "units": definition.get("Units"), "similar": list(res.similar),
                 })
     return found

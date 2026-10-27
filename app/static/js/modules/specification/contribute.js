@@ -38,6 +38,8 @@
     const useButton = document.getElementById("spec-use");
     let catalog = { modalities: [], project_open: false };
     let projectSpecimens = [];  // sample types this project added itself
+    let foundMetrics = [];  // unknown metrics of the open project, each with its modality
+    let foundSearched = [];  // the kinds of data whose columns were searched
     let foundColumn = null;  // the "Found in your data" column the form was filled from
     const exampleCells = new Map();  // step 2: field -> the example cell beside that entry, refilled when another template is chosen
     let answers = [];  // step 2: one {entry, read()} per entry of the chosen kind of data
@@ -80,7 +82,12 @@
         return node;
     }
 
-    function renderUnknown(metrics) {
+    // Columns found in the data belong to the kind of data they were read for; only the chosen kind's are shown.
+    function renderUnknown() {
+        const kind = currentKind();
+        const searched = (kind && foundSearched.indexOf(kind.name) !== -1);
+        document.getElementById("spec-m-project").hidden = !catalog.project_open || !searched;
+        const metrics = foundMetrics.filter(function (metric) { return kind && metric.modality === kind.name; });
         unknownBox.replaceChildren();
         if (!metrics.length) {
             unknownBox.appendChild(el("p", "text-muted small mb-0", "Nothing: every measurement in your data is known."));
@@ -182,7 +189,9 @@
             say(data.error || "Could not read the project", "warning");
             return;
         }
-        renderUnknown(data.unknown_metrics);
+        foundMetrics = data.unknown_metrics;
+        foundSearched = data.metric_modalities;
+        renderUnknown();
         projectSpecimens = data.items.filter(function (item) {
             return item.layer === 2 && item.status === "local" && item.field === "Technical.SpecimenType";
         }).map(function (item) { return item.value; });
@@ -495,6 +504,9 @@
     async function chooseKind() {
         clearMessage();
         const kind = currentKind();
+        if (foundColumn) m.name.value = "";  // a column picked under another kind must not follow into this one
+        forgetFound();
+        renderUnknown();
         if (kind) lastKind = kind.name;
         if (kindSelect.value === "new-kind") nk.closest.value = lastKind;
         document.getElementById("spec-new-kind").hidden = kindSelect.value !== "new-kind";
@@ -516,6 +528,7 @@
         if (kind.metrics) fillPick();
     }
 
+
     kindSelect.addEventListener("change", chooseKind);
     templateSelect.addEventListener("change", function () { loadExample(templateSelect.value); });
     useButton.addEventListener("click", async function () {
@@ -525,7 +538,7 @@
     });
 
     const m = {};
-    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "share", "use", "use-hint", "project", "local"]
+    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -552,6 +565,10 @@
 
     // Step 3: the official measurements (only those of the chosen sample type, if one is chosen), then "Missing".
     function fillPick() {
+        const twoLevel = currentKind().specimen_level !== false;  // a kind like environment has no sample type: unit or levels instead
+        m["specimen-box"].hidden = !twoLevel;
+        m["levels-box"].hidden = twoLevel;
+        m["cf-box"].hidden = twoLevel;
         const keep = m.pick.value;
         const specimen = chosenSpecimen().value;
         m.pick.replaceChildren();
@@ -559,7 +576,7 @@
         (currentKind().metrics || []).filter(function (metric) {
             return !specimen || metric.specimens.indexOf(specimen) !== -1;
         }).forEach(function (metric) {
-            m.pick.appendChild(option(metric.label + " (" + [metric.id, metric.units].filter(Boolean).join(", ") + ")", metric.id));
+            m.pick.appendChild(option(metric.label + " (" + [metric.id, metric.units || Object.keys(metric.levels || {}).join("/")].filter(Boolean).join(", ") + ")", metric.id));
         });
         m.pick.appendChild(option("Missing: add a measurement…", "missing"));
         m.pick.value = keep;
@@ -614,7 +631,6 @@
         m.units.appendChild(option("Other…", "other"));
         m.units.selectedIndex = 0;
         fillSpecimens();
-        m.project.hidden = !catalog.project_open;
         m.local.hidden = !catalog.project_open;
     }
 
@@ -630,10 +646,21 @@
         if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
     });
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
+    // "CODE=LABEL" lines as {code: label}; a line without "=" is sent as a code with an empty label, the backend refuses it
+    function readLevels() {
+        const levels = {};
+        m.levels.value.split("\n").map(function (l) { return l.trim(); }).filter(Boolean).forEach(function (line) {
+            const at = line.indexOf("=");
+            levels[at < 0 ? line : line.slice(0, at).trim()] = at < 0 ? "" : line.slice(at + 1).trim();
+        });
+        return Object.keys(levels).length ? levels : null;
+    }
     m.share.addEventListener("click", function () {
+        const oneLevel = currentKind().specimen_level === false;
         propose({
+            levels: oneLevel ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
-            units: m.units.value === "other" ? m["units-other"].value : m.units.value, specimen: m.specimen.value,
+            units: (m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");

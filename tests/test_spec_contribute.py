@@ -387,3 +387,56 @@ def test_a_free_new_kind_name_goes_into_the_title_and_the_text():
 
 def test_a_new_kind_without_a_name_is_still_accepted():
     assert "Suggested name: not given" in proposal_for_new_kind("Skin temperature", "a\tb\n")["text"]
+
+
+def test_catalog_environment_metrics():
+    env = _entry("environment")
+    temp = next(m for m in env["metrics"] if m["id"] == "prism:air-temperature")
+    assert temp["units"] == "degC" and temp["specimens"] == []
+    assert env["specimen_level"] is False and _entry("biosample")["specimen_level"] is True
+    ex = example_entries("environment")
+    assert not any(e["field"].startswith(("Privacy", "Provenance")) for e in ex["entries"])
+    assert "Privacy" not in ex["sections"] and "Provenance" not in ex["sections"]
+
+
+def test_new_environment_metric():
+    r = proposal_for_new_metric("noise level", "Sound pressure level", "dB", modality="environment")
+    assert r["problems"] == []
+    [term] = r["proposal"]["terms"]
+    assert term["TermID"] == "prism:noise-level" and term["Level"] == "variable" and term["Units"] == "dB"
+
+
+def test_new_environment_metric_with_levels_and_cf_name():
+    r = proposal_for_new_metric("sky state", "How the sky looks", modality="environment", levels={"c": "clear", "o": "overcast"}, cf_standard_name="cloud_area_fraction")
+    assert r["problems"] == []
+    [term] = r["proposal"]["terms"]
+    assert term["Levels"] == {"c": "clear", "o": "overcast"} and "Units" not in term and term["CFStandardName"] == "cloud_area_fraction"
+
+
+def test_environment_metric_refuses_specimen():
+    with pytest.raises(OverlayError, match="sample type"):
+        proposal_for_new_metric("noise level", "Sound pressure level", "dB", "saliva", modality="environment")
+
+
+def test_units_or_levels_required():
+    with pytest.raises(OverlayError, match="exactly one"):
+        proposal_for_new_metric("noise level", "x", modality="environment")
+    with pytest.raises(OverlayError, match="exactly one"):
+        proposal_for_new_metric("noise level", "x", "dB", modality="environment", levels={"a": "b"})
+
+
+def test_biosample_metric_without_specimen_is_refused_clearly():
+    with pytest.raises(OverlayError, match="specimen|sample type"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL")
+
+
+def test_two_level_kind_refuses_levels_and_cf_standard_name():
+    with pytest.raises(OverlayError, match="levels"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL", "saliva", levels={"a": "b"})
+    with pytest.raises(OverlayError, match="CF standard name"):
+        proposal_for_new_metric("DHEA", "x", "pg/mL", "saliva", cf_standard_name="air_temperature")
+
+
+def test_catalog_levels_variable_metric_lists_levels():
+    metrics = _entry("environment")["metrics"]
+    assert all("levels" in m for m in metrics)

@@ -17,6 +17,7 @@ from src.environment_mri_scan import (
     build_mri_acquisition_table,
     resolve_bids_rawdata_root,
 )
+from src.environment_windows import parse_window
 
 
 def _bool_arg(value: object, *, default: bool = False) -> bool:
@@ -107,6 +108,7 @@ def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
                 getattr(args, "pilot_random_subject", False), default=False
             ),
             log_callback=log_callback,
+            windows=[parse_window(text) for text in getattr(args, "window", None) or []],
             cancel_check=(
                 (lambda: cancel_file.exists()) if cancel_file is not None else None
             ),

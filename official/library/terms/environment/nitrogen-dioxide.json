@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:nitrogen-dioxide",
+  "Level": "variable",
+  "Label": "nitrogen dioxide",
+  "Aliases": [
+    "no2_ug_m3"
+  ],
+  "Description": "Mass concentration of nitrogen dioxide in air.",
+  "Units": "ug/m3",
+  "CFStandardName": "mass_concentration_of_nitrogen_dioxide_in_air",
+  "Status": "official"
+}

@@ -1,0 +1,12 @@
+{
+  "TermID": "prism:relative-humidity",
+  "Level": "variable",
+  "Label": "relative humidity",
+  "Aliases": [
+    "humidity_pct"
+  ],
+  "Description": "Water vapour in the air as a percentage of the saturation amount.",
+  "Units": "%",
+  "CFStandardName": "relative_humidity",
+  "Status": "official"
+}

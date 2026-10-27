@@ -46,7 +46,7 @@
 
 - [ ] **Step 1: Write the failing tests:** `test_term_modalities_from_entities` (both entries, exact dicts above); `test_specification_loads_environment_terms` (`"air-temperature" in load_specification().terms["environment"]`).
 - [ ] **Step 2: Run** `pytest tests/test_entity_rules.py tests/test_specification.py -q` — FAIL.
-- [ ] **Step 3: Sync and implement** as in Interfaces. Studio's own `src/term_proposal.py::check_with_specification` calls the vendored `check_proposal`: pass `modalities=current_specification().term_modalities` and, for a modality without `contextField`, `specimens=None` (never `[]`, which would apply biosample's two-level rules to environment). The vendored scripts sit in `scripts/specification/` with no `schemas/` beside them, so they must never be asked to read the repository layout: Studio passes everything explicitly. Add a test: a one-level environment proposal through `check_with_specification` has no problems. The sync will also break the environment tests that assert the 1.1.0 format; leave them red for Tasks 3-4 only if they are about environment content, otherwise fix here.
+- [ ] **Step 3: Sync and implement** as in Interfaces. Studio's own `src/term_proposal.py::check_with_specification` calls the vendored `check_proposal`: pass `modalities=current_specification().term_modalities` and, for a modality without `contextField`, `specimens=None` (never `[]`, which would apply biosample's two-level rules to environment). The vendored scripts sit in `scripts/specification/` with no `schemas/` beside them, so they must never be asked to read the repository layout: Studio passes everything explicitly. Add a test: a one-level environment proposal through `check_with_specification` has no problems. The sync breaks tests that assert the environment 1.1.0 format. Every commit stays green: mark each such test `@pytest.mark.xfail(strict=True, reason="environment 2.0.0: Task 3")` (validator) or `... Task 4")` (converter), and the named task removes the marker; anything else the sync breaks is fixed here.
 - [ ] **Step 4: Run** `pytest tests/test_entity_rules.py tests/test_specification.py tests/test_check_terms.py -q` — PASS.
 - [ ] **Step 5: Commit** `feat: sync specification v1.4.0; term modalities come from entities`.
 
@@ -83,7 +83,7 @@
   - `TERM_INHERITED_FIELDS` += `"Levels"`.
   - `_check_biosample_terms` → `_check_terms(sidecar_data, key, file_path, root_dir, modality)`; called for every modality in `current_specification().term_modalities`. Biosample's specimen messages stay in the branch for modalities with a `contextField`.
   - Delete `ENV_REQUIRED_COLUMNS`, `ENV_NUMERIC_COLUMNS`, the hard-coded level sets and `_validate_environment_content`'s fixed checks; environment content goes through the described-columns path. Keep the forbidden-column check as WARNING (`ENV_FORBIDDEN_COLUMNS` stays the list).
-  - Retired-format ERROR (exact text in Global Constraints).
+  - Retired-format ERROR (exact text in Global Constraints); for such a sidecar it replaces the schema-validation errors (one ERROR, not a cascade).
   - Values outside term-inherited `Levels` → WARNING.
 - Test: `tests/test_validator_environment_terms.py` (new); update `tests/test_validator_no_fake_environment.py` and any test asserting the removed errors.
 
@@ -113,7 +113,7 @@
 
 **Interfaces:**
 - Consumes: `load_registry("environment")` (Task 1).
-- Produces: `_build_environment_sidecar() -> dict` = `{"Technical": {"Source": "open-meteo", "SpatialResolution": "city", "TemporalResolution": "hourly"}, "Study": {"EnvironmentName": "weather", "Description": "Weather, air quality, pollen and sun/moon context at each session (Open-Meteo)"}, "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": <today>, "Creator": "PRISM Environment Converter"}, <column>: {"Term": <TermID whose Aliases contain column>} for each value column, "subject_id": {"Description": "BIDS subject identifier"}, "session_id": {"Description": "BIDS session identifier"}}`. Term lookup by alias through `find_term`, so the converter never carries its own column→term table.
+- Produces: `_build_environment_sidecar() -> dict` = `{"Technical": {"Source": "open-meteo", "SpatialResolution": "city", "TemporalResolution": "hourly"}, "Study": {"EnvironmentName": "weather", "Description": "Weather, air quality, pollen and sun/moon context at each session (Open-Meteo)"}, "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": <today>, "Creator": "PRISM Environment Converter"}, <column>: {"Term": <TermID whose Aliases contain column>} for each value column, "subject_id": {"Description": "BIDS subject identifier", "Units": "n/a"}, "session_id": {"Description": "BIDS session identifier", "Units": "n/a"}}` (`Units "n/a"` as biosample's `sample_id`: the 2.0.0 column `anyOf` needs Description+Units or Term). Term lookup by alias through `find_term`, so the converter never carries its own column→term table.
 
 - [ ] **Step 1: Write the failing tests:** `test_sidecar_is_v2_and_valid` (validates against the vendored 2.0.0 schema with jsonschema; every value column has a `Term` found in the registry); `test_no_privacy_or_relative_time`; `test_weather_regime_codes_english`.
 - [ ] **Step 2: Run** `pytest tests/test_environment_conversion.py -q` — FAIL.
