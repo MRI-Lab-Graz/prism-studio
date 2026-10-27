@@ -40,7 +40,7 @@ MAX_PROBLEMS = 50
 MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
-    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName".split()
+    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName Group".split()
 )
 REPO = Path(__file__).resolve().parents[1]
 # The term modalities before they were declared in entities.schema.json. PRISM Studio vendors these scripts

@@ -652,7 +652,9 @@ def _build_environment_preview(rows_out: list[dict], window_columns: list[str] =
 
 
 def _build_environment_sidecar(windows: Sequence[WindowSpec] = ()) -> dict[str, Any]:
-    """environment 2.0.0: every value column points to its official term (looked up by alias)."""
+    """Every value column points to its official term (looked up by alias); the version is the stable environment schema's."""
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, load_schema  # lazy, as in spec_contribute
+
     registry = load_registry("environment")
     sidecar: dict[str, Any] = {
         "Technical": {
@@ -665,7 +667,7 @@ def _build_environment_sidecar(windows: Sequence[WindowSpec] = ()) -> dict[str, 
             "Description": "Weather, air quality, pollen and sun/moon context at each session (Open-Meteo)",
         },
         "Metadata": {
-            "SchemaVersion": "2.0.0",
+            "SchemaVersion": load_schema("environment", DEFAULT_SCHEMA_DIR, "stable")["version"],
             "CreationDate": datetime.now(timezone.utc).date().isoformat(),
             "Creator": "PRISM Environment Converter",
         },

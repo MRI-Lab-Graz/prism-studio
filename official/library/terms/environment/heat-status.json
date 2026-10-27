@@ -13,5 +13,6 @@
     "heatwave": "maximum 30 degC or more on the day and the 2 days before",
     "unknown": "unknown"
   },
+  "Group": "Temperature and humidity",
   "Status": "official"
 }

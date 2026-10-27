@@ -8,5 +8,6 @@
   "Description": "Wind speed near the surface.",
   "Units": "m/s",
   "CFStandardName": "wind_speed",
+  "Group": "Wind, pressure and rain",
   "Status": "official"
 }

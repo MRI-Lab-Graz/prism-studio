@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/environment/v2.0.0",
-  "version": "2.0.0",
+  "$id": "https://prism.org/schemas/environment/v2.1.0",
+  "version": "2.1.0",
   "title": "Environment Metadata",
   "description": "Schema for environmental context of a session (weather, air quality, light, noise, room sensors). One TSV per subject/session/recording, one row per time point or session, one column per quantity. Files are named: sub-<label>[_ses-<label>]_recording-<label>_environment.<tsv|tsv.gz|json>. Each column is defined by a registry Term or by Description and Units, and may carry a Window and Statistic.",
   "type": "object",
@@ -215,7 +215,7 @@
           "sum",
           "count"
         ],
-        "description": "Statistic computed over the Window"
+        "description": "Statistic computed over the Window. A `count` column is a number of hours, so it is unitless (Units \"1\") and takes no unit from its term"
       }
     },
     "anyOf": [

@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/environment/v2.0.0",
+  "version": "2.0.0",
+  "title": "Environment Metadata",
+  "description": "Schema for environmental context of a session (weather, air quality, light, noise, room sensors). One TSV per subject/session/recording, one row per time point or session, one column per quantity. Files are named: sub-<label>[_ses-<label>]_recording-<label>_environment.<tsv|tsv.gz|json>. Each column is defined by a registry Term or by Description and Units, and may carry a Window and Statistic.",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Where the environmental data come from",
+      "properties": {
+        "Source": {
+          "type": "string",
+          "description": "Data source; usual values: open-meteo, room-sensor, manual, other (free string)"
+        },
+        "SpatialResolution": {
+          "type": "string",
+          "description": "Spatial resolution of the source (e.g. city, room)"
+        },
+        "TemporalResolution": {
+          "type": "string",
+          "description": "Temporal resolution of the source (e.g. hourly)"
+        }
+      },
+      "required": [
+        "Source"
+      ]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Recording-level information",
+      "properties": {
+        "EnvironmentName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Environment recording identifier; must equal the recording-<label> in the filename (e.g. weather)"
+        },
+        "Description": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "What this recording describes"
+        },
+        "Citation": {
+          "type": "string",
+          "description": "Citation for the data source"
+        },
+        "DOI": {
+          "type": "string",
+          "description": "DOI for the data source"
+        },
+        "Keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keywords describing the recording"
+        }
+      },
+      "required": [
+        "EnvironmentName"
+      ]
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of creation"
+        },
+        "Creator": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "SchemaVersion",
+        "CreationDate"
+      ]
+    }
+  },
+  "required": [
+    "Technical",
+    "Study",
+    "Metadata"
+  ],
+  "additionalProperties": {
+    "type": "object",
+    "description": "Column definition (one per TSV column)",
+    "properties": {
+      "Term": {
+        "type": "string",
+        "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:air-temperature; Units are then inherited and may be omitted"
+      },
+      "Description": {
+        "type": [
+          "string",
+          "object"
+        ],
+        "description": "Description of the column"
+      },
+      "Units": {
+        "type": "string",
+        "description": "Unit of measurement (e.g. mg/L, pg/mL); n/a for non-numeric columns"
+      },
+      "AliasOf": {
+        "type": "string",
+        "description": "Column name of the canonical definition this is an alias for"
+      },
+      "Aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alternative column names that use this same definition"
+      },
+      "DataType": {
+        "type": "string",
+        "enum": [
+          "string",
+          "integer",
+          "float",
+          ""
+        ],
+        "description": "Expected data type"
+      },
+      "MinValue": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "description": "Minimum allowed value (error below)"
+      },
+      "MaxValue": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "description": "Maximum allowed value (error above)"
+      },
+      "WarnMinValue": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "description": "Warning threshold below"
+      },
+      "WarnMaxValue": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "description": "Warning threshold above"
+      },
+      "AllowedValues": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "description": "Allowed values"
+      },
+      "Levels": {
+        "type": "object",
+        "description": "Mapping of coded values to labels",
+        "patternProperties": {
+          "^.*$": {
+            "type": [
+              "string",
+              "object"
+            ]
+          }
+        }
+      },
+      "CFStandardName": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "description": "CF standard name of the quantity (cfconventions.org), for example air_temperature"
+      },
+      "Window": {
+        "type": "object",
+        "description": "Time window before the session over which the value is computed: Start and End are ISO 8601 durations before the session start (PT0S = the session itself)",
+        "additionalProperties": false,
+        "properties": {
+          "Start": {
+            "type": "string",
+            "pattern": "^P(?!$)(\\d+Y)?(\\d+M)?(\\d+W)?(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?)?$"
+          },
+          "End": {
+            "type": "string",
+            "pattern": "^P(?!$)(\\d+Y)?(\\d+M)?(\\d+W)?(\\d+D)?(T(?=\\d)(\\d+H)?(\\d+M)?(\\d+S)?)?$"
+          }
+        },
+        "required": [
+          "Start",
+          "End"
+        ]
+      },
+      "Statistic": {
+        "type": "string",
+        "enum": [
+          "value",
+          "mean",
+          "min",
+          "max",
+          "sum",
+          "count"
+        ],
+        "description": "Statistic computed over the Window"
+      }
+    },
+    "anyOf": [
+      {
+        "required": [
+          "Description",
+          "Units"
+        ]
+      },
+      {
+        "required": [
+          "Term"
+        ]
+      }
+    ]
+  }
+}

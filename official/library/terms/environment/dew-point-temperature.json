@@ -8,5 +8,6 @@
   "Description": "Temperature at which the air becomes saturated with water vapour.",
   "Units": "degC",
   "CFStandardName": "dew_point_temperature",
+  "Group": "Temperature and humidity",
   "Status": "official"
 }

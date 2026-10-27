@@ -28,7 +28,7 @@ _LOINC = re.compile(r"^\d+-\d$")
 _STATUSES = ("official", "deprecated")
 
 
-_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC", "CFStandardName")
+_STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC", "CFStandardName", "Group")
 _STRING_LISTS = ("Aliases", "AlternativeUnits", "Equivalents")
 _NUMBERS = ("MinValue", "WarnMaxValue")
 
@@ -39,6 +39,9 @@ def type_problems(term: dict, where: str) -> list[str]:
     for key in _STRINGS:
         if key in term and not isinstance(term[key], str):
             problems.append(f"{where}: {key} must be a string")
+    group = term.get("Group")
+    if isinstance(group, str) and (not 1 <= len(group) <= 60 or "\n" in group):
+        problems.append(f"{where}: Group must be 1-60 characters without a line break")
     for key in _STRING_LISTS:
         if key in term and not (isinstance(term[key], list) and all(isinstance(v, str) for v in term[key])):
             problems.append(f"{where}: {key} must be a list of strings")

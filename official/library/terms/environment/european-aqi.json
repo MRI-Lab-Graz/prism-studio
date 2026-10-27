@@ -7,5 +7,6 @@
   ],
   "Description": "European air quality index, combining the main pollutants.",
   "Units": "1",
+  "Group": "Air quality",
   "Status": "official"
 }

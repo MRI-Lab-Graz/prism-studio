@@ -7,5 +7,6 @@
   ],
   "Description": "Hours since the last daylight period.",
   "Units": "h",
+  "Group": "Sun and light",
   "Status": "official"
 }

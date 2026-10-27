@@ -8,5 +8,6 @@
   "Description": "Atmospheric pressure at the surface.",
   "Units": "hPa",
   "CFStandardName": "surface_air_pressure",
+  "Group": "Wind, pressure and rain",
   "Status": "official"
 }

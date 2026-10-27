@@ -7,5 +7,6 @@
   ],
   "Description": "Illuminated fraction of the moon.",
   "Units": "%",
+  "Group": "Place and time",
   "Status": "official"
 }

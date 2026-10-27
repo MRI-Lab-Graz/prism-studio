@@ -8,5 +8,6 @@
   "Description": "Air temperature near the surface.",
   "Units": "degC",
   "CFStandardName": "air_temperature",
+  "Group": "Temperature and humidity",
   "Status": "official"
 }

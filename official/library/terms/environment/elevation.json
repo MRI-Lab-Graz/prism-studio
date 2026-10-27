@@ -8,5 +8,6 @@
   "Description": "Height of the location above mean sea level.",
   "Units": "m",
   "CFStandardName": "height_above_mean_sea_level",
+  "Group": "Place and time",
   "Status": "official"
 }
