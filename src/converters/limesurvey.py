@@ -378,87 +378,39 @@ _FIXED_ANSWERS = {
 }
 
 
-def _add_fixed_answer_levels(questions_map, language):
+def _add_fixed_answer_levels(questions_map, languages):
     """Give the fixed-option types their LimeSurvey answer options as levels, labelled in
-    ``language`` (German variants like de-informal included); numbers label themselves."""
-    # ponytail: en/de labels only; another language gets the English label under "en",
-    # never under its own key. Add languages from LimeSurvey's locale/<lang>.mo when needed.
-    base = language.split("-")[0]
-    key = language if base in ("en", "de") else "en"
+    each of ``languages`` (German variants like de-informal included); numbers label themselves."""
+    # ponytail: en/de labels only; other languages are left out, and with none of the two
+    # the English label goes under "en", never under another language's key. Add languages
+    # from LimeSurvey's locale/<lang>.mo when needed.
+    keys = {lang: lang.split("-")[0] for lang in languages if lang.split("-")[0] in ("en", "de")} or {"en": "en"}
     for q in questions_map.values():
         options = _FIXED_ANSWERS.get(q["type"])
         if options and not q["levels"]:
             q["levels"] = {
-                code: {key: labels.get(base if base in labels else "en", code)}
+                code: {key: labels.get(base, labels.get("en", code)) for key, base in keys.items()}
                 for code, labels in options.items()
             }
 
 
+def _base_language(root):
+    """The survey's base language: <surveys> row, else the first of <languages>, else the
+    first language any row names, else "en" (.lsq/.lsg files have no <surveys>)."""
+    for path in ("surveys/rows/row/language", "languages/language"):
+        value = (root.findtext(path) or "").strip()
+        if value:
+            return value
+    return next(((el.text or "").strip() for el in root.iter("language") if (el.text or "").strip()), "en")
+
+
 def _detect_languages(root, get_text):
-    """Detect all languages present in a LimeSurvey XML structure.
-
-    Checks surveys_languagesettings, questions, and answers sections for
-    language attributes.
-
-    Returns:
-        tuple: (languages_list, default_language)
-    """
-    languages = set()
-    default_language = "en"
-
-    # Check surveys_languagesettings
-    lang_section = root.find("surveys_languagesettings")
-    if lang_section is not None:
-        rows = lang_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                lang = get_text(row, "surveyls_language")
-                if lang and lang.strip():
-                    languages.add(lang.strip())
-
-    # Check surveys section for base language
-    surveys_section = root.find("surveys")
-    if surveys_section is not None:
-        rows = surveys_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                lang = get_text(row, "language")
-                if lang and lang.strip():
-                    default_language = lang.strip()
-                    languages.add(lang.strip())
-                # Check additional_languages
-                addl = get_text(row, "additional_languages")
-                if addl and addl.strip():
-                    for al in addl.strip().split():
-                        if al.strip():
-                            languages.add(al.strip())
-                break
-
-    # Check questions section for language diversity
-    questions_section = root.find("questions")
-    if questions_section is not None:
-        rows = questions_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                lang = get_text(row, "language")
-                if lang and lang.strip():
-                    languages.add(lang.strip())
-
-    # Check answers section
-    answers_section = root.find("answers")
-    if answers_section is not None:
-        rows = answers_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                lang = get_text(row, "language")
-                if lang and lang.strip():
-                    languages.add(lang.strip())
-
-    if not languages:
-        languages.add(default_language)
-
-    return sorted(languages), default_language
-
+    """(all languages of the survey, sorted; the base language)."""
+    base = _base_language(root)
+    languages = {base} | {(el.text or "").strip() for el in root.iter("language")}
+    for row in root.findall("surveys/rows/row"):
+        languages.update(get_text(row, "additional_languages").split())
+    return sorted(lang for lang in languages if lang), base
 
 def _parse_lss_structure(root, get_text):
     """Parse LimeSurvey XML structure to extract questions, groups, subquestions, and attributes.
@@ -476,28 +428,32 @@ def _parse_lss_structure(root, get_text):
     # Temporary map for subquestions: parent_qid -> list of subquestion dicts
     subquestions_map = {}
 
-    # ── LS 6.x l10n fallback maps ──────────────────────────────────
-    # In LS 6.x (DBVersion 636+), text fields (group_name, question,
-    # answer) live in separate *_l10ns tables instead of inline.
-    # Build lookup maps so we can fall back when inline fields are empty.
-    _group_l10ns = {}  # gid -> {name, description}
-    for row in root.findall(".//group_l10ns/rows/row"):
-        gid = get_text(row, "gid")
-        lang = get_text(row, "language")
-        if gid and gid not in _group_l10ns:  # first language wins (usually base)
-            _group_l10ns[gid] = {
-                "name": html_to_text(get_text(row, "group_name")),
-                "description": get_text(row, "description"),
-            }
+    # Every language's texts, from LS 6 *_l10ns tables and LS 3 per-language rows alike:
+    # ("g", gid) / ("q", qid) -> {language: {field: text}}. Rows without a language
+    # (single-language exports) count as the base language.
+    base = _base_language(root)
+    texts = {}
 
-    _question_l10ns = {}  # qid -> {question, help}
-    for row in root.findall(".//question_l10ns/rows/row"):
-        qid = get_text(row, "qid")
-        if qid and qid not in _question_l10ns:
-            _question_l10ns[qid] = {
-                "question": get_text(row, "question"),
-                "help": get_text(row, "help"),
-            }
+    def collect(rows, kind, id_tag, fields):
+        for row in rows:
+            values = {f: get_text(row, f) for f in fields if get_text(row, f)}
+            if values:
+                lang = get_text(row, "language").strip() or base
+                texts.setdefault((kind, get_text(row, id_tag)), {}).setdefault(lang, {}).update(values)
+
+    collect(root.findall("groups/rows/row") + root.findall(".//group_l10ns/rows/row"),
+            "g", "gid", ("group_name", "description"))
+    collect(root.findall("questions/rows/row") + root.findall("subquestions/rows/row")
+            + root.findall(".//question_l10ns/rows/row"), "q", "qid", ("question", "help"))
+
+    def text_by_language(kind, key, field, clean=html_to_text):
+        """{language: plain text} of one field, the base language first."""
+        found = {lang: clean(v[field]) for lang, v in texts.get((kind, key), {}).items() if v.get(field)}
+        return dict(sorted(((lang, t) for lang, t in found.items() if t), key=lambda kv: kv[0] != base))
+
+    def other_language(row):  # LS 3 repeats each row once per language
+        lang = get_text(row, "language").strip()
+        return bool(lang) and lang != base
 
     # Temporary map for question attributes: qid -> {attribute_name: value}
     attributes_map = {}
@@ -508,31 +464,24 @@ def _parse_lss_structure(root, get_text):
         rows = groups_section.find("rows")
         if rows is not None:
             for row in rows.findall("row"):
+                if other_language(row):
+                    continue
                 gid = get_text(row, "gid")
-                name = html_to_text(get_text(row, "group_name"))
+                name = next(iter(text_by_language("g", gid, "group_name").values()), "")
                 group_order = get_text(row, "group_order")
-                description = get_text(row, "description")
+                description = next(iter(text_by_language("g", gid, "description").values()), "")
                 randomization_group = get_text(row, "randomization_group")
                 grelevance = get_text(row, "grelevance")  # Group relevance equation
-
-                # LS 6.x fallback: text fields live in group_l10ns
-                if not name and gid in _group_l10ns:
-                    name = _group_l10ns[gid]["name"]
-                if not description and gid in _group_l10ns:
-                    description = _group_l10ns[gid]["description"]
 
                 try:
                     order_int = int(group_order) if group_order else 0
                 except ValueError:
                     order_int = 0
 
-                # Clean HTML from description
-                clean_desc = html_to_text(description or "")
-
                 groups_map[gid] = {
                     "name": name if name else "",
                     "order": order_int,
-                    "description": clean_desc,
+                    "description": description,
                     "randomization_group": (
                         randomization_group if randomization_group else None
                     ),
@@ -547,16 +496,14 @@ def _parse_lss_structure(root, get_text):
         rows = subquestions_section.find("rows")
         if rows is not None:
             for row in rows.findall("row"):
+                if other_language(row):
+                    continue
                 qid = get_text(row, "qid")
                 parent_qid = get_text(row, "parent_qid")
                 title = get_text(row, "title")  # Subquestion code (e.g., SQ001)
-                question_text = get_text(row, "question")
+                question_text = next(iter(text_by_language("q", qid, "question", str).values()), "")
                 question_order = get_text(row, "question_order")
                 scale_id = get_text(row, "scale_id")  # 0 or 1 for dual-scale arrays
-
-                # LS 6.x fallback: question text in question_l10ns
-                if not question_text and qid in _question_l10ns:
-                    question_text = _question_l10ns[qid].get("question", "")
 
                 try:
                     sq_order = int(question_order) if question_order else 0
@@ -575,6 +522,7 @@ def _parse_lss_structure(root, get_text):
                     "qid": qid,
                     "code": title,
                     "text": clean_text,
+                    "text_i18n": text_by_language("q", qid, "question"),
                     "order": sq_order,
                     "scale_id": scale,
                     "media_urls": media_urls if media_urls else None,
@@ -622,37 +570,34 @@ def _parse_lss_structure(root, get_text):
         rows = questions_section.find("rows")
         if rows is not None:
             for row in rows.findall("row"):
+                if other_language(row):
+                    continue
                 qid = get_text(row, "qid")
                 gid = get_text(row, "gid")
                 title = get_text(row, "title")  # Variable name (e.g. 'ADS01')
-                question_text = get_text(row, "question")
+                question_i18n = text_by_language("q", qid, "question")
+                help_i18n = text_by_language("q", qid, "help")
                 q_type = get_text(row, "type")
                 parent_qid = get_text(row, "parent_qid")
                 mandatory = get_text(row, "mandatory")  # Y or N
                 question_order = get_text(row, "question_order")
                 other = get_text(row, "other")  # Y or N - has "Other" option
-                help_text = get_text(row, "help")  # Help text shown to user
                 preg = get_text(row, "preg")  # Validation regex
                 relevance = get_text(row, "relevance")  # Relevance equation
-
-                # LS 6.x fallback: text fields in question_l10ns
-                if not question_text and qid in _question_l10ns:
-                    question_text = _question_l10ns[qid].get("question", "")
-                if not help_text and qid in _question_l10ns:
-                    help_text = _question_l10ns[qid].get("help", "")
 
                 try:
                     q_order_int = int(question_order) if question_order else 0
                 except ValueError:
                     q_order_int = 0
 
-                # Clean up HTML tags from text fields
-                clean_question = html_to_text(question_text or "")
-                clean_help = html_to_text(help_text or "")
+                clean_question = next(iter(question_i18n.values()), "")
+                clean_help = next(iter(help_i18n.values()), "")
 
                 questions_map[qid] = {
                     "title": title,
                     "question": clean_question,
+                    "question_i18n": question_i18n,
+                    "help_i18n": help_i18n,
                     "type": q_type,
                     "type_name": _get_question_type_name(q_type),
                     "mandatory": mandatory.upper() == "Y" if mandatory else False,
@@ -749,7 +694,7 @@ def _build_prism_template_from_parsed(
         # Handle help text - could be per-language in attributes
         help_text = q_data.get("help") or ""
         if help_text:
-            ls_props["helpText"] = {default_language: help_text}
+            ls_props["helpText"] = dict(q_data.get("help_i18n") or {default_language: help_text})
         # Check for language-specific help in attributes
         for attr_key, attr_val in attributes.items():
             if attr_key.startswith("help_"):
@@ -795,10 +740,8 @@ def _build_prism_template_from_parsed(
 
                 full_desc = sq_text if sq_text else question_text
                 entry = {
-                    "Description": (
-                        {default_language: full_desc}
-                        if full_desc
-                        else {default_language: ""}
+                    "Description": dict(
+                        sq.get("text_i18n") or q_data.get("question_i18n") or {default_language: full_desc}
                     ),
                     "LimeSurvey": dict(ls_props),  # Copy for each subquestion
                 }
@@ -810,11 +753,7 @@ def _build_prism_template_from_parsed(
         else:
             # Non-matrix question: single entry
             entry = {
-                "Description": (
-                    {default_language: question_text}
-                    if question_text
-                    else {default_language: ""}
-                ),
+                "Description": dict(q_data.get("question_i18n") or {default_language: question_text}),
                 "LimeSurvey": ls_props,
             }
 
@@ -905,7 +844,7 @@ def _parse_lsq_lsg_xml(xml_content, source_type):
     questions_map, groups_map = _parse_lss_structure(root, _get_text)
     _parse_answers_into_questions(root, questions_map, _get_text)
     languages, default_language = _detect_languages(root, _get_text)
-    _add_fixed_answer_levels(questions_map, default_language)
+    _add_fixed_answer_levels(questions_map, languages)
     return _build_prism_template_from_parsed(
         questions_map, groups_map, languages, default_language, source_type=source_type
     )
@@ -948,25 +887,6 @@ def _task_name(name):
     return sanitize_task_name(ascii_name) or "imported"
 
 
-def _drop_other_language_rows(root, get_text):
-    """LS 3.x repeats group/question/subquestion/answer rows once per language; keep the
-    base language's rows only (rows without a <language> child, LS 4-6, are kept)."""
-    base = ""
-    surveys = root.find("surveys/rows/row")
-    if surveys is not None:
-        base = get_text(surveys, "language").strip()
-    for section in ("groups", "questions", "subquestions", "answers"):
-        rows = root.find(f"{section}/rows")
-        if rows is None:
-            continue
-        for row in list(rows):
-            lang = get_text(row, "language").strip()
-            if lang and not base:
-                base = lang  # no survey base language: first language seen wins
-            if lang and lang != base:
-                rows.remove(row)
-
-
 def _parse_lss_for_questionnaires(xml_content):
     try:
         root = ET.fromstring(xml_content)
@@ -975,10 +895,9 @@ def _parse_lss_for_questionnaires(xml_content):
 
 
     languages, default_language = _detect_languages(root, _get_text)
-    _drop_other_language_rows(root, _get_text)
     questions_map, groups_map = _parse_lss_structure(root, _get_text)
     _parse_answers_into_questions(root, questions_map, _get_text)
-    _add_fixed_answer_levels(questions_map, default_language)
+    _add_fixed_answer_levels(questions_map, languages)
     return {
         "questions": questions_map,
         "groups": groups_map,
@@ -1073,12 +992,16 @@ def _questionnaire_template(parsed, part):
     study["TaskName"] = _task_name(part["name"])
     study["Description"] = part["description"] or f"Imported from LimeSurvey: {part['name']}"
     stems = [
-        q["question"]
+        q.get("question_i18n") or {lang: q["question"]}
         for q in questions.values()
         if q["type"] in _ARRAY_TYPES and q["subquestions"] and q["question"]
     ]
-    if stems:
-        study["Instructions"] = {lang: "\n\n".join(stems)}
+    instructions = {
+        language: "\n\n".join(stem[language] for stem in stems if stem.get(language))
+        for language in dict.fromkeys(language for stem in stems for language in stem)
+    }
+    if instructions:
+        study["Instructions"] = instructions
     template["Technical"]["AdministrationMethod"] = "online"
     return template, _apply_prismmeta(template, part["prismmeta"])
 
@@ -1308,7 +1231,7 @@ def parse_lss_xml(
 
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
-    _add_fixed_answer_levels(questions_map, survey_meta.get("language") or "en")
+    _add_fixed_answer_levels(questions_map, [survey_meta.get("language") or "en"])
 
     # Determine task name early for registry
     survey_title = survey_meta.get("title") or task_name or "survey"

@@ -223,8 +223,9 @@ def test_ls3_multilanguage_rows_are_not_duplicated():
 
     items = [k for k in template if k not in ("Technical", "Study", "Metadata", "I18n")]
     assert items == ["WHO1", "WHO2"]
-    assert template["WHO1"]["Description"] == {"de": "Frage eins"}
-    assert template["WHO1"]["Levels"] == {"1": {"de": "nie"}}
+    # every language is kept, the base language (de) first
+    assert template["WHO1"]["Description"] == {"de": "Frage eins", "en": "Question one"}
+    assert template["WHO1"]["Levels"] == {"1": {"de": "nie", "en": "never"}}
     assert found["name"] == "Wohl"
 
 
