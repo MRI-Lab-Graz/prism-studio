@@ -50,10 +50,11 @@ works with **no project open** and asks one thing at a time:
    and *Unknown* entries and the *Not sure* tick only go along as context for the maintainer, and add nothing to the
    specification. A line beside the share button always says what you propose and what goes along as context. When several lists have a missing
    value, each gets its own *Share the new …* button and the other new values appear in its context.
-3. **Measurements**, for kinds of data with a measurement list (biosample and environment; environment has no sample type and takes a unit or levels): a pull-down of the
-   measurements PRISM knows, with ID and unit, under group headings when the official terms have a *Group* (for environment: temperature and humidity, air quality, pollen, ...). When a specimen type is chosen in step 2, only that sample type's
-   measurements are listed. The last entry, *Missing: add a measurement…*, opens the measurement form with the sample
-   type from step 2 already filled in. Give its name, what it measures and its unit; *Share…* shows the proposal and
+3. **Measurements**, for kinds of data with a measurement list (biosample and environment; environment has no sample type and takes a unit or levels): the measurements
+   PRISM knows. Where the official terms have a *Group* (environment: temperature and humidity, air quality, pollen, ...)
+   you choose the group first and then one of its measurements; the pull-downs show short names, and the ID and unit appear
+   under your choice. When a specimen type is chosen in step 2, only that sample type's measurements are listed. The last entry, *Missing: add a measurement…*, opens the measurement form with the sample
+   type from step 2 already filled in. Give its name, what it measures and its unit (and, where groups exist, optionally its group); *Share…* shows the proposal and
    sends your step-2 entries and the *Not sure* tick along as context.
 4. **Nothing fits: a new kind of data** opens a short form: a description (what is measured, how, with which device
    or lab, what one file holds), a sample file (pasted or picked as a text file; made-up data only, never real

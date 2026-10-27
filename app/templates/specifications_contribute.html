@@ -118,9 +118,14 @@
                 <div id="spec-m-found"></div>
             </div>
 
+            <div class="mb-3" id="spec-m-group-box" hidden>
+                <label class="form-label" for="spec-m-group">Group of measurements</label>
+                <select id="spec-m-group" class="form-select w-100"></select>
+            </div>
             <div class="mb-3">
                 <label class="form-label" for="spec-m-pick">Your measurement</label>
-                <select id="spec-m-pick" class="form-select w-auto mw-100"></select>
+                <select id="spec-m-pick" class="form-select w-100"></select>
+                <div id="spec-m-detail" class="form-text"></div>
             </div>
             <p id="spec-m-yes" class="alert alert-info" hidden>
                 Nothing to propose: it is already in PRISM. Use its name for your column instead of proposing it.
@@ -152,6 +157,10 @@
                     <div class="col-md-8" id="spec-m-levels-box" hidden>
                         <label class="form-label small mb-0" for="spec-m-levels">Or levels instead of a unit: one CODE=LABEL per line</label>
                         <textarea id="spec-m-levels" class="form-control form-control-sm" rows="3" placeholder="c=clear"></textarea>
+                    </div>
+                    <div class="col-md-4" id="spec-m-form-group-box" hidden>
+                        <label class="form-label small mb-0" for="spec-m-form-group">Group (optional)</label>
+                        <select id="spec-m-form-group" class="form-select form-select-sm"></select>
                     </div>
                     <div class="col-md-6" id="spec-m-cf-box" hidden>
                         <label class="form-label small mb-0" for="spec-m-cf">CF standard name (optional)</label>
