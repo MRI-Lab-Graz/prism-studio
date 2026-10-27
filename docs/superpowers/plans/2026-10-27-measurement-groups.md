@@ -4,7 +4,7 @@
 
 **Goal:** The Propose page's measurement list is clustered (group first, then the variable), shows short labels, and never overflows its card; the groups are part of the specification (an optional `Group` on every term).
 
-**Architecture:** prism-specification gets an optional term field `Group` (+ the 31 environment terms grouped), released as v1.5.0 together with two approved follow-ups (`check_modalities.py --terms`, "a `count` window column is unitless" in the environment schema 2.1.0). Studio syncs the tag; `spec_catalog()` metrics carry `group`; the page shows a group pull-down, then the measurements of that group (`label (unit)` only; id and level codes in a line under the choice); proposals can carry a group.
+**Architecture:** prism-specification gets an optional term field `Group` (+ the 31 environment terms grouped), released as v1.4.1 together with two approved follow-ups (`check_modalities.py --terms`, "a `count` window column is unitless" in the environment schema 2.1.0). Studio syncs the tag; `spec_catalog()` metrics carry `group`; the page shows a group pull-down, then the measurements of that group (`label (unit)` only; id and level codes in a line under the choice); proposals can carry a group.
 
 **Tech Stack:** Python 3, JSON Schema, vanilla JS, pytest, Playwright e2e.
 
@@ -34,7 +34,7 @@
 
 ---
 
-### Task 1: Specification v1.5.0 (repo prism-specification, worktree `../prism-specification-groups`, branch `feat/term-groups`)
+### Task 1: Specification v1.4.1 (repo prism-specification, worktree `../prism-specification-groups`, branch `feat/term-groups`)
 
 **Files:** `scripts/check_terms.py` (`Group` type/length rule in `type_problems` or `check_registry`), `scripts/term_proposal.py` (ALLOWED_FIELDS += Group), `scripts/check_modalities.py` (`--terms DIR`), `terms/environment/*.json` (add `Group`), `schemas/stable/environment.schema.json` → 2.1.0 (Statistic description: a `count` is a number of hours, unitless, `Units "1"`), `schemas/archive/environment/2.0.0.schema.json` (byte copy of the previous stable), `specs/environment.md` (prose sentence; regenerate the table), `CONTRIBUTING.md` (one line: optional `Group`), tests.
 
@@ -44,11 +44,11 @@
 - [ ] **Step 2:** run → FAIL.
 - [ ] **Step 3:** implement; add `Group` to the 31 term files; schema 2.1.0 with archive copy; regenerate `specs/environment.md` (`python scripts/generate_schema_reference.py`); CONTRIBUTING line.
 - [ ] **Step 4:** `python3 -m pytest -q && python3 scripts/check_terms.py --all && python3 scripts/check_modalities.py && python3 scripts/generate_schema_reference.py --check && python3 scripts/check_schema_versions.py origin/main HEAD` all pass.
-- [ ] **Step 5:** commit. Then STOP for review; merge/tag v1.5.0/push/release only after the user's go.
+- [ ] **Step 5:** commit. Then STOP for review; merge/tag v1.4.1/push/release only after the user's go.
 
-### Task 2: Studio backend and CLI (branch `feat/measurement-groups`, after v1.5.0 is released)
+### Task 2: Studio backend and CLI (branch `feat/measurement-groups`, after v1.4.1 is released)
 
-**Files:** sync (`python scripts/sync_specification.py --tag v1.5.0`), `src/spec_contribute.py` (`spec_catalog` metrics get `"group": term.get("Group")`; `proposal_for_new_metric(..., group: str | None = None)` puts `Group` on the term when given, validated with the same rule), `app/src/cli/parser.py` + `app/src/cli/commands/spec.py` (`--group`), `app/src/web/blueprints/specification_contribute.py` (route passes `group`), tests (`tests/test_spec_contribute.py`, `tests/test_cli_spec.py`, route test), updated expectations of the sync.
+**Files:** sync (`python scripts/sync_specification.py --tag v1.4.1`), `src/spec_contribute.py` (`spec_catalog` metrics get `"group": term.get("Group")`; `proposal_for_new_metric(..., group: str | None = None)` puts `Group` on the term when given, validated with the same rule), `app/src/cli/parser.py` + `app/src/cli/commands/spec.py` (`--group`), `app/src/web/blueprints/specification_contribute.py` (route passes `group`), tests (`tests/test_spec_contribute.py`, `tests/test_cli_spec.py`, route test), updated expectations of the sync.
 
 **Interfaces:** catalog metric = `{"id", "label", "units", "levels"?, "specimens", "group"}` (`group` None when the term has none). Produces `groups` per kind: ordered unique list of the metrics' groups (`kind["groups"]`, `[]` when none).
 
