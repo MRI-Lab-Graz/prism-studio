@@ -108,6 +108,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the task). A converter around eye2bids is parked in `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`.
 
 ### Fixed
+- **LimeSurvey responses reach the right items.** A response field (`{sid}X{gid}X{qid}{row}`) is now split using the
+  survey's own question ids. Before, numeric row codes ran into the question id (ADS rows `1`–`20` came out as
+  `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
+  the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
+  keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **LimeSurvey texts are imported as clean plain text.** Question, answer, help and group texts had HTML entities
+  left in (`&lt; 5`, `&nbsp;`), words glued at line and paragraph breaks (`Satz eins.Satz zwei.`), and anything
+  after a `<` that was not a tag cut away (the equation `{if(a<3, 1, b>2)}` became `{if(a2)}`). One function,
+  `html_to_text`, now removes only real tags, keeps breaks as line breaks and decodes entities.
+- **A survey exported from PRISM converts back with its answers.** Matrix rows are written with 5-character codes
+  (`PHQ901` -> `PHQ01`), but the CodeMap in the hidden PRISMMETA question recorded the unshortened code, so a
+  matched template got every answer as `n/a`. Both exporters now record the column each item was really written to
+  (`PHQ901=MPHQ901[PHQ01]`), and the response import and the Template Editor import read it.
 - Participants import: numbers with padded decimal zeros (LimeSurvey exports ages as `23.0000000000`) are read as `23`;
   `44.50` becomes `44.5`. The value is the same number, so the preview and `participants.tsv` show it without the zeros.
 - **Linux launcher in the applications menu.** `install.sh` now writes `prism-studio.desktop` to `~/.local/share/applications`

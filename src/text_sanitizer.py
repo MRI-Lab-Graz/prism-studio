@@ -17,6 +17,7 @@ Usage:
     # Result: "Strongly agree"
 """
 
+import html
 import re
 import logging
 from typing import Optional
@@ -66,6 +67,25 @@ PRESERVE_PATTERNS = [
     re.compile(r"\{TOKEN:[A-Z_]+\}", re.IGNORECASE),  # {TOKEN:FIRSTNAME}
     re.compile(r"\{INSERTANS:[^}]+\}", re.IGNORECASE),  # {INSERTANS:123X456X789}
 ]
+
+
+# A tag is "<" + tag name + space, "/" or ">", so "a<3" and "{if(a<b, 1, c>2)}" are text.
+_HTML_TAG_RE = re.compile(r"</?[A-Za-z][A-Za-z0-9]*(?=[\s/>])[^<>]*>")
+_HTML_BREAK_RE = re.compile(r"<br\s*/?>|</(?:p|div|li|h[1-6]|tr|blockquote)\s*>", re.IGNORECASE)
+_HTML_DROP_RE = re.compile(r"<!--.*?-->|<(script|style)\b.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
+
+
+def html_to_text(value: Optional[str]) -> str:
+    """Plain text from HTML as LimeSurvey stores it: tags removed, line and paragraph
+    breaks kept as line breaks, entities decoded (after the tags, so ``&lt;b&gt;``
+    stays text), spaces collapsed and blank lines dropped."""
+    if not value:
+        return ""
+    text = _HTML_DROP_RE.sub("", value)
+    text = _HTML_TAG_RE.sub("", _HTML_BREAK_RE.sub("\n", text))
+    text = html.unescape(text).replace("\xa0", " ")
+    lines = (re.sub(r"[ \t\f\v]+", " ", line).strip() for line in text.splitlines())
+    return "\n".join(line for line in lines if line)
 
 
 def sanitize_display_text(text: Optional[str], strip_html: bool = False) -> str:

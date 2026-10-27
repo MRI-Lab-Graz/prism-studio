@@ -4,6 +4,7 @@ import re
 import sys
 import unicodedata
 import zipfile
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -11,8 +12,15 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
+from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
+
+
+def _get_text(element, tag):
+    """Text of a child element, "" when the child or its text is missing."""
+    child = element.find(tag)
+    return (child.text if child is not None else "") or ""
 
 
 def _utc_creation_date() -> str:
@@ -149,17 +157,6 @@ def _get_question_type_name(type_code):
     return LIMESURVEY_QUESTION_TYPES.get(type_code, f"Unknown ({type_code})")
 
 
-def _map_field_to_code(fieldname, qid_to_title):
-    m = re.match(r"(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
-    if not m:
-        return fieldname
-    qid = m.group(3)
-    suffix = m.group(4)
-    if suffix:
-        return suffix
-    return qid_to_title.get(qid, fieldname)
-
-
 def parse_lsa_responses(lsa_path):
     """Return (dataframe, qid->title mapping, groups_map) extracted from a LimeSurvey .lsa file."""
     with zipfile.ZipFile(lsa_path, "r") as z:
@@ -168,23 +165,8 @@ def parse_lsa_responses(lsa_path):
 
     lss_root = ET.fromstring(xml_lss)
 
-    # Helper to find text of a child element
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
 
-    questions_map, groups_map = _parse_lss_structure(lss_root, get_text)
-
-    # Build simple qid->title map for column renaming
-    qid_to_title = {qid: d["title"] for qid, d in questions_map.items()}
-
-    # Also include subquestions in qid_to_title if needed?
-    # The original code did this:
-    for row in lss_root.findall(".//subquestions/rows/row"):
-        qid = row.find("qid").text
-        title = row.find("title").text
-        qid_to_title[qid] = title
+    questions_map, groups_map = _parse_lss_structure(lss_root, _get_text)
 
     # Parse once; both the fieldname list and the row data come from this tree.
     resp_root = ET.fromstring(xml_resp)
@@ -200,7 +182,7 @@ def parse_lsa_responses(lsa_path):
 
     df = pd.DataFrame(records)
 
-    rename_map = {f: _map_field_to_code(f, qid_to_title) for f in fieldnames}
+    rename_map = dict(zip(fieldnames, lsa_column_names(fieldnames, xml_lss)))
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
 
     return df, questions_map, groups_map
@@ -265,7 +247,7 @@ def _clean_html_preserve_info(html_content):
     media_urls = _extract_media_urls(html_content)
 
     # Remove HTML tags
-    clean_text = re.sub("<[^<]+?>", "", html_content).strip()
+    clean_text = html_to_text(html_content)
     # Clean up whitespace
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
@@ -315,15 +297,13 @@ def _parse_survey_metadata(root, get_text):
                 desc = get_text(row, "surveyls_description")
 
                 if title:
-                    metadata["title"] = re.sub("<[^<]+?>", "", title).strip()
+                    metadata["title"] = html_to_text(title)
                 if welcome:
-                    metadata["welcome_message"] = re.sub(
-                        "<[^<]+?>", "", welcome
-                    ).strip()
+                    metadata["welcome_message"] = html_to_text(welcome)
                 if end:
-                    metadata["end_message"] = re.sub("<[^<]+?>", "", end).strip()
+                    metadata["end_message"] = html_to_text(end)
                 if desc:
-                    metadata["description"] = re.sub("<[^<]+?>", "", desc).strip()
+                    metadata["description"] = html_to_text(desc)
                 break  # Take first language settings
 
     return metadata
@@ -349,13 +329,13 @@ def _parse_answers_into_questions(root, questions_map, get_text):
     answer_l10ns = {}
     for l10n in root.findall("answer_l10ns/rows/row"):
         answer_l10ns.setdefault(get_text(l10n, "aid"), []).append(
-            (get_text(l10n, "language"), get_text(l10n, "answer"))
+            (get_text(l10n, "language"), html_to_text(get_text(l10n, "answer")))
         )
 
     for row in rows.findall("row"):
         qid = get_text(row, "qid")
         code = get_text(row, "code")
-        answer = get_text(row, "answer")
+        answer = html_to_text(get_text(row, "answer"))
         lang = get_text(row, "language")
 
         if qid not in questions_map:
@@ -470,7 +450,7 @@ def _parse_lss_structure(root, get_text):
         lang = get_text(row, "language")
         if gid and gid not in _group_l10ns:  # first language wins (usually base)
             _group_l10ns[gid] = {
-                "name": get_text(row, "group_name"),
+                "name": html_to_text(get_text(row, "group_name")),
                 "description": get_text(row, "description"),
             }
 
@@ -483,11 +463,6 @@ def _parse_lss_structure(root, get_text):
                 "help": get_text(row, "help"),
             }
 
-    _answer_l10ns = {}  # aid -> answer text  (for LS 6.x)
-    for row in root.findall(".//answer_l10ns/rows/row"):
-        aid = get_text(row, "aid")
-        if aid and aid not in _answer_l10ns:
-            _answer_l10ns[aid] = get_text(row, "answer")
     # Temporary map for question attributes: qid -> {attribute_name: value}
     attributes_map = {}
 
@@ -498,7 +473,7 @@ def _parse_lss_structure(root, get_text):
         if rows is not None:
             for row in rows.findall("row"):
                 gid = get_text(row, "gid")
-                name = get_text(row, "group_name")
+                name = html_to_text(get_text(row, "group_name"))
                 group_order = get_text(row, "group_order")
                 description = get_text(row, "description")
                 randomization_group = get_text(row, "randomization_group")
@@ -516,7 +491,7 @@ def _parse_lss_structure(root, get_text):
                     order_int = 0
 
                 # Clean HTML from description
-                clean_desc = re.sub("<[^<]+?>", "", description or "").strip()
+                clean_desc = html_to_text(description or "")
 
                 groups_map[gid] = {
                     "name": name if name else "",
@@ -636,8 +611,8 @@ def _parse_lss_structure(root, get_text):
                     q_order_int = 0
 
                 # Clean up HTML tags from text fields
-                clean_question = re.sub("<[^<]+?>", "", question_text or "").strip()
-                clean_help = re.sub("<[^<]+?>", "", help_text or "").strip()
+                clean_question = html_to_text(question_text or "")
+                clean_help = html_to_text(help_text or "")
 
                 questions_map[qid] = {
                     "title": title,
@@ -881,70 +856,30 @@ def _build_prism_template_from_parsed(
     return template
 
 
-def parse_lsq_xml(xml_content):
-    """Parse a .lsq (LimeSurvey single question export) into a PRISM template dict.
-
-    .lsq files contain: <questions>, <subquestions>, <answers>, <question_attributes>
-    but no <groups> or <surveys> sections.
-
-    Args:
-        xml_content: XML content as bytes or string
-
-    Returns:
-        dict: PRISM template with per-item LimeSurvey properties, or None on error
-    """
+def _parse_lsq_lsg_xml(xml_content, source_type):
+    """Parse a .lsq (one question: <questions>, <subquestions>, <answers>,
+    <question_attributes>) or .lsg (the same plus <groups>) export into a PRISM
+    template dict with per-item LimeSurvey properties, or None on invalid XML."""
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
-        print(f"Error parsing .lsq XML: {e}")
+        print(f"Error parsing .{source_type} XML: {e}")
         return None
 
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
-
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
-
-    languages, default_language = _detect_languages(root, get_text)
-
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
+    _parse_answers_into_questions(root, questions_map, _get_text)
+    languages, default_language = _detect_languages(root, _get_text)
     return _build_prism_template_from_parsed(
-        questions_map, groups_map, languages, default_language, source_type="lsq"
+        questions_map, groups_map, languages, default_language, source_type=source_type
     )
+
+
+def parse_lsq_xml(xml_content):
+    return _parse_lsq_lsg_xml(xml_content, "lsq")
 
 
 def parse_lsg_xml(xml_content):
-    """Parse a .lsg (LimeSurvey question group export) into a PRISM template dict.
-
-    .lsg files contain: <groups>, <questions>, <subquestions>, <answers>,
-    <question_attributes> but no <surveys> section.
-
-    Args:
-        xml_content: XML content as bytes or string
-
-    Returns:
-        dict: PRISM template with per-item LimeSurvey properties, or None on error
-    """
-    try:
-        root = ET.fromstring(xml_content)
-    except ET.ParseError as e:
-        print(f"Error parsing .lsg XML: {e}")
-        return None
-
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
-
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
-
-    languages, default_language = _detect_languages(root, get_text)
-
-    return _build_prism_template_from_parsed(
-        questions_map, groups_map, languages, default_language, source_type="lsg"
-    )
+    return _parse_lsq_lsg_xml(xml_content, "lsg")
 
 
 SPLIT_MODES = ("group", "question", "survey")
@@ -1001,21 +936,18 @@ def _parse_lss_for_questionnaires(xml_content):
     except ET.ParseError as exc:
         raise ValueError(f"Invalid LimeSurvey XML: {exc}") from exc
 
-    def get_text(element, tag):
-        child = element.find(tag)
-        return (child.text if child is not None else "") or ""
 
-    languages, default_language = _detect_languages(root, get_text)
-    _drop_other_language_rows(root, get_text)
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
-    _parse_answers_into_questions(root, questions_map, get_text)
+    languages, default_language = _detect_languages(root, _get_text)
+    _drop_other_language_rows(root, _get_text)
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
+    _parse_answers_into_questions(root, questions_map, _get_text)
     return {
         "questions": questions_map,
         "groups": groups_map,
         "languages": languages,
         "default_language": default_language,
-        "title": _parse_survey_metadata(root, get_text).get("title") or "survey",
-        "db_version": get_text(root, "DBVersion"),
+        "title": _parse_survey_metadata(root, _get_text).get("title") or "survey",
+        "db_version": _get_text(root, "DBVersion"),
     }
 
 
@@ -1080,8 +1012,12 @@ def _apply_prismmeta(template, html):
         study["Authors"] = [fields["authors"]]
         restored.append("Authors")
     codemap = parse_prismmeta_codemap(fields)
-    if any(code in template for code in codemap):
-        renamed = {codemap.get(k, k): v for k, v in template.items()}
+
+    def column(key, entry):  # a matrix row's CodeMap entry names its column, MPHQ901[PHQ01]
+        return (entry.get("LimeSurvey") or {}).get("columnName", key) if isinstance(entry, dict) else key
+
+    if any(column(k, v) in codemap for k, v in template.items()):
+        renamed = {codemap.get(column(k, v), k): v for k, v in template.items()}
         template.clear()
         template.update(renamed)
         restored.append("CodeMap")
@@ -1174,6 +1110,50 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
     return parsed, results
 
 
+def lsa_column_names(fieldnames, lss_xml):
+    """Name each LimeSurvey response field (``{sid}X{gid}X{qid}{code}``) after the item the
+    template import makes for it, so every answer reaches its own item.
+
+    The question id is looked up among the survey's questions, never read off the digits
+    (qid 38486 + row "1" is the field ``...X384861``). A field without an item of its own
+    (an "Other" text, or a row whose item ID two arrays share) keeps LimeSurvey's notation
+    ``title[code]`` and so shows up as an unconverted column instead of feeding another item.
+    """
+    parsed, results = _build_questionnaires(lss_xml, "group", keep_prismmeta=True)
+    item_of = {}  # LimeSurvey column -> item ID
+    for _info, template in results:
+        for key, entry in template.items():
+            if key not in TEMPLATE_SECTIONS and isinstance(entry, dict):
+                item_of[entry.get("LimeSurvey", {}).get("columnName", key)] = key
+    shared = {item for item, n in Counter(item_of.values()).items() if n > 1}
+    questions = [
+        (qid, q) for qid, q in parsed["questions"].items() if q.get("parent_qid") in (None, "", "0")
+    ]
+
+    def column(field):
+        m = re.fullmatch(r"_?\d+X(\d+)X(\d+.*)", field)
+        if not m:
+            return field
+        gid, rest = m.groups()
+        found = set()
+        for qid, q in questions:
+            if q["gid"] != gid or not rest.startswith(qid):
+                continue
+            code = rest[len(qid):]
+            rows = {sq["code"] for sq in q["subquestions"]}
+            if code in ("", "other", "comment") or code in rows or (
+                code.endswith("comment") and code[: -len("comment")] in rows
+            ):
+                found.add(f"{q['title']}[{code}]" if code else q["title"])
+        if len(found) != 1:
+            return field  # no question (or more than one) fits: leave it as LimeSurvey named it
+        name = found.pop()
+        item = item_of.get(name)
+        return item if item and item not in shared else name
+
+    return [column(f) for f in fieldnames]
+
+
 def list_limesurvey_questionnaires(
     xml_content, split="group", source_name="LimeSurvey file", project_path=None, match_library=False
 ):
@@ -1245,16 +1225,11 @@ def parse_lss_xml(
         print(f"Error parsing XML: {e}")
         return None
 
-    # Helper to find text of a child element
-    def get_text(element, tag):
-        child = element.find(tag)
-        val = child.text if child is not None else ""
-        return val or ""
 
     # Get survey-level metadata
-    survey_meta = _parse_survey_metadata(root, get_text)
+    survey_meta = _parse_survey_metadata(root, _get_text)
 
-    questions_map, groups_map = _parse_lss_structure(root, get_text)
+    questions_map, groups_map = _parse_lss_structure(root, _get_text)
 
     # Initialize item registry for collision detection
     item_registry = None
@@ -1289,9 +1264,9 @@ def parse_lss_xml(
         rows = answers_section.find("rows")
         if rows is not None:
             for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
+                qid = _get_text(row, "qid")
+                code = _get_text(row, "code")
+                answer = html_to_text(_get_text(row, "answer"))
 
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
@@ -1813,9 +1788,6 @@ def convert_lsa_to_dataset(
                     granular_col = col
                     break
 
-        if t_name == "ads" and not granular_col:
-            pass
-
         # 2. Inject SurveyDuration/SurveyStartTime into schema if missing
         # This ensures every task gets these columns as requested
         if "SurveyDuration" not in t_schema:
@@ -1842,8 +1814,6 @@ def convert_lsa_to_dataset(
             ] = f"Duration for task {t_name} (derived from group timing)"
             task_df["SurveyDuration"] = task_df[granular_col]
 
-            # Debug: Compare durations
-            pass
 
         # 4. Process this single task
         # print(f"DEBUG: Processing task {t_name}")
