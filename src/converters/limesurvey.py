@@ -12,6 +12,7 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
+from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
 
@@ -246,7 +247,7 @@ def _clean_html_preserve_info(html_content):
     media_urls = _extract_media_urls(html_content)
 
     # Remove HTML tags
-    clean_text = re.sub("<[^<]+?>", "", html_content).strip()
+    clean_text = html_to_text(html_content)
     # Clean up whitespace
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
@@ -296,15 +297,13 @@ def _parse_survey_metadata(root, get_text):
                 desc = get_text(row, "surveyls_description")
 
                 if title:
-                    metadata["title"] = re.sub("<[^<]+?>", "", title).strip()
+                    metadata["title"] = html_to_text(title)
                 if welcome:
-                    metadata["welcome_message"] = re.sub(
-                        "<[^<]+?>", "", welcome
-                    ).strip()
+                    metadata["welcome_message"] = html_to_text(welcome)
                 if end:
-                    metadata["end_message"] = re.sub("<[^<]+?>", "", end).strip()
+                    metadata["end_message"] = html_to_text(end)
                 if desc:
-                    metadata["description"] = re.sub("<[^<]+?>", "", desc).strip()
+                    metadata["description"] = html_to_text(desc)
                 break  # Take first language settings
 
     return metadata
@@ -330,13 +329,13 @@ def _parse_answers_into_questions(root, questions_map, get_text):
     answer_l10ns = {}
     for l10n in root.findall("answer_l10ns/rows/row"):
         answer_l10ns.setdefault(get_text(l10n, "aid"), []).append(
-            (get_text(l10n, "language"), get_text(l10n, "answer"))
+            (get_text(l10n, "language"), html_to_text(get_text(l10n, "answer")))
         )
 
     for row in rows.findall("row"):
         qid = get_text(row, "qid")
         code = get_text(row, "code")
-        answer = get_text(row, "answer")
+        answer = html_to_text(get_text(row, "answer"))
         lang = get_text(row, "language")
 
         if qid not in questions_map:
@@ -451,7 +450,7 @@ def _parse_lss_structure(root, get_text):
         lang = get_text(row, "language")
         if gid and gid not in _group_l10ns:  # first language wins (usually base)
             _group_l10ns[gid] = {
-                "name": get_text(row, "group_name"),
+                "name": html_to_text(get_text(row, "group_name")),
                 "description": get_text(row, "description"),
             }
 
@@ -474,7 +473,7 @@ def _parse_lss_structure(root, get_text):
         if rows is not None:
             for row in rows.findall("row"):
                 gid = get_text(row, "gid")
-                name = get_text(row, "group_name")
+                name = html_to_text(get_text(row, "group_name"))
                 group_order = get_text(row, "group_order")
                 description = get_text(row, "description")
                 randomization_group = get_text(row, "randomization_group")
@@ -492,7 +491,7 @@ def _parse_lss_structure(root, get_text):
                     order_int = 0
 
                 # Clean HTML from description
-                clean_desc = re.sub("<[^<]+?>", "", description or "").strip()
+                clean_desc = html_to_text(description or "")
 
                 groups_map[gid] = {
                     "name": name if name else "",
@@ -612,8 +611,8 @@ def _parse_lss_structure(root, get_text):
                     q_order_int = 0
 
                 # Clean up HTML tags from text fields
-                clean_question = re.sub("<[^<]+?>", "", question_text or "").strip()
-                clean_help = re.sub("<[^<]+?>", "", help_text or "").strip()
+                clean_question = html_to_text(question_text or "")
+                clean_help = html_to_text(help_text or "")
 
                 questions_map[qid] = {
                     "title": title,
@@ -1267,7 +1266,7 @@ def parse_lss_xml(
             for row in rows.findall("row"):
                 qid = _get_text(row, "qid")
                 code = _get_text(row, "code")
-                answer = _get_text(row, "answer")
+                answer = html_to_text(_get_text(row, "answer"))
 
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer

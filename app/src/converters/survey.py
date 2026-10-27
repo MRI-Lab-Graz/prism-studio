@@ -30,6 +30,7 @@ except ImportError:
     pd = None
 
 from ..cross_platform import describe_case_insensitive_id_collisions
+from src.text_sanitizer import html_to_text
 from ..utils.io import (
     ensure_dir as _ensure_dir,
     project_name_keywords as _project_name_keywords,
@@ -1200,7 +1201,7 @@ def _extract_lsa_questions_map(input_path: Path) -> dict | None:
                         question_text = get_text(row, "question")
 
                         # Clean HTML tags
-                        clean_question = re.sub("<[^<]+?>", "", question_text).strip()
+                        clean_question = html_to_text(question_text)
 
                         if qid:
                             questions_map[qid] = {

@@ -113,6 +113,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **LimeSurvey texts are imported as clean plain text.** Question, answer, help and group texts had HTML entities
+  left in (`&lt; 5`, `&nbsp;`), words glued at line and paragraph breaks (`Satz eins.Satz zwei.`), and anything
+  after a `<` that was not a tag cut away (the equation `{if(a<3, 1, b>2)}` became `{if(a2)}`). One function,
+  `html_to_text`, now removes only real tags, keeps breaks as line breaks and decodes entities.
 - **A survey exported from PRISM converts back with its answers.** Matrix rows are written with 5-character codes
   (`PHQ901` -> `PHQ01`), but the CodeMap in the hidden PRISMMETA question recorded the unshortened code, so a
   matched template got every answer as `n/a`. Both exporters now record the column each item was really written to
