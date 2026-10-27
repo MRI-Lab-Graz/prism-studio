@@ -738,6 +738,24 @@ def _project_session_id(project_path, label, cache, warnings):
     return cache[label]
 
 
+def _move_retired_environment_pin(project_root, log_callback) -> str | None:
+    """A pin below 2.0.0 names the retired format this run just replaced: move it to the current version (Ruling 14)."""
+    from src.modality_versions import read_pins, update_modality
+    from src.schema_manager import parse_version
+
+    try:
+        pinned = read_pins(project_root)[0].get("environment")
+        if not pinned or parse_version(pinned) >= parse_version("2.0.0"):
+            return None
+        message = f"environment schema pin {pinned} -> {update_modality(project_root, 'environment')}"
+    except Exception as exc:  # noqa: BLE001 - the data is written; say what is left to do
+        log_callback(f"Could not update the environment schema pin in project.json: {exc}; run: "
+                     "prism_tools modality-version update <project> environment", "warning")
+        return None
+    log_callback(message, "info")
+    return message
+
+
 def perform_environment_conversion(
     *,
     input_path: Path,
@@ -1101,6 +1119,7 @@ def perform_environment_conversion(
     from src.modality_versions import pin_after_import
 
     pin_after_import(project_root_path)
+    schema_pin_change = _move_retired_environment_pin(project_root_path, log_callback)
 
     elapsed_seconds = max(0.0, perf_counter() - conversion_started_at)
     estimated_total_seconds = None
@@ -1127,4 +1146,5 @@ def perform_environment_conversion(
         "elapsed_seconds": round(elapsed_seconds, 2),
         "estimated_total_seconds": estimated_total_seconds,
         "source_row_count": int(len(source_df)),
+        "schema_pin_change": schema_pin_change,
     }

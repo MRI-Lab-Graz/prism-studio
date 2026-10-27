@@ -153,3 +153,34 @@ def test_convert_then_validate_has_no_error(tmp_path, monkeypatch):
             str(tsvs[0]), "environment", str(project)
         )
     assert not [i for i in issues if i[0] == "ERROR"], issues
+
+
+def test_reconverting_moves_a_retired_environment_pin_to_the_current_version(tmp_path, monkeypatch):
+    """Ruling 14: a project pinned to environment 1.1.0 validates after re-running the converter."""
+    from runner import validate_dataset
+    from src.modality_versions import current_version, read_pins
+
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "project.json").write_text(json.dumps({
+        "StudyDesign": {"Timepoints": "single"}, "SchemaVersions": {"environment": "1.1.0"},
+    }), encoding="utf-8")
+    (project / "dataset_description.json").write_text(json.dumps(
+        {"Name": "T", "BIDSVersion": "1.10.1", "DatasetType": "raw", "Authors": ["A", "B"]}), encoding="utf-8")
+    monkeypatch.setattr(ec, "_fetch_environment_day", lambda *a, **k: ({"weather": {}, "air": {}, "pollen": {}}, []))
+    logs = []
+    result = ec.perform_environment_conversion(
+        input_path=_write_csv(tmp_path / "env.csv", rows=2),
+        filename="env.csv", suffix=".csv", separator_option="auto",
+        timestamp_col="timestamp", participant_col="participant_id", participant_override=None,
+        session_col=None, session_override="1", location_col=None,
+        lat_col="latitude", lon_col="longitude", location_label_override="",
+        lat_manual=None, lon_manual=None, project_path=str(project),
+        pilot_random_subject=False, log_callback=lambda msg, *a, **k: logs.append(msg),
+    )
+    latest = current_version("environment")
+    assert read_pins(project)[0]["environment"] == latest
+    message = f"environment schema pin 1.1.0 -> {latest}"
+    assert result["schema_pin_change"] == message and message in logs
+    issues, _stats = validate_dataset(str(project))
+    assert not [m for lvl, m, *_ in issues if lvl == "ERROR" and "environment" in m], issues

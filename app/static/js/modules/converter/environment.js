@@ -1222,7 +1222,8 @@ export function initEnvironment(elements) {
                     const filesNote = paths.length > 1
                         ? ` Saved ${paths.length} subject/session files.`
                         : '';
-                    envInfo.textContent = `Converted and saved to project: ${target}.${filesNote}${pilotNote}${estimate}`;
+                    const pinNote = data.schema_pin_change ? ` Updated ${data.schema_pin_change} in project.json.` : '';
+                    envInfo.textContent = `Converted and saved to project: ${target}.${filesNote}${pilotNote}${estimate}${pinNote}`;
                     envInfo.classList.remove('d-none');
                 }
                 renderOutputPreview(data.output_preview || null);
