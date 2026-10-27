@@ -51,7 +51,7 @@ works with **no project open** and asks one thing at a time:
    specification. A line beside the share button always says what you propose and what goes along as context. When several lists have a missing
    value, each gets its own *Share the new …* button and the other new values appear in its context.
 3. **Measurements**, for kinds of data with a measurement list (biosample and environment; environment has no sample type and takes a unit or levels): a pull-down of the
-   measurements PRISM knows, with ID and unit. When a specimen type is chosen in step 2, only that sample type's
+   measurements PRISM knows, with ID and unit, under group headings when the official terms have a *Group* (for environment: temperature and humidity, air quality, pollen, ...). When a specimen type is chosen in step 2, only that sample type's
    measurements are listed. The last entry, *Missing: add a measurement…*, opens the measurement form with the sample
    type from step 2 already filled in. Give its name, what it measures and its unit; *Share…* shows the proposal and
    sends your step-2 entries and the *Not sure* tick along as context.

@@ -248,6 +248,32 @@ def test_the_summary_says_what_is_proposed_and_what_is_only_context(bare_page, s
     expect(summary).to_contain_text("Goes along only as context (not proposed): Collection method, Laboratory")
 
 
+def test_the_measurement_pulldown_fits_inside_the_card(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    pick = bare_page.locator("#spec-m-pick")
+    expect(pick).to_be_visible()
+    card = bare_page.locator("#spec-contribute").bounding_box()
+    box = pick.bounding_box()
+    assert box["x"] + box["width"] <= card["x"] + card["width"] + 1  # not wider than the page card
+
+
+def test_measurements_are_grouped_when_their_terms_have_a_group(bare_page, studio_url):
+    def add_groups(route):
+        data = route.fetch().json()
+        for kind in data["modalities"]:
+            for metric in kind["metrics"] or []:
+                metric["group"] = "Air quality" if metric["id"] in ("prism:ozone", "prism:pm10") else ("Pollen" if "pollen" in metric["id"] else None)
+        route.fulfill(json=data)
+
+    bare_page.route("**/api/spec/catalog", add_groups)
+    choose_kind(bare_page, studio_url, "environment")
+    groups = bare_page.locator("#spec-m-pick optgroup")
+    expect(groups).to_have_count(2)
+    expect(groups.first).to_have_attribute("label", "Air quality")
+    expect(groups.first.locator("option")).to_have_count(2)
+    expect(bare_page.locator("#spec-m-pick > option", has_text="air temperature")).to_have_count(1)  # no group: listed outside
+
+
 def test_no_bids_kind_is_offered(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
     expect(bare_page.locator("#spec-kind option", has_text="BIDS")).to_have_count(0)
