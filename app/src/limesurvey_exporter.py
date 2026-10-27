@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import io
 
+from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
 from src.text_sanitizer import sanitize_answer_text, strip_invalid_xml_chars
 from src.survey_template_metadata import get_study_short_name
 
@@ -52,8 +53,6 @@ LS_SUBQUESTION_CODE_MAX_LENGTH = 5
 
 # Types whose answer options LimeSurvey defines itself: an <answers> row would not be used.
 LS_FIXED_ANSWER_TYPES = {"Y", "G", "5"}
-# Array types: as one question on its own they would be an array without rows.
-LS_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 
 
 def _sanitize_answer_code(
@@ -407,6 +406,10 @@ def _determine_ls_question_type(q_data, has_levels):
 
         if ls_config.get("displayRows"):
             extra_attrs["display_rows"] = str(ls_config["displayRows"])
+
+        for name in LS_DESIGN_ATTRIBUTES:
+            if ls_config.get(name) not in (None, "", 0, False):
+                extra_attrs[name] = "1" if ls_config[name] is True else str(ls_config[name])
 
         # Apply hidden attribute
         if ls_config.get("hidden"):
@@ -2155,24 +2158,7 @@ def generate_lss_from_customization(
                     extra_attrs["equation"] = tool_ov["equation"]
 
                 # Additional toolOverride → LS attribute mappings
-                _ov_to_ls = {
-                    "cssClass": "cssclass",
-                    "pageBreak": "page_break",
-                    "maximumChars": "maximum_chars",
-                    "numbersOnly": "numbers_only",
-                    "inputSize": "input_size",
-                    "prefix": "prefix",
-                    "suffix": "suffix",
-                    "placeholder": "placeholder",
-                    "displayColumns": "display_columns",
-                    "alphasort": "alphasort",
-                    "dropdownSize": "dropdown_size",
-                    "dropdownPrefix": "dropdown_prefix",
-                    "categorySeparator": "category_separator",
-                    "answerWidth": "answer_width",
-                    "repeatHeadings": "repeat_headings",
-                    "useDropdown": "use_dropdown",
-                }
+                _ov_to_ls = {override: attribute for attribute, override in LS_DESIGN_ATTRIBUTES.items()}
                 for ov_key, ls_attr in _ov_to_ls.items():
                     val = tool_ov.get(ov_key)
                     if val is not None and val != "" and val is not False:

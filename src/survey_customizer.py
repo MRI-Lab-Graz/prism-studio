@@ -12,6 +12,7 @@ import os
 import uuid
 from pathlib import Path
 
+from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES
 from src.limesurvey_exporter import item_is_mandatory
 from src.template_info import detect_languages_from_template
 
@@ -136,24 +137,7 @@ def build_customizer_groups(
                                     "integerOnly"
                                 ]
 
-                    simple_key_map = {
-                        "cssclass": "cssClass",
-                        "page_break": "pageBreak",
-                        "maximum_chars": "maximumChars",
-                        "numbers_only": "numbersOnly",
-                        "display_columns": "displayColumns",
-                        "alphasort": "alphasort",
-                        "dropdown_size": "dropdownSize",
-                        "dropdown_prefix": "dropdownPrefix",
-                        "category_separator": "categorySeparator",
-                        "answer_width": "answerWidth",
-                        "repeat_headings": "repeatHeadings",
-                        "use_dropdown": "useDropdown",
-                        "input_size": "inputSize",
-                        "prefix": "prefix",
-                        "suffix": "suffix",
-                        "placeholder": "placeholder",
-                    }
+                    simple_key_map = LS_DESIGN_ATTRIBUTES
                     for ls_key, override_key in simple_key_map.items():
                         if ls_key in ls_props:
                             tool_overrides[override_key] = ls_props[ls_key]

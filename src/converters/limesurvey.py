@@ -12,6 +12,7 @@ import defusedxml.ElementTree as ET
 import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
+from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES
 from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
@@ -286,26 +287,15 @@ def _parse_survey_metadata(root, get_text):
                 metadata["datestamp"] = get_text(row, "datestamp") == "Y"
                 break  # Only first survey row
 
-    # Parse surveys_languagesettings for title and messages
-    lang_section = root.find("surveys_languagesettings")
-    if lang_section is not None:
-        rows = lang_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                title = get_text(row, "surveyls_title")
-                welcome = get_text(row, "surveyls_welcometext")
-                end = get_text(row, "surveyls_endtext")
-                desc = get_text(row, "surveyls_description")
-
-                if title:
-                    metadata["title"] = html_to_text(title)
-                if welcome:
-                    metadata["welcome_message"] = html_to_text(welcome)
-                if end:
-                    metadata["end_message"] = html_to_text(end)
-                if desc:
-                    metadata["description"] = html_to_text(desc)
-                break  # Take first language settings
+    # Title and messages: the base language's settings row (else the first one)
+    rows = root.findall("surveys_languagesettings/rows/row")
+    base = _base_language(root)
+    row = next((r for r in rows if get_text(r, "surveyls_language").strip() == base), rows[0] if rows else None)
+    if row is not None:
+        for key, tag in (("title", "surveyls_title"), ("welcome_message", "surveyls_welcometext"),
+                         ("end_message", "surveyls_endtext"), ("description", "surveyls_description")):
+            if get_text(row, tag):
+                metadata[key] = html_to_text(get_text(row, tag))
 
     return metadata
 
@@ -702,9 +692,16 @@ def _build_prism_template_from_parsed(
                 if lang and isinstance(attr_val, str):
                     ls_props["helpText"][lang] = attr_val
 
-        # Equation type
+        # Equation type: the equation attribute (LimeSurvey 5+), else the question text
         if q_type == "*":
-            ls_props["equation"] = question_text
+            ls_props["equation"] = str(attributes.get("equation") or question_text)
+
+        # Design options (maximum characters, prefix/suffix, ...): the base language's value,
+        # defaults (0, empty) left out
+        for name in LS_DESIGN_ATTRIBUTES:
+            value = attributes.get(f"{name}_{default_language}", attributes.get(name))
+            if value not in (None, "", 0, False):
+                ls_props[name] = value
 
         # Ensure inputWidth is numeric or None
         if ls_props["inputWidth"] is not None:
@@ -723,7 +720,7 @@ def _build_prism_template_from_parsed(
                 except (ValueError, TypeError):
                     ls_props["validation"][vk] = None
 
-        if q_type in _ARRAY_TYPES and subquestions:
+        if q_type in LS_ARRAY_TYPES and subquestions:
             # Matrix question: flatten subquestions to individual items
             multilingual_levels = {}
             for code, answer_text in levels.items():
@@ -859,7 +856,6 @@ def parse_lsg_xml(xml_content):
 
 
 SPLIT_MODES = ("group", "question", "survey")
-_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
 # Text, equation and display questions: no answer options of their own.
 _HELPER_TYPES = {"S", "T", "U", "Q", "*", "X"}
 
@@ -994,7 +990,7 @@ def _questionnaire_template(parsed, part):
     stems = [
         q.get("question_i18n") or {lang: q["question"]}
         for q in questions.values()
-        if q["type"] in _ARRAY_TYPES and q["subquestions"] and q["question"]
+        if q["type"] in LS_ARRAY_TYPES and q["subquestions"] and q["question"]
     ]
     instructions = {
         language: "\n\n".join(stem[language] for stem in stems if stem.get(language))
@@ -1006,7 +1002,36 @@ def _questionnaire_template(parsed, part):
     return template, _apply_prismmeta(template, part["prismmeta"])
 
 
-_LOSSY_SUBQUESTION_TYPES = ("M", "P", ";", ":", "R")  # checkboxes, dual-axis arrays, ranking
+# What a question type with rows becomes in the import, for the notes that report it.
+_LOSSY_SUBQUESTION_TYPES = {
+    "M": "its checkbox options are not imported as items",
+    "P": "its checkbox options and comments are not imported as items",
+    "R": "its ranking positions are not imported as items",
+    ";": "it is a two-dimensional text array, imported as one item per row",
+    ":": "it is a two-dimensional number array, imported as one item per row",
+    "1": "it is a dual-scale array, imported as one item per row with only the first scale's options",
+}
+
+
+def _import_notes(part_name, questions, languages):
+    """What the import of these questions cannot represent, one readable line each."""
+    notes = []
+    for q in questions:
+        where = f"{part_name} / {q['title']}"
+        if q["type"] in _LOSSY_SUBQUESTION_TYPES and q["subquestions"]:
+            notes.append(f"{where}: type {q['type']} ({q['type_name']}): {_LOSSY_SUBQUESTION_TYPES[q['type']]}; "
+                         "check the items by hand")
+        if q["type_name"].startswith("Unknown"):
+            notes.append(f"{where}: question type {q['type']} is not known, imported as a single item")
+        if q["other"]:
+            notes.append(f"{where}: has an \"Other\" text field; it is not imported as an item")
+        if q["type"] == "O":
+            notes.append(f"{where}: has a comment field; it is not imported as an item")
+    builtin = [q for q in questions if any(_FIXED_ANSWERS.get(q["type"], {}).values())]
+    if builtin and not any(lang.split("-")[0] in ("en", "de") for lang in languages):
+        notes.append(f"{part_name}: the built-in answer labels (Yes/No, Gender, ...) exist in English and German only; "
+                     f"this survey ({', '.join(languages)}) got the English labels, check them")
+    return notes
 
 
 def _major_release(db_version):
@@ -1037,13 +1062,6 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
                         "Attributes": {"equation": str(q["attributes"].get("equation", ""))},
                     }
         questions = [parsed["questions"][qid] for qid in part["qids"]]
-        for q in questions:
-            if q["type"] in _LOSSY_SUBQUESTION_TYPES and q["subquestions"]:
-                print(
-                    f"[PRISM] WARNING {part['name']} / {q['title']}: type {q['type']} "
-                    f"({q['type_name']}) with subquestions is imported as a plain single "
-                    "item/array; check the items by hand"
-                )
         results.append((
             {
                 "key": part["key"],
@@ -1053,8 +1071,9 @@ def _build_questionnaires(xml_content, split, keep_prismmeta=False):
                     q["type"] in _HELPER_TYPES and not q["levels"] and not q["subquestions"]
                     for q in questions
                 ),
-                "arrays": [q["title"] for q in questions if q["type"] in _ARRAY_TYPES and q["subquestions"]],
+                "arrays": [q["title"] for q in questions if q["type"] in LS_ARRAY_TYPES and q["subquestions"]],
                 "restored": restored,
+                "notes": _import_notes(part["name"], questions, parsed["languages"]),
             },
             template,
         ))
@@ -1130,6 +1149,7 @@ def list_limesurvey_questionnaires(
     )
     print(f"[PRISM] Split by {split} -> {len(results)} questionnaire(s):")
     for info, _template in results:
+        _print_notes(info["notes"])
         line = f"[PRISM]   {info['key']:<8} {info['name']}  {info['item_count']} item(s)"
         if info["arrays"]:
             line += f"  (array {', '.join(info['arrays'])})"
@@ -1147,8 +1167,19 @@ def list_limesurvey_questionnaires(
     return listing
 
 
+def _print_notes(notes):
+    for note in notes:
+        print(f"[PRISM] WARNING {note}")
+
+
 def limesurvey_questionnaire_template(xml_content, key, split="group"):
     """Build the PRISM template for one questionnaire (key from list_limesurvey_questionnaires)."""
+    return limesurvey_questionnaire(xml_content, key, split)[0]
+
+
+def limesurvey_questionnaire(xml_content, key, split="group"):
+    """(PRISM template, notes) for one questionnaire; the notes list what the import could not
+    represent and are printed to the terminal as well."""
     _parsed, results = _build_questionnaires(xml_content, split)
     for info, template in results:
         if info["key"] == key:
@@ -1159,7 +1190,7 @@ def limesurvey_questionnaire_template(xml_content, key, split="group"):
                 else "no PRISMMETA (fill in Citation, Category, SoftwareVersion by hand)"
             )
             print(f"[PRISM] Loading {key} '{info['name']}': {info['item_count']} item(s), {stem}, {meta}")
-            return template
+            return template, info["notes"]
     valid = ", ".join(info["key"] for info, _ in results) or "none"
     raise ValueError(f"No questionnaire '{key}' (split by {split}). Valid keys: {valid}")
 

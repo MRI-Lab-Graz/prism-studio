@@ -602,7 +602,7 @@ def cmd_survey_import_limesurvey(args):
     """Import LimeSurvey questionnaires as PRISM templates. Matches the Template
     Editor's 'Import Template Source' for .lss/.lsa."""
     from src.converters.limesurvey import (
-        limesurvey_questionnaire_template,
+        limesurvey_questionnaire,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
@@ -631,8 +631,8 @@ def cmd_survey_import_limesurvey(args):
         # Resolve every key first so a failure leaves nothing half written.
         planned = []  # (target, template)
         for key in keys:
-            template = limesurvey_questionnaire_template(xml, key, args.split)
-            payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library)
+            template, notes = limesurvey_questionnaire(xml, key, args.split)
+            payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library, notes)
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
     except (OSError, ValueError) as e:

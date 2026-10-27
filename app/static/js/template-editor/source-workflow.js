@@ -200,7 +200,17 @@ export async function loadNewTemplate(context, { initial = false } = {}) {
   context.renderJsonDiff();
 }
 
-export async function validateCurrent(context, { initial = false, imported = false } = {}) {
+// What the import could not represent (LimeSurvey): shown with the validation result, which
+// replaces the import summary right after an import.
+export function importNotesHtml(notes, escapeHtml) {
+  if (!notes || notes.length === 0) {
+    return '';
+  }
+  const items = notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('');
+  return `<div class="alert alert-warning mt-2 mb-0"><strong>Check after import:</strong><ul class="mb-0">${items}</ul></div>`;
+}
+
+export async function validateCurrent(context, { initial = false, imported = false, notes = [] } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
   const requestProjectPath = context.getCurrentProjectPath();
@@ -242,7 +252,7 @@ export async function validateCurrent(context, { initial = false, imported = fal
   }
 
   const langWarnings = data.language_warnings || [];
-  let langWarnHtml = '';
+  let langWarnHtml = importNotesHtml(notes, context.escapeHtml);
   if (langWarnings.length > 0) {
     const items = langWarnings
       .map((warning) => `<li><i class="fas fa-globe text-warning me-1"></i>${warning.message}${warning.details ? ` <small class="text-muted">(${warning.details})</small>` : ''}</li>`)
@@ -458,14 +468,15 @@ function applyImportedTemplate(context, data, file) {
   return `<strong>Imported ${context.escapeHtml(file.name)}</strong> (${context.escapeHtml(source)})<br>${context.escapeHtml(String(itemCount))} item(s) extracted.`;
 }
 
-export async function finishImport(context, importSummaryMessage) {
-  context.showAlert('success', importSummaryMessage);
+export async function finishImport(context, importSummaryMessage, notes = []) {
+  const notesHtml = importNotesHtml(notes, context.escapeHtml);
+  context.showAlert('success', importSummaryMessage + notesHtml);
   try {
-    await validateCurrent(context, { initial: true, imported: true });
+    await validateCurrent(context, { initial: true, imported: true, notes });
   } catch (error) {
     context.btnDownload.disabled = false;
     context.btnSave.disabled = true;
-    context.showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${context.escapeHtml(error.message)}</small>`);
+    context.showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${context.escapeHtml(error.message)}</small>${notesHtml}`);
   }
 }
 
@@ -504,7 +515,7 @@ async function loadExcelGroup(context, file, group, previousEditorState) {
 
     hideExcelGroupPicker(context);
     const importSummaryMessage = applyImportedTemplate(context, data, file);
-    await finishImport(context, importSummaryMessage);
+    await finishImport(context, importSummaryMessage, data.notes);
   } catch (error) {
     context.restoreEditorState(previousEditorState);
     context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
@@ -605,7 +616,7 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
       project_path: context.getCurrentProjectPath() || '',
       ...(useLibrary ? { use_library: '1' } : {}),
     });
-    await finishImport(context, applyImportedTemplate(context, data, file));
+    await finishImport(context, applyImportedTemplate(context, data, file), data.notes);
   } catch (error) {
     context.restoreEditorState(previousEditorState);
     context.showAlert('danger', `Template import failed: ${context.escapeHtml(error.message)}`);
