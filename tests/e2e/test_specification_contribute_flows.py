@@ -620,6 +620,7 @@ def test_a_missing_measurement_without_a_project(bare_page, studio_url):
     expect(bare_page.locator("#spec-m-found")).to_be_hidden()
     expect(bare_page.locator("body")).not_to_contain_text("Open a project first")
     fill_measurement(bare_page)
+    bare_page.locator("#spec-m-optional summary").click()
     bare_page.locator("#spec-m-aliases").fill("dhea_s, DHEAS")
     bare_page.locator("#spec-m-share").click()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("prism:dhea.saliva")
@@ -789,3 +790,63 @@ def test_the_open_measurement_form_follows_a_new_sample_type(bare_page, studio_u
     pick_specimen(bare_page, "serum")
     expect(bare_page.locator("#spec-m-pick")).to_have_value("missing")
     expect(bare_page.locator("#spec-m-specimen")).to_have_value("serum")
+
+
+def _open_environment_form(page, studio_url):
+    choose_kind(page, studio_url, "environment")
+    page.locator("#spec-m-group").select_option("missing")
+    expect(page.locator("#spec-m-form")).to_be_visible()
+
+
+def test_value_kind_decides_whether_unit_or_levels_show(bare_page, studio_url):
+    _open_environment_form(bare_page, studio_url)
+    expect(bare_page.locator("#spec-m-kind-unit")).to_be_checked()  # a number with a unit is the default
+    expect(bare_page.locator("#spec-m-units")).to_be_visible()
+    expect(bare_page.locator("#spec-m-levels")).to_be_hidden()
+    bare_page.locator("#spec-m-kind-levels").check()
+    expect(bare_page.locator("#spec-m-levels")).to_be_visible()
+    expect(bare_page.locator("#spec-m-units")).to_be_hidden()
+
+
+def test_only_the_chosen_value_kind_is_sent(bare_page, studio_url):
+    _open_environment_form(bare_page, studio_url)
+    bare_page.locator("#spec-m-name").fill("sky state")
+    bare_page.locator("#spec-m-description").fill("How the sky looks")
+    bare_page.locator("#spec-m-units").select_option(index=1)  # typed, then the user switches to levels
+    bare_page.locator("#spec-m-kind-levels").check()
+    bare_page.locator("#spec-m-levels").fill("c=clear\no=overcast")
+    with bare_page.expect_request("**/api/spec/propose-metric") as request:
+        bare_page.locator("#spec-m-share").click()
+    body = request.value.post_data_json
+    assert body["units"] is None and body["levels"] == {"c": "clear", "o": "overcast"}
+
+
+def test_biosample_form_has_no_value_kind_choice(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    bare_page.locator("#spec-m-pick").select_option("missing")
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-kind-box")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-units")).to_be_visible()
+
+
+def test_other_names_and_cf_name_are_folded_into_optional_details(bare_page, studio_url):
+    _open_environment_form(bare_page, studio_url)
+    optional = bare_page.locator("#spec-m-optional")
+    expect(optional).to_have_js_property("open", False)
+    expect(bare_page.locator("#spec-m-aliases")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-cf")).to_be_hidden()
+    optional.locator("summary").click()
+    expect(bare_page.locator("#spec-m-aliases")).to_be_visible()
+    expect(bare_page.locator("#spec-m-cf")).to_be_visible()
+
+
+def test_the_description_shows_an_example_of_the_chosen_kind(bare_page, studio_url):
+    _open_environment_form(bare_page, studio_url)
+    example = bare_page.locator("#spec-m-description").get_attribute("placeholder")
+    assert example.startswith("e.g. ") and len(example) > 12
+
+
+def test_the_two_buttons_say_what_they_do(bare_page, studio_url):
+    _open_environment_form(bare_page, studio_url)
+    expect(bare_page.locator("#spec-m-share-note")).to_contain_text("becomes official only after review")
+    assert "only in your project" in bare_page.locator("#spec-m-use-hint").text_content().lower()

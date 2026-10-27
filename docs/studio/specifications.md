@@ -54,8 +54,10 @@ works with **no project open** and asks one thing at a time:
    PRISM knows. Where the official terms have a *Group* (environment: temperature and humidity, air quality, pollen, ...)
    you choose the group first and then one of its measurements; the pull-downs show short names, and the ID and unit appear
    under your choice. When a specimen type is chosen in step 2, only that sample type's measurements are listed. The last entry, *Missing: add a measurement…*, opens the measurement form with the sample
-   type from step 2 already filled in. Give its name, what it measures and its unit (and, where groups exist, optionally its group); *Share…* shows the proposal and
-   sends your step-2 entries and the *Not sure* tick along as context.
+   type from step 2 already filled in. Give its name, a one-sentence description (the grey example comes from an existing term) and what it records: in environment *a number with a unit* or
+   *a choice from fixed values* (`CODE=LABEL` lines; never both), in biosample a unit and a sample type. Where groups exist you can pick its group. *Other names*
+   and the *CF standard name* are folded under *Optional details*. *Share…* shows the proposal (it becomes official only after review) and
+   sends your step-2 entries and the *Not sure* tick along as context; *Use in my open project* keeps it in your project only.
 4. **Nothing fits: a new kind of data** opens a short form: a description (what is measured, how, with which device
    or lab, what one file holds), a sample file (pasted or picked as a text file; made-up data only, never real
    participant data) and, optionally, a suggested name and the closest kind of data (prefilled with your step-1 choice). The name is
