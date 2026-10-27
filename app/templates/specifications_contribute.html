@@ -40,14 +40,18 @@
                 Describe your data in your own words and give a short sample file; the maintainer builds the new kind of
                 data from it.
             </p>
+            <p class="alert alert-warning">
+                A new kind of data is added by the maintainer. Until it is merged and in a PRISM release, PRISM cannot
+                validate these files. Plan for this before your study starts.
+            </p>
             <div class="mb-3">
                 <label class="form-label" for="spec-nk-description">What is measured, how, with which device or lab, and what one file holds</label>
-                <textarea id="spec-nk-description" class="form-control" rows="4"></textarea>
+                <textarea id="spec-nk-description" class="form-control" rows="4" placeholder="e.g. Skin temperature from a wrist sensor, sampled every 10 seconds; one file per night."></textarea>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="spec-nk-sample">A sample file, as your device or lab writes it</label>
                 <textarea id="spec-nk-sample" class="form-control font-monospace" rows="6"></textarea>
-                <div class="form-text">Use made-up data only — no real participant data.</div>
+                <div id="spec-nk-sample-help" class="form-text">A few rows with the header line, exactly as your device or lab writes them. Use made-up data only — no real participant data.</div>
                 <label class="form-label small mt-2 mb-0" for="spec-nk-file">Or pick a text file</label>
                 <input id="spec-nk-file" type="file" class="form-control form-control-sm" accept=".txt,.csv,.tsv,.json,text/*">
             </div>
@@ -62,11 +66,8 @@
                     <option value="" selected>Not given</option>
                 </select>
             </div>
-            <p class="alert alert-warning">
-                A new kind of data is added by the maintainer. Until it is merged and in a PRISM release, PRISM cannot
-                validate these files. Plan for this before your study starts.
-            </p>
             <button type="button" id="spec-nk-share" class="btn btn-sm btn-primary">Share with the PRISM community…</button>
+            <p id="spec-nk-share-note" class="form-text">Nothing is sent from this page: the button shows your proposal and opens a prefilled form on GitHub, where you submit it.</p>
         </div>
 
         <div id="spec-step2" hidden>

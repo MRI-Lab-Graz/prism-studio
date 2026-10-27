@@ -850,3 +850,19 @@ def test_the_two_buttons_say_what_they_do(bare_page, studio_url):
     _open_environment_form(bare_page, studio_url)
     expect(bare_page.locator("#spec-m-share-note")).to_contain_text("becomes official only after review")
     assert "only in your project" in bare_page.locator("#spec-m-use-hint").text_content().lower()
+
+
+def test_new_kind_form_warns_before_the_fields(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "new-kind")
+    warning = bare_page.locator("#spec-new-kind .alert-warning")
+    expect(warning).to_contain_text("cannot validate")
+    first_field = bare_page.locator("#spec-nk-description")
+    assert warning.bounding_box()["y"] < first_field.bounding_box()["y"]  # the limit is known before the typing starts
+    assert bare_page.locator("#spec-new-kind .alert-warning").count() == 1
+
+
+def test_new_kind_form_helps_with_examples_and_the_next_step(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "new-kind")
+    assert bare_page.locator("#spec-nk-description").get_attribute("placeholder").startswith("e.g. ")
+    assert "header" in bare_page.locator("#spec-nk-sample-help").text_content()
+    expect(bare_page.locator("#spec-nk-share-note")).to_contain_text("GitHub")
