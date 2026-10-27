@@ -104,8 +104,11 @@ jobs:
         if: needs.scope.outputs.content_only == 'true'
         run: python -m pytest tests/test_modality_proposal_fixtures.py -q
 
+      # The script's own main() looks for terms/ next to it (the specification repo's layout);
+      # Studio's are in official/library/terms, so this runs its check() with that folder.
+      # Back to the plain script once prism-specification gives it a --terms option.
       - name: Modality conventions (vendored specification script)
-        run: python scripts/specification/check_modalities.py --entities app/schemas/stable/entities.schema.json --schemas app/schemas/stable
+        run: python -m pytest tests/test_modality_build.py -q -k vendored_conventions
 
       - name: Fast repository verification
         run: |
