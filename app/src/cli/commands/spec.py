@@ -18,7 +18,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import check_new_kind_name, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 from src.term_proposal import deliver_proposal, vendored_term_proposal
 
 
@@ -208,6 +208,15 @@ def cmd_spec_propose_metric(args) -> None:
     _deliver_result(args, result)
 
 
+def cmd_spec_check_kind_name(args) -> None:
+    """Say whether a suggested name for a new kind of data is free (BIDS and PRISM names are not)."""
+    try:
+        check_new_kind_name(args.name)
+    except OverlayError as exc:
+        _fail(args, str(exc))
+    _emit(args, {"success": True}, f"{args.name}: free to suggest")
+
+
 def cmd_spec_propose_new_kind(args) -> None:
     """Propose a whole new kind of data from a description and a sample file; needs no project. Sends nothing itself."""
     limit = vendored_term_proposal().MAX_BYTES
@@ -222,7 +231,8 @@ def cmd_spec_propose_new_kind(args) -> None:
     except UnicodeDecodeError:
         _fail(args, f"the sample file {args.sample} is not UTF-8 text")
     try:
-        result = proposal_for_new_kind(args.description, sample, args.closest, args.name)
+        parts = {key: getattr(args, key) for key in ("measured", "device", "holds", "row")}
+        result = proposal_for_new_kind(args.description, sample, args.closest, args.name, parts if any(parts.values()) else None)
     except OverlayError as exc:
         _fail(args, str(exc))
     problems, url = result["problems"], result["issue_url"]

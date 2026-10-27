@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **The measurement form on the Propose changes page is clearer.** Environment asks first whether a measurement is a number with a unit or a
   choice from fixed values and shows only the matching field; the description has a grey example from a real term; other names and the CF
-  standard name are folded under *Optional details*; a line under each button says what it does. The new-kind form shows its limit first and gives an
-  example and the next step.
+  standard name are folded under *Optional details*; a line under each button says what it does. The new-kind form shows its limit first, describes the data in four short fields
+  (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 
 ### Fixed
 - **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first

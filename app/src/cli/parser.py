@@ -1906,13 +1906,20 @@ def build_prism_tools_parsers(
     parser_spec_kind = spec_subparsers.add_parser(
         "propose-new-kind", help="Propose a whole new kind of data, without a project (sends nothing unless --open)"
     )
-    parser_spec_kind.add_argument("--description", required=True, help="What the data is and how it is recorded")
+    parser_spec_kind.add_argument("--description", help="What the data is and how it is recorded (or give --measured and --holds instead)")
+    parser_spec_kind.add_argument("--measured", help="Instead of --description: what is measured")
+    parser_spec_kind.add_argument("--device", help="With --measured: the device or lab (optional)")
+    parser_spec_kind.add_argument("--holds", help="With --measured: what one file holds")
+    parser_spec_kind.add_argument("--row", help="With --measured: what one row is (optional)")
     parser_spec_kind.add_argument("--sample", required=True, help="A sample data file (UTF-8 text), pasted into the form by you")
     parser_spec_kind.add_argument("--name", help="A suggested name (lowercase letters and digits; names BIDS or PRISM already use are refused)")
     parser_spec_kind.add_argument("--closest", help="The closest existing kind of data")
     parser_spec_kind.add_argument("--out", help="Also save the proposal text to this file")
     parser_spec_kind.add_argument("--open", action="store_true", help="Open the prefilled proposal form in the browser")
     parser_spec_kind.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_spec_name = spec_subparsers.add_parser("check-kind-name", help="Check that a suggested name for a new kind of data is free")
+    parser_spec_name.add_argument("name", help="The suggested name")
+    parser_spec_name.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_spec_propose = spec_subparsers.add_parser(
         "propose", help="Share a local term with the PRISM community (sends nothing unless --open)"
     )

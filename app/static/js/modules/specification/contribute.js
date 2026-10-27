@@ -18,6 +18,7 @@
         proposeMetric: root.dataset.proposeMetricUrl,
         example: root.dataset.exampleUrl,
         proposeNewKind: root.dataset.proposeNewKindUrl,
+        checkKindName: root.dataset.checkKindNameUrl,
         newKindForm: root.dataset.newKindFormUrl,
     };
     const unknownBox = document.getElementById("spec-m-found");
@@ -724,7 +725,7 @@
     });
 
     const nk = {};
-    ["description", "sample", "file", "name", "closest", "share"].forEach(function (key) { nk[key] = document.getElementById("spec-nk-" + key); });
+    ["measured", "device", "holds", "row", "sample", "file", "name", "name-feedback", "closest", "share"].forEach(function (key) { nk[key] = document.getElementById("spec-nk-" + key); });
     const newKindCopy = {
         title: "Share a new kind of data with the PRISM community",
         text: "Nothing is sent from this page. The first button opens a prefilled form on GitHub in a new tab. "
@@ -749,9 +750,24 @@
         clearMessage();
         nk.sample.value = await file.text();
     });
+    // The same refusal the backend gives on Share (names BIDS or PRISM use, bad shape), shown while typing.
+    let nameCheck = 0;
+    nk.name.addEventListener("input", async function () {
+        const ticket = ++nameCheck;
+        const name = nk.name.value.trim();
+        let error = "";
+        if (name) {
+            const { ok, data } = await call(urls.checkKindName, { name });
+            error = ok ? "" : data.error || "";
+        }
+        if (ticket !== nameCheck) return;  // a newer keystroke has its own answer coming
+        nk["name-feedback"].textContent = error;
+        nk["name-feedback"].hidden = !error;
+        nk.name.classList.toggle("is-invalid", Boolean(error));
+    });
     nk.share.addEventListener("click", async function () {
         clearMessage();
-        const body = { description: nk.description.value, sample: nk.sample.value, closest: nk.closest.value || null, name: nk.name.value.trim() || null };
+        const body = { parts: { measured: nk.measured.value, device: nk.device.value, holds: nk.holds.value, row: nk.row.value }, sample: nk.sample.value, closest: nk.closest.value || null, name: nk.name.value.trim() || null };
         const { ok, data } = await call(urls.proposeNewKind, body);
         if (!ok) { say(data.error || "Could not build the proposal", "danger"); return; }
         const copy = data.note ? newKindTooLong : newKindCopy;

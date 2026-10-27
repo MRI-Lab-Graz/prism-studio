@@ -306,12 +306,35 @@ def check_new_kind_name(name: str) -> str:
     return name
 
 
-def proposal_for_new_kind(description: str, sample: str, closest: str | None = None, name: str | None = None) -> dict:
+_KIND_PARTS = (("measured", "What is measured", True), ("device", "Device or lab", False), ("holds", "One file holds", True), ("row", "One row is", False))
+
+
+def describe_new_kind(parts: dict) -> str:
+    """The description of a new kind of data from its short fields (`measured` and `holds` needed, `device` and `row` optional)."""
+    if not isinstance(parts, dict) or not all(isinstance(parts.get(key), (str, type(None))) for key, _, _ in _KIND_PARTS):
+        raise OverlayError("the description parts must be text")
+    lines = []
+    for key, label, needed in _KIND_PARTS:
+        value = (parts.get(key) or "").strip()
+        if needed and not value:
+            raise OverlayError(f"missing: {key} ({label.lower()})")
+        if value:
+            lines.append(f"{label}: {value}")
+    return "\n".join(lines)
+
+
+def proposal_for_new_kind(description: str | None, sample: str, closest: str | None = None, name: str | None = None, parts: dict | None = None) -> dict:
     """The proposal for a whole new kind of data (a description and a pasted sample file); needs no project.
+
+    The description is either one text or `parts` (see `describe_new_kind`), not both.
 
     Returns {"issue_url", "text", "problems", "note"} (`note` says why there is no link when it would be too long). The form is prefilled with the description and the closest kind;
     the sample is never in the link (the user pastes it), `text` is the download with everything.
     """
+    if parts is not None:
+        if description is not None:
+            raise OverlayError("give either a description or its parts, not both")
+        description = describe_new_kind(parts)
     for label, value in (("description", description), ("sample", sample), ("closest", closest)):
         if value is not None and not isinstance(value, str):
             raise OverlayError(f"{label} must be text")

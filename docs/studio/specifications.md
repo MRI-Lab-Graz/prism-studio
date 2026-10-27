@@ -58,11 +58,10 @@ works with **no project open** and asks one thing at a time:
    *a choice from fixed values* (`CODE=LABEL` lines; never both), in biosample a unit and a sample type. Where groups exist you can pick its group. *Other names*
    and the *CF standard name* are folded under *Optional details*. *Share…* shows the proposal (it becomes official only after review) and
    sends your step-2 entries and the *Not sure* tick along as context; *Use in my open project* keeps it in your project only.
-4. **Nothing fits: a new kind of data** opens a short form: a description (what is measured, how, with which device
-   or lab, what one file holds), a sample file (pasted or picked as a text file; made-up data only, never real
+4. **Nothing fits: a new kind of data** opens a short form: four short fields (what is measured, the device or lab, what one file holds, what one row is; the device and the row are optional), a sample file (pasted or picked as a text file; made-up data only, never real
    participant data) and, optionally, a suggested name and the closest kind of data (prefilled with your step-1 choice). The name is
    lowercase letters and digits; names BIDS already uses (data types such as `func`, suffixes such as `bold`, entities such as `task`)
-   and names of existing PRISM kinds are refused. On the command line: `spec propose-new-kind --name`. PRISM cannot
+   and names of existing PRISM kinds are refused. The name is checked while you type. On the command line: `spec propose-new-kind --measured … --holds …` (or `--description`) and `--name`; `spec check-kind-name NAME`. PRISM cannot
    validate such files until the maintainer has added the new kind of data and it is in a PRISM release, so plan for
    this before your study starts. *Share…* opens a prefilled form with the description and closest kind; the sample
    is not in the link: paste it into the form's *Sample file* field. *Download* saves everything as one text file.

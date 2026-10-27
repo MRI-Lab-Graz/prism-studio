@@ -15,6 +15,7 @@
      data-propose-metric-url="{{ url_for('specification_contribute.propose_metric') }}"
      data-example-url="{{ url_for('specification_contribute.example') }}"
      data-propose-new-kind-url="{{ url_for('specification_contribute.propose_new_kind') }}"
+     data-check-kind-name-url="{{ url_for('specification_contribute.check_kind_name') }}"
      data-new-kind-form-url="https://github.com/MRI-Lab-Graz/prism-specification/issues/new?template=propose-new-kind-of-data.yml">
     <div class="card-body">
         <p class="text-muted">
@@ -45,8 +46,20 @@
                 validate these files. Plan for this before your study starts.
             </p>
             <div class="mb-3">
-                <label class="form-label" for="spec-nk-description">What is measured, how, with which device or lab, and what one file holds</label>
-                <textarea id="spec-nk-description" class="form-control" rows="4" placeholder="e.g. Skin temperature from a wrist sensor, sampled every 10 seconds; one file per night."></textarea>
+                <label class="form-label" for="spec-nk-measured">What is measured</label>
+                <input id="spec-nk-measured" type="text" class="form-control" autocomplete="off" placeholder="e.g. Skin temperature at the wrist, sampled every 10 seconds">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-device">Device or lab (optional)</label>
+                <input id="spec-nk-device" type="text" class="form-control" autocomplete="off" placeholder="e.g. Wrist sensor, model and software if you know them">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-holds">What one file holds</label>
+                <input id="spec-nk-holds" type="text" class="form-control" autocomplete="off" placeholder="e.g. One night of one participant">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="spec-nk-row">What one row is (optional)</label>
+                <input id="spec-nk-row" type="text" class="form-control" autocomplete="off" placeholder="e.g. One temperature reading with its time">
             </div>
             <div class="mb-3">
                 <label class="form-label" for="spec-nk-sample">A sample file, as your device or lab writes it</label>
@@ -58,6 +71,7 @@
             <div class="mb-3">
                 <label class="form-label" for="spec-nk-name">Suggested name (optional)</label>
                 <input id="spec-nk-name" type="text" class="form-control w-auto" maxlength="32" autocomplete="off" spellcheck="false">
+                <div id="spec-nk-name-feedback" class="invalid-feedback d-block text-danger" hidden></div>
                 <div class="form-text">Lowercase letters and digits, e.g. skintemp. Names BIDS or PRISM already use are refused.</div>
             </div>
             <div class="mb-3">

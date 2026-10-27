@@ -24,7 +24,7 @@ from src.spec_overlay import (
     remove_local_terms,
     remove_local_values,
 )
-from src.spec_contribute import example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
+from src.spec_contribute import check_new_kind_name, example_entries, proposal_for_new_kind, proposal_for_new_metric, proposal_for_values, spec_catalog
 
 specification_contribute_bp = Blueprint("specification_contribute", __name__)
 
@@ -170,12 +170,21 @@ def propose_metric():
 def propose_new_kind():
     body = _body()
     try:
-        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"), body.get("name"))
+        result = proposal_for_new_kind(body.get("description"), body.get("sample"), body.get("closest"), body.get("name"), body.get("parts"))
     except OverlayError as exc:
         return _error(str(exc))
     if result["problems"]:
         return jsonify({"success": False, "error": "; ".join(result["problems"]), **result}), 400
     return jsonify({"success": True, **result})
+
+
+@specification_contribute_bp.route("/api/spec/check-kind-name", methods=["POST"])
+def check_kind_name():
+    try:
+        check_new_kind_name(_body().get("name"))
+    except OverlayError as exc:
+        return _error(str(exc))
+    return jsonify({"success": True})
 
 
 @specification_contribute_bp.route("/api/spec/propose", methods=["POST"])

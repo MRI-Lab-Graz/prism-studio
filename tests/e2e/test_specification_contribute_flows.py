@@ -356,14 +356,19 @@ def test_a_new_kind_without_a_description_is_refused(bare_page, studio_url):
     expect(bare_page.locator("#spec-nk-closest")).to_have_value("")
     bare_page.locator("#spec-nk-sample").fill("time,value\n0,1\n")
     bare_page.locator("#spec-nk-share").click()
-    expect(bare_page.locator("#spec-message")).to_contain_text("the description is empty")
+    expect(bare_page.locator("#spec-message")).to_contain_text("missing: measured")
     expect(bare_page.locator("#spec-propose-dialog")).not_to_be_visible()
+
+
+def fill_kind(page, measured, holds="One night"):
+    page.locator("#spec-nk-measured").fill(measured)
+    page.locator("#spec-nk-holds").fill(holds)
 
 
 def test_a_new_kind_opens_the_prefilled_form_without_the_sample(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
     bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
-    bare_page.locator("#spec-nk-description").fill("Skin temperature from a wrist sensor, one file per night.")
+    fill_kind(bare_page, "Skin temperature from a wrist sensor, one file per night.")
     bare_page.locator("#spec-nk-sample").fill("time,temp\n0,zzsample-123\n")
     bare_page.locator("#spec-nk-closest").select_option("physio")
     bare_page.locator("#spec-nk-share").click()
@@ -391,7 +396,7 @@ def test_a_new_kind_sample_can_be_picked_from_a_file(bare_page, studio_url, tmp_
 def test_a_hostile_new_kind_description_is_text(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
     bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
-    bare_page.locator("#spec-nk-description").fill('<img src=x onerror="window.pwned=1">')
+    fill_kind(bare_page, '<img src=x onerror="window.pwned=1">')
     bare_page.locator("#spec-nk-sample").fill("a,b\n1,2\n")
     bare_page.locator("#spec-nk-share").click()
     expect(bare_page.locator("#spec-propose-json")).to_contain_text("<img src=x")
@@ -746,7 +751,7 @@ def test_each_share_names_its_own_download(bare_page, studio_url):
     expect(bare_page.locator("#spec-propose-open")).to_have_text("Open the prefilled form on GitHub")
     bare_page.locator("#spec-propose-close").click()
     bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
-    bare_page.locator("#spec-nk-description").fill("Skin temperature from a wrist sensor.")
+    fill_kind(bare_page, "Skin temperature from a wrist sensor.")
     bare_page.locator("#spec-nk-sample").fill("time,temp\n0,36.5\n")
     bare_page.locator("#spec-nk-share").click()
     expect(bare_page.locator("#spec-propose-download")).to_have_text("Download new-kind-of-data.txt")
@@ -755,7 +760,7 @@ def test_each_share_names_its_own_download(bare_page, studio_url):
 def test_a_new_kind_too_long_for_a_link_says_what_to_paste(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/specifications/contribute")
     bare_page.locator("#spec-kind").select_option(label=NOTHING_FITS)
-    bare_page.locator("#spec-nk-description").fill("A wrist sensor. " * 450)  # about 7,200 characters
+    fill_kind(bare_page, "A wrist sensor. " * 450)  # about 7,200 characters
     bare_page.locator("#spec-nk-sample").fill("time,temp\n0,zzsample-123\n")
     bare_page.locator("#spec-nk-share").click()
     open_link = bare_page.locator("#spec-propose-open")
@@ -856,13 +861,42 @@ def test_new_kind_form_warns_before_the_fields(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "new-kind")
     warning = bare_page.locator("#spec-new-kind .alert-warning")
     expect(warning).to_contain_text("cannot validate")
-    first_field = bare_page.locator("#spec-nk-description")
+    first_field = bare_page.locator("#spec-nk-measured")
     assert warning.bounding_box()["y"] < first_field.bounding_box()["y"]  # the limit is known before the typing starts
     assert bare_page.locator("#spec-new-kind .alert-warning").count() == 1
 
 
 def test_new_kind_form_helps_with_examples_and_the_next_step(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "new-kind")
-    assert bare_page.locator("#spec-nk-description").get_attribute("placeholder").startswith("e.g. ")
+    assert bare_page.locator("#spec-nk-measured").get_attribute("placeholder").startswith("e.g. ")
     assert "header" in bare_page.locator("#spec-nk-sample-help").text_content()
     expect(bare_page.locator("#spec-nk-share-note")).to_contain_text("GitHub")
+
+
+def test_new_kind_description_is_four_short_fields(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "new-kind")
+    for field in ("measured", "device", "holds", "row"):
+        expect(bare_page.locator(f"#spec-nk-{field}")).to_be_visible()
+    expect(bare_page.locator("#spec-nk-description")).to_have_count(0)
+    fill_kind(bare_page, "Skin temperature")
+    bare_page.locator("#spec-nk-device").fill("Wrist sensor")
+    bare_page.locator("#spec-nk-sample").fill("time,temp\n0,36.5\n")
+    with bare_page.expect_request("**/api/spec/propose-new-kind") as request:
+        bare_page.locator("#spec-nk-share").click()
+    body = request.value.post_data_json
+    assert body["parts"] == {"measured": "Skin temperature", "device": "Wrist sensor", "holds": "One night", "row": ""}
+    assert "description" not in body or body["description"] is None
+
+
+def test_new_kind_name_is_checked_while_typing(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "new-kind")
+    bare_page.allowed_http[400] = "/api/spec/check-kind-name"
+    name, feedback = bare_page.locator("#spec-nk-name"), bare_page.locator("#spec-nk-name-feedback")
+    name.fill("func")
+    expect(feedback).to_contain_text("already taken")
+    expect(name).to_have_class(re.compile("is-invalid"))
+    name.fill("skintemp")
+    expect(feedback).to_be_hidden()
+    expect(name).not_to_have_class(re.compile("is-invalid"))
+    name.fill("")
+    expect(feedback).to_be_hidden()
