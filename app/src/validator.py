@@ -709,7 +709,8 @@ class DatasetValidator:
             if isinstance(v, dict) and isinstance(v.get("Term"), str) and v["Term"]:
                 res = resolve_column(registry, k, v, specimen)
                 if res.kind in ("term", "deprecated") and res.term:
-                    inherited = {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
+                    # a count of hours is not a value of the term: it takes no unit, type or range from it
+                    inherited = {} if v.get("Statistic") == "count" else {f: res.term[f] for f in TERM_INHERITED_FIELDS if f in res.term}
                     # the column's own values win, but null/"" must not switch an inherited check off
                     own = {f: x for f, x in v.items() if x not in (None, "")}
                     merged = {**inherited, **own}
@@ -1370,7 +1371,7 @@ class DatasetValidator:
             if res.kind == "term":
                 term = res.term or {}
                 declared, recommended = col_def.get("Units"), term.get("Units")
-                if declared and recommended and declared != recommended:
+                if declared and recommended and declared != recommended and col_def.get("Statistic") != "count":
                     known = declared in (term.get("AlternativeUnits") or [])
                     issues.append((
                         "INFO",

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   variable over an ISO 8601 duration before the session (mean, min, max, sum, count; windows are half-open, years and months are
   refused). The Environment page has a "Time windows" list. Rows left empty and rows from a partial window are reported in the
   conversion summary and as `window_problems` in the CLI JSON.
+  A `count` window column is unitless (`Units: "1"`): it takes no unit, type or range from its term, and the validator gives no
+  unit-difference notice for it.
 - **Environment variables can be proposed** (Propose page, `spec propose-metric --modality environment --name ... --description ... --units dB`
   or `--level CODE=LABEL`, optional `--cf-standard-name`); `terms propose --modality environment` works too.
 - **The Propose page is a drill-down.** Pick the kind of data, then see the accepted example beside your proposal, with "Missing..." and
