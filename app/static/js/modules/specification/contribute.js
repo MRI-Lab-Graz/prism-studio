@@ -567,20 +567,21 @@
         return read.value === "Unknown" ? {} : read;
     }
 
-    // The groups of the chosen kind of data, in the pull-down above the measurements and as the optional group of a new one.
+    // Fill a pull-down with new options, keeping what was chosen if it is still offered.
+    function refill(select, nodes) {
+        const keep = select.value;
+        select.replaceChildren(...nodes);
+        select.value = keep;
+        if (select.selectedIndex < 0) select.selectedIndex = 0;
+    }
+
+    // The groups of the chosen kind of data: the pull-down above the measurements and the optional group of a new one.
     function fillGroups(kind) {
-        const keep = m.group.value;
-        m.group.replaceChildren();
-        choose(m.group);
-        kind.groups.forEach(function (name) { m.group.appendChild(option(name, name)); });
-        m.group.appendChild(option("Not in the list: add a measurement…", "missing"));
-        m.group.value = keep;
-        if (m.group.selectedIndex < 0) m.group.selectedIndex = 0;
-        const formKeep = m["form-group"].value;
-        m["form-group"].replaceChildren(option("Not sure", ""));
-        kind.groups.forEach(function (name) { m["form-group"].appendChild(option(name, name)); });
-        m["form-group"].value = formKeep;
-        if (m["form-group"].selectedIndex < 0) m["form-group"].selectedIndex = 0;
+        const placeholder = option("Choose…", "");
+        placeholder.disabled = true;
+        const names = kind.groups.map(function (name) { return option(name, name); });
+        refill(m.group, [placeholder, ...names, option("Not in the list: add a measurement…", "missing")]);
+        refill(m["form-group"], [option("Not sure", ""), ...kind.groups.map(function (name) { return option(name, name); })]);
     }
 
     // Step 3: the official measurements (of the chosen group and sample type, if any), then "Missing".
@@ -612,7 +613,7 @@
         showPick();
     }
 
-    function prefillSpecimen() {
+    function prefillForm() {
         if (m.group.value && m.group.value !== "missing") m["form-group"].value = m.group.value;  // the group chosen above
         const chosen = chosenSpecimen();
         const specimen = chosen.value || chosen.missing || "";
@@ -673,18 +674,18 @@
     m.name.addEventListener("input", forgetFound);
     m.pick.addEventListener("change", function () {
         showPick();
-        if (m.pick.value === "missing") prefillSpecimen();
+        if (m.pick.value === "missing") prefillForm();
     });
     m.group.addEventListener("change", function () {
         m.pick.value = "";  // a measurement of the previous group no longer applies
         fillPick();
-        if (m.pick.value === "missing") prefillSpecimen();
+        if (m.pick.value === "missing") prefillForm();
     });
     sectionsBox.addEventListener("input", showActions);  // free-text entries and "Unknown" ticks change the summary too
     sectionsBox.addEventListener("change", function () {
         if (!currentKind() || !currentKind().metrics) return;
         fillPick();
-        if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
+        if (m.pick.value === "missing") prefillForm();  // the open form follows the sample type chosen in step 2
     });
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
     // "CODE=LABEL" lines as {code: label}; a line without "=" is sent as a code with an empty label, the backend refuses it
