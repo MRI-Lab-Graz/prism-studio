@@ -48,3 +48,18 @@ def test_bad_duration_shows_the_server_message_before_any_conversion(app_page, s
     app_page.click("#envConvertBtn")
 
     expect(app_page.locator("#envError")).to_contain_text("is not an ISO 8601 duration such as P3D", timeout=15000)
+
+
+def test_failed_window_options_route_shows_an_error_not_empty_pulldowns(app_page, studio_url, tmp_path):
+    app_page.allowed_http[500] = "/api/environment-window-options"
+    app_page.route(
+        "**/api/environment-window-options",
+        lambda route: route.fulfill(status=500, content_type="application/json", body='{"error": "boom"}'),
+    )
+    open_environment_tab(app_page, studio_url)
+    preview_file(app_page, tmp_path)
+
+    app_page.click("#envAddWindowBtn")
+
+    expect(app_page.locator("#envError")).to_contain_text("Could not load the time window options")
+    expect(app_page.locator("#envWindowList .env-window-row")).to_have_count(0)
