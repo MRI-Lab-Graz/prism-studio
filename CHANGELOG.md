@@ -113,6 +113,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **LimeSurvey questions with built-in answers get their Levels.** Yes/No, Gender, 5-point choice and the arrays
+  5-point, 10-point, Yes/Uncertain/No and Increase/Same/Decrease have no answer rows in the `.lss`, so they were
+  imported without Levels (type `5` was even "Unknown"). They now get LimeSurvey's stored codes (`Y`/`N`, `F`/`M`,
+  `1`-`5`, `1`-`10`, `Y`/`U`/`N`, `I`/`S`/`D`) with its labels in English or German. Exporting such a template no longer
+  writes answer rows LimeSurvey ignores, and a lone array row is exported as a list instead of an array without rows.
 - **LimeSurvey texts are imported as clean plain text.** Question, answer, help and group texts had HTML entities
   left in (`&lt; 5`, `&nbsp;`), words glued at line and paragraph breaks (`Satz eins.Satz zwei.`), and anything
   after a `<` that was not a tag cut away (the equation `{if(a<3, 1, b>2)}` became `{if(a2)}`). One function,

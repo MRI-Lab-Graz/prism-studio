@@ -50,6 +50,11 @@ LS_ANSWER_CODE_MAX_LENGTH = 5
 # See: https://www.limesurvey.org/manual/Adding_answers_or_subquestions
 LS_SUBQUESTION_CODE_MAX_LENGTH = 5
 
+# Types whose answer options LimeSurvey defines itself: an <answers> row would not be used.
+LS_FIXED_ANSWER_TYPES = {"Y", "G", "5"}
+# Array types: as one question on its own they would be an array without rows.
+LS_ARRAY_TYPES = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+
 
 def _sanitize_answer_code(
     code: str, existing_codes: set, max_length: int = LS_ANSWER_CODE_MAX_LENGTH
@@ -347,6 +352,8 @@ def _determine_ls_question_type(q_data, has_levels):
     # If LimeSurvey section has explicit questionType, use it
     if ls_config.get("questionType"):
         q_type = ls_config["questionType"]
+        if q_type in LS_ARRAY_TYPES:
+            q_type = "L"  # a lone array row: a list keeps its answer options
 
         # Apply LimeSurvey-specific validation settings
         ls_validation = ls_config.get("validation", {})
@@ -1327,7 +1334,9 @@ def generate_lss(
                     qaid_counter += 1
 
                 # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
-                if levels:
+                if q_type in LS_FIXED_ANSWER_TYPES:
+                    pass  # LimeSurvey defines these options itself
+                elif levels:
                     sort_ans = 0
                     used_answer_codes = set()
                     for code, answer_text in levels.items():
@@ -2204,7 +2213,9 @@ def generate_lss_from_customization(
                     qaid_counter += 1
 
                 # Add Answers
-                if levels:
+                if q_type in LS_FIXED_ANSWER_TYPES:
+                    pass  # LimeSurvey defines these options itself
+                elif levels:
                     sort_ans = 0
                     used_answer_codes = set()
                     for code, answer_text in levels.items():
