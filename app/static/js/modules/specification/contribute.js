@@ -710,10 +710,11 @@
     }
     m.share.addEventListener("click", function () {
         const oneLevel = currentKind().specimen_level === false;
+        const asLevels = oneLevel && m["kind-levels"].checked;
         propose({
-            levels: oneLevel && m["kind-levels"].checked ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
+            levels: asLevels ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
-            units: (oneLevel && m["kind-levels"].checked ? "" : m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
+            units: (asLevels ? "" : m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value, group: m["form-group"].value || null,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
