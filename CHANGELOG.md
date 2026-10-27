@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
+  unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
+
 ### Added
 - **Environment measurements are grouped (specification v1.4.1).** The official environment terms carry a `Group` (temperature and
   humidity, wind/pressure/rain, sun and light, place and time, air quality, pollen). On the Propose changes page you choose the group
