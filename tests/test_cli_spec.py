@@ -390,7 +390,7 @@ def opened(monkeypatch):
 def _call(spec_commands, tmp_path, description, sample_text="t\tv\n0\t1\n", open_=True):
     sample = tmp_path / "s.tsv"
     sample.write_text(sample_text, encoding="utf-8")
-    args = argparse.Namespace(description=description, sample=str(sample), closest=None, name=None, out=None, open=open_, json=True)
+    args = argparse.Namespace(description=description, measured=None, device=None, holds=None, row=None, sample=str(sample), closest=None, name=None, out=None, open=open_, json=True)
     try:
         spec_commands.cmd_spec_propose_new_kind(args)
     except SystemExit as exc:
@@ -497,3 +497,20 @@ def test_a_biosample_worded_failure_names_modality_as_the_fix(tmp_path):
     project, tsv = _env_project(tmp_path / "p")
     code, out = _run("terms", "propose", "--data", str(tsv), "--column", "noise_db")  # default biosample
     assert code == 1 and "--modality" in out, out
+
+
+def test_spec_propose_new_kind_takes_the_description_in_parts(tmp_path):
+    sample = tmp_path / "s.tsv"
+    sample.write_text("time\ttemp\n0\t33.1\n", encoding="utf-8")
+    code, text = _run("spec", "propose-new-kind", "--measured", "Skin temperature", "--holds", "One night", "--device", "Wrist sensor",
+                      "--sample", str(sample), "--json")
+    assert code == 0 and "One file holds: One night" in json.loads(text)["text"]
+    code, text = _run("spec", "propose-new-kind", "--measured", "Skin temperature", "--sample", str(sample), "--json")
+    assert code == 1 and "holds" in json.loads(text)["error"]
+
+
+def test_spec_check_kind_name():
+    code, text = _run("spec", "check-kind-name", "skintemp", "--json")
+    assert code == 0 and json.loads(text)["success"]
+    code, text = _run("spec", "check-kind-name", "func", "--json")
+    assert code == 1 and "already taken" in json.loads(text)["error"]

@@ -85,6 +85,8 @@ def dispatch_prism_tools(
             handlers["spec_propose_metric"](args)
         elif args.action == "propose-new-kind":
             handlers["spec_propose_new_kind"](args)
+        elif args.action == "check-kind-name":
+            handlers["spec_check_kind_name"](args)
         else:
             parsers["spec"].print_help()
     elif args.command == "terms":

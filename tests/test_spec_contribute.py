@@ -472,3 +472,26 @@ def test_two_level_kind_refuses_levels_and_cf_standard_name():
 def test_catalog_levels_variable_metric_lists_levels():
     metrics = _entry("environment")["metrics"]
     assert all("levels" in m for m in metrics)
+
+
+PARTS = {"measured": "Skin temperature", "device": "Wrist sensor", "holds": "One night", "row": "One reading every 10 s"}
+
+
+def test_a_new_kind_can_be_described_in_parts():
+    r = proposal_for_new_kind(None, "t\tv\n0\t1\n", parts=PARTS)
+    assert r["problems"] == []
+    assert "What is measured: Skin temperature\nDevice or lab: Wrist sensor\nOne file holds: One night\nOne row is: One reading every 10 s" in r["text"]
+
+
+def test_parts_leave_out_what_is_not_given_and_need_the_essentials():
+    r = proposal_for_new_kind(None, "t\tv\n0\t1\n", parts={"measured": "Skin temperature", "holds": "One night"})
+    assert "Device or lab" not in r["text"] and "One row is" not in r["text"] and r["problems"] == []
+    for missing in ("measured", "holds"):
+        parts = {**PARTS, missing: " "}
+        with pytest.raises(OverlayError, match=missing):
+            proposal_for_new_kind(None, "t\tv\n0\t1\n", parts=parts)
+
+
+def test_a_description_and_parts_together_are_refused():
+    with pytest.raises(OverlayError, match="either"):
+        proposal_for_new_kind("d", "t\tv\n0\t1\n", parts=PARTS)

@@ -495,3 +495,17 @@ def test_propose_takes_the_kind_of_data(client, tmp_path):
     assert _tree(project) == before
     assert "no schema additions" in client.post("/api/spec/propose", json={"patch": True, "modality": "physio"}).get_json()["error"]
     assert client.post("/api/spec/propose", json={"id": "prism:dhea-s", "modality": "survey"}).status_code == 400
+
+
+def test_propose_new_kind_takes_the_description_in_parts(client):
+    parts = {"measured": "Skin temperature", "device": "Wrist sensor", "holds": "One night"}
+    data = client.post("/api/spec/propose-new-kind", json={"parts": parts, "sample": "t\tv\n0\t1\n"}).get_json()
+    assert data["success"] and "One file holds: One night" in data["text"]
+    response = client.post("/api/spec/propose-new-kind", json={"parts": {**parts, "holds": ""}, "sample": "t\tv\n0\t1\n"})
+    assert response.status_code == 400 and "holds" in response.get_json()["error"]
+
+
+def test_check_kind_name_answers_before_sharing(client):
+    assert client.post("/api/spec/check-kind-name", json={"name": "skintemp"}).get_json()["success"]
+    response = client.post("/api/spec/check-kind-name", json={"name": "func"})
+    assert response.status_code == 400 and "already taken" in response.get_json()["error"]
