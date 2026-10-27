@@ -333,6 +333,14 @@ def test_propose_metric_without_a_project(client):
     assert data["success"] is True and data["issue_url"].startswith(FORM)
 
 
+def test_propose_metric_carries_a_group_and_refuses_a_bad_one(client):
+    body = {"modality": "environment", "name": "noise level", "description": "Sound pressure level", "units": "dB", "group": "Air quality"}
+    assert client.post("/api/spec/propose-metric", json=body).get_json()["proposal"]["terms"][0]["Group"] == "Air quality"
+    response = client.post("/api/spec/propose-metric", json=dict(body, group="two\nlines"))
+    assert response.status_code == 400 and "group" in response.get_json()["error"]
+    assert client.post("/api/spec/propose-metric", json=dict(body, group=3)).status_code == 400
+
+
 def test_propose_metric_uses_the_projects_own_specimens(client, tmp_path):
     _open(client, _project(tmp_path / "p"))
     assert client.post("/api/spec/local/add-values", json={"field": "Technical.SpecimenType", "values": ["sweat"]}).get_json()["success"]

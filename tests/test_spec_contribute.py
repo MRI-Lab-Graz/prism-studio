@@ -41,6 +41,15 @@ def test_measurements_carry_the_group_of_their_term():
     assert metrics["prism:ozone"]["group"] == "Air quality" and metrics["prism:pollen-grass"]["group"] == "Pollen"
 
 
+def test_a_kind_lists_the_groups_of_its_measurements_in_order():
+    kinds = {k["name"]: k for k in spec_catalog()["modalities"]}
+    assert kinds["environment"]["groups"] == [
+        "Temperature and humidity", "Wind, pressure and rain", "Sun and light", "Place and time", "Air quality", "Pollen",
+    ]
+    assert kinds["biosample"]["groups"] == []  # no group: the page keeps one flat list
+    assert all(m["group"] for m in kinds["environment"]["metrics"])
+
+
 def test_a_kind_with_nothing_to_propose_is_not_offered():
     names = {m["name"] for m in spec_catalog()["modalities"]}
     assert "events" not in names  # no list to extend and no measurements
@@ -409,6 +418,19 @@ def test_new_environment_metric():
     assert r["problems"] == []
     [term] = r["proposal"]["terms"]
     assert term["TermID"] == "prism:noise-level" and term["Level"] == "variable" and term["Units"] == "dB"
+
+
+def test_new_environment_metric_with_a_group():
+    r = proposal_for_new_metric("noise level", "Sound pressure level", "dB", modality="environment", group="Air quality")
+    assert r["problems"] == []
+    assert r["proposal"]["terms"][0]["Group"] == "Air quality"
+    assert "Group" not in proposal_for_new_metric("noise level", "Sound pressure level", "dB", modality="environment")["proposal"]["terms"][0]
+
+
+@pytest.mark.parametrize("group", ["", "x" * 61, "two\nlines", 3])
+def test_a_bad_group_is_refused(group):
+    with pytest.raises(OverlayError, match="group"):
+        proposal_for_new_metric("noise level", "Sound pressure level", "dB", modality="environment", group=group)
 
 
 def test_new_environment_metric_with_levels_and_cf_name():

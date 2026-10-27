@@ -1892,6 +1892,7 @@ def build_prism_tools_parsers(
     parser_spec_metric.add_argument("--units", help="Unit, for example pg/mL or dB (a variable has a unit or --level, not both)")
     parser_spec_metric.add_argument("--specimen", help="Sample type, for example saliva (kinds with a sample type, such as biosample)")
     parser_spec_metric.add_argument("--level", action="append", help="A level as CODE=LABEL instead of a unit (repeatable; kinds without sample type)")
+    parser_spec_metric.add_argument("--group", help="Optional heading the measurement is listed under, for example 'Air quality' (1-60 characters)")
     parser_spec_metric.add_argument("--cf-standard-name", help="Optional CF standard name, for example air_temperature (kinds without sample type)")
     parser_spec_metric.add_argument("--alias", action="append", help="Another name for it (repeatable)")
     parser_spec_metric.add_argument("--modality", default="biosample", help="The kind of data (default: biosample)")

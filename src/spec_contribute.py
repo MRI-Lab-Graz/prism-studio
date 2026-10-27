@@ -102,6 +102,7 @@ def spec_catalog() -> dict:
             ] if registry else None,
             "templates": _templates(name),
         }
+        kind["groups"] = list(dict.fromkeys(m["group"] for m in kind["metrics"] or [] if m["group"]))  # in the order the list shows them
         if kind["lists"] or kind["metrics"]:  # a kind with no list to extend and no measurements has nothing to propose
             modalities.append(kind)
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
@@ -217,13 +218,14 @@ def proposal_for_new_metric(
     name: str, description: str, units: str | None = None, specimen: str | None = None,
     aliases: list[str] | None = None, modality: str = "biosample", project_root=None,
     entries: dict | None = None, not_sure: bool = False, closest: str | None = None,
-    levels: dict[str, str] | None = None, cf_standard_name: str | None = None,
+    levels: dict[str, str] | None = None, cf_standard_name: str | None = None, group: str | None = None,
 ) -> dict:
     """The proposal for one missing measurement; needs no project.
 
     A two-level kind (biosample) gets its analyte term and the specimen-specific child (`units` and `specimen` needed).
     A one-level kind (environment) gets one `variable` term with exactly one of `units` / `levels` (CODE -> label)
     and an optional `cf_standard_name`; it refuses a `specimen`.
+    An optional `group` is the heading the measurement is listed under (the spec's own rule for it applies).
     `project_root` (optional) adds that project's own sample types to the check.
     Same result shape as `proposal_for_values`; nothing is written.
     """
@@ -231,6 +233,8 @@ def proposal_for_new_metric(
     kinds = [m["name"] for m in spec_catalog()["modalities"]]
     if modality not in kinds:
         raise OverlayError(f"unknown kind of data {modality!r}; choose one of: {', '.join(kinds)}")
+    if group is not None and (bad := _vendored_or_error("check_terms").type_problems({"Group": group}, "group")):
+        raise OverlayError("; ".join(bad))
     registry = load_registry(modality)
     if not registry:
         raise OverlayError(f"{modality} has no known measurements")
@@ -271,7 +275,7 @@ def proposal_for_new_metric(
     for text in [name, *aliases, parent_id]:
         if found := find_term(registry, text):
             raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
-    base = {"TermID": parent_id, "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description}
+    base = {"TermID": parent_id, "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description, **({"Group": group} if group else {})}
     if not two_level:
         extra = {"Levels": {k.strip(): v.strip() for k, v in levels.items()}} if levels else {"Units": units.strip()}
         if cf_standard_name and cf_standard_name.strip():
