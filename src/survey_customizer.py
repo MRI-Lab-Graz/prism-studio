@@ -12,6 +12,7 @@ import os
 import uuid
 from pathlib import Path
 
+from src.limesurvey_exporter import item_is_mandatory
 from src.template_info import detect_languages_from_template
 
 
@@ -116,8 +117,9 @@ def build_customizer_groups(
                         tool_overrides["inputWidth"] = ls_props["inputWidth"]
                     if "displayRows" in ls_props:
                         tool_overrides["displayRows"] = ls_props["displayRows"]
-                    if "Relevance" in ls_props:
-                        tool_overrides["relevance"] = ls_props["Relevance"]
+                    relevance = ls_props.get("relevance") or ls_props.get("Relevance")
+                    if relevance and relevance != "1":  # "1": always shown
+                        tool_overrides["relevance"] = relevance
                     if "equation" in ls_props:
                         tool_overrides["equation"] = ls_props["equation"]
                     if "hidden" in ls_props:
@@ -163,7 +165,7 @@ def build_customizer_groups(
                         "questionCode": question_code,
                         "description": description,
                         "displayOrder": index,
-                        "mandatory": question_data.get("Mandatory", True),
+                        "mandatory": item_is_mandatory(question_data),
                         "enabled": True,
                         "runNumber": current_run,
                         "levels": question_data.get("Levels", {}),

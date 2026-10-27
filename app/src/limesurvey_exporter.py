@@ -281,6 +281,31 @@ def _sanitize_question_code(
     return sanitized
 
 
+def _ls_settings(q_data) -> dict:
+    """The item's LimeSurvey settings (what the Template Editor and a LimeSurvey import write)."""
+    ls = q_data.get("LimeSurvey") if isinstance(q_data, dict) else None
+    return ls if isinstance(ls, dict) else {}
+
+
+def item_is_mandatory(q_data) -> bool:
+    """Required in LimeSurvey: LimeSurvey.mandatory wins over the generic Mandatory; required if neither is set."""
+    ls = _ls_settings(q_data)
+    return bool(ls["mandatory"]) if "mandatory" in ls else bool(q_data.get("Mandatory", True))
+
+
+def item_has_other(q_data) -> bool:
+    """An "Other" answer field: LimeSurvey.other or the generic OtherOption.enabled."""
+    other_option = q_data.get("OtherOption")
+    return bool(_ls_settings(q_data).get("other")) or (
+        isinstance(other_option, dict) and bool(other_option.get("enabled"))
+    )
+
+
+def item_help(q_data):
+    """Help text (a string or one per language): the generic Help, else LimeSurvey.helpText."""
+    return q_data.get("Help") or _ls_settings(q_data).get("helpText") or ""
+
+
 def _apply_run_suffix(code: str, run: int | None) -> str:
     """
     Apply run suffix to question code for multi-run surveys.
@@ -367,6 +392,9 @@ def _determine_ls_question_type(q_data, has_levels):
         # Apply input width if specified
         if ls_config.get("inputWidth"):
             extra_attrs["text_input_width"] = ls_config["inputWidth"]
+
+        if ls_config.get("displayRows"):
+            extra_attrs["display_rows"] = str(ls_config["displayRows"])
 
         # Apply hidden attribute
         if ls_config.get("hidden"):
@@ -477,8 +505,10 @@ def _build_relevance_equation(q_data, code_mapping=None):
     # Check for explicit Relevance first
     if "Relevance" in q_data:
         return q_data["Relevance"]
-    if "LimeSurvey" in q_data and "Relevance" in q_data["LimeSurvey"]:
-        return q_data["LimeSurvey"]["Relevance"]
+    ls = _ls_settings(q_data)
+    ls_relevance = ls.get("relevance") or ls.get("Relevance")
+    if ls_relevance and ls_relevance != "1":  # "1" (always shown) leaves room for ConditionalDisplay
+        return ls_relevance
 
     # Check for ConditionalDisplay
     conditional = q_data.get("ConditionalDisplay", {})
@@ -1014,9 +1044,7 @@ def generate_lss(
                     # Check for template-level MatrixGrouping flag
                     technical = data.get("Technical", {})
                     matrix_grouping_disabled = technical.get("MatrixGrouping") is False
-                    has_other = "OtherOption" in q_data and q_data["OtherOption"].get(
-                        "enabled", False
-                    )
+                    has_other = item_has_other(q_data)
 
                     # Don't group: dropdown, numerical, text, calculated, questions with Other option,
                     # or if template disables grouping
@@ -1057,9 +1085,7 @@ def generate_lss(
                     # Check for template-level MatrixGrouping flag
                     technical = data.get("Technical", {})
                     matrix_grouping_disabled = technical.get("MatrixGrouping") is False
-                    has_other = "OtherOption" in q_data and q_data["OtherOption"].get(
-                        "enabled", False
-                    )
+                    has_other = item_has_other(q_data)
 
                     # Don't group: dropdown, numerical, text, calculated, questions with Other option,
                     # or if template disables grouping
@@ -1122,7 +1148,7 @@ def generate_lss(
                 q_type = "F"
 
                 any_mandatory = any(
-                    data_item.get("Mandatory", True) for _code, data_item in group
+                    item_is_mandatory(data_item) for _code, data_item in group
                 )
 
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
@@ -1267,15 +1293,13 @@ def generate_lss(
                 q_code = _apply_run_suffix(first_code, run_number)
                 code_map[first_code] = q_code
                 q_data = first_data
-                is_mandatory = q_data.get("Mandatory", True)
+                is_mandatory = item_is_mandatory(q_data)
 
                 # Determine Type using helper function
                 q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
 
                 # Check for OtherOption
-                has_other = "OtherOption" in q_data and q_data["OtherOption"].get(
-                    "enabled", False
-                )
+                has_other = item_has_other(q_data)
 
                 q_data_row = {
                     "qid": qid,
@@ -1302,7 +1326,7 @@ def generate_lss(
                     )
                     desc = _apply_ls_styling(desc)
                     h_text = get_text(
-                        q_data.get("Help", ""),
+                        item_help(q_data),
                         lang,
                         i18n_data,
                         f"{first_code}.Help",
@@ -1741,9 +1765,7 @@ def generate_lss_from_customization(
             orig = q.get("originalData", {})
             input_type = orig.get("InputType", "").lower()
             levels = q.get("levels") or orig.get("Levels", {})
-            has_other = "OtherOption" in orig and orig["OtherOption"].get(
-                "enabled", False
-            )
+            has_other = item_has_other(orig)
 
             # Check for template-level MatrixGrouping flag (passed from loader)
             # This is more reliable than re-reading the file
@@ -2153,9 +2175,7 @@ def generate_lss_from_customization(
                     relevance = tool_ov["relevance"]
 
                 # Check for OtherOption
-                has_other = "OtherOption" in orig and orig["OtherOption"].get(
-                    "enabled", False
-                )
+                has_other = item_has_other(orig)
 
                 q_data_row = {
                     "qid": qid,
@@ -2184,7 +2204,7 @@ def generate_lss_from_customization(
                         desc = q.get("description", q_code)
                     desc = _apply_ls_styling(desc)
                     h_text = tool_ov.get("helpText") or get_text(
-                        orig.get("Help", ""), lang, i18n_data, f"{q_code}.Help"
+                        item_help(orig), lang, i18n_data, f"{q_code}.Help"
                     )
                     add_row(
                         question_l10ns_rows,
