@@ -514,6 +514,10 @@
         metricPanel.hidden = !(kind && kind.metrics);
         answers = [];
         sectionsBox.replaceChildren();
+        m.group.replaceChildren();  // nothing of the previous kind of data stays chosen
+        m["form-group"].replaceChildren();
+        m.pick.replaceChildren();
+        m.detail.textContent = "";
         showActions();
         if (!kind) return;
         const data = await loadExample();
@@ -538,7 +542,7 @@
     });
 
     const m = {};
-    ["pick", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
+    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -563,39 +567,54 @@
         return read.value === "Unknown" ? {} : read;
     }
 
-    // Step 3: the official measurements (only those of the chosen sample type, if one is chosen), then "Missing".
+    // Fill a pull-down with new options, keeping what was chosen if it is still offered.
+    function refill(select, nodes) {
+        const keep = select.value;
+        select.replaceChildren(...nodes);
+        select.value = keep;
+        if (select.selectedIndex < 0) select.selectedIndex = 0;
+    }
+
+    // The groups of the chosen kind of data: the pull-down above the measurements and the optional group of a new one.
+    function fillGroups(kind) {
+        const placeholder = option("Choose…", "");
+        placeholder.disabled = true;
+        const names = kind.groups.map(function (name) { return option(name, name); });
+        refill(m.group, [placeholder, ...names, option("Not in the list: add a measurement…", "missing")]);
+        refill(m["form-group"], [option("Not sure", ""), ...kind.groups.map(function (name) { return option(name, name); })]);
+    }
+
+    // Step 3: the official measurements (of the chosen group and sample type, if any), then "Missing".
     function fillPick() {
-        const twoLevel = currentKind().specimen_level !== false;  // a kind like environment has no sample type: unit or levels instead
+        const kind = currentKind();
+        const twoLevel = kind.specimen_level !== false;  // a kind like environment has no sample type: unit or levels instead
         m["specimen-box"].hidden = !twoLevel;
         m["levels-box"].hidden = twoLevel;
         m["cf-box"].hidden = twoLevel;
+        const grouped = kind.groups.length > 0;
+        m["group-box"].hidden = !grouped;
+        m["form-group-box"].hidden = !grouped;
+        if (grouped) fillGroups(kind);
+        const group = grouped ? m.group.value : "";
+        const waiting = grouped && (!group || group === "missing");  // no group chosen yet, or "not in the list"
+        m.pick.disabled = waiting;
         const keep = m.pick.value;
         const specimen = chosenSpecimen().value;
         m.pick.replaceChildren();
         choose(m.pick);
-        const groups = new Map();  // a term's group is a heading in the list; measurements without one come after the groups
-        (currentKind().metrics || []).filter(function (metric) {
-            return !specimen || metric.specimens.indexOf(specimen) !== -1;
+        (kind.metrics || []).filter(function (metric) {
+            return (!grouped || metric.group === group) && (!specimen || metric.specimens.indexOf(specimen) !== -1);
         }).forEach(function (metric) {
-            const key = metric.group || "";
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key).push(option(metric.label + " (" + [metric.id, metric.units || Object.keys(metric.levels || {}).join("/")].filter(Boolean).join(", ") + ")", metric.id));
+            m.pick.appendChild(option(metric.label + (metric.units ? " (" + metric.units + ")" : ""), metric.id));
         });
-        groups.forEach(function (options, key) {
-            if (!key) return;
-            const heading = el("optgroup");
-            heading.label = key;
-            heading.append(...options);
-            m.pick.appendChild(heading);
-        });
-        (groups.get("") || []).forEach(function (node) { m.pick.appendChild(node); });
-        m.pick.appendChild(option("Missing: add a measurement…", "missing"));
-        m.pick.value = keep;
+        if (!(grouped && !group)) m.pick.appendChild(option("Missing: add a measurement…", "missing"));
+        m.pick.value = group === "missing" ? "missing" : keep;
         if (m.pick.selectedIndex < 0) m.pick.selectedIndex = 0;
         showPick();
     }
 
-    function prefillSpecimen() {
+    function prefillForm() {
+        if (m.group.value && m.group.value !== "missing") m["form-group"].value = m.group.value;  // the group chosen above
         const chosen = chosenSpecimen();
         const specimen = chosen.value || chosen.missing || "";
         if (specimen && !Array.from(m.specimen.options).some(function (o) { return o.value === specimen; })) {
@@ -610,7 +629,14 @@
         m["use-hint"].classList.add("d-none");
     }
 
+    // After the choice: its ID and unit (or level codes), which the short option text leaves out.
+    function showDetail() {
+        const metric = (currentKind().metrics || []).find(function (item) { return item.id === m.pick.value; });
+        m.detail.textContent = metric ? [metric.id, metric.units || Object.keys(metric.levels || {}).join(" / ")].filter(Boolean).join(" · ") : "";
+    }
+
     function showPick() {
+        showDetail();
         m.yes.hidden = !m.pick.value || m.pick.value === "missing";
         m.form.hidden = m.pick.value !== "missing";
         if (m.pick.value !== "missing") forgetFound();
@@ -648,13 +674,18 @@
     m.name.addEventListener("input", forgetFound);
     m.pick.addEventListener("change", function () {
         showPick();
-        if (m.pick.value === "missing") prefillSpecimen();
+        if (m.pick.value === "missing") prefillForm();
+    });
+    m.group.addEventListener("change", function () {
+        m.pick.value = "";  // a measurement of the previous group no longer applies
+        fillPick();
+        if (m.pick.value === "missing") prefillForm();
     });
     sectionsBox.addEventListener("input", showActions);  // free-text entries and "Unknown" ticks change the summary too
     sectionsBox.addEventListener("change", function () {
         if (!currentKind() || !currentKind().metrics) return;
         fillPick();
-        if (m.pick.value === "missing") prefillSpecimen();  // the open form follows the sample type chosen in step 2
+        if (m.pick.value === "missing") prefillForm();  // the open form follows the sample type chosen in step 2
     });
     m.units.addEventListener("change", function () { m["units-other"].hidden = m.units.value !== "other"; });
     // "CODE=LABEL" lines as {code: label}; a line without "=" is sent as a code with an empty label, the backend refuses it
@@ -672,7 +703,7 @@
             levels: oneLevel ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
             units: (m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
-            aliases: m.aliases.value.split(","), modality: kindSelect.value,
+            aliases: m.aliases.value.split(","), modality: kindSelect.value, group: m["form-group"].value || null,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
     });

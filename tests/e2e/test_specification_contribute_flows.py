@@ -213,7 +213,7 @@ def test_only_sections_with_something_to_propose_are_shown(bare_page, studio_url
 def test_environment_has_no_privacy_section_and_a_form_without_sample_type(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "environment")
     expect(bare_page.locator("#spec-sections .sm-section-toggle", has_text="Privacy")).to_have_count(0)
-    bare_page.locator("#spec-m-pick").select_option("missing")
+    bare_page.locator("#spec-m-group").select_option("missing")
     expect(bare_page.locator("#spec-m-form")).to_be_visible()
     expect(bare_page.locator("#spec-m-specimen")).to_be_hidden()
     expect(bare_page.locator("#spec-m-units")).to_be_visible()
@@ -248,22 +248,86 @@ def test_the_summary_says_what_is_proposed_and_what_is_only_context(bare_page, s
     expect(summary).to_contain_text("Goes along only as context (not proposed): Collection method, Laboratory")
 
 
-def test_the_measurement_pulldown_fits_inside_the_card(bare_page, studio_url):
+def test_no_measurement_pulldown_is_wider_than_its_card(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "environment")
-    pick = bare_page.locator("#spec-m-pick")
-    expect(pick).to_be_visible()
+    bare_page.locator("#spec-m-group").select_option("Sun and light")
     card = bare_page.locator("#spec-contribute").bounding_box()
-    box = pick.bounding_box()
-    assert box["x"] + box["width"] <= card["x"] + card["width"] + 1  # not wider than the page card
+    for select in ("#spec-kind", "#spec-m-group", "#spec-m-pick"):
+        box = bare_page.locator(select).bounding_box()
+        assert box["x"] + box["width"] <= card["x"] + card["width"] + 1, select
 
 
-def test_environment_measurements_are_listed_under_their_group(bare_page, studio_url):
+def test_environment_measurements_are_chosen_group_first_with_short_labels(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "environment")
-    groups = bare_page.locator("#spec-m-pick optgroup")
-    expect(groups).to_have_count(6)
-    expect(groups.first).to_have_attribute("label", "Temperature and humidity")
-    expect(groups.first.locator("option", has_text="air temperature")).to_have_count(1)
-    expect(bare_page.locator("#spec-m-pick > option")).to_have_count(2)  # "Choose…" and "Missing: add a measurement…"
+    group, pick = bare_page.locator("#spec-m-group"), bare_page.locator("#spec-m-pick")
+    assert group.locator("option").all_inner_texts() == [
+        "Choose…", "Temperature and humidity", "Wind, pressure and rain", "Sun and light", "Place and time", "Air quality", "Pollen",
+        "Not in the list: add a measurement…",
+    ]
+    expect(pick).to_be_disabled()  # until a group is chosen
+    group.select_option("Air quality")
+    expect(pick).to_be_enabled()
+    texts = pick.locator("option").all_inner_texts()
+    assert texts == ["Choose…", "European air quality index (1)", "nitrogen dioxide (ug/m3)", "ozone (ug/m3)", "PM10 (ug/m3)", "PM2.5 (ug/m3)", "Missing: add a measurement…"] or (
+        len(texts) == 7 and not any("prism:" in t for t in texts)
+    ), texts
+    pick.select_option(label=next(t for t in texts if t.startswith("ozone")))
+    expect(bare_page.locator("#spec-m-detail")).to_contain_text("prism:ozone")
+    expect(bare_page.locator("#spec-m-detail")).to_contain_text("ug/m3")
+
+
+def test_a_levels_measurement_shows_its_codes_after_the_choice(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    bare_page.locator("#spec-m-group").select_option("Place and time")
+    pick = bare_page.locator("#spec-m-pick")
+    moon = next(t for t in pick.locator("option").all_inner_texts() if t.startswith("moon phase"))
+    assert moon == "moon phase"  # a levels term has no unit in its text
+    pick.select_option(label=moon)
+    expect(bare_page.locator("#spec-m-detail")).to_contain_text("prism:moon-phase")
+    expect(bare_page.locator("#spec-m-detail")).to_contain_text("new_moon")
+
+
+def test_the_form_opens_without_choosing_a_group_and_sends_the_group(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    bare_page.locator("#spec-m-group").select_option("Air quality")
+    bare_page.locator("#spec-m-pick").select_option(label="Missing: add a measurement…")
+    expect(bare_page.locator("#spec-m-form")).to_be_visible()
+    expect(bare_page.locator("#spec-m-form-group")).to_have_value("Air quality")  # prefilled with the chosen group
+    bare_page.locator("#spec-m-form-group").select_option("Pollen")
+    bare_page.locator("#spec-m-name").fill("noise level")
+    bare_page.locator("#spec-m-description").fill("Sound pressure level")
+    bare_page.locator("#spec-m-units").select_option(index=1)
+    with bare_page.expect_request("**/api/spec/propose-metric") as request:
+        bare_page.locator("#spec-m-share").click()
+    assert request.value.post_data_json["group"] == "Pollen"
+    bare_page.locator("#spec-propose-close").click()  # the first share opened the dialog
+    expect(bare_page.locator("#spec-propose-dialog")).to_be_hidden()
+    bare_page.locator("#spec-m-form-group").select_option("")
+    with bare_page.expect_request("**/api/spec/propose-metric") as request:
+        bare_page.locator("#spec-m-share").click()
+    assert request.value.post_data_json["group"] is None
+
+
+def test_changing_the_kind_clears_group_measurement_and_detail(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "environment")
+    bare_page.locator("#spec-m-group").select_option("Pollen")
+    bare_page.locator("#spec-m-pick").select_option(index=1)
+    expect(bare_page.locator("#spec-m-detail")).not_to_be_empty()
+    bare_page.locator("#spec-kind").select_option("biosample")
+    expect(bare_page.locator("#spec-m-group-box")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-detail")).to_be_empty()
+    bare_page.locator("#spec-kind").select_option("environment")
+    expect(bare_page.locator("#spec-m-group option:checked")).to_have_text("Choose…")
+    expect(bare_page.locator("#spec-m-pick")).to_be_disabled()
+    expect(bare_page.locator("#spec-m-detail")).to_be_empty()
+
+
+def test_a_kind_without_groups_keeps_one_flat_list(bare_page, studio_url):
+    choose_kind(bare_page, studio_url, "biosample")
+    expect(bare_page.locator("#spec-m-group-box")).to_be_hidden()
+    expect(bare_page.locator("#spec-m-pick")).to_be_enabled()
+    expect(bare_page.locator("#spec-m-pick optgroup")).to_have_count(0)
+    expect(bare_page.locator("#spec-m-form-group-box")).to_be_hidden()
 
 
 def test_no_bids_kind_is_offered(bare_page, studio_url):
@@ -350,7 +414,7 @@ def test_the_measurements_follow_the_chosen_specimen(bare_page, studio_url):
     pick_specimen(bare_page, "saliva")
     expect(bare_page.locator("#spec-m-pick")).not_to_contain_text("C-reactive protein")
     texts = " ".join(measurement_options(bare_page))
-    assert "cortisol" in texts and "alpha-amylase" in texts and "prism:cortisol" in texts
+    assert "cortisol" in texts and "alpha-amylase" in texts and "prism:" not in texts  # the id comes after the choice, in a detail line
     assert measurement_options(bare_page)[-1] == "Missing: add a measurement…"
     bare_page.locator("#spec-m-pick").select_option(label=next(t for t in measurement_options(bare_page) if "cortisol" in t))
     expect(bare_page.locator("#spec-m-yes")).to_be_visible()

@@ -201,7 +201,7 @@ def cmd_spec_propose_metric(args) -> None:
             args.name, args.description, args.units, args.specimen, args.alias, args.modality,
             project_root=args.project,
             entries=_cli_entries(args), not_sure=args.not_sure, closest=args.closest,
-            levels=levels or None, cf_standard_name=args.cf_standard_name,
+            levels=levels or None, cf_standard_name=args.cf_standard_name, group=args.group,
         )
     except OverlayError as exc:
         _fail(args, str(exc))

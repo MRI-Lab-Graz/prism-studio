@@ -212,6 +212,16 @@ def test_cli_propose_metric_environment():
     assert json.loads(out)["proposal"]["terms"][0]["TermID"] == "prism:noise-level"
 
 
+def test_cli_propose_metric_environment_with_a_group():
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "noise level",
+                     "--description", "Sound pressure level", "--units", "dB", "--group", "Air quality", "--json")
+    assert code == 0, out
+    assert json.loads(out)["proposal"]["terms"][0]["Group"] == "Air quality"
+    code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "noise level",
+                     "--description", "d", "--units", "dB", "--group", "", "--json")
+    assert code == 1 and "group" in out
+
+
 def test_cli_propose_metric_environment_with_levels():
     code, out = _run("spec", "propose-metric", "--modality", "environment", "--name", "sky state", "--description", "d",
                      "--level", "c=clear", "--level", "o=overcast", "--cf-standard-name", "cloud_area_fraction", "--json")
