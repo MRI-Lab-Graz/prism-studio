@@ -55,6 +55,11 @@ jobs:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
 
+    - name: Tag must match the package version
+      if: startsWith(github.ref, 'refs/tags/v')
+      shell: bash
+      run: python scripts/ci/check_tag_version.py "${GITHUB_REF_NAME}"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
