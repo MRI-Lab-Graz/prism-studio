@@ -113,6 +113,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **Multilingual LimeSurvey surveys import with every language.** LimeSurvey 6 took each question, row and group
+  text from whichever language row came first and filed it under the base language (a German survey could import
+  English text as `de`); LimeSurvey 3 kept only the base language; `.lsq`/`.lsg` files were always `en`. Descriptions,
+  row texts, help, array stems (Instructions) and answer labels now carry every survey language, the base language
+  decides the main text, and the base language comes from the file. The exporters log a warning when a translation
+  is missing and English is used instead.
 - **LimeSurvey export keeps the Template Editor's LimeSurvey settings.** Required, show-condition (relevance), help
   text (per language), the "Other" option and text-box rows set in the Template Editor, or brought in by a LimeSurvey
   import, were dropped on export: the exporters read other keys (`Relevance`, `Help`, `Mandatory`, `OtherOption`).

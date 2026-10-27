@@ -281,6 +281,18 @@ def _sanitize_question_code(
     return sanitized
 
 
+def _text_in_language(texts: dict, lang, path=None):
+    """``texts[lang]``; a missing translation falls back to English (else the first
+    language) and is logged, so the survey shows it instead of an empty question."""
+    if lang in texts:
+        return texts[lang]
+    fallback_lang = "en" if "en" in texts else next(iter(texts), None)
+    if fallback_lang is None:
+        return ""
+    logger.warning("No %r text for %s: exported the %r text instead", lang, path or "an item", fallback_lang)
+    return texts[fallback_lang]
+
+
 def _ls_settings(q_data) -> dict:
     """The item's LimeSurvey settings (what the Template Editor and a LimeSurvey import write)."""
     ls = q_data.get("LimeSurvey") if isinstance(q_data, dict) else None
@@ -768,7 +780,7 @@ def generate_lss(
                 return str(curr)
 
         if isinstance(obj, dict):
-            return obj.get(lang, obj.get("en", next(iter(obj.values()), "")))
+            return _text_in_language(obj, lang, path)
         return str(obj)
 
     # DBVersion must match LimeSurvey's expected schema version
@@ -1628,7 +1640,7 @@ def generate_lss_from_customization(
                 return str(curr)
 
         if isinstance(obj, dict):
-            return obj.get(lang, obj.get("en", next(iter(obj.values()), "")))
+            return _text_in_language(obj, lang, path)
         return str(obj) if obj else ""
 
     # Sort groups by order
