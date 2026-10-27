@@ -39,12 +39,15 @@ def match_questionnaire_to_library(template, name, project_path=None):
     return match
 
 
-def finish_import(template, name, project_path=None, use_library=False):
+def finish_import(template, name, project_path=None, use_library=False, notes=()):
     """Payload for one imported template.
 
-    ``name`` labels the terminal log. With ``use_library`` the matching library template (the
+    ``name`` labels the terminal log; ``notes`` (what the source could not represent) are printed
+    and returned for the preview. With ``use_library`` the matching library template (the
     imported item codes kept as ``Aliases``) is returned instead; ValueError if it cannot be adopted.
     """
+    for note in notes:
+        print(f"[PRISM] WARNING {note}")
     match = match_questionnaire_to_library(template, name, project_path)
     if use_library:
         template = apply_library_template(match)
@@ -61,4 +64,5 @@ def finish_import(template, name, project_path=None, use_library=False):
         "item_count": len([key for key in template if key not in TEMPLATE_SECTIONS]),
         "languages": i18n.get("Languages") or [lang for lang in [(template.get("Technical") or {}).get("Language")] if lang],
         "library_match": public_library_match(match),
+        "notes": list(notes),
     }

@@ -113,6 +113,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
   the other's template. Item IDs are unchanged; a field without an item of its own (an "Other" text, a shared row)
   keeps LimeSurvey's name (`education[other]`) and is listed as unconverted.
+- **The LimeSurvey import reports what it cannot represent.** Multiple choice, ranking and the two-dimensional and
+  dual-scale arrays (their options or second scale are not items), "Other" and comment fields, unknown question
+  types, and built-in answer labels in a language other than English/German were only noted in the terminal. They are
+  now listed under "Check after import" in the Template Editor (also after validation), returned as `notes` by the
+  import route, and printed by `survey import-limesurvey`.
+- **LimeSurvey design options and equations survive the import.** `maximum_chars`, `prefix`/`suffix`, `numbers_only`,
+  `answer_width`, `repeat_headings`, `cssclass`, `page_break` and the other design attributes the Survey Customizer
+  already knew are kept in the item's LimeSurvey settings (base-language value, defaults left out) and written back by
+  both exporters; an Equation question takes its formula from the `equation` attribute before the question text.
+  The survey title and welcome/end texts come from the base language's settings, not the first language row.
 - **Multilingual LimeSurvey surveys import with every language.** LimeSurvey 6 took each question, row and group
   text from whichever language row came first and filed it under the base language (a German survey could import
   English text as `de`); LimeSurvey 3 kept only the base language; `.lsq`/`.lsg` files were always `en`. Descriptions,

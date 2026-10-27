@@ -248,7 +248,7 @@ def test_colliding_task_names_are_deduped_in_listing_and_templates():
     assert all(re.fullmatch(pattern, n) for n in names)
 
 
-def test_checkbox_question_with_subquestions_warns(capsys):
+def test_checkbox_question_with_subquestions_is_reported():
     rows = lambda *r: "<rows>" + "".join(r) + "</rows>"
     xml = (
         "<document><DBVersion>636</DBVersion>"
@@ -262,9 +262,10 @@ def test_checkbox_question_with_subquestions_warns(capsys):
         "</document>"
     ).encode()
 
-    limesurvey_questionnaire_template(xml, "g1")
+    from src.converters.limesurvey import limesurvey_questionnaire
 
-    out = capsys.readouterr().out
-    assert "[PRISM] WARNING Boxes / CB: type M (" in out
-    assert "with subquestions is imported as a plain single item/array; check the items by hand" in out
-    assert out.count("WARNING") == 1
+    _template, notes = limesurvey_questionnaire(xml, "g1")
+
+    [note] = notes
+    assert note.startswith("Boxes / CB: type M (")
+    assert "checkbox options are not imported as items" in note

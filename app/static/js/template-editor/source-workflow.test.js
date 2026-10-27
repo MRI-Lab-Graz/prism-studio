@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, loadNewTemplate, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
+import { finishImport, importNotesHtml, loadNewTemplate, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -89,6 +89,54 @@ describe('finishImport', () => {
         await finishImport(context, 'Imported x');
         expect(alerts.at(-1).type).toBe('warning');
         expect(alerts.at(-1).html).toContain('Not found in your file');
+    });
+});
+
+describe('import notes', () => {
+    const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    it('list what the import could not represent, escaped', () => {
+        const html = importNotesHtml(['Wellbeing / boxes: <b>type M</b> is lossy'], escapeHtml);
+        expect(html).toContain('Check after import');
+        expect(html).toContain('Wellbeing / boxes: &lt;b&gt;type M&lt;/b&gt; is lossy');
+        expect(html).not.toContain('<b>type M');
+        expect(importNotesHtml([], escapeHtml)).toBe('');
+        expect(importNotesHtml(undefined, escapeHtml)).toBe('');
+    });
+
+    async function finishWith(ok, notes) {
+        const alerts = [];
+        const el = { disabled: false, classList: { toggle() {}, add() {} } };
+        const context = {
+            modalityEl: { value: 'survey' }, schemaEl: { value: 'stable' },
+            getCurrentProjectPath: () => '/p', projectContextRequestToken: 1, projectLibraryRoot: '/p/library',
+            getExportWordButton: () => null, currentTemplate: {}, hasExplicitTemplate: true,
+            apiPost: async () => (ok ? { ok: true } : { ok: false, errors: LIMESURVEY_IMPORT_ERRORS }),
+            isProjectContextCurrent: () => true,
+            btnDownload: el, btnSave: el, alertAreaEl: { querySelectorAll: () => [] },
+            deriveFocusPath: (p) => p, escapeHtml, renderMissingSummary() {},
+            addTrailingDisplaySeparator: (p) => p, joinDisplayPath: (a, b) => `${a}/${b}`,
+            showAlert: (type, html) => alerts.push({ type, html }),
+        };
+        await finishImport(context, 'Imported x', notes);
+        return alerts;
+    }
+
+    it('stay visible after a valid import is validated', async () => {
+        const alerts = await finishWith(true, ['Lossy / boxes: type M']);
+        expect(alerts[0].html).toContain('Lossy / boxes: type M');
+        expect(alerts.at(-1).html).toContain('Valid template');
+        expect(alerts.at(-1).html).toContain('Lossy / boxes: type M');
+    });
+
+    it('stay visible when the import still needs details', async () => {
+        const alerts = await finishWith(false, ['Lossy / boxes: type M']);
+        expect(alerts.at(-1).type).toBe('warning');
+        expect(alerts.at(-1).html).toContain('Lossy / boxes: type M');
+    });
+
+    it('are absent when there are none', async () => {
+        expect((await finishWith(true)).at(-1).html).not.toContain('Check after import');
     });
 });
 

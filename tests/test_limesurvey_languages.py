@@ -119,3 +119,27 @@ def test_export_reports_a_missing_translation(tmp_path, caplog):
     with caplog.at_level(logging.WARNING, logger="src.limesurvey_exporter"):
         generate_lss([str(path)], languages=["de", "en"], base_language="de")
     assert any("q1" in r.getMessage() and "'en'" in r.getMessage() for r in caplog.records)
+
+
+def _with_titles(xml):
+    """The survey's language settings with the additional language (en) listed first."""
+    settings = ("<surveys_languagesettings><rows>"
+                + _row(surveyls_language="en", surveyls_title="Mood study", surveyls_description="About mood")
+                + _row(surveyls_language="de", surveyls_title="Stimmungsstudie", surveyls_description="Über Stimmung")
+                + "</rows></surveys_languagesettings>")
+    return xml.replace(b"</document>", settings.encode() + b"</document>")
+
+
+def test_survey_title_comes_from_the_base_language():
+    from src.converters.limesurvey import list_limesurvey_questionnaires
+
+    [found] = list_limesurvey_questionnaires(_with_titles(LS6), split="survey")
+    assert found["name"] == "Stimmungsstudie"
+
+
+def test_single_sidecar_converter_title_and_description_come_from_the_base_language():
+    from src.converters.limesurvey import parse_lss_xml
+
+    study = parse_lss_xml(_with_titles(LS6), check_collisions=False)["Study"]
+    assert study["OriginalName"] == "Stimmungsstudie"
+    assert study["Description"] == "Über Stimmung"

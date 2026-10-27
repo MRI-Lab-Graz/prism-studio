@@ -635,7 +635,7 @@ def api_template_editor_import_limesurvey():
     use_library = (request.form.get("use_library") or "").strip().lower() in ("1", "true")
 
     from src.converters.limesurvey import (
-        limesurvey_questionnaire_template,
+        limesurvey_questionnaire,
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
@@ -652,8 +652,8 @@ def api_template_editor_import_limesurvey():
                 xml, split, source_name=file.filename, project_path=project_path, match_library=True
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = limesurvey_questionnaire_template(xml, key, split)
-        payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library)
+        template, notes = limesurvey_questionnaire(xml, key, split)
+        payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library, notes)
     except ValueError as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": str(e)}), 400

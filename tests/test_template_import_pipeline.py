@@ -57,7 +57,7 @@ def library(tmp_path, monkeypatch):
 def test_payload_has_what_the_editor_reads(no_library):
     payload = finish_import(_template(), "ADS")
 
-    assert set(payload) == {"template", "suggested_filename", "item_count", "languages", "library_match"}
+    assert set(payload) == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes"}
     assert payload["suggested_filename"] == "survey-ads.json"
     assert payload["item_count"] == 2
     assert payload["languages"] == ["de"]
@@ -144,7 +144,7 @@ def test_every_source_returns_the_same_payload_keys(no_library):
 
     assert [r.status_code for r in (lss, pavlovia, excel)] == [200, 200, 200]
     keys = [set(r.get_json()) for r in (lss, pavlovia, excel)]
-    assert keys[0] == keys[1] == keys[2] == {"template", "suggested_filename", "item_count", "languages", "library_match"}
+    assert keys[0] == keys[1] == keys[2] == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes"}
 
 
 def test_an_excel_import_without_a_library_match_reports_null_so_the_editor_offers_to_share(no_library):
