@@ -573,11 +573,22 @@
         const specimen = chosenSpecimen().value;
         m.pick.replaceChildren();
         choose(m.pick);
+        const groups = new Map();  // a term's group is a heading in the list; measurements without one come after the groups
         (currentKind().metrics || []).filter(function (metric) {
             return !specimen || metric.specimens.indexOf(specimen) !== -1;
         }).forEach(function (metric) {
-            m.pick.appendChild(option(metric.label + " (" + [metric.id, metric.units || Object.keys(metric.levels || {}).join("/")].filter(Boolean).join(", ") + ")", metric.id));
+            const key = metric.group || "";
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(option(metric.label + " (" + [metric.id, metric.units || Object.keys(metric.levels || {}).join("/")].filter(Boolean).join(", ") + ")", metric.id));
         });
+        groups.forEach(function (options, key) {
+            if (!key) return;
+            const heading = el("optgroup");
+            heading.label = key;
+            heading.append(...options);
+            m.pick.appendChild(heading);
+        });
+        (groups.get("") || []).forEach(function (node) { m.pick.appendChild(node); });
         m.pick.appendChild(option("Missing: add a measurement…", "missing"));
         m.pick.value = keep;
         if (m.pick.selectedIndex < 0) m.pick.selectedIndex = 0;

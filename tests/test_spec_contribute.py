@@ -36,6 +36,11 @@ def test_the_catalog_has_no_bids_kinds():
     assert not {"anat", "func", "dwi", "eeg", "fmap", "beh"} & {m["name"] for m in spec_catalog()["modalities"]}
 
 
+def test_measurements_carry_the_group_of_their_term():
+    metrics = {m["id"]: m for m in next(k for k in spec_catalog()["modalities"] if k["name"] == "environment")["metrics"]}
+    assert metrics["prism:ozone"]["group"] == "Air quality" and metrics["prism:pollen-grass"]["group"] == "Pollen"
+
+
 def test_a_kind_with_nothing_to_propose_is_not_offered():
     names = {m["name"] for m in spec_catalog()["modalities"]}
     assert "events" not in names  # no list to extend and no measurements

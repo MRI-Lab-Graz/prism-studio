@@ -1,6 +1,6 @@
 """Check entities.schema.json entries and the conventions of every PRISM modality schema.
 
-Usage: python scripts/check_modalities.py [--entities FILE] [--schemas DIR]
+Usage: python scripts/check_modalities.py [--entities FILE] [--schemas DIR] [--terms DIR]
 Prints one line per problem and exits 1 when there is any.
 """
 
@@ -69,9 +69,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--entities", type=Path, default=stable / "entities.schema.json")
     parser.add_argument("--schemas", type=Path, default=stable)
+    parser.add_argument("--terms", type=Path, default=REPO / "terms")
     args = parser.parse_args(argv)
     entities = json.loads(args.entities.read_text(encoding="utf-8"))
-    problems = check(entities, args.schemas, REPO / "terms")
+    problems = check(entities, args.schemas, args.terms)
     for p in problems:
         print(p)
     return 1 if problems else 0

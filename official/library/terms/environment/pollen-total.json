@@ -7,5 +7,6 @@
   ],
   "Description": "Total concentration of pollen in air.",
   "Units": "grains/m3",
+  "Group": "Pollen",
   "Status": "official"
 }

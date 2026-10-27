@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Environment measurements are grouped (specification v1.5.0).** The official environment terms carry a `Group` (temperature and
+  humidity, wind/pressure/rain, sun and light, place and time, air quality, pollen); the Propose changes page lists measurements under
+  those headings, and the pull-down no longer runs wider than its card. Environment schema 2.1.0: a `count` window column is unitless.
 - **Environment time windows.** `environment convert --window VAR:DURATION:STAT` (repeatable, e.g. `temp_c:P3D:max`) summarises a
   variable over an ISO 8601 duration before the session (mean, min, max, sum, count; windows are half-open, years and months are
   refused). The Environment page has a "Time windows" list. Rows left empty and rows from a partial window are reported in the

@@ -8,5 +8,6 @@
   "Description": "Fraction of the sky covered by clouds.",
   "Units": "%",
   "CFStandardName": "cloud_area_fraction",
+  "Group": "Wind, pressure and rain",
   "Status": "official"
 }

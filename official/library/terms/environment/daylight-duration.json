@@ -7,5 +7,6 @@
   ],
   "Description": "Hours of daylight on the day.",
   "Units": "h",
+  "Group": "Sun and light",
   "Status": "official"
 }

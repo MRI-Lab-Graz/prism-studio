@@ -8,5 +8,6 @@
   "Description": "Water vapour in the air as a percentage of the saturation amount.",
   "Units": "%",
   "CFStandardName": "relative_humidity",
+  "Group": "Temperature and humidity",
   "Status": "official"
 }

@@ -95,7 +95,7 @@ def spec_catalog() -> dict:
             "specimen_level": "contextField" in spec.term_modalities.get(name, {}),  # False: terms are one-level variables, no sample type
             "metrics": [
                 {
-                    "id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units"), "levels": t.get("Levels"),
+                    "id": t["TermID"], "label": t.get("Label", ""), "units": t.get("Units"), "levels": t.get("Levels"), "group": t.get("Group"),
                     "specimens": sorted(c["SpecimenType"] for c in registry.values() if c.get("Parent") == t["TermID"] and c.get("SpecimenType")),
                 }
                 for t in registry.values() if t.get("Level") in ("analyte", "variable")

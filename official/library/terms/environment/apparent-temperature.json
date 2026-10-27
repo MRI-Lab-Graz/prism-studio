@@ -7,5 +7,6 @@
   ],
   "Description": "Perceived air temperature, combining temperature, humidity and wind.",
   "Units": "degC",
+  "Group": "Temperature and humidity",
   "Status": "official"
 }

@@ -92,7 +92,7 @@ def test_sidecar_is_v2_and_valid():
         (REPO / "app" / "schemas" / "stable" / "environment.schema.json").read_text(encoding="utf-8")
     )
     jsonschema.validate(sidecar, schema)
-    assert sidecar["Metadata"]["SchemaVersion"] == "2.0.0"
+    assert sidecar["Metadata"]["SchemaVersion"] == json.loads((REPO / "app/schemas/stable/environment.schema.json").read_text(encoding="utf-8"))["version"]
     registry = load_registry("environment")
     for column in VALUE_COLUMNS:
         key, term = find_term(registry, column)  # a column without a term fails here

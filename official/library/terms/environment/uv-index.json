@@ -8,5 +8,6 @@
   "Description": "Ultraviolet radiation index.",
   "Units": "1",
   "CFStandardName": "ultraviolet_index",
+  "Group": "Sun and light",
   "Status": "official"
 }

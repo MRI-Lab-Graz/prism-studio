@@ -18,6 +18,7 @@ from validator import DatasetValidator
 
 REPO = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = REPO / "app" / "schemas"
+SCHEMA_VERSION = json.loads((SCHEMA_DIR / "stable" / "environment.schema.json").read_text(encoding="utf-8"))["version"]
 BASE = "sub-01/ses-1/environment/sub-01_ses-1_recording-weather_environment"
 RETIRED = "environment format 1.1.0 is retired; re-create it with: python prism_tools.py environment convert ..."
 
@@ -40,7 +41,7 @@ def _sidecar(columns):
     return {
         "Technical": {"Source": "open-meteo"},
         "Study": {"EnvironmentName": "weather"},
-        "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": "2026-10-26"},
+        "Metadata": {"SchemaVersion": SCHEMA_VERSION, "CreationDate": "2026-10-26"},
         **ID_COLUMNS,
         **columns,
     }

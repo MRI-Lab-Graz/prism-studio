@@ -8,5 +8,6 @@
   "Description": "Mass concentration of ozone in air.",
   "Units": "ug/m3",
   "CFStandardName": "mass_concentration_of_ozone_in_air",
+  "Group": "Air quality",
   "Status": "official"
 }
