@@ -132,19 +132,26 @@
             </p>
             <form id="spec-m-form" class="mb-4" hidden>
                 <div class="row g-2">
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label class="form-label small mb-0" for="spec-m-name">Name of the measurement</label>
                         <input id="spec-m-name" type="text" class="form-control form-control-sm" autocomplete="off">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small mb-0" for="spec-m-aliases">Other names, separated by commas (optional)</label>
-                        <input id="spec-m-aliases" type="text" class="form-control form-control-sm" autocomplete="off">
                     </div>
                     <div class="col-12">
                         <label class="form-label small mb-0" for="spec-m-description">Description, one sentence</label>
                         <input id="spec-m-description" type="text" class="form-control form-control-sm" autocomplete="off">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-12" id="spec-m-kind-box" hidden>
+                        <span class="form-label small d-block mb-0">What does it record?</span>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="spec-m-kind" id="spec-m-kind-unit" value="unit" checked>
+                            <label class="form-check-label small" for="spec-m-kind-unit">A number with a unit</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="spec-m-kind" id="spec-m-kind-levels" value="levels">
+                            <label class="form-check-label small" for="spec-m-kind-levels">A choice from fixed values</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4" id="spec-m-units-box">
                         <label class="form-label small mb-0" for="spec-m-units">Unit</label>
                         <select id="spec-m-units" class="form-select form-select-sm"></select>
                         <input id="spec-m-units-other" type="text" class="form-control form-control-sm mt-1" aria-label="Your unit" autocomplete="off" hidden>
@@ -155,23 +162,33 @@
                         <div class="form-text">Not in the list? Choose "Missing: add a value…" for Specimen type above.</div>
                     </div>
                     <div class="col-md-8" id="spec-m-levels-box" hidden>
-                        <label class="form-label small mb-0" for="spec-m-levels">Or levels instead of a unit: one CODE=LABEL per line</label>
+                        <label class="form-label small mb-0" for="spec-m-levels">The values: one CODE=LABEL per line</label>
                         <textarea id="spec-m-levels" class="form-control form-control-sm" rows="3" placeholder="c=clear"></textarea>
                     </div>
                     <div class="col-md-4" id="spec-m-form-group-box" hidden>
                         <label class="form-label small mb-0" for="spec-m-form-group">Group (optional)</label>
                         <select id="spec-m-form-group" class="form-select form-select-sm"></select>
                     </div>
-                    <div class="col-md-6" id="spec-m-cf-box" hidden>
-                        <label class="form-label small mb-0" for="spec-m-cf">CF standard name (optional)</label>
-                        <input id="spec-m-cf" type="text" class="form-control form-control-sm" autocomplete="off" placeholder="air_temperature">
-                    </div>
+                    <details class="col-12" id="spec-m-optional">
+                        <summary class="small">Optional details</summary>
+                        <div class="row g-2 mt-0">
+                            <div class="col-md-6">
+                                <label class="form-label small mb-0" for="spec-m-aliases">Other names, separated by commas</label>
+                                <input id="spec-m-aliases" type="text" class="form-control form-control-sm" autocomplete="off">
+                            </div>
+                            <div class="col-md-6" id="spec-m-cf-box" hidden>
+                                <label class="form-label small mb-0" for="spec-m-cf">CF standard name</label>
+                                <input id="spec-m-cf" type="text" class="form-control form-control-sm" autocomplete="off" placeholder="air_temperature">
+                            </div>
+                        </div>
+                    </details>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mt-3">
                     <button type="button" id="spec-m-share" class="btn btn-sm btn-primary">Share with the PRISM community…</button>
                     <button type="button" id="spec-m-use" class="btn btn-sm btn-outline-primary d-none">Use in my open project</button>
                 </div>
-                <p id="spec-m-use-hint" class="form-text d-none">Uses the unit and sample type from your data file.</p>
+                <p id="spec-m-share-note" class="form-text mb-0">Share sends a proposal to the PRISM community; it becomes official only after review.</p>
+                <p id="spec-m-use-hint" class="form-text d-none">Use is only in your project; nobody else sees it. It takes the unit and sample type from your data file.</p>
             </form>
 
             <div id="spec-m-local" hidden>

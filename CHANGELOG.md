@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The measurement form on the Propose changes page is clearer.** Environment asks first whether a measurement is a number with a unit or a
+  choice from fixed values and shows only the matching field; the description has a grey example from a real term; other names and the CF
+  standard name are folded under *Optional details*; a line under each button says what it does.
+
 ### Fixed
 - **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
   unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.

@@ -41,6 +41,11 @@ def test_measurements_carry_the_group_of_their_term():
     assert metrics["prism:ozone"]["group"] == "Air quality" and metrics["prism:pollen-grass"]["group"] == "Pollen"
 
 
+def test_measurements_carry_their_description_for_the_form_example():
+    env = next(k for k in spec_catalog()["modalities"] if k["name"] == "environment")
+    assert all(m["description"] for m in env["metrics"])
+
+
 def test_a_kind_lists_the_groups_of_its_measurements_in_order():
     kinds = {k["name"]: k for k in spec_catalog()["modalities"]}
     assert kinds["environment"]["groups"] == [

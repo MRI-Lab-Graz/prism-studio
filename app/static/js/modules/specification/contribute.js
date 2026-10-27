@@ -542,7 +542,7 @@
     });
 
     const m = {};
-    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-other", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
+    ["pick", "group", "group-box", "detail", "form-group", "form-group-box", "yes", "form", "name", "aliases", "description", "units", "units-box", "units-other", "kind-box", "kind-unit", "kind-levels", "specimen", "specimen-box", "levels", "levels-box", "cf", "cf-box", "share", "use", "use-hint", "project", "local"]
         .forEach(function (key) { m[key] = document.getElementById("spec-m-" + key); });
 
     function choose(select) {
@@ -584,13 +584,24 @@
         refill(m["form-group"], [option("Not sure", ""), ...kind.groups.map(function (name) { return option(name, name); })]);
     }
 
+    // A number has a unit, a choice has fixed values; never both. Biosample always has a unit.
+    function showValueKind() {
+        const levels = !m["kind-box"].hidden && m["kind-levels"].checked;
+        m["levels-box"].hidden = !levels;
+        m["units-box"].hidden = levels;
+    }
+    [m["kind-unit"], m["kind-levels"]].forEach(function (radio) { radio.addEventListener("change", showValueKind); });
+
     // Step 3: the official measurements (of the chosen group and sample type, if any), then "Missing".
     function fillPick() {
         const kind = currentKind();
         const twoLevel = kind.specimen_level !== false;  // a kind like environment has no sample type: unit or levels instead
         m["specimen-box"].hidden = !twoLevel;
-        m["levels-box"].hidden = twoLevel;
+        m["kind-box"].hidden = twoLevel;
         m["cf-box"].hidden = twoLevel;
+        const example = (kind.metrics || [])[0];
+        m.description.placeholder = example && example.description ? "e.g. " + example.description : "";
+        showValueKind();
         const grouped = kind.groups.length > 0;
         m["group-box"].hidden = !grouped;
         m["form-group-box"].hidden = !grouped;
@@ -700,9 +711,9 @@
     m.share.addEventListener("click", function () {
         const oneLevel = currentKind().specimen_level === false;
         propose({
-            levels: oneLevel ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
+            levels: oneLevel && m["kind-levels"].checked ? readLevels() : null, cf_standard_name: oneLevel ? m.cf.value.trim() || null : null,
             name: m.name.value, description: m.description.value,
-            units: (m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
+            units: (oneLevel && m["kind-levels"].checked ? "" : m.units.value === "other" ? m["units-other"].value : m.units.value) || null, specimen: oneLevel ? null : m.specimen.value,
             aliases: m.aliases.value.split(","), modality: kindSelect.value, group: m["form-group"].value || null,
             entries: contextFor(null).entries, not_sure: notSure.checked, closest: kindSelect.value,
         }, urls.proposeMetric, "measurement");
