@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from schema_manager import load_all_schemas
@@ -189,3 +191,38 @@ def test_retired_sidecar_is_reported_once_for_all_its_data_files(tmp_path):
             str(second), "environment", str(tmp_path)
         )
     assert len([m for m in _msgs(issues, "ERROR") if "retired" in m]) == 1, issues
+
+
+BIOSAMPLE_SIDECAR = {
+    "Technical": {"SpecimenType": "saliva", "CollectionMethod": "passive-drool", "StorageTemperature": -80,
+                  "Laboratory": "l", "AssayMethod": "ELISA", "AssayKit": "k", "ProcessingProtocol": "p"},
+    "Study": {"BiosampleName": "saliva"},
+    "Metadata": {"SchemaVersion": "1.1.0", "CreationDate": "2026-10-23"},
+    "sample_id": {"Description": "Tube", "Units": "n/a"},
+    "site": {"Description": "Site", "Units": "n/a", "Levels": {"a": "A", "b": "B"}},
+}
+
+
+@pytest.mark.parametrize("modality, sidecar_name, base, sidecar, header", [
+    ("environment", "recording-weather_environment.json", BASE,
+     _sidecar({"site": {"Description": "Site", "Units": "n/a", "Levels": {"a": "A", "b": "B"}}}),
+     ["subject_id", "session_id", "site"]),
+    ("biosample", "biosample-saliva_biosample.json", "sub-01/ses-1/biosample/sub-01_ses-1_biosample-saliva_biosample",
+     BIOSAMPLE_SIDECAR, ["sample_id", "site"]),
+])
+def test_a_gzipped_described_columns_file_is_read_and_validated(tmp_path, modality, sidecar_name, base, sidecar, header):
+    import gzip
+
+    (tmp_path / sidecar_name).write_text(json.dumps(sidecar), encoding="utf-8")
+    data = tmp_path / f"{base}.tsv.gz"
+    data.parent.mkdir(parents=True)
+    row = ["sub-01", "ses-1", "c"] if modality == "environment" else ["S-1", "c"]
+    with gzip.open(data, "wt", encoding="utf-8") as fh:
+        fh.write("\t".join(header) + "\n" + "\t".join(row) + "\n")
+    with use_specification(load_specification(project_root=tmp_path)):
+        v = DatasetValidator(load_all_schemas(str(SCHEMA_DIR)))
+        issues = v.validate_sidecar(str(data), modality, str(tmp_path)) + v.validate_data_content(
+            str(data), modality, str(tmp_path)
+        )
+    errors = _msgs(issues, "ERROR")
+    assert len(errors) == 1 and "'c'" in errors[0], issues  # the value inside the gz file was read and checked
