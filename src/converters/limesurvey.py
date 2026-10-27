@@ -131,6 +131,7 @@ LIMESURVEY_QUESTION_TYPES = {
     # Numerical
     "N": "Numerical Input",
     "K": "Multiple Numerical Input",
+    "5": "5 Point Choice",
     # Date/Time
     "D": "Date/Time",
     # Arrays/Matrices
@@ -356,6 +357,41 @@ def _parse_answers_into_questions(root, questions_map, get_text):
                     questions_map[qid]["levels"][code] = {lang: answer}
             else:
                 questions_map[qid]["levels"][code] = answer
+
+
+# Answer options LimeSurvey defines itself (no <answers> rows): stored code -> label in
+# LimeSurvey's wording, en and its German translation. Codes as in its question renderers.
+_YES, _NO = {"en": "Yes", "de": "Ja"}, {"en": "No", "de": "Nein"}
+_ONE_TO_FIVE = {str(i): {} for i in range(1, 6)}
+_FIXED_ANSWERS = {
+    "Y": {"Y": _YES, "N": _NO},
+    "G": {"F": {"en": "Female", "de": "weiblich"}, "M": {"en": "Male", "de": "männlich"}},
+    "C": {"Y": _YES, "U": {"en": "Uncertain", "de": "Unsicher"}, "N": _NO},
+    "E": {
+        "I": {"en": "Increase", "de": "Zunahme"},
+        "S": {"en": "Same", "de": "Unverändert"},
+        "D": {"en": "Decrease", "de": "Abnahme"},
+    },
+    "5": _ONE_TO_FIVE,
+    "A": _ONE_TO_FIVE,
+    "B": {str(i): {} for i in range(1, 11)},  # numbers label themselves
+}
+
+
+def _add_fixed_answer_levels(questions_map, language):
+    """Give the fixed-option types their LimeSurvey answer options as levels, labelled in
+    ``language`` (German variants like de-informal included); numbers label themselves."""
+    # ponytail: en/de labels only; another language gets the English label under "en",
+    # never under its own key. Add languages from LimeSurvey's locale/<lang>.mo when needed.
+    base = language.split("-")[0]
+    key = language if base in ("en", "de") else "en"
+    for q in questions_map.values():
+        options = _FIXED_ANSWERS.get(q["type"])
+        if options and not q["levels"]:
+            q["levels"] = {
+                code: {key: labels.get(base if base in labels else "en", code)}
+                for code, labels in options.items()
+            }
 
 
 def _detect_languages(root, get_text):
@@ -796,7 +832,7 @@ def _build_prism_template_from_parsed(
             prism_questions[title] = entry
 
     # Infer DataType from question type for each item
-    numeric_types = {"N", "K", "A", "B"}
+    numeric_types = {"N", "K", "A", "B", "5"}
     text_types = {"S", "T", "U", "Q"}
     for key, entry in prism_questions.items():
         ls = entry.get("LimeSurvey", {})
@@ -869,6 +905,7 @@ def _parse_lsq_lsg_xml(xml_content, source_type):
     questions_map, groups_map = _parse_lss_structure(root, _get_text)
     _parse_answers_into_questions(root, questions_map, _get_text)
     languages, default_language = _detect_languages(root, _get_text)
+    _add_fixed_answer_levels(questions_map, default_language)
     return _build_prism_template_from_parsed(
         questions_map, groups_map, languages, default_language, source_type=source_type
     )
@@ -941,6 +978,7 @@ def _parse_lss_for_questionnaires(xml_content):
     _drop_other_language_rows(root, _get_text)
     questions_map, groups_map = _parse_lss_structure(root, _get_text)
     _parse_answers_into_questions(root, questions_map, _get_text)
+    _add_fixed_answer_levels(questions_map, default_language)
     return {
         "questions": questions_map,
         "groups": groups_map,
@@ -1270,6 +1308,7 @@ def parse_lss_xml(
 
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
+    _add_fixed_answer_levels(questions_map, survey_meta.get("language") or "en")
 
     # Determine task name early for registry
     survey_title = survey_meta.get("title") or task_name or "survey"
