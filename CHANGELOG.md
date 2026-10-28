@@ -84,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **The LimeSurvey export is a LimeSurvey 6 file: DBVersion 636.** It wrote DBVersion 415 (LimeSurvey 5). It now writes 636
+  and the structural columns a LimeSurvey 6 export has on questions, sub-questions and question texts (`same_script`,
+  `other`/`mandatory`/`encrypted`, `script`). The same survey exported as 415 and as 636 was imported into LimeSurvey 6
+  with identical summaries (questions, sub-questions, answers, attributes, groups, languages); LimeSurvey only reads the
+  version number of an imported file below 339, so this makes the file match its own exports without changing how it imports.
 - **Quick Export and the Survey Customizer export use one LimeSurvey builder.** Quick Export (`generate_lss`) was a
   second ~900-line copy of the Customizer's export; it now feeds the same builder from the template files, so the two
   cannot drift apart again. Checked against the old Quick Export on 555 cases (all library templates in single-language,
