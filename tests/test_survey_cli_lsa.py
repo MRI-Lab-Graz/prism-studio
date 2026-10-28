@@ -58,11 +58,11 @@ def _library(tmp_path: Path) -> Path:
     return lib
 
 
-def _convert(tmp_path: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+def _convert(tmp_path: Path, *extra: str, library: Path | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable, str(PRISM_TOOLS_APP), "survey", "convert",
-            "--input", str(_lsa(tmp_path)), "--library", str(_library(tmp_path)),
+            "--input", str(_lsa(tmp_path)), "--library", str(library or _library(tmp_path)),
             "--output", str(tmp_path / "out"), "--id-column", "token", "--force", *extra,
         ],
         capture_output=True, text=True, encoding="utf-8", cwd=str(PROJECT_ROOT), timeout=120,
@@ -103,3 +103,21 @@ def test_skip_existing_keeps_responses_already_in_the_project(tmp_path):
     assert second.returncode == 0, second.stdout + second.stderr
     assert kept.read_text() == "SENTINEL"
     assert "Already in project" in second.stdout
+
+
+def test_lang_auto_writes_the_language_of_the_lsa_not_the_word_auto(tmp_path):
+    """--lang auto with a multilingual library used to compile it for "auto" and write
+    Technical.Language: auto, which the schema rejects."""
+    library = _library(tmp_path)
+    path = library / "survey-wellbeing.json"
+    template = json.loads(path.read_text())
+    for key, item in template.items():
+        if key.startswith("MTEST"):
+            item["Description"] = {"en": item["Description"], "de": item["Description"]}
+    path.write_text(json.dumps(template))
+
+    result = _convert(tmp_path, "--lang", "auto", "--duplicate-handling", "sessions", library=library)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    sidecar = json.loads(next((tmp_path / "out").rglob("task-wellbeing_survey.json")).read_text())
+    assert sidecar["Technical"]["Language"] == "en"

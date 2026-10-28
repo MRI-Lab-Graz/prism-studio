@@ -201,6 +201,12 @@ def cmd_survey_convert(args):
     lang = str(getattr(args, "lang", "de") or "de").strip().lower()
     if not lang:
         lang = "de"
+    if lang == "auto":  # templates are compiled for one real language; an .lsa names its own
+        from src.converters.survey_lsa import infer_lsa_metadata
+
+        input_file = Path(args.input)
+        inferred = infer_lsa_metadata(input_file).get("language") if input_file.suffix.lower() == ".lsa" else None
+        lang = (inferred or "de").lower()
 
     library_tmp = None
     library_label = None
