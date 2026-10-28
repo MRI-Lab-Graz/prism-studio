@@ -16,6 +16,8 @@ import pandas as pd
 from src.converters.pavlovia_import import _flatten, _label, _pages
 
 _PREFIX = re.compile(r"^[^/]+/")
+_BOOKKEEPING = {"surveyId", "responseId", "experimentId", "sessionToken", "participant", "responseDate",
+                "isComplete", "surveyStatus", "length_ch", "expanded"}
 
 
 def _split_rename(spec: str) -> tuple[str, str]:
@@ -51,10 +53,6 @@ def _merge_columns(df: pd.DataFrame, elements: dict, rename: dict, notes: list[s
             merged = merged.where(merged != "", df[col])
         out[target] = merged
     return pd.DataFrame(out, index=df.index)
-
-
-_BOOKKEEPING = {"surveyId", "responseId", "experimentId", "sessionToken", "participant", "responseDate",
-                "isComplete", "surveyStatus", "length_ch", "expanded"}
 
 
 def prepare_pavlovia_responses(
