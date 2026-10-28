@@ -495,3 +495,11 @@ def test_parts_leave_out_what_is_not_given_and_need_the_essentials():
 def test_a_description_and_parts_together_are_refused():
     with pytest.raises(OverlayError, match="either"):
         proposal_for_new_kind("d", "t\tv\n0\t1\n", parts=PARTS)
+
+
+def test_the_issue_title_of_a_described_kind_has_no_field_label():
+    from urllib.parse import parse_qs, urlparse
+
+    r = proposal_for_new_kind(None, "t\tv\n0\t1\n", name="skintemp", parts=PARTS)
+    title = parse_qs(urlparse(r["issue_url"]).query)["title"][0]
+    assert title == "[New kind of data] skintemp: Skin temperature"
