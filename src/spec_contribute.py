@@ -346,7 +346,8 @@ def proposal_for_new_kind(description: str | None, sample: str, closest: str | N
         name = check_new_kind_name(name)
     description = description.strip()
     problems = (["the description is empty"] if not description else []) + vendored_term_proposal().sample_problems(sample)
-    title = "[New kind of data]" + (f" {name}" if name else "") + ": " + (description.splitlines() or [""])[0][:60]
+    headline = (parts or {}).get("measured") or description  # a labelled line ("What is measured: …") makes a poor title
+    title = "[New kind of data]" + (f" {name}" if name else "") + ": " + (headline.strip().splitlines() or [""])[0][:60]
     query = urlencode(
         {"template": ISSUE_NEW_KIND_TEMPLATE, "title": title, "description": description, **({"closest_kind": closest} if closest else {})},
         quote_via=quote,
