@@ -716,6 +716,30 @@ def cmd_survey_import_pavlovia(args):
         sys.exit(1)
 
 
+def cmd_survey_prepare_pavlovia(args):
+    """Pavlovia responses .csv -> clean wide table for 'survey convert' (see src/converters/pavlovia_responses.py)."""
+    import pandas as pd
+
+    from src.converters.pavlovia_responses import prepare_pavlovia_responses
+
+    try:
+        survey = json.loads(Path(args.survey).read_text(encoding="utf-8-sig"))
+        table = pd.read_csv(args.input, dtype=str, keep_default_na=False, encoding="utf-8-sig")
+        wide, notes = prepare_pavlovia_responses(
+            table, survey, id_columns=[c.strip() for c in args.id_columns.split(",")], id_pad=args.id_pad,
+            session_column=args.session_column, rename=args.rename,
+        )
+        for note in notes:
+            print(f"[PRISM] {note}")
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        wide.to_csv(args.output, index=False)
+    except (OSError, ValueError) as e:  # json.JSONDecodeError and pandas parse errors are ValueErrors
+        print(f"Error preparing Pavlovia responses: {e}")
+        sys.exit(1)
+    print(f"[PRISM] Wrote {len(wide)} row(s) to {args.output}. Next: survey convert --input {args.output} "
+          "--id-column participant_id --session-column session")
+
+
 def cmd_survey_import_lsq(args):
     """Import a LimeSurvey question (.lsq) or group (.lsg) export as a PRISM
     template, matching the Studio Template Editor's 'Import .lsq/.lsg'."""
