@@ -2,7 +2,7 @@
 their answers reach them (checkbox lists M/P, ranking R, text/number arrays ;/: and the
 dual-scale array 1). The columns are LimeSurvey's: multiple choice {qid}{row} = Y or empty,
 with comments {qid}{row}comment, ranking {qid}{position}, the two-dimensional arrays
-{qid}{row}_{column}, dual scale {qid}{row}#0 and #1."""
+{qid}{row}_{column}, dual scale {qid}{row}-0 and -1 (LimeSurvey 6; older versions wrote #0 and #1)."""
 
 import sys
 import zipfile
@@ -55,7 +55,7 @@ LSS = f"""<?xml version="1.0" encoding="UTF-8"?>
 </document>""".encode()
 
 FIELDS = ["id", "1X1X10M1", "1X1X10M2", "1X1X20P1", "1X1X20P1comment", "1X1X301", "1X1X302", "1X1X303",
-          "1X1X40T1_K1", "1X1X40T2_K2", "1X1X50N1_K1", "1X1X60D1#0", "1X1X60D1#1"]
+          "1X1X40T1_K1", "1X1X40T2_K2", "1X1X50N1_K1", "1X1X60D1-0", "1X1X60D1-1"]
 EXPECTED = ["id", "M1", "M2", "P1", "P1_comment", "rank_1", "rank_2", "rank_3",
             "T1_K1", "T2_K2", "N1_K1", "D1_scale1", "D1_scale2"]
 
@@ -99,7 +99,7 @@ def test_two_dimensional_arrays_are_one_item_per_row_and_column(template):
 def test_dual_scale_array_is_one_item_per_row_and_scale_with_their_own_levels(template):
     assert template["D1_scale1"]["Levels"] == {"1": {"de": "gut"}, "2": {"de": "schlecht"}}
     assert template["D1_scale2"]["Levels"] == {"1": {"de": "oft"}, "2": {"de": "selten"}}
-    assert template["D1_scale2"]["LimeSurvey"]["columnName"] == "dual[D1#1]"
+    assert template["D1_scale2"]["LimeSurvey"]["columnName"] == "dual[D1-1]"
 
 
 def test_response_columns_land_on_these_items():
@@ -188,3 +188,49 @@ def test_exported_single_items_are_never_row_types_without_rows(tmp_path, templa
     for title in ("M1", "rank2", "D1scale2"):
         [qid] = [i for i, q in questions.items() if q.findtext("title") == title]
         assert qid in with_answers, title
+
+
+def test_the_older_hash_notation_of_dual_scale_columns_maps_to_the_same_items():
+    from src.converters.limesurvey import lsa_column_names
+
+    assert lsa_column_names(["1X1X60D1#0", "1X1X60D1#1"], LSS) == ["D1_scale1", "D1_scale2"]
+
+
+# ── the structure and column names of a real LimeSurvey 6 export (default codes SQ001, AO01) ──
+
+
+def _real_ls6_survey():
+    """Question types M, P, ;, : and 1 as LimeSurvey 6 numbers them, every row coded SQ001."""
+    questions = [(748, "M", "G01Q02"), (752, "P", "G01Q03"), (755, ";", "G01Q04"), (758, ":", "G01Q05"), (761, "1", "G01Q06")]
+    subs = [  # (qid, parent, code, scale)
+        (1, 748, "SQ001", 0), (2, 748, "SQ002", 0), (3, 748, "SQ003", 0), (4, 752, "SQ001", 0), (5, 752, "SQ002", 0),
+        (6, 755, "SQ001", 0), (7, 755, "SQ001", 1), (8, 758, "SQ001", 0), (9, 758, "SQ001", 1), (10, 761, "SQ001", 0),
+    ]
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<document><LimeSurveyDocType>Survey</LimeSurveyDocType><DBVersion>636</DBVersion>
+ <languages><language>de</language></languages>
+ <surveys><rows>{_row(sid=1, language="de")}</rows></surveys>
+ <groups><rows>{_row(gid=1, group_order=1)}</rows></groups>
+ <group_l10ns><rows>{_row(gid=1, group_name="Meine erste Fragengruppe", language="de")}</rows></group_l10ns>
+ <questions><rows>{"".join(_row(qid=q, parent_qid=0, gid=1, type=t, title=title, question_order=i) for i, (q, t, title) in enumerate(questions))}</rows></questions>
+ <subquestions><rows>{"".join(_row(qid=q, parent_qid=p, gid=1, type="T", title=c, question_order=q, scale_id=s) for q, p, c, s in subs)}</rows></subquestions>
+ <question_l10ns><rows>{"".join(_row(qid=q, question="q", language="de") for q, _t, _n in questions)}{"".join(_row(qid=q, question="s", language="de") for q, *_ in subs)}</rows></question_l10ns>
+ <answers><rows>{_row(aid=1, qid=761, code="AO01", sortorder=1, scale_id=0)}{_row(aid=2, qid=761, code="AO01", sortorder=1, scale_id=1)}</rows></answers>
+ <answer_l10ns><rows>{_row(aid=1, answer="gut", language="de")}{_row(aid=2, answer="oft", language="de")}</rows></answer_l10ns>
+</document>""".encode()
+    fields = ["id", "656971X1X748SQ001", "656971X1X748SQ002", "656971X1X748SQ003", "656971X1X752SQ001", "656971X1X752SQ001comment",
+              "656971X1X752SQ002", "656971X1X752SQ002comment", "656971X1X755SQ001_SQ001", "656971X1X758SQ001_SQ001",
+              "656971X1X761SQ001-0", "656971X1X761SQ001-1"]
+    return xml, fields
+
+
+def test_every_column_of_a_real_limesurvey6_survey_with_default_codes_is_an_item():
+    from src.converters.limesurvey import limesurvey_questionnaire, lsa_column_names
+    from src.converters.template_import import TEMPLATE_SECTIONS
+
+    xml, fields = _real_ls6_survey()
+    template, _notes = limesurvey_questionnaire(xml, "g1")
+    items = {k for k in template if k not in TEMPLATE_SECTIONS}
+    columns = lsa_column_names(fields, xml)[1:]
+    assert [c for c in columns if c not in items] == [], columns
+    assert len(set(columns)) == len(columns), "no two columns share an item"

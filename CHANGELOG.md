@@ -156,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`M`, with comments `P`), ranking (`R`), the text and number arrays (`;`, `:`) and the dual-scale array (`1`) were
   imported as one plain item or dropped their rows, so their response columns stayed unconverted. Now each checkbox
   option, comment, ranking position, array cell (row x column) and array row x scale is an item named after
-  LimeSurvey's column (`SQ001`, `SQ001comment`, `rank[2]`, `T1_K1`, `D1#0`), dual-scale rows keep their own answer
+  LimeSurvey's column (`SQ001`, `SQ001comment`, `rank[2]`, `T1_K1`, `D1-0`; LimeSurvey 6 writes the dual-scale columns with a hyphen, older
+  versions with `#`, both are read), dual-scale rows keep their own answer
   options per scale, and response columns are matched to the template items themselves. Unchecked boxes are empty in
   LimeSurvey's data and import as missing; the import notes say so. When exporting such items one by one, the
   Customizer path now also turns a lone matrix row, checkbox option or ranking position into a list with its options
