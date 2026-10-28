@@ -42,6 +42,7 @@ from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
 
 from src.converters.file_reader import read_tabular_file as _read_tabular_file
+from src.text_sanitizer import trim_trailing_decimal_zeros
 
 try:
     from src.cross_platform import CrossPlatformFile
@@ -81,17 +82,6 @@ _SOURCE_KINDS = {
     ".rda": "rdata",
 }
 
-# LimeSurvey exports numbers as DECIMAL(30,10): "23.0000000000".
-_TRAILING_DECIMAL_ZEROS = re.compile(r"-?\d+\.\d*0")
-
-
-def _trim_trailing_decimal_zeros(value: Any) -> Any:
-    """'23.0000000000' -> '23', '44.50' -> '44.5'; same number, other values untouched."""
-    if isinstance(value, str) and _TRAILING_DECIMAL_ZEROS.fullmatch(value.strip()):
-        return value.strip().rstrip("0").rstrip(".")
-    return value
-
-
 def load_participant_source(
     source_path: Path,
     *,
@@ -118,7 +108,7 @@ def load_participant_source(
             sheet=sheet,
         )
         df, warnings = result.df, list(result.warnings)
-    df = df.map(_trim_trailing_decimal_zeros)
+    df = df.map(trim_trailing_decimal_zeros)
     if sessions_from_date:
         df, numbering_warnings = number_sessions_by_date(
             df, id_column, sessions_from_date, decisions=decisions

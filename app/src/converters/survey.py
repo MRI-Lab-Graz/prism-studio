@@ -1684,6 +1684,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         unknown_cols=unknown_cols,
     )
     conversion_warnings.extend(task_template_warnings)
+    conversion_warnings.extend(
+        _survey_processing._trim_padded_numbers(df, templates, tasks_with_data, col_to_mapping)
+    )
 
     col_to_task, task_run_columns = _survey_core._build_col_to_task_and_task_runs(
         col_to_mapping=col_to_mapping,
@@ -1719,7 +1722,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Results Preparation ---
     missing_items_by_task = _compute_missing_items_report(
-        tasks_with_data, templates, col_to_task
+        tasks_with_data, templates, col_to_task, df.columns
     )
 
     # Build template_matches from lsa_analysis for API responses
@@ -2093,14 +2096,18 @@ def _load_and_preprocess_templates(
 
 
 def _compute_missing_items_report(
-    tasks: set[str], templates: dict, col_to_task: dict
+    tasks: set[str], templates: dict, col_to_task: dict, df_columns=()
 ) -> dict[str, int]:
+    """Items per task with no data: neither a mapped column, nor a column named like the item or
+    one of its aliases (the row processing reads those too, e.g. age/sex, which the column
+    mapping skips as participant columns)."""
     report: dict[str, int] = {}
     for task in sorted(tasks):
         schema = templates[task]["json"]
         expected = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
-        present = [c for c, t in col_to_task.items() if t == task]
-        missing = [k for k in expected if k not in present]
+        present = {c for c, t in col_to_task.items() if t == task} | set(df_columns)
+        aliases = schema.get("_reverse_aliases", {})
+        missing = [k for k in expected if k not in present and not present.intersection(aliases.get(k, ()))]
         report[task] = len(missing)
     return report
 

@@ -84,6 +84,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **Converting a real LimeSurvey 6 archive of a survey exported from PRISM: three wrong reports and one wrong value.** Found
+  by exporting a test survey, importing it into LimeSurvey 6, answering it and converting the `.lsa`. (1) The "missing
+  items" count ignored aliases and columns read by item name, so PHQ-9 (`PHQ01…` in LimeSurvey, `PHQ901…` in the template)
+  was reported as 9 missing items although every answer was converted; it now counts an item as present when it, an
+  alias of it, or a column named like it is in the data. (2) The match warning "medium confidence (0/9 items)" for such
+  a survey came from comparing LimeSurvey's shortened codes with the template's; the match now compares through the
+  CodeMap that PRISM exports carry. (3) Integer and float items came out as LimeSurvey stores them (`55.0000000000`); they
+  are written as `55` (the participants import already did this), text items keep their value, and the conversion notes
+  say how many values changed. (4) The generic formula of a calculated item was exported as `{a.NAOK}+{b.NAOK}`, which
+  LimeSurvey stores as the text `3+4` because it only evaluates what is inside the braces; it is now one expression,
+  `{a.NAOK+b.NAOK}`. A `lsFormula` is still used as written.
 - **The LimeSurvey export is a LimeSurvey 6 file: DBVersion 636.** It wrote DBVersion 415 (LimeSurvey 5). It now writes 636
   and the structural columns a LimeSurvey 6 export has on questions, sub-questions and question texts (`same_script`,
   `other`/`mandatory`/`encrypted`, `script`). The same survey exported as 415 and as 636 was imported into LimeSurvey 6
