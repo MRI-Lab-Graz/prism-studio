@@ -461,16 +461,16 @@ def _determine_ls_question_type(q_data, has_levels):
 
             depends_on = calc_config.get("dependsOn", [])
 
-            # Replace variable references with LimeSurvey syntax
+            # Variable references in LimeSurvey syntax (match whole words only)
             for var in depends_on:
                 sanitized_var = _sanitize_question_code(var)
-                # Match whole word only
-                formula = re.sub(
-                    rf"\b{re.escape(var)}\b", f"{{{sanitized_var}.NAOK}}", formula
-                )
+                formula = re.sub(rf"\b{re.escape(var)}\b", f"{sanitized_var}.NAOK", formula)
 
             # Replace ** exponentiation with pow() function
             formula = re.sub(r"\(([^)]+)\)\s*\*\*\s*(\d+)", r"pow(\1, \2)", formula)
+
+            # LimeSurvey evaluates only what is inside braces: the whole expression, not each variable
+            formula = f"{{{formula}}}"
 
         extra_attrs["equation"] = formula
         if calc_config.get("hidden", False):

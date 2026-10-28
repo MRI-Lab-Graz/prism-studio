@@ -69,6 +69,17 @@ PRESERVE_PATTERNS = [
 ]
 
 
+# LimeSurvey stores numbers as DECIMAL(30,10): "23.0000000000".
+_TRAILING_DECIMAL_ZEROS = re.compile(r"-?\d+\.\d*0")
+
+
+def trim_trailing_decimal_zeros(value):
+    """'23.0000000000' -> '23', '44.50' -> '44.5'; same number, other values untouched."""
+    if isinstance(value, str) and _TRAILING_DECIMAL_ZEROS.fullmatch(value.strip()):
+        return value.strip().rstrip("0").rstrip(".")
+    return value
+
+
 # A tag is "<" + tag name + space, "/" or ">", so "a<3" and "{if(a<b, 1, c>2)}" are text.
 _HTML_TAG_RE = re.compile(r"</?[A-Za-z][A-Za-z0-9]*(?=[\s/>])[^<>]*>")
 _HTML_BREAK_RE = re.compile(r"<br\s*/?>|</(?:p|div|li|h[1-6]|tr|blockquote)\s*>", re.IGNORECASE)

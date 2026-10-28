@@ -739,7 +739,17 @@ def match_against_library(
         return None
 
     imported_normalized, runs_detected = _normalize_item_codes(imported_struct)
-    imported_ls_norm = {_ls_normalize_code(c): c for c in imported_normalized}
+    # A survey exported from PRISM shortens codes (PHQ901 -> PHQ01) and records which is which
+    # (CodeMap: LimeSurvey column -> original code); compare by the original code.
+    codemap = parse_prismmeta_codemap(_extract_prismmeta(prism_json))
+    column_of = {
+        k: (v.get("LimeSurvey") or {}).get("columnName")
+        for k, v in prism_json.items()
+        if isinstance(v, dict)
+    }
+    imported_ls_norm = {
+        _ls_normalize_code(codemap.get(column_of.get(c) or c, c)): c for c in imported_normalized
+    }
 
     norm_to_original: dict[str, str] = {}
     for code in imported_struct:
