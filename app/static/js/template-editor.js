@@ -334,6 +334,11 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  // A closed Technical sub-group opens by itself when a required field in it is empty.
+  let technicalGroups = null;
+  import(new URL('./template-editor/technical-groups.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { technicalGroups = module; });
+
   let languageCodes = null;
   let knownLanguageCodes = null;
   import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
@@ -2689,7 +2694,7 @@
           required,
           targetObj,
           mountEl,
-          group.defaultOpen
+          technicalGroups ? technicalGroups.opensByDefault(group, required, targetObj) : group.defaultOpen
         );
       }
       // Render any remaining fields not in any group

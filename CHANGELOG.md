@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 
 ### Fixed
+- **The Template Editor opens the "Data Collection Software" group itself when `SoftwareVersion` is required and empty.** After a
+  Pavlovia import the field was in a closed group and the validation message gave no hint where it is.
 - **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
   keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
   row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
