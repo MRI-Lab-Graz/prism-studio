@@ -28,6 +28,7 @@
   const selectedItemPanelEl = document.getElementById('selectedItemPanel');
   const alertAreaEl = document.getElementById('alertArea');
   const missingSummaryEl = document.getElementById('missingSummaryArea');
+  const answerCodesAreaEl = document.getElementById('answerCodesArea');
   const btnToggleDiff = document.getElementById('btnToggleDiff');
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
   const modeEditEl = document.getElementById('modeEdit');
@@ -4639,7 +4640,73 @@
     container.appendChild(wrapper);
   }
 
+  // Answer codes that are not numbers (e.g. ADS0..ADS3): the backend suggests a number per
+  // code, the user confirms or changes them, the backend applies them (`survey answer-codes`).
+  let answerCodesSignature = null;
+
+  async function renderAnswerCodes() {
+    if (!answerCodesAreaEl) return;
+    const signature = JSON.stringify(itemKeysFromTemplate(currentTemplate).map(k => Object.keys(currentTemplate[k]?.Levels || {})));
+    if (signature === answerCodesSignature) return;
+    answerCodesSignature = signature;
+    let suggestions = [];
+    try {
+      suggestions = (await apiPost('/api/template-editor/answer-codes', { template: currentTemplate })).suggestions || [];
+    } catch (e) {
+      suggestions = [];
+    }
+    if (signature !== answerCodesSignature) return; // the template changed meanwhile
+    answerCodesAreaEl.innerHTML = '';
+    suggestions.forEach((suggestion) => {
+      const box = document.createElement('div');
+      box.className = 'alert alert-warning py-2';
+      const text = document.createElement('div');
+      text.className = 'small mb-2';
+      const items = suggestion.items;
+      text.textContent = `Answer codes are not numbers in ${items.length} item(s) (${items.slice(0, 3).join(', ')}${items.length > 3 ? ', …' : ''}). `
+        + 'Give each code its number: the levels get the numbers, and conversion reads the stored codes as these numbers.';
+      box.appendChild(text);
+      const row = document.createElement('div');
+      row.className = 'd-flex flex-wrap align-items-center gap-2';
+      const inputs = {};
+      Object.entries(suggestion.codes).forEach(([code, number]) => {
+        const label = document.createElement('span');
+        label.className = 'mono small';
+        label.textContent = `${code} →`;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control form-control-sm mono';
+        input.style.width = '60px';
+        input.value = number;
+        input.setAttribute('aria-label', `Number for answer code ${code}`);
+        inputs[code] = input;
+        row.append(label, input);
+      });
+      const apply = document.createElement('button');
+      apply.type = 'button';
+      apply.className = 'btn btn-sm btn-warning';
+      apply.textContent = 'Apply numbers';
+      apply.addEventListener('click', async () => {
+        const codes = Object.fromEntries(Object.entries(inputs).map(([code, input]) => [code, input.value.trim()]));
+        try {
+          const data = await apiPost('/api/template-editor/answer-codes', { template: currentTemplate, codes });
+          currentTemplate = data.template;
+          hasUserInteracted = true;
+          markTemplateDirty();
+          renderAll();
+          showAlert('success', `Answer codes recoded in ${data.changed.length} item(s).`);
+        } catch (e) {
+          showAlert('danger', escapeHtml(e.message));
+        }
+      });
+      row.appendChild(apply);
+      box.appendChild(row);
+      answerCodesAreaEl.appendChild(box);
+    });
+  }
+
   function renderAll() {
+    renderAnswerCodes();
     renderVariantSelectorRow();
     renderTopLevel();
     renderItemList();

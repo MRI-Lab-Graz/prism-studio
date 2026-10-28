@@ -121,7 +121,7 @@ def test_notes_say_that_unchecked_boxes_import_as_missing():
     _template, notes = limesurvey_questionnaire(LSS, "g1")
     assert any(" / boxes:" in n and "unchecked" in n for n in notes)
     assert any(" / boxcom:" in n and "unchecked" in n for n in notes)
-    assert not [n for n in notes if any(f" / {t}:" in n for t in ("rank", "textarr", "numarr", "dual"))]
+    assert not [n for n in notes if "not numbers" not in n and any(f" / {t}:" in n for t in ("rank", "textarr", "numarr", "dual"))]
 
 
 def test_checkbox_answers_convert_checked_boxes_and_leave_unchecked_missing(tmp_path):

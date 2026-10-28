@@ -2233,6 +2233,16 @@ def build_prism_tools_parsers(
         "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
     )
 
+    parser_survey_answer_codes = survey_subparsers.add_parser(
+        "answer-codes",
+        help="List a template's answer codes that are not numbers (e.g. ADS0..ADS3) with suggested numbers, or "
+        "give them numbers with --set: Levels get the numbers, LimeSurvey.answerCodes keeps the stored codes, and "
+        "'survey convert' reads the stored codes as their numbers.",
+    )
+    parser_survey_answer_codes.add_argument("--template", required=True, help="Path to the template .json (changed in place)")
+    parser_survey_answer_codes.add_argument("--set", metavar="CODE=NUMBER,...", help="e.g. ADS0=0,ADS1=1,ADS2=2,ADS3=3")
+    parser_survey_answer_codes.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_survey_prepare_pavlovia = survey_subparsers.add_parser(
         "prepare-pavlovia",
         help="Turn the responses CSV downloaded from Pavlovia into a clean wide table (participant_id, session, one "

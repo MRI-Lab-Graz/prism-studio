@@ -50,6 +50,7 @@ src/ssh_safety.py
 src/subject_id_matching.py
 src/spec_overlay.py
 src/specification.py
+src/survey_answer_codes.py
 src/survey_existing.py
 src/term_proposal.py
 src/term_registry.py
