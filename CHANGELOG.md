@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 
 ### Fixed
+- **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
+  keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
+  row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
+  blocks, hidden items, choices from another question and unsupported types are reported as import notes in the preview and on the
+  command line.
 - **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
   unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
 

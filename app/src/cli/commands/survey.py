@@ -683,7 +683,7 @@ def cmd_survey_import_pavlovia(args):
     the Template Editor's 'Import Template Source' for a Pavlovia survey."""
     from src.converters.pavlovia_import import (
         list_pavlovia_questionnaires,
-        pavlovia_questionnaire_template,
+        pavlovia_questionnaire,
     )
     from src.converters.template_import import finish_import
 
@@ -705,10 +705,10 @@ def cmd_survey_import_pavlovia(args):
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
         planned = []
         for key in keys:
-            template = pavlovia_questionnaire_template(survey, key, args.split, getattr(args, "language", None))
+            template, notes = pavlovia_questionnaire(survey, key, args.split, getattr(args, "language", None))
             if getattr(args, "software_version", None):
                 template["Technical"]["SoftwareVersion"] = args.software_version
-            payload = finish_import(template, template["Study"]["OriginalName"], getattr(args, "project", None))
+            payload = finish_import(template, template["Study"]["OriginalName"], getattr(args, "project", None), notes=notes)
             planned.append((Path(args.output).resolve() / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, Path(args.output).resolve())
     except (OSError, ValueError) as e:  # json.JSONDecodeError is a ValueError

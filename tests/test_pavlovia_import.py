@@ -10,6 +10,7 @@ import pytest
 from src.converters.pavlovia_import import (
     is_pavlovia_survey,
     list_pavlovia_questionnaires,
+    pavlovia_questionnaire,
     pavlovia_questionnaire_template,
 )
 
@@ -90,10 +91,9 @@ def test_descriptions_go_to_instructions(survey):
     assert "Im Vergleich zu einem durchschnittlichen Tag" in study["Instructions"]["en"]
 
 
-def test_hidden_item_is_warned(survey, capsys):
-    pavlovia_questionnaire_template(survey, "p1")
-    out = capsys.readouterr().out
-    assert "WARNING" in out and "studyID" in out and "visible" in out
+def test_hidden_item_is_reported_as_a_note(survey):
+    _template, notes = pavlovia_questionnaire(survey, "p1")
+    assert any("studyID" in n and "visible" in n for n in notes)
 
 
 def test_without_a_language_the_texts_are_plain_strings_and_the_language_is_empty(survey):
@@ -251,3 +251,20 @@ def test_route_bad_input_is_400():
     assert _post({"key": "p9"}).status_code == 400
     assert _post(content=b'{"Technical": {}}').status_code == 400
     assert _post(content=b"not json").status_code == 400
+
+
+def test_cli_prints_the_import_notes(tmp_path, capsys):
+    cmd_survey_import_pavlovia(_args(select=["p1"], output=str(tmp_path)))
+    assert "studyID" in capsys.readouterr().out.split("Loading p1", 1)[1]  # the hidden item, after the load line
+
+
+def test_the_editor_gets_the_import_notes(survey):
+    from app.src.web.blueprints import tools_template_editor_blueprint as bp  # noqa: F401
+    from flask import Flask
+    import io
+
+    app = Flask(__name__)
+    app.register_blueprint(bp.tools_template_editor_bp)
+    data = {"file": (io.BytesIO(json.dumps(survey).encode()), "s.json"), "key": "p1"}
+    reply = app.test_client().post("/api/template-editor/import-pavlovia", data=data, content_type="multipart/form-data")
+    assert reply.status_code == 200 and any("studyID" in n for n in reply.get_json()["notes"])
