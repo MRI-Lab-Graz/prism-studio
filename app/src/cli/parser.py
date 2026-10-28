@@ -2233,6 +2233,26 @@ def build_prism_tools_parsers(
         "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"
     )
 
+    parser_survey_prepare_pavlovia = survey_subparsers.add_parser(
+        "prepare-pavlovia",
+        help="Turn the responses CSV downloaded from Pavlovia into a clean wide table (participant_id, session, one "
+        "column per question) for 'survey convert --id-column participant_id --session-column session'.",
+    )
+    parser_survey_prepare_pavlovia.add_argument("--input", required=True, help="Path to the Pavlovia responses .csv")
+    parser_survey_prepare_pavlovia.add_argument("--survey", required=True, help="Path to the Pavlovia survey .json")
+    parser_survey_prepare_pavlovia.add_argument("--output", required=True, help="Wide table .csv to write")
+    parser_survey_prepare_pavlovia.add_argument(
+        "--id-columns", required=True, help="Questions that make the participant ID, joined in this order (e.g. studyID,subID)"
+    )
+    parser_survey_prepare_pavlovia.add_argument(
+        "--id-pad", type=int, default=0, help="Zero-pad every ID part after the first to this many digits (e.g. 3)"
+    )
+    parser_survey_prepare_pavlovia.add_argument("--session-column", help="Question holding the session (its choice text becomes the label)")
+    parser_survey_prepare_pavlovia.add_argument(
+        "--rename", action="append", default=[], metavar="OLD=NEW",
+        help="Read the answers of the old question name OLD as question NEW (repeatable)",
+    )
+
     parser_survey_import_lsq = survey_subparsers.add_parser(
         "import-lsq",
         help="Import a LimeSurvey question (.lsq) or group (.lsg) export as a PRISM "

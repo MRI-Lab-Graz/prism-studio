@@ -278,6 +278,31 @@ language, so writing needs `--language` (e.g. `de`), which labels all texts and 
 is used when present). In Studio's Template Editor you choose it in the language bar after the import,
 before the template can be validated.
 
+Rating scales keep `rateMin`/`rateMax`/`rateStep`; a matrix becomes one item per row, multiple text one item
+per field, "other"/"none" options become levels. What cannot be represented (checkbox = several values in one
+column, ranking, expression formulas, html blocks, hidden items, choices from another question, other question
+types) is printed as an import note and shown in the Template Editor's preview.
+
+**`survey prepare-pavlovia`** — turn the responses `.csv` downloaded from Pavlovia into a clean wide table
+(`participant_id`, `session`, one column per question) for `survey convert`. The download has no participant or
+session column, carries bookkeeping and `_rt` columns, and stores answers under `block/` when the survey ran in a
+block, or under an older name when a question was renamed:
+
+```bash
+python prism_tools.py survey prepare-pavlovia --input responses.csv --survey survey.json --output wide.csv \
+    --id-columns studyID,subID --id-pad 3 --session-column sesID --rename question3=rauchen
+python prism_tools.py survey convert --input wide.csv --library ./templates --output ./ds \
+    --id-column participant_id --session-column session --session all --duplicate-handling keep_last
+```
+
+The participant ID joins `--id-columns` (every part after the first zero-padded to `--id-pad` digits); an empty
+part takes the survey's default value, but only for an experiment that never stores the field (a hidden field).
+The session is the text the participant saw for the stored choice. Rows without answers or without an ID are
+dropped; `isComplete` is not used, because an unfinished row can hold every answer. A row whose answers are all
+in a fuller row of the same participant and session is dropped as a repeat; two different attempts stay, and
+`survey convert --duplicate-handling` decides (rows are ordered by `responseDate`, so `keep_first` is the
+earliest, `keep_last` the latest). Every drop and merge is printed as a note.
+
 **`survey import-lsq`** — turn a single LimeSurvey question (`.lsq`) or question group
 (`.lsg`) export into a PRISM template JSON, like Studio's Template Editor
 "Import .lsq/.lsg" button:

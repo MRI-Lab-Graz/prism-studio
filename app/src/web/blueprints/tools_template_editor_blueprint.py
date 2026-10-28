@@ -674,7 +674,7 @@ def api_template_editor_import_pavlovia():
     key = (request.form.get("key") or "").strip()
     project_path = (request.form.get("project_path") or "").strip() or None
 
-    from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire_template
+    from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire
     from src.converters.template_import import finish_import
 
     command = f"python prism_tools.py survey import-pavlovia --input {file.filename} --split {split}"
@@ -686,8 +686,8 @@ def api_template_editor_import_pavlovia():
                 survey, split, source_name=file.filename, project_path=project_path, match_library=True
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = pavlovia_questionnaire_template(survey, key, split)
-        payload = finish_import(template, template["Study"]["OriginalName"], project_path)
+        template, notes = pavlovia_questionnaire(survey, key, split)
+        payload = finish_import(template, template["Study"]["OriginalName"], project_path, notes=notes)
     except ValueError as e:  # includes JSON and unicode decode errors
         print(f"[PRISM] Pavlovia import failed: {e}")
         return jsonify({"error": str(e)}), 400

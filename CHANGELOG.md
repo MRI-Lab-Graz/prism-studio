@@ -14,10 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 
 ### Fixed
+- **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
+  keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
+  row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
+  blocks, hidden items, choices from another question and unsupported types are reported as import notes in the preview and on the
+  command line.
 - **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
   unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
 
 ### Added
+- **Pavlovia responses can be converted: `survey prepare-pavlovia`.** The responses `.csv` downloaded from Pavlovia has no
+  participant or session column, `_rt` columns, answers under `block/` and renamed questions. The new command settles all of
+  that against the survey `.json` (ID from `--id-columns` with `--id-pad`, session from the choice text, `--rename OLD=NEW`,
+  repeats of a row dropped, different attempts kept for `--duplicate-handling`) and reports every change; its output goes to
+  `survey convert --id-column participant_id --session-column session`.
 - **Environment measurements are grouped (specification v1.4.1).** The official environment terms carry a `Group` (temperature and
   humidity, wind/pressure/rain, sun and light, place and time, air quality, pollen). On the Propose changes page you choose the group
   first, then one of its measurements; option texts are short and the ID and unit appear under the choice. A new measurement can carry a
