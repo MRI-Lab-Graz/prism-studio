@@ -36,6 +36,7 @@ def _flatten(elements: list[dict]) -> list[dict]:
 _LOCALIZED_KEYS = ("title", "description", "text", "html", "labelTrue", "labelFalse", "otherText", "noneText")
 _NOT_A_QUESTION = ("html", "image")
 _MULTIPLE = ("checkbox", "tagbox")
+_WITH_OTHER = ("radiogroup", "dropdown", *_MULTIPLE)  # the types that can show an "other"/"none" option
 _SINGLE_ITEM = ("text", "comment", "radiogroup", "dropdown", "rating", "boolean", "imagepicker", "ranking", "expression")
 
 
@@ -86,7 +87,7 @@ def _levels(el: dict, lang: str) -> dict | None:
         raw = _rating_values(el)
     levels = {value: _text(lang, text) for value, text in map(_label, raw or [])}
     for flag, value, default in (("showOtherItem", "other", "Other (describe)"), ("showNoneItem", "none", "None")):
-        if el.get(flag) and kind in ("radiogroup", "dropdown", *_MULTIPLE):
+        if el.get(flag) and kind in _WITH_OTHER:
             levels[value] = _text(lang, el.get(f"{value}Text") or default)
     return levels or None
 
@@ -143,7 +144,7 @@ def _expand(el: dict, lang: str, say) -> list[tuple[str, dict]]:
     if not el.get("choices") and not el.get("rateValues") and (el.get("choicesFromQuestion") or el.get("choicesByUrl")):
         say("takes its choices from another question or a web address; the choices were not imported")
     items = [(name, _item(el, lang))]
-    if el.get("showOtherItem") and kind in ("radiogroup", "dropdown", *_MULTIPLE):
+    if el.get("showOtherItem") and kind in _WITH_OTHER:
         items.append((f"{name}-Comment", {**_item({"name": name}, lang), "Description": _text(lang, f"{title} - Other (describe)")}))
     return items
 
