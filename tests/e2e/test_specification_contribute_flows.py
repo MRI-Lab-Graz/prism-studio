@@ -871,6 +871,8 @@ def test_new_kind_form_helps_with_examples_and_the_next_step(bare_page, studio_u
     assert bare_page.locator("#spec-nk-measured").get_attribute("placeholder").startswith("e.g. ")
     assert "header" in bare_page.locator("#spec-nk-sample-help").text_content()
     expect(bare_page.locator("#spec-nk-share-note")).to_contain_text("GitHub")
+    expect(bare_page.locator("#spec-new-kind")).not_to_contain_text("in your own words")  # the form asks four short questions
+    expect(bare_page.locator("#spec-new-kind")).to_contain_text("four short questions")
 
 
 def test_new_kind_description_is_four_short_fields(bare_page, studio_url):
