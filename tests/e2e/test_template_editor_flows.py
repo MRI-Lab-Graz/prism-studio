@@ -325,3 +325,25 @@ def test_limesurvey_import_lists_what_it_could_not_represent(page):
     expect(notes).to_contain_text("edu: has an \"Other\" text field")
     expect(notes).to_contain_text("mystery: question type Z is not known")
     expect(page.locator('option[value="agree"]')).to_have_count(1)  # the questionnaire itself loaded
+
+
+def test_answer_codes_that_are_not_numbers_get_numbers_from_the_suggestion(page, tmp_path):
+    """ADS answer codes ADS0..ADS3 (chosen by the survey's author): the editor suggests
+    0..3, the user applies them, the levels become the numbers."""
+    import json
+
+    levels = {c: {"de": f"label {c}"} for c in ("ADS0", "ADS1", "ADS2", "ADS3")}
+    template = {"Study": {"TaskName": "ads"},
+                **{f"ADS1_{i}": {"Description": {"de": f"q{i}"}, "Levels": levels} for i in (1, 2)}}
+    path = tmp_path / "survey-ads.json"
+    path.write_text(json.dumps(template), encoding="utf-8")
+    page.click("label[for=modeCreate]")
+    page.set_input_files("#templateImportInput", str(path))
+
+    area = page.locator("#answerCodesArea")
+    expect(area).to_contain_text("Answer codes are not numbers in 2 item(s)")
+    expect(area.locator('input[aria-label="Number for answer code ADS2"]')).to_have_value("2")
+    area.locator("button", has_text="Apply numbers").click()
+
+    expect(page.locator("#alertArea")).to_contain_text("Answer codes recoded in 2 item(s)")
+    expect(area.locator(".alert")).to_have_count(0)

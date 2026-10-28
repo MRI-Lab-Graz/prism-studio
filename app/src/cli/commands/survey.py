@@ -201,6 +201,12 @@ def cmd_survey_convert(args):
     lang = str(getattr(args, "lang", "de") or "de").strip().lower()
     if not lang:
         lang = "de"
+    if lang == "auto":  # templates are compiled for one real language; an .lsa names its own
+        from src.converters.survey_lsa import infer_lsa_metadata
+
+        input_file = Path(args.input)
+        inferred = infer_lsa_metadata(input_file).get("language") if input_file.suffix.lower() == ".lsa" else None
+        lang = (inferred or "de").lower()
 
     library_tmp = None
     library_label = None
@@ -776,6 +782,34 @@ def cmd_survey_import_lsq(args):
         print(json.dumps({"success": True, "path": str(output_path)}, indent=2))
     else:
         print(f"✅ Wrote template {output_path}")
+
+
+def cmd_survey_answer_codes(args):
+    """List the answer codes of a template that are not numbers, with a suggested number
+    each, or (--set) give them numbers: Levels get the numbers, LimeSurvey.answerCodes the
+    stored codes. Matches the Studio Template Editor's 'Answer codes' action."""
+    from src.survey_answer_codes import apply_answer_numbers, suggest_answer_numbers
+
+    path = Path(args.template).resolve()
+    template = json.loads(path.read_text(encoding="utf-8"))
+    as_json = bool(getattr(args, "json", False))
+    if not args.set:
+        suggestions = suggest_answer_numbers(template)
+        if as_json:
+            print(json.dumps({"suggestions": suggestions}, indent=2, ensure_ascii=False))
+        else:
+            for s in suggestions:
+                pairs = ",".join(f"{code}={number or '?'}" for code, number in s["codes"].items())
+                print(f"{len(s['items'])} item(s) ({', '.join(s['items'][:3])}...): --set \"{pairs}\"")
+        return
+    try:
+        mapping = dict(pair.split("=", 1) for pair in args.set.split(","))
+        changed = apply_answer_numbers(template, mapping)
+    except ValueError as e:
+        print(json.dumps({"success": False, "error": str(e)}) if as_json else f"Error: {e}")
+        sys.exit(1)
+    path.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps({"success": True, "changed": changed}) if as_json else f"✅ {len(changed)} item(s) recoded in {path}")
 
 
 def parse_session_map(map_str):

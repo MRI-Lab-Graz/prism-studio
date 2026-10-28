@@ -1058,6 +1058,8 @@ def _questionnaire_template(parsed, part):
 
 def _import_notes(part_name, questions, languages):
     """What the import of these questions cannot represent, one readable line each."""
+    from src.survey_answer_codes import _is_number
+
     notes = []
     for q in questions:
         where = f"{part_name} / {q['title']}"
@@ -1070,6 +1072,10 @@ def _import_notes(part_name, questions, languages):
             notes.append(f"{where}: has an \"Other\" text field; it is not imported as an item")
         if q["type"] == "O":
             notes.append(f"{where}: has a comment field; it is not imported as an item")
+        codes = [c for c in q["levels"] if c != "n/a"]
+        if q["type"] not in _FIXED_ANSWERS and codes and not all(_is_number(c) for c in codes):
+            notes.append(f"{where}: answer codes {', '.join(codes)} are not numbers; give them numbers in the "
+                         "Template Editor (Answer codes) or with 'prism_tools.py survey answer-codes'")
     builtin = [q for q in questions if any(_FIXED_ANSWERS.get(q["type"], {}).values())]
     if builtin and not any(lang.split("-")[0] in ("en", "de") for lang in languages):
         notes.append(f"{part_name}: the built-in answer labels (Yes/No, Gender, ...) exist in English and German only; "

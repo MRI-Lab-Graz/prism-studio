@@ -621,6 +621,27 @@ def api_template_editor_import_lsq_lsg():
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/answer-codes", methods=["POST"])
+def api_template_editor_answer_codes():
+    """Answer codes that are not numbers: without 'codes' the suggestions, with 'codes'
+    (code -> number) the template with them applied. Same backend as `survey answer-codes`."""
+    from src.survey_answer_codes import apply_answer_numbers, suggest_answer_numbers
+
+    payload = request.get_json(silent=True) or {}
+    template, codes = payload.get("template"), payload.get("codes")
+    if not isinstance(template, dict):
+        return jsonify({"error": "No template"}), 400
+    if not codes:
+        return jsonify({"suggestions": suggest_answer_numbers(template)}), 200
+    pairs = ",".join(f"{code}={number}" for code, number in codes.items())
+    print(f'[PRISM] python prism_tools.py survey answer-codes --template <template.json> --set "{pairs}"')
+    try:
+        changed = apply_answer_numbers(template, codes)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"template": template, "changed": changed}), 200
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-limesurvey", methods=["POST"])
 def api_template_editor_import_limesurvey():
     """List the questionnaires in a .lss/.lsa (no 'key') or return one as a

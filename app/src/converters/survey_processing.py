@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.survey_answer_codes import stored_code_as_number
+
 
 _LS_ANSWER_CODE_MAX_LENGTH = 5
 
@@ -634,6 +636,7 @@ def _validate_survey_item_value(
     """Internal validation for a single survey item value."""
     if is_missing_fn(val) or not isinstance(item_schema, dict):
         return val
+    val = stored_code_as_number(val, item_schema)
 
     levels = item_schema.get("Levels")
     if not isinstance(levels, dict) or not levels:
