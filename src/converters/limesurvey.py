@@ -699,7 +699,7 @@ def _row_items(q_data, ls_props, languages, language):
     if q_type == "1":
         by_scale = q_data.get("levels_by_scale", {})
         return [
-            (f"{r['code']}#{scale}", f"{r['code']}_scale{scale + 1}",
+            (f"{r['code']}-{scale}", f"{r['code']}_scale{scale + 1}",
              item(_join_texts(_texts(r, language), {}, "{0} (" + str(scale + 1) + ")"),
                   _multilingual(by_scale.get(str(scale), {}), language)))
             for r in rows for scale in (0, 1)
@@ -1162,7 +1162,7 @@ def lsa_column_names(fieldnames, lss_xml):
         for qid, q in questions:
             if q["gid"] != gid or not rest.startswith(qid):
                 continue
-            suffix = rest[len(qid):]
+            suffix = re.sub(r"#([01])$", r"-\1", rest[len(qid):])  # dual scale: LimeSurvey 6 writes -0/-1, older #0/#1
             name = f"{q['title']}[{suffix}]" if suffix else q["title"]
             # a column of an item, an "Other" text, a comment (of the question or of a checkbox row)
             if name in item_of or suffix in ("other", "comment") or (
