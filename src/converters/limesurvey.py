@@ -182,6 +182,8 @@ def parse_lsa_responses(lsa_path):
             rec[tag] = child.text
         records.append(rec)
 
+    if not records:
+        raise ValueError("The .lsa archive contains no responses (only the survey structure).")
     df = pd.DataFrame(records)
 
     rename_map = dict(zip(fieldnames, lsa_column_names(fieldnames, xml_lss)))
