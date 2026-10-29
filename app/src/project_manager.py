@@ -365,6 +365,11 @@ class ProjectManager:
                 json.dumps(project_metadata, indent=2, ensure_ascii=False),
             )
             created_files.append("project.json")
+            # Basics (Name/Authors/Keywords) live in project.json too; without this the
+            # project stays "not ready" until the user saves it once more.
+            self.sync_dataset_metadata_to_project_json(
+                project_path, {**desc_content, "Authors": config.get("authors")}
+            )
 
             # Build CITATION.cff through the same enrichment path the "Citation
             # Health" check expects (contact derived from the corresponding
