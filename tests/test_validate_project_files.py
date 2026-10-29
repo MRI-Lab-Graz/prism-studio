@@ -52,3 +52,15 @@ def test_the_projects_page_check_lists_each_one_once(tmp_path):
     shown = [i["code"] for i in result["issues"] + result["runner_warnings"]]
     for code in ("PRISM004", "PRISM010", "PRISM501"):
         assert shown.count(code) == 1, (code, shown)
+
+
+def test_a_preview_staging_folder_is_not_asked_for_project_files():
+    from src.runner import without_project_file_warnings
+
+    issues = [
+        ("WARNING", "Missing project.json at project root", "/s"),
+        ("WARNING", "Missing participants.tsv although subject folders exist", "/s"),
+        ("WARNING", "Missing .bidsignore entries", "/s"),
+        ("ERROR", "something else", "/s"),
+    ]
+    assert [i[1] for i in without_project_file_warnings(issues)] == ["Missing .bidsignore entries", "something else"]
