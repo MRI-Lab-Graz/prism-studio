@@ -89,4 +89,4 @@ def test_cli_convert_without_library_uses_the_projects_own_templates(tmp_path):
     )
 
     assert "Could not find a survey template library" not in result.stdout
-    assert f"Library: {(project / 'code' / 'library' / 'survey').resolve()}" in result.stdout
+    assert f"project {(project / 'code' / 'library' / 'survey').resolve()}" in result.stdout

@@ -28,6 +28,7 @@ from .tools_helpers import (
     _global_survey_library_root,
     _load_prism_schema,
     _new_template_from_schema,
+    _personal_template_folder,
     _project_template_folder,
     _resolve_requested_or_current_project_root,
     _resolve_library_root,
@@ -80,6 +81,7 @@ def api_template_editor_list_merged():
     templates = {}
     sources_info = {
         "global_library_path": None,
+        "personal_library_path": None,
         "project_library_path": None,
         "project_library_exists": False,
     }
@@ -150,6 +152,24 @@ def api_template_editor_list_merged():
                     **_build_validation_status(p, is_global=True),
                 }
 
+    from src.personal_library import personal_library_path
+
+    personal_lib = personal_library_path(Path(current_app.root_path))
+    if personal_lib is not None and personal_lib.is_dir():
+        sources_info["personal_library_path"] = str(personal_lib)
+        personal_folder = personal_lib / modality
+        if personal_folder.is_dir():
+            for p in sorted(personal_folder.glob("*.json")):
+                if p.name.startswith("."):
+                    continue
+                templates[p.name] = {
+                    "filename": p.name,
+                    "source": "personal",
+                    "path": str(p),
+                    "readonly": False,
+                    **_build_validation_status(p, is_global=True),
+                }
+
     if project_root:
         project_config = load_config(project_path)
         if project_config.template_library_path:
@@ -192,6 +212,7 @@ def api_template_editor_list_merged():
                 "templates": template_list,
                 "sources": sources_info,
                 "has_global": sources_info["global_library_path"] is not None,
+                "has_personal": sources_info["personal_library_path"] is not None,
                 "has_project": project_path is not None,
             }
         ),
@@ -445,6 +466,7 @@ def api_template_editor_save():
     template = payload.get("template")
     is_global = bool(payload.get("is_global", False))
     allow_overwrite = bool(payload.get("allow_overwrite", False))
+    to_personal = payload.get("target") == "personal"
 
     if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
@@ -459,7 +481,7 @@ def api_template_editor_save():
 
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
-        if is_global:
+        if is_global or to_personal:  # a personal template is a library template, not a project copy
             schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
         if is_global and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
@@ -475,9 +497,13 @@ def api_template_editor_save():
                 400,
             )
 
-        folder = _project_template_folder(
-            modality=modality,
-            explicit_project_path=payload.get("project_path"),
+        folder = (
+            _personal_template_folder(modality=modality)
+            if to_personal
+            else _project_template_folder(
+                modality=modality,
+                explicit_project_path=payload.get("project_path"),
+            )
         )
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
@@ -486,7 +512,7 @@ def api_template_editor_save():
             return (
                 jsonify(
                     {
-                        "error": f'Template "{filename}" already exists in the project library',
+                        "error": f'Template "{filename}" already exists in the {"personal" if to_personal else "project"} library',
                         "code": "file_exists",
                     }
                 ),

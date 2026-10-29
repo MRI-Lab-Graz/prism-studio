@@ -33,7 +33,11 @@ export async function refreshTemplateList(context, { silent = false } = {}) {
   }
 
   const projectTemplates = (data.templates || []).filter((template) => template.source === 'project');
-  const globalTemplates = (data.templates || []).filter((template) => template.source !== 'project');
+  const personalTemplates = (data.templates || []).filter((template) => template.source === 'personal');
+  const globalTemplates = (data.templates || []).filter((template) => template.source !== 'project' && template.source !== 'personal');
+  if (context.btnSavePersonal) {
+    context.btnSavePersonal.classList.toggle('d-none', !data.has_personal);
+  }
 
   context.projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
   for (const template of projectTemplates) {
@@ -63,22 +67,36 @@ export async function refreshTemplateList(context, { silent = false } = {}) {
   }
 
   context.globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
-  for (const template of globalTemplates) {
-    const expectedPrefix = `${modality}-`;
-    if (!template.filename.startsWith(expectedPrefix)) {
-      continue;
+  const appendLibrary = (label, templates) => {
+    const options = [];
+    for (const template of templates) {
+      if (!template.filename.startsWith(`${modality}-`)) {
+        continue;
+      }
+      const option = document.createElement('option');
+      option.value = template.filename;
+      option.textContent = `${templateStatusPrefix(template)} ${template.filename}`;
+      option.dataset.source = template.source;
+      option.dataset.path = template.path;
+      option.dataset.readonly = template.readonly;
+      option.dataset.templateValid = String(template.template_valid);
+      option.title = context.templateStatusTitle(template);
+      options.push(option);
+      context.templateMetadata[template.filename] = template;
     }
-    const option = document.createElement('option');
-    option.value = template.filename;
-    option.textContent = `${templateStatusPrefix(template)} ${template.filename}`;
-    option.dataset.source = template.source;
-    option.dataset.path = template.path;
-    option.dataset.readonly = template.readonly;
-    option.dataset.templateValid = String(template.template_valid);
-    option.title = context.templateStatusTitle(template);
-    context.globalTemplateSelectEl.appendChild(option);
-    context.templateMetadata[template.filename] = template;
-  }
+    if (!options.length) {
+      return;
+    }
+    // Group by library only when there is a personal one to tell apart from the global one.
+    const parent = personalTemplates.length ? document.createElement('optgroup') : context.globalTemplateSelectEl;
+    if (parent !== context.globalTemplateSelectEl) {
+      parent.label = label;
+      context.globalTemplateSelectEl.appendChild(parent);
+    }
+    options.forEach((option) => parent.appendChild(option));
+  };
+  appendLibrary('Personal library', personalTemplates);
+  appendLibrary('Global library', globalTemplates);
 
   context.projectLibraryRoot = data.sources?.project_library_path || null;
   context.projectLibraryExists = Boolean(data.sources?.project_library_exists);
@@ -386,6 +404,40 @@ export async function saveCurrent(context) {
     context.showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
     await refreshTemplateList(context, { silent: true });
     await offerShare(context, filename).catch((error) => context.showAlert('warning', `Saved, but sharing failed: ${context.escapeHtml(error.message)}`));
+  } catch (error) {
+    context.showAlert('danger', `Save failed: ${context.escapeHtml(error.message)}`);
+  }
+}
+
+// Save the open template into the user's personal library (no project needed).
+export async function savePersonal(context) {
+  const obj = context.currentTemplate;
+  if (!obj || typeof obj !== 'object') {
+    context.showAlert('danger', 'No template loaded');
+    return;
+  }
+  const modality = context.modalityEl.value;
+  const filename = context.resolveTemplateFilenameForSave(obj, modality);
+  if (!(await validateCurrent(context))) {
+    context.showAlert('danger', 'Cannot save: template is currently invalid. Fix validation errors and validate again.');
+    return;
+  }
+  const exists = context.templateMetadata[filename]?.source === 'personal';
+  if (exists && !confirm(`Replace "${filename}" in your personal library?`)) {
+    return;
+  }
+  context.ensureTemplateNormalized();
+  try {
+    const data = await context.apiPost('/api/template-editor/save', {
+      modality,
+      schema_version: context.schemaEl.value || 'stable',
+      filename,
+      target: 'personal',
+      allow_overwrite: exists,
+      template: obj,
+    });
+    context.showAlert('success', `✅ Saved to your personal library: <code>${context.escapeHtml(data.message || filename)}</code>`);
+    await refreshTemplateList(context, { silent: true });
   } catch (error) {
     context.showAlert('danger', `Save failed: ${context.escapeHtml(error.message)}`);
   }
@@ -937,6 +989,7 @@ export function bindTemplateEditorSourceWorkflowEvents(context) {
     }
   });
 
+  context.btnSavePersonal?.addEventListener('click', () => savePersonal(context));
   context.btnSave.addEventListener('click', async () => {
     try {
       await saveCurrent(context);

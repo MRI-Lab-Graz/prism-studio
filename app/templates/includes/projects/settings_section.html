@@ -69,6 +69,23 @@
                             </div>
                         </div>
                         <div class="col-12">
+                            <label for="personalLibraryPath" class="form-label fw-bold">
+                                <i class="fas fa-user-lock me-1"></i>Personal Template Library <span class="fw-normal text-muted">(optional)</span>
+                            </label>
+                            <div class="input-group studio-picker-group">
+                                <input type="text" class="form-control" id="personalLibraryPath"
+                                       placeholder="A folder only you use, laid out like a project's code/library">
+                                <button class="btn btn-outline-secondary" type="button" id="browsePersonalLibrary">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <div class="small text-muted">
+                                Your own templates, shared by all your projects but never part of one. Same layout as the other libraries
+                                (<code>survey/</code>, <code>biometrics/</code> subfolders). Order of use: the project's library, then this one, then the global library.
+                                A conversion copies the templates it used into the project, so shared projects stay complete.
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <label for="globalRecipesPath" class="form-label fw-bold">
                                 <i class="fas fa-utensils me-1"></i>Global Recipe Library
                             </label>
