@@ -13,9 +13,9 @@ from typing import Any, Dict, Iterable, List, Tuple
 # bare `import runner` succeeds first anyway. issues.py has no such dependency,
 # so it stays src.-first below.
 try:
-    from runner import validate_dataset, validate_subject_only
+    from runner import validate_dataset, validate_subject_only, without_project_file_warnings
 except ImportError:
-    from src.runner import validate_dataset, validate_subject_only
+    from src.runner import validate_dataset, validate_subject_only, without_project_file_warnings
 
 try:
     from src.issues import tuple_to_issue, issues_to_dict, summarize_issues, severity_value
