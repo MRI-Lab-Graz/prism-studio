@@ -184,7 +184,12 @@ def test_health_reachable_without_project(prism_studio_module):
     # /projects made every running instance look like a foreign process.
     resp = prism_studio_module.app.test_client().get("/health")
     assert resp.status_code == 200
-    assert resp.get_json() == {"status": "ok", "running": True}
+    from src import __version__
+
+    payload = resp.get_json()
+    assert payload["status"] == "ok" and payload["running"] is True
+    assert payload["version"] == __version__
+    assert payload["location"]  # where this instance runs from
 
 
 def test_main_reuses_running_instance(prism_studio_module, monkeypatch):
@@ -193,8 +198,12 @@ def test_main_reuses_running_instance(prism_studio_module, monkeypatch):
     def fail(*args, **kwargs):
         raise AssertionError("must not start/replace a server when one is running")
 
+    from src import __version__
+
     monkeypatch.setattr(
-        prism_studio_module, "is_prism_studio_instance", lambda host, port: True
+        prism_studio_module,
+        "_probe_health",
+        lambda host, port: {"status": "ok", "running": True, "version": __version__},
     )
     monkeypatch.setattr(prism_studio_module, "ensure_clean_start", fail)
     monkeypatch.setattr(prism_studio_module, "_should_relaunch_in_dedicated_terminal", fail)
@@ -204,6 +213,58 @@ def test_main_reuses_running_instance(prism_studio_module, monkeypatch):
     prism_studio_module.main()
 
     assert opened == ["http://127.0.0.1:5001"]
+
+
+@pytest.mark.parametrize("old_health", [
+    {"status": "ok", "running": True, "version": "1.22.0"},
+    {"status": "ok", "running": True},  # an instance from before /health told its version
+])
+def test_main_replaces_a_running_instance_of_another_version(prism_studio_module, monkeypatch, old_health):
+    class Replaced(Exception):
+        pass
+
+    def replace(host, port, force=False):
+        raise Replaced
+
+    monkeypatch.setattr(prism_studio_module, "_probe_health", lambda host, port: old_health)
+    monkeypatch.setattr(prism_studio_module, "is_port_in_use", lambda host, port: True)
+    monkeypatch.setattr(prism_studio_module, "ensure_clean_start", replace)
+    monkeypatch.setattr(prism_studio_module.webbrowser, "open", lambda url: pytest.fail("opened the old instance"))
+    monkeypatch.setattr(prism_studio_module.sys, "argv", ["prism-studio.py"])
+
+    with pytest.raises(Replaced):
+        prism_studio_module.main()
+
+
+def test_kill_fallback_only_stops_the_listening_process(prism_studio_module, monkeypatch):
+    import subprocess
+
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="4242\n", stderr="")
+
+    monkeypatch.setattr(prism_studio_module.sys, "platform", "linux")
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(prism_studio_module.time, "sleep", lambda s: None)
+
+    assert prism_studio_module.try_kill_existing_process(5001) is True
+    assert any("-sTCP:LISTEN" in c for c in calls[:1])  # not the browser connected to the port
+    assert calls[1] == ["kill", "-9", "4242"]
+
+
+def test_kill_fallback_without_lsof_says_how_to_stop_it(prism_studio_module, monkeypatch, capsys):
+    import subprocess
+
+    def missing(cmd, **kwargs):
+        raise FileNotFoundError("lsof")
+
+    monkeypatch.setattr(prism_studio_module.sys, "platform", "linux")
+    monkeypatch.setattr(subprocess, "run", missing)
+
+    assert prism_studio_module.try_kill_existing_process(5001) is False
+    assert "pkill -f prism-studio.py" in capsys.readouterr().out
 
 
 def test_version_ignores_stale_git_tags_in_parent_dir(

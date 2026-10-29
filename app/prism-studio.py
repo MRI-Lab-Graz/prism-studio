@@ -227,8 +227,20 @@ def _print_startup_dependency_step(label: str, binary: str) -> None:
     _print_startup_step(label, "warning", "not installed (optional)")
 
 
+def _install_dir() -> Path:
+    return BASE_DIR if getattr(sys, "frozen", False) else BASE_DIR.parent
+
+
+def _version_and_location() -> str:
+    """The running version and the folder it runs from: tells an old install from the new one."""
+    from src import __version__
+
+    return f"{__version__} ({_install_dir()})"
+
+
 def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
     print()
+    print(_startup_colorize(f"Version: {_version_and_location()}", "accent"))
     print(_startup_colorize(f"Open in browser: {url}", "info"))
     if public:
         print(_startup_colorize("Mode: public access enabled for this session.", "warning"))
@@ -1155,7 +1167,9 @@ def specifications(slug):
 @app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint - returns 200 if server is running."""
-    return jsonify({"status": "ok", "running": True}), 200
+    from src import __version__
+
+    return jsonify({"status": "ok", "running": True, "version": __version__, "location": str(_install_dir())}), 200
 
 
 @app.route("/shutdown", methods=["POST"])
@@ -1242,28 +1256,32 @@ def try_kill_existing_process(port):
             # Unix: use lsof to find and kill process
             import subprocess
 
-            result = subprocess.run(
-                ["lsof", "-i", f":{port}"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            for line in result.stdout.split("\n")[1:]:
-                if line.strip():
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        pid = parts[1]
-                        try:
-                            subprocess.run(
-                                ["kill", "-9", pid],
-                                capture_output=True,
-                                check=False,
-                            )
-                            print(f"[INFO]  Stopped process {pid} on port {port}")
-                            time.sleep(0.5)
-                            return True
-                        except Exception as e:
-                            print(f"[WARN]  Could not kill process {pid}: {e}")
+            # LISTEN only: plain `lsof -i :port` also lists the browser connected to the port.
+            try:
+                result = subprocess.run(
+                    ["lsof", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            except FileNotFoundError:
+                print(
+                    "[INFO]  `lsof` is not installed, so the old process cannot be found. "
+                    "Stop it with: pkill -f prism-studio.py"
+                )
+                return False
+            for pid in result.stdout.split():
+                try:
+                    subprocess.run(
+                        ["kill", "-9", pid],
+                        capture_output=True,
+                        check=False,
+                    )
+                    print(f"[INFO]  Stopped process {pid} on port {port}")
+                    time.sleep(0.5)
+                    return True
+                except Exception as e:
+                    print(f"[WARN]  Could not kill process {pid}: {e}")
     except Exception as e:
         print(f"[INFO]  Could not attempt to kill existing process: {e}")
     return False
@@ -1313,15 +1331,15 @@ def request_existing_instance_shutdown(host: str, port: int) -> bool:
             conn.close()
 
 
-def is_prism_studio_instance(host: str, port: int) -> bool:
-    """Check whether the service on a port looks like PRISM Studio."""
+def _probe_health(host: str, port: int) -> Optional[dict]:
+    """The /health answer of a PRISM Studio instance on this port, else None."""
     try:
         probe_host = "127.0.0.1" if ipaddress.ip_address(host).is_unspecified else host
     except ValueError:
         probe_host = host
 
     if not is_port_in_use(probe_host, port):
-        return False
+        return None
 
     conn = None
     try:
@@ -1329,24 +1347,34 @@ def is_prism_studio_instance(host: str, port: int) -> bool:
         conn.request("GET", "/health")
         response = conn.getresponse()
         payload_raw = response.read()
-
         if response.status != 200:
-            return False
-
+            return None
         try:
             payload = json.loads(payload_raw.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError):
-            return False
-
-        if not isinstance(payload, dict):
-            return False
-
-        return payload.get("status") == "ok" and payload.get("running") is True
+            return None
+        if isinstance(payload, dict) and payload.get("status") == "ok" and payload.get("running") is True:
+            return payload
+        return None
     except (OSError, http.client.HTTPException):
-        return False
+        return None
     finally:
         if conn is not None:
             conn.close()
+
+
+def is_prism_studio_instance(host: str, port: int) -> bool:
+    """Check whether the service on a port looks like PRISM Studio."""
+    return _probe_health(host, port) is not None
+
+
+def is_current_instance(host: str, port: int) -> bool:
+    """A running PRISM Studio of this very version (an older one, or one that does not
+    say its version, is not: it must be replaced, not reused)."""
+    from src import __version__
+
+    health = _probe_health(host, port)
+    return health is not None and health.get("version") == __version__
 
 
 def find_next_available_port(host: str, start_port: int, max_attempts: int = 20) -> int:
@@ -1622,9 +1650,6 @@ def main():
     from src.save_gate import ensure_prism_tools_env
     from src.share_publish import apply_env_identity
 
-    apply_env_identity()  # attribute all PRISM edits before any git/datalad call
-    ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
-
     def configure_debug_logging() -> None:
         logging.basicConfig(
             level=logging.DEBUG,
@@ -1638,6 +1663,9 @@ def main():
         app.config["PROPAGATE_EXCEPTIONS"] = True
 
     parser = argparse.ArgumentParser(description="PRISM Studio")
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"PRISM Studio {_version_and_location()}"
+    )
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
     )
@@ -1700,6 +1728,9 @@ def main():
 
     args = parser.parse_args()
 
+    apply_env_identity()  # attribute all PRISM edits before any git/datalad call
+    ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
+
     resolved_browser_app = (
         _require_named_browser(args.browser_app) if args.browser_app else None
     )
@@ -1708,7 +1739,7 @@ def main():
 
     # A second launch (e.g. double-clicking the desktop shortcut again) reuses
     # the running instance instead of piling up servers and terminal windows.
-    if not args.force_clean_start and is_prism_studio_instance(host, args.port):
+    if not args.force_clean_start and is_current_instance(host, args.port):
         url = f"http://127.0.0.1:{args.port}" if args.public else f"http://{host}:{args.port}"
         print(f"[INFO]  PRISM Studio is already running at {url}")
         if not args.no_browser:
