@@ -102,11 +102,18 @@ def test_windows_explains_manual_uv_install():
 
 # --- DataLad + git-annex: offered (default yes) at the end of setup ---
 
-def _run_offer_datalad(tmp_path, answer, tools=()):
+def _run_offer_datalad(tmp_path, answer, tools=(), old_uv=False):
     import sys
     bin_dir = tmp_path / "dbin"
     bin_dir.mkdir()
-    _fake(bin_dir / "uv", f'echo "uv $@" >> {tmp_path}/ran\n')
+    # `--help` lists the flag only on a uv new enough to have it; old uv also cannot self update.
+    help_text = "" if old_uv else "--with-executables-from"
+    self_update = "exit 1" if old_uv else "true"
+    _fake(
+        bin_dir / "uv",
+        f'case "$*" in *--help*) echo "{help_text}"; exit 0;; "self update") {self_update};; esac\n'
+        f'echo "uv $@" >> {tmp_path}/ran\n',
+    )
     _fake(bin_dir / "git", "echo git version 2.45\n")
     for tool in tools:
         _fake(bin_dir / tool, "")
@@ -132,6 +139,14 @@ def test_datalad_installed_with_the_apps_own_command_by_default(tmp_path):
     out = _run_offer_datalad(tmp_path, "\n")
     assert out.returncode == 0, out.stdout + out.stderr
     assert f"{install_command('darwin')}\n" in (tmp_path / "ran").read_text()
+
+
+def test_old_uv_without_the_flag_is_not_asked_to_install_datalad(tmp_path):
+    # Issue #206: old uv aborted with "unexpected argument '--with-executables-from'".
+    out = _run_offer_datalad(tmp_path, "\n", old_uv=True)
+    assert out.returncode == 0
+    assert not (tmp_path / "ran").exists()
+    assert "uv" in out.stdout and "update" in out.stdout.lower()
 
 
 def test_datalad_declined_shows_command_for_later(tmp_path):
