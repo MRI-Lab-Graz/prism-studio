@@ -71,3 +71,18 @@ def test_used_templates_from_other_libraries_are_copied_into_the_project(tmp_pat
     assert copied["Metadata"]["Creator"] == "personal"
     assert copied["Technical"]["SoftwarePlatform"] == "LimeSurvey"  # prepared like an official copy
     assert json.loads((mine / "survey-b.json").read_text(encoding="utf-8"))["Metadata"]["Creator"] == "project"
+
+
+def test_only_the_standard_libraries_are_merged_an_explicit_folder_is_used_as_given(tmp_path):
+    from src.survey_template_sources import is_standard_library
+
+    project, settings = _world(tmp_path)
+    app = tmp_path / "app"
+    assert is_standard_library(project / "code" / "library" / "survey", project, app, settings)
+    assert is_standard_library(project / "code" / "library", project, app, settings)
+    assert is_standard_library(tmp_path / "mine" / "library" / "survey", project, app, settings)
+    assert is_standard_library(tmp_path / "shared" / "library" / "survey", project, app, settings)
+    assert not is_standard_library(tmp_path / "somewhere" / "else", project, app, settings)
+    # a project that has no templates yet still counts: its code/library is where they are put
+    empty = tmp_path / "new"
+    assert is_standard_library(empty / "code" / "library" / "survey", empty, app, settings)

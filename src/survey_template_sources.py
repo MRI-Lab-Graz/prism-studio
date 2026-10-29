@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterator
 
 from src.config import get_effective_library_paths
+from src.project_root import resolve_existing_project_root
 from src.survey_library_resolution import survey_templates_dir
 from src.system_files import filter_system_files
 
@@ -79,6 +80,20 @@ def build_effective_library(project_path, app_root, app_settings=None) -> Effect
             shutil.copy2(path, library.directory / path.name)
             library.origins[_task(path)] = tier
     return library
+
+
+def is_standard_library(library_dir, project_path, app_root, app_settings=None) -> bool:
+    """Is this folder one of the libraries that get merged (so not an explicit one the caller chose)?"""
+    paths = get_effective_library_paths(app_root=str(app_root), app_settings=app_settings)
+    roots = [paths.get("personal_library_path"), paths.get("global_library_path")]
+    if project_path:
+        root = _project_root(project_path)
+        roots += [root / "code" / "library", root / "official" / "library"]
+    def library_root(path) -> Path:  # a library or its survey/ folder: same library
+        path = Path(path)
+        return (path.parent if path.name == "survey" else path).resolve()
+
+    return any(r and library_root(r) == library_root(library_dir) for r in roots)
 
 
 @contextmanager
@@ -153,8 +168,8 @@ def copy_templates_to_project(
     summary: dict[str, list[str]] = {"copied_tasks": [], "existing_tasks": [], "missing_tasks": []}
     if not project_path or not tasks:
         return summary
-    project_root = _project_root(project_path)
-    if not project_root.is_dir():
+    project_root = resolve_existing_project_root(project_path)
+    if project_root is None:
         return summary
 
     dest_dir = project_root / "code" / "library" / "survey"

@@ -518,16 +518,6 @@ def upload_basename(filename: str | None) -> str:
     return str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
 
 
-def should_retry_with_official_library(err: Exception) -> bool:
-    """Return true when converter error suggests official-template fallback."""
-    msg = str(err).lower()
-    return isinstance(err, ValueError) and (
-        "no survey item columns matched" in msg
-        or "unknown surveys:" in msg
-        or "no survey templates were found" in msg
-    )
-
-
 def extract_tasks_from_output(output_root: Path) -> list[str]:
     """Extract unique task names from BIDS-style filenames in output directory."""
     tasks = set()

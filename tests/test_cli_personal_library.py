@@ -1,15 +1,17 @@
 """`survey convert` finds templates in the personal library and leaves a copy in the project."""
 
 import json
-import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-from src import config
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
-ROOT = Path(__file__).resolve().parents[1]
+from src import config  # noqa: E402
+from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
+
 TEMPLATE = {
     "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "Language": "en"},
     "Study": {"TaskName": "pss", "OriginalName": "pss", "LicenseID": "Other", "License": ""},
@@ -24,15 +26,10 @@ READY_PROJECT = {
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
-    home = tmp_path / "home"
-    for var in ("HOME", "XDG_CONFIG_HOME", "APPDATA"):
-        monkeypatch.setenv(var, str(home))
     mine = tmp_path / "mine"
     (mine / "library" / "survey").mkdir(parents=True)
     (mine / "library" / "survey" / "survey-pss.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
-    settings_dir = config._get_user_app_settings_dir()
-    settings_dir.mkdir(parents=True)
-    (settings_dir / config.APP_SETTINGS_FILENAME).write_text(json.dumps({"personalLibraryRoot": str(mine)}), encoding="utf-8")
+    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_root=str(mine)))
 
     project = tmp_path / "proj"
     project.mkdir()
@@ -42,27 +39,30 @@ def setup(tmp_path, monkeypatch):
     return project, table
 
 
-def _convert(project, table, *extra):
-    return subprocess.run(
-        [sys.executable, str(ROOT / "prism_tools.py"), "survey", "convert", "--input", str(table), "--output", str(project),
-         "--id-column", "ID", "--lang", "en", "--force", *extra],
-        capture_output=True, text=True, timeout=180, cwd=ROOT,
+def _args(project, table, **overrides):
+    args = dict(
+        input=str(table), output=str(project), library=None, lang="en", survey=None, id_column="ID",
+        session_column=None, run_column=None, sheet=None, unknown="ignore", dry_run=False, force=True,
+        name=None, authors=None, alias=None, project=None, template_versions=None, value_offsets=None,
     )
+    args.update(overrides)
+    return SimpleNamespace(**args)
 
 
-def test_conversion_uses_the_personal_template_and_leaves_a_copy_in_the_project(setup):
+def test_conversion_uses_the_personal_template_and_leaves_a_copy_in_the_project(setup, capsys):
     project, table = setup
-    result = _convert(project, table)
+    cmd_survey_convert(_args(project, table))
 
-    assert "Survey conversion complete" in result.stdout, result.stdout + result.stderr
-    assert "personal " in result.stdout  # the report names the library it used
+    out = capsys.readouterr().out
+    assert "Survey conversion complete" in out
+    assert "personal " in out  # the report names the library it used
     copied = project / "code" / "library" / "survey" / "survey-pss.json"
     assert json.loads(copied.read_text(encoding="utf-8"))["PSS1"]["Levels"] == {"0": "never", "1": "often"}
 
 
-def test_a_dry_run_leaves_the_project_untouched(setup):
+def test_a_dry_run_leaves_the_project_untouched(setup, capsys):
     project, table = setup
-    result = _convert(project, table, "--dry-run")
+    cmd_survey_convert(_args(project, table, dry_run=True))
 
-    assert "No files were created" in result.stdout, result.stdout + result.stderr
+    assert "No files were created" in capsys.readouterr().out
     assert not (project / "code").exists()

@@ -45,7 +45,6 @@ from .conversion_utils import (
     require_existing_project_root,
     resolve_effective_library_path,
     resolve_validation_library_path,
-    should_retry_with_official_library,
     summarize_project_output_paths,
 )
 from .conversion_request_helpers import (
@@ -174,7 +173,6 @@ _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
 _resolve_validation_library_path = resolve_validation_library_path
 _normalize_filename = normalize_filename
-_should_retry_with_official_library = should_retry_with_official_library
 _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
 
@@ -388,7 +386,6 @@ def _detect_survey_version_contexts(
     task_value_offsets: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     suffix = Path(filename).suffix.lower()
-    official_dir = _resolve_official_survey_dir(project_path)
 
     base_library_dir = Path(library_dir)
     if (base_library_dir / "survey").is_dir() and not list(
@@ -462,22 +459,16 @@ def _detect_survey_version_contexts(
                 )
             raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
 
-        try:
-            used_library_dir = base_library_dir
-            result = _run_detection(used_library_dir)
-        except Exception as exc:
-            if not _should_retry_with_official_library(exc):
-                raise
-            if not official_dir:
-                raise
-            used_library_dir = Path(official_dir)
-            if (used_library_dir / "survey").is_dir() and not list(
-                used_library_dir.glob("survey-*.json")
-            ):
-                used_library_dir = used_library_dir / "survey"
-            if used_library_dir.resolve() == base_library_dir.resolve():
-                raise
-            result = _run_detection(used_library_dir)
+        from src.survey_template_sources import build_effective_library, is_standard_library
+
+        app_root = Path(current_app.root_path).parent if has_app_context() else Path(__file__).resolve().parents[4]
+        effective = (  # kept alive below: used_library_dir is inside it
+            build_effective_library(project_path, app_root)
+            if is_standard_library(base_library_dir, project_path, app_root)
+            else None
+        )
+        used_library_dir = effective.directory if effective and effective.origins else base_library_dir
+        result = _run_detection(used_library_dir)
 
         tasks_included = list(getattr(result, "tasks_included", []) or [])
         preview_participants = []
@@ -550,78 +541,44 @@ def _run_survey_with_official_fallback(
     except (TypeError, ValueError):
         pass
 
-    result = None
-    try:
-        result = converter_fn(library_dir=str(library_dir), **converter_kwargs)
-        tasks_included = getattr(result, "tasks_included", []) or []
+    # The standard libraries are merged (project, then personal, then global), the same as the CLI's;
+    # a folder the caller chose is used as given.
+    from src.survey_template_sources import (
+        build_effective_library,
+        copy_used_templates_to_project,
+        is_standard_library,
+    )
+
+    app_root = Path(current_app.root_path).parent if has_app_context() else Path(__file__).resolve().parents[4]
+    effective = (
+        build_effective_library(fallback_project_path, app_root)
+        if is_standard_library(library_dir, fallback_project_path, app_root)
+        else None
+    )
+    merged = effective is not None and bool(effective.origins)
+    result = converter_fn(
+        library_dir=str(effective.directory if merged else library_dir), **converter_kwargs
+    )
+    tasks_included = list(getattr(result, "tasks_included", []) or [])
+    if merged:
+        copy_used_templates_to_project(
+            effective,
+            tasks_included,
+            fallback_project_path,
+            technical_defaults=technical_defaults,
+            selected_versions=template_version_overrides,
+            log_fn=log_fn,
+        )
+    else:
         _copy_official_templates_to_project(
             official_dir=Path(library_dir),
-            tasks=list(tasks_included),
+            tasks=tasks_included,
             project_path=fallback_project_path,
             technical_defaults=technical_defaults,
             selected_versions=template_version_overrides,
             log_fn=log_fn,
         )
-        return result
-    except Exception as exc:
-        if _should_retry_with_official_library(exc):
-            # Step 1: Try project's local code/library/survey first (project-specific templates).
-            if fallback_project_path:
-                project_root = Path(fallback_project_path).expanduser()
-                if project_root.is_file():
-                    project_root = project_root.parent
-                project_local_dir = project_root / "code" / "library" / "survey"
-                if (
-                    project_local_dir.is_dir()
-                    and list(project_local_dir.glob("survey-*.json"))
-                    and project_local_dir.resolve() != Path(library_dir).resolve()
-                ):
-                    msg = "Template not found in current library; retrying with project local library."
-                    if log_fn:
-                        log_fn(msg, "info")
-                    else:
-                        print(f"[PRISM DEBUG] {msg}")
-                    try:
-                        result = converter_fn(
-                            library_dir=str(project_local_dir), **converter_kwargs
-                        )
-                        return result
-                    except Exception:
-                        pass  # fall through to official library
-
-            # Step 2: Try official library (standard templates, then copy to project).
-            official_dir = _resolve_official_survey_dir(fallback_project_path)
-            if (
-                official_dir
-                and Path(official_dir).resolve() != Path(library_dir).resolve()
-            ):
-                msg = (
-                    "No matches in project templates; retrying with official templates."
-                )
-                if log_fn:
-                    log_fn(msg, "info")
-                else:
-                    print(f"[PRISM DEBUG] {msg}")
-                result = converter_fn(
-                    library_dir=str(official_dir), **converter_kwargs
-                )
-                tasks_included = getattr(result, "tasks_included", []) or []
-                _copy_official_templates_to_project(
-                    official_dir=official_dir,
-                    tasks=list(tasks_included),
-                    project_path=fallback_project_path,
-                    technical_defaults=technical_defaults,
-                    selected_versions=template_version_overrides,
-                    log_fn=log_fn,
-                )
-                return result
-
-            msg = "No matches in project templates and no official templates found to fall back to."
-            if log_fn:
-                log_fn(msg, "warning")
-            else:
-                print(f"[PRISM DEBUG] {msg}")
-        raise
+    return result
 
 
 def api_survey_prepare_workflow():
