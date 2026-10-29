@@ -17,8 +17,20 @@ _NOT_ITEMS = {"Technical", "Study", "Metadata", "I18n"}
 _SIDECAR = re.compile(r"task-([A-Za-z0-9]+)_survey\.json")  # ponytail: acq variants are not checked
 
 
-def _items(sidecar: dict) -> dict:
-    return {k: v for k, v in sidecar.items() if k not in _NOT_ITEMS and not k.startswith("_")}
+_MISSING = "n/a"  # the level the converter adds for missing answers
+
+
+def _items(sidecar: dict, infer_range) -> dict:
+    """The item definitions, without MinValue/MaxValue where they only restate the numeric Levels:
+    the template loader adds them, the converter may not, and neither is a change."""
+    items = {k: dict(v) if isinstance(v, dict) else v for k, v in sidecar.items() if k not in _NOT_ITEMS and not k.startswith("_")}
+    for item in items.values():
+        levels = item.get("Levels") if isinstance(item, dict) else None
+        implied = infer_range({k: v for k, v in levels.items() if k != _MISSING}) if isinstance(levels, dict) else None
+        for name, value in zip(("MinValue", "MaxValue"), implied or ()):
+            if item.get(name) == value:
+                del item[name]
+    return items
 
 
 def check_survey_template_drift(root_dir, project_path=None) -> list[tuple[str, str, str]]:
@@ -30,6 +42,7 @@ def check_survey_template_drift(root_dir, project_path=None) -> list[tuple[str, 
         # The converter's own steps, so "what conversion would write" has one definition.
         from src.converters.survey_core import _inject_missing_token, load_survey_library
         from src.converters.survey_templates import _localize_survey_template
+        from src.survey_scale_inference import infer_contiguous_numeric_levels_range
 
         templates = load_survey_library(str(library))
     except ImportError:  # ponytail: validator wheel has no converter; check is skipped there
@@ -46,8 +59,11 @@ def check_survey_template_drift(root_dir, project_path=None) -> list[tuple[str, 
         except (OSError, ValueError):
             continue  # an unreadable sidecar is reported by the sidecar checks
         language = (sidecar.get("Technical") or {}).get("Language") or None
-        expected = _items(_inject_missing_token(_localize_survey_template(template, language), token="n/a"))
-        actual = _items(sidecar)
+        expected = _items(
+            _inject_missing_token(_localize_survey_template(template, language), token=_MISSING),
+            infer_contiguous_numeric_levels_range,
+        )
+        actual = _items(sidecar, infer_contiguous_numeric_levels_range)
         changed = sorted(k for k in expected.keys() | actual.keys() if expected.get(k) != actual.get(k))
         if changed:
             shown = ", ".join(changed[:5]) + (f" and {len(changed) - 5} more" if len(changed) > 5 else "")

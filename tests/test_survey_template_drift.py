@@ -79,3 +79,21 @@ def test_edits_to_technical_study_and_metadata_are_not_drift(tmp_path):
 def test_sidecar_without_project_template_is_ignored(tmp_path):
     (tmp_path / "task-ads_survey.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
     assert check_survey_template_drift(str(tmp_path), project_path=str(tmp_path)) == []
+
+
+def test_bounds_implied_by_the_levels_are_not_a_change_either_way(tmp_path):
+    """Whether the converter wrote MinValue/MaxValue into the sidecar or not, the template did not change."""
+    template = {**TEMPLATE, "ADS1": {"Description": {"de": "Frage"}, "Levels": {"0": {"de": "a"}, "1": {"de": "b"}}}}
+    template.pop("ADS2")
+    _project(tmp_path, template)
+    _convert(tmp_path)
+    sidecar_path = tmp_path / "task-ads_survey.json"
+
+    for with_bounds in (False, True):
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        for name in ("MinValue", "MaxValue"):
+            sidecar["ADS1"].pop(name, None)
+        if with_bounds:
+            sidecar["ADS1"].update(MinValue=0, MaxValue=1)
+        sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+        assert check_survey_template_drift(str(tmp_path), project_path=str(tmp_path)) == [], with_bounds

@@ -104,3 +104,14 @@ def test_template_save_to_personal_without_a_personal_library_says_how_to_set_it
         cmd_library_template_save(_save_args(tmp_path))
 
     assert "Personal Template Library" in capsys.readouterr().out
+
+
+def test_a_template_copied_from_the_personal_library_is_not_reported_as_changed(setup, capsys):
+    """The copy is prepared (Technical/Study defaults) but its items equal the sidecar's: no PRISM710."""
+    from src.survey_template_drift import check_survey_template_drift
+
+    project, table = setup
+    cmd_survey_convert(_args(project, table))
+
+    assert (project / "task-pss_survey.json").exists()
+    assert check_survey_template_drift(str(project), project_path=str(project)) == []
