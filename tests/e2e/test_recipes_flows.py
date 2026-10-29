@@ -7,9 +7,11 @@ import time
 from pathlib import Path
 
 import pytest
+
 from playwright.sync_api import expect
 
 from src.converters.survey import convert_survey_file_to_prism_dataset
+from src.session_map import save_session_map
 
 BRS = Path(__file__).resolve().parents[2] / "official" / "library" / "survey" / "survey-brs.json"
 RECIPE = Path(__file__).resolve().parents[2] / "official" / "recipe" / "survey" / "recipe-brs.json"
@@ -25,6 +27,11 @@ def scored_project(project, tmp_path):
     shutil.copy(BRS, library / "survey-brs.json")
     (project / "code" / "library" / "survey").mkdir(parents=True, exist_ok=True)
     shutil.copy(BRS, project / "code" / "library" / "survey" / "survey-brs.json")
+    # two sessions per subject: a "single" project would write both as ses-1
+    (project / "project.json").write_text(json.dumps({
+        **json.loads((project / "project.json").read_text()), "StudyDesign": {"Timepoints": "multiple"},
+    }))
+    save_session_map(project, {"1": "1", "2": "2"})
     source = tmp_path / "brs.csv"
     source.write_text(DATA)
     convert_survey_file_to_prism_dataset(

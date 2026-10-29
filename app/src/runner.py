@@ -264,13 +264,10 @@ def _validate_dataset(
             ),
             schema_version or "stable",
         )
-        from src.modality_versions import present_modalities
-
-        used = {"dataset_description", *present_modalities(root_dir, _default_schema_dir())}
         stats.validator_info = {
             "prism_schema_tag": version_tag,
             "prism_schema_versions": schema_versions,
-            "prism_schemas_in_use": {n: v for n, v in schema_versions.items() if n in used},
+            "prism_schemas_in_use": {},  # filled from the scan below, so the tree is not read twice
             "prism_schema_sources": schema_sources,
         }
 
@@ -491,6 +488,10 @@ def _validate_dataset(
 
     if run_prism:
         issues.extend(_check_project_files(root_dir, bool(subject_dirs), stats.modalities))
+        used = {"dataset_description", *stats.modalities}
+        stats.validator_info["prism_schemas_in_use"] = {
+            n: v for n, v in stats.validator_info["prism_schema_versions"].items() if n in used
+        }
 
     # Run standard BIDS validator if requested
     if run_bids:

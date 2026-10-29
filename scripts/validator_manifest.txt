@@ -54,4 +54,5 @@ src/survey_answer_codes.py
 src/survey_existing.py
 src/term_proposal.py
 src/term_registry.py
+src/text_sanitizer.py
 src/validation_library_resolution.py
