@@ -70,3 +70,17 @@ def test_dry_run_preview_lists_the_violations_unless_a_task_offset_is_set(tmp_pa
     assert "P001: 9" in plain and "P002: often" in plain
     shifted = subprocess.run(base + ["--value-offset", "brs=1"], capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" not in shifted
+
+
+def test_stored_answer_codes_count_as_their_numbers():
+    """ADS0..ADS3 in the data are the template's 0..3 (LimeSurvey.answerCodes), not unexpected."""
+    item = {
+        "Levels": {"0": "selten", "1": "manchmal"},
+        "LimeSurvey": {"answerCodes": {"0": "ADS0", "1": "ADS1"}},
+    }
+    df = pd.DataFrame({"id": ["a", "b", "c"], "q": ["ADS0", "ADS1", "ADS9"]})
+
+    issues = find_scale_violations(df, "q", item, "id", lambda v: False)
+
+    assert [i["type"] for i in issues] == ["unexpected_values"]
+    assert issues[0]["examples"] == ["c: ADS9"]  # only the code the template does not know

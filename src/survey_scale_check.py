@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from src.survey_answer_codes import stored_code_as_number
+
 _EXAMPLES = 5
 
 
@@ -44,7 +46,7 @@ def find_scale_violations(
     for pid, value in zip(df[id_column], df[column]):
         if is_missing(value):
             continue
-        text = str(value).strip()
+        text = str(stored_code_as_number(value, item_def)).strip()  # ADS0 -> 0, as conversion reads it
         if any(_same_level(text, key) for key in keys):
             continue
         number = _number(text)

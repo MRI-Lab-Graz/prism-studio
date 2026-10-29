@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
 ### Fixed
+- **The conversion preview no longer reports answers like `ADS0` as "not one of 0, 1, 2, 3" when the template maps those codes to numbers.**
+  The preview's scale check compared the raw answer with the template's levels, while the conversion itself already read each
+  stored code through the item's `LimeSurvey.answerCodes` (`ADS0` as `0`). Both now read the answer the same way, so a template
+  recoded with `survey answer-codes` previews and converts without data issues.
 - **Starting a new Studio no longer reopens an older one that is still running.** A second launch used to open the browser at
   whatever Studio held the port, even a previous version (for example after replacing the install folder while the old
   process was still running: the page showed the old version and missing features). `/health` now reports the version and
