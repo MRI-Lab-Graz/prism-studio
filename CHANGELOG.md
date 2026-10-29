@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.2] - 2026-10-29
+
+### Fixed
+- **A new project is ready right after it is created.** Creating a project with only the required fields (name, authors,
+  keywords, timepoints) left `Name`, `Authors` and `Keywords` out of `project.json`, so the converter and other tools said
+  the required fields were missing until the project was saved once more without any edit. Creating now writes them there.
+
 ## [1.23.1] - 2026-10-29
 
 ### Fixed
