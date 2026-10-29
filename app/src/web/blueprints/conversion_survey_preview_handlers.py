@@ -20,7 +20,6 @@ except ImportError:
     import xml.etree.ElementTree as ET
 
 from src.web.survey_utils import list_survey_template_languages
-from src.runner import without_project_file_warnings
 from src.web.validation import run_validation
 from .conversion_utils import (
     collect_multivariant_tasks_from_library,
@@ -821,6 +820,9 @@ def handle_api_survey_convert_preview(
                     )
                     if v_res and isinstance(v_res, tuple):
                         issues, stats = v_res
+                        # lazy: runner.py needs app/src on sys.path, which run_validation has just ensured
+                        from src.core.validation import without_project_file_warnings
+
                         issues = without_project_file_warnings(issues)
 
                         from src.web.reporting_utils import format_validation_results

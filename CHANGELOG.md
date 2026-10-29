@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.1] - 2026-10-29
+
+### Fixed
+- **The packaged app loads the converter and tools pages again.** In v1.23.0 the survey convert preview imported the validator
+  runner at start-up, which the packaged app cannot do at that point, so `/converter` and the tools pages answered 404 in the
+  Windows, macOS and Linux builds (the v1.23.0 application build failed its own smoke test and published nothing). The import
+  now happens when the preview needs it.
+- The validator manifest carries `text_sanitizer.py`, so the PyPI validator can import the survey converter; the footer and
+  folder-picker titles no longer skip heading levels; a validation reads the project tree once instead of twice.
+
 ## [1.23.0] - 2026-10-29
 
 ### Added
