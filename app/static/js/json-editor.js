@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const sharedApiModuleUrl = new URL('./shared/api.js', jsonEditorScriptUrl).href;
     const pathPickerModuleUrl = new URL('./shared/path-picker.js', jsonEditorScriptUrl).href;
+    const { findDuplicateKey } = await import(new URL('./shared/json-duplicates.js', jsonEditorScriptUrl).href);
+    // JSON.parse keeps the last of two equal keys without a word: refuse instead.
+    const parseJsonText = text => {
+        const dup = findDuplicateKey(text);
+        if (dup !== null) throw new Error(`the key "${dup}" appears twice in the same object`);
+        return JSON.parse(text);
+    };
     let sharedFetchWithApiFallbackPromise = null;
     let browseFileWithFallbackPromise = null;
     let browseSaveFileWithFallbackPromise = null;
@@ -138,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function openJsonFile(file) {
         try {
             const content = await file.text();
-            const jsonData = JSON.parse(content);
+            const jsonData = parseJsonText(content);
             await showJsonEditor(jsonData, file.name);
         } catch (e) {
             showAlert('Invalid JSON file: ' + e.message, 'danger');
@@ -199,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const raw = textarea.value;
                 try {
                     let parsed;
-                    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) parsed = JSON.parse(raw);
+                    if (raw.trim().startsWith('{') || raw.trim().startsWith('[')) parsed = parseJsonText(raw);
                     else if (raw === 'true' || raw === 'false') parsed = JSON.parse(raw);
                     else if (raw === 'null') parsed = null;
                     else if (!isNaN(raw) && raw !== '') parsed = Number(raw);
@@ -218,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             const editor = document.getElementById('jsonEditor');
             if (editor) {
-                updatedJson = JSON.parse(editor.value);
+                updatedJson = parseJsonText(editor.value);
             } else {
                 showAlert('No data to save', 'warning');
                 return null;
