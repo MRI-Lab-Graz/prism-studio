@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 ALLOWLIST = {
+    "app/src/converters/survey_templates.py": "survey_template_drift imports it inside a try/except ImportError, so the "
+    "template-drift warning (PRISM710) is skipped in the wheel, which has no survey converter",
     "src/anonymizer.py": "export path, never reached by the validator",
     "src/participants_converter.py": "needs pandas; the import in subject_id_matching is guarded by try/except, and it is also "
     "loaded by importlib.import_module STRING imports (runner._check_participants_subject_alignment, "

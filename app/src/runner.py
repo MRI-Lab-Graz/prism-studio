@@ -466,6 +466,10 @@ def _validate_dataset(
         )
 
     if run_prism:
+        from src.survey_template_drift import check_survey_template_drift
+
+        issues.extend(check_survey_template_drift(root_dir, project_path=project_path))
+
         from src.participants_levels import check_participants_levels
 
         issues.extend(check_participants_levels(root_dir))

@@ -258,6 +258,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "A participants column has no (or incomplete) value labels",
         "fix_hint": "Open participants.json and add every code of the column to Levels (or a Unit if it is a measurement), or label the codes in the Sociodemographics Participant Annotation panel",
     },
+    "PRISM710": {
+        "message": "Survey template changed since the data was converted",
+        "fix_hint": "If the change is intended, reimport the survey with the template (survey convert --force) so the data and sidecar follow it; otherwise revert the template",
+    },
     # Internal/System (9xx)
     "PRISM900": {
         "message": "Issue reported by a validation plugin",
@@ -537,6 +541,8 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM707"
     elif "missing survey recipes" in msg_lower:
         return "PRISM708"
+    elif "survey template" in msg_lower and "changed since the data was converted" in msg_lower:
+        return "PRISM710"
     elif "participants.json" in msg_lower and "value labels" in msg_lower:
         return "PRISM709"
     elif (

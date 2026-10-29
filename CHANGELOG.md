@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Validation warns when a project survey template changed after its data was converted (`PRISM710`).** The root
+  `task-<name>_survey.json` is written from `code/library/survey/survey-<name>.json` at conversion, so editing the template
+  later (for example remapping answer codes to numbers) left a sidecar that no longer matched it, silently. The warning names
+  the survey and the changed items and says how to bring data and sidecar in line (`survey convert --force`) - or to revert the
+  template. Only item definitions are compared, so edits to `Technical`, `Study` and `Metadata` are not reported. The PyPI
+  validator has no survey converter and skips this check.
+
 ## [1.23.2] - 2026-10-29
 
 ### Fixed
