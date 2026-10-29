@@ -57,3 +57,16 @@ def test_not_ready_message_exact_text():
         "Tools are blocked until these required fields are set on the Projects page: "
         "Authors, Timepoints."
     )
+
+
+def test_freshly_created_project_is_ready(tmp_path):
+    """Create with only the required fields must not need a second save."""
+    from src.project_manager import ProjectManager
+
+    path = tmp_path / "proj"
+    result = ProjectManager().create_project(str(path), {
+        "name": "proj", "authors": [{"name": "A B"}], "keywords": ["x"],
+        "StudyDesign": {"Timepoints": "single"}, "use_datalad": False,
+    })
+    assert result["success"]
+    assert missing_required_fields(path) == []
