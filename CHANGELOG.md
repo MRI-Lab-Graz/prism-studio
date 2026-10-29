@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`prism-studio.py -v` (or `--version`) prints the version and the folder Studio runs from, and the terminal shows the same
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
+### Fixed
+- **Starting a new Studio no longer reopens an older one that is still running.** A second launch used to open the browser at
+  whatever Studio held the port, even a previous version (for example after replacing the install folder while the old
+  process was still running: the page showed the old version and missing features). `/health` now reports the version and
+  folder, and a running Studio of another version is stopped and replaced.
+- The fallback that stops an old Studio (`--force-clean-start`) stops only the process listening on the port; it used to
+  pick the first process connected to it, which could be the browser. Without `lsof` it now says how to stop it
+  (`pkill -f prism-studio.py`).
+
 ## [1.23.2] - 2026-10-29
 
 ### Fixed
