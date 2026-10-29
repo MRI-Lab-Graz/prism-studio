@@ -227,11 +227,15 @@ def _print_startup_dependency_step(label: str, binary: str) -> None:
     _print_startup_step(label, "warning", "not installed (optional)")
 
 
+def _install_dir() -> Path:
+    return BASE_DIR if getattr(sys, "frozen", False) else BASE_DIR.parent
+
+
 def _version_and_location() -> str:
     """The running version and the folder it runs from: tells an old install from the new one."""
     from src import __version__
 
-    return f"{__version__} ({BASE_DIR if getattr(sys, 'frozen', False) else BASE_DIR.parent})"
+    return f"{__version__} ({_install_dir()})"
 
 
 def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
@@ -1165,8 +1169,7 @@ def health_check():
     """Health check endpoint - returns 200 if server is running."""
     from src import __version__
 
-    location = BASE_DIR if getattr(sys, "frozen", False) else BASE_DIR.parent
-    return jsonify({"status": "ok", "running": True, "version": __version__, "location": str(location)}), 200
+    return jsonify({"status": "ok", "running": True, "version": __version__, "location": str(_install_dir())}), 200
 
 
 @app.route("/shutdown", methods=["POST"])
