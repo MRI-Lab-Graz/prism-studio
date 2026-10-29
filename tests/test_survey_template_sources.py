@@ -22,7 +22,7 @@ def _world(tmp_path):
         _put(mine / "library" / "survey", task, "personal")
     for task in ("c", "d"):
         _put(shared / "library" / "survey", task, "global")
-    settings = AppSettings(personal_library_root=str(mine), global_library_root=str(shared))
+    settings = AppSettings(personal_library_path=str(mine), global_library_root=str(shared))
     return project, settings
 
 
@@ -49,7 +49,7 @@ def test_each_task_comes_from_the_nearest_library_that_has_it(tmp_path):
 
 def test_without_a_personal_library_it_is_project_then_global(tmp_path):
     project, settings = _world(tmp_path)
-    settings.personal_library_root = None
+    settings.personal_library_path = None
     with effective_library(project, tmp_path / "app", settings) as library:
         assert _creator(library, "c") == "global"
 

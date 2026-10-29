@@ -2469,7 +2469,14 @@ def build_prism_tools_parsers(
         "Matches the Studio GUI's Template Editor Save action.",
     )
     parser_lib_template_save.add_argument(
-        "--project", required=True, help="Project root folder"
+        "--project", help="Project root folder (needed unless --to personal)"
+    )
+    parser_lib_template_save.add_argument(
+        "--to",
+        choices=["project", "personal"],
+        default="project",
+        help="Where to save: the project's library (default) or your personal library "
+        "(set under Settings > Personal Template Library)",
     )
     parser_lib_template_save.add_argument(
         "--modality", choices=["survey", "biometrics"], required=True

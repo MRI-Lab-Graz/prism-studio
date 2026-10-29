@@ -40,6 +40,7 @@ def get_global_library_settings():
             "success": True,
             "global_template_library_path": settings.global_template_library_path,
             "global_recipes_path": settings.global_recipes_path,
+            "personal_library_path": settings.personal_library_path,
             "default_library_path": default_library_path,
             "default_modalities": settings.default_modalities,
             "backend_monitoring": bool(settings.backend_monitoring),
@@ -253,6 +254,15 @@ def set_global_library_settings():
         else:
             settings.global_template_library_path = None
 
+    if "personal_library_path" in data:
+        path = (data["personal_library_path"] or "").strip()
+        if path and not os.path.isdir(path):
+            return (
+                jsonify({"success": False, "error": f"Path does not exist: {path}"}),
+                400,
+            )
+        settings.personal_library_path = path or None
+
     if "global_recipes_path" in data:
         path = data["global_recipes_path"]
         if path and path.strip():
@@ -296,6 +306,7 @@ def set_global_library_settings():
                 "success": True,
                 "message": f"Settings saved to {settings_path}",
                 "global_template_library_path": settings.global_template_library_path,
+                "personal_library_path": settings.personal_library_path,
                 "global_recipes_path": settings.global_recipes_path,
                     "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
                     getattr(settings, "export_defacing_confirmation_mode", "risk")

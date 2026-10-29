@@ -16,6 +16,9 @@ export async function loadGlobalSettings() {
             const recipesInput = document.getElementById('globalRecipesPath');
             recipesInput.value = data.global_recipes_path || '';
 
+            const personalInput = document.getElementById('personalLibraryPath');
+            if (personalInput) personalInput.value = data.personal_library_path || '';
+
             updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
         }
     } catch (error) {
@@ -318,6 +321,7 @@ export function initProjectSettingsForm() {
 
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
+        const personalPath = document.getElementById('personalLibraryPath')?.value.trim() ?? '';
 
         try {
             const response = await fetchWithApiFallback('/api/settings/global-library', {
@@ -326,6 +330,7 @@ export function initProjectSettingsForm() {
                 body: JSON.stringify({
                     global_template_library_path: libraryPath,
                     global_recipes_path: recipesPath,
+                    personal_library_path: personalPath,
                 })
             });
             const result = await response.json();

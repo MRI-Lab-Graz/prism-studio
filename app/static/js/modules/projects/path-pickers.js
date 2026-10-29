@@ -48,6 +48,14 @@ export function initProjectPathPickers({ fetchWithApiFallback, validateProjectFi
     });
 
     bindFolderPickerButton({
+        buttonId: 'browsePersonalLibrary',
+        inputId: 'personalLibraryPath',
+        title: 'Select Personal Template Library',
+        confirmLabel: 'Use This Folder',
+        fetchWithApiFallback,
+    });
+
+    bindFolderPickerButton({
         buttonId: 'browseGlobalRecipes',
         inputId: 'globalRecipesPath',
         title: 'Select Global Recipe Library',

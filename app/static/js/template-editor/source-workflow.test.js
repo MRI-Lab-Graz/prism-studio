@@ -178,6 +178,57 @@ describe('refreshTemplateList', () => {
 });
 
 
+describe('refreshTemplateList with a personal library', () => {
+    async function refreshed(templates, hasPersonal) {
+        const element = (tag) => ({ tag, dataset: {}, children: [], appendChild(child) { this.children.push(child); } });
+        globalThis.document = { createElement: element };
+        const select = () => {
+            const s = element('select');
+            s.value = '';
+            Object.defineProperty(s, 'innerHTML', { set() { this.children = []; this.value = ''; } });
+            Object.defineProperty(s, 'options', { get() { return this.children.flatMap((c) => (c.tag === 'optgroup' ? c.children : [c])); } });
+            return s;
+        };
+        const classes = new Set(['d-none']);
+        const context = {
+            modalityEl: { value: 'survey' }, schemaEl: { value: 'stable' },
+            getCurrentProjectPath: () => '/p', projectContextRequestToken: 1,
+            withProjectPathQuery: (u) => u,
+            apiGet: async () => ({ templates, has_personal: hasPersonal }),
+            isProjectContextCurrent: () => true, templateStatusTitle: () => '',
+            templateMetadata: {}, projectTemplateSelectEl: select(), globalTemplateSelectEl: select(),
+            btnSavePersonal: { classList: { toggle: (name, on) => (on ? classes.add(name) : classes.delete(name)) } },
+            updateProjectLibraryStatus() {}, updateLoadButtonState() {},
+        };
+        await refreshTemplateList(context, { silent: true });
+        return { context, hiddenButton: classes.has('d-none') };
+    }
+    const TEMPLATES = [
+        { filename: 'survey-mine.json', source: 'personal', path: '/me/survey-mine.json' },
+        { filename: 'survey-gad7.json', source: 'global', path: '/g/survey-gad7.json' },
+    ];
+
+    it('groups the library dropdown by personal and global', async () => {
+        const { context } = await refreshed(TEMPLATES, true);
+        const groups = context.globalTemplateSelectEl.children.filter((c) => c.tag === 'optgroup');
+        expect(groups.map((g) => g.label)).toEqual(['Personal library', 'Global library']);
+        expect(groups[0].children.map((o) => o.value)).toEqual(['survey-mine.json']);
+        expect(groups[1].children.map((o) => o.value)).toEqual(['survey-gad7.json']);
+    });
+
+    it('shows the save-to-personal button only when a personal library is set', async () => {
+        expect((await refreshed(TEMPLATES, true)).hiddenButton).toBe(false);
+        expect((await refreshed([TEMPLATES[1]], false)).hiddenButton).toBe(true);
+    });
+
+    it('keeps a plain list when there is no personal template', async () => {
+        const { context } = await refreshed([TEMPLATES[1]], false);
+        expect(context.globalTemplateSelectEl.children.filter((c) => c.tag === 'optgroup')).toEqual([]);
+        expect(context.globalTemplateSelectEl.options.map((o) => o.value)).toContain('survey-gad7.json');
+    });
+});
+
+
 describe('offerShare', () => {
     const MAIL = { mailto: 'mailto:mri-lab@uni-graz.at?subject=A%26B' };
     const make = (shareCandidate) => {

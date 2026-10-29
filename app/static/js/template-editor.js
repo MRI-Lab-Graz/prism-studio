@@ -36,6 +36,7 @@
   const btnNew = document.getElementById('btnNew');
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
+  const btnSavePersonal = document.getElementById('btnSavePersonal');
   const btnDownload = document.getElementById('btnDownload');
   const btnDelete = document.getElementById('btnDelete');
   const languageBarEl = document.getElementById('languageBar');
@@ -4829,6 +4830,7 @@
         libraryMatchCardEl,
         btnDownload,
         btnSave,
+        btnSavePersonal,
         btnDelete,
         alertAreaEl,
         activeVariantSelectEl,

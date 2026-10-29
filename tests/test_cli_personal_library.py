@@ -29,7 +29,7 @@ def setup(tmp_path, monkeypatch):
     mine = tmp_path / "mine"
     (mine / "library" / "survey").mkdir(parents=True)
     (mine / "library" / "survey" / "survey-pss.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
-    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_root=str(mine)))
+    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
 
     project = tmp_path / "proj"
     project.mkdir()
@@ -66,3 +66,41 @@ def test_a_dry_run_leaves_the_project_untouched(setup, capsys):
 
     assert "No files were created" in capsys.readouterr().out
     assert not (project / "code").exists()
+
+
+GAD7 = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-gad7.json"
+
+
+def _save_args(tmp_path, **overrides):
+    args = dict(
+        project=None, to="personal", modality="survey", filename="survey-gad7.json", template=str(GAD7),
+        schema_version="stable", is_global=False, force=False,
+    )
+    args.update(overrides)
+    return SimpleNamespace(**args)
+
+
+@pytest.mark.skipif(not GAD7.exists(), reason="official library not available")
+def test_template_save_to_the_personal_library(tmp_path, monkeypatch, capsys):
+    from src.cli.commands.library import cmd_library_template_save
+
+    mine = tmp_path / "mine"
+    mine.mkdir()
+    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
+
+    cmd_library_template_save(_save_args(tmp_path))
+
+    assert "Saved to" in capsys.readouterr().out
+    assert (mine / "survey" / "survey-gad7.json").exists()
+
+
+@pytest.mark.skipif(not GAD7.exists(), reason="official library not available")
+def test_template_save_to_personal_without_a_personal_library_says_how_to_set_it(tmp_path, monkeypatch, capsys):
+    from src.cli.commands.library import cmd_library_template_save
+
+    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings())
+
+    with pytest.raises(SystemExit):
+        cmd_library_template_save(_save_args(tmp_path))
+
+    assert "Personal Template Library" in capsys.readouterr().out
