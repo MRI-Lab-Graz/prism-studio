@@ -25,6 +25,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
+from src.participant_ids import find_participant_id_source_column, normalize_participant_id
+
 _NUMERIC_LABEL_RE = re.compile(r"^0*([0-9]+)$")
 
 
@@ -52,11 +54,6 @@ def load_existing_participant_ids(project_root: Path | str) -> set[str]:
     if not participants_tsv.is_file():
         return set()
 
-    try:
-        from .participants_converter import ParticipantsConverter
-    except Exception:
-        return set()
-
     existing_ids: set[str] = set()
     try:
         with participants_tsv.open("r", encoding="utf-8", newline="") as handle:
@@ -68,13 +65,13 @@ def load_existing_participant_ids(project_root: Path | str) -> set[str]:
             id_column = (
                 "participant_id"
                 if "participant_id" in headers
-                else ParticipantsConverter._find_participant_id_source_column(headers)
+                else find_participant_id_source_column(headers)
             )
             if not id_column:
                 return existing_ids
 
             for row in reader:
-                normalized = ParticipantsConverter._normalize_participant_id(
+                normalized = normalize_participant_id(
                     (row or {}).get(id_column)
                 )
                 if normalized:

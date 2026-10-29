@@ -36,6 +36,7 @@ src/entity_rules.py
 src/formatters.py
 src/language_codes.py
 src/modality_versions.py
+src/participant_ids.py
 src/participants_levels.py
 src/participants_sessions.py
 src/recipe_validation.py
@@ -52,6 +53,7 @@ src/spec_overlay.py
 src/specification.py
 src/survey_answer_codes.py
 src/survey_existing.py
+src/survey_localize.py
 src/survey_template_drift.py
 src/term_proposal.py
 src/term_registry.py

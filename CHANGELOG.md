@@ -12,8 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `task-<name>_survey.json` is written from `code/library/survey/survey-<name>.json` at conversion, so editing the template
   later (for example remapping answer codes to numbers) left a sidecar that no longer matched it, silently. The warning names
   the survey and the changed items and says how to bring data and sidecar in line (`survey convert --force`) - or to revert the
-  template. Only item definitions are compared, so edits to `Technical`, `Study` and `Metadata` are not reported. The PyPI
-  validator has no survey converter and skips this check.
+  template. Only item definitions are compared, so edits to `Technical`, `Study` and `Metadata` are not reported.
 - **A personal template library: your own folder of templates, used by all your projects and never part of one.** Set it
   under Settings > Personal Template Library (same layout as a project's `code/library`: `survey/`, `biometrics/`). A
   template is taken from the nearest library that has it: the project, then your personal library, then the global one. The
@@ -35,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **The PyPI validator now reports what the full validator reports.** Two checks silently did nothing in the wheel because the
+  code they need sat behind the conversion stack and pandas: the participants.tsv-against-folders check (`PRISM707`, in the strict
+  mode) and the template-change warning. The small pure parts they use (the participant ID rules, picking a language out of a
+  template) moved into dependency-free modules (`src/participant_ids.py`, `src/survey_localize.py`) that the wheel carries, and
+  the converters import them from there. Two tests keep it so: one runs the staged wheel and the full validator on the same
+  project and compares their findings, one adds a made-up modality to the staged specification and checks that its data is
+  validated from the schema alone. Still open: the participants-mapping step of the CLI writes `participants.tsv` before
+  validating and needs the full converter, so it does nothing in the wheel.
 - **The conversion preview no longer reports answers like `ADS0` as "not one of 0, 1, 2, 3" when the template maps those codes to numbers.**
   The preview's scale check compared the raw answer with the template's levels, while the conversion itself already read each
   stored code through the item's `LimeSurvey.answerCodes` (`ADS0` as `0`). Both now read the answer the same way, so a template

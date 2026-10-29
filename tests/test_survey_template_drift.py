@@ -24,7 +24,7 @@ def _project(tmp_path, template=TEMPLATE):
 def _convert(tmp_path):
     """Write the root sidecar the way the converter does, from the current template."""
     from src.converters.survey_core import _inject_missing_token, load_survey_library
-    from src.converters.survey_templates import _localize_survey_template
+    from src.survey_localize import _localize_survey_template
 
     template = load_survey_library(str(tmp_path / "code" / "library" / "survey"))["ads"]
     sidecar = _inject_missing_token(_localize_survey_template(template, None), token="n/a")

@@ -9,7 +9,6 @@ import re
 import sys
 import json
 import csv
-import importlib
 from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional
@@ -707,27 +706,10 @@ def _check_participants_subject_alignment(
     participants.tsv row without a folder is a warning (not everyone screened is enrolled).
     """
     from src.eligibility import is_screening_only
+    from src.participant_ids import find_participant_id_source_column, normalize_participant_id
 
     participants_path = Path(root_dir) / "participants.tsv"
     if not participants_path.exists() or not participants_path.is_file():
-        return []
-
-    try:
-        participants_converter_module = importlib.import_module(
-            "src.participants_converter"
-        )
-    except ImportError:
-        try:
-            participants_converter_module = importlib.import_module(
-                "participants_converter"
-            )
-        except ImportError:
-            return []
-
-    participants_converter = getattr(
-        participants_converter_module, "ParticipantsConverter", None
-    )
-    if participants_converter is None:
         return []
 
     if subject_ids is None:
@@ -750,14 +732,14 @@ def _check_participants_subject_alignment(
             id_column = (
                 "participant_id"
                 if "participant_id" in headers
-                else participants_converter._find_participant_id_source_column(headers)
+                else find_participant_id_source_column(headers)
             )
             if not id_column:
                 return []
 
             for row in reader:
                 raw_value = (row or {}).get(id_column)
-                normalized = participants_converter._normalize_participant_id(raw_value)
+                normalized = normalize_participant_id(raw_value)
                 if normalized:
                     participant_ids.add(normalized)
                     row_counts[normalized] = row_counts.get(normalized, 0) + 1

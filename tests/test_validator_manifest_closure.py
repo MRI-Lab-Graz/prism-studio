@@ -7,13 +7,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 ALLOWLIST = {
-    "app/src/converters/survey_templates.py": "survey_template_drift imports it inside a try/except ImportError, so the "
-    "template-drift warning (PRISM710) is skipped in the wheel, which has no survey converter",
     "src/anonymizer.py": "export path, never reached by the validator",
-    "src/participants_converter.py": "needs pandas; the import in subject_id_matching is guarded by try/except, and it is also "
-    "loaded by importlib.import_module STRING imports (runner._check_participants_subject_alignment, "
-    "participants_mapping) that this AST test cannot see, so in the wheel the strict --bids "
-    "participants alignment check and auto-applied mapping silently do nothing (known gap)",
+    "src/participants_converter.py": "needs pandas; only participants_mapping's auto-apply step (a conversion that "
+    "writes participants.tsv before validating) loads it, through importlib.import_module STRING imports "
+    "this AST test cannot see, so in the wheel that step does nothing (known gap)",
 }
 
 
