@@ -10,8 +10,6 @@ app/src/converters/survey_processing.py
 app/src/core/__init__.py
 app/src/core/validation.py
 app/src/cross_platform.py
-app/src/derivatives/__init__.py
-app/src/derivatives/participants_mapping.py
 app/src/fixer.py
 app/src/issues.py
 app/src/plugins.py

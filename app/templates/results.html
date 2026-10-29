@@ -143,18 +143,6 @@
         </div>
         {% endif %}
 
-        {% if results and results.get('participants_mapping') and results.participants_mapping.get('applied') %}
-        <div class="alert alert-info border-0 shadow-sm mb-4">
-            <i class="fas fa-file-import me-2"></i>
-            <strong>participants.tsv was auto-regenerated</strong> from
-            <code>{{ results.participants_mapping.get('mapping_file') }}</code>
-            before validation ran
-            {% if results.participants_mapping.get('rows') is not none %}
-            ({{ results.participants_mapping.get('rows') }} rows transformed).
-            {% else %}.{% endif %}
-        </div>
-        {% endif %}
-
         <!-- Summary Dashboard -->
         <div class="card mb-4 border-0 shadow-sm overflow-hidden">
             <div class="card-body p-0">

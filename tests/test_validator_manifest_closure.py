@@ -8,9 +8,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 ALLOWLIST = {
     "src/anonymizer.py": "export path, never reached by the validator",
-    "src/participants_converter.py": "needs pandas; only participants_mapping's auto-apply step (a conversion that "
-    "writes participants.tsv before validating) loads it, through importlib.import_module STRING imports "
-    "this AST test cannot see, so in the wheel that step does nothing (known gap)",
 }
 
 

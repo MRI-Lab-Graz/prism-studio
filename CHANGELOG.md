@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **Validating no longer rewrites `participants.tsv`.** The command line validator and Studio's Validate page used to apply a saved
+  `participants_mapping.json` before every validation, silently changing the dataset. That is a conversion, not a check, and it
+  needed the full converter (so the PyPI validator never did it). It is removed from both; applying a mapping is
+  `participants convert` (with `participants save-mapping`) as before. If you relied on the validator applying the mapping,
+  run `participants convert` first. Validation only reads, in the full and in the PyPI validator.
 - **The PyPI validator now reports what the full validator reports.** Two checks silently did nothing in the wheel because the
   code they need sat behind the conversion stack and pandas: the participants.tsv-against-folders check (`PRISM707`, in the strict
   mode) and the template-change warning. The small pure parts they use (the participant ID rules, picking a language out of a

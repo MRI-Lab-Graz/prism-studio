@@ -12,39 +12,6 @@ import time
 from typing import Optional, Callable, Tuple, Any, List
 
 
-def _resolve_participants_mapping():
-    """Resolve optional participants mapping function lazily."""
-    candidates = [
-        "src.derivatives.participants_mapping",
-        "derivatives.participants_mapping",
-    ]
-
-    for module_name in candidates:
-        try:
-            module = __import__(module_name, fromlist=["apply_participants_mapping"])
-            fn = getattr(module, "apply_participants_mapping", None)
-            if callable(fn):
-                return fn
-        except Exception:
-            continue
-
-    return None
-
-
-def _apply_participants_mapping(
-    dataset_path: str, progress_callback: Optional[Callable] = None
-) -> Optional[dict]:
-    """Delegate participants mapping to derivatives workflow layer.
-
-    Returns the mapping result dict (or None if the feature is unavailable)
-    so callers can surface this dataset-mutating side effect to the user.
-    """
-    apply_participants_mapping = _resolve_participants_mapping()
-    if apply_participants_mapping is None:
-        return None
-    return apply_participants_mapping(dataset_path, progress_callback)
-
-
 # Progress tracking for validation jobs
 _validation_progress: dict[str, dict[str, Any]] = {}
 _validation_progress_lock = threading.Lock()
@@ -286,23 +253,6 @@ def run_validation(
     # Canonical PRISM location: BIDS root is the provided project folder.
     dataset_path = os.path.abspath(dataset_path)
 
-    # Auto-apply participants mapping only when PRISM checks are enabled.
-    # This mutates participants.tsv in the dataset, so the result is attached
-    # to `stats` below and surfaced on the results page rather than left silent.
-    participants_mapping_result = None
-    if run_prism:
-        participants_mapping_result = _apply_participants_mapping(
-            dataset_path, progress_callback
-        )
-
-    def _attach_mapping_result(stats_obj):
-        if participants_mapping_result is not None:
-            try:
-                stats_obj.participants_mapping_result = participants_mapping_result
-            except Exception:
-                pass
-        return stats_obj
-
     core_validate = _get_core_validator()
 
     # Try to use core validator directly first
@@ -366,7 +316,7 @@ def run_validation(
                 else:
                     web_issues.append(issue)
 
-            return web_issues, _attach_mapping_result(stats)
+            return web_issues, stats
         except Exception as e:
             if isinstance(e, ValidationCancelledError):
                 raise
@@ -382,7 +332,7 @@ def run_validation(
         run_prism=run_prism,
         check_nifti_headers=check_nifti_headers,
     )
-    return issues, _attach_mapping_result(stats)
+    return issues, stats
 
 
 def _run_validator_subprocess(
