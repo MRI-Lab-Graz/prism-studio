@@ -8,10 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A personal template library: your own folder of templates, used by all your projects and never part of one.** Set it
+  under Settings > Personal Template Library (same layout as a project's `code/library`: `survey/`, `biometrics/`). A
+  template is taken from the nearest library that has it: the project, then your personal library, then the global one. The
+  template editor lists your personal templates (and the global ones) in the second dropdown, grouped by library, and
+  **Save to Personal library** (CLI: `library template-save --to personal`) saves into it. A conversion copies the templates
+  it used into the project's `code/library`, so a shared project stays complete without access to your folder.
 - **`prism-studio.py -v` (or `--version`) prints the version and the folder Studio runs from, and the terminal shows the same
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
 ### Changed
+- **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only
+  when nothing matched retry with the official library (and copy those into the project); the command line could not do
+  either. Both now build one merged library (project, personal, global: nearest first, per template) and copy the templates a
+  conversion used into the project. A file mixing a project survey and an official one converts both.
 - **`survey convert` picks its template library the same way Studio does.** Without `--library` it stopped with "Could not find a
   survey template library", because it looked in folders this repository does not have. The choice now lives in one place
   (`src/survey_library_resolution.py`) used by both: the project's `code/library`, then its `official/library`, then the

@@ -11,11 +11,10 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
-from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any, Callable
 
 from src.config import get_effective_library_paths
 from src.project_root import resolve_existing_project_root
@@ -94,15 +93,6 @@ def is_standard_library(library_dir, project_path, app_root, app_settings=None) 
         return (path.parent if path.name == "survey" else path).resolve()
 
     return any(r and library_root(r) == library_root(library_dir) for r in roots)
-
-
-@contextmanager
-def effective_library(project_path, app_root, app_settings=None) -> Iterator[EffectiveLibrary]:
-    library = build_effective_library(project_path, app_root, app_settings)
-    try:
-        yield library
-    finally:
-        library._tmp.cleanup()
 
 
 def infer_technical_defaults(input_path) -> dict[str, str]:

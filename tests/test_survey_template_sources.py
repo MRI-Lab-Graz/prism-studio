@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from src.config import AppSettings
-from src.survey_template_sources import copy_used_templates_to_project, effective_library, template_tiers
+from src.survey_template_sources import build_effective_library, copy_used_templates_to_project, template_tiers
 
 
 def _put(folder: Path, task: str, origin: str) -> None:
@@ -38,31 +38,31 @@ def test_tiers_are_project_then_personal_then_global(tmp_path):
 
 def test_each_task_comes_from_the_nearest_library_that_has_it(tmp_path):
     project, settings = _world(tmp_path)
-    with effective_library(project, tmp_path / "app", settings) as library:
-        assert {t: _creator(library, t) for t in "abcd"} == {
-            "a": "project", "b": "project", "c": "personal", "d": "global",
-        }
-        assert {t: tier.label for t, tier in library.origins.items()} == {
-            "a": "project", "b": "project", "c": "personal", "d": "global",
-        }
+    library = build_effective_library(project, tmp_path / "app", settings)
+    assert {t: _creator(library, t) for t in "abcd"} == {
+        "a": "project", "b": "project", "c": "personal", "d": "global",
+    }
+    assert {t: tier.label for t, tier in library.origins.items()} == {
+        "a": "project", "b": "project", "c": "personal", "d": "global",
+    }
 
 
 def test_without_a_personal_library_it_is_project_then_global(tmp_path):
     project, settings = _world(tmp_path)
     settings.personal_library_path = None
-    with effective_library(project, tmp_path / "app", settings) as library:
-        assert _creator(library, "c") == "global"
+    library = build_effective_library(project, tmp_path / "app", settings)
+    assert _creator(library, "c") == "global"
 
 
 def test_no_library_anywhere_gives_an_empty_library(tmp_path):
-    with effective_library(None, tmp_path / "app", AppSettings()) as library:
-        assert library.origins == {}
+    library = build_effective_library(None, tmp_path / "app", AppSettings())
+    assert library.origins == {}
 
 
 def test_used_templates_from_other_libraries_are_copied_into_the_project(tmp_path):
     project, settings = _world(tmp_path)
-    with effective_library(project, tmp_path / "app", settings) as library:
-        summary = copy_used_templates_to_project(library, ["b", "c", "d"], project, technical_defaults={"SoftwarePlatform": "LimeSurvey"})
+    library = build_effective_library(project, tmp_path / "app", settings)
+    summary = copy_used_templates_to_project(library, ["b", "c", "d"], project, technical_defaults={"SoftwarePlatform": "LimeSurvey"})
 
     mine = project / "code" / "library" / "survey"
     assert summary["existing_tasks"] == ["b"]  # the project's own template is never overwritten
