@@ -142,12 +142,6 @@ def cmd_survey_convert(args):
 
     import tempfile
 
-    def _has_survey_templates(dir_path: Path) -> bool:
-        try:
-            return any(dir_path.glob("survey-*.json"))
-        except Exception:
-            return False
-
     def _library_needs_i18n_compile(dir_path: Path) -> bool:
         """Return True if templates in dir_path appear to contain language maps."""
         try:
