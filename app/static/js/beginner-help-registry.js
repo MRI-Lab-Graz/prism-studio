@@ -44,7 +44,7 @@
         envLat: 'Tip: use the location search above instead of typing coordinates by hand.',
         convertSessionColumnOverride: 'Only needed if one file contains several time points. Otherwise leave it on Auto-detect.',
         convertRunColumnOverride: 'A run is a repetition within the same session (e.g. the same questionnaire filled in twice in one visit). Most studies have no runs, so leave it on Auto-detect.',
-        templateImportInput: 'Quickest way to start: export your questionnaire from LimeSurvey or an Excel codebook, import it here, then fill in what is missing.',
+        btnImportTemplateSource: 'Quickest way to start: export your questionnaire from LimeSurvey or an Excel codebook, import it here, then fill in what is missing.',
         jsonFileInput: 'JSON sidecars are the small .json files next to data files that describe them (units, labels, device). Editing them changes metadata, never your data.',
         derivFormat: 'SPSS users: .sav (value labels included). R, Python, or Jamovi: CSV. Excel is best for a quick look.',
         derivSurvey: 'Comma-separated recipe names, e.g. phq9, gad7.',

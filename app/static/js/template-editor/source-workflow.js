@@ -679,12 +679,25 @@ async function importLimeSurvey(context, file, previousEditorState, fromSplitCha
   context.showAlert('info', `Found ${questionnaires.length} questionnaires in ${context.escapeHtml(file.name)}. Choose one above to load it.`);
 }
 
-export async function importTemplateSource(context) {
-  const file = context.templateImportInput.files[0];
-  if (!file) {
-    return;
+// The in-app picker returns a path on the machine Studio runs on; the server hands the
+// bytes back so the import below treats it like any other file.
+async function pickTemplateSource(context) {
+  const path = await window.PrismPathPicker.pickServerFile({
+    title: 'Select Template Source on Server',
+    confirmLabel: 'Import This File',
+    extensions: '.json,.lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv',
+  });
+  if (!path) {
+    return null;
   }
-  context.templateImportInput.value = '';
+  const res = await context.fetchWithApiFallback(`/api/template-editor/read-source?path=${encodeURIComponent(path)}`);
+  if (!res.ok) {
+    throw new Error((await res.json().catch(() => ({}))).error || `Could not read ${path} (${res.status})`);
+  }
+  return new File([await res.blob()], path.split(/[\\/]/).pop());
+}
+
+export async function importTemplateSource(context, file) {
 
   if (context.hasUnsavedChanges() && !confirm('You have unsaved changes. Importing a template source will discard them. Continue?')) {
     return;
@@ -811,13 +824,12 @@ export async function deleteCurrentTemplate(context) {
 }
 
 export function bindTemplateEditorSourceWorkflowEvents(context) {
-  context.btnImportTemplateSource.addEventListener('click', () => {
-    context.templateImportInput.click();
-  });
-
-  context.templateImportInput.addEventListener('change', async () => {
+  context.btnImportTemplateSource.addEventListener('click', async () => {
     try {
-      await importTemplateSource(context);
+      const file = await pickTemplateSource(context);
+      if (file) {
+        await importTemplateSource(context, file);
+      }
     } catch (error) {
       context.showAlert('danger', context.escapeHtml(error.message));
     }

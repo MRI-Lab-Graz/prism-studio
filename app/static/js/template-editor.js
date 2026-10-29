@@ -11,7 +11,6 @@
   const bulkEditFormEl = document.getElementById('bulkEditForm');
   const toolPropertiesFormEl = document.getElementById('toolPropertiesForm');
   const btnImportTemplateSource = document.getElementById('btnImportTemplateSource');
-  const templateImportInput = document.getElementById('templateImportInput');
   const excelGroupPickerRowEl = document.getElementById('excelGroupPickerRow');
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
   const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
@@ -4823,7 +4822,6 @@
         btnImportTemplateSource,
         btnNew,
         btnValidate,
-        templateImportInput,
         excelGroupPickerRowEl,
         excelGroupPickerSelectEl,
         btnLoadExcelGroup,

@@ -413,8 +413,8 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
 
     def test_import_accepts_a_prism_template_json(self):
         template = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
-        start = template.index('id="templateImportInput"')
-        picker = template[template.rindex("<input", 0, start) : template.index(">", start)]
+        source = TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.read_text(encoding="utf-8")
+        picker = source[source.index("async function pickTemplateSource") : source.index("export async function importTemplateSource")]
 
         self.assertIn(".json", picker)
         # The "?" tooltip lists it too.
