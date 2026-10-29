@@ -7,22 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **The measurement form on the Propose changes page is clearer.** Environment asks first whether a measurement is a number with a unit or a
-  choice from fixed values and shows only the matching field; the description has a grey example from a real term; other names and the CF
-  standard name are folded under *Optional details*; a line under each button says what it does. The new-kind form shows its limit first, describes the data in four short fields
-  (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
-
-### Fixed
-- **The Template Editor opens the "Data Collection Software" group itself when `SoftwareVersion` is required and empty.** After a
-  Pavlovia import the field was in a closed group and the validation message gave no hint where it is.
-- **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
-  keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
-  row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
-  blocks, hidden items, choices from another question and unsupported types are reported as import notes in the preview and on the
-  command line.
-- **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
-  unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
+## [1.23.0] - 2026-10-29
 
 ### Added
 - **Pavlovia responses can be converted: `survey prepare-pavlovia`.** The responses `.csv` downloaded from Pavlovia has no
@@ -96,6 +81,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **The measurement form on the Propose changes page is clearer.** Environment asks first whether a measurement is a number with a unit or a
+  choice from fixed values and shows only the matching field; the description has a grey example from a real term; other names and the CF
+  standard name are folded under *Optional details*; a line under each button says what it does. The new-kind form shows its limit first, describes the data in four short fields
+  (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 - **Converting a real LimeSurvey 6 archive of a survey exported from PRISM: three wrong reports and one wrong value.** Found
   by exporting a test survey, importing it into LimeSurvey 6, answering it and converting the `.lsa`. (1) The "missing
   items" count ignored aliases and columns read by item name, so PHQ-9 (`PHQ01…` in LimeSurvey, `PHQ901…` in the template)
@@ -159,6 +148,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of the task). A converter around eye2bids is parked in `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`.
 
 ### Fixed
+- **The Template Editor opens the "Data Collection Software" group itself when `SoftwareVersion` is required and empty.** After a
+  Pavlovia import the field was in a closed group and the validation message gave no hint where it is.
+- **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
+  keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
+  row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
+  blocks, hidden items, choices from another question and unsupported types are reported as import notes in the preview and on the
+  command line.
+- **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
+  unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
 - **LimeSurvey responses reach the right items.** A response field (`{sid}X{gid}X{qid}{row}`) is now split using the
   survey's own question ids. Before, numeric row codes ran into the question id (ADS rows `1`–`20` came out as
   `384861`… and were never converted), and a row code two arrays share (`SQ001`) could put one group's answers into
