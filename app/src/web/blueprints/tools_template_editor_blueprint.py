@@ -546,6 +546,21 @@ def api_template_editor_delete():
         return jsonify({"error": str(e)}), 500
 
 
+IMPORT_SOURCE_EXTENSIONS = {".json", ".lsq", ".lsg", ".lss", ".lsa", ".xlsx", ".csv", ".tsv"}
+
+
+@tools_template_editor_bp.route("/api/template-editor/read-source", methods=["GET"])
+def api_template_editor_read_source():
+    """Bytes of an import file chosen with the in-app picker, so the page can import it
+    like an upload (the import routes below take uploads; the CLI takes --input <path>)."""
+    target = Path((request.args.get("path") or "").strip())
+    if target.suffix.lower() not in IMPORT_SOURCE_EXTENSIONS:
+        return jsonify({"error": "Not a template source file (.json .lsq .lsg .lss .lsa .xlsx .csv .tsv)"}), 400
+    if not target.is_file():
+        return jsonify({"error": "File not found"}), 404
+    return send_file(target)
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-lsq-lsg", methods=["POST"])
 def api_template_editor_import_lsq_lsg():
     """Import a .lsq or .lsg file and return a PRISM template for the editor."""
