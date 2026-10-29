@@ -201,6 +201,12 @@ def cmd_survey_convert(args):
     lang = str(getattr(args, "lang", "de") or "de").strip().lower()
     if not lang:
         lang = "de"
+    if lang == "auto":  # templates are compiled for one real language; an .lsa names its own
+        from src.converters.survey_lsa import infer_lsa_metadata
+
+        input_file = Path(args.input)
+        inferred = infer_lsa_metadata(input_file).get("language") if input_file.suffix.lower() == ".lsa" else None
+        lang = (inferred or "de").lower()
 
     library_tmp = None
     library_label = None
@@ -683,7 +689,7 @@ def cmd_survey_import_pavlovia(args):
     the Template Editor's 'Import Template Source' for a Pavlovia survey."""
     from src.converters.pavlovia_import import (
         list_pavlovia_questionnaires,
-        pavlovia_questionnaire_template,
+        pavlovia_questionnaire,
     )
     from src.converters.template_import import finish_import
 
@@ -705,15 +711,39 @@ def cmd_survey_import_pavlovia(args):
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
         planned = []
         for key in keys:
-            template = pavlovia_questionnaire_template(survey, key, args.split, getattr(args, "language", None))
+            template, notes = pavlovia_questionnaire(survey, key, args.split, getattr(args, "language", None))
             if getattr(args, "software_version", None):
                 template["Technical"]["SoftwareVersion"] = args.software_version
-            payload = finish_import(template, template["Study"]["OriginalName"], getattr(args, "project", None))
+            payload = finish_import(template, template["Study"]["OriginalName"], getattr(args, "project", None), notes=notes)
             planned.append((Path(args.output).resolve() / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, Path(args.output).resolve())
     except (OSError, ValueError) as e:  # json.JSONDecodeError is a ValueError
         print(f"Error importing Pavlovia survey: {e}")
         sys.exit(1)
+
+
+def cmd_survey_prepare_pavlovia(args):
+    """Pavlovia responses .csv -> clean wide table for 'survey convert' (see src/converters/pavlovia_responses.py)."""
+    import pandas as pd
+
+    from src.converters.pavlovia_responses import prepare_pavlovia_responses
+
+    try:
+        survey = json.loads(Path(args.survey).read_text(encoding="utf-8-sig"))
+        table = pd.read_csv(args.input, dtype=str, keep_default_na=False, encoding="utf-8-sig")
+        wide, notes = prepare_pavlovia_responses(
+            table, survey, id_columns=[c.strip() for c in args.id_columns.split(",")], id_pad=args.id_pad,
+            session_column=args.session_column, rename=args.rename,
+        )
+        for note in notes:
+            print(f"[PRISM] {note}")
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        wide.to_csv(args.output, index=False)
+    except (OSError, ValueError) as e:  # json.JSONDecodeError and pandas parse errors are ValueErrors
+        print(f"Error preparing Pavlovia responses: {e}")
+        sys.exit(1)
+    print(f"[PRISM] Wrote {len(wide)} row(s) to {args.output}. Next: survey convert --input {args.output} "
+          "--id-column participant_id --session-column session")
 
 
 def cmd_survey_import_lsq(args):
@@ -752,6 +782,34 @@ def cmd_survey_import_lsq(args):
         print(json.dumps({"success": True, "path": str(output_path)}, indent=2))
     else:
         print(f"✅ Wrote template {output_path}")
+
+
+def cmd_survey_answer_codes(args):
+    """List the answer codes of a template that are not numbers, with a suggested number
+    each, or (--set) give them numbers: Levels get the numbers, LimeSurvey.answerCodes the
+    stored codes. Matches the Studio Template Editor's 'Answer codes' action."""
+    from src.survey_answer_codes import apply_answer_numbers, suggest_answer_numbers
+
+    path = Path(args.template).resolve()
+    template = json.loads(path.read_text(encoding="utf-8"))
+    as_json = bool(getattr(args, "json", False))
+    if not args.set:
+        suggestions = suggest_answer_numbers(template)
+        if as_json:
+            print(json.dumps({"suggestions": suggestions}, indent=2, ensure_ascii=False))
+        else:
+            for s in suggestions:
+                pairs = ",".join(f"{code}={number or '?'}" for code, number in s["codes"].items())
+                print(f"{len(s['items'])} item(s) ({', '.join(s['items'][:3])}...): --set \"{pairs}\"")
+        return
+    try:
+        mapping = dict(pair.split("=", 1) for pair in args.set.split(","))
+        changed = apply_answer_numbers(template, mapping)
+    except ValueError as e:
+        print(json.dumps({"success": False, "error": str(e)}) if as_json else f"Error: {e}")
+        sys.exit(1)
+    path.write_text(json.dumps(template, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps({"success": True, "changed": changed}) if as_json else f"✅ {len(changed)} item(s) recoded in {path}")
 
 
 def parse_session_map(map_str):

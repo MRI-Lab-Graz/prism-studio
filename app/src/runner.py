@@ -653,6 +653,16 @@ def _no_subjects_message(root_dir: str) -> str:
     return f"{message} Did you point the validator at the dataset root?"
 
 
+_MISSING_PROJECT_JSON = "Missing project.json at project root"
+_MISSING_PARTICIPANTS_TSV = "Missing participants.tsv although subject folders exist"
+
+
+def without_project_file_warnings(issues):
+    """Issues without the project.json / participants.tsv warnings, for validating a conversion's
+    throw-away staging folder, which never holds those files (the real output does)."""
+    return [i for i in issues if i[1] not in (_MISSING_PROJECT_JSON, _MISSING_PARTICIPANTS_TSV)]
+
+
 def _check_project_files(root_dir: str, has_subjects: bool, modalities) -> list[tuple[str, str, str]]:
     """PRISM010 / PRISM004 / PRISM501: the project-level files, as warnings.
 
@@ -663,9 +673,9 @@ def _check_project_files(root_dir: str, has_subjects: bool, modalities) -> list[
     root = Path(root_dir)
     found: list[tuple[str, str, str]] = []
     if not (root / "project.json").exists():
-        found.append(("WARNING", "Missing project.json at project root", str(root)))
+        found.append(("WARNING", _MISSING_PROJECT_JSON, str(root)))
     if has_subjects and not (root / "participants.tsv").exists():
-        found.append(("WARNING", "Missing participants.tsv although subject folders exist", str(root)))
+        found.append(("WARNING", _MISSING_PARTICIPANTS_TSV, str(root)))
 
     present = sorted(m for m in modalities if m in current_specification().prism_modalities)
     ignore_path = root / ".bidsignore"

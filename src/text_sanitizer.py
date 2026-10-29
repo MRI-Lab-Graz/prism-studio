@@ -69,10 +69,32 @@ PRESERVE_PATTERNS = [
 ]
 
 
+# LimeSurvey stores numbers as DECIMAL(30,10): "23.0000000000".
+_TRAILING_DECIMAL_ZEROS = re.compile(r"-?\d+\.\d*0")
+
+
+def trim_trailing_decimal_zeros(value):
+    """'23.0000000000' -> '23', '44.50' -> '44.5'; same number, other values untouched."""
+    if isinstance(value, str) and _TRAILING_DECIMAL_ZEROS.fullmatch(value.strip()):
+        return value.strip().rstrip("0").rstrip(".")
+    return value
+
+
 # A tag is "<" + tag name + space, "/" or ">", so "a<3" and "{if(a<b, 1, c>2)}" are text.
 _HTML_TAG_RE = re.compile(r"</?[A-Za-z][A-Za-z0-9]*(?=[\s/>])[^<>]*>")
 _HTML_BREAK_RE = re.compile(r"<br\s*/?>|</(?:p|div|li|h[1-6]|tr|blockquote)\s*>", re.IGNORECASE)
 _HTML_DROP_RE = re.compile(r"<!--.*?-->|<(script|style)\b.*?</\1\s*>", re.IGNORECASE | re.DOTALL)
+
+
+# Pictographs (incl. flags, skin tones, dingbats like ☺ and ❤) with their variation selector,
+# keycap mark and zero-width-joiner sequences; a joiner between letters is not touched.
+_EMOJI = "[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B50\u2B55]"
+_EMOJI_RE = re.compile(f"{_EMOJI}[\uFE0F\u20E3]?(?:\u200D{_EMOJI}\uFE0F?)*|\uFE0F")
+
+
+def strip_emoji(text: str) -> str:
+    """The text without emoji (they break exports and files on Windows); spaces are not collapsed."""
+    return _EMOJI_RE.sub("", text)
 
 
 def html_to_text(value: Optional[str]) -> str:
@@ -83,7 +105,7 @@ def html_to_text(value: Optional[str]) -> str:
         return ""
     text = _HTML_DROP_RE.sub("", value)
     text = _HTML_TAG_RE.sub("", _HTML_BREAK_RE.sub("\n", text))
-    text = html.unescape(text).replace("\xa0", " ")
+    text = strip_emoji(html.unescape(text).replace("\xa0", " "))
     lines = (re.sub(r"[ \t\f\v]+", " ", line).strip() for line in text.splitlines())
     return "\n".join(line for line in lines if line)
 

@@ -38,7 +38,9 @@ def install_hint(platform: Optional[str] = None, which: Callable[[str], Optional
             f"Install Git for Windows ({_GIT_WINDOWS}), then run: {install_command('win32', which)} "
             "and restart PRISM Studio"
         )
-    return f"Install with: {install_command(platform, which)}"
+    cmd = install_command(platform, which)
+    note = " (if uv says 'unexpected argument', run 'uv self update' first)" if cmd.startswith("uv ") else ""
+    return f"Install with: {cmd}{note}"
 
 
 def git_install_hint(platform: Optional[str] = None) -> str:

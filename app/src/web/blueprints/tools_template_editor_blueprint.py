@@ -546,6 +546,21 @@ def api_template_editor_delete():
         return jsonify({"error": str(e)}), 500
 
 
+IMPORT_SOURCE_EXTENSIONS = {".json", ".lsq", ".lsg", ".lss", ".lsa", ".xlsx", ".csv", ".tsv"}
+
+
+@tools_template_editor_bp.route("/api/template-editor/read-source", methods=["GET"])
+def api_template_editor_read_source():
+    """Bytes of an import file chosen with the in-app picker, so the page can import it
+    like an upload (the import routes below take uploads; the CLI takes --input <path>)."""
+    target = Path((request.args.get("path") or "").strip())
+    if target.suffix.lower() not in IMPORT_SOURCE_EXTENSIONS:
+        return jsonify({"error": f"Not a template source file ({' '.join(sorted(IMPORT_SOURCE_EXTENSIONS))})"}), 400
+    if not target.is_file():
+        return jsonify({"error": "File not found"}), 404
+    return send_file(target)
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-lsq-lsg", methods=["POST"])
 def api_template_editor_import_lsq_lsg():
     """Import a .lsq or .lsg file and return a PRISM template for the editor."""
@@ -621,6 +636,27 @@ def api_template_editor_import_lsq_lsg():
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/answer-codes", methods=["POST"])
+def api_template_editor_answer_codes():
+    """Answer codes that are not numbers: without 'codes' the suggestions, with 'codes'
+    (code -> number) the template with them applied. Same backend as `survey answer-codes`."""
+    from src.survey_answer_codes import apply_answer_numbers, suggest_answer_numbers
+
+    payload = request.get_json(silent=True) or {}
+    template, codes = payload.get("template"), payload.get("codes")
+    if not isinstance(template, dict):
+        return jsonify({"error": "No template"}), 400
+    if not codes:
+        return jsonify({"suggestions": suggest_answer_numbers(template)}), 200
+    pairs = ",".join(f"{code}={number}" for code, number in codes.items())
+    print(f'[PRISM] python prism_tools.py survey answer-codes --template <template.json> --set "{pairs}"')
+    try:
+        changed = apply_answer_numbers(template, codes)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"template": template, "changed": changed}), 200
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-limesurvey", methods=["POST"])
 def api_template_editor_import_limesurvey():
     """List the questionnaires in a .lss/.lsa (no 'key') or return one as a
@@ -674,7 +710,7 @@ def api_template_editor_import_pavlovia():
     key = (request.form.get("key") or "").strip()
     project_path = (request.form.get("project_path") or "").strip() or None
 
-    from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire_template
+    from src.converters.pavlovia_import import list_pavlovia_questionnaires, pavlovia_questionnaire
     from src.converters.template_import import finish_import
 
     command = f"python prism_tools.py survey import-pavlovia --input {file.filename} --split {split}"
@@ -686,8 +722,8 @@ def api_template_editor_import_pavlovia():
                 survey, split, source_name=file.filename, project_path=project_path, match_library=True
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
-        template = pavlovia_questionnaire_template(survey, key, split)
-        payload = finish_import(template, template["Study"]["OriginalName"], project_path)
+        template, notes = pavlovia_questionnaire(survey, key, split)
+        payload = finish_import(template, template["Study"]["OriginalName"], project_path, notes=notes)
     except ValueError as e:  # includes JSON and unicode decode errors
         print(f"[PRISM] Pavlovia import failed: {e}")
         return jsonify({"error": str(e)}), 400

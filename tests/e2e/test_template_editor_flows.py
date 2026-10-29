@@ -8,6 +8,12 @@ from playwright.sync_api import expect
 GLOBAL = "survey-aai.json"
 
 
+def import_source(page, path):
+    """Import `path` the way a user does: the in-app picker returns it, the page imports it."""
+    page.evaluate("path => { window.PrismPathPicker.pickServerFile = async () => path; }", str(path))
+    page.click("#btnImportTemplateSource")
+
+
 def save_global_copy_to_project(page):
     page.on("dialog", lambda dialog: dialog.accept())  # "Save an editable project copy?"
     page.select_option("#globalTemplateSelect", GLOBAL)
@@ -40,7 +46,7 @@ FOUR_QUESTIONNAIRES = Path(__file__).parents[1] / "data" / "limesurvey_four_ques
 
 def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
     page.click("label[for=modeCreate]")  # the import card is hidden until "Create or import new" is chosen
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
 
     expect(page.locator("#excelGroupPickerRow")).to_be_visible()
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(4)
@@ -57,7 +63,7 @@ def test_limesurvey_file_with_several_questionnaires_loads_the_chosen_one(page):
 
 def test_changing_split_keeps_the_loaded_questionnaire(page):
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
@@ -71,7 +77,7 @@ def test_changing_split_keeps_the_loaded_questionnaire(page):
 
 def load_ads_from_limesurvey(page):
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     page.select_option("#excelGroupPickerSelect", "g30")
     page.click("#btnLoadExcelGroup")
     expect(page.locator('option[value="ADS1_1"]')).to_have_count(1)
@@ -112,7 +118,7 @@ def test_error_links_are_readable_in_the_hint_and_in_a_real_failure(page):
 
 def test_split_by_select_shows_its_whole_label(page):
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     expect(page.locator("#sourceSplitSelect")).to_be_visible()
 
     room = page.evaluate("""() => {
@@ -143,7 +149,7 @@ def put_ads_in_project_library(project):
 
 def pick_ads(page):
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     page.select_option("#excelGroupPickerSelect", "g30")
 
 
@@ -175,7 +181,7 @@ def test_import_as_new_keeps_the_survey_items(page, project):
 def test_questionnaire_without_a_match_shows_no_card(page, project):
     put_ads_in_project_library(project)
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     page.select_option("#excelGroupPickerSelect", "g20")
 
     expect(page.locator("#libraryMatchCard")).to_be_hidden()
@@ -185,7 +191,7 @@ def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
     messages = []
     page.on("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(FOUR_QUESTIONNAIRES))
+    import_source(page, FOUR_QUESTIONNAIRES)
     page.select_option("#sourceSplitSelect", "survey")  # one entry: used to be loaded silently
     expect(page.locator("#excelGroupPickerSelect option")).to_have_count(1)
     page.select_option("#sourceSplitSelect", "group")
@@ -199,7 +205,7 @@ def test_changing_split_to_a_single_entry_does_not_load_it(page, project):
 def test_opening_create_or_import_does_not_scroll_the_page(page):
     page.evaluate("window.scrollTo(0, 0)")
     page.click("label[for=modeCreate]")
-    expect(page.locator("#excelGroupPickerRow, #templateImportInput")).to_have_count(2)  # panel opened
+    expect(page.locator("#excelGroupPickerRow, #btnImportTemplateSource")).to_have_count(2)  # panel opened
     page.wait_for_timeout(700)  # the old smooth scroll started after 120 ms
     assert page.evaluate("window.scrollY") == 0
 
@@ -314,7 +320,7 @@ LOSSY_TYPES = Path(__file__).parents[1] / "data" / "limesurvey_import_notes.lss"
 
 def test_limesurvey_import_lists_what_it_could_not_represent(page):
     page.click("label[for=modeCreate]")
-    page.set_input_files("#templateImportInput", str(LOSSY_TYPES))
+    import_source(page, LOSSY_TYPES)
     expect(page.locator("#excelGroupPickerRow")).to_be_visible()
     page.click("#btnLoadExcelGroup")
 
@@ -325,3 +331,25 @@ def test_limesurvey_import_lists_what_it_could_not_represent(page):
     expect(notes).to_contain_text("edu: has an \"Other\" text field")
     expect(notes).to_contain_text("mystery: question type Z is not known")
     expect(page.locator('option[value="agree"]')).to_have_count(1)  # the questionnaire itself loaded
+
+
+def test_answer_codes_that_are_not_numbers_get_numbers_from_the_suggestion(page, tmp_path):
+    """ADS answer codes ADS0..ADS3 (chosen by the survey's author): the editor suggests
+    0..3, the user applies them, the levels become the numbers."""
+    import json
+
+    levels = {c: {"de": f"label {c}"} for c in ("ADS0", "ADS1", "ADS2", "ADS3")}
+    template = {"Study": {"TaskName": "ads"},
+                **{f"ADS1_{i}": {"Description": {"de": f"q{i}"}, "Levels": levels} for i in (1, 2)}}
+    path = tmp_path / "survey-ads.json"
+    path.write_text(json.dumps(template), encoding="utf-8")
+    page.click("label[for=modeCreate]")
+    import_source(page, path)
+
+    area = page.locator("#answerCodesArea")
+    expect(area).to_contain_text("Answer codes are not numbers in 2 item(s)")
+    expect(area.locator('input[aria-label="Number for answer code ADS2"]')).to_have_value("2")
+    area.locator("button", has_text="Apply numbers").click()
+
+    expect(page.locator("#alertArea")).to_contain_text("Answer codes recoded in 2 item(s)")
+    expect(area.locator(".alert")).to_have_count(0)

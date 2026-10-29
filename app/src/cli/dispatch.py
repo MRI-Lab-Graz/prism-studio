@@ -197,6 +197,10 @@ def dispatch_prism_tools(
             handlers["survey_import_codebook"](args)
         elif args.action == "import-pavlovia":
             handlers["survey_import_pavlovia"](args)
+        elif args.action == "answer-codes":
+            handlers["survey_answer_codes"](args)
+        elif args.action == "prepare-pavlovia":
+            handlers["survey_prepare_pavlovia"](args)
         elif args.action == "import-limesurvey-batch":
             handlers["survey_import_limesurvey_batch"](args)
         elif args.action == "import-lsq":

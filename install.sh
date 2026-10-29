@@ -120,6 +120,15 @@ offer_datalad() {
     # Same command the app suggests, so installer and app never disagree.
     local cmd
     cmd="$("$VENV_PYTHON_UNIX" -c 'from src.datalad_doctor import install_command; print(install_command())')" || return 0
+    # Older uv versions do not know --with-executables-from; try to update uv before using it.
+    uv_knows_flag() { [[ "$(uv tool install --help 2>/dev/null)" == *--with-executables-from* ]]; }
+    if [[ "$cmd" == uv\ * ]] && ! uv_knows_flag; then
+        uv self update >/dev/null 2>&1
+        if ! uv_knows_flag; then
+            echo_info "Your uv is too old to install DataLad. Update uv (see https://docs.astral.sh/uv/getting-started/installation/), then run: $cmd"
+            return 0
+        fi
+    fi
     echo_info "DataLad and git-annex (version control and backup for your project data) are highly recommended."
     local answer=""
     read -r -p "Install them now with '$cmd'? [Y/n] " answer || answer="n"

@@ -165,7 +165,13 @@ def test_windows_hint_also_asks_for_git_for_windows_and_a_restart():
     assert "uv" not in hint
     assert "restart" in hint.lower()
     assert "Git for Windows" in install_hint("win32", which=HAS_UV)
-    assert install_hint("darwin") == f"Install with: {UV_CMD}"
+    assert install_hint("darwin").startswith(f"Install with: {UV_CMD}")
+
+
+def test_hint_tells_old_uv_users_to_update_uv():
+    # Issue #206: old uv rejects --with-executables-from.
+    assert "uv self update" in install_hint("linux")
+    assert "uv" not in install_hint("win32", which=NO_UV)
 
 
 def test_doctor_shows_the_windows_install_steps_on_windows(tmp_path, monkeypatch):

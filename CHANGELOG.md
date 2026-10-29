@@ -14,10 +14,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`spec propose-new-kind --measured/--holds/--device/--row`), checks the suggested name while you type (`spec check-kind-name`) and says what happens next.
 
 ### Fixed
+- **The Template Editor opens the "Data Collection Software" group itself when `SoftwareVersion` is required and empty.** After a
+  Pavlovia import the field was in a closed group and the validation message gave no hint where it is.
+- **The Pavlovia (SurveyJS) import no longer changes scales and drops questions silently.** A rating with `rateMin`/`rateMax`/`rateStep`
+  keeps its range (0-4 used to come out as 1-5); texts given per language are read in the chosen language; a matrix becomes one item per
+  row and multiple text one item per field; "other"/"none" options are levels (with a comment item). Checkbox/ranking/expression, html
+  blocks, hidden items, choices from another question and unsupported types are reported as import notes in the preview and on the
+  command line.
 - **A wrong `v*` tag no longer publishes anything.** The PyPI, validator-image and application-build workflows now stop first
   unless the tag is `v<__version__>` (`scripts/ci/check_tag_version.py`). A spec tag pushed here by mistake had pushed an image to ghcr.io.
 
 ### Added
+- **Pavlovia responses can be converted: `survey prepare-pavlovia`.** The responses `.csv` downloaded from Pavlovia has no
+  participant or session column, `_rt` columns, answers under `block/` and renamed questions. The new command settles all of
+  that against the survey `.json` (ID from `--id-columns` with `--id-pad`, session from the choice text, `--rename OLD=NEW`,
+  repeats of a row dropped, different attempts kept for `--duplicate-handling`) and reports every change; its output goes to
+  `survey convert --id-column participant_id --session-column session`.
 - **Environment measurements are grouped (specification v1.4.1).** The official environment terms carry a `Group` (temperature and
   humidity, wind/pressure/rain, sun and light, place and time, air quality, pollen). On the Propose changes page you choose the group
   first, then one of its measurements; option texts are short and the ID and unit appear under the choice. A new measurement can carry a
@@ -84,6 +96,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `app/schemas/archive/biosample/` and the shipped example template carries `1.1.0`.
 
 ### Changed
+- **Converting a real LimeSurvey 6 archive of a survey exported from PRISM: three wrong reports and one wrong value.** Found
+  by exporting a test survey, importing it into LimeSurvey 6, answering it and converting the `.lsa`. (1) The "missing
+  items" count ignored aliases and columns read by item name, so PHQ-9 (`PHQ01…` in LimeSurvey, `PHQ901…` in the template)
+  was reported as 9 missing items although every answer was converted; it now counts an item as present when it, an
+  alias of it, or a column named like it is in the data. (2) The match warning "medium confidence (0/9 items)" for such
+  a survey came from comparing LimeSurvey's shortened codes with the template's; the match now compares through the
+  CodeMap that PRISM exports carry. (3) Integer and float items came out as LimeSurvey stores them (`55.0000000000`); they
+  are written as `55` (the participants import already did this), text items keep their value, and the conversion notes
+  say how many values changed. (4) The generic formula of a calculated item was exported as `{a.NAOK}+{b.NAOK}`, which
+  LimeSurvey stores as the text `3+4` because it only evaluates what is inside the braces; it is now one expression,
+  `{a.NAOK+b.NAOK}`. A `lsFormula` is still used as written.
+- **The LimeSurvey export is a LimeSurvey 6 file: DBVersion 636.** It wrote DBVersion 415 (LimeSurvey 5). It now writes 636
+  and the structural columns a LimeSurvey 6 export has on questions, sub-questions and question texts (`same_script`,
+  `other`/`mandatory`/`encrypted`, `script`). The same survey exported as 415 and as 636 was imported into LimeSurvey 6
+  with identical summaries (questions, sub-questions, answers, attributes, groups, languages); LimeSurvey only reads the
+  version number of an imported file below 339, so this makes the file match its own exports without changing how it imports.
 - **Quick Export and the Survey Customizer export use one LimeSurvey builder.** Quick Export (`generate_lss`) was a
   second ~900-line copy of the Customizer's export; it now feeds the same builder from the template files, so the two
   cannot drift apart again. Checked against the old Quick Export on 555 cases (all library templates in single-language,
@@ -140,7 +168,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`M`, with comments `P`), ranking (`R`), the text and number arrays (`;`, `:`) and the dual-scale array (`1`) were
   imported as one plain item or dropped their rows, so their response columns stayed unconverted. Now each checkbox
   option, comment, ranking position, array cell (row x column) and array row x scale is an item named after
-  LimeSurvey's column (`SQ001`, `SQ001comment`, `rank[2]`, `T1_K1`, `D1#0`), dual-scale rows keep their own answer
+  LimeSurvey's column (`SQ001`, `SQ001comment`, `rank[2]`, `T1_K1`, `D1-0`; LimeSurvey 6 writes the dual-scale columns with a hyphen, older
+  versions with `#`, both are read), dual-scale rows keep their own answer
   options per scale, and response columns are matched to the template items themselves. Unchecked boxes are empty in
   LimeSurvey's data and import as missing; the import notes say so. When exporting such items one by one, the
   Customizer path now also turns a lone matrix row, checkbox option or ranking position into a list with its options

@@ -2,6 +2,14 @@
 
 > PRISM Studio now exports only the LimeSurvey 5.x/6.x format; the 3.x/4.x rows below are kept as historical reference.
 
+> **Status 2026-10-28.** The exporter writes **DBVersion 636** and the structural columns LimeSurvey 6 writes
+> (`same_script` on questions and sub-questions, `other`/`mandatory`/`encrypted` on sub-questions, `script` on question
+> texts). A survey exported both ways (415 and 636 with those columns) was imported into LimeSurvey 6 with identical
+> summaries, and LimeSurvey's own import code only looks at the file's DBVersion below 339, so the number itself changes
+> nothing; the columns match what a real export has. The answer-label problem described under "PRISM Current Export"
+> below is fixed (answers carry an `aid`, `answer_l10ns` links by `aid`); CDATA wrapping, `<fields>` declarations and the
+> extra survey-settings columns are not written, and LimeSurvey 6 imports without them.
+
 This document describes the structural differences in the `.lss` XML export format between LimeSurvey versions, relevant for PRISM Studio's export compatibility.
 
 ## DBVersion Mapping

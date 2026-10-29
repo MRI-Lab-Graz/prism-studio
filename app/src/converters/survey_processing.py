@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from src.survey_answer_codes import stored_code_as_number
+
 
 _LS_ANSWER_CODE_MAX_LENGTH = 5
 
@@ -634,6 +636,7 @@ def _validate_survey_item_value(
     """Internal validation for a single survey item value."""
     if is_missing_fn(val) or not isinstance(item_schema, dict):
         return val
+    val = stored_code_as_number(val, item_schema)
 
     levels = item_schema.get("Levels")
     if not isinstance(levels, dict) or not levels:
@@ -871,6 +874,43 @@ def _process_survey_row(
             missing_count += 1
 
     return out, missing_count
+
+
+def _trim_padded_numbers(df, templates, tasks, col_to_mapping) -> list[str]:
+    """Numeric items (DataType integer/float) of ``tasks``: '55.0000000000' becomes '55' in ``df``, in place.
+
+    LimeSurvey stores numbers as DECIMAL(30,10). Text items keep their value. Returns one note per
+    task that says how many values changed, so the change is never silent."""
+    from src.text_sanitizer import trim_trailing_decimal_zeros
+
+    notes = []
+    for task in sorted(tasks):
+        schema = (templates.get(task) or {}).get("json") or {}
+        aliases = schema.get("_reverse_aliases", {})
+        names = {
+            name
+            for item, spec in schema.items()
+            if isinstance(spec, dict) and spec.get("DataType") in ("integer", "float")
+            for name in (item, *aliases.get(item, ()))
+        }
+        columns = {c for c in df.columns if c in names} | {
+            c for c, m in col_to_mapping.items() if m.task == task and m.base_item in names and c in df.columns
+        }
+        count, example = 0, None
+        for column in sorted(columns):
+            before = df[column]
+            after = before.map(trim_trailing_decimal_zeros)
+            diff = before.astype(str) != after.astype(str)
+            if diff.any():
+                df[column] = after
+                count += int(diff.sum())
+                example = example or (str(before[diff].iloc[0]), str(after[diff].iloc[0]))
+        if count:
+            notes.append(
+                f"Task '{task}': {count} value(s) of numeric items had padded decimal zeros "
+                f"(LimeSurvey stores numbers like {example[0]}) and were written as {example[1]}."
+            )
+    return notes
 
 
 def _process_survey_row_with_run(

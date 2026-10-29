@@ -461,16 +461,16 @@ def _determine_ls_question_type(q_data, has_levels):
 
             depends_on = calc_config.get("dependsOn", [])
 
-            # Replace variable references with LimeSurvey syntax
+            # Variable references in LimeSurvey syntax (match whole words only)
             for var in depends_on:
                 sanitized_var = _sanitize_question_code(var)
-                # Match whole word only
-                formula = re.sub(
-                    rf"\b{re.escape(var)}\b", f"{{{sanitized_var}.NAOK}}", formula
-                )
+                formula = re.sub(rf"\b{re.escape(var)}\b", f"{sanitized_var}.NAOK", formula)
 
             # Replace ** exponentiation with pow() function
             formula = re.sub(r"\(([^)]+)\)\s*\*\*\s*(\d+)", r"pow(\1, \2)", formula)
+
+            # LimeSurvey evaluates only what is inside braces: the whole expression, not each variable
+            formula = f"{{{formula}}}"
 
         extra_attrs["equation"] = formula
         if calc_config.get("hidden", False):
@@ -726,6 +726,24 @@ def _format_single_metadata_html(
     return "\n".join(lines)
 
 
+# Columns LimeSurvey 6 writes on every row of these sections (section -> column -> value).
+_LS6_ROW_COLUMNS = {
+    "questions": {"same_script": "0"},
+    "subquestions": {"other": "N", "mandatory": "N", "encrypted": "N", "same_script": "0"},
+    "question_l10ns": {"script": ""},
+}
+
+
+def _add_ls6_columns(root) -> None:
+    """Give the rows the structural columns of a LimeSurvey 6 export (DBVersion 636); a value
+    a row already has is kept."""
+    for section, columns in _LS6_ROW_COLUMNS.items():
+        for row in root.findall(f"{section}/rows/row"):
+            for name, value in columns.items():
+                if row.find(name) is None:
+                    ET.SubElement(row, name).text = value
+
+
 def _strip_invalid_xml_chars(root) -> None:
     """Drop characters XML 1.0 forbids (pasted Word/PDF text has them); the .lss would not import otherwise."""
     for element in root.iter():
@@ -859,7 +877,7 @@ def generate_lss_from_customization(
         languages = [base_language] + [l for l in languages if l != base_language]
     additional_languages = [l for l in languages if l != base_language]
 
-    db_version = "415"
+    db_version = "636"
 
     # IDs
     sid = "123456"
@@ -1644,6 +1662,7 @@ def generate_lss_from_customization(
     )
 
     # Generate XML
+    _add_ls6_columns(root)
     _strip_invalid_xml_chars(root)
     tree = ET.ElementTree(root)
     if hasattr(ET, "indent"):
