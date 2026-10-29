@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`prism-studio.py -v` (or `--version`) prints the version and the folder Studio runs from, and the terminal shows the same
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
+### Changed
+- **`survey convert` picks its template library the same way Studio does.** Without `--library` it stopped with "Could not find a
+  survey template library", because it looked in folders this repository does not have. The choice now lives in one place
+  (`src/survey_library_resolution.py`) used by both: the project's `code/library`, then its `official/library`, then the
+  configured global library, then `official/library` of the app. The same data and project now convert with the same
+  templates on the command line and in the GUI.
+
 ### Fixed
 - **The conversion preview no longer reports answers like `ADS0` as "not one of 0, 1, 2, 3" when the template maps those codes to numbers.**
   The preview's scale check compared the raw answer with the template's levels, while the conversion itself already read each
