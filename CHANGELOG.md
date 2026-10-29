@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`prism-studio.py -v` (or `--version`) prints the version and the folder Studio runs from, and the terminal shows the same
+  line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
+
 ## [1.23.2] - 2026-10-29
 
 ### Fixed

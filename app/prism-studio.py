@@ -227,8 +227,16 @@ def _print_startup_dependency_step(label: str, binary: str) -> None:
     _print_startup_step(label, "warning", "not installed (optional)")
 
 
+def _version_and_location() -> str:
+    """The running version and the folder it runs from: tells an old install from the new one."""
+    from src import __version__
+
+    return f"{__version__} ({BASE_DIR if getattr(sys, 'frozen', False) else BASE_DIR.parent})"
+
+
 def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
     print()
+    print(_startup_colorize(f"Version: {_version_and_location()}", "accent"))
     print(_startup_colorize(f"Open in browser: {url}", "info"))
     if public:
         print(_startup_colorize("Mode: public access enabled for this session.", "warning"))
@@ -1622,9 +1630,6 @@ def main():
     from src.save_gate import ensure_prism_tools_env
     from src.share_publish import apply_env_identity
 
-    apply_env_identity()  # attribute all PRISM edits before any git/datalad call
-    ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
-
     def configure_debug_logging() -> None:
         logging.basicConfig(
             level=logging.DEBUG,
@@ -1638,6 +1643,9 @@ def main():
         app.config["PROPAGATE_EXCEPTIONS"] = True
 
     parser = argparse.ArgumentParser(description="PRISM Studio")
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"PRISM Studio {_version_and_location()}"
+    )
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
     )
@@ -1699,6 +1707,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    apply_env_identity()  # attribute all PRISM edits before any git/datalad call
+    ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
 
     resolved_browser_app = (
         _require_named_browser(args.browser_app) if args.browser_app else None
