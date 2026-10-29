@@ -555,7 +555,7 @@ def api_template_editor_read_source():
     like an upload (the import routes below take uploads; the CLI takes --input <path>)."""
     target = Path((request.args.get("path") or "").strip())
     if target.suffix.lower() not in IMPORT_SOURCE_EXTENSIONS:
-        return jsonify({"error": "Not a template source file (.json .lsq .lsg .lss .lsa .xlsx .csv .tsv)"}), 400
+        return jsonify({"error": f"Not a template source file ({' '.join(sorted(IMPORT_SOURCE_EXTENSIONS))})"}), 400
     if not target.is_file():
         return jsonify({"error": "File not found"}), 404
     return send_file(target)
