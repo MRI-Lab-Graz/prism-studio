@@ -198,3 +198,15 @@ def test_cancelling_the_save_dialog_writes_nothing(app_page, studio_url, project
 
     assert sorted(str(p) for p in project.rglob("*")) == before
     expect(app_page.locator("#saveToProjectBtn")).to_be_enabled()
+
+
+def test_a_key_twice_in_one_object_is_refused_and_the_file_stays_as_it_was(app_page, studio_url, project):
+    before = (project / "dataset_description.json").read_text()
+    open_project_file(app_page, studio_url, "dataset_description")
+    expect(app_page.locator("#jsonEditor")).to_be_visible()
+    set_text(app_page, '{"Timepoint": 1, "Name": "x", "Timepoint": 2}')
+
+    app_page.click("#saveToProjectBtn")
+
+    expect(app_page.locator("#alertContainer .alert-danger")).to_contain_text('"Timepoint" appears twice')
+    assert (project / "dataset_description.json").read_text() == before
