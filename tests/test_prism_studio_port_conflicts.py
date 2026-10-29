@@ -58,6 +58,7 @@ def test_main_uses_fallback_port_for_default_non_prism_conflict(
         raise RuntimeError("stop-after-port-selection")
 
     monkeypatch.setattr(prism_studio_module, "is_port_in_use", fake_is_port_in_use)
+    monkeypatch.setattr(prism_studio_module, "_probe_health", lambda host, port: None)
     monkeypatch.setattr(
         prism_studio_module, "is_prism_studio_instance", lambda host, port: False
     )
@@ -92,6 +93,7 @@ def test_main_does_not_auto_fallback_for_explicit_port(
         raise RuntimeError("stop-after-port-selection")
 
     monkeypatch.setattr(prism_studio_module, "is_port_in_use", fake_is_port_in_use)
+    monkeypatch.setattr(prism_studio_module, "_probe_health", lambda host, port: None)
     monkeypatch.setattr(
         prism_studio_module, "is_prism_studio_instance", lambda host, port: False
     )

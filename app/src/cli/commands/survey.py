@@ -142,12 +142,6 @@ def cmd_survey_convert(args):
 
     import tempfile
 
-    def _has_survey_templates(dir_path: Path) -> bool:
-        try:
-            return any(dir_path.glob("survey-*.json"))
-        except Exception:
-            return False
-
     def _library_needs_i18n_compile(dir_path: Path) -> bool:
         """Return True if templates in dir_path appear to contain language maps."""
         try:
@@ -211,35 +205,27 @@ def cmd_survey_convert(args):
     library_tmp = None
     library_label = None
 
-    if hasattr(args, "library") and args.library:
+    if getattr(args, "library", None):
         candidate = Path(args.library)
-        if _library_needs_i18n_compile(candidate):
-            lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
-            library_label = f"{candidate.resolve()} (i18n compiled to {lang})"
-        else:
-            lib_dir = candidate
-            library_label = str(candidate.resolve())
     else:
-        compiled_candidate = _APP_ROOT / f"library/survey_{lang}"
-        i18n_candidate = _APP_ROOT / "library/survey_i18n"
-        legacy_candidate = _APP_ROOT / "library/survey"
+        from src.survey_library_resolution import resolve_survey_library, survey_templates_dir
 
-        if compiled_candidate.exists() and _has_survey_templates(compiled_candidate):
-            lib_dir = compiled_candidate
-            library_label = str(compiled_candidate.resolve())
-        elif i18n_candidate.exists() and _has_survey_templates(i18n_candidate):
-            lib_dir, library_tmp = _compile_i18n_library(i18n_candidate, lang=lang)
-            library_label = f"{i18n_candidate.resolve()} (i18n compiled to {lang})"
-        elif legacy_candidate.exists() and _has_survey_templates(legacy_candidate):
-            lib_dir = legacy_candidate
-            library_label = str(legacy_candidate.resolve())
-        else:
-            print("Error: Could not find a survey template library.")
-            print(
-                "       Looked for: library/survey_<lang>, library/survey_i18n, library/survey"
-            )
+        project_hint = getattr(args, "project", None)
+        if not project_hint and (Path(args.output) / "project.json").is_file():
+            project_hint = args.output
+        try:
+            candidate = survey_templates_dir(resolve_survey_library(project_hint, _APP_ROOT.parent))
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
             print("       Or provide --library /path/to/library")
             sys.exit(1)
+
+    if _library_needs_i18n_compile(candidate):
+        lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
+        library_label = f"{candidate.resolve()} (i18n compiled to {lang})"
+    else:
+        lib_dir = candidate
+        library_label = str(candidate.resolve())
 
     try:
         input_path = Path(args.input).resolve()
