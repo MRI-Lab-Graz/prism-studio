@@ -142,12 +142,6 @@ def cmd_survey_convert(args):
 
     import tempfile
 
-    def _has_survey_templates(dir_path: Path) -> bool:
-        try:
-            return any(dir_path.glob("survey-*.json"))
-        except Exception:
-            return False
-
     def _library_needs_i18n_compile(dir_path: Path) -> bool:
         """Return True if templates in dir_path appear to contain language maps."""
         try:
@@ -211,35 +205,32 @@ def cmd_survey_convert(args):
     library_tmp = None
     library_label = None
 
-    if hasattr(args, "library") and args.library:
+    effective = None  # the merged project/personal/global library, when --library is not given
+    if getattr(args, "library", None):
         candidate = Path(args.library)
-        if _library_needs_i18n_compile(candidate):
-            lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
-            library_label = f"{candidate.resolve()} (i18n compiled to {lang})"
-        else:
-            lib_dir = candidate
-            library_label = str(candidate.resolve())
     else:
-        compiled_candidate = _APP_ROOT / f"library/survey_{lang}"
-        i18n_candidate = _APP_ROOT / "library/survey_i18n"
-        legacy_candidate = _APP_ROOT / "library/survey"
+        from src.survey_template_sources import build_effective_library
 
-        if compiled_candidate.exists() and _has_survey_templates(compiled_candidate):
-            lib_dir = compiled_candidate
-            library_label = str(compiled_candidate.resolve())
-        elif i18n_candidate.exists() and _has_survey_templates(i18n_candidate):
-            lib_dir, library_tmp = _compile_i18n_library(i18n_candidate, lang=lang)
-            library_label = f"{i18n_candidate.resolve()} (i18n compiled to {lang})"
-        elif legacy_candidate.exists() and _has_survey_templates(legacy_candidate):
-            lib_dir = legacy_candidate
-            library_label = str(legacy_candidate.resolve())
-        else:
-            print("Error: Could not find a survey template library.")
-            print(
-                "       Looked for: library/survey_<lang>, library/survey_i18n, library/survey"
-            )
-            print("       Or provide --library /path/to/library")
+        project_hint = getattr(args, "project", None)
+        if not project_hint and (Path(args.output) / "project.json").is_file():
+            project_hint = args.output
+        effective = build_effective_library(project_hint, _APP_ROOT.parent)
+        if not effective.origins:
+            print("Error: No survey library found. Please provide templates in the project's code/library, your")
+            print("       personal library, or the global library, or provide --library /path/to/library")
             sys.exit(1)
+        candidate = effective.directory
+
+    library_label = (
+        "; ".join(f"{t.label} {t.directory.resolve()}" for t in effective.tiers)
+        if effective
+        else str(candidate.resolve())
+    )
+    if _library_needs_i18n_compile(candidate):
+        lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
+        library_label += f" (i18n compiled to {lang})"
+    else:
+        lib_dir = candidate
 
     try:
         input_path = Path(args.input).resolve()
@@ -289,6 +280,17 @@ def cmd_survey_convert(args):
             template_version_overrides=template_version_overrides,
             task_value_offsets=task_value_offsets,
         )
+        if effective is not None and not args.dry_run:
+            # the project carries the templates it was converted with (not only your own library)
+            from src.survey_template_sources import copy_used_templates_to_project, infer_technical_defaults
+
+            copy_used_templates_to_project(
+                effective,
+                result.tasks_included,
+                project_path,
+                technical_defaults=infer_technical_defaults(input_path),
+                selected_versions=template_version_overrides,
+            )
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)

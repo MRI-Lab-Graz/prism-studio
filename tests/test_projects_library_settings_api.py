@@ -439,3 +439,37 @@ def test_get_library_path_uses_external_path_when_project_library_missing(tmp_pa
     assert payload["project_library_exists"] is False
     assert payload["external_source"] == "project"
     assert payload["library_path"] == str(tmp_path / "external" / "library")
+
+
+def test_personal_library_setting_roundtrip(tmp_path, monkeypatch):
+    app = _build_app_for_blueprint()
+
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path / "settings")
+    mine = tmp_path / "mine"
+    mine.mkdir()
+    client = app.test_client()
+
+    assert client.get("/api/settings/global-library").get_json()["personal_library_path"] is None
+
+    saved = client.post("/api/settings/global-library", json={"personal_library_path": str(mine)})
+    assert saved.status_code == 200
+    assert saved.get_json()["personal_library_path"] == str(mine)
+    assert client.get("/api/settings/global-library").get_json()["personal_library_path"] == str(mine)
+
+    cleared = client.post("/api/settings/global-library", json={"personal_library_path": ""})
+    assert cleared.get_json()["personal_library_path"] is None
+
+
+def test_personal_library_setting_rejects_a_folder_that_does_not_exist(tmp_path, monkeypatch):
+    app = _build_app_for_blueprint()
+
+    from src import config as config_module
+
+    monkeypatch.setattr(config_module, "_get_user_app_settings_dir", lambda: tmp_path / "settings")
+    response = app.test_client().post(
+        "/api/settings/global-library", json={"personal_library_path": str(tmp_path / "nowhere")}
+    )
+    assert response.status_code == 400
+    assert "does not exist" in response.get_json()["error"]

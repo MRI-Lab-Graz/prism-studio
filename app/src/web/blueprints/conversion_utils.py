@@ -518,16 +518,6 @@ def upload_basename(filename: str | None) -> str:
     return str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
 
 
-def should_retry_with_official_library(err: Exception) -> bool:
-    """Return true when converter error suggests official-template fallback."""
-    msg = str(err).lower()
-    return isinstance(err, ValueError) and (
-        "no survey item columns matched" in msg
-        or "unknown surveys:" in msg
-        or "no survey templates were found" in msg
-    )
-
-
 def extract_tasks_from_output(output_root: Path) -> list[str]:
     """Extract unique task names from BIDS-style filenames in output directory."""
     tasks = set()
@@ -611,87 +601,20 @@ def resolve_effective_library_path(
             return Path(path_str)
 
     from src.web.blueprints.projects import get_current_project
+    from src.survey_library_resolution import resolve_survey_library
 
-    # Try project library first, then project official templates.
     project_path = str(project_path_value or "").strip()
     if not project_path:
-        project = get_current_project()
-        project_path = project.get("path")
-
+        project_path = get_current_project().get("path")
     if project_path:
-        project_root = _safe_expand(project_path)
-        try:
-            project_root = _safe_resolve(project_root)
-        except Exception:
-            pass
+        project_path = _safe_resolve(_safe_expand(str(project_path)))
 
-        def _has_survey_templates(path: Path) -> bool:
-            if not path.exists() or not path.is_dir():
-                return False
-            survey_dir = path / "survey" if (path / "survey").is_dir() else path
-            try:
-                return bool(list(survey_dir.glob("survey-*.json")))
-            except (OSError, ValueError):
-                return False
-
-        # Preferred: project code/library — use it even if empty so project-local
-        # templates are always tried first. Missing templates are pulled from the
-        # official library on demand by the fallback mechanism.
-        project_library = project_root / "code" / "library"
-        if project_library.is_dir() or (project_library / "survey").is_dir():
-            # Ensure the directory exists so the converter can write into it
-            (project_library / "survey").mkdir(parents=True, exist_ok=True)
-            return project_library
-
-        # Next: project official library
-        official_library = project_root / "official" / "library"
-        if _has_survey_templates(official_library):
-            return official_library
-
-        # Also accept direct official/library/survey as root
-        official_survey = official_library / "survey"
-        if _has_survey_templates(official_survey):
-            return official_survey
-        # If project libraries exist but lack templates, fall through to global library
-
-    # Fall back to global library
-    from src.config import get_effective_library_paths
-
-    # current_app.root_path points to /app directory, we need to go up one level to get to the workspace root
-    base_dir = Path(current_app.root_path)
-    try:
-        base_dir = base_dir.parent.resolve()
-    except (OSError, ValueError):
-        base_dir = base_dir.parent
-
-    lib_paths = get_effective_library_paths(app_root=str(base_dir))
-
-    if lib_paths.get("global_library_path"):
-        global_lib = _safe_expand(lib_paths["global_library_path"])
-        try:
-            global_lib = _safe_resolve(global_lib)
-        except Exception:
-            pass
-        if global_lib.exists() and global_lib.is_dir():
-            return global_lib
-
-    # Last resort: check default locations
-    default_locations = [
-        base_dir / "library" / "survey_i18n",
-        base_dir / "survey_library",
-        base_dir / "official" / "library",
-    ]
-
-    for location in default_locations:
-        try:
-            if location.exists() and location.is_dir():
-                return location
-        except (OSError, ValueError):
-            continue
-
-    raise FileNotFoundError(
-        "No survey library found. Please provide templates in project /code/library (preferred), project /official/library, or configure a global library."
-    )
+    # current_app.root_path points to /app; the workspace root is one level up.
+    base_dir = _safe_resolve(Path(current_app.root_path)).parent
+    library = resolve_survey_library(project_path, base_dir)
+    if project_path and library == Path(project_path) / "code" / "library":
+        (library / "survey").mkdir(parents=True, exist_ok=True)  # the converter writes templates here
+    return library
 
 
 def resolve_validation_library_path(

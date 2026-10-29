@@ -1731,8 +1731,10 @@ class TestSurveyConverterImports(unittest.TestCase):
 class TestSurveyOfficialTemplateCopy(unittest.TestCase):
     """Regression tests for official -> project survey template copy behavior."""
 
-    def test_fallback_copy_runs_for_non_dry_run(self):
+    def test_new_project_gets_the_global_templates_it_used_in_one_pass(self):
         import importlib
+
+        from src.config import AppSettings
 
         handlers = importlib.import_module(
             "src.web.blueprints.conversion_survey_handlers"
@@ -1745,36 +1747,26 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             (official_dir / "survey-ads.json").write_text("{}", encoding="utf-8")
 
             project_root = tmp_path / "project"
-            project_root.mkdir(parents=True, exist_ok=True)
+            (project_root / "code" / "library" / "survey").mkdir(parents=True, exist_ok=True)
 
-            calls = {"count": 0}
+            seen = []
 
             def fake_converter(*, library_dir, **kwargs):
-                calls["count"] += 1
-                if calls["count"] == 1:
-                    raise RuntimeError("no templates matched")
+                seen.append(sorted(p.name for p in Path(library_dir).glob("survey-*.json")))
                 return SimpleNamespace(tasks_included=["ads"])
 
-            with (
-                patch.object(
-                    handlers,
-                    "_should_retry_with_official_library",
-                    return_value=True,
-                ),
-                patch.object(
-                    handlers,
-                    "_resolve_official_survey_dir",
-                    return_value=official_dir,
-                ),
+            with patch(
+                "src.config.load_app_settings",
+                return_value=AppSettings(global_library_root=str(tmp_path / "official")),
             ):
                 result = handlers._run_survey_with_official_fallback(
                     fake_converter,
-                    library_dir=str(tmp_path / "empty_library"),
+                    library_dir=str(project_root / "code" / "library" / "survey"),
                     fallback_project_path=str(project_root),
                     dry_run=False,
                 )
 
-            self.assertEqual(calls["count"], 2)
+            self.assertEqual(seen, [["survey-ads.json"]])  # one run, the global template already merged in
             self.assertEqual(result.tasks_included, ["ads"])
             copied = project_root / "code" / "library" / "survey" / "survey-ads.json"
             self.assertTrue(copied.exists())

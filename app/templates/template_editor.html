@@ -61,7 +61,7 @@
             </select>
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-bold"><i class="fas fa-globe text-info me-1"></i>Global Templates</label>
+            <label class="form-label fw-bold"><i class="fas fa-globe text-info me-1"></i>Global &amp; Personal Templates</label>
             <select id="globalTemplateSelect" class="form-select">
               <option value="">(select one)</option>
             </select>
@@ -117,6 +117,9 @@
             </button>
             <button class="btn btn-primary" id="btnSave" type="button" disabled data-bs-toggle="tooltip" title="Saves to project/code/library/{modality}/ and confirms before replacing an existing project template.">
               <i class="fas fa-save me-1"></i>Save to Project
+            </button>
+            <button class="btn btn-outline-primary d-none" id="btnSavePersonal" type="button" data-bs-toggle="tooltip" title="Saves into your personal template library (Settings), shared by all your projects but not part of any.">
+              <i class="fas fa-user-lock me-1"></i>Save to Personal library
             </button>
             <button class="btn btn-outline-secondary" id="btnDownload" type="button" disabled>
               <i class="fas fa-download me-1"></i>Download JSON

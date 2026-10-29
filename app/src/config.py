@@ -378,6 +378,10 @@ class AppSettings:
     # Global library root (points to official folder containing library/ and recipe/ subdirs)
     global_library_root: Optional[str] = None
 
+    # Personal library: the user's own folder (never shared), laid out like a project's
+    # code/library (survey/, biometrics/, ...), used by every project. Optional.
+    personal_library_path: Optional[str] = None
+
     # Global template library path (shared, read-only templates from Nextcloud/GitLab)
     # DEPRECATED: Use global_library_root instead
     global_template_library_path: Optional[str] = None
@@ -481,6 +485,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
 
         settings = AppSettings(
             global_library_root=data.get("globalLibraryRoot"),
+            personal_library_path=data.get("personalLibraryPath"),
             global_template_library_path=data.get("globalTemplateLibraryPath"),
             global_recipes_path=data.get("globalRecipesPath"),
             default_modalities=data.get("defaultModalities", ["survey", "biometrics"]),
@@ -523,6 +528,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
 
     data = {
         "globalLibraryRoot": settings.global_library_root,
+        "personalLibraryPath": settings.personal_library_path,
         "globalTemplateLibraryPath": settings.global_template_library_path,
         "globalRecipesPath": settings.global_recipes_path,
         "defaultModalities": settings.default_modalities,
@@ -593,6 +599,7 @@ def get_effective_library_paths(
         - global_library_root: Root path containing library/ and recipe/ subdirs (official folder)
         - global_library_path: Path to global library (official/library/)
         - global_recipe_path: Path to global recipes (official/recipe/)
+        - personal_library_path: the optional personal library folder (None unless configured)
         - source: 'configured' or 'default' indicating where paths came from
     """
     if app_settings is None:
@@ -607,6 +614,7 @@ def get_effective_library_paths(
         "global_library_root": None,
         "global_library_path": None,
         "global_recipe_path": None,
+        "personal_library_path": None,
         "source": None,
     }
 
@@ -626,6 +634,15 @@ def get_effective_library_paths(
                 return candidate
 
         return candidates[0]
+
+    # The personal library is independent of the global one: a library folder (survey/, ...), or an
+    # official-style folder that holds it in library/.
+    if app_settings.personal_library_path:
+        personal = _resolve_configured_root(app_settings.personal_library_path)
+        nested = os.path.join(personal, "library")
+        if os.path.isdir(nested) and not os.path.isdir(os.path.join(personal, "survey")):
+            personal = nested
+        result["personal_library_path"] = personal
 
     # Priority 1: Use configured global_library_root
     if app_settings.global_library_root:

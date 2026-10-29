@@ -1,5 +1,3 @@
-from copy import deepcopy
-import json
 import shutil
 import tempfile
 from pathlib import Path
@@ -8,7 +6,9 @@ from typing import Any
 from flask import current_app, has_app_context
 from src.system_files import filter_system_files
 
-from .conversion_utils import expected_delimiter_for_suffix, resolve_existing_project_root
+from src.survey_template_sources import copy_templates_to_project, infer_technical_defaults
+
+from .conversion_utils import expected_delimiter_for_suffix
 
 
 def _list_non_system_survey_templates(directory: Path) -> list[Path]:
@@ -45,65 +45,7 @@ def resolve_official_survey_dir(project_path: str | None) -> Path | None:
 def infer_project_template_technical_defaults(
     *, input_path: str | Path | None = None
 ) -> dict[str, str]:
-    """Infer project-local administration defaults when the source format is unambiguous."""
-    if not input_path:
-        return {}
-
-    suffix = Path(input_path).suffix.lower()
-    if suffix in {".lsa", ".lss"}:
-        return {
-            "SoftwarePlatform": "LimeSurvey",
-            "AdministrationMethod": "online",
-        }
-
-    return {}
-
-
-def prepare_project_survey_template_from_official(
-    payload: Any,
-    *,
-    task: str,
-    technical_defaults: dict[str, str] | None = None,
-    selected_version: str | None = None,
-) -> Any:
-    """Convert an official instrument template into a project-local administration template."""
-    if not isinstance(payload, dict):
-        return payload
-
-    out = deepcopy(payload)
-
-    technical = out.get("Technical")
-    if not isinstance(technical, dict):
-        technical = {}
-        out["Technical"] = technical
-
-    technical.setdefault("StimulusType", "Questionnaire")
-    technical.setdefault("FileFormat", "tsv")
-    technical.setdefault("Language", "")
-    technical.setdefault("Respondent", "")
-    technical.setdefault("AdministrationMethod", "")
-    technical.setdefault("SoftwarePlatform", "")
-    technical.setdefault("SoftwareVersion", "")
-
-    for key, value in (technical_defaults or {}).items():
-        if not value:
-            continue
-        existing = technical.get(key)
-        if isinstance(existing, str) and existing.strip():
-            continue
-        technical[key] = value
-
-    study = out.get("Study")
-    if not isinstance(study, dict):
-        study = {}
-        out["Study"] = study
-
-    study.setdefault("TaskName", task)
-    study.setdefault("LicenseID", "unknown")
-    if isinstance(selected_version, str) and selected_version.strip():
-        study["Version"] = selected_version.strip()
-
-    return out
+    return infer_technical_defaults(input_path)
 
 
 def copy_official_templates_to_project(
@@ -114,65 +56,19 @@ def copy_official_templates_to_project(
     selected_versions: dict[str, str] | None = None,
     log_fn=None,
 ) -> dict[str, list[str]]:
-    summary: dict[str, Any] = {
-        "copied_tasks": [],
-        "existing_tasks": [],
-        "missing_official_tasks": [],
-    }
-    if not project_path or not tasks:
-        return summary
-    project_root = resolve_existing_project_root(project_path)
-    if project_root is None:
-        return summary
-
     if (official_dir / "survey").is_dir() and not _list_non_system_survey_templates(
         official_dir
     ):
         official_dir = official_dir / "survey"
-
-    dest_dir = project_root / "code" / "library" / "survey"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
-    for task in tasks:
-        src = official_dir / f"survey-{task}.json"
-        dest = dest_dir / f"survey-{task}.json"
-        if not src.exists():
-            summary["missing_official_tasks"].append(task)
-            continue
-
-        if dest.exists():
-            summary["existing_tasks"].append(task)
-            continue
-
-        try:
-            with open(src, "r", encoding="utf-8") as file_handle:
-                payload = json.load(file_handle)
-
-            if isinstance(payload, dict):
-                payload = prepare_project_survey_template_from_official(
-                    payload,
-                    task=task,
-                    technical_defaults=technical_defaults,
-                    selected_version=(selected_versions or {}).get(task),
-                )
-
-                with open(dest, "w", encoding="utf-8") as file_handle:
-                    json.dump(payload, file_handle, indent=2, ensure_ascii=False)
-            else:
-                shutil.copy2(src, dest)
-        except Exception:
-            shutil.copy2(src, dest)
-
-        summary["copied_tasks"].append(task)
-
-    copied = len(summary["copied_tasks"])
-    if copied:
-        message = f"Copied {copied} official survey template(s) into project library."
-        if log_fn:
-            log_fn(message, "info")
-        else:
-            print(f"[PRISM DEBUG] {message}")
-
+    summary = copy_templates_to_project(
+        tasks,
+        lambda task: official_dir / f"survey-{task}.json",
+        project_path,
+        technical_defaults=technical_defaults,
+        selected_versions=selected_versions,
+        log_fn=log_fn,
+    )
+    summary["missing_official_tasks"] = summary.pop("missing_tasks")  # the page reads this name
     return summary
 
 

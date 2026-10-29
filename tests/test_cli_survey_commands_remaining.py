@@ -725,12 +725,19 @@ class TestCmdSurveyConvert:
         (library / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
         return library
 
+    @pytest.fixture(autouse=True)
+    def _no_global_library(self, monkeypatch):
+        # the library choice also reads the user's configured global library
+        monkeypatch.setattr(
+            "src.survey_library_resolution.get_effective_library_paths", lambda app_root=None: {}
+        )
+
     def test_no_library_found_exits(self, tmp_path, monkeypatch, capsys):
-        monkeypatch.setattr(survey_cli, "_APP_ROOT", tmp_path / "no_such_root")
+        monkeypatch.setattr(survey_cli, "_APP_ROOT", tmp_path / "no_such_root" / "app")
         with pytest.raises(SystemExit) as exc_info:
             cmd_survey_convert(_convert_args(tmp_path, library=None))
         assert exc_info.value.code == 1
-        assert "Could not find a survey template library" in capsys.readouterr().out
+        assert "No survey library found" in capsys.readouterr().out
 
     def test_success_basic(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)
@@ -946,14 +953,14 @@ class TestCmdSurveyConvert:
         out = capsys.readouterr().out
         assert "i18n compiled to de" in out
 
-    def test_default_library_discovery_compiled_candidate(
+    def test_default_library_is_the_official_library_of_the_app(
         self, tmp_path, monkeypatch, capsys
     ):
-        app_root = tmp_path / "app_root"
-        lib_dir = app_root / "library" / "survey_de"
+        app_root = tmp_path / "workspace"
+        lib_dir = app_root / "official" / "library" / "survey"
         lib_dir.mkdir(parents=True)
         (lib_dir / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
-        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root)
+        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root / "app")
         monkeypatch.setattr(
             "src.converters.survey.convert_survey_file_to_prism_dataset",
             lambda **kw: _FakeResult(),
@@ -961,15 +968,16 @@ class TestCmdSurveyConvert:
         cmd_survey_convert(_convert_args(tmp_path, library=None))
         out = capsys.readouterr().out
         assert "Survey conversion complete" in out
+        assert str(lib_dir.resolve()) in out
 
-    def test_default_library_discovery_i18n_candidate(
+    def test_default_library_with_language_maps_is_compiled(
         self, tmp_path, monkeypatch, capsys
     ):
-        app_root = tmp_path / "app_root"
-        lib_dir = app_root / "library" / "survey_i18n"
+        app_root = tmp_path / "workspace"
+        lib_dir = app_root / "official" / "library" / "survey"
         lib_dir.mkdir(parents=True)
-        (lib_dir / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
-        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root)
+        (lib_dir / "survey-pss.json").write_text(json.dumps({"I18n": {}, "pss01": {}}))
+        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root / "app")
         monkeypatch.setattr(
             survey_cli,
             "compile_survey_template",
@@ -982,19 +990,3 @@ class TestCmdSurveyConvert:
         cmd_survey_convert(_convert_args(tmp_path, library=None))
         out = capsys.readouterr().out
         assert "i18n compiled to de" in out
-
-    def test_default_library_discovery_legacy_candidate(
-        self, tmp_path, monkeypatch, capsys
-    ):
-        app_root = tmp_path / "app_root"
-        lib_dir = app_root / "library" / "survey"
-        lib_dir.mkdir(parents=True)
-        (lib_dir / "survey-pss.json").write_text(json.dumps({"pss01": {}}))
-        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root)
-        monkeypatch.setattr(
-            "src.converters.survey.convert_survey_file_to_prism_dataset",
-            lambda **kw: _FakeResult(),
-        )
-        cmd_survey_convert(_convert_args(tmp_path, library=None))
-        out = capsys.readouterr().out
-        assert "Survey conversion complete" in out

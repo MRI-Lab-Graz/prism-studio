@@ -108,7 +108,8 @@ def cmd_library_template_save(args) -> None:
     if not schema:
         print(f"Error: Could not load schema for {args.modality}")
         sys.exit(1)
-    if args.is_global:
+    to_personal = getattr(args, "to", "project") == "personal"
+    if args.is_global or to_personal:  # a personal template is a library template, not a project copy
         schema = relax_schema_for_library_template(schema)
 
     errors = validate_template_against_schema(instance=template, schema=schema)
@@ -118,14 +119,25 @@ def cmd_library_template_save(args) -> None:
             print(f"  - {err['path']}: {err['message']}")
         sys.exit(1)
 
-    project_root = Path(args.project).resolve()
-    folder = project_root / "code" / "library" / args.modality
+    if to_personal:
+        from src.personal_library import personal_library_folder
+
+        try:
+            folder = personal_library_folder(args.modality, _APP_ROOT_FOR_SCHEMAS)
+        except RuntimeError as exc:
+            print(f"Error: {exc}")
+            sys.exit(1)
+    else:
+        if not args.project:
+            print("Error: --project is required (or use --to personal)")
+            sys.exit(1)
+        folder = Path(args.project).resolve() / "code" / "library" / args.modality
     folder.mkdir(parents=True, exist_ok=True)
     target = folder / filename
 
     if target.exists() and not args.force:
         print(
-            f'Error: "{filename}" already exists in the project library. '
+            f'Error: "{filename}" already exists in the {"personal" if to_personal else "project"} library. '
             "Pass --force to overwrite."
         )
         sys.exit(1)

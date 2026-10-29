@@ -14,6 +14,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the survey and the changed items and says how to bring data and sidecar in line (`survey convert --force`) - or to revert the
   template. Only item definitions are compared, so edits to `Technical`, `Study` and `Metadata` are not reported. The PyPI
   validator has no survey converter and skips this check.
+- **A personal template library: your own folder of templates, used by all your projects and never part of one.** Set it
+  under Settings > Personal Template Library (same layout as a project's `code/library`: `survey/`, `biometrics/`). A
+  template is taken from the nearest library that has it: the project, then your personal library, then the global one. The
+  template editor lists your personal templates (and the global ones) in the second dropdown, grouped by library, and
+  **Save to Personal library** (CLI: `library template-save --to personal`) saves into it. A conversion copies the templates
+  it used into the project's `code/library`, so a shared project stays complete without access to your folder.
+- **`prism-studio.py -v` (or `--version`) prints the version and the folder Studio runs from, and the terminal shows the same
+  line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
+
+### Changed
+- **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only
+  when nothing matched retry with the official library (and copy those into the project); the command line could not do
+  either. Both now build one merged library (project, personal, global: nearest first, per template) and copy the templates a
+  conversion used into the project. A file mixing a project survey and an official one converts both.
+- **`survey convert` picks its template library the same way Studio does.** Without `--library` it stopped with "Could not find a
+  survey template library", because it looked in folders this repository does not have. The choice now lives in one place
+  (`src/survey_library_resolution.py`) used by both: the project's `code/library`, then its `official/library`, then the
+  configured global library, then `official/library` of the app. The same data and project now convert with the same
+  templates on the command line and in the GUI.
+
+### Fixed
+- **The conversion preview no longer reports answers like `ADS0` as "not one of 0, 1, 2, 3" when the template maps those codes to numbers.**
+  The preview's scale check compared the raw answer with the template's levels, while the conversion itself already read each
+  stored code through the item's `LimeSurvey.answerCodes` (`ADS0` as `0`). Both now read the answer the same way, so a template
+  recoded with `survey answer-codes` previews and converts without data issues.
+- **Starting a new Studio no longer reopens an older one that is still running.** A second launch used to open the browser at
+  whatever Studio held the port, even a previous version (for example after replacing the install folder while the old
+  process was still running: the page showed the old version and missing features). `/health` now reports the version and
+  folder, and a running Studio of another version is stopped and replaced.
+- The fallback that stops an old Studio (`--force-clean-start`) stops only the process listening on the port; it used to
+  pick the first process connected to it, which could be the browser. Without `lsof` it now says how to stop it
+  (`pkill -f prism-studio.py`).
 
 ## [1.23.2] - 2026-10-29
 
