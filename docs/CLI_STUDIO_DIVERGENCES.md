@@ -58,9 +58,26 @@ commits for the CLI.)
   from `src.participant_columns` helpers; the command composes it its own way. The command has no `--excluded-columns` or
   `--extra-columns`. Fix: one backend function for the column selection.
 
+### Export - mostly no CLI command at all
+`projects_export_blueprint.py` is 1,536 lines with six functions over 80 lines. The CLI has `template-export`, `anonymize` and
+`publish`; Studio's other export features have no command: the main project export (zip, folder, structure), the DataLad annex
+availability check, Git-LFS export, defacing (preflight, report, run) and the ANC and OpenMinds exports. The helpers are in
+`src/` (`mri_json_scrubber`, `anonymizer`, `phenotype_export`, `project_export_helpers`, `git_exclude`); the orchestration (what
+is copied, filtered, zipped) is in the blueprint. Each needs a command that runs the same function, and the blueprint reduced to
+calling it.
+
+### Recipe builder
+Studio's analysis endpoints (`/api/recipe-builder/surveys|items|load`) decide what a new recipe contains (item extraction, scale
+range detection from a template). The CLI can only save a finished recipe (`recipes save`); nothing drafts one from a template.
+Needs `recipes draft` running `src.recipe_builder`.
+
+### Survey template matching and the LimeSurvey tools
+`survey import-limesurvey` has `--split`, `--select`, `--use-library`, `--project`; Studio's `limesurvey-to-prism` and
+`limesurvey-save-to-project` routes call `converters.limesurvey` parsers and `survey_templates.match_*` directly. Probably the
+same code paths, not confirmed: read both and add a parity test as for `survey convert`.
+
 ### Not yet read
-Export with defacing, the recipe builder's template analysis, survey template matching and the LimeSurvey tools (see the
-queue below).
+Biometrics, environment and file-management routes (their form fields were not extractable by the automatic pass).
 
 ## Review queue: the Studio-only backend calls, by area
 
