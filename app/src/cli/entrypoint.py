@@ -79,6 +79,7 @@ from src.cli.commands.sessions import (
 )
 from src.cli.commands.methods import cmd_methods_generate
 from src.cli.commands.preregistration import cmd_preregistration_draft
+from src.cli.commands.export import cmd_export_project
 from src.cli.commands.settings import cmd_settings_set, cmd_settings_show
 from src.cli.commands.session_map import (
     cmd_session_map_set,
@@ -226,6 +227,7 @@ def main() -> None:
             "datalad_finalize": cmd_datalad_finalize,
             "preregistration_draft": cmd_preregistration_draft,
             "methods_generate": cmd_methods_generate,
+            "export_project": cmd_export_project,
             "settings_show": cmd_settings_show,
             "settings_set": cmd_settings_set,
             "session_map_show": cmd_session_map_show,

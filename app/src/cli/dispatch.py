@@ -123,6 +123,11 @@ def dispatch_prism_tools(
             handlers["participants_fix_bids"](args)
         else:
             parsers["participants"].print_help()
+    elif args.command == "export":
+        if args.action == "project":
+            handlers["export_project"](args)
+        else:
+            parsers["export"].print_help()
     elif args.command == "settings":
         if args.action in ("show", "set"):
             handlers[f"settings_{args.action}"](args)

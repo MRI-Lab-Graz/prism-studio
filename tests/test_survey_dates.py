@@ -61,7 +61,7 @@ def _project(tmp_path: Path) -> Path:
 
 @pytest.mark.parametrize("anonymize", [True, False])
 def test_zip_export_drops_survey_date(tmp_path, anonymize):
-    from src.web.export_project import export_project
+    from src.project_export import export_project
 
     out = tmp_path / "out.zip"
     export_project(
@@ -128,7 +128,7 @@ def _with_ledger(root: Path) -> Path:
 
 
 def test_zip_export_leaves_out_the_survey_import_ledger(tmp_path):
-    from src.web.export_project import export_project
+    from src.project_export import export_project
 
     out = tmp_path / "out.zip"
     export_project(

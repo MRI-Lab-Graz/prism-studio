@@ -486,6 +486,34 @@ def build_prism_tools_parsers(
     for _name, _setting in _SETTINGS.items():
         parser_settings_set.add_argument("--" + _name.replace("_", "-"), dest=_name, default=None, help=_setting.help)
 
+    parser_export = subparsers.add_parser("export", help="Export a project (Studio's export page): zip, defacing, repositories")
+    export_subparsers = parser_export.add_subparsers(dest="action", help="Action")
+    parser_export_project = export_subparsers.add_parser(
+        "project", help="Export the project to a ZIP: anonymized and scoped as chosen, after a validation gate"
+    )
+    parser_export_project.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_project.add_argument("--output-folder", default=None, help="Folder for the ZIP (default: next to the project)")
+    parser_export_project.add_argument("--preset", choices=["standard", "upload_ready"], default="standard",
+                                       help="upload_ready: data only (no derivatives, sourcedata, code, analysis), version control stripped")
+    parser_export_project.add_argument("--no-anonymize", action="store_true", help="Keep the real participant IDs")
+    parser_export_project.add_argument("--no-mask-questions", action="store_true", help="Keep copyrighted question texts")
+    parser_export_project.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_project.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_project.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_project.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_project.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_project.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_project.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_project.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_project.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_project.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
+    parser_export_project.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
+    parser_export_project.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
+    parser_export_project.add_argument("--repository-mode", choices=["datalad_free", "datalad_preserving", "git_lfs"], default=None,
+                                       help="datalad_preserving keeps Git/DataLad metadata, the others strip it")
+    parser_export_project.add_argument("--validation-mode", choices=["both", "bids", "prism", "ignore"], default="both",
+                                       help="Validation that must pass before exporting (default: both)")
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",
@@ -2860,6 +2888,7 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "settings": parser_settings,
+        "export": parser_export,
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
         "methods": parser_methods,
