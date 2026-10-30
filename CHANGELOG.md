@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
 ### Changed
+- **The startup shows the PRISM logo and keeps quiet about what works.** `prism-studio.py` and `prism-studio.py -v` draw the prism
+  (a beam in, a rainbow out) in the terminal; the pre-flight checks report only warnings and errors instead of one line each.
 - **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only
   when nothing matched retry with the official library (and copy those into the project); the command line could not do
   either. Both now build one merged library (project, personal, global: nearest first, per template) and copy the templates a

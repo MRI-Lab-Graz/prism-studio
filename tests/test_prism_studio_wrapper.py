@@ -68,12 +68,13 @@ def _run_wrapper(flag: str) -> subprocess.CompletedProcess:
 
 
 def test_prism_studio_version_prints_only_the_version() -> None:
-    """-v answers at once: no banner, no pre-flight checks, no app setup/cleanup."""
+    """-v answers at once: logo and version, no pre-flight checks, no app setup/cleanup."""
     result = _run_wrapper("-v")
 
     assert result.returncode == 0, result.stdout + result.stderr
     lines = result.stdout.strip().splitlines()
-    assert len(lines) == 1 and lines[0].startswith("PRISM Studio "), result.stdout
+    assert "/\\" in result.stdout  # the logo's apex
+    assert lines[-1].startswith("PRISM Studio "), result.stdout
     assert "Cleaning up" not in result.stdout + result.stderr
 
 

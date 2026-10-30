@@ -193,8 +193,66 @@ def _build_parser():
     return parser
 
 
+def _supports_startup_color() -> bool:
+    stream = getattr(sys, "stdout", None)
+    return bool(
+        stream
+        and hasattr(stream, "isatty")
+        and stream.isatty()
+        and os.environ.get("TERM") not in {None, "", "dumb"}
+    )
+
+
+def _startup_colorize(text: str, tone: str) -> str:
+    if not _supports_startup_color():
+        return text
+
+    tones = {
+        "headline": "1;38;5;238",
+        "accent": "1;38;5;35",
+        "muted": "38;5;245",
+        "ready": "1;38;5;35",
+        "warning": "1;38;5;178",
+        "error": "1;38;5;160",
+        "beam": "1;38;5;255",
+        "prism": "38;5;67",
+        "red": "38;5;196",
+        "orange": "38;5;208",
+        "yellow": "38;5;226",
+        "green": "38;5;40",
+        "blue": "38;5;39",
+        "violet": "38;5;135",
+        "info": "1;38;5;39",
+    }
+    code = tones.get(tone)
+    if not code:
+        return text
+    return f"\033[{code}m{text}\033[0m"
+
+
+_RAINBOW = ("red", "orange", "yellow", "green", "blue", "violet")
+
+
+def _startup_logo() -> str:
+    """The PRISM logo: a beam enters the prism on the left and fans out as a rainbow."""
+    rows = []
+    for r in range(9):
+        left = 13 - r
+        face = "/" + ("_" if r == 8 else " ") * (2 * r) + "\\"
+        row = " " * left
+        if r == 5:
+            row = _startup_colorize("=" * left, "beam")
+        row += _startup_colorize(face, "prism")
+        if r >= 3:
+            row += _startup_colorize("=" * (4 + 2 * (r - 3)), _RAINBOW[r - 3])
+        rows.append(row)
+    return "\n".join(rows)
+
+
 # Answer -v/--help at once: before the banner, pre-flight checks and app setup below.
 if __name__ == "__main__" and {"-v", "--version", "-h", "--help"} & set(sys.argv[1:]):
+    if {"-v", "--version"} & set(sys.argv[1:]):
+        print(_startup_logo())
     _build_parser().parse_args()  # prints the version or the usage and exits
 
 os.environ.setdefault("PRISM_STARTUP_HIDE_DETAILS", "1")
@@ -283,36 +341,9 @@ def _startup_module_check() -> None:
         )
 
 
-def _supports_startup_color() -> bool:
-    stream = getattr(sys, "stdout", None)
-    return bool(
-        stream
-        and hasattr(stream, "isatty")
-        and stream.isatty()
-        and os.environ.get("TERM") not in {None, "", "dumb"}
-    )
-
-
-def _startup_colorize(text: str, tone: str) -> str:
-    if not _supports_startup_color():
-        return text
-
-    tones = {
-        "headline": "1;38;5;238",
-        "accent": "1;38;5;35",
-        "muted": "38;5;245",
-        "ready": "1;38;5;35",
-        "warning": "1;38;5;178",
-        "error": "1;38;5;160",
-        "info": "1;38;5;39",
-    }
-    code = tones.get(tone)
-    if not code:
-        return text
-    return f"\033[{code}m{text}\033[0m"
-
-
 def _print_startup_intro() -> None:
+    print()
+    print(_startup_logo())
     print()
     print(_startup_colorize("PRISM Studio", "headline"))
     print(_startup_colorize("Structured research data, without the friction.", "muted"))
@@ -320,15 +351,16 @@ def _print_startup_intro() -> None:
     print(_startup_colorize("Not to work.", "muted"))
     print(_startup_colorize("MRI-LAB GRAZ", "accent"))
     print()
-    print(_startup_colorize("Pre-flight check", "accent"))
 
 
 def _print_startup_step(label: str, state: str = "ready", detail: str = "") -> None:
-    icon = {"ready": "✓", "warning": "!", "error": "✗", "info": "•"}.get(
+    """Report a pre-flight step; a step that is ready says nothing."""
+    if state == "ready":
+        return
+    icon = {"warning": "!", "error": "✗", "info": "•"}.get(
         state, "•"
     )
     state_label = {
-        "ready": "ready",
         "warning": "attention",
         "error": "failed",
         "info": "in progress",
