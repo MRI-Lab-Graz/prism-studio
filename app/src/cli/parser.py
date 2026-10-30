@@ -472,6 +472,20 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    from src.settings_update import SETTINGS as _SETTINGS
+
+    parser_settings = subparsers.add_parser(
+        "settings", help="Studio's settings (the Settings page): library folders, terminal, monitoring"
+    )
+    settings_subparsers = parser_settings.add_subparsers(dest="action", help="Action")
+    parser_settings_show = settings_subparsers.add_parser("show", help="Show the current settings")
+    parser_settings_show.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_settings_set = settings_subparsers.add_parser(
+        "set", help="Change settings (give one or more; an empty value clears a folder)"
+    )
+    for _name, _setting in _SETTINGS.items():
+        parser_settings_set.add_argument("--" + _name.replace("_", "-"), dest=_name, default=None, help=_setting.help)
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",
@@ -939,6 +953,11 @@ def build_prism_tools_parsers(
             "Allow writing into a non-empty output dir and overwrite inherited sidecars "
             "(default: on when the output is a PRISM project, otherwise off)"
         ),
+    )
+    parser_survey_convert.add_argument(
+        "--archive-sourcedata",
+        action="store_true",
+        help="Also keep the original input file in the project's sourcedata/ folder",
     )
     parser_survey_convert.add_argument(
         "--strict-levels",
@@ -2775,6 +2794,7 @@ def build_prism_tools_parsers(
         "root": parser,
         "survey": parser_survey,
         "participants": parser_participants,
+        "settings": parser_settings,
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
         "methods": parser_methods,

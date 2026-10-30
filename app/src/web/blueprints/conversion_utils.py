@@ -518,17 +518,6 @@ def upload_basename(filename: str | None) -> str:
     return str(filename or "").replace("\\", "/").rsplit("/", 1)[-1]
 
 
-def extract_tasks_from_output(output_root: Path) -> list[str]:
-    """Extract unique task names from BIDS-style filenames in output directory."""
-    tasks = set()
-    for file_path in output_root.rglob("*"):
-        if file_path.is_file() and "_task-" in file_path.name:
-            match = re.search(r"_task-([a-zA-Z0-9]+)", file_path.name)
-            if match:
-                tasks.add(match.group(1))
-    return sorted(tasks)
-
-
 def log_file_head(input_path: Path, suffix: str, log_func):
     """Helper to log the first few lines of a file to debug delimiter or structure issues."""
     try:

@@ -14,6 +14,20 @@ def get_modalities():
     return jsonify({"success": True, "modalities": get_available_modalities()})
 
 
+def _apply_settings_changes(changes: dict):
+    """Studio's Settings page runs the same function as `prism_tools.py settings set`."""
+    from flask import current_app
+
+    from src.settings_update import SettingsError, update_app_settings
+
+    try:
+        return update_app_settings(Path(current_app.root_path), changes), None
+    except SettingsError as exc:
+        return None, (jsonify({"success": False, "error": str(exc)}), 400)
+    except Exception as exc:  # the settings file could not be written
+        return None, (jsonify({"success": False, "error": str(exc)}), 500)
+
+
 @projects_library_bp.route("/api/settings/global-library", methods=["GET"])
 def get_global_library_settings():
     """Get the global template library settings."""
@@ -78,37 +92,13 @@ def get_study_application_import_setting():
 @projects_library_bp.route("/api/settings/study-application-import", methods=["POST"])
 def set_study_application_import_setting():
     """Update whether the MRI-Lab Graz study application import UI is enabled."""
-    from src.config import load_app_settings, save_app_settings
-    from flask import current_app
-
     data = request.get_json() or {}
     if "enable_study_application_import" not in data:
-        return (
-            jsonify(
-                {"success": False, "error": "Missing enable_study_application_import"}
-            ),
-            400,
-        )
-
-    app_root = Path(current_app.root_path)
-    settings = load_app_settings(app_root=str(app_root))
-    settings.enable_study_application_import = bool(
-        data.get("enable_study_application_import")
-    )
-
-    try:
-        save_app_settings(settings, str(app_root))
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-    return jsonify(
-        {
-            "success": True,
-            "enable_study_application_import": bool(
-                settings.enable_study_application_import
-            ),
-        }
-    )
+        return jsonify({"success": False, "error": "Missing enable_study_application_import"}), 400
+    settings, error = _apply_settings_changes({"enable_study_application_import": data["enable_study_application_import"]})
+    if error:
+        return error
+    return jsonify({"success": True, "enable_study_application_import": bool(settings.enable_study_application_import)})
 
 
 @projects_library_bp.route("/api/settings/backend-monitoring", methods=["GET"])
@@ -132,42 +122,18 @@ def get_backend_monitoring_setting():
 @projects_library_bp.route("/api/settings/backend-monitoring", methods=["POST"])
 def set_backend_monitoring_setting():
     """Update backend-action terminal monitoring setting."""
-    from src.config import load_app_settings, save_app_settings
-    from flask import current_app
-
     data = request.get_json() or {}
-    has_base_toggle = "backend_monitoring" in data
-    has_verbose_toggle = "backend_monitoring_verbose" in data
-    if not has_base_toggle and not has_verbose_toggle:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Missing backend_monitoring or backend_monitoring_verbose",
-                }
-            ),
-            400,
-        )
-
-    app_root = Path(current_app.root_path)
-    settings = load_app_settings(app_root=str(app_root))
-    if has_base_toggle:
-        settings.backend_monitoring = bool(data.get("backend_monitoring"))
-    if has_verbose_toggle:
-        settings.backend_monitoring_verbose = bool(data.get("backend_monitoring_verbose"))
-
-    try:
-        save_app_settings(settings, str(app_root))
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-    return jsonify(
-        {
-            "success": True,
-            "backend_monitoring": bool(settings.backend_monitoring),
-            "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
-        }
-    )
+    changes = {k: data[k] for k in ("backend_monitoring", "backend_monitoring_verbose") if k in data}
+    if not changes:
+        return jsonify({"success": False, "error": "Missing backend_monitoring or backend_monitoring_verbose"}), 400
+    settings, error = _apply_settings_changes(changes)
+    if error:
+        return error
+    return jsonify({
+        "success": True,
+        "backend_monitoring": bool(settings.backend_monitoring),
+        "backend_monitoring_verbose": bool(settings.backend_monitoring_verbose),
+    })
 
 
 @projects_library_bp.route("/api/settings/dedicated-terminal", methods=["GET"])
@@ -190,131 +156,35 @@ def get_dedicated_terminal_setting():
 @projects_library_bp.route("/api/settings/dedicated-terminal", methods=["POST"])
 def set_dedicated_terminal_setting():
     """Update dedicated terminal startup setting."""
-    from src.config import load_app_settings, save_app_settings
-    from flask import current_app
-
     data = request.get_json() or {}
     if "show_dedicated_terminal" not in data:
-        return (
-            jsonify({"success": False, "error": "Missing show_dedicated_terminal"}),
-            400,
-        )
-
-    app_root = Path(current_app.root_path)
-    settings = load_app_settings(app_root=str(app_root))
-    settings.show_dedicated_terminal = bool(data.get("show_dedicated_terminal"))
-
-    try:
-        save_app_settings(settings, str(app_root))
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-    return jsonify(
-        {
-            "success": True,
-            "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
-        }
-    )
+        return jsonify({"success": False, "error": "Missing show_dedicated_terminal"}), 400
+    settings, error = _apply_settings_changes({"show_dedicated_terminal": data["show_dedicated_terminal"]})
+    if error:
+        return error
+    return jsonify({"success": True, "show_dedicated_terminal": bool(settings.show_dedicated_terminal)})
 
 
 @projects_library_bp.route("/api/settings/global-library", methods=["POST"])
 def set_global_library_settings():
     """Update the global template library settings."""
-    from src.config import (
-        library_folder_error,
-        recipes_folder_error,
-        load_app_settings,
-        normalize_export_defacing_confirmation_mode,
-        save_app_settings,
-    )
-    from flask import current_app
-    import os
-
     data = request.get_json()
     if not data:
         return jsonify({"success": False, "error": "No data provided"}), 400
+    from src.settings_update import SETTINGS
 
-    app_root = Path(current_app.root_path)
-    settings = load_app_settings(app_root=str(app_root))
-
-    if "global_template_library_path" in data:
-        path = data["global_template_library_path"]
-        if path and path.strip():
-            if not os.path.exists(path):
-                return (
-                    jsonify(
-                        {"success": False, "error": f"Path does not exist: {path}"}
-                    ),
-                    400,
-                )
-            problem = library_folder_error(path)
-            if problem:
-                return jsonify({"success": False, "error": problem}), 400
-            settings.global_template_library_path = path
-        else:
-            settings.global_template_library_path = None
-
-    if "personal_library_path" in data:
-        path = (data["personal_library_path"] or "").strip()
-        if path and not os.path.isdir(path):
-            return (
-                jsonify({"success": False, "error": f"Path does not exist: {path}"}),
-                400,
-            )
-        settings.personal_library_path = path or None
-
-    if "global_recipes_path" in data:
-        path = data["global_recipes_path"]
-        if path and path.strip():
-            if not os.path.exists(path):
-                return (
-                    jsonify(
-                        {"success": False, "error": f"Path does not exist: {path}"}
-                    ),
-                    400,
-                )
-            problem = recipes_folder_error(path)
-            if problem:
-                return jsonify({"success": False, "error": problem}), 400
-            settings.global_recipes_path = path
-        else:
-            settings.global_recipes_path = None
-
-    if "default_modalities" in data:
-        settings.default_modalities = data["default_modalities"]
-
-    if "export_defacing_confirmation_mode" in data:
-        raw_mode = data.get("export_defacing_confirmation_mode")
-        normalized_mode = normalize_export_defacing_confirmation_mode(raw_mode)
-        if str(raw_mode or "").strip().lower() not in {"risk", "always"}:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Invalid export_defacing_confirmation_mode. Use 'risk' or 'always'.",
-                    }
-                ),
-                400,
-            )
-        settings.export_defacing_confirmation_mode = normalized_mode
-
-    try:
-        app_root = Path(current_app.root_path)
-        settings_path = save_app_settings(settings, str(app_root))
-        return jsonify(
-            {
-                "success": True,
-                "message": f"Settings saved to {settings_path}",
-                "global_template_library_path": settings.global_template_library_path,
-                "personal_library_path": settings.personal_library_path,
-                "global_recipes_path": settings.global_recipes_path,
-                    "export_defacing_confirmation_mode": normalize_export_defacing_confirmation_mode(
-                    getattr(settings, "export_defacing_confirmation_mode", "risk")
-                ),
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode"}
+    settings, error = _apply_settings_changes({k: v for k, v in data.items() if k in shared and k in SETTINGS})
+    if error:
+        return error
+    return jsonify({
+        "success": True,
+        "message": "Settings saved.",
+        "global_template_library_path": settings.global_template_library_path,
+        "personal_library_path": settings.personal_library_path,
+        "global_recipes_path": settings.global_recipes_path,
+        "export_defacing_confirmation_mode": settings.export_defacing_confirmation_mode,
+    })
 
 
 @projects_library_bp.route("/api/projects/library-path", methods=["GET"])

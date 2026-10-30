@@ -6,7 +6,7 @@ from pathlib import Path
 
 from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
-from src.datalad_project_copy import copy_files_into_project
+from src.conversion_to_project import save_conversion_to_project
 from src.system_files import filter_system_files
 
 try:
@@ -42,10 +42,6 @@ def handle_api_survey_convert(
     is_value_offset_confirmation_error,
     format_workflow_preparation_stale_response,
     format_value_offset_confirmation_response,
-    extract_tasks_from_output,
-    iter_session_registration_values,
-    register_session_in_project,
-    sync_project_survey_recipe_offsets,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
 ):
@@ -395,72 +391,20 @@ def handle_api_survey_convert(
             raise
 
         if save_to_project:
-            dest_root = project_root
-            dest_root.mkdir(parents=True, exist_ok=True)
-            copy_pairs: list[tuple[Path, Path]] = []
-
-            for item in output_root.rglob("*"):
-                if item.is_file():
-                    if not filter_system_files([item.name]):
-                        continue
-                    rel_path = item.relative_to(output_root)
-                    dest = dest_root / rel_path
-                    copy_pairs.append((item, dest))
-
-            if archive_sourcedata:
-                sourcedata_dir = project_root / "sourcedata"
-                archive_dest = sourcedata_dir / filename
-                copy_pairs.append((input_path, archive_dest))
-
             try:
-                copy_result = copy_files_into_project(
-                    dataset_root=project_root,
-                    copy_pairs=copy_pairs,
-                    run_message="PRISM: Copy converted survey files into project",
+                project_save = save_conversion_to_project(
+                    project_root=project_root,
+                    staged_root=output_root,
+                    convert_result=convert_result,
+                    source_path=input_path,
+                    source_name=filename,
+                    session_override=session_override,
+                    template_version_overrides=effective_template_version_overrides,
+                    archive_sourcedata=archive_sourcedata,
                 )
             except ValueError as error:
                 return jsonify({"error": str(error)}), 400
-
-            datalad_copy = copy_result.get("datalad")
-
-            registration_sessions = iter_session_registration_values(
-                session_override=session_override,
-                detected_sessions=(
-                    list(getattr(convert_result, "detected_sessions", []) or [])
-                    if convert_result
-                    else []
-                ),
-            )
-            if registration_sessions:
-                conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
-                tasks_out = extract_tasks_from_output(output_root)
-                for registration_session in registration_sessions:
-                    register_session_in_project(
-                        project_root,
-                        registration_session,
-                        tasks_out,
-                        "survey",
-                        filename,
-                        conv_type,
-                        template_version_overrides=effective_template_version_overrides,
-                    )
-
-            if convert_result and callable(sync_project_survey_recipe_offsets):
-                applied_offsets = (
-                    getattr(convert_result, "applied_value_offsets", {}) or {}
-                )
-                offset_application_counts = (
-                    getattr(convert_result, "value_offset_application_counts", {}) or {}
-                )
-                if applied_offsets:
-                    try:
-                        sync_project_survey_recipe_offsets(
-                            project_root=project_root,
-                            task_value_offsets=applied_offsets,
-                            offset_application_counts=offset_application_counts,
-                        )
-                    except Exception:
-                        pass
+            datalad_copy = project_save.datalad
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:

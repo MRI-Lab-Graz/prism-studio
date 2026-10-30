@@ -17,6 +17,7 @@ CommandHandler = Callable[[Namespace], None]
 
 # Commands that must keep working on an unfinished project (they fix or inspect it).
 GATE_EXEMPT_COMMANDS = {
+    "settings",  # app settings, not a project
     "session-map",
     "environment",
     "demo",
@@ -122,6 +123,11 @@ def dispatch_prism_tools(
             handlers["participants_fix_bids"](args)
         else:
             parsers["participants"].print_help()
+    elif args.command == "settings":
+        if args.action in ("show", "set"):
+            handlers[f"settings_{args.action}"](args)
+        else:
+            parsers["settings"].print_help()
     elif args.command == "session-map":
         if args.action == "show":
             handlers["session_map_show"](args)

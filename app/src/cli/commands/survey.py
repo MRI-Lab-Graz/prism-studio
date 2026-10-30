@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import sys
 from pathlib import Path
 
@@ -186,11 +187,17 @@ def cmd_survey_convert(args):
             library_label = "; ".join(f"{t.label} {t.directory.resolve()}" for t in tiers) or str(lib_dir.resolve())
 
         # The options Studio's form fills, and the service Studio runs: the same code, not a copy.
+        # Into a project: convert into a staging folder, then save it into the project, as Studio does
+        # (DataLad-aware copy, sourcedata archive, template versions, recipe offsets). Elsewhere: write directly.
+        save_into_project = project_path is not None and output_root == project_path and not args.dry_run
+        staging = tempfile.TemporaryDirectory(prefix="prism_survey_convert_") if save_into_project else None
+        convert_into = Path(staging.name) / "rawdata" if staging else output_root
+
         options = SurveyWorkflowStageOptions(
             suffix=input_path.suffix.lower(),
             input_path=input_path,
             library_dir=lib_dir,
-            output_root=output_root,
+            output_root=convert_into,
             survey=args.survey,
             id_column=args.id_column,
             session_column=args.session_column,
@@ -226,6 +233,20 @@ def cmd_survey_convert(args):
             lsa_converter=convert_survey_lsa_to_prism_dataset,
             options=options,
         )
+        if save_into_project:
+            from src.conversion_to_project import save_conversion_to_project
+
+            save_conversion_to_project(
+                project_root=project_path,
+                staged_root=convert_into,
+                convert_result=result,
+                source_path=input_path,
+                source_name=input_path.name,
+                session_override=getattr(args, "session", None),
+                template_version_overrides=template_version_overrides,
+                archive_sourcedata=bool(getattr(args, "archive_sourcedata", False)),
+                log_fn=lambda message, level="info": print(message) if message else None,
+            )
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)

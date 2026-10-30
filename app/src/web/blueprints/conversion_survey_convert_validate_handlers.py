@@ -7,8 +7,7 @@ from typing import Any
 
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
-from src.datalad_project_copy import copy_files_into_project
-from src.system_files import filter_system_files
+from src.conversion_to_project import save_conversion_to_project
 from src.survey_workflow_service import SurveyWorkflowStageService
 from .conversion_job_store import ConversionJobStore
 
@@ -47,11 +46,6 @@ def handle_api_survey_convert_validate(
     log_file_head,
     resolve_validation_library_path,
     run_validation,
-    cleanup_stale_tool_limesurvey_sidecars,
-    iter_session_registration_values,
-    extract_tasks_from_output,
-    register_session_in_project,
-    sync_project_survey_recipe_offsets,
     summarize_project_output_paths,
     sanitize_jsonable,
     collect_multivariant_tasks_from_library,
@@ -619,116 +613,23 @@ def handle_api_survey_convert_validate(
         datalad_copy = None
 
         if save_to_project:
-            dest_root = project_root
-            dest_root.mkdir(parents=True, exist_ok=True)
-            add_log(
-                f"Saving output to project: {project_root.name} (into project root)",
-                "info",
-            )
-
-            copy_pairs: list[tuple[Path, Path]] = []
-            output_rel_paths: set[str] = set()
-            for item in output_root.rglob("*"):
-                if item.is_file():
-                    if not filter_system_files([item.name]):
-                        continue
-                    rel_path = item.relative_to(output_root)
-                    dest = dest_root / rel_path
-                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
-                    copy_pairs.append((item, dest))
-
-            if archive_sourcedata:
-                sourcedata_dir = project_root / "sourcedata"
-                archive_dest = sourcedata_dir / filename
-                copy_pairs.append((input_path, archive_dest))
-
             try:
-                copy_result = copy_files_into_project(
-                    dataset_root=project_root,
-                    copy_pairs=copy_pairs,
-                    run_message="PRISM: Copy converted survey files into project",
+                project_save = save_conversion_to_project(
+                    project_root=project_root,
+                    staged_root=output_root,
+                    convert_result=convert_result,
+                    source_path=input_path,
+                    source_name=filename,
+                    session_override=session_override,
+                    template_version_overrides=effective_template_version_overrides,
+                    archive_sourcedata=archive_sourcedata,
+                    log_fn=add_log,
                 )
             except ValueError as error:
                 return jsonify({"error": str(error), "log": log_messages}), 400
-
-            copied_rel_paths = [
-                str(path) for path in list(copy_result.get("copied_paths") or [])
-            ]
-            copied_output_paths = [
-                project_root / rel_path
-                for rel_path in copied_rel_paths
-                if rel_path in output_rel_paths
-            ]
-            datalad_copy = copy_result.get("datalad")
-
-            cleanup_stale_tool_limesurvey_sidecars(
-                copied_output_paths=copied_output_paths,
-                source_suffix=suffix,
-                log_fn=add_log,
-            )
-            add_log("Project updated successfully!", "success")
-
-            if archive_sourcedata:
-                add_log(f"Archived original file to sourcedata/{filename}", "info")
-
-            registration_sessions = iter_session_registration_values(
-                session_override=session_override,
-                detected_sessions=list(getattr(convert_result, "detected_sessions", []) or []),
-            )
-            if registration_sessions:
-                conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
-                tasks_out = (
-                    convert_result.tasks_included
-                    if getattr(convert_result, "tasks_included", None)
-                    else extract_tasks_from_output(output_root)
-                )
-                for registration_session in registration_sessions:
-                    register_session_in_project(
-                        project_root,
-                        registration_session,
-                        tasks_out,
-                        "survey",
-                        filename,
-                        conv_type,
-                        template_version_overrides=effective_template_version_overrides,
-                    )
-                add_log(
-                    "Registered in project.json: "
-                    f"{', '.join(registration_sessions)} → {', '.join(tasks_out)}",
-                    "info",
-                )
-
-            if callable(sync_project_survey_recipe_offsets):
-                applied_offsets = getattr(convert_result, "applied_value_offsets", {}) or {}
-                offset_application_counts = (
-                    getattr(convert_result, "value_offset_application_counts", {}) or {}
-                )
-                if applied_offsets:
-                    try:
-                        recipe_offset_sync_summary = sync_project_survey_recipe_offsets(
-                            project_root=project_root,
-                            task_value_offsets=applied_offsets,
-                            offset_application_counts=offset_application_counts,
-                        )
-                        updated = recipe_offset_sync_summary.get("updated_tasks", [])
-                        missing = recipe_offset_sync_summary.get("missing_tasks", [])
-                        errors = recipe_offset_sync_summary.get("errors", [])
-                        if updated:
-                            add_log(
-                                "Updated survey recipe offset metadata for: "
-                                + ", ".join(updated),
-                                "info",
-                            )
-                        if missing:
-                            add_log(
-                                "No matching survey recipe file found for: "
-                                + ", ".join(missing),
-                                "warning",
-                            )
-                        for sync_error in errors:
-                            add_log(f"Recipe offset sync warning: {sync_error}", "warning")
-                    except Exception as sync_error:
-                        add_log(f"Recipe offset sync warning: {sync_error}", "warning")
+            copied_output_paths = project_save.output_paths
+            datalad_copy = project_save.datalad
+            recipe_offset_sync_summary = project_save.recipe_offset_summary
         else:
             copied_output_paths = []
 
@@ -835,11 +736,6 @@ def handle_api_survey_convert_validate_start(
     log_file_head,
     resolve_validation_library_path,
     run_validation,
-    cleanup_stale_tool_limesurvey_sidecars,
-    iter_session_registration_values,
-    extract_tasks_from_output,
-    register_session_in_project,
-    sync_project_survey_recipe_offsets,
     summarize_project_output_paths,
     sanitize_jsonable,
     collect_multivariant_tasks_from_library,
@@ -1064,11 +960,6 @@ def handle_api_survey_convert_validate_start(
         "log_file_head": log_file_head,
         "resolve_validation_library_path": resolve_validation_library_path,
         "run_validation": run_validation,
-        "cleanup_stale_tool_limesurvey_sidecars": cleanup_stale_tool_limesurvey_sidecars,
-        "iter_session_registration_values": iter_session_registration_values,
-        "extract_tasks_from_output": extract_tasks_from_output,
-        "register_session_in_project": register_session_in_project,
-        "sync_project_survey_recipe_offsets": sync_project_survey_recipe_offsets,
         "summarize_project_output_paths": summarize_project_output_paths,
         "sanitize_jsonable": sanitize_jsonable,
         "collect_multivariant_tasks_from_library": collect_multivariant_tasks_from_library,
@@ -1156,11 +1047,6 @@ def _run_survey_convert_validate_job(
     log_file_head = deps["log_file_head"]
     resolve_validation_library_path = deps["resolve_validation_library_path"]
     run_validation = deps["run_validation"]
-    cleanup_stale_tool_limesurvey_sidecars = deps["cleanup_stale_tool_limesurvey_sidecars"]
-    iter_session_registration_values = deps["iter_session_registration_values"]
-    extract_tasks_from_output = deps["extract_tasks_from_output"]
-    register_session_in_project = deps["register_session_in_project"]
-    sync_project_survey_recipe_offsets = deps["sync_project_survey_recipe_offsets"]
     summarize_project_output_paths = deps["summarize_project_output_paths"]
     sanitize_jsonable = deps["sanitize_jsonable"]
     collect_multivariant_tasks_from_library = deps["collect_multivariant_tasks_from_library"]
@@ -1588,117 +1474,24 @@ def _run_survey_convert_validate_job(
         datalad_copy = None
 
         if save_to_project:
-            dest_root = project_root
-            dest_root.mkdir(parents=True, exist_ok=True)
-            add_log(
-                f"Saving output to project: {project_root.name} (into project root)",
-                "info",
-            )
-
-            copy_pairs: list[tuple[Path, Path]] = []
-            output_rel_paths: set[str] = set()
-            for item in output_root.rglob("*"):
-                if item.is_file():
-                    if not filter_system_files([item.name]):
-                        continue
-                    rel_path = item.relative_to(output_root)
-                    dest = dest_root / rel_path
-                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
-                    copy_pairs.append((item, dest))
-
-            if archive_sourcedata:
-                sourcedata_dir = project_root / "sourcedata"
-                archive_dest = sourcedata_dir / filename
-                copy_pairs.append((input_path, archive_dest))
-
             try:
-                copy_result = copy_files_into_project(
-                    dataset_root=project_root,
-                    copy_pairs=copy_pairs,
-                    run_message="PRISM: Copy converted survey files into project",
+                project_save = save_conversion_to_project(
+                    project_root=project_root,
+                    staged_root=output_root,
+                    convert_result=convert_result,
+                    source_path=input_path,
+                    source_name=filename,
+                    session_override=session_override,
+                    template_version_overrides=effective_template_version_overrides,
+                    archive_sourcedata=archive_sourcedata,
+                    log_fn=add_log,
                 )
             except ValueError as error:
                 _survey_convert_job_store.failure(job_id, str(error))
                 return
-
-            copied_rel_paths = [
-                str(path) for path in list(copy_result.get("copied_paths") or [])
-            ]
-            copied_output_paths = [
-                project_root / rel_path
-                for rel_path in copied_rel_paths
-                if rel_path in output_rel_paths
-            ]
-            datalad_copy = copy_result.get("datalad")
-
-            cleanup_stale_tool_limesurvey_sidecars(
-                copied_output_paths=copied_output_paths,
-                source_suffix=suffix,
-                log_fn=add_log,
-            )
-            add_log("Project updated successfully!", "success")
-
-            if archive_sourcedata:
-                add_log(f"Archived original file to sourcedata/{filename}", "info")
-
-            registration_sessions = iter_session_registration_values(
-                session_override=session_override,
-                detected_sessions=list(getattr(convert_result, "detected_sessions", []) or []),
-            )
-            if registration_sessions:
-                conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
-                tasks_out = (
-                    convert_result.tasks_included
-                    if getattr(convert_result, "tasks_included", None)
-                    else extract_tasks_from_output(output_root)
-                )
-                for registration_session in registration_sessions:
-                    register_session_in_project(
-                        project_root,
-                        registration_session,
-                        tasks_out,
-                        "survey",
-                        filename,
-                        conv_type,
-                        template_version_overrides=effective_template_version_overrides,
-                    )
-                add_log(
-                    "Registered in project.json: "
-                    f"{', '.join(registration_sessions)} → {', '.join(tasks_out)}",
-                    "info",
-                )
-
-            if callable(sync_project_survey_recipe_offsets):
-                applied_offsets = getattr(convert_result, "applied_value_offsets", {}) or {}
-                offset_application_counts = (
-                    getattr(convert_result, "value_offset_application_counts", {}) or {}
-                )
-                if applied_offsets:
-                    try:
-                        recipe_offset_sync_summary = sync_project_survey_recipe_offsets(
-                            project_root=project_root,
-                            task_value_offsets=applied_offsets,
-                            offset_application_counts=offset_application_counts,
-                        )
-                        updated = recipe_offset_sync_summary.get("updated_tasks", [])
-                        missing = recipe_offset_sync_summary.get("missing_tasks", [])
-                        errors = recipe_offset_sync_summary.get("errors", [])
-                        if updated:
-                            add_log(
-                                "Updated survey recipe offset metadata for: "
-                                + ", ".join(updated),
-                                "info",
-                            )
-                        if missing:
-                            add_log(
-                                "No matching survey recipe file found for: "
-                                + ", ".join(missing),
-                                "warning",
-                            )
-                        for sync_error in errors:
-                            add_log(f"Recipe offset sync warning: {sync_error}", "warning")
-                    except Exception as sync_error:
-                        add_log(f"Recipe offset sync warning: {sync_error}", "warning")
+            copied_output_paths = project_save.output_paths
+            datalad_copy = project_save.datalad
+            recipe_offset_sync_summary = project_save.recipe_offset_summary
         else:
             copied_output_paths = []
 

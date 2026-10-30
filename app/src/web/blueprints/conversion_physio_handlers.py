@@ -28,7 +28,7 @@ from .conversion_utils import (
     resolve_existing_project_root,
     summarize_project_output_paths,
 )
-from src.web.services.project_registration import register_session_in_project
+from src.project_registration import register_session_in_project
 from src.datalad_project_copy import copy_files_into_project
 from src.physio_renamer import (
     apply_folder_placeholders as _apply_folder_placeholders,

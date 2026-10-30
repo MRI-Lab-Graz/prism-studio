@@ -12,7 +12,7 @@ FOLLOWS_POLICY = [
     "src/converters/biometrics.py",
     "src/environment_conversion.py",
     "app/src/converters/survey.py",
-    "app/src/web/services/project_registration.py",
+    "src/project_registration.py",
 ]
 
 EXEMPT = {  # writes ses- names, but not from the data being imported

@@ -35,14 +35,14 @@ Method: for each Studio endpoint with an obvious CLI command, read the form fiel
 has. The automatic field extraction misses fields read through helpers (it missed `sessions_from_date`), so every finding
 below was confirmed by reading the code. Fixed items have a test; open ones are listed with what Studio does.
 
-### The "save to project" step is Studio-only (all conversions) - the biggest gap
-After a conversion Studio stages the files, copies them into the project with a DataLad-aware copy and commit
-(`copy_files_into_project`), optionally archives the source file in `sourcedata/`, registers the template versions in
-`project.json` (`register_session_in_project`, which lives in the Studio tree: `app/src/web/services/`), and syncs the
-recipe offsets (`sync_project_survey_recipe_offsets`). Survey, biometrics, physio and environment conversions all do it in
-their routes. The commands write straight into `--output` and do none of it. Fix: one backend function for the tail, called
-by the commands and by the routes; move `register_session_in_project` to `src/`. (Not started: needs a decision on DataLad
-commits for the CLI.)
+### The "save to project" step - survey done, the other conversions open
+After a conversion Studio stages the files, copies them into the project with a DataLad-aware copy and commit, optionally
+archives the source file in `sourcedata/`, registers the template versions in `project.json` and syncs the recipe offsets.
+**Done for surveys**: `src/conversion_to_project.py::save_conversion_to_project` does all of it; Studio's three survey routes and
+`survey convert` (when the output is the project) call it, and `tests/test_survey_convert_saves_into_the_project.py` runs Studio's
+real Convert route against the command on identical projects and compares every file. Open: biometrics, physio and
+environment routes still carry their own copy of the tail (and register sessions through `src/project_registration.py`);
+their commands write straight into `--output`.
 
 ### Physio
 - `physio batch-convert`: **fixed** `--generate-physio-reports` and `--dataset-name` (the command now also writes
@@ -107,8 +107,6 @@ Studio uses them (a first sort by file, not yet a line-by-line read of each):
 
 **Only project setup is exempt**: creating a project and its study metadata (including the DOI and ORCID lookups that fill the
 metadata form). Everything else in this baseline is a divergence to fix, not "infrastructure":
-- Settings (`src.config`: the library paths, the personal library, defacing confirmation, monitoring): the Settings page has
-  **no CLI at all**. Needs `prism_tools.py settings get|set`.
 - DataLad server publish and sync, remote browse and rsync, project structure and the sessions/participants pages, project
   registration, session logging.
 - Pure UI state needs no command (icons, which card is open, the dedicated terminal window, the version check): confirm each
@@ -126,6 +124,9 @@ results page), `spec_overlay` (the Contribute page lists items; `spec local list
   `template_tiers` (the per-template merge for conversions) state the project, personal, global order twice.
 
 ## Fixed (keep the tests green)
+
+- Settings: `prism_tools.py settings show|set`; the Settings page's four routes and the command run `src/settings_update.py`.
+  The command has one flag per setting, generated from the same table the page uses.
 
 - Saving a template: `library template-save` and the editor's Save run `src/template_save.py`. The command used to skip the
   task-name check for library templates that the editor always made.

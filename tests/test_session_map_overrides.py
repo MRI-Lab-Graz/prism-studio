@@ -19,7 +19,7 @@ if str(APP_ROOT) not in sys.path:
 from src.converters.survey import _build_task_context_maps  # noqa: E402
 from src.converters.survey_core import build_survey_id_normalizers  # noqa: E402
 from src.session_map import SessionsNotMappedError, save_session_map  # noqa: E402
-from src.web.services.project_registration import register_session_in_project  # noqa: E402
+from src.project_registration import register_session_in_project  # noqa: E402
 
 MAP = {"pre": "1", "post": "2"}
 TEMPLATES = {
