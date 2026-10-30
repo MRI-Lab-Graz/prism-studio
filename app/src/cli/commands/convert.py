@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from src.physio_varioport import run_varioport_conversion
 import hashlib
 import json
 import sys
@@ -65,43 +66,6 @@ def get_json_hash(json_path):
             return hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
 
 
-def _run_varioport_conversion(
-    raw_file: Path,
-    out_edf: Path,
-    out_json: Path,
-    *,
-    task: str,
-    sampling_rate: float | None,
-    bids_base: Path | None = None,
-) -> None:
-    extra = {"bids_base": bids_base} if bids_base else {}
-    try:
-        convert_varioport(
-            str(raw_file),
-            str(out_edf),
-            str(out_json),
-            task_name=task,
-            base_freq=sampling_rate,
-            **extra,
-        )
-    except ValueError as e:
-        if "Unsupported Varioport header type" not in str(e):
-            raise
-
-        print(
-            "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
-        )
-        convert_varioport(
-            str(raw_file),
-            str(out_edf),
-            str(out_json),
-            task_name=task,
-            base_freq=sampling_rate,
-            allow_raw_multiplexed=True,
-            **extra,
-        )
-
-
 def _iter_physio_input_files(input_path: Path) -> list[Path]:
     supported_suffixes = {".raw", ".vpd"}
     if input_path.is_file():
@@ -144,7 +108,8 @@ def cmd_convert_physio(args):
         print(f"Converting {raw_file.name} -> {out_edf.name}")
 
         try:
-            _run_varioport_conversion(
+            run_varioport_conversion(
+                convert_varioport,
                 raw_file,
                 out_edf,
                 out_json,
@@ -223,7 +188,8 @@ def cmd_convert_physio(args):
         print(f"Converting {filename} -> {out_edf.name}")
 
         try:
-            _run_varioport_conversion(
+            run_varioport_conversion(
+                convert_varioport,
                 raw_file,
                 out_edf,
                 target_dir / f"{out_base}.json",
@@ -643,11 +609,19 @@ def cmd_convert_wide_to_long(args) -> None:
 
 
 def cmd_physio_batch_convert(args) -> None:
-    """Handle 'physio batch-convert' command."""
+    """Handle 'physio batch-convert' command: what Studio's batch convert does, including 'save to project'."""
+    import tempfile
+
     from src.batch_convert import PhysioDestinationError, batch_convert_folder, create_dataset_description
+    from src.conversion_to_project import save_physio_batch_to_project
+    from src.physio_renamer import normalize_project_dest_root, normalize_subject_rewrite_mode
 
     source_folder = Path(args.input)
-    output_folder = Path(args.output)
+    project = getattr(args, "project", None)
+    dry_run = bool(getattr(args, "dry_run", False))
+    if not project and not getattr(args, "output", None):
+        print("Error: give --output (a folder to write the PRISM dataset to) or --project.", file=sys.stderr)
+        sys.exit(2)
 
     if not source_folder.exists():
         print(f"Error: Input folder '{source_folder}' does not exist.", file=sys.stderr)
@@ -662,6 +636,10 @@ def cmd_physio_batch_convert(args) -> None:
         }.get(level, "")
         print(f"{prefix}{msg}")
 
+    # With --project, like Studio: convert into a staging folder, then save into the project
+    staging = tempfile.TemporaryDirectory(prefix="prism_batch_convert_") if project else None
+    output_folder = Path(staging.name) / "output" if staging else Path(args.output)
+    dataset_name = getattr(args, "dataset_name", None) or "Converted Dataset"
     try:
         result = batch_convert_folder(
             source_folder=source_folder,
@@ -670,18 +648,34 @@ def cmd_physio_batch_convert(args) -> None:
             generate_physio_reports=bool(getattr(args, "generate_physio_reports", False)),
             modality_filter=getattr(args, "modality", "all"),
             log_callback=_log,
-            dry_run=getattr(args, "dry_run", False),
+            dry_run=dry_run,
             physio_destination=getattr(args, "destination", None),
         )
+        if not dry_run:  # Studio writes it after every real conversion
+            create_dataset_description(output_folder, name=dataset_name)
+        if project and not dry_run:
+            saved = save_physio_batch_to_project(
+                project_root=Path(project).resolve(),
+                staged_root=output_folder,
+                converted=result.converted,
+                dataset_name=dataset_name,
+                dest_root=normalize_project_dest_root(getattr(args, "dest_root", None) or "root"),
+                flat_structure=bool(getattr(args, "flat_structure", False)),
+                modality_filter=getattr(args, "modality", "all"),
+                subject_rewrite_mode=normalize_subject_rewrite_mode(getattr(args, "subject_rewrite_mode", None)),
+                log_fn=_log,
+            )
+            for warning in saved.warnings:
+                _log(warning, "warning")
     except PhysioDestinationError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(2)
-
-    if not getattr(args, "dry_run", False):  # Studio writes it after every real conversion
-        create_dataset_description(output_folder, name=getattr(args, "dataset_name", None) or "Converted Dataset")
+    finally:
+        if staging is not None:
+            staging.cleanup()
 
     print(
-        f"\n{'DRY-RUN ' if getattr(args, 'dry_run', False) else ''}Batch convert complete: "
+        f"\n{'DRY-RUN ' if dry_run else ''}Batch convert complete: "
         f"{result.success_count} converted, {result.error_count} errors, "
         f"{len(result.skipped)} skipped."
     )

@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from src.export_options import build_export_kwargs
 from flask import Flask
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,12 +44,13 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
         return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
 
     with patch(
-        "src.web.export_project.export_project", side_effect=fake_export_project
+        "src.export_options.export_project", side_effect=fake_export_project
     ):
         with app.test_client() as client:
             response = client.post(
                 "/api/projects/export",
                 json={
+                    "validation_mode": "ignore",
                     "project_path": str(project_dir),
                     "anonymize": True,
                     "mask_questions": False,
@@ -116,8 +118,8 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
 
     args = captured.get("args")
     assert isinstance(args, tuple)
-    assert len(args) == 4
-    export_kwargs = args[1]
+    assert len(args) == 5
+    export_kwargs = build_export_kwargs(args[2])
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is True
     assert export_kwargs["mask_questions"] is False
@@ -127,7 +129,7 @@ def test_projects_export_start_uses_fixed_internal_anonymization_settings(tmp_pa
     assert export_kwargs["id_length"] == 8
     assert export_kwargs["deterministic"] is True
     assert export_kwargs["include_sourcedata"] is False
-    assert args[2] == "study_anonymized_export.zip"
+    assert args[3] == "study_anonymized_export.zip"
 
 
 def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_path):
@@ -171,12 +173,12 @@ def test_projects_export_start_uses_non_anonymized_filename_when_disabled(tmp_pa
 
     args = captured.get("args")
     assert isinstance(args, tuple)
-    assert len(args) == 4
-    export_kwargs = args[1]
+    assert len(args) == 5
+    export_kwargs = build_export_kwargs(args[2])
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["anonymize"] is False
     assert export_kwargs["include_sourcedata"] is False
-    assert args[2] == "study_export.zip"
+    assert args[3] == "study_export.zip"
 
 
 def test_projects_export_deface_route_returns_backend_summary(tmp_path):
@@ -568,14 +570,14 @@ def test_projects_export_start_upload_ready_preset_forces_safe_export_defaults(t
 
     args = captured.get("args")
     assert isinstance(args, tuple)
-    export_kwargs = args[1]
+    export_kwargs = build_export_kwargs(args[2])
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["include_derivatives"] is False
     assert export_kwargs["include_sourcedata"] is False
     assert export_kwargs["include_code"] is False
     assert export_kwargs["include_analysis"] is False
     assert export_kwargs["exclude_version_control_metadata"] is True
-    assert args[2] == "study_anonymized_upload_ready_export.zip"
+    assert args[3] == "study_anonymized_upload_ready_export.zip"
 
 
 def test_projects_export_start_derives_exclude_metadata_from_repository_mode(tmp_path):
@@ -616,7 +618,7 @@ def test_projects_export_start_derives_exclude_metadata_from_repository_mode(tmp
                 )
 
         assert response.status_code == 200
-        export_kwargs = captured["args"][1]
+        export_kwargs = build_export_kwargs(captured["args"][2])
         assert export_kwargs["exclude_version_control_metadata"] is expected_exclude, (
             f"repository_mode={repository_mode!r}"
         )
@@ -655,7 +657,7 @@ def test_projects_export_start_falls_back_to_legacy_exclude_flag_without_reposit
             )
 
     assert response.status_code == 200
-    export_kwargs = captured["args"][1]
+    export_kwargs = build_export_kwargs(captured["args"][2])
     assert export_kwargs["exclude_version_control_metadata"] is True
 
 
@@ -677,12 +679,13 @@ def test_projects_export_sync_route_derives_exclude_metadata_from_repository_mod
         return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
 
     with patch(
-        "src.web.export_project.export_project", side_effect=fake_export_project
+        "src.export_options.export_project", side_effect=fake_export_project
     ):
         with app.test_client() as client:
             response = client.post(
                 "/api/projects/export",
                 json={
+                    "validation_mode": "ignore",
                     "project_path": str(project_dir),
                     "repository_mode": "git_lfs",
                 },
@@ -730,7 +733,7 @@ def test_projects_export_start_passes_survey_task_filters_to_export_job(tmp_path
 
     args = captured.get("args")
     assert isinstance(args, tuple)
-    export_kwargs = args[1]
+    export_kwargs = build_export_kwargs(args[2])
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["exclude_tasks"] == {"survey": {"ads"}}
 
@@ -777,7 +780,7 @@ def test_projects_export_start_forwards_subject_scope_filters_to_export_job(tmp_
 
     args = captured.get("args")
     assert isinstance(args, tuple)
-    export_kwargs = args[1]
+    export_kwargs = build_export_kwargs(args[2])
     assert isinstance(export_kwargs, dict)
     assert export_kwargs["exclude_subjects"] == {"sub-002"}
     assert export_kwargs["exclude_sessions"] == {"ses-2"}
@@ -802,12 +805,13 @@ def test_projects_export_sync_route_forwards_scope_filters(tmp_path):
         return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
 
     with patch(
-        "src.web.export_project.export_project", side_effect=fake_export_project
+        "src.export_options.export_project", side_effect=fake_export_project
     ):
         with app.test_client() as client:
             response = client.post(
                 "/api/projects/export",
                 json={
+                    "validation_mode": "ignore",
                     "project_path": str(project_dir),
                     "anonymize": False,
                     "exclude_subjects": ["sub-003", ""],
@@ -1057,12 +1061,13 @@ def test_projects_export_sync_response_cleans_temp_zip_after_close(tmp_path):
         side_effect=fake_mkstemp,
     ):
         with patch(
-            "src.web.export_project.export_project", side_effect=fake_export_project
+            "src.export_options.export_project", side_effect=fake_export_project
         ):
             with app.test_client() as client:
                 response = client.post(
                     "/api/projects/export",
                     json={
+                    "validation_mode": "ignore",
                         "project_path": str(project_dir),
                         "anonymize": False,
                         "mask_questions": False,
@@ -1168,7 +1173,6 @@ def test_export_job_blocks_when_pre_export_validation_has_errors(tmp_path):
     projects_export_module._create_export_job(job_id)
 
     export_kwargs = {
-        "project_path": project_dir,
         "validation_mode": "both",
     }
 
@@ -1179,9 +1183,10 @@ def test_export_job_blocks_when_pre_export_validation_has_errors(tmp_path):
             SimpleNamespace(total_files=1),
         ),
     ):
-        with patch("src.web.export_project.export_project") as mock_do_export:
+        with patch("src.export_options.export_project") as mock_do_export:
             projects_export_module._run_export_job(
                 job_id,
+                project_dir,
                 export_kwargs,
                 "study_export.zip",
                 str(output_dir),
@@ -1208,7 +1213,6 @@ def test_export_job_allows_warnings_only_pre_export_validation(tmp_path):
         return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
 
     export_kwargs = {
-        "project_path": project_dir,
         "validation_mode": "prism",
     }
 
@@ -1220,11 +1224,12 @@ def test_export_job_allows_warnings_only_pre_export_validation(tmp_path):
         ),
     ):
         with patch(
-            "src.web.export_project.export_project",
+            "src.export_options.export_project",
             side_effect=fake_export_project,
         ):
             projects_export_module._run_export_job(
                 job_id,
+                project_dir,
                 export_kwargs,
                 "study_export.zip",
                 str(output_dir),
@@ -1250,17 +1255,17 @@ def test_export_job_skips_validation_when_mode_is_ignore(tmp_path):
         return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
 
     export_kwargs = {
-        "project_path": project_dir,
         "validation_mode": "ignore",
     }
 
     with patch("src.web.validation.run_validation") as mock_run_validation:
         with patch(
-            "src.web.export_project.export_project",
+            "src.export_options.export_project",
             side_effect=fake_export_project,
         ):
             projects_export_module._run_export_job(
                 job_id,
+                project_dir,
                 export_kwargs,
                 "study_export.zip",
                 str(output_dir),
@@ -1286,7 +1291,6 @@ def test_export_job_does_not_block_on_non_error_issue_levels(tmp_path):
         return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
 
     export_kwargs = {
-        "project_path": project_dir,
         "validation_mode": "both",
     }
 
@@ -1298,11 +1302,12 @@ def test_export_job_does_not_block_on_non_error_issue_levels(tmp_path):
         ),
     ):
         with patch(
-            "src.web.export_project.export_project",
+            "src.export_options.export_project",
             side_effect=fake_export_project,
         ):
             projects_export_module._run_export_job(
                 job_id,
+                project_dir,
                 export_kwargs,
                 "study_export.zip",
                 str(output_dir),
@@ -1358,7 +1363,7 @@ def test_template_export_route_blocks_when_validation_fails(tmp_path):
     (project_dir / "project.json").write_text("{}", encoding="utf-8")
 
     with patch(
-        "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+        "src.export_options.run_pre_export_validation",
         return_value="Export blocked: validation found errors.",
     ):
         with patch(
@@ -1846,7 +1851,7 @@ def test_openminds_export_runs_bids2openminds_and_reports_success(tmp_path):
         "shutil.which",
         return_value="/usr/bin/bids2openminds",
     ), patch(
-        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        "subprocess.run",
         side_effect=fake_run,
     ):
         with app.test_client() as client:
@@ -1877,7 +1882,7 @@ def test_openminds_export_reports_bids2openminds_failure(tmp_path):
         "shutil.which",
         return_value="/usr/bin/bids2openminds",
     ), patch(
-        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        "subprocess.run",
         return_value=SimpleNamespace(
             returncode=1, stdout="", stderr="conversion failed: unsupported BIDS layout"
         ),

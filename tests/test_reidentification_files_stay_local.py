@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from src.git_exclude import ensure_git_excluded
 from src.project_session_logging import ProjectSessionLogger
-from src.web.export_project import export_project
+from src.project_export import export_project
 
 
 def _git_project(tmp_path: Path) -> Path:

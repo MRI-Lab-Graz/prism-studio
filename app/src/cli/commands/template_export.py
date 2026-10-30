@@ -6,16 +6,19 @@ import json
 import sys
 from pathlib import Path
 
-from src.project_template_export import export_project_template_zip
-
 
 def cmd_template_export(args) -> None:
-    """Create a template ZIP from a project without participant data."""
-    project_path = Path(args.project).expanduser().resolve()
-    output_zip = Path(args.output).expanduser().resolve()
+    """Create a template ZIP from a project without participant data (after the validation Studio runs, too)."""
+    from src.export_options import ExportBlocked, run_template_export
 
+    project_path = Path(args.project).expanduser().resolve()
+    data = {"validation_mode": getattr(args, "validation_mode", "both") or "both", "output_folder": getattr(args, "output_folder", None)}
+    output_zip = Path(args.output).expanduser().resolve() if getattr(args, "output", None) else None
     try:
-        stats = export_project_template_zip(project_path, output_zip)
+        stats = run_template_export(project_path, data, output_zip)
+    except ExportBlocked as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
     except ValueError as exc:
         print(f"Error: {exc}")
         sys.exit(1)

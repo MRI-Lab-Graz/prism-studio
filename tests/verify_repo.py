@@ -63,7 +63,7 @@ PATH_HYGIENE_BASELINE_ALLOWLIST = {
 
 SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST = {
     "app/src/web/survey_utils.py",
-    "app/src/web/export_project.py",
+    "src/project_export.py",
     "app/src/web/blueprints/tools_helpers.py",
     "app/src/web/blueprints/projects_metadata_helpers.py",
     "app/src/web/blueprints/conversion_survey_preview_handlers.py",

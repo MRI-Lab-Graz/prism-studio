@@ -6692,9 +6692,7 @@ git push -u origin main
         just that `datalad push` reported success.
         """
         from src.datalad_execution import is_ria_url, resolve_datalad_executable
-        from src.web.blueprints.projects_export_blueprint import (
-            _run_pre_export_validation,
-        )
+        from src.export_options import run_pre_export_validation as _run_pre_export_validation
 
         datalad_executable = resolve_datalad_executable()
         if not datalad_executable:
@@ -6807,9 +6805,7 @@ git push -u origin main
             self._emit_backend_progress(
                 "Running PRISM + BIDS validation on the local dataset before pushing."
             )
-            from src.web.blueprints.projects_export_blueprint import (
-                _run_pre_export_validation,
-            )
+            from src.export_options import run_pre_export_validation as _run_pre_export_validation
 
             # Hold the per-project DataLad lock for the validation scan: the
             # BIDS validator does its own raw filesystem walk (list dir, then

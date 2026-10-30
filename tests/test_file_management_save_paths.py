@@ -288,8 +288,7 @@ def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(
-        handlers,
-        "register_session_in_project",
+        "src.conversion_to_project.register_session_in_project",
         lambda *args, **kwargs: None,
     )
 
@@ -371,8 +370,7 @@ def test_batch_convert_accepts_server_file_paths_for_project_copy(tmp_path, monk
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(
-        handlers,
-        "register_session_in_project",
+        "src.conversion_to_project.register_session_in_project",
         lambda *args, **kwargs: None,
     )
 
@@ -444,8 +442,7 @@ def test_batch_convert_rewrites_subject_to_last_three_digits_for_project_copy(
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(
-        handlers,
-        "register_session_in_project",
+        "src.conversion_to_project.register_session_in_project",
         lambda *args, **kwargs: None,
     )
 
@@ -533,8 +530,7 @@ def test_batch_convert_can_target_explicit_project_path(tmp_path, monkeypatch):
         lambda *args, **kwargs: None,
     )
     monkeypatch.setattr(
-        handlers,
-        "register_session_in_project",
+        "src.conversion_to_project.register_session_in_project",
         lambda *args, **kwargs: None,
     )
 

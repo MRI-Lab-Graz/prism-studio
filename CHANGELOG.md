@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Export is driven by the command line; Studio's export page only triggers it.** New commands `export project|folder|git-lfs|
+  annex-availability|structure|deface-report|deface-preflight|deface|anc|openminds|openminds-tasks`, each running the function the
+  page's route runs (the export core moved from Studio's tree to `src/`). Differences removed on the way: the synchronous export
+  route now validates before exporting like the async one and the command (`validation_mode`, default `both`); `template-export`
+  validates first and, without `--output`, names its zip `<project>_template_export.zip` next to the project like Studio.
+- **`file-management rename-physio --apply --project`** renames files into a project like Studio's renamer (`--dest-root`,
+  `--flat-structure`, `--subject-rewrite-mode`, DataLad-aware copy, a warning for subject folders that do not exist yet).
 - **`prism_tools.py settings show|set`: the Settings page as commands.** The library folders (global templates, recipes, your
   personal library), the default modalities, the defacing confirmation mode, the terminal and monitoring switches and the study
   application import could only be changed on Studio's Settings page. The page's routes and the command now run one function
@@ -38,6 +45,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **The Physio Renamer and `file-management rename-physio` follow one rule.** Their copies of it had drifted in both directions: Studio's
+  renamer let you organize a task-bound physio file into `physio/`, an events file into a non-existent `events/` folder, or a raw
+  EDF into `beh/func/eeg`, which the command refused (with a pointer to the Physio converter); the command accepted a new file name
+  that was empty or held a path separator, which Studio refused. Both now refuse all of it. The Varioport conversion with its Type-7
+  retry is one function for `convert physio` and Studio's Physio converter, too.
+- **`biometrics convert` and `physio batch-convert` save into the project like Studio.** `biometrics convert` now uses the project's
+  templates, matches participant IDs against the project's `participants.tsv` (the same table gave different `sub-` IDs on the
+  command line and in Studio) and takes `--project` and `--dry-run`. `physio batch-convert` takes `--project`, `--dest-root`,
+  `--flat-structure` and `--subject-rewrite-mode`. Both save through the shared function Studio's routes call. Studio's
+  synchronous physio batch no longer differs from its async one (it never registered sessions or wrote `dataset_description.json`).
 - **`survey convert` into a project saves like Studio's Convert.** Studio converted into a staging folder and then saved into the
   project (a DataLad-aware copy with a commit, the source file archived in `sourcedata/`, the template versions registered in
   `project.json`, the recipe offsets synced); the command wrote straight into the output and did none of it. One function now does

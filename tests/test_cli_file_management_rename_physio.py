@@ -147,7 +147,7 @@ class TestApply:
                 )
             )
         assert exc_info.value.code == 1
-        assert "--output is required" in capsys.readouterr().out
+        assert "--output (or --project) is required" in capsys.readouterr().out
 
     def test_apply_copies_renamed_files(self, tmp_path, capsys):
         input_dir = tmp_path / "in"

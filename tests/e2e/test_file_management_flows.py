@@ -239,12 +239,12 @@ def define_renamer_rule(page, folder, session="t2"):
     expect(page.locator("#renamerOriginalExample")).to_contain_text(".edf")
     example = page.locator("#renamerOriginalExample").inner_text()
     subject = re.search(r"(\d{3})-", example).group(1)
-    page.fill("#renamerTask", "rest")
+    # no task: a task-bound recording does not belong in physio/ (the Physio converter puts it next to its task)
     page.select_option("#renamerModality", "physio")
     page.fill("#renamerSubjectValue", subject)
     page.fill("#renamerSessionValue", session)
     # the output template is generated a moment after the last field changes
-    expect(page.locator("#renamerNewExample")).to_have_value("sub-{subject}_ses-{session}_task-rest_physio.edf")
+    expect(page.locator("#renamerNewExample")).to_have_value("sub-{subject}_ses-{session}_physio.edf")
 
 
 def test_renamer_preview_changes_nothing_and_copy_writes_the_renamed_files(app_page, studio_url, project, tmp_path):
@@ -254,15 +254,15 @@ def test_renamer_preview_changes_nothing_and_copy_writes_the_renamed_files(app_p
 
     app_page.click("#renamerDryRunBtn")
 
-    expect(app_page.locator("#fm-renamer-panel")).to_contain_text("sub-004_ses-t2_task-rest_physio.edf")
+    expect(app_page.locator("#fm-renamer-panel")).to_contain_text("sub-004_ses-t2_physio.edf")
     assert not [f for f in project_files(project) if f.startswith("sub-")]  # a preview writes nothing
 
     app_page.click("#renamerCopyBtn")
 
-    target = project / "sub-004/ses-t2/physio/sub-004_ses-t2_task-rest_physio.edf"
+    target = project / "sub-004/ses-t2/physio/sub-004_ses-t2_physio.edf"
     assert eventually(target.exists), project_files(project)
     assert target.read_bytes() == b"EDF 004-t2.edf"  # content is unchanged
-    assert (project / "sub-005/ses-t2/physio/sub-005_ses-t2_task-rest_physio.edf").exists()
+    assert (project / "sub-005/ses-t2/physio/sub-005_ses-t2_physio.edf").exists()
     assert sorted(p.name for p in folder.iterdir()) == ["004-t2.edf", "005-t2.edf"]  # originals stay
 
 
@@ -274,7 +274,7 @@ def test_renamer_keeps_a_numeric_session_exactly_as_typed(app_page, studio_url, 
 
     app_page.click("#renamerCopyBtn")
 
-    assert eventually(lambda: (project / "sub-004/ses-2/physio/sub-004_ses-2_task-rest_physio.edf").exists()), project_files(project)
+    assert eventually(lambda: (project / "sub-004/ses-2/physio/sub-004_ses-2_physio.edf").exists()), project_files(project)
     assert not (project / "sub-004/ses-02").exists()
 
 

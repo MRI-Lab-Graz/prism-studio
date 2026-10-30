@@ -32,7 +32,7 @@ from src.environment_mri_scan import (
     extract_sidecar_location,
     parse_sidecar_timestamp,
 )
-from src.web.export_project import export_project
+from src.project_export import export_project
 
 
 def _run_pipeline_stage(label, fn, *a, **kw):

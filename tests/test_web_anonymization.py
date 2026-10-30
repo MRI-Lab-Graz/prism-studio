@@ -175,7 +175,7 @@ def test_question_mask_mapping_supports_top_level_items_and_study_license():
 
 
 def test_anonymize_json_file_masks_top_level_and_questions_templates(tmp_path):
-    from src.web.export_project import anonymize_json_file
+    from src.project_export import anonymize_json_file
 
     top_level = tmp_path / "survey-top-level.json"
     top_level.write_text(

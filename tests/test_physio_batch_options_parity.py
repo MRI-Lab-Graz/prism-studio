@@ -19,15 +19,12 @@ HANDLER = ROOT / "app" / "src" / "web" / "blueprints" / "conversion_physio_handl
 # Studio job option -> CLI flag dest, where the CLI named it first
 RENAMED = {"modality_filter": "modality", "physio_destination": "destination", "source_dir": "input"}
 # Studio job options that are plumbing, not something the user chooses
-INTERNAL = {"tmp_dir", "project_path", "folder_name"}
-# KNOWN GAPS, each to be fixed and deleted from here (the list may only shrink): the "save to project" step
-# (stage, DataLad-aware copy, register sessions) and its layout options exist only in Studio.
-KNOWN_GAPS = {
-    "save_to_project": "Studio stages the output, copies it into the project with DataLad and registers the sessions",
-    "dest_root": "folder in the project the files are copied to",
-    "flat_structure": "project copy layout",
-    "subject_rewrite_mode": "subject label rewriting while copying",
-}
+INTERNAL = {"tmp_dir", "project_path", "folder_name", "folder_path"}
+# Studio's "save to project" switch is the command's --project
+RENAMED["save_to_project"] = "project"
+RENAMED["dest_root"] = "dest_root"
+RENAMED["flat_structure"] = "flat_structure"
+RENAMED["subject_rewrite_mode"] = "subject_rewrite_mode"
 
 
 def _studio_job_options() -> set[str]:
@@ -45,10 +42,10 @@ def _cli_flags() -> set[str]:
     return {a.dest for a in sub.choices["batch-convert"]._actions}
 
 
-def test_every_studio_batch_option_has_a_cli_flag_or_a_listed_gap():
+def test_every_studio_batch_option_has_a_cli_flag():
     flags = _cli_flags()
     missing = {o for o in _studio_job_options() - INTERNAL if RENAMED.get(o, o) not in flags}
-    assert missing == set(KNOWN_GAPS), f"unlisted gaps: {sorted(missing - set(KNOWN_GAPS))}; fixed (delete from KNOWN_GAPS): {sorted(set(KNOWN_GAPS) - missing)}"
+    assert not missing, f"Studio batch options with no `physio batch-convert` flag: {sorted(missing)}"
 
 
 def test_the_command_passes_the_report_flag_and_writes_the_dataset_description(tmp_path, monkeypatch):

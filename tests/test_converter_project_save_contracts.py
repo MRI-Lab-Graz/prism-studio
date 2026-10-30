@@ -124,9 +124,7 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
         "resolve_effective_library_path",
         lambda project_path_value=None: library_root,
     )
-    monkeypatch.setattr(
-        biometrics, "register_session_in_project", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr("src.conversion_to_project.register_session_in_project", lambda *args, **kwargs: None)
 
     def fake_convert(**kwargs):
         output_root = Path(kwargs["output_root"])
@@ -212,11 +210,7 @@ def test_biometrics_convert_requires_datalad_for_tracked_project_mutation(
         "resolve_effective_library_path",
         lambda project_path_value=None: library_root,
     )
-    monkeypatch.setattr(
-        biometrics,
-        "register_session_in_project",
-        lambda *args, **kwargs: None,
-    )
+    monkeypatch.setattr("src.conversion_to_project.register_session_in_project", lambda *args, **kwargs: None)
 
     def fake_convert(**kwargs):
         output_root = Path(kwargs["output_root"])
@@ -244,7 +238,7 @@ def test_biometrics_convert_requires_datalad_for_tracked_project_mutation(
         "convert_biometrics_table_to_prism_dataset",
         fake_convert,
     )
-    monkeypatch.setattr(biometrics, "copy_files_into_project", raise_missing_datalad)
+    monkeypatch.setattr("src.conversion_to_project.copy_files_into_project", raise_missing_datalad)
 
     with app.test_client() as client:
         with client.session_transaction() as sess:

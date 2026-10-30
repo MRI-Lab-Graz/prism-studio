@@ -486,6 +486,134 @@ def build_prism_tools_parsers(
     for _name, _setting in _SETTINGS.items():
         parser_settings_set.add_argument("--" + _name.replace("_", "-"), dest=_name, default=None, help=_setting.help)
 
+    parser_export = subparsers.add_parser("export", help="Export a project (Studio's export page): zip, defacing, repositories")
+    export_subparsers = parser_export.add_subparsers(dest="action", help="Action")
+    parser_export_project = export_subparsers.add_parser(
+        "project", help="Export the project to a ZIP: anonymized and scoped as chosen, after a validation gate"
+    )
+    parser_export_project.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_project.add_argument("--output-folder", default=None, help="Folder for the ZIP (default: next to the project)")
+    parser_export_project.add_argument("--preset", choices=["standard", "upload_ready"], default="standard",
+                                       help="upload_ready: data only (no derivatives, sourcedata, code, analysis), version control stripped")
+    parser_export_project.add_argument("--no-anonymize", action="store_true", help="Keep the real participant IDs")
+    parser_export_project.add_argument("--no-mask-questions", action="store_true", help="Keep copyrighted question texts")
+    parser_export_project.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_project.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_project.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_project.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_project.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_project.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_project.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_project.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_project.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_project.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
+    parser_export_project.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
+    parser_export_project.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
+    parser_export_project.add_argument("--repository-mode", choices=["datalad_free", "datalad_preserving", "git_lfs"], default=None,
+                                       help="datalad_preserving keeps Git/DataLad metadata, the others strip it")
+    parser_export_project.add_argument("--validation-mode", choices=["both", "bids", "prism", "ignore"], default="both",
+                                       help="Validation that must pass before exporting (default: both)")
+
+    parser_export_folder = export_subparsers.add_parser(
+        "folder", help="Export the project to a plain folder without Git/DataLad metadata"
+    )
+    parser_export_folder.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_folder.add_argument("--output-folder", default=None, help="Folder to export into (default: next to the project)")
+    parser_export_folder.add_argument("--preset", choices=["standard", "upload_ready"], default="standard",
+                                       help="upload_ready: data only (no derivatives, sourcedata, code, analysis), version control stripped")
+    parser_export_folder.add_argument("--no-anonymize", action="store_true", help="Keep the real participant IDs")
+    parser_export_folder.add_argument("--no-mask-questions", action="store_true", help="Keep copyrighted question texts")
+    parser_export_folder.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_folder.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_folder.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_folder.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_folder.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_folder.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_folder.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_folder.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_folder.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_folder.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
+    parser_export_folder.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
+    parser_export_folder.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
+    parser_export_folder.add_argument("--materialize-annex-content", action="store_true", help="Fetch git-annex content so the files are real, not links")
+    parser_export_folder.add_argument("--repository-mode", choices=["datalad_free", "datalad_preserving", "git_lfs"], default=None,
+                                       help="datalad_preserving keeps Git/DataLad metadata, the others strip it")
+    parser_export_folder.add_argument("--validation-mode", choices=["both", "bids", "prism", "ignore"], default="both",
+                                       help="Validation that must pass before exporting (default: both)")
+
+
+    parser_export_git_lfs = export_subparsers.add_parser(
+        "git-lfs", help="One-way Git LFS export snapshot: a folder and, by default, an initialized repository"
+    )
+    parser_export_git_lfs.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_git_lfs.add_argument("--output-folder", default=None, help="Folder to export into (default: next to the project)")
+    parser_export_git_lfs.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_git_lfs.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_git_lfs.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_git_lfs.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_git_lfs.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
+    parser_export_git_lfs.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
+    parser_export_git_lfs.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
+    parser_export_git_lfs.add_argument("--no-init-repo", action="store_true", help="Only write the folder; do not initialize a Git LFS repository")
+    parser_export_annex_availability = export_subparsers.add_parser(
+        "annex-availability", help="Which files of the export scope are not available locally (git-annex)"
+    )
+    parser_export_annex_availability.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_annex_availability.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_annex_availability.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_annex_availability.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_annex_availability.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_annex_availability.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_export_structure = export_subparsers.add_parser("structure", help="The sessions and modalities an export can be scoped to (JSON)")
+    parser_export_structure.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_structure.add_argument("--json", action="store_true", help="(output is always JSON)")
+
+    def _defacing_flags(parser, *, run=False):
+        parser.add_argument("--project", required=True, help="Project root or project.json path")
+        parser.add_argument("--selected-variant", action="append", metavar="VARIANT", help="Only this scan variant, e.g. T1w (repeatable)")
+        parser.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+        parser.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+        if run:
+            parser.add_argument("--repository-mode", choices=["datalad_free", "datalad_preserving"], default=None,
+                                help="datalad_preserving: the copy is a DataLad clone, defaced through datalad run")
+            parser.add_argument("--output-folder", default=None, help="Where the defaced copy goes (default: next to the project)")
+            parser.add_argument("--force", action="store_true", help="Deface scans that already look defaced")
+
+    parser_export_deface_report = export_subparsers.add_parser("deface-report", help="Defacing status of every anatomical scan (JSON)")
+    _defacing_flags(parser_export_deface_report)
+    parser_export_deface_preflight = export_subparsers.add_parser("deface-preflight", help="Whether defacing can run here (JSON)")
+    parser_export_deface_preflight.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_deface = export_subparsers.add_parser("deface", help="Deface an export COPY of the project; the project itself is never changed")
+    _defacing_flags(parser_export_deface, run=True)
+
+    parser_export_anc = export_subparsers.add_parser("anc", help="Export to the ANC (Austrian NeuroCloud) layout")
+    parser_export_anc.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_anc.add_argument("--convert-to-git-lfs", action="store_true", help="Convert the data to Git LFS")
+    parser_export_anc.add_argument("--include-ci-examples", action="store_true", help="Add CI example files")
+    parser_export_anc.add_argument("--metadata", action="append", metavar="KEY=VALUE",
+                                   help="README/CITATION fields, e.g. DATASET_NAME, CONTACT_EMAIL, AUTHOR_GIVEN_NAME, AUTHOR_FAMILY_NAME, DATASET_ABSTRACT (repeatable)")
+    parser_export_anc.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    parser_export_openminds = export_subparsers.add_parser("openminds", help="Export to openMINDS metadata (bids2openminds)")
+    parser_export_openminds.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_openminds.add_argument("--multiple-files", action="store_true", help="One file per node instead of a single .jsonld")
+    parser_export_openminds.add_argument("--include-empty", action="store_true", help="Keep empty properties")
+    parser_export_openminds.add_argument("--protocol-description", action="append", metavar="TASK=TEXT", help="Description of a behavioral protocol (repeatable)")
+    parser_export_openminds.add_argument("--ethics-category", default=None, help="Ethics assessment, written to a supplements file")
+    parser_export_openminds.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_export_openminds_tasks = export_subparsers.add_parser("openminds-tasks", help="The project's task names for the openMINDS form (JSON)")
+    parser_export_openminds_tasks.add_argument("--project", required=True, help="Project root or project.json path")
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",
@@ -1074,9 +1202,25 @@ def build_prism_tools_parsers(
     )
     parser_biometrics_convert.add_argument(
         "--library",
-        required=True,
         dest="library_dir",
-        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+        default=None,
+        help=(
+            "Path to biometrics library directory (containing biometrics-*.json templates); "
+            "default: the project's code/library, then the configured global library"
+        ),
+    )
+    parser_biometrics_convert.add_argument(
+        "--project",
+        default=None,
+        help=(
+            "Project root or project.json: its templates are used and its participant IDs matched "
+            "(default: the output folder, when it is a PRISM project)"
+        ),
+    )
+    parser_biometrics_convert.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Convert into a temporary folder and report; write nothing into the output",
     )
     parser_biometrics_convert.add_argument(
         "--output", required=True, help="Output directory for the PRISM dataset"
@@ -1106,7 +1250,10 @@ def build_prism_tools_parsers(
     )
     parser_biometrics_convert.add_argument("--name", help="Dataset name")
     parser_biometrics_convert.add_argument(
-        "--force", action="store_true", help="Overwrite existing output directory"
+        "--force",
+        action="store_true",
+        default=None,
+        help="Overwrite existing output directory (default: on when the output is a PRISM project)",
     )
 
     parser_physio = subparsers.add_parser(
@@ -1122,7 +1269,31 @@ def build_prism_tools_parsers(
         "--input", required=True, help="Path to source folder containing raw files"
     )
     parser_physio_batch.add_argument(
-        "--output", required=True, help="Path to output PRISM dataset folder"
+        "--output",
+        default=None,
+        help="Path to output PRISM dataset folder (not needed with --project)",
+    )
+    parser_physio_batch.add_argument(
+        "--project",
+        default=None,
+        help="Save the converted files into this project (as Studio's 'save to project'): DataLad-aware copy, sessions registered",
+    )
+    parser_physio_batch.add_argument(
+        "--dest-root",
+        choices=["root", "prism", "rawdata", "sourcedata"],
+        default="root",
+        help="With --project: where in the project the files go (default: the project root)",
+    )
+    parser_physio_batch.add_argument(
+        "--flat-structure",
+        action="store_true",
+        help="With --project and --dest-root rawdata/sourcedata: one folder per modality, no sub-/ses- folders",
+    )
+    parser_physio_batch.add_argument(
+        "--subject-rewrite-mode",
+        choices=["keep", "last3"],
+        default="keep",
+        help="With --project: keep the subject labels or shorten them to their last three digits",
     )
     parser_physio_batch.add_argument(
         "--modality",
@@ -1846,8 +2017,17 @@ def build_prism_tools_parsers(
     )
     parser_template_export.add_argument(
         "--output",
-        required=True,
-        help="Output ZIP path for the template export",
+        default=None,
+        help="Output ZIP path (default: <project>_template_export.zip in --output-folder, or next to the project)",
+    )
+    parser_template_export.add_argument(
+        "--output-folder", default=None, help="Folder for the default-named ZIP (default: next to the project)"
+    )
+    parser_template_export.add_argument(
+        "--validation-mode",
+        choices=["both", "bids", "prism", "ignore"],
+        default="both",
+        help="Validation that must pass before exporting (default: both, as in Studio)",
     )
     parser_template_export.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
@@ -2758,6 +2938,28 @@ def build_prism_tools_parsers(
         help="Actually copy renamed files to --output (default: preview only)",
     )
     parser_file_management_rename_physio.add_argument(
+        "--project",
+        default=None,
+        help="With --apply: copy the renamed files into this project instead of --output (as Studio's 'save to project': DataLad-aware copy)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--dest-root",
+        choices=["root", "prism", "rawdata", "sourcedata"],
+        default="root",
+        help="With --project: where in the project the files go (default: the project root)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--flat-structure",
+        action="store_true",
+        help="With --project and --dest-root rawdata/sourcedata: one folder per modality, no sub-/ses- folders",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--subject-rewrite-mode",
+        choices=["keep", "last3"],
+        default="keep",
+        help="With --project: keep the subject labels or shorten them to their last three digits",
+    )
+    parser_file_management_rename_physio.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
@@ -2795,6 +2997,7 @@ def build_prism_tools_parsers(
         "survey": parser_survey,
         "participants": parser_participants,
         "settings": parser_settings,
+        "export": parser_export,
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
         "methods": parser_methods,
