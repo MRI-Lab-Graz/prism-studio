@@ -48,19 +48,10 @@ def _lss(language):
 </document>""".encode()
 
 
-def _template(language, keep_export_settings=False):
-    """``keep_export_settings``: the import no longer keeps question types; the export tests below
-    still feed the exporters an explicit LimeSurvey.questionType (what a template may carry)."""
-    from src.converters import limesurvey
+def _template(language):
     from src.converters.limesurvey import _build_questionnaires
 
-    keep = pytest.MonkeyPatch()
-    if keep_export_settings:
-        keep.setattr(limesurvey, "strip_export_settings", lambda template: (template, []))
-    try:
-        _parsed, results = _build_questionnaires(_lss(language), "group")
-    finally:
-        keep.undo()
+    _parsed, results = _build_questionnaires(_lss(language), "group")
     return results[0][1]
 
 
@@ -139,13 +130,13 @@ def _export(tmp_path, exporter):
     import defusedxml.ElementTree as DET
     from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
 
-    template = _template("de", keep_export_settings=True)
+    template = _template("de")
     path = tmp_path / "survey-fixed.json"
     path.write_text(json.dumps(template), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:
-        codes = [k for k, v in template.items() if isinstance(v, dict) and "LimeSurvey" in v]
+        codes = [k for k, v in template.items() if isinstance(v, dict) and "Description" in v]
         groups = [{"name": "Fixed", "order": 0, "questions": [
             {"sourceFile": str(path), "questionCode": c, "displayOrder": i, "enabled": True,
              "levels": template[c].get("Levels", {}), "originalData": template[c]}
@@ -161,11 +152,36 @@ def _export(tmp_path, exporter):
 
 
 @pytest.mark.parametrize("exporter", ["quick", "customizer"])
-def test_export_writes_no_answer_rows_for_fixed_option_types(tmp_path, exporter):
+def test_fixed_option_types_export_as_lists_with_limesurveys_codes(tmp_path, exporter):
+    """The template keeps no question type: yes/no, gender and 5-point choice come back as lists
+    whose options are the imported Levels, with LimeSurvey's own codes, so answers keep their values."""
     by_title, answers = _export(tmp_path, exporter)
-    assert by_title["consent"].findtext("type") == "Y" and "consent" not in answers
-    assert by_title["sex"].findtext("type") == "G" and "sex" not in answers
-    assert by_title["mood"].findtext("type") == "5" and "mood" not in answers
+    assert by_title["consent"].findtext("type") == "L" and answers["consent"] == ["Y", "N"]
+    assert by_title["sex"].findtext("type") == "L" and answers["sex"] == ["F", "M"]
+    assert by_title["mood"].findtext("type") == "L" and answers["mood"] == ["1", "2", "3", "4", "5"]
+
+
+def test_a_fixed_option_type_chosen_for_one_export_writes_no_answer_rows(tmp_path):
+    """LimeSurvey defines the options of Y/G/5 itself: an <answers> row would not be used."""
+    import json
+
+    import defusedxml.ElementTree as DET
+    from src.limesurvey_exporter import generate_lss_from_customization
+    from src.survey_customizer import build_customizer_groups
+
+    path = tmp_path / "survey-fixed.json"
+    path.write_text(json.dumps(_template("de")), encoding="utf-8")
+    groups = build_customizer_groups([{"path": str(path)}], "de")
+    chosen = {"consent": "Y", "sex": "G", "mood": "5"}
+    for question in groups[0]["questions"]:
+        if question["questionCode"] in chosen:
+            question["toolOverrides"] = {"questionType": chosen[question["questionCode"]]}
+    root = DET.fromstring(generate_lss_from_customization(groups, language="de", matrix_mode=False))
+    questions = {q.findtext("qid"): q for q in root.findall("questions/rows/row")}
+    types = {q.findtext("title"): q.findtext("type") for q in questions.values()}
+    answered = {questions[a.findtext("qid")].findtext("title") for a in root.findall("answers/rows/row")}
+    assert {code: types[code] for code in chosen} == chosen
+    assert not answered & set(chosen)
 
 
 @pytest.mark.parametrize("exporter", ["quick", "customizer"])

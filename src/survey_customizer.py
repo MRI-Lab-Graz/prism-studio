@@ -12,8 +12,8 @@ import os
 import uuid
 from pathlib import Path
 
-from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES
-from src.limesurvey_exporter import item_is_mandatory
+from src.limesurvey_exporter import item_is_mandatory, ls_question_type
+from src.survey_export_settings import strip_export_settings
 from src.template_info import detect_languages_from_template
 
 
@@ -38,7 +38,8 @@ def build_customizer_groups(
 
         try:
             with open(file_path, "r", encoding="utf-8") as file_handle:
-                template_data = json.load(file_handle)
+                # an old file may still carry export settings: load it like its stripped form
+                template_data = strip_export_settings(json.load(file_handle))[0]
         except Exception:
             continue
 
@@ -114,39 +115,6 @@ def build_customizer_groups(
                         or next(iter(description.values()), "")
                     )
 
-                ls_props = question_data.get("LimeSurvey", {})
-                tool_overrides = {}
-                if ls_props:
-                    if "questionType" in ls_props:
-                        tool_overrides["questionType"] = ls_props["questionType"]
-                    if "inputWidth" in ls_props:
-                        tool_overrides["inputWidth"] = ls_props["inputWidth"]
-                    if "displayRows" in ls_props:
-                        tool_overrides["displayRows"] = ls_props["displayRows"]
-                    relevance = ls_props.get("relevance") or ls_props.get("Relevance")
-                    if relevance and relevance != "1":  # "1": always shown
-                        tool_overrides["relevance"] = relevance
-                    if "equation" in ls_props:
-                        tool_overrides["equation"] = ls_props["equation"]
-                    if "hidden" in ls_props:
-                        tool_overrides["hidden"] = ls_props["hidden"]
-                    if "validation" in ls_props:
-                        validation = ls_props["validation"]
-                        if isinstance(validation, dict):
-                            if "min" in validation:
-                                tool_overrides["validationMin"] = validation["min"]
-                            if "max" in validation:
-                                tool_overrides["validationMax"] = validation["max"]
-                            if "integerOnly" in validation:
-                                tool_overrides["integerOnly"] = validation[
-                                    "integerOnly"
-                                ]
-
-                    simple_key_map = LS_DESIGN_ATTRIBUTES
-                    for ls_key, override_key in simple_key_map.items():
-                        if ls_key in ls_props:
-                            tool_overrides[override_key] = ls_props[ls_key]
-
                 questions.append(
                     {
                         "id": str(uuid.uuid4()),
@@ -160,7 +128,8 @@ def build_customizer_groups(
                         "levels": question_data.get("Levels", {}),
                         "originalData": question_data,
                         "matrixGroupingDisabled": matrix_grouping_disabled,
-                        "toolOverrides": tool_overrides,
+                        "toolOverrides": {},  # the user's per-export changes; the template holds none
+                        "questionType": ls_question_type(question_data),
                         "inputType": question_data.get("InputType", ""),
                         "minValue": question_data.get("MinValue"),
                         "maxValue": question_data.get("MaxValue"),

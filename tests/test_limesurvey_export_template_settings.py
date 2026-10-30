@@ -1,7 +1,7 @@
-"""What the Template Editor saves in an item's LimeSurvey settings (and what a LimeSurvey
-import puts there) must reach the exported .lss: required, show-condition, help text,
-"Other" option and text-box rows. The exporter used to read other keys (Relevance,
-Help, Mandatory, OtherOption) and silently dropped these."""
+"""An old template whose items still carry LimeSurvey settings exports like its stripped form:
+required, show-condition, help text and "Other" option reach the .lss through the generic fields
+they move to (Mandatory, Relevance, Help, OtherOption); display settings such as text-box rows are
+dropped and set by the user for one export."""
 
 import json
 import sys
@@ -88,9 +88,24 @@ def test_other_option_is_exported(tmp_path, exporter):
 
 
 @pytest.mark.parametrize("exporter", ["quick", "customizer"])
-def test_text_box_rows_are_exported(tmp_path, exporter):
+def test_text_box_rows_of_the_template_are_dropped(tmp_path, exporter):
     questions, _help, attributes = _export(tmp_path, exporter)
-    assert attributes[(questions["reason"].findtext("qid"), "display_rows")] == "5"
+    assert (questions["reason"].findtext("qid"), "display_rows") not in attributes
+
+
+def test_text_box_rows_are_set_for_one_export(tmp_path):
+    from src.limesurvey_exporter import generate_lss_from_customization
+    from src.survey_customizer import build_customizer_groups
+
+    path = tmp_path / "survey-settings.json"
+    path.write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    groups = build_customizer_groups([{"path": str(path)}], "de")
+    reason = next(q for q in groups[0]["questions"] if q["questionCode"] == "reason")
+    reason["toolOverrides"] = {"displayRows": 5}
+    root = DET.fromstring(generate_lss_from_customization(groups, languages=["de"], matrix_mode=False))
+    qid = next(q.findtext("qid") for q in root.findall("questions/rows/row") if q.findtext("title") == "reason")
+    rows = {(a.findtext("qid"), a.findtext("attribute")): a.findtext("value") for a in root.findall("question_attributes/rows/row")}
+    assert rows[(qid, "display_rows")] == "5"
 
 
 def test_always_shown_relevance_does_not_hide_a_conditional_display():

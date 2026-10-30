@@ -1,7 +1,7 @@
 """LimeSurvey design attributes (maximum characters, prefix/suffix, numbers only, matrix
 answer width, ...) and the equation attribute are export settings: the import keeps none of them in the
-template (only the question text is the equation question's Description). The exporters still write
-them when a template carries them."""
+template (only the question text is the equation question's Description). The export derives the question
+type from the generic fields and writes design attributes only when the user sets them for one export."""
 
 import json
 import sys
@@ -46,16 +46,10 @@ LSS = f"""<?xml version="1.0" encoding="UTF-8"?>
 </document>""".encode()
 
 
-def _template(keep_export_settings=False):
+def _template():
     from src.converters import limesurvey
 
-    keep = pytest.MonkeyPatch()
-    if keep_export_settings:
-        keep.setattr(limesurvey, "strip_export_settings", lambda template: (template, []))
-    try:
-        return limesurvey.limesurvey_questionnaire_template(LSS, "g1")
-    finally:
-        keep.undo()
+    return limesurvey.limesurvey_questionnaire_template(LSS, "g1")
 
 
 def test_design_attributes_are_export_settings_the_import_does_not_keep():
@@ -67,31 +61,50 @@ def test_the_equation_attribute_beats_the_question_text():
     assert _template()["score"]["Description"] == {"de": "Beschreibung der Summe"}
 
 
-def _export(tmp_path, exporter):
+def _export(tmp_path, exporter, overrides=None):
     from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
     from src.survey_customizer import build_customizer_groups
 
-    template = _template(keep_export_settings=True)  # a template that carries the settings
+    template = _template()
     template["I18n"] = {"Languages": ["de"], "DefaultLanguage": "de"}
     path = tmp_path / "survey-attrs.json"
     path.write_text(json.dumps(template), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:
-        xml = generate_lss_from_customization(
-            build_customizer_groups([{"path": str(path)}], "de"), language="de", matrix_mode=False
-        )
+        groups = build_customizer_groups([{"path": str(path)}], "de")
+        for question in groups[0]["questions"]:
+            question["toolOverrides"] = (overrides or {}).get(question["questionCode"], {})
+        xml = generate_lss_from_customization(groups, language="de", matrix_mode=False)
     root = DET.fromstring(xml)
     titles = {q.findtext("qid"): q.findtext("title") for q in root.findall("questions/rows/row")}
-    return {
+    types = {q.findtext("title"): q.findtext("type") for q in root.findall("questions/rows/row")}
+    attributes = {
         (titles[a.findtext("qid")], a.findtext("attribute")): a.findtext("value")
         for a in root.findall("question_attributes/rows/row")
     }
+    return types, attributes
 
 
 @pytest.mark.parametrize("exporter", ["quick", "customizer"])
-def test_exporters_write_the_design_attributes_back(tmp_path, exporter):
-    attributes = _export(tmp_path, exporter)
+def test_the_export_derives_the_type_of_an_imported_item(tmp_path, exporter):
+    """weight was N (DataType integer), story T (DataType string); score was an equation, and the
+    import keeps no equation, so it is a text question like any item without answer options."""
+    types, attributes = _export(tmp_path, exporter)
+    assert (types["weight"], types["story"], types["score"]) == ("N", "T", "T")
+    assert attributes[("weight", "num_value_int_only")] == "1"
+    item_attributes = {key for key in attributes if key[0] in ("weight", "story", "score")}
+    assert not {key for key in item_attributes if key[1] in ("suffix", "numbers_only", "maximum_chars", "cssclass", "equation")}
+
+
+def test_the_user_sets_design_attributes_for_one_export(tmp_path):
+    overrides = {
+        "weight": {"suffix": "kg", "numbersOnly": True},
+        "story": {"maximumChars": "400", "cssClass": "wide"},
+        "score": {"questionType": "*", "equation": "{sum(weight.NAOK, 1)}"},
+    }
+    types, attributes = _export(tmp_path, "customizer", overrides)
+    assert types["score"] == "*"
     assert attributes[("weight", "suffix")] == "kg"
     assert attributes[("weight", "numbers_only")] == "1"
     assert attributes[("story", "maximum_chars")] == "400"

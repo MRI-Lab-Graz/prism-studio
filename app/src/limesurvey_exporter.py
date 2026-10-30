@@ -7,6 +7,7 @@ import os
 import io
 
 from src.limesurvey_attributes import LS_DESIGN_ATTRIBUTES, LS_ROW_TYPES
+from src.survey_export_settings import strip_export_settings
 from src.text_sanitizer import sanitize_answer_text, strip_invalid_xml_chars
 from src.survey_template_metadata import get_study_short_name
 
@@ -316,29 +317,20 @@ def _text_in(obj, lang, i18n_data=None, path=None):
     return str(obj) if obj else ""
 
 
-def _ls_settings(q_data) -> dict:
-    """The item's LimeSurvey settings (what the Template Editor and a LimeSurvey import write)."""
-    ls = q_data.get("LimeSurvey") if isinstance(q_data, dict) else None
-    return ls if isinstance(ls, dict) else {}
-
-
 def item_is_mandatory(q_data) -> bool:
-    """Required in LimeSurvey: LimeSurvey.mandatory wins over the generic Mandatory; required if neither is set."""
-    ls = _ls_settings(q_data)
-    return bool(ls["mandatory"]) if "mandatory" in ls else bool(q_data.get("Mandatory", True))
+    """Required in LimeSurvey: the generic Mandatory, required when not set."""
+    return bool(q_data.get("Mandatory", True))
 
 
 def item_has_other(q_data) -> bool:
-    """An "Other" answer field: LimeSurvey.other or the generic OtherOption.enabled."""
+    """An "Other" answer field: the generic OtherOption.enabled."""
     other_option = q_data.get("OtherOption")
-    return bool(_ls_settings(q_data).get("other")) or (
-        isinstance(other_option, dict) and bool(other_option.get("enabled"))
-    )
+    return isinstance(other_option, dict) and bool(other_option.get("enabled"))
 
 
 def item_help(q_data):
-    """Help text (a string or one per language): the generic Help, else LimeSurvey.helpText."""
-    return q_data.get("Help") or _ls_settings(q_data).get("helpText") or ""
+    """Help text (a string or one per language): the generic Help."""
+    return q_data.get("Help") or ""
 
 
 def _apply_run_suffix(code: str, run: int | None) -> str:
@@ -387,7 +379,8 @@ def _determine_ls_question_type(q_data, has_levels):
     """
     Determine the LimeSurvey question type based on PRISM metadata.
 
-    Checks for LimeSurvey-specific settings first, then falls back to generic InputType.
+    Derived from the generic item fields only (a template holds no export settings); the user
+    overrides the result for one export through the customizer's toolOverrides.
 
     InputType mapping to LimeSurvey types:
     - numerical: N (Numerical input)
@@ -405,47 +398,8 @@ def _determine_ls_question_type(q_data, has_levels):
     Returns:
         Tuple of (ls_type, extra_attributes)
     """
-    # Check for LimeSurvey-specific settings first
-    ls_config = q_data.get("LimeSurvey", {})
     extra_attrs = {}
 
-    # If LimeSurvey section has explicit questionType, use it
-    if ls_config.get("questionType"):
-        q_type = ls_config["questionType"]
-        if q_type in LS_ROW_TYPES:
-            q_type = "L"  # a lone matrix row, checkbox option or ranking position: a list keeps its options
-
-        # Apply LimeSurvey-specific validation settings
-        ls_validation = ls_config.get("validation", {})
-        if ls_validation.get("min") is not None:
-            extra_attrs["min_num_value_n"] = str(ls_validation["min"])
-        if ls_validation.get("max") is not None:
-            extra_attrs["max_num_value_n"] = str(ls_validation["max"])
-        if ls_validation.get("integerOnly"):
-            extra_attrs["num_value_int_only"] = "1"
-
-        # Apply input width if specified
-        if ls_config.get("inputWidth"):
-            extra_attrs["text_input_width"] = ls_config["inputWidth"]
-
-        if ls_config.get("displayRows"):
-            extra_attrs["display_rows"] = str(ls_config["displayRows"])
-
-        for name in LS_DESIGN_ATTRIBUTES:
-            if ls_config.get(name) not in (None, "", 0, False):
-                extra_attrs[name] = "1" if ls_config[name] is True else str(ls_config[name])
-
-        # Apply hidden attribute
-        if ls_config.get("hidden"):
-            extra_attrs["hidden"] = "1"
-
-        # Apply equation if specified
-        if ls_config.get("equation"):
-            extra_attrs["equation"] = ls_config["equation"]
-
-        return q_type, extra_attrs
-
-    # Fall back to generic InputType mapping
     input_type = q_data.get("InputType", "").lower()
 
     # Check for calculated field first
@@ -477,8 +431,11 @@ def _determine_ls_question_type(q_data, has_levels):
             extra_attrs["hidden"] = "1"
         return "*", extra_attrs
 
-    # Numerical input - use generic MinValue/MaxValue
-    if input_type == "numerical":
+    # Numerical input - use generic MinValue/MaxValue. A number without answer options (DataType
+    # integer/float, what a LimeSurvey import writes for a numerical question) is numerical too.
+    if input_type == "numerical" or (
+        not input_type and not has_levels and q_data.get("DataType") in ("integer", "float")
+    ):
         min_val = q_data.get("MinValue", "")
         max_val = q_data.get("MaxValue", "")
         if min_val != "":
@@ -489,8 +446,7 @@ def _determine_ls_question_type(q_data, has_levels):
             extra_attrs["num_value_int_only"] = "1"
         # Input width for numeric fields
         # LimeSurvey uses numeric scale: 1=smallest (~7%), 2=small, etc.
-        input_width = ls_config.get("inputWidth", "1")  # Default to 1 (smallest)
-        extra_attrs["text_input_width"] = str(input_width)
+        extra_attrs["text_input_width"] = "1"  # the smallest
         return "N", extra_attrs
 
     # Slider input - map to Array (Numbers) with slider display or 5-point
@@ -530,6 +486,11 @@ def _determine_ls_question_type(q_data, has_levels):
         return "T", extra_attrs  # Long free text
 
 
+def ls_question_type(q_data: dict) -> str:
+    """The LimeSurvey question type the export uses for this item when the user overrides nothing."""
+    return _determine_ls_question_type(q_data, bool(q_data.get("Levels")))[0]
+
+
 def _build_relevance_equation(q_data, code_mapping=None):
     """
     Build LimeSurvey relevance equation from ConditionalDisplay metadata.
@@ -544,10 +505,6 @@ def _build_relevance_equation(q_data, code_mapping=None):
     # Check for explicit Relevance first
     if "Relevance" in q_data:
         return q_data["Relevance"]
-    ls = _ls_settings(q_data)
-    ls_relevance = ls.get("relevance") or ls.get("Relevance")
-    if ls_relevance and ls_relevance != "1":  # "1" (always shown) leaves room for ConditionalDisplay
-        return ls_relevance
 
     # Check for ConditionalDisplay
     conditional = q_data.get("ConditionalDisplay", {})
@@ -1163,7 +1120,8 @@ def generate_lss_from_customization(
             if source_file not in _source_file_cache:
                 try:
                     with open(source_file, "r", encoding="utf-8") as f:
-                        _source_file_cache[source_file] = json.load(f)
+                        # an old file may still carry export settings: export it like its stripped form
+                        _source_file_cache[source_file] = strip_export_settings(json.load(f))[0]
                     logger.debug("Loaded source file: %s", source_file)
                 except Exception as e:
                     logger.error("Error loading source file %s: %s", source_file, e)
