@@ -184,7 +184,7 @@ def is_blank(value) -> bool:
 
 
 def missing_required_fields(template: dict, schema: dict) -> list[dict]:
-    """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing"}`` per required field of
+    """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": "error"}`` per required field of
     Technical, Study, Metadata and I18n (as the given, possibly relaxed, schema lists them) that is not filled in."""
     props = schema.get("properties") if isinstance(schema, dict) else None
     props = props if isinstance(props, dict) else {}
@@ -196,17 +196,19 @@ def missing_required_fields(template: dict, schema: dict) -> list[dict]:
         values = values if isinstance(values, dict) else {}
         for field in required if isinstance(required, list) else []:
             if is_blank(values.get(field)):
-                missing.append({"path": f"{section}/{field}", "message": f"{section}/{field} is missing"})
+                missing.append({"path": f"{section}/{field}", "message": f"{section}/{field} is missing", "severity": "error"})
     return missing
 
 
 def is_missing_field_error(error: dict, template: dict, missing: list[dict]) -> bool:
     """Which schema errors a save only warns about: those that say a required field of a section the template has
-    is missing or empty (it is one of ``missing``, or inside one). Everything else (wrong values, wrong types, a
-    whole section absent) is a real error and refuses the save."""
+    is missing or empty (it is one of ``missing``, or inside one), or that a whole section is absent (its required
+    fields are then all in ``missing``). Everything else (wrong values, wrong types) refuses the save."""
     paths = {m["path"] for m in missing}
     path = str(error.get("path") or "")
     found = _REQUIRED_PROPERTY.match(str(error.get("message") or ""))
+    if found and path == "" and found.group(1) in _REQUIRED_SECTIONS:
+        return True
     if found and path in _REQUIRED_SECTIONS and isinstance(template.get(path), dict):
         return f"{path}/{found.group(1)}" in paths
     return any(path == p or path.startswith(p + "/") for p in paths)

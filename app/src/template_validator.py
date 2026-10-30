@@ -820,13 +820,13 @@ class TemplateValidator:
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         errors: List[TemplateValidationError] = []
 
-        def warn(message: str, item: str) -> None:
+        def warn(message: str, item: str, severity: str = "warning") -> None:
             errors.append(
                 TemplateValidationError(
                     file=file_name,
                     error_type="i18n_validation",
                     message=message,
-                    severity="warning",
+                    severity=severity,
                     item=item,
                 )
             )
@@ -842,22 +842,30 @@ class TemplateValidator:
         for item_id, item_def in self._extract_items(data).items():
             if not isinstance(item_def, dict) or not isinstance(item_def.get("Description"), dict):
                 continue
-            texts = [("", item_def["Description"])]
+            texts = [(None, item_def["Description"])]  # (level key or None for the description, texts by language)
             levels = item_def.get("Levels")
             if isinstance(levels, dict):
-                texts += [(f" level {key}", v) for key, v in levels.items() if isinstance(v, dict)]
-            for where, text in texts:
-                for lang in declared:
-                    if not str(text.get(lang) or "").strip():
-                        warn(f"Item {item_id}{where} has no '{lang}' text (declared in I18n.Languages)", item_id)
+                texts += [(str(key), v) for key, v in levels.items() if isinstance(v, dict)]
+            for lang in declared:
+                gaps = [key for key, text in texts if not str(text.get(lang) or "").strip()]
+                if gaps:
+                    parts = ["description"] if None in gaps else []
+                    level_keys = [key for key in gaps if key is not None]
+                    if level_keys:
+                        parts.append("levels " + ", ".join(level_keys))
+                    warn(
+                        f"Item {item_id} has no '{lang}' text for: {', '.join(parts)} (declared in I18n.Languages)",
+                        item_id,
+                    )
+            for _, text in texts:
                 for lang in text:
                     if lang_re.match(lang) and lang not in declared and (lang, item_id) not in undeclared:
                         undeclared.add((lang, item_id))
-                        warn(f"'{lang}' is used in {item_id} but not declared in I18n.Languages", item_id)
+                        warn(f"'{lang}' is used in {item_id} but not declared in I18n.Languages", item_id, "error")
         return errors
 
     def _validate_language_consistency(
-        self, file_name: str, data: Dict[str, Any]
+        self, file_name: str, data: Dict[str, Any], supersede_declared: bool = False
     ) -> List[TemplateValidationError]:
         """
         Validate language consistency across template items.
@@ -868,12 +876,19 @@ class TemplateValidator:
         2. Inconsistent language keys: some items missing languages others have
         3. Mislabeled keys: Technical.Language doesn't match description keys
         4. Complementary keys: disjoint language sets across items
+
+        With ``supersede_declared`` and a usable I18n.Languages, checks 2 to 4 and the
+        Technical.Language comparison are skipped: the declared-language check (0)
+        already reports those facts, so a caller shows each once.
         """
         import re
 
         errors: List[TemplateValidationError] = self._validate_declared_languages(
             file_name, data
         )
+        i18n = data.get("I18n")
+        declared = isinstance(i18n, dict) and bool(i18n.get("Languages")) and isinstance(i18n["Languages"], list)
+        superseded = supersede_declared and declared
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         items = self._extract_items(data)
         if not items:
@@ -910,7 +925,7 @@ class TemplateValidator:
 
         if len(all_langs) < 2:
             # Single-language templates only need Technical.Language check
-            if technical_lang and all_langs and technical_lang not in all_langs:
+            if technical_lang and all_langs and technical_lang not in all_langs and not superseded:
                 actual = ", ".join(sorted(all_langs))
                 errors.append(
                     TemplateValidationError(
@@ -958,6 +973,9 @@ class TemplateValidator:
                             severity="warning",
                         )
                     )
+
+        if superseded:
+            return errors
 
         # Check 2: Inconsistent language keys across items
         for lang_code in sorted(all_langs):
@@ -1028,7 +1046,7 @@ class TemplateValidator:
 
     @staticmethod
     def validate_language_consistency_from_data(
-        data: Dict[str, Any], file_name: str = "template"
+        data: Dict[str, Any], file_name: str = "template", supersede_declared: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Validate language consistency from template data (for API use).
@@ -1036,7 +1054,7 @@ class TemplateValidator:
         Returns list of warning dicts with keys: path, message, severity.
         """
         validator = TemplateValidator.__new__(TemplateValidator)
-        raw_errors = validator._validate_language_consistency(file_name, data)
+        raw_errors = validator._validate_language_consistency(file_name, data, supersede_declared)
         return [
             {
                 "path": e.item or "(template)",

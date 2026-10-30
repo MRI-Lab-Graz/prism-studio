@@ -212,7 +212,7 @@ def test_saving_strips_and_warns_the_same_in_the_cli_and_in_studio(tmp_path, cap
     assert cli_saved == json.loads((studio_project / name).read_text(encoding="utf-8"))
     assert cli_saved[item]["LimeSurvey"] == {"columnName": "q1"}
     assert body["removed"] == [f"{item}: inputWidth, questionType"]
-    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing"} in body["missing"]
+    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": "error"} in body["missing"]
     for field in body["missing"]:
         assert f"warning: {field['message']}" in printed
     assert "removed LimeSurvey export settings from 1 items" in printed

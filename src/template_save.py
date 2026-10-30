@@ -22,7 +22,9 @@ from src.utils.io import dump_json_text
 
 @dataclass
 class SavedTemplate:
-    """What a save did: the file, the problems it only warns about (``{path, message}``), and what it stripped."""
+    """What a save did: the file, the problems it does not refuse over (``{path, message, severity}``; severity is
+    "error" for a missing required field or an undeclared language, "warning" for other language findings), and
+    what it stripped."""
 
     path: Path
     missing: list[dict]
@@ -110,5 +112,5 @@ def save_template(
 def _language_findings(template: dict) -> list[dict]:
     from src.template_validator import TemplateValidator
 
-    findings = TemplateValidator.validate_language_consistency_from_data(template)
-    return [{"path": f["path"], "message": f["message"]} for f in findings]
+    findings = TemplateValidator.validate_language_consistency_from_data(template, supersede_declared=True)
+    return [{"path": f["path"], "message": f["message"], "severity": f["severity"]} for f in findings]

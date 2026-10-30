@@ -31,8 +31,10 @@ def test_a_valid_template_is_saved_into_the_project_library(tmp_path):
 
 
 def test_an_invalid_template_is_not_saved_and_says_why(tmp_path):
+    template = _gad7(project_copy=True)
+    template["Technical"]["Respondent"] = "robot"
     with pytest.raises(TemplateInvalid) as error:
-        save_template("survey", "survey-x.json", {"Study": {}}, target="project", project_root=tmp_path, app_root=APP)
+        save_template("survey", "survey-x.json", template, target="project", project_root=tmp_path, app_root=APP)
     assert error.value.errors
     assert not (tmp_path / "code").exists()
 
@@ -106,7 +108,7 @@ def test_saving_with_an_empty_respondent_writes_and_warns(tmp_path):
     template["Technical"]["Respondent"] = ""
     saved = _project_save(tmp_path, template)
     assert saved.path.exists()
-    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing"} in saved.missing
+    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": "error"} in saved.missing
 
 
 def test_saving_strips_export_settings(tmp_path):
@@ -127,9 +129,20 @@ def test_other_schema_errors_still_refuse(tmp_path):
     assert not (tmp_path / "code").exists()
 
 
-def test_a_template_without_a_whole_section_still_refuses(tmp_path):
+@pytest.mark.parametrize("relaxed", [False, True])
+def test_a_template_without_a_whole_section_is_saved_and_lists_its_required_fields(tmp_path, relaxed):
     template = _gad7(project_copy=True)
+    del template["I18n"]
     del template["Technical"]
+    saved = _project_save(tmp_path, template, relaxed=relaxed)
+    assert saved.path.exists()
+    paths = {m["path"] for m in saved.missing}
+    assert {"I18n/Languages", "Technical/StimulusType"} <= paths
+
+
+def test_another_root_level_error_still_refuses(tmp_path):
+    template = _gad7(project_copy=True)
+    template["Study"] = "not an object"
     with pytest.raises(TemplateInvalid):
         _project_save(tmp_path, template)
 
@@ -153,7 +166,7 @@ def test_missing_english():
 
     template = _gad7(project_copy=True)
     template["Study"]["OriginalName"] = {"en": "", "de": "x"}
-    assert {"path": "Study/OriginalName", "message": "Study/OriginalName is missing"} in missing_required_fields(template, _survey_schema())
+    assert {"path": "Study/OriginalName", "message": "Study/OriginalName is missing", "severity": "error"} in missing_required_fields(template, _survey_schema())
 
 
 def test_a_complete_template_misses_nothing():
@@ -167,3 +180,32 @@ def test_language_consistency_findings_are_warnings_on_save(tmp_path):
     template["I18n"]["Languages"] = ["en", "de", "fr"]
     saved = _project_save(tmp_path, template)
     assert any("'fr'" in m["message"] for m in saved.missing)
+
+
+def test_a_language_finding_is_reported_once_with_its_severity(tmp_path):
+    template = _gad7(project_copy=True)
+    template["Technical"]["Language"] = "fr"
+    saved = _project_save(tmp_path, template)
+    about_fr = [m for m in saved.missing if m["path"] == "Technical/Language" or "Technical.Language" in m["message"]]
+    assert len(about_fr) == 1 and about_fr[0]["severity"] == "warning"
+
+
+def test_a_half_translated_template_gives_one_finding_per_language_and_item(tmp_path):
+    template = _gad7(project_copy=True)
+    template["I18n"]["Languages"] = ["en", "de", "fr", "es"]
+    items = [k for k, v in template.items() if isinstance(v, dict) and "Description" in v]
+    saved = _project_save(tmp_path, template)
+    texts = [m for m in saved.missing if "text for:" in m["message"]]
+    # gad7 has en and de; fr and es have no text anywhere
+    assert len(texts) == 2 * len(items)
+    assert all(m["severity"] == "warning" for m in texts)
+    assert len(saved.missing) < 4 * len(items)
+
+
+def test_an_undeclared_language_is_an_error(tmp_path):
+    template = _gad7(project_copy=True)
+    item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
+    template[item]["Description"]["fr"] = "?"
+    saved = _project_save(tmp_path, template)
+    undeclared = [m for m in saved.missing if "not declared" in m["message"]]
+    assert undeclared and all(m["severity"] == "error" for m in undeclared)
