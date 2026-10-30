@@ -216,3 +216,109 @@ def test_saving_strips_and_warns_the_same_in_the_cli_and_in_studio(tmp_path, cap
     for field in body["missing"]:
         assert f"warning: {field['message']}" in printed
     assert "removed LimeSurvey export settings from 1 items" in printed
+
+
+OLD_LS_TEMPLATE = {
+    "Study": {"OriginalName": "Old"},
+    "I18n": {"Languages": ["de"], "DefaultLanguage": "de"},
+    "q1": {
+        "Description": {"de": "Frage eins"},
+        "Levels": {str(i): {"de": f"Stufe {i}"} for i in range(1, 5)},
+        "LimeSurvey": {"mandatory": False, "questionType": "!", "helpText": "h", "inputWidth": "30"},
+    },
+    "q2": {"Description": {"de": "Gewicht"}, "DataType": "integer"},
+}
+
+
+def _studio_response_bytes(handler, json_body):
+    """Run a Studio export route in a request context; return the file it sends."""
+    import os
+
+    from flask import Flask
+
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    app.secret_key = os.urandom(32)
+    with app.test_request_context("/", method="POST", json=json_body):
+        response = handler()
+        if isinstance(response, tuple):
+            raise AssertionError(response[0].get_json())
+        response.direct_passthrough = False
+        return response.get_data()
+
+
+def test_customized_limesurvey_export_writes_the_same_file_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.survey import cmd_survey_customizer_groups, cmd_survey_export_lss_customized
+    from src.web.blueprints.tools_survey_customizer_handlers import (
+        handle_survey_customizer_export,
+        handle_survey_customizer_load,
+    )
+    from src.template_info import detect_languages_from_template
+
+    template = tmp_path / "survey-old.json"
+    template.write_text(json.dumps(OLD_LS_TEMPLATE), encoding="utf-8")
+
+    # loading: the CLI's customizer-groups and Studio's load give the same groups (ids are fresh uuids)
+    cli_groups_file = tmp_path / "groups.json"
+    cmd_survey_customizer_groups(SimpleNamespace(template=[str(template)], runs=1, language="de", output=str(cli_groups_file)))
+    cli_groups = json.loads(cli_groups_file.read_text(encoding="utf-8"))["groups"]
+    studio_body = _studio_response_bytes(
+        lambda: handle_survey_customizer_load(
+            {"files": [{"path": str(template)}], "language": "de"}, detect_languages_from_template
+        ),
+        {},
+    )
+    studio_groups = json.loads(studio_body)["groups"]
+
+    def without_ids(groups):
+        return [{**g, "id": None, "questions": [{**q, "id": None} for q in g["questions"]]} for g in groups]
+
+    assert without_ids(cli_groups) == without_ids(studio_groups)
+    assert [q["questionType"] for q in cli_groups[0]["questions"]] == ["L", "N"]
+
+    # exporting: one override for this export, same .lss
+    cli_groups[0]["questions"][0]["toolOverrides"] = {"questionType": "!"}
+    ls_settings = {"showProgress": "N"}
+    customization = tmp_path / "customization.json"
+    customization.write_text(
+        json.dumps({"groups": cli_groups, "survey_title": "Old survey", "ls_settings": ls_settings}), encoding="utf-8"
+    )
+    cli_out = tmp_path / "cli.lss"
+    cmd_survey_export_lss_customized(SimpleNamespace(
+        customization_json=str(customization), output=str(cli_out), language="de", languages="de",
+        base_language="de", no_matrix=False, no_matrix_global=False, survey_title=None,
+    ))
+    studio_lss = _studio_response_bytes(
+        lambda: handle_survey_customizer_export(
+            {
+                "exportFormat": "limesurvey",
+                "survey": {"title": "Old survey", "language": "de", "languages": ["de"], "base_language": "de"},
+                "groups": cli_groups,
+                "exportOptions": {"matrix": True, "matrix_global": True},
+                "lsSettings": ls_settings,
+            },
+            str(tmp_path),
+        ),
+        {},
+    )
+    assert cli_out.read_bytes() == studio_lss
+    assert b"<type><![CDATA[!]]></type>" in studio_lss or b"<type>!</type>" in studio_lss
+    assert json.loads(template.read_text(encoding="utf-8")) == OLD_LS_TEMPLATE  # the override stays in the export
+
+
+def test_quick_limesurvey_export_writes_the_same_file_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.survey import cmd_survey_export_lss
+    from src.web.blueprints.tools_generation_handlers import handle_generate_lss_endpoint
+
+    template = tmp_path / "survey-old.json"
+    template.write_text(json.dumps(OLD_LS_TEMPLATE), encoding="utf-8")
+    cli_out = tmp_path / "cli.lss"
+    cmd_survey_export_lss(SimpleNamespace(
+        files=[str(template)], output=str(cli_out), language="de", languages="de", base_language="de",
+        matrix=True, matrix_global=True, include=None,
+    ))
+    studio_lss = _studio_response_bytes(
+        handle_generate_lss_endpoint,
+        {"files": [{"path": str(template)}], "language": "de", "languages": ["de"], "base_language": "de",
+         "matrix": True, "matrix_global": True},
+    )
+    assert cli_out.read_bytes() == studio_lss
