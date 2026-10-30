@@ -466,7 +466,7 @@ def api_template_editor_save():
         return jsonify({"error": "Invalid modality"}), 400
     to_personal = payload.get("target") == "personal"
     try:
-        path = save_template(
+        saved = save_template(
             modality,
             payload.get("filename") or "",
             payload.get("template"),
@@ -486,7 +486,7 @@ def api_template_editor_save():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
-    return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
+    return jsonify({"ok": True, "message": f"Saved to {saved.path}", "missing": saved.missing, "removed": saved.removed}), 200
 
 
 @tools_template_editor_bp.route("/api/template-editor/delete", methods=["DELETE"])

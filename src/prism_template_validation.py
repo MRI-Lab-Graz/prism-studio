@@ -163,3 +163,50 @@ def missing_task_name_error(template: dict) -> dict | None:
     if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
         return None
     return {"path": "Study/TaskName", "message": "Every template needs a task name (letters, digits and hyphens, e.g. 'pss')"}
+
+
+_REQUIRED_SECTIONS = ("Technical", "Study", "Metadata", "I18n")
+_REQUIRED_PROPERTY = re.compile(r"^'(.+)' is a required property$")
+
+
+def is_blank(value) -> bool:
+    """The one rule for "not filled in": absent, ``None``, empty/whitespace text, an empty list, or a language
+    object whose ``en`` is empty. (The template editor's JavaScript applies the same rule.)"""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, list):
+        return not value
+    if isinstance(value, dict):
+        return is_blank(value.get("en"))
+    return False
+
+
+def missing_required_fields(template: dict, schema: dict) -> list[dict]:
+    """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing"}`` per required field of
+    Technical, Study, Metadata and I18n (as the given, possibly relaxed, schema lists them) that is not filled in."""
+    props = schema.get("properties") if isinstance(schema, dict) else None
+    props = props if isinstance(props, dict) else {}
+    template = template if isinstance(template, dict) else {}
+    missing = []
+    for section in _REQUIRED_SECTIONS:
+        required = (props.get(section) or {}).get("required") if isinstance(props.get(section), dict) else None
+        values = template.get(section)
+        values = values if isinstance(values, dict) else {}
+        for field in required if isinstance(required, list) else []:
+            if is_blank(values.get(field)):
+                missing.append({"path": f"{section}/{field}", "message": f"{section}/{field} is missing"})
+    return missing
+
+
+def is_missing_field_error(error: dict, template: dict, missing: list[dict]) -> bool:
+    """Which schema errors a save only warns about: those that say a required field of a section the template has
+    is missing or empty (it is one of ``missing``, or inside one). Everything else (wrong values, wrong types, a
+    whole section absent) is a real error and refuses the save."""
+    paths = {m["path"] for m in missing}
+    path = str(error.get("path") or "")
+    found = _REQUIRED_PROPERTY.match(str(error.get("message") or ""))
+    if found and path in _REQUIRED_SECTIONS and isinstance(template.get(path), dict):
+        return f"{path}/{found.group(1)}" in paths
+    return any(path == p or path.startswith(p + "/") for p in paths)

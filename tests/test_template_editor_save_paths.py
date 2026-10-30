@@ -74,7 +74,7 @@ def test_template_editor_save_relaxes_schema_when_copying_global_template(tmp_pa
     assert response.get_json()["ok"] is True
 
 
-def test_template_editor_save_is_strict_when_not_copying_global_template(tmp_path):
+def test_template_editor_save_warns_about_missing_project_fields_when_not_copying_global_template(tmp_path):
     app, handlers = _build_app_and_handlers()
     template = library_template("aai")
     template["Technical"].pop("SoftwarePlatform", None)
@@ -82,10 +82,9 @@ def test_template_editor_save_is_strict_when_not_copying_global_template(tmp_pat
 
     response, status_code = _save(app, handlers, tmp_path, filename="survey-aai.json", template=template)
 
-    assert status_code == 400
-    payload = response.get_json()
-    assert payload["error"] == "Template validation failed"
-    assert payload["errors"]
+    assert status_code == 200
+    paths = {m["path"] for m in response.get_json()["missing"]}
+    assert {"Technical/SoftwarePlatform", "Technical/AdministrationMethod"} <= paths
 
 
 def test_template_editor_save_requires_explicit_overwrite_confirmation(tmp_path):

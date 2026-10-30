@@ -168,3 +168,51 @@ def test_saving_a_template_writes_the_same_file_in_the_cli_and_in_studio(tmp_pat
     name = "code/library/survey/survey-mood.json"
     # parsed, not bytes: Flask's test client sorts the keys of the JSON it sends
     assert json.loads((cli_project / name).read_text(encoding="utf-8")) == json.loads((studio_project / name).read_text(encoding="utf-8"))
+
+
+def test_saving_strips_and_warns_the_same_in_the_cli_and_in_studio(tmp_path, capsys):
+    import importlib
+    import os
+
+    from flask import Flask, session
+    from template_fixtures import project_template
+
+    from src.cli.commands.library import cmd_library_template_save
+
+    app_dir = Path(__file__).resolve().parents[1] / "app"
+    handlers = importlib.import_module("src.web.blueprints.tools_template_editor_blueprint")
+    app = Flask(__name__, root_path=str(app_dir))
+    app.secret_key = os.urandom(32)
+    template = project_template("mood")
+    template["Technical"]["Respondent"] = ""
+    item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
+    template[item]["LimeSurvey"] = {"questionType": "L", "inputWidth": "30", "columnName": "q1"}
+    source = tmp_path / "mood.json"
+    source.write_text(json.dumps(template), encoding="utf-8")
+    cli_project, studio_project = tmp_path / "cli", tmp_path / "studio"
+    cli_project.mkdir()
+    studio_project.mkdir()
+
+    cmd_library_template_save(SimpleNamespace(
+        project=str(cli_project), to="project", modality="survey", filename="survey-mood.json", template=str(source),
+        schema_version="stable", is_global=False, force=False,
+    ))
+    printed = capsys.readouterr().out
+    with app.test_request_context(
+        "/api/template-editor/save", method="POST",
+        json={"modality": "survey", "schema_version": "stable", "filename": "survey-mood.json", "template": template},
+    ):
+        session["current_project_path"] = str(studio_project)
+        response, status = handlers.api_template_editor_save()
+
+    assert status == 200
+    body = response.get_json()
+    name = "code/library/survey/survey-mood.json"
+    cli_saved = json.loads((cli_project / name).read_text(encoding="utf-8"))
+    assert cli_saved == json.loads((studio_project / name).read_text(encoding="utf-8"))
+    assert cli_saved[item]["LimeSurvey"] == {"columnName": "q1"}
+    assert body["removed"] == [f"{item}: inputWidth, questionType"]
+    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing"} in body["missing"]
+    for field in body["missing"]:
+        assert f"warning: {field['message']}" in printed
+    assert "removed LimeSurvey export settings from 1 items" in printed

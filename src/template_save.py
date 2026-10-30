@@ -2,18 +2,31 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.personal_library import personal_library_folder
 from src.prism_template_validation import (
+    is_missing_field_error,
+    missing_required_fields,
     missing_task_name_error,
     relax_schema_for_library_template,
     strip_template_editor_internal_keys,
     validate_template_against_schema,
 )
 from src.schema_manager import load_schema
+from src.survey_export_settings import strip_export_settings
 from src.survey_template_normalization import normalize_survey_template_for_validation
 from src.utils.io import dump_json_text
+
+
+@dataclass
+class SavedTemplate:
+    """What a save did: the file, the problems it only warns about (``{path, message}``), and what it stripped."""
+
+    path: Path
+    missing: list[dict]
+    removed: list[str]
 
 
 class TemplateInvalid(Exception):
@@ -39,10 +52,14 @@ def save_template(
     schema_version: str = "stable",
     relaxed: bool = False,
     allow_overwrite: bool = False,
-) -> Path:
+) -> SavedTemplate:
     """Validate ``template`` and write it into the project's ``code/library/<modality>`` (``target="project"``) or
     the personal library (``"personal"``). ``relaxed`` validates it as a library template (not a project copy), as
     every personal one is: the project-only fields are optional, the task name never is.
+
+    Export settings are stripped from a survey template first. Required fields that are missing or empty, and
+    language findings (``I18n.Languages`` against the texts), do not refuse the save: the file is written and they
+    come back in ``SavedTemplate.missing``. Every other schema error raises TemplateInvalid.
 
     Raises ValueError (bad filename or template), TemplateInvalid, TemplateExists, RuntimeError (no project or
     personal library to save into) and FileNotFoundError (no schema).
@@ -56,7 +73,9 @@ def save_template(
         raise ValueError("Template must be a JSON object")
 
     template = strip_template_editor_internal_keys(template)
+    removed: list[str] = []
     if modality == "survey":
+        template, removed = strip_export_settings(template)
         template = normalize_survey_template_for_validation(template)
 
     schema = load_schema(modality, schema_dir=str(Path(app_root) / "schemas"), version=schema_version)
@@ -68,8 +87,11 @@ def save_template(
     errors = list(validate_template_against_schema(instance=template, schema=schema))
     if relaxed and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
         errors.append(error)
-    if errors:
-        raise TemplateInvalid(errors)
+    missing = missing_required_fields(template, schema)
+    refused = [e for e in errors if not is_missing_field_error(e, template, missing)]
+    if refused:
+        raise TemplateInvalid(refused)
+    missing += _language_findings(template)
 
     if target == "personal":
         folder = personal_library_folder(modality, app_root)
@@ -82,4 +104,11 @@ def save_template(
         raise TemplateExists(path)
     folder.mkdir(parents=True, exist_ok=True)
     path.write_text(dump_json_text(template), encoding="utf-8")
-    return path
+    return SavedTemplate(path=path, missing=missing, removed=removed)
+
+
+def _language_findings(template: dict) -> list[dict]:
+    from src.template_validator import TemplateValidator
+
+    findings = TemplateValidator.validate_language_consistency_from_data(template)
+    return [{"path": f["path"], "message": f["message"]} for f in findings]

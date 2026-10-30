@@ -90,7 +90,7 @@ def cmd_library_template_save(args) -> None:
         print("Error: --project is required (or use --to personal)")
         sys.exit(1)
     try:
-        target = save_template(
+        saved = save_template(
             args.modality,
             args.filename,
             template,
@@ -112,7 +112,11 @@ def cmd_library_template_save(args) -> None:
     except (ValueError, RuntimeError, FileNotFoundError) as exc:
         print(f"Error: {exc}")
         sys.exit(1)
-    print(f"✅ Saved to {target}")
+    for field in saved.missing:
+        print(f"warning: {field['message']}")
+    if saved.removed:
+        print(f"removed LimeSurvey export settings from {len(saved.removed)} items")
+    print(f"✅ Saved to {saved.path}")
 
 
 def cmd_library_template_delete(args) -> None:
