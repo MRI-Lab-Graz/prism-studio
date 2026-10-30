@@ -105,10 +105,14 @@ Studio uses them (a first sort by file, not yet a line-by-line read of each):
 | Template check against the official library | `conversion_survey_official_template_helpers` | no command |
 | Version-context detection | `conversion_survey_handlers` | no command |
 
-**Projects pages and Studio infrastructure** (exempt by the rule, or UI only; confirm and move them to a short "UI-only"
-list with a reason): project icons, project root/registration/structure/session logging, project-ready gate, settings
-(`src.config`), dedicated terminal, remote browse / rsync / DataLad server, DOI and ORCID lookup, version check,
-`src.api`, JSON editor blueprint, `cross_platform`, `system_files`, `runtime_dependencies`, `template_info`, `folder_create`.
+**Only project setup is exempt**: creating a project and its study metadata (including the DOI and ORCID lookups that fill the
+metadata form). Everything else in this baseline is a divergence to fix, not "infrastructure":
+- Settings (`src.config`: the library paths, the personal library, defacing confirmation, monitoring): the Settings page has
+  **no CLI at all**. Needs `prism_tools.py settings get|set`.
+- DataLad server publish and sync, remote browse and rsync, project structure and the sessions/participants pages, project
+  registration, session logging.
+- Pure UI state needs no command (icons, which card is open, the dedicated terminal window, the version check): confirm each
+  and list it in the baseline with that reason.
 
 **Probably the same function under another name** (check, then fix the guard or the import): `src.issues` (error texts for the
 results page), `spec_overlay` (the Contribute page lists items; `spec local list` exists), `converters.file_reader` and

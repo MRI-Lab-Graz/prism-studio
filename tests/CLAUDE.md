@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **THE CLI EXECUTES, STUDIO ONLY TRIGGERS** (see the root CLAUDE.md). A test for anything Studio does must also run the CLI
 command and compare: `tests/test_cli_studio_parity.py` runs both on identical copies of a project and compares the files.
 
-Every action a user triggers in the UI (file rename, entity/subject rewrite, delete, batch convert, DataLad save, etc.) must be executed as a backend command — the frontend only triggers it (via `fetch`/`FormData` to a Flask route) and renders the result/progress. The only exception is the project page itself (selecting/loading a project), which is local UI state, not a mutating operation. There is no case where the frontend performs the actual file or data work itself.
+Every action a user triggers in the UI (file rename, entity/subject rewrite, delete, batch convert, DataLad save, etc.) must be executed as a backend command — the frontend only triggers it (via `fetch`/`FormData` to a Flask route) and renders the result/progress. The only exception is project setup (creating a project and entering its metadata); choosing which project is open is UI state. There is no case where the frontend performs the actual file or data work itself.
 
 ## Memory Management
 
