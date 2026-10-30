@@ -37,6 +37,7 @@ src/modality_versions.py
 src/participant_ids.py
 src/participants_levels.py
 src/participants_sessions.py
+src/prism_template_validation.py
 src/recipe_validation.py
 src/recipes_data_checks.py
 src/recipes_export_helpers.py

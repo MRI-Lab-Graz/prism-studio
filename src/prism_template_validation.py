@@ -13,7 +13,42 @@ from __future__ import annotations
 import re
 
 from src.schema_manager import apply_schema_validation_profile
-from src.converters.survey_io import normalize_paper_software_platform
+
+_VALID_SOFTWARE_PLATFORMS = {
+    "LimeSurvey",
+    "PsychoPy",
+    "Pavlovia",
+    "Paper and Pencil",
+    "Other",
+}
+
+
+def normalize_paper_software_platform(payload: object) -> object:
+    """Normalise legacy paper-admin software metadata for schema compatibility."""
+    if not isinstance(payload, dict):
+        return payload
+
+    technical = payload.get("Technical")
+    if not isinstance(technical, dict):
+        return payload
+
+    administration_method = str(technical.get("AdministrationMethod", "")).strip().lower()
+    software_platform = str(technical.get("SoftwarePlatform", "")).strip()
+
+    if administration_method != "paper":
+        return payload
+
+    if software_platform in _VALID_SOFTWARE_PLATFORMS:
+        return payload
+
+    normalized_technical = dict(technical)
+    normalized_technical["SoftwarePlatform"] = "Paper and Pencil"
+    normalized_technical["SoftwareVersion"] = ""
+
+    normalized_payload = dict(payload)
+    normalized_payload["Technical"] = normalized_technical
+    return normalized_payload
+
 
 # The severity of a finding in ``SavedTemplate.missing`` (and of the language findings that feed it): the one
 # vocabulary. A gate may refuse on SEVERITY_ERROR; SEVERITY_WARNING is shown only.

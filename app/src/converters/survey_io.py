@@ -17,46 +17,11 @@ from pathlib import Path
 
 from src.cleaning_notes import cleaning_note, missing_id_note
 from src.modality_versions import current_survey_schema_version
+from src.prism_template_validation import normalize_paper_software_platform  # noqa: F401 (re-exported)
 from src.survey_scale_check import find_scale_violations
 from typing import Any
 
 from . import survey_processing as _survey_processing
-
-
-_VALID_SOFTWARE_PLATFORMS = {
-    "LimeSurvey",
-    "PsychoPy",
-    "Pavlovia",
-    "Paper and Pencil",
-    "Other",
-}
-
-
-def normalize_paper_software_platform(payload: object) -> object:
-    """Normalise legacy paper-admin software metadata for schema compatibility."""
-    if not isinstance(payload, dict):
-        return payload
-
-    technical = payload.get("Technical")
-    if not isinstance(technical, dict):
-        return payload
-
-    administration_method = str(technical.get("AdministrationMethod", "")).strip().lower()
-    software_platform = str(technical.get("SoftwarePlatform", "")).strip()
-
-    if administration_method != "paper":
-        return payload
-
-    if software_platform in _VALID_SOFTWARE_PLATFORMS:
-        return payload
-
-    normalized_technical = dict(technical)
-    normalized_technical["SoftwarePlatform"] = "Paper and Pencil"
-    normalized_technical["SoftwareVersion"] = ""
-
-    normalized_payload = dict(payload)
-    normalized_payload["Technical"] = normalized_technical
-    return normalized_payload
 
 
 def _utc_creation_date() -> str:
