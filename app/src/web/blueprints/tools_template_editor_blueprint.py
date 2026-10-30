@@ -115,8 +115,10 @@ def api_template_editor_list_merged():
             }
 
         try:
+            from src.prism_template_validation import with_default_task_name
+
             payload = _normalize_template_for_validation(
-                modality=modality, template=payload
+                modality=modality, template=with_default_task_name(payload, template_path.name, modality)
             )
             errors = _validate_against_schema(instance=payload, schema=active_schema)
         except Exception as exc:
