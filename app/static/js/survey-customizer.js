@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let sharedFetchWithApiFallbackPromise = null;
     const languageChoicesModuleUrl = new URL('./survey-customizer/language-choices.js', surveyCustomizerScriptUrl).href;
     let languageModule = null; // loaded with the groups, see loadQuestionsFromFiles
+    const questionTypeModuleUrl = new URL('./survey-customizer/question-type.js', surveyCustomizerScriptUrl).href;
+    let detectQuestionType = null; // loaded with the groups, see loadQuestionsFromFiles
 
     function loadSharedFetchWithApiFallback() {
         if (!sharedFetchWithApiFallbackPromise) {
@@ -243,50 +245,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     /**
-     * Detect the LimeSurvey question type for a question.
-     * Mirrors Python _determine_ls_question_type() logic.
-     */
-    function detectQuestionType(question) {
-        // If toolOverrides has an explicit type, use it
-        const ov = question.toolOverrides || {};
-        if (ov.questionType) return ov.questionType;
-
-        const orig = question.originalData || {};
-        const lsConfig = orig.LimeSurvey || {};
-
-        // Check LimeSurvey section explicit type
-        if (lsConfig.questionType) return lsConfig.questionType;
-
-        const inputType = (orig.InputType || '').toLowerCase();
-        const levels = orig.Levels || question.levels || {};
-        const hasLevels = levels && typeof levels === 'object' && Object.keys(levels).length > 0;
-
-        // Calculated field
-        if (inputType === 'calculated' || orig.Calculation) return '*';
-
-        // Numerical
-        if (inputType === 'numerical') return 'N';
-
-        // Slider
-        if (inputType === 'slider') return 'K';
-
-        // Dropdown
-        if (inputType === 'dropdown') return '!';
-
-        // Many levels -> dropdown
-        if (hasLevels && Object.keys(levels).length > 10) return '!';
-
-        // Text
-        if (inputType === 'text') {
-            const textConfig = orig.TextConfig || {};
-            return textConfig.multiline ? 'T' : 'S';
-        }
-
-        // Default based on levels
-        return hasLevels ? 'L' : 'T';
-    }
-
-    /**
      * Check if a question should NOT be grouped into a matrix.
      * Mirrors Python _should_not_group() logic (without the removed >= 6 threshold).
      */
@@ -493,6 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 detectedLanguages = customizationState.survey.languages || ['en'];
             }
             languageModule = await import(languageChoicesModuleUrl);
+            ({ detectQuestionType } = await import(questionTypeModuleUrl));
             updateLanguageChoices();
             previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
             updatePreviewLangSwitcher();

@@ -4124,16 +4124,6 @@
 
   // ── Question type detection ──────────────────────────────────────────
   function detectQuestionType(item, template) {
-    // 1. Explicit LimeSurvey questionType
-    const lsType = item.LimeSurvey?.questionType;
-    if (lsType) {
-      if (lsType === '!' ) return 'dropdown';
-      if (lsType === 'N' || lsType === 'K') return 'numerical';
-      if (lsType === 'S') return 'short-text';
-      if (lsType === 'T' || lsType === 'U') return 'long-text';
-      if (lsType === 'D') return 'date';
-      if (lsType === '*' || lsType === 'X') return 'hidden';
-    }
     // 2. Explicit InputType field
     const inputType = item.InputType;
     if (inputType === 'slider') return 'slider';
