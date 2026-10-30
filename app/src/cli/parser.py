@@ -862,8 +862,8 @@ def build_prism_tools_parsers(
     )
     parser_survey_convert.add_argument(
         "--lang",
-        default="de",
-        help="Language for templates when using i18n libraries (default: de; use 'auto' to infer for .lsa)",
+        default=None,
+        help="Language to write multilingual templates in (default: the template's own; 'auto' takes an .lsa's)",
     )
     parser_survey_convert.add_argument(
         "--output",

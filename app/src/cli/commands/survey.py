@@ -140,70 +140,12 @@ def cmd_survey_convert(args):
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
 
-    import tempfile
-
-    def _library_needs_i18n_compile(dir_path: Path) -> bool:
-        """Return True if templates in dir_path appear to contain language maps."""
-        try:
-            files = sorted(dir_path.glob("survey-*.json"))
-        except Exception:
-            return False
-        for p in files[:3]:
-            try:
-                data = _read_json(p)
-            except Exception:
-                continue
-            if isinstance(data, dict) and "I18n" in data:
-                return True
-            reserved = {
-                "Technical",
-                "Study",
-                "Metadata",
-                "I18n",
-                "Scoring",
-                "Normative",
-            }
-            for item_id, item_def in (data or {}).items():
-                if item_id in reserved or not isinstance(item_def, dict):
-                    continue
-                d = item_def.get("Description")
-                if isinstance(d, dict):
-                    return True
-                levels = item_def.get("Levels")
-                if isinstance(levels, dict) and any(
-                    isinstance(v, dict) for v in levels.values()
-                ):
-                    return True
-        return False
-
-    def _compile_i18n_library(
-        src_dir: Path, lang: str
-    ) -> tuple[Path, tempfile.TemporaryDirectory]:
-        tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
-        out_dir = Path(tmp.name)
-        _ensure_dir(out_dir)
-        fallback_langs = [lang_code for lang_code in ["de", "en"] if lang_code != lang]
-
-        for p in sorted(src_dir.glob("survey-*.json")):
-            compiled = compile_survey_template(
-                _read_json(p), lang=lang, fallback_langs=fallback_langs
-            )
-            _write_json(out_dir / p.name, compiled)
-
-        return out_dir, tmp
-
-    lang = str(getattr(args, "lang", "de") or "de").strip().lower()
-    if not lang:
-        lang = "de"
-    if lang == "auto":  # templates are compiled for one real language; an .lsa names its own
+    lang = str(getattr(args, "lang", None) or "").strip().lower() or None
+    if lang == "auto":  # an .lsa names its own language
         from src.converters.survey_lsa import infer_lsa_metadata
 
         input_file = Path(args.input)
-        inferred = infer_lsa_metadata(input_file).get("language") if input_file.suffix.lower() == ".lsa" else None
-        lang = (inferred or "de").lower()
-
-    library_tmp = None
-    library_label = None
+        lang = (infer_lsa_metadata(input_file).get("language") or "").lower() or None if input_file.suffix.lower() == ".lsa" else None
 
     effective = None  # the merged project/personal/global library, when --library is not given
     if getattr(args, "library", None):
@@ -226,11 +168,7 @@ def cmd_survey_convert(args):
         if effective
         else str(candidate.resolve())
     )
-    if _library_needs_i18n_compile(candidate):
-        lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
-        library_label += f" (i18n compiled to {lang})"
-    else:
-        lib_dir = candidate
+    lib_dir = candidate
 
     try:
         input_path = Path(args.input).resolve()
@@ -277,6 +215,7 @@ def cmd_survey_convert(args):
             skip_existing=bool(getattr(args, "skip_existing", False)),
             skip_participants=True,
             project_path=project_path,
+            language=lang,
             template_version_overrides=template_version_overrides,
             task_value_offsets=task_value_offsets,
         )

@@ -68,4 +68,7 @@ def _localize_survey_template(template: dict, language: str | None) -> dict:
             return [_recurse(v) for v in value]
         return value
 
-    return _recurse(deepcopy(template))
+    out = _recurse(deepcopy(template))
+    if isinstance(template.get("I18n"), dict) and isinstance(out.get("Technical"), dict):
+        out["Technical"]["Language"] = lang  # the texts are now in this language: say so
+    return out
