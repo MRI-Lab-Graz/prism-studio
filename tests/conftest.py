@@ -59,7 +59,7 @@ def _no_user_app_settings(monkeypatch, tmp_path_factory):
 
     import src.config  # noqa: F401  (make sure the module is loaded)
 
-    empty = tmp_path_factory.mktemp("no_user_settings")
+    empty = tmp_path_factory.getbasetemp() / "no_user_settings"  # never created: no settings file there
     for module in list(sys.modules.values()):
         if getattr(module, "__name__", "").endswith("config") and hasattr(module, "_get_user_app_settings_dir"):
             monkeypatch.setattr(module, "_get_user_app_settings_dir", lambda: empty)
