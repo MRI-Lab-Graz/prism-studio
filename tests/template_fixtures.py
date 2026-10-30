@@ -16,5 +16,5 @@ def library_template(task: str = "gad7") -> dict:
 def project_template(task: str = "gad7") -> dict:
     """A project copy: a library template that also says how it was administered."""
     template = library_template(task)
-    template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper")
+    template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper", Respondent="self")
     return template

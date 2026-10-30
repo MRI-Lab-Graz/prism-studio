@@ -18,12 +18,14 @@ def _gad7(*, project_copy=False):
     template = json.loads(GAD7.read_text(encoding="utf-8"))
     template["Study"]["TaskName"] = "gad7"
     if project_copy:
-        template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper")
+        template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper", Respondent="self")
     return template
 
 
 def test_a_valid_template_is_saved_into_the_project_library(tmp_path):
-    path = save_template("survey", "survey-gad7", _gad7(project_copy=True), target="project", project_root=tmp_path, app_root=APP)
+    saved = save_template("survey", "survey-gad7", _gad7(project_copy=True), target="project", project_root=tmp_path, app_root=APP)
+    path = saved.path
+    assert saved.missing == [] and saved.removed == []
     assert path == tmp_path / "code" / "library" / "survey" / "survey-gad7.json"
     assert json.loads(path.read_text(encoding="utf-8"))["Study"]["TaskName"]
 
@@ -55,7 +57,7 @@ def test_the_personal_target_uses_the_personal_library_and_checks_the_task_name(
     mine = tmp_path / "mine"
     mine.mkdir()
     monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
-    path = save_template("survey", "survey-gad7.json", _gad7(), target="personal", project_root=None, app_root=APP)
+    path = save_template("survey", "survey-gad7.json", _gad7(), target="personal", project_root=None, app_root=APP).path
     assert path == mine / "survey" / "survey-gad7.json"
 
     nameless = _gad7()
@@ -93,3 +95,75 @@ def test_project_template_needs_respondent():
     from src.schema_manager import load_schema
 
     assert "Respondent" in _technical_required(load_schema("survey"))
+
+
+def _project_save(tmp_path, template, **kwargs):
+    return save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP, **kwargs)
+
+
+def test_saving_with_an_empty_respondent_writes_and_warns(tmp_path):
+    template = _gad7(project_copy=True)
+    template["Technical"]["Respondent"] = ""
+    saved = _project_save(tmp_path, template)
+    assert saved.path.exists()
+    assert {"path": "Technical/Respondent", "message": "Technical/Respondent is missing"} in saved.missing
+
+
+def test_saving_strips_export_settings(tmp_path):
+    template = _gad7(project_copy=True)
+    item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
+    template[item]["LimeSurvey"] = {"questionType": "L", "columnName": "q1"}
+    saved = _project_save(tmp_path, template)
+    written = json.loads(saved.path.read_text(encoding="utf-8"))
+    assert written[item]["LimeSurvey"] == {"columnName": "q1"}
+    assert saved.removed == [f"{item}: questionType"]
+
+
+def test_other_schema_errors_still_refuse(tmp_path):
+    template = _gad7(project_copy=True)
+    template["Technical"]["Respondent"] = "robot"
+    with pytest.raises(TemplateInvalid):
+        _project_save(tmp_path, template)
+    assert not (tmp_path / "code").exists()
+
+
+def test_a_template_without_a_whole_section_still_refuses(tmp_path):
+    template = _gad7(project_copy=True)
+    del template["Technical"]
+    with pytest.raises(TemplateInvalid):
+        _project_save(tmp_path, template)
+
+
+def _survey_schema():
+    from src.schema_manager import load_schema
+
+    return load_schema("survey")
+
+
+def test_missing_required_fields_without_sections():
+    from src.prism_template_validation import missing_required_fields
+
+    paths = {m["path"] for m in missing_required_fields({}, _survey_schema())}
+    assert {"Study/TaskName", "Technical/Respondent", "Metadata/Creator", "I18n/Languages"} <= paths
+    assert missing_required_fields({"Technical": "x", "Study": None, "I18n": []}, _survey_schema())  # no crash
+
+
+def test_missing_english():
+    from src.prism_template_validation import missing_required_fields
+
+    template = _gad7(project_copy=True)
+    template["Study"]["OriginalName"] = {"en": "", "de": "x"}
+    assert {"path": "Study/OriginalName", "message": "Study/OriginalName is missing"} in missing_required_fields(template, _survey_schema())
+
+
+def test_a_complete_template_misses_nothing():
+    from src.prism_template_validation import missing_required_fields
+
+    assert missing_required_fields(_gad7(project_copy=True), _survey_schema()) == []
+
+
+def test_language_consistency_findings_are_warnings_on_save(tmp_path):
+    template = _gad7(project_copy=True)
+    template["I18n"]["Languages"] = ["en", "de", "fr"]
+    saved = _project_save(tmp_path, template)
+    assert any("'fr'" in m["message"] for m in saved.missing)

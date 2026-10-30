@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Set
 
-from survey_scale_inference import infer_contiguous_numeric_levels_range
+from src.survey_scale_inference import infer_contiguous_numeric_levels_range
 
 
 class TemplateValidationError:
@@ -801,6 +801,61 @@ class TemplateValidator:
 
         return errors
 
+    def _validate_declared_languages(
+        self, file_name: str, data: Dict[str, Any]
+    ) -> List[TemplateValidationError]:
+        """I18n.Languages against what the template says (warnings).
+
+        Technical.Language and I18n.DefaultLanguage must be declared; every item
+        Description and every Levels label needs a text for each declared language;
+        a language key used in those texts must be declared. Study texts are exempt.
+        Without a usable I18n.Languages there is nothing to compare (that is a
+        missing required field, reported elsewhere).
+        """
+        import re
+
+        declared = (data.get("I18n") or {}).get("Languages") if isinstance(data.get("I18n"), dict) else None
+        if not isinstance(declared, list) or not declared:
+            return []
+        lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
+        errors: List[TemplateValidationError] = []
+
+        def warn(message: str, item: str) -> None:
+            errors.append(
+                TemplateValidationError(
+                    file=file_name,
+                    error_type="i18n_validation",
+                    message=message,
+                    severity="warning",
+                    item=item,
+                )
+            )
+
+        for path, value in (
+            ("Technical/Language", (data.get("Technical") or {}).get("Language") if isinstance(data.get("Technical"), dict) else None),
+            ("I18n/DefaultLanguage", data["I18n"].get("DefaultLanguage")),
+        ):
+            if value and value not in declared:
+                warn(f"{path.replace('/', '.')} '{value}' is not in I18n.Languages", path)
+
+        undeclared: Set[Tuple[str, str]] = set()
+        for item_id, item_def in self._extract_items(data).items():
+            if not isinstance(item_def, dict) or not isinstance(item_def.get("Description"), dict):
+                continue
+            texts = [("", item_def["Description"])]
+            levels = item_def.get("Levels")
+            if isinstance(levels, dict):
+                texts += [(f" level {key}", v) for key, v in levels.items() if isinstance(v, dict)]
+            for where, text in texts:
+                for lang in declared:
+                    if not str(text.get(lang) or "").strip():
+                        warn(f"Item {item_id}{where} has no '{lang}' text (declared in I18n.Languages)", item_id)
+                for lang in text:
+                    if lang_re.match(lang) and lang not in declared and (lang, item_id) not in undeclared:
+                        undeclared.add((lang, item_id))
+                        warn(f"'{lang}' is used in {item_id} but not declared in I18n.Languages", item_id)
+        return errors
+
     def _validate_language_consistency(
         self, file_name: str, data: Dict[str, Any]
     ) -> List[TemplateValidationError]:
@@ -808,6 +863,7 @@ class TemplateValidator:
         Validate language consistency across template items.
 
         Checks (all warnings):
+        0. Declared languages (I18n.Languages): see _validate_declared_languages
         1. Fake translations: identical content across languages
         2. Inconsistent language keys: some items missing languages others have
         3. Mislabeled keys: Technical.Language doesn't match description keys
@@ -815,7 +871,9 @@ class TemplateValidator:
         """
         import re
 
-        errors: List[TemplateValidationError] = []
+        errors: List[TemplateValidationError] = self._validate_declared_languages(
+            file_name, data
+        )
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         items = self._extract_items(data)
         if not items:
