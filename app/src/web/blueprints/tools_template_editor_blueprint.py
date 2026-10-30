@@ -348,6 +348,26 @@ def api_template_editor_validate():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/completeness", methods=["POST"])
+def api_template_editor_completeness():
+    """How complete the template in the editor is (the numbers `library template-score` prints)."""
+    from src.template_completeness import template_completeness
+
+    payload = request.get_json(silent=True) or {}
+    template = payload.get("template")
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+    return jsonify(
+        template_completeness(
+            template,
+            source=payload.get("filename") or "",
+            app_root=Path(current_app.root_path),
+            schema_version=(payload.get("schema_version") or "stable").strip(),
+            project=not bool(payload.get("is_global", False)),
+        )
+    )
+
+
 @tools_template_editor_bp.route("/api/template-editor/schema", methods=["GET"])
 def api_template_editor_schema():
     modality = (request.args.get("modality") or "").strip().lower()

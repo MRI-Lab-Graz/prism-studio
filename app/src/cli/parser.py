@@ -2756,6 +2756,20 @@ def build_prism_tools_parsers(
         "--schema-version", default="stable", help="Schema version to validate against"
     )
 
+    parser_lib_template_score = subparsers_library.add_parser(
+        "template-score",
+        help="How complete a template is: required and recommended fields filled. "
+        "Matches the rings in Studio's Template Editor.",
+    )
+    parser_lib_template_score.add_argument("--template", required=True, help="Path to the template JSON file")
+    parser_lib_template_score.add_argument(
+        "--is-global",
+        action="store_true",
+        help="Score as a library template (the project-level fields are not required)",
+    )
+    parser_lib_template_score.add_argument("--schema-version", default="stable", help="Schema version")
+    parser_lib_template_score.add_argument("--json", action="store_true", help="Print the result as JSON")
+
     parser_lib_template_delete = subparsers_library.add_parser(
         "template-delete",
         help="Delete a single project-library template. Matches the Studio GUI's "

@@ -86,6 +86,38 @@ def cmd_library_template_check(args) -> None:
     print("All survey templates are complete.")
 
 
+def cmd_library_template_score(args) -> None:
+    """How complete a template is: the numbers the template editor's rings show (the same function runs both).
+    Exit 1 when it cannot be used yet (a required field is empty); recommended fields never decide that."""
+    from src.template_completeness import template_completeness
+
+    template_path = Path(args.template).resolve()
+    try:
+        template = json.loads(template_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Error: --template could not be read: {exc}")
+        sys.exit(1)
+    result = template_completeness(
+        template,
+        source=template_path.name,
+        app_root=_APP_ROOT_FOR_SCHEMAS,
+        schema_version=args.schema_version,
+        project=not args.is_global,
+    )
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        for label, key in (("Required", "required"), ("Recommended", "recommended")):
+            part = result[key]
+            print(f"{label}: {part['filled']}/{part['total']} ({result['percent'][key]}%)")
+            for path in part["missing"]:
+                print(f"  - {path}")
+        for problem in result["problems"]:
+            print(f"Problem: {problem}")
+    if not result["complete"]:
+        sys.exit(1)
+
+
 def cmd_library_template_save(args) -> None:
     """Validate and save a single template into a project's library (or your personal one) -
     the CLI equivalent of the Studio GUI's Template Editor Save action: the same function runs both."""

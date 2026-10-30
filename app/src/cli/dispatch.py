@@ -251,6 +251,8 @@ def dispatch_prism_tools(
             handlers["library_template_save"](args)
         elif args.action == "template-check":
             handlers["library_template_check"](args)
+        elif args.action == "template-score":
+            handlers["library_template_score"](args)
         elif args.action == "template-delete":
             handlers["library_template_delete"](args)
         elif args.action == "share-template":

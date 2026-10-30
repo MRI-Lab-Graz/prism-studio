@@ -55,14 +55,9 @@ class TemplateIncomplete(TemplateInvalid):
 _MISSING_HINTS = {"Technical/Respondent": " – set who answered the questionnaire (self, parent, clinician, …)"}
 
 
-def require_complete_template(
-    template: dict, *, source: str, app_root=None, schema_version: str = "stable", project: bool = True
-) -> None:
-    """Raise ``TemplateIncomplete`` unless ``template`` has every field the survey schema requires and no
-    declared-language error. Saving never needs this; using a template does. A template used in a project
-    (``project=True``, converting data) is a project copy and needs the project-level fields (Respondent,
-    AdministrationMethod, SoftwarePlatform) too; an export of a template (``project=False``) needs the global
-    fields only."""
+def gate_schema(*, app_root=None, schema_version: str = "stable", project: bool = True) -> dict:
+    """The survey schema a template used for converting (``project=True``: a project copy) or exporting
+    (``project=False``: the global fields only) must satisfy."""
     schema = apply_schema_validation_profile(
         load_schema(
             "survey",
@@ -71,14 +66,29 @@ def require_complete_template(
         ),
         profile="project",
     )
-    if not project:
-        schema = relax_schema_for_library_template(schema)
-    template = with_default_task_name(template, Path(source).name, "survey")  # the file name is the task name
+    return schema if project else relax_schema_for_library_template(schema)
+
+
+def gate_findings(template: dict, *, source: str, schema: dict) -> list[dict]:
+    """The error findings that stop a template from being used: required fields not filled in, and declared-language
+    errors. The file name is the task name."""
+    template = with_default_task_name(template, Path(source).name, "survey")
     found = [*missing_required_fields(template, schema), *_language_findings(template)]
+    return [f for f in found if f["severity"] == SEVERITY_ERROR]
+
+
+def require_complete_template(
+    template: dict, *, source: str, app_root=None, schema_version: str = "stable", project: bool = True
+) -> None:
+    """Raise ``TemplateIncomplete`` unless ``template`` has every field the survey schema requires and no
+    declared-language error. Saving never needs this; using a template does. A template used in a project
+    (``project=True``, converting data) is a project copy and needs the project-level fields (Respondent,
+    AdministrationMethod, SoftwarePlatform) too; an export of a template (``project=False``) needs the global
+    fields only."""
+    schema = gate_schema(app_root=app_root, schema_version=schema_version, project=project)
     errors = [
         {"path": f["path"], "message": f"{f['message']} in {source}{_MISSING_HINTS.get(f['path'], '')}"}
-        for f in found
-        if f["severity"] == SEVERITY_ERROR
+        for f in gate_findings(template, source=source, schema=schema)
     ]
     if errors:
         raise TemplateIncomplete(errors)

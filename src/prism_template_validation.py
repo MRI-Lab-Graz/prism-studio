@@ -188,6 +188,17 @@ def is_blank(value) -> bool:
     return False
 
 
+def required_field_paths(schema: dict) -> list[str]:
+    """``Section/Field`` for every required field of Technical, Study, Metadata and I18n in the given schema."""
+    props = schema.get("properties") if isinstance(schema, dict) else None
+    props = props if isinstance(props, dict) else {}
+    paths = []
+    for section in _REQUIRED_SECTIONS:
+        required = (props.get(section) or {}).get("required") if isinstance(props.get(section), dict) else None
+        paths.extend(f"{section}/{field}" for field in required if isinstance(required, list))
+    return paths
+
+
 def missing_required_fields(template: dict, schema: dict) -> list[dict]:
     """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": SEVERITY_ERROR}`` per required field of
     Technical, Study, Metadata and I18n (as the given, possibly relaxed, schema lists them) that is not filled in."""
