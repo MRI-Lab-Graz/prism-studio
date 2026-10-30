@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 LEVELS = {"1": {"en": "no", "de": "nein"}, "2": {"en": "yes", "de": "ja"}}
 TEMPLATE = {
@@ -26,7 +27,7 @@ TEMPLATE = {
 @pytest.fixture
 def template_path(tmp_path):
     path = tmp_path / "survey-mood.json"
-    path.write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    path.write_text(dump_complete(TEMPLATE), encoding="utf-8")
     return str(path)
 
 

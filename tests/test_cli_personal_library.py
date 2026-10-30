@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 from src import config  # noqa: E402
 from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
+from tests.template_fixtures import dump_complete  # noqa: E402
 
 TEMPLATE = {
     "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "Language": "en"},
@@ -28,7 +29,7 @@ READY_PROJECT = {
 def setup(tmp_path, monkeypatch):
     mine = tmp_path / "mine"
     (mine / "library" / "survey").mkdir(parents=True)
-    (mine / "library" / "survey" / "survey-pss.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    (mine / "library" / "survey" / "survey-pss.json").write_text(dump_complete(TEMPLATE), encoding="utf-8")
     monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
 
     project = tmp_path / "proj"

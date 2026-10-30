@@ -799,13 +799,13 @@ def _require_complete_templates(paths):
     the builders skip them)."""
     from src.template_save import require_complete_template
 
-    for path in sorted(p for p in paths if p):
+    for path in sorted(p for p in paths if p and os.path.basename(p) != "participants.json"):  # not a survey
         try:
             with open(path, "r", encoding="utf-8") as handle:
                 template = json.load(handle)
         except (OSError, ValueError):
             continue
-        require_complete_template(template, source=str(path))
+        require_complete_template(template, source=str(path), project=False)
 
 
 def generate_lss_from_customization(

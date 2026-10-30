@@ -23,6 +23,7 @@ APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
+from tests.template_fixtures import complete, dump_complete  # noqa: E402
 from src.cli.commands.survey import (  # noqa: E402
     cmd_survey_export_lss,
     cmd_survey_export_lss_customized,
@@ -98,8 +99,7 @@ class TestExportLssCustomized:
     def _write_customization_json(self, tmp_path) -> Path:
         template_path = tmp_path / "survey-template.json"
         template_path.write_text(
-            json.dumps(
-                {
+            dump_complete({
                     "Study": {"OriginalName": "Template Survey"},
                     "Questions": {
                         "q1": {
@@ -193,7 +193,7 @@ class TestExportLssCustomized:
 
     def test_bare_array_is_accepted_as_groups(self, tmp_path, capsys):
         template_path = tmp_path / "survey-template.json"
-        template_path.write_text(json.dumps({"Study": {}}), encoding="utf-8")
+        template_path.write_text(dump_complete({"Study": {}}), encoding="utf-8")
         groups = [
             {
                 "id": "group-1",
@@ -233,7 +233,7 @@ class TestExportQuestionnaireDocx:
 
     def test_renders_docx_file(self, tmp_path, capsys):
         template_path = tmp_path / "template.json"
-        template_path.write_text(json.dumps(self.LIKERT_TEMPLATE), encoding="utf-8")
+        template_path.write_text(dump_complete(self.LIKERT_TEMPLATE), encoding="utf-8")
         output = tmp_path / "out.docx"
 
         cmd_survey_export_questionnaire_docx(
@@ -268,7 +268,7 @@ class TestExportQuestionnaireDocx:
 
     def test_options_json_inline_string_applied(self, tmp_path):
         template_path = tmp_path / "template.json"
-        template_path.write_text(json.dumps(self.LIKERT_TEMPLATE), encoding="utf-8")
+        template_path.write_text(dump_complete(self.LIKERT_TEMPLATE), encoding="utf-8")
         output = tmp_path / "out.docx"
 
         cmd_survey_export_questionnaire_docx(
@@ -284,7 +284,7 @@ class TestExportQuestionnaireDocx:
 
     def test_invalid_options_json_exits(self, tmp_path):
         template_path = tmp_path / "template.json"
-        template_path.write_text(json.dumps(self.LIKERT_TEMPLATE), encoding="utf-8")
+        template_path.write_text(dump_complete(self.LIKERT_TEMPLATE), encoding="utf-8")
 
         with pytest.raises(SystemExit) as exc_info:
             cmd_survey_export_questionnaire_docx(

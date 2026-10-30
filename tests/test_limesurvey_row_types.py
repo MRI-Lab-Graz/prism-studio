@@ -9,6 +9,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from tests.template_fixtures import complete, dump_complete
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
@@ -134,7 +135,7 @@ def test_checkbox_answers_convert_checked_boxes_and_leave_unchecked_missing(tmp_
     template, _notes = limesurvey_questionnaire(LSS, "g1")
     library = tmp_path / "library"
     library.mkdir()
-    (library / "survey-types.json").write_text(json.dumps(template), encoding="utf-8")
+    (library / "survey-types.json").write_text(dump_complete(template), encoding="utf-8")
     fields = ["id", "1X1X10M1", "1X1X10M2", "1X1X301", "1X1X302", "1X1X303", "1X1X40T1_K1"]
     body = "<row>" + "".join(
         f"<{('_' + f) if f[0].isdigit() else f}>{v}</{('_' + f) if f[0].isdigit() else f}>"
@@ -172,7 +173,7 @@ def test_exported_single_items_are_never_row_types_without_rows(tmp_path, templa
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-types.json"
-    path.write_text(json.dumps({**template, "I18n": {"Languages": ["de"], "DefaultLanguage": "de"}}), encoding="utf-8")
+    path.write_text(dump_complete({**template, "I18n": {"Languages": ["de"], "DefaultLanguage": "de"}}), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:

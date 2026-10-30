@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 FOUR = {str(i): {"en": f"level {i}"} for i in range(1, 5)}
 
@@ -36,7 +37,7 @@ def _old_template():
 
 def _write(tmp_path, template, name="survey-old.json"):
     path = tmp_path / name
-    path.write_text(json.dumps(template), encoding="utf-8")
+    path.write_text(dump_complete(template), encoding="utf-8")
     return path
 
 

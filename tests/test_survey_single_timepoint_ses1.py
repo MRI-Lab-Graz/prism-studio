@@ -1,7 +1,7 @@
 """A project with one timepoint always gets ses-1, whatever label the data carries."""
 
 import json
-import shutil
+from tests.template_fixtures import dump_complete
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ TWICE = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP001,post,4,4
 def library(tmp_path):
     lib = tmp_path / "library" / "survey"
     lib.mkdir(parents=True)
-    shutil.copy(BRS, lib / "survey-brs.json")
+    (lib / "survey-brs.json").write_text(dump_complete(json.loads(BRS.read_text(encoding="utf-8")), "brs"), encoding="utf-8")
     return lib
 
 

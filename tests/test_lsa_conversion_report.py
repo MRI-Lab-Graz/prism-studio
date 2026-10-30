@@ -15,7 +15,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 from test_limesurvey_roundtrip_codes import _answers_for_every_item, _export_phq9, _write_lsa  # noqa: E402
 
-OFFICIAL_SURVEY_LIBRARY = Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+from tests.template_fixtures import completed_official_library, dump_complete  # noqa: E402
+
+OFFICIAL_SURVEY_LIBRARY = completed_official_library()  # a conversion needs complete project templates
 
 
 @pytest.fixture(autouse=True)
@@ -101,7 +103,7 @@ def _convert_mini(tmp_path):
 
     library = tmp_path / "library"
     library.mkdir()
-    (library / "survey-mini.json").write_text(json.dumps({
+    (library / "survey-mini.json").write_text(dump_complete({
         "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "SoftwarePlatform": "LimeSurvey",
                       "Language": "en", "Respondent": "self"},
         "Study": {"TaskName": "mini", "OriginalName": "Mini", "Version": "1.0"},

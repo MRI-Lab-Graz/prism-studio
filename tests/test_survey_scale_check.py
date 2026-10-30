@@ -3,6 +3,7 @@
 import pandas as pd
 
 from src.survey_scale_check import find_scale_violations
+from tests.template_fixtures import completed_official_library
 
 LIKERT = {"Levels": {"0": "never", "1": "sometimes", "2": "often"}}
 
@@ -64,7 +65,7 @@ def test_dry_run_preview_lists_the_violations_unless_a_task_offset_is_set(tmp_pa
     root = Path(__file__).resolve().parents[1]
     base = [sys.executable, str(root / "prism_tools.py"), "survey", "convert", "--input", str(src),
             "--output", str(tmp_path / "out"), "--session", "1", "--dry-run",
-            "--library", str(root / "official" / "library" / "survey")]
+            "--library", str(completed_official_library())]
     env = {**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}
     plain = subprocess.run(base, capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" in plain and "P002: often" in plain

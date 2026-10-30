@@ -10,6 +10,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from tests.template_fixtures import complete, dump_complete
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "src"))
@@ -245,7 +246,7 @@ def _setup_library(lib_dir: Path) -> None:
         },
     )
     with open(survey_dir / "survey-gad7.json", "w", encoding="utf-8") as f:
-        json.dump(gad7, f, indent=2)
+        json.dump(complete(gad7), f, indent=2)
 
     pss = _build_template(
         name="Perceived Stress Scale",
@@ -263,7 +264,7 @@ def _setup_library(lib_dir: Path) -> None:
         },
     )
     with open(survey_dir / "survey-pss.json", "w", encoding="utf-8") as f:
-        json.dump(pss, f, indent=2)
+        json.dump(complete(pss), f, indent=2)
 
 
 # ── Tests ────────────────────────────────────────────────────────────
@@ -422,7 +423,7 @@ class TestTemplateMatching:
             "w",
             encoding="utf-8",
         ) as f:
-            json.dump(gad7, f)
+            json.dump(complete(gad7), f)
 
         matches = match_groups_against_library(parsed_groups, project_path=project_dir)
         matched_names = [name for name, match in matches.items() if match is not None]

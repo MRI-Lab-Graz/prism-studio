@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from src import survey_library_resolution as slr
+from tests.template_fixtures import dump_complete
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = {
@@ -26,7 +27,7 @@ READY_PROJECT = {
 
 def _template(folder: Path):
     folder.mkdir(parents=True)
-    (folder / "survey-pss.json").write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    (folder / "survey-pss.json").write_text(dump_complete(TEMPLATE), encoding="utf-8")
     return folder
 
 

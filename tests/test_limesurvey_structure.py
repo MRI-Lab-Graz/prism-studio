@@ -16,6 +16,7 @@ from src.converters.limesurvey import (
     parse_lss_xml,
     parse_lss_xml_by_groups,
 )
+from tests.template_fixtures import complete, dump_complete
 
 
 # ---------------------------------------------------------------------------
@@ -518,7 +519,7 @@ class TestParseLssXmlByGroups:
         from src.limesurvey_exporter import generate_lss
 
         source = tmp_path / "survey-rts.json"
-        source.write_text(json.dumps({
+        source.write_text(dump_complete({
             "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv",
                           "SoftwarePlatform": "LimeSurvey", "Language": "en",
                           "Respondent": "self"},

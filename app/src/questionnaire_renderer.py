@@ -120,7 +120,7 @@ def render_questionnaire_docx(
     """
     from src.template_save import require_complete_template
 
-    require_complete_template(template, source=source)
+    require_complete_template(template, source=source, project=False)
     template = strip_invalid_xml_chars(template)  # python-docx refuses control characters
     try:
         from docx import Document

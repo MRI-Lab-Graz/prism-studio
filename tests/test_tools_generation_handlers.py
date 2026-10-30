@@ -11,6 +11,8 @@ from pathlib import Path
 
 from flask import Flask
 
+from tests.template_fixtures import dump_complete
+
 
 def _build_app() -> Flask:
     app_root = Path(__file__).resolve().parents[1] / "app"
@@ -232,7 +234,7 @@ def test_handle_generate_pavlovia_endpoint_base_language_reaches_zip_content(
 
     source_file = tmp_path / "task-demo_survey.json"
     source_file.write_text(
-        json.dumps(
+        dump_complete(
             {
                 "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
                 "Study": {"TaskName": "demo"},

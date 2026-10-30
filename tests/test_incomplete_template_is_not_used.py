@@ -9,7 +9,7 @@ import pytest
 
 from src.converters.survey import convert_survey_file_to_prism_dataset
 from src.template_save import TemplateIncomplete, TemplateInvalid, require_complete_template
-from tests.template_fixtures import project_template
+from tests.template_fixtures import complete, project_template
 
 APP = Path(__file__).resolve().parents[1] / "app"
 SOURCE = "code/library/survey/survey-x.json"
@@ -23,6 +23,15 @@ def _without_creator():
 
 def test_a_complete_project_template_passes():
     require_complete_template(project_template(), source=SOURCE, app_root=APP)
+
+
+def test_the_fixture_helper_completes_a_bare_template_and_keeps_what_it_says():
+    bare = {"Study": {"TaskName": "pss"}, "Q1": {"Description": {"en": "a", "de": "b"}}}
+    done = complete(bare)
+    require_complete_template(done, source=SOURCE, app_root=APP)
+    assert done["Study"]["TaskName"] == "pss"
+    assert done["I18n"]["Languages"] == ["de", "en"]
+    assert done["Q1"] == bare["Q1"] and "Technical" not in bare
 
 
 def test_the_category_is_only_the_official_librarys_requirement():
@@ -85,6 +94,33 @@ def _file(tmp_path, template):
     path = tmp_path / "survey-x.json"
     path.write_text(json.dumps(template), encoding="utf-8")
     return path
+
+
+def test_an_export_needs_the_global_fields_only_a_conversion_needs_the_project_fields_too(tmp_path):
+    from src.converters.pavlovia import export_to_pavlovia
+    from src.limesurvey_exporter import generate_lss
+    from src.questionnaire_renderer import render_questionnaire_docx
+
+    library = project_template()
+    for field in ("Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"):
+        library["Technical"].pop(field)
+    with pytest.raises(TemplateIncomplete, match="Technical/Respondent is missing"):
+        require_complete_template(library, source=SOURCE, app_root=APP)  # using it in a project
+    require_complete_template(library, source=SOURCE, app_root=APP, project=False)  # a library template
+    assert render_questionnaire_docx(library).getbuffer().nbytes
+    library["Study"].pop("TaskName")  # as in the official library files: the file name is the task name
+    path = _file(tmp_path, library)  # survey-x.json
+    assert "<document>" in generate_lss([str(path)])
+    export_to_pavlovia(path, output_dir=tmp_path / "px")
+
+
+def test_the_participants_template_is_not_a_survey_and_is_not_gated(tmp_path):
+    from src.limesurvey_exporter import generate_lss
+
+    participants = {"Study": {"OriginalName": "Participants"}, "age": {"Description": {"en": "Age"}}}
+    path = tmp_path / "participants.json"
+    path.write_text(json.dumps(participants), encoding="utf-8")
+    assert "<document>" in generate_lss([str(path)])
 
 
 def test_the_limesurvey_quick_export_refuses_an_incomplete_template(tmp_path):

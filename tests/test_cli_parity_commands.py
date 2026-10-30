@@ -22,6 +22,7 @@ import src.cli.commands.participants as participants_cmds  # noqa: E402
 import src.cli.commands.recipes as recipes_cmds  # noqa: E402
 import src.cli.commands.survey as survey_cmds  # noqa: E402
 from src.cli.parser import build_prism_tools_parsers  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 
 def _touch(path: Path, content: bytes = b"data") -> None:
@@ -275,8 +276,7 @@ def test_gui_fix_participants_handler_rewrites_file_and_reports_success(tmp_path
 def _write_recipe(tmp_path: Path, task: str, items: list[str], method: str = "mean") -> Path:
     path = tmp_path / "recipe.json"
     path.write_text(
-        json.dumps(
-            {
+        json.dumps({
                 "RecipeVersion": "1.0",
                 "Kind": "survey",
                 "Survey": {"TaskName": task},
@@ -333,8 +333,7 @@ def test_recipes_save_finds_official_library_template(tmp_path):
 def test_customizer_groups_feeds_export_lss_customized(tmp_path):
     template = tmp_path / "survey-mini.json"
     template.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Mini"},
                 "Questions": {
                     "Q1": {"Description": {"en": "How are you?"}, "Levels": {"1": "ok"}},

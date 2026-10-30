@@ -20,6 +20,7 @@ from src.converters.survey_io import _generate_dry_run_preview
 from src.web.blueprints.conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
 )
+from tests.template_fixtures import dump_complete
 
 
 def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
@@ -94,7 +95,7 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -228,7 +229,7 @@ def test_survey_preview_validation_skips_per_task_probe_without_manual_review_co
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -322,7 +323,7 @@ def test_survey_preview_uses_project_template_version_overrides_when_request_mis
     )
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -407,7 +408,7 @@ def test_survey_preview_requires_confirmation_for_near_matches(monkeypatch, tmp_
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -470,7 +471,7 @@ def test_survey_preview_passes_selected_near_match_tasks(monkeypatch, tmp_path):
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -547,7 +548,7 @@ def test_survey_preview_accepts_sav_input(monkeypatch, tmp_path):
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 
@@ -622,7 +623,7 @@ def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {
                 "TaskName": "ads"
@@ -631,7 +632,7 @@ def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
                 "Levels": {"1": "low", "2": "mid", "3": "high"}
             }
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -667,7 +668,7 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {
                 "TaskName": "ads"
@@ -676,7 +677,7 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
                 "Levels": {"1": "low", "2": "mid", "3": "high"}
             }
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -726,7 +727,7 @@ def test_survey_converter_reports_missing_project_participants_in_preview(tmp_pa
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {
                 "TaskName": "ads"
@@ -735,7 +736,7 @@ def test_survey_converter_reports_missing_project_participants_in_preview(tmp_pa
                 "Levels": {"1": "low", "2": "mid", "3": "high"}
             }
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -791,7 +792,7 @@ def test_survey_converter_skips_registry_warning_when_participants_are_written(t
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {
                 "TaskName": "ads"
@@ -800,7 +801,7 @@ def test_survey_converter_skips_registry_warning_when_participants_are_written(t
                 "Levels": {"1": "low", "2": "mid", "3": "high"}
             }
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -833,7 +834,7 @@ def test_csv_import_does_not_trigger_tool_limesurvey_sidecars(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {
                 "TaskName": "ads"
@@ -842,7 +843,7 @@ def test_csv_import_does_not_trigger_tool_limesurvey_sidecars(tmp_path):
                 "Levels": {"1": "low", "2": "mid", "3": "high"}
             }
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -883,13 +884,13 @@ def test_converter_near_matches_require_opt_in_by_default(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {"TaskName": "ads"},
             "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -925,13 +926,13 @@ def test_converter_applies_near_matches_after_opt_in(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {"TaskName": "ads"},
             "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -965,23 +966,23 @@ def test_converter_applies_near_matches_only_for_selected_tasks(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {"TaskName": "ads"},
             "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
     (library_root / "survey-bdi.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {"TaskName": "bdi"},
             "BDI01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "BDI02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -1022,14 +1023,14 @@ def test_converter_near_match_count_guard_rejects_partial_coverage(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir()
     (library_root / "survey-ads.json").write_text(
-        """
+        dump_complete(json.loads("""
         {
             "Study": {"TaskName": "ads"},
             "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
             "ADS03": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
         }
-        """.strip(),
+        """.strip())),
         encoding="utf-8",
     )
 
@@ -1065,7 +1066,7 @@ def test_survey_preview_error_names_the_selected_library_when_it_fell_back(
     (selected / "ads.json").write_text("{}", encoding="utf-8")  # not named survey-*.json
     official = tmp_path / "official"
     official.mkdir()
-    (official / "survey-who.json").write_text("{}", encoding="utf-8")
+    (official / "survey-who.json").write_text(dump_complete({}, "who"), encoding="utf-8")
     monkeypatch.setattr(
         conversion_survey_handlers, "_resolve_official_survey_dir", lambda _p: official
     )
@@ -1104,7 +1105,7 @@ def test_survey_preview_tells_the_user_when_it_fell_back_to_the_official_library
     selected.mkdir(parents=True)
     official = tmp_path / "official"
     official.mkdir()
-    (official / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (official / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
     monkeypatch.setattr(
         conversion_survey_handlers, "_resolve_official_survey_dir", lambda _p: official
     )
@@ -1153,7 +1154,7 @@ def _preview_calls_for(tmp_path, extra_form):
     project_root.mkdir()
     library_root = tmp_path / "library"
     library_root.mkdir()
-    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+    (library_root / "survey-ads.json").write_text(dump_complete({}, "ads"), encoding="utf-8")
 
     calls = []
 

@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 
 from tests.test_limesurvey_e2e import LSS_XML
+from tests.template_fixtures import complete, dump_complete
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PRISM_TOOLS_APP = PROJECT_ROOT / "app" / "prism_tools.py"
@@ -55,7 +56,7 @@ def _library(tmp_path: Path) -> Path:
     }
     for i in (1, 2, 3):
         template[f"MTESTSQ00{i}"] = {"Description": f"q{i}", "Levels": {str(k): str(k) for k in range(1, 6)}}
-    (lib / "survey-wellbeing.json").write_text(json.dumps(template))
+    (lib / "survey-wellbeing.json").write_text(dump_complete(template))
     return lib
 
 
@@ -115,7 +116,8 @@ def test_lang_auto_writes_the_language_of_the_lsa_not_the_word_auto(tmp_path):
     for key, item in template.items():
         if key.startswith("MTEST"):
             item["Description"] = {"en": item["Description"], "de": item["Description"]}
-    path.write_text(json.dumps(template))
+    template["I18n"]["Languages"] = ["en", "de"]  # the items now use both
+    path.write_text(dump_complete(template))
 
     result = _convert(tmp_path, "--lang", "auto", "--duplicate-handling", "sessions", library=library)
 

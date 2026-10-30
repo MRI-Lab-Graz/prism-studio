@@ -20,9 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
 
-OFFICIAL_SURVEY_LIBRARY = (
-    Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
-)
+from tests.template_fixtures import completed_official_library  # noqa: E402
+
+OFFICIAL_SURVEY_LIBRARY = completed_official_library()  # a conversion needs complete project templates
 
 
 @pytest.fixture(autouse=True)

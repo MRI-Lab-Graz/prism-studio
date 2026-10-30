@@ -597,7 +597,7 @@ def export_to_pavlovia(
     prism_json = load_prism_json(json_path)
     from src.template_save import require_complete_template
 
-    require_complete_template(prism_json, source=str(json_path))
+    require_complete_template(prism_json, source=str(json_path), project=False)
 
     # Extract metadata
     study = prism_json.get("Study", {})

@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 
 def _row(**fields):
@@ -68,7 +69,7 @@ def _export(tmp_path, exporter, overrides=None):
     template = _template()
     template["I18n"] = {"Languages": ["de"], "DefaultLanguage": "de"}
     path = tmp_path / "survey-attrs.json"
-    path.write_text(json.dumps(template), encoding="utf-8")
+    path.write_text(dump_complete(template), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:

@@ -13,13 +13,14 @@ from types import SimpleNamespace
 import pytest
 
 from src import config
+from tests.template_fixtures import complete
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 import src.cli.commands.survey as survey_cli  # noqa: E402
 from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
 
-TEMPLATE_I18N = {
+TEMPLATE_I18N = complete({
     "I18n": {"DefaultLanguage": "de"},
     "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv", "Language": "de"},
     "Study": {"TaskName": "pss", "OriginalName": "pss", "LicenseID": "Other", "License": ""},
@@ -28,7 +29,7 @@ TEMPLATE_I18N = {
         "Description": {"de": "Frage", "en": "Question"},
         "Levels": {"0": {"de": "nie", "en": "never"}, "1": {"de": "oft", "en": "often"}},
     },
-}
+}, "pss")
 READY_PROJECT = {
     "Basics": {"Name": "N", "Authors": ["A"], "Keywords": ["k"]},
     "StudyDesign": {"Timepoints": "single"},
@@ -218,7 +219,7 @@ def test_saving_strips_and_warns_the_same_in_the_cli_and_in_studio(tmp_path, cap
     assert "removed LimeSurvey export settings from 1 items" in printed
 
 
-OLD_LS_TEMPLATE = {
+OLD_LS_TEMPLATE = complete({
     "Study": {"OriginalName": "Old"},
     "I18n": {"Languages": ["de"], "DefaultLanguage": "de"},
     "q1": {
@@ -227,7 +228,7 @@ OLD_LS_TEMPLATE = {
         "LimeSurvey": {"mandatory": False, "questionType": "!", "helpText": "h", "inputWidth": "30"},
     },
     "q2": {"Description": {"de": "Gewicht"}, "DataType": "integer"},
-}
+}, "old")
 
 
 def _studio_response_bytes(handler, json_body):

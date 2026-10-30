@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
+from tests.template_fixtures import complete, dump_complete
 
 
 def _mandatory_by_title(xml_text):
@@ -25,8 +26,7 @@ def test_generate_lss_from_customization_builds_xml_with_defusedxml_installed(
 ):
     template_path = tmp_path / "survey-template.json"
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {
                     "OriginalName": "Template Survey",
                     "Instructions": {"en": "Please answer all questions."},
@@ -107,8 +107,7 @@ def test_generate_lss_single_question_respects_mandatory_false(tmp_path):
     definition (defaults to true, but explicit false must be honored)."""
     template_path = tmp_path / "task-optional_beh.json"
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Optional Question Survey"},
                 "comments": {
                     "Description": "Any additional comments?",
@@ -132,8 +131,7 @@ def test_generate_lss_single_question_respects_mandatory_false(tmp_path):
 def test_generate_lss_single_question_defaults_mandatory_true(tmp_path):
     template_path = tmp_path / "task-required_beh.json"
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Required Question Survey"},
                 "age": {"Description": "Age", "InputType": "text"},
             }
@@ -157,8 +155,7 @@ def test_generate_lss_matrix_question_mandatory_reflects_any_true(tmp_path):
     template_path = tmp_path / "task-matrix_beh.json"
     levels = {"0": "Not at all", "1": "A little", "2": "Extremely"}
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Matrix Survey"},
                 "mood_1": {
                     "Description": "Sadness",
@@ -190,8 +187,7 @@ def test_generate_lss_matrix_question_mandatory_false_when_all_false(tmp_path):
     template_path = tmp_path / "task-matrix-optional_beh.json"
     levels = {"0": "Not at all", "1": "A little", "2": "Extremely"}
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Matrix Survey"},
                 "mood_1": {
                     "Description": "Sadness",
@@ -231,8 +227,7 @@ def test_generate_lss_default_groups_same_levels_questions_into_matrix(tmp_path)
     template_path = tmp_path / "task-battery_beh.json"
     levels = {"0": "Not at all", "1": "A little", "2": "Extremely"}
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Battery Survey"},
                 "mood_1": {"Description": "Sadness", "Levels": levels},
                 "mood_2": {"Description": "Anxiety", "Levels": levels},
@@ -258,8 +253,7 @@ def test_generate_lss_matrix_mode_false_keeps_questions_standalone(tmp_path):
     template_path = tmp_path / "task-battery_beh.json"
     levels = {"0": "Not at all", "1": "A little", "2": "Extremely"}
     template_path.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"OriginalName": "Battery Survey"},
                 "mood_1": {"Description": "Sadness", "Levels": levels},
                 "mood_2": {"Description": "Anxiety", "Levels": levels},

@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 LIBRARY = Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
 
@@ -26,7 +27,7 @@ def _export(kind, tmp_path):
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-mood.json"
-    path.write_text(json.dumps({
+    path.write_text(dump_complete({
         "Study": {"OriginalName": "Mood"},
         "a": {"Description": "A", "Levels": {"1": "no", "2": "yes"}},
         "b": {"Description": "B", "Levels": {"1": "no", "2": "yes"}},

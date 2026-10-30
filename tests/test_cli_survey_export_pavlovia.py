@@ -18,6 +18,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 from src.cli.commands.survey import cmd_survey_export_pavlovia  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 GAD7_PATH = (
     Path(__file__).resolve().parent.parent
@@ -62,8 +63,7 @@ class TestExportPavlovia:
 
         json_path = tmp_path / "task-demo_survey.json"
         json_path.write_text(
-            json.dumps(
-                {
+            dump_complete({
                     "I18n": {"Languages": ["en", "de"], "DefaultLanguage": "en"},
                     "Study": {"TaskName": "demo"},
                     "q1": {"Description": {"en": "Mood today", "de": "Stimmung heute"}},

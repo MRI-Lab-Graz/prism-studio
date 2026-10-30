@@ -20,6 +20,7 @@ from src.converters.survey import (
 )
 from src.converters.survey_io import _lookup_task_context_value
 from src.converters.survey_templates import _apply_template_version_selection
+from tests.template_fixtures import dump_complete
 
 
 def _make_templates(active_version: str = "10-likert") -> dict[str, dict]:
@@ -131,7 +132,7 @@ def test_contextual_template_versions_preseed_base_template_when_unambiguous(tmp
     library_dir = tmp_path / "survey"
     library_dir.mkdir()
     (library_dir / "survey-wellbeing-multi.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {
                     "TaskName": "wellbeing-multi",
@@ -465,7 +466,7 @@ def test_long_format_run_column_reports_max_run_for_multiversion_contexts(tmp_pa
         }
 
     (library_dir / "survey-wellbeing-multi.json").write_text(
-        json.dumps(template),
+        dump_complete(template),
         encoding="utf-8",
     )
 

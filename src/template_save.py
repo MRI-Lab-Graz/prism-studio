@@ -13,6 +13,7 @@ from src.prism_template_validation import (
     relax_schema_for_library_template,
     strip_template_editor_internal_keys,
     validate_template_against_schema,
+    with_default_task_name,
 )
 from src.schema_manager import apply_schema_validation_profile, load_schema
 from src.survey_export_settings import strip_export_settings
@@ -53,10 +54,14 @@ class TemplateIncomplete(TemplateInvalid):
 _MISSING_HINTS = {"Technical/Respondent": " – set who answered the questionnaire (self, parent, clinician, …)"}
 
 
-def require_complete_template(template: dict, *, source: str, app_root=None, schema_version: str = "stable") -> None:
-    """Raise ``TemplateIncomplete`` unless ``template`` has every field the full survey schema requires (a template
-    used in a project is a project template, so nothing is relaxed) and no declared-language error. Saving never
-    needs this; using a template does."""
+def require_complete_template(
+    template: dict, *, source: str, app_root=None, schema_version: str = "stable", project: bool = True
+) -> None:
+    """Raise ``TemplateIncomplete`` unless ``template`` has every field the survey schema requires and no
+    declared-language error. Saving never needs this; using a template does. A template used in a project
+    (``project=True``, converting data) is a project copy and needs the project-level fields (Respondent,
+    AdministrationMethod, SoftwarePlatform) too; an export of a template (``project=False``) needs the global
+    fields only."""
     schema = apply_schema_validation_profile(
         load_schema(
             "survey",
@@ -65,6 +70,9 @@ def require_complete_template(template: dict, *, source: str, app_root=None, sch
         ),
         profile="project",
     )
+    if not project:
+        schema = relax_schema_for_library_template(schema)
+    template = with_default_task_name(template, Path(source).name, "survey")  # the file name is the task name
     found = [*missing_required_fields(template, schema), *_language_findings(template)]
     errors = [
         {"path": f["path"], "message": f"{f['message']} in {source}{_MISSING_HINTS.get(f['path'], '')}"}

@@ -19,6 +19,7 @@ from src.cli.commands.session_map import (  # noqa: E402
 )
 from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
 from src.session_map import load_session_map  # noqa: E402
+from tests.template_fixtures import dump_complete  # noqa: E402
 
 BRS = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
 
@@ -53,7 +54,7 @@ def test_set_rejects_an_invalid_target_with_exit_code_2(proj, capsys):
 def survey_args(tmp_path, proj, csv_text, **overrides):
     lib = tmp_path / "lib"
     lib.mkdir(exist_ok=True)
-    shutil.copy(BRS, lib / "survey-brs.json")
+    (lib / "survey-brs.json").write_text(dump_complete(json.loads(BRS.read_text(encoding="utf-8")), "brs"), encoding="utf-8")
     data = tmp_path / "in.csv"
     data.write_text(csv_text)
     values = dict(

@@ -11,6 +11,7 @@ from src.converters import library_wording_match as lwm
 from src.converters import limesurvey as ls
 from src.converters import survey_templates as st
 from test_library_wording_match import library_file
+from tests.template_fixtures import complete, dump_complete
 
 FIXTURE = Path(__file__).parent / "data" / "limesurvey_four_questionnaires.lss"
 XML = FIXTURE.read_bytes()
@@ -86,7 +87,7 @@ def test_a_prism_template_round_trips_to_its_own_library_entry(libs, tmp_path):
         "RTS02": {"Description": texts[1], "Levels": {"1": "nie", "2": "oft"}},
     }
     source = libs["project_dir"] / "survey-rts.json"
-    source.write_text(json.dumps(original, ensure_ascii=False), encoding="utf-8")
+    source.write_text(json.dumps(complete(original), ensure_ascii=False), encoding="utf-8")
     lss = tmp_path / "rts.lss"
     generate_lss([str(source)], output_path=str(lss), language="de")
 

@@ -18,6 +18,7 @@ from src.converters.pavlovia import (
 )
 import xml.etree.ElementTree as ET
 import pandas as pd
+from tests.template_fixtures import complete, dump_complete
 
 
 def test_extract_questions_reads_conditional_display_showwhen():
@@ -412,7 +413,7 @@ def test_export_to_pavlovia_end_to_end(tmp_path):
         },
     }
     json_path = tmp_path / "task-recovery_survey.json"
-    json_path.write_text(json.dumps(prism_json), encoding="utf-8")
+    json_path.write_text(dump_complete(prism_json), encoding="utf-8")
 
     psyexp_path = export_to_pavlovia(json_path, tmp_path / "out")
 
@@ -443,7 +444,7 @@ def test_export_to_pavlovia_explicit_language_overrides_default(tmp_path):
         "rec_mood": {"Description": {"en": "Overall mood today", "de": "Stimmung heute"}},
     }
     json_path = tmp_path / "task-recovery_survey.json"
-    json_path.write_text(json.dumps(prism_json), encoding="utf-8")
+    json_path.write_text(dump_complete(prism_json), encoding="utf-8")
 
     psyexp_path = export_to_pavlovia(json_path, tmp_path / "out", language="de")
 
@@ -627,8 +628,7 @@ def test_generate_pavlovia_from_customization_group_named_welcome_does_not_colli
 def test_export_to_pavlovia_include_keeps_only_the_listed_questions(tmp_path):
     source = tmp_path / "survey-x.json"
     source.write_text(
-        json.dumps(
-            {
+        dump_complete({
                 "Study": {"TaskName": "x"},
                 "Q1": {"Description": "one", "DataType": "string"},
                 "Q2": {"Description": "two", "DataType": "string"},

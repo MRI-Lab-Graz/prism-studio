@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 
 from src.converters.pavlovia_responses import prepare_pavlovia_responses
+from tests.template_fixtures import complete, dump_complete
 
 SURVEY = {
     "pages": [
@@ -142,7 +143,7 @@ def _write(tmp_path):
     csv = tmp_path / "responses.csv"
     _table(OLD, NEW).to_csv(csv, index=False)
     survey = tmp_path / "survey.json"
-    survey.write_text(json.dumps(SURVEY), encoding="utf-8")
+    survey.write_text(dump_complete(SURVEY), encoding="utf-8")
     return csv, survey
 
 
@@ -169,7 +170,7 @@ def test_the_wide_table_converts_into_a_prism_dataset(tmp_path):
     library.mkdir()
     for key in ("p1", "p2", "p3"):
         template, _n = pavlovia_questionnaire(SURVEY, key, language="de")
-        (library / f"survey-{template['Study']['TaskName']}.json").write_text(json.dumps(template), encoding="utf-8")
+        (library / f"survey-{template['Study']['TaskName']}.json").write_text(dump_complete(template), encoding="utf-8")
     convert_survey_file_to_prism_dataset(input_path=wide, library_dir=library, output_root=tmp_path / "ds",
                                          id_column="participant_id", session_column="session", session="all", unknown="warn")
     names = {p.name for p in (tmp_path / "ds").rglob("*_survey.tsv")}

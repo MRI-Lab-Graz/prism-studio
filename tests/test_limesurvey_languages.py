@@ -6,6 +6,7 @@ row and answer once per language."""
 import logging
 import sys
 from pathlib import Path
+from tests.template_fixtures import complete, dump_complete
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
@@ -112,7 +113,7 @@ def test_export_reports_a_missing_translation(tmp_path, caplog):
     from src.limesurvey_exporter import generate_lss
 
     path = tmp_path / "survey-half.json"
-    path.write_text(json.dumps({
+    path.write_text(dump_complete({
         "Study": {"OriginalName": "Half"},
         "q1": {"Description": {"de": "Nur deutsch"}, "LimeSurvey": {"questionType": "S"}},
     }), encoding="utf-8")

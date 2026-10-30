@@ -1,6 +1,7 @@
 """Converters tell the user when a label was changed to make it BIDS-safe (letters and digits only)."""
 
 from src.cleaning_notes import cleaning_note, missing_id_note
+from tests.template_fixtures import completed_official_library
 
 
 def test_unchanged_labels_and_prefixes_give_no_note():
@@ -41,7 +42,7 @@ def test_survey_dry_run_reports_skipped_rows_and_cleaned_labels(tmp_path):
     out = subprocess.run(
         [sys.executable, str(root / "prism_tools.py"), "survey", "convert", "--input", str(src),
          "--output", str(tmp_path / "out"), "--session", "pre test", "--dry-run",
-         "--library", str(root / "official" / "library" / "survey")],
+         "--library", str(completed_official_library())],
         capture_output=True, text=True, encoding="utf-8", env={**os.environ, "PRISM_SKIP_VENV_CHECK": "1"},
     ).stdout
     assert "no participant ID and will be skipped (data rows 2)" in out

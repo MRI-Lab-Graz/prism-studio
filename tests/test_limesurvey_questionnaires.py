@@ -60,6 +60,7 @@ from src.converters.limesurvey import (
     list_limesurvey_questionnaires,
     read_lss_xml,
 )
+from tests.template_fixtures import complete, dump_complete
 
 XML = FIXTURE.read_bytes()
 
@@ -160,7 +161,7 @@ def test_prism_template_survives_limesurvey_round_trip(tmp_path):
         "RTS02": {"Description": "zweites Item", "Levels": {"1": "nie", "2": "oft"}},
     }
     source = tmp_path / "survey-rts.json"
-    source.write_text(json.dumps(original), encoding="utf-8")
+    source.write_text(dump_complete(original), encoding="utf-8")
     lss = tmp_path / "rts.lss"
     generate_lss([str(source)], output_path=str(lss), language="de")
     xml = lss.read_bytes()

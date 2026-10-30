@@ -12,9 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
+from tests.template_fixtures import complete  # noqa: E402
 
-@pytest.fixture
-def likert_template():
+
+def _likert_template():
     return {
         "Study": {
             "OriginalName": {"en": "Test Questionnaire", "de": "Test-Fragebogen"},
@@ -58,8 +59,7 @@ def likert_template():
     }
 
 
-@pytest.fixture
-def mixed_template():
+def _mixed_template():
     return {
         "Study": {
             "OriginalName": "Mixed Types",
@@ -88,6 +88,16 @@ def mixed_template():
             "Levels": {str(i): f"Country {i}" for i in range(15)},
         },
     }
+
+
+@pytest.fixture
+def likert_template():
+    return complete(_likert_template(), "tq")  # an export needs a complete template
+
+
+@pytest.fixture
+def mixed_template():
+    return complete(_mixed_template(), "mix")
 
 
 def test_render_likert_produces_valid_docx(likert_template):

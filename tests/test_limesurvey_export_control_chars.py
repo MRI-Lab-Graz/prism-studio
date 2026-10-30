@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app" / "src"))
 
 from limesurvey_exporter import generate_lss  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 
 def test_control_characters_in_question_texts_do_not_break_the_xml(tmp_path):
@@ -19,7 +20,7 @@ def test_control_characters_in_question_texts_do_not_break_the_xml(tmp_path):
         "Q2": {"Description": {"en": "plain"}},
     }
     source = tmp_path / "survey-odd.json"
-    source.write_text(json.dumps(template), encoding="utf-8")
+    source.write_text(dump_complete(template), encoding="utf-8")
     out = tmp_path / "out.lss"
 
     generate_lss([str(source)], str(out), language="en", languages=["en"], base_language="en")
@@ -37,7 +38,7 @@ def test_the_word_export_survives_control_characters_too():
         "Study": {"TaskName": "odd", "OriginalName": {"en": "Odd \x0b name"}},
         "Q1": {"Description": {"en": "left\x00\x0b\x1f x"}, "Levels": {"0": {"en": "no \x08 never"}, "1": {"en": "yes"}}},
     }
-    assert render_questionnaire_docx(template, language="en").getvalue()[:2] == b"PK"  # a zip, i.e. a .docx
+    assert render_questionnaire_docx(complete(template), language="en").getvalue()[:2] == b"PK"  # a zip, i.e. a .docx
 
 
 def test_the_pavlovia_export_survives_control_characters_too(tmp_path):
@@ -51,7 +52,7 @@ def test_the_pavlovia_export_survives_control_characters_too(tmp_path):
         "Q1": {"Description": {"en": "left\x00\x0b\x1f x"}, "Levels": {"0": {"en": "no \x08"}, "1": {"en": "yes"}}},
     }
     source = tmp_path / "survey-odd.json"
-    source.write_text(json.dumps(template), encoding="utf-8")
+    source.write_text(dump_complete(template), encoding="utf-8")
     export_to_pavlovia(source, tmp_path / "pav")
     for psyexp in (tmp_path / "pav").rglob("*.psyexp"):
         ET2.parse(psyexp)  # raises if not well-formed

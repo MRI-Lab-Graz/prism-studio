@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tests.template_fixtures import complete, dump_complete
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
@@ -132,7 +133,7 @@ def _export(tmp_path, exporter):
 
     template = _template("de")
     path = tmp_path / "survey-fixed.json"
-    path.write_text(json.dumps(template), encoding="utf-8")
+    path.write_text(dump_complete(template), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:
@@ -170,7 +171,7 @@ def test_a_fixed_option_type_chosen_for_one_export_writes_no_answer_rows(tmp_pat
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-fixed.json"
-    path.write_text(json.dumps(_template("de")), encoding="utf-8")
+    path.write_text(dump_complete(_template("de")), encoding="utf-8")
     groups = build_customizer_groups([{"path": str(path)}], "de")
     chosen = {"consent": "Y", "sex": "G", "mood": "5"}
     for question in groups[0]["questions"]:

@@ -12,6 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
 import defusedxml.ElementTree as DET  # noqa: E402
+from tests.template_fixtures import complete, dump_complete
 
 TEMPLATE = {
     "Study": {"OriginalName": "Settings", "Instructions": {"de": "Bitte antworten."}},
@@ -39,7 +40,7 @@ def _export(tmp_path, exporter):
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-settings.json"
-    path.write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    path.write_text(dump_complete(TEMPLATE), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], languages=["de", "en"], base_language="de", matrix_mode=False)
     else:
@@ -98,7 +99,7 @@ def test_text_box_rows_are_set_for_one_export(tmp_path):
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-settings.json"
-    path.write_text(json.dumps(TEMPLATE), encoding="utf-8")
+    path.write_text(dump_complete(TEMPLATE), encoding="utf-8")
     groups = build_customizer_groups([{"path": str(path)}], "de")
     reason = next(q for q in groups[0]["questions"] if q["questionCode"] == "reason")
     reason["toolOverrides"] = {"displayRows": 5}

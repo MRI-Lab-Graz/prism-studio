@@ -17,12 +17,13 @@ from src.web.blueprints.conversion_survey_handlers import (
 from src.web.blueprints.conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
 )
+from tests.template_fixtures import dump_complete
 
 
 def _write_basic_survey_template(library_root: Path, task: str = "pss") -> None:
     library_root.mkdir(parents=True, exist_ok=True)
     (library_root / f"survey-{task}.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {"TaskName": task},
                 "PSS01": {
@@ -190,7 +191,7 @@ def test_survey_converter_rejects_offset_when_allowed_values_conflict(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir(parents=True, exist_ok=True)
     (library_root / "survey-pss.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {"TaskName": "pss"},
                 "PSS01": {
@@ -255,7 +256,7 @@ def test_survey_converter_suggests_opposite_direction_when_configured_offset_fai
     library_root = tmp_path / "library"
     library_root.mkdir(parents=True, exist_ok=True)
     (library_root / "survey-pss.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {"TaskName": "pss"},
                 "PSS01": {
@@ -311,7 +312,7 @@ def test_survey_converter_suggests_offset_from_allowed_values_when_levels_confli
     library_root = tmp_path / "library"
     library_root.mkdir(parents=True, exist_ok=True)
     (library_root / "survey-pss.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {"TaskName": "pss"},
                 "PSS01": {
@@ -356,7 +357,7 @@ def test_survey_converter_clears_unsafe_task_wide_offset_suggestion(tmp_path):
     library_root = tmp_path / "library"
     library_root.mkdir(parents=True, exist_ok=True)
     (library_root / "survey-pss.json").write_text(
-        json.dumps(
+        dump_complete(
             {
                 "Study": {"TaskName": "pss"},
                 "PSS01": {
