@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.prism_template_validation import normalize_paper_software_platform
 from src.template_save import TemplateIncomplete, require_complete_template
 
 
@@ -13,7 +14,6 @@ def validate_project_templates_for_tasks(
     tasks: list[str] | None,
     project_path: str | None,
     schema_version: str = "stable",
-    normalize_paper_software_platform=None,
 ) -> list[dict[str, str]]:
     """Validate project survey templates for used tasks and return issues (``tasks=None``: every one of them)."""
     if not project_path or (tasks is not None and not tasks):
@@ -69,11 +69,7 @@ def validate_project_templates_for_tasks(
             )
             continue
 
-        normalized_payload = payload
-        if callable(normalize_paper_software_platform):
-            maybe_normalized_payload = normalize_paper_software_platform(payload)
-            if isinstance(maybe_normalized_payload, dict):
-                normalized_payload = maybe_normalized_payload
+        normalized_payload = normalize_paper_software_platform(payload)
 
         try:
             require_complete_template(normalized_payload, source=str(template_path), schema_version=schema_version)

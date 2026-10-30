@@ -86,7 +86,6 @@ SurveyValueOutOfBoundsError: Any = None
 _resolve_effective_template_version_overrides: Any = None
 _normalize_template_version_overrides_for_requests: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
-normalize_paper_software_platform: Any = None
 _SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
 _SUPPORTED_SURVEY_INPUT_SUFFIXES = SUPPORTED_SURVEY_INPUT_SUFFIXES
 _SUPPORTED_SURVEY_TABULAR_SUFFIXES = SUPPORTED_SURVEY_TABULAR_SUFFIXES
@@ -133,15 +132,6 @@ try:
     _resolve_effective_template_version_overrides = (
         _survey_resolve_effective_template_version_overrides
     )
-except ImportError:
-    pass
-
-try:
-    from src.converters.survey_io import (
-        normalize_paper_software_platform as _normalize_paper_software_platform,
-    )
-
-    normalize_paper_software_platform = _normalize_paper_software_platform
 except ImportError:
     pass
 
@@ -483,7 +473,6 @@ def _validate_project_templates_for_tasks(
         tasks=tasks,
         project_path=project_path,
         schema_version=schema_version,
-        normalize_paper_software_platform=normalize_paper_software_platform,
     )
 
 

@@ -1686,17 +1686,16 @@ def _convert_survey_dataframe_to_prism_dataset(
     conversion_warnings.extend(task_template_warnings)
     from src.template_save import TemplateIncomplete, require_complete_template
 
-    incomplete: list[TemplateIncomplete] = []
+    refusals: list[dict] = []
+    incomplete_tasks: list[str] = []
     for task in sorted(tasks_with_data):  # a template that is used is a project template: it must be complete
         try:
             require_complete_template(templates[task]["json"], source=str(templates[task]["path"]))
         except TemplateIncomplete as error:
-            error.tasks = [task]
-            incomplete.append(error)
-    if incomplete:
-        raise TemplateIncomplete(
-            [e for error in incomplete for e in error.errors], tasks=[t for error in incomplete for t in error.tasks]
-        )
+            refusals.extend(error.errors)
+            incomplete_tasks.append(task)
+    if refusals:
+        raise TemplateIncomplete(refusals, tasks=incomplete_tasks)
     conversion_warnings.extend(
         _survey_processing._trim_padded_numbers(df, templates, tasks_with_data, col_to_mapping)
     )
