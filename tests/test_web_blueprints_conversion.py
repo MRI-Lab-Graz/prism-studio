@@ -29,7 +29,7 @@ if app_path not in sys.path:
 _ORIGINAL_MODULES = {}
 _MOCKED_MODULES = {
     "src.web.validation": MagicMock(),
-    "src.web.services.project_registration": MagicMock(),
+    "src.project_registration": MagicMock(),
     "src.converters.biometrics": MagicMock(),
     "src.converters.id_detection": MagicMock(),
     "helpers.physio.convert_varioport": MagicMock(),
@@ -2331,14 +2331,8 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                         detected_sessions=["1", "2"],
                     ),
                 ),
-                patch.object(
-                    handlers,
-                    "_extract_tasks_from_output",
-                    return_value=["wellbeing"],
-                ),
-                patch.object(
-                    handlers,
-                    "_register_session_in_project",
+                patch(
+                    "src.conversion_to_project.register_session_in_project",
                 ) as register_mock,
             ):
                 with app.test_client() as client:

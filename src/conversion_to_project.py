@@ -1,0 +1,165 @@
+"""What happens after a conversion, once the converted files exist: save them into the project.
+
+One function for ``survey convert`` and for Studio's Save to project: copy the files in (DataLad-aware, with a
+commit), archive the source file, register the template versions in ``project.json``, clean up stale leftovers
+and sync the recipe offsets.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable
+
+from src.datalad_project_copy import copy_files_into_project
+from src.project_registration import register_session_in_project
+from src.system_files import filter_system_files
+
+
+@dataclass
+class ProjectSave:
+    copied_paths: list[str] = field(default_factory=list)  # relative to the project, the archived source included
+    output_paths: list[Path] = field(default_factory=list)  # the converted files that arrived (not the archived source)
+    datalad: dict | None = None
+    registered_sessions: list[str] = field(default_factory=list)
+    recipe_offset_summary: dict | None = None
+    removed_stale: list[Path] = field(default_factory=list)
+
+
+def iter_session_registration_values(*, session_override: str | None, detected_sessions: list[str] | None) -> list[str]:
+    """The sessions to register: the one given, or (for ``all``) every session the file turned out to hold."""
+    normalized_override = str(session_override or "").strip()
+    if not normalized_override:
+        return []
+    if normalized_override.lower() != "all":
+        return [normalized_override]
+
+    values: list[str] = []
+    seen: set[str] = set()
+    for raw_value in detected_sessions or []:
+        candidate = str(raw_value or "").strip()
+        if not candidate or candidate.lower() == "all" or candidate in seen:
+            continue
+        seen.add(candidate)
+        values.append(candidate)
+    return values
+
+
+def extract_tasks_from_output(output_root: Path) -> list[str]:
+    """The task names in the BIDS-style file names under ``output_root``."""
+    tasks = set()
+    for file_path in Path(output_root).rglob("*"):
+        if file_path.is_file() and "_task-" in file_path.name:
+            match = re.search(r"_task-([a-zA-Z0-9]+)", file_path.name)
+            if match:
+                tasks.add(match.group(1))
+    return sorted(tasks)
+
+
+def cleanup_stale_tool_limesurvey_sidecars(
+    *, copied_output_paths: list[Path], source_suffix: str, log_fn: Callable[[str, str], Any] | None = None
+) -> list[Path]:
+    """Remove stale tool-limesurvey sidecars for non-LimeSurvey imports.
+
+    When converting non-LSA/LSS sources, older buggy runs may have left `*_tool-limesurvey_survey.{tsv,json}` files in
+    project survey folders. If the current run does not emit such files, clean stale leftovers in the survey
+    directories touched by this save.
+    """
+    if str(source_suffix or "").strip().lower() in {".lsa", ".lss"}:
+        return []
+    if any("_tool-limesurvey_survey" in path.name for path in copied_output_paths):
+        return []
+
+    removed: list[Path] = []
+    for survey_dir in sorted({path.parent for path in copied_output_paths if path.parent.name == "survey"}):
+        for pattern in ("*_tool-limesurvey_survey.tsv", "*_tool-limesurvey_survey.json"):
+            for stale in survey_dir.glob(pattern):
+                if not stale.is_file():
+                    continue
+                try:
+                    stale.unlink()
+                    removed.append(stale)
+                except OSError:
+                    continue
+    if removed and callable(log_fn):
+        log_fn(f"Removed {len(removed)} stale tool-limesurvey sidecar file(s) for non-LimeSurvey import.", "info")
+    return removed
+
+
+def save_conversion_to_project(
+    *,
+    project_root,
+    staged_root,
+    convert_result,
+    source_path,
+    source_name: str,
+    session_override: str | None,
+    template_version_overrides: Any,
+    archive_sourcedata: bool = False,
+    modality: str = "survey",
+    run_message: str = "PRISM: Copy converted survey files into project",
+    conv_type: str | None = None,
+    log_fn: Callable[[str, str], Any] | None = None,
+) -> ProjectSave:
+    """Save the files in ``staged_root`` (a conversion's output) into ``project_root``."""
+    project_root, staged_root = Path(project_root), Path(staged_root)
+    log = log_fn or (lambda message, level="info": None)
+
+    log(f"Saving output to project: {project_root.name} (into project root)", "info")
+    pairs: list[tuple[Path, Path]] = []
+    for item in sorted(staged_root.rglob("*")):
+        if item.is_file() and filter_system_files([item.name]):
+            pairs.append((item, project_root / item.relative_to(staged_root)))
+    output_rel = {dest.relative_to(project_root).as_posix() for _src, dest in pairs}
+    if archive_sourcedata and source_path:
+        pairs.append((Path(source_path), project_root / "sourcedata" / source_name))
+
+    copy_result = copy_files_into_project(dataset_root=project_root, copy_pairs=pairs, run_message=run_message)
+    saved = ProjectSave(copied_paths=[str(p) for p in copy_result.get("copied_paths") or []], datalad=copy_result.get("datalad"))
+    saved.output_paths = [project_root / rel for rel in saved.copied_paths if rel in output_rel]
+    log("Project updated successfully!", "success")
+    if archive_sourcedata:
+        log(f"Archived original file to sourcedata/{source_name}", "info")
+
+    suffix = Path(source_name).suffix.lower()
+    if modality == "survey":
+        saved.removed_stale = cleanup_stale_tool_limesurvey_sidecars(
+            copied_output_paths=saved.output_paths,
+            source_suffix=suffix,
+            log_fn=log_fn,
+        )
+
+    sessions = iter_session_registration_values(
+        session_override=session_override, detected_sessions=list(getattr(convert_result, "detected_sessions", []) or [])
+    )
+    if sessions:
+        tasks = list(getattr(convert_result, "tasks_included", None) or extract_tasks_from_output(staged_root))
+        label = conv_type or (f"{modality}-lsa" if suffix == ".lsa" else f"{modality}-xlsx")
+        for session in sessions:
+            register_session_in_project(
+                project_root, session, tasks, modality, source_name, label, template_version_overrides=template_version_overrides
+            )
+        saved.registered_sessions = sessions
+        log(f"Registered in project.json: {', '.join(sessions)} → {', '.join(tasks)}", "info")
+
+    applied = getattr(convert_result, "applied_value_offsets", None) or {}
+    if modality == "survey" and applied:
+        from src.converters.survey import sync_project_survey_recipe_offsets
+
+        try:
+            summary = sync_project_survey_recipe_offsets(
+                project_root=project_root,
+                task_value_offsets=applied,
+                offset_application_counts=getattr(convert_result, "value_offset_application_counts", {}) or {},
+            )
+            saved.recipe_offset_summary = summary
+            if summary.get("updated_tasks"):
+                log("Updated survey recipe offset metadata for: " + ", ".join(summary["updated_tasks"]), "info")
+            if summary.get("missing_tasks"):
+                log("No matching survey recipe file found for: " + ", ".join(summary["missing_tasks"]), "warning")
+            for sync_error in summary.get("errors", []):
+                log(f"Recipe offset sync warning: {sync_error}", "warning")
+        except Exception as sync_error:  # noqa: BLE001 - the recipe metadata must never fail a conversion that was saved
+            log(f"Recipe offset sync warning: {sync_error}", "warning")
+    return saved

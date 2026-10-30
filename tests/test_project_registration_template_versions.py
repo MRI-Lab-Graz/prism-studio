@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from src.web.services.project_registration import register_session_in_project
+from src.project_registration import register_session_in_project
 
 
 def _write_project_json(project_root: Path, payload: dict) -> None:

@@ -3,7 +3,7 @@ import re
 from flask import jsonify, request
 
 from src.project_structure import get_project_modalities_and_sessions
-from src.web.services.project_registration import _normalize_session_id
+from src.project_registration import _normalize_session_id
 
 from .projects_helpers import (
     _resolve_project_root_path,

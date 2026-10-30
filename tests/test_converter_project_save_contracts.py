@@ -461,9 +461,6 @@ def test_survey_convert_validate_requires_datalad_for_tracked_project_mutation(
             value_offset_application_counts={},
         )
 
-    survey_convert_validate_handlers = importlib.import_module(
-        "src.web.blueprints.conversion_survey_convert_validate_handlers"
-    )
 
     def raise_missing_datalad(**_kwargs):
         raise ValueError("mutation changes require DataLad run")
@@ -473,11 +470,7 @@ def test_survey_convert_validate_requires_datalad_for_tracked_project_mutation(
         "_run_survey_with_official_fallback",
         fake_run_survey_with_official_fallback,
     )
-    monkeypatch.setattr(
-        survey_convert_validate_handlers,
-        "copy_files_into_project",
-        raise_missing_datalad,
-    )
+    monkeypatch.setattr("src.conversion_to_project.copy_files_into_project", raise_missing_datalad)
 
     with app.test_client() as client:
         with client.session_transaction() as sess:
@@ -556,9 +549,6 @@ def test_survey_convert_requires_datalad_for_tracked_project_mutation(
             value_offset_application_counts={},
         )
 
-    survey_convert_handlers = importlib.import_module(
-        "src.web.blueprints.conversion_survey_convert_handlers"
-    )
 
     def raise_missing_datalad(**_kwargs):
         raise ValueError("mutation changes require DataLad run")
@@ -568,11 +558,7 @@ def test_survey_convert_requires_datalad_for_tracked_project_mutation(
         "_run_survey_with_official_fallback",
         fake_run_survey_with_official_fallback,
     )
-    monkeypatch.setattr(
-        survey_convert_handlers,
-        "copy_files_into_project",
-        raise_missing_datalad,
-    )
+    monkeypatch.setattr("src.conversion_to_project.copy_files_into_project", raise_missing_datalad)
 
     with app.test_client() as client:
         with client.session_transaction() as sess:

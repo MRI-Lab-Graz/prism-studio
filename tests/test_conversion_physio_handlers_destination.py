@@ -79,7 +79,7 @@ def test_session_registered_under_target_folder(monkeypatch, tmp_path):
 def test_register_session_accepts_empty_task_list(tmp_path):
     import json
 
-    from src.web.services.project_registration import register_session_in_project
+    from src.project_registration import register_session_in_project
 
     (tmp_path / "project.json").write_text(json.dumps({"Name": "p"}), encoding="utf-8")
     register_session_in_project(tmp_path, "1", [], "physio", "ds", "physio")

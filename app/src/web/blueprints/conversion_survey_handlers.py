@@ -19,7 +19,6 @@ from src.survey_workflow_service import (
 
 from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
-from src.web.services.project_registration import register_session_in_project
 from .conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
     handle_api_survey_languages,
@@ -31,7 +30,6 @@ from .tools_post_conversion_handlers import handle_limesurvey_save_to_project
 from .conversion_utils import (
     collect_multivariant_tasks_from_library,
     expected_delimiter_for_suffix,
-    extract_tasks_from_output,
     log_file_head,
     merge_selected_survey_filter,
     normalize_separator_option,
@@ -87,7 +85,6 @@ MissingIdMappingError: Any = None
 SurveyValueOutOfBoundsError: Any = None
 _resolve_effective_template_version_overrides: Any = None
 _normalize_template_version_overrides_for_requests: Any = None
-sync_project_survey_recipe_offsets: Any = None
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
 normalize_paper_software_platform: Any = None
 _SUPPORTED_SURVEY_INPUT_MESSAGE = SUPPORTED_SURVEY_INPUT_MESSAGE
@@ -126,15 +123,6 @@ except ImportError:
 
 try:
     from src.converters.survey import (
-        sync_project_survey_recipe_offsets as _sync_project_survey_recipe_offsets,
-    )
-
-    sync_project_survey_recipe_offsets = _sync_project_survey_recipe_offsets
-except ImportError:
-    pass
-
-try:
-    from src.converters.survey import (
         _normalize_template_version_overrides as _survey_normalize_template_version_overrides,
         _resolve_effective_template_version_overrides as _survey_resolve_effective_template_version_overrides,
     )
@@ -170,8 +158,6 @@ _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
 _resolve_validation_library_path = resolve_validation_library_path
 _normalize_filename = normalize_filename
-_extract_tasks_from_output = extract_tasks_from_output
-_register_session_in_project = register_session_in_project
 
 
 def _get_effective_template_version_overrides(
@@ -214,79 +200,6 @@ def _resolve_requested_project_root(*, require_project: bool) -> Path | None:
             "The selected project path no longer exists. Reopen the project and retry survey conversion."
         ),
     )
-
-
-def _iter_session_registration_values(
-    *,
-    session_override: str | None,
-    detected_sessions: list[str] | None,
-) -> list[str]:
-    normalized_override = str(session_override or "").strip()
-    if not normalized_override:
-        return []
-    if normalized_override.lower() != "all":
-        return [normalized_override]
-
-    values: list[str] = []
-    seen: set[str] = set()
-    for raw_value in detected_sessions or []:
-        candidate = str(raw_value or "").strip()
-        if not candidate or candidate.lower() == "all" or candidate in seen:
-            continue
-        seen.add(candidate)
-        values.append(candidate)
-    return values
-
-
-def _cleanup_stale_tool_limesurvey_sidecars(
-    *,
-    copied_output_paths: list[Path],
-    source_suffix: str,
-    log_fn=None,
-) -> list[Path]:
-    """Remove stale tool-limesurvey sidecars for non-LimeSurvey imports.
-
-    When converting non-LSA/LSS sources, older buggy runs may have left
-    `*_tool-limesurvey_survey.{tsv,json}` files in project survey folders.
-    If the current run does not emit such files, clean stale leftovers in the
-    survey directories touched by this save operation.
-    """
-
-    normalized_suffix = str(source_suffix or "").strip().lower()
-    if normalized_suffix in {".lsa", ".lss"}:
-        return []
-
-    if any("_tool-limesurvey_survey" in path.name for path in copied_output_paths):
-        return []
-
-    touched_survey_dirs = {
-        path.parent for path in copied_output_paths if path.parent.name == "survey"
-    }
-    removed_paths: list[Path] = []
-
-    for survey_dir in sorted(touched_survey_dirs):
-        for pattern in (
-            "*_tool-limesurvey_survey.tsv",
-            "*_tool-limesurvey_survey.json",
-        ):
-            for stale_path in survey_dir.glob(pattern):
-                if not stale_path.is_file():
-                    continue
-                try:
-                    stale_path.unlink()
-                    removed_paths.append(stale_path)
-                except OSError:
-                    continue
-
-    if removed_paths and callable(log_fn):
-        log_fn(
-            "Removed "
-            f"{len(removed_paths)} stale tool-limesurvey sidecar file(s) "
-            "for non-LimeSurvey import.",
-            "info",
-        )
-
-    return removed_paths
 
 
 def _format_value_offset_confirmation_response(
@@ -696,10 +609,6 @@ def api_survey_convert():
         is_value_offset_confirmation_error=_is_value_offset_confirmation_error,
         format_workflow_preparation_stale_response=_format_workflow_preparation_stale_response,
         format_value_offset_confirmation_response=_format_value_offset_confirmation_response,
-        extract_tasks_from_output=_extract_tasks_from_output,
-        iter_session_registration_values=_iter_session_registration_values,
-        register_session_in_project=_register_session_in_project,
-        sync_project_survey_recipe_offsets=sync_project_survey_recipe_offsets,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
     )
@@ -737,11 +646,6 @@ def api_survey_convert_validate():
         log_file_head=_log_file_head,
         resolve_validation_library_path=_resolve_validation_library_path,
         run_validation=run_validation,
-        cleanup_stale_tool_limesurvey_sidecars=_cleanup_stale_tool_limesurvey_sidecars,
-        iter_session_registration_values=_iter_session_registration_values,
-        extract_tasks_from_output=_extract_tasks_from_output,
-        register_session_in_project=_register_session_in_project,
-        sync_project_survey_recipe_offsets=sync_project_survey_recipe_offsets,
         summarize_project_output_paths=summarize_project_output_paths,
         sanitize_jsonable=sanitize_jsonable,
         collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
@@ -780,11 +684,6 @@ def api_survey_convert_validate_start():
         log_file_head=_log_file_head,
         resolve_validation_library_path=_resolve_validation_library_path,
         run_validation=run_validation,
-        cleanup_stale_tool_limesurvey_sidecars=_cleanup_stale_tool_limesurvey_sidecars,
-        iter_session_registration_values=_iter_session_registration_values,
-        extract_tasks_from_output=_extract_tasks_from_output,
-        register_session_in_project=_register_session_in_project,
-        sync_project_survey_recipe_offsets=sync_project_survey_recipe_offsets,
         summarize_project_output_paths=summarize_project_output_paths,
         sanitize_jsonable=sanitize_jsonable,
         collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,

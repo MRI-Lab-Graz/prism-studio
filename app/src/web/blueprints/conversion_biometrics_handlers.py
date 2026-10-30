@@ -31,7 +31,7 @@ from .conversion_request_helpers import (
 )
 from src.datalad_project_copy import copy_files_into_project
 from src.subject_id_matching import load_existing_participant_ids
-from src.web.services.project_registration import register_session_in_project
+from src.project_registration import register_session_in_project
 
 # Safe imports for optional dependencies
 IdColumnNotDetectedError: Any = None
