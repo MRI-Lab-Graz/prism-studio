@@ -24,6 +24,11 @@ def _package(repo: Path, file: Path) -> list[str]:
     return parts[1:] if parts and parts[0] == "app" else parts
 
 
+def _is_app_src_module(repo: Path, module: str) -> bool:
+    path = repo / "app" / "src" / Path(*module.split("."))
+    return path.with_suffix(".py").is_file() or (path / "__init__.py").is_file()
+
+
 def _imports(repo: Path, files) -> set[str]:
     found = set()
     for file in files:
@@ -37,6 +42,8 @@ def _imports(repo: Path, files) -> set[str]:
                 continue
             base = package[: len(package) - (node.level - 1)] if node.level else []
             module = ".".join(base + ([node.module] if node.module else []))
+            if not module.startswith("src.") and _is_app_src_module(repo, module):
+                module = "src." + module  # `core.validation` and `src.core.validation` are the same file
             for alias in node.names:
                 found.add(f"{module}:{alias.name}")
     return found

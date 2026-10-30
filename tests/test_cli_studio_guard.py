@@ -38,6 +38,14 @@ def test_studio_own_modules_and_classes_are_not_backend_calls(tmp_path):
     assert studio_only_backend_calls(repo) == set()
 
 
+def test_a_bare_import_of_an_app_src_module_is_the_same_function_as_the_src_import(tmp_path):
+    """prism.py imports `core.validation`, Studio `src.core.validation`: one file, one function."""
+    repo = _repo(tmp_path, "from src.core.validation import validate\n", "from core.validation import validate\n")
+    (repo / "app" / "src" / "core").mkdir(parents=True)
+    (repo / "app" / "src" / "core" / "validation.py").write_text("def validate(): pass\n", encoding="utf-8")
+    assert studio_only_backend_calls(repo) == set()
+
+
 def test_only_names_missing_from_the_baseline_are_new(tmp_path):
     repo = _repo(tmp_path, "from src.x import known, fresh\n", "")
     baseline = tmp_path / "baseline.json"
