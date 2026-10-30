@@ -68,7 +68,7 @@ Method: subagent-driven development (one implementer subagent per task, then a r
 | 4 | `src/survey_export_settings.py::strip_export_settings` | done, reviewed |
 | 5 | `save_template` strips export settings, returns `SavedTemplate(path, missing, removed)`, language-consistency checks, severity constants | done, reviewed (2 fix rounds) |
 | 6 | Importers/fixer stop inventing answers; one function gives the schema's current version | done, reviewed (63c7bbbe, 3398511e, 6e0eee5d) |
-| 2c | Rename the pinned spec tag v1.6.0 -> v1.5.1 (see below) | **not started** |
+| 2c | Rename the pinned spec tag v1.6.0 -> v1.5.1 | done (superseded by 2d: v1.5.2) |
 | 7 | LimeSurvey export derives question settings itself; per-export overrides only | not started |
 | 8 | Converting/exporting needs a complete template (`require_complete_template`, `TemplateIncomplete`) | not started |
 | 9 | Editor: `questionnaire-sections.js` (field->section map, `isMissing`, labels) | not started |
@@ -99,7 +99,7 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
    If Karl has pushed the tag meanwhile, skip all this and sync without `--source`.
 3. (Task 2c is done; Task 2d replaces it) In Studio run
    `python scripts/sync_specification.py --tag v1.5.2 --source /some/dir/spec-repo`, change the pinned tag in
-   `tests/test_vendored_specification.py` to `v1.5.1`, `grep -rn "v1.5.1" .` and fix the plan/spec/handoff text, run
+   `tests/test_vendored_specification.py` to `v1.5.2`, `grep -rn "v1.5.1" .` and fix the plan/spec text, run
    `python scripts/ci/check_specification_lock.py`. The schema content is byte-identical; only the tag name in
    `specification.lock.json` changes.
 4. Recreate the SDD ledger (it was gitignored): first line
@@ -109,7 +109,7 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
 
 ## Rulings made on Karl's behalf (all can be undone)
 
-- **Tag naming (Karl):** finer-graded tags; the spec release is `v1.5.1`, not a minor bump. Schema file version is 2.0.0.
+- **Tag naming (Karl):** finer-graded tags; the spec release is `v1.5.2` (v1.5.1 was the first local tag), not a minor bump. Schema file version is 2.0.0.
 - **Nothing is pushed.** Spec patches live here; the spec repo must get a branch + tag pushed by Karl (outward-facing).
 - **Official library `Technical.Language` = language of the item texts** (Karl, provisional): `en` for all 103.
   Karl reviews each questionnaire individually later. Notes of instruments possibly not English in origin:
@@ -174,4 +174,4 @@ Spec Task 1: `OtherOption` has no `required: ["enabled"]`; `I18n.TranslationMeth
 ## Before merging into main
 
 Karl's standing rule (CLAUDE.md): run `/ponytail:ponytail-audit` on the branch, apply what is worth it, re-run tests,
-then merge. Also: spec repo branch + `v1.5.1` pushed and merged first, so `specification.lock.json` names a real tag.
+then merge. Also: spec repo branch + `v1.5.2` pushed and merged first, so `specification.lock.json` names a real tag.
