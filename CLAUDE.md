@@ -3,10 +3,11 @@
 ## THE RULE: THE CLI EXECUTES. STUDIO ONLY TRIGGERS.
 
 **Every Studio action is a CLI command that Studio triggers** - converting, validating, saving templates, recipes, file
-management, everything. The only exceptions are the Projects pages (create/open a project, study metadata) and the
-Settings page. The logic exists once, in the backend (`src/`), and `prism_tools.py` / `prism.py` run it. A Studio route
+management, export, DataLad, settings, everything. **The ONE exception is project setup: creating a project and entering
+its metadata.** Not the settings, not export, not DataLad or server sync, not the sessions or participants pages: those are
+commands too. The logic exists once, in the backend (`src/`), and `prism_tools.py` / `prism.py` run it. A Studio route
 (`app/src/web/**`) and the JavaScript do nothing but collect input, call that same function with the same arguments and
-show the result.
+show the result. (What stays in the GUI is UI state only: which card is open, which button is blocked.)
 
 - **A difference between Studio and the CLI is a BUG, never a feature.** Same input must give the same files and the same
   messages in both. Fix it by deleting the second implementation, not by documenting the difference.
@@ -56,7 +57,7 @@ test after the fix; a test that never failed proves nothing.
 (This is THE RULE above; the details follow.)
 
 Every Studio feature (converters, validator, recipes, file management, ...)
-**except the Projects pages** (create/open project, study metadata) is a
+**except project setup** (creating a project and its study metadata) is a
 command: its logic is implemented once in the backend (`src/`) and exposed
 through the command line (`prism_tools.py` / `src/cli`). The GUI (Flask routes,
 JavaScript) is a thin adapter that runs that same command/function - it must
