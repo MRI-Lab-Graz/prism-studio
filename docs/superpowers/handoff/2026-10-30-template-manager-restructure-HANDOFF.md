@@ -28,7 +28,7 @@ Method: subagent-driven development (one implementer subagent per task, then a r
 | 4 | `src/survey_export_settings.py::strip_export_settings` | done, reviewed |
 | 5 | `save_template` strips export settings, returns `SavedTemplate(path, missing, removed)`, language-consistency checks, severity constants | done, reviewed (2 fix rounds) |
 | 6 | Importers/fixer stop inventing answers; one function gives the schema's current version | done, reviewed (63c7bbbe, 3398511e, 6e0eee5d) |
-| 2c | Rename the pinned spec tag v1.6.0 -> v1.5.1 (see below) | **not started** |
+| 2c | Rename the pinned spec tag v1.5.1 -> v1.5.1 (see below) | **not started** |
 | 7 | LimeSurvey export derives question settings itself; per-export overrides only | not started |
 | 8 | Converting/exporting needs a complete template (`require_complete_template`, `TemplateIncomplete`) | not started |
 | 9 | Editor: `questionnaire-sections.js` (field->section map, `isMissing`, labels) | not started |
@@ -58,7 +58,7 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
    If Karl has pushed the tag meanwhile, skip all this and sync without `--source`.
 3. Task 2c (first thing): in Studio run
    `python scripts/sync_specification.py --tag v1.5.1 --source /some/dir/spec-repo`, change the pinned tag in
-   `tests/test_vendored_specification.py` to `v1.5.1`, `grep -rn "v1.6.0" .` and fix the plan/spec/handoff text, run
+   `tests/test_vendored_specification.py` to `v1.5.1`, `grep -rn "v1.5.1" .` and fix the plan/spec/handoff text, run
    `python scripts/ci/check_specification_lock.py`. The schema content is byte-identical; only the tag name in
    `specification.lock.json` changes.
 4. Recreate the SDD ledger (it was gitignored): first line
@@ -95,9 +95,12 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
 - `app/src/questionnaire_renderer.py:61` (`_detect_question_type`) reads `LimeSurvey.questionType`; imported templates no longer carry it, so numeric/long-text/date/hidden items would render as short-text. Give it a derivation from `DataType`/`InputType`/`Levels` (the plan lists the file; this is the reason).
 - Three LimeSurvey tests (`test_limesurvey_attributes`, `test_limesurvey_fixed_answer_levels`, `test_limesurvey_row_types`) monkeypatch `strip_export_settings` so the exporter still sees an explicit `questionType`. When Task 7 removes the exporter's `questionType` branch, rewrite them to assert the derivation.
 
-## Open question for Karl (not decided)
+## Decided by Karl (2026-10-30), implemented as Task 6 fix round 2
 
-Excel import still invents: `AdministrationMethod` "paper" (and `SoftwarePlatform` "Paper and Pencil"), `ResponseType ["paper-pencil"]`, `Version` "1.0", `OriginalName` fallback "<prefix> Questionnaire". Same class as the removed `Respondent: "self"`; changing it touches many Excel tests. Decide: remove (and report as missing) or keep.
+Excel import writes no invented entries (no `AdministrationMethod` "paper", `SoftwarePlatform` "Paper and Pencil",
+`ResponseType`, `Version` "1.0", `OriginalName` fallback). `AdministrationMethod`, `Respondent` and `SoftwarePlatform`
+are set in the PROJECT copy of the survey, not globally. Still to check (Task 8/10): how the project copy gets them set
+(`technical_defaults` from the project in `src/survey_template_sources.py`?) and that the gate message points there.
 
 ## Deferred minors (from reviews)
 
