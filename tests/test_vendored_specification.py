@@ -16,5 +16,5 @@ def _check_module():
 
 def test_lock_matches_tree_and_the_pinned_tag():
     lock = json.loads((REPO / "specification.lock.json").read_text(encoding="utf-8"))
-    assert lock["repository"] == "MRI-Lab-Graz/prism-specification" and lock["tag"] == "v1.6.0"
+    assert lock["repository"] == "MRI-Lab-Graz/prism-specification" and lock["tag"] == "v1.5.1"
     assert _check_module().check(REPO, lock) == []

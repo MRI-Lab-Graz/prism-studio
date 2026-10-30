@@ -97,8 +97,8 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
 - [ ] **Step 3:** Add `"I18n"` to the top-level `required`; `I18n.required: ["Languages"]`; `Languages`:
   `minItems: 1`, item pattern `^[a-z]{2}(-[A-Z]{2})?$`, `uniqueItems: true`; same for `DefaultLanguage` (no empty
   alternative, optional). Update `specs/survey.md`, regenerate the reference.
-- [ ] **Step 4:** full suite and checks pass; commit; move tag `v1.6.0`
-- After it: re-run `python scripts/sync_specification.py --tag v1.6.0 --source <clone>` in Studio (Task 2b) and
+- [ ] **Step 4:** full suite and checks pass; commit; move tag `v1.5.1`
+- After it: re-run `python scripts/sync_specification.py --tag v1.5.1 --source <clone>` in Studio (Task 2b) and
   commit the new lock.
 
 ## Part 2 — Studio (this repository, branch `feat/template-manager-restructure`)
