@@ -46,7 +46,7 @@ class SurveyWorkflowStageOptions:
     sheet: str | int = 0
     unknown: str = "warn"
     dry_run: bool = False
-    force: bool = True
+    force: bool | None = None  # None: on when the output is a PRISM project
     name: str | None = None
     authors: tuple[str, ...] = ()
     language: str | None = None

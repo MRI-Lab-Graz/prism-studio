@@ -9,23 +9,29 @@ making Studio call the same backend function as the command, with the same optio
 and comparing options; not exhaustive. Add what you find, delete what you fix, and prove each fix with a test in
 `tests/test_cli_studio_parity.py`.
 
-## `survey convert`
+## How this list is kept honest
 
-| What | CLI | Studio |
-|---|---|---|
-| `force` default | off | **on** (`SurveyWorkflowStageOptions.force`) |
-| `authors` default | none | empty tuple |
-| strict levels | no flag | option |
-| near-item matching (`allow_near_item_match`, `near_match_tasks`) | no flag | options |
-| ID map file | no flag on `convert` | option |
-| CSV separator | no flag | option |
-| `skip_participants` | fixed on | option |
+`scripts/check_cli_studio_parity.py` lists every backend function Studio imports and no CLI command imports
+(`python scripts/check_cli_studio_parity.py`). Its reviewed baseline, `scripts/cli_studio_baseline.json`, may only
+shrink; `tests/test_cli_studio_guard.py` fails CI when Studio starts using backend code the CLI does not. Each entry in
+the baseline is a divergence to review: fix it (the CLI runs it too) and delete the entry.
+
+## `survey convert` (done)
+
+Same options, same defaults, one code path: the command builds Studio's `SurveyWorkflowStageOptions` and runs Studio's
+`SurveyWorkflowStageService` with the backend runner `run_survey_with_template_sources`. `tests/test_survey_convert_options_parity.py`
+fails when a Studio option has no CLI flag or the defaults differ.
 
 ## Logic that lives in Studio only (no command runs it)
 
 - `app/src/web/blueprints/conversion_survey_official_template_helpers.py` - checking which official templates match an
   uploaded file (`infer_tasks_against_official_templates`) and resolving the official library on its own
-  (`resolve_official_survey_dir`).
+  (`resolve_official_survey_dir`). No CLI command.
+- `app/src/web/blueprints/conversion_survey_handlers.py` - "detect version contexts" (which template versions a file
+  needs) builds its own merged library. No CLI command.
+- Studio-only backend calls the baseline lists (about 150): defacing export (`src.mri_json_scrubber`), the recipe builder's
+  template analysis (`src.recipe_builder`), Neurobagel schema generation (`src.participant_columns`), physio renaming
+  helpers (`src.physio_renamer`) and more. Each needs a look: does a CLI command run the same code?
 - `app/src/web/validation.py` - Studio's validation has its own subprocess fallback path next to the core validator.
 
 ## Two implementations of the same thing

@@ -803,7 +803,7 @@ class TestCmdSurveyConvert:
         project_file = tmp_path / "project.json"
         project_file.write_text("{}")
         cmd_survey_convert(_convert_args(tmp_path, project=str(project_file)))
-        assert captured["project_path"] == project_file.parent
+        assert Path(captured["project_path"]) == project_file.parent
 
     def test_dry_run_renders_full_preview(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)

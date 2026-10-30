@@ -1,6 +1,5 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
-import inspect
 import shutil
 import tempfile
 from pathlib import Path
@@ -62,7 +61,6 @@ from .conversion_survey_convert_validate_handlers import (
 )
 from .conversion_survey_official_template_helpers import (
     copy_official_templates_to_project,
-    infer_project_template_technical_defaults,
     infer_tasks_against_official_templates,
     resolve_official_survey_dir,
 )
@@ -314,12 +312,6 @@ def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
     return resolve_official_survey_dir(project_path)
 
 
-def _infer_project_template_technical_defaults(
-    *, input_path: str | Path | None = None
-) -> dict[str, str]:
-    return infer_project_template_technical_defaults(input_path=input_path)
-
-
 def _copy_official_templates_to_project(
     official_dir: Path,
     tasks: list[str],
@@ -504,81 +496,14 @@ def _run_survey_with_official_fallback(
     log_fn=None,
     **kwargs,
 ):
-    technical_defaults = _infer_project_template_technical_defaults(
-        input_path=kwargs.get("input_path")
-    )
-    template_version_overrides = kwargs.get("template_version_overrides") or {}
-    if fallback_project_path:
-        kwargs.setdefault("project_path", fallback_project_path)
-
-    converter_kwargs = dict(kwargs)
-    try:
-        signature = inspect.signature(converter_fn)
-        accepts_var_kwargs = any(
-            parameter.kind == inspect.Parameter.VAR_KEYWORD
-            for parameter in signature.parameters.values()
-        )
-        if not accepts_var_kwargs:
-            accepted_names = set(signature.parameters.keys())
-            unsupported = sorted(
-                key for key in converter_kwargs.keys() if key not in accepted_names
-            )
-            if unsupported:
-                converter_name = str(getattr(converter_fn, "__name__", "converter"))
-                msg = (
-                    f"Converter '{converter_name}' does not accept options "
-                    f"{', '.join(unsupported)}; skipping unsupported options."
-                )
-                if log_fn:
-                    log_fn(msg, "warning")
-                else:
-                    print(f"[PRISM WARN] {msg}")
-                converter_kwargs = {
-                    key: value
-                    for key, value in converter_kwargs.items()
-                    if key in accepted_names
-                }
-    except (TypeError, ValueError):
-        pass
-
-    # The standard libraries are merged (project, then personal, then global), the same as the CLI's;
-    # a folder the caller chose is used as given.
-    from src.survey_template_sources import (
-        build_effective_library,
-        copy_used_templates_to_project,
-        is_standard_library,
-    )
+    """Studio's Convert triggers the same backend runner as `survey convert`."""
+    from src.survey_template_sources import run_survey_with_template_sources
 
     app_root = Path(current_app.root_path).parent if has_app_context() else Path(__file__).resolve().parents[4]
-    effective = (
-        build_effective_library(fallback_project_path, app_root)
-        if is_standard_library(library_dir, fallback_project_path, app_root)
-        else None
+    return run_survey_with_template_sources(
+        converter_fn, library_dir=library_dir, fallback_project_path=fallback_project_path,
+        app_root=app_root, log_fn=log_fn, **kwargs,
     )
-    merged = effective is not None and bool(effective.origins)
-    result = converter_fn(
-        library_dir=str(effective.directory if merged else library_dir), **converter_kwargs
-    )
-    tasks_included = list(getattr(result, "tasks_included", []) or [])
-    if merged:
-        copy_used_templates_to_project(
-            effective,
-            tasks_included,
-            fallback_project_path,
-            technical_defaults=technical_defaults,
-            selected_versions=template_version_overrides,
-            log_fn=log_fn,
-        )
-    else:
-        _copy_official_templates_to_project(
-            official_dir=Path(library_dir),
-            tasks=tasks_included,
-            project_path=fallback_project_path,
-            technical_defaults=technical_defaults,
-            selected_versions=template_version_overrides,
-            log_fn=log_fn,
-        )
-    return result
 
 
 def api_survey_prepare_workflow():
