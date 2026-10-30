@@ -60,7 +60,6 @@ from .conversion_survey_convert_validate_handlers import (
     handle_api_survey_convert_validate_status,
 )
 from .conversion_survey_official_template_helpers import (
-    copy_official_templates_to_project,
     infer_tasks_against_official_templates,
     resolve_official_survey_dir,
 )
@@ -310,24 +309,6 @@ def _is_value_offset_confirmation_error(error: Exception) -> bool:
 
 def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
     return resolve_official_survey_dir(project_path)
-
-
-def _copy_official_templates_to_project(
-    official_dir: Path,
-    tasks: list[str],
-    project_path: str | None,
-    technical_defaults: dict[str, str] | None = None,
-    selected_versions: dict[str, str] | None = None,
-    log_fn=None,
-) -> dict[str, list[str]]:
-    return copy_official_templates_to_project(
-        official_dir,
-        tasks,
-        project_path,
-        technical_defaults=technical_defaults,
-        selected_versions=selected_versions,
-        log_fn=log_fn,
-    )
 
 
 def _infer_tasks_against_official_templates(
