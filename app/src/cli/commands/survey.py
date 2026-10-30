@@ -219,8 +219,9 @@ def cmd_survey_convert(args):
             template_version_overrides=template_version_overrides,
             task_value_offsets=task_value_offsets,
         )
-        if effective is not None and not args.dry_run:
-            # the project carries the templates it was converted with (not only your own library)
+        if effective is not None:
+            # the project carries the templates it was converted with (not only your own library); a dry-run
+            # leaves them too, like Studio's preview, whose template check reads them there
             from src.survey_template_sources import copy_used_templates_to_project, infer_technical_defaults
 
             copy_used_templates_to_project(
@@ -509,7 +510,7 @@ def cmd_survey_convert(args):
                     shown_by_type[f["type"]] += 1
 
         print("\n" + "=" * 80)
-        print("No files were created. Run without --dry-run to execute the conversion.")
+        print("No data files were created. Run without --dry-run to execute the conversion.")
         print("=" * 80)
         return
 

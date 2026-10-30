@@ -60,12 +60,13 @@ def test_conversion_uses_the_personal_template_and_leaves_a_copy_in_the_project(
     assert json.loads(copied.read_text(encoding="utf-8"))["PSS1"]["Levels"] == {"0": "never", "1": "often"}
 
 
-def test_a_dry_run_leaves_the_project_untouched(setup, capsys):
+def test_a_dry_run_writes_no_data_but_leaves_the_template_it_used(setup, capsys):
     project, table = setup
     cmd_survey_convert(_args(project, table, dry_run=True))
 
-    assert "No files were created" in capsys.readouterr().out
-    assert not (project / "code").exists()
+    assert "No data files were created" in capsys.readouterr().out
+    assert (project / "code" / "library" / "survey" / "survey-pss.json").exists()  # like Studio's preview
+    assert not list(project.glob("sub-*"))
 
 
 GAD7 = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-gad7.json"

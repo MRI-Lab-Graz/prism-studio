@@ -908,7 +908,7 @@ class TestCmdSurveyConvert:
         assert "PARTICIPANT SURVEY COMPLETENESS" in out
         assert "COLUMN MAPPING" in out
         assert "FILES TO CREATE" in out
-        assert "No files were created" in out
+        assert "No data files were created" in out
 
     def test_dry_run_no_issues_no_preview_data(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)

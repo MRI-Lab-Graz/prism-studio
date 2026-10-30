@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **`survey convert` and Studio write the same files.** Three differences removed: the command line compiled multilingual
+  templates itself while Studio left that to the converter (it now hands the language over like Studio, and `--lang` defaults
+  to the template's own language instead of `de`); a dry-run now leaves the templates it used in the project, as Studio's
+  preview did (it still writes no data); and sidecars written from a multilingual template now say the language their texts
+  are in (`Technical.Language` kept the template's tag, so English texts were labelled `de`). A new parity test runs both on the
+  same project and compares the files. The rule behind it, and the differences still open, are written down in `CLAUDE.md`
+  and `docs/CLI_STUDIO_DIVERGENCES.md`.
 - **Validating no longer rewrites `participants.tsv`.** The command line validator and Studio's Validate page used to apply a saved
   `participants_mapping.json` before every validation, silently changing the dataset. That is a conversion, not a check, and it
   needed the full converter (so the PyPI validator never did it). It is removed from both; applying a mapping is

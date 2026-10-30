@@ -12,6 +12,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from src import config
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 
 import src.cli.commands.survey as survey_cli  # noqa: E402
@@ -109,4 +111,23 @@ def test_the_cli_and_studio_write_the_same_files(world, tmp_path, capsys):
 
     cli_files, studio_files = _written(project), _written(twin)
     assert cli_files.keys() == studio_files.keys()
+    assert cli_files == studio_files
+
+
+def test_a_dry_run_leaves_the_same_files_in_the_cli_and_in_studio(world, tmp_path, monkeypatch, capsys):
+    """Studio's preview puts the templates it used into the project (its template check reads them there);
+    the CLI's dry-run does the same, and neither writes data."""
+    project, table = world
+    mine = tmp_path / "mine"
+    (mine / "survey").mkdir(parents=True)
+    shutil.move(str(project / "code" / "library" / "survey" / "survey-pss.json"), str(mine / "survey" / "survey-pss.json"))
+    monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
+    twin = tmp_path / "twin"
+    shutil.copytree(project, twin)
+
+    cmd_survey_convert(_cli_args(project, table, dry_run=True))
+    _studio_convert(twin, table, dry_run=True)
+
+    cli_files, studio_files = _written(project), _written(twin)
+    assert list(cli_files) == ["code/library/survey/survey-pss.json"]  # the copy, and no data
     assert cli_files == studio_files
