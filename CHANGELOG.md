@@ -38,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a used template is incomplete, the templates are copied into the project's `code/library/survey` and the message names
   those copies, so the missing fields can be filled in the Template editor (a library file cannot be). Studio's
   pre-conversion template check now asks the same backend gate instead of validating against the raw schema, so it
-  reports the same fields, in the same words, as the CLI.
+  reports the same fields, in the same words, as the CLI. The check is also a command:
+  `library template-check --project <folder> [--tasks a,b]` (exit 1 when a template is incomplete).
 - **LimeSurvey export types.** Items with no `InputType`/`Levels` and an integer/float `DataType` export as numeric (`N`);
   the types `Y`, `G`, `5` export as list (`L`); `*` and the text array become text (`T`); date (`D`) cannot be produced.
 - **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only

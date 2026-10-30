@@ -151,6 +151,15 @@ python prism_tools.py library template-delete --project /path/to/project \
   --modality survey --filename survey-mytask.json --yes
 ```
 
+**`library template-check`** — list what a project's survey templates still lack before
+data can be converted with them (the check Studio runs before a conversion). Exits 1
+when anything is missing; `--tasks a,b` limits it, otherwise every survey template of the
+project is checked:
+
+```bash
+python prism_tools.py library template-check --project /path/to/project
+```
+
 The generated Methods boilerplate summarizes richer schema metadata (DOIs, licenses,
 age ranges, administration/scoring times, item counts, access levels) alongside
 citations.

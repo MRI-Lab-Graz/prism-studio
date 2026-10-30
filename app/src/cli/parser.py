@@ -2563,6 +2563,19 @@ def build_prism_tools_parsers(
         help="Overwrite an existing template with the same filename",
     )
 
+    parser_lib_template_check = subparsers_library.add_parser(
+        "template-check",
+        help="Check that a project's survey templates are complete enough to convert with. "
+        "Matches the check Studio runs before a conversion.",
+    )
+    parser_lib_template_check.add_argument("--project", required=True, help="Project root folder")
+    parser_lib_template_check.add_argument(
+        "--tasks", help="Comma-separated task names (default: every survey template of the project)"
+    )
+    parser_lib_template_check.add_argument(
+        "--schema-version", default="stable", help="Schema version to validate against"
+    )
+
     parser_lib_template_delete = subparsers_library.add_parser(
         "template-delete",
         help="Delete a single project-library template. Matches the Studio GUI's "

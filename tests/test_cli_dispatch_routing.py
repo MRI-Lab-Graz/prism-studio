@@ -97,6 +97,7 @@ DISPATCH_CASES = [
     (dict(command="library", action="catalog"), "library_catalog"),
     (dict(command="library", action="fill"), "library_fill"),
     (dict(command="library", action="template-save"), "library_template_save"),
+    (dict(command="library", action="template-check"), "library_template_check"),
     (dict(command="library", action="template-delete"), "library_template_delete"),
     (dict(command="library", action="share-template"), "library_share_template"),
     (

@@ -70,6 +70,22 @@ def cmd_library_fill(args) -> None:
 _APP_ROOT_FOR_SCHEMAS = Path(__file__).resolve().parents[3]
 
 
+def cmd_library_template_check(args) -> None:
+    """List what a project's survey templates still lack to be converted with - the check Studio runs before a
+    conversion: the same function runs both."""
+    from src.survey_template_check import validate_project_templates_for_tasks
+
+    tasks = [t.strip() for t in args.tasks.split(",") if t.strip()] if args.tasks else None
+    issues = validate_project_templates_for_tasks(
+        tasks=tasks, project_path=str(Path(args.project).resolve()), schema_version=args.schema_version
+    )
+    for issue in issues:
+        print(issue["message"])
+    if issues:
+        sys.exit(1)
+    print("All survey templates are complete.")
+
+
 def cmd_library_template_save(args) -> None:
     """Validate and save a single template into a project's library (or your personal one) -
     the CLI equivalent of the Studio GUI's Template Editor Save action: the same function runs both."""
