@@ -941,6 +941,11 @@ def build_prism_tools_parsers(
         ),
     )
     parser_survey_convert.add_argument(
+        "--archive-sourcedata",
+        action="store_true",
+        help="Also keep the original input file in the project's sourcedata/ folder",
+    )
+    parser_survey_convert.add_argument(
         "--strict-levels",
         action="store_true",
         help="For an .lsa: only accept answers that are one of the template's levels",

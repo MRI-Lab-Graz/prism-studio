@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **`survey convert` into a project saves like Studio's Convert.** Studio converted into a staging folder and then saved into the
+  project (a DataLad-aware copy with a commit, the source file archived in `sourcedata/`, the template versions registered in
+  `project.json`, the recipe offsets synced); the command wrote straight into the output and did none of it. One function now does
+  all of it for both (`src/conversion_to_project.py`), Studio's three survey routes use it instead of three slightly different
+  copies, and the command has `--archive-sourcedata`. Biometrics, physio and environment follow.
 - **Studio's Convert and `survey convert` are now one code path, with the same options.** The command takes the options
   Studio had and it lacked (`--strict-levels`, `--allow-near-item-match`, `--near-match-tasks`, `--separator`, `--id-map`),
   runs Studio's own options object and service, and `--force` no longer differs: left unset it is on when the output is a PRISM

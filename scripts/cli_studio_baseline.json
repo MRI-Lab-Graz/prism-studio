@@ -97,6 +97,8 @@
  "src.project_manager:get_available_modalities": "to review",
  "src.project_ready:missing_required_fields": "to review",
  "src.project_ready:not_ready_message": "to review",
+ "src.project_registration:_normalize_session_id": "to review: the Projects sessions page normalizes session labels itself (sessions set/unset exist)",
+ "src.project_registration:register_session_in_project": "to review: the biometrics and physio routes register sessions after converting; their commands do not (the save-to-project tail, next)",
  "src.project_root:require_existing_project_root": "to review",
  "src.project_root:resolve_existing_project_root": "to review",
  "src.project_root:resolve_project_root_path": "to review",
