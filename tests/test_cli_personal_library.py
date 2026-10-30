@@ -69,12 +69,14 @@ def test_a_dry_run_writes_no_data_but_leaves_the_template_it_used(setup, capsys)
     assert not list(project.glob("sub-*"))
 
 
-GAD7 = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-gad7.json"
+from template_fixtures import GAD7, library_template  # noqa: E402
 
 
 def _save_args(tmp_path, **overrides):
+    template = tmp_path / "gad7.json"
+    template.write_text(json.dumps(library_template()), encoding="utf-8")
     args = dict(
-        project=None, to="personal", modality="survey", filename="survey-gad7.json", template=str(GAD7),
+        project=None, to="personal", modality="survey", filename="survey-gad7.json", template=str(template),
         schema_version="stable", is_global=False, force=False,
     )
     args.update(overrides)

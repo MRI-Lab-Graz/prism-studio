@@ -71,78 +71,47 @@ _APP_ROOT_FOR_SCHEMAS = Path(__file__).resolve().parents[3]
 
 
 def cmd_library_template_save(args) -> None:
-    """Validate and save a single template into a project's library —
-    the CLI equivalent of the Studio GUI's Template Editor Save action."""
-    from src.schema_manager import load_schema
-
-    filename = str(args.filename).strip()
-    if not filename or "/" in filename or "\\" in filename:
-        print("Error: --filename must be a bare filename (no path separators)")
-        sys.exit(1)
-    if not filename.lower().endswith(".json"):
-        filename += ".json"
+    """Validate and save a single template into a project's library (or your personal one) -
+    the CLI equivalent of the Studio GUI's Template Editor Save action: the same function runs both."""
+    from src.template_save import TemplateExists, TemplateInvalid, save_template
 
     template_path = Path(args.template).resolve()
     if not template_path.exists():
         print(f"Error: --template not found: {template_path}")
         sys.exit(1)
-
     try:
         template = json.loads(template_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         print(f"Error: --template is not valid JSON: {exc}")
         sys.exit(1)
-    if not isinstance(template, dict):
-        print("Error: --template must be a JSON object")
-        sys.exit(1)
 
-    template = strip_template_editor_internal_keys(template)
-    if args.modality == "survey":
-        template = normalize_survey_template_for_validation(template)
-
-    schema = load_schema(
-        args.modality,
-        schema_dir=str(_APP_ROOT_FOR_SCHEMAS / "schemas"),
-        version=args.schema_version,
-    )
-    if not schema:
-        print(f"Error: Could not load schema for {args.modality}")
-        sys.exit(1)
     to_personal = getattr(args, "to", "project") == "personal"
-    if args.is_global or to_personal:  # a personal template is a library template, not a project copy
-        schema = relax_schema_for_library_template(schema)
-
-    errors = validate_template_against_schema(instance=template, schema=schema)
-    if errors:
+    if not to_personal and not args.project:
+        print("Error: --project is required (or use --to personal)")
+        sys.exit(1)
+    try:
+        target = save_template(
+            args.modality,
+            args.filename,
+            template,
+            target="personal" if to_personal else "project",
+            project_root=Path(args.project).resolve() if args.project else None,
+            app_root=_APP_ROOT_FOR_SCHEMAS,
+            schema_version=args.schema_version,
+            relaxed=bool(args.is_global),
+            allow_overwrite=bool(args.force),
+        )
+    except TemplateInvalid as exc:
         print("Error: template validation failed:")
-        for err in errors:
+        for err in exc.errors:
             print(f"  - {err['path']}: {err['message']}")
         sys.exit(1)
-
-    if to_personal:
-        from src.personal_library import personal_library_folder
-
-        try:
-            folder = personal_library_folder(args.modality, _APP_ROOT_FOR_SCHEMAS)
-        except RuntimeError as exc:
-            print(f"Error: {exc}")
-            sys.exit(1)
-    else:
-        if not args.project:
-            print("Error: --project is required (or use --to personal)")
-            sys.exit(1)
-        folder = Path(args.project).resolve() / "code" / "library" / args.modality
-    folder.mkdir(parents=True, exist_ok=True)
-    target = folder / filename
-
-    if target.exists() and not args.force:
-        print(
-            f'Error: "{filename}" already exists in the {"personal" if to_personal else "project"} library. '
-            "Pass --force to overwrite."
-        )
+    except TemplateExists as exc:
+        print(f'Error: "{exc.path.name}" already exists in the {"personal" if to_personal else "project"} library. Pass --force to overwrite.')
         sys.exit(1)
-
-    target.write_text(dump_json_text(template), encoding="utf-8")
+    except (ValueError, RuntimeError, FileNotFoundError) as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
     print(f"✅ Saved to {target}")
 
 

@@ -36,14 +36,16 @@ fails when a Studio option has no CLI flag or the defaults differ.
 
 ## Two implementations of the same thing
 
-- **Saving a template**: the route `api_template_editor_save` (`tools_template_editor_blueprint.py`) and the command
-  `library template-save` (`cli/commands/library.py`) each validate and write on their own. One shared function should do it.
 - **Picking one language out of a multilingual template**: `src/survey_localize.py` (the converters) and
   `library_i18n.compile_survey_template` (`library i18n build`) are separate implementations.
 - **Choosing a template library**: `resolve_survey_library` (a single folder, for the editor and validation) and
   `template_tiers` (the per-template merge for conversions) state the project, personal, global order twice.
 
 ## Fixed (keep the tests green)
+
+- Saving a template: `library template-save` and the editor's Save run `src/template_save.py`. The command used to skip the
+  task-name check for library templates that the editor always made.
+- `survey convert`: Studio's options and service run in the CLI; same flags, same defaults.
 
 - Library choice, merge order and copying used templates into the project: one function for both
   (`src/survey_template_sources.py`).

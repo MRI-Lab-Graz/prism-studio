@@ -131,3 +131,40 @@ def test_a_dry_run_leaves_the_same_files_in_the_cli_and_in_studio(world, tmp_pat
     cli_files, studio_files = _written(project), _written(twin)
     assert list(cli_files) == ["code/library/survey/survey-pss.json"]  # the copy, and no data
     assert cli_files == studio_files
+
+
+def test_saving_a_template_writes_the_same_file_in_the_cli_and_in_studio(tmp_path):
+    import importlib
+    import os
+
+    from flask import Flask, session
+    from template_fixtures import project_template
+
+    from src.cli.commands.library import cmd_library_template_save
+
+    app_dir = Path(__file__).resolve().parents[1] / "app"
+    handlers = importlib.import_module("src.web.blueprints.tools_template_editor_blueprint")
+    app = Flask(__name__, root_path=str(app_dir))
+    app.secret_key = os.urandom(32)
+    template = project_template("mood")
+    source = tmp_path / "mood.json"
+    source.write_text(json.dumps(template), encoding="utf-8")
+    cli_project, studio_project = tmp_path / "cli", tmp_path / "studio"
+    cli_project.mkdir()
+    studio_project.mkdir()
+
+    cmd_library_template_save(SimpleNamespace(
+        project=str(cli_project), to="project", modality="survey", filename="survey-mood.json", template=str(source),
+        schema_version="stable", is_global=False, force=False,
+    ))
+    with app.test_request_context(
+        "/api/template-editor/save", method="POST",
+        json={"modality": "survey", "schema_version": "stable", "filename": "survey-mood.json", "template": template},
+    ):
+        session["current_project_path"] = str(studio_project)
+        _response, status = handlers.api_template_editor_save()
+
+    assert status == 200
+    name = "code/library/survey/survey-mood.json"
+    # parsed, not bytes: Flask's test client sorts the keys of the JSON it sends
+    assert json.loads((cli_project / name).read_text(encoding="utf-8")) == json.loads((studio_project / name).read_text(encoding="utf-8"))

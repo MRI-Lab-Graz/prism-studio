@@ -34,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **Studio's Convert and `survey convert` are now one code path, with the same options.** The command takes the options
+  Studio had and it lacked (`--strict-levels`, `--allow-near-item-match`, `--near-match-tasks`, `--separator`, `--id-map`),
+  runs Studio's own options object and service, and `--force` no longer differs: left unset it is on when the output is a PRISM
+  project (writing there is what a conversion is for), as it always was in Studio. Saving a template is one function too:
+  `library template-save` skipped the task-name check for library templates that the editor's Save always made.
+- **A CI guard keeps it that way**: `scripts/check_cli_studio_parity.py` lists every backend function Studio imports that no CLI
+  command does; a new one fails `tests/test_cli_studio_guard.py`. The existing ones (about 150, to review) are in
+  `scripts/cli_studio_baseline.json`, and the list may only shrink.
 - **`survey convert` and Studio write the same files.** Three differences removed: the command line compiled multilingual
   templates itself while Studio left that to the converter (it now hands the language over like Studio, and `--lang` defaults
   to the template's own language instead of `de`); a dry-run now leaves the templates it used in the project, as Studio's

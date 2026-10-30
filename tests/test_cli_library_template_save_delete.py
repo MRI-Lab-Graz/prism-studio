@@ -26,6 +26,7 @@ from src.cli.commands.library import (  # noqa: E402
     cmd_library_template_delete,
     cmd_library_template_save,
 )
+from template_fixtures import library_template  # noqa: E402
 
 GAD7_PATH = (
     Path(__file__).resolve().parent.parent
@@ -34,6 +35,14 @@ GAD7_PATH = (
     / "survey"
     / "survey-gad7.json"
 )
+
+
+@pytest.fixture(autouse=True)
+def _gad7_with_a_task_name(tmp_path_factory, monkeypatch):
+    """The official GAD-7 has no task name; a library template needs one (the editor always required it)."""
+    path = tmp_path_factory.mktemp("template") / "survey-gad7.json"
+    path.write_text(json.dumps(library_template()), encoding="utf-8")
+    monkeypatch.setattr(sys.modules[__name__], "GAD7_PATH", path)
 
 
 def _save_args(**overrides) -> SimpleNamespace:
@@ -258,3 +267,19 @@ class TestTemplateDelete:
             )
         assert exc_info.value.code == 1
         assert outside_target.exists()
+
+
+def test_a_library_template_without_a_task_name_is_rejected_like_in_the_editor(tmp_path, capsys):
+    """The command used to save it (only Studio's Save checked): now both run the same function."""
+    nameless = library_template()
+    nameless["Study"].pop("TaskName")
+    source = tmp_path / "nameless.json"
+    source.write_text(json.dumps(nameless), encoding="utf-8")
+    project = tmp_path / "project"
+    project.mkdir()
+
+    with pytest.raises(SystemExit):
+        cmd_library_template_save(_save_args(project=str(project), filename="survey-x.json", template=str(source), is_global=True))
+
+    assert "task name" in capsys.readouterr().out
+    assert not (project / "code").exists()

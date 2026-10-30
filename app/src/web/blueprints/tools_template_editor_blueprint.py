@@ -28,7 +28,6 @@ from .tools_helpers import (
     _global_survey_library_root,
     _load_prism_schema,
     _new_template_from_schema,
-    _personal_template_folder,
     _project_template_folder,
     _resolve_requested_or_current_project_root,
     _resolve_library_root,
@@ -459,74 +458,35 @@ def api_template_editor_export_questionnaire():
 
 @tools_template_editor_bp.route("/api/template-editor/save", methods=["POST"])
 def api_template_editor_save():
+    from src.template_save import TemplateExists, TemplateInvalid, save_template
+
     payload = request.get_json(silent=True) or {}
     modality = (payload.get("modality") or "").strip().lower()
-    schema_version = (payload.get("schema_version") or "stable").strip()
-    filename = (payload.get("filename") or "").strip()
-    template = payload.get("template")
-    is_global = bool(payload.get("is_global", False))
-    allow_overwrite = bool(payload.get("allow_overwrite", False))
-    to_personal = payload.get("target") == "personal"
-
     if modality not in SUPPORTED_MODALITIES:
         return jsonify({"error": "Invalid modality"}), 400
-    if not filename or "/" in filename or "\\" in filename:
-        return jsonify({"error": "Invalid filename"}), 400
-    if not filename.lower().endswith(".json"):
-        filename += ".json"
-    if not isinstance(template, dict):
-        return jsonify({"error": "Template must be a JSON object"}), 400
-
-    template = _normalize_template_for_validation(modality=modality, template=template)
-
+    to_personal = payload.get("target") == "personal"
     try:
-        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
-        if is_global or to_personal:  # a personal template is a library template, not a project copy
-            schema = _relax_schema_for_library_template(schema)
-        errors = _validate_against_schema(instance=template, schema=schema)
-        if is_global and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
-            errors.append(error)
-        if errors:
-            return (
-                jsonify(
-                    {
-                        "error": "Template validation failed",
-                        "errors": errors,
-                    }
-                ),
-                400,
-            )
-
-        folder = (
-            _personal_template_folder(modality=modality)
-            if to_personal
-            else _project_template_folder(
-                modality=modality,
-                explicit_project_path=payload.get("project_path"),
-            )
+        path = save_template(
+            modality,
+            payload.get("filename") or "",
+            payload.get("template"),
+            target="personal" if to_personal else "project",
+            project_root=_resolve_requested_or_current_project_root(payload.get("project_path")),
+            app_root=Path(current_app.root_path),
+            schema_version=(payload.get("schema_version") or "stable").strip(),
+            relaxed=bool(payload.get("is_global", False)),
+            allow_overwrite=bool(payload.get("allow_overwrite", False)),
         )
-        folder.mkdir(parents=True, exist_ok=True)
-        path = folder / filename
-
-        if path.exists() and not allow_overwrite:
-            return (
-                jsonify(
-                    {
-                        "error": f'Template "{filename}" already exists in the {"personal" if to_personal else "project"} library',
-                        "code": "file_exists",
-                    }
-                ),
-                409,
-            )
-
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(dump_json_text(template))
-
-        return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
-    except RuntimeError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except TemplateInvalid as exc:
+        return jsonify({"error": "Template validation failed", "errors": exc.errors}), 400
+    except TemplateExists as exc:
+        where = "personal" if to_personal else "project"
+        return jsonify({"error": f'Template "{exc.path.name}" already exists in the {where} library', "code": "file_exists"}), 409
+    except (ValueError, RuntimeError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+    return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
 
 
 @tools_template_editor_bp.route("/api/template-editor/delete", methods=["DELETE"])
