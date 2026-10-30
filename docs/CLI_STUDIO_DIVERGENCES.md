@@ -57,7 +57,7 @@ their commands write straight into `--output`.
   runs Studio's dry-run against the command. The copies had drifted both ways: Studio lacked the organize refusals (no `events/`
   folder, no task-bound physio in `physio/`, no raw EDF in beh/func/eeg) and the command lacked the filename check.
   Decision (2026-10-30): both refuse.
-- **Renamer, save to project: open.** Studio's route copies renamed files into the project (`dest_root`, `flat_structure`,
+- **Renamer, save to project: done** (`save_renamed_to_project`; `rename-physio --apply --project`). Before: open. Studio's route copies renamed files into the project (`dest_root`, `flat_structure`,
   `subject_rewrite_mode`, subject-folder warnings, its own second copy of the organize logic); `file-management rename-physio`
   only writes to `--output`.
 
@@ -70,13 +70,15 @@ route runs the command in a subprocess.
   from `src.participant_columns` helpers; the command composes it its own way. The command has no `--excluded-columns` or
   `--extra-columns`. Fix: one backend function for the column selection.
 
-### Export - mostly no CLI command at all
-`projects_export_blueprint.py` is 1,536 lines with six functions over 80 lines. The CLI has `template-export`, `anonymize` and
-`publish`; Studio's other export features have no command: the main project export (zip, folder, structure), the DataLad annex
-availability check, Git-LFS export, defacing (preflight, report, run) and the ANC and OpenMinds exports. The helpers are in
-`src/` (`mri_json_scrubber`, `anonymizer`, `phenotype_export`, `project_export_helpers`, `git_exclude`); the orchestration (what
-is copied, filtered, zipped) is in the blueprint. Each needs a command that runs the same function, and the blueprint reduced to
-calling it.
+### Export - done: the CLI drives it, Studio triggers it
+Every export route of Studio's page runs a backend function that a command runs too: `export project` (zip, with the validation
+gate), `export folder`, `export git-lfs`, `export annex-availability`, `export structure`, `export deface-report|deface-preflight|deface`
+(the run defaces a copy, never the project), `export anc`, `export openminds` and `openminds-tasks`, and `template-export`
+(which now validates first and names its zip like Studio). The code is `src/export_options.py`, `src/export_defacing.py`,
+`src/export_openminds.py` and `src/project_export.py` (moved out of Studio's tree). Tests run each command against Studio's
+real route. Still open: the async job's status/download/cancel routes are job plumbing in the GUI (the work they run is the
+shared function), and the pre-export validation reaches two helpers in Studio's validation module (see `ponytail:` in
+`src/export_options.py`).
 
 ### Recipe builder
 Studio's analysis endpoints (`/api/recipe-builder/surveys|items|load`) decide what a new recipe contains (item extraction, scale

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Export is driven by the command line; Studio's export page only triggers it.** New commands `export project|folder|git-lfs|
+  annex-availability|structure|deface-report|deface-preflight|deface|anc|openminds|openminds-tasks`, each running the function the
+  page's route runs (the export core moved from Studio's tree to `src/`). Differences removed on the way: the synchronous export
+  route now validates before exporting like the async one and the command (`validation_mode`, default `both`); `template-export`
+  validates first and, without `--output`, names its zip `<project>_template_export.zip` next to the project like Studio.
+- **`file-management rename-physio --apply --project`** renames files into a project like Studio's renamer (`--dest-root`,
+  `--flat-structure`, `--subject-rewrite-mode`, DataLad-aware copy, a warning for subject folders that do not exist yet).
 - **`prism_tools.py settings show|set`: the Settings page as commands.** The library folders (global templates, recipes, your
   personal library), the default modalities, the defacing confirmation mode, the terminal and monitoring switches and the study
   application import could only be changed on Studio's Settings page. The page's routes and the command now run one function

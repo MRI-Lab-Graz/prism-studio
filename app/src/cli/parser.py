@@ -604,6 +604,16 @@ def build_prism_tools_parsers(
                                    help="README/CITATION fields, e.g. DATASET_NAME, CONTACT_EMAIL, AUTHOR_GIVEN_NAME, AUTHOR_FAMILY_NAME, DATASET_ABSTRACT (repeatable)")
     parser_export_anc.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_export_openminds = export_subparsers.add_parser("openminds", help="Export to openMINDS metadata (bids2openminds)")
+    parser_export_openminds.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_openminds.add_argument("--multiple-files", action="store_true", help="One file per node instead of a single .jsonld")
+    parser_export_openminds.add_argument("--include-empty", action="store_true", help="Keep empty properties")
+    parser_export_openminds.add_argument("--protocol-description", action="append", metavar="TASK=TEXT", help="Description of a behavioral protocol (repeatable)")
+    parser_export_openminds.add_argument("--ethics-category", default=None, help="Ethics assessment, written to a supplements file")
+    parser_export_openminds.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_export_openminds_tasks = export_subparsers.add_parser("openminds-tasks", help="The project's task names for the openMINDS form (JSON)")
+    parser_export_openminds_tasks.add_argument("--project", required=True, help="Project root or project.json path")
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",

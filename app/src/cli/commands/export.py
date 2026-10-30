@@ -7,6 +7,7 @@ from pathlib import Path
 
 from src.export_options import (
     ExportBlocked,
+    build_export_defacing_warning,
     export_zip_name,
     normalize_export_preset,
     run_annex_availability,
@@ -66,6 +67,13 @@ def cmd_export_project(args) -> None:
 
     def progress(percent: int, message: str) -> None:
         print(f"[{percent:3d}%] {message}")
+
+    # warning-only, as in Studio's export status: scans in the exported scope that are not defaced
+    warning = build_export_defacing_warning(
+        project, exclude_subjects=data["exclude_subjects"], exclude_sessions=data["exclude_sessions"]
+    )
+    if warning:
+        print(f"⚠️  {warning['message']}")
 
     try:
         run_project_export(project, output_zip, data, progress_callback=progress)
@@ -197,3 +205,35 @@ def cmd_export_anc(args) -> None:
         _emit(result)
     else:
         print(f"✅ {result['message']}: {result['output_path']}")
+
+
+def cmd_export_openminds(args) -> None:
+    """Export to openMINDS metadata with bids2openminds (protocol descriptions as NAME=TEXT)."""
+    from src.export_openminds import OpenMindsError, run_openminds_export
+
+    descriptions = {}
+    for item in getattr(args, "protocol_description", None) or []:
+        name, _, text = str(item).partition("=")
+        if name.strip():
+            descriptions[name.strip()] = text
+    data = {
+        "single_file": not getattr(args, "multiple_files", False),
+        "include_empty": bool(getattr(args, "include_empty", False)),
+        "supplements": {"protocol_descriptions": descriptions, "ethics_category": getattr(args, "ethics_category", None) or ""},
+    }
+    try:
+        result = run_openminds_export(_project_or_exit(args), data)
+    except OpenMindsError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if getattr(args, "json", False):
+        _emit(result)
+    else:
+        print(f"✅ {result['message']}: {result['output_path']}")
+
+
+def cmd_export_openminds_tasks(args) -> None:
+    """The project's task names (what the openMINDS pre-flight form lists)."""
+    from src.export_openminds import openminds_tasks
+
+    _emit({"success": True, "tasks": openminds_tasks(_project_or_exit(args))})

@@ -77,3 +77,14 @@ def test_a_failing_validation_blocks_the_export_and_exits_nonzero(tmp_path, monk
         cmd_export_project(_args(project, validation_mode="both"))
     assert exit_info.value.code == 1 and "Export blocked" in capsys.readouterr().out
     assert not list(tmp_path.glob("*.zip"))
+
+
+def test_the_command_warns_about_scans_that_are_not_defaced_like_studios_export_status(tmp_path, capsys, monkeypatch):
+    from unittest.mock import patch
+
+    project = _project(tmp_path)
+    report = [{"status": "not_defaced"}, {"status": "defaced"}, {"status": "unknown"}]
+    with patch("src.mri_json_scrubber.build_defacing_report", lambda *a, **k: report):
+        cmd_export_project(_args(project, no_anonymize=True))
+    out = capsys.readouterr().out
+    assert "includes 2 anatomical scans that are not defaced" in out and "Exported to" in out  # a warning, not a block

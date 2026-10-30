@@ -1851,7 +1851,7 @@ def test_openminds_export_runs_bids2openminds_and_reports_success(tmp_path):
         "shutil.which",
         return_value="/usr/bin/bids2openminds",
     ), patch(
-        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        "subprocess.run",
         side_effect=fake_run,
     ):
         with app.test_client() as client:
@@ -1882,7 +1882,7 @@ def test_openminds_export_reports_bids2openminds_failure(tmp_path):
         "shutil.which",
         return_value="/usr/bin/bids2openminds",
     ), patch(
-        "src.web.blueprints.projects_export_blueprint.subprocess.run",
+        "subprocess.run",
         return_value=SimpleNamespace(
             returncode=1, stdout="", stderr="conversion failed: unsupported BIDS layout"
         ),
