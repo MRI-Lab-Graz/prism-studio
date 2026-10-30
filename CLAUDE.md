@@ -1,5 +1,24 @@
 # Repo Notes for Claude
 
+## THE RULE: THE CLI EXECUTES. STUDIO ONLY TRIGGERS.
+
+**Every Studio action is a CLI command that Studio triggers** - converting, validating, saving templates, recipes, file
+management, everything. The only exceptions are the Projects pages (create/open a project, study metadata) and the
+Settings page. The logic exists once, in the backend (`src/`), and `prism_tools.py` / `prism.py` run it. A Studio route
+(`app/src/web/**`) and the JavaScript do nothing but collect input, call that same function with the same arguments and
+show the result.
+
+- **A difference between Studio and the CLI is a BUG, never a feature.** Same input must give the same files and the same
+  messages in both. Fix it by deleting the second implementation, not by documenting the difference.
+- **No logic in Studio**: no fallbacks, retries, defaults, template or library choices, language handling, copying or
+  rewriting data in a route or in JavaScript. If a route needs it, it belongs in `src/` and in a CLI command.
+- **Same options, same defaults**: a Studio option without a CLI flag (or the other way round) is a gap; a different
+  default is a bug.
+- **A feature is not done** until the CLI does it, Studio only triggers it, and a parity test proves they write the same
+  files (`tests/test_cli_studio_parity.py` runs both on identical copies of a project and compares).
+- Before you edit anything in `app/src/web/**` ask: "is this the CLI's job?" It almost always is.
+- Known open differences are tracked in `docs/CLI_STUDIO_DIVERGENCES.md`. Remove entries; never add one on purpose.
+
 ## Mandatory skills for every chat in this repo
 
 At the start of every conversation in this repository, invoke both of the
@@ -33,6 +52,8 @@ watch it fail, then write the fix. For bugs, also invoke
 test after the fix; a test that never failed proves nothing.
 
 ## One implementation: every command lives in the backend/CLI, the GUI only calls it
+
+(This is THE RULE above; the details follow.)
 
 Every Studio feature (converters, validator, recipes, file management, ...)
 **except the Projects pages** (create/open project, study metadata) is a

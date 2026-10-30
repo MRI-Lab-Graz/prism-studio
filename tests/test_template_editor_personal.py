@@ -13,6 +13,7 @@ import pytest
 from flask import Flask, session
 
 from src import config
+from template_fixtures import library_template
 
 
 @pytest.fixture
@@ -66,7 +67,7 @@ def _save(app, handlers, project, **extra):
     with app.test_request_context(
         "/api/template-editor/save", method="POST",
         json={"modality": "survey", "schema_version": "stable", "filename": "survey-new.json",
-              "template": {"Study": {"TaskName": "new"}}, **extra},
+              "template": library_template("new"), **extra},
     ):
         session["current_project_path"] = str(project)
         return handlers.api_template_editor_save()

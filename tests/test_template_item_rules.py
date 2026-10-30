@@ -103,7 +103,7 @@ def _client(monkeypatch):
     from src.web.blueprints import tools_template_editor_blueprint as handlers
 
     monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    app = Flask(__name__)
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))  # the save reads the schemas here
     app.register_blueprint(handlers.tools_template_editor_bp)
     return app.test_client()
 

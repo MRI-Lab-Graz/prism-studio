@@ -803,7 +803,7 @@ class TestCmdSurveyConvert:
         project_file = tmp_path / "project.json"
         project_file.write_text("{}")
         cmd_survey_convert(_convert_args(tmp_path, project=str(project_file)))
-        assert captured["project_path"] == project_file.parent
+        assert Path(captured["project_path"]) == project_file.parent
 
     def test_dry_run_renders_full_preview(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)
@@ -908,7 +908,7 @@ class TestCmdSurveyConvert:
         assert "PARTICIPANT SURVEY COMPLETENESS" in out
         assert "COLUMN MAPPING" in out
         assert "FILES TO CREATE" in out
-        assert "No files were created" in out
+        assert "No data files were created" in out
 
     def test_dry_run_no_issues_no_preview_data(self, tmp_path, monkeypatch, capsys):
         self._plain_library(tmp_path)
@@ -934,24 +934,20 @@ class TestCmdSurveyConvert:
         out = capsys.readouterr().out
         assert "NO DATA ISSUES DETECTED" in out
 
-    def test_library_with_i18n_compiles(self, tmp_path, monkeypatch, capsys):
-        library = tmp_path / "library"
-        library.mkdir()
-        (library / "survey-pss.json").write_text(
-            json.dumps({"I18n": True, "pss01": {}})
-        )
-        monkeypatch.setattr(
-            survey_cli,
-            "compile_survey_template",
-            lambda data, lang, fallback_langs: {"compiled": True},
-        )
-        monkeypatch.setattr(
-            "src.converters.survey.convert_survey_file_to_prism_dataset",
-            lambda **kw: _FakeResult(),
-        )
-        cmd_survey_convert(_convert_args(tmp_path, library=str(library)))
-        out = capsys.readouterr().out
-        assert "i18n compiled to de" in out
+    @pytest.mark.parametrize("lang, expected", [("en", "en"), (None, None), (" DE ", "de")])
+    def test_language_goes_to_the_converter_which_picks_it_out_of_multilingual_templates(
+        self, tmp_path, monkeypatch, lang, expected
+    ):
+        self._plain_library(tmp_path)
+        seen = {}
+
+        def _convert(**kw):
+            seen.update(kw)
+            return _FakeResult()
+
+        monkeypatch.setattr("src.converters.survey.convert_survey_file_to_prism_dataset", _convert)
+        cmd_survey_convert(_convert_args(tmp_path, lang=lang))
+        assert seen["language"] == expected
 
     def test_default_library_is_the_official_library_of_the_app(
         self, tmp_path, monkeypatch, capsys
@@ -969,24 +965,3 @@ class TestCmdSurveyConvert:
         out = capsys.readouterr().out
         assert "Survey conversion complete" in out
         assert str(lib_dir.resolve()) in out
-
-    def test_default_library_with_language_maps_is_compiled(
-        self, tmp_path, monkeypatch, capsys
-    ):
-        app_root = tmp_path / "workspace"
-        lib_dir = app_root / "official" / "library" / "survey"
-        lib_dir.mkdir(parents=True)
-        (lib_dir / "survey-pss.json").write_text(json.dumps({"I18n": {}, "pss01": {}}))
-        monkeypatch.setattr(survey_cli, "_APP_ROOT", app_root / "app")
-        monkeypatch.setattr(
-            survey_cli,
-            "compile_survey_template",
-            lambda data, lang, fallback_langs: {"compiled": True},
-        )
-        monkeypatch.setattr(
-            "src.converters.survey.convert_survey_file_to_prism_dataset",
-            lambda **kw: _FakeResult(),
-        )
-        cmd_survey_convert(_convert_args(tmp_path, library=None))
-        out = capsys.readouterr().out
-        assert "i18n compiled to de" in out

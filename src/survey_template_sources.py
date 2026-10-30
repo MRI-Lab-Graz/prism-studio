@@ -8,6 +8,7 @@ library).
 
 from __future__ import annotations
 
+import inspect
 import json
 import shutil
 import tempfile
@@ -201,3 +202,56 @@ def copy_used_templates_to_project(library: EffectiveLibrary, tasks, project_pat
         project_path,
         **kwargs,
     )
+
+
+def _accepted_kwargs(converter_fn, kwargs: dict, log_fn=None) -> dict:
+    """Drop the options an older converter does not take (and say so)."""
+    try:
+        parameters = inspect.signature(converter_fn).parameters
+    except (TypeError, ValueError):
+        return kwargs
+    if any(p.kind == inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        return kwargs
+    unsupported = sorted(k for k in kwargs if k not in parameters)
+    if unsupported:
+        message = (
+            f"Converter '{getattr(converter_fn, '__name__', 'converter')}' does not accept options "
+            f"{', '.join(unsupported)}; skipping unsupported options."
+        )
+        log_fn(message, "warning") if log_fn else print(f"[PRISM WARN] {message}")
+    return {k: v for k, v in kwargs.items() if k in parameters}
+
+
+def run_survey_with_template_sources(
+    converter_fn, *, library_dir, fallback_project_path, app_root, log_fn=None, **kwargs
+):
+    """Run a survey conversion: the CLI's and Studio's one way to do it.
+
+    The standard libraries are merged (project, then personal, then global); a library folder the caller
+    chose is used as given. The templates the conversion used end up in the project. ``force`` left unset
+    means: on when the output is a PRISM project (writing there is what a conversion is for), else off.
+    """
+    technical_defaults = infer_technical_defaults(kwargs.get("input_path"))
+    versions = kwargs.get("template_version_overrides") or {}
+    if fallback_project_path:
+        kwargs.setdefault("project_path", fallback_project_path)
+    if kwargs.get("force") is None:
+        kwargs["force"] = bool(fallback_project_path) or (Path(kwargs.get("output_root") or ".") / "project.json").is_file()
+    kwargs = _accepted_kwargs(converter_fn, kwargs, log_fn)
+
+    effective = (
+        build_effective_library(fallback_project_path, app_root)
+        if is_standard_library(library_dir, fallback_project_path, app_root)
+        else None
+    )
+    merged = effective is not None and bool(effective.origins)
+    result = converter_fn(library_dir=str(effective.directory if merged else library_dir), **kwargs)
+    tasks = list(getattr(result, "tasks_included", []) or [])
+    if merged:
+        copy_used_templates_to_project(effective, tasks, fallback_project_path,
+                                       technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
+    else:
+        given = survey_templates_dir(Path(library_dir))
+        copy_templates_to_project(tasks, lambda task: given / f"survey-{task}.json", fallback_project_path,
+                                  technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
+    return result

@@ -347,12 +347,13 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
 
     def test_template_editor_save_api_rejects_unconfirmed_conflicts(self):
         content = TEMPLATE_EDITOR_BLUEPRINT.read_text(encoding="utf-8")
+        backend = (TEMPLATE_EDITOR_BLUEPRINT.parents[4] / "src" / "template_save.py").read_text(encoding="utf-8")
 
-        self.assertIn(
-            'allow_overwrite = bool(payload.get("allow_overwrite", False))', content
-        )
-        self.assertIn("if path.exists() and not allow_overwrite:", content)
+        # the route only passes the flag on and shows the conflict; the shared function decides
+        self.assertIn('allow_overwrite=bool(payload.get("allow_overwrite", False))', content)
+        self.assertIn("except TemplateExists as exc:", content)
         self.assertIn('"code": "file_exists"', content)
+        self.assertIn("if path.exists() and not allow_overwrite:", backend)
 
     def test_template_editor_add_item_mode_controls_exist(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")

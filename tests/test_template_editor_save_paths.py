@@ -9,6 +9,8 @@ from types import SimpleNamespace
 
 from flask import Flask, session
 
+from template_fixtures import library_template, project_template
+
 
 def _build_app_and_handlers():
     app_root = Path(__file__).resolve().parents[1] / "app"
@@ -23,192 +25,62 @@ def _build_app_and_handlers():
     return app, handlers
 
 
-def test_template_editor_save_writes_only_to_project_code_library(
-    tmp_path, monkeypatch
-):
+def _save(app, handlers, session_project, **payload):
+    body = {"modality": "survey", "schema_version": "stable", **payload}
+    with app.test_request_context("/api/template-editor/save", method="POST", json=body):
+        session["current_project_path"] = str(session_project)
+        return handlers.api_template_editor_save()
+
+
+def test_template_editor_save_writes_only_to_project_code_library(tmp_path):
     app, handlers = _build_app_and_handlers()
 
     legacy_path = tmp_path / "survey_library" / "survey" / "survey-mood.json"
     legacy_path.parent.mkdir(parents=True)
     legacy_path.write_text('{"location": "legacy-root"}', encoding="utf-8")
 
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
-
-    template = {
-        "Study": {"TaskName": "mood", "ShortName": "mood"},
-        "Technical": {"Language": "en"},
-        "MOOD01": {"Description": "I feel calm.", "MinValue": 1, "MaxValue": 5},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-mood.json",
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
+    response, status_code = _save(app, handlers, tmp_path, filename="survey-mood.json", template=project_template("mood"))
 
     assert status_code == 200
-    data = response.get_json()
-    assert data["ok"] is True
-
+    assert response.get_json()["ok"] is True
     saved_path = tmp_path / "code" / "library" / "survey" / "survey-mood.json"
-    assert saved_path.exists()
-    assert json.loads(saved_path.read_text(encoding="utf-8")) == template
-    assert json.loads(legacy_path.read_text(encoding="utf-8")) == {
-        "location": "legacy-root"
-    }
+    assert json.loads(saved_path.read_text(encoding="utf-8"))["Study"]["TaskName"] == "mood"
+    assert json.loads(legacy_path.read_text(encoding="utf-8")) == {"location": "legacy-root"}
 
 
-def test_template_editor_save_normalizes_legacy_platform_for_paper(
-    tmp_path, monkeypatch
-):
+def test_template_editor_save_normalizes_legacy_platform_for_paper(tmp_path):
     app, handlers = _build_app_and_handlers()
+    template = project_template("stai")
+    template["Technical"].update(AdministrationMethod="paper", SoftwarePlatform="Legacy/Imported", SoftwareVersion="legacy")
 
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+    response, status_code = _save(app, handlers, tmp_path, filename="survey-stai.json", template=template)
 
-    template = {
-        "Study": {"TaskName": "stai", "ShortName": "stai"},
-        "Technical": {
-            "Language": "en",
-            "Respondent": "self",
-            "AdministrationMethod": "paper",
-            "SoftwarePlatform": "Legacy/Imported",
-            "SoftwareVersion": "legacy",
-        },
-    }
+    assert status_code == 200, response.get_json()
+    saved = json.loads((tmp_path / "code" / "library" / "survey" / "survey-stai.json").read_text(encoding="utf-8"))
+    assert saved["Technical"]["SoftwarePlatform"] == "Paper and Pencil"
+    assert saved["Technical"]["SoftwareVersion"] == ""
 
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-stai.json",
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
 
-    assert status_code == 200
+def test_template_editor_save_relaxes_schema_when_copying_global_template(tmp_path):
+    """A library template has no project fields (platform, administration method): saving it as a copy of a global one is fine."""
+    app, handlers = _build_app_and_handlers()
+    template = library_template("aai")
+    template["Technical"].pop("SoftwarePlatform", None)
+    template["Technical"].pop("AdministrationMethod", None)
+
+    response, status_code = _save(app, handlers, tmp_path, filename="survey-aai.json", is_global=True, template=template)
+
+    assert status_code == 200, response.get_json()
     assert response.get_json()["ok"] is True
 
-    saved_path = tmp_path / "code" / "library" / "survey" / "survey-stai.json"
-    saved_payload = json.loads(saved_path.read_text(encoding="utf-8"))
-    assert saved_payload["Technical"]["SoftwarePlatform"] == "Paper and Pencil"
-    assert saved_payload["Technical"]["SoftwareVersion"] == ""
 
-
-def test_template_editor_save_relaxes_schema_when_copying_global_template(
-    tmp_path, monkeypatch
-):
+def test_template_editor_save_is_strict_when_not_copying_global_template(tmp_path):
     app, handlers = _build_app_and_handlers()
+    template = library_template("aai")
+    template["Technical"].pop("SoftwarePlatform", None)
+    template["Technical"].pop("AdministrationMethod", None)
 
-    captured_required = {}
-
-    def _fake_validate_against_schema(*, instance, schema):
-        captured_required["study"] = list(
-            schema.get("properties", {}).get("Study", {}).get("required", [])
-        )
-        captured_required["technical"] = list(
-            schema.get("properties", {}).get("Technical", {}).get("required", [])
-        )
-        return []
-
-    monkeypatch.setattr(
-        handlers,
-        "_load_prism_schema",
-        lambda **kwargs: {
-            "properties": {
-                "Study": {"required": ["TaskName", "LicenseID", "Citation"]},
-                "Technical": {"required": ["SoftwarePlatform", "AdministrationMethod"]},
-            }
-        },
-    )
-    monkeypatch.setattr(
-        handlers, "_validate_against_schema", _fake_validate_against_schema
-    )
-
-    template = {
-        "Study": {"ShortName": "aai", "TaskName": "aai"},  # the task name is never relaxed
-        "Technical": {"Language": "en"},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-aai.json",
-            "is_global": True,
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
-
-    assert status_code == 200
-    assert response.get_json()["ok"] is True
-    assert "TaskName" not in captured_required["study"]
-    assert "LicenseID" not in captured_required["study"]
-    assert "Citation" not in captured_required["study"]
-    assert "SoftwarePlatform" not in captured_required["technical"]
-    assert "AdministrationMethod" not in captured_required["technical"]
-
-
-def test_template_editor_save_is_strict_when_not_copying_global_template(
-    tmp_path, monkeypatch
-):
-    app, handlers = _build_app_and_handlers()
-
-    def _fake_validate_against_schema(*, instance, schema):
-        required_study = (
-            schema.get("properties", {}).get("Study", {}).get("required", [])
-        )
-        if "TaskName" in required_study and "TaskName" not in instance.get("Study", {}):
-            return [{"path": "$.Study", "message": "'TaskName' is a required property"}]
-        return []
-
-    monkeypatch.setattr(
-        handlers,
-        "_load_prism_schema",
-        lambda **kwargs: {
-            "properties": {
-                "Study": {"required": ["TaskName"]},
-                "Technical": {"required": []},
-            }
-        },
-    )
-    monkeypatch.setattr(
-        handlers, "_validate_against_schema", _fake_validate_against_schema
-    )
-
-    template = {
-        "Study": {"ShortName": "aai"},
-        "Technical": {"Language": "en"},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-aai.json",
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
+    response, status_code = _save(app, handlers, tmp_path, filename="survey-aai.json", template=template)
 
     assert status_code == 400
     payload = response.get_json()
@@ -216,121 +88,52 @@ def test_template_editor_save_is_strict_when_not_copying_global_template(
     assert payload["errors"]
 
 
-def test_template_editor_save_requires_explicit_overwrite_confirmation(
-    tmp_path, monkeypatch
-):
+def test_template_editor_save_requires_explicit_overwrite_confirmation(tmp_path):
     app, handlers = _build_app_and_handlers()
-
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
-
     existing_path = tmp_path / "code" / "library" / "survey" / "survey-mood.json"
     existing_path.parent.mkdir(parents=True)
     existing_path.write_text('{"status": "original"}', encoding="utf-8")
 
-    template = {
-        "Study": {"TaskName": "mood", "ShortName": "mood"},
-        "Technical": {"Language": "en"},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-mood.json",
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
+    response, status_code = _save(app, handlers, tmp_path, filename="survey-mood.json", template=project_template("mood"))
 
     assert status_code == 409
     payload = response.get_json()
-    assert (
-        payload["error"]
-        == 'Template "survey-mood.json" already exists in the project library'
-    )
+    assert payload["error"] == 'Template "survey-mood.json" already exists in the project library'
     assert payload["code"] == "file_exists"
-    assert json.loads(existing_path.read_text(encoding="utf-8")) == {
-        "status": "original"
-    }
+    assert json.loads(existing_path.read_text(encoding="utf-8")) == {"status": "original"}
 
 
-def test_template_editor_save_allows_confirmed_overwrite(tmp_path, monkeypatch):
+def test_template_editor_save_allows_confirmed_overwrite(tmp_path):
     app, handlers = _build_app_and_handlers()
-
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
-
     existing_path = tmp_path / "code" / "library" / "survey" / "survey-mood.json"
     existing_path.parent.mkdir(parents=True)
     existing_path.write_text('{"status": "original"}', encoding="utf-8")
 
-    template = {
-        "Study": {"TaskName": "mood", "ShortName": "mood"},
-        "Technical": {"Language": "en"},
-        "MOOD01": {"Description": "I feel calm."},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-mood.json",
-            "allow_overwrite": True,
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(tmp_path)
-        response, status_code = handlers.api_template_editor_save()
+    response, status_code = _save(
+        app, handlers, tmp_path, filename="survey-mood.json", allow_overwrite=True, template=project_template("mood")
+    )
 
     assert status_code == 200
     assert response.get_json()["ok"] is True
-    assert json.loads(existing_path.read_text(encoding="utf-8")) == template
+    assert json.loads(existing_path.read_text(encoding="utf-8"))["Study"]["TaskName"] == "mood"
 
 
-def test_template_editor_save_can_target_explicit_project_path(tmp_path, monkeypatch):
+def test_template_editor_save_can_target_explicit_project_path(tmp_path):
     app, handlers = _build_app_and_handlers()
-
     primary_project = tmp_path / "primary"
     target_project = tmp_path / "target"
     primary_project.mkdir()
     target_project.mkdir()
 
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
-    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
-
-    template = {
-        "Study": {"TaskName": "mood", "ShortName": "mood"},
-        "Technical": {"Language": "en"},
-    }
-
-    with app.test_request_context(
-        "/api/template-editor/save",
-        method="POST",
-        json={
-            "modality": "survey",
-            "schema_version": "stable",
-            "filename": "survey-mood.json",
-            "project_path": str(target_project),
-            "template": template,
-        },
-    ):
-        session["current_project_path"] = str(primary_project)
-        response, status_code = handlers.api_template_editor_save()
+    response, status_code = _save(
+        app, handlers, primary_project, filename="survey-mood.json", project_path=str(target_project),
+        template=project_template("mood"),
+    )
 
     assert status_code == 200
     assert response.get_json()["ok"] is True
-    assert (
-        target_project / "code" / "library" / "survey" / "survey-mood.json"
-    ).exists()
-    assert not (
-        primary_project / "code" / "library" / "survey" / "survey-mood.json"
-    ).exists()
+    assert (target_project / "code" / "library" / "survey" / "survey-mood.json").exists()
+    assert not (primary_project / "code" / "library" / "survey" / "survey-mood.json").exists()
 
 
 def test_template_editor_delete_can_target_explicit_project_path(tmp_path, monkeypatch):

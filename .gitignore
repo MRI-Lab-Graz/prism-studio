@@ -106,8 +106,6 @@ recipes/
 derivatives/
 !src/derivatives/
 !src/derivatives/**
-!app/src/derivatives/
-!app/src/derivatives/**
 src/derivatives/**/__pycache__/
 src/derivatives/**/*.pyc
 app/src/derivatives/**/__pycache__/

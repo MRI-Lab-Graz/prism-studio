@@ -260,10 +260,10 @@ def test_no_measurement_pulldown_is_wider_than_its_card(bare_page, studio_url):
 def test_environment_measurements_are_chosen_group_first_with_short_labels(bare_page, studio_url):
     choose_kind(bare_page, studio_url, "environment")
     group, pick = bare_page.locator("#spec-m-group"), bare_page.locator("#spec-m-pick")
-    assert group.locator("option").all_inner_texts() == [
+    expect(group.locator("option")).to_have_text([  # waits for the page to fill the list
         "Choose…", "Temperature and humidity", "Wind, pressure and rain", "Sun and light", "Place and time", "Air quality", "Pollen",
         "Not in the list: add a measurement…",
-    ]
+    ])
     expect(pick).to_be_disabled()  # until a group is chosen
     group.select_option("Air quality")
     expect(pick).to_be_enabled()

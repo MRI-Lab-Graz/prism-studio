@@ -862,8 +862,8 @@ def build_prism_tools_parsers(
     )
     parser_survey_convert.add_argument(
         "--lang",
-        default="de",
-        help="Language for templates when using i18n libraries (default: de; use 'auto' to infer for .lsa)",
+        default=None,
+        help="Language to write multilingual templates in (default: the template's own; 'auto' takes an .lsa's)",
     )
     parser_survey_convert.add_argument(
         "--output",
@@ -934,7 +934,39 @@ def build_prism_tools_parsers(
     parser_survey_convert.add_argument(
         "--force",
         action="store_true",
-        help="Allow writing into a non-empty output dir and overwrite inherited sidecars",
+        default=None,
+        help=(
+            "Allow writing into a non-empty output dir and overwrite inherited sidecars "
+            "(default: on when the output is a PRISM project, otherwise off)"
+        ),
+    )
+    parser_survey_convert.add_argument(
+        "--strict-levels",
+        action="store_true",
+        help="For an .lsa: only accept answers that are one of the template's levels",
+    )
+    parser_survey_convert.add_argument(
+        "--allow-near-item-match",
+        action="store_true",
+        help="Match survey columns to template items whose IDs are close but not identical",
+    )
+    parser_survey_convert.add_argument(
+        "--near-match-tasks",
+        default=None,
+        metavar="TASK[,TASK...]",
+        help="Limit near-item matching to these tasks (default: all)",
+    )
+    parser_survey_convert.add_argument(
+        "--separator",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        default=None,
+        help="Column separator of a .csv/.tsv input (default: guessed from the file)",
+    )
+    parser_survey_convert.add_argument(
+        "--id-map",
+        dest="id_map",
+        default=None,
+        help="File mapping the IDs in the survey to participant IDs",
     )
     parser_survey_convert.add_argument(
         "--name", help="Dataset name written to dataset_description.json (if created)"

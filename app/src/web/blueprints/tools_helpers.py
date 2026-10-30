@@ -155,14 +155,6 @@ def _project_template_folder(
     return folder
 
 
-def _personal_template_folder(*, modality: str) -> Path:
-    from src.personal_library import personal_library_folder
-
-    folder = personal_library_folder(modality, Path(current_app.root_path))
-    folder.mkdir(parents=True, exist_ok=True)
-    return folder
-
-
 def _load_prism_schema(*, modality: str, schema_version: str | None) -> dict:
     from src.schema_manager import load_schema
 

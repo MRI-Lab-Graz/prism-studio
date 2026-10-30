@@ -136,101 +136,23 @@ def cmd_survey_convert(args):
             convert_survey_file_to_prism_dataset,
             convert_survey_lsa_to_prism_dataset,
         )
+        from src.survey_library_resolution import resolve_survey_library, survey_templates_dir
+        from src.survey_template_sources import run_survey_with_template_sources, template_tiers
+        from src.survey_workflow_service import (
+            SUPPORTED_SURVEY_TABULAR_SUFFIXES,
+            SurveyWorkflowStageOptions,
+            SurveyWorkflowStageService,
+        )
     except Exception as e:
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
 
-    import tempfile
-
-    def _library_needs_i18n_compile(dir_path: Path) -> bool:
-        """Return True if templates in dir_path appear to contain language maps."""
-        try:
-            files = sorted(dir_path.glob("survey-*.json"))
-        except Exception:
-            return False
-        for p in files[:3]:
-            try:
-                data = _read_json(p)
-            except Exception:
-                continue
-            if isinstance(data, dict) and "I18n" in data:
-                return True
-            reserved = {
-                "Technical",
-                "Study",
-                "Metadata",
-                "I18n",
-                "Scoring",
-                "Normative",
-            }
-            for item_id, item_def in (data or {}).items():
-                if item_id in reserved or not isinstance(item_def, dict):
-                    continue
-                d = item_def.get("Description")
-                if isinstance(d, dict):
-                    return True
-                levels = item_def.get("Levels")
-                if isinstance(levels, dict) and any(
-                    isinstance(v, dict) for v in levels.values()
-                ):
-                    return True
-        return False
-
-    def _compile_i18n_library(
-        src_dir: Path, lang: str
-    ) -> tuple[Path, tempfile.TemporaryDirectory]:
-        tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
-        out_dir = Path(tmp.name)
-        _ensure_dir(out_dir)
-        fallback_langs = [lang_code for lang_code in ["de", "en"] if lang_code != lang]
-
-        for p in sorted(src_dir.glob("survey-*.json")):
-            compiled = compile_survey_template(
-                _read_json(p), lang=lang, fallback_langs=fallback_langs
-            )
-            _write_json(out_dir / p.name, compiled)
-
-        return out_dir, tmp
-
-    lang = str(getattr(args, "lang", "de") or "de").strip().lower()
-    if not lang:
-        lang = "de"
-    if lang == "auto":  # templates are compiled for one real language; an .lsa names its own
+    lang = str(getattr(args, "lang", None) or "").strip().lower() or None
+    if lang == "auto":  # an .lsa names its own language
         from src.converters.survey_lsa import infer_lsa_metadata
 
         input_file = Path(args.input)
-        inferred = infer_lsa_metadata(input_file).get("language") if input_file.suffix.lower() == ".lsa" else None
-        lang = (inferred or "de").lower()
-
-    library_tmp = None
-    library_label = None
-
-    effective = None  # the merged project/personal/global library, when --library is not given
-    if getattr(args, "library", None):
-        candidate = Path(args.library)
-    else:
-        from src.survey_template_sources import build_effective_library
-
-        project_hint = getattr(args, "project", None)
-        if not project_hint and (Path(args.output) / "project.json").is_file():
-            project_hint = args.output
-        effective = build_effective_library(project_hint, _APP_ROOT.parent)
-        if not effective.origins:
-            print("Error: No survey library found. Please provide templates in the project's code/library, your")
-            print("       personal library, or the global library, or provide --library /path/to/library")
-            sys.exit(1)
-        candidate = effective.directory
-
-    library_label = (
-        "; ".join(f"{t.label} {t.directory.resolve()}" for t in effective.tiers)
-        if effective
-        else str(candidate.resolve())
-    )
-    if _library_needs_i18n_compile(candidate):
-        lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
-        library_label += f" (i18n compiled to {lang})"
-    else:
-        lib_dir = candidate
+        lang = (infer_lsa_metadata(input_file).get("language") or "").lower() or None if input_file.suffix.lower() == ".lsa" else None
 
     try:
         input_path = Path(args.input).resolve()
@@ -250,47 +172,60 @@ def cmd_survey_convert(args):
             # Writing into a PRISM project: the project's own rules (session map) apply.
             project_path = output_root
 
-        # An .lsa goes through the LimeSurvey reader (structure + responses), like the GUI.
-        is_lsa = input_path.suffix.lower() == ".lsa"
-        convert = (
-            convert_survey_lsa_to_prism_dataset
-            if is_lsa
-            else convert_survey_file_to_prism_dataset
-        )
-        result = convert(
-            input_path=str(input_path),
-            library_dir=str(lib_dir),
-            output_root=str(output_root),
+        if getattr(args, "library", None):
+            lib_dir = Path(args.library)
+            library_label = str(lib_dir.resolve())
+        else:
+            try:
+                lib_dir = survey_templates_dir(resolve_survey_library(project_path, _APP_ROOT.parent))
+            except FileNotFoundError as e:
+                print(f"Error: {e}")
+                print("       Or provide --library /path/to/library")
+                sys.exit(1)
+            tiers = template_tiers(project_path, _APP_ROOT.parent)  # the libraries that are merged, nearest first
+            library_label = "; ".join(f"{t.label} {t.directory.resolve()}" for t in tiers) or str(lib_dir.resolve())
+
+        # The options Studio's form fills, and the service Studio runs: the same code, not a copy.
+        options = SurveyWorkflowStageOptions(
+            suffix=input_path.suffix.lower(),
+            input_path=input_path,
+            library_dir=lib_dir,
+            output_root=output_root,
             survey=args.survey,
             id_column=args.id_column,
             session_column=args.session_column,
-            session=getattr(args, "session", None),
             run_column=getattr(args, "run_column", None),
-            **({} if is_lsa else {"sheet": args.sheet}),
+            session=getattr(args, "session", None),
+            sheet=args.sheet if args.sheet is not None else 0,
+            separator=getattr(args, "separator", None),
             unknown=args.unknown,
             dry_run=bool(args.dry_run),
-            force=bool(args.force),
+            force=getattr(args, "force", None),
             name=args.name,
-            authors=args.authors,
-            alias_file=getattr(args, "alias", None),
+            authors=tuple(args.authors or ()),
+            language=lang,
+            alias_file=Path(args.alias) if getattr(args, "alias", None) else None,
+            id_map_file=Path(args.id_map) if getattr(args, "id_map", None) else None,
+            strict_levels=bool(getattr(args, "strict_levels", False)),
             duplicate_handling=getattr(args, "duplicate_handling", "error"),
             skip_existing=bool(getattr(args, "skip_existing", False)),
-            skip_participants=True,
-            project_path=project_path,
+            project_path=str(project_path) if project_path else None,
+            fallback_project_path=str(project_path) if project_path else None,
             template_version_overrides=template_version_overrides,
+            allow_near_item_match=bool(getattr(args, "allow_near_item_match", False)),
+            near_match_tasks=[t.strip() for t in args.near_match_tasks.split(",") if t.strip()]
+            if getattr(args, "near_match_tasks", None)
+            else None,
             task_value_offsets=task_value_offsets,
         )
-        if effective is not None and not args.dry_run:
-            # the project carries the templates it was converted with (not only your own library)
-            from src.survey_template_sources import copy_used_templates_to_project, infer_technical_defaults
+        from functools import partial
 
-            copy_used_templates_to_project(
-                effective,
-                result.tasks_included,
-                project_path,
-                technical_defaults=infer_technical_defaults(input_path),
-                selected_versions=template_version_overrides,
-            )
+        result = SurveyWorkflowStageService(tabular_suffixes=SUPPORTED_SURVEY_TABULAR_SUFFIXES).run_stage(
+            workflow_runner=partial(run_survey_with_template_sources, app_root=_APP_ROOT.parent),
+            tabular_converter=convert_survey_file_to_prism_dataset,
+            lsa_converter=convert_survey_lsa_to_prism_dataset,
+            options=options,
+        )
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -570,7 +505,7 @@ def cmd_survey_convert(args):
                     shown_by_type[f["type"]] += 1
 
         print("\n" + "=" * 80)
-        print("No files were created. Run without --dry-run to execute the conversion.")
+        print("No data files were created. Run without --dry-run to execute the conversion.")
         print("=" * 80)
         return
 
