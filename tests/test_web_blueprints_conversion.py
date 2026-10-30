@@ -1,4 +1,5 @@
 import unittest
+from src.physio_renamer import extract_subject_session_from_source_path as _extract_subject_session_from_source_path
 import sys
 import os
 import shutil
@@ -1591,21 +1592,21 @@ class TestPhysioHandlersLogic(unittest.TestCase):
                 self.assertFalse(response.get_json()["exists"])
 
     def test_extract_subject_session_from_folder_path(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "sub-07/ses-03/VPDATA.RAW"
         )
         self.assertEqual(subject, "07")
         self.assertEqual(session, "03")
 
     def test_extract_subject_session_from_generic_folders(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "P001/baseline/VPDATA.RAW"
         )
         self.assertEqual(subject, "P001")
         self.assertEqual(session, "baseline")
 
     def test_extract_subject_session_from_folder_levels(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/135/t1/VPDATA.RAW",
             subject_level_from_end=2,
             session_level_from_end=1,
@@ -1614,7 +1615,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertEqual(session, "t1")
 
     def test_extract_subject_session_from_explicit_example_strings(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/132/t3/VPDATA.RAW",
             subject_level_from_end=2,
             session_level_from_end=1,
@@ -1626,7 +1627,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertEqual(session, "3")
 
     def test_extract_subject_from_explicit_example_without_session(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/132/VPDATA.RAW",
             subject_level_from_end=1,
             session_level_from_end=1,

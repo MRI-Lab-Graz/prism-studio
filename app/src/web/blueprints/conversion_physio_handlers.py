@@ -28,17 +28,15 @@ from .conversion_utils import (
     resolve_existing_project_root,
     summarize_project_output_paths,
 )
-from src.project_registration import register_session_in_project
+from src.conversion_to_project import ConversionCancelled, save_physio_batch_to_project
 from src.datalad_project_copy import copy_files_into_project
 from src.physio_renamer import (
     apply_folder_placeholders as _apply_folder_placeholders,
-    extract_subject_session_from_source_path as _extract_subject_session_from_source_path,
     new_filename_problem,
     normalize_project_dest_root as _normalize_project_dest_root,
     normalize_subject_rewrite_mode as _normalize_subject_rewrite_mode,
     resolve_project_copy_root as _resolve_project_copy_root,
     rewrite_subject_in_filename as _rewrite_subject_in_filename,
-    rewrite_subject_in_relative_path as _rewrite_subject_in_relative_path,
     should_use_flat_project_copy as _should_use_flat_project_copy,
 )
 
@@ -64,24 +62,6 @@ def _requested_project_path() -> str | None:
     return raw_value or None
 
 
-def _resolve_batch_convert_copy_path(
-    project_root: Path,
-    rel_path: Path,
-    *,
-    dest_root: str,
-    flat_structure: bool,
-    modality_filter: str,
-    subject_rewrite_mode: str = "keep",
-) -> Path:
-    rewritten_rel_path = _rewrite_subject_in_relative_path(
-        rel_path, subject_rewrite_mode
-    )
-    if _should_use_flat_project_copy(dest_root, flat_structure):
-        file_modality = modality_filter if modality_filter != "all" else "physio"
-        return project_root / file_modality / rewritten_rel_path.name
-    return project_root / rewritten_rel_path
-
-
 def _append_job_log(job_id: str, message: str, level: str = "info"):
     _batch_job_store.append_log(job_id, message, level)
 
@@ -94,30 +74,6 @@ def _is_job_cancelled(job_id: str) -> bool:
 def _mark_job_cancelled(job_id: str) -> bool:
     """Mark job as cancelled. Returns True if job existed."""
     return _batch_job_store.cancel(job_id)
-
-
-def _register_converted_sessions(project_path, converted, dataset_name, log=None):
-    """Register each converted (session, destination folder) in project.json."""
-    from collections import defaultdict
-
-    session_tasks: dict[tuple[str, str], list[str]] = defaultdict(list)
-    for cf in converted:
-        if cf.success and cf.session:
-            tasks = session_tasks[(cf.session, cf.target_folder)]
-            if cf.task:
-                tasks.append(cf.task)
-    for (ses_id, folder), tasks in session_tasks.items():
-        tasks = sorted(set(tasks))
-        try:
-            register_session_in_project(
-                Path(project_path), ses_id, tasks, folder, dataset_name, "physio"
-            )
-            if log:
-                tail = f" → {', '.join(tasks)}" if tasks else ""
-                log(f"Registered in project.json: ses-{ses_id} ({folder}){tail}", "info")
-        except Exception as reg_err:
-            if log:
-                log(f"⚠️ Could not register session ses-{ses_id} in project.json: {reg_err}", "warning")
 
 
 def _run_batch_job(job_id: str, config: dict[str, Any]):
@@ -200,51 +156,29 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                 if p_path:
                     base_project_root = Path(p_path)
                     if base_project_root.exists():
-                        project_root = _resolve_project_copy_root(
-                            p_path, config["dest_root"]
-                        )
-                        project_root.mkdir(parents=True, exist_ok=True)
-
-                        copy_pairs: list[tuple[Path, Path]] = []
-                        for file in output_dir.rglob("*"):
-                            if file.is_file():
-                                if _is_job_cancelled(job_id):
-                                    _append_job_log(
-                                        job_id,
-                                        "⏹️ Batch conversion cancelled while copying staged files into the project",
-                                        "warning",
-                                    )
-                                    _batch_job_store.failure(
-                                        job_id,
-                                        "Cancelled by user",
-                                        status="cancelled",
-                                    )
-                                    return
-                                rel_path = file.relative_to(output_dir)
-                                dest_file = _resolve_batch_convert_copy_path(
-                                    project_root,
-                                    rel_path,
-                                    dest_root=config["dest_root"],
-                                    flat_structure=bool(
-                                        config.get("flat_structure", False)
-                                    ),
-                                    modality_filter=config["modality_filter"],
-                                    subject_rewrite_mode=config.get(
-                                        "subject_rewrite_mode", "keep"
-                                    ),
-                                )
-                                copy_pairs.append((file, dest_file))
-
-                        copy_result = copy_files_into_project(
-                            dataset_root=base_project_root,
-                            copy_pairs=copy_pairs,
-                            run_message="PRISM: Copy batch-converted physio files into project",
-                        )
-                        copied_files = [
-                            base_project_root / rel_path
-                            for rel_path in list(copy_result.get("copied_paths") or [])
-                        ]
-                        payload["datalad"] = copy_result.get("datalad")
+                        try:
+                            project_save = save_physio_batch_to_project(
+                                project_root=base_project_root,
+                                staged_root=output_dir,
+                                converted=result.converted,
+                                dataset_name=config["dataset_name"],
+                                dest_root=config["dest_root"],
+                                flat_structure=bool(config.get("flat_structure", False)),
+                                modality_filter=config["modality_filter"],
+                                subject_rewrite_mode=config.get("subject_rewrite_mode", "keep"),
+                                cancel_check=lambda: _is_job_cancelled(job_id),
+                                log_fn=log_callback,
+                            )
+                        except ConversionCancelled:
+                            _append_job_log(
+                                job_id,
+                                "⏹️ Batch conversion cancelled while copying staged files into the project",
+                                "warning",
+                            )
+                            _batch_job_store.failure(job_id, "Cancelled by user", status="cancelled")
+                            return
+                        copied_files = project_save.output_paths
+                        payload["datalad"] = project_save.datalad
 
                         if copied_files:
                             output_paths = summarize_project_output_paths(
@@ -260,12 +194,6 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                             )
                             payload["project_output_count"] = len(copied_files)
 
-                        _register_converted_sessions(
-                            p_path,
-                            result.converted,
-                            config["dataset_name"],
-                            log=log_callback,
-                        )
                     else:
                         payload["warnings"].append(
                             f"Project path not found: {p_path}. Copy to project skipped."
@@ -722,34 +650,21 @@ def api_batch_convert():
             # If not a dry-run, move files to project if save_to_project is true
             copied_output_paths: list[Path] = []
             datalad_copy = None
+            if not dry_run:
+                create_dataset_description(output_dir, name=dataset_name)  # as the async job does
             if not dry_run and save_to_project:
-                project_root = _resolve_project_copy_root(
-                    current_project_root, dest_root
+                project_save = save_physio_batch_to_project(
+                    project_root=current_project_root,
+                    staged_root=output_dir,
+                    converted=result.converted,
+                    dataset_name=dataset_name,
+                    dest_root=dest_root,
+                    flat_structure=flat_structure,
+                    modality_filter=modality_filter,
+                    subject_rewrite_mode=subject_rewrite_mode,
                 )
-                project_root.mkdir(parents=True, exist_ok=True)
-                copy_pairs: list[tuple[Path, Path]] = []
-                for file in output_dir.rglob("*"):
-                    if file.is_file():
-                        rel_path = file.relative_to(output_dir)
-                        dest_file = _resolve_batch_convert_copy_path(
-                            project_root,
-                            rel_path,
-                            dest_root=dest_root,
-                            flat_structure=flat_structure,
-                            modality_filter=modality_filter,
-                            subject_rewrite_mode=subject_rewrite_mode,
-                        )
-                        copy_pairs.append((file, dest_file))
-
-                datalad_copy = copy_files_into_project(
-                    dataset_root=current_project_root,
-                    copy_pairs=copy_pairs,
-                    run_message="PRISM: Copy batch-converted physio files into project",
-                )
-                copied_output_paths = [
-                    current_project_root / rel_path
-                    for rel_path in list(datalad_copy.get("copied_paths") or [])
-                ]
+                datalad_copy = project_save.datalad
+                copied_output_paths = project_save.output_paths
 
             output_paths = []
             if copied_output_paths and current_project_root is not None:
@@ -852,7 +767,6 @@ def api_batch_convert():
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
     warnings = []
-    warned_subjects = set()
     try:
         tmp_path = Path(tmp_dir)
         input_dir = tmp_path / "input"
@@ -940,25 +854,15 @@ def api_batch_convert():
             )
 
         project_saved = False
-        project_root = None
         base_project_root = None
         datalad_copy = None
         copied_output_paths: list[Path] = []
-        copy_pairs: list[tuple[Path, Path]] = []
         if save_to_project:
             p_path = _requested_project_path() or session.get("current_project_path")
             if p_path:
                 base_project_root = resolve_existing_project_root(p_path)
-                if base_project_root is not None:
-                    project_root = _resolve_project_copy_root(
-                        base_project_root, dest_root
-                    )
-                    project_root.mkdir(parents=True, exist_ok=True)
-                else:
-                    warnings.append(
-                        f"Project path not found: {p_path}. Copy to project skipped."
-                    )
-                    project_root = None
+                if base_project_root is None:
+                    warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
             else:
                 warnings.append("No active project selected; copy to project skipped.")
 
@@ -966,70 +870,26 @@ def api_batch_convert():
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for file_path in output_dir.rglob("*"):
                 if file_path.is_file():
-                    rel_path = file_path.relative_to(output_dir)
-                    zf.write(file_path, rel_path)
+                    zf.write(file_path, file_path.relative_to(output_dir))
 
-                    if project_root:
-                        copy_rel_path = _rewrite_subject_in_relative_path(
-                            rel_path, subject_rewrite_mode
-                        )
-                        if _should_use_flat_project_copy(dest_root, flat_structure):
-                            file_modality = (
-                                modality_filter
-                                if modality_filter != "all"
-                                else "physio"
-                            )
-                            dest_path = project_root / file_modality / copy_rel_path.name
-                            log_callback(
-                                f"Flat copy: {copy_rel_path.name} → {dest_root}/{file_modality}/{copy_rel_path.name}"
-                            )
-                        else:
-                            bids = (
-                                parse_bids_filename(copy_rel_path.name)
-                                if parse_bids_filename
-                                else None
-                            )
-                            subject_label = None
-                            if bids and bids.get("sub"):
-                                subject_label = bids.get("sub")
-                            else:
-                                m = re.search(
-                                    r"(sub-[A-Za-z0-9]+)", copy_rel_path.name
-                                )
-                                if m:
-                                    subject_label = m.group(1)
-
-                            if subject_label:
-                                subject_dir = project_root / subject_label
-                                if (
-                                    not subject_dir.exists()
-                                    and subject_label not in warned_subjects
-                                ):
-                                    warnings.append(
-                                        f"Subject folder {subject_label} did not exist and will be created in project."
-                                    )
-                                    warned_subjects.add(subject_label)
-
-                            dest_path = project_root / copy_rel_path
-
-                        copy_pairs.append((file_path, dest_path))
-
-        if copy_pairs and base_project_root is not None:
-            datalad_copy = copy_files_into_project(
-                dataset_root=base_project_root,
-                copy_pairs=copy_pairs,
+        if base_project_root is not None:
+            create_dataset_description(output_dir, name=dataset_name)  # as the async job does
+            project_save = save_physio_batch_to_project(
+                project_root=base_project_root,
+                staged_root=output_dir,
+                converted=result.converted,
+                dataset_name=dataset_name,
+                dest_root=dest_root,
+                flat_structure=flat_structure,
+                modality_filter=modality_filter,
+                subject_rewrite_mode=subject_rewrite_mode,
                 run_message="PRISM: Copy converted physio files into project",
+                log_fn=log_callback,
             )
-            copied_output_paths = [
-                base_project_root / rel_path
-                for rel_path in list(datalad_copy.get("copied_paths") or [])
-            ]
+            warnings.extend(project_save.warnings)
+            datalad_copy = project_save.datalad
+            copied_output_paths = project_save.output_paths
             project_saved = bool(copied_output_paths)
-
-        if project_saved and not dry_run:
-            p_path = resolve_existing_project_root(session.get("current_project_path"))
-            if p_path is not None:
-                _register_converted_sessions(p_path, result.converted, dataset_name)
 
         output_paths = []
         if copied_output_paths and base_project_root is not None:

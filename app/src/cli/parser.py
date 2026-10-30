@@ -1141,7 +1141,31 @@ def build_prism_tools_parsers(
         "--input", required=True, help="Path to source folder containing raw files"
     )
     parser_physio_batch.add_argument(
-        "--output", required=True, help="Path to output PRISM dataset folder"
+        "--output",
+        default=None,
+        help="Path to output PRISM dataset folder (not needed with --project)",
+    )
+    parser_physio_batch.add_argument(
+        "--project",
+        default=None,
+        help="Save the converted files into this project (as Studio's 'save to project'): DataLad-aware copy, sessions registered",
+    )
+    parser_physio_batch.add_argument(
+        "--dest-root",
+        choices=["root", "prism", "rawdata", "sourcedata"],
+        default="root",
+        help="With --project: where in the project the files go (default: the project root)",
+    )
+    parser_physio_batch.add_argument(
+        "--flat-structure",
+        action="store_true",
+        help="With --project and --dest-root rawdata/sourcedata: one folder per modality, no sub-/ses- folders",
+    )
+    parser_physio_batch.add_argument(
+        "--subject-rewrite-mode",
+        choices=["keep", "last3"],
+        default="keep",
+        help="With --project: keep the subject labels or shorten them to their last three digits",
     )
     parser_physio_batch.add_argument(
         "--modality",

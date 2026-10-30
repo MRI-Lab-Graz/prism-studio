@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **`biometrics convert` and `physio batch-convert` save into the project like Studio.** `biometrics convert` now uses the project's
+  templates, matches participant IDs against the project's `participants.tsv` (the same table gave different `sub-` IDs on the
+  command line and in Studio) and takes `--project` and `--dry-run`. `physio batch-convert` takes `--project`, `--dest-root`,
+  `--flat-structure` and `--subject-rewrite-mode`. Both save through the shared function Studio's routes call. Studio's
+  synchronous physio batch no longer differs from its async one (it never registered sessions or wrote `dataset_description.json`).
 - **`survey convert` into a project saves like Studio's Convert.** Studio converted into a staging folder and then saved into the
   project (a DataLad-aware copy with a commit, the source file archived in `sourcedata/`, the template versions registered in
   `project.json`, the recipe offsets synced); the command wrote straight into the output and did none of it. One function now does

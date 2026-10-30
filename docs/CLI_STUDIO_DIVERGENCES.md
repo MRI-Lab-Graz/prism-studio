@@ -45,13 +45,14 @@ environment routes still carry their own copy of the tail (and register sessions
 their commands write straight into `--output`.
 
 ### Physio
-- `physio batch-convert`: **fixed** `--generate-physio-reports` and `--dataset-name` (the command now also writes
-  `dataset_description.json` like Studio). Open: `save_to_project`, `dest_root`, `flat_structure`, `subject_rewrite_mode`
-  (the save-to-project step above). Test: `tests/test_physio_batch_options_parity.py` lists the open ones and fails when a new
-  Studio option appears.
-- Physio renamer: the command calls `plan_rename`; Studio's 449-line route builds its own pipeline from nine helpers of the same
-  module and has `dest_root`, `flat_structure`, `subject_rewrite_mode` and the project copy, which the command lacks. Two
-  implementations of the rename plan: the route should call `plan_rename`.
+- **Batch convert: done.** `src/conversion_to_project.py::save_physio_batch_to_project` maps every file to its destination
+  (`dest_root`, flat, subject rewrite), copies with the DataLad-aware copy, registers the sessions and warns about new subject
+  folders. Studio's async job, its synchronous batch (folder and upload mode) and `physio batch-convert --project` call it;
+  `tests/test_physio_batch_saves_into_the_project.py` runs Studio's real route against the command. It also removed a
+  difference *inside* Studio: the synchronous route never registered sessions and never wrote `dataset_description.json`.
+- Open: the renamer. `file-management rename-physio` calls `plan_rename`; Studio's 449-line `api_physio_rename` builds its
+  own pipeline from nine helpers of the same module and has the project copy (`dest_root`, `flat_structure`,
+  `subject_rewrite_mode`), which the command lacks.
 
 ### Participants
 - Preview: Studio's route composes the column selection itself (filter relevant columns, `excluded_columns`, extra columns)
@@ -76,13 +77,10 @@ Needs `recipes draft` running `src.recipe_builder`.
 `limesurvey-save-to-project` routes call `converters.limesurvey` parsers and `survey_templates.match_*` directly. Probably the
 same code paths, not confirmed: read both and add a parity test as for `survey convert`.
 
-### Biometrics - the same input can give different participant IDs
-Studio's route resolves the biometrics library from the project (then the global one) and passes the project's existing
-participant IDs (`load_existing_participant_ids`) to `convert_biometrics_table_to_prism_dataset(existing_participant_ids=...)`,
-so unpadded IDs match the participants already in the project. `biometrics convert` has no `--project`, needs `--library`, and
-passes none of it: the same table gives different `sub-` IDs. (Studio's "dry run" is a conversion into a throwaway folder, and
-"validate" runs the validator afterwards: both are fine as they are.) Fix: the same runner pattern as `survey convert` (library
-choice, ID matching, tail) for biometrics.
+### Biometrics - done
+`biometrics convert` resolves the library from the project, matches participant IDs against the project's `participants.tsv`,
+and saves into the project with the shared function (template copies included); it has `--project` and `--dry-run`.
+`tests/test_biometrics_convert_saves_into_the_project.py` runs Studio's real route against the command.
 
 ### Not yet read
 Environment and file-management routes (their form fields were not extractable by the automatic pass).

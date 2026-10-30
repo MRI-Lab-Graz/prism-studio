@@ -153,3 +153,46 @@ def test_template_copies_are_planned_for_the_used_tasks_the_project_lacks(tmp_pa
 
     assert [(s.name, d.name) for s, d in pairs] == [("biometrics-fitness.json", "biometrics-fitness.json")]
     assert plan_template_copies("biometrics", library, [], project) == []
+
+
+def _physio_world(tmp_path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text(json.dumps({"Sessions": []}), encoding="utf-8")
+    staged = tmp_path / "staged"
+    folder = staged / "sub-001" / "ses-1" / "physio"
+    folder.mkdir(parents=True)
+    (folder / "sub-001_ses-1_task-rest_physio.tsv.gz").write_text("x", encoding="utf-8")
+    converted = [SimpleNamespace(success=True, session="1", target_folder="physio", task="rest")]
+    return project, staged, converted
+
+
+def _save_physio(tmp_path, **overrides):
+    from src.conversion_to_project import save_physio_batch_to_project
+
+    project, staged, converted = _physio_world(tmp_path)
+    kwargs = dict(
+        project_root=project, staged_root=staged, converted=converted, dataset_name="demo", dest_root="root",
+        flat_structure=False, modality_filter="all", subject_rewrite_mode="keep",
+    )
+    kwargs.update(overrides)
+    return project, save_physio_batch_to_project(**kwargs)
+
+
+def test_physio_files_keep_their_structure_under_the_project_root(tmp_path):
+    project, saved = _save_physio(tmp_path)
+    assert (project / "sub-001" / "ses-1" / "physio" / "sub-001_ses-1_task-rest_physio.tsv.gz").exists()
+    assert saved.output_paths and saved.registered_sessions == ["1"]
+
+
+def test_physio_files_can_go_flat_into_rawdata(tmp_path):
+    project, _saved = _save_physio(tmp_path, dest_root="rawdata", flat_structure=True)
+    assert (project / "rawdata" / "physio" / "sub-001_ses-1_task-rest_physio.tsv.gz").exists()
+
+
+def test_a_cancelled_physio_save_raises_before_anything_is_copied(tmp_path):
+    from src.conversion_to_project import ConversionCancelled
+
+    with pytest.raises(ConversionCancelled):
+        _save_physio(tmp_path, cancel_check=lambda: True)
+    assert not list((tmp_path / "proj").glob("sub-*"))
