@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from src.physio_varioport import run_varioport_conversion
 import hashlib
 import json
 import sys
@@ -65,43 +66,6 @@ def get_json_hash(json_path):
             return hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
 
 
-def _run_varioport_conversion(
-    raw_file: Path,
-    out_edf: Path,
-    out_json: Path,
-    *,
-    task: str,
-    sampling_rate: float | None,
-    bids_base: Path | None = None,
-) -> None:
-    extra = {"bids_base": bids_base} if bids_base else {}
-    try:
-        convert_varioport(
-            str(raw_file),
-            str(out_edf),
-            str(out_json),
-            task_name=task,
-            base_freq=sampling_rate,
-            **extra,
-        )
-    except ValueError as e:
-        if "Unsupported Varioport header type" not in str(e):
-            raise
-
-        print(
-            "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
-        )
-        convert_varioport(
-            str(raw_file),
-            str(out_edf),
-            str(out_json),
-            task_name=task,
-            base_freq=sampling_rate,
-            allow_raw_multiplexed=True,
-            **extra,
-        )
-
-
 def _iter_physio_input_files(input_path: Path) -> list[Path]:
     supported_suffixes = {".raw", ".vpd"}
     if input_path.is_file():
@@ -144,7 +108,8 @@ def cmd_convert_physio(args):
         print(f"Converting {raw_file.name} -> {out_edf.name}")
 
         try:
-            _run_varioport_conversion(
+            run_varioport_conversion(
+                convert_varioport,
                 raw_file,
                 out_edf,
                 out_json,
@@ -223,7 +188,8 @@ def cmd_convert_physio(args):
         print(f"Converting {filename} -> {out_edf.name}")
 
         try:
-            _run_varioport_conversion(
+            run_varioport_conversion(
+                convert_varioport,
                 raw_file,
                 out_edf,
                 target_dir / f"{out_base}.json",

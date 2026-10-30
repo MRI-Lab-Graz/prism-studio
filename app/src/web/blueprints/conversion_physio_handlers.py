@@ -23,16 +23,15 @@ from werkzeug.utils import secure_filename
 from .conversion_job_store import ConversionJobStore
 from .conversion_utils import (
     upload_basename,
-    normalize_filename,
     require_existing_project_root,
     resolve_existing_project_root,
     summarize_project_output_paths,
 )
 from src.conversion_to_project import ConversionCancelled, save_physio_batch_to_project
 from src.datalad_project_copy import copy_files_into_project
+from src.physio_varioport import run_varioport_conversion
 from src.physio_renamer import (
-    apply_folder_placeholders as _apply_folder_placeholders,
-    new_filename_problem,
+    rename_one,
     normalize_project_dest_root as _normalize_project_dest_root,
     normalize_subject_rewrite_mode as _normalize_subject_rewrite_mode,
     resolve_project_copy_root as _resolve_project_copy_root,
@@ -506,26 +505,9 @@ def api_physio_convert():
         out_edf = tmp_dir_path / (input_path.stem + ".edf")
         out_json = tmp_dir_path / (input_path.stem + ".json")
 
-        try:
-            convert_varioport(
-                str(input_path),
-                str(out_edf),
-                str(out_json),
-                task_name=task,
-                base_freq=base_freq_val,
-            )
-        except ValueError as e:
-            if "Unsupported Varioport header type" in str(e):
-                convert_varioport(
-                    str(input_path),
-                    str(out_edf),
-                    str(out_json),
-                    task_name=task,
-                    base_freq=base_freq_val,
-                    allow_raw_multiplexed=True,
-                )
-            else:
-                raise
+        run_varioport_conversion(
+            convert_varioport, input_path, out_edf, out_json, task=task, sampling_rate=base_freq_val, log_fn=lambda _message: None
+        )
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -1038,36 +1020,20 @@ def api_physio_rename():
         for idx, fname in enumerate(source_names):
             source_path = source_paths[idx] if idx < len(source_paths) else fname
             try:
-                raw_name = Path(source_path).name
-                new_name = regex.sub(replacement, raw_name)
-                if id_source == "folder":
-                    new_name = _apply_folder_placeholders(
-                        new_name,
-                        source_path,
-                        subject_level_from_end=folder_subject_level,
-                        session_level_from_end=folder_session_level,
-                        example_path=folder_example_path,
-                        subject_example_value=folder_subject_value,
-                        session_example_value=folder_session_value,
-                    )
-                new_name = normalize_filename(new_name)
-                if problem := new_filename_problem(new_name):
-                    raise ValueError(problem)
-
-                zip_path = new_name
-                if organize:
-                    bids = (
-                        parse_bids_filename(new_name) if parse_bids_filename else None
-                    )
-                    if bids:
-                        sub = bids.get("sub")
-                        ses = bids.get("ses")
-                        parts = [sub]
-                        if ses:
-                            parts.append(ses)
-                        parts.append(modality)
-                        parts.append(new_name)
-                        zip_path = "/".join(parts)
+                new_name, zip_path = rename_one(
+                    source_path,
+                    pattern=regex,
+                    replacement=replacement,
+                    id_source=id_source,
+                    folder_subject_level=folder_subject_level,
+                    folder_session_level=folder_session_level,
+                    folder_example_path=folder_example_path,
+                    folder_subject_value=folder_subject_value,
+                    folder_session_value=folder_session_value,
+                    modality=modality,
+                    organize=organize,
+                    parse_bids_filename=parse_bids_filename,
+                )
 
                 results.append(
                     {
@@ -1117,45 +1083,28 @@ def api_physio_rename():
                 source_path = (
                     source_paths[idx] if idx < len(source_paths) else f.filename
                 )
-                old_name = Path(source_path).name
 
                 try:
-                    new_name = regex.sub(replacement, old_name)
-                    if id_source == "folder":
-                        new_name = _apply_folder_placeholders(
-                            new_name,
-                            source_path,
-                            subject_level_from_end=folder_subject_level,
-                            session_level_from_end=folder_session_level,
-                            example_path=folder_example_path,
-                            subject_example_value=folder_subject_value,
-                            session_example_value=folder_session_value,
-                        )
-                    new_name = normalize_filename(new_name)
-                    if problem := new_filename_problem(new_name):
-                        raise ValueError(problem)
+                    new_name, zip_path = rename_one(
+                        source_path,
+                        pattern=regex,
+                        replacement=replacement,
+                        id_source=id_source,
+                        folder_subject_level=folder_subject_level,
+                        folder_session_level=folder_session_level,
+                        folder_example_path=folder_example_path,
+                        folder_subject_value=folder_subject_value,
+                        folder_session_value=folder_session_value,
+                        modality=modality,
+                        organize=organize,
+                        parse_bids_filename=parse_bids_filename,
+                    )
                     project_name = (
                         _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
                         if save_to_project
                         else new_name
                     )
 
-                    zip_path = new_name
-                    if organize:
-                        bids = (
-                            parse_bids_filename(new_name)
-                            if parse_bids_filename
-                            else None
-                        )
-                        if bids:
-                            sub = bids.get("sub")
-                            ses = bids.get("ses")
-                            parts = [sub]
-                            if ses:
-                                parts.append(ses)
-                            parts.append(modality)
-                            parts.append(new_name)
-                            zip_path = "/".join(parts)
 
                     f_content = f.read()
                     if zf is not None:
@@ -1225,45 +1174,27 @@ def api_physio_rename():
                     )
 
             for server_file, server_source_path in server_files:
-                old_name = server_file.name
-
                 try:
-                    new_name = regex.sub(replacement, old_name)
-                    if id_source == "folder":
-                        new_name = _apply_folder_placeholders(
-                            new_name,
-                            server_source_path,
-                            subject_level_from_end=folder_subject_level,
-                            session_level_from_end=folder_session_level,
-                            example_path=folder_example_path,
-                            subject_example_value=folder_subject_value,
-                            session_example_value=folder_session_value,
-                        )
-                    new_name = normalize_filename(new_name)
-                    if problem := new_filename_problem(new_name):
-                        raise ValueError(problem)
+                    new_name, zip_path = rename_one(
+                        server_source_path,
+                        pattern=regex,
+                        replacement=replacement,
+                        id_source=id_source,
+                        folder_subject_level=folder_subject_level,
+                        folder_session_level=folder_session_level,
+                        folder_example_path=folder_example_path,
+                        folder_subject_value=folder_subject_value,
+                        folder_session_value=folder_session_value,
+                        modality=modality,
+                        organize=organize,
+                        parse_bids_filename=parse_bids_filename,
+                    )
                     project_name = (
                         _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
                         if save_to_project
                         else new_name
                     )
 
-                    zip_path = new_name
-                    if organize:
-                        bids = (
-                            parse_bids_filename(new_name)
-                            if parse_bids_filename
-                            else None
-                        )
-                        if bids:
-                            sub = bids.get("sub")
-                            ses = bids.get("ses")
-                            parts = [sub]
-                            if ses:
-                                parts.append(ses)
-                            parts.append(modality)
-                            parts.append(new_name)
-                            zip_path = "/".join(parts)
 
                     f_content = server_file.read_bytes()
                     if zf is not None:

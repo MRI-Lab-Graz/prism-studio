@@ -1,5 +1,6 @@
 import unittest
 from src.physio_renamer import extract_subject_session_from_source_path as _extract_subject_session_from_source_path
+from src.physio_renamer import apply_folder_placeholders as _apply_folder_placeholders
 import sys
 import os
 import shutil
@@ -1639,14 +1640,14 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertIsNone(session)
 
     def test_apply_folder_placeholders_without_session(self):
-        name = physio_module._apply_folder_placeholders(
+        name = _apply_folder_placeholders(
             "sub-{subject}_ses-{session}_task-rest_physio.raw",
             "sub-99/VPDATA.RAW",
         )
         self.assertEqual(name, "sub-99_task-rest_physio.raw")
 
     def test_apply_folder_placeholders_with_level_and_string_mapping(self):
-        name = physio_module._apply_folder_placeholders(
+        name = _apply_folder_placeholders(
             "sub-{subject}_ses-{session}_task-rest_physio.raw",
             "VPDATA/135/t1/VPDATA.RAW",
             subject_level_from_end=2,

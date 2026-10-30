@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   templates on the command line and in the GUI.
 
 ### Fixed
+- **The Physio Renamer and `file-management rename-physio` follow one rule.** Their copies of it had drifted in both directions: Studio's
+  renamer let you organize a task-bound physio file into `physio/`, an events file into a non-existent `events/` folder, or a raw
+  EDF into `beh/func/eeg`, which the command refused (with a pointer to the Physio converter); the command accepted a new file name
+  that was empty or held a path separator, which Studio refused. Both now refuse all of it. The Varioport conversion with its Type-7
+  retry is one function for `convert physio` and Studio's Physio converter, too.
 - **`biometrics convert` and `physio batch-convert` save into the project like Studio.** `biometrics convert` now uses the project's
   templates, matches participant IDs against the project's `participants.tsv` (the same table gave different `sub-` IDs on the
   command line and in Studio) and takes `--project` and `--dry-run`. `physio batch-convert` takes `--project`, `--dest-root`,

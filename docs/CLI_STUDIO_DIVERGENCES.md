@@ -50,9 +50,20 @@ their commands write straight into `--output`.
   folders. Studio's async job, its synchronous batch (folder and upload mode) and `physio batch-convert --project` call it;
   `tests/test_physio_batch_saves_into_the_project.py` runs Studio's real route against the command. It also removed a
   difference *inside* Studio: the synchronous route never registered sessions and never wrote `dataset_description.json`.
-- Open: the renamer. `file-management rename-physio` calls `plan_rename`; Studio's 449-line `api_physio_rename` builds its
-  own pipeline from nine helpers of the same module and has the project copy (`dest_root`, `flat_structure`,
-  `subject_rewrite_mode`), which the command lacks.
+- **Single-file convert: done.** The Varioport call with its Type-7 retry exists once (`src/physio_varioport.py`); `convert physio`
+  and Studio's Physio converter use it.
+- **Renamer, the rule: done.** `src/physio_renamer.py::rename_one` (name, filename check, BIDS organize) is the one rename rule;
+  `plan_rename` (the command) and Studio's three inline copies in `api_physio_rename` call it. `tests/test_physio_rename_parity.py`
+  runs Studio's dry-run against the command. The copies had drifted both ways: Studio lacked the organize refusals (no `events/`
+  folder, no task-bound physio in `physio/`, no raw EDF in beh/func/eeg) and the command lacked the filename check.
+  Decision (2026-10-30): both refuse.
+- **Renamer, save to project: open.** Studio's route copies renamed files into the project (`dest_root`, `flat_structure`,
+  `subject_rewrite_mode`, subject-folder warnings, its own second copy of the organize logic); `file-management rename-physio`
+  only writes to `--output`.
+
+### Environment - already compliant
+`src/environment_conversion.py::perform_environment_conversion` is the one engine; `environment convert` calls it and Studio's
+route runs the command in a subprocess.
 
 ### Participants
 - Preview: Studio's route composes the column selection itself (filter relevant columns, `excluded_columns`, extra columns)

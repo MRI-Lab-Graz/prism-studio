@@ -77,6 +77,7 @@
  "src.personal_library:personal_library_path": "to review",
  "src.physio_renamer:apply_folder_placeholders": "to review",
  "src.physio_renamer:new_filename_problem": "to review",
+ "src.physio_renamer:rename_one": "the command reaches it through plan_rename (the guard only sees imports); the Studio route calls it directly. Remove when the guard follows calls",
  "src.physio_renamer:resolve_project_copy_root": "to review",
  "src.physio_renamer:rewrite_subject_in_filename": "to review",
  "src.physio_renamer:should_use_flat_project_copy": "to review",
