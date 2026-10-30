@@ -27,7 +27,7 @@ Method: subagent-driven development (one implementer subagent per task, then a r
 | 3 | 103 official survey templates meet the new schema (`Technical.Language` = item-text language, provisional) | done, reviewed |
 | 4 | `src/survey_export_settings.py::strip_export_settings` | done, reviewed |
 | 5 | `save_template` strips export settings, returns `SavedTemplate(path, missing, removed)`, language-consistency checks, severity constants | done, reviewed (2 fix rounds) |
-| 6 | Importers/fixer stop inventing answers; one function gives the schema's current version | **committed (63c7bbbe, 3398511e), NOT reviewed** |
+| 6 | Importers/fixer stop inventing answers; one function gives the schema's current version | committed (63c7bbbe, 3398511e), reviewed; fix round 1 (no invented "en", drop LicenseID "Proprietary" in LimeSurvey/Pavlovia) in progress/committed after |
 | 2c | Rename the pinned spec tag v1.6.0 -> v1.5.1 (see below) | **not started** |
 | 7 | LimeSurvey export derives question settings itself; per-export overrides only | not started |
 | 8 | Converting/exporting needs a complete template (`require_complete_template`, `TemplateIncomplete`) | not started |
@@ -90,6 +90,15 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
 - **`SchemaVersion` writers** read the schema's current version via the helper from commit 63c7bbbe, not a literal.
 - Unowned old-fixture failures: Task 10b. `test_studio_version_flag` (2 failures) fails only from a long worktree path.
 
+## Must-do notes for Task 7 (from the Task 6 review)
+
+- `app/src/questionnaire_renderer.py:61` (`_detect_question_type`) reads `LimeSurvey.questionType`; imported templates no longer carry it, so numeric/long-text/date/hidden items would render as short-text. Give it a derivation from `DataType`/`InputType`/`Levels` (the plan lists the file; this is the reason).
+- Three LimeSurvey tests (`test_limesurvey_attributes`, `test_limesurvey_fixed_answer_levels`, `test_limesurvey_row_types`) monkeypatch `strip_export_settings` so the exporter still sees an explicit `questionType`. When Task 7 removes the exporter's `questionType` branch, rewrite them to assert the derivation.
+
+## Open question for Karl (not decided)
+
+Excel import still invents: `AdministrationMethod` "paper" (and `SoftwarePlatform` "Paper and Pencil"), `ResponseType ["paper-pencil"]`, `Version` "1.0", `OriginalName` fallback "<prefix> Questionnaire". Same class as the removed `Respondent: "self"`; changing it touches many Excel tests. Decide: remove (and report as missing) or keep.
+
 ## Deferred minors (from reviews)
 
 Task 4: empty `LimeSurvey: {}` left in place; `other is True` stricter than the exporter; `relevance` compared as the
@@ -97,6 +106,7 @@ string "1" only; no tests for `min = 0`, falsy `mandatory` vs existing `True`, n
 Task 5: inconsistent `path` formats in `missing` ("(template)" fallback); plain-string `Description`/`Levels`
 labels are skipped by the language check when two or more languages are declared; the editor validate endpoint now
 gets severity `error` for undeclared languages, check whether the JS reads `severity`.
+Task 6: `I18n.Languages` of LimeSurvey imports is alphabetical, not primary-first; importers discard the strip report; the fixer's "still to fill in" note names only Language and Respondent.
 Task 3: test does not assert `I18n.Languages` equals the detected languages.
 Spec Task 1: `OtherOption` has no `required: ["enabled"]`; `I18n.TranslationMethod` still allows `""`.
 
