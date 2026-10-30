@@ -127,10 +127,16 @@ _NAMED_BROWSERS: Dict[str, Dict[str, Any]] = {
 def _build_parser():
     import argparse
 
+    class PrintVersion(argparse.Action):
+        """Like action="version", but the line is printed as it is: argparse wraps it at 80 columns, which
+        splits a long install path."""
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            print(f"PRISM Studio {_version_and_location()}")
+            parser.exit()
+
     parser = argparse.ArgumentParser(description="PRISM Studio")
-    parser.add_argument(
-        "-v", "--version", action="version", version=f"PRISM Studio {_version_and_location()}"
-    )
+    parser.add_argument("-v", "--version", action=PrintVersion, nargs=0, help="show the version and exit")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
     )

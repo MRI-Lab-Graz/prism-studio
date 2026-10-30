@@ -51,6 +51,20 @@ def pytest_runtest_makereport(item, call):
     return report
 
 
+@pytest.fixture(autouse=True)
+def _no_user_app_settings(monkeypatch, tmp_path_factory):
+    """A test must not read the developer's own Studio settings (their global library folder, for one): the
+    settings folder is an empty one. Only the settings location is moved, not HOME (git and DataLad read it)."""
+    import sys
+
+    import src.config  # noqa: F401  (make sure the module is loaded)
+
+    empty = tmp_path_factory.mktemp("no_user_settings")
+    for module in list(sys.modules.values()):
+        if getattr(module, "__name__", "").endswith("config") and hasattr(module, "_get_user_app_settings_dir"):
+            monkeypatch.setattr(module, "_get_user_app_settings_dir", lambda: empty)
+
+
 @pytest.fixture
 def make_edf():
     """Factory building a minimal valid EDF by hand (no pyedflib needed).
