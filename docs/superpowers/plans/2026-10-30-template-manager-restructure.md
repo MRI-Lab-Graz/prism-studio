@@ -389,6 +389,20 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
   missing list; Preview still renders. Then run the Task 10 test → pass, and `npx vitest run`.
 - [ ] **Step 5: Commit** `feat(editor): General info is questionnaire info only; item work lives in Items; no tool properties`
 
+### Task 10b: Remaining fixtures and the demo project (added after Task 2's failure inventory)
+
+**Files:** the test groups the Task 2 report lists as unowned: `tests/test_save_gate_battery.py` (demo project sidecars
+lack `Metadata.Creator`/`I18n.Languages`), `test_modality_contribution.py`, `test_validation_matrix.py`,
+`test_validation_matrix_cli.py`, `test_cli_personal_library.py`, `test_template_editor_personal.py`,
+`test_cli_library_template_save_delete.py`, plus whatever the full suite still fails after Tasks 3-10.
+
+- [ ] **Step 1:** `PRISM_SKIP_VENV_CHECK=1 pytest -q --ignore=tests/e2e` and list every failure.
+- [ ] **Step 2:** Fix each by giving the fixture/demo data the required values (`Creator`, `I18n.Languages`,
+  `Respondent`, `Language`, current `SchemaVersion`), never by relaxing the schema or the tests' assertions.
+  `test_studio_version_flag` fails only from the long worktree path; do not chase it.
+- [ ] **Step 3:** Suite green (e2e excluded; run `tests/e2e` once on the finished branch if time allows).
+- [ ] **Step 4: Commit** `test: fixtures and demo project meet the stricter specification`
+
 ### Task 11: Docs and finishing
 
 **Files:**
