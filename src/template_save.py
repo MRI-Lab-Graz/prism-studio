@@ -46,8 +46,9 @@ class TemplateExists(Exception):
 class TemplateIncomplete(TemplateInvalid):
     """A template used for converting or exporting lacks required fields; the message has one line per field."""
 
-    def __init__(self, errors: list[dict]):
+    def __init__(self, errors: list[dict], tasks=()):
         self.errors = errors
+        self.tasks = list(tasks)  # the tasks whose templates are incomplete, when a conversion found them
         Exception.__init__(self, "\n".join(e["message"] for e in errors))
 
 

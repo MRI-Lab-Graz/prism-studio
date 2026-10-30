@@ -1866,7 +1866,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             template_dir = project_root / "code" / "library" / "survey"
             template_dir.mkdir(parents=True, exist_ok=True)
 
-            # Intentionally missing Study.TaskName, Study.LicenseID, and Technical.SoftwarePlatform
+            # Intentionally missing Study.LicenseID and Technical.SoftwarePlatform (the task name is the file name's)
             (template_dir / "survey-pss.json").write_text(
                 json.dumps(
                     {
@@ -1895,7 +1895,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertTrue(issues)
             issue_text = "\n".join(i.get("message", "") for i in issues)
             self.assertIn("SoftwarePlatform", issue_text)
-            self.assertIn("TaskName", issue_text)
+            self.assertNotIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
 
     def test_project_template_validation_accepts_legacy_platform_for_paper(self):

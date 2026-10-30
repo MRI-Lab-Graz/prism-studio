@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft7Validator
+from src.template_save import TemplateIncomplete, require_complete_template
 
 
 def validate_project_templates_for_tasks(
@@ -22,18 +22,6 @@ def validate_project_templates_for_tasks(
 
     template_dir = project_root / "code" / "library" / "survey"
     if not template_dir.exists():
-        return []
-
-    try:
-        from src.schema_manager import load_schema
-
-        app_root = Path(__file__).resolve().parents[3]
-        schema_dir = app_root / "schemas"
-        schema = load_schema("survey", str(schema_dir), version=schema_version)
-        if not schema:
-            return []
-        validator = Draft7Validator(schema)
-    except Exception:
         return []
 
     def _has_multiple_versions(template_payload: dict[str, Any] | None) -> bool:
@@ -82,15 +70,10 @@ def validate_project_templates_for_tasks(
             if isinstance(maybe_normalized_payload, dict):
                 normalized_payload = maybe_normalized_payload
 
-        for err in validator.iter_errors(normalized_payload):
-            field_path = " -> ".join([str(part) for part in err.path])
-            prefix = f"{field_path}: " if field_path else ""
-            issues.append(
-                {
-                    "file": str(template_path),
-                    "message": f"{prefix}{err.message}",
-                }
-            )
+        try:
+            require_complete_template(normalized_payload, source=str(template_path), schema_version=schema_version)
+        except TemplateIncomplete as incomplete:  # the backend gate: the one set of rules
+            issues.extend({"file": str(template_path), "message": e["message"]} for e in incomplete.errors)
 
         if _has_multiple_versions(normalized_payload) and _is_missing_version(
             normalized_payload

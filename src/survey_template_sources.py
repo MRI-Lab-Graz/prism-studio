@@ -21,6 +21,7 @@ from src.config import get_effective_library_paths
 from src.project_root import resolve_existing_project_root
 from src.survey_library_resolution import survey_templates_dir
 from src.system_files import filter_system_files
+from src.template_save import TemplateIncomplete
 
 
 @dataclass(frozen=True)
@@ -240,13 +241,25 @@ def run_survey_with_template_sources(
         else None
     )
     merged = effective is not None and bool(effective.origins)
-    result = converter_fn(library_dir=str(effective.directory if merged else library_dir), **kwargs)
-    tasks = list(getattr(result, "tasks_included", []) or [])
-    if merged:
-        copy_used_templates_to_project(effective, tasks, fallback_project_path,
-                                       technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
-    else:
+
+    def put_into_project(tasks):
+        if merged:
+            return copy_used_templates_to_project(effective, tasks, fallback_project_path,
+                                                  technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
         given = survey_templates_dir(Path(library_dir))
-        copy_templates_to_project(tasks, lambda task: given / f"survey-{task}.json", fallback_project_path,
-                                  technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
+        return copy_templates_to_project(tasks, lambda task: given / f"survey-{task}.json", fallback_project_path,
+                                         technical_defaults=technical_defaults, selected_versions=versions, log_fn=log_fn)
+
+    try:
+        result = converter_fn(library_dir=str(effective.directory if merged else library_dir), **kwargs)
+    except TemplateIncomplete as refused:
+        # A library file cannot be fixed by the user: leave the templates in the project and name them.
+        project_root = resolve_existing_project_root(fallback_project_path) if fallback_project_path else None
+        if project_root is None or not refused.tasks:
+            raise
+        put_into_project(refused.tasks)
+        copies = ", ".join(str(project_root / "code" / "library" / "survey" / f"survey-{t}.json") for t in refused.tasks)
+        hint = {"path": "", "message": f"The project copy to fill in (Template editor), then convert again: {copies}"}
+        raise TemplateIncomplete([*refused.errors, hint], tasks=refused.tasks) from None
+    put_into_project(list(getattr(result, "tasks_included", []) or []))
     return result
