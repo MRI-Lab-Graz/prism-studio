@@ -29,6 +29,64 @@ fails when a Studio option has no CLI flag or the defaults differ.
   (`resolve_official_survey_dir`). No CLI command.
 - `app/src/web/blueprints/conversion_survey_handlers.py` - "detect version contexts" (which template versions a file
   needs) builds its own merged library. No CLI command.
+## Review results (first pass)
+
+Method: for each Studio endpoint with an obvious CLI command, read the form fields the route takes and the flags the command
+has. The automatic field extraction misses fields read through helpers (it missed `sessions_from_date`), so every finding
+below was confirmed by reading the code. Fixed items have a test; open ones are listed with what Studio does.
+
+### The "save to project" step is Studio-only (all conversions) - the biggest gap
+After a conversion Studio stages the files, copies them into the project with a DataLad-aware copy and commit
+(`copy_files_into_project`), optionally archives the source file in `sourcedata/`, registers the template versions in
+`project.json` (`register_session_in_project`, which lives in the Studio tree: `app/src/web/services/`), and syncs the
+recipe offsets (`sync_project_survey_recipe_offsets`). Survey, biometrics, physio and environment conversions all do it in
+their routes. The commands write straight into `--output` and do none of it. Fix: one backend function for the tail, called
+by the commands and by the routes; move `register_session_in_project` to `src/`. (Not started: needs a decision on DataLad
+commits for the CLI.)
+
+### Physio
+- `physio batch-convert`: **fixed** `--generate-physio-reports` and `--dataset-name` (the command now also writes
+  `dataset_description.json` like Studio). Open: `save_to_project`, `dest_root`, `flat_structure`, `subject_rewrite_mode`
+  (the save-to-project step above). Test: `tests/test_physio_batch_options_parity.py` lists the open ones and fails when a new
+  Studio option appears.
+- Physio renamer: the command calls `plan_rename`; Studio's 449-line route builds its own pipeline from nine helpers of the same
+  module and has `dest_root`, `flat_structure`, `subject_rewrite_mode` and the project copy, which the command lacks. Two
+  implementations of the rename plan: the route should call `plan_rename`.
+
+### Participants
+- Preview: Studio's route composes the column selection itself (filter relevant columns, `excluded_columns`, extra columns)
+  from `src.participant_columns` helpers; the command composes it its own way. The command has no `--excluded-columns` or
+  `--extra-columns`. Fix: one backend function for the column selection.
+
+### Export - mostly no CLI command at all
+`projects_export_blueprint.py` is 1,536 lines with six functions over 80 lines. The CLI has `template-export`, `anonymize` and
+`publish`; Studio's other export features have no command: the main project export (zip, folder, structure), the DataLad annex
+availability check, Git-LFS export, defacing (preflight, report, run) and the ANC and OpenMinds exports. The helpers are in
+`src/` (`mri_json_scrubber`, `anonymizer`, `phenotype_export`, `project_export_helpers`, `git_exclude`); the orchestration (what
+is copied, filtered, zipped) is in the blueprint. Each needs a command that runs the same function, and the blueprint reduced to
+calling it.
+
+### Recipe builder
+Studio's analysis endpoints (`/api/recipe-builder/surveys|items|load`) decide what a new recipe contains (item extraction, scale
+range detection from a template). The CLI can only save a finished recipe (`recipes save`); nothing drafts one from a template.
+Needs `recipes draft` running `src.recipe_builder`.
+
+### Survey template matching and the LimeSurvey tools
+`survey import-limesurvey` has `--split`, `--select`, `--use-library`, `--project`; Studio's `limesurvey-to-prism` and
+`limesurvey-save-to-project` routes call `converters.limesurvey` parsers and `survey_templates.match_*` directly. Probably the
+same code paths, not confirmed: read both and add a parity test as for `survey convert`.
+
+### Biometrics - the same input can give different participant IDs
+Studio's route resolves the biometrics library from the project (then the global one) and passes the project's existing
+participant IDs (`load_existing_participant_ids`) to `convert_biometrics_table_to_prism_dataset(existing_participant_ids=...)`,
+so unpadded IDs match the participants already in the project. `biometrics convert` has no `--project`, needs `--library`, and
+passes none of it: the same table gives different `sub-` IDs. (Studio's "dry run" is a conversion into a throwaway folder, and
+"validate" runs the validator afterwards: both are fine as they are.) Fix: the same runner pattern as `survey convert` (library
+choice, ID matching, tail) for biometrics.
+
+### Not yet read
+Environment and file-management routes (their form fields were not extractable by the automatic pass).
+
 ## Review queue: the Studio-only backend calls, by area
 
 `scripts/cli_studio_baseline.json` lists 146 backend functions that Studio imports and no CLI command does. Grouped by where
