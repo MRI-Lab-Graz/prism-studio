@@ -108,6 +108,19 @@ def _client(monkeypatch):
     return app.test_client()
 
 
+def test_the_editor_reports_each_language_fact_once_like_the_save(monkeypatch):
+    template = {
+        "Technical": {"Language": "en"},
+        "I18n": {"Languages": ["en", "de"]},
+        "Q1": {"Description": {"en": "one", "de": "eins"}},
+        "Q2": {"Description": {"en": "two"}},
+    }
+    expected = TemplateValidator.validate_language_consistency_from_data(template, file_name="template", supersede_declared=True)
+    assert expected != TemplateValidator.validate_language_consistency_from_data(template, file_name="template")
+    got = _client(monkeypatch).post("/api/template-editor/validate", json={"modality": "survey", "template": template}).get_json()
+    assert got["language_warnings"] == expected
+
+
 def test_a_wrong_value_inside_an_item_names_the_field_not_the_whole_item():
     from src.prism_template_validation import validate_template_against_schema
 

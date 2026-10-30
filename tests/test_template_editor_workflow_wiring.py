@@ -26,6 +26,21 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertNotIn('id="btnCreateOpen"', content)
         self.assertLess(content.index('id="modeEdit"'), content.index('id="modality"'))
 
+    def test_general_info_is_questionnaire_info_and_item_work_lives_in_items(self):
+        page = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+        script = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("toolPropertiesSection", page)
+        self.assertNotIn("Top-level", page)
+        self.assertIn("Questionnaire info", page)
+        self.assertNotIn("renderToolProperties", script)
+        self.assertNotIn("toolPropertiesForm", script)
+        # Selected item and Bulk edit are shown with the Items tab only
+        self.assertIn('id="bulkEditPanel"', page)
+        visibility = script[script.index("function setItemsPanelVisible") :][:1200]
+        self.assertIn("selectedItemPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
+        self.assertIn("bulkEditPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
+
     def test_schema_version_sits_in_a_closed_advanced_fold_out(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 

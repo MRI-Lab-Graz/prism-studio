@@ -9,7 +9,6 @@
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
   const bulkEditFormEl = document.getElementById('bulkEditForm');
-  const toolPropertiesFormEl = document.getElementById('toolPropertiesForm');
   const btnImportTemplateSource = document.getElementById('btnImportTemplateSource');
   const excelGroupPickerRowEl = document.getElementById('excelGroupPickerRow');
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
@@ -67,47 +66,16 @@
   const topLevelPanelEl = document.getElementById('topLevelPanel');
   const topLevelSectionEl = document.getElementById('topLevelSection');
   const selectedItemSectionEl = document.getElementById('selectedItemSection');
-  const toolPropertiesSectionEl = document.getElementById('toolPropertiesSection');
   const bulkEditSectionEl = document.getElementById('bulkEditSection');
+  const bulkEditPanelEl = document.getElementById('bulkEditPanel');
   const variantSelectorRowEl = document.getElementById('variantSelectorRow');
   const activeVariantSelectEl = document.getElementById('activeVariantSelect');
   const variantSelectorInfoEl = document.getElementById('variantSelectorInfo');
 
   const RESERVED_TOPLEVEL = new Set([
-    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative',
+    'Technical', 'Study', 'Metadata', 'I18n', 'Scoring', 'Normative',
     '_aliases', '_reverse_aliases'
   ]);
-
-  const LS_QUESTION_TYPES = {
-    'L': 'List (Radio)',
-    '!': 'List (Dropdown)',
-    'O': 'List with Comment',
-    'G': 'Gender',
-    'Y': 'Yes/No',
-    'I': 'Language Switch',
-    'M': 'Multiple Choice',
-    'P': 'Multiple Choice with Comments',
-    'S': 'Short Free Text',
-    'T': 'Long Free Text',
-    'U': 'Huge Free Text',
-    'Q': 'Multiple Short Text',
-    'N': 'Numerical Input',
-    'K': 'Multiple Numerical Input',
-    'D': 'Date/Time',
-    'A': 'Array (5 Point)',
-    'B': 'Array (10 Point)',
-    'C': 'Array (Yes/Uncertain/No)',
-    'E': 'Array (Increase/Same/Decrease)',
-    'F': 'Array (Flexible Labels)',
-    'H': 'Array by Column',
-    ';': 'Array (Texts)',
-    ':': 'Array (Numbers)',
-    '1': 'Array Dual Scale',
-    'R': 'Ranking',
-    'X': 'Text Display (Boilerplate)',
-    '*': 'Equation',
-    '|': 'File Upload',
-  };
 
   let currentSchema = null;
   let currentTemplate = null;
@@ -210,6 +178,9 @@
     if (topLevelPanelEl) {
       topLevelPanelEl.classList.toggle('d-none', itemsPanelVisible);
     }
+    // Selected item and Bulk edit belong to the Items tab
+    selectedItemPanelEl.classList.toggle('d-none', !itemsPanelVisible);
+    bulkEditPanelEl.classList.toggle('d-none', !itemsPanelVisible);
     syncViewTabs();
 
     // In item-editing mode, keep item-related chapters open and hide top-level chapter.
@@ -217,9 +188,6 @@
       if (itemsPanelVisible && window.bootstrap?.Collapse) {
         if (selectedItemSectionEl) {
           window.bootstrap.Collapse.getOrCreateInstance(selectedItemSectionEl, { toggle: false }).show();
-        }
-        if (toolPropertiesSectionEl) {
-          window.bootstrap.Collapse.getOrCreateInstance(toolPropertiesSectionEl, { toggle: false }).show();
         }
       }
       if (!itemsPanelVisible && window.bootstrap?.Collapse && topLevelSectionEl) {
@@ -340,6 +308,10 @@
   import(new URL('./template-editor/technical-groups.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { technicalGroups = module; });
 
+  let questionnaireSections = null;
+  import(new URL('./template-editor/questionnaire-sections.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { questionnaireSections = module; if (currentTemplate) renderTopLevel(); });
+
   let languageCodes = null;
   let knownLanguageCodes = null;
   import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
@@ -413,7 +385,7 @@
     if (currentView !== 'editor') switchView('editor');
 
     // Item-level path: section is an item key (not a reserved toplevel section name)
-    const RESERVED_SECTIONS = new Set(['Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative']);
+    const RESERVED_SECTIONS = new Set(['Technical', 'Study', 'Metadata', 'I18n', 'Scoring', 'Normative']);
     if (section && !RESERVED_SECTIONS.has(section) && currentTemplate && currentTemplate[section]) {
       setItemsPanelVisible(true);
       selectedItemId = section;
@@ -507,25 +479,18 @@
   function calculateCompletion() {
     if (!currentTemplate || typeof currentTemplate !== 'object') return 0;
 
-    // Count filled fields in general information sections
-    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
-    let filledCount = 0;
-    let totalCount = 0;
-
-    sections.forEach(s => {
-      const sch = getSectionSchema(s);
-      if (!sch || !sch.properties) return;
-
-      Object.entries(sch.properties).forEach(([key, fieldSchema]) => {
-        totalCount++;
-        const value = currentTemplate[s]?.[key];
-        if (value !== null && value !== undefined && value !== '' && 
-            !(Array.isArray(value) && value.length === 0) &&
-            !(typeof value === 'object' && Object.keys(value).length === 0)) {
-          filledCount++;
-        }
-      });
-    });
+    // Count the filled fields of the Questionnaire info card
+    if (!questionnaireSections) return 0;
+    const paths = [];
+    for (const s of ['Technical', 'Study', 'Metadata', 'I18n']) {
+      Object.keys(getSectionSchema(s)?.properties || {}).forEach((key) => paths.push(`${s}/${key}`));
+    }
+    const shown = [...questionnaireSections.assignFields(paths).values()].flat();
+    const totalCount = shown.length;
+    const filledCount = shown.filter((path) => {
+      const [s, key] = path.split('/');
+      return !questionnaireSections.isMissing(currentTemplate[s]?.[key]);
+    }).length;
 
     if (totalCount === 0) return 0;
     return Math.round((filledCount / totalCount) * 100);
@@ -965,10 +930,10 @@
     return parts.join('\n');
   }
 
-  function makeLabel(name, fieldSchema, isRequired) {
+  function makeLabel(name, fieldSchema, isRequired, text = name) {
     const label = document.createElement('label');
     label.className = 'form-label';
-    label.textContent = name;
+    label.textContent = text;
 
     const hint = document.createElement('span');
     hint.className = 'ms-2 text-muted schema-hint';
@@ -2127,7 +2092,7 @@
     }
 
     const isRequired = required.includes(name);
-    col.appendChild(makeLabel(name, fieldSchema, isRequired));
+    col.appendChild(makeLabel(name, fieldSchema, isRequired, questionnaireSections?.FIELD_LABELS[`${sectionKey}/${name}`] || name));
 
     // Special rendering: VariantScales as a card editor with VariantID dropdown from Study.Versions
     if (sectionKey === 'ITEM' && name === 'VariantScales') {
@@ -2584,8 +2549,14 @@
       }
     }
 
-    const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
+    const isMissing = questionnaireSections ? questionnaireSections.isMissing(targetObj[name]) : (targetObj[name] === undefined || targetObj[name] === null);
     targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
+
+    // common licenses first, the rest of the schema's list after them
+    if (sectionKey === 'Study' && name === 'LicenseID' && questionnaireSections && Array.isArray(fieldSchema.enum)) {
+      const first = questionnaireSections.LICENSE_FIRST.filter((id) => fieldSchema.enum.includes(id));
+      fieldSchema = { ...fieldSchema, enum: [...first, ...fieldSchema.enum.filter((id) => !first.includes(id))] };
+    }
 
     const input = createInput(fieldSchema, targetObj[name], (v) => {
       targetObj[name] = v;
@@ -2920,7 +2891,6 @@
         }
         renderItemList();
         renderSelectedItem();
-        renderToolProperties();
         if (newItemIdEl && typeof newItemIdEl.focus === 'function') {
           newItemIdEl.focus();
         }
@@ -2935,7 +2905,6 @@
         selectedItemId = k;
         renderItemList();
         renderSelectedItem();
-        renderToolProperties();
         openSelectedItemPanel();
       });
       itemListEl.appendChild(item);
@@ -3144,7 +3113,6 @@
         });
 
         renderSelectedItem();
-        renderToolProperties();
         btnDownload.disabled = true;
         btnSave.disabled = true;
         const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
@@ -3156,481 +3124,56 @@
       row.appendChild(col);
     }
 
-    // --- Tool Properties Bulk Edit Section ---
-    const toolHeader = document.createElement('div');
-    toolHeader.className = 'col-md-12 border-bottom pb-2 mt-4';
-    const toolH = document.createElement('h6');
-    toolH.className = 'text-info';
-    toolH.innerHTML = '<i class="fas fa-cogs me-1"></i>Tool Properties (LimeSurvey)';
-    toolHeader.appendChild(toolH);
-    row.appendChild(toolHeader);
-
-    // Bulk: Question Type
-    const bulkQtCol = document.createElement('div');
-    bulkQtCol.className = 'col-md-12 border-bottom pb-3';
-    const bulkQtLabel = document.createElement('label');
-    bulkQtLabel.className = 'form-label fw-bold';
-    bulkQtLabel.textContent = 'Question Type';
-    bulkQtCol.appendChild(bulkQtLabel);
-    const bulkQtGroup = document.createElement('div');
-    bulkQtGroup.className = 'input-group';
-    const bulkQtSelect = document.createElement('select');
-    bulkQtSelect.className = 'form-select';
-    const bulkQtPlaceholder = document.createElement('option');
-    bulkQtPlaceholder.value = '';
-    bulkQtPlaceholder.textContent = '— Select type —';
-    bulkQtSelect.appendChild(bulkQtPlaceholder);
-    for (const [code, label] of Object.entries(LS_QUESTION_TYPES)) {
-      const opt = document.createElement('option');
-      opt.value = code;
-      opt.textContent = `${code} — ${label}`;
-      bulkQtSelect.appendChild(opt);
-    }
-    bulkQtGroup.appendChild(bulkQtSelect);
-    const bulkQtBtn = document.createElement('button');
-    bulkQtBtn.className = 'btn btn-outline-primary';
-    bulkQtBtn.type = 'button';
-    bulkQtBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
-    bulkQtBtn.addEventListener('click', () => {
-      const val = bulkQtSelect.value;
-      if (!val) { showAlert('warning', 'Select a question type first.'); return; }
-      const allKeys = itemKeysFromTemplate(currentTemplate);
-      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
-      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
-      targetKeys.forEach(k => {
-        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
-        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
-        currentTemplate[k].LimeSurvey.questionType = val;
-        currentTemplate[k].LimeSurvey.questionTypeName = LS_QUESTION_TYPES[val] || '';
-      });
-      renderSelectedItem();
-      renderToolProperties();
-      markTemplateDirty();
-      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
-      showAlert('success', `Set questionType=${val} for ${scope} ${targetKeys.length} items.`);
-    });
-    bulkQtGroup.appendChild(bulkQtBtn);
-    bulkQtCol.appendChild(bulkQtGroup);
-    row.appendChild(bulkQtCol);
-
-    // Bulk: Mandatory
-    const bulkMandCol = document.createElement('div');
-    bulkMandCol.className = 'col-md-6 border-bottom pb-3';
-    const bulkMandLabel = document.createElement('label');
-    bulkMandLabel.className = 'form-label fw-bold';
-    bulkMandLabel.textContent = 'Mandatory';
-    bulkMandCol.appendChild(bulkMandLabel);
-    const bulkMandGroup = document.createElement('div');
-    bulkMandGroup.className = 'input-group';
-    const bulkMandSelect = document.createElement('select');
-    bulkMandSelect.className = 'form-select';
-    const mOpt1 = document.createElement('option');
-    mOpt1.value = 'true'; mOpt1.textContent = 'Yes (mandatory)';
-    const mOpt2 = document.createElement('option');
-    mOpt2.value = 'false'; mOpt2.textContent = 'No (optional)';
-    bulkMandSelect.appendChild(mOpt1);
-    bulkMandSelect.appendChild(mOpt2);
-    bulkMandGroup.appendChild(bulkMandSelect);
-    const bulkMandBtn = document.createElement('button');
-    bulkMandBtn.className = 'btn btn-outline-primary';
-    bulkMandBtn.type = 'button';
-    bulkMandBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
-    bulkMandBtn.addEventListener('click', () => {
-      const val = bulkMandSelect.value === 'true';
-      const allKeys = itemKeysFromTemplate(currentTemplate);
-      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
-      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
-      targetKeys.forEach(k => {
-        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
-        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
-        currentTemplate[k].LimeSurvey.mandatory = val;
-      });
-      renderSelectedItem();
-      renderToolProperties();
-      markTemplateDirty();
-      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
-      showAlert('success', `Set mandatory=${val} for ${scope} ${targetKeys.length} items.`);
-    });
-    bulkMandGroup.appendChild(bulkMandBtn);
-    bulkMandCol.appendChild(bulkMandGroup);
-    row.appendChild(bulkMandCol);
-
-    // Bulk: Input Width
-    const bulkIwCol = document.createElement('div');
-    bulkIwCol.className = 'col-md-6 border-bottom pb-3';
-    const bulkIwLabel = document.createElement('label');
-    bulkIwLabel.className = 'form-label fw-bold';
-    bulkIwLabel.textContent = 'Input Width (1-12)';
-    bulkIwCol.appendChild(bulkIwLabel);
-    const bulkIwGroup = document.createElement('div');
-    bulkIwGroup.className = 'input-group';
-    const bulkIwInput = document.createElement('input');
-    bulkIwInput.type = 'number';
-    bulkIwInput.className = 'form-control';
-    bulkIwInput.min = '1';
-    bulkIwInput.max = '12';
-    bulkIwInput.placeholder = '1-12';
-    bulkIwGroup.appendChild(bulkIwInput);
-    const bulkIwBtn = document.createElement('button');
-    bulkIwBtn.className = 'btn btn-outline-primary';
-    bulkIwBtn.type = 'button';
-    bulkIwBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
-    bulkIwBtn.addEventListener('click', () => {
-      const val = bulkIwInput.value ? parseInt(bulkIwInput.value, 10) : null;
-      if (val === null) { showAlert('warning', 'Enter an input width value first.'); return; }
-      const allKeys = itemKeysFromTemplate(currentTemplate);
-      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
-      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
-      targetKeys.forEach(k => {
-        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
-        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
-        currentTemplate[k].LimeSurvey.inputWidth = val;
-      });
-      renderSelectedItem();
-      renderToolProperties();
-      markTemplateDirty();
-      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
-      showAlert('success', `Set inputWidth=${val} for ${scope} ${targetKeys.length} items.`);
-    });
-    bulkIwGroup.appendChild(bulkIwBtn);
-    bulkIwCol.appendChild(bulkIwGroup);
-    row.appendChild(bulkIwCol);
-
     bulkEditFormEl.appendChild(row);
     enableTooltips();
   }
 
-  function renderToolProperties() {
-    if (!toolPropertiesFormEl) return;
-    toolPropertiesFormEl.innerHTML = '';
-
-    if (!selectedItemId || !currentTemplate || !currentTemplate[selectedItemId]) {
-      const p = document.createElement('div');
-      p.className = 'text-muted';
-      p.textContent = 'Select an item to view or edit its tool properties.';
-      toolPropertiesFormEl.appendChild(p);
-      return;
-    }
-
-    const itemData = currentTemplate[selectedItemId];
-
-    // Ensure LimeSurvey dict exists (users can add it to any template)
-    if (!itemData.LimeSurvey || typeof itemData.LimeSurvey !== 'object') {
-      itemData.LimeSurvey = {};
-    }
-    const ls = itemData.LimeSurvey;
-
-    const form = document.createElement('div');
-    form.className = 'row g-3';
-
-    // --- Question Type dropdown ---
-    const qtCol = document.createElement('div');
-    qtCol.className = 'col-md-6';
-    const qtLabel = document.createElement('label');
-    qtLabel.className = 'form-label fw-bold';
-    qtLabel.textContent = 'Question Type';
-    qtCol.appendChild(qtLabel);
-    const qtSelect = document.createElement('select');
-    qtSelect.className = 'form-select';
-    const qtPlaceholder = document.createElement('option');
-    qtPlaceholder.value = '';
-    qtPlaceholder.textContent = '— Not set —';
-    qtSelect.appendChild(qtPlaceholder);
-    for (const [code, label] of Object.entries(LS_QUESTION_TYPES)) {
-      const opt = document.createElement('option');
-      opt.value = code;
-      opt.textContent = `${code} — ${label}`;
-      qtSelect.appendChild(opt);
-    }
-    qtSelect.value = ls.questionType || '';
-    qtSelect.addEventListener('change', () => {
-      ls.questionType = qtSelect.value || null;
-      ls.questionTypeName = LS_QUESTION_TYPES[qtSelect.value] || '';
-    });
-    qtCol.appendChild(qtSelect);
-    if (ls.questionTypeName) {
-      const hint = document.createElement('div');
-      hint.className = 'form-text text-muted';
-      hint.textContent = ls.questionTypeName;
-      qtCol.appendChild(hint);
-    }
-    form.appendChild(qtCol);
-
-    // --- Input Width ---
-    const iwCol = document.createElement('div');
-    iwCol.className = 'col-md-6';
-    const iwLabel = document.createElement('label');
-    iwLabel.className = 'form-label fw-bold';
-    iwLabel.textContent = 'Input Width (1-12)';
-    iwCol.appendChild(iwLabel);
-    const iwInput = document.createElement('input');
-    iwInput.type = 'number';
-    iwInput.className = 'form-control';
-    iwInput.min = '1';
-    iwInput.max = '12';
-    iwInput.placeholder = '— Not set —';
-    iwInput.value = (ls.inputWidth != null) ? String(ls.inputWidth) : '';
-    iwInput.addEventListener('input', () => {
-      ls.inputWidth = iwInput.value ? parseInt(iwInput.value, 10) : null;
-    });
-    iwCol.appendChild(iwInput);
-    const iwHint = document.createElement('div');
-    iwHint.className = 'form-text text-muted';
-    iwHint.textContent = 'LimeSurvey numeric scale: 1=smallest, 12=full width';
-    iwCol.appendChild(iwHint);
-    form.appendChild(iwCol);
-
-    // --- Mandatory checkbox ---
-    const mandCol = document.createElement('div');
-    mandCol.className = 'col-md-4';
-    const mandCheck = document.createElement('div');
-    mandCheck.className = 'form-check mt-4';
-    const mandInput = document.createElement('input');
-    mandInput.type = 'checkbox';
-    mandInput.className = 'form-check-input';
-    mandInput.id = 'lsMandatory';
-    mandInput.checked = Boolean(ls.mandatory);
-    mandInput.addEventListener('change', () => { ls.mandatory = mandInput.checked; });
-    const mandLabel = document.createElement('label');
-    mandLabel.className = 'form-check-label fw-bold';
-    mandLabel.htmlFor = 'lsMandatory';
-    mandLabel.textContent = 'Mandatory';
-    mandCheck.appendChild(mandInput);
-    mandCheck.appendChild(mandLabel);
-    mandCol.appendChild(mandCheck);
-    form.appendChild(mandCol);
-
-    // --- Hidden checkbox ---
-    const hidCol = document.createElement('div');
-    hidCol.className = 'col-md-4';
-    const hidCheck = document.createElement('div');
-    hidCheck.className = 'form-check mt-4';
-    const hidInput = document.createElement('input');
-    hidInput.type = 'checkbox';
-    hidInput.className = 'form-check-input';
-    hidInput.id = 'lsHidden';
-    hidInput.checked = Boolean(ls.hidden);
-    hidInput.addEventListener('change', () => { ls.hidden = hidInput.checked; });
-    const hidLabel = document.createElement('label');
-    hidLabel.className = 'form-check-label fw-bold';
-    hidLabel.htmlFor = 'lsHidden';
-    hidLabel.textContent = 'Hidden';
-    hidCheck.appendChild(hidInput);
-    hidCheck.appendChild(hidLabel);
-    hidCol.appendChild(hidCheck);
-    form.appendChild(hidCol);
-
-    // --- Other checkbox ---
-    const othCol = document.createElement('div');
-    othCol.className = 'col-md-4';
-    const othCheck = document.createElement('div');
-    othCheck.className = 'form-check mt-4';
-    const othInput = document.createElement('input');
-    othInput.type = 'checkbox';
-    othInput.className = 'form-check-input';
-    othInput.id = 'lsOther';
-    othInput.checked = Boolean(ls.other);
-    othInput.addEventListener('change', () => { ls.other = othInput.checked; });
-    const othLabel = document.createElement('label');
-    othLabel.className = 'form-check-label fw-bold';
-    othLabel.htmlFor = 'lsOther';
-    othLabel.textContent = 'Has "Other" option';
-    othCheck.appendChild(othInput);
-    othCheck.appendChild(othLabel);
-    othCol.appendChild(othCheck);
-    form.appendChild(othCol);
-
-    // --- Help Text ---
-    const helpCol = document.createElement('div');
-    helpCol.className = 'col-md-12';
-    const helpLabel = document.createElement('label');
-    helpLabel.className = 'form-label fw-bold';
-    helpLabel.textContent = 'Help Text';
-    helpCol.appendChild(helpLabel);
-    const helpInput = document.createElement('input');
-    helpInput.type = 'text';
-    helpInput.className = 'form-control';
-    helpInput.placeholder = 'Optional help text shown to participants';
-    // Display first language value or empty
-    const helpObj = ls.helpText || {};
-    const helpLangs = Object.keys(helpObj);
-    helpInput.value = helpLangs.length ? (helpObj[helpLangs[0]] || '') : '';
-    helpInput.addEventListener('input', () => {
-      const lang = helpLangs[0] || (currentTemplate.Technical?.Language) || 'en';
-      if (!ls.helpText || typeof ls.helpText !== 'object') ls.helpText = {};
-      ls.helpText[lang] = helpInput.value;
-    });
-    helpCol.appendChild(helpInput);
-    if (helpLangs.length > 1) {
-      const helpHint = document.createElement('div');
-      helpHint.className = 'form-text text-info';
-      helpHint.textContent = `Multilingual: ${helpLangs.join(', ')} (editing primary)`;
-      helpCol.appendChild(helpHint);
-    }
-    form.appendChild(helpCol);
-
-    // --- Relevance ---
-    const relCol = document.createElement('div');
-    relCol.className = 'col-md-6';
-    const relLabel = document.createElement('label');
-    relLabel.className = 'form-label fw-bold';
-    relLabel.textContent = 'Relevance Expression';
-    relCol.appendChild(relLabel);
-    const relInput = document.createElement('input');
-    relInput.type = 'text';
-    relInput.className = 'form-control mono';
-    relInput.placeholder = '1 (always shown)';
-    relInput.value = ls.relevance || '';
-    relInput.addEventListener('input', () => { ls.relevance = relInput.value || '1'; });
-    relCol.appendChild(relInput);
-    form.appendChild(relCol);
-
-    // --- Display Rows ---
-    const drCol = document.createElement('div');
-    drCol.className = 'col-md-6';
-    const drLabel = document.createElement('label');
-    drLabel.className = 'form-label fw-bold';
-    drLabel.textContent = 'Display Rows';
-    drCol.appendChild(drLabel);
-    const drInput = document.createElement('input');
-    drInput.type = 'number';
-    drInput.className = 'form-control';
-    drInput.min = '1';
-    drInput.max = '20';
-    drInput.placeholder = '— Not set —';
-    drInput.value = (ls.displayRows != null) ? String(ls.displayRows) : '';
-    drInput.addEventListener('input', () => {
-      ls.displayRows = drInput.value ? parseInt(drInput.value, 10) : null;
-    });
-    drCol.appendChild(drInput);
-    form.appendChild(drCol);
-
-    // --- Equation ---
-    const eqCol = document.createElement('div');
-    eqCol.className = 'col-md-12';
-    const eqLabel = document.createElement('label');
-    eqLabel.className = 'form-label fw-bold';
-    eqLabel.textContent = 'Equation';
-    eqCol.appendChild(eqLabel);
-    const eqInput = document.createElement('input');
-    eqInput.type = 'text';
-    eqInput.className = 'form-control mono';
-    eqInput.placeholder = 'For equation-type questions only';
-    eqInput.value = ls.equation || '';
-    eqInput.addEventListener('input', () => { ls.equation = eqInput.value || null; });
-    eqCol.appendChild(eqInput);
-    form.appendChild(eqCol);
-
-    // --- Validation group ---
-    const valHeader = document.createElement('div');
-    valHeader.className = 'col-12 mt-2';
-    const valH = document.createElement('h6');
-    valH.className = 'text-muted border-bottom pb-1';
-    valH.textContent = 'Validation';
-    valHeader.appendChild(valH);
-    form.appendChild(valHeader);
-
-    if (!ls.validation || typeof ls.validation !== 'object') {
-      ls.validation = { min: null, max: null, integerOnly: false };
-    }
-
-    // Min
-    const minCol = document.createElement('div');
-    minCol.className = 'col-md-4';
-    const minLabel = document.createElement('label');
-    minLabel.className = 'form-label';
-    minLabel.textContent = 'Min Value';
-    minCol.appendChild(minLabel);
-    const minInput = document.createElement('input');
-    minInput.type = 'number';
-    minInput.className = 'form-control';
-    minInput.placeholder = '— Not set —';
-    minInput.value = (ls.validation.min != null) ? String(ls.validation.min) : '';
-    minInput.addEventListener('input', () => {
-      ls.validation.min = minInput.value ? parseFloat(minInput.value) : null;
-    });
-    minCol.appendChild(minInput);
-    form.appendChild(minCol);
-
-    // Max
-    const maxCol = document.createElement('div');
-    maxCol.className = 'col-md-4';
-    const maxLabel = document.createElement('label');
-    maxLabel.className = 'form-label';
-    maxLabel.textContent = 'Max Value';
-    maxCol.appendChild(maxLabel);
-    const maxInput = document.createElement('input');
-    maxInput.type = 'number';
-    maxInput.className = 'form-control';
-    maxInput.placeholder = '— Not set —';
-    maxInput.value = (ls.validation.max != null) ? String(ls.validation.max) : '';
-    maxInput.addEventListener('input', () => {
-      ls.validation.max = maxInput.value ? parseFloat(maxInput.value) : null;
-    });
-    maxCol.appendChild(maxInput);
-    form.appendChild(maxCol);
-
-    // Integer Only
-    const intCol = document.createElement('div');
-    intCol.className = 'col-md-4';
-    const intCheck = document.createElement('div');
-    intCheck.className = 'form-check mt-4';
-    const intInput = document.createElement('input');
-    intInput.type = 'checkbox';
-    intInput.className = 'form-check-input';
-    intInput.id = 'lsIntOnly';
-    intInput.checked = Boolean(ls.validation.integerOnly);
-    intInput.addEventListener('change', () => { ls.validation.integerOnly = intInput.checked; });
-    const intLabel = document.createElement('label');
-    intLabel.className = 'form-check-label';
-    intLabel.htmlFor = 'lsIntOnly';
-    intLabel.textContent = 'Integer Only';
-    intCheck.appendChild(intInput);
-    intCheck.appendChild(intLabel);
-    intCol.appendChild(intCheck);
-    form.appendChild(intCol);
-
-    form.addEventListener('input', markTemplateDirty);
-    form.addEventListener('change', markTemplateDirty);
-
-    toolPropertiesFormEl.appendChild(form);
-  }
-
   function renderTopLevel() {
     topLevelFormEl.innerHTML = '';
-    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
-    
-    // Map section names to user-friendly labels and icons
-    const sectionLabels = {
-      'Technical': { label: 'Technical Details', icon: 'fa-gear' },
-      'Study': { label: 'Study Information', icon: 'fa-book' },
-      'Metadata': { label: 'Version & Dates', icon: 'fa-calendar' },
-      'I18n': { label: 'Internationalization', icon: 'fa-globe' }
-    };
+    if (!questionnaireSections) return; // rendered again when the module has loaded
 
-    sections.forEach((s) => {
+    const schemas = {};
+    const paths = [];
+    for (const s of ['Technical', 'Study', 'Metadata', 'I18n']) {
       const sch = getSectionSchema(s);
-      if (!sch) return;
+      if (!sch) continue;
       if (!currentTemplate[s] || typeof currentTemplate[s] !== 'object') currentTemplate[s] = {};
+      schemas[s] = sch;
+      Object.keys(sch.properties || {}).forEach((name) => paths.push(`${s}/${name}`));
+    }
 
-      const card = document.createElement('div');
-      card.className = 'card border-0 border-bottom rounded-0 mb-2';
+    const assigned = questionnaireSections.assignFields(paths);
+    for (const section of questionnaireSections.QUESTIONNAIRE_SECTIONS) {
+      const fields = assigned.get(section.id);
+      if (!fields.length) continue;
+
+      const isRequiredAndMissing = (path) => {
+        const [s, name] = path.split('/');
+        return (schemas[s].required || []).includes(name) && questionnaireSections.isMissing(currentTemplate[s][name]);
+      };
+      const openCount = fields.filter(isRequiredAndMissing).length;
+
+      const details = document.createElement('details');
+      details.className = 'te-subgroup mb-3';
+      details.open = openCount > 0 || section === questionnaireSections.QUESTIONNAIRE_SECTIONS[0];
+      const summary = document.createElement('summary');
+      summary.className = 'te-subgroup-summary';
+      summary.innerHTML = `<span class="te-subgroup-title">${escapeHtml(section.label)}</span>`
+        + (openCount ? `<span class="badge text-bg-warning ms-2">${openCount} required</span>` : '');
+      details.appendChild(summary);
+
       const body = document.createElement('div');
-      body.className = 'card-body px-0';
-
-      const title = document.createElement('h6');
-      title.className = 'fw-semibold mb-3';
-      title.innerHTML = `<i class="fas ${sectionLabels[s].icon} me-2 text-muted"></i>${sectionLabels[s].label}`;
-      body.appendChild(title);
-
-      const mount = document.createElement('div');
-      mount.id = `tlBody_${s}`;
-      body.appendChild(mount);
-      renderSection(s, currentTemplate[s], sch, mount);
-
-      card.appendChild(body);
-      topLevelFormEl.appendChild(card);
-    });
+      body.className = 'te-subgroup-body mt-2';
+      const row = document.createElement('div');
+      row.className = 'row g-3';
+      for (const path of fields) {
+        const [s, name] = path.split('/');
+        renderFieldInRow(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
+      }
+      body.appendChild(row);
+      details.appendChild(body);
+      topLevelFormEl.appendChild(details);
+    }
 
     enableTooltips();
     renderMissingSummary();
@@ -4701,7 +4244,6 @@
     renderTopLevel();
     renderItemList();
     renderSelectedItem();
-    renderToolProperties();
     renderBulkEdit();
     renderJsonDiff();
     renderLanguageBar();

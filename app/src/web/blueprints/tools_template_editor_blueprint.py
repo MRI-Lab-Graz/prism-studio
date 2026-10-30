@@ -316,7 +316,7 @@ def api_template_editor_validate():
             from src.template_validator import TemplateValidator
 
             lang_warnings = TemplateValidator.validate_language_consistency_from_data(
-                template, file_name="template"
+                template, file_name="template", supersede_declared=True
             )
         except Exception:
             pass

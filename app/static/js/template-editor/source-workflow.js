@@ -228,6 +228,15 @@ export function importNotesHtml(notes, escapeHtml) {
   return `<div class="alert alert-warning mt-2 mb-0"><strong>Check after import:</strong><ul class="mb-0">${items}</ul></div>`;
 }
 
+// What the save reports besides "saved": required fields still empty, and export settings it took out.
+export function saveNotesHtml(data, escapeHtml) {
+  const list = (title, lines, kind) => (lines && lines.length
+    ? `<div class="alert alert-${kind} mt-2 mb-0"><strong>${title}</strong><ul class="mb-0">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul></div>`
+    : '');
+  return list('Still to fill in:', (data.missing || []).map((m) => m.message), 'warning')
+    + list('Removed from the template (export settings belong to the export):', data.removed, 'info');
+}
+
 export async function validateCurrent(context, { initial = false, imported = false, notes = [] } = {}) {
   const modality = context.modalityEl.value;
   const schemaVersion = context.schemaEl.value;
@@ -401,7 +410,7 @@ export async function saveCurrent(context) {
     const forkNote = wasFork
       ? '<br><small class="text-info">↗ Saved as a project copy — the global template was not changed.</small>'
       : '';
-    context.showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
+    context.showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}${saveNotesHtml(data, context.escapeHtml)}`);
     await refreshTemplateList(context, { silent: true });
     await offerShare(context, filename).catch((error) => context.showAlert('warning', `Saved, but sharing failed: ${context.escapeHtml(error.message)}`));
   } catch (error) {
@@ -436,7 +445,7 @@ export async function savePersonal(context) {
       allow_overwrite: exists,
       template: obj,
     });
-    context.showAlert('success', `✅ Saved to your personal library: <code>${context.escapeHtml(data.message || filename)}</code>`);
+    context.showAlert('success', `✅ Saved to your personal library: <code>${context.escapeHtml(data.message || filename)}</code>${saveNotesHtml(data, context.escapeHtml)}`);
     await refreshTemplateList(context, { silent: true });
   } catch (error) {
     context.showAlert('danger', `Save failed: ${context.escapeHtml(error.message)}`);

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finishImport, importNotesHtml, loadNewTemplate, offerShare, readImportJson, refreshTemplateList, templateStatusPrefix, validateCurrent } from './source-workflow.js';
+import { finishImport, importNotesHtml, loadNewTemplate, offerShare, readImportJson, refreshTemplateList, saveNotesHtml, templateStatusPrefix, validateCurrent } from './source-workflow.js';
 
 const REQUIRED = [{ path: 'Study', message: "'TaskName' is a required property" }];
 const REAL_ERROR = [...REQUIRED, { path: 'Study.Authors', message: "1 is not of type 'string'" }];
@@ -89,6 +89,26 @@ describe('finishImport', () => {
         await finishImport(context, 'Imported x');
         expect(alerts.at(-1).type).toBe('warning');
         expect(alerts.at(-1).html).toContain('Not found in your file');
+    });
+});
+
+describe('save notes', () => {
+    const escapeHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    it('name what is still missing and what the save removed, escaped', () => {
+        const html = saveNotesHtml({
+            missing: [{ path: 'Technical/Respondent', message: 'Technical/Respondent is missing', severity: 'error' }],
+            removed: ['Q1: mandatory <b>moved</b>'],
+        }, escapeHtml);
+        expect(html).toContain('Still to fill in');
+        expect(html).toContain('Technical/Respondent is missing');
+        expect(html).toContain('Removed from the template');
+        expect(html).toContain('&lt;b&gt;moved&lt;/b&gt;');
+    });
+
+    it('is empty when nothing is missing or removed', () => {
+        expect(saveNotesHtml({ missing: [], removed: [] }, escapeHtml)).toBe('');
+        expect(saveNotesHtml({}, escapeHtml)).toBe('');
     });
 });
 
