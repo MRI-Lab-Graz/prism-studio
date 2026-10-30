@@ -1,5 +1,5 @@
 {
-  "GeneratedOn": "2026-09-10T18:05:55+00:00",
+  "GeneratedOn": "2026-10-30T09:37:47+00:00",
   "SourceLibrary": "official/library/survey",
   "Instruments": {
     "aai": {
@@ -409,7 +409,7 @@
         "en": "Critical Social Justice Scale (CSJAS)",
         "de": "Skala für kritische soziale Gerechtigkeit (CSJAS)"
       },
-      "DOI": "https://doi.org/10.1111/sjop.13018.",
+      "DOI": "10.1111/sjop.13018",
       "Citation": "Lahtinen, O. (2024). Construction and validation of a scale for assessing critical social justice\nattitudes. Scandinavian Journal of Psychology, 2024, 65, 693-705. https://doi.org/10.1111/sjop.13018. Link to study",
       "Version": null,
       "Versions": [],
@@ -441,7 +441,7 @@
         "en": "Caffeine Use Disorder Questionnaire (CUDQ)",
         "de": "Fragebogen zur Störung des Koffeinkonsums (CUDQ)"
       },
-      "DOI": "https://doi.org/10.1007/s40429-014-0024-9",
+      "DOI": "10.1007/s40429-014-0024-9",
       "Citation": "Addicott M. A. (2014). Caffeine Use Disorder: A Review of the\nEvidence and Future Implications. Current addiction reports, 1(3),\n186-192. https://doi.org/10.1007/s40429-014-0024-9",
       "Version": null,
       "Versions": [],
@@ -809,7 +809,7 @@
         "en": "Lying in Everyday Situations Scale (LiES)",
         "de": "Skala zum Lügen in Alltagssituationen (LiES)"
       },
-      "DOI": "https://doi.org/10.5406/amerjpsyc.132.3.0343.",
+      "DOI": "10.5406/amerjpsyc.132.3.0343",
       "Citation": "Christian L. Hart, Jelisa M. Jones, John A. Terrizzi, Drew A. Curtis. (2019). Development of the Lying in Everyday Situations Scale. The American Journal of Psychology, 132 (3), 343-352. doi: https://doi.org/10.5406/amerjpsyc.132.3.0343. Download for free",
       "Version": null,
       "Versions": [],

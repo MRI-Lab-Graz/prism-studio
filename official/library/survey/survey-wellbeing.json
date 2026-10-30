@@ -6,8 +6,15 @@
         "Respondent": "self"
     },
     "Metadata": {
-        "SchemaVersion": "1.1.1",
-        "CreationDate": "2026-02-03"
+        "SchemaVersion": "2.0.0",
+        "CreationDate": "2026-02-03",
+        "Creator": "PRISM Studio"
+    },
+    "I18n": {
+        "Languages": [
+            "de",
+            "en"
+        ]
     },
     "Study": {
         "TaskName": "wellbeing",

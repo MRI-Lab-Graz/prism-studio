@@ -2,14 +2,19 @@
     "Technical": {
         "StimulusType": "Questionnaire",
         "FileFormat": "tsv",
-        "SoftwarePlatform": "",
         "Language": "en",
-        "Respondent": "self",
-        "AdministrationMethod": ""
+        "Respondent": "self"
     },
     "Metadata": {
-        "SchemaVersion": "1.2.0",
-        "CreationDate": "2026-03-25"
+        "SchemaVersion": "2.0.0",
+        "CreationDate": "2026-03-25",
+        "Creator": "PRISM Studio"
+    },
+    "I18n": {
+        "Languages": [
+            "de",
+            "en"
+        ]
     },
     "Study": {
         "TaskName": "wellbeing-multi",
