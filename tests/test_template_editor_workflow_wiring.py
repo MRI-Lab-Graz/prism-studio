@@ -52,6 +52,22 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertNotIn("renderSection(sectionKey, currentTemplate[sectionKey]", script)
         self.assertFalse((TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.parent / "technical-groups.js").exists())
 
+    def test_the_rings_show_what_the_backend_counts_and_empty_required_fields_turn_red_live(self):
+        page = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+        script = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        # two rings (required, FAIR) instead of the old bar; the numbers come from the completeness route
+        self.assertIn('id="ringRequired"', page)
+        self.assertIn('id="ringFair"', page)
+        self.assertNotIn("completionBarFill", page + script)
+        self.assertNotIn("calculateCompletion", script)
+        self.assertIn("/api/template-editor/completeness", script)
+        # the hint is always drawn for a required field and shown or hidden as the numbers change
+        self.assertIn("te-required-hint", script)
+        self.assertIn("function paintCompleteness", script)
+        self.assertIn("countMissing", script)
+        self.assertIn("is-invalid", script[script.index("function paintCompleteness") :][:2500])
+
     def test_schema_version_sits_in_a_closed_advanced_fold_out(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 

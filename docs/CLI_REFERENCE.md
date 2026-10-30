@@ -160,6 +160,17 @@ project is checked:
 python prism_tools.py library template-check --project /path/to/project
 ```
 
+**`library template-score`** — how complete one template is, the numbers behind the rings
+in Studio's Template Editor: required fields filled (what a template needs before data can
+be converted or exported with it) and recommended fields filled (the FAIR ring: short name,
+version, authors, DOI, construct, description, instructions; these never block). Exits 1
+while a required field is empty; `--is-global` scores a library template (the project-level
+fields are not required), `--json` prints the result as JSON:
+
+```bash
+python prism_tools.py library template-score --template survey-mytask.json
+```
+
 The generated Methods boilerplate summarizes richer schema metadata (DOIs, licenses,
 age ranges, administration/scoring times, item counts, access levels) alongside
 citations.

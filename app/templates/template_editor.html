@@ -189,16 +189,21 @@
             <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
           </div>
 
-          <!-- Completion Progress Bar -->
-          <div class="completion-bar-container" id="completionBarContainer" style="display:none;">
-            <div class="completion-bar">
-              <div class="completion-bar-fill" id="completionBarFill" style="width: 0%;">
-                <span id="completionBarText">0%</span>
-              </div>
+          <!-- Completeness: the backend counts (library template-score), the page only draws them -->
+          <div class="te-rings" id="completionRings" style="display:none;">
+            <div class="te-ring" id="ringRequired" role="img" data-name="Required" aria-label="Required 0%"
+                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                 title="<strong>Required</strong><br>The fields this template needs before it can be used for converting or exporting.">
+              <div class="te-ring-disc" style="--p: 0;"><span class="te-ring-label">REQ</span></div>
+              <small class="te-ring-count" id="ringRequiredText">0/0</small>
             </div>
-            <div class="completion-bar-label">
-              <span>General Information</span>
+            <div class="te-ring" id="ringFair" role="img" data-name="FAIR" aria-label="FAIR 0%"
+                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
+                 title="<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything; it tracks how reusable the description is.">
+              <div class="te-ring-disc" style="--p: 0;"><span class="te-ring-label">FAIR</span></div>
+              <small class="te-ring-count" id="ringFairText">0/0</small>
             </div>
+            <div class="small" id="completenessProblems"></div>
           </div>
 
           <!-- Editor View -->

@@ -52,6 +52,11 @@ export function assignFields(schemaFields) {
     return map;
 }
 
+/** How many of a section's `paths` the backend lists as empty required fields (`missing` is a Set of paths). */
+export function countMissing(paths, missing) {
+    return paths.filter((path) => missing.has(path)).length;
+}
+
 /** "Not filled in": absent, null, blank text, an empty list, or a language object whose English text is empty. */
 export function isMissing(value) {
     if (value === undefined || value === null) return true;

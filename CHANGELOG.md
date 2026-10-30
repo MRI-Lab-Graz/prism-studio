@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   required fields still empty; `survey convert`, Quick Export, the LimeSurvey customizer, Pavlovia and Word export refuse an
   incomplete template and name the file and the missing fields. Converting into a project also needs `Respondent`,
   `AdministrationMethod` and `SoftwarePlatform`; exports need only the global fields. Specification v1.5.3 (survey schema 2.0.0).
+- **The template editor shows how complete a template is, live.** An empty required field is red until it is filled, the
+  section badges count what is still empty (and turn green at zero), and two rings replace the old bar: **REQ** (required
+  fields filled; 100% means the template can be used) and **FAIR** (recommended fields: short name, version, authors, DOI,
+  construct, description, instructions; never blocks). The numbers come from the backend, also as
+  `library template-score --template <file> [--is-global] [--json]`.
 - **A refused conversion leaves the template in the project to fix.** When `survey convert` (or Studio) is refused because
   a used template is incomplete, the templates are copied into the project's `code/library/survey` and the message names
   those copies, so the missing fields can be filled in the Template editor (a library file cannot be). Studio's

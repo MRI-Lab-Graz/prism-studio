@@ -471,52 +471,94 @@
     }
   }
 
-  function calculateCompletion() {
-    if (!currentTemplate || typeof currentTemplate !== 'object') return 0;
+  // ── Completeness: the backend counts (library template-score), the page only draws it ──
+  let completeness = null;
+  let completenessTimer = null;
+  let completenessRequest = 0;
 
-    // Count the filled fields of the Questionnaire info card
-    if (!questionnaireSections) return 0;
-    const paths = [];
-    for (const s of ['Technical', 'Study', 'Metadata', 'I18n']) {
-      Object.keys(getSectionSchema(s)?.properties || {}).forEach((key) => paths.push(`${s}/${key}`));
+  function refreshCompleteness() {
+    clearTimeout(completenessTimer);
+    completenessTimer = setTimeout(fetchCompleteness, 150);
+  }
+
+  async function fetchCompleteness() {
+    const modality = modalityEl.value;
+    if (modality !== 'survey' || !currentTemplate || typeof currentTemplate !== 'object' || !hasUserInteracted) {
+      completeness = null;
+      paintCompleteness();
+      return;
     }
-    const shown = [...questionnaireSections.assignFields(paths).values()].flat();
-    const totalCount = shown.length;
-    const filledCount = shown.filter((path) => {
-      const [s, key] = path.split('/');
-      return !questionnaireSections.isMissing(currentTemplate[s]?.[key]);
-    }).length;
+    const request = ++completenessRequest;
+    try {
+      const data = await apiPost('/api/template-editor/completeness', {
+        template: currentTemplate,
+        filename: resolveTemplateFilenameForSave(currentTemplate, modality),
+        schema_version: schemaEl.value,
+        is_global: loadedFromReadonly,
+      });
+      if (request !== completenessRequest) return; // a newer edit has asked again
+      completeness = data;
+    } catch (e) {
+      completeness = null;
+    }
+    paintCompleteness();
+  }
 
-    if (totalCount === 0) return 0;
-    return Math.round((filledCount / totalCount) * 100);
+  function setRing(id, percent, counts, state, tip) {
+    const ring = document.getElementById(id);
+    if (!ring) return;
+    ring.dataset.state = state;
+    ring.setAttribute('aria-label', `${ring.dataset.name} ${percent}%`);
+    ring.querySelector('.te-ring-disc').style.setProperty('--p', String(percent));
+    ring.querySelector('.te-ring-count').textContent = counts;
+    if (tip) {
+      ring.setAttribute('title', tip);
+      ring.setAttribute('data-bs-original-title', tip);
+    }
+  }
+
+  function paintCompleteness() {
+    const rings = document.getElementById('completionRings');
+    if (!rings) return;
+    if (!completeness) {
+      rings.style.display = 'none';
+      return;
+    }
+    rings.style.display = 'flex';
+    const missing = new Set(completeness.required.missing);
+    const { required, recommended, percent } = completeness;
+    setRing('ringRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
+    const open = recommended.missing.map((path) => escapeHtml(path.split('/')[1])).join(', ');
+    setRing(
+      'ringFair', percent.recommended, `${recommended.filled}/${recommended.total}`,
+      percent.recommended >= 70 ? 'done' : 'partial',
+      `<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything.${open ? `<br>Still open: ${open}` : ''}`
+    );
+    const problems = document.getElementById('completenessProblems');
+    if (problems) {
+      problems.innerHTML = completeness.problems.map((text) => `<div class="text-danger">${escapeHtml(text)}</div>`).join('');
+    }
+
+    // fields: an empty required field is red until it is filled
+    topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
+      if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', missing.has(el.getAttribute('data-field-path')));
+    });
+    topLevelFormEl.querySelectorAll('.te-required-hint').forEach((hint) => {
+      hint.hidden = !missing.has(hint.dataset.hintPath);
+    });
+    // sections: the badge counts what is still empty in them, and turns green at zero
+    topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
+      const badge = details.querySelector('.te-section-badge');
+      if (!badge || !questionnaireSections) return;
+      const open = questionnaireSections.countMissing((details.dataset.paths || '').split(','), missing);
+      badge.hidden = !open && details.dataset.hasRequired !== '1';
+      badge.textContent = open ? `${open} required` : '✓ complete';
+      badge.className = `badge ms-2 te-section-badge ${open ? 'bg-danger' : 'te-section-badge-done'}`;
+    });
   }
 
   function renderCompletionBar() {
-    const completionBarContainer = document.getElementById('completionBarContainer');
-    const completionBarFill = document.getElementById('completionBarFill');
-    const completionBarText = document.getElementById('completionBarText');
-
-    // Only show if a template is loaded and it has required sections
-    if (!currentTemplate || typeof currentTemplate !== 'object' || !hasUserInteracted) {
-      if (completionBarContainer) completionBarContainer.style.display = 'none';
-      return;
-    }
-
-    const percentage = calculateCompletion();
-    if (completionBarContainer) {
-      completionBarContainer.style.display = 'flex';
-      completionBarFill.style.width = percentage + '%';
-      completionBarText.textContent = percentage + '%';
-      
-      // Change color based on completion
-      if (percentage >= 80) {
-        completionBarFill.style.background = 'linear-gradient(90deg, #28a745 0%, #20c997 100%)';
-      } else if (percentage >= 50) {
-        completionBarFill.style.background = 'linear-gradient(90deg, #17a2b8 0%, #20c997 100%)';
-      } else {
-        completionBarFill.style.background = 'linear-gradient(90deg, #ffc107 0%, #ff9800 100%)';
-      }
-    }
+    refreshCompleteness();
   }
 
   function diffObjects(base, curr, path, out) {
@@ -2524,11 +2566,14 @@
       col.appendChild(helpText);
     }
 
-    if (isMissing && isRequired) {
+    if (isRequired) {
       const hint = document.createElement('div');
-      hint.className = 'form-text text-warning';
+      hint.className = 'form-text te-required-hint';
+      hint.dataset.hintPath = `${sectionKey}/${name}`;
+      hint.hidden = !isMissing;
       hint.textContent = 'Required';
       col.appendChild(hint);
+      if (isMissing && input.matches('input, select, textarea')) input.classList.add('is-invalid');
     }
 
     row.appendChild(col);
@@ -3036,10 +3081,19 @@
       const details = document.createElement('details');
       details.className = 'te-subgroup mb-3';
       details.open = false; // all closed on start; the "required" badge shows where to look
+      details.dataset.paths = fields.join(',');
+      const hasRequired = fields.some((path) => {
+        const [s, name] = path.split('/');
+        return (schemas[s].required || []).includes(name);
+      });
+      details.dataset.hasRequired = hasRequired ? '1' : '';
       const summary = document.createElement('summary');
       summary.className = 'te-subgroup-summary';
+      // the badge is redrawn live from the backend's numbers (paintCompleteness); this is its first state
       summary.innerHTML = `<span class="te-subgroup-title">${escapeHtml(section.label)}</span>`
-        + (openCount ? `<span class="badge bg-warning text-dark ms-2">${openCount} required</span>` : '');
+        + (hasRequired
+          ? `<span class="badge ms-2 te-section-badge ${openCount ? 'bg-danger' : 'te-section-badge-done'}">${openCount ? `${openCount} required` : '✓ complete'}</span>`
+          : '');
       details.appendChild(summary);
 
       const body = document.createElement('div');
@@ -4134,6 +4188,7 @@
   function markTemplateDirty() {
     // Only block Save — Download should remain available for mid-edit export
     btnSave.disabled = true;
+    refreshCompleteness();
   }
 
   function hasUnsavedChanges() {

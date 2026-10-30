@@ -40,6 +40,13 @@ panel and the Bulk edit panel. There is also a language bar and — for multi-ve
 instruments — a variant selector. Templates carry no LimeSurvey export settings; those
 are chosen when you export.
 
+An empty required field is red until you fill it, and a section's badge counts what is
+still empty there (green "✓ complete" at zero). Two rings above the sections show the
+state: **REQ** is the share of required fields filled (100% means the template can be used),
+**FAIR** the share of recommended fields (short name, version, authors, DOI, construct,
+description, instructions), which never blocks anything. Hover a ring for details. The same
+numbers are available as `library template-score` on the command line.
+
 A save always works, and the message lists the required fields that are still empty.
 Converting data or exporting a questionnaire needs a complete template and names what is
 missing.
