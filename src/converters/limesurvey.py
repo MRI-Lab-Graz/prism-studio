@@ -266,7 +266,7 @@ def _parse_survey_metadata(root, get_text):
         "title": "",
         "admin": "",
         "admin_email": "",
-        "language": "en",
+        "language": "",
         "anonymized": False,
         "format": "G",  # G=group, S=single, A=all
         "template": "",
@@ -284,7 +284,7 @@ def _parse_survey_metadata(root, get_text):
             for row in rows.findall("row"):
                 metadata["admin"] = get_text(row, "admin")
                 metadata["admin_email"] = get_text(row, "adminemail")
-                metadata["language"] = get_text(row, "language") or "en"
+                metadata["language"] = get_text(row, "language")
                 metadata["anonymized"] = get_text(row, "anonymized") == "Y"
                 metadata["format"] = get_text(row, "format") or "G"
                 metadata["template"] = get_text(row, "template")
@@ -395,12 +395,12 @@ def _add_fixed_answer_levels(questions_map, languages):
 
 def _base_language(root):
     """The survey's base language: <surveys> row, else the first of <languages>, else the
-    first language any row names, else "en" (.lsq/.lsg files have no <surveys>)."""
+    first language any row names, else "" (.lsq/.lsg files may name none: never invented)."""
     for path in ("surveys/rows/row/language", "languages/language"):
         value = (root.findtext(path) or "").strip()
         if value:
             return value
-    return next(((el.text or "").strip() for el in root.iter("language") if (el.text or "").strip()), "en")
+    return next(((el.text or "").strip() for el in root.iter("language") if (el.text or "").strip()), "")
 
 
 def _detect_languages(root, get_text):
@@ -635,6 +635,15 @@ def _array_item_id(parent_code, row_code, taken):
     return f"{parent_code}_{row_code}"
 
 
+def _unkeyed(value):
+    """``{"": text}`` (texts of a file that names no language) as plain ``text``, everywhere in ``value``."""
+    if isinstance(value, dict):
+        return value[""] if set(value) == {""} else {k: _unkeyed(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_unkeyed(v) for v in value]
+    return value
+
+
 def _multilingual(levels, language):
     """Levels with plain strings turned into {language: text}."""
     return {
@@ -855,8 +864,8 @@ def _build_prism_template_from_parsed(
             "StimulusType": "Questionnaire",
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
-            "Language": default_language,
             "ResponseType": ["online"],
+            **({"Language": default_language} if default_language else {}),
         },
         "Study": {
             "TaskName": normalized_task,
@@ -864,8 +873,6 @@ def _build_prism_template_from_parsed(
             "Version": "1.0",
             "Description": f"Imported from LimeSurvey .{source_type}: {task_name}",
             "ItemCount": len(prism_questions),
-            "LicenseID": "Proprietary",
-            "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
         },
         "Metadata": {
             "SchemaVersion": current_survey_schema_version(),
@@ -874,14 +881,14 @@ def _build_prism_template_from_parsed(
         },
     }
 
-    if languages:
+    if languages:  # none named: no I18n, and the texts stay plain strings (the editor asks for the language)
         template["I18n"] = {
             "Languages": languages,
             "DefaultLanguage": default_language,
         }
 
     template.update(prism_questions)
-    return strip_export_settings(template)[0]  # export settings are derived at export time, not kept
+    return _unkeyed(strip_export_settings(template)[0])  # export settings are derived at export time, not kept
 
 
 def _parse_lsq_lsg_xml(xml_content, source_type):
@@ -1014,7 +1021,7 @@ def _apply_prismmeta(template, html):
             study[target] = fields[field]
             restored.append(target)
             if field == "license":
-                study.pop("LicenseID", None)  # the builder's default would contradict the restored text
+                study.pop("LicenseID", None)
     if fields.get("authors"):
         # ponytail: the exporter joins authors with ", ", which also appears inside
         # "Doe, J." names; kept as one entry rather than guessing the split.
@@ -1055,6 +1062,7 @@ def _questionnaire_template(parsed, part):
     if instructions:
         study["Instructions"] = instructions
     template["Technical"]["AdministrationMethod"] = "online"
+    template = _unkeyed(template)
     return template, _apply_prismmeta(template, part["prismmeta"])
 
 
@@ -1518,8 +1526,8 @@ def parse_lss_xml(
             "StimulusType": "Questionnaire",
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
-            "Language": survey_meta.get("language", "en"),
             "ResponseType": ["online"],
+            **({"Language": survey_meta["language"]} if survey_meta["language"] else {}),
         },
         "Study": {
             "TaskName": normalized_task,
@@ -1527,8 +1535,6 @@ def parse_lss_xml(
             "Version": "1.0",
             "Description": description,
             "ItemCount": len(prism_json),
-            "LicenseID": "Proprietary",
-            "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
         },
         "Metadata": {
             "SchemaVersion": current_survey_schema_version(),
@@ -1538,7 +1544,8 @@ def parse_lss_xml(
     }
 
     # this converter keeps the base language's texts only
-    metadata["I18n"] = {"Languages": [metadata["Technical"]["Language"]]}
+    if survey_meta["language"]:
+        metadata["I18n"] = {"Languages": [survey_meta["language"]]}
 
     # Add survey-level settings if present
     if survey_meta.get("admin"):

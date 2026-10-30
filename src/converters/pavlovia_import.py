@@ -199,8 +199,6 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
         template["Study"] = {
             "TaskName": task, "OriginalName": name, "Version": "1.0",
             "Description": _text(lang, f"Imported from Pavlovia survey: {name}"),
-            "LicenseID": "Proprietary",
-            "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
             **({"Instructions": _text(lang, "\n\n".join(instructions))} if instructions else {}),
         }
         for el in els:

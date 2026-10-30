@@ -196,11 +196,11 @@ class TestParseAnswersIntoQuestions:
 
 
 class TestDetectLanguages:
-    def test_defaults_to_english_when_nothing_found(self):
+    def test_invents_no_language_when_nothing_found(self):
         root = ET.fromstring("<root/>")
         languages, default_language = _detect_languages(root, _get_text)
-        assert languages == ["en"]
-        assert default_language == "en"
+        assert languages == []
+        assert default_language == ""
 
     def test_detects_additional_languages(self):
         xml = """<root>

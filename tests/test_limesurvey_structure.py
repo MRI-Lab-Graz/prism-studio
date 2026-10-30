@@ -41,7 +41,7 @@ class TestParseSurveyMetadata:
         root = _make_root("<root/>")
         meta = _parse_survey_metadata(root, _get_text)
         assert meta["title"] == ""
-        assert meta["language"] == "en"
+        assert meta["language"] == ""
         assert meta["anonymized"] is False
 
     def test_reads_survey_fields(self):

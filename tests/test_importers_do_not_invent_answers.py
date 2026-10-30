@@ -233,3 +233,47 @@ def test_fixer_stub_leaves_respondent_and_language_out_and_reports_them(tmp_path
     assert "Respondent" not in stub["Technical"] and "Language" not in stub["Technical"]
     assert stub["Metadata"]["SchemaVersion"] == current_survey_schema_version()
     assert re.search(r"Respondent", fixes[0].description) and re.search(r"Language", fixes[0].description)
+
+
+# --- fix round 1: no language named -> none invented; no license assumed ---------------------------
+
+_NO_LANGUAGE_LSQ = """<?xml version="1.0" encoding="UTF-8"?>
+<document>
+<questions><rows><row><qid>1</qid><gid>1</gid><type>N</type><title>Q1</title><question>Wie alt?</question><question_order>1</question_order><mandatory>N</mandatory><parent_qid>0</parent_qid></row></rows></questions>
+</document>""".encode()
+
+
+def test_lsq_without_a_language_tag_invents_no_language():
+    from src.converters.limesurvey import parse_lsq_xml
+
+    t = parse_lsq_xml(_NO_LANGUAGE_LSQ)
+    assert "Language" not in t["Technical"]
+    assert "I18n" not in t
+    assert t["Q1"]["Description"] == "Wie alt?"  # plain text, the editor asks for the language
+
+
+def test_lsq_with_a_language_tag_still_sets_it():
+    from src.converters.limesurvey import parse_lsq_xml
+
+    t = parse_lsq_xml(_NO_LANGUAGE_LSQ.replace(b"<questions>", b"<languages><language>de</language></languages><questions>"))
+    assert t["Technical"]["Language"] == "de"
+    assert t["I18n"]["Languages"] == ["de"]
+
+
+def test_parse_lss_xml_without_a_language_tag_invents_no_language():
+    from src.converters.limesurvey import parse_lss_xml
+
+    t = parse_lss_xml(_NO_LANGUAGE_LSQ, check_collisions=False)
+    assert "Language" not in t["Technical"]
+    assert "I18n" not in t
+
+
+def test_limesurvey_and_pavlovia_assume_no_license():
+    from src.converters.limesurvey import limesurvey_questionnaire
+    from src.converters.pavlovia_import import pavlovia_questionnaire_template
+
+    t, _ = limesurvey_questionnaire(LSS, "survey", split="survey")
+    assert "LicenseID" not in t["Study"] and "License" not in t["Study"]
+    survey = json.loads((DATA / "pavlovia_survey.json").read_text(encoding="utf-8"))
+    p = pavlovia_questionnaire_template(survey, "p2")
+    assert "LicenseID" not in p["Study"] and "License" not in p["Study"]
