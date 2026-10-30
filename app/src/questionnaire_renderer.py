@@ -11,6 +11,7 @@ import random
 from datetime import datetime
 from typing import Optional
 
+from src.limesurvey_exporter import ls_question_type
 from src.text_sanitizer import strip_invalid_xml_chars
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -57,40 +58,16 @@ def _safe_num(val):
         return (1, str(val))
 
 
+# LimeSurvey question type (the one derivation, limesurvey_exporter.ls_question_type) -> how it is drawn on paper
+_PAPER_KINDS = {"!": "dropdown", "N": "numerical", "K": "slider", "S": "short-text", "T": "long-text", "*": "hidden"}
+
+
 def _detect_question_type(item: dict) -> str:
-    ls_type = (item.get("LimeSurvey") or {}).get("questionType", "")
-    if ls_type == "!":
-        return "dropdown"
-    if ls_type in ("N", "K"):
-        return "numerical"
-    if ls_type == "S":
-        return "short-text"
-    if ls_type in ("T", "U"):
-        return "long-text"
-    if ls_type == "D":
-        return "date"
-    if ls_type in ("*", "X"):
-        return "hidden"
-    input_type = item.get("InputType", "")
-    if input_type == "slider":
-        return "slider"
-    if input_type == "dropdown":
-        return "dropdown"
-    if input_type == "numerical":
-        return "numerical"
-    if input_type == "calculated":
-        return "hidden"
-    if input_type == "text":
-        tc = item.get("TextConfig") or {}
-        return "long-text" if tc.get("multiline") else "short-text"
-    for vs in item.get("VariantScales") or []:
-        st = (vs or {}).get("ScaleType", "")
-        if st in ("vas", "visual-analogue"):
-            return "slider"
-    levels = item.get("Levels")
-    if levels and isinstance(levels, dict) and len(levels) > 0:
-        return "dropdown" if len(levels) > 10 else "radio"
-    return "short-text"
+    if not item.get("InputType"):
+        for vs in item.get("VariantScales") or []:
+            if (vs or {}).get("ScaleType", "") in ("vas", "visual-analogue"):
+                return "slider"
+    return _PAPER_KINDS.get(ls_question_type(item), "radio")
 
 
 def _get_levels(item: dict, variant_id: Optional[str] = None) -> dict:

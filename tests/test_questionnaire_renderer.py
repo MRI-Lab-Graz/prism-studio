@@ -229,3 +229,22 @@ def test_hidden_items_excluded(likert_template):
     doc = Document(buf)
     full_text = "\n".join(p.text for p in doc.paragraphs)
     assert "Should not appear" not in full_text
+
+
+@pytest.mark.parametrize(
+    "item, kind",
+    [
+        ({"Description": "Weight", "DataType": "integer"}, "numerical"),  # what a LimeSurvey import writes
+        ({"Description": "Story", "DataType": "string"}, "long-text"),
+        ({"Description": "Q", "Levels": {"1": "a", "2": "b"}, "LimeSurvey": {"questionType": "N"}}, "radio"),
+        ({"Description": "Q", "Levels": {str(i): str(i) for i in range(12)}}, "dropdown"),
+        ({"Description": "Q", "InputType": "text"}, "short-text"),
+        ({"Description": "Q", "Calculation": {"formula": "a + b"}}, "hidden"),
+    ],
+)
+def test_word_export_uses_the_limesurvey_exports_derivation(item, kind):
+    """One derivation of the question type (limesurvey_exporter.ls_question_type), from the generic
+    fields only; a template's LimeSurvey.questionType is an old export setting and is ignored."""
+    from src.questionnaire_renderer import _detect_question_type
+
+    assert _detect_question_type(item) == kind
