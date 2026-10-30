@@ -102,23 +102,22 @@ Excel import writes no invented entries (no `AdministrationMethod` "paper", `Sof
 are set in the PROJECT copy of the survey, not globally. Still to check (Task 8/10): how the project copy gets them set
 (`technical_defaults` from the project in `src/survey_template_sources.py`?) and that the gate message points there.
 
-## OPEN DECISION (blocks Tasks 8, 9, 10): global vs project-level fields
+## Decided by Karl: global vs project-level fields
 
-Karl: some fields are mandatory for the template (global), others are project-specific: optional in the template,
-mandatory in the project copy. Today this is only a patch: the schema has ONE required list (the project copy) and
-`relax_schema_for_library_template` (src/prism_template_validation.py) removes TaskName, LicenseID, Citation,
-SoftwarePlatform, AdministrationMethod, Respondent for library templates. Proposal sent to Karl, not yet answered:
-- Global (mandatory in the template): OriginalName, Citation, LicenseID, Language, I18n.Languages, Creator,
-  CreationDate, SchemaVersion, StimulusType, FileFormat; Category for the official library only.
-- Project (optional in the template, mandatory in the project copy): Respondent, AdministrationMethod,
-  SoftwarePlatform, SoftwareVersion.
-- Grey zone: TaskName (file ID, derived), Version/Versions (template describes all forms, project picks one),
-  ItemCount/AdministrationTime (follow from the form).
-If agreed: spec patch release v1.5.2 states both lists in the schema (e.g. `x-prism.projectOnlyRequired` next to
-`officialOnlyRequired`), Studio drops its own relaxation lists, Task 8 gates "template complete" (global) vs "project
-copy complete" (global + project), the editor shows project fields in a separate "For this project" section only when
-editing a project copy. Also check how the project copy gets these values today (`technical_defaults` in
-src/survey_template_sources.py?).
+- **Global (in the template, mandatory where the schema requires it):** TaskName, OriginalName, Citation, LicenseID,
+  Language, I18n.Languages, Creator, CreationDate, SchemaVersion, StimulusType, FileFormat (+ Category, official
+  library only). **Global descriptions, optional:** Version/Versions/VariantDefinitions (all available forms live in
+  the one template), ItemCount (per form via VariantDefinitions[].ItemCount), AdministrationTime (from the authors).
+- **Project-level (optional in the template, required in the project copy):** Respondent, AdministrationMethod,
+  SoftwarePlatform, SoftwareVersion. Which form a project used is an optional project setting, NOT built now.
+- Consequence: `relax_schema_for_library_template` shrinks to this project-only set; TaskName/LicenseID/Citation are
+  no longer relaxed. The schema states the set itself (`x-prism.projectOnlyRequired`, next to `officialOnlyRequired`),
+  Studio reads it and the LIBRARY_RELAXED_* constants are deleted. The "SoftwareVersion required when SoftwarePlatform
+  names real software" rule applies to project copies only. Tasks: 1c (spec, tag v1.5.2), 2d (Studio re-sync + code).
+  Tasks 8, 9, 10 build on this: a template is complete when the global fields are filled, a project copy when the
+  project fields are too; the editor shows project fields in a "For this project" section only on a project copy.
+- Still to check: how the project copy gets these values today (`technical_defaults` in
+  src/survey_template_sources.py?).
 
 ## Deferred minors (from reviews)
 
