@@ -2633,38 +2633,6 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertIn("maia", warnings[0].get("message", "").lower())
 
 
-class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
-    """Regression tests for biometrics template copy behavior."""
-
-    def test_copy_biometrics_templates_to_project(self):
-        import importlib
-
-        handlers = importlib.import_module(
-            "src.web.blueprints.conversion_biometrics_handlers"
-        )
-
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            source_dir = tmp_path / "official" / "library" / "biometrics"
-            source_dir.mkdir(parents=True, exist_ok=True)
-            (source_dir / "biometrics-ecg.json").write_text("{}", encoding="utf-8")
-
-            project_root = tmp_path / "project"
-            project_root.mkdir(parents=True, exist_ok=True)
-
-            handlers._copy_biometrics_templates_to_project(
-                source_dir=source_dir,
-                tasks=["ecg"],
-                project_path=str(project_root),
-                log_fn=lambda *_: None,
-            )
-
-            copied = (
-                project_root / "code" / "library" / "biometrics" / "biometrics-ecg.json"
-            )
-            self.assertTrue(copied.exists())
-
-
 class TestSurveySidecarDefaults(unittest.TestCase):
     """Regression tests for required survey sidecar defaults."""
 

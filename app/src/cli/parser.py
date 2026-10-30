@@ -1074,9 +1074,25 @@ def build_prism_tools_parsers(
     )
     parser_biometrics_convert.add_argument(
         "--library",
-        required=True,
         dest="library_dir",
-        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+        default=None,
+        help=(
+            "Path to biometrics library directory (containing biometrics-*.json templates); "
+            "default: the project's code/library, then the configured global library"
+        ),
+    )
+    parser_biometrics_convert.add_argument(
+        "--project",
+        default=None,
+        help=(
+            "Project root or project.json: its templates are used and its participant IDs matched "
+            "(default: the output folder, when it is a PRISM project)"
+        ),
+    )
+    parser_biometrics_convert.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Convert into a temporary folder and report; write nothing into the output",
     )
     parser_biometrics_convert.add_argument(
         "--output", required=True, help="Output directory for the PRISM dataset"
@@ -1106,7 +1122,10 @@ def build_prism_tools_parsers(
     )
     parser_biometrics_convert.add_argument("--name", help="Dataset name")
     parser_biometrics_convert.add_argument(
-        "--force", action="store_true", help="Overwrite existing output directory"
+        "--force",
+        action="store_true",
+        default=None,
+        help="Overwrite existing output directory (default: on when the output is a PRISM project)",
     )
 
     parser_physio = subparsers.add_parser(

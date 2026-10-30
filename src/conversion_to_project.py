@@ -46,6 +46,24 @@ def iter_session_registration_values(*, session_override: str | None, detected_s
     return values
 
 
+def plan_template_copies(modality: str, source_dir, tasks, project_root) -> list[tuple[Path, Path]]:
+    """``(source, destination)`` pairs for the used tasks' templates the project's code/library lacks.
+
+    ``source_dir`` is a library root (with a ``<modality>/`` subfolder) or that subfolder itself."""
+    if not project_root or not tasks:
+        return []
+    source_dir = Path(source_dir)
+    if (source_dir / modality).is_dir() and not list(source_dir.glob(f"{modality}-*.json")):
+        source_dir = source_dir / modality
+    dest_dir = Path(project_root) / "code" / "library" / modality
+    pairs = []
+    for task in tasks:
+        src, dest = source_dir / f"{modality}-{task}.json", dest_dir / f"{modality}-{task}.json"
+        if src.exists() and not dest.exists():
+            pairs.append((src, dest))
+    return pairs
+
+
 def extract_tasks_from_output(output_root: Path) -> list[str]:
     """The task names in the BIDS-style file names under ``output_root``."""
     tasks = set()
@@ -100,6 +118,7 @@ def save_conversion_to_project(
     modality: str = "survey",
     run_message: str = "PRISM: Copy converted survey files into project",
     conv_type: str | None = None,
+    extra_pairs: list[tuple[Path, Path]] | None = None,
     log_fn: Callable[[str, str], Any] | None = None,
 ) -> ProjectSave:
     """Save the files in ``staged_root`` (a conversion's output) into ``project_root``."""
@@ -112,6 +131,7 @@ def save_conversion_to_project(
         if item.is_file() and filter_system_files([item.name]):
             pairs.append((item, project_root / item.relative_to(staged_root)))
     output_rel = {dest.relative_to(project_root).as_posix() for _src, dest in pairs}
+    pairs.extend(extra_pairs or [])  # e.g. the templates the conversion used: copied, but not "converted output"
     if archive_sourcedata and source_path:
         pairs.append((Path(source_path), project_root / "sourcedata" / source_name))
 

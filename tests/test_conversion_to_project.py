@@ -125,3 +125,31 @@ def test_tasks_are_read_from_the_file_names_of_the_output(tmp_path):
     (tmp_path / "sub-1" / "sub-1_task-pss_survey.tsv").write_text("", encoding="utf-8")
     (tmp_path / "sub-1" / "sub-1_task-gad7_survey.tsv").write_text("", encoding="utf-8")
     assert extract_tasks_from_output(tmp_path) == ["gad7", "pss"]
+
+
+def test_extra_pairs_are_copied_with_the_converted_files(world):
+    project, _staged, source = world
+    template = source.parent / "biometrics-grip.json"
+    template.write_text("{}", encoding="utf-8")
+    result = _save(world, extra_pairs=[(template, project / "code" / "library" / "biometrics" / "biometrics-grip.json")])
+    assert (project / "code" / "library" / "biometrics" / "biometrics-grip.json").exists()
+    assert "code/library/biometrics/biometrics-grip.json" in result.copied_paths
+    assert all(p.name != "biometrics-grip.json" for p in result.output_paths)  # not a converted file
+
+
+def test_template_copies_are_planned_for_the_used_tasks_the_project_lacks(tmp_path):
+    from src.conversion_to_project import plan_template_copies
+
+    library = tmp_path / "lib"
+    (library / "biometrics").mkdir(parents=True)
+    for task in ("grip", "fitness"):
+        (library / "biometrics" / f"biometrics-{task}.json").write_text("{}", encoding="utf-8")
+    project = tmp_path / "proj"
+    have = project / "code" / "library" / "biometrics"
+    have.mkdir(parents=True)
+    (have / "biometrics-grip.json").write_text("{}", encoding="utf-8")
+
+    pairs = plan_template_copies("biometrics", library, ["grip", "fitness", "ghost"], project)
+
+    assert [(s.name, d.name) for s, d in pairs] == [("biometrics-fitness.json", "biometrics-fitness.json")]
+    assert plan_template_copies("biometrics", library, [], project) == []
