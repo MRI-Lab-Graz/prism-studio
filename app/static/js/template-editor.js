@@ -3155,11 +3155,11 @@
 
       const details = document.createElement('details');
       details.className = 'te-subgroup mb-3';
-      details.open = openCount > 0 || section === questionnaireSections.QUESTIONNAIRE_SECTIONS[0];
+      details.open = false; // all closed on start; the "required" badge shows where to look
       const summary = document.createElement('summary');
       summary.className = 'te-subgroup-summary';
       summary.innerHTML = `<span class="te-subgroup-title">${escapeHtml(section.label)}</span>`
-        + (openCount ? `<span class="badge text-bg-warning ms-2">${openCount} required</span>` : '');
+        + (openCount ? `<span class="badge bg-warning text-dark ms-2">${openCount} required</span>` : '');
       details.appendChild(summary);
 
       const body = document.createElement('div');
