@@ -7,13 +7,14 @@ from pathlib import Path
 
 from src.personal_library import personal_library_folder
 from src.prism_template_validation import (
+    SEVERITY_ERROR,
     is_missing_field_error,
     missing_required_fields,
     relax_schema_for_library_template,
     strip_template_editor_internal_keys,
     validate_template_against_schema,
 )
-from src.schema_manager import load_schema
+from src.schema_manager import apply_schema_validation_profile, load_schema
 from src.survey_export_settings import strip_export_settings
 from src.survey_template_normalization import normalize_survey_template_for_validation
 from src.utils.io import dump_json_text
@@ -39,6 +40,39 @@ class TemplateExists(Exception):
     def __init__(self, path: Path):
         self.path = path
         super().__init__(f"{path.name} already exists")
+
+
+class TemplateIncomplete(TemplateInvalid):
+    """A template used for converting or exporting lacks required fields; the message has one line per field."""
+
+    def __init__(self, errors: list[dict]):
+        self.errors = errors
+        Exception.__init__(self, "\n".join(e["message"] for e in errors))
+
+
+_MISSING_HINTS = {"Technical/Respondent": " – set who answered the questionnaire (self, parent, clinician, …)"}
+
+
+def require_complete_template(template: dict, *, source: str, app_root=None, schema_version: str = "stable") -> None:
+    """Raise ``TemplateIncomplete`` unless ``template`` has every field the full survey schema requires (a template
+    used in a project is a project template, so nothing is relaxed) and no declared-language error. Saving never
+    needs this; using a template does."""
+    schema = apply_schema_validation_profile(
+        load_schema(
+            "survey",
+            **({"schema_dir": str(Path(app_root) / "schemas")} if app_root else {}),
+            version=schema_version,
+        ),
+        profile="project",
+    )
+    found = [*missing_required_fields(template, schema), *_language_findings(template)]
+    errors = [
+        {"path": f["path"], "message": f"{f['message']} in {source}{_MISSING_HINTS.get(f['path'], '')}"}
+        for f in found
+        if f["severity"] == SEVERITY_ERROR
+    ]
+    if errors:
+        raise TemplateIncomplete(errors)
 
 
 def save_template(

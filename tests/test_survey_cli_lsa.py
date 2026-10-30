@@ -50,7 +50,8 @@ def _library(tmp_path: Path) -> Path:
             "Citation": "x", "Version": "1", "Instructions": "x", "LicenseID": "CC0-1.0",
             "Category": "Well-being & Life Satisfaction",
         },
-        "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2026-01-01"},
+        "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": "2026-01-01", "Creator": "t"},
+        "I18n": {"Languages": ["en"]},
     }
     for i in (1, 2, 3):
         template[f"MTESTSQ00{i}"] = {"Description": f"q{i}", "Levels": {str(k): str(k) for k in range(1, 6)}}

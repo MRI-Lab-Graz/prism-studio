@@ -794,6 +794,20 @@ def generate_lss(
     )
 
 
+def _require_complete_templates(paths):
+    """Refuse the export when a template file it draws on lacks required fields (unreadable files are skipped, as
+    the builders skip them)."""
+    from src.template_save import require_complete_template
+
+    for path in sorted(p for p in paths if p):
+        try:
+            with open(path, "r", encoding="utf-8") as handle:
+                template = json.load(handle)
+        except (OSError, ValueError):
+            continue
+        require_complete_template(template, source=str(path))
+
+
 def generate_lss_from_customization(
     groups,
     output_path=None,
@@ -825,6 +839,10 @@ def generate_lss_from_customization(
     Returns:
         str: The XML content if output_path is None, else None.
     """
+    _require_complete_templates(
+        {g.get("sourceFile") for g in groups} | {q.get("sourceFile") for g in groups for q in g.get("questions", [])}
+    )
+
     # Normalize language parameters
     if languages is None:
         languages = [language]

@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import current_app, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
+from src.template_save import TemplateIncomplete
 from src.survey_workflow_service import (
     SUPPORTED_SURVEY_INPUT_MESSAGE,
     SUPPORTED_SURVEY_INPUT_SUFFIXES,
@@ -1034,6 +1035,9 @@ def handle_api_survey_convert_preview(
                 ),
                 409,
             )
+
+        if isinstance(error, TemplateIncomplete):
+            return jsonify({"error": str(error)}), 400
 
         if isinstance(error, zipfile.BadZipFile):
             return (

@@ -8,6 +8,7 @@ from flask import current_app, has_app_context, jsonify, request, send_file, ses
 from werkzeug.utils import secure_filename
 from src.conversion_to_project import save_conversion_to_project
 from src.system_files import filter_system_files
+from src.template_save import TemplateIncomplete
 
 try:
     import defusedxml.ElementTree as ET
@@ -257,6 +258,8 @@ def handle_api_survey_convert(
                 ),
                 409,
             )
+        except TemplateIncomplete as error:
+            return jsonify({"error": str(error)}), 400
         except Exception as error:
             if is_value_offset_confirmation_error(error):
                 return (
@@ -378,6 +381,8 @@ def handle_api_survey_convert(
                 ),
                 409,
             )
+        except TemplateIncomplete as error:
+            return jsonify({"error": str(error)}), 400
         except Exception as error:
             if is_value_offset_confirmation_error(error):
                 return (

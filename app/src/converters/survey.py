@@ -1684,6 +1684,10 @@ def _convert_survey_dataframe_to_prism_dataset(
         unknown_cols=unknown_cols,
     )
     conversion_warnings.extend(task_template_warnings)
+    from src.template_save import require_complete_template
+
+    for task in sorted(tasks_with_data):  # a template that is used is a project template: it must be complete
+        require_complete_template(templates[task]["json"], source=str(templates[task]["path"]))
     conversion_warnings.extend(
         _survey_processing._trim_padded_numbers(df, templates, tasks_with_data, col_to_mapping)
     )
