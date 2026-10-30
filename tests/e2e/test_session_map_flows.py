@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from playwright.sync_api import expect
 
 from tests.e2e.test_converter_flows import open_survey_tab
@@ -41,6 +42,7 @@ def test_unmapped_labels_show_prefilled_defaults_and_block_preview_until_saved(a
     expect(app_page.locator("#sessionMapSaveBtn")).to_be_enabled()
 
 
+@pytest.mark.usefixtures("project_with_brs")
 def test_mapping_the_labels_unlocks_preview_and_convert_uses_the_names(app_page, studio_url, tmp_path, project):
     app_page.allowed_http[409] = DETECT  # unmapped labels are the point of this test
     make_longitudinal(project)

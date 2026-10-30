@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   info": closed sections (identity, edition, authors, license, administration, quality, languages, record, advanced) that show
   how many required fields are empty. The selected item and Bulk edit live in the Items tab. Templates no longer carry
   LimeSurvey export settings (the Tool Properties panel is gone; choose them when you export). A save always works and lists the
-  required fields still empty; `survey convert`, Quick Export, the LimeSurvey customizer, Pavlovia and Word export refuse an
+  required fields still empty; `survey convert`, Quick Export, the LimeSurvey customizer and Pavlovia export refuse an
   incomplete template and name the file and the missing fields. Converting into a project also needs `Respondent`,
   `AdministrationMethod` and `SoftwarePlatform`; exports need only the global fields. Specification v1.5.3 (survey schema 2.0.0).
 - **The template editor shows how complete a template is, live.** An empty required field is red until it is filled, the

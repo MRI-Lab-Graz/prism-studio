@@ -1,13 +1,11 @@
 """Converter page: convert real input files the way a user does."""
 
 import json
-import shutil
 
 import pytest
 from playwright.sync_api import expect
 
 from src.session_map import save_session_map
-from tests.template_fixtures import completed_official_library
 
 BRS_CSV = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\nP002,1,0,2\n"
 
@@ -20,13 +18,6 @@ def longitudinal(project):
     meta["StudyDesign"] = {"Timepoints": "multiple"}
     (project / "project.json").write_text(json.dumps(meta))
     save_session_map(project, {label: label for label in ("1", "01", "2", "3", "pre", "post")})
-
-
-@pytest.fixture
-def project_with_brs(project):
-    """The project holds a completed copy of the BRS template, as after the "complete your template" step:
-    converting data needs a project template that says who answered and how it was administered."""
-    shutil.copy(completed_official_library() / "survey-brs.json", project / "code" / "library" / "survey" / "survey-brs.json")
 
 
 def open_survey_tab(page, studio_url):

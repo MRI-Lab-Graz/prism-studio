@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import sys
 import threading
 from pathlib import Path
@@ -16,6 +17,7 @@ import pytest
 
 pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import sync_playwright  # noqa: E402
+from tests.template_fixtures import completed_official_library  # noqa: E402
 from werkzeug.serving import make_server  # noqa: E402
 
 PRISM_STUDIO_FILE = Path(__file__).resolve().parents[2] / "app" / "prism-studio.py"
@@ -70,6 +72,13 @@ def project(tmp_path):
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0"})
     )
     return root
+
+
+@pytest.fixture
+def project_with_brs(project):
+    """The project holds a completed copy of the BRS template, as after the "complete your template" step:
+    converting data needs a project template that says who answered and how it was administered."""
+    shutil.copy(completed_official_library() / "survey-brs.json", project / "code" / "library" / "survey" / "survey-brs.json")
 
 
 def _new_page(browser, studio_url, project_path=None):

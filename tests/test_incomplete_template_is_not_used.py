@@ -148,8 +148,15 @@ def test_the_pavlovia_export_refuses_an_incomplete_template(tmp_path):
         export_to_pavlovia(_file(tmp_path, _without_creator()), output_dir=tmp_path / "px")
 
 
-def test_the_word_export_refuses_an_incomplete_template():
+def test_the_word_export_prints_what_it_is_given_without_the_record_fields():
+    """A paper questionnaire needs the title and the items. The Survey Customizer sends one built from the picked
+    questions (no Technical, no Metadata), so completeness is not asked of it."""
     from src.questionnaire_renderer import render_questionnaire_docx
 
-    with pytest.raises(TemplateIncomplete, match="Metadata/Creator is missing"):
-        render_questionnaire_docx(_without_creator())
+    picked = {
+        "Study": {"OriginalName": {"en": "My picks"}},
+        "Q1": {"Description": {"en": "I feel calm"}, "Levels": {"1": {"en": "no"}, "2": {"en": "yes"}}},
+    }
+
+    assert render_questionnaire_docx(picked).getbuffer().nbytes
+    assert render_questionnaire_docx(_without_creator()).getbuffer().nbytes

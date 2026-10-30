@@ -103,7 +103,6 @@ def render_questionnaire_docx(
     language: str = "en",
     variant_id: Optional[str] = None,
     options: Optional[dict] = None,
-    source: str = "the template",
 ) -> io.BytesIO:
     """
     Render a PRISM survey template as a professional paper-pencil Word document.
@@ -118,9 +117,6 @@ def render_questionnaire_docx(
         header_repeat_every (int): Repeat scale header every N items in matrix (0=never, default 0)
         font_size (int): Base font size in pt (default 10)
     """
-    from src.template_save import require_complete_template
-
-    require_complete_template(template, source=source, project=False)
     template = strip_invalid_xml_chars(template)  # python-docx refuses control characters
     try:
         from docx import Document
