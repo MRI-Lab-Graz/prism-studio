@@ -5,18 +5,28 @@ Written 2026-10-30 at the end of a session. Everything needed to continue is in 
 
 ## LATEST STATE (read this first; it supersedes the table below where they differ)
 
-Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6.
-- **Task 7** (LimeSurvey export derives settings; overrides per export only): an implementer was running when this was
-  written. Check `git log` for its commits; if there are none, the uncommitted edits in `app/src/limesurvey_exporter.py`,
-  `src/survey_customizer.py` and `tests/test_limesurvey_*` are its work in progress: re-dispatch Task 7 from the plan
-  (brief: `bash <sdd-skill>/scripts/task-brief <plan> 7`) and tell the implementer to build on them or reset them.
-  Its must-dos are in the "Must-do notes for Task 7" section below.
+Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6. Committed, review pending: 7.
+- **Task 7** (LimeSurvey export derives settings; overrides per export only): **committed, NOT yet reviewed**
+  (2f95f45f exporter+customizer, 4b588e46 Word export, 515027cb JS, 673b2af5 parity tests). Review it first (scoped
+  to `git diff c060a666..HEAD -- app/src/limesurvey_exporter.py src/survey_customizer.py app/src/questionnaire_renderer.py
+  app/static/js tests`; the commits before that belong to Task 6). Things the implementer reported that the reviewer and
+  Karl should look at:
+  * Behaviour changes: an item with no InputType and no Levels whose DataType is integer/float exports as type N (was
+    long text T). Types Y/G/5 (yes/no, gender, 5-point) can no longer be derived: they export as list questions (L)
+    with the imported Levels; equation `*` and the text-array cell (was S) become long text (T); Date (D) cannot be
+    produced at all. These types are only reachable as a per-export override, and the customizer's type menu offers no
+    Y, G, 5 or D yet (decide: add them to the menu, a small follow-up).
+  * Word export: an item with no InputType and no Levels prints as long text (3 lines), date items print as text.
+  * Not done: `src/converters/pavlovia.py::_relevance` still reads `LimeSurvey.Relevance` (capital R) from the template;
+    it should read the generic `Relevance` (+ strip) like the LimeSurvey exporter.
+  * The two parity tests passed on first run (CLI and Studio already shared the functions): they are guards.
+  * The full `pytest -q` suite was not run after Task 7 (covering set 556 passed, vitest 365 passed).
 - **Task 1c** (spec repo): committed there (`3538ed3`, local tag **v1.5.2**), **not reviewed**, not yet in Studio.
   The 4 patches in `spec-patches/` are the complete spec change (tags: v1.5.1 = after patch 3, v1.5.2 = after patch 4).
 - **Not started:** 2d, 8, 9, 10, 10b, 11.
 
 ### Next steps, in order
-1. **Review Task 1c** (scoped: spec compliance + quality; the diff is patch 0004).
+1. **Review Task 7**, then **review Task 1c** (scoped: spec compliance + quality; the 1c diff is patch 0004).
 2. **Task 2d** (Studio re-sync + unify the relaxation). IMPORTANT FINDING: Studio already has a second mechanism,
    `apply_schema_validation_profile` in `app/src/schema_manager.py` (profile `official` relaxes the fields in
    `x-prism.projectOnlyRequired`), next to `relax_schema_for_library_template` + `LIBRARY_RELAXED_*` in
