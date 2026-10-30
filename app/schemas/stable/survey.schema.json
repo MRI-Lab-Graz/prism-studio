@@ -62,12 +62,14 @@
       "properties": {
         "Languages": {
           "type": "array",
-          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
-          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "description": "Languages this template contains; every item text is expected in each of them"
         },
         "DefaultLanguage": {
           "type": "string",
-          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
           "description": "Default/primary language of the instrument"
         },
         "TranslationMethod": {
@@ -75,7 +77,8 @@
           "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
           "description": "Method used for translation validation"
         }
-      }
+      },
+      "required": ["Languages"]
     },
     "Study": {
       "type": "object",
@@ -442,7 +445,7 @@
       "required": ["SchemaVersion", "CreationDate", "Creator"]
     }
   },
-  "required": ["Technical", "Study", "Metadata"],
+  "required": ["Technical", "I18n", "Study", "Metadata"],
   "allOf": [
     {
       "if": {

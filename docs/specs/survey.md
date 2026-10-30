@@ -84,6 +84,7 @@ The survey sidecar defines the structure, content, and administrative metadata o
 | Object | Requirement | Description |
 | --- | --- | --- |
 | `Technical` | **REQUIRED** | Platform and respondent details. |
+| `I18n` | **REQUIRED** | Languages the template contains. |
 | `Study` | **REQUIRED** | Instrument identification. |
 | `Scoring` | OPTIONAL | Scoring and interpretation rules. |
 | `Normative` | OPTIONAL | Normative data and reference values. |
@@ -130,14 +131,14 @@ When templates are copied from the official library into a project, these projec
 
 > Note: PRISM supports bilingual (i18n) *source templates* and single-language *compiled* templates. See the i18n section below.
 
-### `I18n` Object (Optional)
+### `I18n` Object
 
-If present, `I18n` describes which languages are available in the template.
+`I18n` is **REQUIRED**. `Languages` declares which languages the template contains (at least one, no duplicates, each a tag like `en` or `de-AT`); every item text is expected in each of them.
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `Languages` | OPTIONAL | `array` | List of language codes available in the template. |
-| `DefaultLanguage` | OPTIONAL | `string` | Default language when compiling/exporting. |
+| `Languages` | **REQUIRED** | `array` | Languages this template contains; one or more unique codes (e.g., `["en", "de-AT"]`). |
+| `DefaultLanguage` | OPTIONAL | `string` | Default language when compiling/exporting; a language code, never empty. |
 | `TranslationMethod` | OPTIONAL | `string` | Translation validation approach (e.g., `forward-backward`). |
 
 ### `Study` Object Fields
@@ -305,8 +306,8 @@ Generated from [`schemas/stable/survey.schema.json`](../../app/schemas/stable/su
 | `Technical.Language` | string | yes | Language the instrument was originally published in |
 | `Technical.Respondent` | string | yes | Who provided the responses Allowed: `self`, `clinician`, `parent`, `teacher`, `caregiver`, `other`. |
 | `Technical.AdministrationMethod` | string | yes | How the survey was administered Allowed: `online`, `paper`, `interview`, `phone`, `mixed`. |
-| `I18n` | object | no | Internationalization settings for multi-language surveys |
-| `I18n.Languages` | array | no | List of available languages (e.g., ['en', 'de', 'fr']) |
+| `I18n` | object | yes | Internationalization settings for multi-language surveys |
+| `I18n.Languages` | array | yes | Languages this template contains; every item text is expected in each of them |
 | `I18n.DefaultLanguage` | string | no | Default/primary language of the instrument |
 | `I18n.TranslationMethod` | string | no | Method used for translation validation Allowed: `forward-backward`, `committee`, `parallel`, `original`, `validated-translation`, ``. |
 | `Study` | object | yes | Study-specific survey parameters |
