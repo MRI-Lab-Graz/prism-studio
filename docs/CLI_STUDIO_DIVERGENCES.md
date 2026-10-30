@@ -107,8 +107,6 @@ Studio uses them (a first sort by file, not yet a line-by-line read of each):
 
 **Only project setup is exempt**: creating a project and its study metadata (including the DOI and ORCID lookups that fill the
 metadata form). Everything else in this baseline is a divergence to fix, not "infrastructure":
-- Settings (`src.config`: the library paths, the personal library, defacing confirmation, monitoring): the Settings page has
-  **no CLI at all**. Needs `prism_tools.py settings get|set`.
 - DataLad server publish and sync, remote browse and rsync, project structure and the sessions/participants pages, project
   registration, session logging.
 - Pure UI state needs no command (icons, which card is open, the dedicated terminal window, the version check): confirm each
@@ -126,6 +124,9 @@ results page), `spec_overlay` (the Contribute page lists items; `spec local list
   `template_tiers` (the per-template merge for conversions) state the project, personal, global order twice.
 
 ## Fixed (keep the tests green)
+
+- Settings: `prism_tools.py settings show|set`; the Settings page's four routes and the command run `src/settings_update.py`.
+  The command has one flag per setting, generated from the same table the page uses.
 
 - Saving a template: `library template-save` and the editor's Save run `src/template_save.py`. The command used to skip the
   task-name check for library templates that the editor always made.

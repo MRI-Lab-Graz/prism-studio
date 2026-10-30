@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **`prism_tools.py settings show|set`: the Settings page as commands.** The library folders (global templates, recipes, your
+  personal library), the default modalities, the defacing confirmation mode, the terminal and monitoring switches and the study
+  application import could only be changed on Studio's Settings page. The page's routes and the command now run one function
+  (`src/settings_update.py`), with the same checks (a folder must exist, a library folder must hold what it should).
 - **Validation warns when a project survey template changed after its data was converted (`PRISM710`).** The root
   `task-<name>_survey.json` is written from `code/library/survey/survey-<name>.json` at conversion, so editing the template
   later (for example remapping answer codes to numbers) left a sidecar that no longer matched it, silently. The warning names
