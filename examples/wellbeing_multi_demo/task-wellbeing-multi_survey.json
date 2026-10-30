@@ -2,14 +2,16 @@
   "Technical": {
     "StimulusType": "Questionnaire",
     "FileFormat": "tsv",
-    "SoftwarePlatform": "",
+    "SoftwarePlatform": "Other",
     "Language": "en",
     "Respondent": "self",
-    "AdministrationMethod": ""
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
   },
   "Metadata": {
-    "SchemaVersion": "1.2.0",
-    "CreationDate": "2026-03-26"
+    "SchemaVersion": "2.0.0",
+    "CreationDate": "2026-03-26",
+    "Creator": "PRISM Studio demo"
   },
   "Study": {
     "TaskName": "wellbeing-multi",
@@ -50,16 +52,26 @@
         }
       }
     ],
-    "Authors": ["Demo", "Template"],
+    "Authors": [
+      "Demo",
+      "Template"
+    ],
     "Year": 2026,
     "DOI": "",
     "Citation": "Demo template for variant-specific item sets and per-question scale types.",
     "ItemCount": 10,
-    "License": { "en": "Demo only" },
+    "License": {
+      "en": "Demo only"
+    },
     "LicenseID": "Other",
     "Source": "https://example.org/prism/demo",
     "Instructions": {
       "en": "Select the option that best reflects your recent experience."
     }
+  },
+  "I18n": {
+    "Languages": [
+      "en"
+    ]
   }
 }

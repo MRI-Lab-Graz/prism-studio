@@ -58,7 +58,8 @@ def test_write_minimal_dataset_passes_validation(tmp_path: Path) -> None:
             "LicenseID": "CC0-1.0",
             "Category": "Other / Uncategorized",
         },
-        "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2026-09-11"},
+        "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": "2026-09-11", "Creator": "tests"},
+        "I18n": {"Languages": ["en"]},
     }
 
     write_minimal_dataset(

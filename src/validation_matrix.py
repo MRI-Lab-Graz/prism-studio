@@ -192,6 +192,7 @@ def build_clean_project(root: Path) -> None:
     """A small project the validator should accept: three participants, one survey, one session."""
     from src.converters.survey import convert_survey_file_to_prism_dataset
     from src.project_manager import ProjectManager
+    from src.survey_template_sources import prepare_project_survey_template_from_official
 
     created = ProjectManager().create_project(str(root), {"name": "clean-control"})
     if not created.get("success"):
@@ -201,7 +202,11 @@ def build_clean_project(root: Path) -> None:
     try:
         library = work / "survey"
         library.mkdir()
-        shutil.copy(SURVEY_TEMPLATE, library / SURVEY_TEMPLATE.name)
+        project_copy = prepare_project_survey_template_from_official(
+            json.loads(SURVEY_TEMPLATE.read_text(encoding="utf-8")), task="brs",
+            technical_defaults={"Respondent": "self", "AdministrationMethod": "online", "SoftwarePlatform": "Other"},
+        )  # a project copy says who answered and how; the official file leaves that to the project
+        (library / SURVEY_TEMPLATE.name).write_text(json.dumps(project_copy), encoding="utf-8")
         answers = work / "answers.csv"
         answers.write_text(
             "participant_id,BRS01,BRS02,BRS03,BRS04,BRS05,BRS06\n"
