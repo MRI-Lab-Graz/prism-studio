@@ -1124,6 +1124,16 @@ def build_prism_tools_parsers(
         help="Preview without writing files",
     )
     parser_physio_batch.add_argument(
+        "--generate-physio-reports",
+        action="store_true",
+        help="Write an HTML report per subject/session for the physio recordings",
+    )
+    parser_physio_batch.add_argument(
+        "--dataset-name",
+        default="Converted Dataset",
+        help="Name written to dataset_description.json (default: Converted Dataset)",
+    )
+    parser_physio_batch.add_argument(
         "--destination",
         choices=["beh", "func", "eeg"],
         help="Folder for physio files that have a task- entity (written as BIDS .tsv.gz); "

@@ -644,7 +644,7 @@ def cmd_convert_wide_to_long(args) -> None:
 
 def cmd_physio_batch_convert(args) -> None:
     """Handle 'physio batch-convert' command."""
-    from src.batch_convert import PhysioDestinationError, batch_convert_folder
+    from src.batch_convert import PhysioDestinationError, batch_convert_folder, create_dataset_description
 
     source_folder = Path(args.input)
     output_folder = Path(args.output)
@@ -667,6 +667,7 @@ def cmd_physio_batch_convert(args) -> None:
             source_folder=source_folder,
             output_folder=output_folder,
             physio_sampling_rate=getattr(args, "sampling_rate", None),
+            generate_physio_reports=bool(getattr(args, "generate_physio_reports", False)),
             modality_filter=getattr(args, "modality", "all"),
             log_callback=_log,
             dry_run=getattr(args, "dry_run", False),
@@ -675,6 +676,9 @@ def cmd_physio_batch_convert(args) -> None:
     except PhysioDestinationError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(2)
+
+    if not getattr(args, "dry_run", False):  # Studio writes it after every real conversion
+        create_dataset_description(output_folder, name=getattr(args, "dataset_name", None) or "Converted Dataset")
 
     print(
         f"\n{'DRY-RUN ' if getattr(args, 'dry_run', False) else ''}Batch convert complete: "

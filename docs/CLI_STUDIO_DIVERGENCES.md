@@ -29,6 +29,39 @@ fails when a Studio option has no CLI flag or the defaults differ.
   (`resolve_official_survey_dir`). No CLI command.
 - `app/src/web/blueprints/conversion_survey_handlers.py` - "detect version contexts" (which template versions a file
   needs) builds its own merged library. No CLI command.
+## Review results (first pass)
+
+Method: for each Studio endpoint with an obvious CLI command, read the form fields the route takes and the flags the command
+has. The automatic field extraction misses fields read through helpers (it missed `sessions_from_date`), so every finding
+below was confirmed by reading the code. Fixed items have a test; open ones are listed with what Studio does.
+
+### The "save to project" step is Studio-only (all conversions) - the biggest gap
+After a conversion Studio stages the files, copies them into the project with a DataLad-aware copy and commit
+(`copy_files_into_project`), optionally archives the source file in `sourcedata/`, registers the template versions in
+`project.json` (`register_session_in_project`, which lives in the Studio tree: `app/src/web/services/`), and syncs the
+recipe offsets (`sync_project_survey_recipe_offsets`). Survey, biometrics, physio and environment conversions all do it in
+their routes. The commands write straight into `--output` and do none of it. Fix: one backend function for the tail, called
+by the commands and by the routes; move `register_session_in_project` to `src/`. (Not started: needs a decision on DataLad
+commits for the CLI.)
+
+### Physio
+- `physio batch-convert`: **fixed** `--generate-physio-reports` and `--dataset-name` (the command now also writes
+  `dataset_description.json` like Studio). Open: `save_to_project`, `dest_root`, `flat_structure`, `subject_rewrite_mode`
+  (the save-to-project step above). Test: `tests/test_physio_batch_options_parity.py` lists the open ones and fails when a new
+  Studio option appears.
+- Physio renamer: the command calls `plan_rename`; Studio's 449-line route builds its own pipeline from nine helpers of the same
+  module and has `dest_root`, `flat_structure`, `subject_rewrite_mode` and the project copy, which the command lacks. Two
+  implementations of the rename plan: the route should call `plan_rename`.
+
+### Participants
+- Preview: Studio's route composes the column selection itself (filter relevant columns, `excluded_columns`, extra columns)
+  from `src.participant_columns` helpers; the command composes it its own way. The command has no `--excluded-columns` or
+  `--extra-columns`. Fix: one backend function for the column selection.
+
+### Not yet read
+Export with defacing, the recipe builder's template analysis, survey template matching and the LimeSurvey tools (see the
+queue below).
+
 ## Review queue: the Studio-only backend calls, by area
 
 `scripts/cli_studio_baseline.json` lists 146 backend functions that Studio imports and no CLI command does. Grouped by where
