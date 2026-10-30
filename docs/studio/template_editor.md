@@ -31,10 +31,18 @@ through the Excel codebook import path, see
 ## Editing
 
 The editor has three tabs: **General info** (the `Study`/`Technical` metadata),
-**Items** (with the item count; add, delete and edit the questions) and **Preview**. The
-form has: a Top-level panel, a Selected Item panel, a Tool Properties panel, a Bulk Edit Items panel, an Items panel (add/
-delete items, copy style from another item), a language bar, and — for multi-version
-instruments — a variant selector.
+**Items** (with the item count; add, delete and edit the questions) and **Preview**.
+**General info** holds only the questionnaire's own information, in closed sections
+(identity, edition, authors, license, administration, quality, languages, record,
+advanced); a section shows how many required fields are still empty. The **Items** tab
+has the item list (add/delete items, copy style from another item), the Selected item
+panel and the Bulk edit panel. There is also a language bar and — for multi-version
+instruments — a variant selector. Templates carry no LimeSurvey export settings; those
+are chosen when you export.
+
+A save always works, and the message lists the required fields that are still empty.
+Converting data or exporting a questionnaire needs a complete template and names what is
+missing.
 
 `Study` (instrument identity: `TaskName`, `OriginalName`, `ShortName`, `Authors`,
 `LicenseID`, `ItemCount`, `Versions`/variant definitions) and `Technical`

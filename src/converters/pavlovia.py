@@ -51,13 +51,10 @@ def _extract_condition(value: Dict[str, Any]) -> Optional[str]:
 
     Mirrors the precedence in app/src/limesurvey_exporter.py's
     _build_relevance_equation: explicit Relevance wins, then
-    LimeSurvey.Relevance, then ConditionalDisplay.showWhen.
+    ConditionalDisplay.showWhen.
     """
     if "Relevance" in value:
         return value["Relevance"]
-    limesurvey = value.get("LimeSurvey")
-    if isinstance(limesurvey, dict) and "Relevance" in limesurvey:
-        return limesurvey["Relevance"]
     conditional = value.get("ConditionalDisplay")
     if isinstance(conditional, dict):
         return conditional.get("showWhen") or None

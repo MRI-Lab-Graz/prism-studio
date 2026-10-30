@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   line at start** (`Version: 1.23.2 (/path/to/prism-studio)`), so an old install still running is easy to spot.
 
 ### Changed
+- **Template editor restructured; converting or exporting needs a complete template.** General info is now "Questionnaire
+  info": closed sections (identity, edition, authors, license, administration, quality, languages, record, advanced) that show
+  how many required fields are empty. The selected item and Bulk edit live in the Items tab. Templates no longer carry
+  LimeSurvey export settings (the Tool Properties panel is gone; choose them when you export). A save always works and lists the
+  required fields still empty; `survey convert`, Quick Export, the LimeSurvey customizer, Pavlovia and Word export refuse an
+  incomplete template and name the file and the missing fields. Converting into a project also needs `Respondent`,
+  `AdministrationMethod` and `SoftwarePlatform`; exports need only the global fields. Specification v1.5.2 (survey schema 2.0.0).
+- **LimeSurvey export types.** Items with no `InputType`/`Levels` and an integer/float `DataType` export as numeric (`N`);
+  the types `Y`, `G`, `5` export as list (`L`); `*` and the text array become text (`T`); date (`D`) cannot be produced.
 - **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only
   when nothing matched retry with the official library (and copy those into the project); the command line could not do
   either. Both now build one merged library (project, personal, global: nearest first, per template) and copy the templates a

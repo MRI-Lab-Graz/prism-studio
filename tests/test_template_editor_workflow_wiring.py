@@ -41,6 +41,17 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("selectedItemPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
         self.assertIn("bulkEditPanelEl.classList.toggle('d-none', !itemsPanelVisible)", visibility)
 
+    def test_questionnaire_info_is_the_only_layout_of_study_and_technical(self):
+        # A translation edit used to re-render a section with the old Technical sub-groups
+        # inside a Questionnaire info section, duplicating its fields.
+        script = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertNotIn("TECHNICAL_GROUPS", script)
+        self.assertNotIn("renderSectionGroup", script)
+        self.assertNotIn("technical-groups", script)
+        self.assertNotIn("renderSection(sectionKey, currentTemplate[sectionKey]", script)
+        self.assertFalse((TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.parent / "technical-groups.js").exists())
+
     def test_schema_version_sits_in_a_closed_advanced_fold_out(self):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 

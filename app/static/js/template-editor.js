@@ -303,11 +303,6 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
-  // A closed Technical sub-group opens by itself when a required field in it is empty.
-  let technicalGroups = null;
-  import(new URL('./template-editor/technical-groups.js', document.currentScript?.src || window.location.href).href)
-    .then((module) => { technicalGroups = module; });
-
   let questionnaireSections = null;
   import(new URL('./template-editor/questionnaire-sections.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { questionnaireSections = module; if (currentTemplate) renderTopLevel(); });
@@ -1092,21 +1087,7 @@
           }
           value[lang] = '';
           onChange(Object.assign({}, value));
-          // Re-render
-          const parentCol = container.closest('[data-field-path]');
-          if (parentCol) {
-            const path = parentCol.getAttribute('data-field-path');
-            const parts = path.split('/');
-            if (parts.length === 2) {
-              const sectionKey = parts[0];
-              const mount = parentCol.closest('.row')?.parentElement;
-              if (mount && currentTemplate[sectionKey]) {
-                const sch = getSectionSchema(sectionKey);
-                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
-                enableTooltips();
-              }
-            }
-          }
+          rerenderQuestionnaireInfoFor(container);
         });
 
         container.appendChild(translationTable);
@@ -1135,21 +1116,7 @@
           const translationObj = {};
           translationObj[lang] = currentVal;
           onChange(translationObj);
-          // Replace by re-rendering the parent section
-          const parentCol = container.closest('[data-field-path]');
-          if (parentCol) {
-            const path = parentCol.getAttribute('data-field-path');
-            const parts = path.split('/');
-            if (parts.length === 2) {
-              const sectionKey = parts[0];
-              const mount = parentCol.closest('.row')?.parentElement;
-              if (mount && currentTemplate[sectionKey]) {
-                const sch = getSectionSchema(sectionKey);
-                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
-                enableTooltips();
-              }
-            }
-          }
+          rerenderQuestionnaireInfoFor(container);
         });
         container.appendChild(toggleBtn);
         return container;
@@ -1963,22 +1930,8 @@
         const translationObj = {};
         translationObj[lang] = currentVal;
         onChange(translationObj);
-        // Replace this container with the translation table by re-rendering the parent section
-        const parentCol = container.closest('[data-field-path]');
-        if (parentCol) {
-          const path = parentCol.getAttribute('data-field-path');
-          const parts = path.split('/');
-          if (parts.length === 2) {
-            // Re-render the whole section to pick up the new translation object
-            const sectionKey = parts[0];
-            const mount = parentCol.closest('.row')?.parentElement;
-            if (mount && currentTemplate[sectionKey]) {
-              const sch = getSectionSchema(sectionKey);
-              if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
-              enableTooltips();
-            }
-          }
-        }
+        // Replace this container with the translation table
+        rerenderQuestionnaireInfoFor(container);
       });
       container.appendChild(toggleBtn);
       return container;
@@ -2025,51 +1978,6 @@
     });
     if (isDOI && initVal !== String(value || '')) onChange(initVal);
     return inp;
-  }
-
-  // Sub-group definitions for the Technical section
-  const TECHNICAL_GROUPS = [
-    { label: 'Core Setup', defaultOpen: true, fields: new Set(['Language', 'Respondent', 'AdministrationMethod']) },
-    { label: 'Data Collection Software', defaultOpen: false, fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
-    { label: 'Equipment & Location', defaultOpen: false, fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
-  ];
-
-  function renderSectionGroup(sectionKey, groupLabel, groupFields, props, required, targetObj, mountEl, defaultOpen = false) {
-    if (!groupFields.length) return;
-
-    const details = document.createElement('details');
-    details.className = 'te-subgroup mb-3';
-    details.open = Boolean(defaultOpen);
-
-    const lowerLabel = String(groupLabel || '').toLowerCase();
-    let subgroupKind = 'generic';
-    if (sectionKey === 'Technical') {
-      if (lowerLabel.includes('core')) subgroupKind = 'core';
-      else if (lowerLabel.includes('software')) subgroupKind = 'software';
-      else if (lowerLabel.includes('equipment')) subgroupKind = 'equipment';
-      else if (lowerLabel.includes('additional')) subgroupKind = 'additional';
-    } else if (lowerLabel.includes('required')) {
-      subgroupKind = 'required';
-    } else if (lowerLabel.includes('optional')) {
-      subgroupKind = 'optional';
-    }
-    details.dataset.subgroupKind = subgroupKind;
-
-    const summary = document.createElement('summary');
-    summary.className = 'te-subgroup-summary';
-    summary.innerHTML = `<span class="te-subgroup-title">${groupLabel}</span><span class="badge te-subgroup-count ms-2">${groupFields.length}</span>`;
-    details.appendChild(summary);
-
-    const body = document.createElement('div');
-    body.className = 'te-subgroup-body mt-2';
-    const row = document.createElement('div');
-    row.className = 'row g-3';
-    for (const name of groupFields) {
-      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
-    }
-    body.appendChild(row);
-    details.appendChild(body);
-    mountEl.appendChild(details);
   }
 
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
@@ -2640,55 +2548,12 @@
     const required = sectionSchema.required || [];
     const names = sortedFieldNames(props, required);
 
-    if (sectionKey === 'ITEM') {
-      const row = document.createElement('div');
-      row.className = 'row g-3';
-      for (const name of names) {
-        renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
-      }
-      mountEl.appendChild(row);
-      renderMissingSummary();
-      return;
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+    for (const name of names) {
+      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
     }
-
-    // For Technical section, render in sub-groups with dividers
-    if (sectionKey === 'Technical') {
-      const usedFields = new Set();
-      for (const group of TECHNICAL_GROUPS) {
-        const groupFields = names.filter(n => group.fields.has(n));
-        if (!groupFields.length) continue;
-        groupFields.forEach(name => usedFields.add(name));
-        renderSectionGroup(
-          sectionKey,
-          group.label || 'General',
-          groupFields,
-          props,
-          required,
-          targetObj,
-          mountEl,
-          technicalGroups ? technicalGroups.opensByDefault(group, required, targetObj) : group.defaultOpen
-        );
-      }
-      // Render any remaining fields not in any group
-      // Filter out FileFormat and StimulusType as they should not be edited in the template editor
-      const remaining = names.filter(n => !usedFields.has(n) && !['FileFormat', 'StimulusType'].includes(n));
-      if (remaining.length) {
-        renderSectionGroup(sectionKey, 'Additional Technical Fields', remaining, props, required, targetObj, mountEl, false);
-      }
-      renderMissingSummary();
-      return;
-    }
-
-    const requiredFields = names.filter(name => required.includes(name));
-    const optionalFields = names.filter(name => !required.includes(name));
-
-    if (requiredFields.length) {
-      renderSectionGroup(sectionKey, 'Required Fields', requiredFields, props, required, targetObj, mountEl, true);
-    }
-    if (optionalFields.length) {
-      renderSectionGroup(sectionKey, 'Optional Fields', optionalFields, props, required, targetObj, mountEl, false);
-    }
-
+    mountEl.appendChild(row);
     renderMissingSummary();
   }
 
@@ -3126,6 +2991,21 @@
 
     bulkEditFormEl.appendChild(row);
     enableTooltips();
+  }
+
+  // A field of Study/Technical/... changed shape (translation table): draw Questionnaire info again,
+  // keeping the sections the user has open. Item fields (path ITEM/...) are not part of it.
+  function rerenderQuestionnaireInfoFor(fieldEl) {
+    const path = fieldEl.closest('[data-field-path]')?.getAttribute('data-field-path') || '';
+    const [sectionKey] = path.split('/');
+    if (!currentTemplate || !currentTemplate[sectionKey]) return;
+    const open = new Set(
+      [...topLevelFormEl.querySelectorAll('details[open] .te-subgroup-title')].map((el) => el.textContent)
+    );
+    renderTopLevel();
+    topLevelFormEl.querySelectorAll('details').forEach((d) => {
+      if (open.has(d.querySelector('.te-subgroup-title').textContent)) d.open = true;
+    });
   }
 
   function renderTopLevel() {

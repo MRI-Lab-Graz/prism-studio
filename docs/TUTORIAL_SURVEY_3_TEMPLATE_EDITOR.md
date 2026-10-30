@@ -8,8 +8,8 @@ Excel for any of it.
 ```{mermaid}
 flowchart LR
     T["🗂️ code/library/survey/<br/>survey-recovery.json"]
-    A["🔧 Top-level panel<br/>Study / Technical"] --> T
-    B["📝 Item list + Bulk Edit"] --> T
+    A["🔧 Questionnaire info<br/>Study / Technical"] --> T
+    B["📝 Items tab: list + Bulk Edit"] --> T
     C["👁️ Preview / Export"] --> T
 ```
 
@@ -23,11 +23,11 @@ data entry, when you're typing out many rows at once; once the template is
 project-local, the Template Editor's own form is faster for refinement,
 because it edits `survey-recovery.json` in place, no re-import step at all.
 
-## The Top-level panel
+## Questionnaire info
 
 Load `survey-recovery.json` from **Template Editor** if it isn't already
-open (select it from `#projectTemplateSelect`). Above the item list sit the
-**Study** and **Technical** sections — the same fields you filled in on the
+open (select it from `#projectTemplateSelect`). The **General info** tab shows
+**Questionnaire info**, a set of closed sections (open one to edit it) — the same fields you filled in on the
 `General` sheet in Chapter 2, `OriginalName_en` and `LicenseID` among them,
 now rendered as form fields instead of spreadsheet rows. Nothing new lives
 here: it's literally the same underlying JSON as `Items`/`General` in the
@@ -83,7 +83,7 @@ You edited `survey-recovery.json` two different ways without opening Excel
 once: a single item's wording through the item list and Selected Item panel,
 and a shared wording change across all nine Likert items through Bulk Edit.
 You also saw how the Study/Technical metadata surfaces as form fields in the
-Top-level panel — then previewed the result and exported it as a
+Questionnaire info sections — then previewed the result and exported it as a
 paper-pencil Word questionnaire.
 
 ## What's next
