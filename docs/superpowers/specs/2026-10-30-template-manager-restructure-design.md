@@ -57,6 +57,9 @@ The schemas are vendored (`specification.lock.json`), so "required" changes ther
   `Description`, `Instructions`, `Citation`, `Construct`, and the other `Study` text fields that take a language object)
   require an `en` value when they are language objects; other languages are optional. Item texts and anything that
   ends up in an export (`Description`, `Levels` of items) stay in any language.
+- **Declared languages** (Karl, 2026-10-30): `I18n` becomes required and `I18n.Languages` is a required list with at
+  least one entry (no empty entries): "which languages does this template contain". Everything else is checked
+  against it (see B.5). `Technical.Language` stays the original language and must be one of them.
 - `Help` and `OtherOption` are added to the item schema (see B.1).
 
 **Official library vs project templates.** `Respondent` is required for project templates only, not for the official
@@ -115,6 +118,19 @@ invalid.
    projects with `Respondent: ""` / `Language: ""` show errors until filled. *(Save-with-warnings is my reading of
    "first have a valid template"; the gate is on use, not on save.)*
 
+5. **Declared languages are checked** (Karl, 2026-10-30). JSON Schema cannot compare fields, so the backend does it
+   (extend `validate_language_consistency_from_data` in `app/src/template_validator.py`, the one place that already
+   compares languages; the CLI and Studio call the same function):
+   - `Technical.Language` and `I18n.DefaultLanguage` (when present) are in `I18n.Languages`.
+   - Every item `Description` and every `Levels` label has a non-empty text for each declared language, otherwise
+     "Item pss_01 has no 'de' text (declared in I18n.Languages)".
+   - A language used in an item or level text that is not declared is an error: "'fr' is used in pss_03 but not
+     declared in I18n.Languages".
+   - Questionnaire info (`Study` texts) is exempt: it is always English and need not cover the item languages.
+   - Like other required-field problems, mismatches are warnings when saving and block converting/exporting (B.4).
+   - Importers set `I18n.Languages` from the languages actually found in the source (a fact, not an invented
+     answer); the official library gets it derived the same way (`src/template_info.py::detect_languages_from_template`).
+
 ### C. Template editor (Studio, presentation only)
 
 Tabs stay **General info · Items · Preview**.
@@ -132,7 +148,8 @@ ones with required fields open first:
    `AgeRange`, `ItemCount`, and the Technical fields `Language`, `SoftwarePlatform`, `SoftwareVersion`
    (`StimulusType`/`FileFormat` are single-value and shown read-only or not at all)
 6. **Quality and norms**: `Reliability`, `Validity`, `Norming`, `Subscales`
-7. **Languages**: the `I18n` fields
+7. **Languages**: the `I18n` fields. `I18n.Languages` is required; "Add language" / "Remove language" in the language
+   bar edit it, and the bar reports declared languages that some item text is missing
 8. **Record**: `Creator`, `CreationDate`, `SchemaVersion`
 9. **Advanced** (collapsed): `TermURL`, `License` (the registry's free text), anything in the schema not placed above
 

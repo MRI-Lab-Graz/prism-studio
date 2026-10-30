@@ -87,6 +87,20 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
 
 ---
 
+### Task 1b: Declared languages in the schema (added 2026-10-30, after Task 1)
+
+**Repo:** same clone and branch as Task 1; new commit; move the local tag again (still unpublished).
+
+- [ ] **Step 1: Failing cases:** `I18n` absent → invalid; `I18n: {}` → invalid; `I18n.Languages: []` → invalid;
+  `["en", ""]` → invalid; `["en", "de"]` → valid; `Languages` pattern without the empty alternative.
+- [ ] **Step 2: Run, confirm they fail**
+- [ ] **Step 3:** Add `"I18n"` to the top-level `required`; `I18n.required: ["Languages"]`; `Languages`:
+  `minItems: 1`, item pattern `^[a-z]{2}(-[A-Z]{2})?$`, `uniqueItems: true`; same for `DefaultLanguage` (no empty
+  alternative, optional). Update `specs/survey.md`, regenerate the reference.
+- [ ] **Step 4:** full suite and checks pass; commit; move tag `v1.6.0`
+- After it: re-run `python scripts/sync_specification.py --tag v1.6.0 --source <clone>` in Studio (Task 2b) and
+  commit the new lock.
+
 ## Part 2 — Studio (this repository, branch `feat/template-manager-restructure`)
 
 ### Task 2: Sync the new specification; Respondent optional for library templates
@@ -123,6 +137,7 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
 - [ ] **Step 2: Run** → fails for ~104 files.
 - [ ] **Step 3: Fix the data, never by guessing:**
   - `Metadata.Creator = "PRISM Studio"` in all.
+  - `I18n.Languages` = `detect_languages_from_template(template)` (a fact from the texts; list files where it finds none).
   - Remove `Technical.Respondent` where it is `""` (library may omit it; Task 2).
   - `Technical.Language`: the instrument's original publication language, from its `Study.Citation`/`DOI`/source.
     Where it cannot be established from the file and its citation, **stop and list those files for Karl**; do not
@@ -194,6 +209,7 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
   - Parity in `tests/test_cli_studio_parity.py`: CLI `library template-save` and the Studio save route on identical
     copies, template with a `LimeSurvey` block and empty `Respondent` → identical files and identical
     missing/removed lists.
+  - `test_language_consistency`: `validate_language_consistency_from_data` (extended per spec B.5) reports an item without a `de` text when `I18n.Languages == ["en","de"]`; an undeclared `fr` key; `Technical.Language` not in Languages; Study texts only in `en` with Languages `["de"]` is fine. Its findings are part of `SavedTemplate.missing` as warnings.
 - [ ] **Step 2: Run** → fail.
 - [ ] **Step 3: Implement.** In `save_template`: strip right after `strip_template_editor_internal_keys`; validate;
   partition errors: an error whose `path` equals a `missing_required_fields` path (or whose message is a jsonschema
@@ -221,6 +237,7 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
   - Excel sheet without a Respondent cell → `Technical.get("Respondent", "") == ""`; with a Respondent cell `parent`
     → `"parent"`. `Metadata.Creator == ""` (or absent); `Study.LicenseID` absent or `""`; `Study.OriginalName` not
     copied from `TaskName`.
+  - every importer sets `I18n.Languages` to the languages found in its source (Excel: the sheet's language columns; `.lss`: the survey's languages; Pavlovia/phenotype: the one language it has).
   - LimeSurvey `.lss` import → no `Respondent: "self"`; items carry no `questionType`/`inputWidth`; an item that was
     mandatory in the `.lss` has `Mandatory: True`; `columnName` still present.
   - Pavlovia and phenotype import → no `Respondent: "self"`.
@@ -289,7 +306,7 @@ schema (the file vendored here as `app/schemas/stable/survey.schema.json`) and t
 - Produces: `class TemplateIncomplete(TemplateInvalid)` and
   `require_complete_template(template: dict, *, source: str, app_root, schema_version: str = "stable") -> None` in
   `src/template_save.py`; raises `TemplateIncomplete` whose message is one line per field:
-  `"<path> is missing in <source>"`, with `Technical/Respondent` additionally saying
+  `"<path> is missing in <source>"` (language-consistency findings are listed the same way), with `Technical/Respondent` additionally saying
   `"– set who answered the questionnaire (self, parent, clinician, …)"`. Validates against the full (unrelaxed)
   schema: a template used in a project is a project template.
 
