@@ -1,0 +1,178 @@
+From 1534b3abf04912966c7871c80550a6cd74962a7c Mon Sep 17 00:00:00 2001
+From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
+Date: Fri, 30 Oct 2026 10:00:35 +0100
+Subject: [PATCH 2/3] fix(survey): English rule covers every Study
+ language-object text field (Reliability, Validity, Norming, PermissionsNote,
+ Translation.Notes, References[].Notes, VariantDefinitions[].Description)
+
+---
+ schemas/stable/survey.schema.json | 14 ++++++++++++++
+ specs/survey.md                   |  9 ++++++++-
+ tests/test_survey_schema.py       | 27 +++++++++++++++++++++++++++
+ 3 files changed, 49 insertions(+), 1 deletion(-)
+
+diff --git a/schemas/stable/survey.schema.json b/schemas/stable/survey.schema.json
+index 783287c..895186f 100644
+--- a/schemas/stable/survey.schema.json
++++ b/schemas/stable/survey.schema.json
+@@ -129,6 +129,8 @@
+               },
+               "Description": {
+                 "type": ["string", "object"],
++                "required": ["en"],
++                "properties": {"en": {"type": "string", "minLength": 1}},
+                 "description": "Optional description of this variant."
+               }
+             },
+@@ -215,6 +217,8 @@
+         },
+         "PermissionsNote": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Short note describing permissions/usage constraints"
+         },
+         "PermissionsURL": {
+@@ -251,10 +255,14 @@
+         },
+         "Reliability": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Information about the reliability of the instrument"
+         },
+         "Validity": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Information about the validity of the instrument"
+         },
+         "Subscales": {
+@@ -301,6 +309,8 @@
+         },
+         "Norming": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Information about the norming of the instrument"
+         },
+         "References": {
+@@ -334,6 +344,8 @@
+               },
+               "Notes": {
+                 "type": ["string", "object"],
++                "required": ["en"],
++                "properties": {"en": {"type": "string", "minLength": 1}},
+                 "description": "Optional notes about the reference"
+               }
+             },
+@@ -381,6 +393,8 @@
+             },
+             "Notes": {
+               "type": ["string", "object"],
++              "required": ["en"],
++              "properties": {"en": {"type": "string", "minLength": 1}},
+               "description": "Additional provenance notes"
+             }
+           }
+diff --git a/specs/survey.md b/specs/survey.md
+index 0d6db77..a6116e2 100644
+--- a/specs/survey.md
++++ b/specs/survey.md
+@@ -205,7 +205,7 @@ Any top-level key that is not one of the above objects is considered a question
+ 
+ **Required fields are filled.** An empty string never counts as a value: `Technical.*`, `Study.TaskName`, `Study.Citation`, `Study.OriginalName` and `Metadata.Creator` must be non-empty, and the enums of `StimulusType`, `FileFormat`, `SoftwarePlatform`, `Respondent` and `AdministrationMethod` do not list `""`.
+ 
+-**English rule.** The text fields of `Study` that take a language object (`OriginalName`, `Description`, `Instructions`, `Construct`, `License`) must carry a non-empty `en` entry when written as an object; other languages are optional additions. `ShortName` and `Version` are free.
++**English rule.** Every text field of `Study` that takes a language object (`OriginalName`, `Description`, `Instructions`, `Construct`, `License`, `Reliability`, `Validity`, `Norming`, `PermissionsNote`, `Translation.Notes`, `References[].Notes`, `VariantDefinitions[].Description`) must carry a non-empty `en` entry when written as an object; a plain string is always fine and other languages are optional additions. `ShortName` and `Version` are free.
+ 
+ ### `Metadata` Object Fields
+ 
+@@ -321,6 +321,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.VariantDefinitions[].ItemCount` | integer / null | no | Number of items expected in this variant. |
+ | `Study.VariantDefinitions[].ScaleType` | string | no | Primary response scale family used in this variant. Allowed: `likert`, `vas`, `visual-analogue`, `categorical`, `binary`, `free-text`, `other`, ``. |
+ | `Study.VariantDefinitions[].Description` | string / object | no | Optional description of this variant. |
++| `Study.VariantDefinitions[].Description.en` | string | yes |  |
+ | `Study.Authors` | array | no | Authors of the instrument |
+ | `Study.Citation` | string | yes | DOI or citation for the instrument |
+ | `Study.DOI` | string | no | Digital Object Identifier (DOI) for the instrument; use the canonical DOI string (10.x/...) without protocol prefixes or leave empty when unavailable |
+@@ -332,6 +333,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.CopyrightHolder` | string | no | Rights holder for the instrument (e.g., publisher, author group) |
+ | `Study.Access` | string | no | High-level access/permission classification for transparency Allowed: `public`, `permission-required`, `licensed`, `unknown`, ``. |
+ | `Study.PermissionsNote` | string / object | no | Short note describing permissions/usage constraints |
++| `Study.PermissionsNote.en` | string | yes |  |
+ | `Study.PermissionsURL` | string | no | URL to permission statement or licensing portal |
+ | `Study.TermURL` | string | no | URL to formal definition (e.g., PhenX, SNOMED) |
+ | `Study.Construct` | string / object | no | Primary psychological construct measured (e.g., depression, anxiety, stress) |
+@@ -342,7 +344,9 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.Instructions` | string / object | no | Instructions given to the participant |
+ | `Study.Instructions.en` | string | yes |  |
+ | `Study.Reliability` | string / object | no | Information about the reliability of the instrument |
++| `Study.Reliability.en` | string | yes |  |
+ | `Study.Validity` | string / object | no | Information about the validity of the instrument |
++| `Study.Validity.en` | string | yes |  |
+ | `Study.Subscales` | array | no | List of subscale names if applicable |
+ | `Study.ItemCount` | integer / null | no | Number of items in the instrument |
+ | `Study.AgeRange` | object / string | no | Target age range for the instrument in years |
+@@ -355,6 +359,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.ScoringTime.min` | number | yes | Minimum estimated minutes |
+ | `Study.ScoringTime.max` | number | yes | Maximum estimated minutes |
+ | `Study.Norming` | string / object | no | Information about the norming of the instrument |
++| `Study.Norming.en` | string | yes |  |
+ | `Study.References` | array | no | Structured reference list for the instrument (primary paper, manual, translation, norms, validation, etc.) |
+ | `Study.References[].Type` | string | yes | Reference type Allowed: `primary`, `manual`, `translation`, `validation`, `norms`, `other`, ``. |
+ | `Study.References[].Citation` | string | no | Human-readable citation |
+@@ -362,6 +367,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.References[].URL` | string | no | URL for the reference |
+ | `Study.References[].Year` | integer / null | no | Publication year |
+ | `Study.References[].Notes` | string / object | no | Optional notes about the reference |
++| `Study.References[].Notes.en` | string | yes |  |
+ | `Study.Translation` | object | no | Translation/adaptation provenance (especially for non-original language versions) |
+ | `Study.Translation.SourceLanguage` | string | no | Source language of the instrument |
+ | `Study.Translation.TargetLanguage` | string | no | Target language used in this dataset |
+@@ -369,6 +375,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.Translation.Method` | string | no | Translation/adaptation method (if different from I18n.TranslationMethod) |
+ | `Study.Translation.Reference` | string | no | Citation/DOI/URL for the translation/adaptation reference |
+ | `Study.Translation.Notes` | string / object | no | Additional provenance notes |
++| `Study.Translation.Notes.en` | string | yes |  |
+ | `Normative` | object | no | Normative data and reference values |
+ | `Normative.ReferencePopulation` | string | no | Population on which normative data is based |
+ | `Normative.ReferenceSource` | string | no | Citation for normative data |
+diff --git a/tests/test_survey_schema.py b/tests/test_survey_schema.py
+index 0ac3ea2..13544e0 100644
+--- a/tests/test_survey_schema.py
++++ b/tests/test_survey_schema.py
+@@ -108,3 +108,30 @@ def test_version_and_archive():
+     assert SCHEMA["$id"].endswith("/v2.0.0")
+     archived = json.loads((ROOT / "schemas/archive/survey/1.1.1.schema.json").read_text())
+     assert archived["version"] == "1.1.1"
++
++
++def _nested(path, value):
++    d = copy.deepcopy(BASE)
++    study = d["Study"]
++    if path == "Translation.Notes":
++        study["Translation"] = {"Notes": value}
++    elif path == "References.Notes":
++        study["References"] = [{"Type": "primary", "Notes": value}]
++    elif path == "VariantDefinitions.Description":
++        study["VariantDefinitions"] = [{"VariantID": "short", "Description": value}]
++    else:
++        study[path] = value
++    return d
++
++
++MORE_FIELDS = ["Reliability", "Validity", "Norming", "PermissionsNote", "Translation.Notes",
++               "References.Notes", "VariantDefinitions.Description"]
++
++
++@pytest.mark.parametrize("path", MORE_FIELDS)
++def test_more_text_fields_need_english(path):
++    assert not valid(_nested(path, {"de": "x"}))
++    assert not valid(_nested(path, {"en": "", "de": "x"}))
++    assert valid(_nested(path, {"en": "x"}))
++    assert valid(_nested(path, {"en": "x", "de": "y"}))
++    assert valid(_nested(path, "plain string"))
+-- 
+2.55.0
+

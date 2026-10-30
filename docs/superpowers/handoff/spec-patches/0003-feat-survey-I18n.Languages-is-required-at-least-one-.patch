@@ -1,0 +1,143 @@
+From e95a3018b679e2196dd2fd7131139cd4897320d5 Mon Sep 17 00:00:00 2001
+From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
+Date: Fri, 30 Oct 2026 10:33:58 +0100
+Subject: [PATCH 3/3] feat(survey): I18n.Languages is required (at least one
+ unique language code); DefaultLanguage never empty
+
+---
+ schemas/stable/survey.schema.json | 13 ++++++++-----
+ specs/survey.md                   | 13 +++++++------
+ tests/test_survey_schema.py       | 30 ++++++++++++++++++++++++++++++
+ 3 files changed, 45 insertions(+), 11 deletions(-)
+
+diff --git a/schemas/stable/survey.schema.json b/schemas/stable/survey.schema.json
+index 895186f..aa3f739 100644
+--- a/schemas/stable/survey.schema.json
++++ b/schemas/stable/survey.schema.json
+@@ -62,12 +62,14 @@
+       "properties": {
+         "Languages": {
+           "type": "array",
+-          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
+-          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
++          "minItems": 1,
++          "uniqueItems": true,
++          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
++          "description": "Languages this template contains; every item text is expected in each of them"
+         },
+         "DefaultLanguage": {
+           "type": "string",
+-          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
++          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+           "description": "Default/primary language of the instrument"
+         },
+         "TranslationMethod": {
+@@ -75,7 +77,8 @@
+           "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
+           "description": "Method used for translation validation"
+         }
+-      }
++      },
++      "required": ["Languages"]
+     },
+     "Study": {
+       "type": "object",
+@@ -442,7 +445,7 @@
+       "required": ["SchemaVersion", "CreationDate", "Creator"]
+     }
+   },
+-  "required": ["Technical", "Study", "Metadata"],
++  "required": ["Technical", "I18n", "Study", "Metadata"],
+   "allOf": [
+     {
+       "if": {
+diff --git a/specs/survey.md b/specs/survey.md
+index a6116e2..823a7ef 100644
+--- a/specs/survey.md
++++ b/specs/survey.md
+@@ -84,6 +84,7 @@ The survey sidecar defines the structure, content, and administrative metadata o
+ | Object | Requirement | Description |
+ | --- | --- | --- |
+ | `Technical` | **REQUIRED** | Platform and respondent details. |
++| `I18n` | **REQUIRED** | Languages the template contains. |
+ | `Study` | **REQUIRED** | Instrument identification. |
+ | `Scoring` | OPTIONAL | Scoring and interpretation rules. |
+ | `Normative` | OPTIONAL | Normative data and reference values. |
+@@ -130,14 +131,14 @@ When templates are copied from the official library into a project, these projec
+ 
+ > Note: PRISM supports bilingual (i18n) *source templates* and single-language *compiled* templates. See the i18n section below.
+ 
+-### `I18n` Object (Optional)
++### `I18n` Object
+ 
+-If present, `I18n` describes which languages are available in the template.
++`I18n` is **REQUIRED**. `Languages` declares which languages the template contains (at least one, no duplicates, each a tag like `en` or `de-AT`); every item text is expected in each of them.
+ 
+ | Key | Requirement | Type | Description |
+ | --- | --- | --- | --- |
+-| `Languages` | OPTIONAL | `array` | List of language codes available in the template. |
+-| `DefaultLanguage` | OPTIONAL | `string` | Default language when compiling/exporting. |
++| `Languages` | **REQUIRED** | `array` | Languages this template contains; one or more unique codes (e.g., `["en", "de-AT"]`). |
++| `DefaultLanguage` | OPTIONAL | `string` | Default language when compiling/exporting; a language code, never empty. |
+ | `TranslationMethod` | OPTIONAL | `string` | Translation validation approach (e.g., `forward-backward`). |
+ 
+ ### `Study` Object Fields
+@@ -305,8 +306,8 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Technical.Language` | string | yes | Language the instrument was originally published in |
+ | `Technical.Respondent` | string | yes | Who provided the responses Allowed: `self`, `clinician`, `parent`, `teacher`, `caregiver`, `other`. |
+ | `Technical.AdministrationMethod` | string | yes | How the survey was administered Allowed: `online`, `paper`, `interview`, `phone`, `mixed`. |
+-| `I18n` | object | no | Internationalization settings for multi-language surveys |
+-| `I18n.Languages` | array | no | List of available languages (e.g., ['en', 'de', 'fr']) |
++| `I18n` | object | yes | Internationalization settings for multi-language surveys |
++| `I18n.Languages` | array | yes | Languages this template contains; every item text is expected in each of them |
+ | `I18n.DefaultLanguage` | string | no | Default/primary language of the instrument |
+ | `I18n.TranslationMethod` | string | no | Method used for translation validation Allowed: `forward-backward`, `committee`, `parallel`, `original`, `validated-translation`, ``. |
+ | `Study` | object | yes | Study-specific survey parameters |
+diff --git a/tests/test_survey_schema.py b/tests/test_survey_schema.py
+index 13544e0..83d5997 100644
+--- a/tests/test_survey_schema.py
++++ b/tests/test_survey_schema.py
+@@ -19,6 +19,7 @@ BASE = {
+         "Respondent": "self",
+         "AdministrationMethod": "online",
+     },
++    "I18n": {"Languages": ["en"]},
+     "Study": {
+         "TaskName": "pss",
+         "OriginalName": "Perceived Stress Scale",
+@@ -135,3 +136,32 @@ def test_more_text_fields_need_english(path):
+     assert valid(_nested(path, {"en": "x"}))
+     assert valid(_nested(path, {"en": "x", "de": "y"}))
+     assert valid(_nested(path, "plain string"))
++
++
++def with_i18n(value=None, drop=False):
++    d = copy.deepcopy(BASE)
++    if drop:
++        del d["I18n"]
++    else:
++        d["I18n"] = value
++    return d
++
++
++@pytest.mark.parametrize("i18n", [
++    {}, {"Languages": []}, {"Languages": ["en", ""]}, {"Languages": ["en", "en"]},
++    {"Languages": ["en"], "DefaultLanguage": ""}, {"DefaultLanguage": "en"},
++])
++def test_i18n_invalid(i18n):
++    assert not valid(with_i18n(i18n))
++
++
++def test_i18n_required():
++    assert not valid(with_i18n(drop=True))
++
++
++@pytest.mark.parametrize("i18n", [
++    {"Languages": ["en"]}, {"Languages": ["en", "de"]}, {"Languages": ["en", "de-AT"]},
++    {"Languages": ["en", "de"], "DefaultLanguage": "de"},
++])
++def test_i18n_valid(i18n):
++    assert valid(with_i18n(i18n))
+-- 
+2.55.0
+

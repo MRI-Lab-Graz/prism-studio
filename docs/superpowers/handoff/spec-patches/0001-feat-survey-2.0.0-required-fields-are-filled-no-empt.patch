@@ -1,0 +1,1016 @@
+From e12919c1b0ccb4be3ea66f84985fb4ef421a8e16 Mon Sep 17 00:00:00 2001
+From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
+Date: Fri, 30 Oct 2026 09:58:11 +0100
+Subject: [PATCH 1/3] feat!: survey 2.0.0 - required fields are filled (no
+ empty enums/strings), English rule for Study text objects, Metadata.Creator
+ required, item Help and OtherOption (1.1.1 archived)
+
+---
+ schemas/archive/survey/1.1.1.schema.json | 601 +++++++++++++++++++++++
+ schemas/stable/survey.schema.json        |  49 +-
+ specs/survey.md                          |  44 +-
+ tests/test_survey_schema.py              | 110 +++++
+ 4 files changed, 781 insertions(+), 23 deletions(-)
+ create mode 100644 schemas/archive/survey/1.1.1.schema.json
+ create mode 100644 tests/test_survey_schema.py
+
+diff --git a/schemas/archive/survey/1.1.1.schema.json b/schemas/archive/survey/1.1.1.schema.json
+new file mode 100644
+index 0000000..39cd7cd
+--- /dev/null
++++ b/schemas/archive/survey/1.1.1.schema.json
+@@ -0,0 +1,601 @@
++{
++  "$schema": "http://json-schema.org/draft-07/schema#",
++  "$id": "https://prism.org/schemas/survey/v1.1.1",
++  "version": "1.1.1",
++  "x-prism": {
++    "projectOnlyRequired": {
++      "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
++      "Study": ["TaskName", "LicenseID", "Citation"]
++    },
++    "officialOnlyRequired": {
++      "Study": ["Category"]
++    }
++  },
++  "title": "Survey Data Metadata",
++  "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
++  "type": "object",
++  "properties": {
++    "Technical": {
++      "type": "object",
++      "description": "Technical survey properties",
++      "properties": {
++        "StimulusType": {
++          "type": "string",
++          "enum": ["Questionnaire", ""],
++          "description": "Must be 'Questionnaire' for survey data"
++        },
++        "FileFormat": {
++          "type": "string",
++          "enum": ["tsv", ""],
++          "description": "Survey data file format"
++        },
++        "SoftwarePlatform": {
++          "type": "string",
++          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
++          "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
++        },
++        "SoftwareVersion": {
++          "type": "string",
++          "description": "Version of the survey software platform (not required for Paper and Pencil)"
++        },
++        "Language": {
++          "type": "string",
++          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
++          "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
++        },
++        "Respondent": {
++          "type": "string",
++          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
++          "description": "Who provided the responses"
++        },
++        "AdministrationMethod": {
++          "type": "string",
++          "enum": ["online", "paper", "interview", "phone", "mixed", ""],
++          "description": "How the survey was administered"
++        }
++      },
++      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent", "AdministrationMethod"]
++    },
++    "I18n": {
++      "type": "object",
++      "description": "Internationalization settings for multi-language surveys",
++      "properties": {
++        "Languages": {
++          "type": "array",
++          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
++          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
++        },
++        "DefaultLanguage": {
++          "type": "string",
++          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
++          "description": "Default/primary language of the instrument"
++        },
++        "TranslationMethod": {
++          "type": "string",
++          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
++          "description": "Method used for translation validation"
++        }
++      }
++    },
++    "Study": {
++      "type": "object",
++      "description": "Study-specific survey parameters",
++      "properties": {
++        "TaskName": {
++          "type": "string",
++          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
++          "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
++        },
++        "OriginalName": {
++          "type": ["string", "object"],
++          "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
++        },
++        "ShortName": {
++          "type": ["string", "object"],
++          "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
++        },
++        "Version": {
++          "type": ["string", "object"],
++          "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
++        },
++        "Versions": {
++          "type": "array",
++          "items": {"type": "string"},
++          "description": "List of available versions/forms of this instrument (e.g., ['short', 'long', 'screening']). Use when the same instrument has multiple validated forms with different item counts."
++        },
++        "VariantDefinitions": {
++          "type": "array",
++          "description": "Structured definitions for concrete instrument variants that combine form length and response format (e.g., 10-item Likert, 7-item Likert, 10-item VAS). Use with Study.Version/Study.Versions when variant metadata should be editable in tooling.",
++          "items": {
++            "type": "object",
++            "properties": {
++              "VariantID": {
++                "type": "string",
++                "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
++                "description": "Identifier for this concrete variant (e.g., 10item-likert5, 10item-vas100)."
++              },
++              "ItemCount": {
++                "type": ["integer", "null"],
++                "description": "Number of items expected in this variant."
++              },
++              "ScaleType": {
++                "type": "string",
++                "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
++                "description": "Primary response scale family used in this variant."
++              },
++              "Description": {
++                "type": ["string", "object"],
++                "description": "Optional description of this variant."
++              }
++            },
++            "required": ["VariantID"],
++            "additionalProperties": false
++          }
++        },
++        "Authors": {
++          "type": "array",
++          "items": {"type": "string"},
++          "description": "Authors of the instrument"
++        },
++        "Citation": {
++          "type": "string",
++          "description": "DOI or citation for the instrument"
++        },
++        "DOI": {
++          "type": "string",
++          "description": "Digital Object Identifier (DOI) for the instrument; use the canonical DOI string (10.x/...) without protocol prefixes or leave empty when unavailable",
++          "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
++        },
++        "License": {
++          "type": ["string", "object"],
++          "description": "License statement for this instrument as provided by the source registry"
++        },
++        "LicenseID": {
++          "type": "string",
++          "description": "Normalized license identifier (prefer SPDX or Creative Commons identifiers)",
++          "enum": [
++            "CC-BY-4.0",
++            "CC-BY-SA-4.0",
++            "CC-BY-ND-4.0",
++            "CC-BY-NC-4.0",
++            "CC-BY-NC-SA-4.0",
++            "CC-BY-NC-ND-4.0",
++            "MIT",
++            "Apache-2.0",
++            "GPL-3.0-only",
++            "GPL-3.0-or-later",
++            "LGPL-3.0-only",
++            "BSD-3-Clause",
++            "Unlicense",
++            "PDDL-1.0",
++            "CC0-1.0",
++            "Proprietary",
++            "Other"
++          ]
++        },
++        "Category": {
++          "type": "string",
++          "description": "Content-domain category for official library instruments (mandatory for official/library/survey templates only; see x-prism.officialOnlyRequired)",
++          "enum": [
++            "Personality & Individual Differences",
++            "Mood, Anxiety & Clinical Screening",
++            "Well-being & Life Satisfaction",
++            "Social, Relationships & Attachment",
++            "Addictive & Problematic Behaviors",
++            "Self-Concept & Self-Esteem",
++            "Aggression, Antisocial & Dark Traits",
++            "Cognitive & Executive Function",
++            "Autism & Neurodevelopmental",
++            "Sleep, Health & Physical",
++            "Beliefs, Values & Worldview",
++            "Educational & Occupational",
++            "Other / Uncategorized"
++          ]
++        },
++        "LicenseURL": {
++          "type": "string",
++          "format": "uri",
++          "description": "License URL when available (e.g., creativecommons.org link)"
++        },
++        "CopyrightHolder": {
++          "type": "string",
++          "description": "Rights holder for the instrument (e.g., publisher, author group)"
++        },
++        "Access": {
++          "type": "string",
++          "enum": ["public", "permission-required", "licensed", "unknown", ""],
++          "description": "High-level access/permission classification for transparency"
++        },
++        "PermissionsNote": {
++          "type": ["string", "object"],
++          "description": "Short note describing permissions/usage constraints"
++        },
++        "PermissionsURL": {
++          "type": "string",
++          "description": "URL to permission statement or licensing portal"
++        },
++        "TermURL": {
++          "type": "string",
++          "format": "uri",
++          "description": "URL to formal definition (e.g., PhenX, SNOMED)"
++        },
++        "Construct": {
++          "type": ["string", "object"],
++          "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
++        },
++        "Keywords": {
++          "type": "array",
++          "items": {"type": "string"},
++          "description": "Keywords describing the instrument"
++        },
++        "Description": {
++          "type": ["string", "object"],
++          "description": "Detailed description or abstract of the instrument"
++        },
++        "Instructions": {
++          "type": ["string", "object"],
++          "description": "Instructions given to the participant"
++        },
++        "Reliability": {
++          "type": ["string", "object"],
++          "description": "Information about the reliability of the instrument"
++        },
++        "Validity": {
++          "type": ["string", "object"],
++          "description": "Information about the validity of the instrument"
++        },
++        "Subscales": {
++          "type": "array",
++          "items": {"type": "string"},
++          "description": "List of subscale names if applicable"
++        },
++        "ItemCount": {
++          "type": ["integer", "null"],
++          "description": "Number of items in the instrument"
++        },
++        "AgeRange": {
++          "type": ["object", "string"],
++          "description": "Target age range for the instrument in years",
++          "properties": {
++            "min": { "type": "number", "description": "Minimum age in years" },
++            "max": { "type": "number", "description": "Maximum age in years" }
++          },
++          "required": ["min", "max"],
++          "additionalProperties": false,
++          "examples": [{ "min": 18, "max": 99 }]
++        },
++        "AdministrationTime": {
++          "type": ["object", "string"],
++          "description": "Estimated time to complete the instrument in minutes",
++          "properties": {
++            "min": { "type": "number", "description": "Minimum estimated minutes" },
++            "max": { "type": "number", "description": "Maximum estimated minutes" }
++          },
++          "required": ["min", "max"],
++          "additionalProperties": false,
++          "examples": [{ "min": 10, "max": 15 }]
++        },
++        "ScoringTime": {
++          "type": ["object", "string"],
++          "description": "Estimated time to score the instrument in minutes",
++          "properties": {
++            "min": { "type": "number", "description": "Minimum estimated minutes" },
++            "max": { "type": "number", "description": "Maximum estimated minutes" }
++          },
++          "required": ["min", "max"],
++          "additionalProperties": false,
++          "examples": [{ "min": 5, "max": 5 }]
++        },
++        "Norming": {
++          "type": ["string", "object"],
++          "description": "Information about the norming of the instrument"
++        },
++        "References": {
++          "type": "array",
++          "description": "Structured reference list for the instrument (primary paper, manual, translation, norms, validation, etc.)",
++          "items": {
++            "type": "object",
++            "properties": {
++              "Type": {
++                "type": "string",
++                "enum": ["primary", "manual", "translation", "validation", "norms", "other", ""],
++                "description": "Reference type"
++              },
++              "Citation": {
++                "type": "string",
++                "description": "Human-readable citation"
++              },
++              "DOI": {
++                "type": "string",
++                "description": "DOI for the reference (canonical 10.x/... string) or empty when unavailable",
++                "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
++              },
++              "URL": {
++                "type": "string",
++                "description": "URL for the reference",
++                "format": "uri"
++              },
++              "Year": {
++                "type": ["integer", "null"],
++                "description": "Publication year"
++              },
++              "Notes": {
++                "type": ["string", "object"],
++                "description": "Optional notes about the reference"
++              }
++            },
++            "required": ["Type"],
++            "additionalProperties": false,
++            "examples": [
++              {
++                "Type": "primary",
++                "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS).",
++                "DOI": "10.1007/978-3-642-34523-1",
++                "URL": "https://doi.org/10.1007/978-3-642-34523-1",
++                "Year": 1993,
++                "Notes": {
++                  "en": "Original ADS manual"
++                }
++              }
++            ]
++          }
++        },
++        "Translation": {
++          "type": "object",
++          "description": "Translation/adaptation provenance (especially for non-original language versions)",
++          "properties": {
++            "SourceLanguage": {
++              "type": "string",
++              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
++              "description": "Source language of the instrument"
++            },
++            "TargetLanguage": {
++              "type": "string",
++              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
++              "description": "Target language used in this dataset"
++            },
++            "Validated": {
++              "type": "boolean",
++              "description": "Whether this translation/adaptation is validated"
++            },
++            "Method": {
++              "type": "string",
++              "description": "Translation/adaptation method (if different from I18n.TranslationMethod)"
++            },
++            "Reference": {
++              "type": "string",
++              "description": "Citation/DOI/URL for the translation/adaptation reference"
++            },
++            "Notes": {
++              "type": ["string", "object"],
++              "description": "Additional provenance notes"
++            }
++          }
++        }
++      },
++      "required": ["TaskName", "OriginalName", "Citation", "LicenseID", "Category"]
++    },
++    "Normative": {
++      "type": "object",
++      "description": "Normative data and reference values",
++      "properties": {
++        "ReferencePopulation": {
++          "type": "string",
++          "description": "Population on which normative data is based"
++        },
++        "ReferenceSource": {
++          "type": "string",
++          "description": "Citation for normative data"
++        },
++        "Percentiles": {
++          "type": "object",
++          "description": "Percentile cutoffs (e.g., {'p25': 10, 'p50': 15, 'p75': 20})"
++        }
++      }
++    },
++    "Metadata": {
++      "type": "object",
++      "description": "Administrative metadata",
++      "properties": {
++        "SchemaVersion": {
++          "type": "string",
++          "pattern": "^\\d+\\.\\d+\\.\\d+$"
++        },
++        "CreationDate": {
++          "type": "string",
++          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
++          "description": "Date of creation"
++        },
++        "Creator": {
++          "type": "string"
++        }
++      },
++      "required": ["SchemaVersion", "CreationDate"]
++    }
++  },
++  "required": ["Technical", "Study", "Metadata"],
++  "allOf": [
++    {
++      "if": {
++        "properties": {
++          "Technical": {
++            "type": "object",
++            "properties": {
++              "SoftwarePlatform": {
++                "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Other"]
++              }
++            },
++            "required": ["SoftwarePlatform"]
++          }
++        }
++      },
++      "then": {
++        "properties": {
++          "Technical": {
++            "required": ["SoftwareVersion"]
++          }
++        }
++      }
++    }
++  ],
++  "additionalProperties": {
++    "oneOf": [
++      {
++        "type": "object",
++        "properties": {
++          "Description": {
++            "type": ["string", "object"],
++            "description": "The exact question text presented to the participant"
++          },
++          "Aliases": {
++            "type": "array",
++            "items": {
++              "type": "string"
++            },
++            "description": "List of alternative IDs that refer to this same item. Only needed if you're the canonical item and want to document other names used elsewhere (opposite of AliasOf)."
++          },
++          "Levels": {
++            "type": "object",
++            "description": "Mapping of numeric values to text labels",
++            "patternProperties": {
++              "^.*$": { "type": ["string", "object"] }
++            }
++          },
++          "Unit": {
++            "type": "string",
++            "description": "Unit of measurement (if applicable)"
++          },
++          "TermURL": {
++            "type": "string",
++            "description": "URL to a definition of the term"
++          },
++          "Relevance": {
++            "type": "string",
++            "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
++          },
++          "MinValue": {
++            "type": ["number", "null"],
++            "description": "Minimum allowed value for this column"
++          },
++          "MaxValue": {
++            "type": ["number", "null"],
++            "description": "Maximum allowed value for this column"
++          },
++          "WarnMinValue": {
++            "type": ["number", "null"],
++            "description": "Minimum value threshold for warning"
++          },
++          "WarnMaxValue": {
++            "type": ["number", "null"],
++            "description": "Maximum value threshold for warning"
++          },
++          "AllowedValues": {
++            "type": "array",
++            "items": {
++              "type": ["string", "number"]
++            },
++            "description": "List of allowed values for this column"
++          },
++          "DataType": {
++            "type": "string",
++            "enum": ["string", "integer", "float", ""],
++            "description": "Expected data type for this column"
++          },
++          "SessionHint": {
++            "type": "string",
++            "pattern": "^(ses-[a-zA-Z0-9]+)?$",
++            "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
++          },
++          "RunHint": {
++            "type": "string",
++            "pattern": "^(run-[a-zA-Z0-9]+)?$",
++            "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
++          },
++          "Mandatory": {
++            "type": "boolean",
++            "default": true,
++            "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
++          },
++          "ItemVersion": {
++            "type": "string",
++            "description": "Optional version identifier for this specific item (e.g., '1.0', '2023-rev', 'original'). Useful when tracking revisions of individual questions across studies or when importing updated instruments."
++          },
++          "ApplicableVersions": {
++            "type": "array",
++            "items": {"type": "string"},
++            "description": "List of instrument versions that include this item (e.g., ['short', 'long']). Used when Study.Versions is defined. If omitted, item applies to all versions."
++          },
++          "VariantScales": {
++            "type": "array",
++            "description": "Variant-specific scale definitions for this item. Use when the same question exists across multiple variants but the response format or numeric range changes (for example 5-point Likert vs 0-100 VAS).",
++            "items": {
++              "type": "object",
++              "properties": {
++                "VariantID": {
++                  "type": "string",
++                  "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
++                  "description": "Identifier of the concrete variant this scale definition applies to."
++                },
++                "ScaleType": {
++                  "type": "string",
++                  "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
++                  "description": "Response scale family for this item in the referenced variant."
++                },
++                "DataType": {
++                  "type": "string",
++                  "enum": ["string", "integer", "float", ""],
++                  "description": "Expected data type for this item in the referenced variant."
++                },
++                "MinValue": {
++                  "type": ["number", "null"],
++                  "description": "Minimum allowed value for this item in the referenced variant."
++                },
++                "MaxValue": {
++                  "type": ["number", "null"],
++                  "description": "Maximum allowed value for this item in the referenced variant."
++                },
++                "WarnMinValue": {
++                  "type": ["number", "null"],
++                  "description": "Minimum value threshold for warning in the referenced variant."
++                },
++                "WarnMaxValue": {
++                  "type": ["number", "null"],
++                  "description": "Maximum value threshold for warning in the referenced variant."
++                },
++                "AllowedValues": {
++                  "type": "array",
++                  "items": {"type": ["string", "number"]},
++                  "description": "Allowed values for this item in the referenced variant."
++                },
++                "Levels": {
++                  "type": "object",
++                  "description": "Mapping of numeric or coded values to text labels for this item in the referenced variant.",
++                  "patternProperties": {
++                    "^.*$": { "type": ["string", "object"] }
++                  }
++                },
++                "Unit": {
++                  "type": "string",
++                  "description": "Unit of measurement for this item in the referenced variant, if applicable."
++                }
++              },
++              "required": ["VariantID"],
++              "additionalProperties": false
++            }
++          }
++        },
++        "required": ["Description"]
++      },
++      {
++        "type": "object",
++        "properties": {
++          "AliasOf": {
++            "type": "string",
++            "description": "If this item is just another name for an existing item, specify the canonical item ID here. Use when the same question appears with different IDs in your data (e.g., 'depression_q1' → 'phq9_q1'). Leave empty for canonical items."
++          }
++        },
++        "required": ["AliasOf"]
++      }
++    ]
++  }
++}
+diff --git a/schemas/stable/survey.schema.json b/schemas/stable/survey.schema.json
+index 39cd7cd..783287c 100644
+--- a/schemas/stable/survey.schema.json
++++ b/schemas/stable/survey.schema.json
+@@ -1,7 +1,7 @@
+ {
+   "$schema": "http://json-schema.org/draft-07/schema#",
+-  "$id": "https://prism.org/schemas/survey/v1.1.1",
+-  "version": "1.1.1",
++  "$id": "https://prism.org/schemas/survey/v2.0.0",
++  "version": "2.0.0",
+   "x-prism": {
+     "projectOnlyRequired": {
+       "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
+@@ -21,17 +21,17 @@
+       "properties": {
+         "StimulusType": {
+           "type": "string",
+-          "enum": ["Questionnaire", ""],
++          "enum": ["Questionnaire"],
+           "description": "Must be 'Questionnaire' for survey data"
+         },
+         "FileFormat": {
+           "type": "string",
+-          "enum": ["tsv", ""],
++          "enum": ["tsv"],
+           "description": "Survey data file format"
+         },
+         "SoftwarePlatform": {
+           "type": "string",
+-          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
++          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other"],
+           "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
+         },
+         "SoftwareVersion": {
+@@ -40,17 +40,17 @@
+         },
+         "Language": {
+           "type": "string",
+-          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+-          "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
++          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
++          "description": "Language the instrument was originally published in"
+         },
+         "Respondent": {
+           "type": "string",
+-          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
++          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other"],
+           "description": "Who provided the responses"
+         },
+         "AdministrationMethod": {
+           "type": "string",
+-          "enum": ["online", "paper", "interview", "phone", "mixed", ""],
++          "enum": ["online", "paper", "interview", "phone", "mixed"],
+           "description": "How the survey was administered"
+         }
+       },
+@@ -84,10 +84,14 @@
+         "TaskName": {
+           "type": "string",
+           "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
++          "minLength": 1,
+           "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
+         },
+         "OriginalName": {
+           "type": ["string", "object"],
++          "minLength": 1,
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
+         },
+         "ShortName": {
+@@ -139,6 +143,7 @@
+         },
+         "Citation": {
+           "type": "string",
++          "minLength": 1,
+           "description": "DOI or citation for the instrument"
+         },
+         "DOI": {
+@@ -148,6 +153,8 @@
+         },
+         "License": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "License statement for this instrument as provided by the source registry"
+         },
+         "LicenseID": {
+@@ -221,6 +228,8 @@
+         },
+         "Construct": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
+         },
+         "Keywords": {
+@@ -230,10 +239,14 @@
+         },
+         "Description": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Detailed description or abstract of the instrument"
+         },
+         "Instructions": {
+           "type": ["string", "object"],
++          "required": ["en"],
++          "properties": {"en": {"type": "string", "minLength": 1}},
+           "description": "Instructions given to the participant"
+         },
+         "Reliability": {
+@@ -407,10 +420,12 @@
+           "description": "Date of creation"
+         },
+         "Creator": {
+-          "type": "string"
++          "type": "string",
++          "minLength": 1,
++          "description": "Who built this template (official library: PRISM Studio)"
+         }
+       },
+-      "required": ["SchemaVersion", "CreationDate"]
++      "required": ["SchemaVersion", "CreationDate", "Creator"]
+     }
+   },
+   "required": ["Technical", "Study", "Metadata"],
+@@ -447,6 +462,18 @@
+             "type": ["string", "object"],
+             "description": "The exact question text presented to the participant"
+           },
++          "Help": {
++            "type": ["string", "object"],
++            "description": "Help text shown with the question"
++          },
++          "OtherOption": {
++            "type": "object",
++            "description": "Adds an 'Other, please specify' choice to the question",
++            "properties": {
++              "enabled": {"type": "boolean"},
++              "label": {"type": ["string", "object"]}
++            }
++          },
+           "Aliases": {
+             "type": "array",
+             "items": {
+diff --git a/specs/survey.md b/specs/survey.md
+index cf2dcd1..0d6db77 100644
+--- a/specs/survey.md
++++ b/specs/survey.md
+@@ -120,7 +120,7 @@ When templates are copied from the official library into a project, these projec
+ | `FileFormat` | **REQUIRED** | `string` | MUST be `"tsv"`. |
+ | `SoftwarePlatform` | **REQUIRED** | `string` | Project-local platform used for administration (e.g., `"LimeSurvey"`, `"Paper and Pencil"`). |
+ | `SoftwareVersion` | OPTIONAL | `string` | Project-local version of the software platform. |
+-| `Language` | **REQUIRED** | `string` | Project-local language code actually administered (e.g., `"en"`, `"de-AT"`). |
++| `Language` | **REQUIRED** | `string` | Language the instrument was originally published in (e.g., `"en"`, `"de-AT"`); a single tag, never empty. |
+ | `Respondent` | **REQUIRED** | `string` | Project-local respondent type (e.g., `"self"`, `"parent"`). |
+ | `AdministrationMethod` | **REQUIRED** | `string` | Project-local administration mode (`online`, `paper`, `interview`, `phone`, `mixed`). |
+ | `ResponseType` | RECOMMENDED | `array` | Input method (e.g., `["button"]`, `["slider"]`). |
+@@ -145,7 +145,7 @@ If present, `I18n` describes which languages are available in the template.
+ | Key | Requirement | Type | Description |
+ | --- | --- | --- | --- |
+ | `TaskName` | **REQUIRED** | `string` | Project-local task identifier (e.g., `"moodcheck"`). |
+-| `OriginalName` | **REQUIRED** | `string` | Full name (e.g., `"Dummy Mood Check"`). |
++| `OriginalName` | **REQUIRED** | `string` \| `object` | Full name (e.g., `"Dummy Mood Check"`); not empty. As an object it needs a non-empty `en` entry (see English rule). |
+ | `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation (e.g., `DMC-5`). |
+ | `Version` | OPTIONAL | `string` | Instrument version. |
+ | `Citation` | OPTIONAL | `string` | Reference citation. |
+@@ -191,6 +191,8 @@ Any top-level key that is not one of the above objects is considered a question
+ | Key | Requirement | Type | Description |
+ | --- | --- | --- | --- |
+ | `Description` | **REQUIRED** | `string` \| `object` | The exact text of the question (string) or an i18n map (e.g., `{ "de": "…", "en": "…" }`). |
++| `Help` | OPTIONAL | `string` \| `object` | Help text shown with the question (string or i18n map). |
++| `OtherOption` | OPTIONAL | `object` | Adds an "Other, please specify" choice: `{"enabled": true, "label": "Other"}`; `label` is a string or i18n map. |
+ | `Levels` | OPTIONAL | `object` | Mapping of numeric values to labels. Values may be strings or i18n maps. |
+ | `Unit` / `Units` | OPTIONAL | `string` | Units (if applicable). |
+ | `TermURL` | OPTIONAL | `string` | URL to an ontology term. |
+@@ -201,6 +203,18 @@ Any top-level key that is not one of the above objects is considered a question
+ | `DataType` | OPTIONAL | `string` | Expected type (`string`, `integer`, `float`). |
+ | `SessionHint` / `RunHint` | OPTIONAL | `string` | Used for longitudinal/repeated data mapping. |
+ 
++**Required fields are filled.** An empty string never counts as a value: `Technical.*`, `Study.TaskName`, `Study.Citation`, `Study.OriginalName` and `Metadata.Creator` must be non-empty, and the enums of `StimulusType`, `FileFormat`, `SoftwarePlatform`, `Respondent` and `AdministrationMethod` do not list `""`.
++
++**English rule.** The text fields of `Study` that take a language object (`OriginalName`, `Description`, `Instructions`, `Construct`, `License`) must carry a non-empty `en` entry when written as an object; other languages are optional additions. `ShortName` and `Version` are free.
++
++### `Metadata` Object Fields
++
++| Key | Requirement | Type | Description |
++| --- | --- | --- | --- |
++| `SchemaVersion` | **REQUIRED** | `string` | Schema version the file was written for (`major.minor.patch`). |
++| `CreationDate` | **REQUIRED** | `string` | Date of creation (`YYYY-MM-DD`). |
++| `Creator` | **REQUIRED** | `string` | Who built this template (official library: `PRISM Studio`); not empty. |
++
+ ### `Study.References` Objects
+ 
+ Each entry in `Study.References` must specify a `Type` from the available enum, and it may include a `Citation`, canonical `DOI` (`10.x/...`), and a `URL` (`uri` format). Additional optional metadata includes `Year` (integer) and `Notes`, which can be a string or a localized object to document translations or comments.
+@@ -252,8 +266,9 @@ Each entry in `Study.References` must specify a `Type` from the available enum,
+     }
+   },
+   "Metadata": {
+-    "SchemaVersion": "1.1.1",
+-    "CreationDate": "2025-01-01"
++    "SchemaVersion": "2.0.0",
++    "CreationDate": "2025-01-01",
++    "Creator": "PRISM Studio"
+   },
+   "Q01": {
+     "Description": {
+@@ -276,20 +291,20 @@ Each entry in `Study.References` must specify a `Type` from the available enum,
+ 
+ <!-- BEGIN SCHEMA REFERENCE (generated by scripts/generate_schema_reference.py; do not edit) -->
+ 
+-## Field reference (`survey.schema.json`, version 1.1.1)
++## Field reference (`survey.schema.json`, version 2.0.0)
+ 
+ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.schema.json). Nested fields are shown as `Block.Field`; `[]` marks list items. *Required* applies within its parent block.
+ 
+ | Field | Type | Required | Description |
+ | --- | --- | --- | --- |
+ | `Technical` | object | yes | Technical survey properties |
+-| `Technical.StimulusType` | string | yes | Must be 'Questionnaire' for survey data Allowed: `Questionnaire`, ``. |
+-| `Technical.FileFormat` | string | yes | Survey data file format Allowed: `tsv`, ``. |
+-| `Technical.SoftwarePlatform` | string | yes | Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.) Allowed: `LimeSurvey`, `PsychoPy`, `Pavlovia`, `Paper and Pencil`, `Other`, ``. |
++| `Technical.StimulusType` | string | yes | Must be 'Questionnaire' for survey data Allowed: `Questionnaire`. |
++| `Technical.FileFormat` | string | yes | Survey data file format Allowed: `tsv`. |
++| `Technical.SoftwarePlatform` | string | yes | Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.) Allowed: `LimeSurvey`, `PsychoPy`, `Pavlovia`, `Paper and Pencil`, `Other`. |
+ | `Technical.SoftwareVersion` | string | no | Version of the survey software platform (not required for Paper and Pencil) |
+-| `Technical.Language` | string | yes | Language of the questionnaire (e.g., en, en-US, de-AT) |
+-| `Technical.Respondent` | string | yes | Who provided the responses Allowed: `self`, `clinician`, `parent`, `teacher`, `caregiver`, `other`, ``. |
+-| `Technical.AdministrationMethod` | string | yes | How the survey was administered Allowed: `online`, `paper`, `interview`, `phone`, `mixed`, ``. |
++| `Technical.Language` | string | yes | Language the instrument was originally published in |
++| `Technical.Respondent` | string | yes | Who provided the responses Allowed: `self`, `clinician`, `parent`, `teacher`, `caregiver`, `other`. |
++| `Technical.AdministrationMethod` | string | yes | How the survey was administered Allowed: `online`, `paper`, `interview`, `phone`, `mixed`. |
+ | `I18n` | object | no | Internationalization settings for multi-language surveys |
+ | `I18n.Languages` | array | no | List of available languages (e.g., ['en', 'de', 'fr']) |
+ | `I18n.DefaultLanguage` | string | no | Default/primary language of the instrument |
+@@ -297,6 +312,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study` | object | yes | Study-specific survey parameters |
+ | `Study.TaskName` | string | yes | Short task identifier matching filename (e.g., bdi, phq9, bfi-s) |
+ | `Study.OriginalName` | string / object | yes | Full canonical name of the instrument (e.g., Beck Depression Inventory) |
++| `Study.OriginalName.en` | string | yes |  |
+ | `Study.ShortName` | string / object | no | Common abbreviation (e.g., BDI-II, PHQ-9) |
+ | `Study.Version` | string / object | no | Version of the instrument (e.g., II, 5.0, 21-item) |
+ | `Study.Versions` | array | no | List of available versions/forms of this instrument (e.g., ['short', 'long', 'screening']). Use when the same instrument has multiple validated forms with diff… |
+@@ -309,6 +325,7 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.Citation` | string | yes | DOI or citation for the instrument |
+ | `Study.DOI` | string | no | Digital Object Identifier (DOI) for the instrument; use the canonical DOI string (10.x/...) without protocol prefixes or leave empty when unavailable |
+ | `Study.License` | string / object | no | License statement for this instrument as provided by the source registry |
++| `Study.License.en` | string | yes |  |
+ | `Study.LicenseID` | string | yes | Normalized license identifier (prefer SPDX or Creative Commons identifiers) Allowed: `CC-BY-4.0`, `CC-BY-SA-4.0`, `CC-BY-ND-4.0`, `CC-BY-NC-4.0`, `CC-BY-NC-SA-4.0`, `CC-BY-NC-ND-4.0`, `MIT`, `Apache-2.0`, `GPL-3.0-only`, `GPL-3.0-or-later`, `LGPL-3.0-only`, `BSD-3-Clause`, `Unlicense`, `PDDL-1.0`, `CC0-1.0`, `Proprietary`, `Other`. |
+ | `Study.Category` | string | yes | Content-domain category for official library instruments (mandatory for official/library/survey templates only; see x-prism.officialOnlyRequired) Allowed: `Personality & Individual Differences`, `Mood, Anxiety & Clinical Screening`, `Well-being & Life Satisfaction`, `Social, Relationships & Attachment`, `Addictive & Problematic Behaviors`, `Self-Concept & Self-Esteem`, `Aggression, Antisocial & Dark Traits`, `Cognitive & Executive Function`, `Autism & Neurodevelopmental`, `Sleep, Health & Physical`, `Beliefs, Values & Worldview`, `Educational & Occupational`, `Other / Uncategorized`. |
+ | `Study.LicenseURL` | string | no | License URL when available (e.g., creativecommons.org link) |
+@@ -318,9 +335,12 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Study.PermissionsURL` | string | no | URL to permission statement or licensing portal |
+ | `Study.TermURL` | string | no | URL to formal definition (e.g., PhenX, SNOMED) |
+ | `Study.Construct` | string / object | no | Primary psychological construct measured (e.g., depression, anxiety, stress) |
++| `Study.Construct.en` | string | yes |  |
+ | `Study.Keywords` | array | no | Keywords describing the instrument |
+ | `Study.Description` | string / object | no | Detailed description or abstract of the instrument |
++| `Study.Description.en` | string | yes |  |
+ | `Study.Instructions` | string / object | no | Instructions given to the participant |
++| `Study.Instructions.en` | string | yes |  |
+ | `Study.Reliability` | string / object | no | Information about the reliability of the instrument |
+ | `Study.Validity` | string / object | no | Information about the validity of the instrument |
+ | `Study.Subscales` | array | no | List of subscale names if applicable |
+@@ -356,6 +376,6 @@ Generated from [`schemas/stable/survey.schema.json`](../schemas/stable/survey.sc
+ | `Metadata` | object | yes | Administrative metadata |
+ | `Metadata.SchemaVersion` | string | yes |  |
+ | `Metadata.CreationDate` | string | yes | Date of creation |
+-| `Metadata.Creator` | string | no |  |
++| `Metadata.Creator` | string | yes | Who built this template (official library: PRISM Studio) |
+ 
+ <!-- END SCHEMA REFERENCE -->
+diff --git a/tests/test_survey_schema.py b/tests/test_survey_schema.py
+new file mode 100644
+index 0000000..0ac3ea2
+--- /dev/null
++++ b/tests/test_survey_schema.py
+@@ -0,0 +1,110 @@
++import copy
++import json
++from pathlib import Path
++
++import pytest
++from jsonschema import Draft7Validator
++
++ROOT = Path(__file__).parent.parent
++SCHEMA = json.loads((ROOT / "schemas/stable/survey.schema.json").read_text())
++V = Draft7Validator(SCHEMA)
++
++BASE = {
++    "Technical": {
++        "StimulusType": "Questionnaire",
++        "FileFormat": "tsv",
++        "SoftwarePlatform": "LimeSurvey",
++        "SoftwareVersion": "6.0",
++        "Language": "en",
++        "Respondent": "self",
++        "AdministrationMethod": "online",
++    },
++    "Study": {
++        "TaskName": "pss",
++        "OriginalName": "Perceived Stress Scale",
++        "Citation": "Cohen et al. (1983)",
++        "LicenseID": "CC-BY-4.0",
++        "Category": "Mood, Anxiety & Clinical Screening",
++    },
++    "Metadata": {"SchemaVersion": "2.0.0", "CreationDate": "2026-10-30", "Creator": "PRISM Studio"},
++    "Q01": {"Description": {"en": "I felt stressed"}},
++}
++
++
++def sidecar(block=None, key=None, value=None, drop=None):
++    d = copy.deepcopy(BASE)
++    if drop:
++        del d[block][drop]
++    elif block:
++        d[block][key] = value
++    return d
++
++
++def valid(d):
++    return not list(V.iter_errors(d))
++
++
++def test_base_sidecar_valid():
++    assert valid(BASE)
++
++
++@pytest.mark.parametrize("block,key", [
++    ("Technical", "Respondent"), ("Technical", "Language"), ("Technical", "AdministrationMethod"),
++    ("Technical", "SoftwarePlatform"), ("Technical", "StimulusType"), ("Technical", "FileFormat"),
++    ("Study", "TaskName"), ("Study", "Citation"), ("Study", "LicenseID"), ("Study", "OriginalName"),
++    ("Metadata", "Creator"),
++])
++def test_empty_string_invalid(block, key):
++    assert not valid(sidecar(block, key, ""))
++
++
++@pytest.mark.parametrize("key,value", [
++    ("OriginalName", {"en": "", "de": "Fragebogen"}),
++    ("OriginalName", {"de": "Nur Deutsch"}),
++    ("Description", {"de": "Nur Deutsch"}),
++    ("Instructions", {"de": "Nur Deutsch"}),
++    ("Construct", {"de": "Stress"}),
++    ("License", {"de": "Nur Deutsch"}),
++])
++def test_language_object_needs_english(key, value):
++    assert not valid(sidecar("Study", key, value))
++
++
++@pytest.mark.parametrize("key,value", [
++    ("OriginalName", {"en": "PSS", "de": "PSS"}),
++    ("Description", {"en": "A stress scale", "de": "Eine Stressskala"}),
++    ("ShortName", {"de": "PSS"}),  # unchanged: ShortName stays free
++    ("Version", {"de": "3.0"}),  # unchanged: Version stays free
++])
++def test_language_object_valid(key, value):
++    assert valid(sidecar("Study", key, value))
++
++
++def test_creator_required():
++    assert not valid(sidecar("Metadata", drop="Creator"))
++
++
++def test_help_and_other_option_valid():
++    d = copy.deepcopy(BASE)
++    d["Q01"]["Help"] = {"en": "Pick one"}
++    d["Q01"]["OtherOption"] = {"enabled": True}
++    assert valid(d)
++    d["Q01"]["Help"] = "Pick one"
++    d["Q01"]["OtherOption"] = {"enabled": True, "label": {"en": "Other"}}
++    assert valid(d)
++
++
++@pytest.mark.parametrize("key,value", [
++    ("Help", 5), ("OtherOption", "yes"), ("OtherOption", {"enabled": "yes"}),
++])
++def test_help_and_other_option_types(key, value):
++    d = copy.deepcopy(BASE)
++    d["Q01"][key] = value
++    assert not valid(d)
++
++
++def test_version_and_archive():
++    assert SCHEMA["version"] == "2.0.0"
++    assert SCHEMA["$id"].endswith("/v2.0.0")
++    archived = json.loads((ROOT / "schemas/archive/survey/1.1.1.schema.json").read_text())
++    assert archived["version"] == "1.1.1"
+-- 
+2.55.0
+
