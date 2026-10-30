@@ -75,6 +75,128 @@ else:
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+def _install_dir() -> Path:
+    return BASE_DIR if getattr(sys, "frozen", False) else BASE_DIR.parent
+
+
+def _version_and_location() -> str:
+    """The running version and the folder it runs from: tells an old install from the new one."""
+    from src import __version__
+
+    return f"{__version__} ({_install_dir()})"
+
+
+# Browsers --browser-app can target, keyed by the name the user passes.
+# macOS is looked up by app-bundle name (launched via `open -a`); Windows/Linux
+# by executable path, same style as _find_chromium_browser() above.
+_NAMED_BROWSERS: Dict[str, Dict[str, Any]] = {
+    "safari": {"mac_app": "Safari"},
+    "chrome": {
+        "mac_app": "Google Chrome",
+        "win_paths": [os.path.join("Google", "Chrome", "Application", "chrome.exe")],
+        "linux_names": ["google-chrome-stable", "google-chrome"],
+    },
+    "brave": {
+        "mac_app": "Brave Browser",
+        "win_paths": [os.path.join("BraveSoftware", "Brave-Browser", "Application", "brave.exe")],
+        "linux_names": ["brave-browser", "brave"],
+    },
+    "edge": {
+        "mac_app": "Microsoft Edge",
+        "win_paths": [os.path.join("Microsoft", "Edge", "Application", "msedge.exe")],
+        "linux_names": ["microsoft-edge-stable", "microsoft-edge"],
+    },
+    "firefox": {
+        "mac_app": "Firefox",
+        "win_paths": [os.path.join("Mozilla Firefox", "firefox.exe")],
+        "linux_names": ["firefox"],
+    },
+    "opera": {
+        "mac_app": "Opera",
+        "win_paths": [os.path.join("Opera", "launcher.exe")],
+        "linux_names": ["opera"],
+    },
+    "vivaldi": {
+        "mac_app": "Vivaldi",
+        "win_paths": [os.path.join("Vivaldi", "Application", "vivaldi.exe")],
+        "linux_names": ["vivaldi", "vivaldi-stable"],
+    },
+}
+
+
+def _build_parser():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="PRISM Studio")
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"PRISM Studio {_version_and_location()}"
+    )
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=5001,
+        help="Port to bind to (default: 5001, avoiding macOS Control Center on port 5000)",
+    )
+    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+    parser.add_argument(
+        "--public",
+        action="store_true",
+        help=(
+            "Allow external connections (sets host to 0.0.0.0). There is no login: "
+            "access needs the one-time token in the printed URL."
+        ),
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Do not automatically open a browser or native window",
+    )
+    launch_mode_group = parser.add_mutually_exclusive_group()
+    launch_mode_group.add_argument(
+        "--window",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in a native app window instead of a browser tab "
+            "(default when running as a packaged/frozen app)"
+        ),
+    )
+    launch_mode_group.add_argument(
+        "--browser",
+        action="store_true",
+        help=(
+            "Open PRISM Studio in the default web browser "
+            "(default when running from source)"
+        ),
+    )
+    parser.add_argument(
+        "--browser-app",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Open PRISM Studio in a specific browser instead of the OS default "
+            f"(supported names: {', '.join(sorted(_NAMED_BROWSERS))})"
+        ),
+    )
+    parser.add_argument(
+        "--force-clean-start",
+        action="store_true",
+        help="Force-stop any process using the selected port before launch",
+    )
+    parser.add_argument(
+        "--no-dedicated-terminal",
+        action="store_true",
+        help="Run without opening a dedicated terminal window",
+    )
+    return parser
+
+
+# Answer -v/--help at once: before the banner, pre-flight checks and app setup below.
+if __name__ == "__main__" and {"-v", "--version", "-h", "--help"} & set(sys.argv[1:]):
+    _build_parser().parse_args()  # prints the version or the usage and exits
+
 os.environ.setdefault("PRISM_STARTUP_HIDE_DETAILS", "1")
 
 from src.cross_platform import ensure_user_bin_on_path
@@ -225,17 +347,6 @@ def _print_startup_dependency_step(label: str, binary: str) -> None:
         return
 
     _print_startup_step(label, "warning", "not installed (optional)")
-
-
-def _install_dir() -> Path:
-    return BASE_DIR if getattr(sys, "frozen", False) else BASE_DIR.parent
-
-
-def _version_and_location() -> str:
-    """The running version and the folder it runs from: tells an old install from the new one."""
-    from src import __version__
-
-    return f"{__version__} ({_install_dir()})"
 
 
 def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None) -> None:
@@ -1497,44 +1608,6 @@ def _find_chromium_browser() -> Optional[str]:
     return None
 
 
-# Browsers --browser-app can target, keyed by the name the user passes.
-# macOS is looked up by app-bundle name (launched via `open -a`); Windows/Linux
-# by executable path, same style as _find_chromium_browser() above.
-_NAMED_BROWSERS: Dict[str, Dict[str, Any]] = {
-    "safari": {"mac_app": "Safari"},
-    "chrome": {
-        "mac_app": "Google Chrome",
-        "win_paths": [os.path.join("Google", "Chrome", "Application", "chrome.exe")],
-        "linux_names": ["google-chrome-stable", "google-chrome"],
-    },
-    "brave": {
-        "mac_app": "Brave Browser",
-        "win_paths": [os.path.join("BraveSoftware", "Brave-Browser", "Application", "brave.exe")],
-        "linux_names": ["brave-browser", "brave"],
-    },
-    "edge": {
-        "mac_app": "Microsoft Edge",
-        "win_paths": [os.path.join("Microsoft", "Edge", "Application", "msedge.exe")],
-        "linux_names": ["microsoft-edge-stable", "microsoft-edge"],
-    },
-    "firefox": {
-        "mac_app": "Firefox",
-        "win_paths": [os.path.join("Mozilla Firefox", "firefox.exe")],
-        "linux_names": ["firefox"],
-    },
-    "opera": {
-        "mac_app": "Opera",
-        "win_paths": [os.path.join("Opera", "launcher.exe")],
-        "linux_names": ["opera"],
-    },
-    "vivaldi": {
-        "mac_app": "Vivaldi",
-        "win_paths": [os.path.join("Vivaldi", "Application", "vivaldi.exe")],
-        "linux_names": ["vivaldi", "vivaldi-stable"],
-    },
-}
-
-
 def _resolve_named_browser(name: str) -> Optional[str]:
     """Resolve a --browser-app name to a launch target actually installed here.
 
@@ -1646,7 +1719,6 @@ def _launch_app_mode_window(url: str) -> Optional[subprocess.Popen]:
 
 def main():
     """Run the web application"""
-    import argparse
     from src.save_gate import ensure_prism_tools_env
     from src.share_publish import apply_env_identity
 
@@ -1662,70 +1734,7 @@ def main():
         app.logger.setLevel(logging.DEBUG)
         app.config["PROPAGATE_EXCEPTIONS"] = True
 
-    parser = argparse.ArgumentParser(description="PRISM Studio")
-    parser.add_argument(
-        "-v", "--version", action="version", version=f"PRISM Studio {_version_and_location()}"
-    )
-    parser.add_argument(
-        "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=5001,
-        help="Port to bind to (default: 5001, avoiding macOS Control Center on port 5000)",
-    )
-    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
-    parser.add_argument(
-        "--public",
-        action="store_true",
-        help=(
-            "Allow external connections (sets host to 0.0.0.0). There is no login: "
-            "access needs the one-time token in the printed URL."
-        ),
-    )
-    parser.add_argument(
-        "--no-browser",
-        action="store_true",
-        help="Do not automatically open a browser or native window",
-    )
-    launch_mode_group = parser.add_mutually_exclusive_group()
-    launch_mode_group.add_argument(
-        "--window",
-        action="store_true",
-        help=(
-            "Open PRISM Studio in a native app window instead of a browser tab "
-            "(default when running as a packaged/frozen app)"
-        ),
-    )
-    launch_mode_group.add_argument(
-        "--browser",
-        action="store_true",
-        help=(
-            "Open PRISM Studio in the default web browser "
-            "(default when running from source)"
-        ),
-    )
-    parser.add_argument(
-        "--browser-app",
-        metavar="NAME",
-        default=None,
-        help=(
-            "Open PRISM Studio in a specific browser instead of the OS default "
-            f"(supported names: {', '.join(sorted(_NAMED_BROWSERS))})"
-        ),
-    )
-    parser.add_argument(
-        "--force-clean-start",
-        action="store_true",
-        help="Force-stop any process using the selected port before launch",
-    )
-    parser.add_argument(
-        "--no-dedicated-terminal",
-        action="store_true",
-        help="Run without opening a dedicated terminal window",
-    )
-
+    parser = _build_parser()
     args = parser.parse_args()
 
     apply_env_identity()  # attribute all PRISM edits before any git/datalad call
