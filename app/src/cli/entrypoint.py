@@ -101,7 +101,10 @@ from src.cli.commands.session_map import (
 )
 from src.cli.commands.recipes import (
     cmd_recipes_biometrics,
+    cmd_recipes_draft,
+    cmd_recipes_load,
     cmd_recipes_save,
+    cmd_recipes_templates,
     cmd_recipes_surveys,
     cmd_recipes_validate_file,
 )
@@ -267,6 +270,9 @@ def main() -> None:
             "dataset_renumber_runs": cmd_dataset_renumber_runs,
             "dataset_undo": cmd_dataset_undo,
             "recipes_save": cmd_recipes_save,
+            "recipes_draft": cmd_recipes_draft,
+            "recipes_load": cmd_recipes_load,
+            "recipes_templates": cmd_recipes_templates,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
             "environment_scan_mri": cmd_environment_scan_mri,

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from flask import Flask
 
+from src import recipe_builder as rb
+
 
 def _build_app_and_handlers():
     app_root = Path(__file__).resolve().parents[1] / "app"
@@ -517,10 +519,10 @@ def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
     )
 
     with app.app_context():
-        assert handlers.detect_scale_ranges(str(template_path), modality="survey") == {
+        assert rb.detect_scale_ranges(str(template_path), modality="survey") == {
             "": {"min": 0, "max": 3}
         }
-        assert handlers.extract_item_ranges_from_template(
+        assert rb.extract_item_ranges_from_template(
             str(template_path),
             modality="survey",
         ) == {

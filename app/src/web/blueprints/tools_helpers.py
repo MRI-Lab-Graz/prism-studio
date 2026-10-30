@@ -30,49 +30,9 @@ def _safe_expand_path(path_str: str) -> Path:
 
 def _global_survey_library_root() -> Path | None:
     """Get the global survey library path from configuration."""
-    base_dir = Path(current_app.root_path)
+    from src.library_roots import global_survey_library_root
 
-    from src.config import get_effective_library_paths
-
-    lib_paths = get_effective_library_paths(app_root=str(base_dir))
-
-    if lib_paths["global_library_path"]:
-        candidate = _safe_expand_path(lib_paths["global_library_path"])
-        if not candidate.is_absolute():
-            try:
-                candidate = (base_dir / candidate).resolve()
-            except (OSError, ValueError):
-                candidate = base_dir / candidate
-        if candidate.exists() and candidate.is_dir():
-            return candidate
-
-    official_candidates = [
-        base_dir / "official" / "library",
-        base_dir.parent / "official" / "library",
-    ]
-    for candidate in official_candidates:
-        try:
-            candidate = candidate.resolve()
-            if candidate.exists() and candidate.is_dir():
-                return candidate
-        except (OSError, ValueError):
-            if candidate.exists() and candidate.is_dir():
-                return candidate
-
-    preferred = base_dir / "library" / "survey_i18n"
-    try:
-        preferred = preferred.resolve()
-    except (OSError, ValueError):
-        pass
-    if preferred.exists() and any(preferred.glob("survey-*.json")):
-        return preferred
-
-    fallback = base_dir / "survey_library"
-    try:
-        fallback = fallback.resolve()
-    except (OSError, ValueError):
-        pass
-    return fallback if fallback.exists() else None
+    return global_survey_library_root(Path(current_app.root_path))
 
 
 def _global_recipes_root() -> Path | None:
