@@ -24,6 +24,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.modality_versions import current_survey_schema_version
+
 # Import item registry for collision detection
 try:
     from src.converters.item_registry import ItemRegistry, ItemCollisionError
@@ -1960,9 +1962,7 @@ def extract_excel_templates(
             )
         else:
             # Default to bilingual template layout
-            languages = list(dict.fromkeys(languages))
-            if not languages:
-                languages = ["de", "en"]
+            languages = list(dict.fromkeys(languages))  # none found: stays empty, never invented
 
         default_language = None
         if (
@@ -1977,7 +1977,7 @@ def extract_excel_templates(
                 default_language = "en"
             elif languages:
                 default_language = languages[0]
-            else:
+            elif texts_for_lang:
                 default_language = detect_language(texts_for_lang)
 
         if default_language and default_language not in languages:
@@ -2066,7 +2066,6 @@ def extract_excel_templates(
                     "SoftwarePlatform": software_platform,
                     "SoftwareVersion": software_version,
                     "Language": default_language,
-                    "Respondent": meta.get("Respondent", "self"),
                     "AdministrationMethod": administration_method,
                     "ResponseType": ["paper-pencil"],
                 },
@@ -2085,12 +2084,15 @@ def extract_excel_templates(
                     "Description": study_desc_map,
                 },
                 "Metadata": {
-                    "SchemaVersion": "1.1.1",
+                    "SchemaVersion": current_survey_schema_version(),
                     "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
-                    "Creator": "excel_to_library.py",
                 },
             }
 
+            if meta.get("Respondent"):
+                sidecar["Technical"]["Respondent"] = meta["Respondent"]
+            if not languages:
+                del sidecar["I18n"]["Languages"]
             if meta.get("Authors"):
                 sidecar["Study"]["Authors"] = meta["Authors"]
             if meta.get("DOI"):

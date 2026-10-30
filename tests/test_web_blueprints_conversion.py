@@ -1806,9 +1806,9 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertTrue(copied.exists())
 
             copied_payload = json.loads(copied.read_text(encoding="utf-8"))
-            self.assertEqual(copied_payload["Technical"]["SoftwarePlatform"], "")
+            self.assertNotIn("SoftwarePlatform", copied_payload["Technical"])
             self.assertEqual(copied_payload["Study"]["TaskName"], "phq9")
-            self.assertEqual(copied_payload["Study"]["LicenseID"], "unknown")
+            self.assertNotIn("LicenseID", copied_payload["Study"])
 
     def test_lsa_source_copy_prefills_online_administration_defaults(self):
         import importlib
@@ -2668,7 +2668,7 @@ class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
 class TestSurveySidecarDefaults(unittest.TestCase):
     """Regression tests for required survey sidecar defaults."""
 
-    def test_write_task_sidecars_injects_missing_software_platform(self):
+    def test_write_task_sidecars_leaves_unknown_software_platform_out(self):
         import importlib
 
         survey_io = importlib.import_module("src.converters.survey_io")
@@ -2699,8 +2699,7 @@ class TestSurveySidecarDefaults(unittest.TestCase):
                 (dataset_root / "task-pss_survey.json").read_text(encoding="utf-8")
             )
             self.assertIn("Technical", payload)
-            self.assertIn("SoftwarePlatform", payload["Technical"])
-            self.assertEqual(payload["Technical"]["SoftwarePlatform"], "")
+            self.assertNotIn("SoftwarePlatform", payload["Technical"])
 
     def test_write_task_sidecars_normalizes_legacy_platform_for_paper(self):
         import importlib

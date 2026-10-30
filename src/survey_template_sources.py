@@ -119,10 +119,6 @@ def prepare_project_survey_template_from_official(
 
     technical.setdefault("StimulusType", "Questionnaire")
     technical.setdefault("FileFormat", "tsv")
-    technical.setdefault("Language", "")
-    technical.setdefault("Respondent", "")
-    technical.setdefault("AdministrationMethod", "")
-    technical.setdefault("SoftwarePlatform", "")
     technical.setdefault("SoftwareVersion", "")
 
     for key, value in (technical_defaults or {}).items():
@@ -139,7 +135,6 @@ def prepare_project_survey_template_from_official(
         out["Study"] = study
 
     study.setdefault("TaskName", task)
-    study.setdefault("LicenseID", "unknown")
     if isinstance(selected_version, str) and selected_version.strip():
         study["Version"] = selected_version.strip()
 

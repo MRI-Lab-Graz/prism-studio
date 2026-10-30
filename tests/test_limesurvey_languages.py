@@ -72,7 +72,7 @@ def _check_both_languages(xml):
     assert info["name"] == "Stimmung"
     assert template["M1"]["Description"] == {"de": "ruhig", "en": "calm"}
     assert template["M1"]["Levels"] == {"1": {"de": "nie", "en": "never"}}
-    assert template["M1"]["LimeSurvey"]["helpText"] == {"de": "Ehrlich", "en": "Be honest"}
+    assert template["M1"]["Help"] == {"de": "Ehrlich", "en": "Be honest"}
     assert template["Study"]["Instructions"] == {"de": "Wie fühlen Sie sich?", "en": "How do you feel?"}
     assert template["consent"]["Description"] == {"de": "Einverstanden?", "en": "Agree?"}
     assert template["consent"]["Levels"] == {"Y": {"de": "Ja", "en": "Yes"}, "N": {"de": "Nein", "en": "No"}}

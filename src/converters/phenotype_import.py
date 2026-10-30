@@ -22,6 +22,8 @@ from typing import Any, Optional
 
 import pandas as pd
 
+from src.modality_versions import current_survey_schema_version
+
 _TASK_NAME_SANITIZE_PATTERN = re.compile(r"[^A-Za-z0-9-]+")
 _TASK_NAME_COLLAPSE_HYPHENS = re.compile(r"-{2,}")
 
@@ -103,20 +105,14 @@ def _build_minimal_sidecar(
         "Technical": {
             "StimulusType": "Questionnaire",
             "FileFormat": "tsv",
-            "SoftwarePlatform": "",
-            "Language": "",
-            "Respondent": "self",
-            "AdministrationMethod": "",
         },
         "Metadata": {
-            "SchemaVersion": "1.2.0",
+            "SchemaVersion": current_survey_schema_version(),
             "CreationDate": "",
         },
         "Study": {
             "TaskName": task_name,
-            "OriginalName": task_name,
             "Citation": "Imported from a BIDS phenotype/ directory; no citation available.",
-            "LicenseID": "Other",
         },
         **items,
     }

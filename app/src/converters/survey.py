@@ -30,6 +30,7 @@ except ImportError:
     pd = None
 
 from ..cross_platform import describe_case_insensitive_id_collisions
+from src.survey_export_settings import strip_export_settings
 from src.text_sanitizer import html_to_text
 from ..utils.io import (
     ensure_dir as _ensure_dir,
@@ -206,8 +207,7 @@ def _strip_internal_keys(sidecar: dict) -> dict:
     if not isinstance(sidecar, dict):
         return sidecar
     # Create a copy to avoid side effects
-    out = dict(sidecar)
-    # Filter keys matching internal patterns
+    out, _report = strip_export_settings(sidecar)  # a dataset sidecar holds data, not export settings
     for k in list(out.keys()):
         if str(k).startswith("_"):
             del out[k]

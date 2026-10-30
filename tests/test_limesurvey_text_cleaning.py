@@ -67,7 +67,7 @@ def _template():
 def test_imported_template_has_plain_text_descriptions_and_help():
     template = _template()
     assert template["sleep"]["Description"] == {"de": "Satz eins.\nWie lange schlafen Sie?"}
-    assert template["sleep"]["LimeSurvey"]["helpText"] == {"de": "Nur Werktage"}
+    assert template["sleep"]["Help"] == {"de": "Nur Werktage"}
 
 
 def test_imported_template_has_plain_text_answer_labels():
@@ -77,8 +77,8 @@ def test_imported_template_has_plain_text_answer_labels():
     }
 
 
-def test_equation_keeps_comparisons():
-    assert _template()["score"]["LimeSurvey"]["equation"] == "{if(sleep<3, 1, sleep>2)}"
+def test_equation_is_an_export_setting_not_kept():
+    assert "LimeSurvey" not in _template()["score"]
 
 
 def test_group_name_is_plain_text():

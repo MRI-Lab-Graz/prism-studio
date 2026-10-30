@@ -9,6 +9,7 @@ import re
 from typing import Any
 
 from src.converters.limesurvey import _task_name, _utc_creation_date
+from src.modality_versions import current_survey_schema_version
 
 _SPLITS = ("page", "survey")
 _DEFAULT_RATING = [1, 2, 3, 4, 5]  # SurveyJS rating without rateValues/rateCount
@@ -182,10 +183,10 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
         template: dict[str, Any] = {
             "Technical": {
                 "StimulusType": "Questionnaire", "FileFormat": "tsv", "SoftwarePlatform": "Pavlovia",
-                "Language": lang, "Respondent": "self", "AdministrationMethod": "online",
+                "AdministrationMethod": "online", **({"Language": lang} if lang else {}),
             },
             "Study": {},
-            "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": _utc_creation_date(), "Creator": "pavlovia_import.py"},
+            "Metadata": {"SchemaVersion": current_survey_schema_version(), "CreationDate": _utc_creation_date(), "Creator": "pavlovia_import.py"},
         }
         raw_notes = [page.get("description"), *(el.get("description") for el in els)]
         instructions = list(dict.fromkeys(n for n in raw_notes if n))  # unique, in order
@@ -206,6 +207,8 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
             for item_id, item in _expand(el, lang, lambda text, el=el: notes.append(f"{name} / '{el['name']}': {text}")):
                 template[item_id] = item
         template["Study"]["ItemCount"] = count = len(template) - 3  # not Technical, Study, Metadata
+        if lang:  # the file names no language itself: without one it is not invented
+            template["I18n"] = {"Languages": [lang]}
         results.append(({"key": key, "name": name, "item_count": count}, template, notes))
     return results
 

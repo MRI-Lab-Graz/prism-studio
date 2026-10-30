@@ -22,6 +22,7 @@ from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
+from src.modality_versions import ModalityVersionError, current_survey_schema_version, current_version
 from src.specification import current_specification
 from src.validator import resolve_inherited_sidecar
 
@@ -381,11 +382,17 @@ class DatasetFixer:
 
                 # Create stub sidecar
                 stub = self._create_sidecar_stub(modality, filename)
+                # What the stub cannot know is not guessed: it is named, to be filled in.
+                left_out = (
+                    "; still to fill in: Technical.Language, Technical.Respondent"
+                    if modality == "survey"
+                    else ""
+                )
 
                 self.fixes.append(
                     FixAction(
                         issue_code="PRISM201",
-                        description=f"Create sidecar stub for {filename}",
+                        description=f"Create sidecar stub for {filename}{left_out}",
                         file_path=subject_level_sidecar,
                         action_type="create",
                         details={
@@ -481,26 +488,28 @@ class DatasetFixer:
     def _create_sidecar_stub(self, modality: str, filename: str) -> Dict[str, Any]:
         """Create a stub sidecar JSON for a given modality"""
         today = date.today().isoformat()
+        try:
+            version = current_version(modality)
+        except ModalityVersionError:  # a stub for no known modality
+            version = current_survey_schema_version()
 
         if modality == "survey":
             return {
                 "Technical": {
                     "StimulusType": "Questionnaire",
                     "FileFormat": "tsv",
-                    "Language": "en",
-                    "Respondent": "self",
                 },
                 "Study": {
                     "TaskName": "TODO",
                     "OriginalName": "TODO: Full instrument name",
                 },
-                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
+                "Metadata": {"SchemaVersion": version, "CreationDate": today},
             }
         elif modality == "biometrics":
             return {
                 "Technical": {"StimulusType": "Assessment", "FileFormat": "tsv"},
                 "Study": {"TaskName": "TODO", "OriginalName": "TODO: Assessment name"},
-                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
+                "Metadata": {"SchemaVersion": version, "CreationDate": today},
             }
         elif modality == "physio":
             return {
@@ -509,13 +518,13 @@ class DatasetFixer:
                     "Columns": ["TODO: column names"],
                 },
                 "Study": {"TaskName": "TODO"},
-                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
+                "Metadata": {"SchemaVersion": version, "CreationDate": today},
             }
         else:
             # Generic stub
             return {
                 "Description": f"TODO: Add description for {filename}",
-                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
+                "Metadata": {"SchemaVersion": version, "CreationDate": today},
             }
 
 

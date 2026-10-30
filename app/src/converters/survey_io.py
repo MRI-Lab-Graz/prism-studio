@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.cleaning_notes import cleaning_note, missing_id_note
+from src.modality_versions import current_survey_schema_version
 from src.survey_scale_check import find_scale_violations
 from typing import Any
 
@@ -437,7 +438,7 @@ def _write_task_sidecars(
 
             if "Metadata" not in localized:
                 localized["Metadata"] = {
-                    "SchemaVersion": "1.1.1",
+                    "SchemaVersion": current_survey_schema_version(),
                     "CreationDate": _utc_creation_date(),
                     "Creator": "prism-studio",
                 }
@@ -451,25 +452,14 @@ def _write_task_sidecars(
                 tech["StimulusType"] = "Questionnaire"
             if "FileFormat" not in tech:
                 tech["FileFormat"] = "tsv"
-            if "SoftwarePlatform" not in tech:
-                # Keep key present for schema compliance; projects can fill this later.
-                tech["SoftwarePlatform"] = ""
-            if "AdministrationMethod" not in tech:
-                tech["AdministrationMethod"] = ""
-            if "Language" not in tech:
-                tech["Language"] = language or ""
-            if "Respondent" not in tech:
-                tech["Respondent"] = "self"
+            if "Language" not in tech and language:
+                tech["Language"] = language
 
             if "Study" not in localized or not isinstance(localized.get("Study"), dict):
                 localized["Study"] = {}
             study = localized["Study"]
             if "TaskName" not in study:
                 study["TaskName"] = task
-            if "OriginalName" not in study:
-                study["OriginalName"] = study.get("TaskName", task)
-            if "LicenseID" not in study:
-                study["LicenseID"] = "Other"
             if "License" not in study:
                 study["License"] = ""
 

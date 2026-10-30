@@ -140,9 +140,9 @@ class TestParseLsqXml:
 
     def test_limesurvey_props_preserved(self):
         result = parse_lsq_xml(_MINIMAL_LSQ.encode("utf-8"))
-        ls_props = result["MOOD"]["LimeSurvey"]
-        assert ls_props["questionType"] == "L"
-        assert ls_props["mandatory"] is True
+        item = result["MOOD"]
+        assert "questionType" not in item.get("LimeSurvey", {})
+        assert item["Mandatory"] is True
 
     def test_study_metadata_present(self):
         result = parse_lsq_xml(_MINIMAL_LSQ.encode("utf-8"))

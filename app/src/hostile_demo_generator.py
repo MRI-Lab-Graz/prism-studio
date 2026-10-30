@@ -22,6 +22,7 @@ from typing import Any
 
 import pandas as pd
 
+from src.modality_versions import current_survey_schema_version
 from src.project_manager import ProjectManager
 from src.utils.io import ensure_dir, write_json
 
@@ -1137,7 +1138,7 @@ def build_random_survey_template(seed: int) -> tuple[str, dict[str, Any], list[s
             "Language": "en",
             "Respondent": "self",
         },
-        "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2026-06-21"},
+        "Metadata": {"SchemaVersion": current_survey_schema_version(), "CreationDate": "2026-06-21"},
         "Study": {
             "OriginalName": {"en": f"Randomly Generated Test Survey {seed}"},
             "ShortName": task_name.upper(),

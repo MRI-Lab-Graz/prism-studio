@@ -13,6 +13,8 @@ import pandas as pd
 
 from src.cross_platform import describe_case_insensitive_id_collisions
 from src.limesurvey_attributes import LS_ARRAY_TYPES, LS_DESIGN_ATTRIBUTES, LS_ROW_TYPES
+from src.modality_versions import current_survey_schema_version
+from src.survey_export_settings import strip_export_settings
 from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
 from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
@@ -854,7 +856,6 @@ def _build_prism_template_from_parsed(
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
             "Language": default_language,
-            "Respondent": "self",
             "ResponseType": ["online"],
         },
         "Study": {
@@ -867,21 +868,20 @@ def _build_prism_template_from_parsed(
             "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
         },
         "Metadata": {
-            "SchemaVersion": "1.1.1",
+            "SchemaVersion": current_survey_schema_version(),
             "CreationDate": _utc_creation_date(),
             "Creator": "limesurvey_to_prism.py",
         },
     }
 
-    # Add I18n section if multiple languages detected
-    if len(languages) > 1:
+    if languages:
         template["I18n"] = {
             "Languages": languages,
             "DefaultLanguage": default_language,
         }
 
     template.update(prism_questions)
-    return template
+    return strip_export_settings(template)[0]  # export settings are derived at export time, not kept
 
 
 def _parse_lsq_lsg_xml(xml_content, source_type):
@@ -1519,7 +1519,6 @@ def parse_lss_xml(
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
             "Language": survey_meta.get("language", "en"),
-            "Respondent": "self",
             "ResponseType": ["online"],
         },
         "Study": {
@@ -1532,11 +1531,14 @@ def parse_lss_xml(
             "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
         },
         "Metadata": {
-            "SchemaVersion": "1.1.1",
+            "SchemaVersion": current_survey_schema_version(),
             "CreationDate": _utc_creation_date(),
             "Creator": "limesurvey_to_prism.py",
         },
     }
+
+    # this converter keeps the base language's texts only
+    metadata["I18n"] = {"Languages": [metadata["Technical"]["Language"]]}
 
     # Add survey-level settings if present
     if survey_meta.get("admin"):

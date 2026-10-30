@@ -96,10 +96,10 @@ def test_hidden_item_is_reported_as_a_note(survey):
     assert any("studyID" in n and "visible" in n for n in notes)
 
 
-def test_without_a_language_the_texts_are_plain_strings_and_the_language_is_empty(survey):
+def test_without_a_language_the_texts_are_plain_strings_and_the_language_is_absent(survey):
     """The file has no language; the editor asks for it before the template can be validated."""
     t = pavlovia_questionnaire_template(survey, "p1")
-    assert t["Technical"]["Language"] == ""
+    assert "Language" not in t["Technical"]
     assert t["Kaffee"]["Description"] == "Haben Sie heute einen Kaffee getrunken?"
     assert t["Kaffee"]["Levels"] == {"viel weniger": "Ja", "weniger": "Nein"}
     assert t["Study"]["Instructions"] == "Im Vergleich zu einem durchschnittlichen Tag"
@@ -243,7 +243,7 @@ def test_route_loads_one_page():
 def test_route_returns_plain_texts_and_no_language_for_the_editor_to_ask():
     body = _post({"key": "p2"}).get_json()
     assert body["languages"] == []
-    assert body["template"]["Technical"]["Language"] == ""
+    assert "Language" not in body["template"]["Technical"]
     assert body["template"]["ARSQ1"]["Description"] == "Ich hatte schnell wechselnde Gedanken"
 
 

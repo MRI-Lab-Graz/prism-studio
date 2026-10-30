@@ -67,6 +67,19 @@ def template():
     return limesurvey_questionnaire(LSS, "g1")[0]
 
 
+@pytest.fixture(scope="module")
+def template_with_settings():
+    """The import keeps no question types; the export test below feeds the exporters templates that carry them."""
+    from src.converters import limesurvey
+
+    keep = pytest.MonkeyPatch()
+    keep.setattr(limesurvey, "strip_export_settings", lambda template: (template, []))
+    try:
+        return limesurvey.limesurvey_questionnaire(LSS, "g1")[0]
+    finally:
+        keep.undo()
+
+
 def test_checkbox_rows_are_items_with_a_checked_level(template):
     assert template["M1"]["Description"] == {"de": "Musik"}
     assert template["M1"]["Levels"] == {"Y": {"de": "Ja"}}
@@ -161,7 +174,7 @@ def test_checkbox_answers_convert_checked_boxes_and_leave_unchecked_missing(tmp_
 
 
 @pytest.mark.parametrize("exporter", ["quick", "customizer"])
-def test_exported_single_items_are_never_row_types_without_rows(tmp_path, template, exporter):
+def test_exported_single_items_are_never_row_types_without_rows(tmp_path, template_with_settings, exporter):
     """Each imported item is exported on its own; a lone array/checkbox/ranking question would be
     broken in LimeSurvey, so it becomes a list with its options (or a text/number question)."""
     import json
@@ -172,7 +185,7 @@ def test_exported_single_items_are_never_row_types_without_rows(tmp_path, templa
     from src.survey_customizer import build_customizer_groups
 
     path = tmp_path / "survey-types.json"
-    path.write_text(json.dumps({**template, "I18n": {"Languages": ["de"], "DefaultLanguage": "de"}}), encoding="utf-8")
+    path.write_text(json.dumps({**template_with_settings, "I18n": {"Languages": ["de"], "DefaultLanguage": "de"}}), encoding="utf-8")
     if exporter == "quick":
         xml = generate_lss([str(path)], language="de", matrix_mode=False)
     else:

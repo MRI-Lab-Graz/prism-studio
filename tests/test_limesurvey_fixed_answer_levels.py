@@ -48,10 +48,19 @@ def _lss(language):
 </document>""".encode()
 
 
-def _template(language):
+def _template(language, keep_export_settings=False):
+    """``keep_export_settings``: the import no longer keeps question types; the export tests below
+    still feed the exporters an explicit LimeSurvey.questionType (what a template may carry)."""
+    from src.converters import limesurvey
     from src.converters.limesurvey import _build_questionnaires
 
-    _parsed, results = _build_questionnaires(_lss(language), "group")
+    keep = pytest.MonkeyPatch()
+    if keep_export_settings:
+        keep.setattr(limesurvey, "strip_export_settings", lambda template: (template, []))
+    try:
+        _parsed, results = _build_questionnaires(_lss(language), "group")
+    finally:
+        keep.undo()
     return results[0][1]
 
 
@@ -99,7 +108,7 @@ def test_question_with_own_answers_is_unchanged():
 
 def test_five_point_choice_is_a_known_integer_type():
     item = _template("de")["mood"]
-    assert item["LimeSurvey"]["questionTypeName"] == "5 Point Choice"
+    assert "questionTypeName" not in item.get("LimeSurvey", {})
     assert item["DataType"] == "integer"
 
 
@@ -130,7 +139,7 @@ def _export(tmp_path, exporter):
     import defusedxml.ElementTree as DET
     from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
 
-    template = _template("de")
+    template = _template("de", keep_export_settings=True)
     path = tmp_path / "survey-fixed.json"
     path.write_text(json.dumps(template), encoding="utf-8")
     if exporter == "quick":

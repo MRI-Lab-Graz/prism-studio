@@ -1,6 +1,7 @@
 """LimeSurvey design attributes (maximum characters, prefix/suffix, numbers only, matrix
-answer width, ...) and the equation attribute survive LimeSurvey -> template -> LimeSurvey.
-The exporters and the Survey Customizer already know these attributes; the import dropped them."""
+answer width, ...) and the equation attribute are export settings: the import keeps none of them in the
+template (only the question text is the equation question's Description). The exporters still write
+them when a template carries them."""
 
 import json
 import sys
@@ -45,25 +46,24 @@ LSS = f"""<?xml version="1.0" encoding="UTF-8"?>
 </document>""".encode()
 
 
-def _template():
-    from src.converters.limesurvey import limesurvey_questionnaire_template
+def _template(keep_export_settings=False):
+    from src.converters import limesurvey
 
-    return limesurvey_questionnaire_template(LSS, "g1")
+    keep = pytest.MonkeyPatch()
+    if keep_export_settings:
+        keep.setattr(limesurvey, "strip_export_settings", lambda template: (template, []))
+    try:
+        return limesurvey.limesurvey_questionnaire_template(LSS, "g1")
+    finally:
+        keep.undo()
 
 
-def test_design_attributes_are_kept_with_the_base_language_value():
-    weight, story = _template()["weight"]["LimeSurvey"], _template()["story"]["LimeSurvey"]
-    assert weight["suffix"] == "kg" and weight["numbers_only"] == 1
-    assert story["maximum_chars"] == 400 and story["cssclass"] == "wide" and story["placeholder"] == "hier"
-
-
-def test_empty_and_unknown_attributes_are_not_copied():
-    weight = _template()["weight"]["LimeSurvey"]
-    assert "maximum_chars" not in weight and "hide_tip" not in weight
+def test_design_attributes_are_export_settings_the_import_does_not_keep():
+    template = _template()
+    assert "LimeSurvey" not in template["weight"] and "LimeSurvey" not in template["story"]
 
 
 def test_the_equation_attribute_beats_the_question_text():
-    assert _template()["score"]["LimeSurvey"]["equation"] == "{sum(weight.NAOK, 1)}"
     assert _template()["score"]["Description"] == {"de": "Beschreibung der Summe"}
 
 
@@ -71,7 +71,7 @@ def _export(tmp_path, exporter):
     from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
     from src.survey_customizer import build_customizer_groups
 
-    template = _template()
+    template = _template(keep_export_settings=True)  # a template that carries the settings
     template["I18n"] = {"Languages": ["de"], "DefaultLanguage": "de"}
     path = tmp_path / "survey-attrs.json"
     path.write_text(json.dumps(template), encoding="utf-8")
