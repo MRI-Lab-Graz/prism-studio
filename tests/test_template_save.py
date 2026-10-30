@@ -209,3 +209,15 @@ def test_an_undeclared_language_is_an_error(tmp_path):
     saved = _project_save(tmp_path, template)
     undeclared = [m for m in saved.missing if "not declared" in m["message"]]
     assert undeclared and all(m["severity"] == "error" for m in undeclared)
+
+
+def test_every_missing_entry_has_a_severity_from_the_one_vocabulary(tmp_path):
+    from src.prism_template_validation import SEVERITY_ERROR, SEVERITY_WARNING
+
+    template = _gad7(project_copy=True)
+    template["Technical"]["Respondent"] = ""  # required field
+    template["I18n"]["Languages"] = ["en", "de", "es"]  # declared language without texts
+    item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
+    template[item]["Description"]["fr"] = "?"  # undeclared language
+    saved = _project_save(tmp_path, template)
+    assert {m["severity"] for m in saved.missing} == {SEVERITY_ERROR, SEVERITY_WARNING}

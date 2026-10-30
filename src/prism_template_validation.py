@@ -15,6 +15,11 @@ import re
 
 from src.converters.survey_io import normalize_paper_software_platform
 
+# The severity of a finding in ``SavedTemplate.missing`` (and of the language findings that feed it): the one
+# vocabulary. A gate may refuse on SEVERITY_ERROR; SEVERITY_WARNING is shown only.
+SEVERITY_ERROR = "error"
+SEVERITY_WARNING = "warning"
+
 # Fields in Study/Technical that are relaxed when validating a global/library
 # template. These are either project-copy-specific (TaskName) or frequently absent
 # from official library entries that are still work-in-progress (LicenseID, Citation).
@@ -184,7 +189,7 @@ def is_blank(value) -> bool:
 
 
 def missing_required_fields(template: dict, schema: dict) -> list[dict]:
-    """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": "error"}`` per required field of
+    """One ``{"path": "Technical/Respondent", "message": "Technical/Respondent is missing", "severity": SEVERITY_ERROR}`` per required field of
     Technical, Study, Metadata and I18n (as the given, possibly relaxed, schema lists them) that is not filled in."""
     props = schema.get("properties") if isinstance(schema, dict) else None
     props = props if isinstance(props, dict) else {}
@@ -196,7 +201,7 @@ def missing_required_fields(template: dict, schema: dict) -> list[dict]:
         values = values if isinstance(values, dict) else {}
         for field in required if isinstance(required, list) else []:
             if is_blank(values.get(field)):
-                missing.append({"path": f"{section}/{field}", "message": f"{section}/{field} is missing", "severity": "error"})
+                missing.append({"path": f"{section}/{field}", "message": f"{section}/{field} is missing", "severity": SEVERITY_ERROR})
     return missing
 
 

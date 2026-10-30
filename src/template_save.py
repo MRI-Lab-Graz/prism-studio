@@ -23,8 +23,7 @@ from src.utils.io import dump_json_text
 @dataclass
 class SavedTemplate:
     """What a save did: the file, the problems it does not refuse over (``{path, message, severity}``; severity is
-    "error" for a missing required field or an undeclared language, "warning" for other language findings), and
-    what it stripped."""
+    SEVERITY_ERROR or SEVERITY_WARNING from ``src.prism_template_validation``), and what it stripped."""
 
     path: Path
     missing: list[dict]

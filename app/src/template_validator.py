@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Set
 
+from src.prism_template_validation import SEVERITY_ERROR, SEVERITY_WARNING
 from src.survey_scale_inference import infer_contiguous_numeric_levels_range
 
 
@@ -820,7 +821,7 @@ class TemplateValidator:
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         errors: List[TemplateValidationError] = []
 
-        def warn(message: str, item: str, severity: str = "warning") -> None:
+        def warn(message: str, item: str, severity: str = SEVERITY_WARNING) -> None:
             errors.append(
                 TemplateValidationError(
                     file=file_name,
@@ -861,7 +862,7 @@ class TemplateValidator:
                 for lang in text:
                     if lang_re.match(lang) and lang not in declared and (lang, item_id) not in undeclared:
                         undeclared.add((lang, item_id))
-                        warn(f"'{lang}' is used in {item_id} but not declared in I18n.Languages", item_id, "error")
+                        warn(f"'{lang}' is used in {item_id} but not declared in I18n.Languages", item_id, SEVERITY_ERROR)
         return errors
 
     def _validate_language_consistency(
@@ -935,7 +936,7 @@ class TemplateValidator:
                             f"Technical.Language is '{technical_lang}' but "
                             f"question descriptions use '{actual}' keys"
                         ),
-                        severity="warning",
+                        severity=SEVERITY_WARNING,
                     )
                 )
             return errors
@@ -970,7 +971,7 @@ class TemplateValidator:
                                 f"content to '{la}' across all {compared} "
                                 f"questions (possible copy, not a real translation)"
                             ),
-                            severity="warning",
+                            severity=SEVERITY_WARNING,
                         )
                     )
 
@@ -993,7 +994,7 @@ class TemplateValidator:
                             f"{len(items_without)} question(s) that have "
                             f"multilingual descriptions"
                         ),
-                        severity="warning",
+                        severity=SEVERITY_WARNING,
                         details=f"Missing in: {', '.join(sorted(items_without)[:5])}"
                         + ("..." if len(items_without) > 5 else ""),
                     )
@@ -1010,7 +1011,7 @@ class TemplateValidator:
                         f"Technical.Language is '{technical_lang}' but "
                         f"question descriptions use '{actual}' keys"
                     ),
-                    severity="warning",
+                    severity=SEVERITY_WARNING,
                 )
             )
 
@@ -1038,7 +1039,7 @@ class TemplateValidator:
                                     f"in different questions with no overlap "
                                     f"— possible mislabeling"
                                 ),
-                                severity="warning",
+                                severity=SEVERITY_WARNING,
                             )
                         )
 
