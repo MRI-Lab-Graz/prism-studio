@@ -1990,34 +1990,32 @@ def extract_excel_templates(
             citation = meta.get("Citation") or fallback_meta.get("Citation", "")
             keywords = meta.get("Keywords") or fallback_meta.get("Keywords", [])
 
-            administration_method = str(
-                meta.get("AdministrationMethod", "paper") or "paper"
-            ).strip()
+            administration_method = str(meta.get("AdministrationMethod", "") or "").strip()
             software_platform = str(meta.get("SoftwarePlatform", "") or "").strip()
             software_version = str(meta.get("SoftwareVersion", "") or "").strip()
 
             if administration_method.lower() == "paper":
                 software_platform = "Paper and Pencil"
                 software_version = ""
-            else:
-                if not software_platform or software_platform.lower() == "legacy/imported":
-                    software_platform = "Other"
+            elif software_platform.lower() == "legacy/imported":
+                software_platform = "Other"
 
             original_name_map = _collect_meta_lang_values(meta, "OriginalName")
             if not any(v for v in original_name_map.values()):
-                raw = meta.get("OriginalName") or fallback_meta.get(
-                    "OriginalName", f"{prefix} Questionnaire"
-                )
-                original_name_map[default_language] = raw
-            original_name_map.setdefault("de", "")
-            original_name_map.setdefault("en", "")
+                raw = meta.get("OriginalName") or fallback_meta.get("OriginalName")
+                if raw:
+                    original_name_map[default_language] = raw
+            if original_name_map:
+                original_name_map.setdefault("de", "")
+                original_name_map.setdefault("en", "")
 
             version_map = _collect_meta_lang_values(meta, "Version")
             if not any(v for v in version_map.values()) and not declared_versions:
-                raw_version = meta.get("Version") or "1.0"
-                version_map[default_language] = raw_version
-            version_map.setdefault("de", "")
-            version_map.setdefault("en", "")
+                if meta.get("Version"):
+                    version_map[default_language] = meta["Version"]
+            if version_map:
+                version_map.setdefault("de", "")
+                version_map.setdefault("en", "")
 
             active_version = _clean_cell(meta.get("Version"))
             if not active_version:
@@ -2063,11 +2061,8 @@ def extract_excel_templates(
                 "Technical": {
                     "StimulusType": "Questionnaire",
                     "FileFormat": "tsv",
-                    "SoftwarePlatform": software_platform,
                     "SoftwareVersion": software_version,
                     "Language": default_language,
-                    "AdministrationMethod": administration_method,
-                    "ResponseType": ["paper-pencil"],
                 },
                 "I18n": {
                     "Languages": languages,
@@ -2076,9 +2071,7 @@ def extract_excel_templates(
                 },
                 "Study": {
                     "TaskName": prefix,
-                    "OriginalName": original_name_map,
                     "ShortName": meta.get("ShortName", ""),
-                    "Version": study_version_value,
                     "Citation": citation,
                     "Construct": construct_map,
                     "Description": study_desc_map,
@@ -2089,6 +2082,14 @@ def extract_excel_templates(
                 },
             }
 
+            if administration_method:
+                sidecar["Technical"]["AdministrationMethod"] = administration_method
+            if software_platform:
+                sidecar["Technical"]["SoftwarePlatform"] = software_platform
+            if original_name_map:
+                sidecar["Study"]["OriginalName"] = original_name_map
+            if study_version_value:
+                sidecar["Study"]["Version"] = study_version_value
             if meta.get("Respondent"):
                 sidecar["Technical"]["Respondent"] = meta["Respondent"]
             if not languages:

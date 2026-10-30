@@ -1020,8 +1020,6 @@ def _apply_prismmeta(template, html):
         if fields.get(field):
             study[target] = fields[field]
             restored.append(target)
-            if field == "license":
-                study.pop("LicenseID", None)
     if fields.get("authors"):
         # ponytail: the exporter joins authors with ", ", which also appears inside
         # "Doe, J." names; kept as one entry rather than guessing the split.

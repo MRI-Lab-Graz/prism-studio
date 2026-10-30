@@ -22,17 +22,17 @@ def test_current_survey_schema_version_is_the_schemas_version():
 # --- Excel ----------------------------------------------------------------------------------------
 
 
-def _excel_template(tmp_path, general=None, columns=("Description_de", "Description_en")):
+def _excel_template(tmp_path, general=None, columns=("Description_de", "Description_en"), group="ads"):
     from app.src.converters.excel_to_survey import extract_excel_templates
 
-    row = {"ItemID": "ADS01", "Scale": "0=nie;1=oft", "Group": "ads"}
+    row = {"ItemID": "ADS01", "Scale": "0=nie;1=oft", "Group": group}
     row.update({c: f"text {c}" for c in columns})
     path = tmp_path / "s.xlsx"
     with pd.ExcelWriter(path, engine="openpyxl") as writer:
         pd.DataFrame([row]).to_excel(writer, index=False, sheet_name="Items")
         if general:
             pd.DataFrame([general]).to_excel(writer, index=False, sheet_name="General")
-    return extract_excel_templates(excel_file=path, check_collisions=False)["ads"]
+    return extract_excel_templates(excel_file=path, check_collisions=False)[group]
 
 
 def test_excel_without_respondent_cell_writes_no_respondent(tmp_path):
@@ -277,3 +277,24 @@ def test_limesurvey_and_pavlovia_assume_no_license():
     survey = json.loads((DATA / "pavlovia_survey.json").read_text(encoding="utf-8"))
     p = pavlovia_questionnaire_template(survey, "p2")
     assert "LicenseID" not in p["Study"] and "License" not in p["Study"]
+
+
+# --- fix round 2: Excel writes only what the sheet states ------------------------------------------
+
+
+def test_excel_without_those_cells_writes_none_of_the_defaults(tmp_path):
+    t = _excel_template(tmp_path, group="xyz")  # ads/bdi have built-in names
+    for key in ("AdministrationMethod", "SoftwarePlatform", "SoftwareVersion", "ResponseType"):
+        assert key not in t["Technical"], key
+    assert "Version" not in t["Study"] and "OriginalName" not in t["Study"]
+
+
+def test_excel_with_those_cells_keeps_them(tmp_path):
+    t = _excel_template(
+        tmp_path,
+        {"AdministrationMethod": "online", "SoftwarePlatform": "LimeSurvey", "Version_en": "2", "OriginalName_en": "Scale"},
+    )
+    assert t["Technical"]["AdministrationMethod"] == "online"
+    assert t["Technical"]["SoftwarePlatform"] == "LimeSurvey"
+    assert t["Study"]["Version"]["en"] == "2"
+    assert t["Study"]["OriginalName"]["en"] == "Scale"
