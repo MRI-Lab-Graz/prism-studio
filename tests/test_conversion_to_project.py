@@ -125,3 +125,129 @@ def test_tasks_are_read_from_the_file_names_of_the_output(tmp_path):
     (tmp_path / "sub-1" / "sub-1_task-pss_survey.tsv").write_text("", encoding="utf-8")
     (tmp_path / "sub-1" / "sub-1_task-gad7_survey.tsv").write_text("", encoding="utf-8")
     assert extract_tasks_from_output(tmp_path) == ["gad7", "pss"]
+
+
+def test_extra_pairs_are_copied_with_the_converted_files(world):
+    project, _staged, source = world
+    template = source.parent / "biometrics-grip.json"
+    template.write_text("{}", encoding="utf-8")
+    result = _save(world, extra_pairs=[(template, project / "code" / "library" / "biometrics" / "biometrics-grip.json")])
+    assert (project / "code" / "library" / "biometrics" / "biometrics-grip.json").exists()
+    assert "code/library/biometrics/biometrics-grip.json" in result.copied_paths
+    assert all(p.name != "biometrics-grip.json" for p in result.output_paths)  # not a converted file
+
+
+def test_template_copies_are_planned_for_the_used_tasks_the_project_lacks(tmp_path):
+    from src.conversion_to_project import plan_template_copies
+
+    library = tmp_path / "lib"
+    (library / "biometrics").mkdir(parents=True)
+    for task in ("grip", "fitness"):
+        (library / "biometrics" / f"biometrics-{task}.json").write_text("{}", encoding="utf-8")
+    project = tmp_path / "proj"
+    have = project / "code" / "library" / "biometrics"
+    have.mkdir(parents=True)
+    (have / "biometrics-grip.json").write_text("{}", encoding="utf-8")
+
+    pairs = plan_template_copies("biometrics", library, ["grip", "fitness", "ghost"], project)
+
+    assert [(s.name, d.name) for s, d in pairs] == [("biometrics-fitness.json", "biometrics-fitness.json")]
+    assert plan_template_copies("biometrics", library, [], project) == []
+
+
+def _physio_world(tmp_path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    (project / "project.json").write_text(json.dumps({"Sessions": []}), encoding="utf-8")
+    staged = tmp_path / "staged"
+    folder = staged / "sub-001" / "ses-1" / "physio"
+    folder.mkdir(parents=True)
+    (folder / "sub-001_ses-1_task-rest_physio.tsv.gz").write_text("x", encoding="utf-8")
+    converted = [SimpleNamespace(success=True, session="1", target_folder="physio", task="rest")]
+    return project, staged, converted
+
+
+def _save_physio(tmp_path, **overrides):
+    from src.conversion_to_project import save_physio_batch_to_project
+
+    project, staged, converted = _physio_world(tmp_path)
+    kwargs = dict(
+        project_root=project, staged_root=staged, converted=converted, dataset_name="demo", dest_root="root",
+        flat_structure=False, modality_filter="all", subject_rewrite_mode="keep",
+    )
+    kwargs.update(overrides)
+    return project, save_physio_batch_to_project(**kwargs)
+
+
+def test_physio_files_keep_their_structure_under_the_project_root(tmp_path):
+    project, saved = _save_physio(tmp_path)
+    assert (project / "sub-001" / "ses-1" / "physio" / "sub-001_ses-1_task-rest_physio.tsv.gz").exists()
+    assert saved.output_paths and saved.registered_sessions == ["1"]
+
+
+def test_physio_files_can_go_flat_into_rawdata(tmp_path):
+    project, _saved = _save_physio(tmp_path, dest_root="rawdata", flat_structure=True)
+    assert (project / "rawdata" / "physio" / "sub-001_ses-1_task-rest_physio.tsv.gz").exists()
+
+
+def test_a_cancelled_physio_save_raises_before_anything_is_copied(tmp_path):
+    from src.conversion_to_project import ConversionCancelled
+
+    with pytest.raises(ConversionCancelled):
+        _save_physio(tmp_path, cancel_check=lambda: True)
+    assert not list((tmp_path / "proj").glob("sub-*"))
+
+
+def _renamed(tmp_path, name="sub-1234_ses-1_physio.edf"):
+    source = tmp_path / "upload_00000.edf"
+    source.write_text("EDF", encoding="utf-8")
+    project = tmp_path / "proj"
+    project.mkdir()
+    return project, source, name
+
+
+def _save_renamed(tmp_path, **overrides):
+    from src.batch_convert import parse_bids_filename
+    from src.conversion_to_project import save_renamed_to_project
+
+    project, source, name = _renamed(tmp_path)
+    kwargs = dict(
+        project_root=project, items=[(source, name)], dest_root="root", flat_structure=False, modality="physio",
+        organize=True, subject_rewrite_mode="keep", parse_bids_filename=parse_bids_filename,
+    )
+    kwargs.update(overrides)
+    return project, save_renamed_to_project(**kwargs)
+
+
+def test_a_renamed_file_is_organized_by_subject_session_and_modality(tmp_path):
+    project, saved = _save_renamed(tmp_path)
+    assert (project / "sub-1234" / "ses-1" / "physio" / "sub-1234_ses-1_physio.edf").read_text(encoding="utf-8") == "EDF"
+    assert saved.warnings == ["Subject folder sub-1234 did not exist and will be created in project."]
+
+
+def test_without_organize_the_file_lands_at_the_destination_root_under_its_new_name(tmp_path):
+    project, _saved = _save_renamed(tmp_path, organize=False)
+    assert (project / "sub-1234_ses-1_physio.edf").exists()
+
+
+def test_a_flat_copy_goes_into_the_modality_folder_of_rawdata(tmp_path):
+    project, _saved = _save_renamed(tmp_path, dest_root="rawdata", flat_structure=True)
+    assert (project / "rawdata" / "physio" / "sub-1234_ses-1_physio.edf").exists()
+
+
+def test_the_subject_label_can_be_shortened_to_its_last_three_digits(tmp_path):
+    project, _saved = _save_renamed(tmp_path, subject_rewrite_mode="last3")
+    assert (project / "sub-234" / "ses-1" / "physio" / "sub-234_ses-1_physio.edf").exists()
+
+
+def test_an_existing_subject_folder_gives_no_warning(tmp_path):
+    project, source, name = _renamed(tmp_path)
+    (project / "sub-1234").mkdir()
+    from src.batch_convert import parse_bids_filename
+    from src.conversion_to_project import save_renamed_to_project
+
+    saved = save_renamed_to_project(
+        project_root=project, items=[(source, name)], dest_root="root", flat_structure=False, modality="physio",
+        organize=True, subject_rewrite_mode="keep", parse_bids_filename=parse_bids_filename,
+    )
+    assert saved.warnings == []

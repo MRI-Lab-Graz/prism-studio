@@ -404,6 +404,42 @@ def compute_renamed_filename(
     return normalize_filename(new_name)
 
 
+def rename_one(
+    source_path: str,
+    *,
+    pattern: "re.Pattern[str]",
+    replacement: str,
+    id_source: str = "filename",
+    folder_subject_level: int = 2,
+    folder_session_level: int = 1,
+    folder_example_path: str = "",
+    folder_subject_value: str = "",
+    folder_session_value: str = "",
+    modality: str = "physio",
+    organize: bool = False,
+    parse_bids_filename=None,
+) -> tuple[str, str]:
+    """The new file name and its (BIDS-organized) path for one file; raises ValueError saying why it cannot be renamed.
+
+    The one rename rule: Studio's Physio Renamer and ``file-management rename-physio`` both use it."""
+    new_name = compute_renamed_filename(
+        source_path,
+        pattern=pattern,
+        replacement=replacement,
+        id_source=id_source,
+        folder_subject_level=folder_subject_level,
+        folder_session_level=folder_session_level,
+        folder_example_path=folder_example_path,
+        folder_subject_value=folder_subject_value,
+        folder_session_value=folder_session_value,
+    )
+    if problem := new_filename_problem(new_name):
+        raise ValueError(problem)
+    return new_name, compute_organized_relative_path(
+        new_name, modality=modality, organize=organize, parse_bids_filename=parse_bids_filename
+    )
+
+
 def plan_rename(
     entries: list[tuple[str, str]],
     *,
@@ -434,7 +470,7 @@ def plan_rename(
 
     for source_path, _display_path in entries:
         try:
-            new_name = compute_renamed_filename(
+            new_name, organized_path = rename_one(
                 source_path,
                 pattern=compiled,
                 replacement=replacement,
@@ -444,9 +480,6 @@ def plan_rename(
                 folder_example_path=folder_example_path,
                 folder_subject_value=folder_subject_value,
                 folder_session_value=folder_session_value,
-            )
-            organized_path = compute_organized_relative_path(
-                new_name,
                 modality=modality,
                 organize=organize,
                 parse_bids_filename=parse_bids_filename,

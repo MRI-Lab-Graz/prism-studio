@@ -3,6 +3,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+from src.conversion_to_project import register_converted_physio_sessions
 import pytest
 from flask import Flask
 
@@ -59,16 +60,12 @@ def test_batch_start_passes_destination(client, task_folder, monkeypatch):
 
 def test_session_registered_under_target_folder(monkeypatch, tmp_path):
     calls = []
-    monkeypatch.setattr(
-        handlers,
-        "register_session_in_project",
-        lambda *args: calls.append(args),
-    )
+    monkeypatch.setattr("src.conversion_to_project.register_session_in_project", lambda *args: calls.append(args))
 
     def cf(task, folder):
         return SimpleNamespace(success=True, session="1", task=task, target_folder=folder)
 
-    handlers._register_converted_sessions(
+    register_converted_physio_sessions(
         tmp_path, [cf("rest", "beh"), cf(None, "physio")], "ds"
     )
     by_modality = {c[3]: c for c in calls}
@@ -95,11 +92,11 @@ def test_sync_batch_convert_without_destination_for_task_files_is_400(client, ta
 
 
 def test_registration_log_has_no_dangling_arrow_without_tasks(monkeypatch, tmp_path):
-    monkeypatch.setattr(handlers, "register_session_in_project", lambda *a: None)
+    monkeypatch.setattr("src.conversion_to_project.register_session_in_project", lambda *a: None)
     logs = []
     cf = SimpleNamespace(success=True, session="1", task=None, target_folder="physio")
-    handlers._register_converted_sessions(
-        tmp_path, [cf], "ds", log=lambda msg, level="info": logs.append(msg)
+    register_converted_physio_sessions(
+        tmp_path, [cf], "ds", log_fn=lambda msg, level="info": logs.append(msg)
     )
     assert logs == ["Registered in project.json: ses-1 (physio)"]
 

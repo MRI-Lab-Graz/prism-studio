@@ -54,7 +54,7 @@ def test_template_export_command_skips_subject_data_without_modifying_project(tm
     before_snapshot = _snapshot_tree(project_dir)
 
     output_zip = tmp_path / "study_template.zip"
-    args = Namespace(project=str(project_dir), output=str(output_zip), json=True)
+    args = Namespace(project=str(project_dir), output=str(output_zip), validation_mode="ignore", json=True)
     cmd_template_export(args)
 
     assert output_zip.exists()

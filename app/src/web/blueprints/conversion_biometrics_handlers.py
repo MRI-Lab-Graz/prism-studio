@@ -29,9 +29,8 @@ from .conversion_utils import (
 from .conversion_request_helpers import (
     resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
 )
-from src.datalad_project_copy import copy_files_into_project
+from src.conversion_to_project import plan_template_copies, save_conversion_to_project
 from src.subject_id_matching import load_existing_participant_ids
-from src.project_registration import register_session_in_project
 
 # Safe imports for optional dependencies
 IdColumnNotDetectedError: Any = None
@@ -197,54 +196,6 @@ def api_biometrics_detect():
         return jsonify({"error": error_msg}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def _copy_biometrics_templates_to_project(
-    source_dir: Path,
-    tasks: list[str],
-    project_path: str | None,
-    log_fn=None,
-    *,
-    plan_only: bool = False,
-) -> list[tuple[Path, Path]]:
-    """Copy or plan biometrics template copies into the active project library."""
-    if not project_path or not tasks:
-        return []
-
-    project_root = resolve_existing_project_root(project_path)
-    if project_root is None:
-        return []
-
-    if (source_dir / "biometrics").is_dir() and not list(
-        source_dir.glob("biometrics-*.json")
-    ):
-        source_dir = source_dir / "biometrics"
-
-    dest_dir = project_root / "code" / "library" / "biometrics"
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
-    copy_pairs: list[tuple[Path, Path]] = []
-    for task in tasks:
-        src = source_dir / f"biometrics-{task}.json"
-        dest = dest_dir / f"biometrics-{task}.json"
-        if src.exists() and not dest.exists():
-            copy_pairs.append((src, dest))
-
-    if copy_pairs:
-        if not plan_only:
-            for src, dest in copy_pairs:
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dest)
-            msg = f"Copied {len(copy_pairs)} biometrics template(s) into project library."
-        else:
-            msg = (
-                f"Prepared {len(copy_pairs)} biometrics template(s) for project library copy."
-            )
-        if log_fn:
-            log_fn(msg, "info")
-        else:
-            print(f"[PRISM DEBUG] {msg}")
-    return copy_pairs
 
 
 def api_biometrics_convert():
@@ -430,71 +381,27 @@ def api_biometrics_convert():
 
         # Save to project if requested (but not in dry-run mode)
         if save_to_project and not dry_run and project_root is not None:
-            log_msg(f"Saving output to project: {project_root.name}", "info")
-            copy_pairs: list[tuple[Path, Path]] = []
-            output_rel_paths: set[str] = set()
-            for item in output_root.rglob("*"):
-                if item.is_file():
-                    rel_path = item.relative_to(output_root)
-                    dest = project_root / rel_path
-                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
-                    copy_pairs.append((item, dest))
-
-            copy_pairs.extend(
-                _copy_biometrics_templates_to_project(
-                source_dir=Path(effective_biometrics_dir),
-                tasks=list(result.tasks_included or []),
-                project_path=str(project_root),
-                log_fn=log_msg,
-                plan_only=True,
-            )
-            )
-
             try:
-                copy_result = copy_files_into_project(
-                    dataset_root=project_root,
-                    copy_pairs=copy_pairs,
+                project_save = save_conversion_to_project(
+                    project_root=project_root,
+                    staged_root=output_root,
+                    convert_result=result,
+                    source_path=input_path,
+                    source_name=filename,
+                    session_override=session_override,
+                    template_version_overrides=None,
+                    modality="biometrics",
                     run_message="PRISM: Copy converted biometrics files into project",
+                    conv_type="biometrics",
+                    extra_pairs=plan_template_copies(
+                        "biometrics", Path(effective_biometrics_dir), list(result.tasks_included or []), project_root
+                    ),
+                    log_fn=log_msg,
                 )
             except ValueError as error:
                 return jsonify({"error": str(error), "log": log}), 400
-
-            copied_rel_paths = [
-                str(path) for path in list(copy_result.get("copied_paths") or [])
-            ]
-            copied_output_paths = [
-                project_root / rel_path
-                for rel_path in copied_rel_paths
-                if rel_path in output_rel_paths
-            ]
-            datalad_copy = copy_result.get("datalad")
-
-            log_msg("Project updated successfully!", "success")
-
-            registration_sessions: list[str] = []
-            if session_override:
-                if session_override.strip().lower() == "all":
-                    registration_sessions = list(result.detected_sessions or [])
-                else:
-                    registration_sessions = [session_override]
-
-            if registration_sessions and result and getattr(result, "tasks_included", None):
-                for reg_session in registration_sessions:
-                    register_session_in_project(
-                        project_root,
-                        reg_session,
-                        result.tasks_included,
-                        "biometrics",
-                        filename,
-                        "biometrics",
-                    )
-                registered_labels = ", ".join(
-                    s if s.startswith("ses-") else f"ses-{s}" for s in registration_sessions
-                )
-                log_msg(
-                    f"Registered in project.json: {registered_labels} → {', '.join(result.tasks_included)}",
-                    "info",
-                )
+            copied_output_paths = project_save.output_paths
+            datalad_copy = project_save.datalad
 
         # Run validation if requested
         validation: dict[str, Any] | None = None
@@ -887,72 +794,28 @@ def _run_biometrics_convert_job(job_id: str, config: dict[str, Any]) -> None:
 
         # Save to project if requested (but not in dry-run mode)
         if save_to_project and not dry_run and project_root is not None:
-            log_msg(f"Saving output to project: {project_root.name}", "info")
-            copy_pairs: list[tuple[Path, Path]] = []
-            output_rel_paths: set[str] = set()
-            for item in output_root.rglob("*"):
-                if item.is_file():
-                    rel_path = item.relative_to(output_root)
-                    dest = project_root / rel_path
-                    output_rel_paths.add(dest.relative_to(project_root).as_posix())
-                    copy_pairs.append((item, dest))
-
-            copy_pairs.extend(
-                _copy_biometrics_templates_to_project(
-                    source_dir=Path(effective_biometrics_dir),
-                    tasks=list(result.tasks_included or []),
-                    project_path=str(project_root),
-                    log_fn=log_msg,
-                    plan_only=True,
-                )
-            )
-
             try:
-                copy_result = copy_files_into_project(
-                    dataset_root=project_root,
-                    copy_pairs=copy_pairs,
+                project_save = save_conversion_to_project(
+                    project_root=project_root,
+                    staged_root=output_root,
+                    convert_result=result,
+                    source_path=input_path,
+                    source_name=filename,
+                    session_override=session_override,
+                    template_version_overrides=None,
+                    modality="biometrics",
                     run_message="PRISM: Copy converted biometrics files into project",
+                    conv_type="biometrics",
+                    extra_pairs=plan_template_copies(
+                        "biometrics", Path(effective_biometrics_dir), list(result.tasks_included or []), project_root
+                    ),
+                    log_fn=log_msg,
                 )
             except ValueError as error:
                 _biometrics_job_store.failure(job_id, str(error))
                 return
-
-            copied_rel_paths = [
-                str(path) for path in list(copy_result.get("copied_paths") or [])
-            ]
-            copied_output_paths = [
-                project_root / rel_path
-                for rel_path in copied_rel_paths
-                if rel_path in output_rel_paths
-            ]
-            datalad_copy = copy_result.get("datalad")
-
-            log_msg("Project updated successfully!", "success")
-
-            registration_sessions: list[str] = []
-            if session_override:
-                if session_override.strip().lower() == "all":
-                    registration_sessions = list(result.detected_sessions or [])
-                else:
-                    registration_sessions = [session_override]
-
-            if registration_sessions and result and getattr(result, "tasks_included", None):
-                for reg_session in registration_sessions:
-                    register_session_in_project(
-                        project_root,
-                        reg_session,
-                        result.tasks_included,
-                        "biometrics",
-                        filename,
-                        "biometrics",
-                    )
-                registered_labels = ", ".join(
-                    s if s.startswith("ses-") else f"ses-{s}" for s in registration_sessions
-                )
-                log_msg(
-                    f"Registered in project.json: {registered_labels} → {', '.join(result.tasks_included)}",
-                    "info",
-                )
+            copied_output_paths = project_save.output_paths
+            datalad_copy = project_save.datalad
 
         # Run validation if requested
         validation: dict[str, Any] | None = None

@@ -132,11 +132,30 @@ def test_startup_dependency_steps_report_ready_and_not_installed(
     prism_studio_module._print_startup_dependency_step("git-annex", "git-annex")
     output = capsys.readouterr().out
 
-    assert "DataLad" in output
-    assert "git-annex" in output
-    assert "ready" in output
+    assert "DataLad" not in output  # ready tools stay silent
     assert "not installed (optional)" in output
     assert "! git-annex" in output
+
+
+def test_startup_step_prints_only_problems(prism_studio_module, capsys):
+    capsys.readouterr()
+    prism_studio_module._print_startup_step("Web modules")
+    assert capsys.readouterr().out == ""
+
+    prism_studio_module._print_startup_step("REST API", "error", "boom")
+    assert "REST API" in capsys.readouterr().out
+
+
+def test_startup_intro_draws_the_logo_without_a_preflight_header(
+    prism_studio_module, capsys
+):
+    capsys.readouterr()
+    prism_studio_module._print_startup_intro()
+    output = capsys.readouterr().out
+
+    assert "/\\" in output  # the prism's apex
+    assert "PRISM Studio" in output
+    assert "Pre-flight" not in output
 
 
 def test_inject_utilities_exposes_request_api_origin(

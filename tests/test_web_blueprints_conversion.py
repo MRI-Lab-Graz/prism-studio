@@ -1,4 +1,6 @@
 import unittest
+from src.physio_renamer import extract_subject_session_from_source_path as _extract_subject_session_from_source_path
+from src.physio_renamer import apply_folder_placeholders as _apply_folder_placeholders
 import sys
 import os
 import shutil
@@ -1591,21 +1593,21 @@ class TestPhysioHandlersLogic(unittest.TestCase):
                 self.assertFalse(response.get_json()["exists"])
 
     def test_extract_subject_session_from_folder_path(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "sub-07/ses-03/VPDATA.RAW"
         )
         self.assertEqual(subject, "07")
         self.assertEqual(session, "03")
 
     def test_extract_subject_session_from_generic_folders(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "P001/baseline/VPDATA.RAW"
         )
         self.assertEqual(subject, "P001")
         self.assertEqual(session, "baseline")
 
     def test_extract_subject_session_from_folder_levels(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/135/t1/VPDATA.RAW",
             subject_level_from_end=2,
             session_level_from_end=1,
@@ -1614,7 +1616,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertEqual(session, "t1")
 
     def test_extract_subject_session_from_explicit_example_strings(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/132/t3/VPDATA.RAW",
             subject_level_from_end=2,
             session_level_from_end=1,
@@ -1626,7 +1628,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertEqual(session, "3")
 
     def test_extract_subject_from_explicit_example_without_session(self):
-        subject, session = physio_module._extract_subject_session_from_source_path(
+        subject, session = _extract_subject_session_from_source_path(
             "VPDATA/132/VPDATA.RAW",
             subject_level_from_end=1,
             session_level_from_end=1,
@@ -1638,14 +1640,14 @@ class TestPhysioHandlersLogic(unittest.TestCase):
         self.assertIsNone(session)
 
     def test_apply_folder_placeholders_without_session(self):
-        name = physio_module._apply_folder_placeholders(
+        name = _apply_folder_placeholders(
             "sub-{subject}_ses-{session}_task-rest_physio.raw",
             "sub-99/VPDATA.RAW",
         )
         self.assertEqual(name, "sub-99_task-rest_physio.raw")
 
     def test_apply_folder_placeholders_with_level_and_string_mapping(self):
-        name = physio_module._apply_folder_placeholders(
+        name = _apply_folder_placeholders(
             "sub-{subject}_ses-{session}_task-rest_physio.raw",
             "VPDATA/135/t1/VPDATA.RAW",
             subject_level_from_end=2,
@@ -2631,38 +2633,6 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             warnings = payload.get("warnings") or []
             self.assertEqual(len(warnings), 1)
             self.assertIn("maia", warnings[0].get("message", "").lower())
-
-
-class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
-    """Regression tests for biometrics template copy behavior."""
-
-    def test_copy_biometrics_templates_to_project(self):
-        import importlib
-
-        handlers = importlib.import_module(
-            "src.web.blueprints.conversion_biometrics_handlers"
-        )
-
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            source_dir = tmp_path / "official" / "library" / "biometrics"
-            source_dir.mkdir(parents=True, exist_ok=True)
-            (source_dir / "biometrics-ecg.json").write_text("{}", encoding="utf-8")
-
-            project_root = tmp_path / "project"
-            project_root.mkdir(parents=True, exist_ok=True)
-
-            handlers._copy_biometrics_templates_to_project(
-                source_dir=source_dir,
-                tasks=["ecg"],
-                project_path=str(project_root),
-                log_fn=lambda *_: None,
-            )
-
-            copied = (
-                project_root / "code" / "library" / "biometrics" / "biometrics-ecg.json"
-            )
-            self.assertTrue(copied.exists())
 
 
 class TestSurveySidecarDefaults(unittest.TestCase):
