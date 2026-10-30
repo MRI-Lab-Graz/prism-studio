@@ -6190,7 +6190,7 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 "src.datalad_execution.subprocess.Popen",
                 side_effect=_make_fake_ria_popen(seen_commands=seen_commands),
             ), patch(
-                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                "src.export_options.run_pre_export_validation",
                 return_value=None,
             ), patch.object(
                 ProjectManager,
@@ -6235,7 +6235,7 @@ class TestFinalizeProjectUpload(unittest.TestCase):
             with patch("src.datalad_execution.subprocess.Popen", side_effect=_unexpected_popen), patch(
                 "src.datalad_execution.subprocess.run", side_effect=_unexpected_run
             ), patch(
-                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                "src.export_options.run_pre_export_validation",
                 return_value=(
                     "Export blocked: validation found 411 errors in PRISM + BIDS checks. "
                     "Fix the validation errors or choose 'Ignore validation' in the export options."
@@ -6286,7 +6286,7 @@ class TestFinalizeProjectUpload(unittest.TestCase):
                 )
             )
             with patch(
-                "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+                "src.export_options.run_pre_export_validation",
                 side_effect=_blocking_validation,
             ):
                 job_thread.start()
