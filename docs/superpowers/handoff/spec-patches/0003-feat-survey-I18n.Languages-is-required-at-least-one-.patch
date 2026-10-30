@@ -1,7 +1,7 @@
 From e95a3018b679e2196dd2fd7131139cd4897320d5 Mon Sep 17 00:00:00 2001
 From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
 Date: Fri, 30 Oct 2026 10:33:58 +0100
-Subject: [PATCH 3/3] feat(survey): I18n.Languages is required (at least one
+Subject: [PATCH 3/4] feat(survey): I18n.Languages is required (at least one
  unique language code); DefaultLanguage never empty
 
 ---

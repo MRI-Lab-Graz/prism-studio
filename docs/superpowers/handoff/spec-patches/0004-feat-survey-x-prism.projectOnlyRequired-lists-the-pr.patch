@@ -1,0 +1,67 @@
+From 3538ed3db81c8b01063fd119e0550fdf2b6b3790 Mon Sep 17 00:00:00 2001
+From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
+Date: Fri, 30 Oct 2026 12:51:16 +0100
+Subject: [PATCH 4/4] feat(survey): x-prism.projectOnlyRequired lists the
+ project-level Technical fields (Respondent, AdministrationMethod,
+ SoftwarePlatform); spec section on global vs project-level fields
+
+---
+ schemas/stable/survey.schema.json | 4 ++--
+ specs/survey.md                   | 8 ++++++++
+ tests/test_survey_schema.py       | 8 ++++++++
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/schemas/stable/survey.schema.json b/schemas/stable/survey.schema.json
+index aa3f739..47d55f5 100644
+--- a/schemas/stable/survey.schema.json
++++ b/schemas/stable/survey.schema.json
+@@ -4,9 +4,9 @@
+   "version": "2.0.0",
+   "x-prism": {
+     "projectOnlyRequired": {
+-      "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
+-      "Study": ["TaskName", "LicenseID", "Citation"]
++      "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
+     },
++    "projectOnlyRequiredNote": "These fields are set in the project copy of the survey and are optional in a global/library template. SoftwareVersion is required whenever SoftwarePlatform names real software (project copies only). The required arrays describe the project copy.",
+     "officialOnlyRequired": {
+       "Study": ["Category"]
+     }
+diff --git a/specs/survey.md b/specs/survey.md
+index 823a7ef..5ecdcab 100644
+--- a/specs/survey.md
++++ b/specs/survey.md
+@@ -113,6 +113,14 @@ In practice:
+ 
+ When templates are copied from the official library into a project, these project-local `Technical` fields should be completed there.
+ 
++### Global and project-level fields
++
++- **Global** (describe the instrument, required in every template): `Study.TaskName`, `Study.OriginalName`, `Study.Citation`, `Study.LicenseID`, `Technical.Language`, `I18n.Languages`, `Metadata.Creator`, `Metadata.CreationDate`, `Metadata.SchemaVersion`.
++- **Project-level** (set in the project copy, optional in a global/library template; the schema lists them in `x-prism.projectOnlyRequired`): `Technical.Respondent`, `Technical.AdministrationMethod`, `Technical.SoftwarePlatform`, and `Technical.SoftwareVersion` (required whenever `SoftwarePlatform` names real software).
++- `Study.Version`, `Versions`, `VariantDefinitions`, `ItemCount` and `AdministrationTime` are global descriptions and optional; which form a project used may later become a project setting.
++
++The `required` lists in the schema describe the project copy, which is what dataset validators use.
++
+ ### `Technical` Object Fields
+ 
+ | Key | Requirement | Type | Description |
+diff --git a/tests/test_survey_schema.py b/tests/test_survey_schema.py
+index 83d5997..f21b61b 100644
+--- a/tests/test_survey_schema.py
++++ b/tests/test_survey_schema.py
+@@ -165,3 +165,11 @@ def test_i18n_required():
+ ])
+ def test_i18n_valid(i18n):
+     assert valid(with_i18n(i18n))
++
++
++def test_project_only_required_is_exact():
++    px = SCHEMA["x-prism"]["projectOnlyRequired"]
++    assert px == {"Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]}
++    assert set(px["Technical"]) <= set(SCHEMA["properties"]["Technical"]["required"])
++    assert "projectOnlyRequiredNote" in SCHEMA["x-prism"]
++    assert "SoftwareVersion" in SCHEMA["x-prism"]["projectOnlyRequiredNote"]
+-- 
+2.55.0
+

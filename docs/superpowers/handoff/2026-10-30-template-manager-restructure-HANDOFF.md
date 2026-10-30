@@ -3,6 +3,46 @@
 Written 2026-10-30 at the end of a session. Everything needed to continue is in this branch
 (`feat/template-manager-restructure`) and this folder; nothing depends on the machine it was built on.
 
+## LATEST STATE (read this first; it supersedes the table below where they differ)
+
+Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6.
+- **Task 7** (LimeSurvey export derives settings; overrides per export only): an implementer was running when this was
+  written. Check `git log` for its commits; if there are none, the uncommitted edits in `app/src/limesurvey_exporter.py`,
+  `src/survey_customizer.py` and `tests/test_limesurvey_*` are its work in progress: re-dispatch Task 7 from the plan
+  (brief: `bash <sdd-skill>/scripts/task-brief <plan> 7`) and tell the implementer to build on them or reset them.
+  Its must-dos are in the "Must-do notes for Task 7" section below.
+- **Task 1c** (spec repo): committed there (`3538ed3`, local tag **v1.5.2**), **not reviewed**, not yet in Studio.
+  The 4 patches in `spec-patches/` are the complete spec change (tags: v1.5.1 = after patch 3, v1.5.2 = after patch 4).
+- **Not started:** 2d, 8, 9, 10, 10b, 11.
+
+### Next steps, in order
+1. **Review Task 1c** (scoped: spec compliance + quality; the diff is patch 0004).
+2. **Task 2d** (Studio re-sync + unify the relaxation). IMPORTANT FINDING: Studio already has a second mechanism,
+   `apply_schema_validation_profile` in `app/src/schema_manager.py` (profile `official` relaxes the fields in
+   `x-prism.projectOnlyRequired`), next to `relax_schema_for_library_template` + `LIBRARY_RELAXED_*` in
+   `src/prism_template_validation.py`. The upstream `projectOnlyRequired` list used to be
+   {Technical: Language, Respondent, AdministrationMethod, SoftwarePlatform, SoftwareVersion; Study: TaskName,
+   LicenseID, Citation}; Task 1c replaced it with {Technical: Respondent, AdministrationMethod, SoftwarePlatform}
+   per Karl's decision (TaskName, LicenseID, Citation, Language are GLOBAL). Do: `python scripts/sync_specification.py
+   --tag v1.5.2 --source <spec clone>`; pin v1.5.2 in `tests/test_vendored_specification.py`; make ONE mechanism
+   (prefer `apply_schema_validation_profile`, reading the schema) and delete `LIBRARY_RELAXED_*`; keep
+   `missing_task_name_error`-style checks only where still needed; check `tests/test_unit.py` (lines ~247, 428, 578
+   use projectOnlyRequired fixtures) and every caller of `relax_schema_for_library_template`; the official-library test
+   (`tests/test_official_survey_library_valid.py`) must still pass with the new relaxation; the
+   SoftwareVersion-required-when-platform rule (`validate_template_against_schema`) applies to project copies only.
+   Verify user-made library/personal templates: missing Citation/LicenseID/TaskName now become `missing` warnings on
+   save (they are global-mandatory) and are caught by the Task 8 gate.
+3. **Task 9, Task 10** (the GUI; Karl's original ask): see the plan. The editor shows only global fields in
+   General info ("Questionnaire info" sections); project-level fields (Respondent, AdministrationMethod,
+   SoftwarePlatform, SoftwareVersion) in a "For this project" section only when editing a project copy; Items tab owns
+   Selected item + Bulk edit; Tool Properties removed; switch the editor validate route
+   (`tools_template_editor_blueprint.py` ~:321) to `supersede_declared=True`; check whether the JS reads `severity`.
+4. **Task 8** (gate: converting/exporting needs a complete template; messages point to the project copy for
+   project-level fields). First check how a project copy gets those values today (`technical_defaults` in
+   `src/survey_template_sources.py`?).
+5. **Task 10b** (old fixtures/demo project), **Task 11** (docs, CHANGELOG, `/ponytail:ponytail-audit`, final review).
+6. Karl pushes the spec repo (branch + tags) and reviews the library `Technical.Language` values one by one.
+
 ## What this is
 
 Karl asked to restructure the Template Manager GUI (5 points). It grew into a larger change because of decisions made
@@ -48,16 +88,17 @@ Task 10 only needs Task 9 for its data; the Tool Properties removal needs Task 7
    git clone https://github.com/MRI-Lab-Graz/prism-specification.git /some/dir/spec-repo
    cd /some/dir/spec-repo
    git checkout -b feat/stricter-survey-required 498173138d0a56a41d2eaf951742775f30845a25   # main at the time (v1.4.1 + later commits)
-   git am <this-repo>/docs/superpowers/handoff/spec-patches/*.patch
-   git tag -a v1.5.1 -m "survey 2.0.0"                # annotated; only needed locally
+   git am <this-repo>/docs/superpowers/handoff/spec-patches/*.patch     # 4 patches
+   git tag -a v1.5.1 -m "survey 2.0.0" HEAD~1          # after patch 3 (not needed by Studio once 2d is done)
+   git tag -a v1.5.2 -m "survey 2.0.0"                 # after patch 4; annotated; only needed locally
    ```
    If main in that repo has moved on, `git am` may need `--3way`; the three patches only touch
    `schemas/stable/survey.schema.json`, `schemas/archive/survey/1.1.1.schema.json` (new), `specs/survey.md`,
    `tests/test_survey_schema.py`. After applying: `python scripts/generate_schema_reference.py --check` and the
    repo's tests must pass (370+ at the time).
    If Karl has pushed the tag meanwhile, skip all this and sync without `--source`.
-3. Task 2c (first thing): in Studio run
-   `python scripts/sync_specification.py --tag v1.5.1 --source /some/dir/spec-repo`, change the pinned tag in
+3. (Task 2c is done; Task 2d replaces it) In Studio run
+   `python scripts/sync_specification.py --tag v1.5.2 --source /some/dir/spec-repo`, change the pinned tag in
    `tests/test_vendored_specification.py` to `v1.5.1`, `grep -rn "v1.5.1" .` and fix the plan/spec/handoff text, run
    `python scripts/ci/check_specification_lock.py`. The schema content is byte-identical; only the tag name in
    `specification.lock.json` changes.

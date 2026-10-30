@@ -1,7 +1,7 @@
 From e12919c1b0ccb4be3ea66f84985fb4ef421a8e16 Mon Sep 17 00:00:00 2001
 From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
 Date: Fri, 30 Oct 2026 09:58:11 +0100
-Subject: [PATCH 1/3] feat!: survey 2.0.0 - required fields are filled (no
+Subject: [PATCH 1/4] feat!: survey 2.0.0 - required fields are filled (no
  empty enums/strings), English rule for Study text objects, Metadata.Creator
  required, item Help and OtherOption (1.1.1 archived)
 

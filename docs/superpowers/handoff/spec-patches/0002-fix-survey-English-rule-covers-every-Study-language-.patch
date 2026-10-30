@@ -1,7 +1,7 @@
 From 1534b3abf04912966c7871c80550a6cd74962a7c Mon Sep 17 00:00:00 2001
 From: Karl Koschutnig <karl.koschutnig@uni-graz.at>
 Date: Fri, 30 Oct 2026 10:00:35 +0100
-Subject: [PATCH 2/3] fix(survey): English rule covers every Study
+Subject: [PATCH 2/4] fix(survey): English rule covers every Study
  language-object text field (Reliability, Validity, Norming, PermissionsNote,
  Translation.Notes, References[].Notes, VariantDefinitions[].Description)
 
