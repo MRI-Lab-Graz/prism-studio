@@ -76,8 +76,16 @@ Needs `recipes draft` running `src.recipe_builder`.
 `limesurvey-save-to-project` routes call `converters.limesurvey` parsers and `survey_templates.match_*` directly. Probably the
 same code paths, not confirmed: read both and add a parity test as for `survey convert`.
 
+### Biometrics - the same input can give different participant IDs
+Studio's route resolves the biometrics library from the project (then the global one) and passes the project's existing
+participant IDs (`load_existing_participant_ids`) to `convert_biometrics_table_to_prism_dataset(existing_participant_ids=...)`,
+so unpadded IDs match the participants already in the project. `biometrics convert` has no `--project`, needs `--library`, and
+passes none of it: the same table gives different `sub-` IDs. (Studio's "dry run" is a conversion into a throwaway folder, and
+"validate" runs the validator afterwards: both are fine as they are.) Fix: the same runner pattern as `survey convert` (library
+choice, ID matching, tail) for biometrics.
+
 ### Not yet read
-Biometrics, environment and file-management routes (their form fields were not extractable by the automatic pass).
+Environment and file-management routes (their form fields were not extractable by the automatic pass).
 
 ## Review queue: the Studio-only backend calls, by area
 
