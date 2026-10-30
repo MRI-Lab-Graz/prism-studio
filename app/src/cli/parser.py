@@ -578,6 +578,24 @@ def build_prism_tools_parsers(
     parser_export_structure.add_argument("--project", required=True, help="Project root or project.json path")
     parser_export_structure.add_argument("--json", action="store_true", help="(output is always JSON)")
 
+    def _defacing_flags(parser, *, run=False):
+        parser.add_argument("--project", required=True, help="Project root or project.json path")
+        parser.add_argument("--selected-variant", action="append", metavar="VARIANT", help="Only this scan variant, e.g. T1w (repeatable)")
+        parser.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+        parser.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+        if run:
+            parser.add_argument("--repository-mode", choices=["datalad_free", "datalad_preserving"], default=None,
+                                help="datalad_preserving: the copy is a DataLad clone, defaced through datalad run")
+            parser.add_argument("--output-folder", default=None, help="Where the defaced copy goes (default: next to the project)")
+            parser.add_argument("--force", action="store_true", help="Deface scans that already look defaced")
+
+    parser_export_deface_report = export_subparsers.add_parser("deface-report", help="Defacing status of every anatomical scan (JSON)")
+    _defacing_flags(parser_export_deface_report)
+    parser_export_deface_preflight = export_subparsers.add_parser("deface-preflight", help="Whether defacing can run here (JSON)")
+    parser_export_deface_preflight.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_deface = export_subparsers.add_parser("deface", help="Deface an export COPY of the project; the project itself is never changed")
+    _defacing_flags(parser_export_deface, run=True)
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",

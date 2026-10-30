@@ -124,7 +124,7 @@ def dispatch_prism_tools(
         else:
             parsers["participants"].print_help()
     elif args.command == "export":
-        if args.action in ("project", "folder", "git-lfs", "annex-availability", "structure"):
+        if args.action in ("project", "folder", "git-lfs", "annex-availability", "structure", "deface-report", "deface-preflight", "deface"):
             handlers[f"export_{args.action.replace('-', '_')}"](args)
         else:
             parsers["export"].print_help()

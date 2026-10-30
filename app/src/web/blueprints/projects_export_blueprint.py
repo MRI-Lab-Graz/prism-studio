@@ -17,9 +17,7 @@ from src.export_options import (
     build_export_defacing_warning as _build_export_defacing_warning,
     build_export_kwargs,
     export_zip_name,
-    normalize_defacing_variant_keys as _normalize_defacing_variant_keys,
     normalize_export_validation_mode as _normalize_export_validation_mode,
-    normalize_scope_labels as _normalize_scope_labels,
     export_validation_flags as _export_validation_flags,
     run_pre_export_validation as _run_pre_export_validation,
     run_annex_availability,
@@ -27,6 +25,7 @@ from src.export_options import (
     run_git_lfs_export,
     run_project_export,
 )
+from src.export_defacing import defacing_preflight, defacing_report, run_defacing
 from .projects_helpers import _resolve_project_root_path
 
 projects_export_bp = Blueprint("projects_export", __name__)
@@ -291,31 +290,11 @@ def export_project_annex_availability():
 def export_defacing_report():
     """Return a defacing status report for all anatomical scans in the project."""
     try:
-        from src.mri_json_scrubber import build_defacing_report
-
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        selected_variants = _normalize_defacing_variant_keys(
-            data.get("selected_variants")
-        )
-        excluded_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
-        excluded_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(data.get("project_path"))
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
-
-        report = build_defacing_report(
-            resolved,
-            selected_variants=selected_variants,
-            excluded_subjects=excluded_subjects or None,
-            excluded_sessions=excluded_sessions or None,
-        )
-        counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
-        for entry in report:
-            status = entry.get("status", "unknown")
-            counts[status] = counts.get(status, 0) + 1
-
-        return jsonify({"success": True, "report": report, "counts": counts})
+        return jsonify(defacing_report(resolved, data))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -324,148 +303,25 @@ def export_defacing_report():
 def export_defacing_preflight():
     """Return defacing readiness for current project and environment."""
     try:
-        from src.mri_json_scrubber import get_defacing_preflight
-
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(data.get("project_path"))
         if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        preflight = get_defacing_preflight(resolved)
-        return jsonify({"success": True, **preflight})
+        return jsonify(defacing_preflight(resolved))
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
 @projects_export_bp.route("/api/projects/export/deface", methods=["POST"])
 def export_deface_anatomical_scans():
-    """Run export-aware defacing on anatomical scans.
-
-    Behavior:
-        - Defacing always targets an export copy and never mutates source rawdata.
-        - DataLad-preserving export mode: prepare export copy as DataLad clone and
-            run pydeface via DataLad run on that copy.
-        - DataLad-free export mode: copy anatomical scans to an export target folder
-            (preserving relative structure), then deface that copy directly.
-    """
+    """Run export-aware defacing on an export copy of the project (never on the project itself)."""
     try:
-        from src.mri_json_scrubber import (
-            build_defacing_report,
-            deface_anatomical_scans,
-            prepare_defacing_export_copy,
-        )
-        from src.project_manager import ProjectManager
-
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        selected_variants = _normalize_defacing_variant_keys(
-            data.get("selected_variants")
-        )
-        excluded_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
-        excluded_sessions = _normalize_scope_labels(data.get("exclude_sessions"))
-        repository_mode_raw = str(data.get("repository_mode") or "").strip().lower()
-        has_repository_mode = bool(repository_mode_raw)
-        repository_mode = (
-            repository_mode_raw
-            if repository_mode_raw in {"datalad_free", "datalad_preserving"}
-            else "datalad_preserving"
-        )
-        output_folder = str(data.get("output_folder") or "").strip()
-
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(data.get("project_path"))
         if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        force = bool(data.get("force", False))
-
-        manager = ProjectManager()
-        datalad_status = manager.get_datalad_status(resolved)
-        datalad_enabled = bool(datalad_status.get("enabled"))
-
-        use_datalad_preserving_copy = (
-            datalad_enabled
-            if not has_repository_mode
-            else repository_mode == "datalad_preserving" and datalad_enabled
-        )
-
-        output_root = (
-            Path(output_folder).expanduser().resolve(strict=False)
-            if output_folder
-            else resolved.parent
-        )
-        copy_summary = prepare_defacing_export_copy(
-            resolved,
-            output_root,
-            selected_variants=selected_variants,
-            excluded_subjects=excluded_subjects or None,
-            excluded_sessions=excluded_sessions or None,
-            preserve_datalad_metadata=use_datalad_preserving_copy,
-            datalad_executable=str(datalad_status.get("executable") or ""),
-        )
-        if not copy_summary.get("success"):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": str(copy_summary.get("error") or "Could not prepare export defacing copy."),
-                        "target_mode": "export_copy",
-                        "source_project_path": str(resolved),
-                        "target_path": str(copy_summary.get("target_path") or ""),
-                    }
-                ),
-                400,
-            )
-
-        target_mode = "export_copy"
-        target_path = Path(str(copy_summary.get("target_path") or "")).resolve(
-            strict=False
-        )
-
-        result = deface_anatomical_scans(
-            target_path,
-            force=force,
-            selected_variants=selected_variants,
-            excluded_subjects=excluded_subjects or None,
-            excluded_sessions=excluded_sessions or None,
-        )
-        post_report = build_defacing_report(
-            target_path,
-            selected_variants=selected_variants,
-            excluded_subjects=excluded_subjects or None,
-            excluded_sessions=excluded_sessions or None,
-        )
-        counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
-        for entry in post_report:
-            status = str(entry.get("status", "unknown"))
-            if status not in counts:
-                status = "unknown"
-            counts[status] += 1
-
-        payload = {
-            "success": bool(result.get("success", False)),
-            "message": result.get("message") or result.get("error") or "",
-            "error": result.get("error"),
-            "defacing": {
-                "counts": result.get("counts") or {},
-                "items": result.get("items") or [],
-            },
-            "datalad": result.get("datalad") or {},
-            "target_mode": target_mode,
-            "target_path": str(target_path),
-            "source_project_path": str(resolved),
-            "copy_summary": copy_summary or {},
-            "report": post_report,
-            "report_counts": counts,
-        }
-
-        if payload["success"]:
-            payload["message"] = (
-                f"{payload['message']} Source project was not modified; defaced copy written to {target_path}."
-            )
-
-        status_code = 200 if payload["success"] else 400
-        return jsonify(payload), status_code
+        payload, ok = run_defacing(resolved, data)
+        return jsonify(payload), 200 if ok else 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

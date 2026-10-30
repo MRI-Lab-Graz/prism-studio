@@ -134,3 +134,44 @@ def cmd_export_structure(args) -> None:
     from src.project_structure import get_project_modalities_and_sessions
 
     print(json.dumps(get_project_modalities_and_sessions(_project_or_exit(args)), indent=2, default=str))
+
+
+def _emit(payload: dict, ok: bool = True) -> None:
+    import json
+
+    print(json.dumps(payload, indent=2, ensure_ascii=False, default=str))
+    if not ok:
+        sys.exit(1)
+
+
+def _defacing_data(args) -> dict:
+    return {
+        "selected_variants": list(getattr(args, "selected_variant", None) or []) or None,
+        "exclude_subjects": list(getattr(args, "exclude_subject", None) or []),
+        "exclude_sessions": list(getattr(args, "exclude_session", None) or []),
+        "repository_mode": getattr(args, "repository_mode", None),
+        "output_folder": getattr(args, "output_folder", None),
+        "force": bool(getattr(args, "force", False)),
+    }
+
+
+def cmd_export_deface_report(args) -> None:
+    """Defacing status of every anatomical scan (JSON, as Studio's export page shows it)."""
+    from src.export_defacing import defacing_report
+
+    _emit(defacing_report(_project_or_exit(args), _defacing_data(args)))
+
+
+def cmd_export_deface_preflight(args) -> None:
+    """Whether defacing can run here (JSON)."""
+    from src.export_defacing import defacing_preflight
+
+    _emit(defacing_preflight(_project_or_exit(args)))
+
+
+def cmd_export_deface(args) -> None:
+    """Deface an export COPY of the project (never the project itself); prints the result as JSON."""
+    from src.export_defacing import run_defacing
+
+    payload, ok = run_defacing(_project_or_exit(args), _defacing_data(args))
+    _emit(payload, ok)
