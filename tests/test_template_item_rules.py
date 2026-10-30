@@ -108,17 +108,6 @@ def _client(monkeypatch):
     return app.test_client()
 
 
-def test_library_templates_still_need_a_task_name_to_validate_and_to_save(monkeypatch):
-    client = _client(monkeypatch)
-    body = {"modality": "survey", "template": {"Study": {"TaskName": ""}, "Q1": _item()}, "is_global": True}
-    validated = client.post("/api/template-editor/validate", json=body).get_json()
-    assert not validated["ok"] and validated["errors"][0]["path"] == "Study/TaskName"
-    saved = client.post("/api/template-editor/save", json={**body, "filename": "survey-x.json"})
-    assert saved.status_code == 400
-    body["template"]["Study"]["TaskName"] = "x"
-    assert client.post("/api/template-editor/validate", json=body).get_json()["ok"]
-
-
 def test_a_wrong_value_inside_an_item_names_the_field_not_the_whole_item():
     from src.prism_template_validation import validate_template_against_schema
 

@@ -113,6 +113,14 @@ In practice:
 
 When templates are copied from the official library into a project, these project-local `Technical` fields should be completed there.
 
+### Global and project-level fields
+
+- **Global** (describe the instrument, required in every template): `Study.TaskName`, `Study.OriginalName`, `Study.Citation`, `Study.LicenseID`, `Technical.Language`, `I18n.Languages`, `Metadata.Creator`, `Metadata.CreationDate`, `Metadata.SchemaVersion`.
+- **Project-level** (set in the project copy, optional in a global/library template; the schema lists them in `x-prism.projectOnlyRequired`): `Technical.Respondent`, `Technical.AdministrationMethod`, `Technical.SoftwarePlatform`, and `Technical.SoftwareVersion` (required whenever `SoftwarePlatform` names real software).
+- `Study.Version`, `Versions`, `VariantDefinitions`, `ItemCount` and `AdministrationTime` are global descriptions and optional; which form a project used may later become a project setting.
+
+The `required` lists in the schema describe the project copy, which is what dataset validators use.
+
 ### `Technical` Object Fields
 
 | Key | Requirement | Type | Description |

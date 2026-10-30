@@ -9,7 +9,6 @@ from src.personal_library import personal_library_folder
 from src.prism_template_validation import (
     is_missing_field_error,
     missing_required_fields,
-    missing_task_name_error,
     relax_schema_for_library_template,
     strip_template_editor_internal_keys,
     validate_template_against_schema,
@@ -86,8 +85,6 @@ def save_template(
     if relaxed:
         schema = relax_schema_for_library_template(schema)
     errors = list(validate_template_against_schema(instance=template, schema=schema))
-    if relaxed and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
-        errors.append(error)
     missing = missing_required_fields(template, schema)
     refused = [e for e in errors if not is_missing_field_error(e, template, missing)]
     if refused:

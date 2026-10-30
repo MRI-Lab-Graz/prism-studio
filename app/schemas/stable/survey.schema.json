@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "x-prism": {
     "projectOnlyRequired": {
-      "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
-      "Study": ["TaskName", "LicenseID", "Citation"]
+      "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
     },
+    "projectOnlyRequiredNote": "These fields are set in the project copy of the survey and are optional in a global/library template. SoftwareVersion is required whenever SoftwarePlatform names real software (project copies only). The required arrays describe the project copy.",
     "officialOnlyRequired": {
       "Study": ["Category"]
     }

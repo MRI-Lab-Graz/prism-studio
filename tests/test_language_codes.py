@@ -52,12 +52,12 @@ def test_task_name_is_taken_from_the_file_name_when_the_template_has_none():
 
 
 def test_a_template_without_a_task_name_is_reported_even_when_it_comes_from_the_library():
-    from src.prism_template_validation import missing_task_name_error
+    from src.prism_template_validation import relax_schema_for_library_template, validate_template_against_schema
+    from src.schema_manager import load_schema
 
-    assert missing_task_name_error({"Study": {"TaskName": "aai"}}) is None
-    for template in ({}, {"Study": {}}, {"Study": {"TaskName": "  "}}):
-        error = missing_task_name_error(template)
-        assert error["path"] == "Study/TaskName" and "task name" in error["message"]
+    schema = relax_schema_for_library_template(load_schema("survey"))
+    errors = validate_template_against_schema(instance={"Study": {}}, schema=schema)
+    assert any(e["path"] == "Study" and "'TaskName'" in e["message"] for e in errors)
 
 
 def test_the_language_list_comes_from_the_backend(monkeypatch):

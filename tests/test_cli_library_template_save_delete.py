@@ -269,8 +269,8 @@ class TestTemplateDelete:
         assert outside_target.exists()
 
 
-def test_a_library_template_without_a_task_name_is_rejected_like_in_the_editor(tmp_path, capsys):
-    """The command used to save it (only Studio's Save checked): now both run the same function."""
+def test_a_library_template_without_a_task_name_is_saved_with_a_warning_like_in_the_editor(tmp_path, capsys):
+    """Studio's Save and the command run the same function: saved, the missing task name reported."""
     nameless = library_template()
     nameless["Study"].pop("TaskName")
     source = tmp_path / "nameless.json"
@@ -278,8 +278,7 @@ def test_a_library_template_without_a_task_name_is_rejected_like_in_the_editor(t
     project = tmp_path / "project"
     project.mkdir()
 
-    with pytest.raises(SystemExit):
-        cmd_library_template_save(_save_args(project=str(project), filename="survey-x.json", template=str(source), is_global=True))
+    cmd_library_template_save(_save_args(project=str(project), filename="survey-x.json", template=str(source), is_global=True))
 
-    assert "task name" in capsys.readouterr().out
-    assert not (project / "code").exists()
+    assert "Study/TaskName is missing" in capsys.readouterr().out
+    assert (project / "code" / "library" / "survey" / "survey-x.json").exists()

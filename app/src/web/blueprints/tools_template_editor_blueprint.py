@@ -15,7 +15,6 @@ from flask import (
 from src.config import load_config
 from src.constants import SUPPORTED_MODALITIES
 from src.prism_template_validation import (
-    missing_task_name_error,
     relax_schema_for_library_template as _relax_schema_for_library_template,
     with_default_task_name,
 )
@@ -311,8 +310,6 @@ def api_template_editor_validate():
         if is_global:
             schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
-        if is_global and modality in ("survey", "biometrics") and (error := missing_task_name_error(template)):
-            errors.append(error)
 
         lang_warnings = []
         try:

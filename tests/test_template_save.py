@@ -47,15 +47,15 @@ def test_an_existing_template_is_only_replaced_when_asked(tmp_path):
     save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP, allow_overwrite=True)
 
 
-def test_a_library_template_still_needs_a_task_name(tmp_path):
+def test_a_library_template_without_a_task_name_is_saved_and_reported_missing(tmp_path):
     """The library relaxation drops the project-only fields, not the task name: for the global flag and for personal."""
     nameless = _gad7()
     nameless["Study"].pop("TaskName")
-    with pytest.raises(TemplateInvalid, match="task name"):
-        save_template("survey", "survey-x.json", nameless, target="project", project_root=tmp_path, app_root=APP, relaxed=True)
+    saved = save_template("survey", "survey-x.json", nameless, target="project", project_root=tmp_path, app_root=APP, relaxed=True)
+    assert "Study/TaskName" in [m["path"] for m in saved.missing]
 
 
-def test_the_personal_target_uses_the_personal_library_and_checks_the_task_name(tmp_path, monkeypatch):
+def test_the_personal_target_uses_the_personal_library_and_reports_a_missing_task_name(tmp_path, monkeypatch):
     mine = tmp_path / "mine"
     mine.mkdir()
     monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
@@ -64,8 +64,8 @@ def test_the_personal_target_uses_the_personal_library_and_checks_the_task_name(
 
     nameless = _gad7()
     nameless["Study"].pop("TaskName")
-    with pytest.raises(TemplateInvalid, match="task name"):
-        save_template("survey", "survey-y.json", nameless, target="personal", project_root=None, app_root=APP)
+    saved = save_template("survey", "survey-y.json", nameless, target="personal", project_root=None, app_root=APP)
+    assert "Study/TaskName" in [m["path"] for m in saved.missing]
 
 
 def test_personal_without_a_personal_library_and_project_without_a_project_say_what_is_missing(tmp_path, monkeypatch):
@@ -86,11 +86,26 @@ def _technical_required(schema):
     return schema["properties"]["Technical"]["required"]
 
 
-def test_library_template_may_leave_respondent_out():
+def test_library_relaxation_is_only_the_projects_own_fields():
     from src.prism_template_validation import relax_schema_for_library_template
     from src.schema_manager import load_schema
 
-    assert "Respondent" not in _technical_required(relax_schema_for_library_template(load_schema("survey")))
+    relaxed = relax_schema_for_library_template(load_schema("survey"))
+    assert {"TaskName", "LicenseID", "Citation"} <= set(relaxed["properties"]["Study"]["required"])
+    technical = set(_technical_required(relaxed))
+    assert "Language" in technical
+    assert not technical & {"Respondent", "AdministrationMethod", "SoftwarePlatform"}
+
+
+def test_software_version_is_asked_for_in_a_project_copy_only():
+    from src.prism_template_validation import relax_schema_for_library_template, validate_template_against_schema
+    from src.schema_manager import load_schema
+
+    template = {"Technical": {"SoftwarePlatform": "LimeSurvey", "AdministrationMethod": "online"}}
+    full = load_schema("survey")
+    paths = lambda schema: [e["path"] for e in validate_template_against_schema(instance=template, schema=schema)]
+    assert "Technical/SoftwareVersion" in paths(full)
+    assert "Technical/SoftwareVersion" not in paths(relax_schema_for_library_template(full))
 
 
 def test_project_template_needs_respondent():

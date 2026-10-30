@@ -10,21 +10,15 @@ docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 
 from __future__ import annotations
 
-import copy
 import re
 
+from src.schema_manager import apply_schema_validation_profile
 from src.converters.survey_io import normalize_paper_software_platform
 
 # The severity of a finding in ``SavedTemplate.missing`` (and of the language findings that feed it): the one
 # vocabulary. A gate may refuse on SEVERITY_ERROR; SEVERITY_WARNING is shown only.
 SEVERITY_ERROR = "error"
 SEVERITY_WARNING = "warning"
-
-# Fields in Study/Technical that are relaxed when validating a global/library
-# template. These are either project-copy-specific (TaskName) or frequently absent
-# from official library entries that are still work-in-progress (LicenseID, Citation).
-LIBRARY_RELAXED_STUDY_REQUIRED = {"TaskName", "LicenseID", "Citation"}
-LIBRARY_RELAXED_TECHNICAL_REQUIRED = {"SoftwarePlatform", "AdministrationMethod", "Respondent"}
 
 
 def strip_template_editor_internal_keys(template: dict) -> dict:
@@ -39,32 +33,9 @@ def strip_template_editor_internal_keys(template: dict) -> dict:
 
 
 def relax_schema_for_library_template(schema: dict) -> dict:
-    """Return a copy of *schema* with project-local required fields removed.
-
-    Official library templates intentionally omit administration-specific fields
-    (TaskName, SoftwarePlatform, AdministrationMethod) that only make sense in a
-    project copy. Validating them against the full project-copy schema produces
-    misleading errors. This helper strips those fields from the required arrays
-    so validators only flag genuine structural problems.
-    """
-    schema = copy.deepcopy(schema)
-    props = schema.get("properties", {})
-
-    study_schema = props.get("Study", {})
-    study_required = study_schema.get("required")
-    if isinstance(study_required, list):
-        study_schema["required"] = [
-            f for f in study_required if f not in LIBRARY_RELAXED_STUDY_REQUIRED
-        ]
-
-    tech_schema = props.get("Technical", {})
-    tech_required = tech_schema.get("required")
-    if isinstance(tech_required, list):
-        tech_schema["required"] = [
-            f for f in tech_required if f not in LIBRARY_RELAXED_TECHNICAL_REQUIRED
-        ]
-
-    return schema
+    """Return a copy of *schema* for a global/library template: the fields the schema lists in
+    ``x-prism.projectOnlyRequired`` (set in the project copy, e.g. Respondent) are not required."""
+    return apply_schema_validation_profile(schema, profile="official")
 
 
 # What a schema regex means, for the people who fill in the form.
@@ -126,7 +97,9 @@ def validate_template_against_schema(*, instance: object, schema: dict) -> list[
     for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
         errors.extend(_readable_errors(err))
 
-    if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
+    # the platform (and so its version) is a project-copy field: a relaxed library schema does not require it
+    platform_required = "SoftwarePlatform" in (schema.get("properties", {}).get("Technical", {}).get("required") or [])
+    if platform_required and isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
         technical = normalized_instance["Technical"]
         if isinstance(technical, dict):
             admin_method = str(technical.get("AdministrationMethod", "")).strip().lower()
@@ -160,14 +133,6 @@ def with_default_task_name(template: dict, filename: str, modality: str) -> dict
     if _TASK_NAME.fullmatch(task):
         template = {**template, "Study": {**(study if isinstance(study, dict) else {}), "TaskName": task}}
     return template
-
-
-def missing_task_name_error(template: dict) -> dict | None:
-    """Every template needs a task name (the library relaxation only covers the other project fields)."""
-    study = template.get("Study")
-    if isinstance(study, dict) and str(study.get("TaskName") or "").strip():
-        return None
-    return {"path": "Study/TaskName", "message": "Every template needs a task name (letters, digits and hyphens, e.g. 'pss')"}
 
 
 _REQUIRED_SECTIONS = ("Technical", "Study", "Metadata", "I18n")
