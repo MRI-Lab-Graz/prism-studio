@@ -5,6 +5,7 @@
     "app/schemas/archive/environment/1.1.0.schema.json": "0fa935735bcd4ba8ab5e8b7451aef6630133d159707e44f4bc5849138314846d",
     "app/schemas/archive/environment/2.0.0.schema.json": "abe1c03d7f768e53dc4df0a3da944b5fd652232502ce1b240346dfe2baccb684",
     "app/schemas/archive/eyetracking/1.1.0.schema.json": "d0f73ddfa6491c068b16b1bd352ec1410a0034a346b418dd21689cc27209f8fe",
+    "app/schemas/archive/survey/1.1.1.schema.json": "0f4e812b4fce6004d80e391b2a84588fff5f2e06d12353d9471ccff9c82371df",
     "app/schemas/stable/biometrics.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
     "app/schemas/stable/biosample.schema.json": "5a9419f426514ad0550f350f8043a18db74eed12fddf055386a2a3168b7a60ec",
     "app/schemas/stable/dataset_description.schema.json": "5e9eed8c5092cb4cf5e902d714d76e0db27f946330fe3254c724ca13cb249b22",
@@ -12,7 +13,7 @@
     "app/schemas/stable/environment.schema.json": "1fa7abf2833990a7450075ed27701b0b988ac6237db1322ef1b87caaefce3d5b",
     "app/schemas/stable/events.schema.json": "70a92270b1b4b503dd242bf297a10c5ceb3293e4974797659e01b279a55ff7bb",
     "app/schemas/stable/physio.schema.json": "16c7217c030766092a2d73cd79365579dc977952ffc45747f04273d0ac5fd312",
-    "app/schemas/stable/survey.schema.json": "0f4e812b4fce6004d80e391b2a84588fff5f2e06d12353d9471ccff9c82371df",
+    "app/schemas/stable/survey.schema.json": "279266f556769b7c15cf6b276fd5e52b04b8b3cb0478e916508e085cfe9b01f4",
     "app/schemas/v0.1/dataset_description.schema.json": "4adbaad54bad705f37fb6d3a41b34af85ef732fd2248067ae0b5fd25185ebd87",
     "app/schemas/v0.1/survey.schema.json": "00d3da4d4a38c42fc3db87e1a861e937a7280169dfd90ff4d6c6fe36188e5900",
     "app/schemas/v0.2/biometrics.schema.json": "0cc1bb62ac743817929500baf30154240861111a3948de94dddae1ab2b18f632",
@@ -28,7 +29,7 @@
     "docs/specs/environment.md": "817dca691549845347c570304e2b3e6a2fd85e4e54ca06785d5b316d94a0ecca",
     "docs/specs/events.md": "0388bfd77423fd940eb3644edcb6f9e64d1d9641922c4b7927c21a3eaf6e98e0",
     "docs/specs/physio.md": "732fb67b22ee9744369e925670deee8c57036ab1b67569d5663219e015cc41c4",
-    "docs/specs/survey.md": "4000a5e8a884a727745a82ab584caeb89110833748dd3c1d173a2f147ed458dc",
+    "docs/specs/survey.md": "ea35053b685490cab331cec92ab17268a4141824b8291cb5754427c293dcc68c",
     "official/library/terms/biosample/alpha-amylase.json": "c462439429983971303d497f4f0e58ceccb9254f766b5d251253cda35d295021",
     "official/library/terms/biosample/alpha-amylase.saliva.json": "21e0747cb45b93decf735d518ca53a4168829778fc860ecb30324a2b66f08646",
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
@@ -81,5 +82,5 @@
     "scripts/specification/term_proposal.py": "36008dd971d011cda11896f86d4b18d59730c279860cf8a30a20e937704204c7"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.4.1"
+  "tag": "v1.6.0"
 }

@@ -19,7 +19,7 @@ from src.converters.survey_io import normalize_paper_software_platform
 # template. These are either project-copy-specific (TaskName) or frequently absent
 # from official library entries that are still work-in-progress (LicenseID, Citation).
 LIBRARY_RELAXED_STUDY_REQUIRED = {"TaskName", "LicenseID", "Citation"}
-LIBRARY_RELAXED_TECHNICAL_REQUIRED = {"SoftwarePlatform", "AdministrationMethod"}
+LIBRARY_RELAXED_TECHNICAL_REQUIRED = {"SoftwarePlatform", "AdministrationMethod", "Respondent"}
 
 
 def strip_template_editor_internal_keys(template: dict) -> dict:

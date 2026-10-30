@@ -19,7 +19,7 @@ def schema_dir(tmp_path):
     stable = json.loads((dest / "stable" / "survey.schema.json").read_text())
     current = stable["version"]
     old = dict(stable, version="0.9.0")
-    (dest / "archive" / "survey").mkdir(parents=True)
+    (dest / "archive" / "survey").mkdir(parents=True, exist_ok=True)
     (dest / "archive" / "survey" / "0.9.0.schema.json").write_text(json.dumps(old))
     return str(dest), current
 

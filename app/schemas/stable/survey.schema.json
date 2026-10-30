@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v1.1.1",
-  "version": "1.1.1",
+  "$id": "https://prism.org/schemas/survey/v2.0.0",
+  "version": "2.0.0",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
@@ -21,17 +21,17 @@
       "properties": {
         "StimulusType": {
           "type": "string",
-          "enum": ["Questionnaire", ""],
+          "enum": ["Questionnaire"],
           "description": "Must be 'Questionnaire' for survey data"
         },
         "FileFormat": {
           "type": "string",
-          "enum": ["tsv", ""],
+          "enum": ["tsv"],
           "description": "Survey data file format"
         },
         "SoftwarePlatform": {
           "type": "string",
-          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
+          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other"],
           "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
         },
         "SoftwareVersion": {
@@ -40,17 +40,17 @@
         },
         "Language": {
           "type": "string",
-          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
-          "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Language the instrument was originally published in"
         },
         "Respondent": {
           "type": "string",
-          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other"],
           "description": "Who provided the responses"
         },
         "AdministrationMethod": {
           "type": "string",
-          "enum": ["online", "paper", "interview", "phone", "mixed", ""],
+          "enum": ["online", "paper", "interview", "phone", "mixed"],
           "description": "How the survey was administered"
         }
       },
@@ -84,10 +84,14 @@
         "TaskName": {
           "type": "string",
           "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+          "minLength": 1,
           "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
         },
         "OriginalName": {
           "type": ["string", "object"],
+          "minLength": 1,
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
         },
         "ShortName": {
@@ -125,6 +129,8 @@
               },
               "Description": {
                 "type": ["string", "object"],
+                "required": ["en"],
+                "properties": {"en": {"type": "string", "minLength": 1}},
                 "description": "Optional description of this variant."
               }
             },
@@ -139,6 +145,7 @@
         },
         "Citation": {
           "type": "string",
+          "minLength": 1,
           "description": "DOI or citation for the instrument"
         },
         "DOI": {
@@ -148,6 +155,8 @@
         },
         "License": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "License statement for this instrument as provided by the source registry"
         },
         "LicenseID": {
@@ -208,6 +217,8 @@
         },
         "PermissionsNote": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Short note describing permissions/usage constraints"
         },
         "PermissionsURL": {
@@ -221,6 +232,8 @@
         },
         "Construct": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
         },
         "Keywords": {
@@ -230,18 +243,26 @@
         },
         "Description": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Detailed description or abstract of the instrument"
         },
         "Instructions": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Instructions given to the participant"
         },
         "Reliability": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Information about the reliability of the instrument"
         },
         "Validity": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Information about the validity of the instrument"
         },
         "Subscales": {
@@ -288,6 +309,8 @@
         },
         "Norming": {
           "type": ["string", "object"],
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Information about the norming of the instrument"
         },
         "References": {
@@ -321,6 +344,8 @@
               },
               "Notes": {
                 "type": ["string", "object"],
+                "required": ["en"],
+                "properties": {"en": {"type": "string", "minLength": 1}},
                 "description": "Optional notes about the reference"
               }
             },
@@ -368,6 +393,8 @@
             },
             "Notes": {
               "type": ["string", "object"],
+              "required": ["en"],
+              "properties": {"en": {"type": "string", "minLength": 1}},
               "description": "Additional provenance notes"
             }
           }
@@ -407,10 +434,12 @@
           "description": "Date of creation"
         },
         "Creator": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "description": "Who built this template (official library: PRISM Studio)"
         }
       },
-      "required": ["SchemaVersion", "CreationDate"]
+      "required": ["SchemaVersion", "CreationDate", "Creator"]
     }
   },
   "required": ["Technical", "Study", "Metadata"],
@@ -446,6 +475,18 @@
           "Description": {
             "type": ["string", "object"],
             "description": "The exact question text presented to the participant"
+          },
+          "Help": {
+            "type": ["string", "object"],
+            "description": "Help text shown with the question"
+          },
+          "OtherOption": {
+            "type": "object",
+            "description": "Adds an 'Other, please specify' choice to the question",
+            "properties": {
+              "enabled": {"type": "boolean"},
+              "label": {"type": ["string", "object"]}
+            }
           },
           "Aliases": {
             "type": "array",

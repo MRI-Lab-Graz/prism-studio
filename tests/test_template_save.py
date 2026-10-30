@@ -76,3 +76,20 @@ def test_personal_without_a_personal_library_and_project_without_a_project_say_w
 def test_the_filename_must_be_a_bare_name(tmp_path, bad):
     with pytest.raises(ValueError, match="filename"):
         save_template("survey", bad, _gad7(), target="project", project_root=tmp_path, app_root=APP)
+
+
+def _technical_required(schema):
+    return schema["properties"]["Technical"]["required"]
+
+
+def test_library_template_may_leave_respondent_out():
+    from src.prism_template_validation import relax_schema_for_library_template
+    from src.schema_manager import load_schema
+
+    assert "Respondent" not in _technical_required(relax_schema_for_library_template(load_schema("survey")))
+
+
+def test_project_template_needs_respondent():
+    from src.schema_manager import load_schema
+
+    assert "Respondent" in _technical_required(load_schema("survey"))
