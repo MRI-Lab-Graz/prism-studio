@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from src.export_options import ExportBlocked, export_zip_name, normalize_export_preset, run_project_export
+from src.export_options import ExportBlocked, export_zip_name, normalize_export_preset, run_folder_export, run_project_export
 
 
 def _grouped(values) -> dict[str, list[str]]:
@@ -38,6 +38,8 @@ def export_data_from_args(args) -> dict:
         "export_phenotype_bridge": bool(getattr(args, "phenotype_bridge", False)),
         "repository_mode": getattr(args, "repository_mode", None),
         "validation_mode": getattr(args, "validation_mode", "both"),
+        "output_folder": getattr(args, "output_folder", None),
+        "materialize_annex_content": bool(getattr(args, "materialize_annex_content", False)),
     }
 
 
@@ -67,3 +69,17 @@ def cmd_export_project(args) -> None:
         print(f"Error: {exc}")
         sys.exit(1)
     print(f"✅ Exported to {output_zip}")
+
+
+def cmd_export_folder(args) -> None:
+    """Export the project to a plain folder without Git/DataLad metadata (the folder export of Studio's page)."""
+    project = Path(args.project).resolve()
+    project = project.parent if project.is_file() else project
+    if not project.is_dir():
+        print(f"Error: project folder not found: {project}")
+        sys.exit(1)
+    result = run_folder_export(project, export_data_from_args(args))
+    if not result.get("success"):
+        print(f"Error: {result.get('error') or 'folder export failed'}")
+        sys.exit(1)
+    print(f"✅ Exported to {result.get('output_path') or result.get('output_root') or args.output_folder or 'the default folder'}")

@@ -55,6 +55,7 @@ def test_the_options_the_flags_build_are_the_options_studios_page_sends(tmp_path
         "exclude_sessions": [], "exclude_modalities": [], "exclude_acq": {"anat": ["a", "b"]}, "exclude_tasks": {"func": ["rest"]},
         "scrub_mri_json": True, "scrub_mri_json_groups": ["A"], "export_phenotype_bridge": False,
         "repository_mode": "datalad_preserving", "validation_mode": "ignore",
+        "output_folder": None, "materialize_annex_content": False,
     }
 
 

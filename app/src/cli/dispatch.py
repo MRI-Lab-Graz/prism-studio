@@ -124,8 +124,8 @@ def dispatch_prism_tools(
         else:
             parsers["participants"].print_help()
     elif args.command == "export":
-        if args.action == "project":
-            handlers["export_project"](args)
+        if args.action in ("project", "folder"):
+            handlers[f"export_{args.action}"](args)
         else:
             parsers["export"].print_help()
     elif args.command == "settings":

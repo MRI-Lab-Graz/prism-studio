@@ -213,3 +213,42 @@ def run_project_export(
         progress_callback=progress_callback,
         cancelled_flag=cancelled_flag,
     )
+
+
+def build_folder_export_kwargs(data: dict) -> dict:
+    """The arguments of ``ProjectManager.export_project_to_plain_folder`` for an options dict.
+
+    Only what was sent is passed on; any scope option brings the folder export's own defaults with it."""
+    kwargs: Dict[str, Any] = {"output_root": data.get("output_folder") or None}
+    if "scrub_mri_json" in data:
+        kwargs["scrub_mri_json"] = bool(data.get("scrub_mri_json", False))
+        if kwargs["scrub_mri_json"]:
+            kwargs["scrub_mri_json_groups"] = normalize_scrub_group_ids(data.get("scrub_mri_json_groups"))
+    if "export_phenotype_bridge" in data:
+        kwargs["export_phenotype_bridge"] = bool(data.get("export_phenotype_bridge", False))
+    scope_keys = {
+        "include_derivatives", "include_sourcedata", "include_code", "include_analysis", "exclude_subjects",
+        "exclude_sessions", "exclude_modalities", "exclude_acq", "exclude_tasks", "materialize_annex_content",
+    }
+    if any(key in data for key in scope_keys):
+        kwargs.update({
+            "include_derivatives": bool(data.get("include_derivatives", True)),
+            "include_sourcedata": bool(data.get("include_sourcedata", False)),
+            "include_code": bool(data.get("include_code", True)),
+            "include_analysis": bool(data.get("include_analysis", True)),
+            "exclude_sessions": normalize_scope_labels(data.get("exclude_sessions")) or None,
+            "exclude_modalities": normalize_scope_labels(data.get("exclude_modalities")) or None,
+            "exclude_acq": normalize_scope_grouped_labels(data.get("exclude_acq")) or None,
+            "exclude_tasks": normalize_scope_grouped_labels(data.get("exclude_tasks")) or None,
+            "materialize_annex_content": bool(data.get("materialize_annex_content", False)),
+        })
+        if "exclude_subjects" in data:
+            kwargs["exclude_subjects"] = normalize_scope_labels(data.get("exclude_subjects")) or None
+    return kwargs
+
+
+def run_folder_export(project_path, data: dict) -> dict:
+    """Export the project to a plain folder (no Git/DataLad metadata); returns the manager's result dict."""
+    from src.project_manager import ProjectManager
+
+    return ProjectManager().export_project_to_plain_folder(Path(project_path), **build_folder_export_kwargs(data))
