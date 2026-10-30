@@ -1692,7 +1692,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         try:
             require_complete_template(templates[task]["json"], source=str(templates[task]["path"]))
         except TemplateIncomplete as error:
-            refusals.extend(error.errors)
+            source = str(templates[task]["path"])
+            refusals.extend({**e, "task": task, "source": source} for e in error.errors)
             incomplete_tasks.append(task)
     if refusals:
         raise TemplateIncomplete(refusals, tasks=incomplete_tasks)

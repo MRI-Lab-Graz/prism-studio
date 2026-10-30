@@ -21,9 +21,13 @@ def test_a_refused_conversion_leaves_the_incomplete_template_in_the_project_to_f
     (project / "code" / "library" / "survey").mkdir(parents=True)
     (project / "project.json").write_text("{}", encoding="utf-8")
 
+    temp_source = str(tmp_path / "merged" / "survey-x.json")  # where the converter found it: not the user's file
+
     def refuse(**_):
         raise TemplateIncomplete(
-            [{"path": "Technical/Respondent", "message": "Technical/Respondent is missing in lib"}], tasks=["x"]
+            [{"path": "Technical/Respondent", "message": f"Technical/Respondent is missing in {temp_source}",
+              "task": "x", "source": temp_source}],
+            tasks=["x"],
         )
 
     with pytest.raises(TemplateIncomplete) as refused:
@@ -33,5 +37,5 @@ def test_a_refused_conversion_leaves_the_incomplete_template_in_the_project_to_f
 
     copy = project / "code" / "library" / "survey" / "survey-x.json"
     assert copy.is_file()
-    assert str(copy) in str(refused.value)
-    assert "Technical/Respondent is missing" in str(refused.value)
+    assert f"Technical/Respondent is missing in {copy}" in str(refused.value)  # the field line names the copy
+    assert temp_source not in str(refused.value)

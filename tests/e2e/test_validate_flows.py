@@ -9,8 +9,9 @@ import pytest
 from playwright.sync_api import expect
 
 from src.converters.survey import convert_survey_file_to_prism_dataset
+from tests.template_fixtures import completed_official_library
 
-BRS = Path(__file__).resolve().parents[2] / "official" / "library" / "survey" / "survey-brs.json"
+BRS = completed_official_library() / "survey-brs.json"  # converting needs a complete project copy
 DATA = "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\nP002,1,1,0,2\n"
 
 

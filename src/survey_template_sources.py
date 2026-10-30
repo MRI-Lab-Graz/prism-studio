@@ -258,8 +258,15 @@ def run_survey_with_template_sources(
         if project_root is None or not refused.tasks:
             raise
         put_into_project(refused.tasks)
-        copies = ", ".join(str(project_root / "code" / "library" / "survey" / f"survey-{t}.json") for t in refused.tasks)
-        hint = {"path": "", "message": f"The project copy to fill in (Template editor), then convert again: {copies}"}
-        raise TemplateIncomplete([*refused.errors, hint], tasks=refused.tasks) from None
+        copy_of = {t: str(project_root / "code" / "library" / "survey" / f"survey-{t}.json") for t in refused.tasks}
+        # the converter found the template in a merged folder; the file to fix is the project's copy
+        errors = [
+            {**e, "message": e["message"].replace(e["source"], copy_of[e["task"]])}
+            if e.get("source") and e.get("task") in copy_of
+            else e
+            for e in refused.errors
+        ]
+        hint = {"path": "", "message": "Fill these in the Template editor (the files above are in your project), then convert again."}
+        raise TemplateIncomplete([*errors, hint], tasks=refused.tasks) from None
     put_into_project(list(getattr(result, "tasks_included", []) or []))
     return result

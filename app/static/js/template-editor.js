@@ -557,10 +557,6 @@
     });
   }
 
-  function renderCompletionBar() {
-    refreshCompleteness();
-  }
-
   function diffObjects(base, curr, path, out) {
     const baseKeys = new Set(Object.keys(base || {}));
     const currKeys = new Set(Object.keys(curr || {}));
@@ -4181,7 +4177,7 @@
     renderBulkEdit();
     renderJsonDiff();
     renderLanguageBar();
-    renderCompletionBar();
+    refreshCompleteness();
     if (currentView === 'preview') renderPreview();
   }
 

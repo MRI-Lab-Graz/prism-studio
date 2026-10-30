@@ -9,6 +9,7 @@ from flask import current_app, has_app_context, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.participants_paths import participants_mapping_candidates
 from src.session_map import SessionsNotMappedError
+from src.template_save import TemplateIncomplete
 from src.survey_workflow_service import (
     SUPPORTED_SURVEY_INPUT_MESSAGE,
     SUPPORTED_SURVEY_INPUT_SUFFIXES,
@@ -344,7 +345,20 @@ def _detect_survey_version_contexts(
             else None
         )
         used_library_dir = effective.directory if effective and effective.origins else base_library_dir
-        result = _run_detection(used_library_dir)
+        try:
+            result = _run_detection(used_library_dir)
+        except TemplateIncomplete:
+            # Only looking, nothing is converted: the refusal (naming the project copies to fill in) comes at
+            # preview and convert. Until then there is nothing to detect.
+            return {
+                "tasks_included": [],
+                "detected_sessions": [],
+                "task_runs": {},
+                "preview_participants": [],
+                "session_column": None,
+                "run_column": None,
+                "multivariant_tasks": {},
+            }
 
         tasks_included = list(getattr(result, "tasks_included", []) or [])
         preview_participants = []

@@ -1,11 +1,13 @@
 """Converter page: convert real input files the way a user does."""
 
 import json
+import shutil
 
 import pytest
 from playwright.sync_api import expect
 
 from src.session_map import save_session_map
+from tests.template_fixtures import completed_official_library
 
 BRS_CSV = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\nP002,1,0,2\n"
 
@@ -18,6 +20,13 @@ def longitudinal(project):
     meta["StudyDesign"] = {"Timepoints": "multiple"}
     (project / "project.json").write_text(json.dumps(meta))
     save_session_map(project, {label: label for label in ("1", "01", "2", "3", "pre", "post")})
+
+
+@pytest.fixture
+def project_with_brs(project):
+    """The project holds a completed copy of the BRS template, as after the "complete your template" step:
+    converting data needs a project template that says who answered and how it was administered."""
+    shutil.copy(completed_official_library() / "survey-brs.json", project / "code" / "library" / "survey" / "survey-brs.json")
 
 
 def open_survey_tab(page, studio_url):
@@ -63,6 +72,7 @@ def written_files(project):
 
 @pytest.mark.parametrize("session", ["1", "01", "pre"])
 @pytest.mark.usefixtures("longitudinal")
+@pytest.mark.usefixtures("project_with_brs")
 def test_survey_convert_writes_prism_files_in_the_session_exactly_as_typed(app_page, studio_url, tmp_path, project, session):
     open_survey_tab(app_page, studio_url)
 
@@ -97,6 +107,23 @@ def test_version_detection_falls_back_to_the_global_library_like_convert_does(ap
     assert detect.value.status == 200, detect.value.text()
 
 
+def test_previewing_with_only_the_official_template_names_what_is_missing_and_leaves_a_copy_to_fill_in(
+    app_page, studio_url, tmp_path, project
+):
+    app_page.allowed_http[400] = "/api/survey-workflow-command"
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path)
+
+    app_page.click("#previewBtn")
+
+    error = app_page.locator("#convertError")
+    expect(error).to_contain_text("Technical/Respondent", timeout=30000)
+    expect(error).to_contain_text("code/library/survey/survey-brs.json")
+    assert (project / "code" / "library" / "survey" / "survey-brs.json").is_file()  # to fill in, in the Template editor
+    expect(app_page.locator("#convertBtn")).to_be_disabled()
+    assert written_files(project) == []
+
+
 def _session_label_is_green(page):
     """The Session ID label is green once a session is chosen, red while it is still missing."""
     r, g, _ = page.evaluate(
@@ -127,6 +154,7 @@ REPEATED_CSV = (
 
 
 @pytest.mark.usefixtures("longitudinal")
+@pytest.mark.usefixtures("project_with_brs")
 def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, studio_url, tmp_path, project):
     open_survey_tab(app_page, studio_url)
     app_page.select_option("#convertDuplicateHandling", "sessions")
@@ -296,6 +324,7 @@ def test_review_session_assignment_button_folds_the_table_back_in(app_page, stud
     expect(rows).to_have_count(6, timeout=15000)
 
 
+@pytest.mark.usefixtures("project_with_brs")
 def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
     select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,-1,0,2\nP003,often,1,1\n")
@@ -315,6 +344,7 @@ def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, 
     expect(app_page.locator("#convertIdColumn")).to_have_value("participant_id", timeout=30000)
 
 
+@pytest.mark.usefixtures("project_with_brs")
 def test_preview_warns_about_skipped_rows_and_cleaned_labels(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
     select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
