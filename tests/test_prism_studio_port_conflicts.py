@@ -158,6 +158,41 @@ def test_startup_intro_draws_the_logo_without_a_preflight_header(
     assert "Pre-flight" not in output
 
 
+def _logo_rows(module):
+    import re
+
+    return [re.sub(r"\x1b\[[0-9;]*m", "", row) for row in module._startup_logo().splitlines()]
+
+
+def test_the_logo_carries_the_name_on_the_baseline_and_the_version_in_the_white_beam(prism_studio_module):
+    from src import __version__
+
+    rows = _logo_rows(prism_studio_module)
+    baseline = next(row for row in rows if "PRISM Studio" in row)
+
+    assert baseline.lstrip().startswith("/_") and "PRISM Studio" in baseline and baseline.count("\\") == 1
+    assert baseline is rows[8]  # the last row of the prism: the name sits on its base
+    beam = next(row for row in rows if f"v{__version__}" in row)
+    assert beam.lstrip().startswith("=") and rows.index(beam) == 5  # the white beam enters on the left
+    assert beam.index("/") > beam.index(f"v{__version__}")  # the version is left of the prism
+
+
+def test_the_logo_keeps_its_shape_with_the_text(prism_studio_module):
+    rows = _logo_rows(prism_studio_module)
+
+    apex = rows[0].index("/")
+    for r, row in enumerate(rows):
+        assert row.index("/") == apex - r  # every row starts one column further left
+        assert row.index("\\") - row.index("/") == 2 * r + 1  # and the faces are as wide as before
+
+
+def test_the_intro_names_the_product_once_in_the_logo_not_again_below(prism_studio_module, capsys):
+    capsys.readouterr()
+    prism_studio_module._print_startup_intro()
+
+    assert capsys.readouterr().out.count("PRISM Studio") == 1
+
+
 def test_inject_utilities_exposes_request_api_origin(
     prism_studio_module, monkeypatch
 ):

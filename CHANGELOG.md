@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **LimeSurvey export types.** Items with no `InputType`/`Levels` and an integer/float `DataType` export as numeric (`N`);
   the types `Y`, `G`, `5` export as list (`L`); `*` and the text array become text (`T`); date (`D`) cannot be produced.
 - **The startup shows the PRISM logo and keeps quiet about what works.** `prism-studio.py` and `prism-studio.py -v` draw the prism
-  (a beam in, a rainbow out) in the terminal; the pre-flight checks report only warnings and errors instead of one line each.
+  (a beam in, a rainbow out) in the terminal, with the name on its base and the version in the white beam; the pre-flight checks report only warnings and errors instead of one line each.
 - **One template choice for the converters, in the CLI and in Studio.** Studio used to try the project's templates, and only
   when nothing matched retry with the official library (and copy those into the project); the command line could not do
   either. Both now build one merged library (project, personal, global: nearest first, per template) and copy the templates a

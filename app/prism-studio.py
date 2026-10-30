@@ -240,14 +240,21 @@ _RAINBOW = ("red", "orange", "yellow", "green", "blue", "violet")
 
 
 def _startup_logo() -> str:
-    """The PRISM logo: a beam enters the prism on the left and fans out as a rainbow."""
+    """The PRISM logo: a beam enters the prism on the left and fans out as a rainbow. The name sits on the
+    prism's base and the version in the white beam."""
+    from src import __version__
+
+    version = f" v{__version__} "
+    base = max(13, len(version) + 11)  # columns left of the apex; wide enough for the version in the beam
     rows = []
     for r in range(9):
-        left = 13 - r
-        face = "/" + ("_" if r == 8 else " ") * (2 * r) + "\\"
+        left = base - r
+        inside = "_ PRISM Studio _" if r == 8 else " " * (2 * r)
+        face = "/" + inside + "\\"
         row = " " * left
         if r == 5:
-            row = _startup_colorize("=" * left, "beam")
+            pad = left - len(version)
+            row = _startup_colorize("=" * (pad // 2) + version + "=" * (pad - pad // 2), "beam")
         row += _startup_colorize(face, "prism")
         if r >= 3:
             row += _startup_colorize("=" * (4 + 2 * (r - 3)), _RAINBOW[r - 3])
@@ -351,7 +358,6 @@ def _print_startup_intro() -> None:
     print()
     print(_startup_logo())
     print()
-    print(_startup_colorize("PRISM Studio", "headline"))
     print(_startup_colorize("Structured research data, without the friction.", "muted"))
     print(_startup_colorize("You need friction to walk.", "muted"))
     print(_startup_colorize("Not to work.", "muted"))
