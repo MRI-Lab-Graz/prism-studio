@@ -542,6 +542,42 @@ def build_prism_tools_parsers(
                                        help="Validation that must pass before exporting (default: both)")
 
 
+    parser_export_git_lfs = export_subparsers.add_parser(
+        "git-lfs", help="One-way Git LFS export snapshot: a folder and, by default, an initialized repository"
+    )
+    parser_export_git_lfs.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_git_lfs.add_argument("--output-folder", default=None, help="Folder to export into (default: next to the project)")
+    parser_export_git_lfs.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_git_lfs.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_git_lfs.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_git_lfs.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_git_lfs.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_git_lfs.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
+    parser_export_git_lfs.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
+    parser_export_git_lfs.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
+    parser_export_git_lfs.add_argument("--no-init-repo", action="store_true", help="Only write the folder; do not initialize a Git LFS repository")
+    parser_export_annex_availability = export_subparsers.add_parser(
+        "annex-availability", help="Which files of the export scope are not available locally (git-annex)"
+    )
+    parser_export_annex_availability.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_annex_availability.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser_export_annex_availability.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser_export_annex_availability.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser_export_annex_availability.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser_export_annex_availability.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    parser_export_annex_availability.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_export_structure = export_subparsers.add_parser("structure", help="The sessions and modalities an export can be scoped to (JSON)")
+    parser_export_structure.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_structure.add_argument("--json", action="store_true", help="(output is always JSON)")
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",

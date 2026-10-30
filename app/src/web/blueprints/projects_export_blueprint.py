@@ -19,12 +19,12 @@ from src.export_options import (
     export_zip_name,
     normalize_defacing_variant_keys as _normalize_defacing_variant_keys,
     normalize_export_validation_mode as _normalize_export_validation_mode,
-    normalize_scope_grouped_labels as _normalize_scope_grouped_labels,
     normalize_scope_labels as _normalize_scope_labels,
-    normalize_scrub_group_ids as _normalize_scrub_group_ids,
     export_validation_flags as _export_validation_flags,
     run_pre_export_validation as _run_pre_export_validation,
+    run_annex_availability,
     run_folder_export,
+    run_git_lfs_export,
     run_project_export,
 )
 from .projects_helpers import _resolve_project_root_path
@@ -263,70 +263,12 @@ def export_project_folder():
 def export_project_git_lfs():
     """Create a one-way Git LFS export snapshot (folder + optionally initialized repo)."""
     try:
-        from src.project_manager import ProjectManager
-
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(data.get("project_path"))
         if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        output_folder = data.get("output_folder") or None
-
-        manager_kwargs: Dict[str, object] = {
-            "output_root": output_folder,
-            "init_git_lfs_repo": bool(data.get("init_git_lfs_repo", True)),
-        }
-
-        if "scrub_mri_json" in data:
-            scrub_mri_json = bool(data.get("scrub_mri_json", False))
-            manager_kwargs["scrub_mri_json"] = scrub_mri_json
-            if scrub_mri_json:
-                manager_kwargs["scrub_mri_json_groups"] = _normalize_scrub_group_ids(
-                    data.get("scrub_mri_json_groups")
-                )
-
-        if "export_phenotype_bridge" in data:
-            manager_kwargs["export_phenotype_bridge"] = bool(
-                data.get("export_phenotype_bridge", False)
-            )
-
-        scope_keys = {
-            "include_derivatives",
-            "include_sourcedata",
-            "include_code",
-            "include_analysis",
-            "exclude_subjects",
-            "exclude_sessions",
-            "exclude_modalities",
-            "exclude_acq",
-            "exclude_tasks",
-        }
-        if any(key in data for key in scope_keys):
-            exclude_subjects = _normalize_scope_labels(data.get("exclude_subjects"))
-            manager_kwargs.update(
-                {
-                    "include_derivatives": bool(data.get("include_derivatives", True)),
-                    "include_sourcedata": bool(data.get("include_sourcedata", False)),
-                    "include_code": bool(data.get("include_code", True)),
-                    "include_analysis": bool(data.get("include_analysis", True)),
-                    "exclude_sessions": _normalize_scope_labels(data.get("exclude_sessions")) or None,
-                    "exclude_modalities": _normalize_scope_labels(data.get("exclude_modalities")) or None,
-                    "exclude_acq": _normalize_scope_grouped_labels(data.get("exclude_acq")) or None,
-                    "exclude_tasks": _normalize_scope_grouped_labels(data.get("exclude_tasks")) or None,
-                }
-            )
-            if "exclude_subjects" in data:
-                manager_kwargs["exclude_subjects"] = exclude_subjects or None
-
-        manager = ProjectManager()
-        result = manager.export_project_to_git_lfs_folder(
-            resolved,
-            **manager_kwargs,
-        )
-        if result.get("success"):
-            return jsonify(result)
-        return jsonify(result), 400
+        result = run_git_lfs_export(resolved, data)
+        return jsonify(result) if result.get("success") else (jsonify(result), 400)
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -335,63 +277,12 @@ def export_project_git_lfs():
 def export_project_annex_availability():
     """Preview missing local files for current folder export scope."""
     try:
-        from src.project_manager import ProjectManager
-
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        resolved = _resolve_project_root_path(project_path_raw)
+        resolved = _resolve_project_root_path(data.get("project_path"))
         if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        def _normalize_labels(values: object) -> set[str]:
-            if not isinstance(values, (list, tuple, set)):
-                return set()
-            normalized = {
-                str(value).strip() for value in values if str(value).strip()
-            }
-            return normalized
-
-        def _normalize_grouped_labels(values: object) -> Dict[str, set[str]]:
-            if not isinstance(values, dict):
-                return {}
-            normalized: Dict[str, set[str]] = {}
-            for modality, labels in values.items():
-                modality_name = str(modality).strip()
-                if not modality_name:
-                    continue
-                normalized_labels = _normalize_labels(labels)
-                if normalized_labels:
-                    normalized[modality_name] = normalized_labels
-            return normalized
-
-        exclude_subjects = _normalize_labels(data.get("exclude_subjects"))
-        exclude_sessions = _normalize_labels(data.get("exclude_sessions"))
-        exclude_modalities = _normalize_labels(data.get("exclude_modalities"))
-        exclude_acq = _normalize_grouped_labels(data.get("exclude_acq"))
-        exclude_tasks = _normalize_grouped_labels(data.get("exclude_tasks"))
-
-        manager = ProjectManager()
-        manager_kwargs = {
-            "include_derivatives": bool(data.get("include_derivatives", True)),
-            "include_sourcedata": bool(data.get("include_sourcedata", False)),
-            "include_code": bool(data.get("include_code", True)),
-            "include_analysis": bool(data.get("include_analysis", True)),
-            "exclude_sessions": exclude_sessions or None,
-            "exclude_modalities": exclude_modalities or None,
-            "exclude_acq": exclude_acq or None,
-            "exclude_tasks": exclude_tasks or None,
-        }
-        if "exclude_subjects" in data:
-            manager_kwargs["exclude_subjects"] = exclude_subjects or None
-
-        result = manager.preview_plain_folder_export_availability(
-            resolved,
-            **manager_kwargs,
-        )
-
-        if result.get("success"):
-            return jsonify(result)
-        return jsonify(result), 400
+        result = run_annex_availability(resolved, data)
+        return jsonify(result) if result.get("success") else (jsonify(result), 400)
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

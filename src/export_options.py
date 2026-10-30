@@ -215,10 +215,29 @@ def run_project_export(
     )
 
 
-def build_folder_export_kwargs(data: dict) -> dict:
-    """The arguments of ``ProjectManager.export_project_to_plain_folder`` for an options dict.
+_SCOPE_KEYS = ("include_derivatives", "include_sourcedata", "include_code", "include_analysis", "exclude_subjects",
+               "exclude_sessions", "exclude_modalities", "exclude_acq", "exclude_tasks")
 
-    Only what was sent is passed on; any scope option brings the folder export's own defaults with it."""
+
+def _folder_scope(data: dict) -> dict:
+    """The include/exclude scope of the folder-style exports, with their defaults (analysis is on here)."""
+    scope = {
+        "include_derivatives": bool(data.get("include_derivatives", True)),
+        "include_sourcedata": bool(data.get("include_sourcedata", False)),
+        "include_code": bool(data.get("include_code", True)),
+        "include_analysis": bool(data.get("include_analysis", True)),
+        "exclude_sessions": normalize_scope_labels(data.get("exclude_sessions")) or None,
+        "exclude_modalities": normalize_scope_labels(data.get("exclude_modalities")) or None,
+        "exclude_acq": normalize_scope_grouped_labels(data.get("exclude_acq")) or None,
+        "exclude_tasks": normalize_scope_grouped_labels(data.get("exclude_tasks")) or None,
+    }
+    if "exclude_subjects" in data:
+        scope["exclude_subjects"] = normalize_scope_labels(data.get("exclude_subjects")) or None
+    return scope
+
+
+def _folder_kwargs(data: dict, extra_scope_keys: tuple = ()) -> dict:
+    """What the folder-style exports share: the output, MRI scrubbing, the phenotype bridge, and the scope when sent."""
     kwargs: Dict[str, Any] = {"output_root": data.get("output_folder") or None}
     if "scrub_mri_json" in data:
         kwargs["scrub_mri_json"] = bool(data.get("scrub_mri_json", False))
@@ -226,25 +245,29 @@ def build_folder_export_kwargs(data: dict) -> dict:
             kwargs["scrub_mri_json_groups"] = normalize_scrub_group_ids(data.get("scrub_mri_json_groups"))
     if "export_phenotype_bridge" in data:
         kwargs["export_phenotype_bridge"] = bool(data.get("export_phenotype_bridge", False))
-    scope_keys = {
-        "include_derivatives", "include_sourcedata", "include_code", "include_analysis", "exclude_subjects",
-        "exclude_sessions", "exclude_modalities", "exclude_acq", "exclude_tasks", "materialize_annex_content",
-    }
-    if any(key in data for key in scope_keys):
-        kwargs.update({
-            "include_derivatives": bool(data.get("include_derivatives", True)),
-            "include_sourcedata": bool(data.get("include_sourcedata", False)),
-            "include_code": bool(data.get("include_code", True)),
-            "include_analysis": bool(data.get("include_analysis", True)),
-            "exclude_sessions": normalize_scope_labels(data.get("exclude_sessions")) or None,
-            "exclude_modalities": normalize_scope_labels(data.get("exclude_modalities")) or None,
-            "exclude_acq": normalize_scope_grouped_labels(data.get("exclude_acq")) or None,
-            "exclude_tasks": normalize_scope_grouped_labels(data.get("exclude_tasks")) or None,
-            "materialize_annex_content": bool(data.get("materialize_annex_content", False)),
-        })
-        if "exclude_subjects" in data:
-            kwargs["exclude_subjects"] = normalize_scope_labels(data.get("exclude_subjects")) or None
+    if any(key in data for key in (*_SCOPE_KEYS, *extra_scope_keys)):
+        kwargs.update(_folder_scope(data))
     return kwargs
+
+
+def build_folder_export_kwargs(data: dict) -> dict:
+    """The arguments of ``ProjectManager.export_project_to_plain_folder`` for an options dict.
+
+    Only what was sent is passed on; any scope option brings the folder export's own defaults with it."""
+    kwargs = _folder_kwargs(data, ("materialize_annex_content",))
+    if "include_derivatives" in kwargs:  # the scope was sent, so the folder export's own defaults apply
+        kwargs["materialize_annex_content"] = bool(data.get("materialize_annex_content", False))
+    return kwargs
+
+
+def build_git_lfs_export_kwargs(data: dict) -> dict:
+    """The arguments of ``ProjectManager.export_project_to_git_lfs_folder``."""
+    return {**_folder_kwargs(data), "init_git_lfs_repo": bool(data.get("init_git_lfs_repo", True))}
+
+
+def build_annex_availability_kwargs(data: dict) -> dict:
+    """The arguments of ``ProjectManager.preview_plain_folder_export_availability``: the scope is always sent."""
+    return _folder_scope(data)
 
 
 def run_folder_export(project_path, data: dict) -> dict:
@@ -252,3 +275,15 @@ def run_folder_export(project_path, data: dict) -> dict:
     from src.project_manager import ProjectManager
 
     return ProjectManager().export_project_to_plain_folder(Path(project_path), **build_folder_export_kwargs(data))
+
+
+def run_git_lfs_export(project_path, data: dict) -> dict:
+    from src.project_manager import ProjectManager
+
+    return ProjectManager().export_project_to_git_lfs_folder(Path(project_path), **build_git_lfs_export_kwargs(data))
+
+
+def run_annex_availability(project_path, data: dict) -> dict:
+    from src.project_manager import ProjectManager
+
+    return ProjectManager().preview_plain_folder_export_availability(Path(project_path), **build_annex_availability_kwargs(data))

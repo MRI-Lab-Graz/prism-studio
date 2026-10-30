@@ -5,7 +5,15 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from src.export_options import ExportBlocked, export_zip_name, normalize_export_preset, run_folder_export, run_project_export
+from src.export_options import (
+    ExportBlocked,
+    export_zip_name,
+    normalize_export_preset,
+    run_annex_availability,
+    run_folder_export,
+    run_git_lfs_export,
+    run_project_export,
+)
 
 
 def _grouped(values) -> dict[str, list[str]]:
@@ -40,6 +48,7 @@ def export_data_from_args(args) -> dict:
         "validation_mode": getattr(args, "validation_mode", "both"),
         "output_folder": getattr(args, "output_folder", None),
         "materialize_annex_content": bool(getattr(args, "materialize_annex_content", False)),
+        "init_git_lfs_repo": not getattr(args, "no_init_repo", False),
     }
 
 
@@ -83,3 +92,45 @@ def cmd_export_folder(args) -> None:
         print(f"Error: {result.get('error') or 'folder export failed'}")
         sys.exit(1)
     print(f"✅ Exported to {result.get('output_path') or result.get('output_root') or args.output_folder or 'the default folder'}")
+
+
+def _project_or_exit(args) -> Path:
+    project = Path(args.project).resolve()
+    project = project.parent if project.is_file() else project
+    if not project.is_dir():
+        print(f"Error: project folder not found: {project}")
+        sys.exit(1)
+    return project
+
+
+def _print_result(result: dict, args, done: str) -> None:
+    import json
+
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+    elif result.get("success"):
+        print(f"✅ {done}")
+    if not result.get("success"):
+        print(f"Error: {result.get('error') or 'failed'}")
+        sys.exit(1)
+
+
+def cmd_export_git_lfs(args) -> None:
+    """A one-way Git LFS export snapshot: a folder, and by default an initialized repository."""
+    result = run_git_lfs_export(_project_or_exit(args), export_data_from_args(args))
+    _print_result(result, args, f"Exported to {result.get('output_path') or result.get('output_root') or 'the default folder'}")
+
+
+def cmd_export_annex_availability(args) -> None:
+    """Which files of the export scope are missing locally (git-annex content not fetched)."""
+    result = run_annex_availability(_project_or_exit(args), export_data_from_args(args))
+    _print_result(result, args, "Availability checked")
+
+
+def cmd_export_structure(args) -> None:
+    """The sessions and modalities an export can be scoped to."""
+    import json
+
+    from src.project_structure import get_project_modalities_and_sessions
+
+    print(json.dumps(get_project_modalities_and_sessions(_project_or_exit(args)), indent=2, default=str))
