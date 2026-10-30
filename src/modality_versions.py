@@ -38,6 +38,11 @@ def current_version(name: str, schema_dir=None) -> str:
     return json.loads(path.read_text(encoding="utf-8")).get("version", "1.0.0")
 
 
+def current_survey_schema_version(schema_dir=None) -> str:
+    """The survey schema's current version: what every writer of a survey template puts in Metadata.SchemaVersion."""
+    return current_version("survey", schema_dir)
+
+
 def available_versions(name: str, schema_dir=None) -> list[str]:
     current = current_version(name, schema_dir)
     archived = {
