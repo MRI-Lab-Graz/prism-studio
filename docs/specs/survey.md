@@ -119,7 +119,7 @@ When templates are copied from the official library into a project, these projec
 - **Project-level** (set in the project copy, optional in a global/library template; the schema lists them in `x-prism.projectOnlyRequired`): `Technical.Respondent`, `Technical.AdministrationMethod`, `Technical.SoftwarePlatform`, and `Technical.SoftwareVersion` (required whenever `SoftwarePlatform` names real software).
 - `Study.Version`, `Versions`, `VariantDefinitions`, `ItemCount` and `AdministrationTime` are global descriptions and optional; which form a project used may later become a project setting.
 
-The `required` lists in the schema describe the project copy, which is what dataset validators use.
+The `required` lists in the schema describe the project copy, which is what dataset validators use. The one exception is `Study.Category`, which is required in the official library only (`x-prism.officialOnlyRequired`), not in a project copy.
 
 ### `Technical` Object Fields
 
@@ -128,7 +128,7 @@ The `required` lists in the schema describe the project copy, which is what data
 | `StimulusType` | **REQUIRED** | `string` | MUST be `"Questionnaire"`. |
 | `FileFormat` | **REQUIRED** | `string` | MUST be `"tsv"`. |
 | `SoftwarePlatform` | **REQUIRED** | `string` | Project-local platform used for administration (e.g., `"LimeSurvey"`, `"Paper and Pencil"`). |
-| `SoftwareVersion` | OPTIONAL | `string` | Project-local version of the software platform. |
+| `SoftwareVersion` | OPTIONAL | `string` | Project-local version of the software platform; required whenever `SoftwarePlatform` names real software (project copies only). |
 | `Language` | **REQUIRED** | `string` | Language the instrument was originally published in (e.g., `"en"`, `"de-AT"`); a single tag, never empty. |
 | `Respondent` | **REQUIRED** | `string` | Project-local respondent type (e.g., `"self"`, `"parent"`). |
 | `AdministrationMethod` | **REQUIRED** | `string` | Project-local administration mode (`online`, `paper`, `interview`, `phone`, `mixed`). |
@@ -153,14 +153,15 @@ The `required` lists in the schema describe the project copy, which is what data
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `TaskName` | **REQUIRED** | `string` | Project-local task identifier (e.g., `"moodcheck"`). |
+| `TaskName` | **REQUIRED** | `string` | Task identifier (e.g., `"moodcheck"`); global: the same in the library and in every project copy. |
 | `OriginalName` | **REQUIRED** | `string` \| `object` | Full name (e.g., `"Dummy Mood Check"`); not empty. As an object it needs a non-empty `en` entry (see English rule). |
 | `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation (e.g., `DMC-5`). |
 | `Version` | OPTIONAL | `string` | Instrument version. |
-| `Citation` | OPTIONAL | `string` | Reference citation. |
+| `Citation` | **REQUIRED** | `string` | Reference citation (global). |
 | `DOI` | OPTIONAL | `string` | DOI for the instrument. |
 | `Authors` | OPTIONAL | `array` | Instrument authors. |
-| `License` / `LicenseID` / `LicenseURL` | OPTIONAL | `string` | Rights and license information. |
+| `LicenseID` | **REQUIRED** | `string` | Normalized license identifier (global; see the allowed values below). |
+| `License` / `LicenseURL` | OPTIONAL | `string` | Rights and license information. |
 | `Access` | OPTIONAL | `string` | High-level access classification (`public`, `permission-required`, `licensed`, `unknown`). |
 | `CopyrightHolder` | OPTIONAL | `string` | Rights holder (publisher, consortium, etc.). |
 | `PermissionsNote` / `PermissionsURL` | OPTIONAL | `string` | Short usage constraint note and/or a URL to the statement. |

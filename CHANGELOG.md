@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   LimeSurvey export settings (the Tool Properties panel is gone; choose them when you export). A save always works and lists the
   required fields still empty; `survey convert`, Quick Export, the LimeSurvey customizer, Pavlovia and Word export refuse an
   incomplete template and name the file and the missing fields. Converting into a project also needs `Respondent`,
-  `AdministrationMethod` and `SoftwarePlatform`; exports need only the global fields. Specification v1.5.2 (survey schema 2.0.0).
+  `AdministrationMethod` and `SoftwarePlatform`; exports need only the global fields. Specification v1.5.3 (survey schema 2.0.0).
 - **A refused conversion leaves the template in the project to fix.** When `survey convert` (or Studio) is refused because
   a used template is incomplete, the templates are copied into the project's `code/library/survey` and the message names
   those copies, so the missing fields can be filled in the Template editor (a library file cannot be). Studio's

@@ -29,7 +29,7 @@
     "docs/specs/environment.md": "817dca691549845347c570304e2b3e6a2fd85e4e54ca06785d5b316d94a0ecca",
     "docs/specs/events.md": "0388bfd77423fd940eb3644edcb6f9e64d1d9641922c4b7927c21a3eaf6e98e0",
     "docs/specs/physio.md": "732fb67b22ee9744369e925670deee8c57036ab1b67569d5663219e015cc41c4",
-    "docs/specs/survey.md": "7fe82e28ea29ccd55d180bfccb13268ccd144a75479636bade7a5cc29b4869c1",
+    "docs/specs/survey.md": "a11469960a28cc8f2c256797fe0c8fde7971ec5c0925eb7863f89752068046e5",
     "official/library/terms/biosample/alpha-amylase.json": "c462439429983971303d497f4f0e58ceccb9254f766b5d251253cda35d295021",
     "official/library/terms/biosample/alpha-amylase.saliva.json": "21e0747cb45b93decf735d518ca53a4168829778fc860ecb30324a2b66f08646",
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
@@ -82,5 +82,5 @@
     "scripts/specification/term_proposal.py": "36008dd971d011cda11896f86d4b18d59730c279860cf8a30a20e937704204c7"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.2"
+  "tag": "v1.5.3"
 }
