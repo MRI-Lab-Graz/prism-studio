@@ -287,3 +287,47 @@ def run_annex_availability(project_path, data: dict) -> dict:
     from src.project_manager import ProjectManager
 
     return ProjectManager().preview_plain_folder_export_availability(Path(project_path), **build_annex_availability_kwargs(data))
+
+
+def run_template_export(project_path, data: dict, output_zip=None) -> dict:
+    """A project template ZIP without participant data, after the validation gate; returns the export stats.
+
+    The ZIP goes to ``output_zip`` when given, else to ``output_folder`` (default: next to the project) as
+    ``<project>_template_export.zip``. Raises ExportBlocked when validation finds errors."""
+    from src.project_template_export import export_project_template_zip
+
+    project = Path(project_path)
+    mode = normalize_export_validation_mode(data.get("validation_mode", "both"))
+    if any(export_validation_flags(mode)) and (blocked := run_pre_export_validation(project, mode)):
+        raise ExportBlocked(blocked)
+    if output_zip is None:
+        output_folder = str(data.get("output_folder") or "").strip()
+        destination = Path(output_folder).expanduser().resolve() if output_folder else project.parent
+        destination.mkdir(parents=True, exist_ok=True)
+        output_zip = destination / f"{project.name}_template_export.zip"
+    stats = dict(export_project_template_zip(project, Path(output_zip)))
+    stats.setdefault("output_zip", str(output_zip))
+    return stats
+
+
+def run_anc_export(project_path, data: dict) -> dict:
+    """Export to the ANC (Austrian NeuroCloud) layout, ``<project>_anc_export`` next to the project."""
+    from src.converters.anc_export import ANCExporter
+
+    project = Path(project_path)
+    result_path = ANCExporter(project, project.parent / f"{project.name}_anc_export").export(
+        metadata=data.get("metadata", {}),
+        convert_to_git_lfs=bool(data.get("convert_to_git_lfs", False)),
+        include_ci_examples=bool(data.get("include_ci_examples", False)),
+        copy_data=True,
+    )
+    return {
+        "success": True,
+        "output_path": str(result_path),
+        "message": "ANC export completed successfully",
+        "generated_files": {
+            "readme": str(result_path / "README.md"),
+            "citation": str(result_path / "CITATION.cff"),
+            "validator_config": str(result_path / ".bids-validator-config.json"),
+        },
+    }

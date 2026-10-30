@@ -1363,7 +1363,7 @@ def test_template_export_route_blocks_when_validation_fails(tmp_path):
     (project_dir / "project.json").write_text("{}", encoding="utf-8")
 
     with patch(
-        "src.web.blueprints.projects_export_blueprint._run_pre_export_validation",
+        "src.export_options.run_pre_export_validation",
         return_value="Export blocked: validation found errors.",
     ):
         with patch(

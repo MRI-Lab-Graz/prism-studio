@@ -175,3 +175,25 @@ def cmd_export_deface(args) -> None:
 
     payload, ok = run_defacing(_project_or_exit(args), _defacing_data(args))
     _emit(payload, ok)
+
+
+def cmd_export_anc(args) -> None:
+    """Export to the ANC (Austrian NeuroCloud) layout; metadata as KEY=VALUE (e.g. DATASET_NAME=My Study)."""
+    from src.export_options import run_anc_export
+
+    metadata = {}
+    for item in getattr(args, "metadata", None) or []:
+        key, _, value = str(item).partition("=")
+        if key.strip():
+            metadata[key.strip()] = value.strip()
+    data = {"convert_to_git_lfs": bool(getattr(args, "convert_to_git_lfs", False)),
+            "include_ci_examples": bool(getattr(args, "include_ci_examples", False)), "metadata": metadata}
+    try:
+        result = run_anc_export(_project_or_exit(args), data)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if getattr(args, "json", False):
+        _emit(result)
+    else:
+        print(f"✅ {result['message']}: {result['output_path']}")

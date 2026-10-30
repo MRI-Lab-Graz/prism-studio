@@ -17,13 +17,12 @@ from src.export_options import (
     build_export_defacing_warning as _build_export_defacing_warning,
     build_export_kwargs,
     export_zip_name,
-    normalize_export_validation_mode as _normalize_export_validation_mode,
-    export_validation_flags as _export_validation_flags,
-    run_pre_export_validation as _run_pre_export_validation,
+    run_anc_export,
     run_annex_availability,
     run_folder_export,
     run_git_lfs_export,
     run_project_export,
+    run_template_export,
 )
 from src.export_defacing import defacing_preflight, defacing_report, run_defacing
 from .projects_helpers import _resolve_project_root_path
@@ -420,72 +419,15 @@ def export_job_cancel(job_id: str):
 
 @projects_export_bp.route("/api/projects/anc-export", methods=["POST"])
 def anc_export_project():
-    """
-    Export the current project to ANC (Austrian NeuroCloud) compatible format.
-
-    Expected JSON body:
-    {
-        "project_path": "/path/to/project",
-        "convert_to_git_lfs": false,
-        "include_ci_examples": false,
-        "metadata": {
-            "DATASET_NAME": "My Study",
-            "CONTACT_EMAIL": "contact@example.com",
-            "AUTHOR_GIVEN_NAME": "John",
-            "AUTHOR_FAMILY_NAME": "Doe",
-            "DATASET_ABSTRACT": "Description of the dataset"
-        }
-    }
-    """
+    """Export the current project to the ANC (Austrian NeuroCloud) layout."""
     try:
         data = request.get_json() or {}
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
-
-        project_path = data.get("project_path")
-        resolved_project_path = _resolve_project_root_path(project_path)
-        if resolved_project_path is None:
+        resolved = _resolve_project_root_path(data.get("project_path"))
+        if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        project_path = resolved_project_path
-
-        # Import AND exporter
-        from src.converters.anc_export import ANCExporter
-
-        # Get export options
-        convert_to_git_lfs = bool(data.get("convert_to_git_lfs", False))
-        include_ci_examples = bool(data.get("include_ci_examples", False))
-        metadata = data.get("metadata", {})
-
-        # Determine output path
-        output_path = project_path.parent / f"{project_path.name}_anc_export"
-
-        # Create exporter
-        exporter = ANCExporter(project_path, output_path)
-
-        # Perform export
-        result_path = exporter.export(
-            metadata=metadata,
-            convert_to_git_lfs=convert_to_git_lfs,
-            include_ci_examples=include_ci_examples,
-            copy_data=True,
-        )
-
-        return jsonify(
-            {
-                "success": True,
-                "output_path": str(result_path),
-                "message": "ANC export completed successfully",
-                "generated_files": {
-                    "readme": str(result_path / "README.md"),
-                    "citation": str(result_path / "CITATION.cff"),
-                    "validator_config": str(
-                        result_path / ".bids-validator-config.json"
-                    ),
-                },
-            }
-        )
-
+        return jsonify(run_anc_export(resolved, data))
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
@@ -498,43 +440,19 @@ def template_export_project():
         data = request.get_json() or {}
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
-
-        project_path_raw = data.get("project_path")
-        resolved_project_path = _resolve_project_root_path(project_path_raw)
-        if resolved_project_path is None:
+        resolved = _resolve_project_root_path(data.get("project_path"))
+        if resolved is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
-
-        project_path = resolved_project_path
-        validation_mode = _normalize_export_validation_mode(
-            data.get("validation_mode", "both")
-        )
-        output_folder = str(data.get("output_folder") or "").strip()
-
-        run_bids, run_prism = _export_validation_flags(validation_mode)
-        if run_bids or run_prism:
-            validation_error = _run_pre_export_validation(project_path, validation_mode)
-            if validation_error:
-                return jsonify({"success": False, "error": validation_error}), 400
-
-        if output_folder:
-            dest_dir = Path(output_folder).expanduser().resolve()
-        else:
-            dest_dir = project_path.parent
-        dest_dir.mkdir(parents=True, exist_ok=True)
-
-        output_zip = dest_dir / f"{project_path.name}_template_export.zip"
-
-        from src.project_template_export import export_project_template_zip
-
-        stats = export_project_template_zip(project_path, output_zip)
-        return jsonify(
-            {
-                "success": True,
-                "output_path": str(output_zip),
-                "message": "Template export completed successfully",
-                "stats": stats,
-            }
-        )
+        try:
+            stats = run_template_export(resolved, data)
+        except ExportBlocked as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        return jsonify({
+            "success": True,
+            "output_path": stats["output_zip"],
+            "message": "Template export completed successfully",
+            "stats": stats,
+        })
     except Exception as e:
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500

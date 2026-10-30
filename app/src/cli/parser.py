@@ -596,6 +596,14 @@ def build_prism_tools_parsers(
     parser_export_deface = export_subparsers.add_parser("deface", help="Deface an export COPY of the project; the project itself is never changed")
     _defacing_flags(parser_export_deface, run=True)
 
+    parser_export_anc = export_subparsers.add_parser("anc", help="Export to the ANC (Austrian NeuroCloud) layout")
+    parser_export_anc.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_export_anc.add_argument("--convert-to-git-lfs", action="store_true", help="Convert the data to Git LFS")
+    parser_export_anc.add_argument("--include-ci-examples", action="store_true", help="Add CI example files")
+    parser_export_anc.add_argument("--metadata", action="append", metavar="KEY=VALUE",
+                                   help="README/CITATION fields, e.g. DATASET_NAME, CONTACT_EMAIL, AUTHOR_GIVEN_NAME, AUTHOR_FAMILY_NAME, DATASET_ABSTRACT (repeatable)")
+    parser_export_anc.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_session_map = subparsers.add_parser(
         "session-map",
         help="Session map for longitudinal projects (code/session_map.json)",
@@ -1999,8 +2007,17 @@ def build_prism_tools_parsers(
     )
     parser_template_export.add_argument(
         "--output",
-        required=True,
-        help="Output ZIP path for the template export",
+        default=None,
+        help="Output ZIP path (default: <project>_template_export.zip in --output-folder, or next to the project)",
+    )
+    parser_template_export.add_argument(
+        "--output-folder", default=None, help="Folder for the default-named ZIP (default: next to the project)"
+    )
+    parser_template_export.add_argument(
+        "--validation-mode",
+        choices=["both", "bids", "prism", "ignore"],
+        default="both",
+        help="Validation that must pass before exporting (default: both, as in Studio)",
     )
     parser_template_export.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"

@@ -80,6 +80,7 @@ from src.cli.commands.sessions import (
 from src.cli.commands.methods import cmd_methods_generate
 from src.cli.commands.preregistration import cmd_preregistration_draft
 from src.cli.commands.export import (
+    cmd_export_anc,
     cmd_export_annex_availability,
     cmd_export_deface,
     cmd_export_deface_preflight,
@@ -244,6 +245,7 @@ def main() -> None:
             "export_deface_report": cmd_export_deface_report,
             "export_deface_preflight": cmd_export_deface_preflight,
             "export_deface": cmd_export_deface,
+            "export_anc": cmd_export_anc,
             "settings_show": cmd_settings_show,
             "settings_set": cmd_settings_set,
             "session_map_show": cmd_session_map_show,
