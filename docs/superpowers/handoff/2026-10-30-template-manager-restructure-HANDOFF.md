@@ -5,8 +5,8 @@ Written 2026-10-30 at the end of a session. Everything needed to continue is in 
 
 ## LATEST STATE (read this first; it supersedes the table below where they differ)
 
-Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6. Committed, review pending: 7.
-- **Task 7** (LimeSurvey export derives settings; overrides per export only): **committed, NOT yet reviewed**
+Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6, 7.
+- **Task 7** (LimeSurvey export derives settings; overrides per export only): **done, reviewed (no fix round)**
   (2f95f45f exporter+customizer, 4b588e46 Word export, 515027cb JS, 673b2af5 parity tests). Review it first (scoped
   to `git diff c060a666..HEAD -- app/src/limesurvey_exporter.py src/survey_customizer.py app/src/questionnaire_renderer.py
   app/static/js tests`; the commits before that belong to Task 6). Things the implementer reported that the reviewer and
@@ -20,13 +20,18 @@ Done and reviewed: Tasks 1, 1b, 2, 2b, 2c, 3, 4, 5, 6. Committed, review pending
   * Not done: `src/converters/pavlovia.py::_relevance` still reads `LimeSurvey.Relevance` (capital R) from the template;
     it should read the generic `Relevance` (+ strip) like the LimeSurvey exporter.
   * The two parity tests passed on first run (CLI and Studio already shared the functions): they are guards.
+  * Review rulings: the behaviour changes above are ACCEPTED (presentation-only regression: codes unchanged); list them in
+    the CHANGELOG (Task 11). `template-editor.js` ~:4126 `detectQuestionType` is still its own JS derivation: Task 10 must
+    make the preview use the backend value (or the customizer's question-type module). The Tool Properties bulk editor
+    (`template-editor.js` ~:3164-3246) writes ignored keys: Task 10 removes it. Delete the dead
+    `LimeSurvey["Relevance"]` branch + stale docstring (`src/converters/pavlovia.py` ~:53-60) in Task 11.
   * The full `pytest -q` suite was not run after Task 7 (covering set 556 passed, vitest 365 passed).
 - **Task 1c** (spec repo): committed there (`3538ed3`, local tag **v1.5.2**), **not reviewed**, not yet in Studio.
   The 4 patches in `spec-patches/` are the complete spec change (tags: v1.5.1 = after patch 3, v1.5.2 = after patch 4).
 - **Not started:** 2d, 8, 9, 10, 10b, 11.
 
 ### Next steps, in order
-1. **Review Task 7**, then **review Task 1c** (scoped: spec compliance + quality; the 1c diff is patch 0004).
+1. **Review Task 1c** (scoped: spec compliance + quality; the 1c diff is patch 0004).
 2. **Task 2d** (Studio re-sync + unify the relaxation). IMPORTANT FINDING: Studio already has a second mechanism,
    `apply_schema_validation_profile` in `app/src/schema_manager.py` (profile `official` relaxes the fields in
    `x-prism.projectOnlyRequired`), next to `relax_schema_for_library_template` + `LIBRARY_RELAXED_*` in
