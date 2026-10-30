@@ -196,3 +196,58 @@ def test_a_cancelled_physio_save_raises_before_anything_is_copied(tmp_path):
     with pytest.raises(ConversionCancelled):
         _save_physio(tmp_path, cancel_check=lambda: True)
     assert not list((tmp_path / "proj").glob("sub-*"))
+
+
+def _renamed(tmp_path, name="sub-1234_ses-1_physio.edf"):
+    source = tmp_path / "upload_00000.edf"
+    source.write_text("EDF", encoding="utf-8")
+    project = tmp_path / "proj"
+    project.mkdir()
+    return project, source, name
+
+
+def _save_renamed(tmp_path, **overrides):
+    from src.batch_convert import parse_bids_filename
+    from src.conversion_to_project import save_renamed_to_project
+
+    project, source, name = _renamed(tmp_path)
+    kwargs = dict(
+        project_root=project, items=[(source, name)], dest_root="root", flat_structure=False, modality="physio",
+        organize=True, subject_rewrite_mode="keep", parse_bids_filename=parse_bids_filename,
+    )
+    kwargs.update(overrides)
+    return project, save_renamed_to_project(**kwargs)
+
+
+def test_a_renamed_file_is_organized_by_subject_session_and_modality(tmp_path):
+    project, saved = _save_renamed(tmp_path)
+    assert (project / "sub-1234" / "ses-1" / "physio" / "sub-1234_ses-1_physio.edf").read_text(encoding="utf-8") == "EDF"
+    assert saved.warnings == ["Subject folder sub-1234 did not exist and will be created in project."]
+
+
+def test_without_organize_the_file_lands_at_the_destination_root_under_its_new_name(tmp_path):
+    project, _saved = _save_renamed(tmp_path, organize=False)
+    assert (project / "sub-1234_ses-1_physio.edf").exists()
+
+
+def test_a_flat_copy_goes_into_the_modality_folder_of_rawdata(tmp_path):
+    project, _saved = _save_renamed(tmp_path, dest_root="rawdata", flat_structure=True)
+    assert (project / "rawdata" / "physio" / "sub-1234_ses-1_physio.edf").exists()
+
+
+def test_the_subject_label_can_be_shortened_to_its_last_three_digits(tmp_path):
+    project, _saved = _save_renamed(tmp_path, subject_rewrite_mode="last3")
+    assert (project / "sub-234" / "ses-1" / "physio" / "sub-234_ses-1_physio.edf").exists()
+
+
+def test_an_existing_subject_folder_gives_no_warning(tmp_path):
+    project, source, name = _renamed(tmp_path)
+    (project / "sub-1234").mkdir()
+    from src.batch_convert import parse_bids_filename
+    from src.conversion_to_project import save_renamed_to_project
+
+    saved = save_renamed_to_project(
+        project_root=project, items=[(source, name)], dest_root="root", flat_structure=False, modality="physio",
+        organize=True, subject_rewrite_mode="keep", parse_bids_filename=parse_bids_filename,
+    )
+    assert saved.warnings == []

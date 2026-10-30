@@ -267,8 +267,36 @@ def cmd_file_management_rename_physio(args) -> None:
                 print(f"{len(failed)} file(s) could not be renamed.")
         return
 
+    if getattr(args, "project", None):
+        # Into a project, as Studio's Physio Renamer does: DataLad-aware copy, destination rules, subject warnings
+        from src.conversion_to_project import save_renamed_to_project
+        from src.physio_renamer import normalize_project_dest_root, normalize_subject_rewrite_mode
+
+        saved = save_renamed_to_project(
+            project_root=Path(args.project).resolve(),
+            items=[(Path(entry["old"]), entry["new"]) for entry in results if entry["success"]],
+            dest_root=normalize_project_dest_root(getattr(args, "dest_root", None) or "root"),
+            flat_structure=bool(getattr(args, "flat_structure", False)),
+            modality=args.modality,
+            organize=bool(getattr(args, "organize", False)),
+            subject_rewrite_mode=normalize_subject_rewrite_mode(getattr(args, "subject_rewrite_mode", None)),
+            parse_bids_filename=parse_bids_filename,
+        )
+        copy_errors = [f"{entry['old']}: {entry['new']}" for entry in failed]
+        warnings = [*warnings, *saved.warnings]
+        if as_json:
+            print(json.dumps({"success": True, "applied": True, "copied": len(saved.copied_paths), "errors": copy_errors,
+                              "results": results, "warnings": warnings}, indent=2))
+        else:
+            print(f"Done: {len(saved.copied_paths)} file(s) copied into {args.project}.")
+            for warning in warnings:
+                print(f"  ⚠ {warning}")
+            for copy_error in copy_errors:
+                print(f"  ✗ {copy_error}")
+        return
+
     if not args.output:
-        print("Error: --output is required with --apply")
+        print("Error: --output (or --project) is required with --apply")
         sys.exit(1)
 
     output_root = Path(args.output).resolve()

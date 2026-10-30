@@ -2801,6 +2801,28 @@ def build_prism_tools_parsers(
         help="Actually copy renamed files to --output (default: preview only)",
     )
     parser_file_management_rename_physio.add_argument(
+        "--project",
+        default=None,
+        help="With --apply: copy the renamed files into this project instead of --output (as Studio's 'save to project': DataLad-aware copy)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--dest-root",
+        choices=["root", "prism", "rawdata", "sourcedata"],
+        default="root",
+        help="With --project: where in the project the files go (default: the project root)",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--flat-structure",
+        action="store_true",
+        help="With --project and --dest-root rawdata/sourcedata: one folder per modality, no sub-/ses- folders",
+    )
+    parser_file_management_rename_physio.add_argument(
+        "--subject-rewrite-mode",
+        choices=["keep", "last3"],
+        default="keep",
+        help="With --project: keep the subject labels or shorten them to their last three digits",
+    )
+    parser_file_management_rename_physio.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 

@@ -27,16 +27,13 @@ from .conversion_utils import (
     resolve_existing_project_root,
     summarize_project_output_paths,
 )
-from src.conversion_to_project import ConversionCancelled, save_physio_batch_to_project
-from src.datalad_project_copy import copy_files_into_project
+from src.conversion_to_project import ConversionCancelled, save_physio_batch_to_project, save_renamed_to_project
 from src.physio_varioport import run_varioport_conversion
 from src.physio_renamer import (
     rename_one,
     normalize_project_dest_root as _normalize_project_dest_root,
     normalize_subject_rewrite_mode as _normalize_subject_rewrite_mode,
     resolve_project_copy_root as _resolve_project_copy_root,
-    rewrite_subject_in_filename as _rewrite_subject_in_filename,
-    should_use_flat_project_copy as _should_use_flat_project_copy,
 )
 
 # Optional dependencies
@@ -1007,7 +1004,6 @@ def api_physio_rename():
 
     results = []
     warnings = []
-    warned_subjects = set()
 
     if dry_run:
         source_names = (
@@ -1054,7 +1050,7 @@ def api_physio_rename():
     project_root = None
     base_project_root = None
     copied_output_paths: list[Path] = []
-    copy_pairs: list[tuple[Path, Path]] = []
+    rename_items: list[tuple[Path, str]] = []
     copy_stage_dir: Path | None = None
     if save_to_project:
         try:
@@ -1099,66 +1095,16 @@ def api_physio_rename():
                         organize=organize,
                         parse_bids_filename=parse_bids_filename,
                     )
-                    project_name = (
-                        _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
-                        if save_to_project
-                        else new_name
-                    )
-
-
                     f_content = f.read()
                     if zf is not None:
                         zf.writestr(zip_path, f_content)
 
                     if project_root:
-                        if _should_use_flat_project_copy(dest_root, flat_structure):
-                            dest_path = project_root / modality / project_name
-                        else:
-                            project_zip_path = project_name
-                            if organize:
-                                project_bids = (
-                                    parse_bids_filename(project_name)
-                                    if parse_bids_filename
-                                    else None
-                                )
-                                if project_bids:
-                                    sub = project_bids.get("sub")
-                                    ses = project_bids.get("ses")
-                                    project_parts = [sub]
-                                    if ses:
-                                        project_parts.append(ses)
-                                    project_parts.append(modality)
-                                    project_parts.append(project_name)
-                                    project_zip_path = "/".join(project_parts)
-
-                            dest_path = project_root / Path(project_zip_path)
-
-                            subject_label = None
-                            if parse_bids_filename:
-                                bids_parts = parse_bids_filename(project_name)
-                                if bids_parts:
-                                    subject_label = bids_parts.get("sub")
-                            if not subject_label:
-                                m = re.search(r"(sub-[A-Za-z0-9]+)", project_name)
-                                if m:
-                                    subject_label = m.group(1)
-
-                            if subject_label:
-                                subject_dir = project_root / subject_label
-                                if (
-                                    not subject_dir.exists()
-                                    and subject_label not in warned_subjects
-                                ):
-                                    warnings.append(
-                                        f"Subject folder {subject_label} did not exist and will be created in project."
-                                    )
-                                    warned_subjects.add(subject_label)
-
                         if copy_stage_dir is None:
                             raise ValueError("Copy staging folder is unavailable.")
-                        staged_source = copy_stage_dir / f"upload_{idx:05d}_{project_name}"
+                        staged_source = copy_stage_dir / f"upload_{idx:05d}_{new_name}"
                         staged_source.write_bytes(f_content)
-                        copy_pairs.append((staged_source, dest_path))
+                        rename_items.append((staged_source, new_name))
 
                     results.append(
                         {
@@ -1189,62 +1135,12 @@ def api_physio_rename():
                         organize=organize,
                         parse_bids_filename=parse_bids_filename,
                     )
-                    project_name = (
-                        _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
-                        if save_to_project
-                        else new_name
-                    )
-
-
                     f_content = server_file.read_bytes()
                     if zf is not None:
                         zf.writestr(zip_path, f_content)
 
                     if project_root:
-                        if _should_use_flat_project_copy(dest_root, flat_structure):
-                            dest_path = project_root / modality / project_name
-                        else:
-                            project_zip_path = project_name
-                            if organize:
-                                project_bids = (
-                                    parse_bids_filename(project_name)
-                                    if parse_bids_filename
-                                    else None
-                                )
-                                if project_bids:
-                                    sub = project_bids.get("sub")
-                                    ses = project_bids.get("ses")
-                                    project_parts = [sub]
-                                    if ses:
-                                        project_parts.append(ses)
-                                    project_parts.append(modality)
-                                    project_parts.append(project_name)
-                                    project_zip_path = "/".join(project_parts)
-
-                            dest_path = project_root / Path(project_zip_path)
-
-                            subject_label = None
-                            if parse_bids_filename:
-                                bids_parts = parse_bids_filename(project_name)
-                                if bids_parts:
-                                    subject_label = bids_parts.get("sub")
-                            if not subject_label:
-                                m = re.search(r"(sub-[A-Za-z0-9]+)", project_name)
-                                if m:
-                                    subject_label = m.group(1)
-
-                            if subject_label:
-                                subject_dir = project_root / subject_label
-                                if (
-                                    not subject_dir.exists()
-                                    and subject_label not in warned_subjects
-                                ):
-                                    warnings.append(
-                                        f"Subject folder {subject_label} did not exist and will be created in project."
-                                    )
-                                    warned_subjects.add(subject_label)
-
-                        copy_pairs.append((server_file, dest_path))
+                        rename_items.append((server_file, new_name))
 
                     results.append(
                         {
@@ -1264,16 +1160,20 @@ def api_physio_rename():
                     )
 
         copy_result = None
-        if copy_pairs and base_project_root is not None:
-            copy_result = copy_files_into_project(
-                dataset_root=base_project_root,
-                copy_pairs=copy_pairs,
-                run_message="PRISM: Copy renamed physio files into project",
+        if rename_items and base_project_root is not None:
+            project_save = save_renamed_to_project(
+                project_root=base_project_root,
+                items=rename_items,
+                dest_root=dest_root,
+                flat_structure=flat_structure,
+                modality=modality,
+                organize=organize,
+                subject_rewrite_mode=subject_rewrite_mode,
+                parse_bids_filename=parse_bids_filename,
             )
-            copied_output_paths = [
-                base_project_root / rel_path
-                for rel_path in list(copy_result.get("copied_paths") or [])
-            ]
+            warnings.extend(project_save.warnings)
+            copy_result = project_save.datalad
+            copied_output_paths = project_save.output_paths
 
         zip_base64 = None
         if not skip_zip and mem is not None:

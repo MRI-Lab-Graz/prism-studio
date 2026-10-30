@@ -15,6 +15,7 @@ from typing import Any, Callable
 from src.datalad_project_copy import copy_files_into_project
 from src.physio_renamer import (
     resolve_project_copy_root,
+    rewrite_subject_in_filename,
     rewrite_subject_in_relative_path,
     should_use_flat_project_copy,
 )
@@ -263,4 +264,47 @@ def save_physio_batch_to_project(
     )
     saved.output_paths = [project_root / rel for rel in saved.copied_paths]
     saved.registered_sessions = register_converted_physio_sessions(project_root, converted, dataset_name, log_fn)
+    return saved
+
+
+def save_renamed_to_project(
+    *,
+    project_root,
+    items,
+    dest_root: str,
+    flat_structure: bool,
+    modality: str,
+    organize: bool,
+    subject_rewrite_mode: str,
+    parse_bids_filename=None,
+    run_message: str = "PRISM: Copy renamed physio files into project",
+) -> ProjectSave:
+    """Copy renamed files into the project: ``items`` are ``(source file, new name)``. Each lands, under its
+    (subject-rewritten) name, flat in ``<modality>/`` or organized as ``sub-/ses-/<modality>/``; a subject folder
+    the project does not have yet is reported."""
+    project_root = Path(project_root)
+    target_root = resolve_project_copy_root(project_root, dest_root)
+    pairs: list[tuple[Path, Path]] = []
+    warnings: list[str] = []
+    warned: set[str] = set()
+    for source, new_name in items:
+        name = rewrite_subject_in_filename(new_name, subject_rewrite_mode)
+        if should_use_flat_project_copy(dest_root, flat_structure):
+            pairs.append((Path(source), target_root / modality / name))
+            continue
+        bids = parse_bids_filename(name) if parse_bids_filename else None
+        relative = name
+        if organize and bids:
+            relative = "/".join([bids.get("sub"), *([bids["ses"]] if bids.get("ses") else []), modality, name])
+        pairs.append((Path(source), target_root / relative))
+        subject = (bids or {}).get("sub") or (re.search(r"(sub-[A-Za-z0-9]+)", name) or [None, None])[1]
+        if subject and not (target_root / subject).exists() and subject not in warned:
+            warned.add(subject)
+            warnings.append(f"Subject folder {subject} did not exist and will be created in project.")
+
+    copy_result = copy_files_into_project(dataset_root=project_root, copy_pairs=pairs, run_message=run_message)
+    saved = ProjectSave(
+        copied_paths=[str(p) for p in copy_result.get("copied_paths") or []], datalad=copy_result.get("datalad"), warnings=warnings
+    )
+    saved.output_paths = [project_root / rel for rel in saved.copied_paths]
     return saved
