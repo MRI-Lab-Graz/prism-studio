@@ -22,7 +22,7 @@ KINDS = {  # element kind -> selector (the most common style among its matches i
     "label": "label.form-label",
     "primary button": ".btn-primary$",
     "outline button": ".btn-outline-secondary$",
-    "card": ".card",
+    "card": ".card:not(.card .card)",  # page cards; a sub-panel inside a card (card-body bg-light) is not one
     "card header": ".card-header",
     "select": "select.form-select$",
     "text input": "input.form-control$",
