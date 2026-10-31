@@ -40,6 +40,9 @@ def git_status(root):
     return subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True).stdout
 
 
+@pytest.mark.slow
+
+
 def test_mutation_on_a_tree_dirty_from_a_refused_save_applies_the_change_but_is_not_saved(ds):
     (ds / "BAD").write_text("1")  # dataset is now invalid ...
     (ds / "a.txt").write_text("edited\n")  # ... and dirty inside the mutation scope
@@ -64,6 +67,9 @@ def test_clean_valid_tree_still_uses_the_normal_run(ds):
     assert result["used_run"] and git_status(ds).strip() == ""
 
 
+@pytest.mark.slow
+
+
 def test_mutation_on_another_file_while_a_refused_change_stays_dirty(ds):
     (ds / "x.txt").write_text("x\n")
     subprocess.run(["datalad", "save", "-m", "x"], cwd=ds, check=True, capture_output=True)
@@ -81,6 +87,9 @@ def test_mutation_on_another_file_while_a_refused_change_stays_dirty(ds):
     (ds / "BAD").unlink()
     subprocess.run(["datalad", "save", "-m", "fixed"], cwd=ds, check=True, capture_output=True)
     assert git_status(ds).strip() == ""
+
+
+@pytest.mark.slow
 
 
 def test_annexed_content_path_mutation_on_invalid_tree(tmp_path, monkeypatch):

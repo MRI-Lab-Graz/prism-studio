@@ -213,6 +213,7 @@ def test_amend_is_gated_too(green):
 
 
 @needs_datalad
+@pytest.mark.slow
 def test_only_the_first_save_of_a_new_dataset_is_exempt(tmp_path):
     ds = tmp_path / "fresh"
     assert sh("datalad", "create", str(ds), cwd=tmp_path).returncode == 0  # exactly one commit
@@ -257,6 +258,7 @@ def test_every_decision_is_audited(green):
 
 
 @needs_datalad
+@pytest.mark.slow
 def test_a_real_prism_project_gets_the_gate(tmp_path):
     """The project-creation flow itself installs the hook (not just the test fixture):
     a fresh metadata-only project saves, but participants.tsv without subject data is refused."""

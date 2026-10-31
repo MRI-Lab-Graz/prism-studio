@@ -7,6 +7,8 @@ import tempfile
 import threading
 import time
 import unittest
+
+import pytest
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -1829,6 +1831,7 @@ class TestProjectManager(unittest.TestCase):
         shutil.which("git") and shutil.which("git-annex") and shutil.which("datalad"),
         "datalad and git-annex are required to verify real nested-dataset annex resolution",
     )
+    @pytest.mark.slow
     def test_create_registered_nested_dataset_never_annexes_text_files_on_first_save(
         self,
     ):

@@ -86,6 +86,7 @@ def _studio_datalad(route, root, monkeypatch, body):
 
 
 @pytest.mark.skipif(not shutil.which("datalad") or not shutil.which("git-annex"), reason="needs DataLad and git-annex")
+@pytest.mark.slow
 def test_enabling_and_saving_datalad_do_the_same_in_the_cli_and_in_studio(tmp_path, monkeypatch, capsys):
     from src.cli.commands.datalad import cmd_datalad_enable, cmd_datalad_save
 

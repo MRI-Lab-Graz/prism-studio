@@ -78,6 +78,9 @@ def test_wheel_version_is_the_repo_version(wheel):
     assert wheel.name.startswith(f"prism_validator-{version}-")
 
 
+@pytest.mark.slow
+
+
 def test_installed_wheel_runs_in_clean_venv(wheel, tmp_path):
     venv = tmp_path / "venv"
     subprocess.run([sys.executable, "-m", "venv", str(venv)], check=True)
