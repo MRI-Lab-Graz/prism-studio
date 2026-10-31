@@ -8,7 +8,7 @@ from flask import Flask
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-from src.web.blueprints.projects_lifecycle_handlers import _is_filesystem_root_or_home
+from src.project_delete import is_filesystem_root_or_home as _is_filesystem_root_or_home
 from src.web.blueprints.projects_sourcedata_handlers import handle_get_sourcedata_file
 
 

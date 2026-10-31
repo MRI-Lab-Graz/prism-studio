@@ -190,6 +190,13 @@ REMOTE_DATASET_ACQUIRE_TIMEOUT_SECONDS = 60 * 60
 MRI_SUFFIX_LABEL_MODALITIES = {"anat", "dwi", "fmap", "perf"}
 
 
+DEFAULT_SNAPSHOT_MESSAGE = "Save PRISM project changes"
+DEFAULT_ENABLE_DATALAD_MESSAGE = "Enable DataLad for PRISM project"
+ENABLE_DATALAD_NEEDS_CONFIRMATION = (
+    "Enable DataLad requires explicit confirmation because it modifies the current project in place."
+)
+
+
 class ProjectManager:
     """
     Manages PRISM project creation and validation.
@@ -3715,7 +3722,7 @@ git push -u origin main
         self,
         path: Union[str, Path],
         *,
-        message: str = "Enable DataLad for PRISM project",
+        message: str = DEFAULT_ENABLE_DATALAD_MESSAGE,
     ) -> Dict[str, Any]:
         """Initialize DataLad for an existing project and save an initial snapshot.
 
@@ -5533,7 +5540,7 @@ git push -u origin main
 
         ``detect_no_changes`` compares git HEAD before and after (two extra git calls) so a
         clean tree is reported as "nothing pending" instead of "saved"."""
-        normalized_message = str(message or "").strip() or "Save PRISM project changes"
+        normalized_message = str(message or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
         result: Dict[str, Any] = {
             "available": False,
             "saved": False,

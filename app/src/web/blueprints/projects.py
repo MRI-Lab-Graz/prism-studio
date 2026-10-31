@@ -14,7 +14,13 @@ from typing import Any
 from flask import Blueprint, Response, render_template, jsonify, redirect, session, request, current_app, url_for
 
 from src.config import load_config
-from src.project_manager import ProjectManager, get_available_modalities
+from src.project_manager import (
+    DEFAULT_ENABLE_DATALAD_MESSAGE,
+    DEFAULT_SNAPSHOT_MESSAGE,
+    ENABLE_DATALAD_NEEDS_CONFIRMATION,
+    ProjectManager,
+    get_available_modalities,
+)
 from src.project_session_logging import activate_project_session, close_project_session
 from src.schema_manager import get_available_schema_versions
 from .projects_citation_helpers import (
@@ -398,7 +404,7 @@ def save_datalad_snapshot():
         return jsonify({"success": False, "error": "No current project loaded."}), 400
 
     data = request.get_json(silent=True) or {}
-    message = str(data.get("message") or "").strip() or "Save PRISM project changes"
+    message = str(data.get("message") or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
     result = _project_manager.save_datalad_snapshot(project_path, message=message)
     result["current_project"] = get_current_project()
     if result.get("success"):
@@ -449,16 +455,13 @@ def enable_datalad_for_project():
             jsonify(
                 {
                     "success": False,
-                    "error": (
-                        "Enable DataLad requires explicit confirmation because it "
-                        "modifies the current project in place."
-                    ),
+                    "error": ENABLE_DATALAD_NEEDS_CONFIRMATION,
                 }
             ),
             400,
         )
 
-    message = str(data.get("message") or "").strip() or "Enable DataLad for PRISM project"
+    message = str(data.get("message") or "").strip() or DEFAULT_ENABLE_DATALAD_MESSAGE
     result = _project_manager.enable_datalad_for_project(project_path, message=message)
     result["current_project"] = get_current_project()
     if result.get("success"):

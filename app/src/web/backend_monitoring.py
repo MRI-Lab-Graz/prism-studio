@@ -17,7 +17,7 @@ from typing import Any, Callable
 from flask import session
 
 from src.config import load_app_settings
-from src.project_manager import ProjectManager
+from src.project_manager import DEFAULT_ENABLE_DATALAD_MESSAGE, DEFAULT_SNAPSHOT_MESSAGE, ProjectManager
 from src.project_session_logging import record_project_session_command
 
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -490,7 +490,7 @@ def _build_projects_datalad_save_terminal_command(req) -> str:
     if project_root is None:
         return ""
 
-    message = str(payload.get("message") or "").strip() or "Save PRISM project changes"
+    message = str(payload.get("message") or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
     cmd_parts = ["datalad", "-C", str(project_root), "save", "-r", "-m", message]
     return " ".join(_quote(part) for part in cmd_parts)
 
@@ -511,7 +511,7 @@ def _build_projects_datalad_enable_terminal_command(req) -> str:
     if project_root is None:
         return ""
 
-    message = str(payload.get("message") or "").strip() or "Enable DataLad for PRISM project"
+    message = str(payload.get("message") or "").strip() or DEFAULT_ENABLE_DATALAD_MESSAGE
     status = ProjectManager().get_datalad_status(project_root)
 
     if not status.get("enabled"):

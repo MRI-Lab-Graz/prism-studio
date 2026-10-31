@@ -83,3 +83,32 @@ def cmd_datalad_finalize(args) -> None:
         verify_mode=args.verify_mode,
         mark_annex_dead=args.mark_annex_dead,
     )
+
+
+def _print_result(args, result: dict) -> None:
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+    else:
+        print(result.get("message") or result.get("error") or "")
+    if not result.get("success"):
+        sys.exit(1)
+
+
+def cmd_datalad_enable(args) -> None:
+    """Make the project a DataLad dataset and save a first snapshot (Studio's "Enable DataLad")."""
+    from src.project_manager import DEFAULT_ENABLE_DATALAD_MESSAGE, ENABLE_DATALAD_NEEDS_CONFIRMATION
+
+    if not args.yes:
+        print(ENABLE_DATALAD_NEEDS_CONFIRMATION)
+        sys.exit(2)
+
+    message = str(args.message or "").strip() or DEFAULT_ENABLE_DATALAD_MESSAGE
+    _print_result(args, _manager().enable_datalad_for_project(args.project, message=message))
+
+
+def cmd_datalad_save(args) -> None:
+    """Save the project's changes as a DataLad snapshot (Studio's "Save")."""
+    from src.project_manager import DEFAULT_SNAPSHOT_MESSAGE
+
+    message = str(args.message or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
+    _print_result(args, _manager().save_datalad_snapshot(args.project, message=message))
