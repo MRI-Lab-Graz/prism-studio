@@ -421,6 +421,10 @@ class AppSettings:
     # is not meaningful for external users.
     enable_study_application_import: bool = False
 
+    # Start the Create Project form with DataLad version control switched on.
+    # Off by default: DataLad stays an opt-in, this only pre-selects it.
+    datalad_for_new_projects: bool = False
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -502,6 +506,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             enable_study_application_import=bool(
                 data.get("enableStudyApplicationImport", False)
             ),
+            datalad_for_new_projects=bool(data.get("dataladForNewProjects", False)),
         )
         settings._settings_path = settings_path
         return settings
@@ -541,6 +546,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
             settings.export_defacing_confirmation_mode
         ),
         "enableStudyApplicationImport": settings.enable_study_application_import,
+        "dataladForNewProjects": settings.datalad_for_new_projects,
     }
 
     # Remove None values
