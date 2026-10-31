@@ -366,8 +366,8 @@ def _two_projects(tmp_path):
     """Two identical projects: one for the command, one for Studio."""
     projects = []
     for name in ("cli", "studio"):
-        root = tmp_path / name
-        root.mkdir()
+        root = tmp_path / name / "study"  # same folder name: the fixer puts it into the files it creates
+        root.mkdir(parents=True)
         (root / "project.json").write_text(json.dumps({
             "Basics": {"Name": "Parity", "Authors": ["Lovelace, Ada"], "Keywords": ["a", "b", "c"], "Description": "A study."},
             "StudyDesign": {"Timepoints": "single"},
@@ -421,3 +421,54 @@ def test_regenerating_the_citation_writes_the_same_file_in_the_cli_and_in_studio
     assert strip(cli) == strip(studio)
     assert not (cli / "contributors.json").exists() and not (studio / "contributors.json").exists()
     assert body["message"] in capsys.readouterr().out
+
+
+def _unfixed_projects(tmp_path):
+    cli, studio = _two_projects(tmp_path)
+    for root in (cli, studio):
+        (root / "dataset_description.json").unlink()  # PRISM001: the fixer creates it
+    return cli, studio
+
+
+def _studio_json(handler, body, **kwargs):
+    from flask import Flask
+
+    with Flask(__name__).test_request_context(method="POST", json=body):
+        response = handler(**kwargs)
+    response, status = (response, 200) if not isinstance(response, tuple) else response
+    return response.get_json(), status
+
+
+def _tree(root: Path) -> dict[str, str]:
+    return {p.relative_to(root).as_posix(): p.read_text(encoding="utf-8") for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def test_listing_fixable_issues_answers_the_same_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.project import cmd_project_fixable
+    from src.project_manager import ProjectManager
+    from src.web.blueprints.projects_lifecycle_handlers import handle_get_fixable_issues
+
+    cli, studio = _unfixed_projects(tmp_path)
+    cmd_project_fixable(SimpleNamespace(project=str(cli), json=True))
+    body, status = _studio_json(handle_get_fixable_issues, {"path": str(studio)}, project_manager=ProjectManager())
+
+    cli_issues = json.loads(capsys.readouterr().out)
+    assert status == 200 and body["issues"]
+    # the paths differ per project folder: compare with the folder name taken out
+    norm = lambda issues, root: json.loads(json.dumps(issues).replace(str(root), "<root>"))
+    assert norm(cli_issues, cli) == norm(body["issues"], studio)
+
+
+def test_applying_fixes_writes_the_same_files_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.project import cmd_project_fix
+    from src.project_manager import ProjectManager
+    from src.web.blueprints.projects_lifecycle_handlers import handle_fix_project
+
+    cli, studio = _unfixed_projects(tmp_path)
+    cmd_project_fix(SimpleNamespace(project=str(cli), codes="PRISM001", json=True))
+    body, status = _studio_json(handle_fix_project, {"path": str(studio), "fix_codes": ["PRISM001"]}, project_manager=ProjectManager())
+
+    assert status == 200 and body["success"] and body["count"] >= 1
+    assert json.loads(capsys.readouterr().out)["count"] == body["count"]
+    assert _tree(cli) == _tree(studio)
+    assert (cli / "dataset_description.json").exists()

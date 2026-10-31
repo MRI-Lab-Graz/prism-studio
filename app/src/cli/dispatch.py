@@ -150,7 +150,7 @@ def dispatch_prism_tools(
         else:
             parsers["preregistration"].print_help()
     elif args.command == "project":
-        if args.action in ("generate-readme", "regenerate-citation"):
+        if args.action in ("generate-readme", "regenerate-citation", "fixable", "fix"):
             handlers[f"project_{args.action.replace('-', '_')}"](args)
         else:
             parsers["project"].print_help()
