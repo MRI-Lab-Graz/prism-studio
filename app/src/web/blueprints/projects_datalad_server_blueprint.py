@@ -249,41 +249,19 @@ def datalad_server_status():
 @projects_datalad_server_bp.route("/api/projects/datalad-server/config", methods=["POST"])
 def datalad_server_save_config():
     """Save the per-project RIA URL/sibling name/alias into .prismrc.json."""
-    from pathlib import Path
-
-    from src.config import load_config, save_config
+    from src.project_settings import save_datalad_server_config
 
     data = request.get_json() or {}
-    project_path_raw = data.get("project_path")
-    resolved = _resolve_project_root_path(project_path_raw)
+    resolved = _resolve_project_root_path(data.get("project_path"))
     if resolved is None:
         return jsonify({"error": "Invalid project path"}), 400
-
-    from src.datalad_execution import sibling_label_problem
-
-    sibling_name = str(data.get("sibling_name") or "").strip() or "ria-store"
-    alias = str(data.get("alias") or "").strip()
-    for label, what in ((sibling_name, "sibling name"), (alias, "alias")):
-        if label and (problem := sibling_label_problem(label, what)):
-            return jsonify({"error": problem}), 400
-
-    config = load_config(str(resolved))
-    config.datalad_ria_store_url = str(data.get("ria_url") or "").strip() or None
-    config.datalad_sibling_name = sibling_name
-    config.datalad_sibling_alias = alias or None
-
-    filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
-    saved_path = save_config(config, str(resolved), filename=filename)
-
-    return jsonify(
-        {
-            "success": True,
-            "ria_url": config.datalad_ria_store_url,
-            "sibling_name": config.datalad_sibling_name,
-            "sibling_alias": config.datalad_sibling_alias,
-            "config_path": saved_path,
-        }
-    )
+    try:
+        saved = save_datalad_server_config(
+            resolved, data.get("ria_url"), data.get("sibling_name"), data.get("alias")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"success": True, **saved})
 
 
 @projects_datalad_server_bp.route("/api/projects/datalad-server/sync/start", methods=["POST"])

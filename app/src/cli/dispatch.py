@@ -150,10 +150,15 @@ def dispatch_prism_tools(
         else:
             parsers["preregistration"].print_help()
     elif args.command == "project":
-        if args.action in ("generate-readme", "regenerate-citation", "fixable", "fix"):
+        if args.action in ("generate-readme", "regenerate-citation", "fixable", "fix", "set-schema-version"):
             handlers[f"project_{args.action.replace('-', '_')}"](args)
         else:
             parsers["project"].print_help()
+    elif args.command == "rsync":
+        if args.action in ("config", "sync"):
+            handlers[f"rsync_{args.action}"](args)
+        else:
+            parsers["rsync"].print_help()
     elif args.command == "methods":
         if args.action == "generate":
             handlers["methods_generate"](args)
@@ -173,6 +178,8 @@ def dispatch_prism_tools(
     elif args.command == "datalad":
         if args.action == "doctor":
             handlers["datalad_doctor"](args)
+        elif args.action == "config":
+            handlers["datalad_config"](args)
         elif args.action == "sync":
             handlers["datalad_sync"](args)
         elif args.action == "finalize":

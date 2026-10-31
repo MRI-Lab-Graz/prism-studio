@@ -18,7 +18,6 @@ from src.project_manager import ProjectManager, get_available_modalities
 from src.project_session_logging import activate_project_session, close_project_session
 from src.schema_manager import get_available_schema_versions
 from .projects_citation_helpers import (
-    _validate_recruitment_payload,
     _read_citation_cff_fields,
     _merge_citation_fields,
 )
@@ -52,7 +51,6 @@ from .projects_sessions_handlers import (
     handle_get_sessions,
     handle_get_sessions_declared,
     handle_register_session,
-    handle_save_sessions,
 )
 from .projects_methods_handlers import (
     handle_export_methods,
@@ -832,17 +830,6 @@ def get_sessions():
     return handle_get_sessions(
         get_current_project=get_current_project,
         read_project_json=_read_project_json,
-    )
-
-
-@projects_bp.route("/api/projects/sessions", methods=["POST"])
-def save_sessions():
-    """Write Sessions + TaskDefinitions to project.json."""
-    return handle_save_sessions(
-        get_current_project=get_current_project,
-        read_project_json=_read_project_json,
-        write_project_json=_write_project_json,
-        validate_recruitment_payload=_validate_recruitment_payload,
     )
 
 

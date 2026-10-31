@@ -71,6 +71,7 @@ from src.cli.commands.merge_versions import cmd_merge_versions
 from src.cli.commands.publish import cmd_publish
 from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
+    cmd_datalad_config,
     cmd_datalad_doctor,
     cmd_datalad_finalize,
     cmd_datalad_sync,
@@ -86,7 +87,9 @@ from src.cli.commands.project import (
     cmd_project_fixable,
     cmd_project_generate_readme,
     cmd_project_regenerate_citation,
+    cmd_project_set_schema_version,
 )
+from src.cli.commands.rsync import cmd_rsync_config, cmd_rsync_sync
 from src.cli.commands.preregistration import cmd_preregistration_draft
 from src.cli.commands.export import (
     cmd_export_anc,
@@ -247,6 +250,7 @@ def main() -> None:
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
             "datalad_doctor": cmd_datalad_doctor,
+            "datalad_config": cmd_datalad_config,
             "datalad_sync": cmd_datalad_sync,
             "datalad_finalize": cmd_datalad_finalize,
             "preregistration_draft": cmd_preregistration_draft,
@@ -255,6 +259,9 @@ def main() -> None:
             "project_regenerate_citation": cmd_project_regenerate_citation,
             "project_fixable": cmd_project_fixable,
             "project_fix": cmd_project_fix,
+            "project_set_schema_version": cmd_project_set_schema_version,
+            "rsync_config": cmd_rsync_config,
+            "rsync_sync": cmd_rsync_sync,
             "export_project": cmd_export_project,
             "export_folder": cmd_export_folder,
             "export_git_lfs": cmd_export_git_lfs,

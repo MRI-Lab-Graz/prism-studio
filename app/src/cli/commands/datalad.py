@@ -33,6 +33,20 @@ def cmd_datalad_doctor(args) -> None:
 
 
 
+def cmd_datalad_config(args) -> None:
+    """Save the project's DataLad server settings: what Studio's "Save" on the server panel does (one function runs both)."""
+    from pathlib import Path
+
+    from src.project_settings import save_datalad_server_config
+
+    try:
+        saved = save_datalad_server_config(Path(args.project).resolve(), args.url, args.sibling_name, args.alias)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    print(f"Saved to {saved['config_path']}")
+
+
 def _manager():
     from src.project_manager import ProjectManager
 

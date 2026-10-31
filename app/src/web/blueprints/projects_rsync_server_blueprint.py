@@ -16,32 +16,15 @@ from typing import Dict
 
 from flask import Blueprint, jsonify, request
 
+from src.project_settings import (
+    rsync_sync_options,
+    save_rsync_config,
+)
+
 from .projects_helpers import _resolve_project_root_path
 
 projects_rsync_server_bp = Blueprint("projects_rsync_server", __name__)
 
-
-def _sanitize_exclude_patterns(raw) -> list[str]:
-    """Normalize a client-supplied exclude-pattern list into rsync `--exclude` patterns.
-
-    Accepts a list of strings (from the UI) or a single newline-separated
-    string; drops blanks and duplicates while preserving order.
-    """
-    if isinstance(raw, str):
-        candidates = raw.splitlines()
-    elif isinstance(raw, list):
-        candidates = raw
-    else:
-        candidates = []
-
-    seen: set[str] = set()
-    patterns: list[str] = []
-    for item in candidates:
-        pattern = str(item or "").strip()
-        if pattern and pattern not in seen:
-            seen.add(pattern)
-            patterns.append(pattern)
-    return patterns
 
 # ---------------------------------------------------------------------------
 # Async job store (same shape as the RIA sync/finalize job store)
@@ -168,33 +151,14 @@ def rsync_server_status():
 @projects_rsync_server_bp.route("/api/projects/rsync-server/config", methods=["POST"])
 def rsync_server_save_config():
     """Save the per-project remote target/label into .prismrc.json."""
-    from pathlib import Path
-
-    from src.config import load_config, save_config
-
     data = request.get_json() or {}
-    project_path_raw = data.get("project_path")
-    resolved = _resolve_project_root_path(project_path_raw)
+    resolved = _resolve_project_root_path(data.get("project_path"))
     if resolved is None:
         return jsonify({"error": "Invalid project path"}), 400
-
-    config = load_config(str(resolved))
-    config.rsync_remote_target = str(data.get("remote_target") or "").strip() or None
-    config.rsync_remote_label = str(data.get("remote_label") or "").strip() or None
-    config.rsync_exclude_patterns = _sanitize_exclude_patterns(data.get("exclude_patterns"))
-
-    filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
-    saved_path = save_config(config, str(resolved), filename=filename)
-
-    return jsonify(
-        {
-            "success": True,
-            "remote_target": config.rsync_remote_target,
-            "remote_label": config.rsync_remote_label,
-            "exclude_patterns": config.rsync_exclude_patterns,
-            "config_path": saved_path,
-        }
+    saved = save_rsync_config(
+        resolved, data.get("remote_target"), data.get("remote_label"), data.get("exclude_patterns")
     )
+    return jsonify({"success": True, **saved})
 
 
 @projects_rsync_server_bp.route("/api/projects/rsync-server/sync/start", methods=["POST"])
@@ -206,14 +170,12 @@ def rsync_server_sync_start():
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        sync_kwargs = {
-            "remote_target": (data.get("remote_target") or None),
-            "remote_label": (data.get("remote_label") or None),
-            # Falls back to the project's saved exclude patterns when omitted/empty,
-            # matching remote_target/remote_label's fallback-to-saved-config behavior.
-            "exclude_patterns": _sanitize_exclude_patterns(data.get("exclude_patterns")) or None,
-            "verify": bool(data.get("verify", False)),
-        }
+        sync_kwargs = rsync_sync_options(
+            data.get("remote_target"),
+            data.get("remote_label"),
+            data.get("exclude_patterns"),
+            data.get("verify", False),
+        )
 
         job_id = str(uuid.uuid4())
         _create_rsync_job(job_id)
