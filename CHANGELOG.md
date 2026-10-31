@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **A new project needs its required metadata.** Choosing "Create new project" opens Study Metadata, and Create Project stays grey
+  until dataset name, author (with email), three keywords and timepoints are filled in. "Create anyway" and Preliminary Save are
+  gone from the create form (saving an existing project as preliminary state is unchanged). The Template Editor shows nothing
+  below the template pickers until a template is loaded or created. The project-name `pattern` was an invalid regular expression
+  in current browsers and is fixed. The "Project Loaded" box no longer shows the Validator link or the DataLad version-control row
+  (DataLad is on the Settings page), and loading a project opens Study Metadata the same way a new project does.
+
 ### Added
 - **Settings page.** The global settings (libraries, monitoring, terminal, study-application import) moved from the bottom of the
   project page to their own `/settings` page (gear icon in the navbar). Beginner help mode moved there from the Projects menu. New

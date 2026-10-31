@@ -144,3 +144,22 @@ def bare_page(browser, studio_url):
 def page(app_page, studio_url):
     app_page.goto(f"{studio_url}/template-editor")
     return app_page
+
+
+@pytest.fixture
+def fill_required_metadata():
+    """Fill what the create form needs before Create Project turns green."""
+
+    def fill(page, timepoints="single"):
+        page.fill("#metadataName", "Sleep and memory")
+        page.fill("#metadataKeywords", "sleep, memory, learning")
+        row = page.locator("#metadataAuthorsList .author-row").first
+        row.locator(".author-first").fill("Ada")
+        row.locator(".author-last").fill("Lovelace")
+        row.locator(".author-corresponding").check()
+        row.locator(".author-email").fill("ada@example.org")
+        row.locator('[data-f="accept"]').click()
+        page.locator('[data-bs-target="#smStudyDesign"]').click()
+        page.select_option("#smSDTimepoints", timepoints)
+
+    return fill

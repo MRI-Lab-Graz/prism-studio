@@ -906,48 +906,22 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("addEventListener('input', updateLoadProjectButtonState)", content)
         self.assertIn("dispatchEvent(new Event('input', { bubbles: true }))", browser_content)
 
-    def test_loaded_project_state_links_to_full_validator(self):
+    def test_loaded_project_state_has_no_validator_link_and_no_datalad_row(self):
         content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("Need a full dataset check?", content)
-        self.assertIn('class="validation-result pending', content)
-        self.assertIn('href="/validate"', content)
-        self.assertIn("Snapshot from folders currently found on disk.", content)
-        self.assertIn("Open Validator", content)
-        self.assertIn("id=\"projectBoxSaveBtn\"", content)
-        self.assertIn("Save Changes to Project", content)
-
-    def test_loaded_project_state_links_out_to_datalad_card_instead_of_inlining_it(self):
-        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
-
-        # Scope to renderLoadedProjectState's own template body: the descriptive
-        # sentence below is also legitimately used (unchanged) as dynamic hint text
-        # inside the separate renderProjectBoxDataladState logic function, so
-        # asserting against the whole file would false-positive on that unrelated
-        # code instead of verifying the inline block was actually removed here.
         render_start = content.index("function renderLoadedProjectState(")
         render_end = content.index("function getOpenProjectActionPath(")
         render_body = content[render_start:render_end]
 
-        # The old inline block must be gone from renderLoadedProjectState's template.
-        self.assertNotIn("DataLad Version Control</strong>", render_body)
-        self.assertNotIn(
-            "DataLad adds Git-based version control to your project, useful for tracking changes over time. Click Enable DataLad to get started.",
-            render_body,
-        )
+        self.assertIn('class="validation-result pending', content)
+        self.assertIn("Snapshot from folders currently found on disk.", content)
+        self.assertIn("id=\"projectBoxSaveBtn\"", content)
+        self.assertIn("Save Changes to Project", content)
+        for gone in ("Need a full dataset check?", "Open Validator", 'href="/validate"',
+                     "Version control", "projectLoadedManageDataladLink", "projectLoadedDataladSummary"):
+            self.assertNotIn(gone, render_body)
 
-        # A compact link-out row takes its place, matching the existing
-        # "Need a full dataset check?" pattern already in the same panel.
-        self.assertIn('id="projectLoadedManageDataladLink"', render_body)
-        self.assertIn('href="/settings#dataladSection"', render_body)
-
-        # The row's descriptive sentence must be state-aware rather than a static
-        # claim that misleads once the project is already DataLad-tracked, so the
-        # old unconditional sentence is gone and a dynamic summary span replaces it.
-        self.assertNotIn("DataLad adds Git-based version control any time", render_body)
-        self.assertIn('id="projectLoadedDataladSummary"', render_body)
-
-        # showDataladCard (show/hide the card when a project is loaded) is in the shared card module.
+        # The DataLad card itself lives on the Settings page (showDataladCard is in the shared card module).
         card = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
         self.assertIn("function showDataladCard()", card)
         self.assertIn("dataladSectionCard", card)
@@ -978,29 +952,13 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("fetchWithApiFallback('/api/projects/current')", show_body)
         self.assertIn("applyCurrentProject(current);", show_body)
 
-    def test_render_project_box_datalad_state_updates_loaded_summary_span(self):
-        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
-
-        render_start = content.index("function renderProjectBoxDataladState(")
-        render_end = content.index("\n    function refreshDataladStatusDeep(")
-        render_body = content[render_start:render_end]
-
-        self.assertIn("getElementById('projectLoadedDataladSummary')", render_body)
-        self.assertIn("This project is DataLad-tracked.", render_body)
-        self.assertIn("DataLad version control isn\\'t set up for this project yet.", render_body)
-
-        # Optional element: must not be added to the function's required-elements
-        # early-return guard, since the Project Loaded panel isn't always present.
-        guard_line = next(line for line in render_body.splitlines() if "if (!status" in line)
-        self.assertNotIn("projectLoadedDataladSummary", guard_line)
-
     def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
         self.assertNotIn("function getProjectValidationAction(code) {", content)
         self.assertNotIn("runProjectValidation(", bootstrap_content)
-        self.assertIn('href="/validate"', PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8"))
+        self.assertNotIn('href="/validate"', PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8"))
 
     def test_open_project_copy_describes_load_then_optional_validation(self):
         open_form_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")

@@ -23,8 +23,8 @@ def open_datalad_card(page, studio_url, project):
     page.click("#card-open")
     page.fill("#existingPath", str(project))
     page.click("#loadProjectBtn")
-    page.wait_for_selector("#projectLoadedManageDataladLink")
-    page.click("#projectLoadedManageDataladLink")  # the card lives on the Settings page
+    page.wait_for_selector("#projectBoxSaveBtn")
+    page.goto(f"{studio_url}/settings#dataladSection")  # the card lives on the Settings page
     page.wait_for_selector("#dataladSectionCard", state="visible")
     expect(page.locator("#projectBoxDataladStateBadge")).to_be_visible()
 
@@ -154,14 +154,14 @@ def assert_tracked_and_text_is_not_annexed(project, *text_files):
         assert (project / name).is_file() and not is_annexed(project / name), name
 
 
-def test_creating_a_project_with_datalad_switched_on_tracks_it(bare_page, studio_url, tmp_path):
+def test_creating_a_project_with_datalad_switched_on_tracks_it(bare_page, studio_url, tmp_path, fill_required_metadata):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
     bare_page.fill("#projectName", "tracked_study")
     bare_page.fill("#projectPath", str(tmp_path))
     bare_page.click('label[for="projectUseDatalad"]')
+    fill_required_metadata(bare_page)
     bare_page.click("#createProjectSubmitBtnTop")
-    bare_page.get_by_role("button", name="Create anyway (incomplete)").click()
 
     expect(bare_page.locator("#createResult")).to_contain_text("tracked_study", timeout=180000)
 

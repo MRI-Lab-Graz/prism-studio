@@ -4298,7 +4298,12 @@
     });
   }
 
+  function syncWorkspace() {
+    document.getElementById('templateWorkspace').classList.toggle('d-none', !hasExplicitTemplate);
+  }
+
   function renderAll() {
+    syncWorkspace();
     renderAnswerCodes();
     renderVariantSelectorRow();
     renderTopLevel();
@@ -4525,6 +4530,7 @@
         },
         set hasExplicitTemplate(value) {
           hasExplicitTemplate = value;
+          syncWorkspace();
         },
         getCurrentProjectPath,
         getTrackedSelectValue,

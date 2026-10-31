@@ -159,3 +159,19 @@ def test_every_language_in_the_bar_has_an_x_that_removes_it(page, project, studi
     page.once("dialog", lambda dialog: dialog.accept())
     page.locator("#langBadges [data-lang='en'] [data-lang-remove]").click()
     assert page.locator("#langBadges [data-lang='en']").count() == 0
+
+
+def test_nothing_below_the_pickers_shows_until_a_template_is_loaded(page, project, studio_url):
+    (project / "code" / "library" / "survey" / "survey-x.json").write_text(json.dumps(project_template()), encoding="utf-8")
+    page.goto(f"{studio_url}/template-editor", wait_until="networkidle")
+
+    for hidden in ("#btnValidate", "#languageBar", "#editorViewTabs", "#editorView"):
+        assert not page.locator(hidden).is_visible(), hidden
+
+    page.select_option("#projectTemplateSelect", "survey-x.json")
+    page.wait_for_selector("#editorViewTabs", state="visible")
+    assert page.locator("#btnValidate").is_visible()
+
+    page.click('label[for="modeCreate"]')
+    page.click("#btnNew")  # a brand-new template also opens the workspace
+    page.wait_for_selector("#editorViewTabs", state="visible")

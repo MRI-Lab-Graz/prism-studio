@@ -1,22 +1,35 @@
 """Projects page: create, open and edit a project the way a user does."""
 
 import json
+import re
 
 from playwright.sync_api import expect
 
 
-def test_create_project_asks_about_missing_metadata_then_creates_it(bare_page, studio_url, tmp_path):
+def test_create_project_is_blocked_until_required_metadata_is_filled(bare_page, studio_url, tmp_path):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
     bare_page.fill("#projectName", "my_study")
     bare_page.fill("#projectPath", str(tmp_path))
 
+    # the metadata form opens by itself and Create stays grey until it is complete
+    expect(bare_page.locator("#studyMetadataSection")).to_be_visible()
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()
+    expect(bare_page.locator("#createProjectSubmitBtn")).to_be_disabled()
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_have_attribute("title", re.compile("required"))
+    assert not (tmp_path / "my_study").exists()
+
+
+def test_create_project_works_once_required_metadata_is_filled(bare_page, studio_url, tmp_path, fill_required_metadata):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-create")
+    bare_page.fill("#projectName", "my_study")
+    bare_page.fill("#projectPath", str(tmp_path))
+    expect(bare_page.locator("#preliminaryCreateBtnTop")).to_have_count(0)  # no way around the required fields
+
+    fill_required_metadata(bare_page)
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_enabled()
     bare_page.click("#createProjectSubmitBtnTop")
-
-    expect(bare_page.get_by_role("heading", name="Required Fields Missing")).to_be_visible()
-    assert not (tmp_path / "my_study").exists()  # nothing is written before confirming
-
-    bare_page.get_by_role("button", name="Create anyway (incomplete)").click()
 
     expect(bare_page.locator("#createResult")).to_contain_text("my_study")
     assert (tmp_path / "my_study" / "project.json").is_file()
@@ -38,6 +51,19 @@ def test_open_existing_project_makes_it_current_and_remembers_it(bare_page, stud
 
     bare_page.reload()
     expect(bare_page.locator("#recentProjectsList")).to_contain_text(project.name)
+
+
+def test_a_loaded_project_opens_its_metadata_and_shows_no_validator_or_datalad_box(bare_page, studio_url, project):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-open")
+    bare_page.fill("#existingPath", str(project))
+    bare_page.click("#loadProjectBtn")
+
+    expect(bare_page.locator("#projectBoxSaveBtn")).to_be_visible()
+    expect(bare_page.locator("#studyMetadataSection")).to_be_visible()  # opened like for a new project
+    expect(bare_page.locator("#smCoreSetupGroupBody")).to_be_visible()
+    expect(bare_page.locator(".project-loaded-state")).not_to_contain_text("Open Validator")
+    expect(bare_page.locator(".project-loaded-state")).not_to_contain_text("DataLad")
 
 
 def open_study_metadata(page):
@@ -64,19 +90,19 @@ def test_study_metadata_edit_is_saved_to_the_project_and_survives_reload(app_pag
     expect(app_page.locator("#metadataName")).to_have_value("Sleep and memory")
 
 
-def test_create_project_rejects_a_name_with_spaces(bare_page, studio_url, tmp_path):
+def test_create_project_rejects_a_name_with_spaces(bare_page, studio_url, tmp_path, fill_required_metadata):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
     bare_page.fill("#projectName", "my study")
     bare_page.fill("#projectPath", str(tmp_path))
+    fill_required_metadata(bare_page)
 
     bare_page.click("#createProjectSubmitBtnTop")
 
-    expect(bare_page.get_by_role("heading", name="Required Fields Missing")).to_have_count(0)
     assert list(tmp_path.iterdir()) == []
 
 
-def test_create_project_never_overwrites_an_existing_folder(bare_page, studio_url, tmp_path):
+def test_create_project_never_overwrites_an_existing_folder(bare_page, studio_url, tmp_path, fill_required_metadata):
     existing = tmp_path / "my_study"
     existing.mkdir()
     (existing / "precious.txt").write_text("keep me")
@@ -84,11 +110,9 @@ def test_create_project_never_overwrites_an_existing_folder(bare_page, studio_ur
     bare_page.click("#card-create")
     bare_page.fill("#projectName", "my_study")
     bare_page.fill("#projectPath", str(tmp_path))
+    fill_required_metadata(bare_page)
 
     bare_page.click("#createProjectSubmitBtnTop")
-    anyway = bare_page.get_by_role("button", name="Create anyway (incomplete)")
-    if anyway.is_visible():
-        anyway.click()
     bare_page.wait_for_timeout(1500)
 
     assert (existing / "precious.txt").read_text() == "keep me"
@@ -212,22 +236,16 @@ def test_delete_project_needs_the_exact_name_then_removes_the_folder(bare_page, 
 
 
 
-def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url, tmp_path):
+def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url, tmp_path, fill_required_metadata):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
     bare_page.fill("#projectName", "long_study")
     bare_page.fill("#projectPath", str(tmp_path))
 
-    bare_page.click("#createProjectSubmitBtnTop")
-    expect(bare_page.get_by_role("heading", name="Required Fields Missing")).to_be_visible()
-    expect(bare_page.locator(".modal.show")).to_contain_text("Timepoints")
-    bare_page.get_by_role("button", name="Go back and fill fields").click()
-
-    open_study_metadata(bare_page)
-    bare_page.locator('[data-bs-target="#smStudyDesign"]').click()
+    fill_required_metadata(bare_page, timepoints="")
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()  # everything but Timepoints is set
     bare_page.select_option("#smSDTimepoints", "multiple")
     bare_page.click("#createProjectSubmitBtnTop")
-    bare_page.get_by_role("button", name="Create anyway (incomplete)").click()
 
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
     saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
