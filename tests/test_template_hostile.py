@@ -437,8 +437,9 @@ def test_cli_and_studio_agree_on_which_templates_are_incomplete(tmp_path):
         [sys.executable, str(ROOT / "app" / "prism_tools.py"), "library", "template-check", "--project", str(tmp_path)],
         capture_output=True, text=True, encoding="utf-8", cwd=str(ROOT), timeout=300,
     )
+    issues = "\n".join(line for line in result.stdout.splitlines() if not line.startswith("Warning:"))  # warnings never block
     for task, template in cases.items():
         studio = validate_project_templates_for_tasks(tasks=[task], project_path=str(tmp_path))
         incomplete = bool(studio)
-        assert (f"survey-{task}.json" in result.stdout) == incomplete, f"{task}: CLI and Studio disagree\n{result.stdout}"
+        assert (f"survey-{task}.json" in issues) == incomplete, f"{task}: CLI and Studio disagree\n{result.stdout}"
     assert result.returncode == 1

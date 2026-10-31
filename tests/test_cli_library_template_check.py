@@ -61,6 +61,7 @@ def test_without_tasks_every_survey_template_of_the_project_is_checked(tmp_path)
 
     result = _check(_project(tmp_path, a=project_template(), b=incomplete))
 
+    issues = "\n".join(line for line in result.stdout.splitlines() if not line.startswith("Warning:"))  # warnings never block
     assert result.returncode == 1
-    assert "survey-b.json" in result.stdout
-    assert "survey-a.json" not in result.stdout
+    assert "survey-b.json" in issues
+    assert "survey-a.json" not in issues

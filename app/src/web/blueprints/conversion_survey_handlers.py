@@ -59,6 +59,7 @@ from .conversion_survey_convert_validate_handlers import (
     handle_api_survey_convert_validate_status,
 )
 from .conversion_survey_official_template_helpers import (
+    app_root,
     infer_tasks_against_official_templates,
     resolve_official_survey_dir,
 )
@@ -235,149 +236,17 @@ def _infer_tasks_against_official_templates(
         sheet=sheet,
         duplicate_handling=duplicate_handling,
         separator_option=separator_option,
-        supported_survey_tabular_suffixes=_SUPPORTED_SURVEY_TABULAR_SUFFIXES,
-        supported_survey_input_message=_SUPPORTED_SURVEY_INPUT_MESSAGE,
-        convert_survey_file_to_prism_dataset=convert_survey_file_to_prism_dataset,
-        convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
-        run_survey_with_official_fallback=_run_survey_with_official_fallback,
     )
 
 
-def _detect_survey_version_contexts(
-    *,
-    uploaded_file,
-    filename: str,
-    library_dir: str | Path,
-    project_path: str | None,
-    survey: str | None,
-    id_column: str | None,
-    session_column: str | None,
-    run_column: str | None,
-    session_override: str | None,
-    sheet: str | int,
-    duplicate_handling: str,
-    separator_option: str,
-    template_version_overrides: dict[str, str] | list[dict[str, object]] | None,
-    allow_near_item_match: bool = False,
-    near_match_tasks: set[str] | None = None,
-    task_value_offsets: dict[str, float] | None = None,
-) -> dict[str, Any]:
-    suffix = Path(filename).suffix.lower()
+def _detect_survey_version_contexts(*, uploaded_file, filename: str, **options) -> dict[str, Any]:
+    from src.survey_input_checks import detect_version_contexts
 
-    base_library_dir = Path(library_dir)
-    if (base_library_dir / "survey").is_dir() and not list(
-        base_library_dir.glob("survey-*.json")
-    ):
-        base_library_dir = base_library_dir / "survey"
-
-    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_version_context_")
+    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_upload_")
     try:
-        tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / filename
+        input_path = Path(tmp_dir) / filename
         uploaded_file.save(str(input_path))
-        output_root = tmp_dir_path / "context_rawdata"
-        separator = expected_delimiter_for_suffix(suffix, separator_option)
-
-        def _run_detection(candidate_library_dir: Path):
-            if suffix in _SUPPORTED_SURVEY_TABULAR_SUFFIXES:
-                return convert_survey_file_to_prism_dataset(
-                    input_path=input_path,
-                    library_dir=str(candidate_library_dir),
-                    output_root=output_root,
-                    survey=survey,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    sheet=sheet,
-                    unknown="ignore",
-                    dry_run=True,
-                    force=True,
-                    name="version_context",
-                    authors=[],
-                    language=None,
-                    alias_file=None,
-                    id_map_file=None,
-                    separator=separator,
-                    duplicate_handling=duplicate_handling,
-                    skip_participants=True,
-                    project_path=project_path,
-                    template_version_overrides=template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            if suffix == ".lsa":
-                return convert_survey_lsa_to_prism_dataset(
-                    input_path=input_path,
-                    library_dir=str(candidate_library_dir),
-                    output_root=output_root,
-                    survey=survey,
-                    id_column=id_column,
-                    session_column=session_column,
-                    run_column=run_column,
-                    session=session_override,
-                    unknown="ignore",
-                    dry_run=True,
-                    force=True,
-                    name="version_context",
-                    authors=[],
-                    language=None,
-                    alias_file=None,
-                    id_map_file=None,
-                    strict_levels=None,
-                    duplicate_handling=duplicate_handling,
-                    skip_participants=True,
-                    project_path=project_path,
-                    template_version_overrides=template_version_overrides,
-                    allow_near_item_match=allow_near_item_match,
-                    near_match_tasks=near_match_tasks,
-                    task_value_offsets=task_value_offsets,
-                )
-            raise ValueError(_SUPPORTED_SURVEY_INPUT_MESSAGE)
-
-        from src.survey_template_sources import build_effective_library, is_standard_library
-
-        app_root = Path(current_app.root_path).parent if has_app_context() else Path(__file__).resolve().parents[4]
-        effective = (  # kept alive below: used_library_dir is inside it
-            build_effective_library(project_path, app_root)
-            if is_standard_library(base_library_dir, project_path, app_root)
-            else None
-        )
-        used_library_dir = effective.directory if effective and effective.origins else base_library_dir
-        try:
-            result = _run_detection(used_library_dir)
-        except TemplateIncomplete:
-            # Only looking, nothing is converted: the refusal (naming the project copies to fill in) comes at
-            # preview and convert. Until then there is nothing to detect.
-            return {
-                "tasks_included": [],
-                "detected_sessions": [],
-                "task_runs": {},
-                "preview_participants": [],
-                "session_column": None,
-                "run_column": None,
-                "multivariant_tasks": {},
-            }
-
-        tasks_included = list(getattr(result, "tasks_included", []) or [])
-        preview_participants = []
-        dry_run_preview = getattr(result, "dry_run_preview", None)
-        if isinstance(dry_run_preview, dict):
-            preview_participants = list(dry_run_preview.get("participants") or [])
-        return {
-            "tasks_included": tasks_included,
-            "detected_sessions": list(getattr(result, "detected_sessions", []) or []),
-            "task_runs": getattr(result, "task_runs", {}) or {},
-            "preview_participants": preview_participants,
-            "session_column": getattr(result, "session_column", None),
-            "run_column": getattr(result, "run_column", None),
-            "multivariant_tasks": collect_multivariant_tasks_from_library(
-                library_dir=used_library_dir,
-                tasks=tasks_included,
-                selected_versions=template_version_overrides,
-            ),
-        }
+        return detect_version_contexts(input_path=input_path, app_root=app_root(), **options)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -542,9 +411,6 @@ def api_survey_check_project_templates():
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,
         validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
-        collect_project_template_warnings_for_tasks=_collect_project_template_warnings_for_tasks,
-        collect_multivariant_tasks_from_library=collect_multivariant_tasks_from_library,
-        get_effective_template_version_overrides=_get_effective_template_version_overrides,
     )
 
 
@@ -561,9 +427,6 @@ def api_survey_detect_version_context():
         parse_task_value_offsets=parse_task_value_offsets,
         survey_workflow_stage_service=_survey_workflow_stage_service,
         normalize_separator_option=normalize_separator_option,
-        get_effective_template_version_overrides=_get_effective_template_version_overrides,
-        resolve_effective_library_path=_resolve_effective_library_path,
-        resolve_official_survey_dir=_resolve_official_survey_dir,
         detect_survey_version_contexts=_detect_survey_version_contexts,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         missing_id_mapping_error_cls=MissingIdMappingError,

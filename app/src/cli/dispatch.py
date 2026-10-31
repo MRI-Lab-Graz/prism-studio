@@ -226,6 +226,8 @@ def dispatch_prism_tools(
             handlers["survey_answer_codes"](args)
         elif args.action == "detect-columns":
             handlers["survey_detect_columns"](args)
+        elif args.action == "detect-version-contexts":
+            handlers["survey_detect_version_contexts"](args)
         elif args.action == "prepare-pavlovia":
             handlers["survey_prepare_pavlovia"](args)
         elif args.action == "import-limesurvey-batch":

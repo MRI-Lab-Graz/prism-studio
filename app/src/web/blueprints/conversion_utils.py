@@ -16,6 +16,10 @@ from src.converters.file_reader import (  # noqa: F401 - re-exported for bluepri
     read_tabular_file,
 )
 from src.participants_paths import participant_json_candidates  # noqa: F401
+from src.survey_input_checks import (  # noqa: F401 - the backend owns these; re-exported for blueprints
+    coerce_template_version_value as _coerce_template_version_value,
+    collect_multivariant_tasks_from_library,
+)
 from src.project_root import (  # noqa: F401 - re-exported for blueprints
     require_existing_project_root,
     resolve_existing_project_root,
@@ -50,25 +54,6 @@ def summarize_project_output_paths(
     if limit is not None:
         return summarized[:limit]
     return summarized
-
-
-def _coerce_template_version_value(raw_value: object) -> str:
-    """Collapse template version payloads to a concrete version string."""
-    if isinstance(raw_value, str):
-        return raw_value.strip()
-    if isinstance(raw_value, dict):
-        if "version" in raw_value:
-            nested_value = _coerce_template_version_value(raw_value.get("version"))
-            if nested_value:
-                return nested_value
-        for lang in ("en", "de"):
-            candidate = raw_value.get(lang)
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-        for candidate in raw_value.values():
-            if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-    return ""
 
 
 def parse_template_version_overrides(
@@ -329,85 +314,6 @@ def parse_task_value_offsets(raw_value: str | None) -> dict[str, float]:
         )
 
     return offsets
-
-
-def collect_multivariant_tasks_from_library(
-    *,
-    library_dir: str | Path,
-    tasks: list[str] | None = None,
-    selected_versions: list[dict[str, object]] | dict[str, str] | None = None,
-) -> dict[str, dict]:
-    """Return multi-version task metadata for templates in a survey library."""
-    survey_dir = Path(library_dir).expanduser().resolve()
-    if (survey_dir / "survey").is_dir() and not list(survey_dir.glob("survey-*.json")):
-        survey_dir = survey_dir / "survey"
-    if not survey_dir.is_dir():
-        return {}
-
-    selected_tasks = {
-        str(task).strip().lower() for task in (tasks or []) if str(task).strip()
-    }
-    requested_versions: dict[str, str] = {}
-    if isinstance(selected_versions, dict):
-        requested_versions = {
-            str(task).strip().lower(): _coerce_template_version_value(version)
-            for task, version in selected_versions.items()
-            if str(task).strip() and _coerce_template_version_value(version)
-        }
-    elif isinstance(selected_versions, list):
-        for entry in selected_versions:
-            if not isinstance(entry, dict):
-                continue
-            task = str(entry.get("task") or "").strip().lower()
-            version = _coerce_template_version_value(entry.get("version"))
-            run_value = entry.get("run")
-            if not task or not version or run_value not in {None, ""}:
-                continue
-            requested_versions[task] = version
-
-    result: dict[str, dict] = {}
-    for json_file in sorted(survey_dir.glob("survey-*.json")):
-        try:
-            payload = json.loads(json_file.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-
-        if not isinstance(payload, dict):
-            continue
-
-        study = payload.get("Study", {})
-        if not isinstance(study, dict):
-            continue
-
-        task_from_name = json_file.stem.replace("survey-", "")
-        task_name = str(study.get("TaskName") or task_from_name).strip().lower()
-        if not task_name:
-            continue
-        if selected_tasks and task_name not in selected_tasks:
-            continue
-
-        versions_raw = study.get("Versions")
-        versions = []
-        if isinstance(versions_raw, list):
-            versions = [
-                str(value).strip() for value in versions_raw if str(value).strip()
-            ]
-
-        if len(versions) <= 1:
-            continue
-
-        default_version = _coerce_template_version_value(study.get("Version"))
-        if not default_version and versions:
-            default_version = versions[0]
-
-        result[task_name] = {
-            "versions": versions,
-            "default_version": default_version,
-            "selected_version": requested_versions.get(task_name, default_version),
-            "variant_definitions": study.get("VariantDefinitions", []),
-        }
-
-    return result
 
 
 def read_tabular_dataframe_robust(

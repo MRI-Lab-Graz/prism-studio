@@ -2573,6 +2573,32 @@ def build_prism_tools_parsers(
     parser_survey_detect_columns.add_argument("--run-column", help="Read the runs from this column")
     parser_survey_detect_columns.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_survey_detect_contexts = survey_subparsers.add_parser(
+        "detect-version-contexts",
+        help="Which tasks, sessions, runs and template versions a survey table holds (a dry run; writes nothing): "
+        "what Studio's survey page shows before converting.",
+    )
+    parser_survey_detect_contexts.add_argument("--input", required=True, help="The survey table (.xlsx/.csv/.tsv/.lsa)")
+    parser_survey_detect_contexts.add_argument("--project", help="Project root: its templates and session rules apply")
+    parser_survey_detect_contexts.add_argument("--library", help="A template library folder (default: the project's, else yours, else the global one)")
+    parser_survey_detect_contexts.add_argument("--survey", help="Only these tasks (comma-separated)")
+    parser_survey_detect_contexts.add_argument("--id-column", help="Participant ID column (default: detected)")
+    parser_survey_detect_contexts.add_argument("--session-column", help="Session column")
+    parser_survey_detect_contexts.add_argument("--run-column", help="Run column")
+    parser_survey_detect_contexts.add_argument("--session", help="Session label for every row, or the one session to read")
+    parser_survey_detect_contexts.add_argument("--sheet", default="0", help="Excel sheet name or index (default: 0)")
+    parser_survey_detect_contexts.add_argument(
+        "--separator", default="auto", choices=["auto", "comma", "semicolon", "tab", "pipe"], help="Delimiter of a CSV/TSV (default: auto)"
+    )
+    parser_survey_detect_contexts.add_argument(
+        "--duplicate-handling", default="error", choices=["error", "keep_first", "keep_last", "sessions"], help="Repeated participant IDs (default: error)"
+    )
+    parser_survey_detect_contexts.add_argument("--template-versions", action="append", help="TASK=VERSION (repeatable)")
+    parser_survey_detect_contexts.add_argument("--value-offsets", action="append", help="TASK=OFFSET (repeatable)")
+    parser_survey_detect_contexts.add_argument("--allow-near-item-match", action="store_true", help="Allow near item matches")
+    parser_survey_detect_contexts.add_argument("--near-match-tasks", help="Comma-separated tasks near matching may apply to")
+    parser_survey_detect_contexts.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_survey_prepare_pavlovia = survey_subparsers.add_parser(
         "prepare-pavlovia",
         help="Turn the responses CSV downloaded from Pavlovia into a clean wide table (participant_id, session, one "
@@ -2844,6 +2870,22 @@ def build_prism_tools_parsers(
     parser_lib_template_check.add_argument(
         "--schema-version", default="stable", help="Schema version to validate against"
     )
+    parser_lib_template_check.add_argument(
+        "--input",
+        help="An input table (.xlsx/.csv/.tsv/.lsa) to match against the official templates first (copies the matching ones into the project)",
+    )
+    parser_lib_template_check.add_argument("--id-column", help="Participant ID column of --input (default: detected)")
+    parser_lib_template_check.add_argument("--session-column", help="Session column of --input")
+    parser_lib_template_check.add_argument("--sheet", default="0", help="Excel sheet name or index of --input (default: 0)")
+    parser_lib_template_check.add_argument(
+        "--separator", default="auto", choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter of a CSV/TSV --input (default: auto)",
+    )
+    parser_lib_template_check.add_argument(
+        "--duplicate-handling", default="error", choices=["error", "keep_first", "keep_last", "sessions"],
+        help="Repeated participant IDs in --input (default: error)",
+    )
+    parser_lib_template_check.add_argument("--json", action="store_true", help="Print the result as JSON")
 
     parser_lib_template_validate = subparsers_library.add_parser(
         "template-validate",

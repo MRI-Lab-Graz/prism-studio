@@ -22,13 +22,15 @@ Same options, same defaults, one code path: the command builds Studio's `SurveyW
 `SurveyWorkflowStageService` with the backend runner `run_survey_with_template_sources`. `tests/test_survey_convert_options_parity.py`
 fails when a Studio option has no CLI flag or the defaults differ.
 
-## Logic that lives in Studio only (no command runs it)
+## Template check and version contexts (done)
 
-- `app/src/web/blueprints/conversion_survey_official_template_helpers.py` - checking which official templates match an
-  uploaded file (`infer_tasks_against_official_templates`) and resolving the official library on its own
-  (`resolve_official_survey_dir`). No CLI command.
-- `app/src/web/blueprints/conversion_survey_handlers.py` - "detect version contexts" (which template versions a file
-  needs) builds its own merged library. No CLI command.
+`src/survey_input_checks.py` answers both questions Studio's survey page asks about a table: which official templates match
+and whether the project's copies are complete (`library template-check --input`), and which tasks, sessions, runs and
+template versions the table holds (`survey detect-version-contexts`). The routes only save the upload.
+`tests/test_cli_studio_parity_survey_checks.py` runs the commands against Studio's real routes (it also covers `prepare`
+and the workflow command). The warnings of both are now the same set: Studio's template check used to omit the language
+and item-rule warnings the command printed.
+
 ## Review results (first pass)
 
 Method: for each Studio endpoint with an obvious CLI command, read the form fields the route takes and the flags the command

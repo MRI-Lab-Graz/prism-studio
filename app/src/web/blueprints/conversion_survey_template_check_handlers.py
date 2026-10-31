@@ -2,9 +2,7 @@ from pathlib import Path
 
 from flask import jsonify, request, session
 from werkzeug.utils import secure_filename
-from src.system_files import filter_system_files
-
-from .conversion_survey_template_helpers import build_template_completion_gate
+from src.survey_input_checks import check_project_templates, matching_summary
 
 
 def handle_api_survey_check_project_templates(
@@ -19,9 +17,6 @@ def handle_api_survey_check_project_templates(
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
     validate_project_templates_for_tasks,
-    collect_project_template_warnings_for_tasks,
-    collect_multivariant_tasks_from_library,
-    get_effective_template_version_overrides,
 ):
     """Validate local project survey templates and optionally seed from official templates."""
     requested_project_path = (request.form.get("project_path") or "").strip() or None
@@ -49,19 +44,8 @@ def handle_api_survey_check_project_templates(
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
-    matching_summary = {
-        "input_file": None,
-        "official_template_count": 0,
-        "matched_tasks": [],
-        "copied_tasks": [],
-        "existing_tasks": [],
-        "missing_official_tasks": [],
-        "detected_sessions": [],
-        "task_runs": {},
-        "session_column": None,
-        "run_column": None,
-        "match_error": None,
-    }
+    inferred = None
+    input_name = None
 
     if uploaded_file and getattr(uploaded_file, "filename", ""):
         filename = secure_filename(uploaded_file.filename)
@@ -69,7 +53,7 @@ def handle_api_survey_check_project_templates(
         if suffix not in supported_survey_input_suffixes:
             return jsonify({"error": supported_survey_input_message}), 400
 
-        matching_summary["input_file"] = filename
+        input_name = filename
         try:
             inferred = infer_tasks_against_official_templates(
                 uploaded_file=uploaded_file,
@@ -81,22 +65,6 @@ def handle_api_survey_check_project_templates(
                 duplicate_handling=duplicate_handling,
                 separator_option=separator_option,
             )
-            matching_summary["official_template_count"] = inferred.get(
-                "official_template_count", 0
-            )
-            matching_summary["matched_tasks"] = inferred.get("tasks", [])
-            matching_summary["copied_tasks"] = inferred.get("copied_tasks", [])
-            matching_summary["existing_tasks"] = inferred.get("existing_tasks", [])
-            matching_summary["missing_official_tasks"] = inferred.get(
-                "missing_official_tasks", []
-            )
-            matching_summary["detected_sessions"] = inferred.get(
-                "detected_sessions", []
-            )
-            matching_summary["task_runs"] = inferred.get("task_runs", {})
-            matching_summary["session_column"] = inferred.get("session_column")
-            matching_summary["run_column"] = inferred.get("run_column")
-            matching_summary["match_error"] = inferred.get("match_error")
         except id_column_not_detected_error_cls as error:
             return (
                 jsonify(
@@ -121,109 +89,14 @@ def handle_api_survey_check_project_templates(
                 409,
             )
         except Exception as error:
-            matching_summary["match_error"] = str(error)
+            inferred = {"match_error": str(error)}
     elif upload_error and upload_error != "Missing input file":
         return jsonify({"error": upload_error}), 400
 
-    template_dir = project_root / "code" / "library" / "survey"
-    if template_dir.is_dir():
-        template_candidates = sorted(template_dir.glob("survey-*.json"))
-        allowed_names = set(
-            filter_system_files([path.name for path in template_candidates])
-        )
-        template_files = [
-            path for path in template_candidates if path.name in allowed_names
-        ]
-    else:
-        template_files = []
-    tasks = sorted(
-        {
-            file_path.stem[len("survey-") :]
-            for file_path in template_files
-            if file_path.stem.startswith("survey-")
-            and len(file_path.stem) > len("survey-")
-        }
-    )
-    local_templates = list(tasks)
-
-    if matching_summary["matched_tasks"]:
-        tasks = matching_summary["matched_tasks"]
-
-    if not template_files:
-        return jsonify(
-            {
-                "ok": True,
-                "message": "No local survey templates found in project code/library/survey.",
-                "template_dir": str(template_dir),
-                "template_count": 0,
-                "local_templates": [],
-                "tasks": [],
-                "issues": [],
-                "warnings": [],
-                "matching": matching_summary,
-                "multivariant_tasks": {},
-                "detected_sessions": matching_summary["detected_sessions"],
-                "task_runs": matching_summary["task_runs"],
-                "session_column": matching_summary["session_column"],
-                "run_column": matching_summary["run_column"],
-            }
-        )
-
-    issues = validate_project_templates_for_tasks(
-        tasks=tasks,
-        project_path=str(project_root),
-        schema_version="stable",
-    )
-    warnings = collect_project_template_warnings_for_tasks(
-        tasks=local_templates,
-        project_path=str(project_root),
-    )
-    multivariant_tasks = collect_multivariant_tasks_from_library(
-        library_dir=project_root / "code" / "library" / "survey",
-        tasks=tasks,
-        selected_versions=get_effective_template_version_overrides(
-            project_path=project_root,
-            template_version_overrides=None,
-        ),
-    )
-
-    if issues:
-        gate = build_template_completion_gate(tasks=tasks, issues=issues)
-        return jsonify(
-            {
-                "ok": False,
-                "message": gate["message"],
-                "template_dir": str(template_dir),
-                "template_count": len(template_files),
-                "local_templates": local_templates,
-                "tasks": tasks,
-                "issues": issues,
-                "warnings": warnings,
-                "workflow_gate": gate,
-                "matching": matching_summary,
-                "multivariant_tasks": multivariant_tasks,
-                "detected_sessions": matching_summary["detected_sessions"],
-                "task_runs": matching_summary["task_runs"],
-                "session_column": matching_summary["session_column"],
-                "run_column": matching_summary["run_column"],
-            }
-        )
-
     return jsonify(
-        {
-            "ok": True,
-            "message": "Project survey templates passed required-field validation.",
-            "template_dir": str(template_dir),
-            "template_count": len(template_files),
-            "local_templates": local_templates,
-            "tasks": tasks,
-            "issues": [],
-            "warnings": warnings,
-            "matching": matching_summary,
-            "multivariant_tasks": multivariant_tasks,
-            "detected_sessions": matching_summary["detected_sessions"],
-            "task_runs": matching_summary["task_runs"],
-            "session_column": matching_summary["session_column"],
-            "run_column": matching_summary["run_column"],
-        }
+        check_project_templates(
+            project_root,
+            matching_summary(input_name, inferred),
+            validate=validate_project_templates_for_tasks,
+        )
     )
