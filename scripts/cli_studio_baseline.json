@@ -68,6 +68,7 @@
  "src.physio_renamer:resolve_project_copy_root": "to review",
  "src.prism_template_validation:missing_task_name_error": "to review",
  "src.prism_template_validation:with_default_task_name": "to review",
+ "src.project_documents:remove_legacy_contributor_files": "project setup: saving the dataset description (the CLI's regenerate-citation runs it too, inside regenerate_citation)",
  "src.project_icons:normalize_project_icon": "to review",
  "src.project_icons:resolve_project_icon": "to review",
  "src.project_icons:stable_project_icon": "to review",

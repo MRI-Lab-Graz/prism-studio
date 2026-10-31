@@ -700,6 +700,16 @@ def build_prism_tools_parsers(
         help="Output format (docx needs --output and python-docx)",
     )
 
+    parser_project = subparsers.add_parser("project", help="Project files written from its metadata")
+    project_subparsers = parser_project.add_subparsers(dest="action", help="Action")
+    for action, help_text in (
+        ("generate-readme", "Write README.md from project.json"),
+        ("regenerate-citation", "Write CITATION.cff from the project's metadata"),
+    ):
+        project_subparsers.add_parser(action, help=help_text).add_argument(
+            "--project", required=True, help="Project root or project.json path"
+        )
+
     parser_methods = subparsers.add_parser(
         "methods", help="Methods section from project metadata"
     )
@@ -3052,6 +3062,7 @@ def build_prism_tools_parsers(
         "export": parser_export,
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
+        "project": parser_project,
         "methods": parser_methods,
         "sessions": parser_sessions,
         "publish": parser_publish,

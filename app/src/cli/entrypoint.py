@@ -81,6 +81,7 @@ from src.cli.commands.sessions import (
     cmd_sessions_unset,
 )
 from src.cli.commands.methods import cmd_methods_generate
+from src.cli.commands.project import cmd_project_generate_readme, cmd_project_regenerate_citation
 from src.cli.commands.preregistration import cmd_preregistration_draft
 from src.cli.commands.export import (
     cmd_export_anc,
@@ -245,6 +246,8 @@ def main() -> None:
             "datalad_finalize": cmd_datalad_finalize,
             "preregistration_draft": cmd_preregistration_draft,
             "methods_generate": cmd_methods_generate,
+            "project_generate_readme": cmd_project_generate_readme,
+            "project_regenerate_citation": cmd_project_regenerate_citation,
             "export_project": cmd_export_project,
             "export_folder": cmd_export_folder,
             "export_git_lfs": cmd_export_git_lfs,
