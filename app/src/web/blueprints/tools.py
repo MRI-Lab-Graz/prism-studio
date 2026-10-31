@@ -87,7 +87,7 @@ from src.converters.wide_to_long import (
     convert_wide_to_long_dataframe,
     resolve_wide_to_long_id_uniqueness,
 )
-from src.participants_id_selection import resolve_participants_id_selection
+from src.wide_table_peek import peek_wide_table
 
 
 from src.template_info import (
@@ -683,17 +683,10 @@ def api_file_management_raw_peek():
     """Return column names and first few rows of an uploaded wide table."""
     upload = request.files.get("data")
     source_file_path = (request.form.get("source_file_path") or "").strip()
-    payload: bytes | None = None
 
     if upload is not None and upload.filename:
-        filtered = filter_system_files([upload.filename])
-        if not filtered:
-            return jsonify({"error": "System files are not accepted."}), 400
-        filename = filtered[0]
-        try:
-            payload = upload.read()
-        except Exception as exc:
-            return jsonify({"error": f"Could not read file: {exc}"}), 400
+        display_name = upload.filename
+        read_payload = upload.read
     elif source_file_path:
         # Resolve for existence/read checks, but keep the original (unresolved)
         # path for the display name: resolving follows symlinks, which would
@@ -702,57 +695,29 @@ def api_file_management_raw_peek():
         source_path = raw_source_path.resolve()
         if not source_path.exists() or not source_path.is_file():
             return jsonify({"error": f"File not found: {source_file_path}"}), 400
-        filtered = filter_system_files([raw_source_path.name])
-        if not filtered:
-            return jsonify({"error": "System files are not accepted."}), 400
-        filename = filtered[0]
-        try:
-            payload = source_path.read_bytes()
-        except Exception as exc:
-            return jsonify({"error": f"Could not read file: {exc}"}), 400
+        display_name = raw_source_path.name
+        read_payload = source_path.read_bytes
     else:
         return jsonify({"error": "Please upload a file."}), 400
 
-    suffix = Path(filename).suffix.lower()
-    if suffix not in {".csv", ".tsv", ".xlsx"}:
-        return jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400
-    if payload is None:
-        return jsonify({"error": "Could not read file."}), 400
+    try:
+        payload = read_payload()
+    except Exception as exc:
+        return jsonify({"error": f"Could not read file: {exc}"}), 400
 
-    requested_sheet = (request.form.get("sheet") or "").strip()
     with tempfile.TemporaryDirectory(prefix="prism_peek_") as tmpdir:
-        input_path = Path(tmpdir) / f"input{suffix}"
+        input_path = Path(tmpdir) / f"input{Path(display_name).suffix.lower()}"
         input_path.write_bytes(payload)
-        sheet_metadata = list_excel_sheets(input_path) if suffix == ".xlsx" else None
-        resolved_sheet = resolve_sheet_selection(requested_sheet, sheet_metadata)
         try:
-            df = _read_wide_to_long_input(input_path, sheet=resolved_sheet)
-        except Exception as exc:
-            return jsonify({"error": f"Could not parse file: {exc}"}), 400
-
-    peek_df = df.head(5).fillna("").astype(str)
-    id_resolution = resolve_participants_id_selection(
-        [str(column) for column in df.columns],
-        suffix,
-        explicit_id_column=None,
-    )
-    return jsonify(
-        {
-            "filename": filename,
-            "columns": list(df.columns),
-            "rows": peek_df.to_dict(orient="records"),
-            "total_rows": len(df),
-            "total_columns": len(df.columns),
-            "suggested_id_column": id_resolution.get("suggested_id_column"),
-            "participant_id_found": bool(id_resolution.get("participant_id_found")),
-            "id_selection_required": bool(id_resolution.get("id_selection_required")),
-            "sheet_names": list((sheet_metadata or {}).get("sheet_names") or []),
-            "non_empty_sheet_names": list(
-                (sheet_metadata or {}).get("non_empty_sheet_names") or []
-            ),
-            "resolved_sheet": resolved_sheet,
-        }
-    )
+            return jsonify(
+                peek_wide_table(
+                    input_path,
+                    display_name=display_name,
+                    sheet=request.form.get("sheet") or "",
+                )
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
 
 
 @tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])

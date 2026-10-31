@@ -9,6 +9,7 @@ from pathlib import Path
 from src.json_editor.file_manager import FileManager
 from src.json_editor.json_validator import JSONValidator
 from src.json_editor.schema_loader import BIDSSchemaLoader
+from src.json_editor.validation import validate_json_document
 from src.web.blueprints.conversion_utils import resolve_existing_project_root
 
 
@@ -203,8 +204,9 @@ def create_json_editor_blueprint(bids_folder=None):
             file_manager.save_file(json_type, data)
 
             # Validate after save
-            schema = schema_loader.get_schema_for_type(json_type)
-            _is_valid, errors = validator.validate(json_type, data, schema)
+            _is_valid, errors = validate_json_document(
+                json_type, data, validator=validator, schema_loader=schema_loader
+            )
             return jsonify(
                 {
                     "success": True,
@@ -228,8 +230,9 @@ def create_json_editor_blueprint(bids_folder=None):
                     400,
                 )
 
-            schema = schema_loader.get_schema_for_type(json_type)
-            is_valid, errors = validator.validate(json_type, data, schema)
+            is_valid, errors = validate_json_document(
+                json_type, data, validator=validator, schema_loader=schema_loader
+            )
             return jsonify(
                 {
                     "success": True,

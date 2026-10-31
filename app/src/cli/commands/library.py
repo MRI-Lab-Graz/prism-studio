@@ -11,7 +11,7 @@ from src.prism_template_validation import (
     strip_template_editor_internal_keys,
     validate_template_against_schema,
 )
-from src.reporting import generate_methods_text
+from src.methods_boilerplate import write_methods_boilerplate
 from src.survey_template_normalization import normalize_survey_template_for_validation
 from src.utils.io import dump_json_text
 
@@ -23,7 +23,7 @@ def cmd_library_generate_methods_text(args) -> None:
     if args.biometrics_lib:
         libs.append(args.biometrics_lib)
 
-    generate_methods_text(libs, args.output, lang=args.lang)
+    write_methods_boilerplate(libs, args.output, lang=args.lang)
 
 
 def cmd_library_sync(args) -> None:

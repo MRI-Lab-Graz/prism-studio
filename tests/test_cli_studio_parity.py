@@ -472,3 +472,145 @@ def test_applying_fixes_writes_the_same_files_in_the_cli_and_in_studio(tmp_path,
     assert json.loads(capsys.readouterr().out)["count"] == body["count"]
     assert _tree(cli) == _tree(studio)
     assert (cli / "dataset_description.json").exists()
+
+
+def test_the_methods_boilerplate_is_the_same_text_in_the_cli_and_in_studio(tmp_path):
+    from template_fixtures import project_template
+
+    from src.cli.commands.library import cmd_library_generate_methods_text
+    from src.web.blueprints.tools_generation_handlers import handle_generate_boilerplate_endpoint
+
+    library = tmp_path / "library" / "survey"
+    library.mkdir(parents=True)
+    template_file = library / "survey-mood.json"
+    template_file.write_text(json.dumps(project_template("mood")), encoding="utf-8")
+    out = tmp_path / "methods.md"
+
+    cmd_library_generate_methods_text(SimpleNamespace(survey_lib=str(library), biometrics_lib=None, output=str(out), lang="en"))
+    body, status = _studio_json(handle_generate_boilerplate_endpoint, {"files": [str(template_file)], "language": "en"})
+
+    assert status == 200
+    assert out.read_text(encoding="utf-8") == body["md"]
+    assert "PRISM schema version" in body["md"]
+
+
+def test_the_merge_conflict_report_is_the_same_csv_in_the_cli_and_in_studio(tmp_path, capsys):
+    import io
+    from unittest.mock import patch
+
+    from flask import Flask
+
+    from src.cli.commands.participants import cmd_participants_merge
+    from src.web.blueprints import conversion_participants_mapping as mapping_module
+    from src.web.blueprints.conversion_participants_blueprint import conversion_participants_bp
+
+    project = tmp_path / "study"
+    project.mkdir()
+    (project / "project.json").write_text(json.dumps(READY_PROJECT), encoding="utf-8")
+    (project / "participants.tsv").write_text("participant_id\tage\tsex\nsub-001\t21\tF\nsub-002\t22\tM\n", encoding="utf-8")
+    table = b"participant_id,age,sex\nsub-001,25,F\nsub-002,22,X\n"
+    source = tmp_path / "participants.csv"
+    source.write_bytes(table)
+
+    app = Flask(__name__)
+    app.secret_key = "t"
+    app.register_blueprint(conversion_participants_bp)
+    with patch.object(mapping_module, "_load_survey_template_item_ids", return_value=set()), patch.object(
+        mapping_module, "resolve_effective_library_path", return_value=project
+    ):
+        client = app.test_client()
+        with client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(project)
+        response = client.post(
+            "/api/participants-merge-conflicts",
+            data={"separator": "comma", "id_column": "participant_id", "preview_limit": "1", "file": (io.BytesIO(table), "participants.csv")},
+            content_type="multipart/form-data",
+        )
+        cmd_participants_merge(SimpleNamespace(
+            project=str(project), input=str(source), separator="comma", sheet=0, preview_limit=1, id_column="participant_id",
+            conflicts_csv=True, apply=False, json=False, screening_only=None, neurobagel_schema=None,
+            session_resolution=None, harmonization=None, sessions_from_date=None,
+        ))
+
+    assert response.status_code == 200
+    cli_csv = capsys.readouterr().out
+    assert cli_csv == response.data.decode("utf-8")
+    assert "sub-001" in cli_csv and "sub-002" in cli_csv  # both conflicts, though preview_limit is 1
+
+
+@pytest.mark.parametrize("data", [{"Name": "x", "BIDSVersion": "1.10.0"}, {"Name": 5}], ids=["valid", "wrong-type"])
+def test_the_json_editor_validates_the_same_in_the_cli_and_in_studio(tmp_path, capsys, data):
+    from flask import Flask
+
+    from src.cli.commands.json_editor import cmd_json_editor_validate
+    from src.json_editor_blueprint import create_json_editor_blueprint
+
+    source = tmp_path / "dataset_description.json"
+    source.write_text(json.dumps(data), encoding="utf-8")
+    app = Flask(__name__)
+    app.register_blueprint(create_json_editor_blueprint(bids_folder=None))
+    response = app.test_client().post("/editor/api/validate?type=dataset_description", json=data)
+    capsys.readouterr()  # the schema-loading chatter of Studio's own start-up
+    code = 0
+    try:
+        cmd_json_editor_validate(SimpleNamespace(file=str(source), type="dataset_description", json=True))
+    except SystemExit as exc:
+        code = exc.code
+
+    studio, cli = response.get_json(), json.loads(capsys.readouterr().out)
+    assert code == (0 if studio["valid"] else 1)
+    assert response.status_code == 200 and studio["success"]
+    assert (cli["valid"], cli["errors"]) == (studio["valid"], studio["errors"])
+    assert studio["valid"] == (not studio["errors"])
+    assert studio["errors"] or data["Name"] == "x"  # the wrong-typed Name is really reported
+
+
+def test_detecting_columns_answers_the_same_in_the_cli_and_in_studio(tmp_path, capsys):
+    import io
+
+    from flask import Flask
+
+    from src.cli.commands.survey import cmd_survey_detect_columns
+    from src.web.blueprints.tools_generation_handlers import handle_detect_columns
+
+    table = b"Code;visit;trial;q1\nA1;pre;1;3\nA2;post;2;4\nA3;pre;1;5\n"
+    source = tmp_path / "data.csv"
+    source.write_bytes(table)
+
+    with Flask(__name__).test_request_context(
+        method="POST",
+        data={"separator": "semicolon", "run_column_override": "trial", "file": (io.BytesIO(table), "data.csv")},
+        content_type="multipart/form-data",
+    ):
+        studio = handle_detect_columns().get_json()
+    cmd_survey_detect_columns(SimpleNamespace(
+        file=str(source), separator="semicolon", session_column="", run_column="trial", json=True,
+    ))
+
+    cli = json.loads(capsys.readouterr().out)
+    assert cli == studio
+    assert studio["columns"] == ["Code", "visit", "trial", "q1"]
+    assert studio["detected_sessions"] == ["post", "pre"] and studio["detected_runs"] == ["1", "2"]
+
+
+def test_peeking_into_a_wide_table_answers_the_same_in_the_cli_and_in_studio(tmp_path, capsys):
+    import io
+
+    from flask import Flask
+
+    from src.cli.commands.file_management import cmd_file_management_raw_peek
+    from src.web.blueprints.tools import api_file_management_raw_peek
+
+    table = b"participant_id,age,sex\nsub-001,25,F\nsub-002,22,X\n"
+    source = tmp_path / "wide.csv"
+    source.write_bytes(table)
+
+    with Flask(__name__).test_request_context(
+        method="POST", data={"data": (io.BytesIO(table), "wide.csv")}, content_type="multipart/form-data"
+    ):
+        studio = api_file_management_raw_peek().get_json()
+    cmd_file_management_raw_peek(SimpleNamespace(input=str(source), sheet="", json=True))
+
+    cli = json.loads(capsys.readouterr().out)
+    assert cli == studio
+    assert studio["total_rows"] == 2 and studio["columns"] == ["participant_id", "age", "sex"]

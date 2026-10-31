@@ -334,3 +334,26 @@ def cmd_file_management_rename_physio(args) -> None:
             print(f"{len(copy_errors)} file(s) failed:")
             for copy_error in copy_errors:
                 print(f"  ✗ {copy_error}")
+
+
+def cmd_file_management_raw_peek(args) -> None:
+    """First look at a wide data table - the preview Studio shows after choosing the file (the same function runs both)."""
+    from src.wide_table_peek import peek_wide_table
+
+    path = Path(args.input).expanduser()
+    if not path.is_file():
+        print(f"Error: --input not found: {path}")
+        sys.exit(1)
+    try:
+        result = peek_wide_table(path.resolve(), display_name=path.name, sheet=args.sheet or "")
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+    print(f"{result['filename']}: {result['total_rows']} rows, {result['total_columns']} columns")
+    print(f"Columns: {', '.join(map(str, result['columns']))}")
+    print(f"Suggested ID column: {result['suggested_id_column']}")
+    for row in result["rows"]:
+        print("  " + " | ".join(str(v) for v in row.values()))

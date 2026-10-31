@@ -1170,3 +1170,32 @@ def cmd_survey_export_questionnaire_docx(args) -> None:
     output_path = Path(args.output).resolve()
     output_path.write_bytes(buf.getvalue())
     print(f"✅ Questionnaire Word document written: {output_path}")
+
+
+def cmd_survey_detect_columns(args) -> None:
+    """What is in a survey data file: columns, the likely ID column, sessions and runs - the lists Studio's
+    column pickers show (the same function runs both)."""
+    from src.survey_columns import detect_columns
+
+    path = Path(args.file).expanduser().resolve()
+    if not path.is_file():
+        print(f"Error: --file not found: {path}")
+        sys.exit(1)
+    try:
+        result = detect_columns(
+            path,
+            separator=args.separator,
+            session_column_override=args.session_column or "",
+            run_column_override=args.run_column or "",
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+    print(f"Columns ({len(result['columns'])}): {', '.join(map(str, result['columns']))}")
+    print(f"Suggested ID column: {result['suggested_id_column']}")
+    for kind in ("session", "run"):
+        if result.get(f"{kind}_column"):
+            print(f"{kind.capitalize()} column: {result[f'{kind}_column']} -> {', '.join(result[f'detected_{kind}s'])}")

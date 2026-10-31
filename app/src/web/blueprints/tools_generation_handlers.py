@@ -1,17 +1,12 @@
 import io
 import os
-import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
-from flask import current_app, jsonify, request, send_file
-from src.converters.file_reader import read_tabular_file
-
-from .conversion_utils import (
-    expected_delimiter_for_suffix,
-    normalize_separator_option,
-)
+from flask import jsonify, request, send_file
+from src.methods_boilerplate import write_methods_boilerplate
+from src.survey_columns import detect_columns
 
 
 def _require_json_object_payload():
@@ -188,17 +183,6 @@ def handle_generate_pavlovia_endpoint():
 def handle_generate_boilerplate_endpoint():
     """Generate Methods Boilerplate from selected JSON files."""
     try:
-        root_dir = str(Path(current_app.root_path))
-        if root_dir not in sys.path:
-            sys.path.insert(0, root_dir)
-        from src.reporting import generate_methods_text
-    except ImportError:
-        generate_methods_text = None
-
-    if not generate_methods_text:
-        return jsonify({"error": "Boilerplate generator not available"}), 500
-
-    try:
         data, payload_error = _require_json_object_payload()
         if payload_error is not None:
             return payload_error
@@ -217,21 +201,7 @@ def handle_generate_boilerplate_endpoint():
         os.close(fd)
 
         language = data.get("language", "en")
-        github_url = "https://github.com/MRI-Lab-Graz/prism-studio"
-        try:
-            from src.schema_manager import DEFAULT_SCHEMA_VERSION
-
-            schema_version = DEFAULT_SCHEMA_VERSION
-        except ImportError:
-            schema_version = "stable"
-
-        generate_methods_text(
-            valid_files,
-            temp_path,
-            lang=language,
-            github_url=github_url,
-            schema_version=schema_version,
-        )
+        write_methods_boilerplate(valid_files, temp_path, lang=language)
 
         with open(temp_path, "r", encoding="utf-8") as file_handle:
             md_content = file_handle.read()
@@ -264,152 +234,26 @@ def handle_detect_columns():
     """Detect column names from uploaded file for ID column selection."""
     file = request.files.get("file")
     source_file_path = (request.form.get("source_file_path") or "").strip()
-    session_column_override = (request.form.get("session_column_override") or "").strip()
-    run_column_override = (request.form.get("run_column_override") or "").strip()
-
-    filename = ""
-    local_source_path: Path | None = None
-    if file and getattr(file, "filename", ""):
-        filename = file.filename.lower()
-    elif source_file_path:
-        candidate_path = Path(source_file_path).expanduser().resolve()
-        if not candidate_path.exists() or not candidate_path.is_file():
-            return jsonify({"error": f"File not found: {source_file_path}"}), 400
-        filename = candidate_path.name.lower()
-        local_source_path = candidate_path
-    else:
-        return jsonify({"error": "No file uploaded"}), 400
+    options = {
+        "separator": request.form.get("separator"),
+        "session_column_override": (request.form.get("session_column_override") or "").strip(),
+        "run_column_override": (request.form.get("run_column_override") or "").strip(),
+    }
 
     try:
-        columns = []
-        df = None
-
-        separator_option = normalize_separator_option(request.form.get("separator"))
-
-        if filename.endswith(".lsa"):
-            import shutil
-
-            tmp_dir = tempfile.mkdtemp(prefix="prism_detect_cols_")
-            try:
-                tmp_path = Path(tmp_dir) / filename
-                if local_source_path is not None:
-                    shutil.copy2(local_source_path, tmp_path)
-                else:
-                    file.save(str(tmp_path))
-                from src.converters.limesurvey import parse_lsa_responses
-
-                df, _, _ = parse_lsa_responses(str(tmp_path))
-                columns = list(df.columns)
-            except Exception as lsa_err:
-                return jsonify({"error": f"Failed to read .lsa: {lsa_err}"}), 400
-            finally:
-                shutil.rmtree(tmp_dir, ignore_errors=True)
-
-        elif filename.endswith((".xlsx", ".csv", ".tsv")):
-            suffix = Path(filename).suffix.lower()
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-                if local_source_path is not None:
-                    tmp.write(local_source_path.read_bytes())
-                else:
-                    file.save(tmp.name)
-                tmp_path = Path(tmp.name)
-            try:
-                kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
-                df = read_tabular_file(
-                    tmp_path,
-                    kind=kind,
-                    separator=expected_delimiter_for_suffix(suffix, separator_option),
-                ).df
-            finally:
-                tmp_path.unlink(missing_ok=True)
-            columns = list(df.columns)
-
-        else:
-            return jsonify({"columns": [], "suggested_id_column": None})
-
-        from src.converters.id_detection import detect_id_column, has_prismmeta_columns
-
-        has_prismmeta = has_prismmeta_columns(columns)
-        is_prism_data = has_prismmeta or any(
-            c.lower()
-            in (
-                "participant_id",
-                "participantid",
-                "prism_participant_id",
-                "prismparticipantid",
-            )
-            for c in columns
-        )
-        source_format = "lsa" if filename.endswith(".lsa") else "xlsx"
-        suggested = detect_id_column(
-            columns,
-            source_format,
-            has_prismmeta=has_prismmeta,
-        )
-
-        session_column = None
-        detected_sessions = []
-        run_column = None
-        detected_runs: list[str] = []
-        if columns and df is not None:
-            lower_to_col = {str(c).strip().lower(): str(c).strip() for c in columns}
-            for candidate in ("session", "ses", "visit", "timepoint"):
-                if candidate in lower_to_col:
-                    session_column = lower_to_col[candidate]
-                    break
-
-            # A manually chosen Session/Run Column override (e.g. a column not
-            # matching the auto-detect candidates) still lets us read its values
-            # immediately, without requiring a full Preview run first.
-            session_values_column = (
-                session_column_override
-                if session_column_override in df.columns
-                else session_column
-            )
-            if session_values_column and session_values_column in df.columns:
-                detected_sessions = sorted(
-                    [
-                        str(v).strip()
-                        for v in df[session_values_column].dropna().unique()
-                        if str(v).strip()
-                    ]
-                )
-
-            for candidate in ("run", "run_id", "run_number", "run_nr"):
-                if candidate in lower_to_col:
-                    run_column = lower_to_col[candidate]
-                    break
-
-            run_values_column = (
-                run_column_override
-                if run_column_override in df.columns
-                else run_column
-            )
-            if run_values_column and run_values_column in df.columns:
-                detected_runs = sorted(
-                    [
-                        str(v).strip()
-                        for v in df[run_values_column].dropna().unique()
-                        if str(v).strip()
-                    ]
-                )
-
-        return jsonify(
-            {
-                "columns": columns,
-                "suggested_id_column": suggested,
-                "is_prism_data": is_prism_data,
-                "session_column": session_column,
-                "detected_sessions": detected_sessions,
-                "run_column": run_column,
-                "detected_runs": detected_runs,
-            }
-        )
-
+        if file and getattr(file, "filename", ""):
+            with tempfile.TemporaryDirectory(prefix="prism_detect_cols_") as tmp_dir:
+                upload = Path(tmp_dir) / Path(file.filename).name
+                file.save(str(upload))
+                return jsonify(detect_columns(upload, **options))
+        if source_file_path:
+            source = Path(source_file_path).expanduser().resolve()
+            if not source.is_file():
+                return jsonify({"error": f"File not found: {source_file_path}"}), 400
+            return jsonify(detect_columns(source, **options))
+        return jsonify({"error": "No file uploaded"}), 400
+    except ValueError as e:  # a file that cannot be read
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
-        import traceback
-
-        error_msg = str(e)
-        print(f"ERROR in /api/detect-columns: {error_msg}")
-        print(traceback.format_exc())
-        return jsonify({"error": error_msg}), 500
+        print(f"ERROR in /api/detect-columns: {e}")
+        return jsonify({"error": str(e)}), 500
