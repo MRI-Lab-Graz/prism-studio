@@ -289,7 +289,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             core_content,
         )
         self.assertIn("const projectMaintenanceActions = createProjectMaintenanceActions({", core_content)
-        self.assertIn("initProjectSettingsForm();", core_content)
+        # The settings card moved to the Settings page (see test_settings_page_wiring.py).
+        self.assertNotIn("initProjectSettingsForm", core_content)
 
     def test_projects_page_uses_single_bootstrap_entrypoint(self):
         index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")

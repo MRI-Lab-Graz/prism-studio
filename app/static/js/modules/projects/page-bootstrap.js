@@ -1,11 +1,8 @@
 export async function initProjectsPageBootstrap({
     initProjectFieldHints,
     initBeginnerHelpMode,
-    initBackendMonitoringToggle,
-    initDedicatedTerminalToggle,
-    initStudyApplicationImportToggle,
-    loadGlobalSettings,
-    loadLibraryInfo,
+    loadStudyApplicationImportVisibility,
+    applyDataladDefaultToCreateForm,
     showStudyMetadataCard,
     showMethodsCard,
     showDataladCard,
@@ -22,8 +19,6 @@ export async function initProjectsPageBootstrap({
     clearRecentProjects,
     initProjectSelectionUi,
     clearCurrentProject,
-    useDefaultLibrary,
-    clearGlobalLibrary,
 }) {
     const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
@@ -67,9 +62,8 @@ export async function initProjectsPageBootstrap({
 
     initProjectFieldHints();
     initBeginnerHelpMode();
-    initBackendMonitoringToggle();
-    initDedicatedTerminalToggle();
-    initStudyApplicationImportToggle();
+    loadStudyApplicationImportVisibility();
+    applyDataladDefaultToCreateForm();
 
     const currentProjectState = getCurrentProjectState();
     const hasLoadedProject = Boolean(currentProjectState.path);
@@ -80,8 +74,6 @@ export async function initProjectsPageBootstrap({
         await ensureOpenSectionVisibleForLoadedProject();
     }
 
-    loadGlobalSettings();
-    loadLibraryInfo();
     showStudyMetadataCard();
     showMethodsCard();
     if (!hasLoadedProject) {
@@ -99,8 +91,7 @@ export async function initProjectsPageBootstrap({
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
         { element: 'dataladSection', chevron: 'dataladSectionChevron' },
-        { element: 'exportSection', chevron: 'exportChevron' },
-        { element: 'settingsSection', chevron: 'settingsChevron' }
+        { element: 'exportSection', chevron: 'exportChevron' }
     ];
 
     sections.forEach((section) => {
@@ -177,20 +168,6 @@ export async function initProjectsPageBootstrap({
     if (clearCurrentProjectBtn) {
         clearCurrentProjectBtn.addEventListener('click', () => {
             clearCurrentProject();
-        });
-    }
-
-    const useDefaultLibraryBtn = document.getElementById('useDefaultLibraryBtn');
-    if (useDefaultLibraryBtn) {
-        useDefaultLibraryBtn.addEventListener('click', () => {
-            useDefaultLibrary();
-        });
-    }
-
-    const clearGlobalLibraryBtn = document.getElementById('clearGlobalLibraryBtn');
-    if (clearGlobalLibraryBtn) {
-        clearGlobalLibraryBtn.addEventListener('click', () => {
-            clearGlobalLibrary();
         });
     }
 }

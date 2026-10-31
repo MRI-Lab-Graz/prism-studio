@@ -7,6 +7,7 @@ PAGES = [
     "/",
     "/projects",
     "/projects/share",
+    "/settings",
     "/converter",
     "/validate",
     "/recipes",

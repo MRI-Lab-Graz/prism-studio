@@ -22,14 +22,8 @@ import { initProjectSelectionController } from './project-selection.js';
 import { createProjectMaintenanceActions } from './maintenance-actions.js';
 import { createRecentProjectsController } from './recent-projects.js';
 import {
-    clearGlobalLibrary,
-    initBackendMonitoringToggle,
-    initDedicatedTerminalToggle,
-    initStudyApplicationImportToggle,
-    initProjectSettingsForm,
-    loadGlobalSettings,
-    loadLibraryInfo,
-    useDefaultLibrary,
+    applyDataladDefaultToCreateForm,
+    loadStudyApplicationImportVisibility,
 } from './settings.js';
 import { validateProjectField } from './validation.js';
 import { initProjectFileBrowser } from './file-browser.js';
@@ -162,8 +156,6 @@ initProjectPathPickers({
     clearCreateResult,
 });
 
-initProjectSettingsForm();
-
 const createPreflightController = initCreatePreflightController({
     fetchWithApiFallback,
     escapeHtml,
@@ -294,11 +286,8 @@ export function initProjectsPage() {
     void initProjectsPageBootstrap({
         initProjectFieldHints,
         initBeginnerHelpMode,
-        initBackendMonitoringToggle,
-        initDedicatedTerminalToggle,
-        initStudyApplicationImportToggle,
-        loadGlobalSettings,
-        loadLibraryInfo,
+        loadStudyApplicationImportVisibility,
+        applyDataladDefaultToCreateForm,
         showStudyMetadataCard,
         showMethodsCard,
         showDataladCard,
@@ -314,8 +303,6 @@ export function initProjectsPage() {
         clearRecentProjects,
         initProjectSelectionUi: () => projectSelectionController.initProjectSelectionUi(),
         clearCurrentProject,
-        useDefaultLibrary,
-        clearGlobalLibrary,
     });
 }
 
@@ -324,5 +311,3 @@ window.selectProjectType = selectProjectType;
 window.fixIssue = fixIssue;
 window.fixAllIssues = fixAllIssues;
 window.clearCurrentProject = clearCurrentProject;
-window.useDefaultLibrary = useDefaultLibrary;
-window.clearGlobalLibrary = clearGlobalLibrary;

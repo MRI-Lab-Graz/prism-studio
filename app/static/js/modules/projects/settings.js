@@ -187,16 +187,16 @@ function setStudyApplicationImportVisibility(enabled) {
     }
 }
 
-async function loadStudyApplicationImportSetting() {
-    const toggle = document.getElementById('studyApplicationImportToggle');
-    if (!toggle) return;
-
+// The project page shows the import button only when the setting is on; the
+// switch itself lives on the Settings page, so this must not need it.
+export async function loadStudyApplicationImportVisibility() {
     try {
         const response = await fetchWithApiFallback('/api/settings/study-application-import');
         const data = await response.json();
         if (data && data.success) {
             const enabled = Boolean(data.enable_study_application_import);
-            toggle.checked = enabled;
+            const toggle = document.getElementById('studyApplicationImportToggle');
+            if (toggle) toggle.checked = enabled;
             setStudyApplicationImportVisibility(enabled);
         }
     } catch (error) {
@@ -223,7 +223,7 @@ export function initStudyApplicationImportToggle() {
     const toggle = document.getElementById('studyApplicationImportToggle');
     if (!toggle) return;
 
-    loadStudyApplicationImportSetting();
+    loadStudyApplicationImportVisibility();
 
     toggle.addEventListener('change', async () => {
         const desired = Boolean(toggle.checked);
@@ -417,4 +417,62 @@ export async function clearGlobalLibrary() {
     } catch (error) {
         console.error('Error clearing library:', error);
     }
+}
+
+// Create Project form: start with the DataLad switch on when the user's
+// setting says so (the switch itself stays opt-in, off unless set).
+export async function applyDataladDefaultToCreateForm() {
+    const toggle = document.getElementById('projectUseDatalad');
+    if (!toggle) return;
+    try {
+        const response = await fetchWithApiFallback('/api/settings/global-library');
+        const data = await response.json();
+        if (data && data.success && data.datalad_for_new_projects && !toggle.checked) {
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    } catch (error) {
+        console.error('Error loading DataLad default for new projects:', error);
+    }
+}
+
+// Settings page: the "DataLad on for new projects" switch.
+export async function initDataladForNewProjectsToggle() {
+    const toggle = document.getElementById('dataladForNewProjectsToggle');
+    if (!toggle) return;
+    const feedback = document.getElementById('dataladForNewProjectsFeedback');
+
+    try {
+        const response = await fetchWithApiFallback('/api/settings/global-library');
+        const data = await response.json();
+        if (data && data.success) toggle.checked = Boolean(data.datalad_for_new_projects);
+    } catch (error) {
+        console.error('Error loading DataLad default for new projects:', error);
+    }
+
+    toggle.addEventListener('change', async () => {
+        const desired = Boolean(toggle.checked);
+        toggle.disabled = true;
+        try {
+            const response = await fetchWithApiFallback('/api/settings/global-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datalad_for_new_projects: desired })
+            });
+            const data = await response.json();
+            if (!response.ok || !data || !data.success) {
+                throw new Error(data?.error || 'Could not save the setting.');
+            }
+            toggle.checked = Boolean(data.datalad_for_new_projects);
+            if (feedback) feedback.textContent = '';
+        } catch (error) {
+            toggle.checked = !desired;
+            if (feedback) {
+                feedback.className = 'small mt-2 text-danger';
+                feedback.textContent = error.message || 'Could not save the setting.';
+            }
+        } finally {
+            toggle.disabled = false;
+        }
+    });
 }

@@ -36,6 +36,19 @@ import * as core from './core.js';
 import * as exportModule from './export.js';
 import * as dataladServerModule from './datalad_server.js';
 import { initDataladSetupCheck } from './datalad_setup_check.js';
+import {
+    clearGlobalLibrary,
+    initBackendMonitoringToggle,
+    initDataladForNewProjectsToggle,
+    initDedicatedTerminalToggle,
+    initProjectSettingsForm,
+    initStudyApplicationImportToggle,
+    loadGlobalSettings,
+    loadLibraryInfo,
+    useDefaultLibrary,
+} from './settings.js';
+import { initProjectPathPickers } from './path-pickers.js';
+import { fetchWithApiFallback } from '../../shared/api.js';
 import * as rsyncServerModule from './rsync_server.js';
 import * as pushServerToggleModule from './push_server_toggle.js';
 import * as metadata from './metadata.js?v=20260515-4';
@@ -52,11 +65,7 @@ export const {
     saveRecentProjects, 
     addRecentProject, 
     renderRecentProjects, 
-    loadGlobalSettings, 
-    loadLibraryInfo, 
-    selectProjectType,
-    useDefaultLibrary,
-    clearGlobalLibrary 
+    selectProjectType
 } = core;
 export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences, initializeProjectsExport } = exportModule;
 export const { showDataladServerCard, initDataladServerSection } = dataladServerModule;
@@ -99,6 +108,23 @@ export function initializeSharePage() {
     // Runs after both destination sections so its show/hide of the merged
     // "Push to Server" card and its DataLad-vs-rsync toggle win last.
     initPushServerToggle();
+}
+
+// Settings is its own page (help, DataLad default, libraries, advanced).
+// See templates/settings.html. Every action behind it is
+// `prism_tools.py settings show|set` (src/settings_update.py).
+export function initializeSettingsPage() {
+    const noop = () => {};
+    initProjectPathPickers({ fetchWithApiFallback, validateProjectField: noop, clearCreateResult: noop });
+    initDataladForNewProjectsToggle();
+    initBackendMonitoringToggle();
+    initDedicatedTerminalToggle();
+    initStudyApplicationImportToggle();
+    initProjectSettingsForm();
+    loadGlobalSettings();
+    loadLibraryInfo();
+    document.getElementById('useDefaultLibraryBtn')?.addEventListener('click', () => useDefaultLibrary());
+    document.getElementById('clearGlobalLibraryBtn')?.addEventListener('click', () => clearGlobalLibrary());
 }
 
 console.log('Projects module loaded with ES6 imports');
