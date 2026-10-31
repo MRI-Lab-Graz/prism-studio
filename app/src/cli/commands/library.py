@@ -88,6 +88,33 @@ def cmd_library_template_check(args) -> None:
     print("All survey templates are complete.")
 
 
+def cmd_library_template_validate(args) -> None:
+    """Check one template the way Studio's Template Editor "Validate" does (the same function runs both):
+    schema errors, item rules, and the language and item warnings. Exit 1 when there are errors."""
+    from src.template_validate import validate_template_document
+
+    try:
+        template = json.loads(Path(args.template).read_text(encoding="utf-8"))
+        result = validate_template_document(
+            template, modality=args.modality, app_root=_APP_ROOT_FOR_SCHEMAS,
+            schema_version=args.schema_version, is_global=bool(args.is_global),
+        )
+    except (OSError, json.JSONDecodeError, ValueError, FileNotFoundError) as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        for error in result["errors"]:
+            print(f"Error: {error['path']}: {error['message']}")
+        for warning in result["language_warnings"] + result["item_warnings"]:
+            print(f"Warning: {warning['message']}")
+        if result["ok"]:
+            print("Template is valid.")
+    if not result["ok"]:
+        sys.exit(1)
+
+
 def cmd_library_template_score(args) -> None:
     """How complete a template is: the numbers the template editor's rings show (the same function runs both).
     Exit 1 when it cannot be used yet (a required field is empty); recommended fields never decide that."""

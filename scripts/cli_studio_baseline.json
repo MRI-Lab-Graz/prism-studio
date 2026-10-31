@@ -107,7 +107,6 @@
  "src.system_files:is_system_file": "to review",
  "src.template_info:detect_languages_from_template": "to review",
  "src.template_info:extract_template_info": "to review",
- "src.template_save:template_warnings": "DIVERGENCE: the template editor's validate route builds schema errors + warnings + item rules itself; no single-template CLI check yet (library template-check works on a project)",
  "src.text_export:convert": "to review",
  "src.utils.naming:normalize_filename": "to review",
  "src.utils.naming:sanitize_task_name": "to review",

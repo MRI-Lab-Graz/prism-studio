@@ -19,7 +19,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP_FILE = Path(__file__).with_name("route_cli_map.json")
-MAX_OPEN = 33  # lower this when an "open" route gets its command. (32 -> 33 once: the template validate route was mapped to a project-level check that is not the same thing)
+MAX_OPEN = 32  # lower this when an "open" route gets its command; never raise it
 MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
 
 

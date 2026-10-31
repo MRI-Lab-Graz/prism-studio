@@ -2769,6 +2769,18 @@ def build_prism_tools_parsers(
         "--schema-version", default="stable", help="Schema version to validate against"
     )
 
+    parser_lib_template_validate = subparsers_library.add_parser(
+        "template-validate",
+        help="Check one template the way Studio's Template Editor Validate does: schema errors, item rules, warnings.",
+    )
+    parser_lib_template_validate.add_argument("--template", required=True, help="Path to the template JSON file")
+    parser_lib_template_validate.add_argument("--modality", default="survey", choices=["survey", "biometrics"])
+    parser_lib_template_validate.add_argument(
+        "--is-global", action="store_true", help="Validate as a library template (project-level fields not required)"
+    )
+    parser_lib_template_validate.add_argument("--schema-version", default="stable", help="Schema version")
+    parser_lib_template_validate.add_argument("--json", action="store_true", help="Print the result as JSON")
+
     parser_lib_template_score = subparsers_library.add_parser(
         "template-score",
         help="How complete a template is: required and recommended fields filled. "

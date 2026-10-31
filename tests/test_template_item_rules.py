@@ -66,9 +66,9 @@ def test_validate_route_fails_on_an_impossible_range_and_lists_item_warnings(mon
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
     from src.web.blueprints.tools_template_editor_blueprint import tools_template_editor_bp
 
-    from src.web.blueprints import tools_template_editor_blueprint as handlers
+    import src.template_validate
 
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(src.template_validate, "load_template_schema", lambda *a, **kwargs: {})
     app = Flask(__name__)
     app.register_blueprint(tools_template_editor_bp)
     template = {"Q1": _item(MinValue=10, MaxValue=1), "A B": _item()}
@@ -100,9 +100,10 @@ def _client(monkeypatch):
     from flask import Flask
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
+    import src.template_validate
     from src.web.blueprints import tools_template_editor_blueprint as handlers
 
-    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(src.template_validate, "load_template_schema", lambda *a, **kwargs: {})
     app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))  # the save reads the schemas here
     app.register_blueprint(handlers.tools_template_editor_bp)
     return app.test_client()
