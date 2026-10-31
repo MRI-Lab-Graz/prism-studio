@@ -709,6 +709,14 @@ def build_prism_tools_parsers(
         project_subparsers.add_parser(action, help=help_text).add_argument(
             "--project", required=True, help="Project root or project.json path"
         )
+    parser_project_fixable = project_subparsers.add_parser(
+        "fixable", help="List what 'project fix' can repair (missing dataset_description, .bidsignore, sidecar stubs)"
+    )
+    parser_project_fix = project_subparsers.add_parser("fix", help="Repair the fixable issues of a project")
+    parser_project_fix.add_argument("--codes", help="Comma-separated issue codes to fix (default: all), e.g. PRISM001,PRISM501")
+    for parser_with_json in (parser_project_fixable, parser_project_fix):
+        parser_with_json.add_argument("--project", required=True, help="Project root or project.json path")
+        parser_with_json.add_argument("--json", action="store_true", help="Print the result as JSON")
 
     parser_methods = subparsers.add_parser(
         "methods", help="Methods section from project metadata"
