@@ -42,12 +42,9 @@ def validate_template_document(
         schema = _p.relax_schema_for_library_template(schema)
     errors = _p.validate_template_against_schema(instance=template, schema=schema)
     language_warnings, item_warnings = template_warnings(template)
-    if modality in ("survey", "biometrics"):
-        errors += [
-            {"path": f["path"], "message": f["message"]}
-            for f in TemplateValidator.validate_item_rules_from_data(template)
-            if f["severity"] == "error"
-        ]
-    else:
-        item_warnings = []
+    errors += [
+        {"path": f["path"], "message": f["message"]}
+        for f in TemplateValidator.validate_item_rules_from_data(template)
+        if f["severity"] == "error"
+    ]
     return {"ok": not errors, "errors": errors, "language_warnings": language_warnings, "item_warnings": item_warnings}
