@@ -11,6 +11,7 @@ from src.project_ready import (
     missing_required_fields,
     not_ready_message,
 )
+from src.project_documents import generate_readme
 from src.readme_generator import ReadmeGenerator
 
 from .projects_citation_helpers import _read_citation_cff_fields
@@ -369,26 +370,11 @@ def handle_generate_readme(get_current_project):
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
 
-    if not (project_path / "project.json").exists():
-        return jsonify({"success": False, "error": "project.json not found"}), 404
-
     try:
-        generator = ReadmeGenerator(project_path)
-        output_path = generator.save()
-
-        message = "README.md generated successfully"
-        merge_note = generator.merge_note
-        if merge_note:
-            message = f"README.md generated and updated. {merge_note}"
-
-        return jsonify(
-            {
-                "success": True,
-                "message": message,
-                "path": str(output_path),
-                "merge_note": merge_note,
-            }
-        )
+        result = generate_readme(project_path)
+        return jsonify({"success": True, **result})
+    except FileNotFoundError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
     except Exception as e:
         logger.error(f"README generation error: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500

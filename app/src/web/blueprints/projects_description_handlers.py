@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import jsonify, request
 from src.dataset_description import write_dataset_description
+from src.project_documents import regenerate_citation, remove_legacy_contributor_files
 from src.orcid_lookup import OrcidLookupError, search_orcid_candidates
 
 from .projects_helpers import _resolve_requested_or_current_project_root
@@ -453,17 +454,6 @@ def handle_get_metadata_status(get_current_project, project_manager):
         )
 
 
-def _remove_legacy_contributor_files(project_path: Path) -> None:
-    """Delete legacy contributor files once project.json becomes canonical."""
-    for legacy_name in ("contributors.json", "contributor.json"):
-        legacy_path = project_path / legacy_name
-        try:
-            legacy_path.unlink(missing_ok=True)
-        except Exception:
-            # Best-effort cleanup only; do not fail save flow on stale files.
-            pass
-
-
 def _enrich_authors_with_roles(project_path: Path, authors_value):
     """Attach contributor roles to author dictionaries for frontend editing."""
     if not isinstance(authors_value, list):
@@ -742,7 +732,7 @@ def handle_save_dataset_description(
                 project_path, submitted_citation_fields.get("Authors")
             )
             project_manager.update_citation_cff(project_path, project_metadata_payload)
-            _remove_legacy_contributor_files(project_path)
+            remove_legacy_contributor_files(project_path)
             citation_updated = True
         except Exception as e:
             print(f"Warning: could not update CITATION.cff: {e}")
@@ -886,16 +876,8 @@ def handle_regenerate_citation(
         return jsonify({"success": False, "error": error_message}), status_code
 
     try:
-        project_manager.regenerate_citation_cff(project_path)
-        _remove_legacy_contributor_files(project_path)
-        status = project_manager.get_citation_cff_status(project_path)
-
         return jsonify(
-            {
-                "success": True,
-                "message": "CITATION.cff regenerated successfully",
-                **status,
-            }
+            {"success": True, **regenerate_citation(project_path, project_manager)}
         )
     except Exception as e:
         return (

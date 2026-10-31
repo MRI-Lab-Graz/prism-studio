@@ -360,3 +360,64 @@ def test_validating_a_template_answers_the_same_in_the_cli_and_in_studio(tmp_pat
         code = exc.code
     assert json.loads(capsys.readouterr().out) == studio
     assert code == (0 if studio["ok"] else 1)
+
+
+def _two_projects(tmp_path):
+    """Two identical projects: one for the command, one for Studio."""
+    projects = []
+    for name in ("cli", "studio"):
+        root = tmp_path / name
+        root.mkdir()
+        (root / "project.json").write_text(json.dumps({
+            "Basics": {"Name": "Parity", "Authors": ["Lovelace, Ada"], "Keywords": ["a", "b", "c"], "Description": "A study."},
+            "StudyDesign": {"Timepoints": "single"},
+        }), encoding="utf-8")
+        (root / "dataset_description.json").write_text(
+            json.dumps({"Name": "Parity", "BIDSVersion": "1.10.0", "Authors": ["Lovelace, Ada"]}), encoding="utf-8"
+        )
+        projects.append(root)
+    return projects
+
+
+def _studio_handler(handler, project, **kwargs):
+    from flask import Flask
+
+    with Flask(__name__).test_request_context(method="POST", json={"project_path": str(project)}):
+        response = handler(**kwargs)
+    response, status = (response, 200) if not isinstance(response, tuple) else response
+    return response.get_json(), status
+
+
+def test_generating_the_readme_writes_the_same_file_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.project import cmd_project_generate_readme
+    from src.web.blueprints.projects_study_metadata_handlers import handle_generate_readme
+
+    cli, studio = _two_projects(tmp_path)
+    cmd_project_generate_readme(SimpleNamespace(project=str(cli)))
+    body, status = _studio_handler(handle_generate_readme, studio, get_current_project=lambda: {})
+
+    assert status == 200 and body["success"]
+    assert (cli / "README.md").read_text(encoding="utf-8") == (studio / "README.md").read_text(encoding="utf-8")
+    assert body["message"] in capsys.readouterr().out
+
+
+def test_regenerating_the_citation_writes_the_same_file_in_the_cli_and_in_studio(tmp_path, capsys):
+    from src.cli.commands.project import cmd_project_regenerate_citation
+    from src.project_manager import ProjectManager
+    from src.web.blueprints.projects_description_handlers import handle_regenerate_citation
+
+    cli, studio = _two_projects(tmp_path)
+    for root in (cli, studio):  # legacy files Studio removes while regenerating
+        (root / "contributors.json").write_text("{}", encoding="utf-8")
+    cmd_project_regenerate_citation(SimpleNamespace(project=str(cli)))
+    body, status = _studio_handler(
+        handle_regenerate_citation, studio,
+        get_current_project=lambda: {}, get_bids_file_path=None, project_manager=ProjectManager(),
+    )
+
+    assert status == 200 and body["success"]
+    # date-released is the day of writing: compare the rest
+    strip = lambda p: [l for l in (p / "CITATION.cff").read_text(encoding="utf-8").splitlines() if not l.startswith("date-released")]
+    assert strip(cli) == strip(studio)
+    assert not (cli / "contributors.json").exists() and not (studio / "contributors.json").exists()
+    assert body["message"] in capsys.readouterr().out

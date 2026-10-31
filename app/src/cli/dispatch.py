@@ -149,6 +149,11 @@ def dispatch_prism_tools(
             handlers["preregistration_draft"](args)
         else:
             parsers["preregistration"].print_help()
+    elif args.command == "project":
+        if args.action in ("generate-readme", "regenerate-citation"):
+            handlers[f"project_{args.action.replace('-', '_')}"](args)
+        else:
+            parsers["project"].print_help()
     elif args.command == "methods":
         if args.action == "generate":
             handlers["methods_generate"](args)
