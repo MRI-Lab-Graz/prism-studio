@@ -16,7 +16,8 @@ from src.project_manager import ProjectManager  # noqa: E402
 
 
 def test_ensure_prism_tools_env_sets_the_repo_script(monkeypatch):
-    monkeypatch.delenv("PRISM_TOOLS", raising=False)
+    monkeypatch.setenv("PRISM_TOOLS", "placeholder")  # so monkeypatch restores the variable: the call below sets it for real
+    monkeypatch.delenv("PRISM_TOOLS")
     value = sg.ensure_prism_tools_env()
     assert value and os.path.basename(value) == "prism_tools.py"
     assert os.environ["PRISM_TOOLS"] == value
@@ -111,6 +112,7 @@ def test_nested_dataset_gets_the_hook_after_its_creation_save(monkeypatch, tmp_p
 
 
 def test_registered_existing_nested_dataset_gets_the_hook(monkeypatch, tmp_path):
+    monkeypatch.setenv("PRISM_TOOLS", "/x/tool")  # the hook is installed only when the tool is known
     pm = ProjectManager()
     project = tmp_path / "p"
     sub = project / "sub-001"

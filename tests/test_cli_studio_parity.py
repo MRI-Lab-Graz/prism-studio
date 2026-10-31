@@ -373,7 +373,7 @@ def _two_projects(tmp_path):
             "StudyDesign": {"Timepoints": "single"},
         }), encoding="utf-8")
         (root / "dataset_description.json").write_text(
-            json.dumps({"Name": "Parity", "BIDSVersion": "1.10.0", "DatasetType": "raw", "Authors": ["Lovelace, Ada"]}), encoding="utf-8"
+            json.dumps({"Name": "Parity", "BIDSVersion": "1.10.0", "DatasetType": "raw", "Authors": ["Lovelace, Ada"], "Keywords": ["a", "b", "c"]}), encoding="utf-8"
         )
         projects.append(root)
     return projects
