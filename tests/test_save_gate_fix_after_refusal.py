@@ -1,3 +1,4 @@
+import shutil
 import stat
 import subprocess
 
@@ -13,12 +14,19 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture
-def ds(tmp_path, monkeypatch):
-    root = tmp_path / "ds"
+@pytest.fixture(scope="module")
+def _ds_template(tmp_path_factory):
+    root = tmp_path_factory.mktemp("ds_template") / "ds"
     subprocess.run(["datalad", "create", "-c", "text2git", str(root)], check=True, capture_output=True)
     (root / "a.txt").write_text("hello\n")
     subprocess.run(["datalad", "save", "-m", "a"], cwd=root, check=True, capture_output=True)
+    return root
+
+
+@pytest.fixture
+def ds(tmp_path, monkeypatch, _ds_template):
+    root = tmp_path / "ds"
+    shutil.copytree(_ds_template, root, symlinks=True)
     # fake tool: invalid while a file named BAD exists
     tool = tmp_path / "prism_tools"
     tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n', newline="\n")

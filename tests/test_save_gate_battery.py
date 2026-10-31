@@ -53,30 +53,47 @@ def snapshot(root: Path) -> dict[str, str]:
     return out
 
 
-@pytest.fixture(autouse=True)
-def real_tool(tmp_path, monkeypatch):
-    """PRISM_TOOLS -> the real prism_tools.py, run with this interpreter."""
-    wrapper = tmp_path / "prism_tools"
+def _write_wrapper(folder: Path) -> Path:
+    wrapper = folder / "prism_tools"
     wrapper.write_text(
         f'#!/bin/sh\nPRISM_SKIP_VENV_CHECK=1 exec "{sys.executable}" "{REPO / "prism_tools.py"}" "$@"\n'
     )
     wrapper.chmod(0o755)
+    return wrapper
+
+
+@pytest.fixture(autouse=True)
+def real_tool(tmp_path, monkeypatch):
+    """PRISM_TOOLS -> the real prism_tools.py, run with this interpreter."""
+    wrapper = _write_wrapper(tmp_path)
     monkeypatch.setenv("PRISM_TOOLS", str(wrapper))
     return wrapper
 
 
+@pytest.fixture(scope="module")
+def _green_template(tmp_path_factory):
+    """Built once: a DataLad dataset holding a valid PRISM dataset, gate installed, first save done."""
+    base = tmp_path_factory.mktemp("green_template")
+    ds = base / "ds"
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("PRISM_TOOLS", str(_write_wrapper(base)))
+        assert sh("datalad", "create", "-c", "text2git", str(ds), cwd=base).returncode == 0
+        # A global core.autocrlf=true (Windows default) makes `git add` rewrite line endings that
+        # `datalad save` committed untouched, so "restored to the saved state" would still differ.
+        sh("git", "config", "core.autocrlf", "false", cwd=ds)
+        shutil.copytree(DEMO, ds, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".datalad"))
+        assert sg.install_save_hooks(ds)["installed"] == [str(ds)]
+        first = sh("datalad", "save", "-m", "scaffold", cwd=ds)
+        assert first.returncode == 0, first.stdout + first.stderr
+        assert sg.check_save(ds).allowed
+    return ds
+
+
 @pytest.fixture
-def green(tmp_path):
-    """A DataLad dataset holding a valid PRISM dataset, gate installed, first save done."""
+def green(tmp_path, _green_template):
+    """A fresh copy of the template dataset (the hook does not embed its path)."""
     ds = tmp_path / "ds"
-    assert sh("datalad", "create", "-c", "text2git", str(ds), cwd=tmp_path).returncode == 0
-    # A global core.autocrlf=true (Windows default) makes `git add` rewrite line endings that
-    # `datalad save` committed untouched, so "restored to the saved state" would still differ.
-    sh("git", "config", "core.autocrlf", "false", cwd=ds)
-    shutil.copytree(DEMO, ds, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".git", ".datalad"))
-    assert sg.install_save_hooks(ds)["installed"] == [str(ds)]
-    first = sh("datalad", "save", "-m", "scaffold", cwd=ds)
-    assert first.returncode == 0, first.stdout + first.stderr
+    shutil.copytree(_green_template, ds, symlinks=True)
     assert sg.check_save(ds).allowed
     return ds
 
