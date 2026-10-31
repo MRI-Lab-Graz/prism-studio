@@ -239,11 +239,10 @@ class TestCmdSurveyValidate:
         parser_source = (APP_ROOT / "src" / "cli" / "parser.py").read_text(
             encoding="utf-8"
         )
-        # Assumes '"validate",' appears exactly once in the file; if a future
-        # duplicate is added, this assertion catches it instead of the split
-        # below silently checking the wrong block.
-        assert parser_source.count('"validate",') == 1
-        validate_parser_block = parser_source.split('"validate",', 1)[1][:400]
+        # Other command groups have a "validate" too (json-editor): anchor on the survey one, exactly once.
+        anchor = 'survey_subparsers.add_parser(\n        "validate",'
+        assert parser_source.count(anchor) == 1
+        validate_parser_block = parser_source.split(anchor, 1)[1][:400]
         assert "uniqueness" in validate_parser_block.lower()
 
 

@@ -19,7 +19,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MAP_FILE = Path(__file__).with_name("route_cli_map.json")
-MAX_OPEN = 16  # lower this when an "open" route gets its command; never raise it
+MAX_OPEN = 9  # lower this when an "open" route gets its command; never raise it
 MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
 
 

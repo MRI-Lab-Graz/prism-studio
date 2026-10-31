@@ -2562,6 +2562,17 @@ def build_prism_tools_parsers(
     parser_survey_answer_codes.add_argument("--set", metavar="CODE=NUMBER,...", help="e.g. ADS0=0,ADS1=1,ADS2=2,ADS3=3")
     parser_survey_answer_codes.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_survey_detect_columns = survey_subparsers.add_parser(
+        "detect-columns",
+        help="List the columns of a survey data file (.lsa/.xlsx/.csv/.tsv) with the likely ID column and the "
+        "sessions and runs in it: what Studio's column pickers show.",
+    )
+    parser_survey_detect_columns.add_argument("--file", required=True, help="The data file")
+    parser_survey_detect_columns.add_argument("--separator", default="auto", help="auto, comma, semicolon or tab")
+    parser_survey_detect_columns.add_argument("--session-column", help="Read the sessions from this column")
+    parser_survey_detect_columns.add_argument("--run-column", help="Read the runs from this column")
+    parser_survey_detect_columns.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_survey_prepare_pavlovia = survey_subparsers.add_parser(
         "prepare-pavlovia",
         help="Turn the responses CSV downloaded from Pavlovia into a clean wide table (participant_id, session, one "
@@ -2971,6 +2982,15 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON instead of progress lines"
     )
 
+    parser_file_management_raw_peek = file_management_subparsers.add_parser(
+        "raw-peek",
+        help="First look at a wide data table (.csv/.tsv/.xlsx): columns, first rows, likely ID column, sheets. "
+        "Matches the file preview of Studio's File Management -> Wide to long.",
+    )
+    parser_file_management_raw_peek.add_argument("--input", required=True, help="The data file")
+    parser_file_management_raw_peek.add_argument("--sheet", default="", help="Excel sheet name or number")
+    parser_file_management_raw_peek.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_file_management_rename_physio = file_management_subparsers.add_parser(
         "rename-physio",
         help="Preview or apply a regex-based batch rename of physio files. "
@@ -3108,6 +3128,16 @@ def build_prism_tools_parsers(
     parser_json_editor_save.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
+
+    parser_json_editor_validate = json_editor_subparsers.add_parser(
+        "validate",
+        help="Check a BIDS sidecar JSON file against the BIDS schema (the JSON Editor's Validate action)",
+    )
+    parser_json_editor_validate.add_argument(
+        "--type", required=True, help="JSON type: 'dataset_description', 'participants', 'samples' or 'task-<name>'"
+    )
+    parser_json_editor_validate.add_argument("--file", required=True, help="Path to the JSON file to check")
+    parser_json_editor_validate.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     return parser, {
         "root": parser,

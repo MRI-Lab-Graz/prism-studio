@@ -12,7 +12,9 @@ classes the GUI does.
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -23,6 +25,23 @@ def _load_json_editor_backend():
     from src.json_editor.schema_loader import BIDSSchemaLoader
 
     return FileManager, JSONValidator, BIDSSchemaLoader
+
+
+@contextlib.contextmanager
+def _quiet_schema_loading(quiet: bool):
+    """BIDSSchemaLoader prints load-progress diagnostics that would pollute --json output; suppress them via its
+    existing opt-out (used the same way by the Studio launcher for the same reason)."""
+    previous = os.environ.get("PRISM_STARTUP_HIDE_DETAILS")
+    if quiet:
+        os.environ["PRISM_STARTUP_HIDE_DETAILS"] = "1"
+    try:
+        yield
+    finally:
+        if quiet:
+            if previous is None:
+                os.environ.pop("PRISM_STARTUP_HIDE_DETAILS", None)
+            else:
+                os.environ["PRISM_STARTUP_HIDE_DETAILS"] = previous
 
 
 def cmd_json_editor_save(args) -> None:
@@ -48,7 +67,8 @@ def cmd_json_editor_save(args) -> None:
         sys.exit(1)
 
     try:
-        FileManager, JSONValidator, BIDSSchemaLoader = _load_json_editor_backend()
+        FileManager, _validator, _schema_loader = _load_json_editor_backend()
+        from src.json_editor.validation import validate_json_document
     except ImportError as exc:
         print(f"Error: JSON editor backend is not available: {exc}")
         sys.exit(1)
@@ -61,29 +81,12 @@ def cmd_json_editor_save(args) -> None:
         print(f"Error: {exc}")
         sys.exit(1)
 
-    validator = JSONValidator()
-    schema_loader = BIDSSchemaLoader()
     validation_errors: list[str] = []
-    # BIDSSchemaLoader prints load-progress diagnostics that would otherwise
-    # pollute --json output; suppress them via its existing opt-out (used
-    # the same way by the Studio launcher for the same reason).
-    import os
-
-    previous_hide_details = os.environ.get("PRISM_STARTUP_HIDE_DETAILS")
     try:
-        if as_json:
-            os.environ["PRISM_STARTUP_HIDE_DETAILS"] = "1"
-        schema_loader.load_schema()
-        schema = schema_loader.get_schema_for_type(args.type)
-        _is_valid, validation_errors = validator.validate(args.type, data, schema)
+        with _quiet_schema_loading(as_json):
+            _is_valid, validation_errors = validate_json_document(args.type, data)
     except Exception as exc:
         validation_errors = [f"Could not run post-save validation: {exc}"]
-    finally:
-        if as_json:
-            if previous_hide_details is None:
-                os.environ.pop("PRISM_STARTUP_HIDE_DETAILS", None)
-            else:
-                os.environ["PRISM_STARTUP_HIDE_DETAILS"] = previous_hide_details
 
     if as_json:
         print(
@@ -103,3 +106,26 @@ def cmd_json_editor_save(args) -> None:
         print(f"⚠ {len(validation_errors)} validation warning(s):")
         for error in validation_errors:
             print(f"  - {error}")
+
+
+def cmd_json_editor_validate(args) -> None:
+    """Check a BIDS sidecar JSON file against the BIDS schema - the JSON Editor's Validate action
+    (the same function runs both). Exit 1 when it is not valid."""
+    from src.json_editor.validation import validate_json_document
+
+    try:
+        data = json.loads(Path(args.file).read_text(encoding="utf-8"))
+        with _quiet_schema_loading(args.json):
+            valid, errors = validate_json_document(args.type, data)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Error: --file could not be read: {exc}")
+        sys.exit(1)
+    if args.json:
+        print(json.dumps({"valid": valid, "errors": errors}, indent=2, ensure_ascii=False))
+    elif valid:
+        print("Valid.")
+    else:
+        for error in errors:
+            print(f"  - {error}")
+    if not valid:
+        sys.exit(1)

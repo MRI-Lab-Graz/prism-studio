@@ -224,6 +224,8 @@ def dispatch_prism_tools(
             handlers["survey_import_pavlovia"](args)
         elif args.action == "answer-codes":
             handlers["survey_answer_codes"](args)
+        elif args.action == "detect-columns":
+            handlers["survey_detect_columns"](args)
         elif args.action == "prepare-pavlovia":
             handlers["survey_prepare_pavlovia"](args)
         elif args.action == "import-limesurvey-batch":
@@ -303,6 +305,8 @@ def dispatch_prism_tools(
             handlers["file_management_delete_files"](args)
         elif args.action == "remove-scans-tsv":
             handlers["file_management_remove_scans_tsv"](args)
+        elif args.action == "raw-peek":
+            handlers["file_management_raw_peek"](args)
         elif args.action == "rename-physio":
             handlers["file_management_rename_physio"](args)
         else:
@@ -310,6 +314,8 @@ def dispatch_prism_tools(
     elif args.command == "json-editor":
         if args.action == "save":
             handlers["json_editor_save"](args)
+        elif args.action == "validate":
+            handlers["json_editor_validate"](args)
         else:
             parsers["json_editor"].print_help()
     elif args.command == "recipes":

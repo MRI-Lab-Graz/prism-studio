@@ -34,9 +34,10 @@ from src.cli.commands.dataset import (
 from src.cli.commands.file_management import (
     cmd_file_management_delete_files,
     cmd_file_management_remove_scans_tsv,
+    cmd_file_management_raw_peek,
     cmd_file_management_rename_physio,
 )
-from src.cli.commands.json_editor import cmd_json_editor_save
+from src.cli.commands.json_editor import cmd_json_editor_save, cmd_json_editor_validate
 from src.cli.commands.hostile_demo import cmd_dataset_build_hostile_demo
 from src.cli.commands.validation_matrix import cmd_dataset_validation_matrix
 from src.cli.commands.environment import (
@@ -139,6 +140,7 @@ from src.cli.commands.survey import (
     cmd_survey_import_pavlovia,
     cmd_survey_prepare_pavlovia,
     cmd_survey_answer_codes,
+    cmd_survey_detect_columns,
     cmd_survey_import_limesurvey_batch,
     cmd_survey_import_lsq,
     cmd_survey_validate,
@@ -240,6 +242,7 @@ def main() -> None:
             "survey_import_pavlovia": cmd_survey_import_pavlovia,
             "survey_prepare_pavlovia": cmd_survey_prepare_pavlovia,
             "survey_answer_codes": cmd_survey_answer_codes,
+            "survey_detect_columns": cmd_survey_detect_columns,
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
             "survey_i18n_build": cmd_survey_i18n_build,
@@ -323,8 +326,10 @@ def main() -> None:
             "dataset_rewrite_entities": cmd_dataset_rewrite_entities,
             "file_management_delete_files": cmd_file_management_delete_files,
             "file_management_remove_scans_tsv": cmd_file_management_remove_scans_tsv,
+            "file_management_raw_peek": cmd_file_management_raw_peek,
             "file_management_rename_physio": cmd_file_management_rename_physio,
             "json_editor_save": cmd_json_editor_save,
+            "json_editor_validate": cmd_json_editor_validate,
             "dataset_build_hostile_demo": cmd_dataset_build_hostile_demo,
             "dataset_validation_matrix": cmd_dataset_validation_matrix,
             "recipes_surveys": cmd_recipes_surveys,
