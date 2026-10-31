@@ -612,7 +612,12 @@ def cmd_physio_batch_convert(args) -> None:
     """Handle 'physio batch-convert' command: what Studio's batch convert does, including 'save to project'."""
     import tempfile
 
-    from src.batch_convert import PhysioDestinationError, batch_convert_folder, create_dataset_description
+    from src.batch_convert import (
+        PhysioDestinationError,
+        batch_convert_folder,
+        create_dataset_description,
+        describe_conflicts,
+    )
     from src.conversion_to_project import save_physio_batch_to_project
     from src.physio_renamer import normalize_project_dest_root, normalize_subject_rewrite_mode
 
@@ -651,6 +656,10 @@ def cmd_physio_batch_convert(args) -> None:
             dry_run=dry_run,
             physio_destination=getattr(args, "destination", None),
         )
+        conflicts = None if dry_run else describe_conflicts(result, output_folder)
+        if conflicts:  # as Studio: two different files for one place, nothing is saved
+            print(f"Error: {conflicts[0]}", file=sys.stderr)
+            sys.exit(1)
         if not dry_run:  # Studio writes it after every real conversion
             create_dataset_description(output_folder, name=dataset_name)
         if project and not dry_run:

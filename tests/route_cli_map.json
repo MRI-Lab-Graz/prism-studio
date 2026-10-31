@@ -1,9 +1,9 @@
 {
  "api.validate": "prism: validate",
  "api.validate_batch": "prism: validate",
- "conversion.api_batch_convert": "open",
+ "conversion.api_batch_convert": "cli: physio batch-convert",
  "conversion.api_batch_convert_cancel": "exempt: job control of a running GUI task, no data effect",
- "conversion.api_batch_convert_start": "open",
+ "conversion.api_batch_convert_start": "cli: physio batch-convert",
  "conversion.api_biometrics_convert": "cli: biometrics convert",
  "conversion.api_biometrics_convert_start": "cli: biometrics convert",
  "conversion.api_biometrics_detect": "cli: biometrics detect",
