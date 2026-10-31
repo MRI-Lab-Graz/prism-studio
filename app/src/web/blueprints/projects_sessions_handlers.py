@@ -35,47 +35,6 @@ def handle_get_sessions(get_current_project, read_project_json):
     )
 
 
-def handle_save_sessions(
-    get_current_project,
-    read_project_json,
-    write_project_json,
-    validate_recruitment_payload,
-):
-    """Write Sessions + TaskDefinitions to project.json."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
-    req = request.get_json()
-    if not req:
-        return jsonify({"success": False, "error": "No data provided"}), 400
-
-    project_path, error_message, status_code = (
-        _resolve_requested_or_current_project_root(
-            get_current_project,
-            req.get("project_path"),
-        )
-    )
-    if project_path is None:
-        return jsonify({"success": False, "error": error_message}), status_code
-
-    recruitment_error = validate_recruitment_payload(req.get("Recruitment"))
-    if recruitment_error:
-        return jsonify({"success": False, "error": recruitment_error}), 400
-
-    data = read_project_json(project_path)
-    if not data:
-        return jsonify({"success": False, "error": "project.json not found"}), 404
-
-    if "sessions" in req:
-        data["Sessions"] = req["sessions"]
-    if "task_definitions" in req:
-        data["TaskDefinitions"] = req["task_definitions"]
-
-    write_project_json(project_path, data)
-    return jsonify({"success": True, "message": "Sessions saved"})
-
-
 def handle_get_sessions_declared(get_current_project, read_project_json):
     """Lightweight list of [{id, label}] for converter session picker."""
     explicit_project_path = str(request.args.get("project_path") or "").strip()

@@ -35,6 +35,22 @@ def cmd_project_regenerate_citation(args) -> None:
         print(f"Warning: {issue}")
 
 
+def cmd_project_set_schema_version(args) -> None:
+    """Choose the schema version the project is validated against: what Studio's schema picker saves."""
+    from pathlib import Path
+
+    from src.project_settings import set_schema_version
+    from src.schema_manager import get_available_schema_versions
+
+    app_schemas = Path(__file__).resolve().parents[3] / "schemas"
+    try:
+        saved = set_schema_version(_project_root(args), args.version, get_available_schema_versions(str(app_schemas)) or ["stable"])
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    print(f"Schema version {saved['schema_version']} saved to {saved['config_path']}")
+
+
 def cmd_project_fixable(args) -> None:
     """List what `project fix` can repair (the list Studio's Fix button shows; the same ProjectManager method runs both)."""
     from src.project_manager import ProjectManager

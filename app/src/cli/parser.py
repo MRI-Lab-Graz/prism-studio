@@ -709,6 +709,11 @@ def build_prism_tools_parsers(
         project_subparsers.add_parser(action, help=help_text).add_argument(
             "--project", required=True, help="Project root or project.json path"
         )
+    parser_project_schema = project_subparsers.add_parser(
+        "set-schema-version", help="Choose the schema version the project is validated against"
+    )
+    parser_project_schema.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_project_schema.add_argument("--version", required=True, help="Schema version, e.g. stable")
     parser_project_fixable = project_subparsers.add_parser(
         "fixable", help="List what 'project fix' can repair (missing dataset_description, .bidsignore, sidecar stubs)"
     )
@@ -722,6 +727,21 @@ def build_prism_tools_parsers(
     for parser_with_json in (parser_project_fixable, parser_project_fix):
         parser_with_json.add_argument("--project", required=True, help="Project root or project.json path")
         parser_with_json.add_argument("--json", action="store_true", help="Print the result as JSON")
+
+    parser_rsync = subparsers.add_parser("rsync", help="Copy a project to a remote folder with rsync (no DataLad)")
+    rsync_subparsers = parser_rsync.add_subparsers(dest="action", help="Action")
+    for action, help_text in (
+        ("config", "Save the project's remote target, label and exclude patterns"),
+        ("sync", "Copy the project to its remote target"),
+    ):
+        sub_rsync = rsync_subparsers.add_parser(action, help=help_text)
+        sub_rsync.add_argument("--project", required=True, help="Project root")
+        sub_rsync.add_argument("--remote-target", help="user@host:/path or a local/mounted folder (sync: default is the saved one)")
+        sub_rsync.add_argument("--remote-label", help="Label shown for the target")
+        sub_rsync.add_argument("--exclude", action="append", default=[], help="rsync exclude pattern; repeat for several")
+        if action == "sync":
+            sub_rsync.add_argument("--verify", action="store_true", help="Also verify checksums afterwards (slower)")
+            sub_rsync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_methods = subparsers.add_parser(
         "methods", help="Methods section from project metadata"
@@ -838,6 +858,14 @@ def build_prism_tools_parsers(
     parser_datalad_doctor.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
+
+    parser_datalad_config = datalad_subparsers.add_parser(
+        "config", help="Save the project's DataLad server settings (URL, sibling name, alias)"
+    )
+    parser_datalad_config.add_argument("--project", required=True, help="Project root")
+    parser_datalad_config.add_argument("--url", help="Server URL (ria+ssh://user@host/path, user@host:path)")
+    parser_datalad_config.add_argument("--sibling-name", help="Sibling name (default: ria-store)")
+    parser_datalad_config.add_argument("--alias", help="Store alias (RIA stores only)")
 
     def _add_push_options(sub):
         sub.add_argument("--project", required=True, help="Project root")
@@ -3090,6 +3118,7 @@ def build_prism_tools_parsers(
         "session-map": parser_session_map,
         "preregistration": parser_preregistration,
         "project": parser_project,
+        "rsync": parser_rsync,
         "methods": parser_methods,
         "sessions": parser_sessions,
         "publish": parser_publish,

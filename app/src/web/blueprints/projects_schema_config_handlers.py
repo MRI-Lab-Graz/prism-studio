@@ -10,6 +10,7 @@ from src.config import (
     save_config,
 )
 from src.cross_platform import safe_path_join
+from src.project_settings import set_schema_version
 from src.schema_manager import get_available_schema_versions
 from .projects_helpers import (
     _resolve_project_root_path,
@@ -99,37 +100,23 @@ def handle_save_project_schema_config(get_current_project):
     if project_root is None:
         return jsonify({"success": False, "error": error_message}), status_code
 
-    requested_version = (
-        str(payload.get("schema_version") or "stable").strip() or "stable"
-    )
     available_versions = _get_schema_versions()
-    if requested_version not in available_versions:
+    try:
+        saved = set_schema_version(
+            project_root, payload.get("schema_version"), available_versions
+        )
+    except ValueError as error:
         return (
             jsonify(
                 {
                     "success": False,
-                    "error": f"Unknown schema version: {requested_version}",
+                    "error": str(error),
                     "available_versions": available_versions,
                 }
             ),
             400,
         )
-
-    config = load_config(str(project_root))
-    config.schema_version = requested_version
-    filename = (
-        Path(config._config_path).name if config._config_path else ".prismrc.json"
-    )
-    saved_path = save_config(config, str(project_root), filename=filename)
-
-    return jsonify(
-        {
-            "success": True,
-            "schema_version": requested_version,
-            "available_versions": available_versions,
-            "config_path": saved_path,
-        }
-    )
+    return jsonify({"success": True, **saved})
 
 
 def handle_get_project_preferences(get_current_project, namespace: str | None = None):
