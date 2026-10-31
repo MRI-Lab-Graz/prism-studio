@@ -136,7 +136,7 @@
  "tools_template_editor.api_template_editor_import_pavlovia": "cli: survey import-pavlovia",
  "tools_template_editor.api_template_editor_save": "cli: library template-save",
  "tools_template_editor.api_template_editor_share_mail": "cli: library share-template",
- "tools_template_editor.api_template_editor_validate": "cli: library template-check",
+ "tools_template_editor.api_template_editor_validate": "open",
  "validation.api_validate": "prism: validate",
  "validation.cancel_validation_progress": "exempt: job control of a running GUI task, no data effect",
  "validation.cleanup": "exempt: GUI state (which project is open, window)",
