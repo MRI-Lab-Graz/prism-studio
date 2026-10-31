@@ -11,7 +11,6 @@
     --studio-font-size-base: 1rem;
     --studio-line-height-base: 1.5;
     --studio-control-min-height: 2.5rem;
-    --studio-action-button-min-height: 3.25rem;
     --studio-button-icon-size: 1rem;
     --studio-brand-primary: #33363d;
     --studio-brand-primary-hover: #24272d;
@@ -262,12 +261,6 @@
 
 .studio-theme main .btn.btn-lg {
     min-height: calc(var(--studio-control-min-height) + 0.5rem);
-}
-
-.studio-theme main .studio-action-btn {
-    min-height: var(--studio-action-button-min-height);
-    border-radius: 12px;
-    font-weight: 600;
 }
 
 .studio-theme main .btn > i[class*="fa-"],

@@ -4,8 +4,7 @@
 page that shows it must compute the same font, colours, border and radius. A page that restyles a button, card or
 field on its own fails here and names the page, the element and the property.
 
-Not compared yet: primary buttons (the project page only has its own .studio-action-btn, so there is nothing to
-compare with), h1, h5, links and the size of fields. COMPARE says what is checked per kind.
+Not compared yet: h1, h5, links and the size of fields. COMPARE says what is checked per kind.
 """
 
 import pytest
@@ -34,7 +33,7 @@ PROBE = """([kinds, props]) => {
   // The most common value per property among a kind's elements: one odd element (a disabled button, a field marked
   // invalid) does not decide what the page looks like. Computed style exists for collapsed (display:none) elements
   // too, and the project page keeps most of its fields folded.
-  const plain = ':not(:disabled):not([readonly]):not(.disabled):not(.is-invalid):not(.is-valid):not(.btn-sm):not(.btn-lg):not(.form-select-sm):not(.form-control-sm):not(.form-control-plaintext):not(.studio-action-btn)';  // studio-action-btn is the project page's own large button
+  const plain = ':not(:disabled):not([readonly]):not(.disabled):not(.is-invalid):not(.is-valid):not(.btn-sm):not(.btn-lg):not(.form-select-sm):not(.form-control-sm):not(.form-control-plaintext)';
   const out = {};
   for (const [kind, sel] of Object.entries(kinds)) {
     const els = [...document.querySelectorAll(sel.replace('$', plain))]

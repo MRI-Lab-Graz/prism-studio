@@ -120,13 +120,6 @@
     color: rgba(31,35,40,0.75) !important;
 }
 
-/* Shared action button styling across converter panels */
-.converter-action-btn {
-    min-height: var(--studio-action-button-min-height);
-    border-radius: 10px;
-    font-weight: 600;
-}
-
 .participants-case-select {
     border-radius: 14px;
 }
