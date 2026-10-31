@@ -30,6 +30,7 @@ except ImportError:
     pd = None
 
 from ..cross_platform import describe_case_insensitive_id_collisions
+from src.dataset_description import write_dataset_description
 from src.survey_export_settings import strip_export_settings
 from src.text_sanitizer import html_to_text
 from ..utils.io import (
@@ -2011,7 +2012,8 @@ def _write_survey_description(
         ],
         "HEDVersion": "8.2.0",
     }
-    _write_json(ds_desc, dataset_description)
+    # mirror=False: the default name above is a placeholder, not the project's name
+    write_dataset_description(output_root, dataset_description, mirror=False)
 
 
 def _build_participant_col_renames(

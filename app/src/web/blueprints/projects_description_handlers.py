@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from flask import jsonify, request
+from src.dataset_description import write_dataset_description
 from src.orcid_lookup import OrcidLookupError, search_orcid_candidates
 
 from .projects_helpers import _resolve_requested_or_current_project_root
@@ -758,8 +759,9 @@ def handle_save_dataset_description(
             ):
                 description_to_store.pop(citation_owned_key, None)
 
-        with open(desc_path, "w", encoding="utf-8") as f:
-            json.dump(description_to_store, f, indent=2, ensure_ascii=False)
+        # mirror=False: this handler already mirrored the richer payload (with the citation-owned keys)
+        # into project.json above, before the CITATION.cff update that reads it.
+        write_dataset_description(project_path, description_to_store, mirror=False)
 
         if "Name" in description:
             set_current_project(str(project_path), description["Name"])

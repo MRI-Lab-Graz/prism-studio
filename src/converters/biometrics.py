@@ -19,6 +19,7 @@ import unicodedata
 
 
 from src.cross_platform import describe_case_insensitive_id_collisions
+from src.dataset_description import write_dataset_description
 from src.converters.file_reader import (
     infer_tabular_kind as _infer_tabular_kind,
     read_tabular_file as _read_tabular_file,
@@ -361,7 +362,8 @@ def convert_biometrics_table_to_prism_dataset(
             }
         ],
     }
-    _write_json(output_root / "dataset_description.json", dataset_description)
+    # mirror=False: the default name above is a placeholder, not the project's name
+    write_dataset_description(output_root, dataset_description, mirror=False)
 
     try:
         import pandas as pd
