@@ -135,7 +135,11 @@ def _build_parser():
             print(f"PRISM Studio {_version_and_location()}")
             parser.exit()
 
-    parser = argparse.ArgumentParser(description="PRISM Studio")
+    parser = argparse.ArgumentParser(
+        description="PRISM Studio",
+        epilog="Tip: for best performance use a Chromium-based browser (Chrome, Edge, Brave). "
+        "Safari can be slow here, especially with iCloud Private Relay enabled.",
+    )
     parser.add_argument("-v", "--version", action=PrintVersion, nargs=0, help="show the version and exit")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
@@ -412,11 +416,6 @@ def _print_startup_ready(url: str, *, public: bool, log_file: Path | None = None
     if log_file is not None:
         print(_startup_colorize(f"Startup log: {log_file}", "muted"))
     print(_startup_colorize("Status: ready. Launching the interface now.", "ready"))
-    print(_startup_colorize(
-        "Tip: for best performance use a Chromium-based browser (Chrome, Edge, Brave). "
-        "Safari can be slow here, especially with iCloud Private Relay enabled.",
-        "muted",
-    ))
     print(_startup_colorize("Press Ctrl+C to stop the server", "muted"))
     print()
 
