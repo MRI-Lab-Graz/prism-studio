@@ -177,10 +177,6 @@ def test_creating_a_new_project_is_blocked_while_a_draft_is_pending(bare_page, s
     page.click("#card-create")
     page.fill("#projectName", "row_guard_study")
     page.fill("#projectPath", str(tmp_path))
-    for target in ("#studyMetadataSection", "#smCoreSetupGroupBody"):
-        if not page.locator(target).is_visible():
-            page.locator(f'[data-bs-target="{target}"]').click()
-            expect(page.locator(target)).to_be_visible()
     row = _fill_draft_author(page)
     page.evaluate("document.getElementById('createProjectForm').requestSubmit()")  # Create is grey, Enter still submits
     expect(page.get_by_text("not accepted yet")).to_be_visible()

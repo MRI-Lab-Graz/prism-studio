@@ -107,11 +107,11 @@ def test_datalad_card_logic_is_one_module_used_by_the_open_flow_and_the_settings
     assert "createDataladCard(" in index and "showDataladCard()" in index
 
 
-def test_project_page_points_to_the_settings_page_for_datalad():
+def test_project_page_no_longer_shows_datalad():
     opener = _text(PROJECTS_JS / "open-project.js")
     boot = _text(PROJECTS_JS / "page-bootstrap.js")
 
-    assert 'href="/settings#dataladSection"' in opener
+    assert "/settings#dataladSection" not in opener  # the loaded-project box has no DataLad row any more
     assert "getElementById('dataladSection')" not in opener  # no in-page scroll handler any more
     assert "showDataladCard" not in boot
     assert "dataladSectionChevron" not in boot
