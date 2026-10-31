@@ -323,3 +323,40 @@ def test_quick_limesurvey_export_writes_the_same_file_in_the_cli_and_in_studio(t
          "matrix": True, "matrix_global": True},
     )
     assert cli_out.read_bytes() == studio_lss
+
+
+@pytest.mark.parametrize("damage", ["none", "required-field-gone", "language-missing"])
+def test_validating_a_template_answers_the_same_in_the_cli_and_in_studio(tmp_path, capsys, damage):
+    import importlib
+    import os
+
+    from flask import Flask
+    from template_fixtures import project_template
+
+    from src.cli.commands.library import cmd_library_template_validate
+
+    template = project_template("mood")
+    if damage == "required-field-gone":
+        del template["Study"]["TaskName"]
+    if damage == "language-missing":
+        item = next(k for k, v in template.items() if isinstance(v, dict) and isinstance(v.get("Description"), dict))
+        template[item]["Description"] = {"en": "Question"}
+        template["I18n"] = {"DefaultLanguage": "en", "Languages": ["en", "de"]}
+    source = tmp_path / "mood.json"
+    source.write_text(json.dumps(template), encoding="utf-8")
+
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    app.register_blueprint(importlib.import_module("src.web.blueprints.tools_template_editor_blueprint").tools_template_editor_bp)
+    studio = app.test_client().post(
+        "/api/template-editor/validate", json={"modality": "survey", "schema_version": "stable", "template": template}
+    ).get_json()
+
+    code = 0
+    try:
+        cmd_library_template_validate(SimpleNamespace(
+            template=str(source), modality="survey", schema_version="stable", is_global=False, json=True,
+        ))
+    except SystemExit as exc:
+        code = exc.code
+    assert json.loads(capsys.readouterr().out) == studio
+    assert code == (0 if studio["ok"] else 1)

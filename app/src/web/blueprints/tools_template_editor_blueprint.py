@@ -294,49 +294,20 @@ def api_template_editor_load():
 
 @tools_template_editor_bp.route("/api/template-editor/validate", methods=["POST"])
 def api_template_editor_validate():
+    from src.template_validate import validate_template_document
+
     payload = request.get_json(silent=True) or {}
-    modality = (payload.get("modality") or "").strip().lower()
-    schema_version = (payload.get("schema_version") or "stable").strip()
-    template = payload.get("template")
-    is_global = bool(payload.get("is_global", False))
-
-    if modality not in SUPPORTED_MODALITIES:
-        return jsonify({"error": "Invalid modality"}), 400
-    if not isinstance(template, dict):
-        return jsonify({"error": "Template must be a JSON object"}), 400
-
-    template = _normalize_template_for_validation(modality=modality, template=template)
-
     try:
-        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
-        if is_global:
-            schema = _relax_schema_for_library_template(schema)
-        errors = _validate_against_schema(instance=template, schema=schema)
-
-        from src.template_save import template_warnings
-        from src.template_validator import TemplateValidator
-
-        lang_warnings, item_warnings = template_warnings(template)
-        if modality in ("survey", "biometrics"):
-            errors += [
-                {"path": f["path"], "message": f["message"]}
-                for f in TemplateValidator.validate_item_rules_from_data(template)
-                if f["severity"] == "error"
-            ]
-        else:
-            item_warnings = []
-
-        return (
-            jsonify(
-                {
-                    "ok": len(errors) == 0,
-                    "errors": errors,
-                    "language_warnings": lang_warnings,
-                    "item_warnings": item_warnings,
-                }
-            ),
-            200,
+        result = validate_template_document(
+            payload.get("template"),
+            modality=(payload.get("modality") or "").strip().lower(),
+            app_root=current_app.root_path,
+            schema_version=(payload.get("schema_version") or "stable").strip(),
+            is_global=bool(payload.get("is_global", False)),
         )
+        return jsonify(result), 200
+    except ValueError as e:  # not a supported modality, not a JSON object
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
