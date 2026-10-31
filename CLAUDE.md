@@ -20,6 +20,16 @@ show the result. (What stays in the GUI is UI state only: which card is open, wh
 - Before you edit anything in `app/src/web/**` ask: "is this the CLI's job?" It almost always is.
 - Known open differences are tracked in `docs/CLI_STUDIO_DIVERGENCES.md`. Remove entries; never add one on purpose.
 
+## Structured GUI behaviour: the project page is the reference
+
+Every Studio page behaves like the project page (`app/templates/projects.html`,
+`app/static/js/modules/projects/`). The same kind of field gets the same widget everywhere: a list
+of choices is a pull-down, and what the user picks moves out of the list into a green chip below it
+(click the chip to remove it); free-text lists use the chip input; required/complete state uses the
+same badges. Before you build or change a field in another page (template editor, converters,
+recipes, ...) look at how the project page does it and reuse its helpers (`chip-list.js`) instead
+of writing a second widget. A page that deviates is a bug, like a CLI/Studio difference.
+
 ## Mandatory skills for every chat in this repo
 
 At the start of every conversation in this repository, invoke both of the
