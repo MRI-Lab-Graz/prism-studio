@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request
 
 from src.project_manager import get_available_modalities
 from .projects import get_current_project, get_bids_file_path
@@ -12,6 +12,12 @@ projects_library_bp = Blueprint("projects_library", __name__)
 def get_modalities():
     """Get list of available PRISM modalities."""
     return jsonify({"success": True, "modalities": get_available_modalities()})
+
+
+@projects_library_bp.route("/settings")
+def settings_page():
+    """Render the Settings page: global settings, DataLad and beginner help."""
+    return render_template("settings.html", current_project=get_current_project())
 
 
 def _apply_settings_changes(changes: dict):
@@ -66,6 +72,7 @@ def get_global_library_settings():
             "enable_study_application_import": bool(
                 getattr(settings, "enable_study_application_import", False)
             ),
+            "datalad_for_new_projects": bool(settings.datalad_for_new_projects),
         }
     )
 
@@ -173,7 +180,7 @@ def set_global_library_settings():
         return jsonify({"success": False, "error": "No data provided"}), 400
     from src.settings_update import SETTINGS
 
-    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode"}
+    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode", "datalad_for_new_projects"}
     settings, error = _apply_settings_changes({k: v for k, v in data.items() if k in shared and k in SETTINGS})
     if error:
         return error
@@ -184,6 +191,7 @@ def set_global_library_settings():
         "personal_library_path": settings.personal_library_path,
         "global_recipes_path": settings.global_recipes_path,
         "export_defacing_confirmation_mode": settings.export_defacing_confirmation_mode,
+        "datalad_for_new_projects": settings.datalad_for_new_projects,
     })
 
 

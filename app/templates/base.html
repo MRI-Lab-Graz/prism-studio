@@ -355,6 +355,7 @@
 </head>
 <body class="studio-theme">
     {% set converter_available = endpoint_exists('tools.converter') %}
+    {% set settings_available = endpoint_exists('projects_library.settings_page') %}
     {% set file_management_available = endpoint_exists('tools.file_management') %}
     {% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
     {% set recipes_available = endpoint_exists('tools.recipes') %}
@@ -453,16 +454,6 @@
                             <li><h6 class="dropdown-header">Recent Projects</h6></li>
                             <li class="px-0"><div id="projectsRecentList"></div></li>
                             <li id="projectsRecentEmpty"><span class="dropdown-item-text text-muted small">No recent projects yet</span></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="px-3 py-1">
-                                <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="beginnerHelpModeToggle">
-                                    <label class="form-check-label" for="beginnerHelpModeToggle">
-                                        <span class="d-block fw-semibold small"><i class="fas fa-graduation-cap me-1 text-info"></i>Beginner help mode</span>
-                                        <small class="text-muted">Show guidance under fields (all pages)</small>
-                                    </label>
-                                </div>
-                            </li>
                         </ul>
                     </li>
 
@@ -571,6 +562,14 @@
                             </a></li>
                         </ul>
                     </li>
+
+                    {% if settings_available %}
+                    <li class="nav-item">
+                        <a class="nav-link{% if request.endpoint == 'projects_library.settings_page' %} active{% endif %}" href="{{ url_for('projects_library.settings_page') }}" title="Settings: help, DataLad, libraries and advanced options" aria-label="Settings">
+                            <i class="fas fa-cog"></i>
+                        </a>
+                    </li>
+                    {% endif %}
 
                     <li class="nav-item d-flex align-items-center ms-lg-2">
                         <a href="https://github.com/MRI-Lab-Graz/prism-studio" target="_blank" rel="noopener" title="Star PRISM Studio on GitHub">

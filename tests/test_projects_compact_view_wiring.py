@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -109,6 +110,22 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
 
         self.assertIn('id="createProjectSubmitBtnTop"', content)
         self.assertIn('id="preliminaryCreateBtnTop"', content)
+
+    def test_create_form_recommends_datalad_but_keeps_it_opt_in(self):
+        content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
+
+        toggle = re.search(r'<input[^>]*id="projectUseDatalad"[^>]*>', content).group(0)
+        self.assertNotIn("checked", toggle)
+        self.assertIn("(recommended)", content)
+        self.assertNotIn("Turn this on only when", content)
+        self.assertNotIn("switched on automatically", content)
+
+    def test_create_preflight_never_flips_the_datalad_switch(self):
+        js = (
+            REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "create-preflight.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("toggle.checked =", js)
 
     def test_project_setup_forms_include_datalad_toggle(self):
         create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")

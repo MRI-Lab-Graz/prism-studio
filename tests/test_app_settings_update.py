@@ -97,3 +97,9 @@ def test_every_setting_has_a_command_flag():
     sub = [a for a in parsers["settings"]._actions if isinstance(a, argparse._SubParsersAction)][0]
     flags = {a.dest for a in sub.choices["set"]._actions}
     assert set(SETTINGS) <= flags, sorted(set(SETTINGS) - flags)
+
+
+def test_datalad_for_new_projects_is_off_by_default_and_can_be_switched_on():
+    assert config.load_app_settings(app_root=str(APP)).datalad_for_new_projects is False
+    assert update_app_settings(APP, {"datalad_for_new_projects": "on"}).datalad_for_new_projects is True
+    assert config.load_app_settings(app_root=str(APP)).datalad_for_new_projects is True

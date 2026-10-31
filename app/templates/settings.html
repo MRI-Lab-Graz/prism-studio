@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
+
+{% block title %}PRISM Studio - Settings{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css', v='20260423-overflow') }}">
+{% endblock %}
+
+{% block content %}
+<div class="studio-page-shell" id="settingsRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}" data-current-project-icon="{{ current_project.icon or '' }}">
+    {{ page_header(
+        'fas fa-cog',
+        'Settings',
+        'Preferences that apply to every project: help, version control, libraries and advanced options.'
+    ) }}
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-info bg-opacity-10">
+            <div class="h5 mb-0"><i class="fas fa-graduation-cap text-info me-2"></i>Help</div>
+        </div>
+        <div class="card-body">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="beginnerHelpModeToggle">
+                <label class="form-check-label" for="beginnerHelpModeToggle">
+                    <span class="d-block fw-semibold">Beginner help mode</span>
+                    <small class="text-muted">Show guidance under fields on all pages. Stored in this browser.</small>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <div class="h5 mb-0"><i class="fas fa-code-branch text-secondary me-2"></i>DataLad Version Control</div>
+        </div>
+        <div class="card-body">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="dataladForNewProjectsToggle">
+                <label class="form-check-label" for="dataladForNewProjectsToggle">
+                    <span class="d-block fw-semibold">Switch DataLad on when creating a new project</span>
+                    <small class="text-muted">Recommended. Only pre-selects the switch in the Create Project form; you can still turn it off per project.</small>
+                </label>
+            </div>
+            <div class="small mt-2" id="dataladForNewProjectsFeedback" aria-live="polite"></div>
+            {% if not current_project.path %}
+            <div class="small text-muted mt-3">Open a project to see and manage its own DataLad tracking here.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% include 'includes/projects/datalad_section.html' %}
+
+    {% include 'includes/projects/settings_section.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- ES6 Module aggregator (new modular architecture) -->
+<script type="module" src="{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}"></script>
+
+<script>
+    // Template variables - must be rendered server-side
+    window.currentProjectPath = "{{ current_project.path or '' }}";
+    window.currentProjectName = "{{ current_project.name or '' }}";
+    window.currentProjectIcon = "{{ current_project.icon or '' }}";
+</script>
+{% endblock %}

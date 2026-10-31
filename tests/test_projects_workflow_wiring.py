@@ -67,6 +67,9 @@ PROJECTS_HINTS_MODULE = (
 PROJECTS_SETTINGS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "settings.js"
 )
+PROJECTS_DATALAD_CARD_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "datalad-card.js"
+)
 PROJECTS_OPEN_PROJECT_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "open-project.js"
 )
@@ -192,7 +195,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
 
     def test_open_project_loaded_state_owns_datalad_actions(self):
-        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        # The card logic lives in datalad-card.js; open-project.js keeps the opt-in prompt.
+        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8") + PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function renderProjectBoxDataladState(", content)
         # The static markup for these IDs now lives in datalad_section.html
@@ -219,8 +223,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("window.prompt('Commit message for this checkpoint'", content)
         self.assertIn("window.setNavbarDataladFeedback?.(", content)
         self.assertIn("const DATALAD_PREFERENCES_NAMESPACE = 'datalad';", content)
-        self.assertIn("const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
-        self.assertIn("const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';", content)
+        self.assertIn("export const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
+        self.assertIn("export const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';", content)
         # The backend knows the platform; the JS only shows what the status says.
         self.assertIn("dataladState.install_command", content)
         self.assertIn("Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}", content)
@@ -237,10 +241,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn('id="dataladSectionCard"', content)
         self.assertIn('style="display: none;"', content)
-        self.assertIn('data-bs-target="#dataladSection"', content)
-        self.assertIn('aria-controls="dataladSection"', content)
-        self.assertIn('id="dataladSectionChevron"', content)
-        self.assertIn('class="collapse" id="dataladSection"', content)
+        self.assertIn('id="dataladSection"', content)
+        self.assertNotIn("data-bs-toggle", content)  # always open on the Settings page
         self.assertIn('id="projectBoxDataladStateBadge"', content)
         self.assertIn('id="projectBoxDataladStatus"', content)
         self.assertIn('id="projectBoxDataladHint"', content)
@@ -256,9 +258,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('href="https://www.datalad.org/"', content)
 
         page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
+        self.assertNotIn("datalad_section.html", page_sections_content)
         self.assertIn(
             "{% include 'includes/projects/datalad_section.html' %}",
-            page_sections_content,
+            (REPO_ROOT / "app" / "templates" / "settings.html").read_text(encoding="utf-8"),
         )
 
     def test_settings_and_fix_actions_use_api_fallback(self):
@@ -289,7 +292,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             core_content,
         )
         self.assertIn("const projectMaintenanceActions = createProjectMaintenanceActions({", core_content)
-        self.assertIn("initProjectSettingsForm();", core_content)
+        # The settings card moved to the Settings page (see test_settings_page_wiring.py).
+        self.assertNotIn("initProjectSettingsForm", core_content)
 
     def test_projects_page_uses_single_bootstrap_entrypoint(self):
         index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
@@ -935,7 +939,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         # A compact link-out row takes its place, matching the existing
         # "Need a full dataset check?" pattern already in the same panel.
         self.assertIn('id="projectLoadedManageDataladLink"', render_body)
-        self.assertIn('href="#dataladSection"', render_body)
+        self.assertIn('href="/settings#dataladSection"', render_body)
 
         # The row's descriptive sentence must be state-aware rather than a static
         # claim that misleads once the project is already DataLad-tracked, so the
@@ -943,31 +947,26 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertNotIn("DataLad adds Git-based version control any time", render_body)
         self.assertIn('id="projectLoadedDataladSummary"', render_body)
 
-        # showDataladCard mirrors showMethodsCard's show/hide-on-project-loaded logic.
-        self.assertIn("function showDataladCard()", content)
-        self.assertIn("dataladSectionCard", content)
-        self.assertIn("return {", content)
-        self.assertIn("showDataladCard,", content)
+        # showDataladCard (show/hide the card when a project is loaded) is in the shared card module.
+        card = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
+        self.assertIn("function showDataladCard()", card)
+        self.assertIn("dataladSectionCard", card)
 
-    def test_datalad_card_visibility_is_wired_through_bootstrap_like_methods_card(self):
+    def test_datalad_card_visibility_is_wired_by_the_settings_page_not_the_project_page(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
+        index_content = (REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "index.js").read_text(encoding="utf-8")
 
-        self.assertIn("const showDataladCard = openProjectController.showDataladCard;", core_content)
-        self.assertIn("showDataladCard,", core_content)
-
-        self.assertIn("showDataladCard();", bootstrap_content)
-        self.assertIn(
-            "{ element: 'dataladSection', chevron: 'dataladSectionChevron' }",
-            bootstrap_content,
-        )
+        self.assertNotIn("showDataladCard", core_content)
+        self.assertNotIn("showDataladCard", bootstrap_content)
+        self.assertIn(").showDataladCard();", index_content)
 
     def test_show_datalad_card_populates_and_binds_when_visible(self):
         # Finding 1 (whole-branch review): a plain GET /projects with a project
         # already active in the session can show the card without ever running
         # loadProjectWithoutValidation, so showDataladCard() itself must populate
         # and bind the card rather than only toggling display.
-        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
 
         show_start = content.index("function showDataladCard()")
         show_end = content.index("\n    }\n", show_start)
@@ -980,7 +979,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("applyCurrentProject(current);", show_body)
 
     def test_render_project_box_datalad_state_updates_loaded_summary_span(self):
-        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
 
         render_start = content.index("function renderProjectBoxDataladState(")
         render_end = content.index("\n    function refreshDataladStatusDeep(")

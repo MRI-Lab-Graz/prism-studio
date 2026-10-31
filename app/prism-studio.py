@@ -1174,6 +1174,8 @@ def ensure_project_selected_first():
         return None
     if path == "/projects" or path.startswith("/api/projects/"):
         return None
+    if path == "/settings":
+        return None
     if path == "/assets/prism-logo" or path == "/assets/prism-logo.png":
         return None
 

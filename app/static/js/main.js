@@ -33,3 +33,12 @@ if (document.getElementById('shareRoot')) {
         ProjectsModule.initializeSharePage();
     }
 }
+
+// Initialize the Settings page (help, DataLad default, libraries, advanced).
+if (document.getElementById('settingsRoot')) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => ProjectsModule.initializeSettingsPage());
+    } else {
+        ProjectsModule.initializeSettingsPage();
+    }
+}
