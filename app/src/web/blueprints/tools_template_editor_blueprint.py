@@ -313,25 +313,18 @@ def api_template_editor_validate():
             schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
 
-        lang_warnings = []
-        try:
-            from src.template_validator import TemplateValidator
+        from src.template_save import template_warnings
+        from src.template_validator import TemplateValidator
 
-            lang_warnings = TemplateValidator.validate_language_consistency_from_data(
-                template, file_name="template", supersede_declared=True
-            )
-        except Exception:
-            pass
-
-        item_warnings = []
+        lang_warnings, item_warnings = template_warnings(template)
         if modality in ("survey", "biometrics"):
-            from src.template_validator import TemplateValidator
-
-            for finding in TemplateValidator.validate_item_rules_from_data(template):
-                if finding["severity"] == "error":
-                    errors.append({"path": finding["path"], "message": finding["message"]})
-                else:
-                    item_warnings.append(finding)
+            errors += [
+                {"path": f["path"], "message": f["message"]}
+                for f in TemplateValidator.validate_item_rules_from_data(template)
+                if f["severity"] == "error"
+            ]
+        else:
+            item_warnings = []
 
         return (
             jsonify(

@@ -8,6 +8,7 @@ from pathlib import Path
 from src.personal_library import personal_library_folder
 from src.prism_template_validation import (
     SEVERITY_ERROR,
+    SEVERITY_WARNING,
     is_missing_field_error,
     missing_required_fields,
     relax_schema_for_library_template,
@@ -156,6 +157,26 @@ def save_template(
     folder.mkdir(parents=True, exist_ok=True)
     path.write_text(dump_json_text(template), encoding="utf-8")
     return SavedTemplate(path=path, missing=missing, removed=removed)
+
+
+def template_warnings(template: dict) -> tuple[list[dict], list[dict]]:
+    """(language, item) findings that do not stop a template from being used but the user should see. A check that
+    cannot run is itself a warning: it is never skipped silently."""
+    from src.template_validator import TemplateValidator
+
+    language: list[dict] = []
+    items: list[dict] = []
+    try:
+        language = TemplateValidator.validate_language_consistency_from_data(
+            template, file_name="template", supersede_declared=True
+        )
+    except Exception as exc:
+        language = [{"path": "(template)", "message": f"The language check could not run: {exc}", "severity": SEVERITY_WARNING}]
+    try:
+        items = [f for f in TemplateValidator.validate_item_rules_from_data(template) if f["severity"] != SEVERITY_ERROR]
+    except Exception as exc:
+        items = [{"path": "(template)", "message": f"The item check could not run: {exc}", "severity": SEVERITY_WARNING}]
+    return language, items
 
 
 def _language_findings(template: dict) -> list[dict]:

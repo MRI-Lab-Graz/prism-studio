@@ -30,7 +30,6 @@ def test_an_empty_required_field_is_red_and_the_section_counts_it(page, project,
     assert badge.inner_text() == "1 required" and "bg-danger" in badge.get_attribute("class")
     field = administration.locator("#field_Technical_Respondent")
     assert "is-invalid" in field.get_attribute("class")
-    assert administration.locator(".te-required-hint[data-hint-path='Technical/Respondent']").is_visible()
     assert page.locator("#ringRequired").get_attribute("aria-label") != "Required 100%"
 
 
@@ -43,7 +42,6 @@ def test_filling_the_field_turns_everything_green_without_a_reload(page, project
     page.wait_for_function("document.querySelector('#ringRequired').getAttribute('aria-label') === 'Required 100%'")
     assert administration.locator(".te-section-badge").inner_text() == "✓ complete"
     assert "is-invalid" not in administration.locator("#field_Technical_Respondent").get_attribute("class")
-    assert not administration.locator(".te-required-hint[data-hint-path='Technical/Respondent']").is_visible()
 
 
 def test_the_fair_ring_counts_recommended_fields_and_never_blocks(page, project, studio_url):

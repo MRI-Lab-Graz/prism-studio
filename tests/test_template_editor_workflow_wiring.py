@@ -62,8 +62,8 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertNotIn("completionBarFill", page + script)
         self.assertNotIn("calculateCompletion", script)
         self.assertIn("/api/template-editor/completeness", script)
-        # the hint is always drawn for a required field and shown or hidden as the numbers change
-        self.assertIn("te-required-hint", script)
+        # an empty required field is marked by its red border and star, not by an extra line
+        self.assertNotIn("te-required-hint", script)
         self.assertIn("function paintCompleteness", script)
         self.assertIn("countMissing", script)
         self.assertIn("is-invalid", script[script.index("function paintCompleteness") :][:2500])

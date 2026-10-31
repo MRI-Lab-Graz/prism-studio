@@ -39,9 +39,8 @@
             </select>
           </div>
           <div class="col-md-6 col-lg-8">
-            <details id="advancedOptions" class="small">
-              <summary class="text-muted mt-md-4">Advanced</summary>
-              <label class="form-label fw-bold mt-2" for="schemaVersion">Schema version</label>
+            <details id="advancedOptions">
+              <summary class="form-label fw-bold text-muted">Advanced: schema version</summary>
               <select id="schemaVersion" class="form-select" style="max-width: 20rem;">
                 {% for v in schema_versions %}
                 <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
@@ -159,6 +158,7 @@
             <span class="fw-bold small"><i class="fas fa-globe me-1"></i>Languages:</span>
             <span id="langBadges"></span>
             <span id="langPrimaryBadge"></span>
+            <span class="text-muted" data-bs-toggle="tooltip" title="Click a language to make it the primary one (&#9733;). The &times; removes it from all questions.">&#9432;</span>
             <span id="langWarningIndicator" class="text-warning small" style="display:none;" title="Language configuration mismatch"><i class="fas fa-exclamation-triangle"></i></span>
             <span id="primaryLanguageForm" class="d-none align-items-center gap-1">
               <label class="small fw-bold mb-0" for="primaryLanguageInput">Language of the texts <span class="text-danger" title="Required before the template can be validated">*</span></label>
