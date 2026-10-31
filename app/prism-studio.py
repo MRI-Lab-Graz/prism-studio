@@ -187,6 +187,16 @@ def _build_parser():
         ),
     )
     parser.add_argument(
+        "-rp",
+        "--recent-project",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Open the recent project with this name (case-insensitive, part of a name is enough) "
+            "and start on the project page; if there is none, start as usual"
+        ),
+    )
+    parser.add_argument(
         "--force-clean-start",
         action="store_true",
         help="Force-stop any process using the selected port before launch",
@@ -356,12 +366,12 @@ def _startup_module_check() -> None:
 
 def _print_startup_intro() -> None:
     print()
+    print(_startup_colorize("MRI-LAB Graz", "accent"))
+    print(_startup_colorize("Structured research data, without the friction.", "muted"))
+    print()
     print(_startup_logo())
     print()
-    print(_startup_colorize("Structured research data, without the friction.", "muted"))
-    print(_startup_colorize("You need friction to walk.", "muted"))
-    print(_startup_colorize("Not to work.", "muted"))
-    print(_startup_colorize("MRI-LAB GRAZ", "accent"))
+    print(_startup_colorize("You need friction to walk. Not to work.", "muted"))
     print()
 
 
@@ -1841,6 +1851,17 @@ def main():
         token = secrets.token_urlsafe(24)
         app.config["PRISM_ACCESS_TOKEN"] = token
         url += f"/?token={token}"
+
+    if args.recent_project:
+        # The page that opens the project is the start URL; the name is used once (see projects.open_recent_from_launch)
+        app.config["PRISM_OPEN_RECENT"] = args.recent_project
+        from src.recent_projects import recent_project_notice
+        from src.web.blueprints.projects_helpers import _load_recent_projects
+
+        print(f"[INFO]  {recent_project_notice(_load_recent_projects(), args.recent_project)}")
+        url = f"{scheme}://{display_host}:{port}/api/projects/open-recent"
+        if args.public:
+            url += f"?token={token}"
 
     startup_log_file = Path.home() / "prism_studio.log" if getattr(sys, "frozen", False) else None
     _print_startup_welcome(url, public=bool(args.public), log_file=startup_log_file)

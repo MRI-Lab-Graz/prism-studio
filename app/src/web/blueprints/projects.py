@@ -11,7 +11,7 @@ Provides routes for:
 from pathlib import Path
 from typing import Any
 
-from flask import Blueprint, Response, render_template, jsonify, session, request, current_app
+from flask import Blueprint, Response, render_template, jsonify, redirect, session, request, current_app, url_for
 
 from src.config import load_config
 from src.project_manager import ProjectManager, get_available_modalities
@@ -58,6 +58,7 @@ from .projects_methods_handlers import (
     handle_export_methods,
     handle_generate_methods_section,
 )
+from .projects_helpers import _load_recent_projects
 from .projects_lifecycle_handlers import (
     handle_create_project,
     handle_datalad_doctor,
@@ -357,6 +358,23 @@ def get_datalad_status_deep():
 def get_project_summary():
     """Counted project summary, fetched after the load response has painted."""
     return handle_project_summary()
+
+
+@projects_bp.route("/api/projects/open-recent")
+def open_recent_from_launch():
+    """`prism-studio -rp NAME`: open that recent project and land on the project page.
+
+    The name is the one the launcher stored, used once; no match (or no flag) starts the standard page.
+    """
+    from src.recent_projects import find_recent_project
+
+    name = current_app.config.pop("PRISM_OPEN_RECENT", None)
+    project = find_recent_project(_load_recent_projects(), name) if name else None
+    if not project:
+        return redirect("/")
+    set_current_project(project["path"], project["name"], project.get("icon"))
+    _save_last_project(project["path"], project["name"])
+    return redirect(url_for("projects.projects_page"))
 
 
 @projects_bp.route("/api/projects/current", methods=["POST"])
