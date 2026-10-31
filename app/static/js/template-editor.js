@@ -310,6 +310,7 @@
   // document.currentScript is only set while the script first runs, so the URLs are made here, not in a .then
   const languagePickerUrl = new URL('./template-editor/language-picker.js', document.currentScript?.src || window.location.href).href;
   const chipListUrl = new URL('./modules/projects/chip-list.js', document.currentScript?.src || window.location.href).href;
+  const authorEntryUrl = new URL('./template-editor/author-entry.js', document.currentScript?.src || window.location.href).href;
   let languageCodes = null;
   let knownLanguageCodes = null;
   import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
@@ -318,10 +319,34 @@
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => { if (data && Array.isArray(data.codes)) knownLanguageCodes = new Set(data.codes); })
     .catch(() => {}) // the format check still applies without the list
-    .then(() => Promise.all([import(languagePickerUrl), import(chipListUrl)]))
-    .then(([picker, chips]) => { languagePicker = { ...picker, ...chips }; if (currentTemplate) renderTopLevel(); })
+    .then(() => Promise.all([import(languagePickerUrl), import(chipListUrl), import(authorEntryUrl)]))
+    .then(([picker, chips, authors]) => { languagePicker = { ...picker, ...chips, ...authors }; if (currentTemplate) renderTopLevel(); })
     .catch((err) => console.error('Language picker failed to load', err));
   let languagePicker = null; // language-picker.js + chip-list.js, once loaded and the code list is in
+  /** The author string for typed names: ORCID is looked up; none found (or no lookup) = the names alone. */
+  async function lookupAuthor(family, given, pickEl) {
+    const { composeAuthor, pickCandidate, authorFromCandidate } = languagePicker;
+    let found = [];
+    try {
+      const params = new URLSearchParams({ given_names: given.trim(), family_name: family.trim(), limit: '10' });
+      const data = await (await fetch(`/api/projects/orcid/search?${params}`)).json();
+      if (data.success) found = data.candidates || [];
+    } catch (err) { /* lookup is a convenience: the author is still added */ }
+    const hit = pickCandidate(found, family, given);
+    if (hit !== undefined) return hit ? authorFromCandidate(hit, family, given) : composeAuthor([family, given, '']);
+    return new Promise((resolve) => {
+      const sel = document.createElement('select');
+      sel.className = 'form-select form-select-sm mt-1';
+      sel.innerHTML = '<option value="">Several ORCID matches: choose one</option><option value="none">None of these (no ORCID)</option>';
+      found.forEach((c, i) => sel.add(new Option(`${c.display_name} (${c.orcid_id})${c.affiliation ? ` \u2013 ${c.affiliation}` : ''}`, i)));
+      sel.addEventListener('change', () => {
+        pickEl.innerHTML = '';
+        resolve(sel.value === 'none' ? composeAuthor([family, given, '']) : authorFromCandidate(found[Number(sel.value)], family, given));
+      });
+      pickEl.replaceChildren(sel);
+    });
+  }
+
   /** Message for a language code the user typed, '' when it is fine. */
   function languageProblem(raw) {
     return languageCodes ? languageCodes.languageCodeProblem(raw, knownLanguageCodes) : '';
@@ -548,10 +573,10 @@
 
     // fields: an empty required field is red until it is filled
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
-      if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', missing.has(el.getAttribute('data-field-path')));
-    });
-    topLevelFormEl.querySelectorAll('.te-required-hint').forEach((hint) => {
-      hint.hidden = !missing.has(hint.dataset.hintPath);
+      const isEmpty = missing.has(el.getAttribute('data-field-path'));
+      if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
+      // the tile of an empty required field turns red and says so
+      (el.querySelector(':scope > .te-field') || el.closest('.te-field'))?.classList.toggle('te-field-missing', isEmpty);
     });
     // sections: the badge counts what is still empty in them, and turns green at zero
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
@@ -1088,7 +1113,7 @@
 
         for (const [lang, text] of langEntries) {
           const row = document.createElement('div');
-          row.className = 'row g-2 align-items-start mb-3';
+          row.className = 'row g-2 align-items-start mb-2';
 
           const langCol = document.createElement('div');
           langCol.className = 'col-auto';
@@ -1101,7 +1126,7 @@
           textCol.className = 'col';
           const textArea = document.createElement('textarea');
           textArea.className = 'form-control';
-          textArea.rows = 4;
+          textArea.rows = 3;
           textArea.value = text || '';
           textArea.addEventListener('input', () => {
             value[lang] = textArea.value;
@@ -1145,7 +1170,7 @@
         const container = document.createElement('div');
         const ta = document.createElement('textarea');
         ta.className = 'form-control';
-        ta.rows = 6;
+        ta.rows = 2;
         ta.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
         ta.placeholder = '— Not set —';
         ta.addEventListener('input', () => onChange(ta.value));
@@ -1153,7 +1178,7 @@
 
         const toggleBtn = document.createElement('button');
         toggleBtn.type = 'button';
-        toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
         toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
         toggleBtn.addEventListener('click', () => {
           const currentVal = ta.value || '';
@@ -1390,6 +1415,38 @@
           onChange(parseCsv(inp.value));
         });
         return inp;
+      }
+
+      // Authors -> Family / Given boxes; the green check looks the ORCID up, stored as "Family, Given (ORCID)"
+      if (languagePicker && fieldName === 'Authors' && isPrimitive && allowsItemString) {
+        const container = document.createElement('div');
+        const box = (placeholder) => Object.assign(document.createElement('input'), {
+          type: 'text', className: 'form-control', placeholder,
+        });
+        const [family, given] = [box('Family name'), box('Given names')];
+        const pickEl = document.createElement('div'); // several ORCID hits: the user chooses here
+        const list = languagePicker.mountChipList(container, {
+          fields: [family, given],
+          compose: languagePicker.composeAuthor,
+          chipText: (text) => (languagePicker.parseAuthor(text) ? text : `\u26A0 ${text}`),
+          resolve: ([fam, giv]) => lookupAuthor(fam, giv, pickEl),
+          onChange: (vals) => onChange([...vals]),
+        });
+        container.querySelector('.chip-input-row').after(pickEl);
+        list.setValues(currentVal);
+        return container;
+      }
+
+      // Lists of text -> one input plus green chips, the same widget as the project page
+      if (languagePicker && isPrimitive && allowsItemString && !allowsItemInteger && !allowsItemNumber
+          && !items.properties && !items.oneOf && !items.anyOf && !items.allOf) {
+        const container = document.createElement('div');
+        const list = languagePicker.mountChipList(container, {
+          placeholder: 'Type and press Enter',
+          onChange: (vals) => onChange([...vals]),
+        });
+        list.setValues(currentVal);
+        return container;
       }
 
       // Freeform primitive arrays -> add/remove rows
@@ -1638,13 +1695,13 @@
     // Trigger if: allows both string and object AND (has patternProperties OR value is already a translation object)
     if (allowsObject && allowsString && (fieldSchema.patternProperties || isTranslationObject(value))) {
       const container = document.createElement('div');
-      container.className = 'border rounded p-2';
+      container.className = 'border rounded p-1';
 
       const table = document.createElement('div');
       container.appendChild(table);
       const addRowBtn = document.createElement('button');
       addRowBtn.type = 'button';
-      addRowBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+      addRowBtn.className = 'btn btn-sm btn-outline-primary mt-1';
       addRowBtn.textContent = 'Add language';
       container.appendChild(addRowBtn);
 
@@ -2062,7 +2119,19 @@
     return inp;
   }
 
+  /** One field = one tile (label + input); required fields get their own tint. */
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
+    const before = row.lastElementChild;
+    renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row);
+    const col = row.lastElementChild;
+    if (!col || col === before) return;
+    const tile = document.createElement('div');
+    tile.className = 'te-field' + (required.includes(name) ? ' te-field-required' : '');
+    while (col.firstChild) tile.appendChild(col.firstChild);
+    col.appendChild(tile);
+  }
+
+  function renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row) {
     // When a variant is explicitly selected, hide base scale fields that are managed
     // per-variant inside VariantScales. The user should only edit the variant-specific
     // version of these fields through the VariantScales card.
@@ -2313,12 +2382,6 @@
 
       renderEntries();
       col.appendChild(container);
-      if (fieldSchema.description) {
-        const helpText = document.createElement('div');
-        helpText.className = 'form-text text-muted small';
-        helpText.textContent = fieldSchema.description;
-        col.appendChild(helpText);
-      }
       row.appendChild(col);
       return;
     }
@@ -2478,12 +2541,6 @@
 
       renderDefs();
       col.appendChild(container);
-      if (fieldSchema.description) {
-        const helpText = document.createElement('div');
-        helpText.className = 'form-text text-muted small';
-        helpText.textContent = fieldSchema.description;
-        col.appendChild(helpText);
-      }
       row.appendChild(col);
       return;
     }
@@ -2528,12 +2585,6 @@
           checkWrap.appendChild(label);
         });
         col.appendChild(checkWrap);
-        if (fieldSchema.description) {
-          const helpText = document.createElement('div');
-          helpText.className = 'form-text text-muted small';
-          helpText.textContent = fieldSchema.description;
-          col.appendChild(helpText);
-        }
         row.appendChild(col);
         return; // bypass generic input creation
       }
@@ -2590,6 +2641,8 @@
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 
+    // short single-line fields sit two per row
+    if (input.matches('input:not([type=checkbox]), select')) col.className = 'col-12 col-md-6';
     if (input.classList.contains('form-check-input')) {
       const wrap = document.createElement('div');
       wrap.className = 'form-check';
@@ -2599,20 +2652,8 @@
       col.appendChild(input);
     }
 
-    if (fieldSchema.description) {
-      const helpText = document.createElement('div');
-      helpText.className = 'form-text text-muted small';
-      helpText.textContent = fieldSchema.description;
-      col.appendChild(helpText);
-    }
 
     if (isRequired) {
-      const hint = document.createElement('div');
-      hint.className = 'form-text te-required-hint';
-      hint.dataset.hintPath = `${sectionKey}/${name}`;
-      hint.hidden = !isMissing;
-      hint.textContent = 'Required';
-      col.appendChild(hint);
       if (isMissing && input.matches('input, select, textarea')) input.classList.add('is-invalid');
     }
 
@@ -2634,7 +2675,7 @@
     const names = sortedFieldNames(props, required);
 
     const row = document.createElement('div');
-    row.className = 'row g-3';
+    row.className = 'row g-2';
     for (const name of names) {
       renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
     }
@@ -3144,7 +3185,7 @@
       const body = document.createElement('div');
       body.className = 'te-subgroup-body mt-2';
       const row = document.createElement('div');
-      row.className = 'row g-3';
+      row.className = 'row g-2';
       for (const path of fields) {
         const [s, name] = path.split('/');
         renderFieldInRow(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
@@ -3307,8 +3348,8 @@
       // Click a language to make it the primary one; the x removes it (both run the same code as the field)
       langBadgesEl.innerHTML = langs.map((l) =>
         `<span class="badge ${l === primaryLang ? 'bg-primary' : 'bg-info text-dark'} d-inline-flex align-items-center gap-1" data-lang="${l}">`
-        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none fw-bold" data-lang-primary title="Make ${l} the primary language">${l}</button>`
-        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none" data-lang-remove aria-label="Remove ${l}" title="Remove ${l}">&times;</button></span>`
+        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none fw-bold" data-lang-primary title="${l === primaryLang ? 'Primary language' : `Click to make ${l} the primary language`}">${l === primaryLang ? '&#9733;' : '&#9734;'} ${l}</button>`
+        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none" data-lang-remove aria-label="Remove ${l}" title="Remove ${l} from all questions">&times;</button></span>`
       ).join(' ');
     }
 

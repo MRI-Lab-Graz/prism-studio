@@ -67,13 +67,15 @@ export function mountChipArea(container, { chipText = (value) => value, single =
 /** Mounts an entry row and the chip area into `container`; returns { getValues, setValues, addValue }.
  *  Default: one text input. For structured entries pass `fields` (input/select elements the
  *  caller built), `compose(values) -> string` (the stored string, '' = incomplete) and
- *  `chipText(storedString) -> string` (what the chip shows). */
+ *  `chipText(storedString) -> string` (what the chip shows). `resolve(values) -> string`
+ *  (optional, may be async) turns the typed values into the stored string instead of `compose`. */
 export function mountChipList(container, {
     placeholder = '',
     fields = null,
     compose = ([text]) => normalizeChipText(text),
     chipText = (value) => value,
     single = false,
+    resolve = null,
     onChange = () => {},
 } = {}) {
     container.innerHTML = `
@@ -102,8 +104,11 @@ export function mountChipList(container, {
         entryFields.forEach((field) => { field.value = ''; });
         syncAccept();
     };
-    const acceptEntry = () => {
-        const entry = compose(readFields());
+    // `resolve(values)` may be async (a lookup before the entry is kept); '' / null = nothing is added
+    const acceptEntry = async () => {
+        const values = readFields();
+        if (!compose(values)) return;
+        const entry = resolve ? await resolve(values) : compose(values);
         if (!entry) return;
         area.addValue(entry);
         clearFields();

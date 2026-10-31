@@ -73,7 +73,7 @@ _APP_ROOT_FOR_SCHEMAS = Path(__file__).resolve().parents[3]
 def cmd_library_template_check(args) -> None:
     """List what a project's survey templates still lack to be converted with - the check Studio runs before a
     conversion: the same function runs both."""
-    from src.survey_template_check import validate_project_templates_for_tasks
+    from src.survey_template_check import project_template_warnings, validate_project_templates_for_tasks
 
     tasks = [t.strip() for t in args.tasks.split(",") if t.strip()] if args.tasks else None
     issues = validate_project_templates_for_tasks(
@@ -81,6 +81,8 @@ def cmd_library_template_check(args) -> None:
     )
     for issue in issues:
         print(issue["message"])
+    for warning in project_template_warnings(tasks=tasks, project_path=str(Path(args.project).resolve())):
+        print(f"Warning: {warning['file']}: {warning['message']}")
     if issues:
         sys.exit(1)
     print("All survey templates are complete.")

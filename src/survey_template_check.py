@@ -87,3 +87,24 @@ def validate_project_templates_for_tasks(
             )
 
     return issues
+
+
+def project_template_warnings(*, tasks: list[str] | None, project_path: str | None) -> list[dict[str, str]]:
+    """Warnings (language, item rules) for the project's survey templates; they never block a conversion."""
+    from src.template_save import template_warnings
+
+    template_dir = Path(project_path or "").expanduser().resolve() / "code" / "library" / "survey"
+    if not template_dir.is_dir():
+        return []
+    wanted = None if tasks is None else {f"survey-{t}.json" for t in tasks}
+    found: list[dict[str, str]] = []
+    for path in sorted(template_dir.glob("survey-*.json")):
+        if wanted is not None and path.name not in wanted:
+            continue
+        try:
+            template = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue  # an unreadable file is reported as an issue by validate_project_templates_for_tasks
+        if isinstance(template, dict):
+            found += [{"file": path.name, "message": w["message"]} for w in sum(template_warnings(template), [])]
+    return found

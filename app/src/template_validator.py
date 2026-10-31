@@ -816,7 +816,10 @@ class TemplateValidator:
         import re
 
         declared = (data.get("I18n") or {}).get("Languages") if isinstance(data.get("I18n"), dict) else None
-        if not isinstance(declared, list) or not declared:
+        if not isinstance(declared, list):
+            return []
+        declared = [lang for lang in declared if isinstance(lang, str)]  # a list or number is a schema error, not a language
+        if not declared:
             return []
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         errors: List[TemplateValidationError] = []

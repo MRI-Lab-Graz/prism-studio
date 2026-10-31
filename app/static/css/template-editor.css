@@ -37,6 +37,16 @@
   .lang-bar .badge {
     font-size: 0.8rem;
   }
+  .lang-bar .badge .btn {
+    min-height: 0;
+    font-size: inherit;
+    line-height: inherit;
+  }
+  .lang-bar .badge [data-lang-remove] {
+    border-left: 1px solid currentColor !important;
+    padding-left: 0.4rem !important;
+    opacity: 0.8;
+  }
   .lang-bar-warn {
     border-color: #ffc107;
     background: #fff8e1;
@@ -303,7 +313,6 @@
     color: var(--ring);
   }
   .te-ring-count { font-size: 0.75rem; font-weight: 700; color: var(--ring); }
-  .te-required-hint { color: #c0392b; font-weight: 600; }
   #topLevelForm .is-invalid { border-color: #c0392b; }
   #topLevelForm .is-invalid:focus { border-color: #c0392b; box-shadow: 0 0 0 0.2rem rgba(192, 57, 43, 0.25); }
   .te-section-badge-done { background: #1f8b5c; color: #fff; }
@@ -435,6 +444,36 @@
   .te-item-field .form-control,
   .te-item-field .form-select {
     background-color: #fbfdff;
+  }
+
+  /* one tile per field; required fields are tinted green */
+  .te-field {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #adb5bd;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem 0.6rem;
+    height: 100%;
+  }
+  .te-field-required {
+    background: #f3faf6;
+    border-left-color: #198754;
+  }
+  .te-field-missing {
+    background: #fdf2f1;
+    border-left-color: #c0392b;
+  }
+  .te-field-missing .form-label::after {
+    content: "required";
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #c0392b;
+    text-transform: uppercase;
+  }
+  .te-field .form-label {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
   }
 
 </style>

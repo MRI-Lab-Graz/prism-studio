@@ -282,7 +282,7 @@ export async function validateCurrent(context, { initial = false, imported = fal
   let langWarnHtml = importNotesHtml(notes, context.escapeHtml);
   if (langWarnings.length > 0) {
     const items = langWarnings
-      .map((warning) => `<li><i class="fas fa-globe text-warning me-1"></i>${warning.message}${warning.details ? ` <small class="text-muted">(${warning.details})</small>` : ''}</li>`)
+      .map((warning) => `<li><i class="fas fa-globe text-warning me-1"></i>${context.escapeHtml(warning.message)}${warning.details ? ` <small class="text-muted">(${context.escapeHtml(typeof warning.details === 'string' ? warning.details : JSON.stringify(warning.details))})</small>` : ''}</li>`)
       .join('');
     langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
   }
