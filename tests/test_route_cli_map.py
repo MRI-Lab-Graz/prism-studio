@@ -11,6 +11,7 @@ A new route fails here until it is listed, so a feature cannot ship Studio-only 
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -68,7 +69,7 @@ def test_named_cli_commands_exist(route_map):
 
 
 def test_every_entry_is_a_known_kind_with_a_reason(route_map):
-    bad = {e: v for e, v in route_map.items() if not (v == "open" or v.split(": ", 1)[0] in ("cli", "prism", "exempt") and v.split(": ", 1)[1:] != [""])}
+    bad = {e: v for e, v in route_map.items() if v != "open" and not re.fullmatch(r"(cli|prism|exempt): \S.*", v)}
     assert not bad, bad
 
 
