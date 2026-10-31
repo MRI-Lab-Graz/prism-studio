@@ -1,0 +1,58 @@
+{
+ "colour": {
+  "app/static/css/converter.css": 75,
+  "app/static/css/projects/cards.css": 10,
+  "app/static/css/projects/layout.css": 39,
+  "app/static/css/projects/metadata.css": 33,
+  "app/static/css/projects/validation.css": 16,
+  "app/static/css/recipe_builder.css": 28,
+  "app/static/css/results.css": 8,
+  "app/static/css/survey-customizer.css": 54,
+  "app/static/css/survey-generator.css": 30,
+  "app/static/css/template-editor.css": 90,
+  "app/templates/base.html": 9,
+  "app/templates/file_management.html": 14,
+  "app/templates/home.html": 6,
+  "app/templates/index.html": 5,
+  "app/templates/recipes.html": 9,
+  "app/templates/survey_customizer.html": 1
+ },
+ "inline_style": {
+  "app/templates/base.html": 1,
+  "app/templates/converter.html": 1,
+  "app/templates/converter_biometrics.html": 3,
+  "app/templates/converter_environment.html": 6,
+  "app/templates/converter_participants.html": 4,
+  "app/templates/converter_physio.html": 3,
+  "app/templates/converter_survey.html": 8,
+  "app/templates/file_management.html": 16,
+  "app/templates/includes/projects/create_form.html": 1,
+  "app/templates/includes/projects/datalad_section.html": 5,
+  "app/templates/includes/projects/export_section.html": 19,
+  "app/templates/includes/projects/init_bids_form.html": 4,
+  "app/templates/includes/projects/methods_section.html": 6,
+  "app/templates/includes/projects/open_form.html": 3,
+  "app/templates/includes/projects/push_server_section.html": 12,
+  "app/templates/includes/projects/settings_section.html": 1,
+  "app/templates/includes/projects/study_metadata.html": 10,
+  "app/templates/index.html": 2,
+  "app/templates/json_editor.html": 1,
+  "app/templates/recipe_builder.html": 14,
+  "app/templates/recipes.html": 4,
+  "app/templates/results.html": 4,
+  "app/templates/survey_customizer.html": 3,
+  "app/templates/survey_generator.html": 2,
+  "app/templates/template_editor.html": 16
+ },
+ "restyle": {
+  "app/static/css/projects/layout.css": 1,
+  "app/static/css/projects/metadata.css": 3,
+  "app/static/css/results.css": 1,
+  "app/static/css/survey-customizer.css": 4,
+  "app/static/css/template-editor.css": 5,
+  "app/templates/base.html": 13
+ },
+ "select_multiple": {
+  "app/templates/includes/projects/study_metadata.html": 1
+ }
+}
