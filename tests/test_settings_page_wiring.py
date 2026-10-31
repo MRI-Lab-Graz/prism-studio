@@ -115,3 +115,18 @@ def test_project_page_points_to_the_settings_page_for_datalad():
     assert "getElementById('dataladSection')" not in opener  # no in-page scroll handler any more
     assert "showDataladCard" not in boot
     assert "dataladSectionChevron" not in boot
+
+
+def test_settings_page_still_runs_the_deep_datalad_status_for_tracked_projects():
+    card = _text(PROJECTS_JS / "datalad-card.js")
+    show = card[card.index("function showDataladCard()") :]
+
+    assert "refreshDataladStatusDeep(" in show.split("\n    }\n")[0]
+
+
+def test_datalad_card_exports_only_what_other_modules_use():
+    card = _text(PROJECTS_JS / "datalad-card.js")
+    exported = card[card.rindex("    return {") :]
+
+    for name in ("formatElapsedDuration", "getSaveProgressElements", "normalizeDataladBoolean", "confirmEnableDatalad"):
+        assert name not in exported, name

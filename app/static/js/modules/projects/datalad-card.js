@@ -763,6 +763,9 @@ export function createDataladCard({
                 if (!isSameProjectPath(currentPath, path)) return; // user navigated to a different project meanwhile
                 applyCurrentProject(current);
                 renderProjectBoxDataladState(current.datalad, currentPath);
+                if (current.datalad && current.datalad.enabled) {
+                    refreshDataladStatusDeep(currentPath);
+                }
             })
             .catch(() => {
                 // Best-effort enhancement only; the state from getCurrentProjectState() already rendered.
@@ -770,30 +773,15 @@ export function createDataladCard({
     }
 
     return {
-        formatElapsedDuration,
-        getSaveProgressElements,
-        stopProjectBoxDataladSaveProgress,
-        updateProjectBoxDataladSaveProgress,
-        startProjectBoxDataladSaveProgress,
-        finishProjectBoxDataladSaveProgress,
-        normalizeDataladBoolean,
         normalizeDataladSetupIntent,
         normalizeDataladAskOnOpen,
-        getDataladOperationState,
-        setDataladOperationState,
         normalizeProjectSummaryCount,
         normalizeProjectSummaryLabels,
         normalizeDataladState,
         setProjectBoxDataladFeedback,
         renderProjectBoxDataladState,
-        refreshDataladStatusDeep,
-        applyProjectDataladResponse,
-        getDataladLockMessage,
-        confirmEnableDatalad,
         buildMissingDataladToolsMessage,
-        pollCurrentProjectDataladStateWhileBusy,
         runProjectBoxEnableDatalad,
-        bindProjectBoxDataladActions,
         showDataladCard,
     };
 }
