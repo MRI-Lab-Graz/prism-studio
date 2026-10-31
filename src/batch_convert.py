@@ -123,6 +123,18 @@ class BatchConvertResult:
         return sum(1 for f in self.converted if not f.success)
 
 
+def describe_conflicts(result: BatchConvertResult, output_folder: Path) -> tuple[str, list[dict]] | None:
+    """The refusal Studio and `physio batch-convert` give when the batch would write two different files to one
+    place: nothing is saved into a project then. None when there is no conflict."""
+    if not result.conflicts:
+        return None
+    message = (
+        f"File conflicts detected: {len(result.conflicts)} files already exist with different content. "
+        "Please use different names or delete existing files."
+    )
+    return message, [{"path": str(c.output_path.relative_to(output_folder)), "reason": c.reason} for c in result.conflicts]
+
+
 def parse_bids_filename(filename: str) -> dict | None:
     """Parse a BIDS-like filename into its components.
 

@@ -55,7 +55,7 @@ def test_the_command_passes_the_report_flag_and_writes_the_dataset_description(t
 
     def fake_batch(**kw):
         seen.update(kw)
-        return SimpleNamespace(success_count=0, error_count=0, skipped=[], new_files=[], existing_files=[])
+        return SimpleNamespace(success_count=0, error_count=0, skipped=[], new_files=[], existing_files=[], conflicts=[])
 
     monkeypatch.setattr("src.batch_convert.batch_convert_folder", fake_batch)
     source, out = tmp_path / "raw", tmp_path / "out"

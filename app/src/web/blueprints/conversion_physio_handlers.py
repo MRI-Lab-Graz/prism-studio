@@ -144,6 +144,11 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             "project_output_count": 0,
         }
 
+        conflicts = None if config["dry_run"] else describe_conflicts(result, output_dir)
+        if conflicts:
+            _batch_job_store.failure(job_id, conflicts[0])
+            return
+
         if not config["dry_run"]:
             create_dataset_description(output_dir, name=config["dataset_name"])
 
@@ -175,6 +180,7 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                             return
                         copied_files = project_save.output_paths
                         payload["datalad"] = project_save.datalad
+                        payload["warnings"].extend(project_save.warnings)
 
                         if copied_files:
                             output_paths = summarize_project_output_paths(
@@ -410,6 +416,7 @@ def api_batch_convert_metrics():
 batch_convert_folder: Any = None
 check_physio_destination: Any = None
 create_dataset_description: Any = None
+describe_conflicts: Any = None
 parse_bids_filename: Any = None
 
 
@@ -423,6 +430,7 @@ try:
     batch_convert_folder = _batch_convert.batch_convert_folder
     check_physio_destination = _batch_convert.check_physio_destination
     create_dataset_description = _batch_convert.create_dataset_description
+    describe_conflicts = _batch_convert.describe_conflicts
     parse_bids_filename = _batch_convert.parse_bids_filename
 except (ImportError, AttributeError):
     pass
@@ -629,6 +637,11 @@ def api_batch_convert():
             # If not a dry-run, move files to project if save_to_project is true
             copied_output_paths: list[Path] = []
             datalad_copy = None
+            folder_warnings: list[str] = []
+            conflicts = None if dry_run else describe_conflicts(result, output_dir)
+            if conflicts:
+                message, conflicts_info = conflicts
+                return jsonify({"error": message, "conflicts": conflicts_info, "logs": logs}), 409
             if not dry_run:
                 create_dataset_description(output_dir, name=dataset_name)  # as the async job does
             if not dry_run and save_to_project:
@@ -641,7 +654,9 @@ def api_batch_convert():
                     flat_structure=flat_structure,
                     modality_filter=modality_filter,
                     subject_rewrite_mode=subject_rewrite_mode,
+                    log_fn=log_callback,
                 )
+                folder_warnings = project_save.warnings
                 datalad_copy = project_save.datalad
                 copied_output_paths = project_save.output_paths
 
@@ -671,6 +686,7 @@ def api_batch_convert():
                     "project_output_path": output_paths[0] if output_paths else None,
                     "project_output_count": len(copied_output_paths),
                     "datalad": datalad_copy,
+                    "warnings": folder_warnings,
                 }
             )
         except PhysioDestinationError as error:
@@ -815,22 +831,10 @@ def api_batch_convert():
 
         create_dataset_description(output_dir, name=dataset_name)
 
-        # Check for conflicts (files with different content)
-        if result.conflicts:
-            conflicts_info = [
-                {"path": str(c.output_path.relative_to(output_dir)), "reason": c.reason}
-                for c in result.conflicts
-            ]
-            return (
-                jsonify(
-                    {
-                        "error": f"File conflicts detected: {len(result.conflicts)} files already exist with different content. Please use different names or delete existing files.",
-                        "conflicts": conflicts_info,
-                        "logs": logs,
-                    }
-                ),
-                409,
-            )
+        conflicts = describe_conflicts(result, output_dir)
+        if conflicts:
+            message, conflicts_info = conflicts
+            return jsonify({"error": message, "conflicts": conflicts_info, "logs": logs}), 409
 
         project_saved = False
         base_project_root = None
@@ -862,7 +866,6 @@ def api_batch_convert():
                 flat_structure=flat_structure,
                 modality_filter=modality_filter,
                 subject_rewrite_mode=subject_rewrite_mode,
-                run_message="PRISM: Copy converted physio files into project",
                 log_fn=log_callback,
             )
             warnings.extend(project_save.warnings)
