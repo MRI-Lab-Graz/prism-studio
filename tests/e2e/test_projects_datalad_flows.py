@@ -1,4 +1,4 @@
-"""Projects page > DataLad Version Control card, against the real datalad / git-annex."""
+"""Settings page > DataLad card for the loaded project, against the real datalad / git-annex."""
 
 import shutil
 import subprocess
@@ -23,8 +23,9 @@ def open_datalad_card(page, studio_url, project):
     page.click("#card-open")
     page.fill("#existingPath", str(project))
     page.click("#loadProjectBtn")
+    page.wait_for_selector("#projectLoadedManageDataladLink")
+    page.click("#projectLoadedManageDataladLink")  # the card lives on the Settings page
     page.wait_for_selector("#dataladSectionCard", state="visible")
-    page.locator('[data-bs-target="#dataladSection"]').click()
     expect(page.locator("#projectBoxDataladStateBadge")).to_be_visible()
 
 

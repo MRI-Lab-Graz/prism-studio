@@ -5,7 +5,6 @@ export async function initProjectsPageBootstrap({
     applyDataladDefaultToCreateForm,
     showStudyMetadataCard,
     showMethodsCard,
-    showDataladCard,
     renderRecentProjects,
     loadRecentProjectsFromServer,
     ensureOpenSectionVisibleForLoadedProject,
@@ -76,9 +75,6 @@ export async function initProjectsPageBootstrap({
 
     showStudyMetadataCard();
     showMethodsCard();
-    if (!hasLoadedProject) {
-        showDataladCard();
-    }
     renderRecentProjects();
     loadRecentProjectsFromServer();
 
@@ -90,7 +86,6 @@ export async function initProjectsPageBootstrap({
         { element: 'openProjectSection', chevron: 'openProjectChevron' },
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
-        { element: 'dataladSection', chevron: 'dataladSectionChevron' },
         { element: 'exportSection', chevron: 'exportChevron' }
     ];
 

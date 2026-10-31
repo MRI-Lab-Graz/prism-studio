@@ -43,8 +43,13 @@
                 </label>
             </div>
             <div class="small mt-2" id="dataladForNewProjectsFeedback" aria-live="polite"></div>
+            {% if not current_project.path %}
+            <div class="small text-muted mt-3">Open a project to see and manage its own DataLad tracking here.</div>
+            {% endif %}
         </div>
     </div>
+
+    {% include 'includes/projects/datalad_section.html' %}
 
     {% include 'includes/projects/settings_section.html' %}
 </div>

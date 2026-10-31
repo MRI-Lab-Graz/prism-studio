@@ -80,3 +80,38 @@ def test_settings_page_opens_without_a_project():
     guard = studio[studio.index("def ensure_project_selected_first") :]
 
     assert 'path == "/settings"' in guard[: guard.index("\n\n\n")]
+
+
+# --- the DataLad card for the loaded project lives on the Settings page ---------------------------
+
+PROJECTS_JS = JS / "modules" / "projects"
+
+
+def test_datalad_card_moved_from_the_project_page_to_the_settings_page():
+    assert "datalad_section.html" not in _text(TEMPLATES / "includes" / "projects" / "page_sections.html")
+    page = _text(TEMPLATES / "settings.html")
+    assert "includes/projects/datalad_section.html" in page
+    assert 'id="dataladSectionCard"' in _text(TEMPLATES / "includes" / "projects" / "datalad_section.html")
+
+
+def test_datalad_card_logic_is_one_module_used_by_the_open_flow_and_the_settings_page():
+    card = _text(PROJECTS_JS / "datalad-card.js")
+    opener = _text(PROJECTS_JS / "open-project.js")
+    index = _text(PROJECTS_JS / "index.js")
+
+    assert "export function createDataladCard(" in card
+    for name in ("function renderProjectBoxDataladState", "function runProjectBoxEnableDatalad", "function bindProjectBoxDataladActions"):
+        assert name in card, name
+        assert name not in opener, name
+    assert "createDataladCard(" in opener
+    assert "createDataladCard(" in index and "showDataladCard()" in index
+
+
+def test_project_page_points_to_the_settings_page_for_datalad():
+    opener = _text(PROJECTS_JS / "open-project.js")
+    boot = _text(PROJECTS_JS / "page-bootstrap.js")
+
+    assert 'href="/settings#dataladSection"' in opener
+    assert "getElementById('dataladSection')" not in opener  # no in-page scroll handler any more
+    assert "showDataladCard" not in boot
+    assert "dataladSectionChevron" not in boot

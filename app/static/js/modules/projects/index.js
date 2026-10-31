@@ -48,6 +48,9 @@ import {
     useDefaultLibrary,
 } from './settings.js';
 import { initProjectPathPickers } from './path-pickers.js';
+import { createDataladCard } from './datalad-card.js';
+import { createProjectsCurrentStateController } from './current-project-state.js';
+import { getProjectStateSnapshot, setProjectStateSnapshot } from '../../shared/project-state.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import * as rsyncServerModule from './rsync_server.js';
 import * as pushServerToggleModule from './push_server_toggle.js';
@@ -117,6 +120,12 @@ export function initializeSettingsPage() {
     const noop = () => {};
     initProjectPathPickers({ fetchWithApiFallback, validateProjectField: noop, clearCreateResult: noop });
     initDataladForNewProjectsToggle();
+    const projectState = createProjectsCurrentStateController({ getProjectStateSnapshot, setProjectStateSnapshot });
+    createDataladCard({
+        fetchWithApiFallback,
+        getCurrentProjectState: projectState.getCurrentProjectState,
+        applyCurrentProject: projectState.applyCurrentProject,
+    }).showDataladCard();
     initBackendMonitoringToggle();
     initDedicatedTerminalToggle();
     initStudyApplicationImportToggle();

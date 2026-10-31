@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Settings page.** The global settings (libraries, monitoring, terminal, study-application import) moved from the bottom of the
   project page to their own `/settings` page (gear icon in the navbar). Beginner help mode moved there from the Projects menu. New
   setting `datalad_for_new_projects` (`prism_tools.py settings set --datalad-for-new-projects on`, off by default) starts the Create
-  Project form with the DataLad switch on; DataLad stays an opt-in, and the form's text now recommends it.
+  Project form with the DataLad switch on; DataLad stays an opt-in, and the form's text now recommends it. The DataLad card (state,
+  enable/repair, snapshot) of the loaded project moved to the Settings page too; the project page keeps a one-line "Version control"
+  row whose "Manage DataLad" button opens it. The card's code is one module (`datalad-card.js`) shared with the open-project flow.
 - **Recipe builder as commands.** `recipes templates|draft|load` return what the builder page shows (templates offered, the
   items/descriptions/scale ranges a new recipe starts from, a saved recipe). `recipes save` now resolves the global template
   library like Studio (configured, else official) instead of only the official one.
