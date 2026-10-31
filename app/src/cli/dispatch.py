@@ -267,6 +267,8 @@ def dispatch_prism_tools(
             handlers["library_template_save"](args)
         elif args.action == "template-check":
             handlers["library_template_check"](args)
+        elif args.action == "save-templates":
+            handlers["library_save_templates"](args)
         elif args.action == "template-validate":
             handlers["library_template_validate"](args)
         elif args.action == "template-score":

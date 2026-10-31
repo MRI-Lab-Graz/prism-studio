@@ -56,6 +56,7 @@ from src.cli.commands.library import (
     cmd_library_template_delete,
     cmd_library_template_save,
     cmd_library_template_score,
+    cmd_library_save_templates,
     cmd_library_template_validate,
 )
 from src.cli.commands.participants import (
@@ -317,6 +318,7 @@ def main() -> None:
             "library_template_check": cmd_library_template_check,
             "library_template_score": cmd_library_template_score,
             "library_template_validate": cmd_library_template_validate,
+            "library_save_templates": cmd_library_save_templates,
             "library_share_template": cmd_library_share_template,
             "library_check_path": cmd_library_check_path,
             "library_template_delete": cmd_library_template_delete,
