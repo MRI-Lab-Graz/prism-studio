@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 
+from src.project_delete import ProjectDeleteRefused, delete_project
 from src.project_documents import generate_readme, regenerate_citation
 from src.project_root import resolve_project_root_path
 
@@ -66,3 +67,14 @@ def cmd_project_fix(args) -> None:
         print(f"Error: {result['error']}")
     if not result["success"]:
         sys.exit(1)
+
+
+def cmd_project_delete(args) -> None:
+    """Delete a project folder from disk (what Studio's Delete button does; the same function runs both).
+    --confirm-name must echo the project's exact name."""
+    try:
+        root = delete_project(str(args.project), str(args.confirm_name or "").strip())
+    except ProjectDeleteRefused as refused:
+        print(f"Error: {refused}")
+        sys.exit(1)
+    print(f"Deleted {root}")

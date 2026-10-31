@@ -72,7 +72,9 @@ from src.cli.commands.publish import cmd_publish
 from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
     cmd_datalad_doctor,
+    cmd_datalad_enable,
     cmd_datalad_finalize,
+    cmd_datalad_save,
     cmd_datalad_sync,
 )
 from src.cli.commands.sessions import (
@@ -82,6 +84,7 @@ from src.cli.commands.sessions import (
 )
 from src.cli.commands.methods import cmd_methods_generate
 from src.cli.commands.project import (
+    cmd_project_delete,
     cmd_project_fix,
     cmd_project_fixable,
     cmd_project_generate_readme,
@@ -255,6 +258,9 @@ def main() -> None:
             "project_regenerate_citation": cmd_project_regenerate_citation,
             "project_fixable": cmd_project_fixable,
             "project_fix": cmd_project_fix,
+            "project_delete": cmd_project_delete,
+            "datalad_enable": cmd_datalad_enable,
+            "datalad_save": cmd_datalad_save,
             "export_project": cmd_export_project,
             "export_folder": cmd_export_folder,
             "export_git_lfs": cmd_export_git_lfs,

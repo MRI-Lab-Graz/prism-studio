@@ -712,6 +712,11 @@ def build_prism_tools_parsers(
     parser_project_fixable = project_subparsers.add_parser(
         "fixable", help="List what 'project fix' can repair (missing dataset_description, .bidsignore, sidecar stubs)"
     )
+    parser_project_delete = project_subparsers.add_parser(
+        "delete", help="Delete a project folder from disk (irreversible; the name must be echoed)"
+    )
+    parser_project_delete.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_project_delete.add_argument("--confirm-name", required=True, help="The project's exact name")
     parser_project_fix = project_subparsers.add_parser("fix", help="Repair the fixable issues of a project")
     parser_project_fix.add_argument("--codes", help="Comma-separated issue codes to fix (default: all), e.g. PRISM001,PRISM501")
     for parser_with_json in (parser_project_fixable, parser_project_fix):
@@ -870,6 +875,20 @@ def build_prism_tools_parsers(
     parser_datalad_finalize.add_argument(
         "--yes", action="store_true", help="Confirm the disconnect (required)"
     )
+
+    parser_datalad_enable = datalad_subparsers.add_parser(
+        "enable", help="Make the project a DataLad dataset and save a first snapshot"
+    )
+    parser_datalad_enable.add_argument("--project", required=True, help="Project root")
+    parser_datalad_enable.add_argument("--message", help="Commit message of the first snapshot")
+    parser_datalad_enable.add_argument("--yes", action="store_true", help="Confirm: this changes the project in place (required)")
+    parser_datalad_enable.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_datalad_save = datalad_subparsers.add_parser(
+        "save", help="Save the project's changes as a DataLad snapshot"
+    )
+    parser_datalad_save.add_argument("--project", required=True, help="Project root")
+    parser_datalad_save.add_argument("--message", help="Commit message (default: Save PRISM project changes)")
+    parser_datalad_save.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_environment = subparsers.add_parser(
         "environment",

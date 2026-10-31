@@ -1,5 +1,4 @@
 import os
-import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -7,6 +6,11 @@ from typing import Any
 from flask import jsonify, request, session
 import requests
 
+from src.project_delete import (
+    ProjectDeleteRefused,
+    delete_project,
+    derive_project_name,
+)
 from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
@@ -32,25 +36,6 @@ _init_bids_job_store = ConversionJobStore(log_level_key="level")
 def _normalize_dataset_type(dataset_type):
     """Force DatasetType to "raw" - derivative datasets are not supported."""
     return "raw"
-
-
-def _derive_project_name(root_path: Path, fallback_name: str | None = None) -> str:
-    """Resolve display name from project metadata with safe fallbacks."""
-    project_json = root_path / "project.json"
-    if project_json.exists() and project_json.is_file():
-        try:
-            payload = json.loads(project_json.read_text(encoding="utf-8"))
-            name = str(payload.get("name") or "").strip()
-            if name:
-                return name
-        except Exception:
-            pass
-
-    fallback = str(fallback_name or "").strip()
-    if fallback:
-        return fallback
-
-    return root_path.name
 
 
 def _derive_project_icon(
@@ -248,7 +233,7 @@ def handle_set_current(
 
     path = str(resolved_root)
 
-    resolved_name = _derive_project_name(Path(path), fallback_name=name)
+    resolved_name = derive_project_name(Path(path), fallback_name=name)
     requested_icon = normalize_project_icon(data.get("icon"))
     resolved_icon = _derive_project_icon(
         Path(path),
@@ -528,7 +513,7 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
         result = project_manager.validate_structure(root_path)
         result["success"] = True
 
-        project_name = _derive_project_name(
+        project_name = derive_project_name(
             root_path_obj,
             fallback_name=session.get("current_project_name"),
         )
@@ -553,97 +538,23 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
         return jsonify({"success": False, "error": str(error)}), 500
 
 
-def _make_writable_and_retry(func, path, exc_info):
-    """``shutil.rmtree`` onerror handler for read-only git-annex objects.
-
-    DataLad/git-annex store annexed file content as read-only objects so
-    accidental edits fail loudly. That same read-only bit makes a plain
-    ``rmtree`` fail on those files, so we chmod the offending path writable
-    and retry the failed operation once.
-    """
-    try:
-        os.chmod(path, 0o700 if os.path.isdir(path) else 0o600)
-        func(path)
-    except OSError:
-        raise exc_info[1]
-
-
-def _is_filesystem_root_or_home(path: Path) -> bool:
-    return str(path) == path.anchor or path == Path.home()
-
-
 def handle_delete_project(project_manager, get_current_project, clear_current_project):
-    """Permanently delete a project directory from disk.
-
-    This is destructive and irreversible, so it requires the caller to
-    confirm by echoing back the project's exact name (mirrors the
-    "type the name to confirm" pattern used for other irreversible actions),
-    in addition to the path itself.
-    """
+    """Permanently delete a project directory from disk (src.project_delete.delete_project, the same rule as
+    `prism_tools project delete`). Destructive and irreversible, so the caller echoes the project's exact name."""
     try:
         data = request.get_json()
         if not data:
             return jsonify({"success": False, "error": "No data provided"}), 400
 
         path = data.get("path")
-        confirm_name = str(data.get("confirm_name") or "").strip()
         if not path:
             return jsonify({"success": False, "error": "Path is required"}), 400
 
-        root_path_obj = _resolve_project_root_path(path)
-        if not root_path_obj or not root_path_obj.exists():
-            return (
-                jsonify({"success": False, "error": f"Path does not exist: {path}"}),
-                400,
-            )
-
-        # Refuse to touch anything that doesn't look like a PRISM/BIDS
-        # project root, and refuse filesystem roots / home directories
-        # outright — this endpoint only ever deletes recognizable project
-        # folders, never arbitrary paths a caller might pass by mistake.
-        looks_like_project = (root_path_obj / "project.json").exists() or (
-            root_path_obj / "dataset_description.json"
-        ).exists()
-        if not looks_like_project:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "This folder does not look like a PRISM project "
-                        "(no project.json or dataset_description.json found). "
-                        "Refusing to delete it.",
-                    }
-                ),
-                400,
-            )
-
-        if _is_filesystem_root_or_home(root_path_obj):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Refusing to delete a filesystem root or home directory.",
-                    }
-                ),
-                400,
-            )
-
-        actual_name = _derive_project_name(root_path_obj, fallback_name=root_path_obj.name)
-        if not confirm_name or confirm_name != actual_name:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Confirmation name does not match the project name. "
-                        f"Expected '{actual_name}'.",
-                    }
-                ),
-                400,
-            )
-
-        root_path = str(root_path_obj)
-
-        shutil.rmtree(root_path, onerror=_make_writable_and_retry)
+        try:
+            root = delete_project(path, str(data.get("confirm_name") or "").strip())
+        except ProjectDeleteRefused as refused:
+            return jsonify({"success": False, "error": str(refused)}), 400
+        root_path = str(root)
 
         # Drop it from the recent-projects list and clear it as the active
         # project if it was loaded, so the UI doesn't point at a dead path.
