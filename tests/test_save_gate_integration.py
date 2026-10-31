@@ -159,6 +159,7 @@ def _real_project(monkeypatch, tmp_path):
 
 
 @_NEEDS_DATALAD
+@pytest.mark.slow
 def test_real_create_flow_installs_hooks_in_project_and_nested_datasets(monkeypatch, tmp_path):
     project, result = _real_project(monkeypatch, tmp_path)
     hook = result["save_gate_hook"]

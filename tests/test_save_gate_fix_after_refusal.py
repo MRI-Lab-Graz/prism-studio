@@ -1,3 +1,4 @@
+import shutil
 import stat
 import subprocess
 
@@ -13,12 +14,19 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest.fixture
-def ds(tmp_path, monkeypatch):
-    root = tmp_path / "ds"
+@pytest.fixture(scope="module")
+def _ds_template(tmp_path_factory):
+    root = tmp_path_factory.mktemp("ds_template") / "ds"
     subprocess.run(["datalad", "create", "-c", "text2git", str(root)], check=True, capture_output=True)
     (root / "a.txt").write_text("hello\n")
     subprocess.run(["datalad", "save", "-m", "a"], cwd=root, check=True, capture_output=True)
+    return root
+
+
+@pytest.fixture
+def ds(tmp_path, monkeypatch, _ds_template):
+    root = tmp_path / "ds"
+    shutil.copytree(_ds_template, root, symlinks=True)
     # fake tool: invalid while a file named BAD exists
     tool = tmp_path / "prism_tools"
     tool.write_text('#!/bin/sh\nif [ -e BAD ]; then echo "PRISM save gate: 1 validation error(s)." ; exit 1; fi\nexit 0\n', newline="\n")
@@ -32,6 +40,7 @@ def git_status(root):
     return subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True).stdout
 
 
+@pytest.mark.slow
 def test_mutation_on_a_tree_dirty_from_a_refused_save_applies_the_change_but_is_not_saved(ds):
     (ds / "BAD").write_text("1")  # dataset is now invalid ...
     (ds / "a.txt").write_text("edited\n")  # ... and dirty inside the mutation scope
@@ -56,6 +65,7 @@ def test_clean_valid_tree_still_uses_the_normal_run(ds):
     assert result["used_run"] and git_status(ds).strip() == ""
 
 
+@pytest.mark.slow
 def test_mutation_on_another_file_while_a_refused_change_stays_dirty(ds):
     (ds / "x.txt").write_text("x\n")
     subprocess.run(["datalad", "save", "-m", "x"], cwd=ds, check=True, capture_output=True)
@@ -75,6 +85,7 @@ def test_mutation_on_another_file_while_a_refused_change_stays_dirty(ds):
     assert git_status(ds).strip() == ""
 
 
+@pytest.mark.slow
 def test_annexed_content_path_mutation_on_invalid_tree(tmp_path, monkeypatch):
     root = tmp_path / "ds2"
     subprocess.run(["datalad", "create", str(root)], check=True, capture_output=True)
