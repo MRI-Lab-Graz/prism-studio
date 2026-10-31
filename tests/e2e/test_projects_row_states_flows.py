@@ -182,7 +182,7 @@ def test_creating_a_new_project_is_blocked_while_a_draft_is_pending(bare_page, s
             page.locator(f'[data-bs-target="{target}"]').click()
             expect(page.locator(target)).to_be_visible()
     row = _fill_draft_author(page)
-    page.click("#createProjectSubmitBtn")
+    page.evaluate("document.getElementById('createProjectForm').requestSubmit()")  # Create is grey, Enter still submits
     expect(page.get_by_text("not accepted yet")).to_be_visible()
     expect(row).to_have_class(re.compile("row-pending"))
     assert not (tmp_path / "row_guard_study").exists()  # nothing was created

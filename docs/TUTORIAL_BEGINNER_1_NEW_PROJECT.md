@@ -207,13 +207,11 @@ depends on them.
 
 ## Part C — Create the project
 
-Click **Create Project** (not **Preliminary Save**, which only saves the
-form without creating anything yet).
+Click **Create Project**. The button stays grey until the required fields from Part B are filled in.
 
 With Dataset Name, a corresponding Author and at least three Keywords filled
-in from Part B, project creation should proceed straight through without any
-warning dialog. If a **Required Fields Missing** dialog appears anyway, it
-means one of those fields didn't save correctly (e.g. the corresponding
+in from Part B, the button turns green and project creation proceeds straight through.
+If it stays grey, hover it to see how many required fields are missing; one of those fields didn't save correctly (e.g. the corresponding
 author's email is still empty, or only two keywords were entered) — read the listed items, click **Go back and fill fields**,
 and fix exactly what's named rather than guessing.
 
@@ -281,11 +279,8 @@ reconstruct from memory.
   already exists.
 - **Typing a project name with spaces or accented characters** — the field
   will tell you exactly what's invalid; fix it there rather than guessing.
-- **Clicking Preliminary Save and expecting a project to exist** — that
-  button only saves form values for later; only **Create Project** actually
-  creates the folder structure.
 - **Marking an author corresponding without an email** — this is the most
-  common reason the Required Fields Missing dialog still appears after
+  common reason Create Project stays grey after
   filling in Part B; the email is only required *because* that author is
   corresponding, so add it or unmark the checkbox.
 - **Confusing CORE with REQUIRED** — see Part B, step 5: the blue CORE badge

@@ -437,26 +437,6 @@ export function initOpenProjectController({
                 </div>
                 <p class="mb-1 mt-2"><strong><span class="me-1" aria-hidden="true">${projectIconClass}</span>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
                 <div id="projectQuickSummary">${quickSummaryHtml}</div>
-                <div class="alert alert-info mt-2 mb-0" role="status">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                        <div>
-                            <strong>Need a full dataset check?</strong>
-                            <span class="ms-1">Open the Validator to run the canonical PRISM/BIDS validation flow for the current project.</span>
-                        </div>
-                        <a href="/validate" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-shield-check me-1"></i>Open Validator
-                        </a>
-                    </div>
-                </div>
-                <div class="alert alert-light border mt-3 mb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="status">
-                    <div>
-                        <strong><i class="fas fa-code-branch me-1"></i>Version control</strong>
-                        <span class="ms-1" id="projectLoadedDataladSummary"></span>
-                    </div>
-                    <a href="/settings#dataladSection" class="btn btn-sm btn-outline-secondary" id="projectLoadedManageDataladLink">
-                        <i class="fas fa-gear me-1"></i>Manage DataLad
-                    </a>
-                </div>
                 <div class="d-flex flex-column align-items-end mt-2">
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
                         <button type="button" class="btn btn-outline-danger" id="projectBoxDeleteBtn"

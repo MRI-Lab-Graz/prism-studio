@@ -29,66 +29,6 @@ export function initCreateProjectController({
     updateCreateProjectButton,
     showMethodsCard,
 }) {
-    function showIncompleteMetadataModal(missingItems) {
-        return new Promise((resolve) => {
-            const existingModal = document.getElementById('_incompleteMetadataModal');
-            if (existingModal) existingModal.remove();
-
-            const listHtml = missingItems
-                .map(item => `<li class="mb-1">${escapeHtml(item)}</li>`)
-                .join('');
-
-            const modalEl = document.createElement('div');
-            modalEl.id = '_incompleteMetadataModal';
-            modalEl.className = 'modal fade';
-            modalEl.tabIndex = -1;
-            modalEl.setAttribute('aria-modal', 'true');
-            modalEl.setAttribute('role', 'dialog');
-            modalEl.innerHTML = `
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content border-warning">
-                        <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning">
-                            <h5 class="modal-title">
-                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                                Required Fields Missing
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>The following required fields are still empty or invalid. The project will be created, but the metadata will be <strong>incomplete</strong>. You can fill in missing fields later.</p>
-                            <ul class="text-danger mb-0 ps-3">${listHtml}</ul>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="_incompleteModalCancel">
-                                <i class="fas fa-arrow-left me-1"></i>Go back and fill fields
-                            </button>
-                            <button type="button" class="btn btn-warning" id="_incompleteModalConfirm">
-                                <i class="fas fa-folder-plus me-1"></i>Create anyway (incomplete)
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-
-            document.body.appendChild(modalEl);
-
-            const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
-
-            document.getElementById('_incompleteModalConfirm').addEventListener('click', () => {
-                bsModal.hide();
-                resolve(true);
-            });
-            document.getElementById('_incompleteModalCancel').addEventListener('click', () => {
-                bsModal.hide();
-                resolve(false);
-            });
-            modalEl.addEventListener('hidden.bs.modal', () => {
-                modalEl.remove();
-            }, { once: true });
-
-            bsModal.show();
-        });
-    }
-
     const createProjectFormEl = document.getElementById('createProjectForm');
     if (!createProjectFormEl) {
         return;
@@ -100,7 +40,6 @@ export function initCreateProjectController({
         if (metadataForm && !guardSave(metadataForm, showTopFeedback)) {
             return;
         }
-        const forcePreliminary = Boolean(options.forcePreliminary);
         const triggerButton = options.triggerButton instanceof HTMLElement ? options.triggerButton : null;
 
         const projectName = document.getElementById('projectName').value.trim();
@@ -127,13 +66,9 @@ export function initCreateProjectController({
         const validation = validateAllMandatoryFields();
         const requiredIssueCount = (validation.emptyFields?.length || 0) + (validation.requiredInvalidFields?.length || 0);
         const optionalIssueCount = validation.optionalInvalidFields?.length || 0;
-        if (requiredIssueCount > 0 && !forcePreliminary) {
-            const issues = [
-                ...validation.emptyFields,
-                ...(validation.requiredInvalidFields || [])
-            ];
-            const confirmed = await showIncompleteMetadataModal(issues);
-            if (!confirmed) return;
+        if (requiredIssueCount > 0) {
+            showTopFeedback(`Fill in the ${requiredIssueCount} missing required field(s) in Study Metadata first.`, 'warning');
+            return;
         }
 
         if (optionalIssueCount > 0) {
@@ -147,18 +82,12 @@ export function initCreateProjectController({
             document.getElementById('createProjectSubmitBtn'),
             document.getElementById('createProjectSubmitBtnTop')
         ].filter(Boolean);
-        const preliminaryButtons = [
-            document.getElementById('preliminaryCreateBtn'),
-            document.getElementById('preliminaryCreateBtnTop')
-        ].filter(Boolean);
 
         const fallbackCreateButton = createButtons[0] || null;
-        const fallbackPreliminaryButton = preliminaryButtons[0] || null;
-        const activeBtn = triggerButton || (forcePreliminary ? fallbackPreliminaryButton : fallbackCreateButton);
-        const originalText = activeBtn ? setButtonLoading(activeBtn, true, forcePreliminary ? 'Saving...' : 'Creating...') : null;
+        const activeBtn = triggerButton || fallbackCreateButton;
+        const originalText = activeBtn ? setButtonLoading(activeBtn, true, 'Creating...') : null;
 
         createButtons.forEach(btn => { btn.disabled = true; });
-        preliminaryButtons.forEach(btn => { btn.disabled = true; });
 
         const fullPath = joinProjectTargetPath(projectPath, projectName);
 
@@ -330,7 +259,6 @@ export function initCreateProjectController({
                 setButtonLoading(activeBtn, false, null, originalText);
             }
             createButtons.forEach(btn => { btn.disabled = false; });
-            preliminaryButtons.forEach(btn => { btn.disabled = false; });
         }
     }
 
@@ -371,22 +299,6 @@ export function initCreateProjectController({
                 return;
             }
             submitCreateProject({ triggerButton: createProjectSubmitBtnTop });
-        });
-    }
-
-    const preliminaryCreateBtn = document.getElementById('preliminaryCreateBtn');
-    if (preliminaryCreateBtn) {
-        preliminaryCreateBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtn });
-        });
-    }
-
-    const preliminaryCreateBtnTop = document.getElementById('preliminaryCreateBtnTop');
-    if (preliminaryCreateBtnTop) {
-        preliminaryCreateBtnTop.addEventListener('click', (event) => {
-            event.preventDefault();
-            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtnTop });
         });
     }
 

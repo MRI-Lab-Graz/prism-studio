@@ -282,16 +282,6 @@ export function createDataladCard({
     }
 
     function renderProjectBoxDataladState(dataladState, fallbackPath = '') {
-        const summaryState = normalizeDataladState(dataladState, fallbackPath);
-        const loadedSummary = document.getElementById('projectLoadedDataladSummary');
-        if (loadedSummary) {
-            loadedSummary.textContent = summaryState.enabled
-                ? (summaryState.available
-                    ? 'This project is DataLad-tracked.'
-                    : 'This project is DataLad-tracked, but DataLad isn\'t available here.')
-                : 'DataLad version control isn\'t set up for this project yet.';
-        }
-
         const status = document.getElementById('projectBoxDataladStatus');
         const hint = document.getElementById('projectBoxDataladHint');
         const stateBadge = document.getElementById('projectBoxDataladStateBadge');

@@ -93,11 +93,10 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn('id="projectsPreliminaryBadge"', content)
         self.assertIn("Preliminary", content)
 
-    def test_study_metadata_has_preliminary_create_button(self):
+    def test_study_metadata_has_no_preliminary_create_button(self):
         content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('id="preliminaryCreateBtn"', content)
-        self.assertIn("Preliminary Save", content)
+        self.assertNotIn('id="preliminaryCreateBtn"', content)
 
     def test_create_form_requires_project_location(self):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
@@ -109,7 +108,7 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="createProjectSubmitBtnTop"', content)
-        self.assertIn('id="preliminaryCreateBtnTop"', content)
+        self.assertNotIn("preliminaryCreateBtnTop", content)
 
     def test_create_form_recommends_datalad_but_keeps_it_opt_in(self):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")

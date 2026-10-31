@@ -2333,8 +2333,6 @@ export function updateCreateProjectButton() {
     if (!createButtons.length) return;
 
     const preliminaryButtons = [
-        document.getElementById('preliminaryCreateBtn'),
-        document.getElementById('preliminaryCreateBtnTop'),
         // Only manage this button when the full project box (with both save buttons) is rendered;
         // in load-without-validation mode only this button exists and should stay visible.
         projectBoxSaveBtn ? document.getElementById('projectBoxPreliminarySaveBtn') : null
@@ -2390,7 +2388,6 @@ export function updateCreateProjectButton() {
         });
     };
 
-    const hasOutputFolder = Boolean((document.getElementById('projectPath')?.value || '').trim());
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
     const currentProjectPath = _getCurrentProjectPath();
@@ -2482,11 +2479,7 @@ export function updateCreateProjectButton() {
     removeCreateClasses('btn-info');
 
     if (requiredIssueCount === 0) {
-        setPreliminaryHidden(true);
-        setPreliminaryDisabled(false);
-        setPreliminaryTitle('');
         setCreateButtonDisabled(false);
-        createButtons.forEach(btn => { btn.dataset.incomplete = ''; });
         removeCreateClasses('btn-secondary', 'btn-warning');
         addCreateClass(optionalIssueCount > 0 ? 'btn-warning' : 'btn-success');
         setCreateTitle(optionalIssueCount > 0
@@ -2499,20 +2492,12 @@ export function updateCreateProjectButton() {
                     + _missingCoreFieldsSuffix(validation);
         });
     } else {
-        setPreliminaryHidden(false);
-        setPreliminaryDisabled(!hasOutputFolder);
-        if (hasOutputFolder) {
-            setPreliminaryTitle(`Create project now as preliminary (${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing).`);
-        } else {
-            setPreliminaryTitle('Select a Project Location (output folder) to enable Preliminary Save.');
-        }
-        setCreateButtonDisabled(false);
-        createButtons.forEach(btn => { btn.dataset.incomplete = '1'; });
-        removeCreateClasses('btn-success', 'btn-secondary');
-        addCreateClass('btn-warning');
-        setCreateTitle(`${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`);
+        setCreateButtonDisabled(true);
+        removeCreateClasses('btn-success', 'btn-warning');
+        addCreateClass('btn-secondary');
+        setCreateTitle(`Fill in the ${requiredIssueCount} missing required field${requiredIssueCount > 1 ? 's' : ''} in Study Metadata to create the project.`);
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
+            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> Fill them in Study Metadata to enable Create Project.`;
         });
     }
 }
@@ -2882,6 +2867,10 @@ export function showStudyMetadataCard({ reload = true } = {}) {
 
     if (currentProjectPath || createActive) {
         card.style.display = 'block';
+        // New or loaded project: the required metadata is the next thing to do, so open the form.
+        ['studyMetadataSection', 'smCoreSetupGroupBody'].forEach(id => {
+            bootstrap.Collapse.getOrCreateInstance(document.getElementById(id), { toggle: false }).show();
+        });
 
         // For new projects there's nothing to score yet, so the readiness
         // panel stays hidden; the REQUIRED/CORE/FAIR legend above it is
