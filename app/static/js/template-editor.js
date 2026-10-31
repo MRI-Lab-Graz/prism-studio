@@ -307,6 +307,9 @@
   import(new URL('./template-editor/questionnaire-sections.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { questionnaireSections = module; if (currentTemplate) renderTopLevel(); });
 
+  // document.currentScript is only set while the script first runs, so the URLs are made here, not in a .then
+  const languagePickerUrl = new URL('./template-editor/language-picker.js', document.currentScript?.src || window.location.href).href;
+  const chipListUrl = new URL('./modules/projects/chip-list.js', document.currentScript?.src || window.location.href).href;
   let languageCodes = null;
   let knownLanguageCodes = null;
   import(new URL('./template-editor/language-codes.js', document.currentScript?.src || window.location.href).href)
@@ -314,7 +317,11 @@
   fetch('/api/template-editor/language-codes')
     .then((response) => (response.ok ? response.json() : null))
     .then((data) => { if (data && Array.isArray(data.codes)) knownLanguageCodes = new Set(data.codes); })
-    .catch(() => {}); // the format check still applies without the list
+    .catch(() => {}) // the format check still applies without the list
+    .then(() => Promise.all([import(languagePickerUrl), import(chipListUrl)]))
+    .then(([picker, chips]) => { languagePicker = { ...picker, ...chips }; if (currentTemplate) renderTopLevel(); })
+    .catch((err) => console.error('Language picker failed to load', err));
+  let languagePicker = null; // language-picker.js + chip-list.js, once loaded and the code list is in
   /** Message for a language code the user typed, '' when it is fine. */
   function languageProblem(raw) {
     return languageCodes ? languageCodes.languageCodeProblem(raw, knownLanguageCodes) : '';
@@ -1161,6 +1168,21 @@
       }
     }
 
+    // I18n.DefaultLanguage -> pull-down of the languages chosen above (the editor re-renders when they change)
+    if (fieldName === 'DefaultLanguage' && languagePicker && currentTemplate?.I18n) {
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      let current = typeof value === 'string' ? value : '';
+      const fill = () => {
+        sel.innerHTML = '<option value="">— Not set —</option>';
+        for (const o of languagePicker.defaultLanguageOptions(currentTemplate.I18n.Languages || [], current)) sel.add(new Option(o.label, o.value));
+        sel.value = current;
+      };
+      sel.addEventListener('change', () => { current = sel.value; onChange(current); });
+      fill();
+      return sel;
+    }
+
     // Special handling for Language field - dropdown with de-AT and en-UK
     if (fieldName === 'Language' && !Array.isArray(fieldSchema.enum)) {
       const sel = document.createElement('select');
@@ -1288,6 +1310,28 @@
       const allowsItemNumber = itemTypes.includes('number');
       const isPrimitive = itemTypes.length > 0 && itemTypes.every(tp => ['string', 'integer', 'number'].includes(tp));
       let currentVal = Array.isArray(value) ? [...value] : (value === undefined || value === null ? [] : [value]);
+
+      // I18n.Languages -> pull-down; the chosen languages sit below it as green chips (as on the project page).
+      // Adding or removing runs the same code as the language bar (item texts included), then the editor re-renders.
+      if (fieldName === 'Languages' && allowsItemString && languagePicker) {
+        const container = document.createElement('div');
+        const sel = document.createElement('select');
+        sel.className = 'form-select mb-2';
+        sel.innerHTML = '<option value="">— add a language —</option>';
+        for (const o of languagePicker.languageOptions(knownLanguageCodes, currentVal)) sel.add(new Option(o.label, o.value));
+        sel.addEventListener('change', () => { if (sel.value) applyAddLanguage(sel.value); });
+        const chipsEl = document.createElement('div');
+        container.append(sel, chipsEl);
+        const area = languagePicker.mountChipArea(chipsEl, {
+          chipText: languagePicker.languageLabel,
+          onChange: (vals) => {
+            const removed = currentVal.find((code) => !vals.includes(code));
+            if (removed !== undefined && !applyRemoveLanguage(removed)) keepOpenSections(renderTopLevel); // declined: the chip comes back
+          },
+        });
+        area.setValues(currentVal);
+        return container;
+      }
 
       // Enum arrays -> multi-select
       if (isPrimitive && Array.isArray(items.enum) && items.enum.length) {
@@ -3036,17 +3080,22 @@
 
   // A field of Study/Technical/... changed shape (translation table): draw Questionnaire info again,
   // keeping the sections the user has open. Item fields (path ITEM/...) are not part of it.
+  /** Runs `render` (which redraws Questionnaire info) and re-opens the sections that were open. */
+  function keepOpenSections(render) {
+    const open = new Set(
+      [...topLevelFormEl.querySelectorAll('details[open] .te-subgroup-title')].map((el) => el.textContent)
+    );
+    render();
+    topLevelFormEl.querySelectorAll('details').forEach((d) => {
+      if (open.has(d.querySelector('.te-subgroup-title').textContent)) d.open = true;
+    });
+  }
+
   function rerenderQuestionnaireInfoFor(fieldEl) {
     const path = fieldEl.closest('[data-field-path]')?.getAttribute('data-field-path') || '';
     const [sectionKey] = path.split('/');
     if (!currentTemplate || !currentTemplate[sectionKey]) return;
-    const open = new Set(
-      [...topLevelFormEl.querySelectorAll('details[open] .te-subgroup-title')].map((el) => el.textContent)
-    );
-    renderTopLevel();
-    topLevelFormEl.querySelectorAll('details').forEach((d) => {
-      if (open.has(d.querySelector('.te-subgroup-title').textContent)) d.open = true;
-    });
+    keepOpenSections(renderTopLevel);
   }
 
   function renderTopLevel() {
@@ -3112,24 +3161,34 @@
   // ── Language detection & overview bar ──────────────────────────────
   const LANG_CODE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 
-  function detectLanguagesFromTemplate(tpl) {
-    if (!tpl || typeof tpl !== 'object') return [];
-    const langSet = new Set();
-
-    // Scan top-level multilingual fields in reserved sections (Study.OriginalName, Study.Instructions, etc.)
+  /** Calls `fn(textByLanguage)` for each translated text of Study/Technical/Metadata/I18n (Study.Instructions, ...). */
+  function forEachTopLevelText(tpl, fn) {
     const TOP_LEVEL_ML_FIELDS = ['OriginalName', 'Description', 'Instructions', 'Citation', 'License', 'Source'];
     for (const section of ['Study', 'Technical', 'Metadata', 'I18n']) {
       const sec = tpl[section];
       if (!sec || typeof sec !== 'object') continue;
       for (const field of TOP_LEVEL_ML_FIELDS) {
         const val = sec[field];
-        if (val && typeof val === 'object' && !Array.isArray(val)) {
-          for (const k of Object.keys(val)) {
-            if (LANG_CODE_RE.test(k)) langSet.add(k);
-          }
-        }
+        if (val && typeof val === 'object' && !Array.isArray(val)) fn(val);
       }
     }
+  }
+
+  function detectLanguagesFromTemplate(tpl) {
+    if (!tpl || typeof tpl !== 'object') return [];
+    const langSet = new Set();
+
+    // Declared languages count even before any text is written in them
+    for (const code of Array.isArray(tpl.I18n?.Languages) ? tpl.I18n.Languages : []) {
+      if (LANG_CODE_RE.test(code)) langSet.add(code);
+    }
+
+    // Scan top-level multilingual fields in reserved sections (Study.OriginalName, Study.Instructions, etc.)
+    forEachTopLevelText(tpl, (val) => {
+      for (const k of Object.keys(val)) {
+        if (LANG_CODE_RE.test(k)) langSet.add(k);
+      }
+    });
 
     const items = itemKeysFromTemplate(tpl);
     for (const key of items) {
@@ -3245,8 +3304,11 @@
     if (langs.length === 0) {
       langBadgesEl.innerHTML = '<span class="badge bg-secondary">none detected</span>';
     } else {
-      langBadgesEl.innerHTML = langs.map(l =>
-        `<span class="badge bg-info text-dark">${l}</span>`
+      // Click a language to make it the primary one; the x removes it (both run the same code as the field)
+      langBadgesEl.innerHTML = langs.map((l) =>
+        `<span class="badge ${l === primaryLang ? 'bg-primary' : 'bg-info text-dark'} d-inline-flex align-items-center gap-1" data-lang="${l}">`
+        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none fw-bold" data-lang-primary title="Make ${l} the primary language">${l}</button>`
+        + `<button type="button" class="btn btn-link p-0 border-0 text-reset text-decoration-none" data-lang-remove aria-label="Remove ${l}" title="Remove ${l}">&times;</button></span>`
       ).join(' ');
     }
 
@@ -3271,6 +3333,20 @@
     primaryLanguageFormEl.classList.toggle('d-flex', needsLanguage);
   }
 
+  /** The primary language is Technical.Language and the I18n default: one pick sets both. */
+  function applyPrimaryLanguageChoice(code) {
+    currentTemplate.Technical = { ...(currentTemplate.Technical || {}), Language: code };
+    currentTemplate.I18n = { ...(currentTemplate.I18n || {}), DefaultLanguage: code };
+    keepOpenSections(renderAll);
+  }
+
+  langBadgesEl.addEventListener('click', (event) => {
+    const code = event.target.closest('[data-lang]')?.dataset.lang;
+    if (!currentTemplate || !code) return;
+    if (event.target.closest('[data-lang-remove]')) applyRemoveLanguage(code);
+    else if (event.target.closest('[data-lang-primary]')) applyPrimaryLanguageChoice(code);
+  });
+
   btnSetPrimaryLang.addEventListener('click', () => {
     if (!currentTemplate || !primaryLanguage) return;
     try {
@@ -3286,21 +3362,29 @@
     btnValidate.click();
   });
 
-  // Add Language: adds a language key to ALL question Descriptions and Levels
-  btnAddLang.addEventListener('click', () => {
-    if (!currentTemplate) return;
-    const newLang = prompt('Enter language code to add (e.g., en, de, fr):');
-    if (newLang === null) return;
-    const problem = languageProblem(newLang);
-    if (problem) {
-      alert(problem);
-      return;
-    }
-    const lang = newLang.trim();
-    if (detectLanguagesFromTemplate(currentTemplate).includes(lang)) {
-      alert(`The template already has the language "${lang}".`);
-      return;
-    }
+  /** Inline pull-down next to `btn` (the one way to pick a language, as on the project page);
+   *  resolves with the chosen code, or null when it is dismissed. */
+  function chooseLanguage(btn, options) {
+    return new Promise((resolve) => {
+      document.getElementById('langChooser')?.remove();
+      const sel = document.createElement('select');
+      sel.id = 'langChooser';
+      sel.className = 'form-select form-select-sm';
+      sel.style.width = 'auto';
+      sel.innerHTML = '<option value="">— choose a language —</option>';
+      for (const o of options) sel.add(new Option(o.label, o.value));
+      let finished = false;
+      const done = (code) => { if (finished) return; finished = true; sel.remove(); resolve(code || null); }; // removing it blurs it: run once
+      sel.addEventListener('change', () => done(sel.value));
+      sel.addEventListener('blur', () => done(null));
+      btn.before(sel);
+      sel.focus();
+    });
+  }
+
+  // Add Language: adds a language key to ALL question Descriptions and Levels, and declares it in I18n.Languages
+  // The bar and the Languages field both end here: one behaviour.
+  function applyAddLanguage(lang) {
     const items = itemKeysFromTemplate(currentTemplate);
     const primaryLang = currentTemplate.Technical?.Language || 'en';
 
@@ -3355,12 +3439,11 @@
       }
     }
 
-    // Update I18n.Languages if it exists
-    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
-      if (!currentTemplate.I18n.Languages.includes(lang)) {
-        currentTemplate.I18n.Languages.push(lang);
-      }
-    }
+    forEachTopLevelText(currentTemplate, (val) => { if (!(lang in val)) val[lang] = ''; });
+
+    // Declare every language the template now has (not just the new one), so none is "used but not declared"
+    const i18n = (currentTemplate.I18n ||= {});
+    i18n.Languages = [...new Set([...(i18n.Languages || []), ...detectLanguagesFromTemplate(currentTemplate), lang])];
 
     // If no primary language set and this is the first, set it
     if (!currentTemplate.Technical?.Language && items.length > 0) {
@@ -3368,28 +3451,19 @@
       currentTemplate.Technical.Language = lang;
     }
 
-    renderAll();
+    keepOpenSections(renderAll);
+  }
+
+  btnAddLang.addEventListener('click', async () => {
+    if (!currentTemplate || !languagePicker) return;
+    const lang = await chooseLanguage(btnAddLang, languagePicker.languageOptions(knownLanguageCodes, detectLanguagesFromTemplate(currentTemplate)));
+    if (lang) applyAddLanguage(lang);
   });
 
   // Remove Language: strips a language key from ALL question Descriptions and Levels
-  btnRemoveLang.addEventListener('click', () => {
-    if (!currentTemplate) return;
-    const langs = detectLanguagesFromTemplate(currentTemplate);
-    if (langs.length === 0) {
-      alert('No languages detected in this template.');
-      return;
-    }
-    const lang = prompt(`Enter language code to remove (detected: ${langs.join(', ')}):`);
-    if (!lang || !LANG_CODE_RE.test(lang.trim())) {
-      if (lang !== null) alert('Invalid language code.');
-      return;
-    }
-    const code = lang.trim();
-    if (!langs.includes(code)) {
-      alert(`Language '${code}' not found in template content.`);
-      return;
-    }
-    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels?`)) return;
+  /** Strips `code` from every item text and from I18n.Languages after a confirmation; false when declined. */
+  function applyRemoveLanguage(code) {
+    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels?`)) return false;
 
     const items = itemKeysFromTemplate(currentTemplate);
     for (const key of items) {
@@ -3441,12 +3515,27 @@
       }
     }
 
+    forEachTopLevelText(currentTemplate, (val) => { delete val[code]; });
+
     // Update I18n.Languages if it exists
     if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
       currentTemplate.I18n.Languages = currentTemplate.I18n.Languages.filter(l => l !== code);
+      if (currentTemplate.I18n.DefaultLanguage === code) currentTemplate.I18n.DefaultLanguage = '';
     }
 
-    renderAll();
+    keepOpenSections(renderAll);
+    return true;
+  }
+
+  btnRemoveLang.addEventListener('click', async () => {
+    if (!currentTemplate || !languagePicker) return;
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    if (langs.length === 0) {
+      alert('No languages detected in this template.');
+      return;
+    }
+    const code = await chooseLanguage(btnRemoveLang, langs.map((value) => ({ value, label: languagePicker.languageLabel(value) })));
+    if (code) applyRemoveLanguage(code);
   });
 
   // ── View tab switching (Editor / Preview) ───────────────────────────

@@ -1509,11 +1509,10 @@ def create_dataset_description(
         "HEDVersion": "8.2.0",
     }
 
-    output_path = output_folder / "dataset_description.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(desc, f, indent=2, ensure_ascii=False)
+    from src.dataset_description import write_dataset_description
 
-    return output_path
+    # mirror=False: the default name above is a placeholder, not the project's name
+    return write_dataset_description(output_folder, desc, mirror=False)
 
 
 # CLI interface

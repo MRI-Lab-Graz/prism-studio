@@ -171,8 +171,10 @@ def process_dataframe(
         }
         if project_keywords:
             dataset_description["Keywords"] = project_keywords
-        with open(desc_path, "w", encoding="utf-8") as f:
-            json.dump(dataset_description, f, indent=2)
+        from src.dataset_description import write_dataset_description
+
+        # mirror=False: the default name above is a placeholder, not the project's name
+        write_dataset_description(output_root, dataset_description, mirror=False)
 
     id_cols = [
         c

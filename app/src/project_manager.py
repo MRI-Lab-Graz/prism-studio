@@ -50,6 +50,7 @@ from src.project_export_helpers import (
     _matches_excluded_acq_label,
 )
 from src.constants import DEFAULT_BIDS_VERSION
+from src.dataset_description import write_dataset_description
 from src.cross_platform import (
     CrossPlatformFile,
     describe_case_insensitive_id_collisions,
@@ -322,11 +323,9 @@ class ProjectManager:
                 created_files.append(".gitattributes")
 
             # 1. Create dataset_description.json in root (BIDS standard)
-            desc_path = project_path / "dataset_description.json"
             desc_content = self._create_dataset_description(name, config)
-            CrossPlatformFile.write_text(
-                str(desc_path), json.dumps(desc_content, indent=2)
-            )
+            # mirror=False: project.json is created just below and mirrored with the authors from the config
+            write_dataset_description(project_path, desc_content, mirror=False)
             created_files.append("dataset_description.json")
 
             # 2. Create .bidsignore in root
@@ -575,20 +574,18 @@ class ProjectManager:
             # --- Sanitize existing dataset_description.json -----------------
             # Strip empty HEDVersion (invalid per BIDS schema — must match hed_version format)
             desc_path = project_path / "dataset_description.json"
+            desc_data: Dict[str, Any] = {}
+            desc_sanitized = False
             try:
-                desc_raw = CrossPlatformFile.read_text(str(desc_path))
-                desc_data = json.loads(desc_raw)
+                desc_data = json.loads(CrossPlatformFile.read_text(str(desc_path)))
                 if "HEDVersion" in desc_data and not desc_data.get("HEDVersion"):
                     del desc_data["HEDVersion"]
-                    CrossPlatformFile.write_text(
-                        str(desc_path),
-                        json.dumps(desc_data, indent=2, ensure_ascii=False),
-                    )
+                    desc_sanitized = True
                     created_files.append(
                         "dataset_description.json (sanitized: removed empty HEDVersion)"
                     )
             except Exception:
-                pass  # leave untouched if unreadable
+                desc_data = {}  # leave untouched if unreadable
 
             # --- .prismrc.json ----------------------------------------------
             prismrc_path = project_path / ".prismrc.json"
@@ -601,6 +598,7 @@ class ProjectManager:
 
             # --- project.json -----------------------------------------------
             project_json_path = project_path / "project.json"
+            project_json_created = False
             if not project_json_path.exists():
                 CrossPlatformFile.write_text(
                     str(project_json_path),
@@ -611,6 +609,13 @@ class ProjectManager:
                     ),
                 )
                 created_files.append("project.json")
+                project_json_created = True
+
+            # --- dataset_description.json: the one writer --------------------
+            # The adopted dataset's description is the authority: a new project.json mirrors it (name,
+            # keywords, ...) instead of disagreeing with it; an existing project.json is left alone.
+            if desc_data and (desc_sanitized or project_json_created):
+                write_dataset_description(project_path, desc_data, mirror=project_json_created)
 
             # --- CITATION.cff -----------------------------------------------
             # Same enrichment path as create_project (see comment there): keeps
