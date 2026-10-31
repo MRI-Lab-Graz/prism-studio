@@ -17,6 +17,13 @@ def _resolve_default_repo_root() -> Path:
     return _APP_ROOT.parent if _APP_ROOT.name == "app" else _APP_ROOT
 
 
+def global_survey_library_root() -> Path | None:
+    """The global template library, resolved as in Studio (configured, else official)."""
+    from src.library_roots import global_survey_library_root as _root
+
+    return _root(_APP_ROOT)
+
+
 def run_recipes_job(
     *,
     prism_root: Path,
@@ -344,14 +351,13 @@ def cmd_recipes_save(args) -> None:
     )
 
     as_json = bool(getattr(args, "json", False))
-    official_root = _resolve_default_repo_root() / "official" / "library"
     try:
         recipe = json.loads(Path(args.recipe).read_text(encoding="utf-8"))
         result = save_recipe_to_project(
             str(Path(args.project).resolve()),
             recipe,
             modality=args.modality,
-            global_root=official_root if official_root.is_dir() else None,
+            global_root=global_survey_library_root(),
         )
     except RecipeSaveError as error:
         errors = error.validation_errors or []
@@ -375,3 +381,43 @@ def cmd_recipes_save(args) -> None:
     print(f"✅ Saved {result['path']}")
     for warning in result.get("warnings") or []:
         print(f"  ⚠ {warning}")
+
+
+def _print_json(payload: dict) -> None:
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def cmd_recipes_templates(args) -> None:
+    """The templates the Recipe Builder offers (JSON, as its survey list endpoint returns them)."""
+    from src.recipe_builder import list_builder_templates
+
+    include_global = bool(getattr(args, "include_global", False))
+    _print_json({
+        "surveys": list_builder_templates(
+            Path(args.project).resolve(), modality=args.modality, include_global=include_global, global_root=global_survey_library_root()
+        ),
+        "include_global": include_global,
+        "modality": args.modality,
+    })
+
+
+def cmd_recipes_draft(args) -> None:
+    """What a new recipe for a task starts from: items, descriptions, scale ranges, reversed items (JSON)."""
+    from src.recipe_builder import draft_from_template
+
+    _print_json(draft_from_template(
+        Path(args.project).resolve(), args.task, modality=args.modality,
+        include_global=bool(getattr(args, "include_global", False)), global_root=global_survey_library_root(),
+    ))
+
+
+def cmd_recipes_load(args) -> None:
+    """The project's saved recipe for a task (JSON; ``{"recipe": null}`` when there is none)."""
+    from src.recipe_builder import RecipeSaveError, load_recipe
+
+    try:
+        found = load_recipe(Path(args.project).resolve(), args.task, modality=args.modality)
+    except RecipeSaveError as exc:
+        print(f"❌ {exc}")
+        sys.exit(1)
+    _print_json({"recipe": found[0], "path": str(found[1])} if found else {"recipe": None})

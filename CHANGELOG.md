@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Recipe builder as commands.** `recipes templates|draft|load` return what the builder page shows (templates offered, the
+  items/descriptions/scale ranges a new recipe starts from, a saved recipe). `recipes save` now resolves the global template
+  library like Studio (configured, else official) instead of only the official one.
 - **Export is driven by the command line; Studio's export page only triggers it.** New commands `export project|folder|git-lfs|
   annex-availability|structure|deface-report|deface-preflight|deface|anc|openminds|openminds-tasks`, each running the function the
   page's route runs (the export core moved from Studio's tree to `src/`). Differences removed on the way: the synchronous export

@@ -619,3 +619,47 @@ def save_recipe_to_project(
         "path": str(out_path),
         "warnings": validate_recipe_warnings(recipe),
     }
+
+
+def list_builder_templates(dataset_path, *, modality: str = "survey", include_global: bool = False, global_root=None) -> list[dict]:
+    """The templates the Recipe Builder offers: ``task``, ``label``, ``file`` and ``source`` of each."""
+    return [
+        {key: t[key] for key in ("task", "label", "file", "source")}
+        for t in find_templates(str(dataset_path), modality=modality, include_global=include_global, global_root=global_root)
+    ]
+
+
+def draft_from_template(dataset_path, task: str, *, modality: str = "survey", include_global: bool = False, global_root=None) -> dict:
+    """What a new recipe for ``task`` starts from: its items, descriptions, scale ranges, reversed items, study metadata."""
+    templates = find_templates(str(dataset_path), modality=modality, include_global=include_global, global_root=global_root)
+    match = next((t for t in templates if t["task"] == task), None)
+    if match is None:
+        return {"items": []}
+    path = match["full_path"]
+    descriptions, descriptions_i18n, description_languages, template_language = extract_item_description_metadata_from_template(
+        path, modality=modality
+    )
+    return {
+        "items": extract_items_from_template(path, modality=modality),
+        "item_descriptions": descriptions,
+        "item_descriptions_i18n": descriptions_i18n,
+        "item_description_languages": description_languages,
+        "template_language": template_language,
+        "scale_ranges": detect_scale_ranges(path, modality=modality),
+        "item_ranges": extract_item_ranges_from_template(path, modality=modality),
+        "template_reversed_items": extract_template_reversed_items(path, modality=modality),
+        "items_missing_ranges": extract_items_missing_ranges_from_template(path, modality=modality),
+        "template_metadata": extract_template_study_metadata(path, modality=modality),
+    }
+
+
+def load_recipe(dataset_path, task: str, *, modality: str = "survey") -> tuple[dict, Path] | None:
+    """The project's saved recipe for ``task`` as ``(recipe, path)``, or None. Raises RecipeSaveError for a bad task name."""
+    if not re.fullmatch(r"[a-zA-Z0-9_-]+", task):
+        raise RecipeSaveError("Invalid task")
+    root = Path(dataset_path)
+    for folder in (root / "code" / "recipes" / modality, root / "recipe" / modality):
+        for name in (f"recipe-{task}.json", f"recipe-{task}_{modality}.json"):
+            if (candidate := folder / name).is_file():
+                return json.loads(candidate.read_text(encoding="utf-8")), candidate
+    return None

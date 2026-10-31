@@ -1597,6 +1597,19 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    for _name, _help in (
+        ("templates", "List the templates the Recipe Builder offers (JSON)"),
+        ("draft", "What a new recipe for a task starts from: items, descriptions, scale ranges (JSON)"),
+        ("load", "Show the project's saved recipe for a task (JSON)"),
+    ):
+        _p = recipes_subparsers.add_parser(_name, help=_help)
+        _p.add_argument("--project", required=True, help="Project root folder")
+        _p.add_argument("--modality", choices=["survey", "biometrics"], default="survey", help="Template modality (default: survey)")
+        if _name != "templates":
+            _p.add_argument("--task", required=True, help="Task name, e.g. ads")
+        if _name != "load":
+            _p.add_argument("--include-global", action="store_true", help="Also offer the global template library")
+
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )

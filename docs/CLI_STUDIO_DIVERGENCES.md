@@ -80,10 +80,10 @@ real route. Still open: the async job's status/download/cancel routes are job pl
 shared function), and the pre-export validation reaches two helpers in Studio's validation module (see `ponytail:` in
 `src/export_options.py`).
 
-### Recipe builder
-Studio's analysis endpoints (`/api/recipe-builder/surveys|items|load`) decide what a new recipe contains (item extraction, scale
-range detection from a template). The CLI can only save a finished recipe (`recipes save`); nothing drafts one from a template.
-Needs `recipes draft` running `src.recipe_builder`.
+### Recipe builder - done
+`recipes templates|draft|load` run what the builder's endpoints run (`src/recipe_builder.py`: `list_builder_templates`,
+`draft_from_template`, `load_recipe`), next to `recipes save`. `save` also used a different global library than the page
+(only `official/library`, not the configured one); both now use `src/library_roots.py`.
 
 ### Survey template matching and the LimeSurvey tools
 `survey import-limesurvey` has `--split`, `--select`, `--use-library`, `--project`; Studio's `limesurvey-to-prism` and

@@ -4,24 +4,17 @@ These endpoints support creating and editing survey or biometrics recipe JSON
 files interactively in the browser, without touching the recipe *runner* logic.
 """
 
-import json
 import os
-import re
 from pathlib import Path
 
-from flask import current_app, jsonify
+from flask import jsonify
 
 from src.constants import SUPPORTED_MODALITIES as _SUPPORTED_MODALITIES
 from src.recipe_builder import (  # noqa: F401 - RecipeSaveError re-exported
     RecipeSaveError,
-    detect_scale_ranges,
-    extract_item_description_metadata_from_template,
-    extract_item_ranges_from_template,
-    extract_items_from_template,
-    extract_items_missing_ranges_from_template,
-    extract_template_reversed_items,
-    extract_template_study_metadata,
-    find_templates,
+    draft_from_template,
+    list_builder_templates,
+    load_recipe,
     save_recipe_to_project,
 )
 from .tools_helpers import _global_survey_library_root
@@ -56,25 +49,12 @@ def handle_api_recipe_builder_surveys(
     if not dataset_path or not os.path.isdir(dataset_path):
         return jsonify({"surveys": []}), 200
 
-    templates = find_templates(
-        dataset_path,
-        modality=modality,
-        include_global=include_global,
-        global_root=_global_library_root(),
-    )
-    client = [
-        {
-            "task": t["task"],
-            "label": t["label"],
-            "file": t["file"],
-            "source": t["source"],
-        }
-        for t in templates
-    ]
     return (
         jsonify(
             {
-                "surveys": client,
+                "surveys": list_builder_templates(
+                    dataset_path, modality=modality, include_global=include_global, global_root=_global_library_root()
+                ),
                 "include_global": include_global,
                 "modality": modality,
             }
@@ -99,53 +79,11 @@ def handle_api_recipe_builder_items(
     if not os.path.isdir(dataset_path):
         return jsonify({"error": "Project path not found"}), 400
 
-    templates = find_templates(
-        dataset_path,
-        modality=modality,
-        include_global=include_global,
-        global_root=_global_library_root(),
-    )
-    match = next((t for t in templates if t["task"] == task), None)
-    if match is None:
-        return jsonify({"items": []}), 200
-
-    items = extract_items_from_template(match["full_path"], modality=modality)
-    (
-        item_descriptions,
-        item_descriptions_i18n,
-        item_description_languages,
-        template_language,
-    ) = extract_item_description_metadata_from_template(
-        match["full_path"],
-        modality=modality,
-    )
-    scale_ranges = detect_scale_ranges(match["full_path"], modality=modality)
-    item_ranges = extract_item_ranges_from_template(match["full_path"], modality=modality)
-    template_reversed_items = extract_template_reversed_items(
-        match["full_path"],
-        modality=modality,
-    )
-    items_missing_ranges = extract_items_missing_ranges_from_template(
-        match["full_path"],
-        modality=modality,
-    )
-    template_metadata = extract_template_study_metadata(
-        match["full_path"], modality=modality
-    )
     return (
         jsonify(
-            {
-                "items": items,
-                "item_descriptions": item_descriptions,
-                "item_descriptions_i18n": item_descriptions_i18n,
-                "item_description_languages": item_description_languages,
-                "template_language": template_language,
-                "scale_ranges": scale_ranges,
-                "item_ranges": item_ranges,
-                "template_reversed_items": template_reversed_items,
-                "items_missing_ranges": items_missing_ranges,
-                "template_metadata": template_metadata,
-            }
+            draft_from_template(
+                dataset_path, task, modality=modality, include_global=include_global, global_root=_global_library_root()
+            )
         ),
         200,
     )
@@ -164,33 +102,15 @@ def handle_api_recipe_builder_load(
     if not dataset_path or not task:
         return jsonify({"recipe": None}), 200
 
-    # Same restriction handle_api_recipe_builder_save applies before writing
-    # -- task feeds straight into a filesystem path below, so reject anything
-    # containing a path separator or other unexpected character rather than
-    # silently returning {"recipe": None} for a malformed value.
-    if not re.fullmatch(r"[a-zA-Z0-9_-]+", task):
-        return jsonify({"error": "Invalid task"}), 400
-
-    candidates: list[Path] = [
-        Path(dataset_path) / "code" / "recipes" / modality / f"recipe-{task}.json",
-        Path(dataset_path)
-        / "code"
-        / "recipes"
-        / modality
-        / f"recipe-{task}_{modality}.json",
-        Path(dataset_path) / "recipe" / modality / f"recipe-{task}.json",
-        Path(dataset_path) / "recipe" / modality / f"recipe-{task}_{modality}.json",
-    ]
-    for candidate in candidates:
-        if candidate.is_file():
-            try:
-                with open(candidate, encoding="utf-8") as fh:
-                    data = json.load(fh)
-                return jsonify({"recipe": data, "path": str(candidate)}), 200
-            except Exception as exc:
-                return jsonify({"error": f"Failed to parse recipe: {exc}"}), 500
-
-    return jsonify({"recipe": None}), 200
+    try:
+        found = load_recipe(dataset_path, task, modality=modality)
+    except RecipeSaveError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Failed to parse recipe: {exc}"}), 500
+    if found is None:
+        return jsonify({"recipe": None}), 200
+    return jsonify({"recipe": found[0], "path": str(found[1])}), 200
 
 
 def handle_api_recipe_builder_save(data: dict):
