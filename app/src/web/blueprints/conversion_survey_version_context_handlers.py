@@ -17,9 +17,6 @@ def handle_api_survey_detect_version_context(
     parse_task_value_offsets,
     survey_workflow_stage_service,
     normalize_separator_option,
-    get_effective_template_version_overrides,
-    resolve_effective_library_path,
-    resolve_official_survey_dir,
     detect_survey_version_contexts,
     id_column_not_detected_error_cls,
     missing_id_mapping_error_cls,
@@ -97,26 +94,12 @@ def handle_api_survey_detect_version_context(
         return jsonify({"error": str(error)}), 400
 
     project_path = requested_project_path
-    effective_template_version_overrides = get_effective_template_version_overrides(
-        project_path=project_path,
-        template_version_overrides=template_version_overrides,
-    )
-
-    try:
-        library_path = resolve_effective_library_path()
-    except FileNotFoundError:
-        library_path = resolve_official_survey_dir(project_path)
-        if not library_path:
-            return (
-                jsonify({"error": "No survey template library could be resolved."}),
-                400,
-            )
 
     try:
         context = detect_survey_version_contexts(
             uploaded_file=uploaded_file,
             filename=filename,
-            library_dir=library_path,
+            library_dir=None,  # the backend picks the library: project, else personal, else global, else official
             project_path=project_path,
             survey=survey_filter,
             id_column=id_column,
@@ -126,7 +109,7 @@ def handle_api_survey_detect_version_context(
             sheet=sheet,
             duplicate_handling=duplicate_handling,
             separator_option=separator_option,
-            template_version_overrides=effective_template_version_overrides,
+            template_version_overrides=template_version_overrides,
             allow_near_item_match=allow_near_item_match,
             near_match_tasks=near_match_tasks,
             task_value_offsets=task_value_offsets,

@@ -71,21 +71,63 @@ _APP_ROOT_FOR_SCHEMAS = Path(__file__).resolve().parents[3]
 
 
 def cmd_library_template_check(args) -> None:
-    """List what a project's survey templates still lack to be converted with - the check Studio runs before a
-    conversion: the same function runs both."""
-    from src.survey_template_check import project_template_warnings, validate_project_templates_for_tasks
+    """The check Studio runs before a conversion: are the project's survey templates complete enough to convert with?
+    With --input, the table is matched against the official templates first, as Studio's survey page does (the same
+    backend functions run both)."""
+    from contextlib import redirect_stdout
 
-    tasks = [t.strip() for t in args.tasks.split(",") if t.strip()] if args.tasks else None
-    issues = validate_project_templates_for_tasks(
-        tasks=tasks, project_path=str(Path(args.project).resolve()), schema_version=args.schema_version
+    from src.survey_input_checks import (
+        check_project_templates,
+        infer_tasks_against_official_templates,
+        matching_summary,
     )
-    for issue in issues:
-        print(issue["message"])
-    for warning in project_template_warnings(tasks=tasks, project_path=str(Path(args.project).resolve())):
-        print(f"Warning: {warning['file']}: {warning['message']}")
-    if issues:
+    from src.converters.id_detection import IdColumnNotDetectedError
+    from src.converters.survey import MissingIdMappingError
+
+    project_root = Path(args.project).resolve()
+    input_path = Path(args.input).resolve() if getattr(args, "input", None) else None
+    inferred = None
+    if input_path:
+        try:
+            with redirect_stdout(sys.stderr):  # the converter narrates what it reads; stdout is the answer
+                inferred = infer_tasks_against_official_templates(
+                    input_path=input_path,
+                    project_path=str(project_root),
+                    id_column=args.id_column,
+                    session_column=args.session_column,
+                    sheet=args.sheet,
+                    duplicate_handling=args.duplicate_handling,
+                    separator_option=args.separator,
+                    app_root=_APP_ROOT_FOR_SCHEMAS.parent,
+                )
+        except (IdColumnNotDetectedError, MissingIdMappingError) as exc:
+            print(f"Error: {exc}")
+            sys.exit(1)
+        except Exception as exc:  # the answer says the matching failed; the templates are still checked
+            inferred = {"match_error": str(exc)}
+    elif args.tasks:
+        inferred = {"tasks": [t.strip() for t in args.tasks.split(",") if t.strip()]}
+    result = check_project_templates(
+        project_root,
+        matching_summary(input_path.name if input_path else None, inferred),
+        schema_version=args.schema_version,
+    )
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        matching = result["matching"]
+        if matching["match_error"]:
+            print(f"Warning: could not match {matching['input_file']} against the official templates: {matching['match_error']}")
+        elif matching["input_file"]:
+            print(f"{matching['input_file']} matches: {', '.join(matching['matched_tasks']) or 'no official template'}")
+        for issue in result["issues"]:
+            print(issue["message"])
+        for warning in result["warnings"]:
+            print(f"Warning: {Path(warning['file']).name}: {warning['message']}")
+        if result["ok"]:
+            print("All survey templates are complete.")
+    if not result["ok"]:
         sys.exit(1)
-    print("All survey templates are complete.")
 
 
 def cmd_library_save_templates(args) -> None:

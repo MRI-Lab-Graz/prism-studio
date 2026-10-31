@@ -2631,8 +2631,12 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertTrue(payload.get("ok"))
             self.assertEqual(payload.get("tasks"), ["pss"])
             warnings = payload.get("warnings") or []
-            self.assertEqual(len(warnings), 1)
-            self.assertIn("maia", warnings[0].get("message", "").lower())
+            # the same warnings `library template-check` prints: the Levels/Min-Max clash of a template beyond the
+            # matched tasks, and the item rules of every template (pss is empty)
+            self.assertTrue(
+                any("maia" in w["message"].lower() and "Levels and Min/Max" in w["message"] for w in warnings)
+            )
+            self.assertTrue(any("no items yet" in w["message"] for w in warnings))
 
 
 class TestSurveySidecarDefaults(unittest.TestCase):

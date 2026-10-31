@@ -1199,3 +1199,56 @@ def cmd_survey_detect_columns(args) -> None:
     for kind in ("session", "run"):
         if result.get(f"{kind}_column"):
             print(f"{kind.capitalize()} column: {result[f'{kind}_column']} -> {', '.join(result[f'detected_{kind}s'])}")
+
+
+def cmd_survey_detect_version_contexts(args) -> None:
+    """Which tasks, sessions, runs and template versions a survey table holds (a dry run): what Studio's survey page
+    shows before converting. The same backend function runs both."""
+    from contextlib import redirect_stdout
+
+    from src.survey_input_checks import detect_version_contexts
+
+    input_path = Path(args.input).expanduser().resolve()
+    if not input_path.is_file():
+        print(f"Error: --input not found: {input_path}")
+        sys.exit(1)
+    project_path = None
+    if getattr(args, "project", None):
+        project = Path(args.project).resolve()
+        project_path = str(project.parent if project.is_file() else project)
+    try:
+        with redirect_stdout(sys.stderr):  # the converter narrates what it reads; stdout is the answer
+            context = detect_version_contexts(
+                input_path=input_path,
+                library_dir=Path(args.library) if getattr(args, "library", None) else None,
+                project_path=project_path,
+                app_root=_APP_ROOT.parent,
+                survey=args.survey,
+                id_column=args.id_column,
+                session_column=args.session_column,
+                run_column=args.run_column,
+                session_override=args.session,
+                sheet=args.sheet,
+                duplicate_handling=args.duplicate_handling,
+                separator_option=args.separator,
+                template_version_overrides=_parse_template_version_args(args.template_versions) or None,
+                allow_near_item_match=bool(args.allow_near_item_match),
+                near_match_tasks={t.strip() for t in args.near_match_tasks.split(",") if t.strip()}
+                if args.near_match_tasks
+                else None,
+                task_value_offsets=_parse_task_value_offset_args(args.value_offsets) or None,
+            )
+    except Exception as exc:  # id column not detected, ids not mapped, sessions not mapped, unreadable file...
+        print(f"Error: {exc}")
+        sys.exit(1)
+    if args.json:
+        print(json.dumps({"ok": True, **context}, indent=2, ensure_ascii=False, default=str))
+        return
+    print(f"Tasks: {', '.join(context['tasks_included']) or 'none'}")
+    if context["detected_sessions"]:
+        print(f"Sessions: {', '.join(map(str, context['detected_sessions']))}")
+    for task, runs in context["task_runs"].items():
+        print(f"{task}: {runs} run(s)")
+    for task, info in context["multivariant_tasks"].items():
+        print(f"{task}: versions {', '.join(info['versions'])} (using {info['selected_version']})")
+
