@@ -2845,6 +2845,16 @@ def build_prism_tools_parsers(
         "--schema-version", default="stable", help="Schema version to validate against"
     )
 
+    parser_lib_save_templates = subparsers_library.add_parser(
+        "save-templates",
+        help="Save several templates into a project's survey library (what Studio's 'Save templates to project' does)",
+    )
+    parser_lib_save_templates.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_lib_save_templates.add_argument(
+        "--input", required=True, help='JSON file: a list of {"filename": ..., "content": {...}}, or {"templates": [...]}'
+    )
+    parser_lib_save_templates.add_argument("--json", action="store_true", help="Print the result as JSON")
+
     parser_lib_template_validate = subparsers_library.add_parser(
         "template-validate",
         help="Check one template the way Studio's Template Editor Validate does: schema errors, item rules, warnings.",

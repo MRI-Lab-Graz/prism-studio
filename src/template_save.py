@@ -159,6 +159,44 @@ def save_template(
     return SavedTemplate(path=path, missing=missing, removed=removed)
 
 
+def save_templates_to_project(templates: list, *, project_root, app_root) -> dict:
+    """Save the survey templates a conversion made (``[{filename, content}]``) into the project's library: what
+    Studio's "Save templates to project" and ``library save-templates`` answer.
+
+    Each one goes through ``save_template``, so it is validated, stripped of export settings and written the same
+    way as a template saved from the editor. A file that already exists is overwritten (the user chose to save
+    these). A template that is refused is reported in ``errors`` and skipped; the others are still saved.
+    ``success`` means at least one file was written. ``warnings`` lists fields a saved template still lacks."""
+    folder = Path(project_root) / "code" / "library" / "survey"
+    saved, errors, warnings = [], [], []
+    for entry in templates:
+        filename = (entry or {}).get("filename") if isinstance(entry, dict) else None
+        content = entry.get("content") if isinstance(entry, dict) else None
+        if not filename or content is None:
+            errors.append("Invalid template entry: missing filename or content")
+            continue
+        try:
+            result = save_template(
+                "survey", filename, content, target="project", project_root=project_root, app_root=app_root,
+                allow_overwrite=True,
+            )
+        except TemplateInvalid as exc:
+            errors.append(f"{filename}: {exc}")
+        except (ValueError, FileNotFoundError, RuntimeError) as exc:
+            errors.append(f"{filename}: {exc}")
+        else:
+            saved.append({"filename": result.path.name, "path": str(result.path)})
+            warnings += [f"{result.path.name}: {m['message']}" for m in result.missing]
+    return {
+        "success": bool(saved),
+        "saved_files": saved,
+        "saved_count": len(saved),
+        "library_path": str(folder),
+        "errors": errors or None,
+        "warnings": warnings or None,
+    }
+
+
 def template_warnings(template: dict) -> tuple[list[dict], list[dict]]:
     """(language, item) findings that do not stop a template from being used but the user should see. A check that
     cannot run is itself a warning: it is never skipped silently."""

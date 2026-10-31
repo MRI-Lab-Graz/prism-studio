@@ -88,6 +88,39 @@ def cmd_library_template_check(args) -> None:
     print("All survey templates are complete.")
 
 
+def cmd_library_save_templates(args) -> None:
+    """Save several templates (a JSON list of {filename, content}, or {"templates": [...]}) into the project's
+    survey library - what Studio's "Save templates to project" does; the same function runs both."""
+    from src.project_root import resolve_project_root_path
+    from src.template_save import save_templates_to_project
+
+    root = resolve_project_root_path(str(args.project))
+    if root is None:
+        print(f"Error: project not found: {args.project}")
+        sys.exit(1)
+    try:
+        data = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Error: --input could not be read: {exc}")
+        sys.exit(1)
+    templates = data.get("templates") if isinstance(data, dict) else data
+    if not templates:
+        print("Error: No templates provided")
+        sys.exit(1)
+    result = save_templates_to_project(templates, project_root=root, app_root=_APP_ROOT_FOR_SCHEMAS)
+    if args.json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        for saved in result["saved_files"]:
+            print(f"\u2705 Saved {saved['path']}")
+        for line in result["warnings"] or []:
+            print(f"warning: {line}")
+        for line in result["errors"] or []:
+            print(f"Error: {line}")
+    if not result["success"]:
+        sys.exit(1)
+
+
 def cmd_library_template_validate(args) -> None:
     """Check one template the way Studio's Template Editor "Validate" does (the same function runs both):
     schema errors, item rules, and the language and item warnings. Exit 1 when there are errors."""
