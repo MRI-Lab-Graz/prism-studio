@@ -594,9 +594,10 @@
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small" for="smPreregHypotheses">Hypotheses</label>
-                                    <textarea class="form-control form-control-sm" id="smPreregHypotheses" rows="3"
-                                              placeholder="One hypothesis per line (e.g. H1: Mindfulness training lowers perceived stress)"></textarea>
+                                    <label class="form-label fw-bold small">Hypotheses</label>
+                                    <textarea class="form-control form-control-sm d-none" id="smPreregHypotheses" rows="3"
+                                              placeholder="One hypothesis per line (e.g. H1: Mindfulness training lowers perceived stress)" aria-hidden="true" tabindex="-1"></textarea>
+                                    <div id="smPreregHypothesesList" class="d-flex flex-column gap-2"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small" for="smPreregPrimaryOutcomes">Primary outcomes</label>

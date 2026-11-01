@@ -215,7 +215,7 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
 
         const prereg = sm.Preregistration || {};
         document.getElementById('smPreregDataStatus').value = prereg.DataStatus || '';
-        document.getElementById('smPreregHypotheses').value = (prereg.Hypotheses || []).join('\n');
+        setOverviewList('smPreregHypotheses', prereg.Hypotheses);
         document.getElementById('smPreregPrimaryOutcomes').value = prereg.PrimaryOutcomes || '';
         document.getElementById('smPreregSecondaryOutcomes').value = prereg.SecondaryOutcomes || '';
         document.getElementById('smPreregAnalysisPlan').value = prereg.AnalysisPlan || '';
@@ -496,7 +496,7 @@ function _buildStudyMetadataPayload() {
         },
         Preregistration: {
             DataStatus: document.getElementById('smPreregDataStatus').value || undefined,
-            Hypotheses: _textToArray(document.getElementById('smPreregHypotheses').value) || undefined,
+            Hypotheses: getOverviewList('smPreregHypotheses') || undefined,
             PrimaryOutcomes: document.getElementById('smPreregPrimaryOutcomes').value || undefined,
             SecondaryOutcomes: document.getElementById('smPreregSecondaryOutcomes').value || undefined,
             AnalysisPlan: document.getElementById('smPreregAnalysisPlan').value || undefined,
@@ -1430,6 +1430,10 @@ const OVERVIEW_LIST_FIELDS = {
     smProcQC: {
         listId: 'smProcQCList',
         placeholder: 'Quality control measure (e.g. attention check)',
+    },
+    smPreregHypotheses: {
+        listId: 'smPreregHypothesesList',
+        placeholder: 'e.g. H1: Mindfulness training lowers perceived stress',
     },
     smReferencesText: {
         listId: 'smReferencesList',

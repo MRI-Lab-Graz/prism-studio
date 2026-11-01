@@ -357,6 +357,18 @@ def test_a_list_field_turns_accepted_entries_into_green_chips_below_one_input(ap
     assert page.input_value("#smOverviewIV") == "task difficulty"
 
 
+def test_hypotheses_are_a_chip_list_like_the_other_list_fields(app_page, studio_url):
+    page = app_page
+    open_sections(page, studio_url, "#smRecruitmentExecutionGroupBody", "#smPreregistration")
+    field = page.locator("#smPreregHypothesesList")
+    field.locator(".chip-input").fill("H1: Mindfulness lowers stress")
+    field.locator('[data-f="accept"]').click()
+    expect(field.locator(".chip-badge")).to_have_count(1)
+    assert page.input_value("#smPreregHypotheses") == "H1: Mindfulness lowers stress"
+    field.locator(".chip-badge").first.click()  # clicking a chip removes it
+    assert page.input_value("#smPreregHypotheses") == ""
+
+
 def test_a_duplicate_entry_is_not_added_twice(app_page, studio_url):
     page = app_page
     _open_overview(page, studio_url)
