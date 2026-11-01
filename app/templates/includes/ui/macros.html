@@ -88,3 +88,28 @@
     </div>
 </div>
 {%- endmacro %}
+{# Same markup as StudioTheme.fieldLabelHtml / .tally in static/js/studio-theme.js (parity test). #}
+{% macro field_label(text, tier='', tip='') -%}
+{% set tiers = {'required': ('bg-danger', 'REQUIRED'), 'core': ('badge-tier-core', 'CORE'), 'optional': ('bg-secondary', 'OPTIONAL')} -%}
+<label class="form-label studio-field-label">{% if tier in tiers %}<span class="badge {{ tiers[tier][0] }}">{{ tiers[tier][1] }}</span> {% endif %}{{ text|e }}{% if tip %} <span class="info-tip text-muted" data-bs-toggle="tooltip" title="{{ tip|e }}">&#9432;</span>{% endif %}</label>
+{%- endmacro %}
+
+{% macro tally(required=none, core=none, fair=none) -%}
+{% for label, c, open_class in [('Required', required, 'bg-danger'), ('Core', core, 'badge-tier-core'), ('FAIR', fair, 'bg-warning text-dark')] -%}
+{% if c and c[1] > 0 %}<span class="badge {{ 'bg-success' if c[0] == c[1] else open_class }} bg-opacity-75"{% if c[2] %} title="{{ c[2]|e }}"{% endif %}>{{ label }} {{ c[0] }}/{{ c[1] }}</span>{% endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{# Readiness row (project page "Methods Readiness", template editor Required/FAIR): label, bar, score, optional extras via call. #}
+{% macro readiness_row(prefix, label, tip='') -%}
+<div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row"{% if tip %} id="{{ prefix }}Row" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="{{ tip|e }}"{% endif %}>
+    <strong class="small text-uppercase text-muted">{{ label }}</strong>
+    <div class="progress flex-grow-1 studio-readiness-bar">
+        <div class="progress-bar w-0" role="progressbar" id="{{ prefix }}ProgressBar"></div>
+    </div>
+    <span class="fw-bold" id="{{ prefix }}Score">0%</span>
+    {%- if caller is defined %}
+    {{ caller() }}
+    {%- endif %}
+</div>
+{%- endmacro %}

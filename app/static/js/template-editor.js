@@ -536,33 +536,33 @@
     paintCompleteness();
   }
 
-  function setRing(id, percent, counts, state, tip) {
-    const ring = document.getElementById(id);
-    if (!ring) return;
-    ring.dataset.state = state;
-    ring.setAttribute('aria-label', `${ring.dataset.name} ${percent}%`);
-    ring.querySelector('.te-ring-disc').style.setProperty('--p', String(percent));
-    ring.querySelector('.te-ring-count').textContent = counts;
-    if (tip) {
-      ring.setAttribute('title', tip);
-      ring.setAttribute('data-bs-original-title', tip);
+  function setBar(prefix, percent, counts, state, tip) {
+    const bar = document.getElementById(`${prefix}ProgressBar`);
+    if (!bar) return;
+    bar.style.width = `${percent}%`;
+    bar.className = `progress-bar ${{ done: 'bg-success', partial: 'bg-warning', open: 'bg-danger' }[state]}`;
+    document.getElementById(`${prefix}Score`).textContent = counts;
+    const row = document.getElementById(`${prefix}Row`);
+    if (row && tip) {
+      row.setAttribute('title', tip);
+      row.setAttribute('data-bs-original-title', tip);
     }
   }
 
   function paintCompleteness() {
-    const rings = document.getElementById('completionRings');
-    if (!rings) return;
+    const panel = document.getElementById('completionPanel');
+    if (!panel) return;
     if (!completeness) {
-      rings.style.display = 'none';
+      panel.style.display = 'none';
       return;
     }
-    rings.style.display = 'flex';
+    panel.style.display = 'block';
     const missing = new Set(completeness.required.missing);
     const { required, recommended, percent } = completeness;
-    setRing('ringRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
+    setBar('teRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
     const open = recommended.missing.map((path) => escapeHtml(path.split('/')[1])).join(', ');
-    setRing(
-      'ringFair', percent.recommended, `${recommended.filled}/${recommended.total}`,
+    setBar(
+      'teFair', percent.recommended, `${recommended.filled}/${recommended.total}`,
       percent.recommended >= 70 ? 'done' : 'partial',
       `<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything.${open ? `<br>Still open: ${open}` : ''}`
     );
@@ -575,17 +575,14 @@
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
       const isEmpty = missing.has(el.getAttribute('data-field-path'));
       if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
-      // the tile of an empty required field turns red and says so
-      (el.querySelector(':scope > .te-field') || el.closest('.te-field'))?.classList.toggle('te-field-missing', isEmpty);
     });
-    // sections: the badge counts what is still empty in them, and turns green at zero
+    // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
-      const badge = details.querySelector('.te-section-badge');
-      if (!badge || !questionnaireSections) return;
+      const slot = details.querySelector('.te-subgroup-tally');
+      const total = Number(details.dataset.requiredTotal || 0);
+      if (!slot || !total || !questionnaireSections) return;
       const open = questionnaireSections.countMissing((details.dataset.paths || '').split(','), missing);
-      badge.hidden = !open && details.dataset.hasRequired !== '1';
-      badge.textContent = open ? `${open} required` : '✓ complete';
-      badge.className = `badge ms-2 te-section-badge ${open ? 'bg-danger' : 'te-section-badge-done'}`;
+      slot.innerHTML = StudioTheme.tally({ required: [total - open, total] });
     });
   }
 
@@ -996,25 +993,11 @@
   }
 
   function makeLabel(name, fieldSchema, isRequired, text = name) {
-    const label = document.createElement('label');
-    label.className = 'form-label';
-    label.textContent = text;
-
-    const hint = document.createElement('span');
-    hint.className = 'ms-2 text-muted schema-hint';
-    hint.setAttribute('data-bs-toggle', 'tooltip');
-    hint.setAttribute('data-bs-placement', 'right');
-    hint.setAttribute('title', infoHtml(fieldSchema));
-    hint.textContent = 'ⓘ';
-    label.appendChild(hint);
-
-    if (isRequired) {
-      const star = document.createElement('span');
-      star.className = 'ms-1 text-danger';
-      star.textContent = '*';
-      label.appendChild(star);
-    }
-    return label;
+    return StudioTheme.fieldLabel({
+      text,
+      tier: isRequired ? 'required' : 'optional',
+      tip: infoHtml(fieldSchema),
+    });
   }
 
   function normalizeValueForSchema(fieldSchema, rawValue, schemaTypesArg) {
@@ -2120,17 +2103,6 @@
   }
 
   /** One field = one tile (label + input); required fields get their own tint. */
-  function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
-    const before = row.lastElementChild;
-    renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row);
-    const col = row.lastElementChild;
-    if (!col || col === before) return;
-    const tile = document.createElement('div');
-    tile.className = 'te-field' + (required.includes(name) ? ' te-field-required' : '');
-    while (col.firstChild) tile.appendChild(col.firstChild);
-    col.appendChild(tile);
-  }
-
   function renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row) {
     // When a variant is explicitly selected, hide base scale fields that are managed
     // per-variant inside VariantScales. The user should only edit the variant-specific
@@ -2146,9 +2118,6 @@
     // Render one field per row in both top-level and item views for readability.
     col.className = 'col-12';
     col.setAttribute('data-field-path', `${sectionKey}/${name}`);
-    if (sectionKey === 'ITEM') {
-      col.classList.add('te-item-field');
-    }
 
     const isRequired = required.includes(name);
     col.appendChild(makeLabel(name, fieldSchema, isRequired, questionnaireSections?.FIELD_LABELS[`${sectionKey}/${name}`] || name));
@@ -2677,7 +2646,7 @@
     const row = document.createElement('div');
     row.className = 'row g-2';
     for (const name of names) {
-      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+      renderFieldContent(sectionKey, name, props[name], required, targetObj, row);
     }
     mountEl.appendChild(row);
     renderMissingSummary();
@@ -3168,18 +3137,16 @@
       details.className = 'te-subgroup mb-3';
       details.open = false; // all closed on start; the "required" badge shows where to look
       details.dataset.paths = fields.join(',');
-      const hasRequired = fields.some((path) => {
+      const requiredTotal = fields.filter((path) => {
         const [s, name] = path.split('/');
         return (schemas[s].required || []).includes(name);
-      });
-      details.dataset.hasRequired = hasRequired ? '1' : '';
+      }).length;
+      details.dataset.requiredTotal = String(requiredTotal);
       const summary = document.createElement('summary');
       summary.className = 'te-subgroup-summary';
-      // the badge is redrawn live from the backend's numbers (paintCompleteness); this is its first state
+      // the tally is redrawn live from the backend's numbers (paintCompleteness); this is its first state
       summary.innerHTML = `<span class="te-subgroup-title">${escapeHtml(section.label)}</span>`
-        + (hasRequired
-          ? `<span class="badge ms-2 te-section-badge ${openCount ? 'bg-danger' : 'te-section-badge-done'}">${openCount ? `${openCount} required` : '✓ complete'}</span>`
-          : '');
+        + `<span class="te-subgroup-tally ms-2">${StudioTheme.tally({ required: [requiredTotal - openCount, requiredTotal] })}</span>`;
       details.appendChild(summary);
 
       const body = document.createElement('div');
@@ -3188,7 +3155,7 @@
       row.className = 'row g-2';
       for (const path of fields) {
         const [s, name] = path.split('/');
-        renderFieldInRow(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
+        renderFieldContent(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
       }
       body.appendChild(row);
       details.appendChild(body);

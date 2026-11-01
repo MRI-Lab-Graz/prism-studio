@@ -680,3 +680,17 @@
         flex-direction: column;
     }
 }
+
+/* Field heading (StudioTheme.fieldLabel / macro field_label): the project page's look. */
+.studio-field-label {
+    font-weight: 700;
+    font-size: 0.875em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 0.25rem;
+}
+
+.info-tip { cursor: help; }
+
+.studio-readiness-bar { height: 12px; }
+.w-0 { width: 0; }

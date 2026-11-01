@@ -30,6 +30,17 @@ same badges. Before you build or change a field in another page (template editor
 recipes, ...) look at how the project page does it and reuse its helpers (`chip-list.js`) instead
 of writing a second widget. A page that deviates is a bug, like a CLI/Studio difference.
 
+## One theme for every page (corporate identity)
+
+Studio has one look, defined once in the theme (`app/static/css/studio-theme.css`, the macros in
+`app/templates/includes/ui/macros.html`, and the JS builder `app/static/js/studio-theme.js`). The project page is the
+reference; its field headings (tier badge + label + ⓘ tooltip), section headers (title, copy, Required/Core/FAIR
+tally), readiness display and flat field bodies are theme parts, not page code. A page supplies content only and uses
+the macro (server-rendered) or the JS builder (built in JavaScript); both emit the same markup. **A page that styles or
+builds its own copy of a themed part is a bug**, the same as a CLI/Studio difference: change the theme part, not the
+page. A new kind of field or section is added to the theme first, then used. Design and plan:
+`docs/superpowers/specs/2026-11-01-studio-theme-design.md`. Pages still to move are listed there.
+
 ## Mandatory skills for every chat in this repo
 
 At the start of every conversation in this repository, invoke both of the
