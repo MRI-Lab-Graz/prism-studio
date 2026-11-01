@@ -380,56 +380,5 @@
     padding-top: 0.25rem;
   }
 
-  .te-item-field {
-    border: 1px solid #d6dde5;
-    border-radius: 0.5rem;
-    background: #ffffff;
-    padding: 0.75rem 0.85rem 0.65rem;
-  }
-  .te-item-field .form-label {
-    font-weight: 600;
-    margin-bottom: 0.45rem;
-  }
-  .te-item-field .form-text {
-    margin-top: 0.45rem;
-  }
-  .te-item-field .row.g-2 {
-    --bs-gutter-y: 0.6rem;
-  }
-  .te-item-field textarea,
-  .te-item-field .form-control,
-  .te-item-field .form-select {
-    background-color: #fbfdff;
-  }
-
-  /* one tile per field; required fields are tinted green */
-  .te-field {
-    background: #fff;
-    border: 1px solid #dee2e6;
-    border-left: 4px solid #adb5bd;
-    border-radius: 0.5rem;
-    padding: 0.4rem 0.75rem 0.6rem;
-    height: 100%;
-  }
-  .te-field-required {
-    background: #f3faf6;
-    border-left-color: #198754;
-  }
-  .te-field-missing {
-    background: #fdf2f1;
-    border-left-color: #c0392b;
-  }
-  .te-field-missing .form-label::after {
-    content: "required";
-    margin-left: 0.5rem;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: #c0392b;
-    text-transform: uppercase;
-  }
-  .te-field .form-label {
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-  }
 
 </style>

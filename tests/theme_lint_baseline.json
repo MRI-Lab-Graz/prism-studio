@@ -9,7 +9,7 @@
   "app/static/css/results.css": 8,
   "app/static/css/survey-customizer.css": 54,
   "app/static/css/survey-generator.css": 30,
-  "app/static/css/template-editor.css": 80,
+  "app/static/css/template-editor.css": 69,
   "app/templates/base.html": 9,
   "app/templates/file_management.html": 14,
   "app/templates/home.html": 6,
@@ -49,7 +49,7 @@
   "app/static/css/projects/metadata.css": 3,
   "app/static/css/results.css": 1,
   "app/static/css/survey-customizer.css": 4,
-  "app/static/css/template-editor.css": 5,
+  "app/static/css/template-editor.css": 4,
   "app/templates/base.html": 13
  },
  "select_multiple": {

@@ -575,8 +575,6 @@
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
       const isEmpty = missing.has(el.getAttribute('data-field-path'));
       if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
-      // the tile of an empty required field turns red and says so
-      (el.querySelector(':scope > .te-field') || el.closest('.te-field'))?.classList.toggle('te-field-missing', isEmpty);
     });
     // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
@@ -2105,17 +2103,6 @@
   }
 
   /** One field = one tile (label + input); required fields get their own tint. */
-  function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
-    const before = row.lastElementChild;
-    renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row);
-    const col = row.lastElementChild;
-    if (!col || col === before) return;
-    const tile = document.createElement('div');
-    tile.className = 'te-field' + (required.includes(name) ? ' te-field-required' : '');
-    while (col.firstChild) tile.appendChild(col.firstChild);
-    col.appendChild(tile);
-  }
-
   function renderFieldContent(sectionKey, name, fieldSchema, required, targetObj, row) {
     // When a variant is explicitly selected, hide base scale fields that are managed
     // per-variant inside VariantScales. The user should only edit the variant-specific
@@ -2131,9 +2118,6 @@
     // Render one field per row in both top-level and item views for readability.
     col.className = 'col-12';
     col.setAttribute('data-field-path', `${sectionKey}/${name}`);
-    if (sectionKey === 'ITEM') {
-      col.classList.add('te-item-field');
-    }
 
     const isRequired = required.includes(name);
     col.appendChild(makeLabel(name, fieldSchema, isRequired, questionnaireSections?.FIELD_LABELS[`${sectionKey}/${name}`] || name));
@@ -2662,7 +2646,7 @@
     const row = document.createElement('div');
     row.className = 'row g-2';
     for (const name of names) {
-      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+      renderFieldContent(sectionKey, name, props[name], required, targetObj, row);
     }
     mountEl.appendChild(row);
     renderMissingSummary();
@@ -3171,7 +3155,7 @@
       row.className = 'row g-2';
       for (const path of fields) {
         const [s, name] = path.split('/');
-        renderFieldInRow(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
+        renderFieldContent(s, name, schemas[s].properties[name], schemas[s].required || [], currentTemplate[s], row);
       }
       body.appendChild(row);
       details.appendChild(body);
