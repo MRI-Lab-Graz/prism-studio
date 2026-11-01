@@ -15,7 +15,7 @@
         </div>
         <div class="collapse" id="studyMetadataSection">
         <div class="card-body">
-            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3" id="smFieldTierLegend">
+            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3" data-help-panel data-help-default-mode="beginner" id="smFieldTierLegend">
                 <i class="fas fa-lightbulb me-2"></i>
                 <span class="badge bg-danger">REQUIRED</span> fields must be filled in before you can create the project (Dataset Name, Authors and at least three Keywords).
                 <span class="badge badge-tier-core">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the Methods Readiness / FAIR score below instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge badge-tier-core">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
@@ -45,9 +45,9 @@
             <div class="d-none align-items-center gap-2 flex-wrap mb-3 p-2 border rounded bg-light" id="surveyImportContainer">
                 <label for="surveyImportInput" class="btn btn-outline-secondary btn-sm mb-0">
                     <i class="fas fa-file-import me-1"></i>Import from study application (survey.json)
+                    <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Prefills PI/author, ethics, funding and study fields from a Pavlovia survey response export.">&#9432;</span>
                 </label>
                 <input type="file" id="surveyImportInput" accept="application/json,.json" class="visually-hidden">
-                <small class="text-muted">Prefills PI/author, ethics, funding and study fields from a Pavlovia survey response export.</small>
                 <div id="surveyImportStatus" class="small w-100" role="status" aria-live="polite"></div>
             </div>
 
@@ -82,7 +82,7 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-                            <div class="sm-basics-intro mb-3">
+                            <div class="sm-basics-intro mb-3" data-help-panel data-help-default-mode="beginner">
                                 <div class="sm-basics-intro__eyebrow">Start here</div>
                                 <p class="sm-basics-intro__copy mb-0">Complete the identity, ethics, keywords, and funding fields first. DOI, HED, and other discovery/citation details live in their own section under Reporting and follow-up, and can be filled in once the project scaffold is stable.</p>
                             </div>
@@ -90,30 +90,31 @@
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-danger">REQUIRED</span> Dataset Name
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="This becomes the BIDS Name field and is reused in CITATION.cff.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
-                                    <small class="text-muted">This becomes the BIDS Name field and is reused in CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-danger" id="metadataAuthorsRequiredBadge">REQUIRED</span> Authors
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Add at least one author and mark one corresponding contact with an email address. ORCID, roles, and affiliations sync into citation files automatically.">&#9432;</span>
                                     </label>
                                     <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
                                         <i class="fas fa-user-plus me-1"></i>Add Author
                                     </button>
-                                    <small class="text-muted d-block">Add at least one author and mark one corresponding contact with an email address. ORCID, roles, and affiliations sync into citation files automatically.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Personal thanks only &mdash; funding sources have their own field below.">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="People, labs, or institutions to thank..."></textarea>
-                                    <small class="text-muted">Personal thanks only &mdash; funding sources have their own field below.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge badge-tier-core" id="metadataEthicsRequiredBadge">CORE</span> Ethics Approvals
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="If approved, add the committee name and reference number. Placeholder text is never saved.">&#9432;</span>
                                     </label>
                                     <div class="mb-2">
                                         <input type="hidden" id="metadataEthicsApproved" value="">
@@ -132,18 +133,18 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <small class="text-muted">If approved, add the committee name and reference number. Placeholder text is never saved.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-danger">REQUIRED</span> Keywords (comma-separated, at least three)
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="The dataset schema requires at least three keywords; they also make the dataset easier to find later.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                    <small class="text-muted">The dataset schema requires at least three keywords; they also make the dataset easier to find later.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge badge-tier-core" id="metadataFundingRequiredBadge">CORE</span> Funding
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="If funding exists, enter each source with its agency (and grant number) and accept it with the check mark.">&#9432;</span>
                                     </label>
                                     <div class="mb-2">
                                         <input type="hidden" id="metadataFundingDeclared" value="">
@@ -156,7 +157,6 @@
                                         <div id="metadataFundingList" class="d-flex flex-column gap-2 mb-2"></div>
                                         <input type="hidden" id="metadataFunding" value="">
                                     </div>
-                                    <small class="text-muted">If funding exists, enter each source with its agency (and grant number) and accept it with the check mark.</small>
                                 </div>
                                 <div class="col-12">
                                     <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button"
@@ -166,13 +166,13 @@
                                     <div class="collapse mt-2" id="smBasicsAdvanced">
                                         <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                             <span class="badge bg-info text-dark">PROJECT</span> Schema Version
+                                            <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Defaults to stable. Only switch when a project must stay on an older PRISM schema.">&#9432;</span>
                                         </label>
                                         <select class="form-select form-select-sm" id="metadataSchemaVersion">
                                             {% for v in schema_versions %}
                                             <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
                                             {% endfor %}
                                         </select>
-                                        <small class="text-muted">Defaults to stable. Only switch when a project must stay on an older PRISM schema.</small>
                                     </div>
                                 </div>
                             </div>
@@ -196,38 +196,34 @@
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">
                                         <span class="badge bg-secondary">OPTIONAL</span> Dataset Overview
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Include: Why was this dataset created? What makes it unique and valuable?">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
                                               placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
-                                    <small class="text-muted">Include: Why was this dataset created? What makes it unique and valuable?</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Independent Variables</label>
+                                    <label class="form-label fw-bold small">Independent Variables <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Condition variables that were manipulated">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewIV" rows="3"
                                               placeholder="One per line (e.g., stimulus valence, task difficulty)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewIVList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted">Condition variables that were manipulated</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Dependent Variables</label>
+                                    <label class="form-label fw-bold small">Dependent Variables <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Response variables that were measured">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewDV" rows="3"
                                               placeholder="One per line (e.g., reaction times, BOLD signal)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewDVList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted">Response variables that were measured</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Control Variables</label>
+                                    <label class="form-label fw-bold small">Control Variables <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Aspects that were explicitly controlled">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewCV" rows="3"
                                               placeholder="One per line (e.g., age, sex, reading performance)" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewCVList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted">Aspects that were explicitly controlled</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Quality Assessment</label>
+                                    <label class="form-label fw-bold small">Quality Assessment <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Reference to quality control measures">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smOverviewQA" rows="3"
                                               placeholder="Link to quality report or brief quality notes" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smOverviewQAList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted">Reference to quality control measures</small>
                                 </div>
                             </div>
                         </div>
@@ -265,13 +261,13 @@
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small" for="smSDTimepoints">
                                         <span class="badge bg-danger">REQUIRED</span> Timepoints
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Several timepoints: every session label in an import must be mapped by you (Converter).">&#9432;</span>
                                     </label>
                                     <select class="form-select form-select-sm" id="smSDTimepoints">
                                         <option value="">-- Select --</option>
                                         <option value="single">One timepoint (cross-sectional)</option>
                                         <option value="multiple">Several timepoints (longitudinal)</option>
                                     </select>
-                                    <small class="text-muted">Several timepoints: every session label in an import must be mapped by you (Converter).</small>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Condition Type</label>
@@ -385,7 +381,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-secondary" id="smRecLocationRequiredBadge">OPTIONAL</span> Location
+                                        <span class="badge bg-secondary" id="smRecLocationRequiredBadge">OPTIONAL</span> Location <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Search and select a known place to add it to the list.">&#9432;</span>
                                     </label>
                                     <!-- Location search picker -->
                                     <div class="input-group input-group-sm flex-nowrap mb-1" id="recLocationPickerGroup">
@@ -410,7 +406,6 @@
                                             Online-only recruitment
                                         </label>
                                     </div>
-                                    <small class="text-muted d-block mt-1">Search and select a known place to add it to the list.</small>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
@@ -461,7 +456,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
                                         <span class="badge badge-tier-core" id="smEligCriteriaRequiredBadge">CORE</span> Inclusion Criteria
-                                    </label>
+                                    <span class="info-tip text-muted" data-bs-toggle="tooltip" title="At least one Inclusion criterion is required. Exclusion criteria are optional but recommended.">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smEligInclusionList" class="d-flex flex-column gap-2"></div>
@@ -475,15 +470,9 @@
                                     <div id="smEligExclusionList" class="d-flex flex-column gap-2"></div>
                                 </div>
                                 <div class="col-12">
-                                    <small class="text-muted">
-                                        At least one Inclusion criterion is required. Exclusion criteria are optional but recommended.
-                                    </small>
-                                </div>
-                                <div class="col-12">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-secondary">OPTIONAL</span> Checked Criteria
+                                        <span class="badge bg-secondary">OPTIONAL</span> Checked Criteria <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Limits the validator checks against participants.tsv (warnings only, also on partial data). Link a participants column to a criterion in the Sociodemographics converter.">&#9432;</span>
                                     </label>
-                                    <div><small class="text-muted">Limits the validator checks against participants.tsv (warnings only, also on partial data). Link a participants column to a criterion in the Sociodemographics converter.</small></div>
                                     <div class="input-group input-group-sm w-auto my-2">
                                         <select class="form-select form-select-sm" id="smEligCriteriaSelect" aria-label="Criterion type"></select>
                                         <button type="button" class="btn btn-outline-secondary btn-sm" id="smEligCriteriaAdd">
@@ -553,10 +542,9 @@
                                                           placeholder="Debriefing procedure"></textarea>
                                             </div>
                                             <div class="col-12">
-                                                <label class="form-label fw-bold small">Additional Data Acquired</label>
+                                                <label class="form-label fw-bold small">Additional Data Acquired <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Especially relevant if not included in dataset">&#9432;</span></label>
                                                 <textarea class="form-control form-control-sm" id="smProcAdditionalData" rows="2"
                                                           placeholder="Other data collected (questionnaires, swabs, clinical info, etc.)"></textarea>
-                                                <small class="text-muted">Especially relevant if not included in dataset</small>
                                             </div>
                                             <div class="col-12">
                                                 <label class="form-label fw-bold small">Notes</label>
@@ -678,9 +666,9 @@
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Enter a DOI only when one already exists. It syncs into CITATION.cff.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
-                                    <small class="text-muted">Enter a DOI only when one already exists. It syncs into CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -692,17 +680,17 @@
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Saved into CITATION.cff and kept aligned with dataset_description.json.">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
-                                    <small class="text-muted">Saved into CITATION.cff and kept aligned with dataset_description.json.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-secondary">OPTIONAL</span> Citation Links
+                                        <span class="info-tip text-muted" data-bs-toggle="tooltip" title="One http(s) URL per entry. They sync into CITATION.cff and dataset_description.json.">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="metadataReferences" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="metadataReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted d-block mt-1">One http(s) URL per entry. They sync into CITATION.cff and dataset_description.json.</small>
                                 </div>
                             </div>
                         </div>
@@ -734,16 +722,14 @@
                                               placeholder="General description of missing or problematic data..."></textarea>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small">Missing Files (Table)</label>
+                                    <label class="form-label fw-bold small">Missing Files (Table) <span class="info-tip text-muted" data-bs-toggle="tooltip" title="One entry per problem: pick the subject, session, and modality, then the reason and an optional detail, and accept it with the check mark.">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smMissingFiles" rows="3" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smMissingFilesList" class="d-flex flex-column gap-2 mb-2"></div>
-                                    <small class="text-muted d-block mt-1">One entry per problem: pick the subject, session, and modality, then the reason and an optional detail, and accept it with the check mark.</small>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small">Known Issues (Table)</label>
+                                    <label class="form-label fw-bold small">Known Issues (Table) <span class="info-tip text-muted" data-bs-toggle="tooltip" title="One entry per file: filename, then the issue description, and accept it with the check mark.">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smKnownIssues" rows="3" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smKnownIssuesList" class="d-flex flex-column gap-2 mb-2"></div>
-                                    <small class="text-muted d-block mt-1">One entry per file: filename, then the issue description, and accept it with the check mark.</small>
                                 </div>
                             </div>
                         </div>
@@ -764,10 +750,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small">Background Literature</label>
+                                    <label class="form-label fw-bold small">Background Literature <span class="info-tip text-muted" data-bs-toggle="tooltip" title="DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).">&#9432;</span></label>
                                     <textarea class="form-control form-control-sm d-none" id="smReferencesText" rows="2" aria-hidden="true" tabindex="-1"></textarea>
                                     <div id="smReferencesList" class="d-flex flex-column gap-2"></div>
-                                    <small class="text-muted d-block mt-1">DOIs only (10.xxxx/... or https://doi.org/...). Included in the README, separate from the Citation Links field under Discovery &amp; Citation (which feeds CITATION.cff).</small>
                                 </div>
                             </div>
                         </div>
