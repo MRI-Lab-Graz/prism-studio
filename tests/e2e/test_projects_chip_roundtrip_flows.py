@@ -43,7 +43,6 @@ def test_untouched_lists_are_saved_exactly_as_they_were_loaded(app_page, studio_
     _open(page, studio_url)
     page.wait_for_timeout(1500)
     page.click("#createProjectSubmitBtn")
-    page.get_by_role("button", name="Save Preliminary State").click()
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
     saved = json.loads((project / "project.json").read_text())
     assert saved["Overview"]["IndependentVariables"] == independent
@@ -106,7 +105,6 @@ def test_removing_and_re_adding_a_criterion_keeps_its_hand_written_id(app_page, 
     draft.locator('[data-f="accept"]').click()
     expect(chips).to_have_count(1)
     page.click("#createProjectSubmitBtn")
-    page.get_by_role("button", name="Save Preliminary State").click()
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
     saved = json.loads((project / "project.json").read_text())["Eligibility"]["Criteria"]
     assert [c["id"] for c in saved] == ["min_age"]  # participants.json links to it keep working

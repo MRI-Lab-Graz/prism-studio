@@ -66,6 +66,7 @@ def project(tmp_path):
         json.dumps({
             "Basics": {"Name": "e2e", "Authors": ["Lovelace, Ada"], "Keywords": ["psychology", "experiment", "PRISM"]},
             "StudyDesign": {"Timepoints": "single"},
+            "governance": {"contacts": [{"name": "Lovelace, Ada", "email": "ada@example.org", "corresponding": True}]},
         })
     )
     (root / "dataset_description.json").write_text(

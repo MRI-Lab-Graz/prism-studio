@@ -79,7 +79,6 @@ def test_study_metadata_edit_is_saved_to_the_project_and_survives_reload(app_pag
     app_page.fill("#metadataName", "Sleep and memory")
 
     app_page.click("#createProjectSubmitBtn")
-    app_page.get_by_role("button", name="Save Preliminary State").click()  # required fields still missing
 
     expect(app_page.locator("#metadataSaveStatus")).to_contain_text("aved")
     description = json.loads((project / "dataset_description.json").read_text())

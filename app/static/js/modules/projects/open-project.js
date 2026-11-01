@@ -443,9 +443,6 @@ export function initOpenProjectController({
                                 data-project-path="${escapeHtml(loadedPath)}" data-project-name="${escapeHtml(loadedName || '')}">
                             <i class="fas fa-trash me-2"></i>Delete Project
                         </button>
-                        <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
-                            <i class="fas fa-save me-2"></i>Save Preliminary Project State
-                        </button>
                         <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
                             <i class="fas fa-save me-2"></i>Save Changes to Project
                         </button>

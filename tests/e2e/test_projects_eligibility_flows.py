@@ -34,7 +34,6 @@ def test_eligibility_criteria_load_edit_and_save(app_page, studio_url, project):
     expect(chips.nth(1)).to_contain_text("Sex · exclude Male")
 
     page.click("#createProjectSubmitBtn")
-    page.get_by_role("button", name="Save Preliminary State").click()  # required fields still missing
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
     saved = json.loads((project / "project.json").read_text())["Eligibility"]["Criteria"]
     assert saved[0] == AGE

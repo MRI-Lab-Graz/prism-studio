@@ -27,7 +27,6 @@ import { issueFieldTarget } from './issue-links.js';
 import { knownIssueChipText, missingFilesChipText } from './chip-summaries.js';
 import { findPending, guardSave, mountRowActions, registerStagedControl } from './row-state.js';
 import { duplicateIndexes, normalizeDoi as _normalizeDoi } from './doi-list.js';
-import { showPreliminarySaveModal } from './preliminary-save-modal.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { renderNotReadyBanner } from './not-ready-banner.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
@@ -2306,23 +2305,6 @@ function _updateRequirementGapInlineAlert(validation) {
     alertEl.classList.remove('d-none');
 }
 
-function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
-    const badge = document.getElementById('projectsPreliminaryBadge');
-    if (!badge) {
-        return;
-    }
-
-    const hasCurrentProject = Boolean(_getCurrentProjectPath());
-    const issueCount = _getRequiredValidationIssueCount(validation);
-    const shouldShow = !isCreateMode && hasCurrentProject && issueCount > 0;
-
-    badge.classList.toggle('d-none', !shouldShow);
-    if (shouldShow) {
-        badge.textContent = 'Preliminary';
-        badge.title = `${issueCount} required field${issueCount > 1 ? 's are' : ' is'} still incomplete`;
-    }
-}
-
 export function updateCreateProjectButton() {
     // Keep section badges (Required/FAIR) in sync with the current form state.
     const completeness = computeLocalCompleteness();
@@ -2335,12 +2317,6 @@ export function updateCreateProjectButton() {
         projectBoxSaveBtn
     ].filter(Boolean);
     if (!createButtons.length) return;
-
-    const preliminaryButtons = [
-        // Only manage this button when the full project box (with both save buttons) is rendered;
-        // in load-without-validation mode only this button exists and should stay visible.
-        projectBoxSaveBtn ? document.getElementById('projectBoxPreliminarySaveBtn') : null
-    ].filter(Boolean);
 
     const setCreateButtonHtml = (html) => {
         createButtons.forEach(btn => {
@@ -2364,26 +2340,6 @@ export function updateCreateProjectButton() {
     };
     const setCreateTitle = (title = '') => {
         createButtons.forEach(btn => {
-            if (title) {
-                btn.title = title;
-            } else {
-                btn.removeAttribute('title');
-            }
-        });
-    };
-
-    const setPreliminaryHidden = (hidden) => {
-        preliminaryButtons.forEach(btn => {
-            btn.classList.toggle('d-none', hidden);
-        });
-    };
-    const setPreliminaryDisabled = (disabled) => {
-        preliminaryButtons.forEach(btn => {
-            btn.disabled = disabled;
-        });
-    };
-    const setPreliminaryTitle = (title = '') => {
-        preliminaryButtons.forEach(btn => {
             if (title) {
                 btn.title = title;
             } else {
@@ -2419,9 +2375,7 @@ export function updateCreateProjectButton() {
 
         if (studyMetadataLoadInFlight) {
             setCreateButtonDisabled(true);
-            setPreliminaryDisabled(true);
             setCreateTitle(loadingMessage);
-            setPreliminaryTitle(loadingMessage);
             setMetadataSaveStatus(loadingMessage, 'muted');
             actionHints.forEach(actionHint => {
                 actionHint.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading project metadata before save actions become available.';
@@ -2431,9 +2385,7 @@ export function updateCreateProjectButton() {
 
         // Keep actions clickable so users can trigger a metadata reload retry via save.
         setCreateButtonDisabled(false);
-        setPreliminaryDisabled(false);
         setCreateTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
-        setPreliminaryTitle('Project metadata is unavailable. Click save to retry loading metadata first.');
         setMetadataSaveStatus(loadingMessage, 'warning');
         actionHints.forEach(actionHint => {
             actionHint.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Project metadata is unavailable. Click save to retry metadata loading, then save once it is ready.';
@@ -2446,25 +2398,19 @@ export function updateCreateProjectButton() {
     _updateProjectBoxRequirementAlert(validation);
     _updateProjectMetadataStat(validation);
 
-    _updateProjectsPreliminaryBadge(validation, isCreateMode);
-
     const requiredIssueCount = _getRequiredValidationIssueCount(validation);
     const optionalIssueCount = _getOptionalValidationIssueCount(validation);
 
     if (!isCreateMode) {
-        setPreliminaryHidden(true);
-        setCreateButtonDisabled(false);
+        // no half-saved state: Save waits until the required fields are in
+        setCreateButtonDisabled(requiredIssueCount > 0);
         removeCreateClasses('btn-secondary', 'btn-success', 'btn-warning', 'btn-info');
-        if (requiredIssueCount === 0) {
-            addCreateClass('btn-info');
-            setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Changes to Project');
-            setCreateTitle(optionalIssueCount > 0
-                ? `Fix before saving: ${_formatOptionalIssuesSummary(validation)}`
-                : '');
+        addCreateClass(requiredIssueCount > 0 ? 'btn-warning' : 'btn-info');
+        setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Changes to Project');
+        if (requiredIssueCount > 0) {
+            setCreateTitle(`Fill in first: ${_getRequiredValidationIssueMessages(validation).join(' ')}`);
         } else {
-            addCreateClass('btn-warning');
-            setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Preliminary Project State');
-            setCreateTitle(`${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`);
+            setCreateTitle(optionalIssueCount > 0 ? `Fix before saving: ${_formatOptionalIssuesSummary(validation)}` : '');
         }
         actionHints.forEach(actionHint => {
             if (requiredIssueCount === 0 && optionalIssueCount === 0) {
@@ -2473,7 +2419,7 @@ export function updateCreateProjectButton() {
             } else if (requiredIssueCount === 0) {
                 actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
             } else {
-                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing:</strong> ${escapeHtml(_getRequiredValidationIssueMessages(validation).join(' '))} You can save a preliminary project state now and complete metadata later.`;
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing:</strong> ${escapeHtml(_getRequiredValidationIssueMessages(validation).join(' '))} Fill them in to save.`;
             }
         });
         return;
@@ -3685,10 +3631,6 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     }
     studyMetadataSubmitInFlight = true;
 
-    const submitIntent = String(this.dataset.submitIntent || 'standard').trim().toLowerCase();
-    delete this.dataset.submitIntent;
-    const forcePreliminarySave = submitIntent === 'preliminary';
-
     const releaseSubmitLock = () => {
         studyMetadataSubmitInFlight = false;
     };
@@ -3715,24 +3657,14 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     const requiredValidation = validateAllMandatoryFields();
     const requiredIssueCount = _getRequiredValidationIssueCount(requiredValidation);
     const optionalIssueCount = _getOptionalValidationIssueCount(requiredValidation);
-    let isPreliminarySave = false;
     if (requiredIssueCount > 0) {
-        const issues = _getRequiredValidationIssueMessages(requiredValidation);
-        if (!forcePreliminarySave) {
-            const confirmed = await showPreliminarySaveModal(issues);
-            if (!confirmed) {
-                showTopFeedback(`Fill out all required fields (${requiredIssueCount} remaining).`, 'warning');
-                setMetadataSaveStatus(`Save cancelled. ${requiredIssueCount} required field(s) still missing.`, 'warning');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                updateCreateProjectButton();
-                releaseSubmitLock();
-                return;
-            }
-        }
-
-        isPreliminarySave = true;
-        showTopFeedback(`Preliminary save selected (${requiredIssueCount} field issue${requiredIssueCount > 1 ? 's' : ''} remaining).`, 'warning');
-        setMetadataSaveStatus(`Saving preliminary state (${requiredIssueCount} required field issue${requiredIssueCount > 1 ? 's' : ''} remaining)...`, 'warning');
+        // Enter can still submit a form whose button is disabled: say what is missing instead
+        showTopFeedback(`Fill out all required fields (${requiredIssueCount} remaining): ${_getRequiredValidationIssueMessages(requiredValidation).join(' ')}`, 'warning');
+        setMetadataSaveStatus(`Save blocked. ${requiredIssueCount} required field(s) still missing.`, 'warning');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateCreateProjectButton();
+        releaseSubmitLock();
+        return;
     } else if (optionalIssueCount > 0) {
         const firstIssue = requiredValidation.optionalInvalidFields?.[0] || 'Please fix metadata validation errors before saving.';
         showToast(firstIssue, 'warning');
@@ -3744,7 +3676,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         return;
     }
 
-    if (!isPreliminarySave && !this.checkValidity()) {
+    if (!this.checkValidity()) {
         const firstInvalid = this.querySelector(':invalid');
         showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
         setMetadataSaveStatus('Save blocked: please fix highlighted fields.', 'warning');
@@ -3770,7 +3702,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     }
 
     try {
-        await studyMetadataSaveController.saveStudyMetadata({ isPreliminarySave });
+        await studyMetadataSaveController.saveStudyMetadata();
     } finally {
         releaseSubmitLock();
     }

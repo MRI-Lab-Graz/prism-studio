@@ -2,12 +2,11 @@ export function createStudyMetadataSubmitController({
     getCurrentProjectPath,
     getSubmitInFlight,
 }) {
-    function requestStudyMetadataSubmit(submitIntent = 'standard') {
+    function requestStudyMetadataSubmit() {
         const form = document.getElementById('studyMetadataForm');
         if (!form) return;
 
         const preferredSubmitter = document.getElementById('createProjectSubmitBtn');
-        form.dataset.submitIntent = submitIntent;
 
         const active = document.activeElement;
         if (active instanceof HTMLElement && form.contains(active) && typeof active.blur === 'function') {
@@ -28,10 +27,10 @@ export function createStudyMetadataSubmitController({
     }
 
     function requestMetadataRepairSave() {
-        requestStudyMetadataSubmit('standard');
+        requestStudyMetadataSubmit();
     }
 
-    function bindProjectBoxSubmitBridge(button, submitIntent) {
+    function bindProjectBoxSubmitBridge(button) {
         if (!button || button.dataset.bound === '1') {
             return;
         }
@@ -40,7 +39,7 @@ export function createStudyMetadataSubmitController({
         let pointerTriggeredSubmit = false;
 
         const triggerSubmit = () => {
-            requestStudyMetadataSubmit(submitIntent);
+            requestStudyMetadataSubmit();
         };
 
         button.addEventListener('pointerdown', (event) => {
@@ -62,10 +61,7 @@ export function createStudyMetadataSubmitController({
 
     function bindProjectBoxActionButtons() {
         const projectBoxSaveBtn = document.getElementById('projectBoxSaveBtn');
-        bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');
-
-        const projectBoxPreliminarySaveBtn = document.getElementById('projectBoxPreliminarySaveBtn');
-        bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');
+        bindProjectBoxSubmitBridge(projectBoxSaveBtn);
     }
 
     function shouldSubmitStudyMetadataFromPrimaryButton() {

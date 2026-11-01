@@ -68,7 +68,7 @@ export async function initProjectsPageBootstrap({
     const hasLoadedProject = Boolean(currentProjectState.path);
 
     // When arriving from the navbar, load the summary before metadata UI can
-    // calculate and display preliminary-state indicators.
+    // calculate and display its required-field indicators.
     if (hasLoadedProject) {
         await ensureOpenSectionVisibleForLoadedProject();
     }

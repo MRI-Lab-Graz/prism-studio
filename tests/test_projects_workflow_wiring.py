@@ -1140,30 +1140,17 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("regenerateCitationCff();", metadata_content)
         self.assertIn("function requestMetadataRepairSave() {", metadata_submit_content)
 
-    def test_project_box_save_buttons_set_distinct_submit_intents(self):
+    def test_project_box_save_button_goes_through_the_submit_bridge(self):
         content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "function requestStudyMetadataSubmit(submitIntent = 'standard') {",
-            content,
-        )
-        self.assertIn("function bindProjectBoxSubmitBridge(button, submitIntent) {", content)
+        self.assertIn("function requestStudyMetadataSubmit() {", content)
+        self.assertIn("function bindProjectBoxSubmitBridge(button) {", content)
         self.assertIn("button.addEventListener('pointerdown', (event) => {", content)
-        self.assertIn("form.dataset.submitIntent = submitIntent;", content)
-        self.assertIn(
-            "bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');",
-            content,
-        )
-        self.assertIn(
-            "bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');",
-            content,
-        )
-        self.assertIn(
-            "const submitIntent = String(this.dataset.submitIntent || 'standard').trim().toLowerCase();",
-            PROJECTS_METADATA_MODULE.read_text(encoding="utf-8"),
-        )
+        self.assertIn("bindProjectBoxSubmitBridge(projectBoxSaveBtn);", content)
+        self.assertNotIn("submitIntent", content + PROJECTS_METADATA_MODULE.read_text(encoding="utf-8"))
+        self.assertNotIn('Quick Validate', content)
 
-    def test_preliminary_state_only_tracks_required_metadata_issues(self):
+    def test_required_and_optional_issues_are_tracked_separately(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("requiredInvalidFields", content)
@@ -1371,17 +1358,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertNotIn('id="quickValidateProjectBtn"', content)
         self.assertNotIn('Quick Validate', content)
 
-    def test_project_box_exposes_preliminary_save_button_with_shared_submit_path(self):
+    def test_project_box_has_one_save_button_on_the_shared_submit_path(self):
         open_project_content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
         submit_content = PROJECTS_METADATA_SUBMIT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn('id="projectBoxPreliminarySaveBtn"', open_project_content)
-        self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", submit_content)
-        self.assertIn("bindProjectBoxSubmitBridge(projectBoxPreliminarySaveBtn, 'preliminary');", submit_content)
-        self.assertIn(
-            "bindProjectBoxSubmitBridge(projectBoxSaveBtn, 'standard');",
-            submit_content,
-        )
+        self.assertNotIn("PreliminarySaveBtn", open_project_content + submit_content)
+        self.assertIn("bindProjectBoxSubmitBridge(projectBoxSaveBtn);", submit_content)
 
     def test_create_project_result_scrolls_into_view(self):
         """#createResult lives in the top "Create New Project" card

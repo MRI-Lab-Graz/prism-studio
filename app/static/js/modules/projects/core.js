@@ -71,7 +71,7 @@ function setCreateResultHtml(html, scope = 'server') {
     resultDiv.innerHTML = html;
 
     // #createResult sits in the "Create New Project" card at the top of the
-    // page; every trigger for it (the create/preliminary buttons at the
+    // page; every trigger for it (the create button at the
     // bottom of the Study Metadata form, a preflight conflict check) can fire
     // while the user is scrolled far below it, so every result written here
     // must bring itself into view - fixed once here rather than at each of

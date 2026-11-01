@@ -8,11 +8,12 @@ import pytest
 from playwright.sync_api import expect
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def _no_authors_yet(project):
     """The shared project is complete (it has an author); these tests start with an empty author list."""
     meta = json.loads((project / "project.json").read_text())
     del meta["Basics"]["Authors"]
+    del meta["governance"]  # its contact would bring the author back
     (project / "project.json").write_text(json.dumps(meta))
 
 
@@ -49,6 +50,7 @@ def test_a_malformed_doi_cannot_be_accepted(app_page, studio_url):
     expect(box.locator('[data-f="accept"]')).to_be_disabled()
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
@@ -76,6 +78,7 @@ def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page,
     expect(page.locator("#metadataAuthorsList .author-row")).to_have_count(1)
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_loaded_authors_are_defined(app_page, studio_url, project):
     (project / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))
@@ -96,7 +99,6 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     expect(page.locator("#metadataFundingList .chip-badge")).to_have_count(1)  # loaded = a chip
     page.click("#createProjectSubmitBtn")
-    page.get_by_role("button", name="Save Preliminary State").click()
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
     saved = json.loads((project / "dataset_description.json").read_text())
     assert saved["Funding"] == ["FWF, P12345"]
@@ -105,6 +107,7 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
 
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_location_picker_add_button_is_the_green_check_and_loaded_locations_are_chips(app_page, studio_url, project):
     meta = json.loads((project / "project.json").read_text())
     meta["Recruitment"] = {"Location": "Graz, Austria"}
@@ -129,25 +132,31 @@ def _fill_draft_author(page):
     row = page.locator("#metadataAuthorsList .author-row").first
     row.locator(".author-first").fill("Ada")
     row.locator(".author-last").fill("Lovelace")
+    row.locator(".author-corresponding").check()
+    row.locator(".author-email").fill("ada@example.org")
     return row
 
 
+def _enter(page):
+    """What Enter does in the form: submit it, even while the Save button is disabled."""
+    page.evaluate("document.getElementById('studyMetadataForm').requestSubmit()")
+
+
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_saving_is_blocked_while_a_draft_with_content_is_pending(app_page, studio_url, project):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     before = _project_json_text(project)
     row = _fill_draft_author(page)  # typed, not accepted
 
-    page.click("#createProjectSubmitBtn")
+    _enter(page)
     expect(page.get_by_text("not accepted yet")).to_be_visible()
     expect(row).to_have_class(re.compile("row-pending"))
-    expect(page.get_by_role("button", name="Save Preliminary State")).to_have_count(0)  # no save flow started
     assert _project_json_text(project) == before  # nothing was sent
 
     row.locator('[data-f="accept"]').click()
     expect(row).not_to_have_class(re.compile("row-pending"))
     page.click("#createProjectSubmitBtn")
-    page.get_by_role("button", name="Save Preliminary State").click()  # now the normal flow runs
     expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")
     assert "Lovelace" in _project_json_text(project)
 
@@ -155,9 +164,9 @@ def test_saving_is_blocked_while_a_draft_with_content_is_pending(app_page, studi
 def test_an_empty_draft_does_not_block_saving(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
-    page.click("#addAuthorRow")  # an empty draft next to the empty placeholder
+    page.click("#addAuthorRow")  # an empty draft next to the loaded author
     page.click("#createProjectSubmitBtn")
-    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()  # normal flow
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")  # the normal flow ran
     expect(page.get_by_text("not accepted yet")).to_have_count(0)
 
 
@@ -170,9 +179,10 @@ def test_text_typed_into_the_location_search_blocks_saving_but_an_empty_search_d
     expect(page.locator("#recLocationPickerGroup")).to_have_class(re.compile("row-pending"))
     page.fill("#recLocationQuery", "")
     page.click("#createProjectSubmitBtn")
-    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")  # the normal flow ran
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_creating_a_new_project_is_blocked_while_a_draft_is_pending(bare_page, studio_url, tmp_path):
     page = bare_page
     page.goto(f"{studio_url}/projects")
@@ -209,7 +219,7 @@ def test_after_searching_and_adding_a_location_saving_is_not_blocked(app_page, s
     expect(page.locator("#smRecLocationList .chip-badge")).to_have_count(1)
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_text("not accepted yet")).to_have_count(0)  # nothing is pending any more
-    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")  # the normal flow ran
 
 
 
@@ -242,6 +252,7 @@ def test_an_added_checked_criterion_is_an_unsaved_change(app_page, studio_url):
     assert any("unsaved" in message.lower() for message in dialogs), dialogs
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_url):
     page = app_page
     page.route("**/api/projects/orcid/search*", lambda route: route.fulfill(
@@ -258,6 +269,7 @@ def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_u
     expect(row.locator('[data-f="accept"]')).to_be_enabled()  # the helper filled what was missing
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_accepting_an_author_searches_the_orcid_when_it_is_empty(app_page, studio_url):
     page = app_page
     page.route("**/api/projects/orcid/search*", lambda route: route.fulfill(
@@ -287,6 +299,7 @@ def test_new_project_starts_without_the_previous_projects_criteria(app_page, stu
     expect(page.locator("#smEligCriteriaRequiredBadge")).not_to_have_class(re.compile("bg-success"))
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
@@ -298,6 +311,7 @@ def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
     expect(row.locator('[data-f="accept"]')).to_be_enabled()
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_the_check_is_gray_until_the_row_is_complete_and_then_turns_green(app_page, studio_url):
     page = app_page
     open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
@@ -402,7 +416,7 @@ def test_text_typed_but_not_accepted_in_a_list_field_blocks_saving(app_page, stu
     assert _project_json_text(project) == before
     page.locator("#smOverviewDVList .chip-input").press("Enter")  # accepted: the chip is part of the form
     page.click("#createProjectSubmitBtn")
-    expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()
+    expect(page.locator("#metadataSaveStatus")).to_contain_text("aved")  # the normal flow ran
 
 
 
@@ -533,6 +547,7 @@ def test_an_added_location_is_a_chip_that_can_be_removed_and_counts_for_the_loca
     expect(badge).not_to_have_class(re.compile("bg-success"))
 
 
+@pytest.mark.usefixtures("_no_authors_yet")
 def test_an_author_who_is_already_listed_cannot_be_added_twice(app_page, studio_url, project):
     (project / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))

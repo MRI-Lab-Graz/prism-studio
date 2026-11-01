@@ -56,9 +56,12 @@ def test_project_page_opens_with_all_headings_and_one_score_row(app_page, studio
     assert page.locator("#smFairRing").count() == 0
 
 
-def test_required_score_and_save_hint_agree_about_the_corresponding_author(app_page, studio_url):
+def test_required_score_and_save_hint_agree_about_the_corresponding_author(app_page, studio_url, project):
     # the shared project has an author but nobody marked as corresponding contact: Save asks for that,
     # so the Required tally must not claim everything is done
+    meta = json.loads((project / "project.json").read_text())
+    del meta["governance"]
+    (project / "project.json").write_text(json.dumps(meta))
     page = app_page
     page.goto(f"{studio_url}/projects")
     expect(page.locator("#smScoreRow")).to_contain_text("Required 3/4")
@@ -69,3 +72,13 @@ def test_required_score_and_save_hint_agree_about_the_corresponding_author(app_p
     row.locator(".author-corresponding").check()
     row.locator(".author-email").fill("ada@example.org")
     expect(page.locator("#smScoreRow")).to_contain_text("Required 4/4")
+
+
+def test_save_waits_for_the_required_fields_and_says_which(app_page, studio_url, project):
+    (project / "project.json").write_text(json.dumps({"Basics": {"Name": "e2e"}}))
+    page = app_page
+    page.goto(f"{studio_url}/projects")
+    save = page.locator("#createProjectSubmitBtn")
+    expect(save).to_be_disabled()
+    expect(page.locator("#metadataActionHint")).to_contain_text("required field")
+    expect(page.locator("body")).not_to_contain_text("Preliminary")

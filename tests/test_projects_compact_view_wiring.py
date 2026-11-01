@@ -81,7 +81,7 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         discovery_pos = content.index('id="smDiscoveryCitation"')
         self.assertGreater(discovery_pos, reporting_start)
 
-    def test_projects_header_has_preliminary_badge_placeholder(self):
+    def test_projects_header_has_no_preliminary_badge(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
@@ -90,8 +90,7 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         )
         self.assertIn("{{ page_header(", content)
         self.assertIn("{% call help_panel(", content)
-        self.assertIn('id="projectsPreliminaryBadge"', content)
-        self.assertIn("Preliminary", content)
+        self.assertNotIn("projectsPreliminaryBadge", content)
 
     def test_study_metadata_has_no_preliminary_create_button(self):
         content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")

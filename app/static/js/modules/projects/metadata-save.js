@@ -17,19 +17,16 @@ export function createStudyMetadataSaveController({
     showTopFeedback,
     setButtonLoading,
 }) {
-    async function saveStudyMetadata({ isPreliminarySave = false } = {}) {
+    async function saveStudyMetadata() {
         const saveButtons = [
             document.getElementById('createProjectSubmitBtn'),
-            document.getElementById('projectBoxSaveBtn'),
-            document.getElementById('projectBoxPreliminarySaveBtn')
+            document.getElementById('projectBoxSaveBtn')
         ].filter(Boolean);
         const originalButtonTexts = new Map();
         saveButtons.forEach(button => {
             originalButtonTexts.set(button, setButtonLoading(button, true, 'Saving...'));
         });
-        if (!isPreliminarySave) {
-            setMetadataSaveStatus('Saving metadata...', 'muted');
-        }
+        setMetadataSaveStatus('Saving metadata...', 'muted');
 
         let saveSucceeded = false;
 
@@ -48,17 +45,8 @@ export function createStudyMetadataSaveController({
                 // Keep frontend readiness scoring semantics stable by recomputing from
                 // the current form state after save.
                 updateCompletenessUI(computeLocalCompleteness());
-                let datasetDescriptionSaved = true;
-                try {
-                    await saveDatasetDescription(requestProjectPath);
-                    showToast('Dataset description saved', 'success');
-                } catch (error) {
-                    if (!isPreliminarySave) {
-                        throw error;
-                    }
-                    datasetDescriptionSaved = false;
-                    console.warn('Preliminary save: dataset_description save deferred:', error);
-                }
+                await saveDatasetDescription(requestProjectPath);
+                showToast('Dataset description saved', 'success');
 
                 const readmeResult = await generateReadmeSilent(requestProjectPath);
 
@@ -82,23 +70,7 @@ export function createStudyMetadataSaveController({
                     setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
                 }
 
-                if (isPreliminarySave) {
-                    if (datasetDescriptionSaved) {
-                        const preliminaryMessage = readmeResult.success
-                            ? 'Preliminary project state saved. You can complete required metadata later.'
-                            : 'Preliminary project state saved, but README generation failed. You can complete required metadata later.';
-                        showTopFeedback(preliminaryMessage, 'warning');
-                        setMetadataSaveStatus(
-                            readmeResult.success
-                                ? 'Preliminary state saved. Required metadata is still incomplete.'
-                                : 'Preliminary state saved. README generation failed.',
-                            'warning'
-                        );
-                    } else {
-                        showTopFeedback('Preliminary study metadata saved. Dataset description save deferred until required fields are complete.', 'warning');
-                        setMetadataSaveStatus('Preliminary save completed. Dataset description update deferred.', 'warning');
-                    }
-                } else if (readmeResult.success) {
+                if (readmeResult.success) {
                     showToast('Study metadata saved successfully', 'success');
                     showTopFeedback('Study metadata saved successfully.', 'success');
                     setMetadataSaveStatus('Saved successfully. Metadata and derived files were updated.', 'success');
