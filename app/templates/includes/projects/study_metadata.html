@@ -88,14 +88,14 @@
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-danger">REQUIRED</span> Dataset Name
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="This becomes the BIDS Name field and is reused in CITATION.cff.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-danger" id="metadataAuthorsRequiredBadge">REQUIRED</span> Authors
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Add at least one author and mark one corresponding contact with an email address. ORCID, roles, and affiliations sync into citation files automatically.">&#9432;</span>
                                     </label>
@@ -105,14 +105,14 @@
                                     </button>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Personal thanks only &mdash; funding sources have their own field below.">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="People, labs, or institutions to thank..."></textarea>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge badge-tier-core" id="metadataEthicsRequiredBadge">CORE</span> Ethics Approvals
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="If approved, add the committee name and reference number. Placeholder text is never saved.">&#9432;</span>
                                     </label>
@@ -135,14 +135,14 @@
                                     </div>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-danger">REQUIRED</span> Keywords (comma-separated, at least three)
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="The dataset schema requires at least three keywords; they also make the dataset easier to find later.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge badge-tier-core" id="metadataFundingRequiredBadge">CORE</span> Funding
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="If funding exists, enter each source with its agency (and grant number) and accept it with the check mark.">&#9432;</span>
                                     </label>
@@ -164,7 +164,7 @@
                                         <i class="fas fa-chevron-down me-1"></i>Advanced
                                     </button>
                                     <div class="collapse mt-2" id="smBasicsAdvanced">
-                                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <label class="form-label studio-field-label">
                                             <span class="badge bg-info text-dark">PROJECT</span> Schema Version
                                             <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Defaults to stable. Only switch when a project must stay on an older PRISM schema.">&#9432;</span>
                                         </label>
@@ -664,28 +664,28 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Enter a DOI only when one already exists. It syncs into CITATION.cff.">&#9432;</span>
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-secondary">OPTIONAL</span> HED Version
                                     </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
                                     <small class="text-muted">Leave empty unless the dataset uses HED tags. <a href="https://www.hedtags.org" target="_blank" rel="noopener noreferrer">What is HED?</a></small>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="Saved into CITATION.cff and kept aligned with dataset_description.json.">&#9432;</span>
                                     </label>
                                     <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                    <label class="form-label studio-field-label">
                                         <span class="badge bg-secondary">OPTIONAL</span> Citation Links
                                         <span class="info-tip text-muted" data-bs-toggle="tooltip" title="One http(s) URL per entry. They sync into CITATION.cff and dataset_description.json.">&#9432;</span>
                                     </label>

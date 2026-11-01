@@ -1691,6 +1691,16 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
         self.assertEqual(leftovers, [])
 
+    def test_study_metadata_labels_use_theme_class(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        self.assertNotIn("fw-bold small text-muted text-uppercase", content)
+        self.assertGreaterEqual(content.count("studio-field-label"), 11)
+
+    def test_metadata_js_tally_comes_from_theme(self):
+        source = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        self.assertIn("StudioTheme.tally(", source)
+        self.assertNotIn("bg-opacity-75\">Core ${", source)
+
 
 if __name__ == "__main__":
     unittest.main()

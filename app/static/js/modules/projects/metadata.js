@@ -3605,9 +3605,10 @@ export function updateCompletenessUI(completeness) {
         const missingCoreFields = (sec.fields || [])
             .filter(f => f.required && !f.filled)
             .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
-        const coreTitleAttr = missingCoreFields.length
-            ? ` title="Missing: ${_escapeHtmlAttr(missingCoreFields.join(', '))}"`
-            : ' title="All Core fields filled"';
+        const coreTitle = missingCoreFields.length
+            ? `Missing: ${missingCoreFields.join(', ')}`
+            : 'All Core fields filled';
+        const coreTitleAttr = ` title="${_escapeHtmlAttr(coreTitle)}"`;
 
         // REQUIRED-tier (red, creation-blocking) fields aren't part of
         // reqTotal/reqFilled above (those are CORE-only, see
@@ -3623,14 +3624,12 @@ export function updateCompletenessUI(completeness) {
         const missingRequiredFields = blockingFields
             .filter(f => !f.filled)
             .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
-        const requiredTitleAttr = missingRequiredFields.length
-            ? ` title="Required to create the project - missing: ${_escapeHtmlAttr(missingRequiredFields.join(', '))}"`
-            : ' title="All required fields filled"';
+        const requiredTitle = missingRequiredFields.length
+            ? `Required to create the project - missing: ${missingRequiredFields.join(', ')}`
+            : 'All required fields filled';
+        const requiredTitleAttr = ` title="${_escapeHtmlAttr(requiredTitle)}"`;
         const requiredBadgeHtml = blockingTotal > 0
             ? `<span class="${blockingDone ? 'text-success' : 'text-danger'}"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
-            : '';
-        const requiredBadgeElHtml = blockingTotal > 0
-            ? `<span class="badge ${blockingDone ? 'bg-success' : 'bg-danger'} bg-opacity-75"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
             : '';
 
         html += `<div class="section-completeness-row${rowClickable ? ' section-completeness-row--clickable' : ''}"${rowClickable ? ` data-section-key="${key}" role="button" tabindex="0"` : ''}>
@@ -3647,13 +3646,11 @@ export function updateCompletenessUI(completeness) {
 
         const badgeEl = document.getElementById('sm' + key + 'Badge');
         if (badgeEl) {
-            const reqClass = reqDone ? 'bg-success' : 'badge-tier-core';
-            const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
-            badgeEl.innerHTML = `
-                ${requiredBadgeElHtml}
-                ${reqTotal > 0 ? `<span class="badge ${reqClass} bg-opacity-75"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>` : ''}
-                ${optTotal > 0 ? `<span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>` : ''}
-            `;
+            badgeEl.innerHTML = StudioTheme.tally({
+                required: [blockingFilled, blockingTotal, requiredTitle],
+                core: [reqFilled, reqTotal, coreTitle],
+                fair: [optFilled, optTotal],
+            });
         }
     }
 
@@ -3674,17 +3671,11 @@ export function updateCompletenessUI(completeness) {
         const totals = computeGlobalTierTotals(
             Object.fromEntries(groupKeys.filter(k => sections[k]).map(k => [k, sections[k]]))
         );
-        const reqDone = totals.blockingTotal === 0 || totals.blockingFilled === totals.blockingTotal;
-        const coreDone = totals.coreTotal === 0 || totals.coreFilled === totals.coreTotal;
-        const fairDone = totals.fairTotal === 0 || totals.fairFilled === totals.fairTotal;
-        const reqBadgeHtml = totals.blockingTotal > 0
-            ? `<span class="badge ${reqDone ? 'bg-success' : 'bg-danger'} bg-opacity-75">Required ${totals.blockingFilled}/${totals.blockingTotal}</span>`
-            : '';
-        badgeSlot.innerHTML = `
-            ${reqBadgeHtml}
-            ${totals.coreTotal > 0 ? `<span class="badge ${coreDone ? 'bg-success' : 'badge-tier-core'} bg-opacity-75">Core ${totals.coreFilled}/${totals.coreTotal}</span>` : ''}
-            ${totals.fairTotal > 0 ? `<span class="badge ${fairDone ? 'bg-success' : 'bg-warning text-dark'} bg-opacity-75">FAIR ${totals.fairFilled}/${totals.fairTotal}</span>` : ''}
-        `;
+        badgeSlot.innerHTML = StudioTheme.tally({
+            required: [totals.blockingFilled, totals.blockingTotal],
+            core: [totals.coreFilled, totals.coreTotal],
+            fair: [totals.fairFilled, totals.fairTotal],
+        });
     }
 
     // Compact reminder on the "Project Loaded" panel (open-project.js),
