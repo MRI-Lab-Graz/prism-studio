@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "includes/ui/macros.html" import page_header, help_panel %}
+{% from "includes/ui/macros.html" import page_header, help_panel, readiness_row %}
 
 {% block title %}PRISM Studio - Template Editor{% endblock %}
 
@@ -192,19 +192,9 @@
           </div>
 
           <!-- Completeness: the backend counts (library template-score), the page only draws them -->
-          <div class="te-rings" id="completionRings" style="display:none;">
-            <div class="te-ring" id="ringRequired" role="img" data-name="Required" aria-label="Required 0%"
-                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                 title="<strong>Required</strong><br>The fields this template needs before it can be used for converting or exporting.">
-              <div class="te-ring-disc" style="--p: 0;"><span class="te-ring-label">REQ</span></div>
-              <small class="te-ring-count" id="ringRequiredText">0/0</small>
-            </div>
-            <div class="te-ring" id="ringFair" role="img" data-name="FAIR" aria-label="FAIR 0%"
-                 data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                 title="<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything; it tracks how reusable the description is.">
-              <div class="te-ring-disc" style="--p: 0;"><span class="te-ring-label">FAIR</span></div>
-              <small class="te-ring-count" id="ringFairText">0/0</small>
-            </div>
+          <div class="mb-3 p-3 bg-light rounded" id="completionPanel" style="display:none;">
+            {{ readiness_row('teRequired', 'Required', '<strong>Required</strong><br>The fields this template needs before it can be used for converting or exporting.') }}
+            {{ readiness_row('teFair', 'FAIR', '<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything; it tracks how reusable the description is.') }}
             <div class="small" id="completenessProblems"></div>
           </div>
 

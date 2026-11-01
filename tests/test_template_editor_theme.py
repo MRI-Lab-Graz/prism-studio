@@ -29,3 +29,15 @@ def test_section_header_uses_tally_not_complete_badge():
     assert "✓ complete" not in EDITOR_JS
     assert "StudioTheme.tally(" in EDITOR_JS
     assert "te-section-badge" not in EDITOR_CSS
+
+
+def test_editor_has_no_rings_and_uses_readiness_row():
+    for source in (EDITOR_HTML, EDITOR_JS, EDITOR_CSS):
+        assert "te-ring" not in source
+        assert "completionRings" not in source
+    assert "readiness_row(" in EDITOR_HTML
+
+
+def test_project_page_uses_readiness_row_too():
+    study = (ROOT / "app/templates/includes/projects/study_metadata.html").read_text(encoding="utf-8")
+    assert "readiness_row(" in study

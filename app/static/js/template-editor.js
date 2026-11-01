@@ -536,33 +536,33 @@
     paintCompleteness();
   }
 
-  function setRing(id, percent, counts, state, tip) {
-    const ring = document.getElementById(id);
-    if (!ring) return;
-    ring.dataset.state = state;
-    ring.setAttribute('aria-label', `${ring.dataset.name} ${percent}%`);
-    ring.querySelector('.te-ring-disc').style.setProperty('--p', String(percent));
-    ring.querySelector('.te-ring-count').textContent = counts;
-    if (tip) {
-      ring.setAttribute('title', tip);
-      ring.setAttribute('data-bs-original-title', tip);
+  function setBar(prefix, percent, counts, state, tip) {
+    const bar = document.getElementById(`${prefix}ProgressBar`);
+    if (!bar) return;
+    bar.style.width = `${percent}%`;
+    bar.className = `progress-bar ${{ done: 'bg-success', partial: 'bg-warning', open: 'bg-danger' }[state]}`;
+    document.getElementById(`${prefix}Score`).textContent = counts;
+    const row = document.getElementById(`${prefix}Row`);
+    if (row && tip) {
+      row.setAttribute('title', tip);
+      row.setAttribute('data-bs-original-title', tip);
     }
   }
 
   function paintCompleteness() {
-    const rings = document.getElementById('completionRings');
-    if (!rings) return;
+    const panel = document.getElementById('completionPanel');
+    if (!panel) return;
     if (!completeness) {
-      rings.style.display = 'none';
+      panel.style.display = 'none';
       return;
     }
-    rings.style.display = 'flex';
+    panel.style.display = 'block';
     const missing = new Set(completeness.required.missing);
     const { required, recommended, percent } = completeness;
-    setRing('ringRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
+    setBar('teRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
     const open = recommended.missing.map((path) => escapeHtml(path.split('/')[1])).join(', ');
-    setRing(
-      'ringFair', percent.recommended, `${recommended.filled}/${recommended.total}`,
+    setBar(
+      'teFair', percent.recommended, `${recommended.filled}/${recommended.total}`,
       percent.recommended >= 70 ? 'done' : 'partial',
       `<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything.${open ? `<br>Still open: ${open}` : ''}`
     );

@@ -1,3 +1,4 @@
+{% from "includes/ui/macros.html" import readiness_row %}
     <!-- Study Metadata Card -->
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
@@ -23,12 +24,7 @@
 
             <!-- Completeness Panel -->
             <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
-                <div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row">
-                    <strong class="small text-uppercase text-muted">Methods Readiness</strong>
-                    <div class="progress flex-grow-1" style="height: 12px;">
-                        <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
-                    </div>
-                    <span class="fw-bold" id="smMainScore">0%</span>
+                {% call readiness_row('smMain', 'Methods Readiness') %}
                     <div class="sm-fair-motivation" id="smFairMotivation" role="img" aria-label="FAIR readiness 0%" data-score="0"
                          data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
                          title="<strong>Methods Readiness / FAIR score</strong><br>Share of CORE and optional fields you've filled in across all sections below. It does not block project creation &mdash; it tracks how reusable and FAIR-compliant your documentation is.">
@@ -37,7 +33,7 @@
                         </div>
                         <small class="sm-fair-percent" id="smFairPercent">0%</small>
                     </div>
-                </div>
+                {% endcall %}
                 <button type="button" class="btn btn-link btn-sm p-0 mb-2 d-none" id="smFairNextAction"></button>
                 <div id="smSectionDots"></div>
             </div>
