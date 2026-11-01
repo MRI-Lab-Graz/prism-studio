@@ -1635,24 +1635,61 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('value="datalad_free"', content)
         self.assertIn('value="datalad_preserving"', content)
 
-    def test_field_tier_legend_is_not_gated_by_beginner_help_mode(self):
+    def test_field_tier_legend_is_beginner_mode_only(self):
         content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
 
         legend_match = re.search(
-            r'<div class="([^"]*)" id="smFieldTierLegend">', content
+            r'<div class="[^"]*"([^>]*)id="smFieldTierLegend"([^>]*)>', content
         )
         self.assertIsNotNone(
             legend_match, "smFieldTierLegend element not found in template"
         )
-        legend_classes = legend_match.group(1).split()
-        self.assertNotIn(
-            "beginner-help-block",
-            legend_classes,
-            "REQUIRED/CORE/FAIR legend must not be dismissible via the "
-            "site-wide beginner-help-mode toggle - it's reference info, "
-            "not a beginner tip, and should always be visible.",
+        attrs = legend_match.group(1) + legend_match.group(2)
+        # global-help-mode.js hides [data-help-panel][data-help-default-mode=beginner]
+        # when beginner mode is off (Settings).
+        self.assertIn("data-help-panel", attrs)
+        self.assertIn('data-help-default-mode="beginner"', attrs)
+
+    def test_project_flow_strip_is_beginner_mode_only(self):
+        macros = STUDY_METADATA_TEMPLATE.parent / "macros.html"
+        content = macros.read_text(encoding="utf-8")
+        self.assertIn("data-help-panel", content)
+        self.assertIn('data-help-default-mode="beginner"', content)
+
+    def test_basics_intro_is_beginner_mode_only(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        self.assertRegex(
+            content,
+            r'<div class="sm-basics-intro mb-3"[^>]*data-help-panel[^>]*'
+            r'data-help-default-mode="beginner"',
         )
-        self.assertIn("alert", legend_classes)
+
+    def test_project_cards_show_only_title_and_icon_outside_beginner_mode(self):
+        css = (REPO_ROOT / "app/static/css/projects/cards.css").read_text(
+            encoding="utf-8"
+        )
+        self.assertRegex(
+            css,
+            r'\[data-beginner-help-mode="off"\][^{]*\.project-card-lead'
+            r'[^{]*\.project-card-tags[^{]*\.project-card-detail[^{]*'
+            r'\{[^}]*display:\s*none',
+        )
+
+    def test_field_hints_live_in_heading_tooltips_not_under_fields(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+        authors_hint = "Add at least one author and mark one corresponding contact"
+        self.assertRegex(
+            content,
+            r'Authors\s*<span class="info-tip[^>]*data-bs-toggle="tooltip"[^>]*'
+            r'title="' + authors_hint,
+        )
+        self.assertNotRegex(content, r"<small[^>]*>\s*" + authors_hint)
+        # no plain one-line hint is left under a field
+        leftovers = re.findall(
+            r'<small class="text-muted(?: d-block)?(?: mt-\d)?">[^<]{20,}</small>',
+            content,
+        )
+        self.assertEqual(leftovers, [])
 
 
 if __name__ == "__main__":

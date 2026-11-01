@@ -133,3 +133,11 @@
         font-size: 0.96rem;
     }
 }
+
+/* Beginner mode off: cards show only icon and title. */
+html[data-beginner-help-mode="off"] .project-card-topline,
+html[data-beginner-help-mode="off"] .project-card-lead,
+html[data-beginner-help-mode="off"] .project-card-tags,
+html[data-beginner-help-mode="off"] .project-card-detail {
+    display: none;
+}
