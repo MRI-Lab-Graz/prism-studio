@@ -52,17 +52,17 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertNotIn("renderSection(sectionKey, currentTemplate[sectionKey]", script)
         self.assertFalse((TEMPLATE_EDITOR_SOURCE_WORKFLOW_SCRIPT.parent / "technical-groups.js").exists())
 
-    def test_the_rings_show_what_the_backend_counts_and_empty_required_fields_turn_red_live(self):
+    def test_the_bars_show_what_the_backend_counts_and_empty_required_fields_turn_red_live(self):
         page = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
         script = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
 
-        # two rings (required, FAIR) instead of the old bar; the numbers come from the completeness route
-        self.assertIn('id="ringRequired"', page)
-        self.assertIn('id="ringFair"', page)
+        # two readiness rows (required, FAIR) as on the project page; the numbers come from the completeness route
+        self.assertIn("readiness_row('teRequired'", page)
+        self.assertIn("readiness_row('teFair'", page)
         self.assertNotIn("completionBarFill", page + script)
         self.assertNotIn("calculateCompletion", script)
         self.assertIn("/api/template-editor/completeness", script)
-        # an empty required field is marked by its red border and star, not by an extra line
+        # an empty required field is marked by its red border, not by an extra line
         self.assertNotIn("te-required-hint", script)
         self.assertIn("function paintCompleteness", script)
         self.assertIn("countMissing", script)
@@ -88,7 +88,7 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
-            '{% from "includes/ui/macros.html" import page_header, help_panel %}',
+            '{% from "includes/ui/macros.html" import page_header, help_panel, readiness_row %}',
             content,
         )
         self.assertIn("{{ page_header(", content)

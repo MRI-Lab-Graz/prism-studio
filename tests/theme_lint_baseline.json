@@ -9,7 +9,7 @@
   "app/static/css/results.css": 8,
   "app/static/css/survey-customizer.css": 54,
   "app/static/css/survey-generator.css": 30,
-  "app/static/css/template-editor.css": 90,
+  "app/static/css/template-editor.css": 80,
   "app/templates/base.html": 9,
   "app/templates/file_management.html": 14,
   "app/templates/home.html": 6,
@@ -34,7 +34,7 @@
   "app/templates/includes/projects/open_form.html": 3,
   "app/templates/includes/projects/push_server_section.html": 12,
   "app/templates/includes/projects/settings_section.html": 1,
-  "app/templates/includes/projects/study_metadata.html": 10,
+  "app/templates/includes/projects/study_metadata.html": 8,
   "app/templates/index.html": 2,
   "app/templates/json_editor.html": 1,
   "app/templates/recipe_builder.html": 14,
@@ -42,7 +42,7 @@
   "app/templates/results.html": 4,
   "app/templates/survey_customizer.html": 3,
   "app/templates/survey_generator.html": 2,
-  "app/templates/template_editor.html": 16
+  "app/templates/template_editor.html": 14
  },
  "restyle": {
   "app/static/css/projects/layout.css": 1,

@@ -691,3 +691,6 @@
 }
 
 .info-tip { cursor: help; }
+
+.studio-readiness-bar { height: 12px; }
+.w-0 { width: 0; }

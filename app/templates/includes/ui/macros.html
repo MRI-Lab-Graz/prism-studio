@@ -104,8 +104,8 @@
 {% macro readiness_row(prefix, label, tip='') -%}
 <div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row"{% if tip %} id="{{ prefix }}Row" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="{{ tip|e }}"{% endif %}>
     <strong class="small text-uppercase text-muted">{{ label }}</strong>
-    <div class="progress flex-grow-1" style="height: 12px;">
-        <div class="progress-bar" role="progressbar" id="{{ prefix }}ProgressBar" style="width: 0%"></div>
+    <div class="progress flex-grow-1 studio-readiness-bar">
+        <div class="progress-bar w-0" role="progressbar" id="{{ prefix }}ProgressBar"></div>
     </div>
     <span class="fw-bold" id="{{ prefix }}Score">0%</span>
     {%- if caller is defined %}
