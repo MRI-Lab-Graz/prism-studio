@@ -18,7 +18,7 @@ def test_study_design_selects_share_one_top_edge(app_page, studio_url):
             page.locator(f'[data-bs-target="{target}"]').click()
             expect(page.locator(target)).to_be_visible()
     # the info icon next to "Timepoints" is added by script: measure only once it is there
-    expect(page.locator("#smStudyDesign .field-hint-trigger").first).to_be_visible()
+    expect(page.locator("#smStudyDesign .info-tip").first).to_be_visible()
     page.wait_for_timeout(300)
     tops = [_top(page, s) for s in ("#smSDType", "#smSDTimepoints", "#smSDConditionType")]
     assert max(tops) - min(tops) <= 1, tops  # a CORE badge, a REQUIRED badge and plain text must not shift the fields

@@ -1,5 +1,5 @@
 """Template editor in a real browser: empty required fields are red until filled, the section badge and the
-rings follow live, and the numbers are the backend's."""
+readiness bars follow live, and the numbers are the backend's."""
 
 import json
 
@@ -13,7 +13,7 @@ def _open_incomplete_template(page, project, studio_url):
     (project / "code" / "library" / "survey" / "survey-x.json").write_text(json.dumps(template), encoding="utf-8")
     page.goto(f"{studio_url}/template-editor", wait_until="networkidle")
     page.select_option("#projectTemplateSelect", "survey-x.json")
-    page.wait_for_selector("#completionRings", state="visible")
+    page.wait_for_selector("#completionPanel", state="visible")
 
 
 def _administration(page):
@@ -26,11 +26,11 @@ def test_an_empty_required_field_is_red_and_the_section_counts_it(page, project,
     _open_incomplete_template(page, project, studio_url)
     administration = _administration(page)
 
-    badge = administration.locator(".te-section-badge")
-    assert badge.inner_text() == "1 required" and "bg-danger" in badge.get_attribute("class")
+    badge = administration.locator(".te-subgroup-tally .badge")
+    assert badge.inner_text() == "Required 3/4" and "bg-danger" in badge.get_attribute("class")
     field = administration.locator("#field_Technical_Respondent")
     assert "is-invalid" in field.get_attribute("class")
-    assert page.locator("#ringRequired").get_attribute("aria-label") != "Required 100%"
+    assert page.locator("#teRequiredProgressBar").evaluate("e => e.style.width") != "100%"
 
 
 def test_filling_the_field_turns_everything_green_without_a_reload(page, project, studio_url):
@@ -39,21 +39,21 @@ def test_filling_the_field_turns_everything_green_without_a_reload(page, project
 
     administration.locator("#field_Technical_Respondent").select_option("self")
 
-    page.wait_for_function("document.querySelector('#ringRequired').getAttribute('aria-label') === 'Required 100%'")
-    assert administration.locator(".te-section-badge").inner_text() == "✓ complete"
+    page.wait_for_function("document.querySelector('#teRequiredProgressBar').style.width === '100%'")
+    badge = administration.locator(".te-subgroup-tally .badge")
+    assert badge.inner_text() == "Required 4/4" and "bg-success" in badge.get_attribute("class")
     assert "is-invalid" not in administration.locator("#field_Technical_Respondent").get_attribute("class")
 
 
-def test_the_fair_ring_counts_recommended_fields_and_never_blocks(page, project, studio_url):
+def test_the_fair_bar_counts_recommended_fields_and_never_blocks(page, project, studio_url):
     _open_incomplete_template(page, project, studio_url)
 
     page.evaluate("document.querySelectorAll('details.te-subgroup').forEach((d) => { d.open = true; })")
-    fair = page.locator("#ringFair")
-    before = fair.get_attribute("aria-label")
+    before = page.locator("#teFairScore").inner_text()
     page.locator("#field_Study_DOI").fill("10.1000/182")
 
-    page.wait_for_function(f"document.querySelector('#ringFair').getAttribute('aria-label') !== {json.dumps(before)}")
-    assert page.locator("#ringFairText").inner_text().split("/")[0].isdigit()
+    page.wait_for_function(f"document.querySelector('#teFairScore').textContent !== {json.dumps(before)}")
+    assert page.locator("#teFairScore").inner_text().split("/")[0].isdigit()
 
 
 def test_languages_is_a_pull_down_and_the_pick_becomes_a_green_chip(page, project, studio_url):
@@ -134,7 +134,7 @@ def _open_template_without_items(page, project, studio_url):
     (project / "code" / "library" / "survey" / "survey-x.json").write_text(json.dumps(template), encoding="utf-8")
     page.goto(f"{studio_url}/template-editor", wait_until="networkidle")
     page.select_option("#projectTemplateSelect", "survey-x.json")
-    page.wait_for_selector("#completionRings", state="visible")
+    page.wait_for_selector("#completionPanel", state="visible")
 
 
 def test_a_language_added_to_a_template_without_items_shows_in_the_bar(page, project, studio_url):
