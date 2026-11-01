@@ -689,3 +689,5 @@
     color: var(--bs-secondary-color, #6c757d);
     margin-bottom: 0.25rem;
 }
+
+.info-tip { cursor: help; }

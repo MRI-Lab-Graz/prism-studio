@@ -996,25 +996,11 @@
   }
 
   function makeLabel(name, fieldSchema, isRequired, text = name) {
-    const label = document.createElement('label');
-    label.className = 'form-label';
-    label.textContent = text;
-
-    const hint = document.createElement('span');
-    hint.className = 'ms-2 text-muted schema-hint';
-    hint.setAttribute('data-bs-toggle', 'tooltip');
-    hint.setAttribute('data-bs-placement', 'right');
-    hint.setAttribute('title', infoHtml(fieldSchema));
-    hint.textContent = 'ⓘ';
-    label.appendChild(hint);
-
-    if (isRequired) {
-      const star = document.createElement('span');
-      star.className = 'ms-1 text-danger';
-      star.textContent = '*';
-      label.appendChild(star);
-    }
-    return label;
+    return StudioTheme.fieldLabel({
+      text,
+      tier: isRequired ? 'required' : 'optional',
+      tip: infoHtml(fieldSchema),
+    });
   }
 
   function normalizeValueForSchema(fieldSchema, rawValue, schemaTypesArg) {
