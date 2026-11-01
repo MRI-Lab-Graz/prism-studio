@@ -1,4 +1,3 @@
-{% from "includes/ui/macros.html" import readiness_row %}
     <!-- Study Metadata Card -->
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
@@ -19,22 +18,14 @@
             <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3" data-help-panel data-help-default-mode="beginner" id="smFieldTierLegend">
                 <i class="fas fa-lightbulb me-2"></i>
                 <span class="badge bg-danger">REQUIRED</span> fields must be filled in before you can create the project (Dataset Name, Authors and at least three Keywords).
-                <span class="badge badge-tier-core">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the Methods Readiness / FAIR score below instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge badge-tier-core">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
+                <span class="badge badge-tier-core">CORE</span> and <span class="badge bg-secondary">OPTIONAL</span> fields never block creation &mdash; they drive the FAIR score above instead (CORE fields matter most for that score). Each section below shows its own <span class="badge bg-danger bg-opacity-75">Required</span>/<span class="badge badge-tier-core">Core</span>/<span class="badge bg-warning text-dark bg-opacity-75">FAIR</span> tally so you can see what's missing without expanding it.
             </div>
 
-            <!-- Completeness Panel -->
-            <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
-                {% call readiness_row('smMain', 'Methods Readiness') %}
-                    <div class="sm-fair-motivation" id="smFairMotivation" role="img" aria-label="FAIR readiness 0%" data-score="0"
-                         data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true"
-                         title="<strong>Methods Readiness / FAIR score</strong><br>Share of CORE and optional fields you've filled in across all sections below. It does not block project creation &mdash; it tracks how reusable and FAIR-compliant your documentation is.">
-                        <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
-                            <span class="sm-fair-label">FAIR</span>
-                        </div>
-                        <small class="sm-fair-percent" id="smFairPercent">0%</small>
-                    </div>
-                {% endcall %}
-                <button type="button" class="btn btn-link btn-sm p-0 mb-2 d-none" id="smFairNextAction"></button>
+            <!-- Score of the whole project; #smSectionDots only holds the sync repair hint -->
+            <div class="mb-3" id="smCompletenessPanel">
+                <div class="d-flex align-items-center gap-2 flex-wrap" id="smScoreRow"
+                     data-bs-toggle="tooltip" data-bs-placement="top"
+                     title="Required fields block project creation. Core and FAIR never block; they track how reusable the documentation is."></div>
                 <div id="smSectionDots"></div>
             </div>
 

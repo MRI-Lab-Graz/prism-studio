@@ -39,3 +39,17 @@ def test_a_dataset_description_error_links_to_the_field_it_names(app_page, studi
     expect(page.locator("#metadataKeywords")).to_be_focused()
     feedback.get_by_role("link", name="Authors").first.click()
     expect(page.locator("#metadataAuthorsList .author-first").first).to_be_focused()
+
+
+def test_project_page_opens_unfolded_with_one_score_row(app_page, studio_url):
+    page = app_page
+    page.goto(f"{studio_url}/projects")
+    row = page.locator("#smScoreRow")
+    expect(row).to_be_visible()
+    expect(row).to_contain_text("Required")
+    expect(row).to_contain_text("Core")
+    expect(row).to_contain_text("FAIR")
+    for target in ("#smCoreSetupGroupBody", "#smRecruitmentExecutionGroupBody", "#smReportingFollowupGroupBody",
+                   "#smBasics", "#smStudyDesign", "#smEligibility", "#smReferences"):
+        expect(page.locator(target)).to_be_visible()
+    assert page.locator("#smFairRing").count() == 0

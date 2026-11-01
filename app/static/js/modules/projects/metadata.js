@@ -2857,6 +2857,12 @@ export async function saveDatasetDescription(projectPath = null) {
 // restart the loaded project's metadata load - that sets the busy flag which then
 // refuses the project switch the same click is about to make (and a project whose
 // folder is gone never finishes loading, so it would refuse every time).
+const SECTION_GROUP_BODY_IDS = ['smCoreSetupGroupBody', 'smRecruitmentExecutionGroupBody', 'smReportingFollowupGroupBody'];
+const SECTION_COLLAPSE_IDS = [
+    'smBasics', 'smOverview', 'smStudyDesign', 'smRecruitment', 'smEligibility',
+    'smProcedure', 'smPreregistration', 'smDiscoveryCitation', 'smMissingData', 'smReferences',
+];
+
 export function showStudyMetadataCard({ reload = true } = {}) {
     const card = document.getElementById('studyMetadataCard');
     if (!card) return;
@@ -2872,8 +2878,10 @@ export function showStudyMetadataCard({ reload = true } = {}) {
     if (currentProjectPath || createActive) {
         card.style.display = 'block';
         // New or loaded project: the required metadata is the next thing to do, so open the form.
-        ['studyMetadataSection', 'smCoreSetupGroupBody'].forEach(id => {
-            bootstrap.Collapse.getOrCreateInstance(document.getElementById(id), { toggle: false }).show();
+        // unfold everything: the card, its three groups and every section in them
+        ['studyMetadataSection', ...SECTION_GROUP_BODY_IDS, ...SECTION_COLLAPSE_IDS].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).show();
         });
 
         // For new projects there's nothing to score yet, so the readiness
@@ -3522,140 +3530,38 @@ export function updateCompletenessUI(completeness) {
         headerBadge.className = 'badge ' + colorClass;
     }
 
-    const mainBar = document.getElementById('smMainProgressBar');
-    if (mainBar) {
-        mainBar.style.width = score + '%';
-        mainBar.className = 'progress-bar ' + colorClass;
-    }
-    const mainScore = document.getElementById('smMainScore');
-    if (mainScore) mainScore.textContent = score + '%';
-
-    const fairMotivation = document.getElementById('smFairMotivation');
-    const fairRing = document.getElementById('smFairRing');
-    const fairPercent = document.getElementById('smFairPercent');
-    if (fairMotivation) {
-        fairMotivation.setAttribute('aria-label', `FAIR readiness ${score}%`);
-        fairMotivation.dataset.score = String(score);
-    }
-    if (fairRing) {
-        fairRing.style.setProperty('--fair-progress', String(score));
-    }
-    if (fairPercent) {
-        fairPercent.textContent = score + '%';
-        fairPercent.style.color = score >= 70 ? '#1f8b5c' : '#8a6a00';
-    }
-
-    const dotsDiv = document.getElementById('smSectionDots');
-    if (!dotsDiv) return;
-
     const sections = completeness.sections || {};
-    const sectionOrder = [
-        'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
-        'Procedure', 'DiscoveryCitation', 'MissingData', 'References'
-    ];
-    const sectionLabels = {
-        Basics: 'Basics (BIDS)',
-        Overview: 'Overview',
-        StudyDesign: 'Study Design',
-        Recruitment: 'Recruitment',
-        Eligibility: 'Eligibility',
-        Procedure: 'Procedure',
-        DiscoveryCitation: 'Discovery & Citation',
-        MissingData: 'Missing Data & Issues',
-        References: 'Background Literature'
-    };
-    // The 9 section rows render in a 2-column grid (metadata.css:
-    // .section-completeness-grid) to use horizontal space instead of a long
-    // half-empty single column; Metadata Sync/Citation Health stay outside
-    // it, appended below in normal block flow, so their dashed-divider
-    // styling (meant for a single-column list) keeps working.
-    let html = '<div class="section-completeness-grid">';
-    let nextActionKey = null;
-    let nextActionRatio = 1;
-    for (const key of sectionOrder) {
-        const sec = sections[key];
-        if (!sec) continue;
+    const totals = computeGlobalTierTotals(sections);
+    const scoreRow = document.getElementById('smScoreRow');
+    if (scoreRow) {
+        scoreRow.innerHTML = StudioTheme.tally({
+            required: [totals.blockingFilled, totals.blockingTotal],
+            core: [totals.coreFilled, totals.coreTotal],
+            fair: [totals.fairFilled, totals.fairTotal],
+        });
+    }
+
+    // the per-section tallies sit on the section headers
+    for (const [key, sec] of Object.entries(sections)) {
+        const badgeEl = document.getElementById('sm' + key + 'Badge');
+        if (!badgeEl) continue;
         const reqTotal = sec.required_total || 0;
         const reqFilled = sec.required_filled || 0;
-        const optTotal = sec.optional_total || 0;
-        const optFilled = sec.optional_filled || 0;
-
-        // Track the least-complete CORE-tier section as the "next best step"
-        // toward a higher readiness score. Ties keep the earliest section in
-        // sectionOrder, which already runs in the order researchers fill it in.
-        if (!sec.read_only && reqTotal > 0 && reqFilled < reqTotal) {
-            const ratio = reqFilled / reqTotal;
-            if (nextActionKey === null || ratio < nextActionRatio) {
-                nextActionKey = key;
-                nextActionRatio = ratio;
-            }
-        }
-        const baseTotal = reqTotal > 0 ? reqTotal : sec.total;
-        const baseFilled = reqTotal > 0 ? reqFilled : sec.filled;
-        const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
-        const reqDone = reqTotal > 0 ? reqFilled === reqTotal : true;
-        const fairDone = optTotal > 0 ? optFilled === optTotal : true;
-        const reqTextClass = reqDone ? 'text-success' : 'text-tier-core';
-        const fairTextClass = fairDone ? 'text-success' : 'text-warning';
-        let dotClass = 'empty';
-        if (pct === 100) dotClass = 'full';
-        else if (pct > 0) dotClass = 'partial';
-
-        const autoLabel = sec.read_only ? ' <span class="text-muted small">(auto)</span>' : '';
-        const rowClickable = !sec.read_only;
-
-        // "What's missing" tooltip text for the Core badge - names the
-        // specific unfilled CORE-tier fields instead of just a raw count.
-        const missingCoreFields = (sec.fields || [])
-            .filter(f => f.required && !f.filled)
-            .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
-        const coreTitle = missingCoreFields.length
-            ? `Missing: ${missingCoreFields.join(', ')}`
-            : 'All Core fields filled';
-        const coreTitleAttr = ` title="${_escapeHtmlAttr(coreTitle)}"`;
-
-        // REQUIRED-tier (red, creation-blocking) fields aren't part of
-        // reqTotal/reqFilled above (those are CORE-only, see
-        // computeLocalCompleteness) - pull them from .fields directly so the
-        // collapsed section header also surfaces "you can't create the
-        // project without this" instead of only showing once expanded. Only
-        // rendered for sections that actually have such fields (today, only
-        // Basics: Name/Authors).
         const blockingFields = (sec.fields || []).filter(f => f.blocksCreation);
-        const blockingTotal = blockingFields.length;
         const blockingFilled = blockingFields.filter(f => f.filled).length;
-        const blockingDone = blockingTotal === 0 || blockingFilled === blockingTotal;
-        const missingRequiredFields = blockingFields
-            .filter(f => !f.filled)
+        const missingCore = (sec.fields || []).filter(f => f.required && !f.filled)
             .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
-        const requiredTitle = missingRequiredFields.length
-            ? `Required to create the project - missing: ${missingRequiredFields.join(', ')}`
-            : 'All required fields filled';
-        const requiredTitleAttr = ` title="${_escapeHtmlAttr(requiredTitle)}"`;
-        const requiredBadgeHtml = blockingTotal > 0
-            ? `<span class="${blockingDone ? 'text-success' : 'text-danger'}"${requiredTitleAttr}>Required ${blockingFilled}/${blockingTotal}</span>`
-            : '';
-
-        html += `<div class="section-completeness-row${rowClickable ? ' section-completeness-row--clickable' : ''}"${rowClickable ? ` data-section-key="${key}" role="button" tabindex="0"` : ''}>
-            <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
-            <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
-            <span class="section-badge">
-                ${[
-                    requiredBadgeHtml,
-                    reqTotal > 0 ? `<span class="${reqTextClass}"${coreTitleAttr}>Core ${reqFilled}/${reqTotal}</span>` : '',
-                    optTotal > 0 ? `<span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>` : '',
-                ].filter(Boolean).join('<span class="text-muted"> • </span>')}
-            </span>
-        </div>`;
-
-        const badgeEl = document.getElementById('sm' + key + 'Badge');
-        if (badgeEl) {
-            badgeEl.innerHTML = StudioTheme.tally({
-                required: [blockingFilled, blockingTotal, requiredTitle],
-                core: [reqFilled, reqTotal, coreTitle],
-                fair: [optFilled, optTotal],
-            });
-        }
+        const missingRequired = blockingFields.filter(f => !f.filled)
+            .map(f => FIELD_DISPLAY_NAMES[f.name] || f.name);
+        badgeEl.innerHTML = StudioTheme.tally({
+            required: [blockingFilled, blockingFields.length, missingRequired.length
+                ? `Required to create the project - missing: ${missingRequired.join(', ')}`
+                : 'All required fields filled'],
+            core: [reqFilled, reqTotal, missingCore.length
+                ? `Missing: ${missingCore.join(', ')}`
+                : 'All Core fields filled'],
+            fair: [sec.optional_filled || 0, sec.optional_total || 0],
+        });
     }
 
     // Required/Core/FAIR sums on the three collapsed section-group headers
@@ -3686,7 +3592,7 @@ export function updateCompletenessUI(completeness) {
     // rendered fresh every time a project loads - only populated here, once
     // the Study Metadata form has actually been read (see updateCompletenessUI
     // call sites), so it never shows a stale project's numbers.
-    const globalTierTotals = computeGlobalTierTotals(sections);
+    const globalTierTotals = totals;
     const requiredReminderBadge = document.getElementById('projectLoadedRequiredBadge');
     if (requiredReminderBadge) {
         const done = globalTierTotals.blockingTotal === 0 || globalTierTotals.blockingFilled === globalTierTotals.blockingTotal;
@@ -3712,109 +3618,9 @@ export function updateCompletenessUI(completeness) {
         fairReminderBadge.classList.toggle('text-dark', !done);
     }
 
-    let metadataDotClass = 'empty';
-    let metadataText = 'Metadata sync status pending...';
-    const lastMetadataSyncStatus = getLastMetadataSyncStatus();
 
-    if (
-        lastMetadataSyncStatus.projectJsonExists === false
-        || lastMetadataSyncStatus.datasetDescriptionExists === false
-    ) {
-        metadataDotClass = 'partial';
-        metadataText = 'Metadata files missing';
-    } else if (lastMetadataSyncStatus.consistent === true) {
-        metadataDotClass = 'full';
-        metadataText = 'Metadata files are in sync';
-    } else if (lastMetadataSyncStatus.consistent === false) {
-        metadataDotClass = 'partial';
-        metadataText = 'Metadata files are out of sync';
-    }
-
-    const metadataStatusClass = metadataDotClass === 'full' ? 'text-success' : 'text-warning';
-
-    html += '</div>'; // close .section-completeness-grid
-
-    html += `<div class="section-completeness-row section-completeness-row-metadata-sync">
-        <span class="section-label">Metadata Sync</span>
-        <span class="completeness-dot ${metadataDotClass}" title="Metadata consistency status"></span>
-        <span class="section-badge ${metadataStatusClass}">${metadataText}</span>
-    </div>`;
-
-    let citationDotClass = 'empty';
-    let citationText = 'CITATION.cff status pending...';
-    const lastCitationStatus = getLastCitationStatus();
-
-    if (
-        lastCitationStatus.exists === true
-        && lastCitationStatus.valid === true
-        && lastCitationStatus.consistent !== false
-    ) {
-        citationDotClass = 'full';
-        citationText = 'CITATION.cff healthy and CFF-compliant';
-    } else if (lastCitationStatus.exists === false) {
-        citationDotClass = 'partial';
-        citationText = 'CITATION.cff missing';
-    } else if (lastCitationStatus.valid === false) {
-        citationDotClass = 'partial';
-        citationText = 'CITATION.cff needs attention';
-    } else if (lastCitationStatus.consistent === false) {
-        citationDotClass = 'partial';
-        citationText = 'CITATION.cff is out of sync with project metadata';
-    }
-
-    const citationStatusClass = citationDotClass === 'full' ? 'text-success' : 'text-warning';
-
-    html += `<div class="section-completeness-row section-completeness-row-citation">
-        <span class="section-label">Citation Health</span>
-        <span class="completeness-dot ${citationDotClass}" title="Citation status"></span>
-        <span class="section-badge ${citationStatusClass}">${citationText}</span>
-    </div>`;
-
-    html += renderMetadataRepairHint();
-
-    dotsDiv.innerHTML = html;
-    _updateFairNextActionHint(nextActionKey, sectionLabels);
-}
-
-function _updateFairNextActionHint(sectionKey, sectionLabels) {
-    const button = document.getElementById('smFairNextAction');
-    if (!button) return;
-
-    if (!sectionKey) {
-        button.classList.add('d-none');
-        button.onclick = null;
-        return;
-    }
-
-    button.classList.remove('d-none');
-    button.innerHTML = `<i class="fas fa-arrow-right me-1"></i>Next best step: complete ${sectionLabels[sectionKey] || sectionKey}`;
-    button.onclick = () => _jumpToSection(sectionKey);
-}
-
-function _jumpToSection(sectionKey) {
-    const collapseId = 'sm' + sectionKey;
-    const collapseEl = document.getElementById(collapseId);
-    const toggleButton = document.querySelector(`[data-bs-target="#${collapseId}"]`);
-
-    // Expand any ancestor section-group fold first, since a section's own
-    // collapse can be "show" while still hidden inside a collapsed group.
-    const groupBody = collapseEl?.closest('.collapse[id$="GroupBody"]');
-    if (groupBody && window.bootstrap?.Collapse) {
-        window.bootstrap.Collapse.getOrCreateInstance(groupBody, { toggle: false }).show();
-    }
-
-    if (collapseEl && window.bootstrap?.Collapse) {
-        window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).show();
-    }
-
-    const scrollTarget = toggleButton || collapseEl;
-    scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // Focus the first empty field inside the section once it has expanded.
-    setTimeout(() => {
-        const firstEmptyField = collapseEl?.querySelector('.required-field-empty, #metadataFundingList .funding-agency-input:placeholder-shown');
-        firstEmptyField?.focus();
-    }, 250);
+    const repairHint = document.getElementById('smSectionDots');
+    if (repairHint) repairHint.innerHTML = renderMetadataRepairHint();
 }
 
 const studyMetadataForm = document.getElementById('studyMetadataForm');
@@ -3844,19 +3650,6 @@ if (smSectionDots) {
             regenerateCitationCff();
             return;
         }
-
-        const sectionRow = event.target.closest('[data-section-key]');
-        if (sectionRow) {
-            _jumpToSection(sectionRow.dataset.sectionKey);
-        }
-    });
-
-    smSectionDots.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        const sectionRow = event.target.closest('[data-section-key]');
-        if (!sectionRow) return;
-        event.preventDefault();
-        _jumpToSection(sectionRow.dataset.sectionKey);
     });
 }
 

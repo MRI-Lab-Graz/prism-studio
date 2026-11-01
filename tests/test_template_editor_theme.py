@@ -36,8 +36,3 @@ def test_editor_has_no_rings_and_uses_readiness_row():
         assert "te-ring" not in source
         assert "completionRings" not in source
     assert "readiness_row(" in EDITOR_HTML
-
-
-def test_project_page_uses_readiness_row_too():
-    study = (ROOT / "app/templates/includes/projects/study_metadata.html").read_text(encoding="utf-8")
-    assert "readiness_row(" in study
