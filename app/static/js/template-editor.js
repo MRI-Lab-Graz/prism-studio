@@ -578,14 +578,13 @@
       // the tile of an empty required field turns red and says so
       (el.querySelector(':scope > .te-field') || el.closest('.te-field'))?.classList.toggle('te-field-missing', isEmpty);
     });
-    // sections: the badge counts what is still empty in them, and turns green at zero
+    // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
-      const badge = details.querySelector('.te-section-badge');
-      if (!badge || !questionnaireSections) return;
+      const slot = details.querySelector('.te-subgroup-tally');
+      const total = Number(details.dataset.requiredTotal || 0);
+      if (!slot || !total || !questionnaireSections) return;
       const open = questionnaireSections.countMissing((details.dataset.paths || '').split(','), missing);
-      badge.hidden = !open && details.dataset.hasRequired !== '1';
-      badge.textContent = open ? `${open} required` : '✓ complete';
-      badge.className = `badge ms-2 te-section-badge ${open ? 'bg-danger' : 'te-section-badge-done'}`;
+      slot.innerHTML = StudioTheme.tally({ required: [total - open, total] });
     });
   }
 
@@ -3154,18 +3153,16 @@
       details.className = 'te-subgroup mb-3';
       details.open = false; // all closed on start; the "required" badge shows where to look
       details.dataset.paths = fields.join(',');
-      const hasRequired = fields.some((path) => {
+      const requiredTotal = fields.filter((path) => {
         const [s, name] = path.split('/');
         return (schemas[s].required || []).includes(name);
-      });
-      details.dataset.hasRequired = hasRequired ? '1' : '';
+      }).length;
+      details.dataset.requiredTotal = String(requiredTotal);
       const summary = document.createElement('summary');
       summary.className = 'te-subgroup-summary';
-      // the badge is redrawn live from the backend's numbers (paintCompleteness); this is its first state
+      // the tally is redrawn live from the backend's numbers (paintCompleteness); this is its first state
       summary.innerHTML = `<span class="te-subgroup-title">${escapeHtml(section.label)}</span>`
-        + (hasRequired
-          ? `<span class="badge ms-2 te-section-badge ${openCount ? 'bg-danger' : 'te-section-badge-done'}">${openCount ? `${openCount} required` : '✓ complete'}</span>`
-          : '');
+        + `<span class="te-subgroup-tally ms-2">${StudioTheme.tally({ required: [requiredTotal - openCount, requiredTotal] })}</span>`;
       details.appendChild(summary);
 
       const body = document.createElement('div');

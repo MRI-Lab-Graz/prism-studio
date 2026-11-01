@@ -312,7 +312,6 @@
   .te-ring-count { font-size: 0.75rem; font-weight: 700; color: var(--ring); }
   #topLevelForm .is-invalid { border-color: #c0392b; }
   #topLevelForm .is-invalid:focus { border-color: #c0392b; box-shadow: 0 0 0 0.2rem rgba(192, 57, 43, 0.25); }
-  .te-section-badge-done { background: #1f8b5c; color: #fff; }
 
   .chapter-card .card-header.chapter-header {
     cursor: pointer;

@@ -22,3 +22,10 @@ def test_make_label_delegates_to_theme():
 def test_base_template_loads_theme_script():
     base = (ROOT / "app/templates/base.html").read_text(encoding="utf-8")
     assert "js/studio-theme.js" in base
+
+
+def test_section_header_uses_tally_not_complete_badge():
+    assert "te-section-badge" not in EDITOR_JS
+    assert "✓ complete" not in EDITOR_JS
+    assert "StudioTheme.tally(" in EDITOR_JS
+    assert "te-section-badge" not in EDITOR_CSS
