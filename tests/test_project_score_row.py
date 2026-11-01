@@ -28,11 +28,13 @@ def test_score_row_is_drawn_with_the_shared_tally():
     assert "StudioTheme.tally" in _function_body("updateCompletenessUI")
 
 
-def test_loading_a_project_unfolds_every_group_and_section():
-    assert "...SECTION_GROUP_BODY_IDS, ...SECTION_COLLAPSE_IDS" in _function_body("showStudyMetadataCard")
-    ids = re.search(r"SECTION_GROUP_BODY_IDS = \[(.*?)\];", META_JS, re.S).group(1)
-    ids += re.search(r"SECTION_COLLAPSE_IDS = \[(.*?)\];", META_JS, re.S).group(1)
-    shown = set(re.findall(r"'(\w+)'", ids))
-    # every collapse that holds a group or a section of the form is unfolded
-    wanted = set(re.findall(r'<div class="collapse" id="(sm\w+)"', STUDY))
-    assert wanted <= shown, wanted - shown
+def test_loading_a_project_unfolds_the_groups_but_no_section():
+    body = _function_body("showStudyMetadataCard")
+    assert "...SECTION_GROUP_BODY_IDS" in body and "SECTION_COLLAPSE_IDS" not in META_JS
+    groups = set(re.findall(r"'(\w+)'", re.search(r"SECTION_GROUP_BODY_IDS = \[(.*?)\];", META_JS, re.S).group(1)))
+    assert groups == set(re.findall(r'<div class="collapse" id="(sm\w+GroupBody)"', STUDY))
+
+
+def test_no_section_starts_open():
+    assert not re.search(r'class="collapse[^"]*\bshow\b[^"]*" id="sm', STUDY)
+    assert not re.search(r'data-bs-target="#sm(Basics|Overview)" aria-expanded="true"', STUDY)

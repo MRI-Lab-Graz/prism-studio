@@ -151,6 +151,8 @@ def fill_required_metadata():
     """Fill what the create form needs before Create Project turns green."""
 
     def fill(page, timepoints="single"):
+        if not page.locator("#smBasics").is_visible():  # sections start folded
+            page.locator('[data-bs-target="#smBasics"]').click()
         page.fill("#metadataName", "Sleep and memory")
         page.fill("#metadataKeywords", "sleep, memory, learning")
         row = page.locator("#metadataAuthorsList .author-row").first

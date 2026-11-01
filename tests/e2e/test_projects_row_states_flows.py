@@ -51,7 +51,7 @@ def test_a_malformed_doi_cannot_be_accepted(app_page, studio_url):
 
 def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = page.locator("#metadataAuthorsList .author-row").first
     badge = page.locator("#metadataAuthorsRequiredBadge")
 
@@ -79,7 +79,7 @@ def test_a_new_author_is_a_draft_that_counts_only_after_it_is_accepted(app_page,
 def test_loaded_authors_are_defined(app_page, studio_url, project):
     (project / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))
-    open_sections(app_page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(app_page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = app_page.locator("#metadataAuthorsList .author-row").first
     expect(row.locator(".author-last")).to_have_value("Lovelace")
     expect(row.locator('[data-f="remove"]')).to_have_count(1)
@@ -93,7 +93,7 @@ def test_saving_a_loaded_project_without_touching_rows_keeps_authors_and_funding
                    "Authors": ["Ada Lovelace"], "Funding": ["FWF, P12345"]}
     (project / "dataset_description.json").write_text(json.dumps(description))
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     expect(page.locator("#metadataFundingList .chip-badge")).to_have_count(1)  # loaded = a chip
     page.click("#createProjectSubmitBtn")
     page.get_by_role("button", name="Save Preliminary State").click()
@@ -124,6 +124,8 @@ def _project_json_text(project):
 
 
 def _fill_draft_author(page):
+    if not page.locator("#smBasics").is_visible():  # sections start folded
+        page.locator('[data-bs-target="#smBasics"]').click()
     row = page.locator("#metadataAuthorsList .author-row").first
     row.locator(".author-first").fill("Ada")
     row.locator(".author-last").fill("Lovelace")
@@ -132,7 +134,7 @@ def _fill_draft_author(page):
 
 def test_saving_is_blocked_while_a_draft_with_content_is_pending(app_page, studio_url, project):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     before = _project_json_text(project)
     row = _fill_draft_author(page)  # typed, not accepted
 
@@ -152,7 +154,7 @@ def test_saving_is_blocked_while_a_draft_with_content_is_pending(app_page, studi
 
 def test_an_empty_draft_does_not_block_saving(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     page.click("#addAuthorRow")  # an empty draft next to the empty placeholder
     page.click("#createProjectSubmitBtn")
     expect(page.get_by_role("button", name="Save Preliminary State")).to_be_visible()  # normal flow
@@ -247,7 +249,7 @@ def test_the_orcid_helper_filling_the_names_enables_the_check(app_page, studio_u
         body=json.dumps({"success": True, "candidates": [{
             "orcid_id": "0000-0002-1825-0097", "given_names": "Ada", "family_name": "Lovelace",
             "affiliation": "Analytical Engines"}]})))
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = page.locator("#metadataAuthorsList .author-row").first
     row.locator(".author-last").fill("Lovelace")  # first name missing: the check is disabled
     expect(row.locator('[data-f="accept"]')).to_be_disabled()
@@ -263,7 +265,7 @@ def test_accepting_an_author_searches_the_orcid_when_it_is_empty(app_page, studi
         body=json.dumps({"success": True, "candidates": [{
             "orcid_id": "0000-0002-1825-0097", "orcid": "https://orcid.org/0000-0002-1825-0097",
             "given_names": "Ada", "family_name": "Lovelace", "affiliation": "Analytical Engines"}]})))
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = page.locator("#metadataAuthorsList .author-row").first
     row.locator(".author-first").fill("Ada")
     row.locator(".author-last").fill("Lovelace")
@@ -287,7 +289,7 @@ def test_new_project_starts_without_the_previous_projects_criteria(app_page, stu
 
 def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = page.locator("#metadataAuthorsList .author-row").first
     expect(row.locator('[data-f="hint"]')).to_contain_text("first and last name")
     row.locator(".author-first").fill("Ada")
@@ -298,7 +300,7 @@ def test_a_disabled_check_says_what_is_missing(app_page, studio_url):
 
 def test_the_check_is_gray_until_the_row_is_complete_and_then_turns_green(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     row = page.locator("#metadataAuthorsList .author-row").first
     accept = row.locator('[data-f="accept"]')
     expect(accept).to_have_class(re.compile("btn-outline-secondary"))  # nothing set: nothing looks ok
@@ -408,7 +410,7 @@ def test_text_typed_but_not_accepted_in_a_list_field_blocks_saving(app_page, stu
 
 def test_funding_sources_become_chips_below_the_agency_and_grant_inputs(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     page.click("#metadataFundingYes")
     field = page.locator("#metadataFundingList")
     agency = field.locator(".funding-agency-input")
@@ -441,7 +443,7 @@ def test_funding_sources_become_chips_below_the_agency_and_grant_inputs(app_page
 
 def test_a_funding_entry_that_is_typed_but_not_accepted_blocks_saving_and_is_not_listed(app_page, studio_url, project):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     page.click("#metadataFundingYes")
     before = _project_json_text(project)
     page.locator("#metadataFundingList .funding-agency-input").fill("FWF")
@@ -455,7 +457,7 @@ def test_a_funding_entry_that_is_typed_but_not_accepted_blocks_saving_and_is_not
 
 def test_accepting_a_funding_source_turns_the_funding_badge_green(app_page, studio_url):
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     page.click("#metadataFundingYes")
     field = page.locator("#metadataFundingList")
     field.locator(".funding-agency-input").fill("FWF")
@@ -535,7 +537,7 @@ def test_an_author_who_is_already_listed_cannot_be_added_twice(app_page, studio_
     (project / "dataset_description.json").write_text(
         json.dumps({"Name": "e2e", "BIDSVersion": "1.10.0", "Authors": ["Ada Lovelace"]}))
     page = app_page
-    open_sections(page, studio_url, "#smCoreSetupGroupBody")
+    open_sections(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     page.click("#addAuthorRow")
     row = page.locator("#metadataAuthorsList .author-row").nth(1)
     row.locator(".author-first").fill("ada")

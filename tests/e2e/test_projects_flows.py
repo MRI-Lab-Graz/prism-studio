@@ -67,7 +67,7 @@ def test_a_loaded_project_opens_its_metadata_and_shows_no_validator_or_datalad_b
 
 
 def open_study_metadata(page):
-    for target in ("#studyMetadataSection", "#smCoreSetupGroupBody"):
+    for target in ("#studyMetadataSection", "#smCoreSetupGroupBody", "#smBasics"):
         if not page.locator(target).is_visible():
             page.locator(f'[data-bs-target="{target}"]').click()
             expect(page.locator(target)).to_be_visible()

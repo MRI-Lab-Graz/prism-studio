@@ -73,7 +73,7 @@ def test_dataset_description_messages_cannot_inject_html(app_page, studio_url, p
         "Name": "e2e", "BIDSVersion": "1.10.0",
         "Keywords": '<img src=x id=pwned onerror="window.__pwned=1">'}))
     page = app_page
-    _open(page, studio_url, "#smCoreSetupGroupBody")
+    _open(page, studio_url, "#smCoreSetupGroupBody", "#smBasics")
     expect(page.locator("#metadataValidationFeedback")).to_be_visible()
     page.wait_for_timeout(800)
     assert page.evaluate("window.__pwned") is None

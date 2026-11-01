@@ -2473,7 +2473,7 @@ export function updateCreateProjectButton() {
             } else if (requiredIssueCount === 0) {
                 actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${optionalIssueCount === 1 ? 'Validation issue' : `${optionalIssueCount} validation issues`} detected:</strong> ${escapeHtml(_formatOptionalIssuesSummary(validation))} Required fields are complete, but remaining validation errors must be fixed before saving changes.`;
             } else {
-                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing:</strong> ${escapeHtml(_getRequiredValidationIssueMessages(validation).join(' '))} You can save a preliminary project state now and complete metadata later.`;
             }
         });
         return;
@@ -2858,10 +2858,6 @@ export async function saveDatasetDescription(projectPath = null) {
 // refuses the project switch the same click is about to make (and a project whose
 // folder is gone never finishes loading, so it would refuse every time).
 const SECTION_GROUP_BODY_IDS = ['smCoreSetupGroupBody', 'smRecruitmentExecutionGroupBody', 'smReportingFollowupGroupBody'];
-const SECTION_COLLAPSE_IDS = [
-    'smBasics', 'smOverview', 'smStudyDesign', 'smRecruitment', 'smEligibility',
-    'smProcedure', 'smPreregistration', 'smDiscoveryCitation', 'smMissingData', 'smReferences',
-];
 
 export function showStudyMetadataCard({ reload = true } = {}) {
     const card = document.getElementById('studyMetadataCard');
@@ -2878,8 +2874,8 @@ export function showStudyMetadataCard({ reload = true } = {}) {
     if (currentProjectPath || createActive) {
         card.style.display = 'block';
         // New or loaded project: the required metadata is the next thing to do, so open the form.
-        // unfold everything: the card, its three groups and every section in them
-        ['studyMetadataSection', ...SECTION_GROUP_BODY_IDS, ...SECTION_COLLAPSE_IDS].forEach(id => {
+        // unfold the card and its three groups: every section shows its heading, its fields stay folded
+        ['studyMetadataSection', ...SECTION_GROUP_BODY_IDS].forEach(id => {
             const el = document.getElementById(id);
             if (el) bootstrap.Collapse.getOrCreateInstance(el, { toggle: false }).show();
         });
@@ -3437,7 +3433,8 @@ export function computeLocalCompleteness() {
     const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     addField('Basics', 'SchemaVersion', textFilled(document.getElementById('metadataSchemaVersion')?.value));
     addField('Basics', 'Name', datasetName.length >= 3);
-    addField('Basics', 'Authors', hasAtLeastOneAuthor());
+    // the same bar Save sets: a named corresponding author with an email address
+    addField('Basics', 'Authors', hasAtLeastOneAuthor() && hasCorrespondingAuthor() && Boolean(getCorrespondingAuthorEmail()));
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
     addField('Basics', 'EthicsApprovals', hasValidEthicsResponse());
     addField('Basics', 'Funding', hasValidFundingResponse());
