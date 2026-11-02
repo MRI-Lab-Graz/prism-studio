@@ -93,6 +93,7 @@ def _read_participants_input_table(
 ):
     if sessions_from_date:
         from src.session_assignments import load_session_assignments, survey_id_of
+        from src.session_order import content_session_order
 
         project_path = session.get("current_project_path")
         df, warnings = load_participant_source(
@@ -106,6 +107,7 @@ def _read_participants_input_table(
                 if project_path
                 else None
             ),
+            order=content_session_order(project_path) if project_path else None,
         )
         if warnings_out is not None:
             warnings_out.extend(warnings)

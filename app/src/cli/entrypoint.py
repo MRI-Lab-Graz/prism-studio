@@ -116,6 +116,12 @@ from src.cli.commands.session_map import (
     cmd_session_map_suggest,
     cmd_session_map_unset,
 )
+from src.cli.commands.session_order import (
+    cmd_session_order_import,
+    cmd_session_order_set,
+    cmd_session_order_show,
+    cmd_session_order_unset,
+)
 from src.cli.commands.recipes import (
     cmd_recipes_biometrics,
     cmd_recipes_draft,
@@ -291,6 +297,10 @@ def main() -> None:
             "session_map_set": cmd_session_map_set,
             "session_map_suggest": cmd_session_map_suggest,
             "session_map_unset": cmd_session_map_unset,
+            "session_order_show": cmd_session_order_show,
+            "session_order_set": cmd_session_order_set,
+            "session_order_unset": cmd_session_order_unset,
+            "session_order_import": cmd_session_order_import,
             "sessions_review": cmd_sessions_review,
             "sessions_set": cmd_sessions_set,
             "sessions_unset": cmd_sessions_unset,

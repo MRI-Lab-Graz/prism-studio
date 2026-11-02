@@ -19,6 +19,7 @@ CommandHandler = Callable[[Namespace], None]
 GATE_EXEMPT_COMMANDS = {
     "settings",  # app settings, not a project
     "session-map",
+    "session-order",
     "environment",
     "demo",
     "save-gate",
@@ -144,6 +145,11 @@ def dispatch_prism_tools(
             handlers["session_map_unset"](args)
         else:
             parsers["session-map"].print_help()
+    elif args.command == "session-order":
+        if args.action in ("show", "set", "unset", "import"):
+            handlers[f"session_order_{args.action}"](args)
+        else:
+            parsers["session-order"].print_help()
     elif args.command == "preregistration":
         if args.action == "draft":
             handlers["preregistration_draft"](args)

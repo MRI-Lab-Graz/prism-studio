@@ -63,7 +63,7 @@ export function initCreateProjectController({
             return;
         }
 
-        const validation = validateAllMandatoryFields();
+        const validation = validateAllMandatoryFields({ forCreation: true });
         const requiredIssueCount = (validation.emptyFields?.length || 0) + (validation.requiredInvalidFields?.length || 0);
         const optionalIssueCount = validation.optionalInvalidFields?.length || 0;
         if (requiredIssueCount > 0) {
@@ -116,6 +116,7 @@ export function initCreateProjectController({
             StudyDesign: {
                 Type: document.getElementById('smSDType').value || undefined,
                 Timepoints: document.getElementById('smSDTimepoints').value || undefined,
+                SessionLabels: document.getElementById('smSDSessionLabels').value || undefined,
                 TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
                 Blinding: document.getElementById('smSDBlinding').value || undefined,
                 Randomization: document.getElementById('smSDRandomization').value || undefined,

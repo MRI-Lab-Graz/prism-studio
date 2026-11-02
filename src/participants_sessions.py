@@ -178,11 +178,19 @@ def _outcomes(
     date_column: str,
     response_id_column: str,
     decisions: dict | None,
+    order: dict | None = None,
+    order_id_column: str | None = None,
+    strict: bool = True,
 ) -> tuple[pd.DataFrame, list[str]]:
     """Per-response outcome shared by numbering and the review table.
 
     Returns (res, warnings). ``res`` is indexed like ``df`` with
     participant, response_id, when, completed, lastpage, session (str | None), reason.
+
+    ``order`` (content projects, see ``session_order``) renames the date numbers per
+    participant, looked up by the raw ID in ``order_id_column`` (default ``id_column``).
+    A participant it cannot name raises ``SessionsNotOrderedError`` when ``strict``;
+    otherwise their responses are left unnamed (reason ``not in session order``).
     """
     if (
         date_column == "startdate"
@@ -224,6 +232,7 @@ def _outcomes(
         index=df.index,
     )
     res["session"] = None
+    res["number"] = None  # the date-order number of a numbered response, before any naming
     res["reason"] = ""
 
     for i, row in res.iterrows():
@@ -254,9 +263,34 @@ def _outcomes(
             "Fix these responses in LimeSurvey before numbering sessions."
         )
     ordered = auto.sort_values(["participant", "when"], kind="stable")
-    res.loc[ordered.index, "session"] = (
-        ordered.groupby("participant").cumcount() + 1
-    ).astype(str)
+    numbers = (ordered.groupby("participant").cumcount() + 1).astype(str)
+    res.loc[ordered.index, "session"] = numbers
+    res.loc[ordered.index, "number"] = numbers
+
+    problems: list[str] = []
+    if order is not None:
+        from src.session_order import SessionsNotOrderedError, participant_key  # lazy: it imports this module
+
+        raw_ids = df[order_id_column or id_column].map(participant_key)
+        for _, group in ordered.groupby("participant", sort=True):
+            key = raw_ids[group.index[0]]
+            entries = order.get(key)
+            numbers = res.loc[group.index, "session"]
+            if entries is None:
+                problems.append(f"{key}: not in the session order")
+            elif len(group) != len(entries):
+                problems.append(
+                    f"{key}: {len(group)} responses in this file, {len(entries)} in the session order"
+                )
+            elif unknown := [n for n in numbers if n not in entries]:
+                problems.append(f"{key}: number {', '.join(unknown)} not in the session order")
+            else:
+                res.loc[group.index, "session"] = numbers.map(entries)
+                continue
+            res.loc[group.index, "session"] = None
+            res.loc[group.index, "reason"] = "not in session order"
+        if problems and strict:
+            raise SessionsNotOrderedError(problems)
 
     assigned = res[res["session"].notna()]
     clash = assigned[assigned.duplicated(["participant", "session"], keep=False)]
@@ -274,6 +308,7 @@ def _outcomes(
         f"Sessions numbered by {date_column} (completed responses only): "
         f"{len(assigned)} of {len(res)} responses kept."
     ]
+    warnings.extend(problems)
     applied = res[res["reason"].isin(["skipped", "override", "included"])]
     if len(applied):
         def _ids(frame):
@@ -318,6 +353,8 @@ def number_sessions_by_date(
     session_column: str = "session",
     decisions: dict | None = None,
     response_id_column: str = "id",
+    order: dict | None = None,
+    order_id_column: str | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     """Give each participant's *completed* responses sessions "1", "2", ... by date.
 
@@ -325,13 +362,16 @@ def number_sessions_by_date(
     Incomplete responses (empty ``submitdate``) are left out, and listed in the
     warnings; ``decisions`` (``{response_id: {"skip": True} | {"session": label}}``)
     override the automatic rule. Rows are never merged. The returned frame holds
-    only the responses that got a session.
+    only the responses that got a session. With ``order`` (a content project's
+    ``code/session_order.tsv``) the numbers become the participant's condition names.
     """
     if session_column in df.columns:
         raise ValueError(
             f"The file already has a '{session_column}' column; use it as the session column instead."
         )
-    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    res, warnings = _outcomes(
+        df, id_column, date_column, response_id_column, decisions, order, order_id_column
+    )
     if len(res) and res["session"].isna().all():
         raise ValueError(
             f"No response gets a session ({len(res)} response(s): all incomplete or skipped). "
@@ -351,6 +391,8 @@ def session_assignment_table(
     response_id_column: str = "id",
     imported_root=None,
     survey_id: str = "default",
+    order: dict | None = None,
+    order_id_column: str | None = None,
 ) -> tuple[list[dict], list[str]]:
     """One row per response for review: what session it gets and why.
 
@@ -358,7 +400,10 @@ def session_assignment_table(
     and unchanged since) are left out, except manual session overrides; the sessions are
     still numbered across the whole file.
     """
-    res, warnings = _outcomes(df, id_column, date_column, response_id_column, decisions)
+    res, warnings = _outcomes(
+        df, id_column, date_column, response_id_column, decisions, order, order_id_column,
+        strict=False,
+    )
     if imported_root is not None:
         from src.survey_existing import FINGERPRINT_COLUMNS, ImportIndex, row_fingerprint, seen_entry
 
@@ -385,6 +430,7 @@ def session_assignment_table(
             "completed": bool(r["completed"]),
             "lastpage": r["lastpage"],
             "session": r["session"],
+            "number": r["number"] if pd.notna(r["number"]) else None,
             "reason": r["reason"],
         }
         for _, r in res.sort_values(["participant", "when"], kind="stable").iterrows()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearReviewTable, reviewFormData, rowClass, subjectStripes } from './survey-session-assignments.js';
+import { clearReviewTable, isLeftOut, reviewFormData, rowClass, sessionCellText, subjectStripes } from './survey-session-assignments.js';
 
 describe('reviewFormData', () => {
     it('sends the picked server path when no file was uploaded', () => {
@@ -57,5 +57,21 @@ describe('subjectStripes', () => {
     it('alternates only when the participant changes, so one subject shares a shade', () => {
         const rows = ['a', 'a', 'b', 'c', 'c', 'a'].map((participant) => ({ participant }));
         expect(subjectStripes(rows)).toEqual([false, false, true, false, false, true]);
+    });
+});
+
+describe('a response the session order cannot name', () => {
+    const row = { session: null, reason: 'not in session order' };
+
+    it('is highlighted as needing a manual alignment, not muted as left out', () => {
+        expect(rowClass(row)).toBe('table-danger');
+        expect(isLeftOut(row)).toBe(false);
+        expect(sessionCellText(row)).toBe('needs a session name (see Session order below)');
+    });
+
+    it('other rows keep their look', () => {
+        expect(isLeftOut({ session: null, reason: 'incomplete' })).toBe(true);
+        expect(sessionCellText({ session: null, reason: 'incomplete' })).toBe('left out (incomplete)');
+        expect(sessionCellText({ session: 'rested', reason: 'auto' })).toBe('rested');
     });
 });
