@@ -9,6 +9,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app"))
 
 from src.project_documents import generate_readme  # noqa: E402
@@ -159,3 +161,15 @@ def test_init_result_names_the_project_after_the_dataset(tmp_path):
     result = ProjectManager().init_on_existing_bids(str(_bids(tmp_path)))
 
     assert result["name"] == "Colleague DS"
+
+
+@pytest.mark.parametrize("content", ["authors: [unclosed\n  - : :", "- just\n- a list\n"])
+def test_init_leaves_a_citation_cff_it_cannot_read_untouched(tmp_path, content):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(content, encoding="utf-8")
+
+    result = ProjectManager().init_on_existing_bids(str(root))
+
+    assert result["success"]
+    assert (root / "CITATION.cff").read_text(encoding="utf-8") == content
+    assert any("could not be read" in line["message"] for line in result["log"] if isinstance(line, dict))
