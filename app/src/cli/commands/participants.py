@@ -27,6 +27,7 @@ from src.participants_converter import ParticipantsConverter, load_participant_s
 from src.eligibility import load_criteria
 from src.participants_sessions import find_repeat_conflicts, scope_to_session
 from src.session_assignments import load_session_assignments, survey_id_of
+from src.session_order import content_session_order
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 from src.participant_columns import (
@@ -92,6 +93,7 @@ def _load_participant_table(
     sessions_from_date: str | None = None,
     id_column: str | None = None,
     decisions: dict | None = None,
+    order: dict | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     suffix = input_path.suffix.lower()
     if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
@@ -103,6 +105,7 @@ def _load_participant_table(
         sessions_from_date=sessions_from_date,
         id_column=id_column,
         decisions=decisions,
+        order=order,
     )
 
 
@@ -295,6 +298,7 @@ def cmd_participants_preview(args) -> None:
                 if sessions_from_date
                 else None
             ),
+            order=content_session_order(project_root) if sessions_from_date else None,
         )
         session_candidates, df = scope_to_session(
             df,

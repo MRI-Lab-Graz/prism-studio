@@ -1077,6 +1077,7 @@ def _build_participants_merge_input(
 
         separator_value = None if (separator or "auto") == "auto" else separator
         from src.session_assignments import load_session_assignments, survey_id_of
+        from src.session_order import content_session_order
 
         # Outside the try: a corrupt decisions file must keep its own message.
         decisions = (
@@ -1084,6 +1085,7 @@ def _build_participants_merge_input(
             if sessions_from_date
             else None
         )
+        order = content_session_order(project_root) if sessions_from_date else None
         try:
             source_df, _ = load_participant_source(
                 source_path,
@@ -1092,6 +1094,7 @@ def _build_participants_merge_input(
                 sessions_from_date=sessions_from_date,
                 id_column=source_id_column,
                 decisions=decisions,
+                order=order,
             )
         except Exception:
             raise ValueError(

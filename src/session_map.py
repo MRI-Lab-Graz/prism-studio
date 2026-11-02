@@ -261,7 +261,15 @@ def session_map_for_conversion(
         return None
     if state == "undeclared":
         raise TimepointsNotDeclaredError()
-    return load_session_map(project_path)
+    mapping = load_session_map(project_path)
+    from src.session_order import content_session_order  # lazy: it imports this module
+
+    order = content_session_order(project_path)
+    if order is None:
+        return mapping
+    # Names the order gives are already final: they map to themselves.
+    names = {name: name for entries in order.values() for name in entries.values()}
+    return {**mapping, **names}
 
 
 def unmapped_session_labels(
