@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 from pathlib import Path
@@ -338,14 +337,6 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
         return jsonify({"success": False, "error": str(error)}), 500
 
 
-def _project_json_name(project_root: Path) -> str:
-    """The project's name as init wrote it (the dataset's own Name), "" when unreadable."""
-    try:
-        return str(json.loads((project_root / "project.json").read_text(encoding="utf-8")).get("name") or "")
-    except (OSError, ValueError, AttributeError):
-        return ""
-
-
 def handle_init_on_bids(project_manager, set_current_project, save_last_project):
     """Initialise PRISM on an existing BIDS dataset root."""
     try:
@@ -433,7 +424,7 @@ def handle_init_on_bids(project_manager, set_current_project, save_last_project)
 
         if result.get("success"):
             resolved_path = str(result.get("path") or path)
-            project_name = _project_json_name(Path(resolved_path)) or Path(resolved_path).name
+            project_name = result.get("name") or Path(resolved_path).name
             project_icon = _derive_project_icon(Path(resolved_path))
             set_current_project(resolved_path, project_name)
             session["current_project_icon"] = project_icon

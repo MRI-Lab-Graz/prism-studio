@@ -153,3 +153,9 @@ def test_init_leaves_a_citation_cff_alone_when_it_holds_something_prism_cannot(t
     assert (root / "CITATION.cff").read_text(encoding="utf-8") == CITATION
     warnings = [e["message"] for e in result["log"] if e["level"] == "warning"]
     assert any("CITATION.cff" in w and "message" in w for w in warnings), warnings
+
+
+def test_init_result_names_the_project_after_the_dataset(tmp_path):
+    result = ProjectManager().init_on_existing_bids(str(_bids(tmp_path)))
+
+    assert result["name"] == "Colleague DS"

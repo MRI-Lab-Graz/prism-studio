@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Init on a BIDS dataset keeps the dataset's own CITATION.cff and README.md.** Authors, keywords, DOI, license and abstract from
+  an existing `CITATION.cff` fill the still-empty project fields, so the next "Regenerate citation" no longer replaces them with
+  placeholders. The file is rewritten in PRISM's format only when nothing in it is lost; otherwise it stays as it came and the log
+  says why. The dataset's README text is kept below the generated README. The project is named after the dataset (`Name` in
+  `dataset_description.json`); the Display Name field is gone from the form.
+
 ### Changed
 - **A new project needs its required metadata.** Choosing "Create new project" opens Study Metadata, and Create Project stays grey
   until dataset name, author (with email), three keywords and timepoints are filled in. "Create anyway" and Preliminary Save are

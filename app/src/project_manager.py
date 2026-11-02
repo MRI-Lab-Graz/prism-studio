@@ -116,9 +116,6 @@ ANNEXED_TEXT_FILE_SCAN_PER_ROOT_TIMEOUT_SECONDS = 5
 DATALAD_EXPORT_STEP_TIMEOUT_SECONDS = 60 * 60
 DATALAD_DOCS_URL = "https://www.datalad.org/"
 DATALAD_INSTALL_HINT = install_hint()
-# CITATION.cff person fields that a governance contact keeps (see _normalize_contact_author).
-_CFF_CONTACT_KEYS = ("given-names", "family-names", "name", "email", "orcid", "affiliation", "website")
-
 DATALAD_TEXT_POLICY_REQUIRED_LINES = (
     "*.cfg annex.largefiles=nothing",
     "*.csv annex.largefiles=nothing",
@@ -198,6 +195,10 @@ DEFAULT_ENABLE_DATALAD_MESSAGE = "Enable DataLad for PRISM project"
 ENABLE_DATALAD_NEEDS_CONFIRMATION = (
     "Enable DataLad requires explicit confirmation because it modifies the current project in place."
 )
+
+
+# CITATION.cff person fields that a governance contact keeps.
+_CFF_CONTACT_KEYS = ("given-names", "family-names", "name", "email", "orcid", "affiliation", "website")
 
 
 class ProjectManager:
@@ -738,6 +739,7 @@ class ProjectManager:
             result = {
                 "success": True,
                 "path": str(project_path),
+                "name": self._load_json_dict(project_path / "project.json").get("name") or project_path.name,
                 "created_files": created_files,
                 "message": msg,
                 "log": log,
