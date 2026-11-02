@@ -23,7 +23,7 @@ export function sessionLabelsMissing(timepoints, sessionLabels) {
 export function syncSessionLabelsField() {
     const group = document.getElementById('smSDSessionLabelsGroup');
     if (!group) return;
-    group.style.display = sessionLabelsVisible(document.getElementById('smSDTimepoints')?.value) ? '' : 'none';
+    group.classList.toggle('d-none', !sessionLabelsVisible(document.getElementById('smSDTimepoints')?.value));
     const info = document.getElementById('smSDSessionLabelsInfo');
     if (info && !info.textContent) info.textContent = SESSION_LABELS_INFO;
 }

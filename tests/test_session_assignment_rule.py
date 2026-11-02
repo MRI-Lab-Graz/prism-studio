@@ -110,9 +110,10 @@ def test_table_lists_every_response_with_reason_and_session():
     assert [r["response_id"] for r in rows] == ["1", "2", "3", "4", "5", "6"]
     assert by_id["1"] | {"date": ""} == {
         "participant": "a", "response_id": "1", "date": "", "completed": False,
-        "lastpage": "2", "session": None, "reason": "incomplete",
+        "lastpage": "2", "session": None, "number": None, "reason": "incomplete",
     }
     assert (by_id["2"]["session"], by_id["2"]["reason"]) == ("1", "auto")
+    assert by_id["2"]["number"] == "1"
     assert (by_id["3"]["session"], by_id["3"]["reason"]) == (None, "skipped")
     assert by_id["2"]["date"].startswith("2026-03-01")
 
