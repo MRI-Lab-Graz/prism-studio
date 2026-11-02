@@ -7,6 +7,7 @@ from flask import Blueprint, jsonify, request
 
 from src.participants_converter import load_participant_source
 from src.participants_sessions import session_assignment_table
+from src.session_order import content_session_order
 from src.session_assignments import (
     SessionAssignmentError,
     load_session_assignments,
@@ -56,6 +57,7 @@ def api_review_session_assignments():
         )
         survey_id = survey_id_of(input_path)
         decisions = load_session_assignments(root, survey_id) if root else {}
+        order = content_session_order(root) if root else None
         rows, warnings = session_assignment_table(
             df,
             id_column,
@@ -63,8 +65,17 @@ def api_review_session_assignments():
             decisions=decisions,
             imported_root=root if request.form.get("skip_existing") == "true" else None,
             survey_id=survey_id,
+            order=order,
         )
-        return jsonify({"survey_id": survey_id, "rows": rows, "warnings": warnings})
+        return jsonify(
+            {
+                "survey_id": survey_id,
+                "rows": rows,
+                "warnings": warnings,
+                "session_labels": "content" if order is not None else "time",
+                "order": order or {},
+            }
+        )
     except (ValueError, OSError) as exc:
         return jsonify({"error": str(exc)}), 400
     finally:

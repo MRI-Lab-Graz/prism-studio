@@ -46,6 +46,7 @@ src/recipes_path_utils.py
 src/recipes_surveys.py
 src/safe_excel.py
 src/session_map.py
+src/session_order.py
 src/ssh_safety.py
 src/subject_id_matching.py
 src/spec_overlay.py

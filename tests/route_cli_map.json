@@ -89,6 +89,8 @@
  "session_assignments.api_review_session_assignments": "cli: sessions review",
  "session_assignments.api_set_session_assignment": "cli: sessions set",
  "session_map.api_set_session_map": "cli: session-map set",
+ "session_order.api_import_session_order": "cli: session-order import",
+ "session_order.api_set_session_order": "cli: session-order set",
  "shutdown": "exempt: GUI state (which project is open, window)",
  "specification_contribute.add_term": "cli: spec local add-term",
  "specification_contribute.add_values": "cli: spec local add-values",

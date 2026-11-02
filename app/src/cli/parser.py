@@ -677,6 +677,41 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_session_order = subparsers.add_parser(
+        "session-order",
+        help="Per-participant session order for content projects (code/session_order.tsv)",
+        description=(
+            "Content projects (StudyDesign.SessionLabels = content) name sessions after "
+            "conditions whose order differs per participant (ses-rested, not ses-2). Record "
+            "each participant's order here; participant IDs are the ones in the survey data."
+        ),
+    )
+    session_order_subparsers = parser_session_order.add_subparsers(dest="action", help="Action")
+    parser_session_order_show = session_order_subparsers.add_parser(
+        "show", help="Show the project's SessionLabels declaration and session order"
+    )
+    parser_session_order_show.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_session_order_show.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_session_order_set = session_order_subparsers.add_parser(
+        "set", help="Name one numbered session of one participant"
+    )
+    parser_session_order_set.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_session_order_set.add_argument("--participant", required=True, help="Participant ID as in the survey data (e.g. the token)")
+    parser_session_order_set.add_argument("--number", required=True, help="Session number by date: 1, 2, ...")
+    parser_session_order_set.add_argument("--session", required=True, help="Session name to write (letters and digits)")
+    parser_session_order_unset = session_order_subparsers.add_parser(
+        "unset", help="Remove a participant, or one numbered session of theirs"
+    )
+    parser_session_order_unset.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_session_order_unset.add_argument("--participant", required=True, help="Participant ID, exactly as recorded")
+    parser_session_order_unset.add_argument("--number", help="Only this session number (default: the whole participant)")
+    parser_session_order_import = session_order_subparsers.add_parser(
+        "import", help="Read a prepared .tsv/.csv/.xlsx with participant_id, session_number, session"
+    )
+    parser_session_order_import.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_session_order_import.add_argument("--file", required=True, help="The prepared order file")
+    parser_session_order_import.add_argument("--replace", action="store_true", help="Replace the recorded order instead of merging")
+
     parser_preregistration = subparsers.add_parser(
         "preregistration",
         help="Preregistration draft from project.json (AsPredicted question order)",
@@ -3198,6 +3233,7 @@ def build_prism_tools_parsers(
         "settings": parser_settings,
         "export": parser_export,
         "session-map": parser_session_map,
+        "session-order": parser_session_order,
         "preregistration": parser_preregistration,
         "project": parser_project,
         "rsync": parser_rsync,

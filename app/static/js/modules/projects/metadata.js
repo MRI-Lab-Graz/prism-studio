@@ -31,6 +31,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { renderNotReadyBanner } from './not-ready-banner.js';
 import { DEFAULT_REQUIRED_FIELDS_SCHEMA, normalizeRequiredFieldsSchema } from './study-metadata-required-fields.js';
 import { computeGlobalTierTotals } from './global-tier-totals.js';
+import { SESSION_LABELS_MISSING_LABEL, sessionLabelsMissing, syncSessionLabelsField } from './session-labels.js';
 import { MISSING_FILE_REASON_OPTIONS, combineMissingFilesRow, parseMissingFilesValue } from './missing-files-row.js';
 
 function _getCurrentProjectState() {
@@ -159,6 +160,8 @@ const studyMetadataLoadController = createStudyMetadataLoadController({
         const sd = sm.StudyDesign || {};
         document.getElementById('smSDType').value = sd.Type || '';
         document.getElementById('smSDTimepoints').value = sd.Timepoints || '';
+        document.getElementById('smSDSessionLabels').value = sd.SessionLabels || '';
+        syncSessionLabelsField();
         document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
         document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
         document.getElementById('smSDBlinding').value = sd.Blinding || '';
@@ -453,6 +456,7 @@ function _buildStudyMetadataPayload() {
         StudyDesign: {
             Type: document.getElementById('smSDType').value || undefined,
             Timepoints: document.getElementById('smSDTimepoints').value || undefined,
+            SessionLabels: document.getElementById('smSDSessionLabels').value || undefined,
             TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
             Blinding: document.getElementById('smSDBlinding').value || undefined,
             Randomization: document.getElementById('smSDRandomization').value || undefined,
@@ -2003,7 +2007,7 @@ export function getRecPeriodRangeError() {
 
 // ===== MANDATORY METADATA VALIDATION =====
 
-export function validateAllMandatoryFields() {
+export function validateAllMandatoryFields({ forCreation = false } = {}) {
     const completeness = computeLocalCompleteness();
     const emptyFields = [];
     const requiredInvalidFields = [];
@@ -2045,6 +2049,11 @@ export function validateAllMandatoryFields() {
             emptyFields.push(friendlyLabel);
         });
     });
+
+    // Future studies only: an existing project without the answer keeps working (as time) and can be saved.
+    if (forCreation && sessionLabelsMissing(document.getElementById('smSDTimepoints')?.value, document.getElementById('smSDSessionLabels')?.value)) {
+        emptyFields.push(SESSION_LABELS_MISSING_LABEL);
+    }
 
     const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     if (datasetName.length > 0 && datasetName.length < 3) {
@@ -2175,7 +2184,7 @@ function refreshMetadataValidationState(options = {}) {
         'metadataDOI', 'metadataHED', 'metadataKeywords',
         'metadataHowToAcknowledge', 'metadataReferences',
         'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
-        'smSDType', 'smSDTimepoints', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
+        'smSDType', 'smSDTimepoints', 'smSDSessionLabels', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
         'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
         'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
         'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcDebriefing',
@@ -3840,6 +3849,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (studyDesignTypeSelect) {
         studyDesignTypeSelect.addEventListener('change', toggleExperimentalFields);
     }
+    document.getElementById('smSDTimepoints')?.addEventListener('change', syncSessionLabelsField);
+    syncSessionLabelsField();
 
     const ethicsYesBtn = document.getElementById('metadataEthicsYes');
     if (ethicsYesBtn) {

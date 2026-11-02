@@ -614,3 +614,59 @@ def test_peeking_into_a_wide_table_answers_the_same_in_the_cli_and_in_studio(tmp
     cli = json.loads(capsys.readouterr().out)
     assert cli == studio
     assert studio["total_rows"] == 2 and studio["columns"] == ["participant_id", "age", "sex"]
+
+
+def test_session_order_is_written_identically_by_the_cli_and_studio(tmp_path):
+    """`session-order import / set / unset` and Studio's endpoints leave the same code/session_order.tsv."""
+    import io
+
+    import pandas as pd
+    from flask import Flask
+
+    from src.cli.commands.session_order import (
+        cmd_session_order_import,
+        cmd_session_order_set,
+        cmd_session_order_unset,
+    )
+    from src.session_order import ORDER_FILE, load_session_order
+    from src.web.blueprints.session_order_blueprint import session_order_bp
+
+    cli_project = tmp_path / "cli"
+    studio_project = tmp_path / "studio"
+    for root in (cli_project, studio_project):
+        root.mkdir()
+        (root / "project.json").write_text(json.dumps({
+            "Basics": {"Name": "N", "Authors": ["A"], "Keywords": ["k"]},
+            "StudyDesign": {"Timepoints": "multiple", "SessionLabels": "content"},
+        }), encoding="utf-8")
+    prepared = tmp_path / "order.csv"
+    pd.DataFrame({
+        "participant_id": ["P01", "P01", "P02"], "session_number": [1, 2, 1], "session": ["a", "b", "b"],
+    }).to_csv(prepared, index=False)
+
+    cmd_session_order_import(SimpleNamespace(project=str(cli_project), file=str(prepared), replace=False))
+    cmd_session_order_set(SimpleNamespace(project=str(cli_project), participant="P03", number="1", session="a"))
+    cmd_session_order_unset(SimpleNamespace(project=str(cli_project), participant="P01", number="2"))
+
+    app = Flask(__name__)
+    app.register_blueprint(session_order_bp)
+    http = app.test_client()
+    path = str(studio_project)
+    http.post("/api/session-order/import", content_type="multipart/form-data", data={
+        "project_path": path, "file": (io.BytesIO(prepared.read_bytes()), "order.csv"),
+    })
+    http.post("/api/session-order", json={"project_path": path, "participant": "P03", "number": "1", "session": "a"})
+    http.post("/api/session-order", json={"project_path": path, "participant": "P01", "number": "2", "clear": True})
+
+    assert (studio_project / ORDER_FILE).read_text() == (cli_project / ORDER_FILE).read_text()
+    assert load_session_order(cli_project) == {"P01": {"1": "a"}, "P02": {"1": "b"}, "P03": {"1": "a"}}
+
+    # --replace / "Replace" on import: the recorded order is replaced, not merged.
+    smaller = tmp_path / "smaller.csv"
+    pd.DataFrame({"participant_id": ["P09"], "session_number": [1], "session": ["z"]}).to_csv(smaller, index=False)
+    cmd_session_order_import(SimpleNamespace(project=str(cli_project), file=str(smaller), replace=True))
+    http.post("/api/session-order/import", content_type="multipart/form-data", data={
+        "project_path": path, "replace": "true", "file": (io.BytesIO(smaller.read_bytes()), "smaller.csv"),
+    })
+    assert (studio_project / ORDER_FILE).read_text() == (cli_project / ORDER_FILE).read_text()
+    assert load_session_order(studio_project) == {"P09": {"1": "z"}}

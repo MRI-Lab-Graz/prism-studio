@@ -256,6 +256,22 @@
                                         <option value="multiple">Several timepoints (longitudinal)</option>
                                     </select>
                                 </div>
+                                <div class="col-md-4 d-none" id="smSDSessionLabelsGroup">
+                                    <label class="form-label fw-bold small" for="smSDSessionLabels">
+                                        <span class="badge bg-danger">REQUIRED</span> Sessions are
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smSDSessionLabels">
+                                        <option value="">-- Select --</option>
+                                        <option value="time">Time (waves, same order for everyone)</option>
+                                        <option value="content">Content (conditions, order differs per participant)</option>
+                                    </select>
+                                    <div class="form-text" id="smSDSessionLabelsInfo">
+                                        <b>Time:</b> sessions are waves in the same order for everyone (ses-1, ses-2 or pre/post).
+                                        <b>Content:</b> sessions are conditions whose order differs per participant (e.g. sleepdep / rested
+                                        in counterbalanced order); you then provide each participant's order, and the folders are named
+                                        after the condition (ses-rested, not ses-2).
+                                    </div>
+                                </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Condition Type</label>
                                     <select class="form-select form-select-sm" id="smSDConditionType">

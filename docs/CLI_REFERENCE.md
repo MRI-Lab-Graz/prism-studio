@@ -474,6 +474,41 @@ python prism_tools.py session-map suggest --project /absolute/path/to/my-project
 python prism_tools.py session-map unset --project /absolute/path/to/my-project --label pree
 ```
 
+### Session order (content sessions)
+
+For projects with several timepoints you declare under Study Design (`StudyDesign.SessionLabels`)
+what the sessions are:
+
+- **time:** sessions are waves in the same order for everyone (`ses-1`, `ses-2` or `pre`/`post`).
+  The session map above names them. This is what a project without the field does.
+- **content:** sessions are conditions whose order differs per participant (for example `sleepdep`
+  and `rested` in counterbalanced order); you then provide each participant's order, and the folders
+  are named after the condition (`ses-rested`, not `ses-2`).
+
+LimeSurvey stores only dates, so PRISM still numbers each participant's completed responses `1`, `2`,
+... by date (see `sessions review`); in a content project the session order then turns those numbers
+into names. Record it in `code/session_order.tsv` (columns `participant_id`, `session_number`,
+`session`), with `participant_id` exactly as in the survey data (a leading `sub-` is ignored) and the
+session names letters and digits only. PRISM never creates or guesses an order: a participant who is
+missing, or whose number of responses differs from their recorded sessions, stops the import with a
+list of who is affected. Name such responses yourself in the review (`sessions set --session
+sleepdep`); a response you name is final.
+
+```bash
+# Show the declaration and the recorded order
+python prism_tools.py session-order show --project /absolute/path/to/my-project --json
+
+# One participant at a time ...
+python prism_tools.py session-order set --project /absolute/path/to/my-project --participant P01 --number 1 --session sleepdep
+python prism_tools.py session-order set --project /absolute/path/to/my-project --participant P01 --number 2 --session rested
+
+# ... or a prepared .tsv/.csv/.xlsx (merged into what is recorded; --replace replaces it)
+python prism_tools.py session-order import --project /absolute/path/to/my-project --file order.xlsx
+
+# Remove a participant, or only one number of theirs
+python prism_tools.py session-order unset --project /absolute/path/to/my-project --participant P01 --number 2
+```
+
 `survey convert` and the participants importer stop with the list of unmapped labels until
 they are all in the map. In a longitudinal project `survey convert` imports every session of
 a file with a session column (it never silently picks "the first one"); use

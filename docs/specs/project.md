@@ -40,6 +40,7 @@ Generated from [`app/schemas/stable/project.schema.json`](../../app/schemas/stab
 | `StudyDesign` | object | no | Overall study design characteristics |
 | `StudyDesign.Type` | string | no | Type of study design Allowed: `cross-sectional`, `longitudinal`, `randomized-controlled-trial`, `quasi-experimental`, `case-control`, `cohort`, `single-case`, `mixed-methods`, `other`. |
 | `StudyDesign.Timepoints` | string | no | Whether the study has one timepoint (cross-sectional) or several (longitudinal). Several: every session label of an import must be mapped in code/session_map.j… Allowed: `single`, `multiple`. |
+| `StudyDesign.SessionLabels` | string | no | Time: sessions are waves in the same order for everyone (ses-1, ses-2 or pre/post). Content: sessions are conditions whose order differs per participant (e.g.… Allowed: `time`, `content`. |
 | `StudyDesign.TypeDescription` | string | no | Additional description of study design (e.g., '2x2 factorial design', 'Two-wave panel study with 4-week interval') |
 | `StudyDesign.Blinding` | string | no | Blinding procedure (for experimental studies) Allowed: `none`, `single-blind`, `double-blind`, `triple-blind`, ``. |
 | `StudyDesign.Randomization` | string | no | Randomization procedure description (for experimental studies) |

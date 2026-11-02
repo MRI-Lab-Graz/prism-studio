@@ -64,6 +64,11 @@
           "enum": ["single", "multiple"],
           "description": "Whether the study has one timepoint (cross-sectional) or several (longitudinal). Several: every session label of an import must be mapped in code/session_map.json"
         },
+        "SessionLabels": {
+          "type": "string",
+          "enum": ["time", "content"],
+          "description": "Time: sessions are waves in the same order for everyone (ses-1, ses-2 or pre/post). Content: sessions are conditions whose order differs per participant (e.g. sleepdep / rested in counterbalanced order); you then provide each participant's order, and the folders are named after the condition (ses-rested, not ses-2). Asked when Timepoints is multiple; a project without it behaves as time. Content: provide each participant's order in code/session_order.tsv."
+        },
         "TypeDescription": {
           "type": "string",
           "description": "Additional description of study design (e.g., '2x2 factorial design', 'Two-wave panel study with 4-week interval')"

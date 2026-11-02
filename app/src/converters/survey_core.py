@@ -703,6 +703,7 @@ def _handle_duplicate_ids(
     res_ses_col: str | None = None,
     res_run_col: str | None = None,
     decisions: dict | None = None,
+    order: dict | None = None,
 ) -> tuple[object, str | None, list[str]]:
     """Handle duplicate participant IDs according to duplicate_handling policy.
 
@@ -745,6 +746,8 @@ def _handle_duplicate_ids(
                 date_column,
                 session_column=GENERATED_SESSION_COLUMN,
                 decisions=decisions,
+                order=order,
+                order_id_column=res_id_col,
             )
             df = df.drop(columns=["_dup_norm_id"])
             return df, GENERATED_SESSION_COLUMN, numbering_warnings
@@ -788,6 +791,8 @@ def _handle_duplicate_ids(
                     date_column,
                     session_column=GENERATED_SESSION_COLUMN,
                     decisions=decisions,
+                    order=order,
+                    order_id_column=res_id_col,
                 )
                 df = df.drop(columns=["_dup_norm_id"])
                 warnings.extend(numbering_warnings)

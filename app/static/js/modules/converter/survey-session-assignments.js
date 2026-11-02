@@ -1,5 +1,6 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { SINGLE_BADGE, SINGLE_HINT, isSingleTimepoint } from './single-timepoint.js';
+import { orderGrid, orderPayload } from './session-order-panel.js';
 
 /** Review request body: the uploaded file, or the path picked with Browse. Null until both inputs exist. */
 export function reviewFormData({ file, serverPath, idColumn, skipExisting = false }) {
@@ -12,8 +13,22 @@ export function reviewFormData({ file, serverPath, idColumn, skipExisting = fals
     return formData;
 }
 
-/** Manual overrides are highlighted (they mark a session-mapping problem); left-out rows are muted. */
+const NOT_ORDERED = 'not in session order';
+
+/** A response the session order cannot name still takes part: it needs a name, it is not left out. */
+export function isLeftOut(row) {
+    return row.session === null && row.reason !== NOT_ORDERED;
+}
+
+export function sessionCellText(row) {
+    if (row.reason === NOT_ORDERED) return 'needs a session name (see Session order below)';
+    return isLeftOut(row) ? `left out (${row.reason})` : row.session;
+}
+
+/** Manual overrides are highlighted (they mark a session-mapping problem), and so are responses
+ *  the session order cannot name (to be aligned by hand); left-out rows are muted. */
 export function rowClass(row) {
+    if (row.reason === NOT_ORDERED) return 'table-danger';
     if (row.reason === 'override') return 'table-warning';
     return row.session === null ? 'text-muted' : '';
 }
@@ -68,19 +83,40 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
         const stripes = subjectStripes(rows);
         rows.forEach((r, i) => {
-            const left = r.session === null;
+            const left = isLeftOut(r);
             html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${rowClass(r)}${stripes[i] ? ' subject-alt' : ''}">`
                 + `<td>${esc(r.participant)}</td><td>${esc(r.response_id)}</td>`
                 + `<td>${esc(String(r.date).slice(0, 16))}</td><td>${r.completed ? 'yes' : 'no'}</td>`
                 + `<td>${esc(r.lastpage)}</td>`
-                + `<td class="session-cell">${left ? `left out (${esc(r.reason)})` : esc(r.session)}</td>`
+                + `<td class="session-cell">${esc(sessionCellText(r))}</td>`
                 + `<td><input type="checkbox" data-role="skip" ${left ? 'checked' : ''}></td>`
                 + `<td><input type="text" data-role="label" class="form-control form-control-sm" size="14"`
                 + ` value="${r.reason === 'override' ? esc(r.session) : ''}" placeholder="auto (by date)"></td></tr>`;
         });
         html += '</tbody></table>';
         (data.warnings || []).forEach((w) => { html += `<div class="text-muted">${esc(w)}</div>`; });
+        html += orderHtml(rows, data);
         body.innerHTML = html;
+    }
+
+    // Content project: the numbered sessions are named per participant (code/session_order.tsv).
+    function orderHtml(rows, data) {
+        if (data.session_labels !== 'content') return '';
+        let html = '<div class="mt-3" data-role="session-order"><div class="fw-bold">Session order</div>'
+            + '<div class="text-muted mb-1">Name each participant\'s numbered sessions (letters and digits), '
+            + 'e.g. sleepdep, rested. The number is the order by date.</div>'
+            + '<table class="table table-sm table-bordered mb-2"><thead><tr><th>Participant</th><th>Number</th><th>Session</th></tr></thead><tbody>';
+        orderGrid(rows, data.order).forEach((cell) => {
+            html += `<tr><td>${esc(cell.participant)}</td><td>${esc(cell.number)}</td>`
+                + `<td><input type="text" data-role="order-name" data-participant="${esc(cell.participant)}" data-number="${esc(cell.number)}"`
+                + ` class="form-control form-control-sm" size="14" value="${esc(cell.name)}" placeholder="not named"></td></tr>`;
+        });
+        html += '</tbody></table>'
+            + '<label class="form-label mb-0">Or import a prepared file (participant_id, session_number, session)</label> '
+            + '<input type="file" data-role="order-file" accept=".tsv,.csv,.xlsx" class="form-control form-control-sm">'
+            + '<label class="form-check-label small"><input type="checkbox" data-role="order-replace" class="form-check-input"> '
+            + 'Replace the recorded order instead of merging</label></div>';
+        return html;
     }
 
     let surveyId = 'default';
@@ -93,6 +129,18 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ response_id: responseId, survey_id: surveyId, ...payload }),
             });
+            const data = await response.json();
+            if (response.ok) return true;
+            await load(data.error || 'Save failed');
+        } catch (error) {
+            await load(`Save failed: ${error.message || error}`);
+        }
+        return false;
+    }
+
+    async function postOrder(request) {
+        try {
+            const response = await fetchWithApiFallback('/api/session-order', request);
             const data = await response.json();
             if (response.ok) return true;
             await load(data.error || 'Save failed');
@@ -155,10 +203,35 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             if (toggleBtn?.getAttribute('aria-expanded') === 'true') load();
         });
         body?.addEventListener('change', async (event) => {
+            const role = event.target.dataset?.role;
+            if (role === 'order-name') {
+                const { participant, number } = event.target.dataset;
+                const saved = await postOrder({
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderPayload(participant, number, event.target.value)),
+                });
+                if (saved) await load();
+                return;
+            }
+            if (role === 'order-file') {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                if (body.querySelector('[data-role="order-replace"]')?.checked) formData.append('replace', 'true');
+                try {
+                    const response = await fetchWithApiFallback('/api/session-order/import', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    await load(response.ok ? '' : data.error || 'Import failed');
+                } catch (error) {
+                    await load(`Import failed: ${error.message || error}`);
+                }
+                return;
+            }
             const row = event.target.closest('tr[data-response-id]');
             if (!row) return;
             const responseId = row.dataset.responseId;
-            const role = event.target.dataset.role;
             const hasDecision = ['override', 'skipped', 'included'].includes(row.dataset.reason);
             let payload = null;
             if (role === 'skip') {
