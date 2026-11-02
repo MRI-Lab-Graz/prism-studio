@@ -68,12 +68,7 @@ def capture_no_project_shots(page: Page, base_url: str) -> None:
     print("[no project] Study Metadata card revealed")
     page.fill("#projectName", "demo_project")
     page.dispatch_event("#projectName", "input")
-    page.wait_for_selector("#studyMetadataCard", state="visible", timeout=5000)
-    page.click("#studyMetadataCard .card-header")
-    page.wait_for_selector("#studyMetadataSection.show", state="visible")
-    page.click("#smCoreSetupGroup button")
-    page.wait_for_selector("#smCoreSetupGroupBody.show", state="visible")
-    page.locator("#smBasics").scroll_into_view_if_needed()
+    page.wait_for_selector("#studyMetadataSection.show", state="visible", timeout=5000)  # opens by itself
     shoot(page, "prism-studio-project-metadata.png")
 
 
