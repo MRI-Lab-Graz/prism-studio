@@ -1,6 +1,7 @@
 """A test that saves app settings must not leak them into the next test (importing prism-studio.py saves
 settings, which once made the survey parity tests resolve the official library from a stale `../official`)."""
 
+import json
 import sys
 from pathlib import Path
 
@@ -14,7 +15,8 @@ def test_a_saved_setting_exists_inside_its_own_test():
     assert Path(get_app_settings_path(None)).exists()
 
 
-def test_the_next_test_starts_without_settings():
-    from src.config import get_app_settings_path
+def test_the_next_test_starts_with_default_settings():
+    from src.config import get_app_settings_path, load_app_settings
 
-    assert not Path(get_app_settings_path(None)).exists()
+    assert load_app_settings(None).global_library_root is None
+    assert json.loads(Path(get_app_settings_path(None)).read_text(encoding="utf-8")) == {}

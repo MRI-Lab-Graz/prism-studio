@@ -60,7 +60,10 @@ def _no_user_app_settings(monkeypatch, tmp_path_factory):
 
     import src.config  # noqa: F401  (make sure the module is loaded)
 
-    empty = tmp_path_factory.getbasetemp() / "no_user_settings"  # never created: no settings file there
+    empty = tmp_path_factory.getbasetemp() / "no_user_settings"
+    # An empty settings file there: without one the app falls back to the checkout's own app/prism_studio_settings.json.
+    empty.mkdir(parents=True, exist_ok=True)
+    (empty / src.config.APP_SETTINGS_FILENAME).write_text("{}", encoding="utf-8")
     for module in list(sys.modules.values()):
         if getattr(module, "__name__", "").endswith("config") and hasattr(module, "_get_user_app_settings_dir"):
             monkeypatch.setattr(module, "_get_user_app_settings_dir", lambda: empty)
