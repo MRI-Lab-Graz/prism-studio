@@ -116,3 +116,11 @@ def test_merged_bare_readme_survives_a_second_generate(tmp_path):
     readme = (root / "README.md").read_text(encoding="utf-8")
     assert readme.count("Plain BIDS readme text.") == 1
     assert not (root / "README").exists()
+
+
+def test_init_names_the_project_after_the_dataset(tmp_path):
+    root = _bids(tmp_path)
+
+    assert ProjectManager().init_on_existing_bids(str(root))["success"]
+
+    assert json.loads((root / "project.json").read_text(encoding="utf-8"))["name"] == "Colleague DS"

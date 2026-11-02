@@ -283,7 +283,6 @@ export function initProjectInitOnBidsController({
         const bidsPath = (document.getElementById('initBidsPath')?.value || '').trim();
         const clonePath = (document.getElementById('initBidsClonePath')?.value || '').trim();
         const remoteUrl = (document.getElementById('initBidsRemoteUrl')?.value || '').trim();
-        const displayName = (document.getElementById('initBidsName')?.value || '').trim();
         const useDatalad = document.getElementById('initBidsUseDatalad')?.checked !== false;
         const autoEnvironmentEnrichment = document.getElementById('initBidsAutoEnvironmentEnrichment')?.checked !== false;
         const fetchRemoteDerivatives = document.getElementById('initBidsFetchDerivatives')?.checked === true;
@@ -414,7 +413,6 @@ export function initProjectInitOnBidsController({
                     path: targetPath || undefined,
                     bids_path: hasRemote ? undefined : bidsPath,
                     clone_path: hasRemote ? clonePath : undefined,
-                    name: displayName || undefined,
                     use_datalad: useDatalad,
                     remote_url: hasRemote ? remoteUrl : undefined,
                     source_type: hasRemote ? 'remote' : 'local',
@@ -505,7 +503,7 @@ export function initProjectInitOnBidsController({
                 `;
                 applyCurrentProject(result.current_project);
                 addRecentProject(
-                    result.current_project?.name || displayName || targetPath.split(/[\\/]/).pop(),
+                    result.current_project?.name || targetPath.split(/[\\/]/).pop(),
                     result.path,
                     result.current_project?.icon
                 );
