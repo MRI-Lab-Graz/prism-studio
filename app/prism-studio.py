@@ -744,6 +744,11 @@ modular_blueprints = [
         "session_assignments_bp",
         "session_assignments",
     ),
+    (
+        "src.web.blueprints.session_order_blueprint",
+        "session_order_bp",
+        "session_order",
+    ),
     ("src.web.blueprints.validation", "validation_bp", "validation"),
     ("src.web.blueprints.tools", "tools_bp", "tools"),
     (

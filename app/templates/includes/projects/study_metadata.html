@@ -256,6 +256,17 @@
                                         <option value="multiple">Several timepoints (longitudinal)</option>
                                     </select>
                                 </div>
+                                <div class="col-md-4" id="smSDSessionLabelsGroup" style="display: none;">
+                                    <label class="form-label fw-bold small" for="smSDSessionLabels">
+                                        <span class="badge bg-danger">REQUIRED</span> Sessions are
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smSDSessionLabels">
+                                        <option value="">-- Select --</option>
+                                        <option value="time">Time (waves, same order for everyone)</option>
+                                        <option value="content">Content (conditions, order differs per participant)</option>
+                                    </select>
+                                    <div class="form-text" id="smSDSessionLabelsInfo"></div>
+                                </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Condition Type</label>
                                     <select class="form-select form-select-sm" id="smSDConditionType">

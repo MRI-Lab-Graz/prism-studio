@@ -94,3 +94,19 @@ def test_review_table_reports_instead_of_raising():
 def test_without_an_order_the_numbers_stay():
     out, _ = number_sessions_by_date(frame(), "token")
     assert names(out)[("P02", "2026-02")] == "2"
+
+
+def test_review_rows_carry_the_date_number_so_the_page_never_counts():
+    rows, _ = session_assignment_table(frame(), "token", order={"P01": ORDER["P01"]})
+    by_response = {r["response_id"]: r for r in rows}
+    assert [(by_response[i]["number"], by_response[i]["session"]) for i in ("1", "2")] == [
+        ("1", "sleepdep"), ("2", "rested"),
+    ]
+    assert [by_response[i]["number"] for i in ("3", "4")] == ["1", "2"]  # P02 is not named, still numbered
+
+
+def test_a_named_response_has_no_number():
+    rows, _ = session_assignment_table(
+        frame(), "token", order=ORDER, decisions={"1": {"session": "sleepdep"}}
+    )
+    assert {r["response_id"]: r["number"] for r in rows}["1"] is None

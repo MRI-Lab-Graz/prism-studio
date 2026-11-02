@@ -232,6 +232,7 @@ def _outcomes(
         index=df.index,
     )
     res["session"] = None
+    res["number"] = None  # the date-order number of a numbered response, before any naming
     res["reason"] = ""
 
     for i, row in res.iterrows():
@@ -262,9 +263,9 @@ def _outcomes(
             "Fix these responses in LimeSurvey before numbering sessions."
         )
     ordered = auto.sort_values(["participant", "when"], kind="stable")
-    res.loc[ordered.index, "session"] = (
-        ordered.groupby("participant").cumcount() + 1
-    ).astype(str)
+    numbers = (ordered.groupby("participant").cumcount() + 1).astype(str)
+    res.loc[ordered.index, "session"] = numbers
+    res.loc[ordered.index, "number"] = numbers
 
     problems: list[str] = []
     if order is not None:
@@ -429,6 +430,7 @@ def session_assignment_table(
             "completed": bool(r["completed"]),
             "lastpage": r["lastpage"],
             "session": r["session"],
+            "number": r["number"] if pd.notna(r["number"]) else None,
             "reason": r["reason"],
         }
         for _, r in res.sort_values(["participant", "when"], kind="stable").iterrows()

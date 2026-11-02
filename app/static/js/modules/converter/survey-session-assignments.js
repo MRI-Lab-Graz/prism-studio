@@ -1,5 +1,6 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { SINGLE_BADGE, SINGLE_HINT, isSingleTimepoint } from './single-timepoint.js';
+import { orderGrid, orderPayload } from './session-order-panel.js';
 
 /** Review request body: the uploaded file, or the path picked with Browse. Null until both inputs exist. */
 export function reviewFormData({ file, serverPath, idColumn, skipExisting = false }) {
@@ -80,7 +81,26 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         });
         html += '</tbody></table>';
         (data.warnings || []).forEach((w) => { html += `<div class="text-muted">${esc(w)}</div>`; });
+        html += orderHtml(rows, data);
         body.innerHTML = html;
+    }
+
+    // Content project: the numbered sessions are named per participant (code/session_order.tsv).
+    function orderHtml(rows, data) {
+        if (data.session_labels !== 'content') return '';
+        let html = '<div class="mt-3" data-role="session-order"><div class="fw-bold">Session order</div>'
+            + '<div class="text-muted mb-1">Name each participant\'s numbered sessions (letters and digits), '
+            + 'e.g. sleepdep, rested. The number is the order by date.</div>'
+            + '<table class="table table-sm table-bordered mb-2"><thead><tr><th>Participant</th><th>Number</th><th>Session</th></tr></thead><tbody>';
+        orderGrid(rows, data.order).forEach((cell) => {
+            html += `<tr><td>${esc(cell.participant)}</td><td>${esc(cell.number)}</td>`
+                + `<td><input type="text" data-role="order-name" data-participant="${esc(cell.participant)}" data-number="${esc(cell.number)}"`
+                + ` class="form-control form-control-sm" size="14" value="${esc(cell.name)}" placeholder="not named"></td></tr>`;
+        });
+        html += '</tbody></table>'
+            + '<label class="form-label mb-0">Or import a prepared file (participant_id, session_number, session)</label> '
+            + '<input type="file" data-role="order-file" accept=".tsv,.csv,.xlsx" class="form-control form-control-sm"></div>';
+        return html;
     }
 
     let surveyId = 'default';
@@ -93,6 +113,18 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ response_id: responseId, survey_id: surveyId, ...payload }),
             });
+            const data = await response.json();
+            if (response.ok) return true;
+            await load(data.error || 'Save failed');
+        } catch (error) {
+            await load(`Save failed: ${error.message || error}`);
+        }
+        return false;
+    }
+
+    async function postOrder(request) {
+        try {
+            const response = await fetchWithApiFallback('/api/session-order', request);
             const data = await response.json();
             if (response.ok) return true;
             await load(data.error || 'Save failed');
@@ -155,10 +187,34 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             if (toggleBtn?.getAttribute('aria-expanded') === 'true') load();
         });
         body?.addEventListener('change', async (event) => {
+            const role = event.target.dataset?.role;
+            if (role === 'order-name') {
+                const { participant, number } = event.target.dataset;
+                const saved = await postOrder({
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderPayload(participant, number, event.target.value)),
+                });
+                if (saved) await load();
+                return;
+            }
+            if (role === 'order-file') {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const response = await fetchWithApiFallback('/api/session-order/import', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    await load(response.ok ? '' : data.error || 'Import failed');
+                } catch (error) {
+                    await load(`Import failed: ${error.message || error}`);
+                }
+                return;
+            }
             const row = event.target.closest('tr[data-response-id]');
             if (!row) return;
             const responseId = row.dataset.responseId;
-            const role = event.target.dataset.role;
             const hasDecision = ['override', 'skipped', 'included'].includes(row.dataset.reason);
             let payload = null;
             if (role === 'skip') {
