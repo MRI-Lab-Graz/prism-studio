@@ -124,3 +124,32 @@ def test_init_names_the_project_after_the_dataset(tmp_path):
     assert ProjectManager().init_on_existing_bids(str(root))["success"]
 
     assert json.loads((root / "project.json").read_text(encoding="utf-8"))["name"] == "Colleague DS"
+
+
+PRISM_MESSAGE = "If you use this dataset, please cite it using the metadata from this file."  # what PRISM writes itself
+
+
+def test_init_hands_a_citation_cff_over_when_project_json_holds_all_of_it(tmp_path):
+    """Nothing of PRISM's exists yet at init, so the file's content moves into project.json and the file is then
+    PRISM's own rendering: Citation Health has nothing to say."""
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION.replace("Please cite", PRISM_MESSAGE), encoding="utf-8")
+
+    pm = ProjectManager()
+    assert pm.init_on_existing_bids(str(root))["success"]
+
+    status = pm.get_citation_cff_status(root)
+    assert status["valid"] and status["consistent"], status
+    assert "title: \"Colleague DS\"" in (root / "CITATION.cff").read_text(encoding="utf-8")  # PRISM's own rendering
+    assert "Jane" in (root / "CITATION.cff").read_text(encoding="utf-8")  # still her authors
+
+
+def test_init_leaves_a_citation_cff_alone_when_it_holds_something_prism_cannot(tmp_path):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION, encoding="utf-8")  # has its own message
+
+    result = ProjectManager().init_on_existing_bids(str(root))
+
+    assert (root / "CITATION.cff").read_text(encoding="utf-8") == CITATION
+    warnings = [e["message"] for e in result["log"] if e["level"] == "warning"]
+    assert any("CITATION.cff" in w and "message" in w for w in warnings), warnings

@@ -641,6 +641,19 @@ class ProjectManager:
             elif project_json_created:
                 if self.import_citation_cff_into_project_json(project_path):
                     add_log("Took authors and citation metadata from the existing CITATION.cff.", "step")
+                    # project.json holds it now, so the file becomes PRISM's rendering of it - unless that would
+                    # lose something PRISM has no field for (then the file stays as it came).
+                    unkept = self._citation_cff_content_prism_would_lose(project_path)
+                    if unkept:
+                        add_log(
+                            "CITATION.cff was kept as it came: PRISM cannot hold its "
+                            + ", ".join(f"'{key}'" for key in unkept)
+                            + ", so Citation Health will report that it differs.",
+                            "warning",
+                        )
+                    else:
+                        self.regenerate_citation_cff(project_path)
+                        add_log("CITATION.cff now follows PRISM's format; nothing in it was lost.", "step")
                 else:
                     add_log("Existing CITATION.cff could not be read; it was left untouched.", "warning")
 
@@ -9004,6 +9017,21 @@ participants/sociodemographics import step, not at project creation.
         CrossPlatformFile.write_text(
             str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
         )
+
+    def _citation_cff_content_prism_would_lose(self, project_path: Path) -> List[str]:
+        """The keys of the CITATION.cff on disk whose value PRISM's own rendering of project.json would change."""
+        try:
+            on_disk = yaml.safe_load((Path(project_path) / "CITATION.cff").read_text(encoding="utf-8"))
+            rendered = yaml.safe_load(self._build_expected_citation_cff_content(Path(project_path)))
+        except (OSError, yaml.YAMLError):
+            return ["file"]
+        if not isinstance(on_disk, dict) or not isinstance(rendered, dict):
+            return ["file"]
+        return [
+            str(key)
+            for key, value in on_disk.items()
+            if key not in ("cff-version", "date-released") and rendered.get(key) != value
+        ]
 
     def import_citation_cff_into_project_json(self, project_path: Path) -> bool:
         """Fill the project.json fields that are still empty from an existing CITATION.cff.
