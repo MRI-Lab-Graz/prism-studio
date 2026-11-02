@@ -28,11 +28,11 @@ export function createRecentProjectsController({
     resolveProjectIconClass,
     getCurrentProjectIcon,
 }) {
-    function syncRecentProjectsToServer(payload) {
+    function syncRecentProjectsToServer(body) {
         fetchWithApiFallback('/api/projects/recent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Array.isArray(payload) ? { projects: payload } : payload)
+            body: JSON.stringify(body)
         }).catch(() => {
             // localStorage remains fallback source
         });
@@ -68,7 +68,7 @@ export function createRecentProjectsController({
 
     // Replaces the stored list on the server: only for clearing it. Adding sends one project.
     function saveRecentProjects(list) {
-        syncRecentProjectsToServer(cacheRecentProjects(list));
+        syncRecentProjectsToServer({ projects: cacheRecentProjects(list) });
     }
 
     function addRecentProject(name, path, icon = '') {
