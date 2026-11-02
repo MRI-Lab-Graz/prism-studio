@@ -6,10 +6,14 @@ following the AND (Austrian NeuroCloud) dataset documentation standard.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 from src.eligibility import screening_only_ids
+
+_MERGED_HEADING = "## Original README (merged from existing BIDS dataset)"
+_GENERATED_FOOTER = re.compile(r"\*Generated with \[?PRISM Studio")
 
 
 class ReadmeGenerator:
@@ -593,19 +597,22 @@ choose.
 
         content = self.generate()
 
-        # Merge bare README if present (typical in plain BIDS datasets)
+        # The dataset's own README text is kept below the generated part: a README.md
+        # PRISM did not write, the section an earlier run already merged, and a bare README.
+        originals = []
+        if output_path.is_file():
+            existing = output_path.read_text(encoding="utf-8").strip()
+            if _MERGED_HEADING in existing:
+                originals.append(existing.split(_MERGED_HEADING, 1)[1].strip())
+            elif existing and not _GENERATED_FOOTER.search(existing):
+                originals.append(existing)
+
         bare_readme = self.project_path / "README"
         if bare_readme.exists() and bare_readme.is_file():
             try:
                 old_content = bare_readme.read_text(encoding="utf-8").strip()
                 if old_content:
-                    content = (
-                        content.rstrip()
-                        + "\n\n---\n\n"
-                        + "## Original README (merged from existing BIDS dataset)\n\n"
-                        + old_content
-                        + "\n"
-                    )
+                    originals.append(old_content)
                 bare_readme.unlink()
                 self.merge_note = (
                     "Existing bare README was merged into README.md and removed "
@@ -613,6 +620,9 @@ choose.
                 )
             except OSError:
                 pass  # leave the bare file untouched if we can't remove it
+
+        if originals:
+            content = content.rstrip() + "\n\n---\n\n" + _MERGED_HEADING + "\n\n" + "\n\n".join(originals) + "\n"
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
