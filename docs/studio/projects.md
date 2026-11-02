@@ -157,6 +157,8 @@ help mode, DataLad for new projects, and the DataLad card of the loaded project)
 their own **Settings** page (gear icon in the navbar). On the command line:
 `prism_tools.py settings show|set`.
 
+![PRISM Studio Settings page](../_static/screenshots/prism-studio-settings.png)
+
 ## Time or content sessions
 
 A project declares whether its sessions follow time or content (`SessionLabels`). In a
