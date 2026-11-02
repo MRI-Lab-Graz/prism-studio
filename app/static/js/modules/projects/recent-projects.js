@@ -2,6 +2,13 @@ import { isSameProjectPath } from '../../shared/project-state.js';
 
 const recentProjectsKey = 'prism_recent_projects';
 const recentProjectStatusCache = new Map();
+const recentShown = 5;
+const recentStoredMax = 20;
+
+/** The first five recent projects get a button each; the rest go into the "older" pull-down. */
+export function splitRecent(list) {
+    return { shown: list.slice(0, recentShown), older: list.slice(recentShown) };
+}
 
 function normalizeRecentProjectEntry(entry, resolveProjectIconClass) {
     if (!entry || typeof entry !== 'object') return null;
@@ -21,11 +28,11 @@ export function createRecentProjectsController({
     resolveProjectIconClass,
     getCurrentProjectIcon,
 }) {
-    function syncRecentProjectsToServer(list) {
+    function syncRecentProjectsToServer(payload) {
         fetchWithApiFallback('/api/projects/recent', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projects: list })
+            body: JSON.stringify(Array.isArray(payload) ? { projects: payload } : payload)
         }).catch(() => {
             // localStorage remains fallback source
         });
@@ -46,17 +53,22 @@ export function createRecentProjectsController({
         }
     }
 
-    function saveRecentProjects(list) {
+    function cacheRecentProjects(list) {
         const limited = (Array.isArray(list) ? list : [])
             .map((entry) => normalizeRecentProjectEntry(entry, resolveProjectIconClass))
             .filter(Boolean)
-            .slice(0, 5);
+            .slice(0, recentStoredMax);
         try {
             localStorage.setItem(recentProjectsKey, JSON.stringify(limited));
         } catch (err) {
             console.warn('Could not save recent projects', err);
         }
-        syncRecentProjectsToServer(limited);
+        return limited;
+    }
+
+    // Replaces the stored list on the server: only for clearing it. Adding sends one project.
+    function saveRecentProjects(list) {
+        syncRecentProjectsToServer(cacheRecentProjects(list));
     }
 
     function addRecentProject(name, path, icon = '') {
@@ -64,9 +76,11 @@ export function createRecentProjectsController({
         const safeName = name && name.trim() ? name.trim() : path.split(/[\\/]/).pop();
         const safeIcon = resolveProjectIconClass(icon || getCurrentProjectIcon());
         const list = getRecentProjects().filter((project) => !isSameProjectPath(project.path, path));
-        list.unshift({ name: safeName, path, icon: safeIcon });
+        const project = { name: safeName, path, icon: safeIcon };
+        list.unshift(project);
         recentProjectStatusCache.delete(path);
-        saveRecentProjects(list);
+        cacheRecentProjects(list);
+        syncRecentProjectsToServer({ project });
         renderRecentProjects();
     }
 
@@ -103,6 +117,7 @@ export function createRecentProjectsController({
     function renderRecentProjects() {
         const block = document.getElementById('recentProjectsBlock');
         const listEl = document.getElementById('recentProjectsList');
+        const olderEl = document.getElementById('recentProjectsOlder');
         if (!block || !listEl) return;
 
         const list = getRecentProjects();
@@ -116,26 +131,21 @@ export function createRecentProjectsController({
             project,
             available: await isRecentProjectAvailable(project.path)
         }))).then((results) => {
+            // An unavailable folder is only hidden: the server keeps it for when the drive is back.
             const availableProjects = results
                 .filter(({ available }) => available !== false)
                 .map(({ project }) => project);
 
-            const unavailableProjects = results.filter(({ available }) => available === false);
-            if (unavailableProjects.length > 0) {
-                results
-                    .filter(({ available }) => available === false)
-                    .forEach(({ project }) => recentProjectStatusCache.delete(project.path));
-                saveRecentProjects(availableProjects);
-            }
-
             if (!availableProjects.length) {
                 block.style.display = 'none';
                 listEl.innerHTML = '';
+                if (olderEl) olderEl.classList.add('d-none');
                 return;
             }
 
+            const { shown, older } = splitRecent(availableProjects);
             block.style.display = 'block';
-            listEl.innerHTML = availableProjects.map((project, index) => {
+            listEl.innerHTML = shown.map((project, index) => {
                 const label = project.name || project.path;
                 const iconClass = resolveProjectIconClass(project.icon);
                 const safeLabel = escapeHtml(label);
@@ -146,6 +156,13 @@ export function createRecentProjectsController({
                         <span class="me-1" aria-hidden="true">${safeIconClass}</span>${safeLabel}
                     </button>`;
             }).join('');
+
+            if (olderEl) {
+                olderEl.classList.toggle('d-none', !older.length);
+                olderEl.innerHTML = `<option value="">Older projects (${older.length})…</option>` + older.map((project) => (
+                    `<option value="${escapeHtml(project.path || '')}" title="${escapeHtml(project.path || '')}">${escapeHtml(project.name || project.path)}</option>`
+                )).join('');
+            }
         }).catch(() => {
             block.style.display = 'none';
             listEl.innerHTML = '';
@@ -157,7 +174,7 @@ export function createRecentProjectsController({
             .then(response => response.json())
             .then((data) => {
                 if (!data || !data.success || !Array.isArray(data.projects)) return;
-                localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, 5)));
+                localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, recentStoredMax)));
                 renderRecentProjects();
             })
             .catch(() => {

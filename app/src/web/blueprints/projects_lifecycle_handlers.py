@@ -11,7 +11,12 @@ from src.project_delete import (
     delete_project,
     derive_project_name,
 )
-from .projects_helpers import _load_recent_projects, _save_recent_projects
+from .projects_helpers import (
+    _load_recent_projects,
+    _record_recent_project,
+    _save_recent_projects,
+    _stored_recent_projects,
+)
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
 from .conversion_job_store import ConversionJobStore
@@ -561,7 +566,7 @@ def handle_delete_project(project_manager, get_current_project, clear_current_pr
         try:
             remaining = [
                 entry
-                for entry in _load_recent_projects()
+                for entry in _stored_recent_projects()
                 if str(entry.get("path") or "") != root_path
             ]
             _save_recent_projects(remaining)
@@ -681,8 +686,13 @@ def handle_get_recent_projects():
 
 
 def handle_set_recent_projects():
-    """Replace recent projects list in user-scoped settings storage."""
+    """Record one project (`project`) or replace the whole list (`projects`, used to clear it)."""
     data = request.get_json(silent=True) or {}
+    if isinstance(data.get("project"), dict):
+        try:
+            return jsonify({"success": True, "projects": _record_recent_project(data["project"])})
+        except Exception as error:
+            return jsonify({"success": False, "error": str(error)}), 500
     projects = data.get("projects")
     if not isinstance(projects, list):
         return jsonify({"success": False, "error": "projects must be a list"}), 400

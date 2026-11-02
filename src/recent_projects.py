@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+RECENT_MAX = 20  # the stored history; the project page shows the first 5 and lists the rest
+
+
+def record_recent(stored: list[dict], entry: dict) -> list[dict]:
+    """`entry` moved to the front of `stored` (same path = same project), the list cut to RECENT_MAX."""
+    return [entry, *(p for p in stored if p.get("path") != entry.get("path"))][:RECENT_MAX]
+
 
 def find_recent_project(projects: list[dict], query: str) -> dict | None:
     """The project named `query` (case-insensitive); else the most recent one whose name contains it.

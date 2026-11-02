@@ -21,7 +21,7 @@ def test_deleting_a_project_removes_the_same_folder_and_refuses_the_same_way(tmp
     import src.web.blueprints.projects_lifecycle_handlers as lifecycle
     from src.cli.commands.project import cmd_project_delete
 
-    monkeypatch.setattr(lifecycle, "_load_recent_projects", lambda: [])  # the user's real recent list stays untouched
+    monkeypatch.setattr(lifecycle, "_stored_recent_projects", lambda: [])  # the user's real recent list stays untouched
     monkeypatch.setattr(lifecycle, "_save_recent_projects", lambda projects: projects)
 
     def studio_delete(root, name):
