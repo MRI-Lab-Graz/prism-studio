@@ -197,6 +197,10 @@ ENABLE_DATALAD_NEEDS_CONFIRMATION = (
 )
 
 
+# CITATION.cff person fields that a governance contact keeps.
+_CFF_CONTACT_KEYS = ("given-names", "family-names", "name", "email", "orcid", "affiliation", "website")
+
+
 class ProjectManager:
     """
     Manages PRISM project creation and validation.
@@ -635,6 +639,24 @@ class ProjectManager:
                     self._build_expected_citation_cff_content(project_path),
                 )
                 created_files.append("CITATION.cff")
+            elif project_json_created:
+                if self.import_citation_cff_into_project_json(project_path):
+                    add_log("Took authors and citation metadata from the existing CITATION.cff.", "step")
+                    # project.json holds it now, so the file becomes PRISM's rendering of it - unless that would
+                    # lose something PRISM has no field for (then the file stays as it came).
+                    unkept = self._citation_cff_content_prism_would_lose(project_path)
+                    if unkept:
+                        add_log(
+                            "CITATION.cff was kept as it came: PRISM cannot hold its "
+                            + ", ".join(f"'{key}'" for key in unkept)
+                            + ", so Citation Health will report that it differs.",
+                            "warning",
+                        )
+                    else:
+                        self.regenerate_citation_cff(project_path)
+                        add_log("CITATION.cff now follows PRISM's format; nothing in it was lost.", "step")
+                else:
+                    add_log("Existing CITATION.cff could not be read; it was left untouched.", "warning")
 
             # --- CHANGES (BIDS standard) ------------------------------------
             changes_path = project_path / "CHANGES"
@@ -717,6 +739,7 @@ class ProjectManager:
             result = {
                 "success": True,
                 "path": str(project_path),
+                "name": self._load_json_dict(project_path / "project.json").get("name") or project_path.name,
                 "created_files": created_files,
                 "message": msg,
                 "log": log,
@@ -8996,6 +9019,61 @@ participants/sociodemographics import step, not at project creation.
         CrossPlatformFile.write_text(
             str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
         )
+
+    def _citation_cff_content_prism_would_lose(self, project_path: Path) -> List[str]:
+        """The keys of the CITATION.cff on disk whose value PRISM's own rendering of project.json would change."""
+        try:
+            on_disk = yaml.safe_load((Path(project_path) / "CITATION.cff").read_text(encoding="utf-8"))
+            rendered = yaml.safe_load(self._build_expected_citation_cff_content(Path(project_path)))
+        except (OSError, yaml.YAMLError):
+            return ["file"]
+        if not isinstance(on_disk, dict) or not isinstance(rendered, dict):
+            return ["file"]
+        return [
+            str(key)
+            for key, value in on_disk.items()
+            if key not in ("cff-version", "date-released") and rendered.get(key) != value
+        ]
+
+    def import_citation_cff_into_project_json(self, project_path: Path) -> bool:
+        """Fill the project.json fields that are still empty from an existing CITATION.cff.
+
+        CITATION.cff is otherwise only written from project.json; an adopted dataset that brings its own
+        (BIDS then leaves Authors out of dataset_description.json) would lose it on the next regenerate.
+        Returns False when there is no readable CITATION.cff.
+        """
+        try:
+            cff = yaml.safe_load((Path(project_path) / "CITATION.cff").read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError):
+            return False
+        if not isinstance(cff, dict):
+            return False
+
+        project_json = Path(project_path) / "project.json"
+        payload = self._load_json_dict(project_json)
+        basics = payload.setdefault("Basics", {})
+        governance = payload.setdefault("governance", {})
+
+        authors = [a for a in self._normalize_list(cff.get("authors")) if isinstance(a, dict)]
+        if authors and not governance.get("contacts") and not basics.get("Authors"):
+            governance["contacts"] = [
+                {k: str(v) for k, v in a.items() if k in _CFF_CONTACT_KEYS and v} for a in authors
+            ]
+            basics["Authors"] = [name for name in map(self._author_display_name, authors) if name]
+        fill = {
+            "Keywords": self._normalize_keywords(cff.get("keywords")),
+            "DatasetDOI": self._normalize_doi(cff.get("doi")),
+            "License": self._normalize_license_value(cff.get("license")),
+            "Description": self._clean_citation_source_text(cff.get("abstract")),
+        }
+        for key, value in fill.items():
+            if value and not basics.get(key):
+                basics[key] = value
+
+        CrossPlatformFile.write_text(
+            str(project_json), json.dumps(payload, indent=2, ensure_ascii=False)
+        )
+        return True
 
     def record_validation_run(
         self, project_path: Path, validator_info: Dict[str, Any]
