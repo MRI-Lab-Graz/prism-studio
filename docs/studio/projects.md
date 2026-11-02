@@ -29,14 +29,20 @@ Fields on the **Create New Project** form:
 - **Project Location** — the parent folder the new project directory is created in.
 - **Use DataLad version control for this new project** — optional checkbox. If
   DataLad/git-annex aren't installed, project creation silently falls back to a
-  non-DataLad project rather than failing.
+  non-DataLad project rather than failing. The switch starts on when the setting
+  *DataLad for new projects* (Settings page) is on; it is off by default.
+
+Choosing **Create New Project** opens **Study Metadata**. **Create Project** stays grey
+until the required fields are filled in: dataset name, an author (with email), three
+keywords and the timepoints. The score row at the top (Required / Core / FAIR) shows
+how far you are, and the button's hint names what is still missing.
 
 There is no modality or session picker at creation time — modalities and sessions are
 no longer chosen up front; they're populated as you actually import data.
 
 ### Importing from a study application
 
-If **MRI-Lab Graz study application import** is enabled in Global Settings, the
+If **MRI-Lab Graz study application import** is enabled on the **Settings** page (gear icon in the navbar), the
 Study Metadata card (shown for both **Create New Project** and **Init PRISM on
 BIDS Dataset**) gets an **Import from study application (survey.json)** file
 button that prefills PI/author/ethics/funding/study fields from a Pavlovia
@@ -44,8 +50,8 @@ study-application export. This format is specific to MRI-Lab Graz's intake
 survey, so the toggle is off by default; external users can leave it off and
 fill in Study Metadata by hand.
 
-Buttons: **Preliminary Save** (saves the form without creating the project yet) and
-**Create Project**.
+There is no preliminary save: **Create Project** (and **Save** for a loaded project)
+waits for the required fields and names the ones still missing.
 
 ### Checked eligibility criteria
 
@@ -95,8 +101,8 @@ same rule applies, so you always know whether a click is needed:
 - Rows that are already in the project when you open it are accepted.
 - The recruitment-location search works the same way: its green **Add Selected Location**
   button accepts the place you searched for.
-- **You cannot save while a draft with content is pending.** Create Project, Preliminary
-  Save and Save are blocked, the pending rows get a yellow outline, and a message says to
+- **You cannot save while a draft with content is pending.** Create Project and
+  Save are blocked, the pending rows get a yellow outline, and a message says to
   click the green check or Cancel. A completely empty draft is simply dropped.
 
 ### What gets created
@@ -130,6 +136,33 @@ The generated `README.md` describes this same layout and points you at `sourceda
 Same file set as project creation, but only for files that don't already exist —
 nothing your existing BIDS dataset already has gets overwritten. If the dataset has a
 legacy `phenotype/` directory, it's auto-imported as part of this step.
+
+The project is named after the dataset (`Name` in `dataset_description.json`); there is
+no separate name field. If the dataset brings its own `CITATION.cff`, its authors,
+keywords, DOI, license and abstract are taken into the still-empty project fields, so a
+later *Regenerate citation* does not replace them with placeholders. The file is
+rewritten in PRISM's format only when nothing in it is lost; otherwise it stays as it
+came and the log says why. The dataset's own `README.md` text is kept below the
+generated README.
+
+## Recent projects
+
+The last 20 projects you opened are remembered. The page shows the 5 most recent;
+older ones are in a pull-down.
+
+## Settings
+
+Global settings (libraries, monitoring, terminal, study-application import, beginner
+help mode, DataLad for new projects, and the DataLad card of the loaded project) live on
+their own **Settings** page (gear icon in the navbar). On the command line:
+`prism_tools.py settings show|set`.
+
+## Time or content sessions
+
+A project declares whether its sessions follow time or content (`SessionLabels`). In a
+content project each participant has a session order file, and date-numbered sessions
+are named from it. Edit the order on the project page's Sessions section or with the
+`session-order` commands (see the [CLI reference](../CLI_REFERENCE.md)).
 
 ## Deleting a project
 

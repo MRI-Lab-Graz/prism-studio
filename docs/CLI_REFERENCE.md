@@ -550,6 +550,16 @@ PRISM project (one or several timepoints): use `survey convert`, which enforces 
 session rule. In a one-timepoint project, `survey convert` with repeated responses that would be
 numbered into several sessions stops with a message; declare several timepoints first.
 
+### Settings
+
+The Settings page as commands. `settings set` changes only the options you name; switches take `on` or `off`.
+
+```bash
+python prism_tools.py settings show
+python prism_tools.py settings set --datalad-for-new-projects on
+python prism_tools.py settings set --personal-library-path /absolute/path/to/my-library
+```
+
 ### Publish
 
 Pushes a DataLad dataset on a department share to its server sibling, but only if the
