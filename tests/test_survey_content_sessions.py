@@ -6,6 +6,7 @@ import pytest
 
 from src.converters.survey import convert_survey_lsa_to_prism_dataset
 from src.project_registration import _output_session_id_fn
+from src.session_assignments import set_assignment
 from src.session_map import save_session_map, session_map_for_conversion
 from src.session_order import SessionsNotOrderedError, set_order_entries
 from tests.lsa_fixtures import make_library, make_lsa
@@ -93,3 +94,43 @@ def test_a_time_project_ignores_a_session_order_file(tmp_path):
     convert(tmp_path, project)
 
     assert sessions(tmp_path, "sub-a") == ["ses-post", "ses-pre"]
+
+
+THIRD_A = ["5", "a", "2026-12-01 10:00:00", "2026-12-01 10:20:00", "5", "1", "1", "1"]
+
+
+def test_a_response_named_by_hand_is_final(tmp_path):
+    project = make_project(tmp_path, order=False)
+    set_order_entries(project, "c", {"1": "rested", "2": "sleepdep"})
+    save_session_map(project, {"1": "pre"})  # a stale number map must not touch a final name
+    set_assignment(project, "1", survey_id="999999", session="baseline")
+    set_assignment(project, "2", survey_id="999999", session="followup")
+
+    convert(tmp_path, project)
+
+    assert sessions(tmp_path, "sub-a") == ["ses-baseline", "ses-followup"]
+    assert sessions(tmp_path, "sub-c") == ["ses-rested", "ses-sleepdep"]
+
+
+def test_a_count_mismatch_stops_until_the_extra_response_is_named(tmp_path):
+    project = make_project(tmp_path)  # a has two entries, the file three completed responses
+    with pytest.raises(SessionsNotOrderedError) as caught:
+        convert(tmp_path, project, ROWS + [THIRD_A])
+    assert caught.value.problems == ["a: 3 responses in this file, 2 in the session order"]
+
+    set_assignment(project, "5", survey_id="999999", session="extra")
+    again = tmp_path / "again"
+    again.mkdir()
+    convert(again, project, ROWS + [THIRD_A])
+
+    assert sessions(again, "sub-a") == ["ses-extra", "ses-rested", "ses-sleepdep"]
+
+
+def test_the_order_is_looked_up_by_the_raw_id_not_the_normalised_one(tmp_path):
+    project = make_project(tmp_path, order=False)
+    set_order_entries(project, "P-01", {"1": "sleepdep", "2": "rested"})  # normalised: sub-P01
+    rows = [[r[0], "P-01", *r[2:]] for r in ROWS[:2]]
+
+    convert(tmp_path, project, rows)
+
+    assert sessions(tmp_path, "sub-P01") == ["ses-rested", "ses-sleepdep"]

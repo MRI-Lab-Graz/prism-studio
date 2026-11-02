@@ -660,3 +660,13 @@ def test_session_order_is_written_identically_by_the_cli_and_studio(tmp_path):
 
     assert (studio_project / ORDER_FILE).read_text() == (cli_project / ORDER_FILE).read_text()
     assert load_session_order(cli_project) == {"P01": {"1": "a"}, "P02": {"1": "b"}, "P03": {"1": "a"}}
+
+    # --replace / "Replace" on import: the recorded order is replaced, not merged.
+    smaller = tmp_path / "smaller.csv"
+    pd.DataFrame({"participant_id": ["P09"], "session_number": [1], "session": ["z"]}).to_csv(smaller, index=False)
+    cmd_session_order_import(SimpleNamespace(project=str(cli_project), file=str(smaller), replace=True))
+    http.post("/api/session-order/import", content_type="multipart/form-data", data={
+        "project_path": path, "replace": "true", "file": (io.BytesIO(smaller.read_bytes()), "smaller.csv"),
+    })
+    assert (studio_project / ORDER_FILE).read_text() == (cli_project / ORDER_FILE).read_text()
+    assert load_session_order(studio_project) == {"P09": {"1": "z"}}

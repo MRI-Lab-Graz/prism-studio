@@ -42,6 +42,7 @@ from ..utils.io import (
 from ..utils.naming import sanitize_id
 from ..bids_integration import check_and_update_bidsignore
 from ..constants import DEFAULT_BIDS_VERSION
+from ..session_assignments import named_sessions, survey_id_of
 from ..session_map import (
     SessionMapError,
     TimepointsNotDeclaredError,
@@ -1404,7 +1405,12 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     timepoints = project_timepoints(project_path) if project_path else None
     session_map = (
-        session_map_for_conversion(project_path)
+        session_map_for_conversion(
+            project_path,
+            named_sessions(project_path, survey_id_of(input_path))
+            if duplicate_handling == "sessions"
+            else (),
+        )
         if project_path and timepoints == "multiple"
         else None
     )
@@ -1579,7 +1585,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
-    from src.session_assignments import load_session_assignments, survey_id_of
+    from src.session_assignments import load_session_assignments
     from src.session_order import content_session_order
 
     all_responses = df  # every response of the file, before incomplete ones are left out

@@ -52,6 +52,15 @@ def survey_id_of(path: str | Path) -> str:
     return DEFAULT_SURVEY
 
 
+def named_sessions(project_path: str | Path, survey_id: str = "default") -> set[str]:
+    """The session names the user gave responses by hand in this survey."""
+    return {
+        decision["session"]
+        for decision in load_session_assignments(project_path, survey_id).values()
+        if decision.get("session")
+    }
+
+
 def _clean(responses: object, where: str) -> dict[str, dict]:
     if not isinstance(responses, dict):
         raise SessionAssignmentError(f"{where} must hold an object under 'responses'")

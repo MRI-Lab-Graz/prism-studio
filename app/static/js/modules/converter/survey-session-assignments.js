@@ -99,7 +99,9 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
         });
         html += '</tbody></table>'
             + '<label class="form-label mb-0">Or import a prepared file (participant_id, session_number, session)</label> '
-            + '<input type="file" data-role="order-file" accept=".tsv,.csv,.xlsx" class="form-control form-control-sm"></div>';
+            + '<input type="file" data-role="order-file" accept=".tsv,.csv,.xlsx" class="form-control form-control-sm">'
+            + '<label class="form-check-label small"><input type="checkbox" data-role="order-replace" class="form-check-input"> '
+            + 'Replace the recorded order instead of merging</label></div>';
         return html;
     }
 
@@ -203,6 +205,7 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
                 if (!file) return;
                 const formData = new FormData();
                 formData.append('file', file);
+                if (body.querySelector('[data-role="order-replace"]')?.checked) formData.append('replace', 'true');
                 try {
                     const response = await fetchWithApiFallback('/api/session-order/import', { method: 'POST', body: formData });
                     const data = await response.json();

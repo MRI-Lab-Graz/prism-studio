@@ -251,9 +251,12 @@ def single_session_warning(label: object) -> str | None:
 
 def session_map_for_conversion(
     project_path: str | Path | None,
+    final_names: Iterable[str] = (),
 ) -> dict[str, str] | None:
     """None when the gate does not apply (no project, single timepoint);
-    the map (possibly empty) for a multiple-timepoint project."""
+    the map (possibly empty) for a multiple-timepoint project. In a content project
+    the names the session order gives, and ``final_names`` (names the user gave a
+    response by hand), are final: they map to themselves."""
     if not project_path:
         return None
     state = project_timepoints(project_path)
@@ -269,6 +272,7 @@ def session_map_for_conversion(
         return mapping
     # Names the order gives are already final: they map to themselves.
     names = {name: name for entries in order.values() for name in entries.values()}
+    names.update({name: name for name in final_names})
     return {**mapping, **names}
 
 
