@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.participants_converter import load_participant_source
 from src.participants_sessions import session_assignment_table
+from src.session_order import content_session_order
 from src.session_assignments import (
     load_session_assignments,
     set_assignment,
@@ -31,6 +32,7 @@ def cmd_sessions_review(args) -> None:
             df, args.id_column, args.date_column, decisions=decisions,
             imported_root=args.project if getattr(args, "skip_existing", False) else None,
             survey_id=survey_id,
+            order=content_session_order(args.project) if args.project else None,
         )
     except (ValueError, OSError) as exc:  # SessionAssignmentError is a ValueError
         _fail(exc)
