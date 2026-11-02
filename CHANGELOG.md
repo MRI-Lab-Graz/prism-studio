@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.24.0] - 2026-11-02
 
 ### Fixed
+- **Create Project no longer turns green before the session labels are answered.** A new project with several timepoints must say
+  whether its sessions follow time or content; the button used to look ready and then refuse on click.
 - **Recent projects keep a history of 20.** The project page shows the last 5 and lists the older ones in a pull-down.
 - **Init on a BIDS dataset keeps the dataset's own CITATION.cff and README.md.** Authors, keywords, DOI, license and abstract from
   an existing `CITATION.cff` fill the still-empty project fields, so the next "Regenerate citation" no longer replaces them with

@@ -244,11 +244,14 @@ def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url
     fill_required_metadata(bare_page, timepoints="")
     expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()  # everything but Timepoints is set
     bare_page.select_option("#smSDTimepoints", "multiple")
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()  # a new multi-session study says time or content
+    bare_page.select_option("#smSDSessionLabels", "time")
     bare_page.click("#createProjectSubmitBtnTop")
 
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
     saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
     assert saved["StudyDesign"]["Timepoints"] == "multiple"
+    assert saved["StudyDesign"]["SessionLabels"] == "time"
 
 
 def test_datalad_setup_check_works_before_any_project_exists(bare_page, studio_url):

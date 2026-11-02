@@ -2402,7 +2402,7 @@ export function updateCreateProjectButton() {
         return;
     }
 
-    const validation = validateAllMandatoryFields();
+    const validation = validateAllMandatoryFields({ forCreation: isCreateMode });
     _updateRequirementGapInlineAlert(validation);
     _updateProjectBoxRequirementAlert(validation);
     _updateProjectMetadataStat(validation);
