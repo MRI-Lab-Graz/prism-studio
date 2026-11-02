@@ -118,3 +118,29 @@ def test_content_session_order_is_none_for_a_time_project(tmp_path):
     assert content_session_order(root) is None
     root = make_project(tmp_path)
     assert content_session_order(root) == {"P01": {"1": "a"}}
+
+
+def test_excel_numbers_are_found_as_the_whole_number(tmp_path):
+    root = make_project(tmp_path)
+    sheet = tmp_path / "order.csv"  # what Excel/pandas leave behind: 1.0, 2.0
+    sheet.write_text("participant_id,session_number,session\n1.0,1.0,a\n1.0,2.0,b\n01,1,c\n", encoding="utf-8")
+
+    import_session_order(root, sheet)
+
+    assert load_session_order(root) == {"1": {"1": "a", "2": "b"}, "01": {"1": "c"}}  # 01 stays 01
+
+
+def test_a_real_decimal_is_not_a_whole_number(tmp_path):
+    root = make_project(tmp_path)
+    sheet = tmp_path / "order.csv"
+    sheet.write_text("participant_id,session_number,session\nP1,1.5,a\n", encoding="utf-8")
+
+    import_session_order(root, sheet)
+
+    assert load_session_order(root) == {"P1": {"1.5": "a"}}
+
+
+def test_sub_prefix_is_ignored_in_any_case(tmp_path):
+    root = make_project(tmp_path)
+    write_order(root, HEADER + "SUB-P01\t1\ta\nSub-P02\t1\tb\n")
+    assert set(load_session_order(root)) == {"P01", "P02"}

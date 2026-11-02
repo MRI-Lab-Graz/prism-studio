@@ -118,9 +118,6 @@ def load_participant_source(
     return df, warnings
 
 
-from src.session_order import content_session_order  # noqa: E402
-
-
 def _import_session_map():
     try:
         from src import session_map
@@ -383,11 +380,13 @@ class ParticipantsConverter:
                 ),
                 None,
             )
-            decisions = None
+            decisions = order = None
             if sessions_from_date:
                 from src.session_assignments import load_session_assignments, survey_id_of
+                from src.session_order import content_session_order
 
                 decisions = load_session_assignments(self.dataset_path, survey_id_of(source_path))
+                order = content_session_order(self.dataset_path)
             df, load_warnings = load_participant_source(
                 source_path,
                 separator=None if separator == "auto" else separator,
@@ -395,7 +394,7 @@ class ParticipantsConverter:
                 sessions_from_date=sessions_from_date,
                 id_column=id_source,
                 decisions=decisions,
-                order=content_session_order(self.dataset_path) if sessions_from_date else None,
+                order=order,
             )
             for w in load_warnings:
                 self._log("WARNING", w)

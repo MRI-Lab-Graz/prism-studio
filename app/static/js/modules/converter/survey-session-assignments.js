@@ -13,8 +13,22 @@ export function reviewFormData({ file, serverPath, idColumn, skipExisting = fals
     return formData;
 }
 
-/** Manual overrides are highlighted (they mark a session-mapping problem); left-out rows are muted. */
+const NOT_ORDERED = 'not in session order';
+
+/** A response the session order cannot name still takes part: it needs a name, it is not left out. */
+export function isLeftOut(row) {
+    return row.session === null && row.reason !== NOT_ORDERED;
+}
+
+export function sessionCellText(row) {
+    if (row.reason === NOT_ORDERED) return 'needs a session name (see Session order below)';
+    return isLeftOut(row) ? `left out (${row.reason})` : row.session;
+}
+
+/** Manual overrides are highlighted (they mark a session-mapping problem), and so are responses
+ *  the session order cannot name (to be aligned by hand); left-out rows are muted. */
 export function rowClass(row) {
+    if (row.reason === NOT_ORDERED) return 'table-danger';
     if (row.reason === 'override') return 'table-warning';
     return row.session === null ? 'text-muted' : '';
 }
@@ -69,12 +83,12 @@ export function createSurveySessionAssignmentsController({ getConvertServerFileP
             + '<th>Session</th><th>Skip</th><th>Session override</th></tr></thead><tbody>';
         const stripes = subjectStripes(rows);
         rows.forEach((r, i) => {
-            const left = r.session === null;
+            const left = isLeftOut(r);
             html += `<tr data-response-id="${esc(r.response_id)}" data-completed="${r.completed ? 'true' : 'false'}" data-reason="${esc(r.reason)}" class="${rowClass(r)}${stripes[i] ? ' subject-alt' : ''}">`
                 + `<td>${esc(r.participant)}</td><td>${esc(r.response_id)}</td>`
                 + `<td>${esc(String(r.date).slice(0, 16))}</td><td>${r.completed ? 'yes' : 'no'}</td>`
                 + `<td>${esc(r.lastpage)}</td>`
-                + `<td class="session-cell">${left ? `left out (${esc(r.reason)})` : esc(r.session)}</td>`
+                + `<td class="session-cell">${esc(sessionCellText(r))}</td>`
                 + `<td><input type="checkbox" data-role="skip" ${left ? 'checked' : ''}></td>`
                 + `<td><input type="text" data-role="label" class="form-control form-control-sm" size="14"`
                 + ` value="${r.reason === 'override' ? esc(r.session) : ''}" placeholder="auto (by date)"></td></tr>`;

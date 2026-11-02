@@ -48,9 +48,17 @@ def order_path(project_path: str | Path) -> Path:
 
 
 def participant_key(raw: object) -> str:
-    """The participant as LimeSurvey has it; one leading 'sub-' is ignored."""
+    """The participant as LimeSurvey has it; one leading 'sub-' (any case, like the
+    conversion's own ID normalisation) is ignored."""
     key = session_label(raw)
-    return key[4:] if key.startswith("sub-") else key
+    return key[4:] if key[:4].lower() == "sub-" else key
+
+
+def _spreadsheet_text(value: object) -> str:
+    """A cell as text; the whole number a spreadsheet stores as 1.0 is 1 (01 and 1.5 stay)."""
+    text = str(value).strip()
+    whole = re.fullmatch(r"(\d+)\.0+", text)
+    return whole.group(1) if whole else text
 
 
 def _name(value: object, where: str) -> str:
@@ -73,14 +81,14 @@ def _add(order: Order, participant: str, number: str, name: str, where: str) -> 
     entries[number] = name
 
 
-def _from_rows(rows: Iterable[Mapping[str, object]], source: str) -> Order:
+def _from_rows(rows: Iterable[tuple[int, Mapping[str, object]]], source: str) -> Order:
     order: Order = {}
     for line, row in rows:
         where = f"{source} line {line}"
         _add(
             order,
-            participant_key(row["participant_id"]),
-            session_label(row["session_number"]),
+            participant_key(_spreadsheet_text(row["participant_id"])),
+            session_label(_spreadsheet_text(row["session_number"])),
             _name(row["session"], where),
             where,
         )
