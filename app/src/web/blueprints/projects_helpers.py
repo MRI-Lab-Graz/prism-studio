@@ -3,6 +3,7 @@ import os
 import sys
 from pathlib import Path
 
+from src.recent_projects import RECENT_MAX, record_recent
 from src.project_icons import (
     normalize_project_icon,
     resolve_project_icon,
@@ -13,7 +14,6 @@ from src.project_root import (  # noqa: F401 - re-exported for blueprints
 )
 
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
-_RECENT_PROJECTS_MAX = 5
 
 
 def _resolve_project_json_path(project_path_value: str) -> Path | None:
@@ -168,32 +168,31 @@ def _normalize_recent_projects(projects: list) -> list[dict]:
         )
         seen.add(canonical_path)
 
-        if len(normalized) >= _RECENT_PROJECTS_MAX:
+        if len(normalized) >= RECENT_MAX:
             break
 
     return normalized
 
 
-def _load_recent_projects() -> list[dict]:
+def _stored_recent_projects() -> list[dict]:
+    """Every stored project, including those whose folder is not there right now."""
     file_path = _recent_projects_file()
     if not file_path.exists():
         return []
-
     try:
         data = json.loads(file_path.read_text(encoding="utf-8"))
-        if not isinstance(data, list):
-            return []
-        # Hidden, not deleted from the file: an unmounted drive comes back when remounted.
-        return _normalize_recent_projects(
-            [
-                item
-                for item in data
-                if isinstance(item, dict)
-                and Path(str(item.get("path") or "")).expanduser().exists()
-            ]
-        )
+        return _normalize_recent_projects(data) if isinstance(data, list) else []
     except Exception:
         return []
+
+
+def _load_recent_projects() -> list[dict]:
+    # Hidden, not deleted from the file: an unmounted drive comes back when remounted.
+    return [
+        item
+        for item in _stored_recent_projects()
+        if Path(item["path"]).expanduser().exists()
+    ]
 
 
 def _save_recent_projects(projects: list[dict]) -> list[dict]:
@@ -201,3 +200,11 @@ def _save_recent_projects(projects: list[dict]) -> list[dict]:
     file_path = _recent_projects_file()
     file_path.write_text(json.dumps(normalized, indent=2), encoding="utf-8")
     return normalized
+
+
+def _record_recent_project(project: dict) -> list[dict]:
+    """Put `project` first in the stored history; older and unmounted ones stay."""
+    entry = _normalize_recent_projects([project])
+    if not entry:
+        return _stored_recent_projects()
+    return _save_recent_projects(record_recent(_stored_recent_projects(), entry[0]))
