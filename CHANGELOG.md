@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-11-02
+
 ### Fixed
+- **Recent projects keep a history of 20.** The project page shows the last 5 and lists the older ones in a pull-down.
 - **Init on a BIDS dataset keeps the dataset's own CITATION.cff and README.md.** Authors, keywords, DOI, license and abstract from
   an existing `CITATION.cff` fill the still-empty project fields, so the next "Regenerate citation" no longer replaces them with
   placeholders. The file is rewritten in PRISM's format only when nothing in it is lost; otherwise it stays as it came and the log
@@ -23,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (DataLad is on the Settings page), and loading a project opens Study Metadata the same way a new project does.
 
 ### Added
+- **Time or content sessions.** A project declares whether its sessions follow time or content (`SessionLabels`). In a content
+  project each participant has a session order file, and date-numbered sessions are named from it; the order is edited in Studio
+  and with the `session-order` commands. A response named by hand is final.
 - **Settings page.** The global settings (libraries, monitoring, terminal, study-application import) moved from the bottom of the
   project page to their own `/settings` page (gear icon in the navbar). Beginner help mode moved there from the Projects menu. New
   setting `datalad_for_new_projects` (`prism_tools.py settings set --datalad-for-new-projects on`, off by default) starts the Create
