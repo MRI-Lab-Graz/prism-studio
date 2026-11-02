@@ -35,6 +35,7 @@ session_label = _import_session_label()
 
 MAP_FILE = Path("code") / "session_map.json"
 TIMEPOINT_VALUES = ("single", "multiple")
+SESSION_LABEL_VALUES = ("time", "content")
 _TARGET = re.compile(r"[A-Za-z0-9]+")
 
 
@@ -72,9 +73,8 @@ def map_path(project_path: str | Path) -> Path:
     return _root(project_path) / MAP_FILE
 
 
-def project_timepoints(project_path: str | Path) -> str | None:
-    """'single', 'multiple', 'undeclared' (project.json without a valid
-    StudyDesign.Timepoints) or None (no project.json: not a PRISM project)."""
+def _study_design(project_path: str | Path) -> dict | None:
+    """project.json's StudyDesign ({} when absent); None when there is no project.json."""
     pj = _root(project_path) / "project.json"
     if not pj.is_file():
         return None
@@ -83,8 +83,34 @@ def project_timepoints(project_path: str | Path) -> str | None:
     except (OSError, ValueError) as exc:
         raise SessionMapError(f"{pj} could not be read: {exc}") from exc
     design = data.get("StudyDesign") if isinstance(data, dict) else None
-    value = design.get("Timepoints") if isinstance(design, dict) else None
+    return design if isinstance(design, dict) else {}
+
+
+def project_timepoints(project_path: str | Path) -> str | None:
+    """'single', 'multiple', 'undeclared' (project.json without a valid
+    StudyDesign.Timepoints) or None (no project.json: not a PRISM project)."""
+    design = _study_design(project_path)
+    if design is None:
+        return None
+    value = design.get("Timepoints")
     return value if value in TIMEPOINT_VALUES else "undeclared"
+
+
+def project_session_labels(project_path: str | Path) -> str:
+    """'content' when a multiple-timepoint project declares StudyDesign.SessionLabels
+    = content; 'time' otherwise (absent, or one timepoint, where the field is ignored).
+    A present but unknown value is an error, never silently 'time'."""
+    if project_timepoints(project_path) != "multiple":
+        return "time"
+    value = _study_design(project_path).get("SessionLabels")
+    if value is None:
+        return "time"
+    if value not in SESSION_LABEL_VALUES:
+        raise SessionMapError(
+            f"StudyDesign.SessionLabels must be 'time' or 'content', got {value!r}. "
+            "Fix it under Study Design on the Projects page."
+        )
+    return value
 
 
 def _clean(mapping: object, where: str) -> dict[str, str]:
