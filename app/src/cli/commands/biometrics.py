@@ -48,7 +48,7 @@ def cmd_biometrics_convert(args) -> None:
     """Handle 'biometrics convert': what Studio's Convert does, including saving into the project."""
     import tempfile
 
-    from src.conversion_to_project import plan_template_copies, save_conversion_to_project
+    from src.conversion_to_project import plan_template_copies, print_log, save_conversion_to_project
     from src.converters.biometrics import (
         convert_biometrics_table_to_prism_dataset,
     )  # lazy
@@ -124,7 +124,7 @@ def cmd_biometrics_convert(args) -> None:
                 run_message="PRISM: Copy converted biometrics files into project",
                 conv_type="biometrics",
                 extra_pairs=plan_template_copies("biometrics", library_dir, result.tasks_included, project_path),
-                log_fn=lambda message, level="info": print(message) if message else None,
+                log_fn=print_log,
             )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

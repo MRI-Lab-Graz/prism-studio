@@ -295,7 +295,7 @@ def infer_tasks_against_official_templates(
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-EMPTY_MATCHING = {
+EMPTY_MATCHING: dict[str, Any] = {
     "input_file": None, "official_template_count": 0, "matched_tasks": [], "copied_tasks": [], "existing_tasks": [],
     "missing_official_tasks": [], "detected_sessions": [], "task_runs": {}, "session_column": None, "run_column": None,
     "match_error": None,

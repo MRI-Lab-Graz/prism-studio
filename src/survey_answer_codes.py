@@ -62,7 +62,7 @@ def apply_answer_numbers(template: dict, mapping: dict[str, str]) -> list[str]:
     return targets
 
 
-def stored_code_as_number(value, item: dict):
+def stored_code_as_number(value, item: dict | None):
     """The number the item's template gives this stored answer code (ADS2 -> "2"), else the value."""
     answer_codes = (item.get("LimeSurvey") or {}).get("answerCodes") if isinstance(item, dict) else None
     if not answer_codes:

@@ -443,3 +443,9 @@ def test_cli_and_studio_agree_on_which_templates_are_incomplete(tmp_path):
         incomplete = bool(studio)
         assert (f"survey-{task}.json" in issues) == incomplete, f"{task}: CLI and Studio disagree\n{result.stdout}"
     assert result.returncode == 1
+
+
+def test_required_field_paths_skips_a_section_without_a_required_list():
+    schema = {"properties": {"Technical": {"required": ["Respondent"]}, "Study": {}, "I18n": {"required": None}}}
+
+    assert required_field_paths(schema) == ["Technical/Respondent"]

@@ -234,7 +234,7 @@ def cmd_survey_convert(args):
             options=options,
         )
         if save_into_project:
-            from src.conversion_to_project import save_conversion_to_project
+            from src.conversion_to_project import print_log, save_conversion_to_project
 
             save_conversion_to_project(
                 project_root=project_path,
@@ -245,7 +245,7 @@ def cmd_survey_convert(args):
                 session_override=getattr(args, "session", None),
                 template_version_overrides=template_version_overrides,
                 archive_sourcedata=bool(getattr(args, "archive_sourcedata", False)),
-                log_fn=lambda message, level="info": print(message) if message else None,
+                log_fn=print_log,
             )
     except Exception as e:
         print(f"Error: {e}")
