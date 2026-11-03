@@ -38,7 +38,7 @@ jobs:
             python_arch: x64
             python_version: '3.10'
             bundle_executable: dist/PrismStudio/PrismStudio.exe
-          - os: ubuntu-latest
+          - os: ubuntu-22.04 # oldest glibc we can build on: the binary runs on Debian 12 (#212)
             platform_name: Linux
             artifact_name: prism-studio-Linux
             asset_name: prism-studio-Linux.zip
