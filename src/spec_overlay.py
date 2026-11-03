@@ -1,6 +1,6 @@
 """A project's own, not yet official specification: terms in `<project>/code/specification/terms/<modality>/`.
 
-Phase 1 of docs/superpowers/specs/2026-10-23-specification-contributions-design.md. A local term file is
+Phase 1 of docs/superpowers/specs/2026-10-23-specification-contributions-design.md (removed after v1.24.0; in git history). A local term file is
 exactly a proposal term (no `Status`), so sharing it later is a plain copy into prism-specification. The
 validator reads the overlay through `load_specification(project_root=...)`; the official registry always wins.
 Project files are data: a bad file is skipped and reported, never trusted and never a crash.

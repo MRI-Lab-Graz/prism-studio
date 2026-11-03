@@ -22,8 +22,3 @@ def test_cli_reference_lists_the_commands():
 def test_workflow_tells_maintainers_how_to_release_a_modality_version():
     text = (DOCS / "MODALITY_WORKFLOW.md").read_text(encoding="utf-8")
     assert "archive" in text and "bump" in text
-
-
-def test_spec_has_clarifications():
-    text = (DOCS / "superpowers/specs/2026-10-16-modality-versioning-design.md").read_text(encoding="utf-8")
-    assert "Clarifications from the plan" in text

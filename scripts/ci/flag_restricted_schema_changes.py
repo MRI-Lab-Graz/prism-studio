@@ -6,7 +6,7 @@ grammar, project/dataset-description structure) can legitimately need
 changes, they just need a core maintainer's eyes rather than the
 template-contribution review path.
 
-See docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md
+See docs/superpowers/specs/2026-09-11-modality-contribution-workflow-design.md (removed after v1.24.0; in git history)
 section 1.1.
 """
 

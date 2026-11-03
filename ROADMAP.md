@@ -289,8 +289,8 @@ making the repository public.
 
 - **Eye-tracking converter** (waiting for lab data): turns an EyeLink Data Viewer TSV export into BEP20 physio files
   in the task's datatype folder, raw files to `sourcedata/`, aligned to the task's `events.tsv` by tracker markers.
-  Design and status: branch `feat/eyetracking-converter`,
-  `docs/superpowers/specs/2026-10-31-eyetracking-converter-design.md`. Needs the lab's `events.tsv`, the `.edf` and
+  Design and status:
+  `docs/_archive/EYETRACKING_CONVERTER_DESIGN_2026-10.md`. Needs the lab's `events.tsv`, the `.edf` and
   a binocular export before the plan is written. Raw `.edf` via eye2bids stays opt-in (`requirements-eyetrack.txt`).
 
 ## Done (Summary)

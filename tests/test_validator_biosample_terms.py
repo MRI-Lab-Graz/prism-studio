@@ -1,5 +1,5 @@
 """Validator x term registry: inheritance, unknown-metric notices, severity table
-(docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md)."""
+(docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md (removed after v1.24.0; in git history))."""
 
 import json
 import os

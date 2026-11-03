@@ -1,6 +1,6 @@
 """Session map for longitudinal projects.
 
-Spec: docs/superpowers/specs/2026-09-30-session-map-design.md
+Spec: docs/superpowers/specs/2026-09-30-session-map-design.md (removed after v1.24.0; in git history)
 
 In a project that declares several timepoints, every session label being
 imported must have an explicit entry in ``code/session_map.json``. Nothing is

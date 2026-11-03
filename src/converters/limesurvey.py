@@ -356,7 +356,7 @@ def _parse_answers_into_questions(root, questions_map, get_text):
 # Answer options LimeSurvey defines itself (no <answers> rows): stored code -> label in
 # LimeSurvey's wording, en and its German translation. Codes as in its question renderers.
 _YES, _NO = {"en": "Yes", "de": "Ja"}, {"en": "No", "de": "Nein"}
-_ONE_TO_FIVE = {str(i): {} for i in range(1, 6)}
+_ONE_TO_FIVE: dict[str, dict] = {str(i): {} for i in range(1, 6)}
 _FIXED_ANSWERS = {
     "Y": {"Y": _YES, "N": _NO},
     "G": {"F": {"en": "Female", "de": "weiblich"}, "M": {"en": "Male", "de": "männlich"}},

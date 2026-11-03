@@ -24,8 +24,8 @@ def _is_number(code: str) -> bool:
 
 def _suggest(codes: list[str]) -> dict[str, str]:
     """ADS0 -> "0": the number after a prefix all codes share; blank where that does not fit."""
-    parts = [re.fullmatch(r"(\D+)(\d+)", c) for c in codes]
-    if all(parts) and len({m[1] for m in parts}) == 1 and len({int(m[2]) for m in parts}) == len(codes):
+    parts = [m for m in (re.fullmatch(r"(\D+)(\d+)", c) for c in codes) if m]
+    if len(parts) == len(codes) and len({m[1] for m in parts}) == 1 and len({int(m[2]) for m in parts}) == len(codes):
         return {m[0]: str(int(m[2])) for m in parts}
     return {c: "" for c in codes}
 

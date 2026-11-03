@@ -1,6 +1,6 @@
 """What the validator knows (modalities, schemas, terms) as one object, current for one validation run.
 
-Phase 0 of docs/superpowers/specs/2026-10-23-specification-contributions-design.md. Validation code asks
+Phase 0 of docs/superpowers/specs/2026-10-23-specification-contributions-design.md (removed after v1.24.0; in git history). Validation code asks
 `current_specification()` instead of reading constants frozen at import or hand-written modality lists, so a
 project's local additions (later phases) can be part of one run without leaking into the next project.
 Outside a run the official specification is current, so converters and CLI tools without a project behave as before.
