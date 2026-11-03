@@ -1,7 +1,7 @@
 """Validity-gated push from a department share to the DataLad server sibling.
 
 One implementation: the CLI (`prism_tools publish`) and the Studio routes call
-these functions. See docs/superpowers/specs/2026-10-02-share-publish-design.md.
+these functions. See docs/superpowers/specs/2026-10-02-share-publish-design.md (removed after v1.24.0; in git history).
 """
 
 from __future__ import annotations

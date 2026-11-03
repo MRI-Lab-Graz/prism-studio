@@ -1,6 +1,6 @@
 """Validator x environment 2.0.0: columns go through the term registry like biosample.
 
-Plan: docs/superpowers/plans/2026-10-26-environment-terms-phase-b-studio.md (Task 3).
+Plan: docs/superpowers/plans/2026-10-26-environment-terms-phase-b-studio.md (removed after v1.24.0; in git history) (Task 3).
 """
 
 import json

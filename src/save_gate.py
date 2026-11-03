@@ -3,7 +3,7 @@
 Enforced by a git pre-commit hook in every dataset root (see install_save_hooks);
 the hook calls `prism_tools save-gate --check`. One implementation: the CLI and
 PRISM's own saves go through the same hook. See
-docs/superpowers/specs/2026-10-02-save-gate-design.md.
+docs/superpowers/specs/2026-10-02-save-gate-design.md (removed after v1.24.0; in git history).
 """
 
 from __future__ import annotations

@@ -10,6 +10,7 @@ with ``--id-column participant_id --session-column session``.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 import pandas as pd
 
@@ -62,7 +63,7 @@ def prepare_pavlovia_responses(
     id_columns: list[str],
     id_pad: int = 0,
     session_column: str | None = None,
-    rename: list[str] = (),
+    rename: Sequence[str] = (),
 ) -> tuple[pd.DataFrame, list[str]]:
     """(wide table with ``participant_id`` and ``session``, notes on everything that was changed or left out).
 

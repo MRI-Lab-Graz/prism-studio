@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from functools import lru_cache
+from typing import Any
 from urllib.parse import quote, urlencode
 
 from src.spec_overlay import OverlayError, _enum_of, _value_at, _project_specimens, _official_schema, _vendored_or_error
@@ -80,7 +81,8 @@ def spec_catalog() -> dict:
 
     spec = current_specification()
     rules = spec.rules
-    modalities, units = [], set()
+    modalities: list[dict[str, Any]] = []
+    units: set[str] = set()
     # BIDS kinds are left out: PRISM passes them through and cannot change the BIDS schemas.
     for name in sorted(n for n in rules.modalities if n not in rules.aliases and rules.modalities[n].kind == "prism"):
         rule = rules.modalities[name]
@@ -88,7 +90,7 @@ def spec_catalog() -> dict:
         schema = load_schema(name, DEFAULT_SCHEMA_DIR, "stable") if fields else {}
         registry = load_registry(name)
         units.update(t["Units"] for t in registry.values() if t.get("Units"))
-        kind = {
+        kind: dict[str, Any] = {
             "name": name,
             "label": rule.description or name,
             "lists": [{"field": f, "label": _list_label(f), "values": [v for v in _enum_of(schema, f) or [] if v != ""]} for f in fields],
@@ -106,7 +108,7 @@ def spec_catalog() -> dict:
         if kind["lists"] or kind["metrics"]:  # a kind with no list to extend and no measurements has nothing to propose
             modalities.append(kind)
     biosample = next((m for m in modalities if m["name"] == "biosample"), None)
-    specimens = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
+    specimens: list[str] = next((x["values"] for x in biosample["lists"] if x["field"] == "Technical.SpecimenType"), []) if biosample else []
     return {"modalities": modalities, "units": sorted(units), "specimens": specimens}
 
 
@@ -153,7 +155,8 @@ def example_entries(modality: str, template: str | None = None) -> dict:
         except (OSError, ValueError):
             data = {}
     schema = load_schema(modality, DEFAULT_SCHEMA_DIR, "stable") or {}
-    entries, labels = [], {}
+    entries: list[dict[str, Any]] = []
+    labels: dict[str, list[str]] = {}
     for section, node in (schema.get("properties") or {}).items():
         if section == "Metadata" or not isinstance(node, dict):
             continue
@@ -162,7 +165,8 @@ def example_entries(modality: str, template: str | None = None) -> dict:
                 continue
             field = f"{section}.{name}"
             values = [v for v in _enum_of(schema, field) or [] if v != ""]
-            if "boolean" in (child.get("type") if isinstance(child.get("type"), list) else [child.get("type")]):
+            types = child.get("type")
+            if "boolean" in (types if isinstance(types, list) else [types]):
                 values = ["yes", "no"]  # as _example_text prints them; not an extendable list
             entries.append({
                 "field": field, "label": _list_label(field),
@@ -243,12 +247,12 @@ def proposal_for_new_metric(
     fields = {"name": name, "description": description, **({"units": units, "specimen": specimen} if two_level else {})}
     if empty := [k for k, v in fields.items() if not isinstance(v, str) or not v.strip()]:
         raise OverlayError(f"missing: {', '.join('specimen (the sample type)' if k == 'specimen' else k for k in empty)}")
-    fields = {k: v.strip() for k, v in fields.items()}
-    name, description = fields["name"], fields["description"]
+    clean = {k: str(v).strip() for k, v in fields.items()}  # all text by the check above
+    name, description = clean["name"], clean["description"]
     if two_level:
         if levels or cf_standard_name:
             raise OverlayError(f"{modality} takes a unit and a sample type; levels and a CF standard name are for kinds without sample type")
-        units, specimen = fields["units"], fields["specimen"]
+        units, specimen = clean["units"], clean["specimen"]
         if not _VALUE.fullmatch(specimen):
             raise OverlayError(f"{specimen!r}: use lowercase letters, digits and - for the sample type")
     else:
@@ -277,7 +281,7 @@ def proposal_for_new_metric(
             raise OverlayError(f"{text!r} is already an official measurement ({found[1]['TermID']})")
     base = {"TermID": parent_id, "Label": name, **({"Aliases": aliases} if aliases else {}), "Description": description, **({"Group": group} if group else {})}
     if not two_level:
-        extra = {"Levels": {k.strip(): v.strip() for k, v in levels.items()}} if levels else {"Units": units.strip()}
+        extra: dict[str, Any] = {"Levels": {k.strip(): v.strip() for k, v in levels.items()}} if levels else {"Units": str(units).strip()}
         if cf_standard_name and cf_standard_name.strip():
             extra["CFStandardName"] = cf_standard_name.strip()
         return _result({"modality": modality, "terms": [{**base, "Level": "variable", **extra}]}, registry, None, context=context)

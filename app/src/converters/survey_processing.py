@@ -905,7 +905,7 @@ def _trim_padded_numbers(df, templates, tasks, col_to_mapping) -> list[str]:
                 df[column] = after
                 count += int(diff.sum())
                 example = example or (str(before[diff].iloc[0]), str(after[diff].iloc[0]))
-        if count:
+        if count and example:
             notes.append(
                 f"Task '{task}': {count} value(s) of numeric items had padded decimal zeros "
                 f"(LimeSurvey stores numbers like {example[0]}) and were written as {example[1]}."

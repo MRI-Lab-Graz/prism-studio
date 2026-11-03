@@ -3,7 +3,7 @@
 The proposal format and its checks live in the prism-specification repository
 (scripts/term_proposal.py, vendored in scripts/specification/); this module only builds the
 document from a column and the prefilled issue-form URL. Nothing here sends anything.
-Spec: docs/superpowers/specs/2026-10-23-metric-proposal-design.md
+Spec: docs/superpowers/specs/2026-10-23-metric-proposal-design.md (removed after v1.24.0; in git history)
 """
 
 from __future__ import annotations
@@ -67,9 +67,10 @@ def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: 
     """One-level modality (environment): an unknown column becomes one `variable` term."""
     res = resolve_column(registry, column, col_def, None)
     if res.kind in ("term", "suggestion"):
+        term_id = (res.term or {}).get("TermID")
         raise ProposalError(
-            f"{column!r} is already an official variable ({res.term['TermID']}): "
-            f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
+            f"{column!r} is already an official variable ({term_id}): "
+            f'add "Term": "{term_id}" to the column instead of proposing it'
         )
     if res.kind == "deprecated":
         raise ProposalError(res.message)

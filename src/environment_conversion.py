@@ -624,7 +624,7 @@ def _load_environment_dataframe(
     return result.df
 
 
-def _build_environment_preview(rows_out: list[dict], window_columns: list[str] = ()) -> dict:
+def _build_environment_preview(rows_out: list[dict], window_columns: Sequence[str] = ()) -> dict:
     preview_columns = [
         "subject_id",
         "session_id",
@@ -938,7 +938,7 @@ def perform_environment_conversion(
                 }
         return env_day_cache[day_key]
 
-    window_problems = {
+    window_problems: dict[str, dict[str, Any]] = {
         window_column_name(w): {"column": window_column_name(w), "empty_rows": 0, "partial_rows": 0} for w in windows
     }
     longest_window = max((duration_to_timedelta(w.duration) for w in windows), default=timedelta(0))

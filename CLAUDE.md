@@ -39,7 +39,7 @@ tally), readiness display and flat field bodies are theme parts, not page code. 
 the macro (server-rendered) or the JS builder (built in JavaScript); both emit the same markup. **A page that styles or
 builds its own copy of a themed part is a bug**, the same as a CLI/Studio difference: change the theme part, not the
 page. A new kind of field or section is added to the theme first, then used. Design and plan:
-`docs/superpowers/specs/2026-11-01-studio-theme-design.md`. Pages still to move are listed there.
+`docs/superpowers/specs/2026-11-01-studio-theme-design.md` (removed after v1.24.0; in git history, `git log --all -- docs/superpowers`), which lists the pages still to move.
 
 ## Mandatory skills for every chat in this repo
 
@@ -238,7 +238,7 @@ file to its list when it starts to need the rules). A hand-written
 list of modality names is replaced by a derived set when it means "all modalities of a kind" (that is
 how `biosample` was once forgotten in the BIDS folder list); a deliberate subset stays, with a comment
 saying what it is. Reason: a project's local additions (see
-`docs/superpowers/specs/2026-10-23-specification-contributions-design.md`) must apply to that
+`docs/superpowers/specs/2026-10-23-specification-contributions-design.md`, removed after v1.24.0, in git history) must apply to that
 project's run only and never leak into the next project validated in the same process.
 
 ## A project's own specification lives in `code/specification/`

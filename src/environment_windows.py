@@ -5,6 +5,7 @@ and starts ``duration`` before it. Used by the converter and ``environment conve
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -88,5 +89,5 @@ def compute_window(hourly: dict[str, float | None], end: datetime, spec: WindowS
         return None
     if spec.statistic == "count":
         return len(values)
-    statistic = {"mean": lambda v: sum(v) / len(v), "min": min, "max": max, "sum": sum}[spec.statistic]
-    return round(statistic(values), 4)
+    statistics: dict[str, Callable[[list[float]], float]] = {"mean": lambda v: sum(v) / len(v), "min": min, "max": max, "sum": sum}
+    return round(statistics[spec.statistic](values), 4)
