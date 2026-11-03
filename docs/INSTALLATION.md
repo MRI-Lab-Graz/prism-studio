@@ -1,74 +1,13 @@
 # Installation
 
-Get PRISM Studio running. Most people only need the first section below.
+Get PRISM Studio running. Most people only need the first section below (the installer); the prebuilt release is the alternative.
 
-## Prebuilt Release (Recommended)
+## Installer (Recommended)
 
-Download the latest release, extract it, and start PRISM Studio from the extracted
-folder — no Python or repository setup needed.
-
-1. Open the [latest release page](https://github.com/MRI-Lab-Graz/prism-studio/releases/latest).
-2. Pick your OS and download the matching ZIP:
-
-<div class="prism-os-grid">
-
-<details class="prism-os-card">
-<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><path d="M16.7 12.4c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.6-1-1.9 0-3.6 1.1-4.5 2.7-1.9 3.3-.5 8.2 1.4 10.9.9 1.3 2 2.9 3.4 2.8 1.4-.1 1.9-.9 3.5-.9s2.1.9 3.5.9c1.5 0 2.4-1.4 3.3-2.7.6-.9 1-1.8 1.4-2.8-1.9-.7-2.5-2.6-2.5-2.6Z"/><path d="M13.9 4.1c.7-.9 1.2-2.1 1.1-3.3-1.1.1-2.3.7-3 1.6-.7.8-1.3 2.1-1.1 3.3 1.2.1 2.4-.6 3-1.6Z"/></svg></span>macOS</summary>
-
-<div class="prism-os-body">
-
-Download `prism-studio-macOS-AppleSilicon.zip` (Apple Silicon: M1/M2/M3/M4).
-
-Intel Macs: there is no pre-built app any more (Homebrew and GitHub have dropped
-Intel macOS). Run PRISM Studio from source instead (`bash install.sh`), or use the
-`prism-validator` package for validation only.
-
-</div>
-</details>
-
-<details class="prism-os-card">
-<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>Windows</summary>
-
-<div class="prism-os-body">
-
-Download: `prism-studio-Windows.zip`
-
-</div>
-</details>
-
-<details class="prism-os-card">
-<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="15" rx="6" ry="7"/><circle cx="12" cy="7" r="3.2"/><ellipse cx="9.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/><ellipse cx="14.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/></svg></span>Linux</summary>
-
-<div class="prism-os-body">
-
-Download: `prism-studio-Linux.zip`
-
-</div>
-</details>
-
-</div>
-
-3. Extract the ZIP and start PRISM Studio from the extracted folder.
-   - **macOS first launch**: if the OS blocks the app, use
-     `Prism Studio Installer.app` or `Open Prism Studio.command` from the extracted
-     folder, or right-click `PrismStudio.app` → Open once.
-   - **Windows first launch**: if SmartScreen shows "Windows protected your PC",
-     click **More info** then **Run anyway**.
-4. Confirm it worked: the interface should open automatically. If not, go to
-   `http://localhost:5001`.
-
-```{note}
-PRISM Studio's releases aren't code-signed (signing costs money the project
-doesn't currently have) — see
-[Installing an Unsigned Build](INSTALLATION_SECURITY.md) for exactly what
-each OS shows, how to get past it, how to verify your download, and a
-gentler alternative if you'd rather not.
-```
-
-## Source Install (Advanced)
-
-Use this only if you need local code changes, development work, or CLI usage from
-the source tree. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
+`install.sh` (macOS/Linux) and `install.cmd` (Windows) set everything up on your own
+machine: a virtual environment, the dependencies and a **PRISM Studio** shortcut. They work
+on any Linux distribution, need no code signing, and also give you the CLI tools and the
+source tree for local changes. Requires **Python 3.10-3.12** (3.9 and older are unsupported; 3.13+ has no
 wheels yet for some pinned dependencies). `install.cmd`
 pins the version via `.python-version` when uv is available.
 
@@ -146,6 +85,69 @@ environment is active it runs directly (no `python` prefix), and is equivalent t
 **Updating**: `git pull` then re-run `./install.sh` (or `install.cmd` on Windows).
 
 `pip install prism-validator` includes the BIDS engine (bids-validator-deno and the Deno runtime, about 80 MB installed). Supported: macOS, Linux x86_64/aarch64 with glibc >= 2.27, and Windows AMD64. On Alpine/musl and glibc older than 2.27 there is no Deno wheel and its source build fails, so `pip install prism-validator` fails there: use the Docker image or a glibc >= 2.27 system. On other architectures such as Windows ARM64 the dependency is skipped, the install succeeds, and a run reports `PRISM902` with the hint to use `--no-bids`.
+
+## Prebuilt Release (No Installation Step)
+
+If you prefer not to run an installer, download the latest release, extract it, and
+start PRISM Studio from the extracted folder — no Python or repository setup needed.
+
+1. Open the [latest release page](https://github.com/MRI-Lab-Graz/prism-studio/releases/latest).
+2. Pick your OS and download the matching ZIP:
+
+<div class="prism-os-grid">
+
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><path d="M16.7 12.4c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.2-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.6-1-1.9 0-3.6 1.1-4.5 2.7-1.9 3.3-.5 8.2 1.4 10.9.9 1.3 2 2.9 3.4 2.8 1.4-.1 1.9-.9 3.5-.9s2.1.9 3.5.9c1.5 0 2.4-1.4 3.3-2.7.6-.9 1-1.8 1.4-2.8-1.9-.7-2.5-2.6-2.5-2.6Z"/><path d="M13.9 4.1c.7-.9 1.2-2.1 1.1-3.3-1.1.1-2.3.7-3 1.6-.7.8-1.3 2.1-1.1 3.3 1.2.1 2.4-.6 3-1.6Z"/></svg></span>macOS</summary>
+
+<div class="prism-os-body">
+
+Download `prism-studio-macOS-AppleSilicon.zip` (Apple Silicon: M1/M2/M3/M4).
+
+Intel Macs: there is no pre-built app any more (Homebrew and GitHub have dropped
+Intel macOS). Run PRISM Studio from source instead (`bash install.sh`), or use the
+`prism-validator` package for validation only.
+
+</div>
+</details>
+
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></span>Windows</summary>
+
+<div class="prism-os-body">
+
+Download: `prism-studio-Windows.zip`
+
+</div>
+</details>
+
+<details class="prism-os-card">
+<summary><span class="prism-os-icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="15" rx="6" ry="7"/><circle cx="12" cy="7" r="3.2"/><ellipse cx="9.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/><ellipse cx="14.5" cy="16" rx="1.6" ry="2.4" fill="var(--prism-surface)"/></svg></span>Linux</summary>
+
+<div class="prism-os-body">
+
+Download: `prism-studio-Linux.zip`
+
+</div>
+</details>
+
+</div>
+
+3. Extract the ZIP and start PRISM Studio from the extracted folder.
+   - **macOS first launch**: if the OS blocks the app, use
+     `Prism Studio Installer.app` or `Open Prism Studio.command` from the extracted
+     folder, or right-click `PrismStudio.app` → Open once.
+   - **Windows first launch**: if SmartScreen shows "Windows protected your PC",
+     click **More info** then **Run anyway**.
+4. Confirm it worked: the interface should open automatically. If not, go to
+   `http://localhost:5001`.
+
+```{note}
+PRISM Studio's releases aren't code-signed (signing costs money the project
+doesn't currently have) — see
+[Installing an Unsigned Build](INSTALLATION_SECURITY.md) for exactly what
+each OS shows, how to get past it, how to verify your download, and a
+gentler alternative if you'd rather not.
+```
 
 ## Troubleshooting
 

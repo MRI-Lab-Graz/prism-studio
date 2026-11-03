@@ -83,7 +83,7 @@ you can inspect yourself.
 ## Would rather not click past a security warning?
 
 That's a reasonable position, and PRISM Studio doesn't require the
-prebuilt release — the [Source Install](INSTALLATION.md#source-install-advanced)
+prebuilt release — the [Source Install](INSTALLATION.md#installer-recommended)
 section runs the same application from a `git clone` of this repository
 instead, with nothing unsigned to get past. It runs a short setup script
 that installs Python packages into a `.venv` folder *inside* the cloned
@@ -95,7 +95,7 @@ Python 3.10 or newer ([python.org/downloads](https://www.python.org/downloads/)
 if you don't already have it) — a bigger one-time step than double-clicking
 a ZIP, but a terminal here is just a window you paste a handful of exact
 commands into, one at a time, waiting for each to finish before the next.
-The commands themselves are in [Installation](INSTALLATION.md#source-install-advanced).
+The commands themselves are in [Installation](INSTALLATION.md#installer-recommended).
 
 ## What's next
 
