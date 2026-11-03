@@ -10,6 +10,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 _REPO = Path(__file__).resolve().parents[1]
 
@@ -175,7 +176,7 @@ def term_columns(sidecar_data: dict, modality: str) -> list[tuple[str, dict]]:
 def context_value(sidecar_data: dict, modality: str) -> str | None:
     """The value at the modality's `contextField` (biosample: Technical.SpecimenType); None when it has none."""
     field = _declaration(modality).get("contextField")
-    node = sidecar_data
+    node: Any = sidecar_data
     for part in field.split(".") if field else ():
         node = node.get(part) if isinstance(node, dict) else None
     return node if field and isinstance(node, str) else None

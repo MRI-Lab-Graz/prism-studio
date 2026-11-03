@@ -67,9 +67,10 @@ def _build_variable_proposal(registry: dict, column: str, col_def: dict, label: 
     """One-level modality (environment): an unknown column becomes one `variable` term."""
     res = resolve_column(registry, column, col_def, None)
     if res.kind in ("term", "suggestion"):
+        term_id = (res.term or {}).get("TermID")
         raise ProposalError(
-            f"{column!r} is already an official variable ({res.term['TermID']}): "
-            f'add "Term": "{res.term["TermID"]}" to the column instead of proposing it'
+            f"{column!r} is already an official variable ({term_id}): "
+            f'add "Term": "{term_id}" to the column instead of proposing it'
         )
     if res.kind == "deprecated":
         raise ProposalError(res.message)

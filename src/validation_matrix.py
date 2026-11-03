@@ -15,10 +15,12 @@ import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 REPO = Path(__file__).resolve().parents[1]
 SURVEY_TEMPLATE = REPO / "official" / "library" / "survey" / "survey-brs.json"
+
+Mutation = Callable[[Path], Any]  # changes a copy of the dataset; what it returns is ignored
 
 ANY = "ANY"  # the catalogue has no code for it: any new error or warning counts
 NONE = "NONE"  # messy but legal: the validator must stay quiet
@@ -32,7 +34,7 @@ class Defect:
     id: str
     rule: str  # what the validator should catch, in words
     expect: str  # PRISM code from the issue catalogue
-    mutate: Callable[[Path], None]
+    mutate: Mutation
 
 
 def _edit_json(path: Path, change: Callable[[dict], None]) -> None:
@@ -41,23 +43,23 @@ def _edit_json(path: Path, change: Callable[[dict], None]) -> None:
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _write(rel: str, text: str) -> Callable[[Path], None]:
+def _write(rel: str, text: str) -> Mutation:
     return lambda root: (root / rel).write_text(text, encoding="utf-8")
 
 
-def _remove(rel: str) -> Callable[[Path], None]:
+def _remove(rel: str) -> Mutation:
     return lambda root: (root / rel).unlink()
 
 
-def _rename(src: str, dst: str) -> Callable[[Path], None]:
+def _rename(src: str, dst: str) -> Mutation:
     return lambda root: (root / src).rename(root / dst)
 
 
-def _json(rel: str, change: Callable[[dict], None]) -> Callable[[Path], None]:
+def _json(rel: str, change: Callable[[dict], None]) -> Mutation:
     return lambda root: _edit_json(root / rel, change)
 
 
-def _answer(value: str) -> Callable[[Path], None]:
+def _answer(value: str) -> Mutation:
     """Replace the first answer of sub-01 (BRS01, a 0-4 item)."""
     return _write(DATA, f"BRS01\tBRS02\tBRS03\n{value}\t4\t2\n")
 
@@ -89,7 +91,7 @@ def _coded_participants_column(root: Path) -> None:
     path.write_text("\n".join([rows[0] + "\tgroup"] + [f"{r}\t{i % 2 + 1}" for i, r in enumerate(rows[1:])]) + "\n", encoding="utf-8")
 
 
-def _copy_subject(src: str, dst: str) -> Callable[[Path], None]:
+def _copy_subject(src: str, dst: str) -> Mutation:
     """Copy sub-<src> as sub-<dst> (files renamed) and list it in participants.tsv."""
     def mutate(root: Path) -> None:
         _participants_row(f"sub-{dst}\t33\n")(root)
@@ -99,7 +101,7 @@ def _copy_subject(src: str, dst: str) -> Callable[[Path], None]:
     return mutate
 
 
-def _participants_row(row: str) -> Callable[[Path], None]:
+def _participants_row(row: str) -> Mutation:
     return lambda root: (root / "participants.tsv").open("a", encoding="utf-8").write(row)
 
 
