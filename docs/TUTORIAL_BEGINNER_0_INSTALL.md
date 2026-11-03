@@ -34,7 +34,7 @@ Intel Macs have no pre-built app any more; run PRISM Studio from source with
 ```{note}
 Windows users who'd rather run from source (for local code changes or CLI
 use) can skip the ZIP and use `install.cmd` instead — see
-[Source Install](INSTALLATION.md#source-install-advanced) in the Installation
+[Source Install](INSTALLATION.md#installer-recommended) in the Installation
 guide.
 ```
 

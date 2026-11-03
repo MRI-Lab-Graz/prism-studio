@@ -17,10 +17,12 @@ PRISM pairs every research data file with a JSON sidecar that explains it —
 item wordings, response options, units, scoring — organized by subject,
 session, and modality. Modalities, file-naming rules, and sidecar contracts
 are JSON schemas, so the model extends to new instruments without code
-changes, while staying compatible with standard BIDS tooling. PRISM currently
-ships modalities and templates for psychological research (surveys,
-biometrics). **PRISM Studio** is the local web and CLI tool that applies the
-model to validation, conversion, and dataset management.
+changes, while staying compatible with standard BIDS tooling. PRISM is not
+about one kind of data: it describes and enriches whatever a study collects.
+It currently ships modalities for surveys, biometrics, physiology, biosamples
+and environment data. **PRISM Studio** is the local web and CLI tool that
+applies the model to validation, conversion, enrichment, and dataset
+management.
 
 **Missing a modality?** PRISM is open and dynamic: propose a new modality or a
 new filename suffix with a short workbook and a synthetic sample, and it can ship
@@ -36,7 +38,8 @@ essentials to get running.
 
 - Dataset validation and conversion
 - PRISM Studio web interface, plus CLI workflows for terminal users
-- Survey and biometrics metadata support
+- Sidecar metadata for every modality (surveys, biometrics, physiology,
+  biosamples, environment), not for questionnaires alone
 - Local-first operation (data stays on your machine; the only exception is
   optional, off-by-default environment enrichment, which sends coordinates
   and dates — never participant data — to a public weather service)
@@ -45,7 +48,7 @@ essentials to get running.
 
 | Tier | Meaning | Examples |
 |------|---------|----------|
-| **Core loop** | The primary supported workflow; breaking changes here get release notes and migration guidance. | Survey conversion, dataset validation, DataLad-tracked provenance for mutations and recipe scoring, entity/filename rules ([`entities.schema.json`](docs/specs/entities.md)) |
+| **Core loop** | The primary supported workflow; breaking changes here get release notes and migration guidance. | Data conversion, dataset validation, DataLad-tracked provenance for mutations and recipe scoring, entity/filename rules ([`entities.schema.json`](docs/specs/entities.md)) |
 | **Supported** | Deliberately-scoped bridges and integrations; stable, but intentionally narrower than the core loop. | BIDS `phenotype/` export/import bridge (lossy by design — see [ROADMAP.md](ROADMAP.md) Phase 1), recipe/derivative scoring |
 | **Experimental** | Works, but has known rough edges or limited validation; use with care and report issues. | The Type-7 multiplexed decoder in the Varioport physio converter (flagged "QC required" in code) |
 
@@ -57,13 +60,30 @@ officially accepts PRISM-formatted datasets alongside plain BIDS — see the
 
 ## Installation
 
-Python 3.10, 3.11, or 3.12 is required for source installation (3.9 and older
+Python 3.10, 3.11, or 3.12 is required for the installer (3.9 and older
 lack required features; 3.13+ has no wheels yet for some pinned scientific
 dependencies). `install.sh` checks this automatically and, if your default
 `python3` is outside that range, uses `uv` to find or install a compatible
 version for you — no manual Python install needed.
 
-### Pre-built binaries (recommended for most users)
+### Installer (recommended)
+
+```bash
+bash install.sh          # macOS/Linux
+install.cmd               # Windows — double-click, or run from any shell
+```
+
+Get the code from the latest
+[Release](https://github.com/MRI-Lab-Graz/prism-studio/releases) (the
+**Source code** download) or with `git clone`. The installer creates a virtual
+environment, installs the dependencies, and adds a **PRISM Studio** desktop
+shortcut. It runs on your own machine, so it works on any Linux distribution
+and needs no code signing. See the
+[installation guide](https://prism-studio.readthedocs.io) for Windows
+execution-policy notes and other platform-specific details. On Windows,
+extract the ZIP first (don't run `install.cmd` from inside it).
+
+### Pre-built binaries (no installation step)
 
 Download the latest release for your platform from the
 [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
@@ -83,21 +103,9 @@ gh attestation verify prism-studio-Linux.zip --repo MRI-Lab-Graz/prism-studio
 ```
 
 macOS: if Gatekeeper blocks the first launch, run `Prism Studio Installer.app`
-from the extracted folder (fallback: `Open Prism Studio.command`).
-
-### From source
-
-```bash
-bash install.sh          # macOS/Linux
-install.cmd               # Windows — double-click, or run from any shell
-```
-
-Both create a virtual environment, install dependencies, and add a
-**PRISM Studio** desktop shortcut. See the
-[installation guide](https://prism-studio.readthedocs.io) for Windows
-execution-policy notes and other platform-specific details. On Windows,
-extract the ZIP first (don't run `install.cmd` from inside it); if Windows 11
-**Smart App Control** blocks a download, see the guide's Troubleshooting section.
+from the extracted folder (fallback: `Open Prism Studio.command`). If Windows 11
+**Smart App Control** blocks a download, see the guide's Troubleshooting
+section; the installer above avoids both warnings.
 
 ## Quick Usage
 
