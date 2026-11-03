@@ -30,7 +30,9 @@ Fields on the **Create New Project** form:
 - **Use DataLad version control for this new project** — optional checkbox. If
   DataLad/git-annex aren't installed, project creation silently falls back to a
   non-DataLad project rather than failing. The switch starts on when the setting
-  *DataLad for new projects* (Settings page) is on; it is off by default.
+  *DataLad for new projects* (Settings page) is on; it is off by default. Only the question
+  is shown until you switch it on; then the explanation, the availability status and
+  *Check DataLad setup* open below it.
 
 Choosing **Create New Project** opens **Study Metadata**. **Create Project** stays grey
 until the required fields are filled in: dataset name, an author (with email), three
@@ -49,6 +51,8 @@ button that prefills PI/author/ethics/funding/study fields from a Pavlovia
 study-application export. This format is specific to MRI-Lab Graz's intake
 survey, so the toggle is off by default; external users can leave it off and
 fill in Study Metadata by hand.
+
+A hint beside the button says why it is grey and names the required fields still missing.
 
 There is no preliminary save: **Create Project** (and **Save** for a loaded project)
 waits for the required fields and names the ones still missing.

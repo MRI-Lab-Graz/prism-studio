@@ -2369,7 +2369,8 @@ export function updateCreateProjectButton() {
     const isCreateMode = Boolean(createActive) && !currentProjectPath;
     const actionHints = [
         document.getElementById('metadataActionHint'),
-        document.getElementById('projectBoxSaveHint')
+        document.getElementById('projectBoxSaveHint'),
+        document.getElementById('createFormActionHint')
     ].filter(Boolean);
 
     const studyMetadataLoadInFlight = studyMetadataLoadController.getLoadInFlight();
@@ -2456,7 +2457,7 @@ export function updateCreateProjectButton() {
         addCreateClass('btn-secondary');
         setCreateTitle(`Fill in the ${requiredIssueCount} missing required field${requiredIssueCount > 1 ? 's' : ''} in Study Metadata to create the project.`);
         actionHints.forEach(actionHint => {
-            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${requiredIssueCount} required field${requiredIssueCount > 1 ? 's' : ''} missing.</strong> Fill them in Study Metadata to enable Create Project.`;
+            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>Create Project stays grey until all required fields in Study Metadata are set.</strong> Missing (${requiredIssueCount}): ${escapeHtml(_getRequiredValidationIssueMessages(validation).map(message => message.replace(/[.!\s]+$/, '')).join('; '))}.`;
         });
     }
 }
