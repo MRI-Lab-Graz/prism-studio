@@ -8,7 +8,7 @@ the copy and the lock disagree. Stdlib only.
 
 Usage: python scripts/sync_specification.py --tag v1.0.0 [--source DIR] [--studio-root DIR]
   --source  use a local prism-specification checkout instead of downloading the tag
-Spec: docs/superpowers/specs/2026-10-22-prism-specification-repo-design.md
+Spec: docs/superpowers/specs/2026-10-22-prism-specification-repo-design.md (removed after v1.24.0; in git history)
 """
 
 from __future__ import annotations

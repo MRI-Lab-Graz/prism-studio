@@ -1,4 +1,4 @@
-"""biosample schema + template lookup (phase 1 of docs/superpowers/specs/2026-10-15-biosample-modality-design.md)."""
+"""biosample schema + template lookup (phase 1 of docs/superpowers/specs/2026-10-15-biosample-modality-design.md (removed after v1.24.0; in git history))."""
 
 import copy
 import json

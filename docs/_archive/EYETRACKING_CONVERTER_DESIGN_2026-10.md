@@ -1,7 +1,7 @@
 # Eye-tracking converter: design
 
 Status: draft for review, 2026-10-31. Nothing is built. Implementation waits for more lab data (see "Open").
-Follows `docs/superpowers/plans/2026-10-24-drop-eyetracking.md`, which dropped PRISM's own `eyetracking` modality and
+Follows the drop-eyetracking plan (`docs/superpowers/plans/2026-10-24-drop-eyetracking.md`, removed after v1.24.0; in git history), which dropped PRISM's own `eyetracking` modality and
 deferred the converter ("no converter for now").
 
 ## Intent

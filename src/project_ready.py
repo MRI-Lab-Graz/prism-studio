@@ -1,7 +1,7 @@
 """Is a PRISM project complete enough to work with? (one rule for CLI and GUI)
 
 A folder without project.json is not a PRISM project and is never gated.
-Spec: docs/superpowers/specs/2026-10-15-project-required-fields-gate-design.md
+Spec: docs/superpowers/specs/2026-10-15-project-required-fields-gate-design.md (removed after v1.24.0; in git history)
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 """Per-participant session order for projects whose sessions are conditions.
 
-Spec: docs/superpowers/specs/2026-11-02-content-sessions-design.md
+Spec: docs/superpowers/specs/2026-11-02-content-sessions-design.md (removed after v1.24.0; in git history)
 
 In a project with ``StudyDesign.SessionLabels = content`` the date numbering of
 repeated responses (1, 2, ...) is not the same condition for everyone. The lab

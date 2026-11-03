@@ -4,7 +4,7 @@ Reads a modality proposal (workbook, YAML or JSON), checks it and its sample
 data file, and generates the schema, example sidecar and registration files.
 Also builds minimal valid PRISM datasets, shared by the CI contribution-contract
 check and the Issue-Form-to-draft-PR bot. Spec:
-docs/superpowers/specs/2026-10-15-modality-registration-design.md
+docs/superpowers/specs/2026-10-15-modality-registration-design.md (removed after v1.24.0; in git history)
 """
 
 from __future__ import annotations

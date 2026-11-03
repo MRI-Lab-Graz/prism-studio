@@ -1,4 +1,4 @@
-"""Term registry: loader, registry check, column resolution (docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md)."""
+"""Term registry: loader, registry check, column resolution (docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md (removed after v1.24.0; in git history))."""
 
 import json
 import os

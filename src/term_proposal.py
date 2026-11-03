@@ -3,7 +3,7 @@
 The proposal format and its checks live in the prism-specification repository
 (scripts/term_proposal.py, vendored in scripts/specification/); this module only builds the
 document from a column and the prefilled issue-form URL. Nothing here sends anything.
-Spec: docs/superpowers/specs/2026-10-23-metric-proposal-design.md
+Spec: docs/superpowers/specs/2026-10-23-metric-proposal-design.md (removed after v1.24.0; in git history)
 """
 
 from __future__ import annotations

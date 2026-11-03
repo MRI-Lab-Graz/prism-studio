@@ -1,6 +1,6 @@
 """Per-response session decisions for repeated LimeSurvey exports.
 
-Spec: docs/superpowers/specs/2026-10-12-session-assignment-review-design.md
+Spec: docs/superpowers/specs/2026-10-12-session-assignment-review-design.md (removed after v1.24.0; in git history)
 
 ``code/session_assignments.json`` maps, per survey, a LimeSurvey response ``id``
 to ``{"skip": true}``, ``{"session": "<label>"}`` or ``{"include": true}``
