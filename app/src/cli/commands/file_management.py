@@ -303,7 +303,7 @@ def cmd_file_management_rename_physio(args) -> None:
     output_root.mkdir(parents=True, exist_ok=True)
 
     copied = 0
-    copy_errors: list[str] = []
+    copy_errors = []
     for entry in results:
         if not entry["success"]:
             copy_errors.append(f"{entry['old']}: {entry['new']}")

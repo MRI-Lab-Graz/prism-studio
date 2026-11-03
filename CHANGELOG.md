@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-11-02
+
+### Fixed
+- **The Create Project form asks about DataLad and shows the rest only on yes.** Only the "Use DataLad version control" switch is
+  visible; the explanation, "What does DataLad give me?", the availability status and "Check DataLad setup" open when the switch
+  is turned on (also when the *DataLad for new projects* setting starts it on).
+- **A grey Create Project button says why.** A hint right beside the button explains that it stays grey until all required fields in
+  Study Metadata are set, and names the ones still missing (it used to appear only at the end of the Study Metadata card).
+- **Create Project no longer turns green before the session labels are answered.** A new project with several timepoints must say
+  whether its sessions follow time or content; the button used to look ready and then refuse on click.
+- **Recent projects keep a history of 20.** The project page shows the last 5 and lists the older ones in a pull-down.
+- **Init on a BIDS dataset keeps the dataset's own CITATION.cff and README.md.** Authors, keywords, DOI, license and abstract from
+  an existing `CITATION.cff` fill the still-empty project fields, so the next "Regenerate citation" no longer replaces them with
+  placeholders. The file is rewritten in PRISM's format only when nothing in it is lost; otherwise it stays as it came and the log
+  says why. The dataset's README text is kept below the generated README. The project is named after the dataset (`Name` in
+  `dataset_description.json`); the Display Name field is gone from the form.
+
 ### Changed
 - **A new project needs its required metadata.** Choosing "Create new project" opens Study Metadata, and Create Project stays grey
   until dataset name, author (with email), three keywords and timepoints are filled in. "Create anyway" and Preliminary Save are
@@ -16,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (DataLad is on the Settings page), and loading a project opens Study Metadata the same way a new project does.
 
 ### Added
+- **Time or content sessions.** A project declares whether its sessions follow time or content (`SessionLabels`). In a content
+  project each participant has a session order file, and date-numbered sessions are named from it; the order is edited in Studio
+  and with the `session-order` commands. A response named by hand is final.
 - **Settings page.** The global settings (libraries, monitoring, terminal, study-application import) moved from the bottom of the
   project page to their own `/settings` page (gear icon in the navbar). Beginner help mode moved there from the Projects menu. New
   setting `datalad_for_new_projects` (`prism_tools.py settings set --datalad-for-new-projects on`, off by default) starts the Create

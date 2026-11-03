@@ -235,6 +235,23 @@ def test_delete_project_needs_the_exact_name_then_removes_the_folder(bare_page, 
 
 
 
+def test_a_grey_create_button_says_which_required_fields_are_missing(bare_page, studio_url, tmp_path, fill_required_metadata):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-create")
+    bare_page.fill("#projectName", "grey_study")
+    bare_page.fill("#projectPath", str(tmp_path))
+
+    button = bare_page.locator("#createProjectSubmitBtnTop")
+    hint = bare_page.locator("#createProjectActionsTop")
+    expect(button).to_be_disabled()
+    for text in ("required fields", "Dataset Name", "Keywords", "Timepoints"):
+        expect(hint).to_contain_text(text)  # beside the button, not only at the end of Study Metadata
+
+    fill_required_metadata(bare_page)
+    expect(button).to_be_enabled()
+    expect(hint).not_to_contain_text("Dataset Name")
+
+
 def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url, tmp_path, fill_required_metadata):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
@@ -244,16 +261,37 @@ def test_timepoints_is_required_and_saved_with_the_project(bare_page, studio_url
     fill_required_metadata(bare_page, timepoints="")
     expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()  # everything but Timepoints is set
     bare_page.select_option("#smSDTimepoints", "multiple")
+    expect(bare_page.locator("#createProjectSubmitBtnTop")).to_be_disabled()  # a new multi-session study says time or content
+    bare_page.select_option("#smSDSessionLabels", "time")
     bare_page.click("#createProjectSubmitBtnTop")
 
     expect(bare_page.locator("#createResult")).to_contain_text("long_study")
     saved = json.loads((tmp_path / "long_study" / "project.json").read_text())
     assert saved["StudyDesign"]["Timepoints"] == "multiple"
+    assert saved["StudyDesign"]["SessionLabels"] == "time"
+
+
+def test_datalad_details_stay_hidden_until_the_switch_is_on(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/projects")
+    bare_page.click("#card-create")
+
+    details = bare_page.locator("#createDataladDetails")
+    expect(bare_page.locator('label[for="projectUseDatalad"]')).to_be_visible()  # only the question shows
+    expect(details).to_be_hidden()
+    expect(bare_page.locator("#createDataladCheckBtn")).to_be_hidden()
+
+    bare_page.click('label[for="projectUseDatalad"]')
+    expect(details).to_be_visible()
+    expect(bare_page.locator("#createDataladCheckBtn")).to_be_visible()
+
+    bare_page.click('label[for="projectUseDatalad"]')
+    expect(details).to_be_hidden()
 
 
 def test_datalad_setup_check_works_before_any_project_exists(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/projects")
     bare_page.click("#card-create")
+    bare_page.click('label[for="projectUseDatalad"]')  # the check is part of the DataLad details
 
     bare_page.click("#createDataladCheckBtn")
 

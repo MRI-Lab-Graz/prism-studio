@@ -34,6 +34,16 @@ class ProjectSave:
     warnings: list[str] = field(default_factory=list)
 
 
+def _quiet(message: str, level: str = "info") -> None:
+    return None
+
+
+def print_log(message: str, level: str = "info") -> None:
+    """The command line's log: the message on stdout, nothing for an empty one."""
+    if message:
+        print(message)
+
+
 def iter_session_registration_values(*, session_override: str | None, detected_sessions: list[str] | None) -> list[str]:
     """The sessions to register: the one given, or (for ``all``) every session the file turned out to hold."""
     normalized_override = str(session_override or "").strip()
@@ -130,7 +140,7 @@ def save_conversion_to_project(
 ) -> ProjectSave:
     """Save the files in ``staged_root`` (a conversion's output) into ``project_root``."""
     project_root, staged_root = Path(project_root), Path(staged_root)
-    log = log_fn or (lambda message, level="info": None)
+    log = log_fn or _quiet
 
     log(f"Saving output to project: {project_root.name} (into project root)", "info")
     pairs: list[tuple[Path, Path]] = []

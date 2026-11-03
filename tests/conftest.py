@@ -55,14 +55,20 @@ def pytest_runtest_makereport(item, call):
 def _no_user_app_settings(monkeypatch, tmp_path_factory):
     """A test must not read the developer's own Studio settings (their global library folder, for one): the
     settings folder is an empty one. Only the settings location is moved, not HOME (git and DataLad read it)."""
+    import shutil
     import sys
 
     import src.config  # noqa: F401  (make sure the module is loaded)
 
-    empty = tmp_path_factory.getbasetemp() / "no_user_settings"  # never created: no settings file there
+    empty = tmp_path_factory.getbasetemp() / "no_user_settings"
+    # An empty settings file there: without one the app falls back to the checkout's own app/prism_studio_settings.json.
+    empty.mkdir(parents=True, exist_ok=True)
+    (empty / src.config.APP_SETTINGS_FILENAME).write_text("{}", encoding="utf-8")
     for module in list(sys.modules.values()):
         if getattr(module, "__name__", "").endswith("config") and hasattr(module, "_get_user_app_settings_dir"):
             monkeypatch.setattr(module, "_get_user_app_settings_dir", lambda: empty)
+    yield
+    shutil.rmtree(empty, ignore_errors=True)  # a test that saved settings must not leave them for the next one
 
 
 @pytest.fixture

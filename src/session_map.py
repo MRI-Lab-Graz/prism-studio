@@ -102,7 +102,7 @@ def project_session_labels(project_path: str | Path) -> str:
     A present but unknown value is an error, never silently 'time'."""
     if project_timepoints(project_path) != "multiple":
         return "time"
-    value = _study_design(project_path).get("SessionLabels")
+    value = (_study_design(project_path) or {}).get("SessionLabels")
     if value is None:
         return "time"
     if value not in SESSION_LABEL_VALUES:

@@ -149,6 +149,15 @@ export async function initProjectsPageBootstrap({
         });
     }
 
+    const recentOlder = document.getElementById('recentProjectsOlder');
+    if (recentOlder) {
+        recentOlder.addEventListener('change', () => {
+            const path = recentOlder.value;
+            recentOlder.selectedIndex = 0;
+            if (path) submitOpenProjectPath(path);
+        });
+    }
+
     const clearRecentBtn = document.getElementById('clearRecentProjectsBtn');
     if (clearRecentBtn) {
         clearRecentBtn.addEventListener('click', () => {

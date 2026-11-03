@@ -1,0 +1,175 @@
+"""Init on an existing BIDS dataset reads what the dataset already says about itself.
+
+CITATION.cff and README.md are generated from project.json; when a dataset arrives with its own, init must
+take them over, or the next "Regenerate citation" / "Generate README" replaces them with placeholders.
+"""
+
+import json
+import os
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app"))
+
+from src.project_documents import generate_readme  # noqa: E402
+from src.project_manager import ProjectManager  # noqa: E402
+
+CITATION = """cff-version: 1.2.0
+title: Colleague DS
+message: Please cite
+authors:
+  - family-names: Doe
+    given-names: Jane
+    orcid: https://orcid.org/0000-0002-1825-0097
+    affiliation: Uni Graz
+  - family-names: Roe
+    given-names: Rick
+keywords: [mri, memory]
+license: CC0-1.0
+doi: 10.1234/abcd
+abstract: Abstract from cff
+"""
+
+
+def _bids(tmp_path: Path) -> Path:
+    (tmp_path / "dataset_description.json").write_text(
+        json.dumps({"Name": "Colleague DS", "BIDSVersion": "1.10.0"}), encoding="utf-8"
+    )
+    return tmp_path
+
+
+def test_init_takes_authors_and_metadata_from_existing_citation_cff(tmp_path):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION, encoding="utf-8")
+
+    assert ProjectManager().init_on_existing_bids(str(root))["success"]
+
+    project = json.loads((root / "project.json").read_text(encoding="utf-8"))
+    basics = project["Basics"]
+    contacts = project["governance"]["contacts"]
+    assert [(c["given-names"], c["family-names"]) for c in contacts] == [("Jane", "Doe"), ("Rick", "Roe")]
+    assert contacts[0]["orcid"] == "https://orcid.org/0000-0002-1825-0097"
+    assert contacts[0]["affiliation"] == "Uni Graz"
+    assert basics["Authors"] == ["Jane Doe", "Rick Roe"]
+    assert basics["Keywords"] == ["mri", "memory"]
+    assert basics["DatasetDOI"] == "10.1234/abcd"
+    assert basics["Description"] == "Abstract from cff"
+    assert basics["License"] == "CC0-1.0"
+
+
+def test_regenerating_citation_after_init_keeps_the_original_authors(tmp_path):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION, encoding="utf-8")
+    pm = ProjectManager()
+    pm.init_on_existing_bids(str(root))
+
+    pm.regenerate_citation_cff(root)
+
+    citation = (root / "CITATION.cff").read_text(encoding="utf-8")
+    assert "Doe" in citation and "0000-0002-1825-0097" in citation and "Roe" in citation
+    assert "prism-studio" not in citation
+    assert "10.1234/abcd" in citation
+
+
+def test_dataset_description_wins_over_citation_cff(tmp_path):
+    root = _bids(tmp_path)
+    desc = {"Name": "Colleague DS", "BIDSVersion": "1.10.0", "Description": "From dd", "Authors": ["Ann Lee"]}
+    (root / "dataset_description.json").write_text(json.dumps(desc), encoding="utf-8")
+    (root / "CITATION.cff").write_text(CITATION, encoding="utf-8")
+
+    ProjectManager().init_on_existing_bids(str(root))
+
+    basics = json.loads((root / "project.json").read_text(encoding="utf-8"))["Basics"]
+    assert basics["Description"] == "From dd"
+    assert basics["Authors"] == ["Ann Lee"]
+
+
+def test_unreadable_citation_cff_does_not_fail_init(tmp_path):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text("not: [valid", encoding="utf-8")
+
+    assert ProjectManager().init_on_existing_bids(str(root))["success"]
+    assert (root / "CITATION.cff").read_text(encoding="utf-8") == "not: [valid"
+
+
+def test_generate_readme_keeps_an_existing_readme_md(tmp_path):
+    root = _bids(tmp_path)
+    (root / "README.md").write_text("# Colleague DS\n\nOverview written by the lab.\n", encoding="utf-8")
+    ProjectManager().init_on_existing_bids(str(root))
+
+    generate_readme(root)
+    generate_readme(root)  # a second run must neither lose nor duplicate it
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert readme.count("Overview written by the lab.") == 1
+    assert "Generated with" in readme
+
+
+def test_merged_bare_readme_survives_a_second_generate(tmp_path):
+    root = _bids(tmp_path)
+    (root / "README").write_text("Plain BIDS readme text.", encoding="utf-8")
+    ProjectManager().init_on_existing_bids(str(root))
+
+    generate_readme(root)
+    generate_readme(root)
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    assert readme.count("Plain BIDS readme text.") == 1
+    assert not (root / "README").exists()
+
+
+def test_init_names_the_project_after_the_dataset(tmp_path):
+    root = _bids(tmp_path)
+
+    assert ProjectManager().init_on_existing_bids(str(root))["success"]
+
+    assert json.loads((root / "project.json").read_text(encoding="utf-8"))["name"] == "Colleague DS"
+
+
+PRISM_MESSAGE = "If you use this dataset, please cite it using the metadata from this file."  # what PRISM writes itself
+
+
+def test_init_hands_a_citation_cff_over_when_project_json_holds_all_of_it(tmp_path):
+    """Nothing of PRISM's exists yet at init, so the file's content moves into project.json and the file is then
+    PRISM's own rendering: Citation Health has nothing to say."""
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION.replace("Please cite", PRISM_MESSAGE), encoding="utf-8")
+
+    pm = ProjectManager()
+    assert pm.init_on_existing_bids(str(root))["success"]
+
+    status = pm.get_citation_cff_status(root)
+    assert status["valid"] and status["consistent"], status
+    assert "title: \"Colleague DS\"" in (root / "CITATION.cff").read_text(encoding="utf-8")  # PRISM's own rendering
+    assert "Jane" in (root / "CITATION.cff").read_text(encoding="utf-8")  # still her authors
+
+
+def test_init_leaves_a_citation_cff_alone_when_it_holds_something_prism_cannot(tmp_path):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(CITATION, encoding="utf-8")  # has its own message
+
+    result = ProjectManager().init_on_existing_bids(str(root))
+
+    assert (root / "CITATION.cff").read_text(encoding="utf-8") == CITATION
+    warnings = [e["message"] for e in result["log"] if e["level"] == "warning"]
+    assert any("CITATION.cff" in w and "message" in w for w in warnings), warnings
+
+
+def test_init_result_names_the_project_after_the_dataset(tmp_path):
+    result = ProjectManager().init_on_existing_bids(str(_bids(tmp_path)))
+
+    assert result["name"] == "Colleague DS"
+
+
+@pytest.mark.parametrize("content", ["authors: [unclosed\n  - : :", "- just\n- a list\n"])
+def test_init_leaves_a_citation_cff_it_cannot_read_untouched(tmp_path, content):
+    root = _bids(tmp_path)
+    (root / "CITATION.cff").write_text(content, encoding="utf-8")
+
+    result = ProjectManager().init_on_existing_bids(str(root))
+
+    assert result["success"]
+    assert (root / "CITATION.cff").read_text(encoding="utf-8") == content
+    assert any("could not be read" in line["message"] for line in result["log"] if isinstance(line, dict))

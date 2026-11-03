@@ -303,7 +303,13 @@ export function initCreatePreflightController({
 
     const projectUseDataladInput = document.getElementById('projectUseDatalad');
     if (projectUseDataladInput) {
+        // Only the question shows; what DataLad is and its checks open when the user says yes.
+        const syncDataladDetails = () => {
+            document.getElementById('createDataladDetails')?.classList.toggle('d-none', !projectUseDataladInput.checked);
+        };
+        syncDataladDetails();
         projectUseDataladInput.addEventListener('change', function() {
+            syncDataladDetails();
             renderCreateDataladAvailability(createDataladPreflightStatus);
             scheduleCreateTargetStatusCheck();
         });

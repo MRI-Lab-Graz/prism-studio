@@ -502,7 +502,7 @@ def resolve_effective_library_path(
     if not project_path:
         project_path = get_current_project().get("path")
     if project_path:
-        project_path = _safe_resolve(_safe_expand(str(project_path)))
+        project_path = str(_safe_resolve(_safe_expand(str(project_path))))
 
     # current_app.root_path points to /app; the workspace root is one level up.
     base_dir = _safe_resolve(Path(current_app.root_path)).parent

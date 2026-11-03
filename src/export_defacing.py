@@ -100,4 +100,4 @@ def run_defacing(project_path, data: dict) -> tuple[dict, bool]:
     }
     if payload["success"]:
         payload["message"] = f"{payload['message']} Source project was not modified; defaced copy written to {target_path}."
-    return payload, payload["success"]
+    return payload, bool(payload["success"])

@@ -49,7 +49,7 @@ def check_survey_template_drift(root_dir, project_path=None) -> list[tuple[str, 
     for sidecar_path in sorted(root.glob("task-*_survey.json")):
         match = _SIDECAR.fullmatch(sidecar_path.name)
         template = templates.get(match[1]) if match else None
-        if template is None:
+        if match is None or template is None:
             continue
         try:
             sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))

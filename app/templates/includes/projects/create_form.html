@@ -31,8 +31,9 @@
                     <div class="form-check form-switch mt-3">
                         <input class="form-check-input" type="checkbox" id="projectUseDatalad">
                         <label class="form-check-label fw-semibold" for="projectUseDatalad">Use DataLad version control for this new project (recommended)</label>
-                        <small class="d-block text-muted">Recommended: every saved state can be restored later. Switch it on to enable it; if DataLad or git-annex is unavailable, PRISM still creates the project without DataLad.</small>
                     </div>
+                    <div id="createDataladDetails" class="d-none">
+                    <small class="d-block text-muted mt-2">Recommended: every saved state can be restored later. Switch it on to enable it; if DataLad or git-annex is unavailable, PRISM still creates the project without DataLad.</small>
                     <details class="small mt-2" id="createDataladBenefits">
                         <summary class="text-primary">What does DataLad give me?</summary>
                         <ul class="mt-2 mb-1">
@@ -57,9 +58,11 @@
                         <span class="form-text ms-2">Git, git-annex, DataLad and your SSH key. To also test a server login, use the Push to Server card once a project is open.</span>
                         <div class="mt-2" id="createDataladCheckResult" aria-live="polite"></div>
                     </div>
+                    </div>
                 </form>
 
                 <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap mt-3" id="createProjectActionsTop">
+                    <small class="text-muted text-end flex-grow-1" id="createFormActionHint" aria-live="polite"></small>
                     <button type="button" class="btn btn-success" id="createProjectSubmitBtnTop">
                         <i class="fas fa-folder-plus me-2"></i>Create Project
                     </button>

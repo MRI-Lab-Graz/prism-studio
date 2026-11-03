@@ -11,6 +11,7 @@ docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P2.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from src.schema_manager import apply_schema_validation_profile
 
@@ -23,7 +24,7 @@ _VALID_SOFTWARE_PLATFORMS = {
 }
 
 
-def normalize_paper_software_platform(payload: object) -> object:
+def normalize_paper_software_platform(payload: Any) -> Any:
     """Normalise legacy paper-admin software metadata for schema compatibility."""
     if not isinstance(payload, dict):
         return payload
@@ -192,10 +193,11 @@ def required_field_paths(schema: dict) -> list[str]:
     """``Section/Field`` for every required field of Technical, Study, Metadata and I18n in the given schema."""
     props = schema.get("properties") if isinstance(schema, dict) else None
     props = props if isinstance(props, dict) else {}
-    paths = []
+    paths: list[str] = []
     for section in _REQUIRED_SECTIONS:
         required = (props.get(section) or {}).get("required") if isinstance(props.get(section), dict) else None
-        paths.extend(f"{section}/{field}" for field in required if isinstance(required, list))
+        if isinstance(required, list):
+            paths.extend(f"{section}/{field}" for field in required)
     return paths
 
 

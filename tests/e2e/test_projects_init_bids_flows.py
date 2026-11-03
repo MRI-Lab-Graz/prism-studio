@@ -20,12 +20,10 @@ def bids(tmp_path):
     return root
 
 
-def open_init_form(page, studio_url, path, name=None):
+def open_init_form(page, studio_url, path):
     page.goto(f"{studio_url}/projects")
     page.click("#card-init-bids")
     page.fill("#initBidsPath", str(path))
-    if name:
-        page.fill("#initBidsName", name)
 
 
 def test_init_adds_prism_files_and_leaves_the_data_alone(bare_page, studio_url, bids):
@@ -45,14 +43,17 @@ def test_init_adds_prism_files_and_leaves_the_data_alone(bare_page, studio_url, 
     assert current["path"] == str(bids)
 
 
-def test_init_stores_the_display_name_in_project_json(bare_page, studio_url, bids):
-    open_init_form(bare_page, studio_url, bids, name="Sleep and memory")
+def test_init_names_the_project_after_the_dataset(bare_page, studio_url, bids):
+    """One name: the dataset's own (dataset_description.json Name); the form has no second one to disagree with it."""
+    open_init_form(bare_page, studio_url, bids)
+    expect(bare_page.locator("#initBidsName")).to_have_count(0)
 
     bare_page.click("#initBidsSubmitBtn")
 
     expect(bare_page.locator("#initBidsResult")).to_contain_text("project.json", timeout=60000)
-    project = json.loads((bids / "project.json").read_text())
-    assert "Sleep and memory" in json.dumps(project)
+    assert json.loads((bids / "project.json").read_text())["name"] == "My BIDS"
+    current = bare_page.request.get(f"{studio_url}/api/projects/current").json()
+    assert current["name"] == "My BIDS"
 
 
 def test_init_refuses_a_folder_that_is_not_a_bids_root_and_adds_nothing(bare_page, studio_url, tmp_path):

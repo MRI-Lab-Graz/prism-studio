@@ -846,7 +846,7 @@ class TemplateValidator:
         for item_id, item_def in self._extract_items(data).items():
             if not isinstance(item_def, dict) or not isinstance(item_def.get("Description"), dict):
                 continue
-            texts = [(None, item_def["Description"])]  # (level key or None for the description, texts by language)
+            texts: list[tuple[str | None, dict]] = [(None, item_def["Description"])]  # (level key or None for the description, texts by language)
             levels = item_def.get("Levels")
             if isinstance(levels, dict):
                 texts += [(str(key), v) for key, v in levels.items() if isinstance(v, dict)]
