@@ -812,9 +812,7 @@
 }
 
 /* WCAG 1.4.1: a link inside running text is told apart by more than its colour. */
-.studio-theme p a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item),
-.studio-theme li a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item),
-.studio-theme small a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item) {
+.studio-theme :is(p, li, small) a:not(.btn, .badge, .nav-link, .dropdown-item) {
     text-decoration: underline !important;
 }
 

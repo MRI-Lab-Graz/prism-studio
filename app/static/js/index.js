@@ -933,7 +933,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         currentProjectTargetDetails.textContent = 'Current project not selected';
         currentProjectTargetDetails.removeAttribute('title');
-        currentProjectTargetDetails.removeAttribute('aria-label');
     }
 
 
