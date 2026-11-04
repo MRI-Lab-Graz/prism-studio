@@ -1,5 +1,6 @@
 import { isSameProjectPath } from '../../shared/project-state.js';
 import { askGitIdentity } from './git-identity-dialog.js';
+import { saveDataladSnapshot } from '../../shared/datalad-save.js';
 
 export const DATALAD_DOCS_URL = 'https://www.datalad.org/';
 export const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';
@@ -708,12 +709,7 @@ export function createDataladCard({
                 startProjectBoxDataladSaveProgress();
 
                 try {
-                    const response = await fetchWithApiFallback('/api/projects/datalad/save', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: saveMessage })
-                    });
-                    const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                    const { response, data } = await saveDataladSnapshot(fetchWithApiFallback, saveMessage);
                     if (!response.ok || !data.success) {
                         throw new Error(data.error || data.message || 'Could not save DataLad changes.');
                     }

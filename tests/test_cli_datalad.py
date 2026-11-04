@@ -143,3 +143,66 @@ def test_parser_accepts_the_sync_and_finalize_options():
     assert (a.command, a.action, a.verify, a.sibling_name) == ("datalad", "sync", True, "lab")
     b = parser.parse_args(["datalad", "finalize", "--project", "/p", "--verify-mode", "full", "--mark-annex-dead", "--yes"])
     assert (b.action, b.verify_mode, b.mark_annex_dead, b.yes) == ("finalize", "full", True, True)
+
+
+# --- save: validity gate override -------------------------------------------
+
+class FakeSaveManager:
+    def __init__(self, result):
+        self.result, self.kw = result, None
+
+    def save_datalad_snapshot(self, project, **kw):
+        self.kw = kw
+        return self.result
+
+
+@pytest.mark.parametrize("flag", [False, True])
+def test_save_passes_allow_invalid_through(monkeypatch, flag):
+    mgr = FakeSaveManager({"success": True, "message": "Saved."})
+    monkeypatch.setattr(cli, "_manager", lambda: mgr)
+    cli.cmd_datalad_save(SimpleNamespace(project="/p", message=None, json=False, allow_invalid=flag))
+    assert mgr.kw["allow_invalid"] is flag
+
+
+def test_save_refused_for_an_invalid_dataset_exits_1_and_names_the_override(monkeypatch, capsys):
+    refused = {"success": False, "error": "2 validation error(s) ... save anyway (--allow-invalid / 'Save anyway')."}
+    monkeypatch.setattr(cli, "_manager", lambda: FakeSaveManager(refused))
+    with pytest.raises(SystemExit) as exc:
+        cli.cmd_datalad_save(SimpleNamespace(project="/p", message=None, json=False, allow_invalid=False))
+    assert exc.value.code == 1 and "--allow-invalid" in capsys.readouterr().out
+
+
+def test_parser_accepts_save_allow_invalid():
+    parser, _ = build_prism_tools_parsers(ROOT)
+    assert parser.parse_args(["datalad", "save", "--project", "/p", "--allow-invalid"]).allow_invalid is True
+    assert parser.parse_args(["datalad", "save", "--project", "/p"]).allow_invalid is False
+
+
+# --- status (pending changes) ---------------------------------------------
+
+class FakeStatusManager:
+    def __init__(self, result):
+        self.result = result
+
+    def check_datalad_clean_status(self, project):
+        return self.result
+
+
+def test_status_prints_the_message_and_exits_zero_with_changes_pending(monkeypatch, capsys):
+    mgr = FakeStatusManager({"checked": True, "clean": False, "dirty_count": 3, "message": "3 uncommitted change(s) pending."})
+    monkeypatch.setattr(cli, "_manager", lambda: mgr)
+    cli.cmd_datalad_status(SimpleNamespace(project="/p", json=False))
+    assert "3 uncommitted change(s) pending." in capsys.readouterr().out
+
+
+def test_status_json_is_the_dict_the_studio_route_returns(monkeypatch, capsys):
+    result = {"checked": True, "clean": True, "dirty_count": 0, "message": "Working tree is clean."}
+    monkeypatch.setattr(cli, "_manager", lambda: FakeStatusManager(result))
+    cli.cmd_datalad_status(SimpleNamespace(project="/p", json=True))
+    assert json.loads(capsys.readouterr().out) == result
+
+
+def test_parser_accepts_datalad_status():
+    parser, _ = build_prism_tools_parsers(ROOT)
+    a = parser.parse_args(["datalad", "status", "--project", "/p", "--json"])
+    assert (a.command, a.action, a.project, a.json) == ("datalad", "status", "/p", True)

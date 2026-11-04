@@ -420,6 +420,7 @@
                         <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
                         <i class="fas fa-spinner fa-spin me-1 d-none" id="navbarDataladSpinnerIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>
+                        <span class="badge rounded-pill text-bg-warning ms-1 d-none" id="navbarDataladPendingCount"></span>
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
                     </a>
                 </div>
@@ -1095,7 +1096,8 @@
                 icon?.classList.add('text-success');
                 stateLabel = 'Tracked';
                 if (dataladState.available) {
-                    fetchNavbarDataladCleanStatus(dataladState.path || nextPath);
+                    // A finished validator run (the results page) is the moment to look again: bypass the 30 s cache.
+                    fetchNavbarDataladCleanStatus(dataladState.path || nextPath, { force: {{ 'true' if request.endpoint == 'validation.show_results' else 'false' }} });
                 }
             } else {
                 icon?.classList.add('text-dark');
@@ -1109,7 +1111,12 @@
         const navbarDataladCleanStatusCacheTtlMs = 30000;
         let navbarDataladCleanStatusFetchToken = 0;
 
-        function renderNavbarDataladCleanIcon(clean) {
+        function renderNavbarDataladCleanIcon(clean, count = 0) {
+            const pending = document.getElementById('navbarDataladPendingCount');
+            if (pending) {
+                pending.textContent = count > 99 ? '99+' : String(count);
+                pending.classList.toggle('d-none', !(clean === false && count > 0));
+            }
             const cleanIcon = document.getElementById('navbarDataladCleanIcon');
             if (!cleanIcon) return;
             cleanIcon.classList.remove('d-none', 'fa-circle-check', 'fa-circle-xmark', 'fa-pen-to-square', 'text-success', 'text-danger', 'text-warning');
@@ -1137,7 +1144,7 @@
                 try {
                     const cached = JSON.parse(window.sessionStorage.getItem(cacheKey) || 'null');
                     if (cached && typeof cached === 'object' && Date.now() - cached.fetchedAt < navbarDataladCleanStatusCacheTtlMs) {
-                        renderNavbarDataladCleanIcon(cached.clean);
+                        renderNavbarDataladCleanIcon(cached.clean, cached.count);
                         return;
                     }
                 } catch (error) {
@@ -1153,7 +1160,8 @@
 
                 const cleanStatus = data && data.success ? data.datalad_clean : null;
                 const clean = cleanStatus && cleanStatus.checked ? Boolean(cleanStatus.clean) : null;
-                renderNavbarDataladCleanIcon(clean);
+                const count = clean === false ? Number(cleanStatus.dirty_count) || 0 : 0;
+                renderNavbarDataladCleanIcon(clean, count);
 
                 const cleanIcon = document.getElementById('navbarDataladCleanIcon');
                 if (cleanIcon && cleanStatus && cleanStatus.message) {
@@ -1161,7 +1169,7 @@
                 }
 
                 try {
-                    window.sessionStorage.setItem(cacheKey, JSON.stringify({ clean, fetchedAt: Date.now() }));
+                    window.sessionStorage.setItem(cacheKey, JSON.stringify({ clean, count, fetchedAt: Date.now() }));
                 } catch (error) {
                     // sessionStorage may be unavailable (e.g. private mode); skip caching
                 }
@@ -1229,12 +1237,8 @@
             setNavbarDataladBusy(true, 'Saving…');
 
             try {
-                const response = await navbarFetchWithApiFallback('/api/projects/datalad/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: saveMessage })
-                });
-                const data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                const { saveDataladSnapshot } = await import("{{ url_for('static', filename='js/shared/datalad-save.js', v=prism_static_asset_token|default('', true)) }}");
+                const { response, data } = await saveDataladSnapshot(navbarFetchWithApiFallback, saveMessage);
                 if (!response.ok || !data.success) {
                     throw new Error(data.error || data.message || 'Could not save DataLad changes.');
                 }

@@ -139,6 +139,16 @@ def test_results_page_disables_publish_when_errors(client):
     assert "Fix 3 error(s) before publishing" in html
 
 
+def test_navbar_rechecks_datalad_changes_after_a_validator_run_only(client):
+    _store({})
+    call = "fetchNavbarDataladCleanStatus(dataladState.path || nextPath, { force: %s })"
+    assert call % "true" in client.get("/results/rid").get_data(as_text=True)
+    other = client.get("/validate").get_data(as_text=True)
+    assert call % "false" in other and "navbarDataladPendingCount" in other
+    # the navbar save loads the shared "refused, save anyway?" helper from a real static URL
+    assert "/static/js/shared/datalad-save.js?v=t" in other
+
+
 def test_publish_route_uncommitted_changes_is_400(client, monkeypatch):
     monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
     monkeypatch.setattr(
