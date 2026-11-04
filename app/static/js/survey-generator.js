@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         div.innerHTML = `
             <div class="d-flex align-items-center">
                 <input class="form-check-input file-checkbox me-2 flex-shrink-0" type="checkbox" value="${escapeHtml(file.path)}"
-                       id="${fileId}" data-details-id="${detailsId}"
+                       id="${fileId}" aria-label="${escapeHtml(origName || file.filename)}" data-details-id="${detailsId}"
                        data-filename="${escapeHtml(file.filename)}"
                        data-detected-languages="${fileLangs.join(',')}"
                        ${hasLang ? '' : 'disabled'}>

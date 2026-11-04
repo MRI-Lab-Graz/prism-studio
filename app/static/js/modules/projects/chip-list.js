@@ -18,6 +18,21 @@ export function addChip(values, text, single = false) {
     return single ? [entry] : [...values, entry];
 }
 
+/** The sentence a screen reader hears when a chip is added or removed. */
+export const chipAnnouncement = (action, text) => `${action === 'add' ? 'Added' : 'Removed'} ${text}`;
+
+// One hidden live region for every chip list: the chips are rebuilt on each change, so they cannot hold it.
+let liveRegion = null;
+function announce(message) {
+    if (!liveRegion) {
+        liveRegion = document.createElement('div');
+        liveRegion.className = 'visually-hidden';
+        liveRegion.setAttribute('role', 'status');
+        document.body.appendChild(liveRegion);
+    }
+    liveRegion.textContent = message;
+}
+
 export const removeChipAt = (values, index) => values.filter((_, i) => i !== index);
 
 /** Just the green chips (no input): `container` becomes the chip area. Returns
@@ -40,6 +55,7 @@ export function mountChipArea(container, { chipText = (value) => value, single =
             chip.addEventListener('click', () => {
                 values = removeChipAt(values, index);
                 render();
+                announce(chipAnnouncement('remove', text));
                 onChange(values);
             });
             container.appendChild(chip);
@@ -53,6 +69,7 @@ export function mountChipArea(container, { chipText = (value) => value, single =
             if (next === values) return false;
             values = next;
             render();
+            announce(chipAnnouncement('add', chipText(values[values.length - 1])));
             onChange(values);
             return true;
         },

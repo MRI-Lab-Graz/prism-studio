@@ -80,7 +80,7 @@ export function createParticipantsSourcedataQuickSelectController({
         wrapper.innerHTML = `
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
-                <select class="form-select form-select-sm" id="participantsSourcedataFileSelect">
+                <select class="form-select form-select-sm" id="participantsSourcedataFileSelect" aria-label="Sourcedata file">
                     <option value="">Loading sourcedata files...</option>
                 </select>
             </div>
