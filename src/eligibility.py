@@ -23,13 +23,24 @@ def is_screening_only(row: dict) -> bool:
 
 
 def screening_only_ids(participants_tsv) -> set[str]:
-    """Participant ids in the screening-only group of a participants.tsv (empty if unreadable)."""
+    """Prescreened participant ids of a participants.tsv (empty if unreadable).
+
+    A row with no ``sub-*`` folder next to the file is prescreening (screened, not
+    enrolled), and stops being so once its folder exists. Rows marked
+    ``group`` = screening-only count too. Before any folder exists nobody is derived,
+    because then the project simply has no data yet.
+    """
+    tsv = Path(participants_tsv)
     try:
-        with Path(participants_tsv).open(encoding="utf-8-sig", newline="") as handle:
+        with tsv.open(encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.DictReader(handle, delimiter="\t"))
     except (OSError, ValueError):
         return set()
-    return {(row.get("participant_id") or "").strip() for row in rows if is_screening_only(row)}
+    pid = lambda row: (row.get("participant_id") or "").strip()  # noqa: E731
+    ids = {pid(row) for row in rows}
+    folders = {p.name for p in tsv.parent.glob("sub-*") if p.is_dir()}
+    derived = ids - folders if folders else set()
+    return (derived | {pid(row) for row in rows if is_screening_only(row)}) - {""}
 
 
 def mark_screening_only(df, schema: dict, screening_ids, source_ids) -> None:
@@ -204,6 +215,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
         ("WARNING", f"PRISM603 Eligibility criterion {desc} in project.json is malformed (needs an id, type numeric or categorical, mode include or exclude, and a numeric min/max or a list of values); it is ignored.", str(root / "project.json"))
         for desc, _ in rejected
     ]
+    prescreened = screening_only_ids(tsv)
     found: list[tuple[str, str, str]] = []
     reported: set[str] = set()  # duplicate ids already warned about
     for col, crit_id in links.items():
@@ -250,7 +262,7 @@ def check_eligibility(root_dir: str) -> list[tuple[str, str, str]]:
             def violates(raw, labels=None, wanted=None, crit=crit):
                 return _numeric_violation(raw, crit)
 
-        values = ((row.get(col) or "").strip() for row in rows if not is_screening_only(row))
+        values = ((row.get(col) or "").strip() for row in rows if (row.get("participant_id") or "").strip() not in prescreened)
         count = sum(1 for raw in values if raw.lower() not in _MISSING and violates(raw))
         if count:  # one line per criterion: a count, never a list of participants
             found.append(("WARNING", f"PRISM602 {count} participant(s) with {col} {where} the {kind} {expected} (criterion: {label})", str(tsv)))

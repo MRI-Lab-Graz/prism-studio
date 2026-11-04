@@ -168,7 +168,6 @@ DEFECTS: list[Defect] = [
     Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _write(DATA, "BRS01;BRS02;BRS03\n3;4;2\n")),
     Defect("nan_in_sidecar", "NaN written into a JSON sidecar", ANY, lambda root: _write(SIDECAR, (root / SIDECAR).read_text(encoding="utf-8").replace('"Reversed": false', '"Reversed": NaN', 1))(root)),
     Defect("participants_tsv_duplicate_id", "the same participant twice in participants.tsv", ANY, _participants_row("sub-01\t31\n")),
-    Defect("participants_row_without_folder", "participants.tsv lists a participant that has no folder", "PRISM707", _participants_row("sub-99\t50\n")),
     Defect("non_ascii_subject_label", "sub-Müller is not a valid BIDS label", ANY, _copy_subject("03", "Müller")),
     Defect("session_padding_differs_between_subjects", "ses-1 for most subjects, ses-01 for one", "PRISM601", _mixed_session_padding),
     Defect("stray_file_at_root", "a word-processor file in the dataset root", ANY, _stray_file),
@@ -178,6 +177,8 @@ DEFECTS: list[Defect] = [
     Defect("benign_sidecar_describes_more_items", "a file holds fewer items than the shared sidecar describes", NONE,
            _write(DATA, "BRS01\tBRS02\n3\t4\n")),
     Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _write(DATA, "BRS01\tBRS02\tBRS03\nn/a\t4\t2\n")),
+    Defect("benign_prescreened_row_without_folder", "participants.tsv lists a participant that has no folder (prescreened)", NONE,
+           _participants_row("sub-99\t50\n")),
     Defect("benign_long_subject_label", "a 40-character alphanumeric participant label", NONE,
            _copy_subject("03", "x" * 40)),
 ]
