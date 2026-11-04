@@ -3934,6 +3934,8 @@ git push -u origin main
                 result["success"] = True
                 result["message"] = datalad_result.get("message") or "Current project is already tracked by DataLad."
                 result["datalad"] = datalad_result
+                if created_subdatasets:  # this call finished (or continued) the registration: the gate follows the last batch
+                    self._install_save_gate_hooks(project_path, result)
                 return result
 
             result["success"] = True
@@ -4008,6 +4010,14 @@ git push -u origin main
         if not os.environ.get("PRISM_TOOLS"):
             result["save_gate_hook"] = {
                 "installed": [], "foreign": [], "errors": [], "skipped": self._SAVE_GATE_SKIPPED,
+            }
+            return
+        if int((result.get("datalad") or {}).get("subdatasets_remaining_count", 0) or 0) > 0:
+            # Registering many subjects takes several calls; a gate turned on now would refuse the next call's
+            # bookkeeping commit for any dataset that is not valid yet. The last batch installs it.
+            result["save_gate_hook"] = {
+                "installed": [], "foreign": [], "errors": [],
+                "skipped": "nested datasets are still being registered; the gate is installed with the last batch",
             }
             return
         try:
