@@ -36,11 +36,11 @@ def screening_only_ids(participants_tsv) -> set[str]:
             rows = list(csv.DictReader(handle, delimiter="\t"))
     except (OSError, ValueError):
         return set()
-    ids = {(row.get("participant_id") or "").strip() for row in rows}
+    pid = lambda row: (row.get("participant_id") or "").strip()  # noqa: E731
+    ids = {pid(row) for row in rows}
     folders = {p.name for p in tsv.parent.glob("sub-*") if p.is_dir()}
     derived = ids - folders if folders else set()
-    marked = {(row.get("participant_id") or "").strip() for row in rows if is_screening_only(row)}
-    return (derived | marked) - {""}
+    return (derived | {pid(row) for row in rows if is_screening_only(row)}) - {""}
 
 
 def mark_screening_only(df, schema: dict, screening_ids, source_ids) -> None:
