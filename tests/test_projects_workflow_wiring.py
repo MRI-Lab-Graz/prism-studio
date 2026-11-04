@@ -340,6 +340,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "    initProjectsPage();\n"
             "    initProjectValidation();\n"
             "    initDataladSetupCheck();\n"
+            "    initGitIdentityCard({ fetchWithApiFallback });\n"
             "}",
             index_content,
         )

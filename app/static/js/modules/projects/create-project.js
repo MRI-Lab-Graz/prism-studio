@@ -1,3 +1,4 @@
+import { askGitIdentity } from './git-identity-dialog.js';
 import { showTopFeedback } from './helpers.js';
 import { guardSave } from './row-state.js';
 
@@ -181,6 +182,16 @@ export function initCreateProjectController({
             const result = await response.json();
 
             if (result.success) {
+                // DataLad was asked for but this project has no name and email yet: ask once, then switch it on.
+                if (result.datalad?.needs_git_identity
+                    && await askGitIdentity({ fetchWithApiFallback, projectPath: result.path })) {
+                    const enabled = await (await fetchWithApiFallback('/api/projects/datalad/enable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ confirmed: true })
+                    })).json();
+                    result.datalad = { ...result.datalad, ...(enabled.datalad || {}), message: enabled.message || enabled.error };
+                }
                 const dataladNotice = result.datalad?.message
                     ? `
                         <div class="alert alert-${result.datalad.saved ? 'info' : (result.datalad.requested ? 'warning' : 'secondary')} mt-3 mb-0">

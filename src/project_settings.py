@@ -6,6 +6,9 @@ One implementation for Studio's save buttons and the `datalad config`, `rsync co
 
 from __future__ import annotations
 
+import contextlib
+import os
+import subprocess
 from pathlib import Path
 
 from src.config import load_config, save_config
@@ -29,6 +32,57 @@ def set_schema_version(project_root: Path, version: str, available_versions: lis
     config = load_config(str(project_root))
     config.schema_version = version
     return {"schema_version": version, "available_versions": available_versions, "config_path": _save(config, project_root)}
+
+
+_IDENTITY_ENV = ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL")
+
+
+def project_git_identity(project_root) -> dict:
+    config = load_config(str(project_root))
+    return {"name": config.git_user_name or "", "email": config.git_user_email or ""}
+
+
+def apply_project_git_identity(project_root) -> None:
+    """Copy the project's identity into the git config of the project and its nested datasets."""
+    identity = project_git_identity(project_root)
+    root = Path(project_root)
+    if not all(identity.values()):
+        return
+    for repo in [root, *root.glob("*"), *root.glob("*/*")]:
+        if (repo / ".git").exists():
+            for key, value in (("user.name", identity["name"]), ("user.email", identity["email"])):
+                subprocess.run(["git", "-C", str(repo), "config", "--local", key, value], capture_output=True, check=False)
+
+
+@contextlib.contextmanager
+def project_git_identity_env(project_root):
+    """Sign every git/DataLad call inside the block with the project's identity (datasets that do not exist yet
+    have no git config to carry it), then write it into the datasets' own config so a terminal works too."""
+    identity = project_git_identity(project_root)
+    saved = {key: os.environ.get(key) for key in _IDENTITY_ENV}
+    if all(identity.values()):
+        for prefix in ("GIT_AUTHOR_", "GIT_COMMITTER_"):
+            os.environ[prefix + "NAME"], os.environ[prefix + "EMAIL"] = identity["name"], identity["email"]
+    try:
+        yield
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        apply_project_git_identity(project_root)
+
+
+def save_project_git_identity(project_root: Path, name, email) -> dict:
+    from src.datalad_doctor import check_git_identity
+
+    name, email = check_git_identity(name, email)
+    config = load_config(str(project_root))
+    config.git_user_name, config.git_user_email = name, email
+    config_path = _save(config, project_root)
+    apply_project_git_identity(project_root)
+    return {"name": name, "email": email, "config_path": config_path}
 
 
 def save_datalad_server_config(project_root: Path, ria_url=None, sibling_name=None, alias=None) -> dict:

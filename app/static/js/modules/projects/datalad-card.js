@@ -1,4 +1,5 @@
 import { isSameProjectPath } from '../../shared/project-state.js';
+import { askGitIdentity } from './git-identity-dialog.js';
 
 export const DATALAD_DOCS_URL = 'https://www.datalad.org/';
 export const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';
@@ -601,6 +602,10 @@ export function createDataladCard({
                     body: JSON.stringify({ confirmed: true }),
                 });
                 data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
+                if (data.needs_git_identity) {
+                    if (await askGitIdentity({ fetchWithApiFallback, projectPath: normalizedPath })) continue;
+                    throw new Error('DataLad was not enabled: this project needs a name and email first.');
+                }
                 if (!response.ok || !data.success) {
                     throw new Error(data.error || data.message || 'Could not enable DataLad.');
                 }

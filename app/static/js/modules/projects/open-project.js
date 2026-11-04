@@ -532,6 +532,7 @@ export function initOpenProjectController({
             showStudyMetadataCard();
             updateCreateProjectButton();
             showMethodsCard();
+            window.dispatchEvent(new CustomEvent('prism-project-opened', { detail: { path: loadedPath } }));
 
             lastShallowProjectSummary = projectSummary;
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);

@@ -125,6 +125,10 @@ class PrismConfig:
     datalad_sibling_name: str = "ria-store"
     datalad_sibling_alias: Optional[str] = None
 
+    # Who signs this project's DataLad/git snapshots (students may share one login on a machine)
+    git_user_name: Optional[str] = None
+    git_user_email: Optional[str] = None
+
     # Plain-copy server connection for users not using DataLad (rsync over
     # SSH, or a local/mounted destination path), for "Push to Remote Server"
     # Example:
@@ -213,6 +217,8 @@ def load_config(dataset_path: str) -> PrismConfig:
             datalad_ria_store_url=data.get("riaStoreUrl"),
             datalad_sibling_name=data.get("siblingName", "ria-store"),
             datalad_sibling_alias=data.get("siblingAlias"),
+            git_user_name=data.get("gitUserName"),
+            git_user_email=data.get("gitUserEmail"),
             rsync_remote_target=data.get("rsyncRemoteTarget"),
             rsync_remote_label=data.get("rsyncRemoteLabel"),
             rsync_exclude_patterns=data.get("rsyncExcludePatterns", []),
@@ -262,6 +268,10 @@ def config_to_dict(config: PrismConfig) -> dict:
 
     if config.datalad_sibling_alias:
         data["siblingAlias"] = config.datalad_sibling_alias
+
+    if config.git_user_name and config.git_user_email:
+        data["gitUserName"] = config.git_user_name
+        data["gitUserEmail"] = config.git_user_email
 
     if config.rsync_remote_target:
         data["rsyncRemoteTarget"] = config.rsync_remote_target
@@ -425,6 +435,10 @@ class AppSettings:
     # Off by default: DataLad stays an opt-in, this only pre-selects it.
     datalad_for_new_projects: bool = False
 
+    # Several people use this computer login (a lab PC). DataLad then needs a name and email per project;
+    # on a personal computer the git name and email of the machine are used for every project.
+    shared_login: bool = True
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -507,6 +521,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
                 data.get("enableStudyApplicationImport", False)
             ),
             datalad_for_new_projects=bool(data.get("dataladForNewProjects", False)),
+            shared_login=bool(data.get("sharedLogin", True)),
         )
         settings._settings_path = settings_path
         return settings
@@ -547,6 +562,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         ),
         "enableStudyApplicationImport": settings.enable_study_application_import,
         "dataladForNewProjects": settings.datalad_for_new_projects,
+        "sharedLogin": settings.shared_login,
     }
 
     # Remove None values

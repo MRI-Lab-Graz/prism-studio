@@ -20,6 +20,21 @@ def settings_page():
     return render_template("settings.html", current_project=get_current_project())
 
 
+@projects_library_bp.route("/api/settings/git-identity", methods=["GET", "POST"])
+def git_identity():
+    """Studio's Settings page runs the same functions as `prism_tools.py datalad identity`."""
+    from src.datalad_doctor import get_git_identity, set_git_identity
+
+    if request.method == "GET":
+        return jsonify({"success": True, **get_git_identity()})
+    data = request.get_json(silent=True) or {}
+    try:
+        identity = set_git_identity(data.get("name"), data.get("email"))
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+    return jsonify({"success": True, **identity})
+
+
 def _apply_settings_changes(changes: dict):
     """Studio's Settings page runs the same function as `prism_tools.py settings set`."""
     from flask import current_app
@@ -73,6 +88,7 @@ def get_global_library_settings():
                 getattr(settings, "enable_study_application_import", False)
             ),
             "datalad_for_new_projects": bool(settings.datalad_for_new_projects),
+            "shared_login": bool(settings.shared_login),
         }
     )
 
@@ -180,7 +196,7 @@ def set_global_library_settings():
         return jsonify({"success": False, "error": "No data provided"}), 400
     from src.settings_update import SETTINGS
 
-    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode", "datalad_for_new_projects"}
+    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode", "datalad_for_new_projects", "shared_login"}
     settings, error = _apply_settings_changes({k: v for k, v in data.items() if k in shared and k in SETTINGS})
     if error:
         return error
@@ -192,6 +208,7 @@ def set_global_library_settings():
         "global_recipes_path": settings.global_recipes_path,
         "export_defacing_confirmation_mode": settings.export_defacing_confirmation_mode,
         "datalad_for_new_projects": settings.datalad_for_new_projects,
+        "shared_login": settings.shared_login,
     })
 
 

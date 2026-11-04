@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import sys
 
-from src.datalad_doctor import run_doctor
+from src.datalad_doctor import get_git_identity, run_doctor, set_git_identity
 
 
 def _server_url(args):
@@ -126,3 +126,32 @@ def cmd_datalad_save(args) -> None:
 
     message = str(args.message or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
     _print_result(args, _manager().save_datalad_snapshot(args.project, message=message))
+
+
+def cmd_datalad_identity(args) -> None:
+    """Show or set who signs saved changes: this project's (--project), else the whole computer's.
+
+    Studio's project page and Settings page run the same functions."""
+    from pathlib import Path
+
+    from src import project_settings
+
+    project = getattr(args, "project", None)
+    try:
+        if project:
+            root = Path(project).resolve()
+            identity = (
+                project_settings.save_project_git_identity(root, args.name, args.email)
+                if (args.name or args.email)
+                else project_settings.project_git_identity(root)
+            )
+        else:
+            identity = set_git_identity(args.name, args.email) if (args.name or args.email) else get_git_identity()
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    identity = {"name": identity["name"], "email": identity["email"]}
+    if getattr(args, "json", False):
+        print(json.dumps({"success": True, **identity}, ensure_ascii=False))
+    else:
+        print(f"{identity['name'] or '(no name)'} <{identity['email'] or 'no email'}>")

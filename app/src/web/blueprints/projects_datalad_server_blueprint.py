@@ -246,6 +246,24 @@ def datalad_server_status():
     return jsonify(status)
 
 
+@projects_datalad_server_bp.route("/api/projects/git-identity", methods=["GET", "POST"])
+def project_git_identity_route():
+    """Who signs this project's DataLad snapshots; the same functions as `prism_tools.py datalad identity --project`."""
+    from src import project_settings
+
+    data = request.get_json(silent=True) or {} if request.method == "POST" else {}
+    resolved = _resolve_project_root_path(data.get("project_path") or request.args.get("project_path"))
+    if resolved is None:
+        return jsonify({"success": False, "error": "Invalid project path"}), 400
+    if request.method == "GET":
+        return jsonify({"success": True, **project_settings.project_git_identity(resolved)})
+    try:
+        saved = project_settings.save_project_git_identity(resolved, data.get("name"), data.get("email"))
+    except ValueError as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+    return jsonify({"success": True, **saved})
+
+
 @projects_datalad_server_bp.route("/api/projects/datalad-server/config", methods=["POST"])
 def datalad_server_save_config():
     """Save the per-project RIA URL/sibling name/alias into .prismrc.json."""
