@@ -78,6 +78,12 @@ def _alternating_diff_index_run_side_effect():
 
 
 class TestProjectManager(unittest.TestCase):
+    def setUp(self):
+        # These tests mock subprocess.run; the real machine checks are covered in test_datalad_preflight.py
+        patcher = patch("src.project_manager.datalad_preflight", return_value=[])
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_create_project_sets_default_author(self):
         manager = ProjectManager()
 

@@ -43,6 +43,25 @@
                 </label>
             </div>
             <div class="small mt-2" id="dataladForNewProjectsFeedback" aria-live="polite"></div>
+            <hr>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="sharedLoginToggle">
+                <label class="form-check-label" for="sharedLoginToggle">
+                    <span class="d-block fw-semibold">Several people use this computer login</span>
+                    <small class="text-muted">On: each project asks for its own DataLad name and email once, when DataLad is switched on. Off: you enter your name and email here, once, for all projects.</small>
+                </label>
+            </div>
+            <div class="small mb-2" id="sharedLoginFeedback" aria-live="polite"></div>
+            <div id="gitIdentityMachine">
+            <div class="fw-semibold">Your name and email</div>
+            <small class="text-muted d-block mb-2">Used for all your projects. Stored in your git settings for this computer.</small>
+            <form class="row g-2" id="gitIdentityForm">
+                <div class="col-md-4"><input class="form-control form-control-sm" id="gitIdentityName" placeholder="Your name" autocomplete="name"></div>
+                <div class="col-md-4"><input class="form-control form-control-sm" id="gitIdentityEmail" type="email" placeholder="you@example.org" autocomplete="email"></div>
+                <div class="col-md-4"><button type="submit" class="btn btn-sm btn-outline-primary">Save</button></div>
+            </form>
+            <div class="small mt-2" id="gitIdentityFeedback" aria-live="polite"></div>
+            </div>
             {% if not current_project.path %}
             <div class="small text-muted mt-3">Open a project to see and manage its own DataLad tracking here.</div>
             {% endif %}
@@ -50,6 +69,7 @@
     </div>
 
     {% include 'includes/projects/datalad_section.html' %}
+    {% include 'includes/projects/git_identity_modal.html' %}
 
     {% include 'includes/projects/settings_section.html' %}
 </div>

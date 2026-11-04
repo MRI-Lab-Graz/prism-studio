@@ -186,6 +186,8 @@ def dispatch_prism_tools(
             handlers["datalad_doctor"](args)
         elif args.action == "config":
             handlers["datalad_config"](args)
+        elif args.action == "identity":
+            handlers["datalad_identity"](args)
         elif args.action == "sync":
             handlers["datalad_sync"](args)
         elif args.action == "finalize":

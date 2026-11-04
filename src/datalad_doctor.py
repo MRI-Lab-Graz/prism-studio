@@ -7,10 +7,12 @@ Pure functions; `which`/`run` are injectable so tests never touch the network.
 from __future__ import annotations
 
 import functools
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
@@ -59,6 +61,117 @@ _IDENTITY_FIX = (
     'git config --global user.name "Your Name"\n'
     'git config --global user.email "you@example.org"'
 )
+
+
+def needs_project_identity(cwd) -> bool:
+    """True when the user should be asked for this project's own name and email (shared login only)."""
+    from src.config import load_app_settings
+
+    return load_app_settings().shared_login and bool(missing_identity_message(cwd))
+
+
+def get_git_identity(cwd=None) -> dict:
+    """The name and email git would sign a saved change with (global config, or the project's own)."""
+    values = {}
+    for key in ("name", "email"):
+        proc = subprocess.run(["git", "config", "--get", f"user.{key}"], capture_output=True, text=True, cwd=cwd)
+        values[key] = proc.stdout.strip() if proc.returncode == 0 else ""
+    return values
+
+
+def missing_identity_message(cwd=None) -> str:
+    """Empty when DataLad may sign saved changes here, else what to do (before its first commit fails on it).
+
+    A project not yet tracked by DataLad needs its own name and email: on a login shared by several people the
+    computer's git identity may be someone else's. An already tracked project may fall back to git's.
+    """
+    if cwd is None:
+        return "" if all(get_git_identity().values()) else (
+            "Git does not know your name and email (user.name / user.email), so DataLad cannot save.\n" + _IDENTITY_FIX
+        )
+    from src.config import load_app_settings
+    from src.project_settings import project_git_identity
+
+    if all(project_git_identity(cwd).values()):
+        return ""
+    shared = load_app_settings().shared_login
+    if (not shared or (Path(cwd) / ".datalad").exists()) and all(get_git_identity(cwd).values()):
+        return ""
+    if not shared:
+        return (
+            "Git does not know your name and email, so DataLad cannot save. "
+            "Enter them on the Settings page (Settings > DataLad Version Control), or run: "
+            'prism_tools.py datalad identity --name "Your Name" --email you@example.org'
+        )
+    return (
+        "DataLad signs every saved change with a name and email, and this project has none of its own yet "
+        "(this computer is set up as a shared login). "
+        "Enter them in the DataLad card on the project page, or run: "
+        f'prism_tools.py datalad identity --project "{cwd}" --name "Your Name" --email you@example.org'
+    )
+
+
+def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil.which) -> list:
+    """Everything that would make DataLad fail on this project, as plain sentences (empty list = ready).
+
+    Runs before DataLad touches the project; reports all problems at once, each with its fix.
+    """
+    project = Path(project)
+    problems = []
+    for tool in ("git", "git-annex", "datalad"):
+        if not which(tool):
+            problems.append(f"{tool} is not installed. {_tool_fix(tool, which)}")
+    if not which("git"):
+        return problems
+    cwd = project if project.is_dir() else None
+    identity_problem = missing_identity_message(cwd)
+    if identity_problem:
+        problems.append(identity_problem)
+    if cwd is None or not os.access(project, os.W_OK | os.X_OK):
+        problems.append(f"PRISM cannot write to {project}. Check that the folder exists and that you own it.")
+        return problems
+
+    top = subprocess.run(["git", "-C", str(project), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    if top.returncode == 0:
+        if Path(top.stdout.strip()).resolve() != project.resolve():
+            problems.append(
+                f"This folder is inside another git repository ({top.stdout.strip()}). "
+                "Move the project out of it, or DataLad would nest inside it."
+            )
+    elif "dubious ownership" in top.stderr:
+        problems.append(
+            "Git refuses this folder because it belongs to another user. Run:\n"
+            f'git config --global --add safe.directory "{project}"'
+        )
+
+    if not identity_problem:  # a real commit catches broken hooks / git config that reading the config cannot
+        from src.project_settings import project_git_identity_env
+
+        with tempfile.TemporaryDirectory() as tmp, project_git_identity_env(project):
+            for cmd in (["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "prism preflight"]):
+                proc = subprocess.run(["git", "-C", tmp, *cmd], capture_output=True, text=True)
+                if proc.returncode != 0:
+                    problems.append(f"Git could not make a test commit: {(proc.stderr or proc.stdout).strip()}")
+                    break
+    return problems
+
+
+def check_git_identity(name: str, email: str) -> tuple:
+    """(name, email) trimmed, or ValueError with the sentence to show."""
+    name, email = (name or "").strip(), (email or "").strip()
+    if not name or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) or "\n" in name:
+        raise ValueError("Enter your name and a valid email address (like you@example.org).")
+    return name, email
+
+
+def set_git_identity(name: str, email: str) -> dict:
+    """Write user.name and user.email to the global git config (`datalad identity` without a project)."""
+    name, email = check_git_identity(name, email)
+    for key, value in (("user.name", name), ("user.email", email)):
+        proc = subprocess.run(["git", "config", "--global", key, value], capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise ValueError(f"git could not save {key}: {proc.stderr.strip()}")
+    return {"name": name, "email": email}
 
 
 def _check_git_identity(git_path: str, run: Run) -> dict:

@@ -78,6 +78,8 @@
  "projects_export.export_project_structure": "cli: export structure",
  "projects_export.openminds_export_project": "cli: export openminds",
  "projects_export.template_export_project": "cli: template-export",
+ "projects_datalad_server.project_git_identity_route": "cli: datalad identity",
+ "projects_library.git_identity": "cli: datalad identity",
  "projects_library.set_backend_monitoring_setting": "cli: settings set",
  "projects_library.set_dedicated_terminal_setting": "cli: settings set",
  "projects_library.set_global_library_settings": "cli: settings set",

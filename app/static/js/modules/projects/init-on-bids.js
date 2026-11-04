@@ -509,6 +509,7 @@ export function initProjectInitOnBidsController({
                 );
                 showStudyMetadataCard();
                 showMethodsCard();
+                window.dispatchEvent(new CustomEvent('prism-project-opened', { detail: { path: result.path } }));
             } else {
                 stopProgressTimer();
                 setProgress(100, 'Initialization failed.', 'danger', false);

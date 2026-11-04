@@ -259,7 +259,7 @@ def test_every_decision_is_audited(green):
 
 @needs_datalad
 @pytest.mark.slow
-def test_a_real_prism_project_gets_the_gate(tmp_path):
+def test_a_real_prism_project_gets_the_gate(tmp_path, personal_login):
     """The project-creation flow itself installs the hook (not just the test fixture):
     a fresh metadata-only project saves, but participants.tsv without subject data is refused."""
     sys.path.insert(0, str(REPO / "app"))
