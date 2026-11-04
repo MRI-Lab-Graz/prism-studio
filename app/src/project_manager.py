@@ -3757,7 +3757,7 @@ git push -u origin main
         real git.
         """
         project_path = Path(path)
-        problems = datalad_preflight(project_path)
+        problems = datalad_preflight(project_path, validate=True)
         if problems:
             return {
                 "success": False,

@@ -216,6 +216,10 @@ def test_gate_waits_for_the_last_nested_batch_so_registration_is_not_blocked_by_
         (survey / f"{sub}_ses-1_task-x_survey.tsv").write_text("a\tb\n1\t2\n")
     (project / "participants.tsv").write_text("participant_id\nsub-001\n")  # sub-002/003 missing: the dataset is invalid
 
+    from src import datalad_doctor
+
+    real_preflight = datalad_doctor.datalad_preflight  # this dataset is invalid on purpose; enable's own validation is tested elsewhere
+    monkeypatch.setattr("src.project_manager.datalad_preflight", lambda p, **kw: real_preflight(p, **{**kw, "validate": False}))
     one_at_a_time = ProjectManager._create_nested_subdatasets
     monkeypatch.setattr(
         ProjectManager, "_create_nested_subdatasets",

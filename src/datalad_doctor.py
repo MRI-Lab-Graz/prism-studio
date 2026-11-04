@@ -111,10 +111,12 @@ def missing_identity_message(cwd=None) -> str:
     )
 
 
-def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil.which) -> list:
+def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil.which, validate: bool = False) -> list:
     """Everything that would make DataLad fail on this project, as plain sentences (empty list = ready).
 
     Runs before DataLad touches the project; reports all problems at once, each with its fix.
+    validate=True also requires an untracked project that already has subjects to validate: the save gate refuses
+    every later save of an invalid one, so DataLad would leave it unsavable.
     """
     project = Path(project)
     problems = []
@@ -130,6 +132,19 @@ def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil
     if cwd is None or not os.access(project, os.W_OK | os.X_OK):
         problems.append(f"PRISM cannot write to {project}. Check that the folder exists and that you own it.")
         return problems
+
+    if validate and not (project / ".datalad").exists() and any(project.glob("sub-*")):
+        from src.share_publish import validate_for_publish
+
+        try:
+            errors = validate_for_publish(project)
+        except (Exception, SystemExit) as exc:  # fail closed, like the gate
+            errors = [f"Validation could not run: {exc}"]
+        if errors:
+            problems.append(
+                "The project does not validate yet, and PRISM's save gate refuses to save a project that does not. "
+                "Fix this first, then enable DataLad:\n- " + "\n- ".join(errors)
+            )
 
     top = subprocess.run(["git", "-C", str(project), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
     if top.returncode == 0:
