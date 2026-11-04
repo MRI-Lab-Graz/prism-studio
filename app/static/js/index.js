@@ -928,7 +928,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const labelName = currentName || 'Current project';
             currentProjectTargetDetails.textContent = `${labelName} · ${currentPath}`;
             currentProjectTargetDetails.title = currentPath;
-            currentProjectTargetDetails.setAttribute('aria-label', currentPath);
             return;
         }
 

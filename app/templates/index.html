@@ -76,7 +76,7 @@
                                 <div class="flex-grow-1">
                                     <span class="fw-bold">Validating the current project</span>
                                     <br>
-                                    <small class="text-muted" id="currentProjectTargetDetails" title="{{ current_project.path | default('') }}" aria-label="{{ current_project.path | default('') }}">{{ current_project.name }} · {{ current_project.path }}</small>
+                                    <small class="text-muted" id="currentProjectTargetDetails" title="{{ current_project.path | default('') }}">{{ current_project.name }} · {{ current_project.path }}</small>
                                     {% if project_schemas and project_schemas.schemas %}
                                     <div class="small mt-2" id="currentProjectSchemas">
                                         <span class="text-muted">Schemas in use:</span>

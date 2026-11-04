@@ -1,8 +1,8 @@
 {% macro page_header(icon_class, title, subtitle='', note='') -%}
 <div class="studio-page-header mb-4">
-    <h2 class="mb-2">
+    <h1 class="h2 mb-2">
         <i class="{{ icon_class }} text-primary me-2 studio-page-header-icon"></i>{{ title }}
-    </h2>
+    </h1>
     {% if subtitle %}
     <p class="text-muted mb-0">{{ subtitle }}</p>
     {% endif %}

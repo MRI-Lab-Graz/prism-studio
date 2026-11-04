@@ -172,11 +172,13 @@
 }
 
 .studio-theme .studio-page-shell > .row:first-child h2,
-.studio-theme .page-header h2 {
+.studio-theme .page-header h2,
+.studio-theme .studio-page-header h1 {
     font-weight: 700;
     letter-spacing: -0.01em;
 }
 
+.studio-theme .studio-page-header h1,
 .studio-theme .studio-page-header h2 {
     display: flex;
     align-items: center;
@@ -807,4 +809,16 @@
     --bs-success-rgb: 31, 122, 77;
     --bs-warning-rgb: 255, 213, 0;
     --bs-danger-rgb: 184, 74, 85;
+}
+
+/* WCAG 1.4.1: a link inside running text is told apart by more than its colour. */
+.studio-theme p a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item),
+.studio-theme li a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item),
+.studio-theme small a:not(.btn):not(.badge):not(.nav-link):not(.dropdown-item) {
+    text-decoration: underline !important;
+}
+
+/* WCAG 2.4.11: the sticky navbar must not cover the control that has the keyboard focus. */
+html {
+    scroll-padding-top: 6rem;
 }
