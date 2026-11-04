@@ -30,6 +30,7 @@ def ensure_git_excluded(project_root: str | Path, *patterns: str) -> None:
 
 
 SENSITIVE_PATHS = ("code/anonymization_map.json", "code/logs")
+LOCAL_ONLY_PATTERNS = ("code/anonymization_map.json", "code/logs/")  # never committed, whoever creates the repo
 
 
 def tracked_sensitive_files(project_root: str | Path) -> list[str]:

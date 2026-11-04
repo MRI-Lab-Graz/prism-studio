@@ -58,7 +58,12 @@ from src.cross_platform import (
 )
 from src.project_settings import project_git_identity_env
 from src.datalad_doctor import explain_ssh_failures, install_command, install_hint, datalad_preflight, needs_project_identity
-from src.git_exclude import sensitive_files_warning, tracked_sensitive_files
+from src.git_exclude import (
+    LOCAL_ONLY_PATTERNS,
+    ensure_git_excluded,
+    sensitive_files_warning,
+    tracked_sensitive_files,
+)
 from src.entity_rules import load_entity_rules
 from src.specification import current_specification
 from src.issues import get_fix_hint, infer_code_from_message
@@ -4136,6 +4141,7 @@ git push -u origin main
             )
             return result
 
+        ensure_git_excluded(project_path, *LOCAL_ONLY_PATTERNS)  # before the first save commits them
         if create_nested_subdatasets:
             nested_result = self._create_nested_subdatasets(
                 project_path,

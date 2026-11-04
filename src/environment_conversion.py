@@ -1122,8 +1122,10 @@ def perform_environment_conversion(
 
     # Writes sub-*/ses-*/environment/ straight into the project root (CLI and Studio).
     from src.modality_versions import pin_after_import
+    from src.utils.io import register_subjects
 
     pin_after_import(project_root_path)
+    register_subjects(project_root_path, [row["subject_id"] for row in rows_out])
     schema_pin_change = _move_retired_environment_pin(project_root_path, log_callback)
 
     elapsed_seconds = max(0.0, perf_counter() - conversion_started_at)

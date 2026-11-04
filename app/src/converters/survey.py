@@ -1940,6 +1940,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     # that standard BIDS validators don't recognize.
     check_and_update_bidsignore(dataset_root, ["survey"])
 
+    from src.utils.io import register_subjects
+
+    register_subjects(dataset_root, normalized_ids_for_collision_check)
+
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
         unknown_columns=unknown_cols,

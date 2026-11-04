@@ -553,7 +553,9 @@ def test_full_non_mri_sweep_with_and_without_datalad(tmp_path: Path, use_datalad
         rawdata / "participants_merge_incoming_source.csv",
         _FULL_SWEEP_MERGE_MAPPING,
     )
-    assert merge_result["merged_participant_count"] == 5
+    # The survey stage listed the subjects it wrote (sub-01..sub-05, who were in no participants source), so the
+    # merged table holds them next to the two participant sources.
+    assert merge_result["merged_participant_count"] == 10
 
     # 5) Recipe scoring against the survey data just imported.
     recipes_dir = project_root / "code" / "recipes" / "survey"
@@ -602,6 +604,7 @@ def test_full_non_mri_sweep_with_and_without_datalad(tmp_path: Path, use_datalad
         project_root / "participants.tsv", sep="\t", dtype=str, keep_default_na=False
     )
     assert set(participants_final["participant_id"]) == {
+        "sub-01", "sub-02", "sub-03", "sub-04", "sub-05",  # registered by the survey conversion
         "sub-100",
         "sub-101",
         "sub-Ab",
