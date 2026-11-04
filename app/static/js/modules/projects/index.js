@@ -37,6 +37,7 @@ import * as exportModule from './export.js';
 import * as dataladServerModule from './datalad_server.js';
 import { initDataladSetupCheck } from './datalad_setup_check.js';
 import { initGitIdentityCard } from './git-identity-card.js';
+import { initSessionMapCard } from './session-map-card.js';
 import {
     clearGlobalLibrary,
     initBackendMonitoringToggle,
@@ -103,6 +104,7 @@ export function initializeProjectsPage() {
     initProjectValidation();
     initDataladSetupCheck();
     initGitIdentityCard({ fetchWithApiFallback });
+    initSessionMapCard({ fetchWithApiFallback });
 }
 
 // Share & Archive is its own page (export, DataLad server push, rsync

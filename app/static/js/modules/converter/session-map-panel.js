@@ -36,6 +36,16 @@ export function entriesToSave(labels, typed) {
     return entries;
 }
 
+/** What to save when a saved map is edited: valid names that differ from the saved ones. */
+export function changedEntries(saved, typed) {
+    const entries = {};
+    for (const [label, raw] of Object.entries(typed)) {
+        const value = String(raw ?? '').trim();
+        if (validSessionName(value) && value !== saved[label]) entries[label] = value;
+    }
+    return entries;
+}
+
 /**
  * Groups of digit-only labels that differ only by leading zeros ('1', '01', '001').
  * They are different labels and stay different; this only lets the panel point it out.
