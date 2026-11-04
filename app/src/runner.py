@@ -702,10 +702,9 @@ def _check_participants_subject_alignment(
 ) -> list[tuple[str, str, str]]:
     """Return the mismatches between top-level sub-* folders and participants.tsv.
 
-    Read-only. A sub-* folder missing from participants.tsv is an error; a
-    participants.tsv row without a folder is a warning (not everyone screened is enrolled).
+    Read-only. A sub-* folder missing from participants.tsv is an error. A
+    participants.tsv row without a folder is valid: prescreened, not enrolled.
     """
-    from src.eligibility import is_screening_only
     from src.participant_ids import find_participant_id_source_column, normalize_participant_id
 
     participants_path = Path(root_dir) / "participants.tsv"
@@ -720,7 +719,6 @@ def _check_participants_subject_alignment(
         }
 
     participant_ids: set[str] = set()
-    screening_ids: set[str] = set()
     row_counts: dict[str, int] = {}
     try:
         with participants_path.open("r", encoding="utf-8", newline="") as handle:
@@ -743,8 +741,6 @@ def _check_participants_subject_alignment(
                 if normalized:
                     participant_ids.add(normalized)
                     row_counts[normalized] = row_counts.get(normalized, 0) + 1
-                    if is_screening_only(row):
-                        screening_ids.add(normalized)
     except Exception:
         return []
 
@@ -766,10 +762,8 @@ def _check_participants_subject_alignment(
         return found
 
     missing_in_tsv = sorted(subject_ids - participant_ids)
-    # screening-only rows are expected to have no folder
-    missing_subject_dirs = sorted(participant_ids - subject_ids - screening_ids)
-
-    if not missing_in_tsv and not missing_subject_dirs:
+    # a row without a folder is prescreening (screened, not enrolled): valid, no message
+    if not missing_in_tsv:
         return found
 
     def _summarize(values: list[str], limit: int = 20) -> str:
@@ -785,16 +779,6 @@ def _check_participants_subject_alignment(
                 "participants.tsv mismatch with dataset subject folders. "
                 "Subjects present as sub-* folders but missing in participants.tsv: "
                 + _summarize(missing_in_tsv),
-                str(participants_path),
-            )
-        )
-    if missing_subject_dirs:
-        # Only a warning: e.g. prescreened participants who were never invited stay listed on purpose.
-        found.append(
-            (
-                "WARNING",
-                f"participants.tsv lists {len(missing_subject_dirs)} participant(s) without a sub-* folder "
-                "(for example prescreened but not enrolled): " + _summarize(missing_subject_dirs),
                 str(participants_path),
             )
         )

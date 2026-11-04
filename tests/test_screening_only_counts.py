@@ -37,6 +37,27 @@ def test_no_group_column_or_no_file_means_nobody(tmp_path):
     assert screening_only_ids(_project(tmp_path, "participant_id\tage\nsub-01\t20\n") / "participants.tsv") == set()
 
 
+def test_rows_without_a_subject_folder_are_prescreening(tmp_path):
+    root = _project(tmp_path)
+    (root / "sub-01").mkdir()
+    (root / "sub-02").mkdir()
+    # sub-03/sub-04 have no folder; sub-04 is also explicitly marked
+    assert screening_only_ids(root / "participants.tsv") == {"sub-03", "sub-04"}
+
+
+def test_a_row_stops_being_prescreening_when_its_folder_appears(tmp_path):
+    root = _project(tmp_path, "participant_id\tage\nsub-01\t20\nsub-02\t30\n")
+    (root / "sub-01").mkdir()
+    assert screening_only_ids(root / "participants.tsv") == {"sub-02"}
+    (root / "sub-02").mkdir()
+    assert screening_only_ids(root / "participants.tsv") == set()
+
+
+def test_before_any_data_nobody_is_prescreening(tmp_path):
+    root = _project(tmp_path, "participant_id\tage\nsub-01\t20\n")
+    assert screening_only_ids(root / "participants.tsv") == set()
+
+
 def test_sample_statistics_leave_the_screened_out_and_count_them(tmp_path):
     stats = helpers._compute_participant_stats(_project(tmp_path))
     assert stats["n"] == 2 and stats["n_screened"] == 2

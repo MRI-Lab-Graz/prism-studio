@@ -40,19 +40,15 @@ def test_real_mismatch_is_still_reported(tmp_path):
 
     issues = _check_participants_subject_alignment(str(root))
 
-    assert [level for level, _, _ in issues] == ["ERROR", "WARNING"]
+    assert [level for level, _, _ in issues] == ["ERROR"]
     assert "mismatch" in issues[0][1]
 
 
-def test_participants_without_folder_are_only_a_warning(tmp_path):
+def test_participants_without_folder_are_prescreening_not_an_issue(tmp_path):
     root = _project(tmp_path, ["sub-01", "sub-02", "sub-03"])
     (root / "sub-01").mkdir()
 
-    issues = _check_participants_subject_alignment(str(root))
-
-    assert [level for level, _, _ in issues] == ["WARNING"]
-    assert "2 participant(s)" in issues[0][1]
-    assert infer_code_from_message(issues[0][1]) == "PRISM707"
+    assert _check_participants_subject_alignment(str(root)) == []
 
 
 # --- metadata-only projects are green; participants without subjects are red ---
@@ -106,13 +102,10 @@ def test_prism_only_run_reports_the_participants_mismatch_too(tmp_path):
     assert any("participants.tsv mismatch" in message for _, message, _ in issues)
 
 
-def test_screening_only_rows_without_folder_raise_no_warning(tmp_path):
+def test_rows_without_folder_are_prescreening_and_raise_no_warning(tmp_path):
     (tmp_path / "participants.tsv").write_text(
         "participant_id\tgroup\nsub-01\tcontrol\nsub-02\tscreening-only\nsub-03\tcontrol\n"
     )
     (tmp_path / "sub-01").mkdir()
 
-    issues = _check_participants_subject_alignment(str(tmp_path))
-
-    assert len(issues) == 1 and "1 participant(s)" in issues[0][1]
-    assert "sub-03" in issues[0][1] and "sub-02" not in issues[0][1]
+    assert _check_participants_subject_alignment(str(tmp_path)) == []

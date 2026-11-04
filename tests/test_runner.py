@@ -228,7 +228,7 @@ class TestValidateDataset:
         )
 
     def test_bids_run_reports_orphan_participants_in_tsv(self, tmp_path, monkeypatch):
-        """BIDS run should warn (not error) when participants.tsv contains orphan participant IDs."""
+        """A participants.tsv row without a folder is prescreening: neither error nor warning."""
         (tmp_path / "dataset_description.json").write_text(
             '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
             encoding="utf-8",
@@ -249,15 +249,12 @@ class TestValidateDataset:
         )
 
         assert not [i for i in issues if i[0] == "ERROR"]
-        assert any(
-            level == "WARNING" and "without a sub-* folder" in msg and "sub-999" in msg
-            for level, msg, *_rest in issues
-        )
+        assert not any("sub-999" in msg for _level, msg, *_rest in issues)
 
     def test_bids_run_splits_participant_mismatch_by_direction(
         self, tmp_path, monkeypatch
     ):
-        """A folder without a row is an error; a row without a folder (e.g. prescreened, never invited) only a warning."""
+        """A folder without a row is an error; a row without a folder (prescreened, never invited) is fine."""
         (tmp_path / "dataset_description.json").write_text(
             '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
             encoding="utf-8",
@@ -279,17 +276,12 @@ class TestValidateDataset:
         )
 
         errors = [msg for level, msg, *_rest in issues if level == "ERROR"]
-        warnings = [msg for level, msg, *_rest in issues if level == "WARNING"]
         assert any(
             "Subjects present as sub-* folders but missing in participants.tsv" in msg
             and "sub-002" in msg
             for msg in errors
         )
-        assert not any("sub-999" in msg for msg in errors)
-        assert any(
-            "without a sub-* folder" in msg and "1 participant" in msg and "sub-999" in msg
-            for msg in warnings
-        )
+        assert not any("sub-999" in msg for _level, msg, *_rest in issues)
 
     def test_nested_derivative_dataset_description_is_accepted(self):
         """Variant subfolders under derivatives should satisfy metadata checks."""
