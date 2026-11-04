@@ -33,6 +33,8 @@ exclude_patterns = [
     # Maintainer-only checklist, linked from CONTRIBUTING.md for browsing on
     # GitHub directly; not part of the public docs site.
     "RELEASE_CHECKLIST.md",
+    # Working checklist for the accessibility pass; for people working on the code.
+    "ACCESSIBILITY_CHECKLIST.md",
     # Replaced by TUTORIAL_BEGINNER
     "QUICK_START.md",
 ]
