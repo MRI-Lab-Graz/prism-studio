@@ -1,25 +1,10 @@
 """Every Studio page opens with a project selected and raises no browser error.
-A new page belongs in this list; a flow that needs clicking gets its own test_<page>_flows.py."""
+A new page belongs in tests/e2e/pages.py; a flow that needs clicking gets its own test_<page>_flows.py."""
 
 import pytest
 
-PAGES = [
-    "/",
-    "/projects",
-    "/projects/share",
-    "/settings",
-    "/converter",
-    "/validate",
-    "/recipes",
-    "/recipe-builder",
-    "/survey-customizer",
-    "/survey-generator",
-    "/template-editor",
-    "/file-management",
-    "/specifications",
-    "/specifications/contribute",
-    "/editor/",
-]
+from tests.e2e.pages import PAGES
+
 
 
 @pytest.mark.parametrize("path", PAGES)

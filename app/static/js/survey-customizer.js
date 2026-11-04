@@ -1964,7 +1964,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const study = template.Study || {};
         // Header
         const header = document.createElement('div');
-        header.style.cssText = 'border-bottom:2px solid #1f8b5c;padding-bottom:0.75rem;margin-bottom:1rem;';
+        header.style.cssText = 'border-bottom:2px solid #1a744d;padding-bottom:0.75rem;margin-bottom:1rem;';
         const title = getText(study.OriginalName, lang) || 'Questionnaire';
         const h4 = document.createElement('h4');
         h4.textContent = title;
@@ -1976,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const instrText = getText(study.Instructions, lang);
             if (instrText) {
                 const instrBox = document.createElement('div');
-                instrBox.style.cssText = 'background:#f8f9fa;border-left:4px solid #1f8b5c;padding:0.75rem 1rem;margin-bottom:1.25rem;border-radius:0 0.375rem 0.375rem 0;';
+                instrBox.style.cssText = 'background:#f8f9fa;border-left:4px solid #1a744d;padding:0.75rem 1rem;margin-bottom:1.25rem;border-radius:0 0.375rem 0.375rem 0;';
                 instrBox.innerHTML = `<strong>Instructions:</strong> ${escapeHtml(instrText)}`;
                 previewModalBody.appendChild(instrBox);
             }
@@ -2036,7 +2036,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tr.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff';
                         const td = document.createElement('td');
                         td.style.cssText = 'padding:6px 8px;font-size:0.92rem;border:1px solid #eee;';
-                        td.innerHTML = `<span style="font-weight:700;color:#1f8b5c;">${qNum}.</span> ${escapeHtml(getText(entry.item.Description, lang))}`;
+                        td.innerHTML = `<span style="font-weight:700;color:#1a744d;">${qNum}.</span> ${escapeHtml(getText(entry.item.Description, lang))}`;
                         tr.appendChild(td);
                         for (const lk of sortedLk) {
                             const rtd = document.createElement('td');
@@ -2056,7 +2056,7 @@ document.addEventListener('DOMContentLoaded', function() {
             qNum++;
             const card = document.createElement('div');
             card.style.cssText = 'border:1px solid #dee2e6;border-radius:0.375rem;padding:1rem;margin-bottom:0.75rem;background:#fff;';
-            card.innerHTML = `<div style="font-weight:600;color:#6c757d;font-size:0.85rem;margin-bottom:0.25rem;"><span style="font-weight:700;color:#1f8b5c;">${qNum}.</span> ${escapeHtml(cur.key)}</div>`;
+            card.innerHTML = `<div style="font-weight:600;color:#6c757d;font-size:0.85rem;margin-bottom:0.25rem;"><span style="font-weight:700;color:#1a744d;">${qNum}.</span> ${escapeHtml(cur.key)}</div>`;
             const desc = document.createElement('div');
             desc.textContent = getText(cur.item.Description, lang);
             desc.style.marginBottom = '0.5rem';

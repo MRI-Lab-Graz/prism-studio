@@ -15,14 +15,14 @@
     --studio-brand-primary: #33363d;
     --studio-brand-primary-hover: #24272d;
     --studio-brand-primary-soft: #f1f2f3;
-    --studio-semantic-primary: #1f8b5c;
-    --studio-semantic-primary-hover: #1a744d;
+    --studio-semantic-primary: #1a744d;
+    --studio-semantic-primary-hover: #155f40;
     --studio-semantic-primary-soft: #e7f5ec;
-    --studio-semantic-success: #2c9a62;
-    --studio-semantic-success-hover: #248352;
+    --studio-semantic-success: #1f7a4d;
+    --studio-semantic-success-hover: #1a6a43;
     --studio-semantic-success-soft: #e8f6ee;
-    --studio-semantic-info: #1f8b5c;
-    --studio-semantic-info-hover: #1a744d;
+    --studio-semantic-info: #1a744d;
+    --studio-semantic-info-hover: #155f40;
     --studio-semantic-info-soft: #e7f5ec;
     --studio-semantic-danger: #b84a55;
     --studio-semantic-danger-hover: #a13f49;
@@ -30,9 +30,9 @@
     --studio-brand-accent: #ffd500;
     --studio-brand-accent-soft: #fff6cc;
     --studio-brand-accent-text: #33363d;
-    --studio-icon-primary: #1f8b5c;
-    --studio-icon-success: #2c9a62;
-    --studio-icon-info: #1f8b5c;
+    --studio-icon-primary: #1a744d;
+    --studio-icon-success: #1f7a4d;
+    --studio-icon-info: #1a744d;
     --studio-icon-warning: #8b6f00;
     --studio-icon-danger: #b84a55;
     --studio-navbar-tint-start: #ffffff;
@@ -51,7 +51,7 @@
 
 .studio-theme {
     --bs-primary: var(--studio-semantic-primary);
-    --bs-primary-rgb: 31, 139, 92;
+    --bs-primary-rgb: 26, 116, 77;
     --bs-success: var(--studio-semantic-success);
     --bs-info: var(--studio-semantic-info);
     --bs-warning: var(--studio-brand-accent);
@@ -647,7 +647,7 @@
 
 .sm-section-toggle__title {
     font-weight: 700;
-    color: #1f8b5c;
+    color: #1a744d;
 }
 
 .sm-section-toggle:hover .sm-section-toggle__title,
@@ -694,3 +694,117 @@
 
 .studio-readiness-bar { height: 12px; }
 .w-0 { width: 0; }
+
+/* Accessibility (WCAG AA 4.5:1): Bootstrap's muted grey, secondary text and inline-code pink are
+   too light on white and on the light-grey surfaces; one override here fixes every page. */
+.studio-theme {
+    --bs-secondary-color: #5c636a;
+    --bs-code-color: #b0215f;
+}
+.studio-theme .text-muted,
+.studio-theme .form-text {
+    color: #5c636a !important;
+}
+.studio-theme .btn-outline-secondary {
+    --bs-btn-color: #5c636a;
+    --bs-btn-border-color: #5c636a;
+    color: #5c636a;
+    border-color: #5c636a;
+}
+.studio-theme .btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #5c636a;
+}
+.studio-theme .bg-secondary {
+    background-color: #5c636a !important;
+    color: #fff;
+}
+.studio-theme code {
+    color: var(--bs-code-color);
+}
+
+/* Accessibility: links use the (darker) theme green; the keyboard focus is always visible. */
+.studio-theme {
+    --bs-link-color-rgb: 26, 116, 77;
+    --bs-link-hover-color-rgb: 21, 95, 64;
+}
+.studio-theme :focus-visible {
+    outline: 3px solid var(--studio-semantic-primary);
+    outline-offset: 2px;
+}
+
+/* Visitors who ask the system for more contrast, or use Windows High Contrast. */
+@media (prefers-contrast: more) {
+    .studio-theme {
+        --studio-border: #5c636a;
+        --studio-border-soft: #5c636a;
+        --bs-secondary-color: #33363d;
+    }
+    .studio-theme .text-muted,
+    .studio-theme .form-text {
+        color: #33363d !important;
+    }
+    .studio-theme .card,
+    .studio-theme .form-control,
+    .studio-theme .form-select {
+        border-color: #33363d;
+    }
+}
+
+/* Visitors who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+    .studio-theme *,
+    .studio-theme *::before,
+    .studio-theme *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Bootswatch Litera paints plain links, active list items and secondary/success buttons with light
+   colours (3.7:1, 2.1:1, 2.6:1); the theme replaces them with AA colours. */
+.studio-theme a:not([class]),
+.studio-theme a.text-decoration-none:not(.btn):not(.nav-link) {
+    color: var(--studio-semantic-primary);
+}
+.studio-theme .list-group-item.active {
+    background-color: var(--studio-semantic-primary);
+    border-color: var(--studio-semantic-primary);
+}
+.studio-theme .btn-secondary {
+    --bs-btn-bg: #5c636a;
+    --bs-btn-border-color: #5c636a;
+    background-color: #5c636a;
+    border-color: #5c636a;
+}
+.studio-theme .btn-check:checked + .btn-outline-success,
+.studio-theme .btn-outline-success:hover {
+    background-color: var(--studio-semantic-success);
+    border-color: var(--studio-semantic-success);
+}
+.studio-theme .text-secondary.select-all-section,
+.studio-theme .text-secondary.deselect-all-section {
+    color: #5c636a !important;
+}
+.studio-theme .alert-link {
+    color: var(--studio-brand-primary);
+}
+.studio-theme .bg-warning .text-muted {
+    color: var(--studio-brand-primary) !important;
+}
+.studio-theme .bg-success .text-muted,
+.studio-theme .bg-info .text-muted,
+.studio-theme .bg-primary .text-muted {
+    color: #fff !important;
+}
+
+/* bg-info / bg-success / bg-warning with a bg-opacity-* class need the matching -rgb value, or the
+   background is drawn opaque. */
+.studio-theme {
+    --bs-info-rgb: 26, 116, 77;
+    --bs-success-rgb: 31, 122, 77;
+    --bs-warning-rgb: 255, 213, 0;
+    --bs-danger-rgb: 184, 74, 85;
+}
