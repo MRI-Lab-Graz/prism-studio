@@ -1367,6 +1367,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             "duplicate_handling must be one of: error, keep_first, keep_last, sessions"
         )
 
+    if (language or "").strip().lower() == "auto":  # Studio sends "auto": that is no language to write
+        language = None
+
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
 

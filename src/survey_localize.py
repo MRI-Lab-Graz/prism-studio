@@ -16,7 +16,7 @@ def _normalize_language(lang: str | None) -> str | None:
     if not lang:
         return None
     norm = str(lang).strip().lower()
-    return norm or None
+    return None if norm in ("", "auto") else norm  # "auto" = no choice: the template's own language
 
 
 def _default_language_from_template(template: dict) -> str:
