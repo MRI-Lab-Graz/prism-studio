@@ -58,7 +58,12 @@ from src.cross_platform import (
 )
 from src.project_settings import project_git_identity_env
 from src.datalad_doctor import explain_ssh_failures, install_command, install_hint, datalad_preflight, needs_project_identity
-from src.git_exclude import sensitive_files_warning, tracked_sensitive_files
+from src.git_exclude import (
+    SENSITIVE_PATHS,
+    ensure_git_excluded,
+    sensitive_files_warning,
+    tracked_sensitive_files,
+)
 from src.entity_rules import load_entity_rules
 from src.specification import current_specification
 from src.issues import get_fix_hint, infer_code_from_message
@@ -3757,7 +3762,7 @@ git push -u origin main
         real git.
         """
         project_path = Path(path)
-        problems = datalad_preflight(project_path)
+        problems = datalad_preflight(project_path, validate=True)
         if problems:
             return {
                 "success": False,
@@ -3934,6 +3939,8 @@ git push -u origin main
                 result["success"] = True
                 result["message"] = datalad_result.get("message") or "Current project is already tracked by DataLad."
                 result["datalad"] = datalad_result
+                if created_subdatasets:  # this call finished (or continued) the registration: the gate follows the last batch
+                    self._install_save_gate_hooks(project_path, result)
                 return result
 
             result["success"] = True
@@ -4008,6 +4015,14 @@ git push -u origin main
         if not os.environ.get("PRISM_TOOLS"):
             result["save_gate_hook"] = {
                 "installed": [], "foreign": [], "errors": [], "skipped": self._SAVE_GATE_SKIPPED,
+            }
+            return
+        if int((result.get("datalad") or {}).get("subdatasets_remaining_count", 0) or 0) > 0:
+            # Registering many subjects takes several calls; a gate turned on now would refuse the next call's
+            # bookkeeping commit for any dataset that is not valid yet. The last batch installs it.
+            result["save_gate_hook"] = {
+                "installed": [], "foreign": [], "errors": [],
+                "skipped": "nested datasets are still being registered; the gate is installed with the last batch",
             }
             return
         try:
@@ -4126,6 +4141,7 @@ git push -u origin main
             )
             return result
 
+        ensure_git_excluded(project_path, *SENSITIVE_PATHS)  # before the first save commits them
         if create_nested_subdatasets:
             nested_result = self._create_nested_subdatasets(
                 project_path,

@@ -105,3 +105,49 @@ def test_a_login_is_shared_until_the_user_says_otherwise():
     from src.config import load_app_settings
 
     assert load_app_settings().shared_login is True
+
+
+def _project_with_subjects(tmp_path, listed):
+    from src.project_manager import ProjectManager
+
+    proj = tmp_path / "proj"
+    assert ProjectManager().create_project(str(proj), {"name": "proj", "use_datalad": False})["success"]
+    for sub in ("sub-001", "sub-002"):
+        survey = proj / sub / "ses-1" / "survey"
+        survey.mkdir(parents=True)
+        (survey / f"{sub}_ses-1_task-x_survey.tsv").write_text("a\tb\n1\t2\n")
+    (proj / "participants.tsv").write_text("participant_id\n" + "".join(f"{s}\n" for s in listed))
+    return proj
+
+
+def test_a_project_that_does_not_validate_is_not_ready_for_datalad(clean_git, tmp_path):
+    proj = _project_with_subjects(tmp_path, ["sub-001"])  # sub-002 has a folder but no row
+    save_project_git_identity(proj, "Eva", "eva@uni.example")
+    problems = datalad_preflight(proj, which=_which_all, validate=True)
+    assert len(problems) == 1 and "does not validate" in problems[0] and "sub-002" in problems[0]
+
+
+def test_participants_without_a_folder_do_not_stop_datalad(clean_git, tmp_path):
+    proj = _project_with_subjects(tmp_path, ["sub-001", "sub-002", "sub-003"])  # sub-003: screened, no folder
+    save_project_git_identity(proj, "Eva", "eva@uni.example")
+    problems = datalad_preflight(proj, which=_which_all, validate=True)
+    assert not any("participants.tsv" in p for p in problems)  # (the fixture's missing sidecars are another error)
+
+
+def test_enable_refuses_an_invalid_project_and_leaves_it_untouched(clean_git, tmp_path):
+    from src.project_manager import ProjectManager
+
+    proj = _project_with_subjects(tmp_path, ["sub-001"])
+    save_project_git_identity(proj, "Eva", "eva@uni.example")
+    result = ProjectManager().enable_datalad_for_project(proj)
+    assert result["success"] is False and "does not validate" in result["error"]
+    assert not (proj / ".git").exists()
+
+
+def test_a_new_empty_project_may_still_get_datalad(clean_git, tmp_path):
+    from src.project_manager import ProjectManager
+
+    proj = tmp_path / "empty"
+    assert ProjectManager().create_project(str(proj), {"name": "empty", "use_datalad": False})["success"]
+    save_project_git_identity(proj, "Eva", "eva@uni.example")
+    assert datalad_preflight(proj, which=_which_all, validate=True) == []

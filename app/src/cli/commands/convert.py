@@ -142,6 +142,7 @@ def cmd_convert_physio(args):
 
     success_count = 0
     error_count = 0
+    converted_subjects: set[str] = set()
 
     for raw_file in files:
         filename = raw_file.name
@@ -212,6 +213,7 @@ def cmd_convert_physio(args):
                 continue
 
             success_count += 1
+            converted_subjects.add(sub_id)
         except Exception as e:
             print(f"Error converting {filename}: {e}")
             error_count += 1
@@ -219,8 +221,10 @@ def cmd_convert_physio(args):
     print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
     if success_count:
         from src.modality_versions import pin_after_import
+        from src.utils.io import register_subjects
 
         pin_after_import(output_dir)
+        register_subjects(output_dir, converted_subjects)
 
 
 def _parse_session_indicators(raw_value: str | None) -> list[str]:

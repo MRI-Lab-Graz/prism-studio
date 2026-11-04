@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 ALLOWLIST = {
     "src/anonymizer.py": "export path, never reached by the validator",
+    "src/share_publish.py": "datalad_preflight(validate=True) runs only when DataLad is enabled in Studio/CLI, never in the validator",
 }
 
 

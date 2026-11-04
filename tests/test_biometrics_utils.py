@@ -275,7 +275,8 @@ class TestConvertBiometricsTable:
             output_root=output_root,
             skip_participants=True,
         )
-        assert not (output_root / "participants.tsv").exists()
+        # skip_participants drops the table built from the data; the subjects are still listed
+        assert (output_root / "participants.tsv").read_text().split() == ["participant_id", "sub-001"]
 
     def test_unknown_error_mode_raises(self, tmp_path):
         try:

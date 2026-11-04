@@ -198,3 +198,40 @@ def test_nested_helper_reports_what_really_happened(monkeypatch, tmp_path):
     monkeypatch.setattr(sg, "install_save_hook", boom)
     r = pm._install_save_gate_hook_for_nested(tmp_path)
     assert r["installed"] == [] and r["errors"] == ["odd"]
+
+
+@_NEEDS_DATALAD
+@pytest.mark.slow
+def test_gate_waits_for_the_last_nested_batch_so_registration_is_not_blocked_by_it(monkeypatch, tmp_path, personal_login):
+    """Registering many subjects takes several enable calls. The gate must not turn on after the first one:
+    its next bookkeeping commit would be refused by a dataset that is merely not valid yet (a dataset with
+    1000 subjects would stop half way)."""
+    monkeypatch.setenv("PRISM_TOOLS", str(Path(sg.__file__).resolve().parents[1] / "prism_tools.py"))
+    project = tmp_path / "multi"
+    pm = ProjectManager()
+    assert pm.create_project(str(project), {"name": "multi", "use_datalad": False})["success"]
+    for sub in ("sub-001", "sub-002", "sub-003"):
+        survey = project / sub / "ses-1" / "survey"
+        survey.mkdir(parents=True)
+        (survey / f"{sub}_ses-1_task-x_survey.tsv").write_text("a\tb\n1\t2\n")
+    (project / "participants.tsv").write_text("participant_id\nsub-001\n")  # sub-002/003 missing: the dataset is invalid
+
+    from src import datalad_doctor
+
+    real_preflight = datalad_doctor.datalad_preflight  # this dataset is invalid on purpose; enable's own validation is tested elsewhere
+    monkeypatch.setattr("src.project_manager.datalad_preflight", lambda p, **kw: real_preflight(p, **{**kw, "validate": False}))
+    one_at_a_time = ProjectManager._create_nested_subdatasets
+    monkeypatch.setattr(
+        ProjectManager, "_create_nested_subdatasets",
+        lambda self, p, exe, **kw: one_at_a_time(self, p, exe, **{**kw, "max_to_create": 1}),
+    )
+    remaining = None
+    for _ in range(6):
+        result = pm.enable_datalad_for_project(project)
+        assert result["success"], result
+        assert not result["datalad"].get("subdataset_failures"), result["datalad"]["subdataset_failures"]
+        remaining = result["datalad"]["subdatasets_remaining_count"]
+        assert sg.has_save_hook(project) == (remaining == 0)
+        if remaining == 0:
+            break
+    assert remaining == 0

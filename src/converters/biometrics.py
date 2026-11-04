@@ -213,7 +213,7 @@ def convert_biometrics_table_to_prism_dataset(
     - sub-*/ses-*/biometrics/sub-*_ses-*_task-<task>_biometrics.tsv
 
     Args:
-        skip_participants: If True, skip creating participants.tsv (default: False)
+        skip_participants: If True, do not build participants.tsv from the data table (default: False); the converted subjects are listed in it either way
         existing_participant_ids: Canonical participant_id values already
             present in the target project's own participants.tsv (the
             ground truth). When a raw incoming id numerically matches
@@ -442,8 +442,10 @@ def convert_biometrics_table_to_prism_dataset(
                 tasks_included.append(task)
 
     from src.modality_versions import pin_after_import
+    from src.utils.io import register_subjects
 
     pin_after_import(output_root)
+    register_subjects(output_root, normalized_ids)
     return BiometricsConvertResult(
         id_column=col_pid,
         session_column=col_ses,

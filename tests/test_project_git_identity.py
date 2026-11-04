@@ -118,3 +118,19 @@ def test_route_sets_and_shows_the_projects_identity(empty_global_git, project):
     assert client.post("/api/projects/git-identity", json=body).get_json()["success"] is True
     got = client.get("/api/projects/git-identity", query_string={"project_path": str(project)}).get_json()
     assert (got["name"], got["email"]) == ("Eva", "eva@uni.example")
+
+
+@pytest.mark.skipif(not (shutil.which("datalad") and shutil.which("git-annex")), reason="needs datalad + git-annex")
+def test_enabling_datalad_keeps_session_logs_and_the_pseudonym_map_out_of_git(empty_global_git, project):
+    from src.project_manager import ProjectManager
+
+    (project / "dataset_description.json").write_text('{"Name": "x", "BIDSVersion": "1.10.0"}')
+    (project / "code" / "logs").mkdir(parents=True)
+    (project / "code" / "logs" / "prism_session_1.log").write_text("/Users/eva/secret/path\n")
+    (project / "code" / "anonymization_map.json").write_text("{}")
+    (project / "code" / "keep.py").write_text("print(1)\n")
+    save_project_git_identity(project, "Eva Student", "eva@uni.example")
+    assert ProjectManager().enable_datalad_for_project(project)["success"]
+    tracked = _git(project, "ls-files", "code").splitlines()
+    assert "code/keep.py" in tracked
+    assert not [f for f in tracked if f.startswith("code/logs") or f.endswith("anonymization_map.json")]

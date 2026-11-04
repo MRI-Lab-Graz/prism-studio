@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 import csv
 import re
+import sys
 from typing import Any
 
 _LANGUAGE_KEY_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
@@ -241,3 +242,19 @@ def project_name_keywords(root: Path) -> tuple[str | None, list]:
         return None, []
     basics = project.get("Basics") or {}
     return project.get("name") or basics.get("Name"), basics.get("Keywords") or []
+
+
+def register_subjects(dataset_root: Path, subject_ids) -> None:
+    """Make participants.tsv list these subjects (rows already there stay as they are).
+
+    Run after each conversion with the subjects it wrote: a subject folder without a row fails validation.
+    A row without a folder is fine (a participant who was screened but not enrolled), so rows are only ever
+    added. An id that is no valid subject label is the validator's to report, not to copy into the table.
+    """
+    from src.participant_ids import normalize_participant_id
+
+    subjects = {s for s in subject_ids if s and normalize_participant_id(s) == s}
+    update_participants_tsv(
+        Path(dataset_root), subjects,
+        log_fn=lambda msg: print(msg, file=sys.stderr) if "Updated participants.tsv" in msg else None,
+    )
