@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.e2e.test_every_page_loads import PAGES
+from tests.e2e.pages import PAGES
 
 AXE = Path(__file__).resolve().parents[2] / "node_modules" / "axe-core" / "axe.min.js"
 BASELINE = Path(__file__).with_name("a11y_baseline.json")
@@ -19,6 +19,6 @@ def test_page_has_no_new_accessibility_violations(app_page, studio_url, path):
     found = app_page.evaluate(
         "axe.run({preload: false}).then(r => r.violations.filter(v => ['serious','critical'].includes(v.impact)).map(v => v.id))"
     )
-    known = json.loads(BASELINE.read_text()).get(path, []) if BASELINE.exists() else []
+    known = json.loads(BASELINE.read_text()).get(path, [])
     assert sorted(set(known) - set(found)) == [], f"fixed on {path}: remove from a11y_baseline.json"
     assert sorted(set(found) - set(known)) == [], f"new axe violations on {path}"

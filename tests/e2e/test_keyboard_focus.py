@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.e2e.test_every_page_loads import PAGES
+from tests.e2e.pages import PAGES
 
 
 @pytest.mark.parametrize("path", PAGES)

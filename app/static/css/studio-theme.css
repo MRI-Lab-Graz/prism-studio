@@ -750,11 +750,6 @@
         border-color: #33363d;
     }
 }
-@media (forced-colors: active) {
-    .studio-theme :focus-visible {
-        outline-color: Highlight;
-    }
-}
 
 /* Visitors who ask for less motion. */
 @media (prefers-reduced-motion: reduce) {
@@ -796,14 +791,12 @@
 .studio-theme .alert-link {
     color: var(--studio-brand-primary);
 }
-.studio-theme .bg-warning .text-muted,
-.studio-theme [class*="bg-warning"] .text-muted {
+.studio-theme .bg-warning .text-muted {
     color: var(--studio-brand-primary) !important;
 }
 .studio-theme .bg-success .text-muted,
 .studio-theme .bg-info .text-muted,
-.studio-theme .bg-primary .text-muted,
-.studio-theme [style*="#1a744d"] .text-muted {
+.studio-theme .bg-primary .text-muted {
     color: #fff !important;
 }
 
