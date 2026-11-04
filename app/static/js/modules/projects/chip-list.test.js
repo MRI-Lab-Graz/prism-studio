@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addChip, normalizeChipText, removeChipAt } from './chip-list.js';
+import { addChip, chipAnnouncement, normalizeChipText, removeChipAt } from './chip-list.js';
 
 describe('normalizeChipText', () => {
     it('trims and collapses whitespace', () => {
@@ -36,5 +36,12 @@ describe('removeChipAt', () => {
     });
     it('leaves the list alone for a position that does not exist', () => {
         expect(removeChipAt(['age'], 5)).toEqual(['age']);
+    });
+});
+
+describe('chipAnnouncement', () => {
+    it('says what was added or removed, for screen readers', () => {
+        expect(chipAnnouncement('add', 'age')).toBe('Added age');
+        expect(chipAnnouncement('remove', 'age')).toBe('Removed age');
     });
 });

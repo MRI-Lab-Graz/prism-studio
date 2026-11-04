@@ -354,6 +354,7 @@
     </style>
 </head>
 <body class="studio-theme">
+    <a class="visually-hidden-focusable" href="#main-content">Skip to main content</a>
     {% set converter_available = endpoint_exists('tools.converter') %}
     {% set settings_available = endpoint_exists('projects_library.settings_page') %}
     {% set file_management_available = endpoint_exists('tools.file_management') %}
@@ -1653,7 +1654,7 @@
         });
     </script>
 
-    <main class="container-xxl my-4 px-3 px-xxl-4">
+    <main id="main-content" tabindex="-1" class="container-xxl my-4 px-3 px-xxl-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
