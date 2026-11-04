@@ -1,0 +1,21 @@
+    <!-- The saved session map: which source session label becomes which ses-<name> (editable) -->
+    <div class="card shadow-sm mt-4 d-none" id="sessionMapCard">
+        <div class="card-header bg-secondary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#sessionMapBody"
+             role="button" tabindex="0" aria-expanded="false" aria-controls="sessionMapBody">
+            <div class="h5 mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-shuffle text-secondary me-2"></i>Session mapping</span>
+                <i class="fas fa-chevron-down text-muted"></i>
+            </div>
+        </div>
+        <div class="collapse" id="sessionMapBody">
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Each label found in your data files (left) becomes the session name on the right (<code>ses-&lt;name&gt;</code>),
+                    stored in <code>code/session_map.json</code>. Changes apply to later imports; session folders already written are not renamed.
+                </p>
+                <div id="sessionMapRows"></div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="sessionMapSave" disabled>Save</button>
+                <div class="small mt-2" id="sessionMapFeedback" aria-live="polite"></div>
+            </div>
+        </div>
+    </div>

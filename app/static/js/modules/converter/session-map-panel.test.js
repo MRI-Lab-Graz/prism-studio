@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canSaveSessionMap, entriesToSave, numericTwinLabels, validSessionName, withDefaults } from './session-map-panel.js';
+import { canSaveSessionMap, changedEntries, entriesToSave, numericTwinLabels, validSessionName, withDefaults } from './session-map-panel.js';
 
 describe('session map panel rules', () => {
     it('accepts letters and digits only', () => {
@@ -42,5 +42,19 @@ describe('session map panel rules', () => {
         const typed = { pre: 'T0' };
         expect(withDefaults(['pre', 'post', ''], typed, { pre: '1', post: '2', '': '3' })).toEqual({ pre: 'T0', post: '2' });
         expect(withDefaults(['pre'], {}, undefined)).toEqual({});
+    });
+});
+
+describe('editing a saved session map', () => {
+    it('saves only the names that differ from the saved map', () => {
+        const saved = { pre: '1', post: '2' };
+        expect(changedEntries(saved, { pre: '1', post: '3' })).toEqual({ post: '3' });
+        expect(changedEntries(saved, { pre: ' 1 ' })).toEqual({});
+        expect(changedEntries(saved, {})).toEqual({});
+    });
+
+    it('never saves an invalid name or a blank one', () => {
+        expect(changedEntries({ pre: '1' }, { pre: 'ses-2' })).toEqual({});
+        expect(changedEntries({ pre: '1' }, { pre: '' })).toEqual({});
     });
 });

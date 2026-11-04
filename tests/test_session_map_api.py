@@ -62,3 +62,10 @@ def test_get_without_labels_has_no_suggestions(client):
     http, root = client
     body = http.get("/api/session-map", query_string={"project_path": str(root)}).get_json()
     assert "suggested" not in body
+
+
+def test_post_changes_an_existing_entry(client):
+    http, root = client
+    http.post("/api/session-map", json={"project_path": str(root), "entries": {"pre": "1", "post": "2"}})
+    resp = http.post("/api/session-map", json={"project_path": str(root), "entries": {"post": "3"}})
+    assert resp.get_json() == {"ok": True, "map": {"pre": "1", "post": "3"}}
