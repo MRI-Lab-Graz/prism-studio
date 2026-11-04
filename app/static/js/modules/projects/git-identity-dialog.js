@@ -1,3 +1,14 @@
+export async function saveProjectGitIdentity(fetchWithApiFallback, projectPath, name, email) {
+    const response = await fetchWithApiFallback('/api/projects/git-identity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_path: projectPath, name, email })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || 'Could not save.');
+    return data;
+}
+
 // Pop-up asking who signs a project's DataLad snapshots. Saves through the same route as the project page card.
 // Resolves true once saved, false when the user cancels.
 export async function askGitIdentity({ fetchWithApiFallback, projectPath }) {
@@ -27,13 +38,7 @@ export async function askGitIdentity({ fetchWithApiFallback, projectPath }) {
         form.onsubmit = async (event) => {
             event.preventDefault();
             try {
-                const response = await fetchWithApiFallback('/api/projects/git-identity', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ project_path: projectPath, name: name.value, email: email.value })
-                });
-                const data = await response.json();
-                if (!response.ok || !data.success) throw new Error(data.error || 'Could not save.');
+                await saveProjectGitIdentity(fetchWithApiFallback, projectPath, name.value, email.value);
                 saved = true;
                 modal.hide();
             } catch (err) {

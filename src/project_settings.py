@@ -67,7 +67,10 @@ def project_git_identity_env(project_root):
         yield
     finally:
         for key, value in saved.items():
-            os.environ.pop(key, None) if value is None else os.environ.__setitem__(key, value)
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
         apply_project_git_identity(project_root)
 
 

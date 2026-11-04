@@ -1,3 +1,5 @@
+import { saveProjectGitIdentity } from './git-identity-dialog.js';
+
 // Project page: the git name + email DataLad signs this project's snapshots with (stored in the project, not the machine).
 export function initGitIdentityCard({ fetchWithApiFallback }) {
     const card = document.getElementById('gitIdentityCard');
@@ -36,14 +38,7 @@ export function initGitIdentityCard({ fetchWithApiFallback }) {
     document.getElementById('gitIdentityForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         try {
-            const response = await fetchWithApiFallback('/api/projects/git-identity', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project_path: projectPath, name: name.value, email: email.value })
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) throw new Error(data.error || 'Could not save.');
-            render(data);
+            render(await saveProjectGitIdentity(fetchWithApiFallback, projectPath, name.value, email.value));
             show(true, 'Saved.');
         } catch (error) {
             show(false, error.message || 'Could not save.');
