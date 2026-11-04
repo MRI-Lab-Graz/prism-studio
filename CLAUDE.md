@@ -73,6 +73,19 @@ watch it fail, then write the fix. For bugs, also invoke
 `superpowers:systematic-debugging` before proposing a fix. Don't write the
 test after the fix; a test that never failed proves nothing.
 
+## More process skills
+
+- `superpowers:verification-before-completion`: before saying work is done, fixed or mergeable, run the checks for
+  what was touched and quote the result. Say which checks were not run (the full suite is the nightly job's).
+- `superpowers:using-git-worktrees`: feature work happens on a branch in a worktree, never `git stash` on a clean tree.
+- `superpowers:writing-plans` / `superpowers:subagent-driven-development`: for multi-task rollouts (e.g. an importer
+  rollout), plan first, then execute task by task.
+- `superpowers:requesting-code-review` and `/code-review`: correctness review before merge, next to
+  `ponytail:ponytail-audit` (which only hunts over-engineering).
+- `superpowers:finishing-a-development-branch`: the merge / PR / keep step; the ponytail audit runs right before it.
+- `/security-review` for any change to `src/share_publish.py`, DataLad/annex code, or code that reads project data
+  (`code/specification/`, uploads).
+
 ## One implementation: every command lives in the backend/CLI, the GUI only calls it
 
 (This is THE RULE above; the details follow.)

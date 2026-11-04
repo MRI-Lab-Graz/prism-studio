@@ -491,7 +491,7 @@ def _show_startup_dialog(url: str) -> None:
             font=("Segoe UI", 10, "bold"),
             anchor="w",
             bg="#f6f8f5",
-            fg="#1f8b5c",
+            fg="#1a744d",
             pady=2,
         ).pack(fill="x")
 

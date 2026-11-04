@@ -1,0 +1,25 @@
+{
+  "/projects": [
+    "aria-progressbar-name"
+  ],
+  "/projects/share": [
+    "aria-prohibited-attr"
+  ],
+  "/converter": [
+    "label",
+    "select-name"
+  ],
+  "/recipes": [
+    "select-name"
+  ],
+  "/survey-generator": [
+    "label",
+    "select-name"
+  ],
+  "/template-editor": [
+    "select-name"
+  ],
+  "/specifications": [
+    "scrollable-region-focusable"
+  ]
+}
