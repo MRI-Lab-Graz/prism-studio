@@ -857,6 +857,18 @@ name starts with `-` or contains spaces, and any location containing `::` (git t
 python prism_tools.py datalad put-on-server --project /absolute/path/to/my-project --location user@lab.example.org:/data/study
 ```
 
+`open-from-server` is for everybody else: it needs no project. It clones the project at `--location` (same forms and
+refusals as `put-on-server`) into `--target`, an empty or new folder, with the server as `origin`, installs the nested
+subject datasets without their data (fetch it with Get data) and installs the save-gate hook in every dataset (git does
+not copy hooks). It stops before cloning when the folder is not empty, DataLad, git or git-annex is missing, or git does
+not know your name and email (`reason`: `bad_location`, `target_not_empty`, `no_datalad`, `no_identity`,
+`clone_failed`). Studio's `POST /api/projects/datalad/open-from-server` (`location`, `target`) runs the same function as
+a job and then opens the new copy as the current project.
+
+```bash
+python prism_tools.py datalad open-from-server --location user@lab.example.org:/data/study --target ~/projects/study
+```
+
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
 (`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
 (10 s limit; an unreachable server is reported as `reachable: false`, never an error, and never changes

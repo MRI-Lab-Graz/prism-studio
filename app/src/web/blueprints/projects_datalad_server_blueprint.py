@@ -8,6 +8,7 @@ import threading
 import time
 import traceback
 import uuid
+from pathlib import Path
 from threading import Lock
 from typing import Dict
 
@@ -128,13 +129,21 @@ def _run_put_job(job_id: str, project_path, put_kwargs: dict) -> None:
     ))
 
 
-def _start_job(kind: str, runner) -> tuple:
+def _run_open_job(job_id: str, target, open_kwargs: dict) -> None:
+    """The same function as `prism_tools datalad open-from-server`; the result's `path` is the project the page opens."""
+    from src.datalad_clone import open_from_server
+
+    _run_job(job_id, "Open from server", "Opening the project from the server...", lambda line_callback: open_from_server(
+        str(open_kwargs.get("location") or ""), target, line_callback=line_callback
+    ))
+
+
+def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_resolve_project_root_path) -> tuple:
     try:
         data = request.get_json() or {}
-        project_path_raw = data.get("project_path")
-        resolved = _resolve_project_root_path(str(project_path_raw or ""))
+        resolved = resolve(str(data.get(path_key) or ""))
         if resolved is None:
-            return jsonify({"error": "Invalid project path"}), 400
+            return jsonify({"error": f"Invalid {path_key.replace('_', ' ')}"}), 400
 
         identity = None  # the CLI's --as, built exactly as the publish route does
         if data.get("name") or data.get("email"):
@@ -221,6 +230,15 @@ def datalad_server_sync_start():
 def datalad_put_on_server():
     """Start `prism_tools datalad put-on-server` as a job; poll it with the sync job's status and cancel routes."""
     return _start_job("put", _run_put_job)
+
+
+@projects_datalad_server_bp.route("/api/projects/datalad/open-from-server", methods=["POST"])
+def datalad_open_from_server():
+    """Start `prism_tools datalad open-from-server` as a job (no project needed); poll it with the sync job's routes.
+
+    When it completes, the page opens `result.path` through POST /api/projects/current, as opening any project does.
+    """
+    return _start_job("open", _run_open_job, path_key="target", resolve=lambda raw: Path(raw) if raw.strip() else None)
 
 
 @projects_datalad_server_bp.route(

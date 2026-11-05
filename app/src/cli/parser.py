@@ -946,6 +946,17 @@ def build_prism_tools_parsers(
     )
     parser_datalad_put.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_datalad_open = datalad_subparsers.add_parser(
+        "open-from-server",
+        help="Get your own copy of a project from the lab server (nested datasets installed, no data yet)",
+    )
+    parser_datalad_open.add_argument(
+        "--location", required=True,
+        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
+    )
+    parser_datalad_open.add_argument("--target", required=True, help="An empty or new folder for your copy")
+    parser_datalad_open.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_datalad_enable = datalad_subparsers.add_parser(
         "enable", help="Make the project a DataLad dataset and save a first snapshot"
     )

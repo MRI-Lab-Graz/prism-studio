@@ -940,6 +940,54 @@ def run_datalad_update(
     return result
 
 
+def run_datalad_clone(
+    location: str,
+    target: Path,
+    *,
+    datalad_executable: str = "",
+    timeout_seconds: int = 3600,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """`datalad clone <location> <target>` (the source becomes `origin`), then install the nested datasets, no content.
+
+    `location` must already have passed `share_publish.location_problem`; `target` must be an absolute path.
+    """
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {"success": False, "command": "", "output": "", "message": ""}
+    if not resolved:
+        result["message"] = (
+            "DataLad executable is not available in this environment. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+        return result
+    target = Path(target)
+    steps = (
+        ([resolved, "clone", str(location), str(target)], str(target.parent)),
+        ([resolved, "get", "-n", "-r", "."], str(target)),  # nested sub-* datasets, no file content
+    )
+    outputs = []
+    for command, cwd in steps:
+        result["command"] = shlex.join(command)
+        try:
+            run_result = _run_streaming_command(
+                command, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback
+            )
+        except subprocess.TimeoutExpired:
+            result["message"] = f"DataLad {command[1]} timed out after {max(1, int(timeout_seconds))} seconds."
+            return result
+        except Exception as exc:
+            result["message"] = f"DataLad {command[1]} failed ({type(exc).__name__}: {exc})."
+            return result
+        outputs.append(run_result["output"])
+        result["output"] = "".join(outputs)
+        if run_result["returncode"] != 0:
+            result["message"] = f"DataLad {command[1]} failed: {run_result['output'].strip() or 'Unknown DataLad error.'}"
+            return result
+    result["success"] = True
+    result["message"] = "DataLad clone completed."
+    return result
+
+
 def run_datalad_push_verify(
     project_root: Path,
     *,

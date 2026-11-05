@@ -92,6 +92,14 @@ def cmd_datalad_put_on_server(args) -> None:
     _print_push_result(args, result)
 
 
+def cmd_datalad_open_from_server(args) -> None:
+    """Get your own copy of a project from the lab server into an empty or new folder (Studio's "Open from server")."""
+    from src.datalad_clone import open_from_server
+
+    result = open_from_server(args.location, args.target, line_callback=None if args.json else print)
+    _print_result(args, result)
+
+
 def _print_push_result(args, result: dict) -> None:
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))

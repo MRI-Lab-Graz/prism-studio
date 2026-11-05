@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **Open a project from the lab server.** `prism_tools datalad open-from-server --location <folder | user@host:path |
+  ssh://host/path> --target <empty or new folder> [--json]` clones the project with the server as `origin`, installs the
+  nested subject datasets without their data and installs the save-gate hook in every dataset (git does not copy
+  hooks). A folder that is not empty, missing tools, a missing git name/email and web or `-` locations are refused
+  before cloning. Studio's `POST /api/projects/datalad/open-from-server` runs it as a job; the page then opens the copy.
 - **Put a project on the lab server.** `prism_tools datalad put-on-server --project <path> --location <folder |
   user@host:path | ssh://host/path> [--sibling-name] [--allow-invalid] [--as] [--json]` creates the dataset there
   (subject datasets too) as `origin`, then sends it with the same checks as publish (saved, valid or acknowledged, no

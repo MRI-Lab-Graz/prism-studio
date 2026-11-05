@@ -283,3 +283,28 @@ def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):
         )
 
     assert response.status_code == 404
+
+
+def test_open_from_server_route_runs_the_cli_function_with_a_new_target(tmp_path):
+    """No project is open yet: the target folder may not exist. The job result carries the path the page opens."""
+    app = _build_app()
+    target = tmp_path / "new-copy"
+    result = {"success": True, "reason": "cloned", "path": str(target), "message": "Opened."}
+    with patch("src.web.blueprints.projects_datalad_server_blueprint.threading.Thread") as thread_cls, patch(
+        "src.datalad_clone.open_from_server", return_value=result
+    ) as opened:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured.update(target=target, args=args)
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        thread_cls.side_effect = _capture
+        with app.test_client() as client:
+            assert client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x"}).status_code == 400
+            start = client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x", "target": str(target)})
+            assert start.status_code == 200
+            captured["target"](*captured["args"])
+            status = client.get(f"/api/projects/datalad-server/sync/{start.get_json()['job_id']}/status").get_json()
+    assert opened.call_args.args == ("/srv/x", target)
+    assert status["status"] == "complete" and status["result"]["path"] == str(target)
