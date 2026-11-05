@@ -122,6 +122,7 @@ def _run_put_job(job_id: str, project_path, put_kwargs: dict) -> None:
         project_path,
         str(put_kwargs.get("location") or ""),
         sibling_name=put_kwargs.get("sibling_name"),
+        identity=put_kwargs.get("identity"),
         allow_invalid=bool(put_kwargs.get("allow_invalid")),
         line_callback=line_callback,
     ))
@@ -135,7 +136,14 @@ def _start_job(kind: str, runner) -> tuple:
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 
+        identity = None  # the CLI's --as, built exactly as the publish route does
+        if data.get("name") or data.get("email"):
+            try:
+                identity = parse_identity(f'{data.get("name", "")} <{data.get("email", "")}>')
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
         job_kwargs = {
+            "identity": identity,
             "sibling_name": data.get("sibling_name") or None,
             "allow_invalid": bool(data.get("allow_invalid")),
             "location": str(data.get("location") or ""),

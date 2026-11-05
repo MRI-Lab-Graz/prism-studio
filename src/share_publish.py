@@ -370,8 +370,21 @@ def location_problem(location: str) -> str:
         return "A server location cannot start with '-'."
     if any(ord(c) < 32 for c in location):
         return "A server location cannot contain control characters (such as a line break)."
+    if "::" in location:  # git transport helpers (ext::, fd::, datalad-annex::) can run commands
+        return "A server location cannot contain '::'. Give a folder, user@host:path or ssh://host/path."
     if "://" in location and not location.strip().lower().startswith("ssh://"):
         return "A web address cannot be the lab server. Give a folder, user@host:path or ssh://host/path."
+    from src.datalad_doctor import parse_ssh_target
+    from src.ssh_safety import ssh_target_ok
+
+    target = parse_ssh_target(location.strip())
+    if target is None and location.strip().lower().startswith("ssh://"):
+        return "The ssh:// address has no server name."
+    if target is not None:
+        user, host, _port = target
+        # DataLad passes [user@]host to ssh without `--`: a '-' there would be read as an ssh option
+        if not ssh_target_ok(f"{user}@{host}" if user else host):
+            return "The server name or user in this address is not valid."
     return ""
 
 

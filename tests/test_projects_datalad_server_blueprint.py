@@ -227,6 +227,53 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
     assert status_response.get_json()["status"] == "cancelled"
 
 
+def _start_put(tmp_path, body):
+    """POST put-on-server, run the captured job now; returns (start response, status json, put_on_server mock)."""
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+    with patch("src.web.blueprints.projects_datalad_server_blueprint.threading.Thread") as thread_cls, patch(
+        "src.share_publish.put_on_server", return_value={"success": True, "message": "Published to the server."}
+    ) as put:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured.update(target=target, args=args)
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        thread_cls.side_effect = _capture
+        with app.test_client() as client:
+            start = client.post("/api/projects/datalad/put-on-server", json={"project_path": str(project_dir), **body})
+            if start.status_code != 200:
+                return start, None, put
+            captured["target"](*captured["args"])
+            status = client.get(f"/api/projects/datalad-server/sync/{start.get_json()['job_id']}/status").get_json()
+    return start, status, put
+
+
+def test_put_on_server_route_passes_the_identity_like_the_cli_as_option(tmp_path):
+    from src.share_publish import Identity
+
+    start, status, put = _start_put(
+        tmp_path, {"location": "/srv/lab/study", "name": "Ada", "email": "ada@example.org", "allow_invalid": True}
+    )
+    assert start.status_code == 200 and status["status"] == "complete"
+    args, kwargs = put.call_args
+    assert args[1] == "/srv/lab/study"
+    assert kwargs["identity"] == Identity("Ada", "ada@example.org")
+    assert kwargs["allow_invalid"] is True and kwargs["sibling_name"] is None
+
+
+def test_put_on_server_route_without_name_and_email_leaves_the_identity_to_the_backend(tmp_path):
+    _, _, put = _start_put(tmp_path, {"location": "/srv/lab/study"})
+    assert put.call_args.kwargs["identity"] is None
+
+
+def test_put_on_server_route_refuses_a_malformed_identity(tmp_path):
+    start, _, put = _start_put(tmp_path, {"location": "/srv/lab/study", "name": "Ada", "email": "not-an-email"})
+    assert start.status_code == 400 and "Identity" in start.get_json()["error"]
+    put.assert_not_called()
+
+
 def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):
     app = _build_app()
 

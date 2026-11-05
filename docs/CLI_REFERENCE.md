@@ -850,7 +850,8 @@ anything is created on the server it refuses a project that already has that ser
 not empty ("open it from the server instead"), unsaved changes, validation errors (unless `--allow-invalid`) and a
 public host while `sourcedata/` is tracked. Nested subject datasets are created too. If the send is interrupted after
 the server dataset exists, run `sync`. Studio's `POST /api/projects/datalad/put-on-server` runs the same function as a
-job (`location`, `sibling_name`, `allow_invalid`).
+job (`location`, `sibling_name`, `allow_invalid`, and `name`/`email` for `--as`). An ssh location whose user or server
+name starts with `-` or contains spaces, and any location containing `::` (git transport helpers), is refused.
 
 ```bash
 python prism_tools.py datalad put-on-server --project /absolute/path/to/my-project --location user@lab.example.org:/data/study

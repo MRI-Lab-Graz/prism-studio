@@ -120,8 +120,28 @@ def test_it_refuses_web_locations_and_dash_locations(location, tmp_path):
     create.assert_not_called()
 
 
+@pytest.mark.parametrize("location", [
+    "ssh://-oX=y@h/p",
+    "ssh://u@-oX=y/p",
+    "ssh://h x/p",
+    "ssh://-oProxyCommand=touch pwned@lab.invalid/x",
+    "ssh://-oX=y@/p",
+    "-oX=y@h:p",
+    "a@-oProxyCommand=x:path",
+    "ext::sh -c touch% pwned",
+    "datalad-annex::?type=directory",
+    "fd::17",
+])
+def test_an_ssh_option_or_transport_helper_hidden_in_the_location_is_refused(location, tmp_path):
+    """ssh gets `[user@]host` without `--` from DataLad: a '-' there would be an ssh option (ProxyCommand runs locally)."""
+    assert location_problem(location)
+    with patch("src.share_publish.run_datalad_create_sibling_plain") as create:
+        assert put_on_server(tmp_path, location, identity=WHO)["reason"] == "bad_location"
+    create.assert_not_called()
+
+
 @pytest.mark.parametrize(
-    "location", [r"C:\share\x", "/srv/lab/project", "../server", "ada@lab.example.org:projects/x", "ssh://lab.example.org/x"]
+    "location", ["user@host:/srv/x", "ssh://user@host/srv/x", "ssh://host:2222/srv/x", r"C:\share\x", "/srv/lab/project", "../server", "ada@lab.example.org:projects/x", "ssh://lab.example.org/x"]
 )
 def test_a_windows_drive_path_is_a_folder_not_an_ssh_target(location):
     assert location_problem(location) == ""
@@ -210,6 +230,23 @@ def test_the_cli_and_studio_put_a_project_on_the_server_the_same_way(project, tm
     assert job["status"] == "complete", job
     assert cli["reason"] == job["result"]["reason"] == "pushed"
     assert _files(cli_server) == _files(studio_server)
+
+
+def _prism_tools(*argv):
+    """The real entry point (parser, dispatch, handler map): direct handler calls once hid an undispatched command."""
+    return subprocess.run([sys.executable, str(ROOT / "prism_tools.py"), *argv], capture_output=True, text=True, timeout=120)
+
+
+def test_datalad_status_runs_through_the_real_dispatch(tmp_path):
+    out = _prism_tools("datalad", "status", "--project", str(tmp_path), "--json")
+    assert out.returncode == 0, out.stderr
+    assert json.loads(out.stdout)["next_step"] in {"enable", "install_datalad"}
+
+
+def test_put_on_server_runs_through_the_real_dispatch(tmp_path):
+    out = _prism_tools("datalad", "put-on-server", "--project", str(tmp_path), "--location", "https://x/y", "--json")
+    assert out.returncode == 1, out.stderr
+    assert json.loads(out.stdout)["reason"] == "bad_location"
 
 
 def test_the_cli_parser_has_put_on_server():

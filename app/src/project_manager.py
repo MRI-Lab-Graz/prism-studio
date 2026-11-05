@@ -5764,15 +5764,18 @@ git push -u origin main
 
     @staticmethod
     def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
-        """Did the last fetch from `sibling` see a branch besides git-annex? True when git cannot say (fail safe)."""
-        process = subprocess.run(
-            ["git", "for-each-ref", "--format=%(refname)", f"refs/remotes/{sibling}/"],
-            cwd=str(project_path), capture_output=True, text=True, check=False,
-        )
+        """Does the server itself have a branch besides git-annex? True when it cannot be asked (fail safe)."""
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
+        try:
+            process = subprocess.run(
+                ["git", "ls-remote", "--heads", sibling],
+                cwd=str(project_path), capture_output=True, text=True, check=False, timeout=30, env=env,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            return True
         if process.returncode != 0:
             return True
-        branches = [ref for ref in process.stdout.split() if not ref.endswith(("/git-annex", "/HEAD"))]
-        return bool(branches)
+        return any(not line.endswith("refs/heads/git-annex") for line in process.stdout.splitlines() if line.strip())
 
     @staticmethod
     def _git_head(project_path: Path) -> Optional[str]:
