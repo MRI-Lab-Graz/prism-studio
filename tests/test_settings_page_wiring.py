@@ -151,3 +151,14 @@ def test_datalad_card_exports_only_what_other_modules_use():
 
     for name in ("formatElapsedDuration", "getSaveProgressElements", "normalizeDataladBoolean", "confirmEnableDatalad"):
         assert name not in exported, name
+
+
+def test_no_page_hardcodes_the_wcag_green():
+    # The darker green belongs to the WCAG enhanced view only; pages take the theme colour so the switch changes them.
+    hits = [
+        str(path.relative_to(APP))
+        for pattern in ("static/css/**/*.css", "static/js/*.js", "templates/**/*.html")
+        for path in APP.glob(pattern)
+        if path.name != "studio-theme.css" and "#1a744d" in _text(path)
+    ]
+    assert sorted(set(hits) - {"static/css/projects/cards.css"}) == []  # cards.css only has it as a var() fallback

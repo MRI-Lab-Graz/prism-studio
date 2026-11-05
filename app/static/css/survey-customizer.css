@@ -24,12 +24,12 @@
     }
 
     .group-item:hover {
-        border-color: #1a744d;
+        border-color: var(--studio-semantic-primary);
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .group-item.active {
-        border-color: #1a744d;
+        border-color: var(--studio-semantic-primary);
         background: #f0fff4;
     }
 
@@ -270,7 +270,7 @@
 
     /* Matrix Parent (Three-Level Hierarchy) */
     .matrix-parent {
-        border: 2px solid #1a744d;
+        border: 2px solid var(--studio-semantic-primary);
         border-radius: 8px;
         background: #f0fff4;
         padding: 0.75rem;
@@ -288,7 +288,7 @@
     .matrix-header .matrix-name {
         font-family: monospace;
         font-weight: 700;
-        color: #1a744d;
+        color: var(--studio-semantic-primary);
         font-size: 0.95rem;
     }
 
@@ -308,7 +308,7 @@
 
     .matrix-text-input:focus {
         outline: none;
-        border-color: #1a744d;
+        border-color: var(--studio-semantic-primary);
         box-shadow: 0 0 0 2px rgba(31, 139, 92, 0.15);
     }
 
@@ -322,7 +322,7 @@
     }
 
     .matrix-subquestions {
-        border-left: 3px solid #1a744d;
+        border-left: 3px solid var(--studio-semantic-primary);
         margin-left: 0.5rem;
         padding-left: 0.75rem;
     }
@@ -343,7 +343,7 @@
     }
 
     .matrix-subquestion:hover {
-        border-color: #1a744d;
+        border-color: var(--studio-semantic-primary);
         background: #f0fff4;
     }
 

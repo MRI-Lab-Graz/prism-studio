@@ -29,8 +29,8 @@
 }
 
 .sm-choice-group .btn.sm-choice-selected {
-    background-color: #1a744d !important;
-    border-color: #1a744d !important;
+    background-color: var(--studio-semantic-primary) !important;
+    border-color: var(--studio-semantic-primary) !important;
     color: #ffffff !important;
 }
 
@@ -42,7 +42,7 @@
 }
 
 /* CORE-tier field badge - deliberately NOT bg-primary/bg-success. This
-   theme's --bs-primary (#1a744d) and --bs-success (#2c9a62) are both dark
+   theme's --bs-primary (#1f8b5c) and --bs-success (#2c9a62) are both dark
    greens, close enough that an unfilled CORE badge and a filled/"done"
    badge were visually indistinguishable. A true blue keeps "this is a
    CORE field" and "this field is filled" unambiguous at a glance.

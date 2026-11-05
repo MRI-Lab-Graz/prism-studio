@@ -19,7 +19,7 @@
     }
     .tpl-row:last-child { margin-bottom: 0; }
     .tpl-row:hover {
-        border-color: #1a744d;
+        border-color: var(--studio-semantic-primary);
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .tpl-row.tpl-selected {
