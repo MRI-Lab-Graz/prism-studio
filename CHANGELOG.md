@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **DataLad has its own page** (`/projects/datalad`, the **DataLad** item in the navbar, now always shown and still
+  carrying the count of unsaved changes). It shows one next step for the open project, decided by the backend
+  (`datalad status`): Open from server..., Enable DataLad, Put on server..., Save, Sync now; *More* holds Get latest,
+  Get data (with the export's filters, starting at the CLI's defaults), Check this computer and the link to your name
+  and email. Long steps show progress with Cancel; validation errors are listed with *Send anyway, I understand this
+  dataset has N errors*. Every button runs the matching `prism_tools.py datalad` command. Clicking the navbar item
+  opens the page; it no longer saves. See `docs/studio/datalad.md`.
+
 ### Fixed
 - `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.
 
 ### Removed
+- **The DataLad card on the Settings page and the DataLad panel on the Share page**, replaced by the DataLad page.
+  The Share page keeps the rsync backup; Settings keeps your name and email. The Share page's *Publish (validated)*
+  button went with the panel (*Sync now* sends only a valid dataset; the results page keeps *Publish*).
 - **Finalize & disconnect, the RIA-store connect step and the unvalidated sync are gone** (`datalad finalize`, the Finalize
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 

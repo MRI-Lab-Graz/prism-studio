@@ -76,17 +76,14 @@ Protocol Descriptions (saved to `openminds_supplements.json`). **Export to
 openMINDS** writes `<project>_openminds.jsonld` (or a `<project>_openminds/`
 directory in multiple-file mode) next to the project.
 
-## Push to Server
+## Back up to a server (rsync)
 
-Accordion section on the same page: share the project through the lab's DataLad server or
-back it up to an rsync destination. **Check this computer** tests Git, git-annex, DataLad,
-your SSH key and the login. **Sync now** first gets what others have saved on the server,
-then sends your saved changes, and only if the dataset passes validation. **Publish
-(validated)** is the push without the update. Nothing is ever merged: if you and someone
-else both changed the project, Sync stops and changes nothing. `sourcedata/` travels with
-every push, so use the internal lab server only, never a public host: Studio refuses
-http(s) and public-host targets while `sourcedata/` is tracked. CLI: `prism_tools.py
-datalad sync`, `datalad update`, `publish`, `save-gate` (see [DataLad](../DATALAD.md)).
+Accordion section on the same page: copy the project to an SSH server or a local or mounted drive as a plain
+backup. Each sync is additive: local files are kept, and files already copied are not deleted from the
+destination. `sourcedata/` is part of the copy, so use the internal lab server only, never a public host.
+
+Snapshots shared with your team through the lab's DataLad server (Sync now, Put on server, Open from server,
+Get data, Check this computer) are on the [DataLad page](datalad.md).
 
 ## CLI equivalents
 
