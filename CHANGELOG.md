@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.
+
 ### Removed
 - **Finalize & disconnect, the RIA-store connect step and the unvalidated sync are gone** (`datalad finalize`, the Finalize
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **Get data.** `prism_tools datalad get-data --project <root> [export filters] [--json]` (Studio: `POST /api/projects/datalad/get-data`, a job) fetches the annexed data of your copy from the server with the export's filters (subjects, sessions, modalities, acq, task, derivatives, code, analysis, sourcedata). The export's "which files" logic moved out of `export_project_to_plain_folder` into `src/export_selection.py` and both use it; the export selects the same files as before. One helper adds the filter flags to the export commands and to `get-data`.
 - **Open a project from the lab server.** `prism_tools datalad open-from-server --location <folder | user@host:path |
   ssh://host/path> --target <empty or new folder> [--json]` clones the project with the server as `origin`, installs the
   nested subject datasets level by level without their data, only from addresses inside the project on the server

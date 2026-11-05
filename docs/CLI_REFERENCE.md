@@ -884,6 +884,20 @@ that is not a full path is refused with 400) and then opens the new copy as the 
 python prism_tools.py datalad open-from-server --location user@lab.example.org:/data/study --target ~/projects/study
 ```
 
+`get-data --project <root> [filters] [--json]` fetches the data (MRI, physio, ...) of your own copy from the server
+(`origin`). It takes the export's filter flags, added by the same helper to the `export` commands:
+`--exclude-subject`, `--exclude-session`, `--exclude-modality`, `--exclude-acq MODALITY=LABEL`, `--exclude-task MODALITY=TASK`,
+`--include-sourcedata`, `--no-derivatives`, `--no-code`, `--include-analysis` (same defaults as the export). Without filters
+everything the defaults keep is fetched. A project without `origin` is not an error (`skipped: true`, exit 0, "nothing to fetch
+from"); an unreachable server, or files no server has (listed in the message and in `failed_paths`), exit 1. Studio's
+`POST /api/projects/datalad/get-data` runs the same function as a job (the filters under the export page's option names,
+e.g. `exclude_subjects`). The selection itself is `src/export_selection.py`, which the export's "fetch annexed content"
+step uses too.
+
+```bash
+python prism_tools.py datalad get-data --project ~/projects/study --exclude-subject sub-02 --exclude-modality physio
+```
+
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
 (`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
 (10 s limit; an unreachable server is reported as `reachable: false`, never an error, and never changes

@@ -8,6 +8,19 @@ from pathlib import Path
 from src.entity_rules import load_entity_rules
 
 
+def add_export_filter_flags(parser) -> None:
+    """The export's scope flags (what comes along, what is left out); `datalad get-data` takes the very same ones."""
+    parser.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
+    parser.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
+    parser.add_argument("--no-code", action="store_true", help="Leave out code/")
+    parser.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
+    parser.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
+    parser.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
+    parser.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
+    parser.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
+    parser.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Create a base parser for prism_tools."""
     return argparse.ArgumentParser(
@@ -497,15 +510,7 @@ def build_prism_tools_parsers(
                                        help="upload_ready: data only (no derivatives, sourcedata, code, analysis), version control stripped")
     parser_export_project.add_argument("--no-anonymize", action="store_true", help="Keep the real participant IDs")
     parser_export_project.add_argument("--no-mask-questions", action="store_true", help="Keep copyrighted question texts")
-    parser_export_project.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
-    parser_export_project.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
-    parser_export_project.add_argument("--no-code", action="store_true", help="Leave out code/")
-    parser_export_project.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
-    parser_export_project.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
-    parser_export_project.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
-    parser_export_project.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
-    parser_export_project.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
-    parser_export_project.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    add_export_filter_flags(parser_export_project)
     parser_export_project.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
     parser_export_project.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
     parser_export_project.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
@@ -523,15 +528,7 @@ def build_prism_tools_parsers(
                                        help="upload_ready: data only (no derivatives, sourcedata, code, analysis), version control stripped")
     parser_export_folder.add_argument("--no-anonymize", action="store_true", help="Keep the real participant IDs")
     parser_export_folder.add_argument("--no-mask-questions", action="store_true", help="Keep copyrighted question texts")
-    parser_export_folder.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
-    parser_export_folder.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
-    parser_export_folder.add_argument("--no-code", action="store_true", help="Leave out code/")
-    parser_export_folder.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
-    parser_export_folder.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
-    parser_export_folder.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
-    parser_export_folder.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
-    parser_export_folder.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
-    parser_export_folder.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    add_export_filter_flags(parser_export_folder)
     parser_export_folder.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
     parser_export_folder.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
     parser_export_folder.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
@@ -547,15 +544,7 @@ def build_prism_tools_parsers(
     )
     parser_export_git_lfs.add_argument("--project", required=True, help="Project root or project.json path")
     parser_export_git_lfs.add_argument("--output-folder", default=None, help="Folder to export into (default: next to the project)")
-    parser_export_git_lfs.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
-    parser_export_git_lfs.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
-    parser_export_git_lfs.add_argument("--no-code", action="store_true", help="Leave out code/")
-    parser_export_git_lfs.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
-    parser_export_git_lfs.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
-    parser_export_git_lfs.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
-    parser_export_git_lfs.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
-    parser_export_git_lfs.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
-    parser_export_git_lfs.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    add_export_filter_flags(parser_export_git_lfs)
     parser_export_git_lfs.add_argument("--scrub-mri-json", action="store_true", help="Scrub identifying fields from MRI JSON sidecars and clean NIfTI headers")
     parser_export_git_lfs.add_argument("--scrub-group", action="append", metavar="GROUP", help="With --scrub-mri-json: only this field group (repeatable)")
     parser_export_git_lfs.add_argument("--phenotype-bridge", action="store_true", help="Also write the phenotype/ bridge")
@@ -564,15 +553,7 @@ def build_prism_tools_parsers(
         "annex-availability", help="Which files of the export scope are not available locally (git-annex)"
     )
     parser_export_annex_availability.add_argument("--project", required=True, help="Project root or project.json path")
-    parser_export_annex_availability.add_argument("--include-sourcedata", action="store_true", help="Also export sourcedata/")
-    parser_export_annex_availability.add_argument("--no-derivatives", action="store_true", help="Leave out derivatives/")
-    parser_export_annex_availability.add_argument("--no-code", action="store_true", help="Leave out code/")
-    parser_export_annex_availability.add_argument("--include-analysis", action="store_true", help="Also export the analysis folder")
-    parser_export_annex_availability.add_argument("--exclude-subject", action="append", metavar="SUB", help="Leave out a subject (repeatable)")
-    parser_export_annex_availability.add_argument("--exclude-session", action="append", metavar="SES", help="Leave out a session (repeatable)")
-    parser_export_annex_availability.add_argument("--exclude-modality", action="append", metavar="MODALITY", help="Leave out a modality (repeatable)")
-    parser_export_annex_availability.add_argument("--exclude-acq", action="append", metavar="MODALITY=LABEL", help="Leave out an acq label of a modality (repeatable)")
-    parser_export_annex_availability.add_argument("--exclude-task", action="append", metavar="MODALITY=TASK", help="Leave out a task of a modality (repeatable)")
+    add_export_filter_flags(parser_export_annex_availability)
     parser_export_annex_availability.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_export_structure = export_subparsers.add_parser("structure", help="The sessions and modalities an export can be scoped to (JSON)")
     parser_export_structure.add_argument("--project", required=True, help="Project root or project.json path")
@@ -980,6 +961,13 @@ def build_prism_tools_parsers(
     parser_datalad_update.add_argument("--project", required=True, help="Project root")
     parser_datalad_update.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
     parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_datalad_get_data = datalad_subparsers.add_parser(
+        "get-data",
+        help="Fetch the data (MRI, physio, ...) of your copy from the server; the export's filters choose what",
+    )
+    parser_datalad_get_data.add_argument("--project", required=True, help="Project root")
+    add_export_filter_flags(parser_datalad_get_data)
+    parser_datalad_get_data.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show the DataLad state, the unsaved changes and the next step"
     )

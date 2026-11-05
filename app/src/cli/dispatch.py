@@ -190,7 +190,7 @@ def dispatch_prism_tools(
             handlers["datalad_identity"](args)
         elif args.action == "sync":
             handlers["datalad_sync"](args)
-        elif args.action in ("enable", "save", "update", "status", "put-on-server", "open-from-server"):
+        elif args.action in ("enable", "save", "update", "status", "put-on-server", "open-from-server", "get-data"):
             handlers[f"datalad_{args.action.replace('-', '_')}"](args)
         else:
             parsers["datalad"].print_help()

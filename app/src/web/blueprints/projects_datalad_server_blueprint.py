@@ -138,6 +138,15 @@ def _run_open_job(job_id: str, target, open_kwargs: dict) -> None:
     ))
 
 
+def _run_get_job(job_id: str, project_path, get_kwargs: dict) -> None:
+    """The same function as `prism_tools datalad get-data`: fetch the data the export's filters choose."""
+    from src.datalad_get_data import filters_from_options, get_data
+
+    _run_job(job_id, "Get data", "Fetching data from the server...", lambda line_callback: get_data(
+        project_path, line_callback=line_callback, **filters_from_options(get_kwargs.get("options") or {})
+    ))
+
+
 def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_resolve_project_root_path) -> tuple:
     try:
         data = request.get_json() or {}
@@ -156,6 +165,7 @@ def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_re
             "sibling_name": data.get("sibling_name") or None,
             "allow_invalid": bool(data.get("allow_invalid")),
             "location": str(data.get("location") or ""),
+            "options": data,
         }
 
         job_id = str(uuid.uuid4())
@@ -230,6 +240,12 @@ def datalad_server_sync_start():
 def datalad_put_on_server():
     """Start `prism_tools datalad put-on-server` as a job; poll it with the sync job's status and cancel routes."""
     return _start_job("put", _run_put_job)
+
+
+@projects_datalad_server_bp.route("/api/projects/datalad/get-data", methods=["POST"])
+def datalad_get_data():
+    """Start `prism_tools datalad get-data` as a job; poll it with the sync job's status and cancel routes."""
+    return _start_job("get", _run_get_job)
 
 
 @projects_datalad_server_bp.route("/api/projects/datalad/open-from-server", methods=["POST"])

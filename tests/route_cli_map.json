@@ -60,6 +60,7 @@
  "projects.set_recent_projects": "exempt: GUI state (which project is open, window)",
  "projects.validate_dataset_description_draft": "exempt: project setup (creating a project and its metadata is the one GUI-only part)",
  "projects.validate_project": "prism: validate",
+ "projects_datalad_server.datalad_get_data": "cli: datalad get-data",
  "projects_datalad_server.datalad_open_from_server": "cli: datalad open-from-server",
  "projects_datalad_server.datalad_put_on_server": "cli: datalad put-on-server",
  "projects_datalad_server.datalad_server_publish": "cli: publish",

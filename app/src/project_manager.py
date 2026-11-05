@@ -50,6 +50,7 @@ from src.project_export_helpers import (
     _matches_excluded_acq_label,
 )
 from src.constants import DEFAULT_BIDS_VERSION
+from src.export_selection import ExportFilters, select_content_paths, select_scope_dirs
 from src.dataset_description import write_dataset_description
 from src.cross_platform import (
     CrossPlatformFile,
@@ -2359,231 +2360,30 @@ class ProjectManager:
         materialization_workspace: Optional[Path] = None
         workspace_cleanup_error: Optional[str] = None
 
-        materialization_included_top_level_folders = {
-            "derivatives": include_derivatives,
-            "sourcedata": include_sourcedata,
-            "code": include_code,
-            "analysis": include_analysis,
-        }
-        materialization_exclude_subjects = {
-            str(label).strip()
-            for label in (exclude_subjects or set())
-            if str(label).strip()
-        }
-        materialization_exclude_sessions = {
-            str(label).strip()
-            for label in (exclude_sessions or set())
-            if str(label).strip()
-        }
-        materialization_exclude_modalities = {
-            str(label).strip()
-            for label in (exclude_modalities or set())
-            if str(label).strip()
-        }
-        materialization_exclude_acq = {
-            str(modality).strip(): {
-                str(label).strip() for label in labels if str(label).strip()
-            }
-            for modality, labels in (exclude_acq or {}).items()
-            if str(modality).strip() and labels
-        }
-        materialization_exclude_tasks = {
-            str(modality).strip(): {
-                str(label).strip() for label in labels if str(label).strip()
-            }
-            for modality, labels in (exclude_tasks or {}).items()
-            if str(modality).strip() and labels
-        }
+        materialization_filters = dict(
+            exclude_subjects=exclude_subjects,
+            exclude_sessions=exclude_sessions,
+            exclude_modalities=exclude_modalities,
+            exclude_acq=exclude_acq,
+            exclude_tasks=exclude_tasks,
+            include_derivatives=include_derivatives,
+            include_sourcedata=include_sourcedata,
+            include_code=include_code,
+            include_analysis=include_analysis,
+        )
+
+        _materialization_entry_filters = ExportFilters(**materialization_filters)
 
         def _materialization_should_exclude_entry(
             rel_parts: tuple[str, ...], *, is_dir: bool
         ) -> bool:
-            if not rel_parts:
-                return False
-
-            if rel_parts[0].startswith("sub-") and rel_parts[0] in materialization_exclude_subjects:
-                return True
-
-            if len(rel_parts) == 1:
-                root_name = rel_parts[0]
-                if root_name in materialization_included_top_level_folders:
-                    return not materialization_included_top_level_folders[root_name]
-                if not is_dir:
-                    survey_task_filters = materialization_exclude_tasks.get("survey", set())
-                    if survey_task_filters:
-                        task_match = re.search(
-                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
-                        )
-                        if task_match and task_match.group(1) in survey_task_filters:
-                            return True
-                return False
-
-            if not rel_parts[0].startswith("sub-"):
-                return False
-
-            part_index = 1
-            if (
-                part_index < len(rel_parts)
-                and rel_parts[part_index].startswith("ses-")
-            ):
-                session_label = rel_parts[part_index]
-                if session_label in materialization_exclude_sessions:
-                    return True
-                part_index += 1
-
-            if part_index >= len(rel_parts):
-                return False
-
-            modality = rel_parts[part_index]
-            if modality in materialization_exclude_modalities:
-                return True
-
-            if is_dir:
-                return False
-
-            filename = rel_parts[-1]
-            excluded_acq_labels = materialization_exclude_acq.get(modality, set())
-            if excluded_acq_labels:
-                if modality in MRI_SUFFIX_LABEL_MODALITIES:
-                    if _matches_excluded_acq_label(filename, excluded_acq_labels):
-                        return True
-                elif _matches_excluded_acq_label(filename, excluded_acq_labels):
-                    return True
-
-            excluded_task_labels = materialization_exclude_tasks.get(modality, set())
-            if excluded_task_labels:
-                task_label = _extract_export_task_label(filename, modality)
-                if task_label and task_label in excluded_task_labels:
-                    return True
-
-            return False
+            return _materialization_entry_filters.excludes(rel_parts, is_dir=is_dir)
 
         def _collect_materialization_targets(dataset_root: Path) -> List[str]:
-            selected_files: List[str] = []
-            ignored_names_for_materialization = {
-                ".git",
-                ".datalad",
-                ".gitattributes",
-                ".gitignore",
-                ".gitmodules",
-                "CHANGES",
-            }
-
-            for current_dir_raw, dirnames, filenames in os.walk(dataset_root):
-                current_dir = Path(current_dir_raw)
-
-                non_system_dirs = set(filter_system_files(dirnames))
-                kept_dirs: List[str] = []
-                for dirname in dirnames:
-                    if dirname not in non_system_dirs:
-                        continue
-                    if dirname in ignored_names_for_materialization:
-                        continue
-                    candidate_dir = current_dir / dirname
-                    try:
-                        rel_parts = candidate_dir.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
-                        continue
-                    kept_dirs.append(dirname)
-                dirnames[:] = kept_dirs
-
-                non_system_files = set(filter_system_files(filenames))
-                for filename in filenames:
-                    if filename not in non_system_files:
-                        continue
-                    if filename in ignored_names_for_materialization:
-                        continue
-                    candidate_file = current_dir / filename
-                    try:
-                        rel_parts = candidate_file.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=False):
-                        continue
-                    selected_files.append(Path(*rel_parts).as_posix())
-
-            return sorted(set(selected_files))
+            return select_content_paths(dataset_root, **materialization_filters)
 
         def _collect_materialization_recursive_scope_dirs(dataset_root: Path) -> List[str]:
-            # Prefer modality-level roots for scoped recursion. Fall back to session/subject
-            # roots only when deeper scope roots are not discoverable pre-materialization.
-            subject_dirs: Set[str] = set()
-            session_dirs: Set[str] = set()
-            modality_dirs: Set[str] = set()
-
-            subject_has_children: Dict[str, bool] = {}
-            session_has_modalities: Dict[str, bool] = {}
-            ignored_names_for_materialization = {
-                ".git",
-                ".datalad",
-                ".gitattributes",
-                ".gitignore",
-                ".gitmodules",
-                "CHANGES",
-            }
-
-            for current_dir_raw, dirnames, _filenames in os.walk(dataset_root):
-                current_dir = Path(current_dir_raw)
-
-                non_system_dirs = set(filter_system_files(dirnames))
-                kept_dirs: List[str] = []
-                for dirname in dirnames:
-                    if dirname not in non_system_dirs:
-                        continue
-                    if dirname in ignored_names_for_materialization:
-                        continue
-                    candidate_dir = current_dir / dirname
-                    try:
-                        rel_parts = candidate_dir.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
-                        continue
-                    kept_dirs.append(dirname)
-
-                    if not rel_parts or not rel_parts[0].startswith("sub-"):
-                        continue
-
-                    rel_path = Path(*rel_parts).as_posix()
-                    subject_key = rel_parts[0]
-
-                    if len(rel_parts) == 1:
-                        subject_dirs.add(rel_path)
-                        subject_has_children.setdefault(subject_key, False)
-                        continue
-
-                    subject_has_children[subject_key] = True
-
-                    part_index = 1
-                    session_key: Optional[str] = None
-                    if rel_parts[part_index].startswith("ses-"):
-                        session_key = Path(*rel_parts[:2]).as_posix()
-                        session_dirs.add(session_key)
-                        session_has_modalities.setdefault(session_key, False)
-                        part_index += 1
-
-                    if part_index >= len(rel_parts):
-                        continue
-
-                    if len(rel_parts) == part_index + 1:
-                        modality_dirs.add(rel_path)
-                        if session_key:
-                            session_has_modalities[session_key] = True
-                dirnames[:] = kept_dirs
-
-            selected_dirs: Set[str] = set(modality_dirs)
-
-            for session_dir in sorted(session_dirs):
-                if not session_has_modalities.get(session_dir, False):
-                    selected_dirs.add(session_dir)
-
-            for subject_dir in sorted(subject_dirs):
-                if not subject_has_children.get(subject_dir, False):
-                    selected_dirs.add(subject_dir)
-
-            return sorted(selected_dirs)
+            return select_scope_dirs(dataset_root, **materialization_filters)
 
         if materialize_annex_content:
             if not status.get("enabled"):

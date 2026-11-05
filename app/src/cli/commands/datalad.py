@@ -100,6 +100,19 @@ def cmd_datalad_open_from_server(args) -> None:
     _print_result(args, result)
 
 
+def cmd_datalad_get_data(args) -> None:
+    """Fetch the data of your copy from the server, with the export's filters (Studio's "Get data")."""
+    from src.datalad_get_data import filters_from_options, get_data
+    from src.cli.commands.export import export_data_from_args
+
+    result = get_data(
+        args.project,
+        line_callback=None if args.json else print,
+        **filters_from_options(export_data_from_args(args)),
+    )
+    _print_result(args, result)
+
+
 def _print_push_result(args, result: dict) -> None:
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))

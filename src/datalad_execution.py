@@ -166,43 +166,16 @@ def run_datalad_get_paths(
         )
         return (False, detail or "Unknown DataLad error.")
 
+    # No `--on-failure`: it is a global DataLad option that `get` rejects, and `ignore` would hide failures anyway.
     for chunk in target_chunks:
-        active_command = [*base_command, "--on-failure", "ignore", *chunk]
-        ok, error_message = _run_get_command(active_command)
+        ok, error_message = _run_get_command([*base_command, "--", *chunk])
 
-        if (
-            not ok
-            and no_data
-            and any(
-                fragment in str(error_message).lower()
-                for fragment in (
-                    "unknown argument: -n",
-                    "unrecognized arguments: -n",
-                    "unknown option: -n",
-                )
-            )
+        if not ok and no_data and any(
+            fragment in str(error_message).lower()
+            for fragment in ("unknown argument: -n", "unrecognized arguments: -n", "unknown option: -n")
         ):
-            active_command = [
-                *_without_no_data_flag(base_command),
-                "--on-failure",
-                "ignore",
-                *chunk,
-            ]
-            ok, error_message = _run_get_command(active_command)
-
-        if (
-            not ok
-            and "--on-failure" in str(error_message).lower()
-            and (
-                "unknown argument" in str(error_message).lower()
-                or "unrecognized arguments" in str(error_message).lower()
-            )
-        ):
-            active_command = [*(
-                _without_no_data_flag(base_command)
-                if no_data else base_command
-            ), *chunk]
-            ok, error_message = _run_get_command(active_command)
+            base_command = _without_no_data_flag(base_command)
+            ok, error_message = _run_get_command([*base_command, "--", *chunk])
 
         if not ok:
             error_messages.append(str(error_message))
