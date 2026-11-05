@@ -161,13 +161,18 @@ def cmd_datalad_status(args) -> None:
     from src.datalad_state import datalad_state
 
     state = datalad_state(
-        args.project, check_server=bool(getattr(args, "check_server", False)), validate=bool(getattr(args, "validate", False))
+        args.project,
+        check_server=bool(getattr(args, "check_server", False)),
+        validate=bool(getattr(args, "validate", False)),
+        check_nested=bool(getattr(args, "check_nested", False)),
     )
     if getattr(args, "json", False):
         print(json.dumps(state, indent=2, ensure_ascii=False, default=str))
         return
     print(state["message"])
     print(f"Next step: {state['next_step']}")
+    if state.get("nested_unregistered"):
+        print(f"{state['nested_unregistered']} subject dataset(s) not registered yet: run `datalad enable` to finish.")
     server = state["server"]
     if server:
         reach = {True: "reachable", False: "not reachable", None: "not checked"}[server["reachable"]]

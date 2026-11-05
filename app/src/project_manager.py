@@ -5385,6 +5385,7 @@ git push -u origin main
             "subdatasets_remaining_count": remaining_count,
             "subdatasets_progress_percent": progress_percent,
             "next_missing_subdataset": missing_paths[0] if missing_paths else "",
+            "missing_subdatasets": missing_paths,
             "subdatasets_topology_mode": topology_mode,
         }
 

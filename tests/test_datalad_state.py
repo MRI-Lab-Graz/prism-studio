@@ -128,3 +128,48 @@ def test_the_old_clean_status_route_is_gone():
     import src.web.blueprints.projects as projects
 
     assert not hasattr(projects, "datalad_clean_status")
+
+
+# --- nested subject datasets that are not registered yet: "Finish enabling DataLad" ------------------------------
+
+
+def test_first_enable_says_so(tmp_path):
+    state = datalad_state(tmp_path)
+    assert state["next_step"] == "enable" and state["enable_kind"] == "first"
+
+
+def test_unregistered_subject_datasets_lead_to_finish_enabling(with_server):
+    (with_server / "sub-01").mkdir()
+    (with_server / "sub-01" / "notes.txt").write_text("x\n", encoding="utf-8")
+    state = datalad_state(with_server, check_nested=True)
+    assert state["nested_unregistered"] == 1 and state["nested_unregistered_paths"] == ["sub-01"]
+    assert state["next_step"] == "enable" and state["enable_kind"] == "finish"
+
+
+def test_registered_subject_datasets_keep_the_usual_step(with_server):
+    _run("datalad", "create", "-c", "text2git", "-d", ".", "sub-01", cwd=with_server)
+    state = datalad_state(with_server, check_nested=True)
+    assert state["nested_unregistered"] == 0 and state["next_step"] == "sync"
+    assert "enable_kind" not in state
+
+
+def test_nested_datasets_are_only_counted_when_asked(with_server):
+    (with_server / "sub-01").mkdir()
+    state = datalad_state(with_server)  # the navbar's call: no `datalad subdatasets` run
+    assert "nested_unregistered" not in state and state["next_step"] != "enable"
+
+
+def test_cli_json_and_the_route_answer_the_same_with_the_nested_check(with_server, capsys, monkeypatch):
+    import src.web.blueprints.projects as projects
+    from flask import Flask
+    from src.cli.commands.datalad import cmd_datalad_status
+
+    (with_server / "sub-01").mkdir()
+    cmd_datalad_status(
+        SimpleNamespace(project=str(with_server), json=True, check_server=False, validate=False, check_nested=True)
+    )
+    cli = json.loads(capsys.readouterr().out)
+    monkeypatch.setattr(projects, "get_current_project", lambda: {"path": str(with_server)})
+    with Flask(__name__).test_request_context("/api/projects/datalad/state?check_nested=1"):
+        body = projects.datalad_state_route().get_json()
+    assert body == cli and cli["enable_kind"] == "finish"

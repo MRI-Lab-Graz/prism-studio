@@ -156,3 +156,9 @@ def test_parser_accepts_datalad_status():
     parser, _ = build_prism_tools_parsers(ROOT)
     a = parser.parse_args(["datalad", "status", "--project", "/p", "--json"])
     assert (a.command, a.action, a.project, a.json) == ("datalad", "status", "/p", True)
+
+
+def test_parser_status_has_the_nested_check():
+    parser, _ = build_prism_tools_parsers(ROOT)
+    assert parser.parse_args(["datalad", "status", "--project", "/p", "--check-nested"]).check_nested is True
+    assert parser.parse_args(["datalad", "status", "--project", "/p"]).check_nested is False

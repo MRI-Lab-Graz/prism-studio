@@ -623,7 +623,9 @@ def datalad_state_route():
     if not project_path:
         return jsonify({"success": False, "error": "No current project loaded."}), 400
     flag = lambda name: request.args.get(name) in ("1", "true")  # noqa: E731
-    return jsonify(datalad_state(project_path, check_server=flag("check_server"), validate=flag("validate")))
+    return jsonify(datalad_state(
+        project_path, check_server=flag("check_server"), validate=flag("validate"), check_nested=flag("check_nested")
+    ))
 
 
 @projects_bp.route("/api/projects/remote-source-status", methods=["POST"])

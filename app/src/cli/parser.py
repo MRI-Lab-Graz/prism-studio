@@ -974,6 +974,10 @@ def build_prism_tools_parsers(
     parser_datalad_status.add_argument("--project", required=True, help="Project root")
     parser_datalad_status.add_argument("--check-server", action="store_true", help="Ask the server whether it can be reached")
     parser_datalad_status.add_argument("--validate", action="store_true", help="Also validate the dataset (slower)")
+    parser_datalad_status.add_argument(
+        "--check-nested", action="store_true",
+        help="Also count subject datasets not registered yet; then the next step is to finish enabling (slower)",
+    )
     parser_datalad_status.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_environment = subparsers.add_parser(
