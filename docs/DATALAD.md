@@ -118,8 +118,9 @@ brings it in (CLI: `prism_tools.py datalad update --project <root>`). It is deli
 - A project with no server yet is simply skipped, and a server that cannot be reached shows a message and does not
   stop you from working.
 
-The server can be an SSH location or a mounted network share; PRISM Studio only needs its address
-(`prism_tools.py datalad config --project <root> --url ...`).
+The server can be an SSH location or a mounted network share. Each user's copy is a clone of the server's
+dataset, so the server is its `origin`; Studio's *Sync now* (`prism_tools.py datalad sync --project <root>`) is
+*get the latest, then publish*.
 
 **Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can
 save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then ends with
@@ -148,7 +149,7 @@ server sibling; if validation has errors, nothing is pushed.
   subdatasets). Run `datalad save`, then publish.
 - **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, refused,
   hook allowed/refused). It lives in the git dir, so it never dirties the dataset.
-- **Studio**: only the "Publish" button is gated. The existing "Sync now" flow is NOT validated.
+- **Studio**: both "Publish (validated)" and "Sync now" are gated; Sync now also gets the latest first.
 - **More caveats**:
   - The gate validates with the stable schema and no library path, so the Studio validator
     page can disagree if the project uses another schema or library. The backend is the authority.

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Finalize & disconnect, the RIA-store connect step and the unvalidated sync are gone** (`datalad finalize`, the Finalize
+  button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
+
 ### Added
 - **The navbar shows how many changes are not yet saved to DataLad**, as a yellow number next to "DataLad". It is looked at again
   after every validator run (the results page). `prism_tools datalad status --project <path> [--json]` prints the same.
@@ -16,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   has unsaved changes, and skips a project that has no server yet.
 
 ### Changed
+- **Sync now gets the latest, then sends only a valid dataset.** `prism_tools datalad sync` and Studio's *Sync now* run
+  `update`, then the validated publish (saved, valid, to the lab server). The server is the project's `origin` by default
+  (it was `ria-store`). Nothing is ever merged.
 - **A snapshot saved with "Save anyway" says so.** Its message ends with `[saved with N validation error(s)]`.
 - **Saving a DataLad snapshot needs a PRISM-valid dataset.** With validation errors the save is refused and nothing is written;
   `prism_tools datalad save --allow-invalid` and Studio's "Save anyway" prompt override it. Automatic saves (on project switch,

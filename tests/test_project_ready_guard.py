@@ -102,7 +102,7 @@ def test_guard_installed_after_project_selection_hook():
     "/api/projects/anc-export", "/api/projects/openminds-export", "/api/projects/template-export",
     "/api/projects/export", "/api/projects/export/start", "/api/projects/export/deface",
     "/api/projects/export/git-lfs", "/api/projects/datalad-server/publish",
-    "/api/projects/datalad-server/sync/start", "/api/projects/datalad-server/finalize/start",
+    "/api/projects/datalad-server/sync/start",
     "/api/projects/datalad/remove-scans-tsv", "/api/projects/participants",
 ])
 def test_routes_that_export_publish_or_write_project_data_are_gated_like_their_cli_twins(path):

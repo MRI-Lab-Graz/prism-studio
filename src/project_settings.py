@@ -60,7 +60,7 @@ def adopt_legacy_project_identity(project_root) -> None:
 def save_datalad_server_config(project_root: Path, ria_url=None, sibling_name=None, alias=None) -> dict:
     from src.datalad_execution import sibling_label_problem
 
-    sibling_name = str(sibling_name or "").strip() or "ria-store"
+    sibling_name = str(sibling_name or "").strip() or "origin"
     alias = str(alias or "").strip()
     for label, what in ((sibling_name, "sibling name"), (alias, "alias")):
         if label and (problem := sibling_label_problem(label, what)):

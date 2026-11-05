@@ -1,19 +1,7 @@
-"""Push a finished PRISM/DataLad project to a central DataLad sibling
-(a RIA store, or a plain SSH/local sibling for a server that was never set
-up with a RIA layout -- see `run_datalad_create_sibling` in
-datalad_execution.py).
+"""Sync a project with the lab's DataLad server (the same function as `prism_tools datalad sync`).
 
-Two distinct operations, mirroring the async job pattern used by the Export
-feature (`/start` -> background thread -> `/status` polling -> `/cancel`):
-
-- "Sync now": connect (idempotent) + push. Safe to run repeatedly throughout
-  a study; the sibling stays registered as an ongoing backup. An optional
-  `verify` flag additionally confirms every annexed key actually reached
-  the sibling before reporting success -- useful before treating the local
-  copy as safe to delete, without going through a full finalize/disconnect.
-- "Finalize & disconnect": one last push, a verification step, then removes
-  the local sibling registration. Local files are kept. Disconnect only
-  happens if verification passes, so a failed/partial run can be retried.
+"Sync now" runs as an async job (`/start` -> background thread -> `/status` polling -> `/cancel`): it gets the latest
+changes from the server, then sends the saved changes, and only if the dataset validates.
 """
 
 import threading
@@ -32,7 +20,7 @@ from .projects_helpers import _resolve_project_root_path
 projects_datalad_server_bp = Blueprint("projects_datalad_server", __name__)
 
 # ---------------------------------------------------------------------------
-# Async job store (shared shape for both "sync" and "finalize" jobs)
+# Async job store for "sync" jobs
 # ---------------------------------------------------------------------------
 
 _ria_jobs: Dict[str, dict] = {}
@@ -96,88 +84,26 @@ def _get_ria_job(job_id: str) -> dict:
         return {k: v for k, v in job.items() if k != "cancel_event"}
 
 
-def _run_sync_job(job_id: str, project_path, ria_kwargs: dict) -> None:
-    from src.project_manager import ProjectManager
+def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
+    """The same function as `prism_tools datalad sync`: get the latest, then publish a valid dataset."""
+    from src.share_publish import sync_with_server
 
-    job = _ria_jobs.get(job_id, {})
-    cancel_event = job.get("cancel_event")
-
-    def progress_callback(percent: int, message: str) -> None:
-        _update_ria_job(job_id, percent=percent, message=message, status="running")
-
-    def is_cancelled() -> bool:
-        return bool(cancel_event and cancel_event.is_set())
-
+    cancel_event = _ria_jobs.get(job_id, {}).get("cancel_event")
+    if cancel_event and cancel_event.is_set():  # a push that has begun is never interrupted
+        _update_ria_job(job_id, status="cancelled", message="Sync cancelled", percent=0)
+        return
     try:
-        manager = ProjectManager()
-        result = manager.sync_project_to_ria(
+        _update_ria_job(job_id, status="running", percent=10, message="Syncing with the server...")
+        result = sync_with_server(
             project_path,
-            progress_callback=progress_callback,
-            is_cancelled=is_cancelled,
-            **ria_kwargs,
+            sibling_name=sync_kwargs.get("sibling_name"),
+            line_callback=lambda line: _update_ria_job(job_id, message=line, status="running"),
         )
-        if is_cancelled():
-            _update_ria_job(job_id, status="cancelled", message="Sync cancelled", percent=0)
-            return
         if result.get("success"):
-            _update_ria_job(
-                job_id,
-                status="complete",
-                percent=100,
-                message=result.get("message", "Sync complete."),
-                result=result,
-            )
+            _update_ria_job(job_id, status="complete", percent=100, message=result["message"], result=result)
         else:
-            _update_ria_job(
-                job_id,
-                status="error",
-                message=result.get("message", "Sync failed."),
-                error=result.get("message", "Sync failed."),
-                result=result,
-            )
-    except Exception as exc:
-        _update_ria_job(job_id, status="error", message=str(exc), error=str(exc))
-
-
-def _run_finalize_job(job_id: str, project_path, ria_kwargs: dict) -> None:
-    from src.project_manager import ProjectManager
-
-    job = _ria_jobs.get(job_id, {})
-    cancel_event = job.get("cancel_event")
-
-    def progress_callback(percent: int, message: str) -> None:
-        _update_ria_job(job_id, percent=percent, message=message, status="running")
-
-    def is_cancelled() -> bool:
-        return bool(cancel_event and cancel_event.is_set())
-
-    try:
-        manager = ProjectManager()
-        result = manager.finalize_project_upload(
-            project_path,
-            progress_callback=progress_callback,
-            is_cancelled=is_cancelled,
-            **ria_kwargs,
-        )
-        if is_cancelled() and not result.get("success"):
-            _update_ria_job(job_id, status="cancelled", message="Finalize cancelled", percent=0)
-            return
-        if result.get("success"):
-            _update_ria_job(
-                job_id,
-                status="complete",
-                percent=100,
-                message=result.get("message", "Finalize complete."),
-                result=result,
-            )
-        else:
-            _update_ria_job(
-                job_id,
-                status="error",
-                message=result.get("message", "Finalize failed."),
-                error=result.get("message", "Finalize failed."),
-                result=result,
-            )
+            detail = "\n".join([result.get("message", "Sync failed."), *result.get("errors", [])[:20]])
+            _update_ria_job(job_id, status="error", message=detail, error=detail, result=result)
     except Exception as exc:
         _update_ria_job(job_id, status="error", message=str(exc), error=str(exc))
 
@@ -190,16 +116,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        ria_kwargs = {
-            "ria_url": (data.get("ria_url") or None),
-            "sibling_name": (data.get("sibling_name") or None),
-            "alias": (data.get("alias") or None),
-        }
-        if kind == "sync":
-            ria_kwargs["verify"] = bool(data.get("verify", False))
-        if kind == "finalize":
-            ria_kwargs["verify_mode"] = str(data.get("verify_mode") or "fast").strip().lower()
-            ria_kwargs["mark_annex_dead"] = bool(data.get("mark_annex_dead", False))
+        ria_kwargs = {"sibling_name": data.get("sibling_name") or None}
 
         job_id = str(uuid.uuid4())
         _create_ria_job(job_id, kind=kind)
@@ -207,7 +124,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
         # The job body runs on a separate thread, which does NOT inherit
         # Flask's request-local app context -- without explicitly pushing
         # one here, ProjectManager._emit_backend_progress's has_app_context()
-        # check silently no-ops for the whole sync/finalize run, so none of
+        # check silently no-ops for the whole sync run, so none of
         # its terminal progress lines (the same live "ACTION/COMMAND" output
         # nested-subdataset registration produces) would ever be printed.
         from flask import current_app
@@ -291,43 +208,6 @@ def datalad_server_sync_status(job_id: str):
     "/api/projects/datalad-server/sync/<job_id>/cancel", methods=["DELETE"]
 )
 def datalad_server_sync_cancel(job_id: str):
-    with _ria_lock:
-        job = _ria_jobs.get(job_id)
-    if not job:
-        return jsonify({"error": "Job not found"}), 404
-    cancel_event = job.get("cancel_event")
-    if cancel_event:
-        cancel_event.set()
-    return jsonify({"cancelled": True})
-
-
-@projects_datalad_server_bp.route("/api/projects/datalad-server/finalize/start", methods=["POST"])
-def datalad_server_finalize_start():
-    return _start_ria_job("finalize", _run_finalize_job)
-
-
-@projects_datalad_server_bp.route(
-    "/api/projects/datalad-server/finalize/<job_id>/status", methods=["GET"]
-)
-def datalad_server_finalize_status(job_id: str):
-    job = _get_ria_job(job_id)
-    if not job:
-        return jsonify({"error": "Job not found"}), 404
-    return jsonify(
-        {
-            "status": job.get("status"),
-            "percent": job.get("percent", 0),
-            "message": job.get("message", ""),
-            "error": job.get("error"),
-            "result": job.get("result"),
-        }
-    )
-
-
-@projects_datalad_server_bp.route(
-    "/api/projects/datalad-server/finalize/<job_id>/cancel", methods=["DELETE"]
-)
-def datalad_server_finalize_cancel(job_id: str):
     with _ria_lock:
         job = _ria_jobs.get(job_id)
     if not job:

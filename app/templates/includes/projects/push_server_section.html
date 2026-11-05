@@ -33,10 +33,10 @@
                 <div id="dataladServerCard">
                     <div class="alert alert-info border-info mb-4 beginner-help-block">
                         <i class="fas fa-info-circle me-2"></i>
-                        Connect this project to a central DataLad server and sync to it as often as you like
-                        while the study is ongoing. When you are completely finished preparing this project,
-                        run <strong>Finalize &amp; disconnect</strong> for a last push, a verification step, and
-                        to remove this computer's connection to the server. Local files are always kept.
+                        <strong>Sync now</strong> first gets what others have saved on the lab server, then sends
+                        your saved changes. Only a dataset that passes validation is sent, and unsaved changes
+                        must be saved first. Nothing is ever merged: if you and someone else both changed the
+                        project, Sync stops and changes nothing.
                     </div>
 
                     <div class="mb-3" id="dataladServerStatusPanel" aria-live="polite">
@@ -67,12 +67,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="dataladServerSiblingName" class="form-label fw-bold">Sibling name</label>
-                                <input type="text" class="form-control" id="dataladServerSiblingName" placeholder="ria-store">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="dataladServerAlias" class="form-label fw-bold">Alias (optional)</label>
-                                <input type="text" class="form-control" id="dataladServerAlias" placeholder="my-study">
-                                <div class="form-text">RIA stores only — ignored for a plain SSH/local sibling.</div>
+                                <input type="text" class="form-control" id="dataladServerSiblingName" placeholder="origin">
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-outline-secondary btn-sm" id="dataladServerSaveConfigBtn">
@@ -99,26 +94,9 @@
                                 title="Validate, then push this dataset to the server">
                             <i class="fas fa-cloud-upload-alt me-2"></i>Publish (validated)
                         </button>
-                        <button type="button" class="btn btn-danger" id="dataladServerFinalizeBtn">
-                            <i class="fas fa-unlink me-2"></i>Finalize &amp; disconnect
-                        </button>
                         <button type="button" class="btn btn-outline-secondary d-none" id="dataladServerCancelBtn">
                             <i class="fas fa-ban me-2"></i>Cancel
                         </button>
-                    </div>
-
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="dataladServerSyncVerify">
-                        <label class="form-check-label" for="dataladServerSyncVerify">
-                            Verify after sync (confirm every file actually reached the server — slower, recommended before deleting the local copy without finalizing)
-                        </label>
-                    </div>
-
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="dataladServerFullVerify">
-                        <label class="form-check-label" for="dataladServerFullVerify">
-                            Full verification on finalize (clone the archived copy and run validation before disconnecting — slower, recommended for large/critical datasets)
-                        </label>
                     </div>
 
                     <div id="dataladServerProgress" style="display:none;" class="mb-3">

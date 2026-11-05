@@ -60,8 +60,6 @@
  "projects.set_recent_projects": "exempt: GUI state (which project is open, window)",
  "projects.validate_dataset_description_draft": "exempt: project setup (creating a project and its metadata is the one GUI-only part)",
  "projects.validate_project": "prism: validate",
- "projects_datalad_server.datalad_server_finalize_cancel": "exempt: job control of a running GUI task, no data effect",
- "projects_datalad_server.datalad_server_finalize_start": "cli: datalad finalize",
  "projects_datalad_server.datalad_server_publish": "cli: publish",
  "projects_datalad_server.datalad_server_save_config": "cli: datalad config",
  "projects_datalad_server.datalad_server_sync_cancel": "exempt: job control of a running GUI task, no data effect",

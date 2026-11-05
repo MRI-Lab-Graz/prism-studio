@@ -817,7 +817,7 @@ Most files under `scripts/` are implementation details called by the CLIs. If
 you're a new user, prefer `prism-validator ...`, `python prism_tools.py ...`, and
 `python prism-studio.py` instead of calling scripts directly.
 
-## DataLad server (setup check, sync, finalize)
+## DataLad server (setup check, get latest, sync)
 
 Checks that this machine can use DataLad with a DataLad server: Git, git-annex, DataLad,
 the SSH client, an SSH key (set up by your IT admin, not by PRISM), and (with a server URL) a real key-based login. Each failed
@@ -826,23 +826,19 @@ same function (`GET /api/projects/datalad/doctor?url=...`).
 
 ```bash
 python prism_tools.py datalad doctor
-python prism_tools.py datalad doctor --url ria+ssh://user@server.example.org/data/store
+python prism_tools.py datalad doctor --url user@server.example.org:/data/study
 python prism_tools.py datalad doctor --project /absolute/path/to/my-project --json
 ```
 
-`sync` connects to the server if needed and pushes; run it as often as you like while a
-study is ongoing. `--verify` also confirms every annexed file reached the server.
-`finalize` does a last push, verifies, then removes this computer's connection to the
-server (local files are always kept); it needs `--yes`. `--verify-mode full` additionally
-clones the server copy and validates it first. The server URL, sibling name and alias
-default to the project's saved Push to Server settings. Exit codes: 0 ok, 1 failed
-(SSH problems are explained in plain words), 2 bad usage (e.g. no server configured).
+`update` gets what others have saved on the server. It only fast-forwards (it never
+merges), refuses while the project has unsaved changes, and skips a project that has no
+server yet. `sync` runs `update`, then sends your saved changes, and only if the dataset
+validates; unsaved changes must be saved first. The server is the project's `origin`
+(or `--sibling-name`). Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
 
 ```bash
+python prism_tools.py datalad update --project /absolute/path/to/my-project
 python prism_tools.py datalad sync --project /absolute/path/to/my-project
-python prism_tools.py datalad sync --project /absolute/path/to/my-project \
-    --url ria+ssh://user@server.example.org/data/store --verify
-python prism_tools.py datalad finalize --project /absolute/path/to/my-project --yes
 ```
 
 On Windows the install hint is: install Git for Windows, then (without uv)

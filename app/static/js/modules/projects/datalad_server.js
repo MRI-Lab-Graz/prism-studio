@@ -1,13 +1,8 @@
 /**
- * Projects Module - Push to DataLad Server
+ * Projects Module - Sync with the DataLad server
  *
- * Two distinct, repeatable-vs-terminal actions against a central DataLad
- * sibling -- a RIA store (`ria+...` URL) or a plain SSH/local sibling (any
- * other URL), see `run_datalad_create_sibling` in datalad_execution.py:
- * - "Sync now": connect (idempotent) + push. Safe to click any number of
- *   times while a study is ongoing; the sibling stays registered.
- * - "Finalize & disconnect": one last push, verification, then removes the
- *   local sibling registration. Local files are always kept.
+ * "Sync now" runs the CLI's `datalad sync`: get the latest from the server, then send the saved changes (only a
+ * valid dataset is sent). Every decision is the backend's; this only starts the job and shows its progress.
  */
 
 import { getProgressEls, setButtonLoading, setStatusBadge as setStatusBadgeFor } from './helpers.js';
@@ -59,20 +54,18 @@ async function refreshDataladServerStatus(projectPath) {
 
         const urlInput = getById('dataladServerUrl');
         const nameInput = getById('dataladServerSiblingName');
-        const aliasInput = getById('dataladServerAlias');
         if (urlInput && !urlInput.value) urlInput.value = status.ria_url || '';
-        if (nameInput && !nameInput.value) nameInput.value = status.sibling_name || 'ria-store';
-        if (aliasInput && !aliasInput.value) aliasInput.value = status.sibling_alias || '';
+        if (nameInput && !nameInput.value) nameInput.value = status.sibling_name || 'origin';
 
         if (!status.datalad_dataset) {
             setStatusBadge('Not a DataLad dataset', 'secondary');
             if (detail) detail.textContent = 'This project is not tracked with DataLad, so it cannot be pushed to a server.';
         } else if (status.connected) {
             setStatusBadge('Connected', 'info');
-            if (detail) detail.textContent = `Sibling "${status.sibling_name}" is registered. Sync now to back up, or finalize when done.`;
+            if (detail) detail.textContent = `Server "${status.sibling_name}" is connected. Sync now to get the latest and send your saved changes.`;
         } else {
             setStatusBadge('Not connected', 'secondary');
-            if (detail) detail.textContent = 'No sibling registered yet. Click "Sync now" to connect and push.';
+            if (detail) detail.textContent = 'This project is not on the lab server yet, so there is nothing to sync with.';
         }
     } catch (error) {
         setStatusBadge('Unknown', 'secondary');
@@ -85,7 +78,6 @@ function getRiaRequestData(projectPath) {
         project_path: projectPath,
         ria_url: (getById('dataladServerUrl')?.value || '').trim() || null,
         sibling_name: (getById('dataladServerSiblingName')?.value || '').trim() || null,
-        alias: (getById('dataladServerAlias')?.value || '').trim() || null,
     };
 }
 
@@ -217,7 +209,6 @@ async function onSyncClick() {
     const btn = getById('dataladServerSyncBtn');
     const originalText = setButtonLoading(btn, true, 'Syncing...');
     const requestData = getRiaRequestData(projectPath);
-    requestData.verify = !!getById('dataladServerSyncVerify')?.checked;
     await runRiaJob({
         startEndpoint: '/api/projects/datalad-server/sync/start',
         statusEndpointBase: '/api/projects/datalad-server/sync',
@@ -225,32 +216,6 @@ async function onSyncClick() {
         originalText,
         requestData,
         successHeading: 'Synced to server',
-    });
-}
-
-async function onFinalizeClick() {
-    const projectPath = resolveCurrentProjectPath();
-    if (!projectPath) {
-        alert('No project is currently loaded');
-        return;
-    }
-    const confirmed = window.confirm(
-        'This pushes one last time, verifies the archive is complete, then disconnects this ' +
-        'computer from the server. Local files are kept. This cannot be undone from this computer. Continue?'
-    );
-    if (!confirmed) return;
-
-    const btn = getById('dataladServerFinalizeBtn');
-    const originalText = setButtonLoading(btn, true, 'Finalizing...');
-    const requestData = getRiaRequestData(projectPath);
-    requestData.verify_mode = getById('dataladServerFullVerify')?.checked ? 'full' : 'fast';
-    await runRiaJob({
-        startEndpoint: '/api/projects/datalad-server/finalize/start',
-        statusEndpointBase: '/api/projects/datalad-server/finalize',
-        button: btn,
-        originalText,
-        requestData,
-        successHeading: 'Finalized and disconnected',
     });
 }
 
@@ -306,8 +271,6 @@ export function initDataladServerSection() {
     const syncBtn = getById('dataladServerSyncBtn');
     if (syncBtn) syncBtn.addEventListener('click', onSyncClick);
 
-    const finalizeBtn = getById('dataladServerFinalizeBtn');
-    if (finalizeBtn) finalizeBtn.addEventListener('click', onFinalizeClick);
 
     const browseBtn = getById('dataladServerBrowseBtn');
     if (browseBtn) browseBtn.addEventListener('click', onBrowseUrlClick);

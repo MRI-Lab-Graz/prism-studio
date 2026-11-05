@@ -53,50 +53,24 @@ def _manager():
     return ProjectManager()
 
 
-def _run_push_operation(args, operation: str, **extra) -> None:
-    """Shared by sync/finalize: run the ProjectManager operation, print, set the exit code."""
-    as_json = getattr(args, "json", False)
-
-    def progress(percent: int, message: str) -> None:
-        print(f"[{percent:3d}%] {message}")
+def cmd_datalad_sync(args) -> None:
+    """Get the latest from the server, then publish: only a saved, valid dataset is sent (Studio's "Sync now")."""
+    from src.share_publish import parse_identity, sync_with_server
 
     try:
-        result = getattr(_manager(), operation)(
-            args.project,
-            ria_url=args.url,
-            sibling_name=args.sibling_name,
-            alias=args.alias,
-            progress_callback=None if as_json else progress,
-            **extra,
-        )
-    except ValueError as exc:  # e.g. no server URL configured
+        identity = parse_identity(args.as_identity) if getattr(args, "as_identity", None) else None
+    except ValueError as exc:
         print(f"Error: {exc}")
         sys.exit(2)
-    if as_json:
+    result = sync_with_server(args.project, sibling_name=args.sibling_name, identity=identity, line_callback=None if args.json else print)
+    if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     else:
         print(result.get("message", ""))
-    if not result.get("success"):
+        for line in result.get("errors", [])[:20]:
+            print(f"  - {line}")
+    if not result["success"]:
         sys.exit(1)
-
-
-def cmd_datalad_sync(args) -> None:
-    _run_push_operation(args, "sync_project_to_ria", verify=args.verify)
-
-
-def cmd_datalad_finalize(args) -> None:
-    if not args.yes:
-        print(
-            "Finalize pushes once more, verifies, then removes this computer's connection to "
-            "the server (local files are kept). Re-run with --yes to do it."
-        )
-        sys.exit(2)
-    _run_push_operation(
-        args,
-        "finalize_project_upload",
-        verify_mode=args.verify_mode,
-        mark_annex_dead=args.mark_annex_dead,
-    )
 
 
 def _print_result(args, result: dict) -> None:

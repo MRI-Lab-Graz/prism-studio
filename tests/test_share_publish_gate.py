@@ -29,7 +29,7 @@ def share(tmp_path, monkeypatch, pushes):
     root = tmp_path / "share" / "study"
     root.mkdir(parents=True)
     git("init", "-q", cwd=root)
-    git("remote", "add", "ria-store", str(server), cwd=root)
+    git("remote", "add", "origin", str(server), cwd=root)
     (root / ".datalad").mkdir()
     monkeypatch.setattr(sp, "is_datalad_dataset", lambda p: True)
 
@@ -54,10 +54,10 @@ def audit_lines(root):
 def test_valid_dataset_is_pushed_and_audited(share, pushes):
     result = sp.publish_to_server(share, identity=ADA)
     assert result["success"] and result["reason"] == "pushed"
-    assert pushes and pushes[0]["sibling_name"] == "ria-store"
+    assert pushes and pushes[0]["sibling_name"] == "origin"
     [line] = audit_lines(share)
     assert line["result"] == "pushed" and line["identity"] == "Ada <ada@uni.at>"
-    assert line["error_count"] == 0 and line["sibling"] == "ria-store"
+    assert line["error_count"] == 0 and line["sibling"] == "origin"
 
 
 def test_invalid_dataset_is_refused_and_nothing_is_pushed(share, pushes, monkeypatch):

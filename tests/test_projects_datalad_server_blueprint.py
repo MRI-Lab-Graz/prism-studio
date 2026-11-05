@@ -106,8 +106,8 @@ def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
     with patch(
         "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
     ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.sync_project_to_ria",
-        return_value={"success": True, "message": "Synced to RIA store."},
+        "src.share_publish.sync_with_server",
+        return_value={"success": True, "message": "Published to the server."},
     ):
         captured = {}
 
@@ -140,72 +140,6 @@ def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
     assert status_payload["result"]["success"] is True
 
 
-def test_datalad_server_sync_forwards_verify_flag(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
-    ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.sync_project_to_ria",
-        return_value={"success": True, "message": "ok"},
-    ) as mock_sync:
-        captured = {}
-
-        def _capture(target=None, args=(), daemon=None):
-            captured["target"] = target
-            captured["args"] = args
-            return _FakeThread(target=target, args=args, daemon=daemon)
-
-        mock_thread_cls.side_effect = _capture
-
-        with app.test_client() as client:
-            start_response = client.post(
-                "/api/projects/datalad-server/sync/start",
-                json={
-                    "project_path": str(project_dir),
-                    "ria_url": "ria+ssh://user@host/store",
-                    "verify": True,
-                },
-            )
-            job_id = start_response.get_json()["job_id"]
-            captured["target"](*captured["args"])
-
-    mock_sync.assert_called_once()
-    _, call_kwargs = mock_sync.call_args
-    assert call_kwargs["verify"] is True
-
-
-def test_datalad_server_sync_defaults_verify_flag_to_false(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
-    ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.sync_project_to_ria",
-        return_value={"success": True, "message": "ok"},
-    ) as mock_sync:
-        captured = {}
-
-        def _capture(target=None, args=(), daemon=None):
-            captured["target"] = target
-            captured["args"] = args
-            return _FakeThread(target=target, args=args, daemon=daemon)
-
-        mock_thread_cls.side_effect = _capture
-
-        with app.test_client() as client:
-            start_response = client.post(
-                "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
-            )
-            captured["target"](*captured["args"])
-
-    _, call_kwargs = mock_sync.call_args
-    assert call_kwargs["verify"] is False
-
-
 def test_datalad_server_sync_job_reaches_error_status_on_failure(tmp_path):
     app = _build_app()
     project_dir = _project_dir(tmp_path)
@@ -213,8 +147,8 @@ def test_datalad_server_sync_job_reaches_error_status_on_failure(tmp_path):
     with patch(
         "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
     ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.sync_project_to_ria",
-        return_value={"success": False, "message": "Could not connect to RIA store."},
+        "src.share_publish.sync_with_server",
+        return_value={"success": False, "message": "Could not connect to the server.", "errors": []},
     ):
         captured = {}
 
@@ -252,7 +186,7 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
     with patch(
         "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
     ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.sync_project_to_ria"
+        "src.share_publish.sync_with_server"
     ) as mock_sync:
         captured = {}
 
@@ -291,91 +225,6 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
             )
 
     assert status_response.get_json()["status"] == "cancelled"
-
-
-def test_datalad_server_finalize_start_forwards_verify_mode_and_mark_annex_dead(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
-    ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.finalize_project_upload",
-        return_value={"success": True, "message": "Push verified and local sibling disconnected."},
-    ) as mock_finalize:
-        captured = {}
-
-        def _capture(target=None, args=(), daemon=None):
-            captured["target"] = target
-            captured["args"] = args
-            return _FakeThread(target=target, args=args, daemon=daemon)
-
-        mock_thread_cls.side_effect = _capture
-
-        with app.test_client() as client:
-            start_response = client.post(
-                "/api/projects/datalad-server/finalize/start",
-                json={
-                    "project_path": str(project_dir),
-                    "ria_url": "ria+ssh://user@host/store",
-                    "verify_mode": "full",
-                    "mark_annex_dead": True,
-                },
-            )
-            job_id = start_response.get_json()["job_id"]
-
-            captured["target"](*captured["args"])
-
-            status_response = client.get(
-                f"/api/projects/datalad-server/finalize/{job_id}/status"
-            )
-
-    mock_finalize.assert_called_once()
-    _, call_kwargs = mock_finalize.call_args
-    assert call_kwargs["verify_mode"] == "full"
-    assert call_kwargs["mark_annex_dead"] is True
-    assert status_response.get_json()["status"] == "complete"
-
-
-def test_datalad_server_finalize_job_reaches_error_status_when_push_unverified(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread"
-    ) as mock_thread_cls, patch(
-        "src.project_manager.ProjectManager.finalize_project_upload",
-        return_value={
-            "success": False,
-            "verified": False,
-            "message": "Push could not be verified: 1 unresolved file(s). Sibling left registered for retry.",
-        },
-    ):
-        captured = {}
-
-        def _capture(target=None, args=(), daemon=None):
-            captured["target"] = target
-            captured["args"] = args
-            return _FakeThread(target=target, args=args, daemon=daemon)
-
-        mock_thread_cls.side_effect = _capture
-
-        with app.test_client() as client:
-            start_response = client.post(
-                "/api/projects/datalad-server/finalize/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
-            )
-            job_id = start_response.get_json()["job_id"]
-
-            captured["target"](*captured["args"])
-
-            status_response = client.get(
-                f"/api/projects/datalad-server/finalize/{job_id}/status"
-            )
-
-    status_payload = status_response.get_json()
-    assert status_payload["status"] == "error"
-    assert "unresolved" in status_payload["error"]
 
 
 def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):

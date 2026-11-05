@@ -906,45 +906,18 @@ def build_prism_tools_parsers(
     )
     parser_datalad_config.add_argument("--project", required=True, help="Project root")
     parser_datalad_config.add_argument("--url", help="Server URL (ria+ssh://user@host/path, user@host:path)")
-    parser_datalad_config.add_argument("--sibling-name", help="Sibling name (default: ria-store)")
+    parser_datalad_config.add_argument("--sibling-name", help="Sibling name (default: origin)")
     parser_datalad_config.add_argument("--alias", help="Store alias (RIA stores only)")
 
-    def _add_push_options(sub):
-        sub.add_argument("--project", required=True, help="Project root")
-        sub.add_argument(
-            "--url",
-            help="Server URL (ria+ssh://user@host/path, user@host:path); default: the project's saved setting",
-        )
-        sub.add_argument("--sibling-name", help="Sibling name (default: saved setting, else ria-store)")
-        sub.add_argument("--alias", help="Store alias (RIA stores only)")
-        sub.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-
     parser_datalad_sync = datalad_subparsers.add_parser(
-        "sync", help="Connect to the DataLad server (if needed) and push; safe to repeat"
+        "sync", help="Get the latest from the server, then send your saved changes (only if the dataset validates)"
     )
-    _add_push_options(parser_datalad_sync)
+    parser_datalad_sync.add_argument("--project", required=True, help="Project root")
+    parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
     parser_datalad_sync.add_argument(
-        "--verify",
-        action="store_true",
-        help="Also confirm every annexed file reached the server (slower)",
+        "--as", dest="as_identity", help='Who is syncing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
     )
-    parser_datalad_finalize = datalad_subparsers.add_parser(
-        "finalize",
-        help="Last push, verification, then disconnect this computer from the server (files kept)",
-    )
-    _add_push_options(parser_datalad_finalize)
-    parser_datalad_finalize.add_argument(
-        "--verify-mode",
-        choices=["fast", "full"],
-        default="fast",
-        help="full = also clone the server copy and validate it before disconnecting (slower)",
-    )
-    parser_datalad_finalize.add_argument(
-        "--mark-annex-dead", action="store_true", help="Mark the local annex copy dead after disconnecting"
-    )
-    parser_datalad_finalize.add_argument(
-        "--yes", action="store_true", help="Confirm the disconnect (required)"
-    )
+    parser_datalad_sync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_datalad_enable = datalad_subparsers.add_parser(
         "enable", help="Make the project a DataLad dataset and save a first snapshot"
@@ -967,7 +940,7 @@ def build_prism_tools_parsers(
         "update", help="Get the latest saved changes from the server (never merges; refuses unsaved changes)"
     )
     parser_datalad_update.add_argument("--project", required=True, help="Project root")
-    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: saved setting, else ria-store)")
+    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
     parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show how many changes are not yet saved as a DataLad snapshot"

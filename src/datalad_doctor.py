@@ -300,28 +300,3 @@ def run_doctor(
     if url:
         results.append(_check_server(url, which("ssh"), pubkey, run))
     return results
-
-
-
-def explain_failure(message: str) -> str:
-    """Prefix a failed push/sync message with a plain-language SSH explanation, keeping the original text."""
-    kind, plain = classify_ssh_error(message)
-    if kind == "unknown":
-        return message
-    return (
-        f"{plain} Use \"Check this computer\" (or `prism_tools.py datalad doctor`) to see what to fix."
-        f"\n\nDetails: {message}"
-    )
-
-
-def explain_ssh_failures(fn):
-    """Decorator for ProjectManager push operations returning {"success", "message", ...}."""
-
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        result = fn(*args, **kwargs)
-        if isinstance(result, dict) and not result.get("success") and result.get("message"):
-            result["message"] = explain_failure(str(result["message"]))
-        return result
-
-    return wrapper

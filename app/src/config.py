@@ -122,7 +122,7 @@ class PrismConfig:
     #   "siblingAlias": "my-study"
     # }
     datalad_ria_store_url: Optional[str] = None
-    datalad_sibling_name: str = "ria-store"
+    datalad_sibling_name: str = "origin"
     datalad_sibling_alias: Optional[str] = None
 
     # Plain-copy server connection for users not using DataLad (rsync over
@@ -211,7 +211,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             neurobagel_participant_filter=data.get("neurobagelParticipantFilter", {}),
             project_preferences=data.get("projectPreferences", {}),
             datalad_ria_store_url=data.get("riaStoreUrl"),
-            datalad_sibling_name=data.get("siblingName", "ria-store"),
+            datalad_sibling_name=data.get("siblingName", "origin"),
             datalad_sibling_alias=data.get("siblingAlias"),
             rsync_remote_target=data.get("rsyncRemoteTarget"),
             rsync_remote_label=data.get("rsyncRemoteLabel"),

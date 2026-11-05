@@ -78,15 +78,15 @@ directory in multiple-file mode) next to the project.
 
 ## Push to Server
 
-Accordion section on the same page: back up the project to a DataLad server (RIA
-store or plain SSH sibling) or an rsync destination. **Check this computer** tests Git,
-git-annex, DataLad, your SSH key and the login; **Sync now** pushes; **Publish
-(validated)** validates first and pushes only if the dataset passes; **Finalize &
-disconnect** does a last push, verifies, and removes this computer's connection (local
-files stay). `sourcedata/` travels with every push, so use the internal lab server only,
-never a public host: Studio refuses http(s) and public-host targets while `sourcedata/`
-is tracked. CLI: `prism_tools.py publish`, `datalad`, `save-gate` (see
-[DataLad](../DATALAD.md)).
+Accordion section on the same page: share the project through the lab's DataLad server or
+back it up to an rsync destination. **Check this computer** tests Git, git-annex, DataLad,
+your SSH key and the login. **Sync now** first gets what others have saved on the server,
+then sends your saved changes, and only if the dataset passes validation. **Publish
+(validated)** is the push without the update. Nothing is ever merged: if you and someone
+else both changed the project, Sync stops and changes nothing. `sourcedata/` travels with
+every push, so use the internal lab server only, never a public host: Studio refuses
+http(s) and public-host targets while `sourcedata/` is tracked. CLI: `prism_tools.py
+datalad sync`, `datalad update`, `publish`, `save-gate` (see [DataLad](../DATALAD.md)).
 
 ## CLI equivalents
 

@@ -104,7 +104,7 @@ def _sibling_for(root: Path, sibling_name: str | None) -> str:
         return sibling_name
     from src.config import load_config
 
-    return str(load_config(str(root)).datalad_sibling_name or "").strip() or "ria-store"
+    return str(load_config(str(root)).datalad_sibling_name or "").strip() or "origin"
 
 
 _PUBLIC_HOSTS = ("github.com", "gitlab.com", "gin.g-node.org", "bitbucket.org", "codeberg.org", "openneuro.org")
@@ -302,6 +302,25 @@ def publish_to_server(
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+
+def sync_with_server(
+    project_root, *, sibling_name: str | None = None, identity: Identity | None = None, line_callback=None
+) -> dict:
+    """Get the latest from the server, then publish: the one way a project's changes reach the server.
+
+    Everything `publish_to_server` demands holds (saved, valid, a server); the update before it never merges, so a
+    push can only ever add on top of what the server has.
+    """
+    from src.project_manager import ProjectManager
+
+    root = Path(project_root)
+    update = ProjectManager().update_datalad_from_server(root, sibling_name=_sibling_for(root, sibling_name))
+    if not update.get("success"):
+        return {"success": False, "reason": "update_failed", "message": update.get("error", ""), "errors": [], "update": update}
+    outcome = publish_to_server(root, sibling_name=sibling_name, identity=identity, line_callback=line_callback)
+    outcome["update"] = update
+    return outcome
 
 
 HOOK_MARKER = "# prism-publish-hook"
