@@ -1375,6 +1375,8 @@
         }
 
         window.setNavbarDataladFeedback = setNavbarDataladFeedback;
+        // The DataLad page asks for a fresh count after a save, sync or update (skips the 30 s cache).
+        window.refreshNavbarDataladCount = (path) => fetchNavbarDataladCleanStatus(path, { force: true });
         window.updateNavbarProject = updateNavbarProject;
         window.getCurrentProjectState = function() {
             return ensureProjectStateStore().getState();

@@ -24,7 +24,6 @@ const latestRequestedFor = new Set();  // projects already asked for their lates
 let projectPath = '';
 let currentState = null;
 let busy = false;
-let lastJob = null;  // {route, body, onComplete}: what "Send anyway" repeats
 let locationKind = '';  // 'put' | 'open'
 let putAllowInvalid = false;
 
@@ -85,6 +84,7 @@ async function loadState(query = '') {
     try {
         const response = await fetchWithApiFallback(`/api/projects/datalad/state${query}`);
         render(response.ok ? await response.json() : null);
+        if (query) window.refreshNavbarDataladCount?.(projectPath);  // after an action: the navbar count too
     } catch {
         render(null);
     }
@@ -102,7 +102,8 @@ function getLatestOnce(path) {
         .finally(() => loadState('?check_server=1&validate=1'));
 }
 
-function showErrors(result) {
+// The job stopped on validation errors: list them; "Send anyway" repeats that same job, acknowledged.
+function showErrors(result, repeatAcknowledged) {
     const errors = result.errors || [];
     const list = errors.slice(0, 50).map((e) => `<li>${escapeHtml(e)}</li>`).join('');
     setResult(`<div class="alert alert-warning mb-0">
@@ -110,12 +111,11 @@ function showErrors(result) {
         <ul class="small mb-3">${list}</ul>
         <button type="button" class="btn btn-outline-danger btn-sm" id="dataladSendAnywayBtn">${escapeHtml(sendAnywayLabel(errors.length))}</button>
     </div>`);
-    getById('dataladSendAnywayBtn').addEventListener('click', () => sendAnyway());
+    getById('dataladSendAnywayBtn').addEventListener('click', repeatAcknowledged);
 }
 
 /** Start a job route, show its progress until it ends; Cancel asks the backend to stop it. */
 async function runJob(route, body, onComplete = null) {
-    lastJob = { route, body, onComplete };
     const progress = getById('dataladJobProgress');
     const bar = getById('dataladJobProgressBar');
     const statusText = getById('dataladJobStatusText');
@@ -174,7 +174,7 @@ async function runJob(route, body, onComplete = null) {
             if (status.status === 'error') {
                 const result = status.result || {};
                 if (result.reason === 'validation_errors') {
-                    showErrors(result);
+                    showErrors(result, () => runJob(route, { ...body, allow_invalid: true }, onComplete));
                 } else if (result.reason === 'no_identity' && await askIdentity()) {
                     setBusy(false);
                     await runJob(route, body, onComplete);
@@ -195,10 +195,9 @@ async function runJob(route, body, onComplete = null) {
     }
 }
 
+// "Send anyway" offered by the state (?validate=1 found errors): the step the page leads with, acknowledged.
 function sendAnyway() {
-    if (lastJob) {
-        runJob(lastJob.route, { ...lastJob.body, allow_invalid: true }, lastJob.onComplete);
-    } else if (currentState?.next_step === 'put_on_server') {
+    if (currentState?.next_step === 'put_on_server') {
         showLocationForm('put', { allowInvalid: true });
     } else {
         runJob('/api/projects/datalad-server/sync/start', { project_path: projectPath, allow_invalid: true });
@@ -278,7 +277,7 @@ async function runAction(action, btn) {
             setResult(alertHtml('danger', error.message));
         } finally {
             setBusy(false);
-            await loadState();
+            await loadState('?check_server=1');
         }
         break;
     }

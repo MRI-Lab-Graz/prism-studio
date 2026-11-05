@@ -118,3 +118,12 @@ def test_page_module_only_triggers_existing_routes():
     assert "allow_invalid: true" in page
     assert "'prism-project-opened'" in page
     assert "method: 'DELETE'" in page
+    # "Send anyway" after a stopped job repeats that same job, acknowledged
+    assert "showErrors(result, () => runJob(route, { ...body, allow_invalid: true }, onComplete))" in page
+
+
+def test_page_refreshes_the_navbar_count_after_an_action():
+    assert "window.refreshNavbarDataladCount = (path) => fetchNavbarDataladCleanStatus(path, { force: true });" in _text(
+        TEMPLATES / "base.html"
+    )
+    assert "window.refreshNavbarDataladCount?.(projectPath)" in _text(PAGE_JS)
