@@ -214,7 +214,7 @@ def uncommitted_changes(root: Path) -> list[str]:
 
 def _uncommitted_message(paths: list[str]) -> str:
     return (
-        f"{len(paths)} uncommitted change(s). Save the dataset first (`datalad save`), then publish."
+        f"{len(paths)} unsaved change(s). Save the dataset first (`datalad save`), then publish."
     )
 
 
@@ -257,6 +257,17 @@ def _push_refusal(root: Path, url: str, target: str, *, allow_invalid: bool) -> 
     return "", "", errors
 
 
+def _publish_refusal(root: Path, sibling: str, identity: Identity | None, *, allow_invalid: bool) -> tuple[str, str, list[str]]:
+    """Everything `publish_to_server` refuses before sending, as `_push_refusal` returns it (sync asks first too)."""
+    if not is_datalad_dataset(root):
+        return "not_a_dataset", "This folder is not a DataLad dataset.", []
+    if identity is None:
+        return "no_identity", _NO_IDENTITY, []
+    if not has_sibling(root, sibling):
+        return "no_sibling", f'No sibling named "{sibling}" in this dataset.', []
+    return _push_refusal(root, _git(root, "remote", "get-url", sibling), f'"{sibling}"', allow_invalid=allow_invalid)
+
+
 def publish_to_server(
     project_root,
     *,
@@ -275,15 +286,7 @@ def publish_to_server(
         _audit(root, identity=identity, sibling=sibling, result=audit_result, error_count=len(outcome["errors"]))
         return outcome
 
-    if not is_datalad_dataset(root):
-        return finish("not_a_dataset", "This folder is not a DataLad dataset.", audit_result="refused")
-    if identity is None:
-        return finish("no_identity", _NO_IDENTITY, audit_result="refused")
-    if not has_sibling(root, sibling):
-        return finish("no_sibling", f'No sibling named "{sibling}" in this dataset.', audit_result="refused")
-    reason, message, errors = _push_refusal(
-        root, _git(root, "remote", "get-url", sibling), f'"{sibling}"', allow_invalid=allow_invalid
-    )
+    reason, message, errors = _publish_refusal(root, sibling, identity, allow_invalid=allow_invalid)
     if reason:
         return finish(reason, message, audit_result="refused", errors=errors)
 
@@ -341,7 +344,22 @@ def sync_with_server(
     from src.project_manager import ProjectManager
 
     root = Path(project_root)
-    update = ProjectManager().update_datalad_from_server(root, sibling_name=_sibling_for(root, sibling_name))
+    sibling = _sibling_for(root, sibling_name)
+    identity = identity or resolve_identity()
+    # refused before anything is created on the server (publish asks again after the update: it may bring changes)
+    reason, message, errors = _publish_refusal(root, sibling, identity, allow_invalid=allow_invalid)
+    if reason:
+        _audit(root, identity=identity, sibling=sibling, result="refused", error_count=len(errors))
+        return {"success": False, "reason": reason, "message": message, "errors": errors, "push": None, "verify": None}
+    # a subject dataset added after the project went on the server has no server copy yet: create only the missing ones
+    created = run_datalad_create_sibling_plain(
+        root, remote_url=_git(root, "remote", "get-url", sibling), sibling_name=sibling, existing="skip",
+        line_callback=line_callback,
+    )
+    if not created.get("success"):
+        message = str(created.get("message") or "Could not create the new datasets on the server.")
+        return {"success": False, "reason": "sibling_failed", "message": message, "errors": [], "sibling": created}
+    update = ProjectManager().update_datalad_from_server(root, sibling_name=sibling)
     if not update.get("success"):
         return {"success": False, "reason": "update_failed", "message": update.get("error", ""), "errors": [], "update": update}
     outcome = publish_to_server(

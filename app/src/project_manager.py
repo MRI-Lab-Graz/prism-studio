@@ -2133,15 +2133,21 @@ class ProjectManager:
 
         before = self._git_head(project_path)
         update = run_datalad_update(project_path, sibling_name=sibling, datalad_executable=executable)
-        if not update["success"] and not self._server_has_saved_branch(project_path, sibling):
-            # a server just created by put-on-server (its first send interrupted): nothing to get, the push fills it
-            result.update(success=True, message="The server has nothing saved yet.")
-            return result
+        # datasets the update could not bring in; "." when the output names none
+        failed = re.findall(r"^update\((?:impossible|error)\): (.+) \(dataset\)", update["output"], re.M) or ["."]
+        if not update["success"] and not any(self._server_has_something_for(project_path / path, sibling) for path in failed):
+            # a dataset with no server copy yet (a new subject before its first sync) or an empty one just created
+            # (put-on-server whose first send was interrupted) has nothing to get: the next push fills it
+            if failed == ["."]:
+                result.update(success=True, message="The server has nothing saved yet.")
+                return result
+            update["success"] = True
         if not update["success"]:
-            result["error"] = (
-                f"{update['message']}\n\nNothing was changed. If you and someone else both saved changes, "
-                "ask your data steward to combine them."
-            )
+            if "not possible to fast-forward" in update["output"].lower():  # git's own ff-only refusal
+                hint = "If you and someone else both saved changes, ask your data steward to combine them."
+            else:
+                hint = "If this keeps happening, ask your data steward."
+            result["error"] = f"{update['message']}\n\nNothing was changed. {hint}"
             return result
         result["updated"] = self._git_head(project_path) != before
         result["success"] = True
@@ -5561,6 +5567,13 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    @classmethod
+    def _server_has_something_for(cls, dataset: Path, sibling: str) -> bool:
+        """False when `dataset` has no copy on the server yet, or an empty one; True when unsure (fail safe)."""
+        from src.share_publish import has_sibling
+
+        return has_sibling(dataset, sibling) and cls._server_has_saved_branch(dataset, sibling)
 
     @staticmethod
     def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
