@@ -760,9 +760,12 @@ export function createDataladCard({
                 renderProjectBoxDataladState(current.datalad, currentPath);
                 if (current.datalad && current.datalad.enabled) {
                     // Get the latest from the server once per project and page load, then show the real status.
-                    const first = !latestRequestedFor.has(currentPath);
+                    if (latestRequestedFor.has(currentPath)) {
+                        refreshDataladStatusDeep(currentPath);
+                        return;
+                    }
                     latestRequestedFor.add(currentPath);
-                    (first ? getLatestFromServer(fetchWithApiFallback) : Promise.resolve({ notice: null }))
+                    getLatestFromServer(fetchWithApiFallback)
                         .then(({ notice }) => {
                             if (notice) window.setNavbarDataladFeedback?.(notice.text, notice.kind, notice.label);
                         })
