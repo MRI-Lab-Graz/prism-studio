@@ -128,8 +128,8 @@ save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then end
 are errors, unless you acknowledge them the same way (`--allow-invalid`); the push is then recorded in the audit log
 as `pushed_with_errors` with the error count.
 
-The acknowledgement reaches the git hooks through one environment variable, `PRISM_ACK_INVALID=1`, which PRISM sets
-only for the one save or push you acknowledged and removes right after. The save gate (pre-commit) and the publish
+The acknowledgement reaches the git hooks through one environment variable, `PRISM_ACK_INVALID=1`, which PRISM passes
+only to the one save or push you acknowledged (never to Studio itself, so its other saves stay gated). The save gate (pre-commit) and the publish
 gate (pre-push) let that one command through and log it (`save_acknowledged`, `hook_acknowledged`). Like the hooks
 themselves it is advisory: anyone can set it in a terminal, so the audit log is the record, not a lock. Unsaved
 changes and a validator that cannot run are never acknowledged away.

@@ -35,16 +35,46 @@ def test_the_save_check_passes_an_invalid_dataset_only_when_acknowledged(tmp_pat
     assert sg.check_save(project) == sg.SaveCheck(True, ["PRISM101 bad"], "acknowledged")
 
 
-def test_ack_invalid_restores_the_environment_even_after_an_exception(monkeypatch):
-    with pytest.raises(RuntimeError):
-        with sg.ack_invalid():
-            assert os.environ[sg.ACK_INVALID_ENV] == "1"
-            raise RuntimeError("boom")
-    assert sg.ACK_INVALID_ENV not in os.environ
-    monkeypatch.setenv(sg.ACK_INVALID_ENV, "earlier")
-    with sg.ack_invalid():
-        pass
-    assert os.environ[sg.ACK_INVALID_ENV] == "earlier"
+def test_the_acknowledgement_is_only_in_the_child_environment(monkeypatch):
+    monkeypatch.setenv("SOME_OTHER", "kept")
+    env = sg.ack_env()
+    assert env[sg.ACK_INVALID_ENV] == "1" and env["SOME_OTHER"] == "kept"
+    assert sg.ACK_INVALID_ENV not in os.environ  # never this process: other threads' commits stay gated
+
+
+def test_an_acknowledged_save_hands_the_variable_to_its_datalad_save_only(tmp_path, monkeypatch):
+    from src.project_manager import ProjectManager
+
+    pm = ProjectManager()
+    seen = {}
+    monkeypatch.setattr(pm, "get_datalad_status", lambda p: {"enabled": True, "available": True, "executable": "datalad"})
+    monkeypatch.setattr("src.share_publish.validate_for_publish", lambda p: ["a"])
+    monkeypatch.setattr(pm, "_ensure_datalad_editable_metadata_policy", lambda p: False)
+    monkeypatch.setattr(pm, "_fix_annexed_text_files", lambda p: {})
+
+    def fake_save(path, **kw):
+        seen["process"] = os.environ.get(sg.ACK_INVALID_ENV)
+        seen["child"] = (kw.get("env") or {}).get(sg.ACK_INVALID_ENV)
+        return {"saved": True, "message": "ok"}
+
+    monkeypatch.setattr(pm, "_run_datalad_save", fake_save)
+    assert pm.save_datalad_snapshot(tmp_path, message="m", allow_invalid=True)["success"]
+    assert seen == {"process": None, "child": "1"}
+
+
+def test_the_push_child_process_gets_the_given_environment(tmp_path, monkeypatch):
+    import src.datalad_execution as de
+
+    probe = [sys.executable, "-c", f"import os; print(os.environ.get({sg.ACK_INVALID_ENV!r}))"]
+    real, seen = de._run_streaming_command, []
+
+    def run(command, **kw):  # the probe instead of datalad, through the real streaming runner
+        return seen.append(real(probe, **kw)["output"].strip()) or {"returncode": 0, "output": ""}
+
+    monkeypatch.setattr(de, "_run_streaming_command", run)
+    de.run_datalad_push(tmp_path, sibling_name="origin", datalad_executable="datalad", env=sg.ack_env())
+    de.run_datalad_push(tmp_path, sibling_name="origin", datalad_executable="datalad")
+    assert seen == ["1", "None"]
 
 
 def test_publish_check_honours_the_acknowledgement_too(share, monkeypatch):  # noqa: F811
@@ -61,13 +91,21 @@ def test_publish_with_allow_invalid_sends_and_audits_pushed_with_errors(share, p
     seen = []
     monkeypatch.setattr(
         sp, "run_datalad_push",
-        lambda root, **kw: seen.append(os.environ.get(sg.ACK_INVALID_ENV)) or {"success": True, "message": "ok"},
+        lambda root, **kw: seen.append((os.environ.get(sg.ACK_INVALID_ENV), (kw.get("env") or {}).get(sg.ACK_INVALID_ENV)))
+        or {"success": True, "message": "ok"},
     )
     result = sp.publish_to_server(share, identity=ADA, allow_invalid=True)
     assert result["success"] and result["reason"] == "pushed_with_errors" and result["errors"] == ["a", "b"]
-    assert seen == ["1"] and sg.ACK_INVALID_ENV not in os.environ  # the pre-push hook passes for this push only
+    assert seen == [(None, "1")]  # the pre-push hook passes for this push only, not for the whole process
     [line] = audit_lines(share)
     assert line["result"] == "pushed_with_errors" and line["error_count"] == 2
+
+
+def test_a_failed_acknowledged_push_keeps_the_error_list(share, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["a", "b"])
+    monkeypatch.setattr(sp, "run_datalad_push", lambda root, **kw: {"success": False, "message": "no route"})
+    result = sp.publish_to_server(share, identity=ADA, allow_invalid=True)
+    assert result["reason"] == "push_failed" and result["errors"] == ["a", "b"]
 
 
 def test_publish_without_allow_invalid_still_refuses(share, pushes, monkeypatch):  # noqa: F811

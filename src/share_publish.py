@@ -285,16 +285,16 @@ def publish_to_server(
             errors=errors,
         )
 
-    from contextlib import nullcontext
-
-    from src.save_gate import ack_invalid
+    from src.save_gate import ack_env
 
     # identity applies for this call only (spec section 4): restore whatever was there before
     saved = {k: os.environ.get(k) for k in _git_identity_env_keys()}
     apply_identity(identity)
     try:
-        with ack_invalid() if errors else nullcontext():  # the pre-push hook passes this one acknowledged push
-            push = run_datalad_push(root, sibling_name=sibling, line_callback=line_callback)
+        # the pre-push hook passes this one acknowledged push (env built after apply_identity, so it carries it)
+        push = run_datalad_push(
+            root, sibling_name=sibling, line_callback=line_callback, env=ack_env() if errors else None
+        )
         outcome["push"] = push
         if push.get("success"):
             # ponytail: plain (non-RIA) share sibling assumed; RIA would need is_ria=True.
@@ -312,8 +312,10 @@ def publish_to_server(
                         errors=errors,
                     )
                 return finish("pushed", "Published to the server.", audit_result="pushed")
-            return finish("push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed")
-        return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed")
+            return finish(
+                "push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed", errors=errors
+            )
+        return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed", errors=errors)
     finally:
         for key, value in saved.items():
             if value is None:

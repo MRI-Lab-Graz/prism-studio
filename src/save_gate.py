@@ -8,7 +8,6 @@ docs/superpowers/specs/2026-10-02-save-gate-design.md (removed after v1.24.0; in
 
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import dataclass
 import os
 import stat
@@ -33,7 +32,7 @@ __all__ = [
     "SAVE_GATE_MARKER",
     "SAVE_HOOK_MARKER",
     "SaveCheck",
-    "ack_invalid",
+    "ack_env",
     "acknowledged",
     "audit_save",
     "check_save",
@@ -54,22 +53,10 @@ def acknowledged() -> bool:
     return os.environ.get(ACK_INVALID_ENV) == "1"
 
 
-@contextmanager
-def ack_invalid():
-    """Acknowledge validation errors for the commands run inside this block; the old value is always restored.
-
-    ponytail: process-global, like apply_identity; fine for one local user. Pass a per-call env if Studio ever
-    runs several users' git commands at once.
-    """
-    saved = os.environ.get(ACK_INVALID_ENV)
-    os.environ[ACK_INVALID_ENV] = "1"
-    try:
-        yield
-    finally:
-        if saved is None:
-            os.environ.pop(ACK_INVALID_ENV, None)
-        else:
-            os.environ[ACK_INVALID_ENV] = saved
+def ack_env() -> dict[str, str]:
+    """The environment for the one acknowledged child process (this process never carries the variable,
+    so a commit started meanwhile by another Studio thread stays gated)."""
+    return {**os.environ, ACK_INVALID_ENV: "1"}
 
 
 @dataclass(frozen=True)

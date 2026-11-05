@@ -2041,18 +2041,16 @@ class ProjectManager:
             result["datalad"]["annexed_text_files_fixed_count"] = annexed_text_fix["fixed_count"]
             result["datalad"]["annexed_text_files_fixed_examples"] = annexed_text_fix["fixed_examples"]
 
-        from contextlib import nullcontext
+        from src.save_gate import ack_env
 
-        from src.save_gate import ack_invalid
-
-        with ack_invalid() if errors else nullcontext():  # the pre-commit hook passes this one acknowledged save
-            save_result = self._run_datalad_save(
-                project_path,
-                message=message,
-                datalad_executable=status.get("executable"),
-                recursive=True,
-                detect_no_changes=True,
-            )
+        save_result = self._run_datalad_save(
+            project_path,
+            message=message,
+            datalad_executable=status.get("executable"),
+            recursive=True,
+            detect_no_changes=True,
+            env=ack_env() if errors else None,  # the pre-commit hook passes this one acknowledged save
+        )
         save_message = save_result.get("message")
         refreshed_status = self.get_datalad_status(project_path)
         save_result.update(refreshed_status)
@@ -5672,6 +5670,7 @@ git push -u origin main
         updated_only: bool = False,
         recursive: bool = False,
         detect_no_changes: bool = False,
+        env: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Run a DataLad save command and normalize the result payload.
 
@@ -5711,6 +5710,7 @@ git push -u origin main
                 text=True,
                 check=False,
                 timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
+                env=env,
             )
         except subprocess.TimeoutExpired:
             result["message"] = self._format_repair_timeout_message(

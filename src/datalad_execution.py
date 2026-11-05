@@ -549,6 +549,7 @@ def _run_streaming_command(
     cwd: str,
     timeout_seconds: int,
     line_callback: Any = None,
+    env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run a command with merged stdout+stderr, streaming each line to
     `line_callback` (if given) as it's produced.
@@ -570,6 +571,7 @@ def _run_streaming_command(
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        env=env,
     )
     output_lines: list[str] = []
     try:
@@ -831,9 +833,10 @@ def run_datalad_push(
     datalad_executable: str = "",
     timeout_seconds: int = 7200,
     line_callback: Any = None,
+    env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """See `run_datalad_create_sibling_plain` for the `line_callback`
-    contract. `push -r` across 100+ subdatasets with real annexed content is
+    contract. `env` is the child's environment (None: inherit). `push -r` across 100+ subdatasets with real annexed content is
     the single longest-running step in the sync/finalize flow -- this is
     where live progress matters most."""
     root = Path(project_root)
@@ -870,6 +873,7 @@ def run_datalad_push(
             cwd=str(root),
             timeout_seconds=timeout_seconds,
             line_callback=line_callback,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         result["message"] = (
