@@ -436,18 +436,18 @@ export async function applyDataladDefaultToCreateForm() {
     }
 }
 
-// Settings page: the "DataLad on for new projects" switch.
-export async function initDataladForNewProjectsToggle() {
-    const toggle = document.getElementById('dataladForNewProjectsToggle');
+// Settings page: a switch bound to one boolean setting of /api/settings/global-library.
+async function initSettingSwitch(toggleId, feedbackId, key) {
+    const toggle = document.getElementById(toggleId);
     if (!toggle) return;
-    const feedback = document.getElementById('dataladForNewProjectsFeedback');
+    const feedback = document.getElementById(feedbackId);
 
     try {
         const response = await fetchWithApiFallback('/api/settings/global-library');
         const data = await response.json();
-        if (data && data.success) toggle.checked = Boolean(data.datalad_for_new_projects);
+        if (data && data.success) toggle.checked = Boolean(data[key]);
     } catch (error) {
-        console.error('Error loading DataLad default for new projects:', error);
+        console.error(`Error loading setting ${key}:`, error);
     }
 
     toggle.addEventListener('change', async () => {
@@ -457,13 +457,13 @@ export async function initDataladForNewProjectsToggle() {
             const response = await fetchWithApiFallback('/api/settings/global-library', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datalad_for_new_projects: desired })
+                body: JSON.stringify({ [key]: desired })
             });
             const data = await response.json();
             if (!response.ok || !data || !data.success) {
                 throw new Error(data?.error || 'Could not save the setting.');
             }
-            toggle.checked = Boolean(data.datalad_for_new_projects);
+            toggle.checked = Boolean(data[key]);
             if (feedback) feedback.textContent = '';
         } catch (error) {
             toggle.checked = !desired;
@@ -476,6 +476,14 @@ export async function initDataladForNewProjectsToggle() {
         }
     });
 }
+
+// Settings page: the "DataLad on for new projects" switch.
+export const initDataladForNewProjectsToggle = () =>
+    initSettingSwitch('dataladForNewProjectsToggle', 'dataladForNewProjectsFeedback', 'datalad_for_new_projects');
+
+// Settings page: the WCAG enhanced view switch (the server sets html[data-wcag] on the next page load).
+export const initWcagEnhancedViewToggle = () =>
+    initSettingSwitch('wcagEnhancedViewToggle', 'wcagEnhancedViewFeedback', 'wcag_enhanced_view');
 
 // Settings page: the git name + email DataLad signs snapshots with (works without a project).
 export async function initGitIdentityForm() {

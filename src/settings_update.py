@@ -34,6 +34,7 @@ SETTINGS: dict[str, Setting] = {
     "default_modalities": Setting("list", "Modalities a new project starts with, comma separated (e.g. survey,biometrics)"),
     "export_defacing_confirmation_mode": Setting("choice", "When the defacing export asks for confirmation: risk or always"),
     "datalad_for_new_projects": Setting("bool", "Start the Create Project form with DataLad version control switched on: on or off"),
+    "wcag_enhanced_view": Setting("bool", "WCAG enhanced view (higher contrast, underlined links, thick focus outline): on or off"),
     "backend_monitoring": Setting("bool", "Show backend actions in the terminal: on or off"),
     "backend_monitoring_verbose": Setting("bool", "Show them in detail: on or off"),
     "show_dedicated_terminal": Setting("bool", "Open Studio's own terminal window at start: on or off"),

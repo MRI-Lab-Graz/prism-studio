@@ -103,3 +103,9 @@ def test_datalad_for_new_projects_is_off_by_default_and_can_be_switched_on():
     assert config.load_app_settings(app_root=str(APP)).datalad_for_new_projects is False
     assert update_app_settings(APP, {"datalad_for_new_projects": "on"}).datalad_for_new_projects is True
     assert config.load_app_settings(app_root=str(APP)).datalad_for_new_projects is True
+
+
+def test_wcag_enhanced_view_is_off_by_default_and_can_be_switched_on():
+    assert config.load_app_settings(app_root=str(APP)).wcag_enhanced_view is False
+    assert update_app_settings(APP, {"wcag_enhanced_view": "on"}).wcag_enhanced_view is True
+    assert config.load_app_settings(app_root=str(APP)).wcag_enhanced_view is True

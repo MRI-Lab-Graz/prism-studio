@@ -1063,6 +1063,7 @@ def inject_utilities():
             latest_version,
         ),
         "prism_api_origin": request.host_url.rstrip("/"),
+        "wcag_enhanced_view": load_app_settings(app_root=str(BASE_DIR)).wcag_enhanced_view,
         "prism_static_asset_token": app.config.get("PRISM_STARTUP_ID", "dev"),
     }
 

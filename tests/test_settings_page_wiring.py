@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import importlib
 import sys
 from pathlib import Path
@@ -72,6 +73,26 @@ def test_datalad_preset_roundtrips_through_the_settings_routes(tmp_path, monkeyp
     posted = client.post("/api/settings/global-library", json={"datalad_for_new_projects": True}).get_json()
     assert posted["success"] is True
     assert client.get("/api/settings/global-library").get_json()["datalad_for_new_projects"] is True
+
+
+def test_wcag_enhanced_view_roundtrips_through_the_settings_routes(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+
+    assert client.get("/api/settings/global-library").get_json()["wcag_enhanced_view"] is False
+    posted = client.post("/api/settings/global-library", json={"wcag_enhanced_view": True}).get_json()
+    assert posted["success"] is True and posted["wcag_enhanced_view"] is True
+    assert client.get("/api/settings/global-library").get_json()["wcag_enhanced_view"] is True
+
+
+def test_wcag_enhanced_view_toggle_page_attribute_and_css_are_wired():
+    assert 'id="wcagEnhancedViewToggle"' in _text(TEMPLATES / "settings.html")
+    assert "data-wcag" in _text(TEMPLATES / "base.html")
+    css = _text(APP / "static" / "css" / "studio-theme.css")
+    assert "html[data-wcag] .studio-theme :focus-visible" in css
+    # every rule of the accessibility section sits behind the switch: the default view is the original look
+    section = css[css.index("/* Accessibility (WCAG AA") :]
+    bare = re.findall(r"^\s*((?:\.studio-theme|html)[^;{}]*?)\s*[,{]\s*$", section, re.M)
+    assert [rule for rule in bare if "html[data-wcag]" not in rule] == []
 
 
 def test_settings_page_opens_without_a_project():
