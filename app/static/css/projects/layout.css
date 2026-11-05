@@ -24,7 +24,7 @@
 .stat-item .stat-value {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #1a744d;
+    color: var(--studio-semantic-primary);
 }
 .stat-item .stat-label {
     font-size: 0.85rem;
@@ -32,7 +32,7 @@
 }
 
 .project-flow-strip {
-    --project-flow-accent: #1a744d;
+    --project-flow-accent: var(--studio-semantic-primary);
     --project-flow-soft: rgba(31, 139, 92, 0.11);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -44,7 +44,7 @@
 }
 
 .project-flow-strip--create {
-    --project-flow-accent: #1a744d;
+    --project-flow-accent: var(--studio-semantic-primary);
     --project-flow-soft: rgba(31, 139, 92, 0.11);
 }
 
@@ -54,7 +54,7 @@
 }
 
 .project-flow-strip--open {
-    --project-flow-accent: #1a744d;
+    --project-flow-accent: var(--studio-semantic-primary);
     --project-flow-soft: rgba(31, 139, 92, 0.11);
 }
 
@@ -145,7 +145,7 @@
 }
 
 .export-filter-chip--neutral {
-    color: #1a744d;
+    color: var(--studio-semantic-primary);
     background: rgba(31, 139, 92, 0.1);
     border-color: rgba(31, 139, 92, 0.2);
 }
