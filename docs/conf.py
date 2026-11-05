@@ -27,6 +27,8 @@ exclude_patterns = [
     ".DS_Store",
     "README.md",
     "archive/**",
+    # Design specs and plans are working documents for the developers, not part of the published docs.
+    "superpowers/**",
     # Advanced pages intentionally hidden from public RTD navigation.
     "LIMESURVEY_VERSION_DIFFERENCES.md",
     "PAVLOVIA_EXPORT.md",
