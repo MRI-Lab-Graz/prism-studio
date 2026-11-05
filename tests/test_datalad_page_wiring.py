@@ -100,7 +100,8 @@ def test_main_initializes_the_datalad_page():
 
 def test_page_module_only_triggers_existing_routes():
     page = _text(PAGE_JS)
-    assert "from './render-state.js'" in page
+    job = _text(PAGE_JS.with_name("job.js"))  # the job runner; its behaviour is tested in job.test.js
+    assert "from './render-state.js'" in page and "from './job.js'" in page
     assert "saveDataladSnapshot" in page and "getLatestFromServer" in page and "enableDatalad" in page
     assert "runDataladCheck" in page  # "Check this computer" is the existing doctor check
     assert "openRemoteFolderPicker" in page  # the existing server folder picker
@@ -109,17 +110,21 @@ def test_page_module_only_triggers_existing_routes():
         "/api/projects/datalad/state",
         "/api/projects/datalad-server/sync/start",
         "/api/projects/datalad/put-on-server",
-        "/api/projects/datalad/open-from-server",
         "/api/projects/datalad/get-data",
-        "/api/projects/datalad-server/sync/",  # status + cancel
-        "/api/projects/current",
     ):
         assert route in page, route
-    assert "allow_invalid: true" in page
+    for route in ("/api/projects/datalad/open-from-server", "/api/projects/datalad-server/sync", "/api/projects/current"):
+        assert route in job, route
     assert "'prism-project-opened'" in page
-    assert "method: 'DELETE'" in page
-    # "Send anyway" after a stopped job repeats that same job, acknowledged
-    assert "showErrors(result, () => runJob(route, { ...body, allow_invalid: true }, onComplete))" in page
+    # the page's own state reads ask for the nested-dataset count; the navbar's does not
+    assert "check_nested=1" in page and "check_nested" not in _text(TEMPLATES / "base.html")
+
+
+def test_page_sends_no_default_snapshot_message_of_its_own():
+    # An empty description goes to the backend, which applies DEFAULT_SNAPSHOT_MESSAGE as `datalad save` does.
+    page = _text(PAGE_JS)
+    assert "saveDataladSnapshot(fetchWithApiFallback, message.trim())" in page
+    assert "PRISM project changes" not in page
 
 
 def test_page_refreshes_the_navbar_count_after_an_action():

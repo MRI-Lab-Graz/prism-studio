@@ -73,4 +73,26 @@ describe('renderState', () => {
     expect(view.secondary).toContainEqual({ id: 'send-anyway', label: sendAnywayLabel(4) });
     expect(sendAnywayLabel(4)).toBe('Send anyway, I understand this dataset has 4 errors');
   });
+
+  it('enable with enable_kind "finish" asks to finish enabling, with the count', () => {
+    const view = renderState({ ...base, server, next_step: 'enable', enable_kind: 'finish', nested_unregistered: 3 });
+    expect(view.primary).toEqual({ id: 'enable', label: 'Finish enabling DataLad' });
+    expect(view.text).toMatch(/3 subject datasets are not registered yet/);
+    expect(view.secondary).toEqual([]);
+  });
+
+  it('invalid and unreachable together show both notices', () => {
+    const view = renderState({ ...base, server: { ...server, reachable: false }, next_step: 'sync', valid: false, error_count: 2 });
+    expect(view.notice.kind).toBe('warning');
+    expect(view.notice.text).toMatch(/2 validation error/);
+    expect(view.notice.text).toMatch(/could not be reached/);
+  });
+
+  it('with no project open, Get latest and Get data are disabled', () => {
+    const more = renderState(null).more;
+    expect(more.find((a) => a.id === 'get-latest').disabled).toBe(true);
+    expect(more.find((a) => a.id === 'get-data').disabled).toBe(true);
+    expect(more.find((a) => a.id === 'doctor').disabled).toBeUndefined();
+    expect(renderState({ ...base, server, next_step: 'sync' }).more.some((a) => a.disabled)).toBe(false);
+  });
 });

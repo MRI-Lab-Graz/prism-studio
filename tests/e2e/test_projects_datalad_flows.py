@@ -116,7 +116,7 @@ def test_snapshot_commits_new_files_and_never_annexes_text_formats(bare_page, st
     save_snapshot(bare_page)
 
     expect(bare_page.locator("#dataladJobResult")).to_contain_text("saved")
-    expect(bare_page.locator("#dataladJobResult")).to_contain_text("Checkpoint")  # the message used
+    expect(bare_page.locator("#dataladJobResult")).to_contain_text("Save PRISM project changes")  # the backend's default
     assert int(git(project, "rev-list", "--count", "HEAD")) > commits_before
     assert git(project, "status", "--porcelain") == ""  # everything was saved
     for relative in TEXT_FILES:

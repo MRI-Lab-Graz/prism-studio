@@ -21,6 +21,8 @@ function view(title, text, primary, secondary = [], notice = null) {
     return { title, text, primary, secondary, more: MORE.map((a) => ({ ...a })), notice };
 }
 
+const NEEDS_PROJECT = new Set(['get-latest', 'get-data']);
+
 function stepView(state) {
     const unsaved = Number(state.unsaved_count) || 0;
     switch (state.next_step) {
@@ -29,6 +31,10 @@ function stepView(state) {
             { id: 'doctor', label: 'Check this computer' }, [],
             { text: 'DataLad was not found on this computer.', kind: 'danger' });
     case 'enable':
+        if (state.enable_kind === 'finish') {
+            return view('DataLad is not finished', `${Number(state.nested_unregistered) || 0} subject datasets are not registered yet: finish enabling.`,
+                { id: 'enable', label: 'Finish enabling DataLad' });
+        }
         return view('Keep snapshots of this project', 'DataLad saves snapshots of the project so you can share it with your team and go back to any saved state.',
             { id: 'enable', label: 'Enable DataLad' }, [{ ...OPEN }]);
     case 'put_on_server': {
@@ -47,15 +53,22 @@ function stepView(state) {
 
 export function renderState(state) {
     if (!state || !state.next_step) {
-        return view('No project open', 'Open a project, or get a team project from the lab server.', { ...OPEN });
+        const result = view('No project open', 'Open a project, or get a team project from the lab server.', { ...OPEN });
+        result.more.forEach((a) => { if (NEEDS_PROJECT.has(a.id)) a.disabled = true; });
+        return result;
     }
     const result = stepView(state);
+    const notices = [];
     if (state.valid === false) {
         const count = Number(state.error_count) || 0;
-        result.notice = { text: `This dataset has ${count} validation error(s). Only a valid dataset is sent, unless you choose to send it anyway.`, kind: 'warning' };
+        notices.push(`This dataset has ${count} validation error(s). Only a valid dataset is sent, unless you choose to send it anyway.`);
         result.secondary.push({ id: 'send-anyway', label: sendAnywayLabel(count) });
-    } else if (state.server && state.server.reachable === false) {
-        result.notice = { text: 'The server could not be reached. You can keep working and saving; sync when the server is back.', kind: 'info' };
+    }
+    if (state.server && state.server.reachable === false) {
+        notices.push('The server could not be reached. You can keep working and saving; sync when the server is back.');
+    }
+    if (notices.length) {
+        result.notice = { text: notices.join(' '), kind: state.valid === false ? 'warning' : 'info' };
     }
     return result;
 }
