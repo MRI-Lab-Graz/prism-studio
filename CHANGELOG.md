@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **`datalad status` tells the next step** (`install_datalad`, `enable`, `put_on_server`, `save`, `sync`), the server
+  (`origin`, with `--check-server` whether it is reachable; unreachable is never an error), other servers, and with
+  `--validate` the error count. Studio's `GET /api/projects/datalad/state` returns the same JSON as `--json`.
 - **The navbar shows how many changes are not yet saved to DataLad**, as a yellow number next to "DataLad". It is looked at again
   after every validator run (the results page). `prism_tools datalad status --project <path> [--json]` prints the same.
 

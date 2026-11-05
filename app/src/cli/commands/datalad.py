@@ -110,14 +110,27 @@ def cmd_datalad_save(args) -> None:
 
 
 def cmd_datalad_status(args) -> None:
-    """Show how many changes are not yet saved as a DataLad snapshot (the navbar count in Studio).
+    """Show the project's DataLad state and the next step (Studio's DataLad page and navbar count).
 
-    Studio's /api/projects/datalad/clean-status runs the same function."""
-    result = _manager().check_datalad_clean_status(args.project)
+    Studio's /api/projects/datalad/state runs the same function."""
+    from src.datalad_state import datalad_state
+
+    state = datalad_state(
+        args.project, check_server=bool(getattr(args, "check_server", False)), validate=bool(getattr(args, "validate", False))
+    )
     if getattr(args, "json", False):
-        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
-    else:
-        print(result.get("message") or "")
+        print(json.dumps(state, indent=2, ensure_ascii=False, default=str))
+        return
+    print(_manager().check_datalad_clean_status(args.project).get("message") or "")
+    print(f"Next step: {state['next_step']}")
+    server = state["server"]
+    if server:
+        reach = {True: "reachable", False: "not reachable", None: "not checked"}[server["reachable"]]
+        print(f"Server {server['name']}: {server['url']} ({reach})")
+    for name in state["other_servers"]:
+        print(f"Other server: {name}")
+    if "valid" in state:
+        print("Valid." if state["valid"] else f"{state['error_count']} validation error(s).")
 
 
 def cmd_datalad_update(args) -> None:

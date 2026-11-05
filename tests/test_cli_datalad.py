@@ -151,11 +151,12 @@ def test_status_prints_the_message_and_exits_zero_with_changes_pending(monkeypat
     assert "3 uncommitted change(s) pending." in capsys.readouterr().out
 
 
-def test_status_json_is_the_dict_the_studio_route_returns(monkeypatch, capsys):
-    result = {"checked": True, "clean": True, "dirty_count": 0, "message": "Working tree is clean."}
-    monkeypatch.setattr(cli, "_manager", lambda: FakeStatusManager(result))
-    cli.cmd_datalad_status(SimpleNamespace(project="/p", json=True))
-    assert json.loads(capsys.readouterr().out) == result
+def test_status_json_is_the_state_the_studio_route_returns(monkeypatch, capsys, tmp_path):
+    # the pending-change count itself: /api/projects/datalad/clean-status keeps the old dict; this is the state
+    monkeypatch.setattr(cli, "_manager", lambda: FakeStatusManager({}))
+    cli.cmd_datalad_status(SimpleNamespace(project=str(tmp_path), json=True))
+    state = json.loads(capsys.readouterr().out)
+    assert state["next_step"] in ("enable", "install_datalad") and state["unsaved_count"] == 0
 
 
 def test_parser_accepts_datalad_status():

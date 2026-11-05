@@ -122,6 +122,10 @@ The server can be an SSH location or a mounted network share. Each user's copy i
 dataset, so the server is its `origin`; Studio's *Sync now* (`prism_tools.py datalad sync --project <root>`) is
 *get the latest, then publish*.
 
+**What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
+what the DataLad page offers next: enable DataLad, put the project on a server, save, or sync. A server that cannot be
+reached is shown as such and does not change that advice.
+
 **Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can
 save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then ends with
 `[saved with N validation error(s)]` so the history shows it. Publishing and *Sync now* also refuse while there

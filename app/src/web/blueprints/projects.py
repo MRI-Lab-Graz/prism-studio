@@ -614,6 +614,18 @@ def datalad_clean_status():
     return jsonify({"success": True, "datalad_clean": result})
 
 
+@projects_bp.route("/api/projects/datalad/state", methods=["GET"])
+def datalad_state_route():
+    """DataLad state and next step of the current project: what `datalad status --json` prints."""
+    from src.datalad_state import datalad_state
+
+    project_path = str(get_current_project().get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+    flag = lambda name: request.args.get(name) in ("1", "true")  # noqa: E731
+    return jsonify(datalad_state(project_path, check_server=flag("check_server"), validate=flag("validate")))
+
+
 @projects_bp.route("/api/projects/remote-source-status", methods=["POST"])
 def remote_source_status():
     """Return remote dataset requirements for the init-on-bids form."""
