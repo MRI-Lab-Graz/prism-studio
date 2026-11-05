@@ -866,9 +866,12 @@ seconds); its committed `.datalad/config` holds only `datalad.dataset.id` and it
 `datalad-id` (any other setting could redirect an address); `.datalad`, `.datalad/config` and `.gitmodules` are not
 links; every `url` is a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the
 exact `--location`; every `path` is a nested dataset recorded in that very dataset (not a deeper path such as
-`sub-01/ses-1`, not a link) and a real folder; and, for a folder location, neither the server folder nor a nested
-dataset's server folder has `objects/info/alternates` (which would make the copy read another repository). The
-server's own `origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
+`sub-01/ses-1`, not a link) and a real folder. For a folder location (the server is read on your computer), the
+location, every folder down to each nested dataset's source on the server and each of their `.git` must be real
+folders (a link or a `gitdir:` file is refused) without `.git/objects/info/alternates`, and no copied dataset may end
+up with an alternates file (either would make the copy read another repository of your computer). For an ssh location
+the addresses are resolved on the server and are not checked on your computer beyond the rules above. The server's own
+`origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
 when a subdataset was added from an address rather than created in place; PRISM never does) cannot be opened this way. The save-gate hook goes into every dataset as soon as it is there (git
 does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
 repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:

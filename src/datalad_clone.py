@@ -105,6 +105,30 @@ def _real_folder(path: Path) -> bool:
         return False
 
 
+def _server_folder_problem(base: Path, source: str = "") -> str:
+    """'' when the folder server's `base`, every folder down to `base/source` and its `.git` are real folders.
+
+    A folder server is read on this computer: a link (also one a push commits into the server's work tree) or a
+    `gitdir:` file there could name any other repository of the user.
+    """
+    here, folders = base, [base]
+    for part in [*(part for part in source.split("/") if part not in ("", ".")), ".git"]:
+        here = here / part
+        folders.append(here)
+    for folder in folders:
+        if not _real_folder(folder):
+            return f"{folder} on the server is not a real folder (a link, a file or missing), which is not accepted"
+    return ""
+
+
+def _copy_alternates_problem(copy: Path) -> str:
+    """'' unless git gave the copy an alternates file (it would read objects of another repository)."""
+    alternates = copy / ".git" / "objects" / "info" / "alternates"
+    if os.path.lexists(alternates):
+        return f"{alternates} was copied from the server and names another repository, which is not accepted"
+    return ""
+
+
 def _alternates_problem(folder: Path) -> str:
     """'' unless the server folder borrows objects from another repository (git clone would copy that and read it)."""
     for name in (".git/objects/info/alternates", "objects/info/alternates"):
@@ -200,8 +224,6 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
         return refuse("bad_location", problem)
     if parse_ssh_target(location) is None:  # a folder: relative to where the user is, not to the target
         location = str(Path(location).expanduser().absolute())
-        if _alternates_problem(Path(location)):
-            return refuse("bad_location", _alternates_problem(Path(location)))
     if target_problem(target):
         return refuse("bad_target", target_problem(target))
     target = Path(str(target).strip()).expanduser()
@@ -221,6 +243,10 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
         return refuse("bad_target", f"{target} is inside a git repository. Choose a folder outside it for your copy.")
     if problems:
         return refuse("clone_failed", "\n".join(problems))
+    if parse_ssh_target(location) is None:  # read on this computer: real folders only, no borrowed objects
+        problem = _server_folder_problem(Path(location)) or _alternates_problem(Path(location))
+        if problem:
+            return refuse("bad_location", problem)
 
     cloned = run_datalad_clone(location, target, line_callback=line_callback)
     if not cloned.get("success"):
@@ -239,6 +265,8 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
         ))
         return outcome
 
+    if _copy_alternates_problem(target):
+        return incomplete(_copy_alternates_problem(target))
     pending = [target]
     while pending:
         root = pending.pop(0)
@@ -249,13 +277,18 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
             continue
         origin = _origin_folder(root)  # DataLad clones <origin>/<path> or the url (relative to origin)
         for source in [*paths, *urls] if origin else ():
-            problem = _alternates_problem(origin / source if _inside(source) else Path(source))
+            base, rel = (origin, source) if _inside(source) else (
+                Path(location), source[len(location.rstrip("/\\")) + 1:]  # an address under the location
+            )
+            problem = _server_folder_problem(base, rel) or _alternates_problem(base / rel)
             if problem:
-                return incomplete(problem)
+                return incomplete(f"the nested dataset source '{source}' of {root}: {problem}")
         got = run_datalad_install_nested(root, paths, line_callback=line_callback)
         if not got.get("success"):
             return incomplete(str(got.get("message") or "the nested datasets could not be installed"))
         for path in paths:
+            if _copy_alternates_problem(root / path):
+                return incomplete(_copy_alternates_problem(root / path))
             if _gitlink_problem(root, path):  # still a real folder now that it is installed
                 return incomplete(_gitlink_problem(root, path))
             _gate(root / path, hooks)

@@ -394,6 +394,76 @@ def test_a_nested_path_must_be_a_real_nested_dataset_of_its_own_parent(mode, ref
     assert not (victim / "sub-v" / ".datalad").exists()  # and nothing installed in it
 
 
+def _folder_server_trap(tmp_path, mode):
+    """A folder server whose files name another repository of this computer (a victim with `s.txt`)."""
+    victim = tmp_path / "victim"
+    _run("datalad", "create", "-c", "text2git", str(victim), cwd=tmp_path)
+    _save(victim, "s.txt", "secret\n")
+    head = _run("git", "rev-parse", "HEAD", cwd=victim).strip()
+    srv = tmp_path / "srv"
+    _run("datalad", "create", "-c", "text2git", str(srv), cwd=tmp_path)
+    for sub in ("sub-01", "sub-02"):
+        _run("datalad", "create", "-c", "text2git", "-d", str(srv), str(srv / sub), cwd=tmp_path)
+    _run("datalad", "save", "-r", "-m", "x", cwd=srv)
+    if mode in ("url-link", "srv-dir-link", "srv-gitfile"):  # sub-02 records the victim's commit
+        _run("git", "update-index", "--cacheinfo", f"160000,{head},sub-02", cwd=srv)
+    if mode == "url-link":  # a push is enough: a committed link, named as sub-02's url
+        (srv / "lnk").symlink_to(victim)
+        gm = srv / ".gitmodules"
+        gm.write_text(gm.read_text(encoding="utf-8").replace("url = ./sub-02", "url = ./lnk"), encoding="utf-8")
+        _run("git", "add", ".gitmodules", "lnk", cwd=srv)
+    if mode in ("url-link", "srv-dir-link", "srv-gitfile"):
+        _run("git", "commit", "-qm", mode, cwd=srv)
+    if mode == "srv-dir-link":  # someone who can write the server folder itself
+        shutil.rmtree(srv / "sub-02")
+        (srv / "sub-02").symlink_to(victim)
+    elif mode == "srv-gitfile":
+        shutil.rmtree(srv / "sub-02" / ".git")
+        (srv / "sub-02" / ".git").write_text(f"gitdir: {victim / '.git'}\n", encoding="utf-8")
+    elif mode in ("loc-gitfile", "alt-gitfile"):  # the location's .git is a `gitdir:` file
+        real = tmp_path / "realgit"
+        shutil.move(str(srv / ".git"), str(real))
+        (srv / ".git").write_text(f"gitdir: {real}\n", encoding="utf-8")
+        if mode == "alt-gitfile":
+            (real / "objects" / "info" / "alternates").write_text(f"{victim / '.git' / 'objects'}\n", encoding="utf-8")
+    elif mode == "alt-commondir":  # the location's .git names a common git dir that has alternates
+        common = tmp_path / "common"
+        shutil.copytree(srv / ".git", common)
+        (common / "objects" / "info" / "alternates").write_text(f"{victim / '.git' / 'objects'}\n", encoding="utf-8")
+        (srv / ".git" / "commondir").write_text(f"{common}\n", encoding="utf-8")
+    return srv, victim, head
+
+
+@needs_datalad
+@pytest.mark.parametrize(
+    "mode, reason, refused",
+    [
+        ("url-link", "clone_failed", "'./lnk'"),
+        ("srv-dir-link", "clone_failed", "'sub-02'"),
+        ("srv-gitfile", "clone_failed", "'sub-02'"),
+        ("loc-gitfile", "bad_location", ".git"),
+        ("alt-gitfile", "bad_location", ".git"),
+        ("alt-commondir", "clone_failed", "alternates"),
+    ],
+)
+def test_a_folder_server_must_be_real_folders_without_alternates(mode, reason, refused, tmp_path, monkeypatch):
+    """A folder server is read on this computer: links, `gitdir:` files and borrowed objects could name any repo."""
+    _identity(tmp_path, monkeypatch)
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    srv, victim, head = _folder_server_trap(tmp_path, mode)
+    target = tmp_path / "mine"
+    result = open_from_server(str(srv), target)
+    assert result["success"] is False and result["reason"] == reason, result
+    assert refused in result["message"] and "not accepted" in result["message"], result["message"]
+    assert not list(target.rglob("s.txt"))  # the victim's content is not in the copy
+    if (target / "sub-02" / ".git").exists():
+        has = subprocess.run(["git", "-C", str(target / "sub-02"), "cat-file", "-e", head], capture_output=True)
+        assert has.returncode != 0  # nor its commit
+    if reason == "bad_location":
+        assert not target.exists()
+
+
 def _alternates(repo, foreign):
     info = repo / ".git" / "objects" / "info"
     info.mkdir(parents=True, exist_ok=True)
