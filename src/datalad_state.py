@@ -31,17 +31,20 @@ def datalad_state(project_root, *, check_server: bool = False, validate: bool = 
     """The project's DataLad state and the one `next_step` the page offers.
 
     next_step: install_datalad | enable | put_on_server | save | sync.
-    ponytail: "up_to_date" is not produced; telling it apart from "sync" needs a fetch. Add when the page wants it.
+    `checked` is False when the unsaved changes could not be counted; then "save" is advised, never "sync".
     """
     from src.project_manager import ProjectManager
 
     root = Path(project_root)
     available = bool(shutil.which("datalad"))
     enabled = is_datalad_dataset(root)
-    state: dict = {"enabled": enabled, "available": available, "unsaved_count": 0, "server": None, "other_servers": []}
+    state: dict = {"enabled": enabled, "available": available, "checked": False, "message": "", "unsaved_count": 0, "server": None, "other_servers": []}
 
     if enabled and available:
-        state["unsaved_count"] = int(ProjectManager().check_datalad_clean_status(root).get("dirty_count") or 0)
+        clean = ProjectManager().check_datalad_clean_status(root)
+        state["checked"] = bool(clean.get("checked"))
+        state["message"] = str(clean.get("message") or "")
+        state["unsaved_count"] = int(clean.get("dirty_count") or 0)
         remotes = _git(root, "remote").split()
         state["other_servers"] = [r for r in remotes if r != SERVER]
         if has_sibling(root, SERVER):
@@ -61,7 +64,7 @@ def datalad_state(project_root, *, check_server: bool = False, validate: bool = 
         state["next_step"] = "enable"
     elif state["server"] is None:
         state["next_step"] = "put_on_server"
-    elif state["unsaved_count"]:
+    elif state["unsaved_count"] or not state["checked"]:
         state["next_step"] = "save"
     else:
         state["next_step"] = "sync"

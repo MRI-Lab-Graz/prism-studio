@@ -105,3 +105,26 @@ def test_cli_json_and_the_route_answer_the_same(with_server, capsys, monkeypatch
     with Flask(__name__).test_request_context("/api/projects/datalad/state?check_server=1"):
         body = projects.datalad_state_route().get_json()
     assert body == cli
+
+
+def test_an_unknown_unsaved_state_never_advises_sync(with_server, monkeypatch):
+    from src.project_manager import ProjectManager
+
+    monkeypatch.setattr(
+        ProjectManager, "check_datalad_clean_status",
+        lambda self, path: {"checked": False, "clean": None, "dirty_count": 0, "message": "A DataLad operation is in progress."},
+    )
+    state = datalad_state(with_server)
+    assert state["checked"] is False and state["message"] == "A DataLad operation is in progress."
+    assert state["unsaved_count"] == 0 and state["next_step"] == "save"
+
+
+def test_the_state_carries_what_the_navbar_needs(with_server):
+    state = datalad_state(with_server)
+    assert state["checked"] is True and state["message"] == "Working tree is clean."
+
+
+def test_the_old_clean_status_route_is_gone():
+    import src.web.blueprints.projects as projects
+
+    assert not hasattr(projects, "datalad_clean_status")

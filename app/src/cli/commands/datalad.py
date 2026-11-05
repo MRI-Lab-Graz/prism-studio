@@ -121,7 +121,7 @@ def cmd_datalad_status(args) -> None:
     if getattr(args, "json", False):
         print(json.dumps(state, indent=2, ensure_ascii=False, default=str))
         return
-    print(_manager().check_datalad_clean_status(args.project).get("message") or "")
+    print(state["message"])
     print(f"Next step: {state['next_step']}")
     server = state["server"]
     if server:

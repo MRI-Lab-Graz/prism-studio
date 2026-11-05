@@ -21,6 +21,14 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));", content)
         self.assertIn("setProjectGatedLinkState('surveyExportLink', Boolean(nextPath)", content)
 
+    def test_navbar_count_reads_the_one_datalad_state(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("/api/projects/datalad/state", content)
+        self.assertIn("unsaved_count", content)
+        self.assertNotIn("clean-status", content)
+        self.assertNotIn("datalad_clean", content)
+
     def test_datalad_only_changes_do_not_emit_project_changed(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 

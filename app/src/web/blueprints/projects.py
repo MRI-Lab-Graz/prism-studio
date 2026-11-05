@@ -602,18 +602,6 @@ def datalad_doctor():
     return handle_datalad_doctor()
 
 
-@projects_bp.route("/api/projects/datalad/clean-status", methods=["GET"])
-def datalad_clean_status():
-    """Return whether the current project's DataLad working tree is clean."""
-    current_project = get_current_project()
-    project_path = str(current_project.get("path") or "").strip()
-    if not project_path:
-        return jsonify({"success": False, "error": "No current project loaded."}), 400
-
-    result = _project_manager.check_datalad_clean_status(project_path)
-    return jsonify({"success": True, "datalad_clean": result})
-
-
 @projects_bp.route("/api/projects/datalad/state", methods=["GET"])
 def datalad_state_route():
     """DataLad state and next step of the current project: what `datalad status --json` prints."""

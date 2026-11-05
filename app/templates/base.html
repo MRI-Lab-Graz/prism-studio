@@ -1139,7 +1139,7 @@
                 return;
             }
 
-            const cacheKey = `prism-datalad-clean-status:${normalizedPath}`;
+            const cacheKey = `prism-datalad-state:${normalizedPath}`;
             if (!force) {
                 try {
                     const cached = JSON.parse(window.sessionStorage.getItem(cacheKey) || 'null');
@@ -1154,13 +1154,14 @@
 
             const fetchToken = ++navbarDataladCleanStatusFetchToken;
             try {
-                const response = await navbarFetchWithApiFallback('/api/projects/datalad/clean-status', { method: 'GET' });
+                const response = await navbarFetchWithApiFallback('/api/projects/datalad/state', { method: 'GET' });
                 const data = await response.json().catch(() => ({ success: false }));
                 if (fetchToken !== navbarDataladCleanStatusFetchToken) return;
 
-                const cleanStatus = data && data.success ? data.datalad_clean : null;
-                const clean = cleanStatus && cleanStatus.checked ? Boolean(cleanStatus.clean) : null;
-                const count = clean === false ? Number(cleanStatus.dirty_count) || 0 : 0;
+                const cleanStatus = data && data.next_step ? data : null;
+                const unsaved = cleanStatus ? Number(cleanStatus.unsaved_count) || 0 : 0;
+                const clean = cleanStatus && cleanStatus.checked ? unsaved === 0 : null;
+                const count = clean === false ? unsaved : 0;
                 renderNavbarDataladCleanIcon(clean, count);
 
                 const cleanIcon = document.getElementById('navbarDataladCleanIcon');

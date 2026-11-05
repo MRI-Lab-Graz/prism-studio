@@ -136,27 +136,20 @@ def test_parser_accepts_save_allow_invalid():
 
 # --- status (pending changes) ---------------------------------------------
 
-class FakeStatusManager:
-    def __init__(self, result):
-        self.result = result
+def test_status_prints_the_message_and_the_next_step_from_one_computation(monkeypatch, capsys):
+    import src.datalad_state as mod
 
-    def check_datalad_clean_status(self, project):
-        return self.result
+    calls = []
 
+    def fake_state(project, **kwargs):
+        calls.append(project)
+        return {"message": "3 uncommitted change(s) pending.", "next_step": "save", "server": None, "other_servers": []}
 
-def test_status_prints_the_message_and_exits_zero_with_changes_pending(monkeypatch, capsys):
-    mgr = FakeStatusManager({"checked": True, "clean": False, "dirty_count": 3, "message": "3 uncommitted change(s) pending."})
-    monkeypatch.setattr(cli, "_manager", lambda: mgr)
+    monkeypatch.setattr(mod, "datalad_state", fake_state)
+    monkeypatch.setattr(cli, "_manager", lambda: pytest.fail("status must not run a second check"))
     cli.cmd_datalad_status(SimpleNamespace(project="/p", json=False))
-    assert "3 uncommitted change(s) pending." in capsys.readouterr().out
-
-
-def test_status_json_is_the_state_the_studio_route_returns(monkeypatch, capsys, tmp_path):
-    # the pending-change count itself: /api/projects/datalad/clean-status keeps the old dict; this is the state
-    monkeypatch.setattr(cli, "_manager", lambda: FakeStatusManager({}))
-    cli.cmd_datalad_status(SimpleNamespace(project=str(tmp_path), json=True))
-    state = json.loads(capsys.readouterr().out)
-    assert state["next_step"] in ("enable", "install_datalad") and state["unsaved_count"] == 0
+    out = capsys.readouterr().out
+    assert "3 uncommitted change(s) pending." in out and "Next step: save" in out and calls == ["/p"]
 
 
 def test_parser_accepts_datalad_status():
