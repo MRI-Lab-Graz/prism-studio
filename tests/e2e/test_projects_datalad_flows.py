@@ -216,21 +216,6 @@ def test_put_on_an_unreachable_server_explains_what_is_wrong(bare_page, studio_u
     expect(action(bare_page, "put-on-server")).to_be_enabled()  # the step is still offered, nothing is locked
 
 
-def test_saving_the_server_settings_refuses_a_sibling_name_or_alias_that_is_not_a_plain_label(bare_page, studio_url, project):
-    request = bare_page.context.request
-
-    def save(**fields):
-        return request.post(
-            f"{studio_url}/api/projects/datalad-server/config",
-            data={"project_path": str(project), "ria_url": "ria+ssh://host/store", **fields},
-        )
-
-    assert save(sibling_name="lab-server", alias="my_study.v2").ok
-    for bad in ({"sibling_name": "-x"}, {"sibling_name": "a b"}, {"alias": "../../evil"}, {"alias": "a/b"}):
-        response = save(**bad)
-        assert response.status == 400 and "plain label" in response.json()["error"], bad
-
-
 def test_without_a_project_the_page_leads_with_open_from_server(bare_page, studio_url):
     bare_page.goto(f"{studio_url}/projects/datalad")
 

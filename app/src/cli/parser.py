@@ -870,10 +870,7 @@ def build_prism_tools_parsers(
         "doctor", help="Check tools and (optionally) server login"
     )
     parser_datalad_doctor.add_argument(
-        "--url", help="Server URL to test (ria+ssh://user@host/path, user@host:path)"
-    )
-    parser_datalad_doctor.add_argument(
-        "--project", help="Project root; uses its configured DataLad server URL"
+        "--url", help="Server URL to test (user@host:path or ssh://user@host/path)"
     )
     parser_datalad_doctor.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
@@ -886,19 +883,11 @@ def build_prism_tools_parsers(
     parser_datalad_identity.add_argument("--email", help="Your email (sets git user.email)")
     parser_datalad_identity.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
-    parser_datalad_config = datalad_subparsers.add_parser(
-        "config", help="Save the project's DataLad server settings (URL, sibling name, alias)"
-    )
-    parser_datalad_config.add_argument("--project", required=True, help="Project root")
-    parser_datalad_config.add_argument("--url", help="Server URL (ria+ssh://user@host/path, user@host:path)")
-    parser_datalad_config.add_argument("--sibling-name", help="Sibling name (default: origin)")
-    parser_datalad_config.add_argument("--alias", help="Store alias (RIA stores only)")
-
     parser_datalad_sync = datalad_subparsers.add_parser(
         "sync", help="Get the latest from the server, then send your saved changes (only if the dataset validates)"
     )
     parser_datalad_sync.add_argument("--project", required=True, help="Project root")
-    parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
+    parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: origin)")
     parser_datalad_sync.add_argument(
         "--as", dest="as_identity", help='Who is syncing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
     )
@@ -959,7 +948,7 @@ def build_prism_tools_parsers(
         "update", help="Get the latest saved changes from the server (never merges; refuses unsaved changes)"
     )
     parser_datalad_update.add_argument("--project", required=True, help="Project root")
-    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
+    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: origin)")
     parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_get_data = datalad_subparsers.add_parser(
         "get-data",

@@ -46,25 +46,6 @@ def test_setting_the_schema_version_writes_the_same_config_in_the_cli_and_in_stu
     assert status == 400 and body["error"] in capsys.readouterr().out
 
 
-def test_saving_the_datalad_server_config_writes_the_same_file_in_the_cli_and_in_studio(tmp_path, capsys):
-    from src.cli.commands.datalad import cmd_datalad_config
-    from src.web.blueprints.projects_datalad_server_blueprint import datalad_server_save_config
-
-    cli, studio = _two_projects(tmp_path)
-    cmd_datalad_config(SimpleNamespace(project=str(cli), url="ssh://host/store", sibling_name="lab", alias="study"))
-    body, status = _studio_in_app(
-        datalad_server_save_config,
-        {"project_path": str(studio), "ria_url": "ssh://host/store", "sibling_name": "lab", "alias": "study"},
-    )
-    assert status == 200 and body["success"]
-    assert _prismrc(cli) == _prismrc(studio)
-
-    with pytest.raises(SystemExit):  # a bad label is refused by both, with the same words
-        cmd_datalad_config(SimpleNamespace(project=str(cli), url=None, sibling_name="bad name!", alias=None))
-    body, status = _studio_in_app(datalad_server_save_config, {"project_path": str(studio), "sibling_name": "bad name!"})
-    assert status == 400 and body["error"] in capsys.readouterr().out
-
-
 def test_saving_the_rsync_config_writes_the_same_file_in_the_cli_and_in_studio(tmp_path):
     from src.cli.commands.rsync import cmd_rsync_config
     from src.web.blueprints.projects_rsync_server_blueprint import rsync_server_save_config

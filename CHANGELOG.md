@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The DataLad card on the Settings page and the DataLad panel on the Share page**, replaced by the DataLad page.
   The Share page keeps the rsync backup; Settings keeps your name and email. The Share page's *Publish (validated)*
   button went with the panel (*Sync now* sends only a valid dataset; the results page keeps *Publish*).
+- **RIA support is dropped.** The server is a plain repository (the project's `origin`). `datalad config` (and the
+  project keys `riaStoreUrl`, `siblingName`, `siblingAlias`: old ones are ignored and removed at the next save),
+  `datalad doctor --project` (use `--url`), `POST /api/projects/datalad-server/config`,
+  `GET /api/projects/datalad-server/status` and the RIA create-sibling code are gone. Sync, update and publish
+  default to the sibling `origin`.
 - **Finalize & disconnect, the RIA-store connect step and the unvalidated sync are gone** (`datalad finalize`, the Finalize
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 

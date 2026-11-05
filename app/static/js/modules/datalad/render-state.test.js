@@ -34,8 +34,8 @@ describe('renderState', () => {
   });
 
   it('put_on_server with a server under another name offers to sync with it', () => {
-    const view = renderState({ ...base, next_step: 'put_on_server', other_servers: ['ria-store'] });
-    expect(view.secondary).toContainEqual({ id: 'sync', label: 'Sync now with "ria-store"', sibling: 'ria-store' });
+    const view = renderState({ ...base, next_step: 'put_on_server', other_servers: ['lab-server'] });
+    expect(view.secondary).toContainEqual({ id: 'sync', label: 'Sync now with "lab-server"', sibling: 'lab-server' });
   });
 
   it('save leads with "Save", then "Sync now"', () => {

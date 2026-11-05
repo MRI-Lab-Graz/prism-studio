@@ -247,3 +247,19 @@ def test_get_effective_template_library_path_uses_global_when_no_override(tmp_pa
 
     assert paths["effective_external_path"] == str(official_root / "library")
     assert paths["source"] == "configured"
+
+
+def test_old_ria_keys_in_a_project_are_ignored_and_not_rewritten(tmp_path):
+    """RIA support is gone: a project written by an older Studio loads, and the next save drops the keys."""
+    path = tmp_path / ".prismrc.json"
+    path.write_text(json.dumps({
+        "strictMode": True,
+        "rsyncRemoteTarget": "me@host:/data",
+        "riaStoreUrl": "ria+ssh://u@h/store",
+        "siblingName": "ria-store",
+        "siblingAlias": "study",
+    }))
+    save_config(load_config(str(tmp_path)), str(tmp_path))
+    saved = json.loads(path.read_text())
+    assert not {"riaStoreUrl", "siblingName", "siblingAlias"} & set(saved)
+    assert saved["strictMode"] is True and saved["rsyncRemoteTarget"] == "me@host:/data"

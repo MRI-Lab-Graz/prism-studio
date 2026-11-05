@@ -127,9 +127,9 @@ def test_the_cli_and_studio_refuse_an_invalid_dataset_the_same_way(lab, capsys):
         with pytest.raises(SystemExit) as refused:
             cmd_datalad_sync(SimpleNamespace(project=str(mine), sibling_name=None, as_identity="Ada <ada@example.org>", json=True))
         cli = json.loads(capsys.readouterr().out)
-        studio._create_ria_job("parity", kind="sync")
+        studio._create_job("parity", kind="sync")
         studio._run_sync_job("parity", other, {})
-        job = studio._get_ria_job("parity")
+        job = studio._get_job("parity")
     assert refused.value.code == 1 and job["status"] == "error"
     assert cli["reason"] == job["result"]["reason"] == "validation_errors"
     assert cli["errors"] == job["result"]["errors"] == ["bad name"]
@@ -153,9 +153,9 @@ def test_the_cli_and_studio_send_an_acknowledged_invalid_dataset_the_same_way(la
     assert _sync(other)["success"] is True  # other gets mine.txt first (sync never merges)
     _save(other, "other.txt")
     with patch("src.share_publish.validate_for_publish", return_value=["bad name"]):
-        studio._create_ria_job("ack", kind="sync")
+        studio._create_job("ack", kind="sync")
         studio._run_sync_job("ack", other, {"allow_invalid": True})
-        job = studio._get_ria_job("ack")
+        job = studio._get_job("ack")
     assert job["status"] == "complete", job
     assert cli["reason"] == job["result"]["reason"] == "pushed_with_errors"
     assert cli["errors"] == job["result"]["errors"] == ["bad name"]

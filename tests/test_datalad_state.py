@@ -79,9 +79,9 @@ def test_an_unreachable_server_is_reported_not_raised(with_server, tmp_path):
 
 
 def test_a_server_not_called_origin_is_reported_with_its_name(dataset, tmp_path):
-    _run("git", "remote", "add", "ria-store", str(tmp_path / "x"), cwd=dataset)
+    _run("git", "remote", "add", "lab-server", str(tmp_path / "x"), cwd=dataset)
     state = datalad_state(dataset)
-    assert state["other_servers"] == ["ria-store"] and state["server"] is None
+    assert state["other_servers"] == ["lab-server"] and state["server"] is None
     assert state["next_step"] == "put_on_server"
 
 

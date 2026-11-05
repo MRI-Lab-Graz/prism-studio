@@ -101,11 +101,7 @@ def _git(root: Path, *args: str) -> str:
 
 
 def _sibling_for(root: Path, sibling_name: str | None) -> str:
-    if sibling_name:
-        return sibling_name
-    from src.config import load_config
-
-    return str(load_config(str(root)).datalad_sibling_name or "").strip() or "origin"
+    return sibling_name or "origin"
 
 
 _PUBLIC_HOSTS = ("github.com", "gitlab.com", "gin.g-node.org", "bitbucket.org", "codeberg.org", "openneuro.org")
@@ -116,8 +112,7 @@ def _is_public_target(url: str) -> bool:
     from src.datalad_doctor import parse_ssh_target
 
     url = str(url or "").strip()
-    url = url[4:] if url.startswith("ria+") else url
-    url = url[4:] if url.lower().startswith("git+") else url  # git+ssh://...
+    url = re.sub(r"^[a-z][a-z0-9.-]*\+", "", url, flags=re.I)  # git+ssh://..., and any other "<tool>+" prefix
     if url.lower().startswith(("http://", "https://", "git://")):
         return True
     target = parse_ssh_target(url)
@@ -304,9 +299,8 @@ def publish_to_server(
         )
         outcome["push"] = push
         if push.get("success"):
-            # ponytail: plain (non-RIA) share sibling assumed; RIA would need is_ria=True.
             verify = run_datalad_push_verify(
-                root, sibling_name=sibling, dataset_roots=_dataset_roots(root), is_ria=False
+                root, sibling_name=sibling, dataset_roots=_dataset_roots(root)
             )
             outcome["verify"] = verify
             if verify.get("verified"):

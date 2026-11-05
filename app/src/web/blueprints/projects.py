@@ -324,7 +324,7 @@ def share_page():
     rsync backup for the active project.
 
     Split out from the main Projects page so distribution/archival tasks
-    (export presets, RIA store push, remote backup) don't compete with
+    (export presets, server push, remote backup) don't compete with
     project creation and study metadata authoring on the same scroll.
     """
     return render_template("share.html", current_project=get_current_project())

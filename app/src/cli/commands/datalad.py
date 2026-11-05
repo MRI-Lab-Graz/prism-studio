@@ -8,19 +8,8 @@ import sys
 from src.datalad_doctor import get_git_identity, run_doctor, set_git_identity
 
 
-def _server_url(args):
-    if getattr(args, "url", None):
-        return args.url
-    project = getattr(args, "project", None)
-    if project:
-        from src.config import load_config
-
-        return load_config(str(project)).datalad_ria_store_url
-    return None
-
-
 def cmd_datalad_doctor(args) -> None:
-    results = run_doctor(_server_url(args))
+    results = run_doctor(getattr(args, "url", None))
     if getattr(args, "json", False):
         print(json.dumps(results, indent=2, ensure_ascii=False))
     else:
@@ -31,20 +20,6 @@ def cmd_datalad_doctor(args) -> None:
     if not all(r["ok"] for r in results):
         sys.exit(1)
 
-
-
-def cmd_datalad_config(args) -> None:
-    """Save the project's DataLad server settings: what Studio's "Save" on the server panel does (one function runs both)."""
-    from pathlib import Path
-
-    from src.project_settings import save_datalad_server_config
-
-    try:
-        saved = save_datalad_server_config(Path(args.project).resolve(), args.url, args.sibling_name, args.alias)
-    except ValueError as exc:
-        print(f"Error: {exc}")
-        sys.exit(1)
-    print(f"Saved to {saved['config_path']}")
 
 
 def _manager():

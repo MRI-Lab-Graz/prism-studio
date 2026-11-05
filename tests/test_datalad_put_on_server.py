@@ -111,7 +111,7 @@ def test_it_refuses_unsaved_changes(project):
     assert not server.exists()
 
 
-@pytest.mark.parametrize("location", ["https://x/y", "http://x/y", "git://x/y", "ria+ssh://x/y", "-oProxy=x", "", "a\nb"])
+@pytest.mark.parametrize("location", ["https://x/y", "http://x/y", "git://x/y", "-oProxy=x", "", "a\nb"])
 def test_it_refuses_web_locations_and_dash_locations(location, tmp_path):
     assert location_problem(location)
     with patch("src.share_publish.run_datalad_create_sibling_plain") as create:
@@ -200,9 +200,9 @@ def test_the_cli_and_studio_refuse_the_same_way(project, capsys):
         with pytest.raises(SystemExit) as refused:
             cmd_datalad_put_on_server(args)
         cli = json.loads(capsys.readouterr().out)
-        studio._create_ria_job("put-refused", kind="put")
+        studio._create_job("put-refused", kind="put")
         studio._run_put_job("put-refused", root, {"location": str(server)})
-        job = studio._get_ria_job("put-refused")
+        job = studio._get_job("put-refused")
     assert refused.value.code == 1 and job["status"] == "error" and job["kind"] == "put"
     assert cli["reason"] == job["result"]["reason"] == "validation_errors"
     assert cli["errors"] == job["result"]["errors"] == ["bad name"]
@@ -224,9 +224,9 @@ def test_the_cli_and_studio_put_a_project_on_the_server_the_same_way(project, tm
             project=str(root), location=str(cli_server), sibling_name=None, as_identity=None, json=True, allow_invalid=False,
         ))
         cli = json.loads(capsys.readouterr().out)
-        studio._create_ria_job("put-ok", kind="put")
+        studio._create_job("put-ok", kind="put")
         studio._run_put_job("put-ok", copy, {"location": str(studio_server)})
-        job = studio._get_ria_job("put-ok")
+        job = studio._get_job("put-ok")
     assert job["status"] == "complete", job
     assert cli["reason"] == job["result"]["reason"] == "pushed"
     assert _files(cli_server) == _files(studio_server)

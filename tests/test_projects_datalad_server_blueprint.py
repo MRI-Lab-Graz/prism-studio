@@ -52,51 +52,10 @@ def _project_dir(tmp_path) -> Path:
 # (start -> status, cancel -> status, config persistence)
 
 
-def test_datalad_server_status_route_uses_project_manager(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.project_manager.ProjectManager.get_ria_status",
-        return_value={"connected": True, "sibling_name": "ria-store"},
-    ) as mock_status:
-        with app.test_client() as client:
-            response = client.get(
-                "/api/projects/datalad-server/status",
-                query_string={"project_path": str(project_dir)},
-            )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    assert payload.get("connected") is True
-    mock_status.assert_called_once_with(project_dir)
-
-
-def test_datalad_server_save_config_persists_to_prismrc(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with app.test_client() as client:
-        response = client.post(
-            "/api/projects/datalad-server/config",
-            json={
-                "project_path": str(project_dir),
-                "ria_url": "ria+ssh://user@host/store",
-                "sibling_name": "my-sibling",
-                "alias": "my-study",
-            },
-        )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    assert payload.get("success") is True
-    assert payload.get("ria_url") == "ria+ssh://user@host/store"
-    assert payload.get("sibling_name") == "my-sibling"
-
-    saved = json.loads(Path(payload["config_path"]).read_text(encoding="utf-8"))
-    assert saved.get("riaStoreUrl") == "ria+ssh://user@host/store"
-    assert saved.get("siblingName") == "my-sibling"
-    assert saved.get("siblingAlias") == "my-study"
+def test_the_old_status_and_config_routes_are_gone(tmp_path):
+    with _build_app().test_client() as client:
+        assert client.get("/api/projects/datalad-server/status", query_string={"project_path": str(tmp_path)}).status_code == 404
+        assert client.post("/api/projects/datalad-server/config", json={"project_path": str(tmp_path)}).status_code == 404
 
 
 def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
@@ -121,7 +80,7 @@ def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             assert start_response.status_code == 200
             job_id = start_response.get_json()["job_id"]
@@ -162,7 +121,7 @@ def test_datalad_server_sync_job_reaches_error_status_on_failure(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             job_id = start_response.get_json()["job_id"]
 
@@ -206,7 +165,7 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             job_id = start_response.get_json()["job_id"]
 

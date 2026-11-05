@@ -2107,7 +2107,6 @@ class ProjectManager:
     def _update_datalad_from_server_locked(
         self, project_path: Path, *, sibling_name: Optional[str]
     ) -> Dict[str, Any]:
-        from src.config import load_config
         from src.datalad_execution import run_datalad_sibling_exists, run_datalad_update
 
         status = self.get_datalad_status(project_path)
@@ -2116,7 +2115,7 @@ class ProjectManager:
             result["error"] = status.get("message") or "Current project is not a DataLad dataset."
             return result
 
-        sibling = str(sibling_name or "").strip() or load_config(str(project_path)).datalad_sibling_name
+        sibling = str(sibling_name or "").strip() or "origin"
         executable = status.get("executable") or ""
         if not run_datalad_sibling_exists(
             project_path, sibling_name=sibling, datalad_executable=executable
@@ -6370,43 +6369,6 @@ git push -u origin main
             result["fixed_count"] += len(matched_paths)
 
         result["fixed_examples"] = result["fixed_examples"][:10]
-        return result
-
-    def get_ria_status(
-        self,
-        project_path: Path,
-        *,
-        sibling_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Cheap, synchronous status check for the "Push to DataLad Server" panel."""
-        from src.config import load_config
-        from src.datalad_execution import (
-            resolve_datalad_executable,
-            run_datalad_sibling_exists,
-        )
-
-        project_path = Path(project_path)
-        config = load_config(str(project_path))
-        name = str(sibling_name or config.datalad_sibling_name or "origin").strip() or "origin"
-
-        result: Dict[str, Any] = {
-            "datalad_dataset": (project_path / ".datalad").exists(),
-            "ria_url": config.datalad_ria_store_url,
-            "sibling_name": name,
-            "sibling_alias": config.datalad_sibling_alias,
-            "connected": False,
-        }
-
-        datalad_executable = resolve_datalad_executable()
-        if not datalad_executable or not result["datalad_dataset"]:
-            return result
-
-        exists_result = run_datalad_sibling_exists(
-            project_path,
-            sibling_name=name,
-            datalad_executable=datalad_executable,
-        )
-        result["connected"] = bool(exists_result.get("exists"))
         return result
 
     def get_rsync_status(self, project_path: Path) -> Dict[str, Any]:

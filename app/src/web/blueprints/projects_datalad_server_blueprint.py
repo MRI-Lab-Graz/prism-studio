@@ -24,32 +24,32 @@ projects_datalad_server_bp = Blueprint("projects_datalad_server", __name__)
 # Async job store for "sync" and "put" jobs
 # ---------------------------------------------------------------------------
 
-_ria_jobs: Dict[str, dict] = {}
-_ria_lock = Lock()
-_RIA_JOB_TTL_SECONDS = 2 * 60 * 60
-_RIA_DONE_STATUSES = {"complete", "error", "cancelled"}
+_jobs: Dict[str, dict] = {}
+_lock = Lock()
+_JOB_TTL_SECONDS = 2 * 60 * 60
+_DONE_STATUSES = {"complete", "error", "cancelled"}
 
 
-def _ria_now() -> float:
+def _now() -> float:
     return float(time.monotonic())
 
 
-def _prune_ria_jobs_locked() -> None:
-    cutoff = _ria_now() - _RIA_JOB_TTL_SECONDS
+def _prune_jobs_locked() -> None:
+    cutoff = _now() - _JOB_TTL_SECONDS
     expired = [
         job_id
-        for job_id, job in _ria_jobs.items()
+        for job_id, job in _jobs.items()
         if job.get("done_at") is not None and float(job["done_at"]) <= cutoff
     ]
     for job_id in expired:
-        _ria_jobs.pop(job_id, None)
+        _jobs.pop(job_id, None)
 
 
-def _create_ria_job(job_id: str, *, kind: str) -> None:
-    with _ria_lock:
-        _prune_ria_jobs_locked()
-        now = _ria_now()
-        _ria_jobs[job_id] = {
+def _create_job(job_id: str, *, kind: str) -> None:
+    with _lock:
+        _prune_jobs_locked()
+        now = _now()
+        _jobs[job_id] = {
             "kind": kind,
             "status": "pending",
             "percent": 0,
@@ -63,23 +63,23 @@ def _create_ria_job(job_id: str, *, kind: str) -> None:
         }
 
 
-def _update_ria_job(job_id: str, **kwargs: object) -> None:
-    with _ria_lock:
-        _prune_ria_jobs_locked()
-        job = _ria_jobs.get(job_id)
+def _update_job(job_id: str, **kwargs: object) -> None:
+    with _lock:
+        _prune_jobs_locked()
+        job = _jobs.get(job_id)
         if job is None:
             return
         job.update(kwargs)
-        now = _ria_now()
+        now = _now()
         job["updated_at"] = now
-        if job.get("status") in _RIA_DONE_STATUSES and job.get("done_at") is None:
+        if job.get("status") in _DONE_STATUSES and job.get("done_at") is None:
             job["done_at"] = now
 
 
-def _get_ria_job(job_id: str) -> dict:
-    with _ria_lock:
-        _prune_ria_jobs_locked()
-        job = _ria_jobs.get(job_id)
+def _get_job(job_id: str) -> dict:
+    with _lock:
+        _prune_jobs_locked()
+        job = _jobs.get(job_id)
         if job is None:
             return {}
         return {k: v for k, v in job.items() if k != "cancel_event"}
@@ -87,20 +87,20 @@ def _get_ria_job(job_id: str) -> dict:
 
 def _run_job(job_id: str, label: str, running: str, call) -> None:
     """Run `call(line_callback)` as job `job_id`; its result dict decides complete or error."""
-    cancel_event = _ria_jobs.get(job_id, {}).get("cancel_event")
+    cancel_event = _jobs.get(job_id, {}).get("cancel_event")
     if cancel_event and cancel_event.is_set():  # a push that has begun is never interrupted
-        _update_ria_job(job_id, status="cancelled", message=f"{label} cancelled", percent=0)
+        _update_job(job_id, status="cancelled", message=f"{label} cancelled", percent=0)
         return
     try:
-        _update_ria_job(job_id, status="running", percent=10, message=running)
-        result = call(lambda line: _update_ria_job(job_id, message=line, status="running"))
+        _update_job(job_id, status="running", percent=10, message=running)
+        result = call(lambda line: _update_job(job_id, message=line, status="running"))
         if result.get("success"):
-            _update_ria_job(job_id, status="complete", percent=100, message=result["message"], result=result)
+            _update_job(job_id, status="complete", percent=100, message=result["message"], result=result)
         else:
             detail = "\n".join([result.get("message", f"{label} failed."), *result.get("errors", [])[:20]])
-            _update_ria_job(job_id, status="error", message=detail, error=detail, result=result)
+            _update_job(job_id, status="error", message=detail, error=detail, result=result)
     except Exception as exc:
-        _update_ria_job(job_id, status="error", message=str(exc), error=str(exc))
+        _update_job(job_id, status="error", message=str(exc), error=str(exc))
 
 
 def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
@@ -169,7 +169,7 @@ def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_re
         }
 
         job_id = str(uuid.uuid4())
-        _create_ria_job(job_id, kind=kind)
+        _create_job(job_id, kind=kind)
 
         # The job body runs on a separate thread, which does NOT inherit
         # Flask's request-local app context -- without explicitly pushing
@@ -196,39 +196,6 @@ def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_re
     except Exception as exc:
         traceback.print_exc()
         return jsonify({"error": str(exc)}), 500
-
-
-@projects_datalad_server_bp.route("/api/projects/datalad-server/status", methods=["GET"])
-def datalad_server_status():
-    """Synchronous status check for the "Push to DataLad Server" panel."""
-    from src.project_manager import ProjectManager
-
-    project_path_raw = request.args.get("project_path")
-    resolved = _resolve_project_root_path(project_path_raw)
-    if resolved is None:
-        return jsonify({"error": "Invalid project path"}), 400
-
-    manager = ProjectManager()
-    status = manager.get_ria_status(resolved)
-    return jsonify(status)
-
-
-@projects_datalad_server_bp.route("/api/projects/datalad-server/config", methods=["POST"])
-def datalad_server_save_config():
-    """Save the per-project RIA URL/sibling name/alias into .prismrc.json."""
-    from src.project_settings import save_datalad_server_config
-
-    data = request.get_json() or {}
-    resolved = _resolve_project_root_path(data.get("project_path"))
-    if resolved is None:
-        return jsonify({"error": "Invalid project path"}), 400
-    try:
-        saved = save_datalad_server_config(
-            resolved, data.get("ria_url"), data.get("sibling_name"), data.get("alias")
-        )
-    except ValueError as error:
-        return jsonify({"error": str(error)}), 400
-    return jsonify({"success": True, **saved})
 
 
 @projects_datalad_server_bp.route("/api/projects/datalad-server/sync/start", methods=["POST"])
@@ -266,7 +233,7 @@ def datalad_open_from_server():
     "/api/projects/datalad-server/sync/<job_id>/status", methods=["GET"]
 )
 def datalad_server_sync_status(job_id: str):
-    job = _get_ria_job(job_id)
+    job = _get_job(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(
@@ -284,8 +251,8 @@ def datalad_server_sync_status(job_id: str):
     "/api/projects/datalad-server/sync/<job_id>/cancel", methods=["DELETE"]
 )
 def datalad_server_sync_cancel(job_id: str):
-    with _ria_lock:
-        job = _ria_jobs.get(job_id)
+    with _lock:
+        job = _jobs.get(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
     cancel_event = job.get("cancel_event")
@@ -298,7 +265,7 @@ def datalad_server_sync_cancel(job_id: str):
 def datalad_server_publish():
     """Validity-gated push of a share dataset (same code path as `prism_tools publish`).
 
-    ponytail: synchronous; move onto the _ria_jobs machinery if share pushes get slow.
+    ponytail: synchronous; move onto the _jobs machinery if share pushes get slow.
     """
     data = request.get_json(silent=True)
     if not isinstance(data, dict):

@@ -21,11 +21,10 @@ from src.datalad_doctor import (  # noqa: E402
 @pytest.mark.parametrize(
     "url, expected",
     [
-        ("ria+ssh://kalle@server.uni.at/data/store", ("kalle", "server.uni.at", None)),
         ("ssh://kalle@server.uni.at:2222/data", ("kalle", "server.uni.at", 2222)),
         ("kalle@server.uni.at:/data/x", ("kalle", "server.uni.at", None)),
         ("ssh://server.uni.at/data", (None, "server.uni.at", None)),
-        ("ria+file:///local/store", None),
+        ("file:///local/store", None),
         ("https://github.com/x/y", None),
         ("", None),
     ],
@@ -118,7 +117,7 @@ def test_server_check_uses_batchmode_ssh_and_reports_ok(tmp_path):
         return 0, ""
 
     res = _by_name(
-        run_doctor("ria+ssh://kalle@h.at:2222/store", which=which, run=run, ssh_dir=ssh_dir)
+        run_doctor("ssh://kalle@h.at:2222/store", which=which, run=run, ssh_dir=ssh_dir)
     )
     assert res["server"]["ok"] is True
     ssh_call = next(c for c in calls if "BatchMode=yes" in c)
@@ -141,7 +140,7 @@ def test_server_rejecting_key_tells_user_to_send_public_key(tmp_path):
 
 def test_non_ssh_url_is_reported_not_crashed(tmp_path):
     which, ssh_dir = _env(tmp_path)
-    res = _by_name(run_doctor("ria+file:///x", which=which, run=_run_ok, ssh_dir=ssh_dir))
+    res = _by_name(run_doctor("file:///x", which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert res["server"]["ok"] is True
     assert "local" in res["server"]["detail"].lower()
 

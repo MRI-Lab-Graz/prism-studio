@@ -114,17 +114,6 @@ class PrismConfig:
     # }
     project_preferences: Dict[str, Any] = field(default_factory=dict)
 
-    # DataLad RIA server connection (for "Push to DataLad Server" feature)
-    # Example:
-    # {
-    #   "riaStoreUrl": "ria+ssh://researcher@datalad.example.org/srv/ria-store",
-    #   "siblingName": "ria-store",
-    #   "siblingAlias": "my-study"
-    # }
-    datalad_ria_store_url: Optional[str] = None
-    datalad_sibling_name: str = "origin"
-    datalad_sibling_alias: Optional[str] = None
-
     # Plain-copy server connection for users not using DataLad (rsync over
     # SSH, or a local/mounted destination path), for "Push to Remote Server"
     # Example:
@@ -210,9 +199,6 @@ def load_config(dataset_path: str) -> PrismConfig:
             template_library_path=data.get("templateLibraryPath"),
             neurobagel_participant_filter=data.get("neurobagelParticipantFilter", {}),
             project_preferences=data.get("projectPreferences", {}),
-            datalad_ria_store_url=data.get("riaStoreUrl"),
-            datalad_sibling_name=data.get("siblingName", "origin"),
-            datalad_sibling_alias=data.get("siblingAlias"),
             rsync_remote_target=data.get("rsyncRemoteTarget"),
             rsync_remote_label=data.get("rsyncRemoteLabel"),
             rsync_exclude_patterns=data.get("rsyncExcludePatterns", []),
@@ -255,13 +241,6 @@ def config_to_dict(config: PrismConfig) -> dict:
 
     if config.project_preferences:
         data["projectPreferences"] = config.project_preferences
-
-    if config.datalad_ria_store_url:
-        data["riaStoreUrl"] = config.datalad_ria_store_url
-        data["siblingName"] = config.datalad_sibling_name
-
-    if config.datalad_sibling_alias:
-        data["siblingAlias"] = config.datalad_sibling_alias
 
     if config.rsync_remote_target:
         data["rsyncRemoteTarget"] = config.rsync_remote_target

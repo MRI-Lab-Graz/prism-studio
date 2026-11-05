@@ -21,9 +21,9 @@ def test_doctor_handler_returns_checks_for_the_given_url(monkeypatch):
         return [{"name": "git", "ok": True, "detail": "", "fix": ""}]
 
     monkeypatch.setattr(mod, "run_doctor", fake)
-    with Flask(__name__).test_request_context("/?url=ria%2Bssh://u@h/s"):
+    with Flask(__name__).test_request_context("/?url=ssh://u@h/s"):
         body = mod.handle_datalad_doctor().get_json()
-    assert seen["url"] == "ria+ssh://u@h/s"
+    assert seen["url"] == "ssh://u@h/s"
     assert body == {"success": True, "checks": [{"name": "git", "ok": True, "detail": "", "fix": ""}]}
 
 

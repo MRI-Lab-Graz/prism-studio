@@ -43,7 +43,7 @@ def _legacy_project(tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
     (proj / ".prismrc.json").write_text(
-        json.dumps({"gitUserName": "Eva", "gitUserEmail": "eva@uni.example", "siblingName": "ria-store"})
+        json.dumps({"gitUserName": "Eva", "gitUserEmail": "eva@uni.example"})
     )
     return proj
 

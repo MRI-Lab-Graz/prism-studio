@@ -73,7 +73,6 @@ from src.cli.commands.merge_versions import cmd_merge_versions
 from src.cli.commands.publish import cmd_publish
 from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
-    cmd_datalad_config,
     cmd_datalad_doctor,
     cmd_datalad_enable,
     cmd_datalad_identity,
@@ -270,7 +269,6 @@ def main() -> None:
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
             "datalad_doctor": cmd_datalad_doctor,
-            "datalad_config": cmd_datalad_config,
             "datalad_sync": cmd_datalad_sync,
             "preregistration_draft": cmd_preregistration_draft,
             "methods_generate": cmd_methods_generate,

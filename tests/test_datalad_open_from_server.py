@@ -578,9 +578,9 @@ def test_without_datalad_it_stops_before_cloning(tmp_path):
 def _studio(job_id, location, target):
     import src.web.blueprints.projects_datalad_server_blueprint as studio
 
-    studio._create_ria_job(job_id, kind="open")
+    studio._create_job(job_id, kind="open")
     studio._run_open_job(job_id, Path(target), {"location": str(location)})
-    return studio._get_ria_job(job_id)
+    return studio._get_job(job_id)
 
 
 def _cli(location, target, capsys):

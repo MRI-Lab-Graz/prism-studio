@@ -64,7 +64,6 @@
  "projects_datalad_server.datalad_open_from_server": "cli: datalad open-from-server",
  "projects_datalad_server.datalad_put_on_server": "cli: datalad put-on-server",
  "projects_datalad_server.datalad_server_publish": "cli: publish",
- "projects_datalad_server.datalad_server_save_config": "cli: datalad config",
  "projects_datalad_server.datalad_server_sync_cancel": "exempt: job control of a running GUI task, no data effect",
  "projects_datalad_server.datalad_server_sync_start": "cli: datalad sync",
  "projects_export.anc_export_project": "cli: export anc",

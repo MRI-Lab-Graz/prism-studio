@@ -19,7 +19,7 @@ def make_project(tmp_path, monkeypatch, *, url, with_sourcedata):
     root = tmp_path / "study"
     root.mkdir()
     git("init", "-q", cwd=root)
-    git("remote", "add", "ria-store", url, cwd=root)
+    git("remote", "add", "lab-server", url, cwd=root)
     (root / "dataset_description.json").write_text("{}")
     if with_sourcedata:
         (root / "sourcedata").mkdir()
@@ -42,24 +42,24 @@ def make_project(tmp_path, monkeypatch, *, url, with_sourcedata):
         "http://example.org/study.git",
         "git@github.com:lab/study.git",
         "ssh://git@gin.g-node.org/lab/study.git",
-        "ria+https://store.example.org#~abc",
+        "lfs+https://store.example.org#~abc",
     ],
 )
 def test_public_target_is_refused_when_sourcedata_is_tracked(tmp_path, monkeypatch, url):
     root, pushes = make_project(tmp_path, monkeypatch, url=url, with_sourcedata=True)
-    result = sp.publish_to_server(root, sibling_name="ria-store", identity=ADA)
+    result = sp.publish_to_server(root, sibling_name="lab-server", identity=ADA)
     assert result["success"] is False and result["reason"] == "public_target_with_sourcedata"
     assert "sourcedata" in result["message"]
     assert pushes == []
 
 
-@pytest.mark.parametrize("url", ["ria+ssh://lab-server.uni.at/data/store", "me@lab-server.uni.at:/data/study", "/srv/store"])
+@pytest.mark.parametrize("url", ["ssh://lab-server.uni.at/data/store", "me@lab-server.uni.at:/data/study", "/srv/store"])
 def test_internal_target_is_allowed_with_sourcedata(tmp_path, monkeypatch, url):
     root, pushes = make_project(tmp_path, monkeypatch, url=url, with_sourcedata=True)
-    assert sp.publish_to_server(root, sibling_name="ria-store", identity=ADA)["success"] is True
+    assert sp.publish_to_server(root, sibling_name="lab-server", identity=ADA)["success"] is True
     assert len(pushes) == 1
 
 
 def test_public_target_is_fine_without_tracked_sourcedata(tmp_path, monkeypatch):
     root, pushes = make_project(tmp_path, monkeypatch, url="https://github.com/lab/s.git", with_sourcedata=False)
-    assert sp.publish_to_server(root, sibling_name="ria-store", identity=ADA)["success"] is True
+    assert sp.publish_to_server(root, sibling_name="lab-server", identity=ADA)["success"] is True

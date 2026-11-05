@@ -828,7 +828,7 @@ same function (`GET /api/projects/datalad/doctor?url=...`).
 ```bash
 python prism_tools.py datalad doctor
 python prism_tools.py datalad doctor --url user@server.example.org:/data/study
-python prism_tools.py datalad doctor --project /absolute/path/to/my-project --json
+python prism_tools.py datalad doctor --url user@server.example.org:/data/study --json
 ```
 
 `update` gets what others have saved on the server. It only fast-forwards (it never

@@ -23,24 +23,21 @@ def _results(ok):
 def test_doctor_exits_nonzero_and_prints_fix_when_a_check_fails(monkeypatch, capsys):
     monkeypatch.setattr(cli, "run_doctor", lambda url: _results(False))
     with pytest.raises(SystemExit) as exc:
-        cli.cmd_datalad_doctor(SimpleNamespace(url=None, project=None, json=False))
+        cli.cmd_datalad_doctor(SimpleNamespace(url=None, json=False))
     assert exc.value.code == 1
     assert "install it" in capsys.readouterr().out
 
 
 def test_doctor_json_and_success_exit(monkeypatch, capsys):
     monkeypatch.setattr(cli, "run_doctor", lambda url: _results(True))
-    cli.cmd_datalad_doctor(SimpleNamespace(url=None, project=None, json=True))
+    cli.cmd_datalad_doctor(SimpleNamespace(url=None, json=True))
     assert json.loads(capsys.readouterr().out)[0]["name"] == "git"
 
 
-def test_doctor_takes_server_url_from_project_config(monkeypatch, tmp_path):
-    (tmp_path / ".prismrc.json").write_text(json.dumps({"riaStoreUrl": "ria+ssh://u@h/s"}))
-    seen = {}
-    monkeypatch.setattr(cli, "run_doctor", lambda url: seen.setdefault("url", url) and _results(True))
-    cli.cmd_datalad_doctor(SimpleNamespace(url=None, project=str(tmp_path), json=True))
-    assert seen["url"] == "ria+ssh://u@h/s"
-
+def test_doctor_has_no_project_option():
+    parser, _ = build_prism_tools_parsers(ROOT)
+    with pytest.raises(SystemExit):
+        parser.parse_args(["datalad", "doctor", "--project", "/p"])
 
 
 # --- sync ------------------------------------------------------------------
@@ -162,3 +159,14 @@ def test_parser_status_has_the_nested_check():
     parser, _ = build_prism_tools_parsers(ROOT)
     assert parser.parse_args(["datalad", "status", "--project", "/p", "--check-nested"]).check_nested is True
     assert parser.parse_args(["datalad", "status", "--project", "/p"]).check_nested is False
+
+
+def test_no_datalad_config_command():
+    import subprocess
+    import sys
+
+    res = subprocess.run(
+        [sys.executable, str(ROOT / "prism_tools.py"), "datalad", "config", "--project", "/p"],
+        capture_output=True, text=True,
+    )
+    assert res.returncode == 2 and "invalid choice" in res.stderr
