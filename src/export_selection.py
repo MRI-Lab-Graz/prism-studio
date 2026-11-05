@@ -14,8 +14,6 @@ from typing import Dict, List, Optional, Set
 from src.project_export_helpers import extract_export_task_label, matches_excluded_acq_label
 from src.system_files import filter_system_files
 
-MRI_SUFFIX_LABEL_MODALITIES = {"anat", "dwi", "fmap", "perf"}  # same set as the export's own copy rules
-
 _NEVER_SELECTED = {".git", ".datalad", ".gitattributes", ".gitignore", ".gitmodules", "CHANGES"}
 
 
@@ -69,6 +67,9 @@ class ExportFilters:
             if not is_dir:
                 survey_tasks = self.tasks.get("survey", set())
                 if survey_tasks:
+                    # known defect, kept so the export selects what it always did: in this raw string `\\.` is a literal
+                    # backslash plus any character, so the pattern never matches and excluding a survey task never
+                    # removes the root `task-<x>_survey.json` (in the export and in Get data alike).
                     match = re.search(r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name)
                     if match and match.group(1) in survey_tasks:
                         return True

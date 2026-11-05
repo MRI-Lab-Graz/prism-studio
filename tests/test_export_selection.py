@@ -63,20 +63,7 @@ def save_dataset(root: Path) -> None:
     _run("datalad", "save", "-m", "fixture", cwd=root)
 
 
-FILTERS = dict(
-    exclude_subjects={"sub-02"},
-    exclude_sessions={"ses-2"},
-    exclude_modalities={"physio"},
-    exclude_acq={"anat": {"lo"}},
-    exclude_tasks={"func": {"nback"}},
-    include_derivatives=True,
-    include_code=False,
-    include_analysis=True,
-    include_sourcedata=False,
-)
-
-# What the export fetched for FILTERS before the selection was extracted (recorded from the unchanged export).
-SELECTED_BEFORE = [
+CONTENT_SCOPED = [
     "analysis/model.bin",
     "dataset_description.json",
     "derivatives/fmriprep/sub-01/out.nii.gz",
@@ -92,6 +79,112 @@ SELECTED_BEFORE = [
     "task-rest_survey.json",
     "task-stai_survey.json",
 ]
+SCOPE_SCOPED = [
+    "sub-01/ses-1/anat",
+    "sub-01/ses-1/func",
+    "sub-01/ses-1/survey",
+    "sub-03/ses-1/anat",
+    "sub-03/ses-1/func",
+    "sub-03/ses-1/survey",
+]
+CONTENT_OTHER = [
+    "code/analysis.py",
+    "dataset_description.json",
+    "participants.tsv",
+    "sourcedata/raw/scan.dcm",
+    "sub-01/ses-1/anat/sub-01_ses-1_acq-hi_T1w.json",
+    "sub-01/ses-1/anat/sub-01_ses-1_acq-hi_T1w.nii.gz",
+    "sub-01/ses-1/anat/sub-01_ses-1_acq-lo_T1w.nii.gz",
+    "sub-01/ses-1/func/sub-01_ses-1_task-nback_bold.nii.gz",
+    "sub-01/ses-1/func/sub-01_ses-1_task-rest_bold.nii.gz",
+    "sub-01/ses-1/survey/sub-01_ses-1_task-stai_survey.tsv",
+    "sub-01/ses-2/anat/sub-01_ses-2_acq-hi_T1w.json",
+    "sub-01/ses-2/anat/sub-01_ses-2_acq-hi_T1w.nii.gz",
+    "sub-01/ses-2/anat/sub-01_ses-2_acq-lo_T1w.nii.gz",
+    "sub-01/ses-2/func/sub-01_ses-2_task-nback_bold.nii.gz",
+    "sub-01/ses-2/func/sub-01_ses-2_task-rest_bold.nii.gz",
+    "sub-01/ses-2/survey/sub-01_ses-2_task-stai_survey.tsv",
+    "sub-02/ses-1/anat/sub-02_ses-1_acq-hi_T1w.json",
+    "sub-02/ses-1/anat/sub-02_ses-1_acq-hi_T1w.nii.gz",
+    "sub-02/ses-1/anat/sub-02_ses-1_acq-lo_T1w.nii.gz",
+    "sub-02/ses-1/func/sub-02_ses-1_task-nback_bold.nii.gz",
+    "sub-02/ses-1/func/sub-02_ses-1_task-rest_bold.nii.gz",
+    "sub-02/ses-1/survey/sub-02_ses-1_task-stai_survey.tsv",
+    "sub-02/ses-2/anat/sub-02_ses-2_acq-hi_T1w.json",
+    "sub-02/ses-2/anat/sub-02_ses-2_acq-hi_T1w.nii.gz",
+    "sub-02/ses-2/anat/sub-02_ses-2_acq-lo_T1w.nii.gz",
+    "sub-02/ses-2/func/sub-02_ses-2_task-nback_bold.nii.gz",
+    "sub-02/ses-2/func/sub-02_ses-2_task-rest_bold.nii.gz",
+    "sub-02/ses-2/survey/sub-02_ses-2_task-stai_survey.tsv",
+    "sub-03/ses-1/anat/sub-03_ses-1_acq-hi_T1w.json",
+    "sub-03/ses-1/anat/sub-03_ses-1_acq-hi_T1w.nii.gz",
+    "sub-03/ses-1/anat/sub-03_ses-1_acq-lo_T1w.nii.gz",
+    "sub-03/ses-1/func/sub-03_ses-1_task-nback_bold.nii.gz",
+    "sub-03/ses-1/func/sub-03_ses-1_task-rest_bold.nii.gz",
+    "sub-03/ses-1/survey/sub-03_ses-1_task-stai_survey.tsv",
+    "sub-03/ses-2/anat/sub-03_ses-2_acq-hi_T1w.json",
+    "sub-03/ses-2/anat/sub-03_ses-2_acq-hi_T1w.nii.gz",
+    "sub-03/ses-2/anat/sub-03_ses-2_acq-lo_T1w.nii.gz",
+    "sub-03/ses-2/func/sub-03_ses-2_task-nback_bold.nii.gz",
+    "sub-03/ses-2/func/sub-03_ses-2_task-rest_bold.nii.gz",
+    "sub-03/ses-2/survey/sub-03_ses-2_task-stai_survey.tsv",
+    "task-rest_survey.json",
+    "task-stai_survey.json",
+]
+SCOPE_OTHER = [
+    "sub-01/ses-1/anat",
+    "sub-01/ses-1/func",
+    "sub-01/ses-1/physio",
+    "sub-01/ses-1/survey",
+    "sub-01/ses-2/anat",
+    "sub-01/ses-2/func",
+    "sub-01/ses-2/physio",
+    "sub-01/ses-2/survey",
+    "sub-02/ses-1/anat",
+    "sub-02/ses-1/func",
+    "sub-02/ses-1/physio",
+    "sub-02/ses-1/survey",
+    "sub-02/ses-2/anat",
+    "sub-02/ses-2/func",
+    "sub-02/ses-2/physio",
+    "sub-02/ses-2/survey",
+    "sub-03/ses-1/anat",
+    "sub-03/ses-1/func",
+    "sub-03/ses-1/physio",
+    "sub-03/ses-1/survey",
+    "sub-03/ses-2/anat",
+    "sub-03/ses-2/func",
+    "sub-03/ses-2/physio",
+    "sub-03/ses-2/survey",
+]
+
+SCOPED = dict(
+    exclude_subjects={"sub-02"},
+    exclude_sessions={"ses-2"},
+    exclude_modalities={"physio"},
+    exclude_acq={"anat": {"lo"}},
+    exclude_tasks={"func": {"nback"}},
+    include_derivatives=True,
+    include_code=False,
+    include_analysis=True,
+    include_sourcedata=False,
+)
+# derivatives off, sourcedata on, analysis off, and a survey task excluded (its root file stays: the known defect
+# in src/export_selection.py, which this test pins so the export keeps selecting what it always did).
+OTHER_FOLDERS = dict(
+    exclude_tasks={"survey": {"rest"}, "physio": {"rest"}},
+    include_derivatives=False,
+    include_code=True,
+    include_analysis=False,
+    include_sourcedata=True,
+)
+
+# What the export fetched (content) and recursed into (scope folders) for each configuration, recorded from the
+# export as it was BEFORE the selection was extracted into src/export_selection.py.
+RECORDED = {
+    "scoped": (SCOPED, CONTENT_SCOPED, SCOPE_SCOPED),
+    "other_folders": (OTHER_FOLDERS, CONTENT_OTHER, SCOPE_OTHER),
+}
 
 
 @pytest.fixture
@@ -104,23 +197,34 @@ def identity(tmp_path, monkeypatch):
 
 
 @needs_datalad
-def test_the_export_selects_exactly_what_it_selected_before(tmp_path, identity):
+@pytest.mark.parametrize("name", sorted(RECORDED))
+def test_the_export_selects_exactly_what_it_selected_before(name, tmp_path, identity):
     from src.project_manager import ProjectManager
 
+    filters, expected_content, expected_scope = RECORDED[name]
     project = tmp_path / "study"
     save_dataset(project)
-    recorded: list[list[str]] = []
+    content_gets: list[list[str]] = []
+    scope_gets: list[list[str]] = []
     real_run = subprocess.run
 
     def spy(command, *args, **kwargs):
-        if isinstance(command, list) and command[1:2] == ["get"] and "-n" not in command and "-r" not in command:
-            recorded.append(list(command))
+        if isinstance(command, list) and command[1:2] == ["get"]:
+            if "-r" in command:
+                scope_gets.append(list(command))
+            else:
+                content_gets.append(list(command))
         return real_run(command, *args, **kwargs)
 
     with patch("src.project_manager.subprocess.run", spy):
         result = ProjectManager().export_project_to_plain_folder(
-            project, output_root=tmp_path / "out", materialize_annex_content=True, **FILTERS
+            project, output_root=tmp_path / "out", materialize_annex_content=True, **filters
         )
     assert result.get("success") is True, result
-    fetched = sorted({part for command in recorded for part in command[2:] if part not in ("--on-failure", "ignore")})
-    assert fetched == SELECTED_BEFORE
+
+    def paths(commands):
+        return sorted({p for c in commands for p in c[2:] if not p.startswith("-") and p != "ignore"})
+
+    print("RECORD", name, "CONTENT", paths(content_gets), "SCOPE", paths(scope_gets))
+    assert paths(content_gets) == expected_content
+    assert paths(scope_gets) == expected_scope

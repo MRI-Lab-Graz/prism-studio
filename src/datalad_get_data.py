@@ -43,6 +43,7 @@ def get_data(project_root, *, line_callback: Optional[Callable[[str], None]] = N
     """Fetch the content of the files the filters keep. ``filters`` are those of ``select_content_paths``."""
     say = line_callback or (lambda _line: None)
     root = Path(project_root)
+    filters = {**filters_from_options({}), **filters}  # a direct call equals the command and Studio: the export's defaults
 
     if not is_datalad_dataset(root) or not has_sibling(root, SERVER):
         return _result(True, "This project has no server, so there is nothing to fetch from.", skipped=True, fetched=0)
@@ -52,6 +53,8 @@ def get_data(project_root, *, line_callback: Optional[Callable[[str], None]] = N
     say("Looking up which folders the server has...")
     scope = select_scope_dirs(root, **filters)
     if scope:  # installs nested datasets of the chosen subjects, without any data
+        # The result is deliberately not checked: a nested dataset that did not install shows up below as files that
+        # cannot be fetched, which is reported with their paths.
         run_datalad_get_paths(root, paths=scope, recursive=True, no_data=True, timeout_seconds=GET_DATA_TIMEOUT_SECONDS)
 
     paths = select_content_paths(root, **filters)
