@@ -140,7 +140,9 @@ datasets are only installed from inside the project on the server; if the server
 there (still gated) and the message says which folder to delete before trying again.
 
 **What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
-what the [DataLad page](studio/datalad.md) offers next: enable DataLad, put the project on a server, save, or sync. A server that cannot be
+what the [DataLad page](studio/datalad.md) offers next: enable DataLad, put the project on a server, save, or sync.
+With `--check-nested` it also counts the subject datasets that are not registered yet (as the page does); if some are
+left, the next step is to finish enabling (`datalad enable` registers them). A server that cannot be
 reached is shown as such and does not change that advice.
 
 **Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can

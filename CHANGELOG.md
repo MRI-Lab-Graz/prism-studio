@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and email. Long steps show progress with Cancel; validation errors are listed with *Send anyway, I understand this
   dataset has N errors*. Every button runs the matching `prism_tools.py datalad` command. Clicking the navbar item
   opens the page; it no longer saves. See `docs/studio/datalad.md`.
+- **`datalad status --check-nested`** (Studio: `?check_nested=1`, asked by the DataLad page, not by the navbar) counts the
+  subject datasets that are not registered yet (`nested_unregistered`, `nested_unregistered_paths`); if some are left,
+  the next step is `enable` with `enable_kind: "finish"`, shown as *Finish enabling DataLad*. `enable_kind` is `"first"`
+  when DataLad is off.
 
 ### Fixed
 - `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.

@@ -529,9 +529,9 @@
                             <li><hr class="dropdown-divider"></li>
 
                             <li><h6 class="dropdown-header{% if not share_enabled %} text-muted{% endif %}">4. Share &amp; Archive</h6></li>
-                            <li><a class="dropdown-item navbar-flow-item{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-target-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
+                            <li><a class="dropdown-item navbar-flow-item{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-target-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export the active project or back it up with rsync"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-cloud-upload-alt me-2 text-info"></i>Share &amp; Archive</span>
-                                <span class="navbar-flow-item-hint">Export, push to a DataLad server, or back up the project</span>
+                                <span class="navbar-flow-item-hint">Export the project or back it up with rsync</span>
                             </a></li>
                         </ul>
                     </li>
@@ -566,7 +566,7 @@
 
                     {% if settings_available %}
                     <li class="nav-item">
-                        <a class="nav-link{% if request.endpoint == 'projects_library.settings_page' %} active{% endif %}" href="{{ url_for('projects_library.settings_page') }}" title="Settings: help, DataLad, libraries and advanced options" aria-label="Settings">
+                        <a class="nav-link{% if request.endpoint == 'projects_library.settings_page' %} active{% endif %}" href="{{ url_for('projects_library.settings_page') }}" title="Settings: help, DataLad for new projects, your name and email, libraries and advanced options" aria-label="Settings">
                             <i class="fas fa-cog"></i>
                         </a>
                     </li>
@@ -1314,7 +1314,7 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(path));
             setProjectGatedLinkState('surveyExportLink', Boolean(path), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(path), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export the active project or back it up with rsync');
             renderNavbarDataladState(nextState);
             renderNavbarRecentProjects();
 
@@ -1369,7 +1369,7 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));
             setProjectGatedLinkState('surveyExportLink', Boolean(nextPath), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(nextPath), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export the active project or back it up with rsync');
             renderNavbarDataladState({ path: nextPath, datalad: nextDatalad });
             renderNavbarRecentProjects();
         }

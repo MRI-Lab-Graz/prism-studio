@@ -16,9 +16,14 @@ starts it and shows the result.
 | No project open | **Open from server...** | `datalad open-from-server` |
 | DataLad is not installed | **Check this computer** | `datalad doctor` |
 | DataLad is off | **Enable DataLad** (and *Open from server...* if you are joining a team project) | `datalad enable --yes` |
+| DataLad is on, but subject datasets are not registered yet | **Finish enabling DataLad** | `datalad enable --yes` |
 | DataLad is on, no server yet | **Put on server...**, and *Save* | `datalad put-on-server`, `datalad save` |
 | Unsaved changes, server known | **Save**, then *Sync now* | `datalad save`, `datalad sync` |
 | Everything saved, server known | **Sync now** | `datalad sync` |
+
+The page counts the subject datasets that are not registered yet (`datalad status --check-nested`; it takes about a
+second, so the navbar's count does not ask for it). If some are left, for example after an interrupted enable, the
+page offers **Finish enabling DataLad**, which registers them all.
 
 No server yet is not an error: your snapshots stay on this computer until you put the project on a server.
 A server that cannot be reached is a plain notice; you can keep working and saving, and sync when it is back.
@@ -32,7 +37,8 @@ A server that cannot be reached is a plain notice; you can keep working and savi
 - **Sync now** first gets what others have saved on the server, then sends your saved changes. Nothing is ever
   merged: if you and someone else both changed the project, Sync stops and changes nothing.
 - **Put on server...** asks for a location (a folder on the lab server as `user@host:/path`, `ssh://host/path`,
-  or a local or network folder; *Browse...* looks at folders on an SSH server) and creates the project there. A
+  or a local or network folder) and creates the project there. *Browse...* only looks at folders on an SSH server
+  (type `user@host:` first); a local or network folder has to be typed in. A
   location that already holds a project is refused: open it from the server instead.
 - **Open from server...** asks for the location and a new or empty folder on this computer, copies the project
   there and opens it. The subject data is not copied yet; use *Get data* for what you need.
@@ -76,7 +82,7 @@ only, never a public host. Web addresses are refused.
 ## CLI equivalents
 
 ```bash
-python prism_tools.py datalad status --project /path/to/project --check-server --validate
+python prism_tools.py datalad status --project /path/to/project --check-server --check-nested --validate
 python prism_tools.py datalad enable --project /path/to/project --yes
 python prism_tools.py datalad save --project /path/to/project --message "After pilot week 1"
 python prism_tools.py datalad put-on-server --project /path/to/project --location user@host:/srv/datalad/study
