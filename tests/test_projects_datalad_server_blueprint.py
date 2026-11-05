@@ -302,6 +302,9 @@ def test_open_from_server_route_runs_the_cli_function_with_a_new_target(tmp_path
         thread_cls.side_effect = _capture
         with app.test_client() as client:
             assert client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x"}).status_code == 400
+            relative = client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x", "target": "mine"})
+            assert relative.status_code == 400 and "full path" in relative.get_json()["error"]  # the CLI's bad_target
+            assert not captured
             start = client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x", "target": str(target)})
             assert start.status_code == 200
             captured["target"](*captured["args"])

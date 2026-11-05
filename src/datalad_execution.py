@@ -948,7 +948,7 @@ def run_datalad_clone(
     timeout_seconds: int = 3600,
     line_callback: Any = None,
 ) -> dict[str, Any]:
-    """`datalad clone <location> <target>` (the source becomes `origin`), then install the nested datasets, no content.
+    """`datalad clone <location> <target>`: the dataset itself, the source as `origin`; nested datasets are not touched.
 
     `location` must already have passed `share_publish.location_problem`; `target` must be an absolute path.
     """
@@ -961,30 +961,49 @@ def run_datalad_clone(
         )
         return result
     target = Path(target)
-    steps = (
-        ([resolved, "clone", str(location), str(target)], str(target.parent)),
-        ([resolved, "get", "-n", "-r", "."], str(target)),  # nested sub-* datasets, no file content
+    return _run_datalad_step(
+        result, [resolved, "clone", str(location), str(target)], str(target.parent), timeout_seconds, line_callback
     )
-    outputs = []
-    for command, cwd in steps:
-        result["command"] = shlex.join(command)
-        try:
-            run_result = _run_streaming_command(
-                command, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback
-            )
-        except subprocess.TimeoutExpired:
-            result["message"] = f"DataLad {command[1]} timed out after {max(1, int(timeout_seconds))} seconds."
-            return result
-        except Exception as exc:
-            result["message"] = f"DataLad {command[1]} failed ({type(exc).__name__}: {exc})."
-            return result
-        outputs.append(run_result["output"])
-        result["output"] = "".join(outputs)
-        if run_result["returncode"] != 0:
-            result["message"] = f"DataLad {command[1]} failed: {run_result['output'].strip() or 'Unknown DataLad error.'}"
-            return result
+
+
+def run_datalad_install_nested(
+    dataset_root: Path,
+    paths: Sequence[str],
+    *,
+    datalad_executable: str = "",
+    timeout_seconds: int = 3600,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """`datalad get -n <paths>`: install these nested datasets of `dataset_root` (one level, no -r), without data.
+
+    The paths (and the urls behind them) must already be checked by the caller.
+    """
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {"success": False, "command": "", "output": "", "message": ""}
+    if not resolved:
+        result["message"] = f"DataLad executable is not available in this environment. {DATALAD_INSTALL_HINT}."
+        return result
+    return _run_datalad_step(
+        result, [resolved, "get", "-n", *paths], str(dataset_root), timeout_seconds, line_callback
+    )
+
+
+def _run_datalad_step(result: dict, command: list[str], cwd: str, timeout_seconds: int, line_callback: Any) -> dict:
+    result["command"] = shlex.join(command)
+    try:
+        run_result = _run_streaming_command(command, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback)
+    except subprocess.TimeoutExpired:
+        result["message"] = f"DataLad {command[1]} timed out after {max(1, int(timeout_seconds))} seconds."
+        return result
+    except Exception as exc:
+        result["message"] = f"DataLad {command[1]} failed ({type(exc).__name__}: {exc})."
+        return result
+    result["output"] = run_result["output"]
+    if run_result["returncode"] != 0:
+        result["message"] = f"DataLad {command[1]} failed: {run_result['output'].strip() or 'Unknown DataLad error.'}"
+        return result
     result["success"] = True
-    result["message"] = "DataLad clone completed."
+    result["message"] = f"DataLad {command[1]} completed."
     return result
 
 

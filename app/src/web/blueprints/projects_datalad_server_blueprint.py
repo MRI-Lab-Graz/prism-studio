@@ -238,7 +238,12 @@ def datalad_open_from_server():
 
     When it completes, the page opens `result.path` through POST /api/projects/current, as opening any project does.
     """
-    return _start_job("open", _run_open_job, path_key="target", resolve=lambda raw: Path(raw) if raw.strip() else None)
+    from src.datalad_clone import target_problem
+
+    problem = target_problem((request.get_json(silent=True) or {}).get("target"))
+    if problem:  # the CLI's bad_target, refused before a job starts
+        return jsonify({"error": problem}), 400
+    return _start_job("open", _run_open_job, path_key="target", resolve=lambda raw: Path(raw))
 
 
 @projects_datalad_server_bp.route(

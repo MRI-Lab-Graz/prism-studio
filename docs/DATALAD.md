@@ -132,7 +132,9 @@ interrupted, the server is already connected; *Sync now* finishes it.
 **Opening a project from the server (everybody else).** `prism_tools.py datalad open-from-server --location <folder |
 user@host:path | ssh://host/path> --target <empty or new folder>` gets your own copy: the server is its `origin`, the
 subject datasets are there without their data (Get data fetches what you need), and the save gate is installed in every
-dataset, since git does not copy hooks. Set your git name and email first; without them nothing is cloned.
+dataset, since git does not copy hooks. Set your git name and email first; without them nothing is cloned. Nested
+datasets are only installed from inside the project on the server; if the server lists one elsewhere, the copy stops
+there (still gated) and the message says which folder to delete before trying again.
 
 **What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
 what the DataLad page offers next: enable DataLad, put the project on a server, save, or sync. A server that cannot be

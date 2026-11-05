@@ -59,7 +59,9 @@ def server(tmp_path, monkeypatch):
     _run("datalad", "create", "-c", "text2git", "-d", str(project), str(project / "sub-01"), cwd=project)
     _save(project / "sub-01", "notes.txt", "subject one\n")
     _save(project / "sub-01", "data.bin", bytes(range(256)) * 64)  # binary: annexed
-    _run("datalad", "save", "-m", "register sub-01", cwd=project)
+    _run("datalad", "create", "-c", "text2git", "-d", str(project / "sub-01"), str(project / "sub-01" / "ses-1"), cwd=project)
+    _save(project / "sub-01" / "ses-1", "notes.txt", "session one\n")
+    _run("datalad", "save", "-r", "-m", "register sub-01", cwd=project)
     location = tmp_path / "server"
     with patch("src.share_publish.validate_for_publish", return_value=[]):
         put = put_on_server(project, str(location), identity=Identity("Ada", "ada@example.org"))
@@ -111,6 +113,8 @@ def test_nested_subject_datasets_are_installed_without_content(server, tmp_path)
     assert open_from_server(str(server), target)["success"] is True
     nested = target / "sub-01"
     assert (nested / "notes.txt").read_text(encoding="utf-8") == "subject one\n"
+    assert (nested / "ses-1" / "notes.txt").read_text(encoding="utf-8") == "session one\n"  # every level
+    assert "url = ./ses-1" in (nested / ".gitmodules").read_text(encoding="utf-8")  # what real DataLad writes
     missing = _run("git", "annex", "find", "--not", "--in=here", cwd=nested).split()
     assert missing == ["data.bin"]
 
@@ -122,7 +126,98 @@ def test_the_copy_has_the_save_gate_hook_in_the_project_and_nested_datasets(serv
     target = tmp_path / "mine"
     result = open_from_server(str(server), target)
     assert result["success"] is True, result
-    assert has_save_hook(target) and has_save_hook(target / "sub-01")
+    assert has_save_hook(target) and has_save_hook(target / "sub-01") and has_save_hook(target / "sub-01" / "ses-1")
+    for repo in (target, target / "sub-01"):  # the hook does its job: an invalid commit is refused
+        bad = repo / "survey" / "sub-01_task-x_wrongsuffix.tsv"
+        bad.parent.mkdir(parents=True, exist_ok=True)
+        bad.write_text("a\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True, capture_output=True)
+        commit = subprocess.run(["git", "-C", str(repo), "commit", "-m", "sneak"], capture_output=True, text=True)
+        assert commit.returncode != 0 and "save gate" in commit.stderr.lower(), (repo, commit.stdout, commit.stderr)
+
+
+def _server_with_submodule_url(tmp_path, url):
+    """A server dataset whose .gitmodules points sub-01 at `url` (what a crafted or compromised server could hold)."""
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    (secret / "s.txt").write_text("secret\n", encoding="utf-8")
+    _run("git", "add", "s.txt", cwd=secret)
+    _run("git", "commit", "-qm", "s", cwd=secret)
+    sha = _run("git", "rev-parse", "HEAD", cwd=secret).strip()
+    srv = tmp_path / "srv"
+    _run("datalad", "create", str(srv), cwd=tmp_path)
+    _run("git", "update-index", "--add", "--cacheinfo", f"160000,{sha},sub-01", cwd=srv)
+    (srv / ".gitmodules").write_text(
+        f'[submodule "sub-01"]\n\tpath = sub-01\n\turl = {str(url).replace("SECRET", str(secret))}\n', encoding="utf-8"
+    )
+    _run("git", "add", ".gitmodules", cwd=srv)
+    _run("git", "commit", "-qm", "sub", cwd=srv)
+    return srv
+
+
+@needs_datalad
+@pytest.mark.parametrize("url", ["SECRET", "ssh://-oproxycommand=touch pwned/y", "../../elsewhere", "ext::sh -c x"])
+def test_a_nested_dataset_url_outside_the_server_is_refused(url, tmp_path, monkeypatch):
+    from src.save_gate import has_save_hook
+
+    _identity(tmp_path, monkeypatch)
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    srv = _server_with_submodule_url(tmp_path, url)
+    target = tmp_path / "mine"
+    result = open_from_server(str(srv), target)
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    shown = url.replace("SECRET", str(tmp_path / "secret"))
+    assert shown in result["message"] and "sub-01" in result["message"]
+    assert "is not inside the project on the server" in result["message"]  # refused by the check, not by DataLad
+    assert str(target) in result["message"] and "delete" in result["message"].lower()
+    assert not (target / "sub-01" / "s.txt").exists()
+    assert not list(tmp_path.rglob("pwned*"))
+    assert has_save_hook(target)  # the incomplete copy is still gated
+
+
+def test_relative_and_inside_urls():
+    from src.datalad_clone import nested_url_problem
+
+    for ok in ("./sub-01", "sub-01", "sub-01/ses-1", "/srv/lab/x/sub-01", "u@h:/srv/x/sub-01"):
+        assert nested_url_problem(ok, "/srv/lab/x" if ok.startswith("/") else "u@h:/srv/x") == "", ok
+    for bad in (
+        "/srv/lab/xy/sub-01", "/srv/lab/x/../secret", "../x", "/etc", "C:\\x", "ssh://h/x", "-oX", "a b", "", ".",
+        "u@-oProxyCommand=x:/srv/lab/x/sub", "a\nb", "ext::sh",
+    ):
+        assert nested_url_problem(bad, "/srv/lab/x"), bad
+
+
+@needs_datalad
+def test_a_relative_location_is_relative_to_the_working_directory(server, tmp_path, monkeypatch):
+    monkeypatch.chdir(server.parent)
+    (tmp_path / "elsewhere").mkdir()
+    target = tmp_path / "elsewhere" / "mine"
+    result = open_from_server(server.name, target)
+    assert result["success"] is True, result
+    assert (target / "participants.tsv").is_file()
+
+
+@needs_datalad
+@pytest.mark.parametrize("existing", [False, True])
+def test_a_target_inside_a_git_work_tree_is_refused(existing, server, tmp_path):
+    repo = tmp_path / "repo"
+    _run("git", "init", "-q", str(repo), cwd=tmp_path)
+    target = repo / "mine"
+    if existing:
+        target.mkdir()
+    with patch("src.datalad_clone.run_datalad_clone") as clone:
+        result = open_from_server(str(server), target)
+    assert result["success"] is False and result["reason"] == "bad_target", result
+    assert "inside a git repository" in result["message"]
+    clone.assert_not_called()
+
+
+def test_a_relative_target_is_refused(tmp_path):
+    with patch("src.datalad_clone.run_datalad_clone") as clone:
+        result = open_from_server("/srv/lab/project", "mine")
+    assert result["success"] is False and result["reason"] == "bad_target", result
+    clone.assert_not_called()
 
 
 @needs_datalad
@@ -184,6 +279,7 @@ def test_the_cli_and_studio_open_a_project_the_same_way(server, tmp_path, capsys
     assert code == 0 and job["status"] == "complete", job
     assert cli["path"] == str((tmp_path / "cli").resolve())
     assert job["result"]["path"] == str((tmp_path / "studio").resolve())  # the page opens this project
+
     def files(d):
         return sorted(str(p.relative_to(d)) for p in d.rglob("*") if ".git" not in p.parts)
 
@@ -201,3 +297,7 @@ def test_open_from_server_runs_through_the_real_dispatch(tmp_path):
     )
     assert out.returncode == 1, out.stderr
     assert json.loads(out.stdout)["reason"] == "bad_location"
+    out = _prism_tools("datalad", "open-from-server", "--location", "/srv/lab/x", "--target", "mine", "--json")
+    assert out.returncode == 1, out.stderr
+    refused = json.loads(out.stdout)
+    assert refused["reason"] == "bad_target" and "full path" in refused["message"]  # Studio's 400 says the same

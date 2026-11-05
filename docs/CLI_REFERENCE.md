@@ -858,12 +858,17 @@ python prism_tools.py datalad put-on-server --project /absolute/path/to/my-proje
 ```
 
 `open-from-server` is for everybody else: it needs no project. It clones the project at `--location` (same forms and
-refusals as `put-on-server`) into `--target`, an empty or new folder, with the server as `origin`, installs the nested
-subject datasets without their data (fetch it with Get data) and installs the save-gate hook in every dataset (git does
-not copy hooks). It stops before cloning when the folder is not empty, DataLad, git or git-annex is missing, or git does
-not know your name and email (`reason`: `bad_location`, `target_not_empty`, `no_datalad`, `no_identity`,
-`clone_failed`). Studio's `POST /api/projects/datalad/open-from-server` (`location`, `target`) runs the same function as
-a job and then opens the new copy as the current project.
+refusals as `put-on-server`; a relative folder is relative to your working directory) into `--target`, an empty or new
+folder given as a full path, with the server as `origin`. It installs the nested subject datasets level by level without
+their data (fetch it with Get data), each only after every address in its parent's `.gitmodules` is checked: a nested
+dataset must be a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the exact
+`--location`; anything else stops the install. The save-gate hook goes into every dataset as soon as it is there (git
+does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
+repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
+`bad_location`, `bad_target`, `target_not_empty`, `no_datalad`, `no_identity`, `clone_failed`). If a nested install
+fails after the clone, the copy is left incomplete (and gated): delete the folder named in the message, then try again.
+Studio's `POST /api/projects/datalad/open-from-server` (`location`, `target`) runs the same function as a job (a target
+that is not a full path is refused with 400) and then opens the new copy as the current project.
 
 ```bash
 python prism_tools.py datalad open-from-server --location user@lab.example.org:/data/study --target ~/projects/study
