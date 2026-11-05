@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The git name and email belong to the person, not the project.** They are read from and saved to the computer's git
+  settings (Settings page or `prism_tools.py datalad identity`). A project no longer stores them, so they cannot travel to
+  other users with a push or pull; the "several people use this login" setting and the per-project identity card are gone.
+  An older project's saved name and email move to the computer's git settings once (only if it has none) and are removed
+  from the project file.
+
 ## [1.24.0] - 2026-11-02
 
 ### Fixed

@@ -129,24 +129,11 @@ def cmd_datalad_save(args) -> None:
 
 
 def cmd_datalad_identity(args) -> None:
-    """Show or set who signs saved changes: this project's (--project), else the whole computer's.
+    """Show or set the name and email git signs your saved changes with (this computer's, for all projects).
 
-    Studio's project page and Settings page run the same functions."""
-    from pathlib import Path
-
-    from src import project_settings
-
-    project = getattr(args, "project", None)
+    Studio's Settings page runs the same functions."""
     try:
-        if project:
-            root = Path(project).resolve()
-            identity = (
-                project_settings.save_project_git_identity(root, args.name, args.email)
-                if (args.name or args.email)
-                else project_settings.project_git_identity(root)
-            )
-        else:
-            identity = set_git_identity(args.name, args.email) if (args.name or args.email) else get_git_identity()
+        identity = set_git_identity(args.name, args.email) if (args.name or args.email) else get_git_identity()
     except ValueError as exc:
         print(f"Error: {exc}")
         sys.exit(1)

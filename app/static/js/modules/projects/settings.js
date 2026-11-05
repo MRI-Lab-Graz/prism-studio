@@ -477,45 +477,6 @@ export async function initDataladForNewProjectsToggle() {
     });
 }
 
-// Settings page: "several people use this login" (decides whether a project needs its own DataLad name and email).
-export async function initSharedLoginToggle() {
-    const toggle = document.getElementById('sharedLoginToggle');
-    if (!toggle) return;
-    const feedback = document.getElementById('sharedLoginFeedback');
-    const machineIdentity = document.getElementById('gitIdentityMachine');
-    const showMachineIdentity = () => machineIdentity?.classList.toggle('d-none', toggle.checked);
-    try {
-        const data = await (await fetchWithApiFallback('/api/settings/global-library')).json();
-        if (data && data.success) toggle.checked = Boolean(data.shared_login);
-    } catch (error) {
-        console.error('Error loading the shared-login setting:', error);
-    }
-    showMachineIdentity();
-    toggle.addEventListener('change', async () => {
-        const desired = Boolean(toggle.checked);
-        toggle.disabled = true;
-        try {
-            const response = await fetchWithApiFallback('/api/settings/global-library', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ shared_login: desired })
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) throw new Error(data.error || 'Could not save the setting.');
-            toggle.checked = Boolean(data.shared_login);
-            showMachineIdentity();
-            feedback.textContent = '';
-        } catch (error) {
-            toggle.checked = !desired;
-            showMachineIdentity();
-            feedback.className = 'small mb-2 text-danger';
-            feedback.textContent = error.message || 'Could not save the setting.';
-        } finally {
-            toggle.disabled = false;
-        }
-    });
-}
-
 // Settings page: the git name + email DataLad signs snapshots with (works without a project).
 export async function initGitIdentityForm() {
     const form = document.getElementById('gitIdentityForm');

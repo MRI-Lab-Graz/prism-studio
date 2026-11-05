@@ -51,7 +51,7 @@ def test_enable_datalad_stops_before_touching_the_project_without_identity(no_id
     project.mkdir()
     result = ProjectManager().enable_datalad_for_project(project)
     assert result["success"] is False
-    assert "name and email" in result["error"]
+    assert "name and email" in result["error"] and "Settings" in result["error"]
     assert result["needs_git_identity"] is True
     assert not (project / ".git").exists()
 
@@ -86,16 +86,3 @@ def test_settings_route_sets_and_reads_identity_without_a_project(no_identity):
     ok = client.post("/api/settings/git-identity", json={"name": "Ada", "email": "ada@example.org"})
     assert ok.get_json() == {"success": True, "name": "Ada", "email": "ada@example.org"}
     assert get_git_identity()["email"] == "ada@example.org"
-
-
-def test_on_a_personal_computer_the_missing_identity_is_set_in_settings_not_per_project(no_identity, tmp_path):
-    from src.project_manager import ProjectManager
-    from src.settings_update import update_app_settings
-
-    update_app_settings(tmp_path, {"shared_login": False})
-    project = tmp_path / "proj"
-    project.mkdir()
-    result = ProjectManager().enable_datalad_for_project(project)
-    assert result["success"] is False
-    assert result["needs_git_identity"] is False
-    assert "Settings" in result["error"]

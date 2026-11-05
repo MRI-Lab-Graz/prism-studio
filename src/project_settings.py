@@ -6,12 +6,10 @@ One implementation for Studio's save buttons and the `datalad config`, `rsync co
 
 from __future__ import annotations
 
-import contextlib
-import os
-import subprocess
+import json
 from pathlib import Path
 
-from src.config import load_config, save_config
+from src.config import find_config_file, load_config, save_config
 
 
 def _save(config, project_root: Path) -> str:
@@ -34,55 +32,24 @@ def set_schema_version(project_root: Path, version: str, available_versions: lis
     return {"schema_version": version, "available_versions": available_versions, "config_path": _save(config, project_root)}
 
 
-_IDENTITY_ENV = ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL")
+def adopt_legacy_project_identity(project_root) -> None:
+    """Older projects kept a git name and email in .prismrc.json, which travelled with every push and pull.
 
-
-def project_git_identity(project_root) -> dict:
-    config = load_config(str(project_root))
-    return {"name": config.git_user_name or "", "email": config.git_user_email or ""}
-
-
-def apply_project_git_identity(project_root) -> None:
-    """Copy the project's identity into the git config of the project and its nested datasets."""
-    identity = project_git_identity(project_root)
-    root = Path(project_root)
-    if not all(identity.values()):
+    The name and email belong to the person: move them to this computer's git config when it has none, and
+    always remove them from the project file.
+    """
+    path = find_config_file(str(project_root))
+    if not path:
         return
-    for repo in [root, *root.glob("*"), *root.glob("*/*")]:
-        if (repo / ".git").exists():
-            for key, value in (("user.name", identity["name"]), ("user.email", identity["email"])):
-                subprocess.run(["git", "-C", str(repo), "config", "--local", key, value], capture_output=True, check=False)
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    name, email = data.pop("gitUserName", None), data.pop("gitUserEmail", None)
+    if name is None and email is None:
+        return
+    from src.datalad_doctor import get_git_identity, set_git_identity
 
-
-@contextlib.contextmanager
-def project_git_identity_env(project_root):
-    """Sign every git/DataLad call inside the block with the project's identity (datasets that do not exist yet
-    have no git config to carry it), then write it into the datasets' own config so a terminal works too."""
-    identity = project_git_identity(project_root)
-    saved = {key: os.environ.get(key) for key in _IDENTITY_ENV}
-    if all(identity.values()):
-        for prefix in ("GIT_AUTHOR_", "GIT_COMMITTER_"):
-            os.environ[prefix + "NAME"], os.environ[prefix + "EMAIL"] = identity["name"], identity["email"]
-    try:
-        yield
-    finally:
-        for key, value in saved.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-        apply_project_git_identity(project_root)
-
-
-def save_project_git_identity(project_root: Path, name, email) -> dict:
-    from src.datalad_doctor import check_git_identity
-
-    name, email = check_git_identity(name, email)
-    config = load_config(str(project_root))
-    config.git_user_name, config.git_user_email = name, email
-    config_path = _save(config, project_root)
-    apply_project_git_identity(project_root)
-    return {"name": name, "email": email, "config_path": config_path}
+    if name and email and not any(get_git_identity().values()):
+        set_git_identity(name, email)
+    Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def save_datalad_server_config(project_root: Path, ria_url=None, sibling_name=None, alias=None) -> dict:

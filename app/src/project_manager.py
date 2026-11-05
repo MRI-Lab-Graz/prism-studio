@@ -56,8 +56,7 @@ from src.cross_platform import (
     describe_case_insensitive_id_collisions,
     remove_tree,
 )
-from src.project_settings import project_git_identity_env
-from src.datalad_doctor import explain_ssh_failures, install_command, install_hint, datalad_preflight, needs_project_identity
+from src.datalad_doctor import explain_ssh_failures, install_command, install_hint, datalad_preflight, missing_identity_message
 from src.git_exclude import (
     SENSITIVE_PATHS,
     ensure_git_excluded,
@@ -1980,7 +1979,7 @@ class ProjectManager:
         :meth:`get_datalad_status`).
         """
         project_path = Path(path)
-        with self._datalad_lock_for(project_path), project_git_identity_env(project_path):
+        with self._datalad_lock_for(project_path):
             return self._save_datalad_snapshot_locked(project_path, message=message)
 
     def _save_datalad_snapshot_locked(
@@ -3768,9 +3767,9 @@ git push -u origin main
                 "success": False,
                 "path": str(project_path),
                 "error": "\n\n".join(problems),
-                "needs_git_identity": needs_project_identity(project_path if project_path.is_dir() else None),
+                "needs_git_identity": bool(missing_identity_message(project_path if project_path.is_dir() else None)),
             }
-        with self._datalad_lock_for(project_path), project_git_identity_env(project_path):
+        with self._datalad_lock_for(project_path):
             return self._enable_datalad_for_project_locked(project_path, message=message)
 
     def _enable_datalad_for_project_locked(
@@ -4096,7 +4095,7 @@ git push -u origin main
         problems = datalad_preflight(project_path)
         if problems:
             result["message"] = "\n\n".join(problems) + "\n\nPRISM continued without DataLad integration."
-            result["needs_git_identity"] = needs_project_identity(project_path)
+            result["needs_git_identity"] = bool(missing_identity_message(project_path))
             return result
 
         result["available"] = bool(datalad_executable)

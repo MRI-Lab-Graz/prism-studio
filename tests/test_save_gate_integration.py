@@ -160,7 +160,7 @@ def _real_project(monkeypatch, tmp_path):
 
 @_NEEDS_DATALAD
 @pytest.mark.slow
-def test_real_create_flow_installs_hooks_in_project_and_nested_datasets(monkeypatch, tmp_path, personal_login):
+def test_real_create_flow_installs_hooks_in_project_and_nested_datasets(monkeypatch, tmp_path):
     project, result = _real_project(monkeypatch, tmp_path)
     hook = result["save_gate_hook"]
     assert hook["foreign"] == [] and hook["errors"] == []
@@ -202,7 +202,7 @@ def test_nested_helper_reports_what_really_happened(monkeypatch, tmp_path):
 
 @_NEEDS_DATALAD
 @pytest.mark.slow
-def test_gate_waits_for_the_last_nested_batch_so_registration_is_not_blocked_by_it(monkeypatch, tmp_path, personal_login):
+def test_gate_waits_for_the_last_nested_batch_so_registration_is_not_blocked_by_it(monkeypatch, tmp_path):
     """Registering many subjects takes several enable calls. The gate must not turn on after the first one:
     its next bookkeeping commit would be refused by a dataset that is merely not valid yet (a dataset with
     1000 subjects would stop half way)."""

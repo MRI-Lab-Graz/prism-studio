@@ -72,14 +72,6 @@ def _no_user_app_settings(monkeypatch, tmp_path_factory):
 
 
 @pytest.fixture
-def personal_login(tmp_path):
-    """A personal computer: DataLad signs with the machine's git name and email, no per-project identity needed."""
-    from src.settings_update import update_app_settings
-
-    update_app_settings(tmp_path, {"shared_login": False})
-
-
-@pytest.fixture
 def make_edf():
     """Factory building a minimal valid EDF by hand (no pyedflib needed).
 

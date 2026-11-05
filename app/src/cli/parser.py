@@ -897,7 +897,6 @@ def build_prism_tools_parsers(
     parser_datalad_identity = datalad_subparsers.add_parser(
         "identity", help="Show or set the name and email git signs your saved changes with"
     )
-    parser_datalad_identity.add_argument("--project", help="Project root: use this project's own identity instead of the computer's")
     parser_datalad_identity.add_argument("--name", help="Your name (sets git user.name)")
     parser_datalad_identity.add_argument("--email", help="Your email (sets git user.email)")
     parser_datalad_identity.add_argument("--json", action="store_true", help="Emit machine-readable JSON")

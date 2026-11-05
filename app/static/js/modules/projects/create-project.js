@@ -184,7 +184,7 @@ export function initCreateProjectController({
             if (result.success) {
                 // DataLad was asked for but this project has no name and email yet: ask once, then switch it on.
                 if (result.datalad?.needs_git_identity
-                    && await askGitIdentity({ fetchWithApiFallback, projectPath: result.path })) {
+                    && await askGitIdentity({ fetchWithApiFallback })) {
                     const enabled = await (await fetchWithApiFallback('/api/projects/datalad/enable', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

@@ -63,15 +63,8 @@ _IDENTITY_FIX = (
 )
 
 
-def needs_project_identity(cwd) -> bool:
-    """True when the user should be asked for this project's own name and email (shared login only)."""
-    from src.config import load_app_settings
-
-    return load_app_settings().shared_login and bool(missing_identity_message(cwd))
-
-
 def get_git_identity(cwd=None) -> dict:
-    """The name and email git would sign a saved change with (global config, or the project's own)."""
+    """The name and email git would sign a saved change with (the person's git config)."""
     values = {}
     for key in ("name", "email"):
         proc = subprocess.run(["git", "config", "--get", f"user.{key}"], capture_output=True, text=True, cwd=cwd)
@@ -80,34 +73,13 @@ def get_git_identity(cwd=None) -> dict:
 
 
 def missing_identity_message(cwd=None) -> str:
-    """Empty when DataLad may sign saved changes here, else what to do (before its first commit fails on it).
-
-    A project not yet tracked by DataLad needs its own name and email: on a login shared by several people the
-    computer's git identity may be someone else's. An already tracked project may fall back to git's.
-    """
-    if cwd is None:
-        return "" if all(get_git_identity().values()) else (
-            "Git does not know your name and email (user.name / user.email), so DataLad cannot save.\n" + _IDENTITY_FIX
-        )
-    from src.config import load_app_settings
-    from src.project_settings import project_git_identity
-
-    if all(project_git_identity(cwd).values()):
+    """Empty when DataLad may sign saved changes here, else what to do (before its first commit fails on it)."""
+    if all(get_git_identity(cwd).values()):
         return ""
-    shared = load_app_settings().shared_login
-    if (not shared or (Path(cwd) / ".datalad").exists()) and all(get_git_identity(cwd).values()):
-        return ""
-    if not shared:
-        return (
-            "Git does not know your name and email, so DataLad cannot save. "
-            "Enter them on the Settings page (Settings > DataLad Version Control), or run: "
-            'prism_tools.py datalad identity --name "Your Name" --email you@example.org'
-        )
     return (
-        "DataLad signs every saved change with a name and email, and this project has none of its own yet "
-        "(this computer is set up as a shared login). "
-        "Enter them in the DataLad card on the project page, or run: "
-        f'prism_tools.py datalad identity --project "{cwd}" --name "Your Name" --email you@example.org'
+        "Git does not know your name and email, so DataLad cannot save. "
+        "Enter them on the Settings page (Settings > DataLad Version Control), or run: "
+        'prism_tools.py datalad identity --name "Your Name" --email you@example.org'
     )
 
 
@@ -126,6 +98,10 @@ def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil
     if not which("git"):
         return problems
     cwd = project if project.is_dir() else None
+    if cwd:
+        from src.project_settings import adopt_legacy_project_identity
+
+        adopt_legacy_project_identity(project)
     identity_problem = missing_identity_message(cwd)
     if identity_problem:
         problems.append(identity_problem)
@@ -160,9 +136,7 @@ def datalad_preflight(project, *, which: Callable[[str], Optional[str]] = shutil
         )
 
     if not identity_problem:  # a real commit catches broken hooks / git config that reading the config cannot
-        from src.project_settings import project_git_identity_env
-
-        with tempfile.TemporaryDirectory() as tmp, project_git_identity_env(project):
+        with tempfile.TemporaryDirectory() as tmp:
             for cmd in (["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "prism preflight"]):
                 proc = subprocess.run(["git", "-C", tmp, *cmd], capture_output=True, text=True)
                 if proc.returncode != 0:

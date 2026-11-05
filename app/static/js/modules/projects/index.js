@@ -36,14 +36,12 @@ import * as core from './core.js';
 import * as exportModule from './export.js';
 import * as dataladServerModule from './datalad_server.js';
 import { initDataladSetupCheck } from './datalad_setup_check.js';
-import { initGitIdentityCard } from './git-identity-card.js';
 import { initSessionMapCard } from './session-map-card.js';
 import {
     clearGlobalLibrary,
     initBackendMonitoringToggle,
     initDataladForNewProjectsToggle,
     initGitIdentityForm,
-    initSharedLoginToggle,
     initDedicatedTerminalToggle,
     initProjectSettingsForm,
     initStudyApplicationImportToggle,
@@ -103,7 +101,6 @@ export function initializeProjectsPage() {
     initProjectsPage();
     initProjectValidation();
     initDataladSetupCheck();
-    initGitIdentityCard({ fetchWithApiFallback });
     initSessionMapCard({ fetchWithApiFallback });
 }
 
@@ -127,7 +124,6 @@ export function initializeSettingsPage() {
     initProjectPathPickers({ fetchWithApiFallback, validateProjectField: noop, clearCreateResult: noop });
     initDataladForNewProjectsToggle();
     initGitIdentityForm();
-    initSharedLoginToggle();
     const projectState = createProjectsCurrentStateController({ getProjectStateSnapshot, setProjectStateSnapshot });
     createDataladCard({
         fetchWithApiFallback,

@@ -12,7 +12,6 @@ for p in (ROOT, ROOT / "app"):
         sys.path.insert(0, str(p))
 
 from src.datalad_doctor import datalad_preflight  # noqa: E402
-from src.project_settings import save_project_git_identity  # noqa: E402
 
 
 @pytest.fixture
@@ -32,14 +31,9 @@ def _which_all(name):
 def test_ready_machine_has_no_problems(clean_git, tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     assert datalad_preflight(proj, which=_which_all) == []
 
 
-def test_on_a_shared_login_a_new_dataset_needs_the_projects_own_identity_even_if_the_machine_has_one(clean_git, tmp_path):
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    assert any("none of its own" in p for p in datalad_preflight(proj, which=_which_all))
 
 
 def test_an_already_tracked_dataset_may_use_the_machines_identity(clean_git, tmp_path):
@@ -64,14 +58,12 @@ def test_project_inside_another_git_repository_is_reported(clean_git, tmp_path):
     subprocess.run(["git", "init", "-q", str(tmp_path / "outer")], check=True)
     proj = tmp_path / "outer" / "proj"
     proj.mkdir()
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     assert any("inside another git repository" in p for p in datalad_preflight(proj, which=_which_all))
 
 
 def test_unwritable_project_is_reported(clean_git, tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     proj.chmod(0o500)
     try:
         assert any("write" in p for p in datalad_preflight(proj, which=_which_all))
@@ -88,23 +80,11 @@ def test_git_that_cannot_commit_is_reported(clean_git, tmp_path):
     clean_git.write_text(clean_git.read_text() + f"[core]\n\thooksPath = {hooks}\n")
     proj = tmp_path / "proj"
     proj.mkdir()
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     assert any("test commit" in p for p in datalad_preflight(proj, which=_which_all))
 
 
-def test_on_a_personal_computer_the_machines_identity_is_enough_for_a_new_dataset(clean_git, tmp_path):
-    from src.settings_update import update_app_settings
-
-    update_app_settings(tmp_path, {"shared_login": False})
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    assert datalad_preflight(proj, which=_which_all) == []
 
 
-def test_a_login_is_shared_until_the_user_says_otherwise():
-    from src.config import load_app_settings
-
-    assert load_app_settings().shared_login is True
 
 
 def _project_with_subjects(tmp_path, listed):
@@ -122,14 +102,12 @@ def _project_with_subjects(tmp_path, listed):
 
 def test_a_project_that_does_not_validate_is_not_ready_for_datalad(clean_git, tmp_path):
     proj = _project_with_subjects(tmp_path, ["sub-001"])  # sub-002 has a folder but no row
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     problems = datalad_preflight(proj, which=_which_all, validate=True)
     assert len(problems) == 1 and "does not validate" in problems[0] and "sub-002" in problems[0]
 
 
 def test_participants_without_a_folder_do_not_stop_datalad(clean_git, tmp_path):
     proj = _project_with_subjects(tmp_path, ["sub-001", "sub-002", "sub-003"])  # sub-003: screened, no folder
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     problems = datalad_preflight(proj, which=_which_all, validate=True)
     assert not any("participants.tsv" in p for p in problems)  # (the fixture's missing sidecars are another error)
 
@@ -138,7 +116,6 @@ def test_enable_refuses_an_invalid_project_and_leaves_it_untouched(clean_git, tm
     from src.project_manager import ProjectManager
 
     proj = _project_with_subjects(tmp_path, ["sub-001"])
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     result = ProjectManager().enable_datalad_for_project(proj)
     assert result["success"] is False and "does not validate" in result["error"]
     assert not (proj / ".git").exists()
@@ -149,5 +126,4 @@ def test_a_new_empty_project_may_still_get_datalad(clean_git, tmp_path):
 
     proj = tmp_path / "empty"
     assert ProjectManager().create_project(str(proj), {"name": "empty", "use_datalad": False})["success"]
-    save_project_git_identity(proj, "Eva", "eva@uni.example")
     assert datalad_preflight(proj, which=_which_all, validate=True) == []

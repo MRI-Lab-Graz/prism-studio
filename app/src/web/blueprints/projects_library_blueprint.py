@@ -88,7 +88,6 @@ def get_global_library_settings():
                 getattr(settings, "enable_study_application_import", False)
             ),
             "datalad_for_new_projects": bool(settings.datalad_for_new_projects),
-            "shared_login": bool(settings.shared_login),
         }
     )
 
@@ -196,7 +195,7 @@ def set_global_library_settings():
         return jsonify({"success": False, "error": "No data provided"}), 400
     from src.settings_update import SETTINGS
 
-    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode", "datalad_for_new_projects", "shared_login"}
+    shared = {"global_template_library_path", "global_recipes_path", "personal_library_path", "default_modalities", "export_defacing_confirmation_mode", "datalad_for_new_projects"}
     settings, error = _apply_settings_changes({k: v for k, v in data.items() if k in shared and k in SETTINGS})
     if error:
         return error
@@ -208,7 +207,6 @@ def set_global_library_settings():
         "global_recipes_path": settings.global_recipes_path,
         "export_defacing_confirmation_mode": settings.export_defacing_confirmation_mode,
         "datalad_for_new_projects": settings.datalad_for_new_projects,
-        "shared_login": settings.shared_login,
     })
 
 

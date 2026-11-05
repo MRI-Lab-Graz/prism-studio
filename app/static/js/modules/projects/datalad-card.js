@@ -603,7 +603,7 @@ export function createDataladCard({
                 });
                 data = await response.json().catch(() => ({ success: false, error: 'Invalid server response.' }));
                 if (data.needs_git_identity) {
-                    if (await askGitIdentity({ fetchWithApiFallback, projectPath: normalizedPath })) continue;
+                    if (await askGitIdentity({ fetchWithApiFallback })) continue;
                     throw new Error('DataLad was not enabled: this project needs a name and email first.');
                 }
                 if (!response.ok || !data.success) {

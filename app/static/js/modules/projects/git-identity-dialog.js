@@ -1,17 +1,7 @@
-export async function saveProjectGitIdentity(fetchWithApiFallback, projectPath, name, email) {
-    const response = await fetchWithApiFallback('/api/projects/git-identity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_path: projectPath, name, email })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success) throw new Error(data.error || 'Could not save.');
-    return data;
-}
-
-// Pop-up asking who signs a project's DataLad snapshots. Saves through the same route as the project page card.
+// Pop-up asking for the name and email git signs saved changes with. Saves through the Settings route:
+// the identity belongs to the person (this computer's git config), never to the project.
 // Resolves true once saved, false when the user cancels.
-export async function askGitIdentity({ fetchWithApiFallback, projectPath }) {
+export async function askGitIdentity({ fetchWithApiFallback }) {
     const modalElement = document.getElementById('gitIdentityModal');
     if (!modalElement || !window.bootstrap) return false;
     const form = document.getElementById('gitIdentityModalForm');
@@ -20,17 +10,11 @@ export async function askGitIdentity({ fetchWithApiFallback, projectPath }) {
     const error = document.getElementById('gitIdentityModalError');
     error.textContent = '';
 
-    // Prefill with the project's identity, else the computer's, so a personal user only confirms.
-    for (const url of [`/api/projects/git-identity?project_path=${encodeURIComponent(projectPath)}`, '/api/settings/git-identity']) {
-        try {
-            const data = await (await fetchWithApiFallback(url)).json();
-            if (data.name && data.email) {
-                name.value = data.name;
-                email.value = data.email;
-                break;
-            }
-        } catch (_) { /* leave the fields empty */ }
-    }
+    try {
+        const data = await (await fetchWithApiFallback('/api/settings/git-identity')).json();
+        name.value = data.name || '';
+        email.value = data.email || '';
+    } catch (_) { /* leave the fields empty */ }
 
     const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
     return new Promise((resolve) => {
@@ -38,7 +22,13 @@ export async function askGitIdentity({ fetchWithApiFallback, projectPath }) {
         form.onsubmit = async (event) => {
             event.preventDefault();
             try {
-                await saveProjectGitIdentity(fetchWithApiFallback, projectPath, name.value, email.value);
+                const response = await fetchWithApiFallback('/api/settings/git-identity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name.value, email: email.value })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.error || 'Could not save.');
                 saved = true;
                 modal.hide();
             } catch (err) {
