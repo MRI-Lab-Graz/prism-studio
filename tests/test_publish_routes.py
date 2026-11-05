@@ -104,6 +104,18 @@ def test_publish_route_ignores_any_client_valid_flag(client, monkeypatch):
     assert resp.status_code == 200 and "valid" not in seen
 
 
+@pytest.mark.parametrize("body, expected", [({}, False), ({"allow_invalid": True}, True)])
+def test_publish_route_passes_the_acknowledgement_like_the_cli_flag(client, monkeypatch, body, expected):
+    seen = {}
+    monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
+    monkeypatch.setattr(
+        srv, "publish_to_server",
+        lambda root, **kw: seen.update(kw) or {"success": True, "reason": "pushed", "errors": [], "message": "ok"},
+    )
+    client.post("/api/projects/datalad-server/publish", json={"project_path": "/p", **body})
+    assert seen["allow_invalid"] is expected
+
+
 def test_publish_route_bad_email_is_400(client, monkeypatch):
     monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
     resp = client.post("/api/projects/datalad-server/publish", json={"project_path": "/p", "name": "A", "email": "nope"})

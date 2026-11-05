@@ -577,8 +577,9 @@ python prism_tools.py publish --check --project /absolute/path/to/share/my-proje
 python prism_tools.py publish --install-hook --project /absolute/path/to/share/my-project
 ```
 
-Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
-`--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
+Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--allow-invalid`, `--check`,
+`--install-hook`, `--json`. `--allow-invalid` sends the dataset despite validation errors (you acknowledge them);
+the result is `pushed_with_errors`, still lists the errors, and the audit log records it with the error count. See [DataLad](DATALAD.md#publishing-from-a-department-share)
 for the hook's requirements and limits.
 
 ### Methods section and preregistration draft
@@ -834,7 +835,8 @@ python prism_tools.py datalad doctor --project /absolute/path/to/my-project --js
 merges), refuses while the project has unsaved changes, and skips a project that has no
 server yet. `sync` runs `update`, then sends your saved changes, and only if the dataset
 validates; unsaved changes must be saved first. The server is the project's `origin`
-(or `--sibling-name`). Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
+(or `--sibling-name`). `--allow-invalid` sends despite validation errors (as `datalad save --allow-invalid`
+saves); the result is `pushed_with_errors` and the audit log records it. Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
 
 ```bash
 python prism_tools.py datalad update --project /absolute/path/to/my-project

@@ -62,7 +62,13 @@ def cmd_datalad_sync(args) -> None:
     except ValueError as exc:
         print(f"Error: {exc}")
         sys.exit(2)
-    result = sync_with_server(args.project, sibling_name=args.sibling_name, identity=identity, line_callback=None if args.json else print)
+    result = sync_with_server(
+        args.project,
+        sibling_name=args.sibling_name,
+        identity=identity,
+        line_callback=None if args.json else print,
+        allow_invalid=bool(getattr(args, "allow_invalid", False)),
+    )
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     else:

@@ -864,6 +864,10 @@ def build_prism_tools_parsers(
     parser_publish.add_argument(
         "--as", dest="as_identity", help='Who is publishing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
     )
+    parser_publish.add_argument(
+        "--allow-invalid", action="store_true",
+        help="Publish even if the dataset has PRISM validation errors (default: refuse)",
+    )
     parser_publish.add_argument("--check", action="store_true", help="Validate only; exit 1 on errors (used by the pre-push hook)")
     parser_publish.add_argument("--install-hook", action="store_true", help="Install the git pre-push hook that enforces the same rule")
     parser_publish.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
@@ -916,6 +920,10 @@ def build_prism_tools_parsers(
     parser_datalad_sync.add_argument("--sibling-name", help="Server name (default: saved setting, else origin)")
     parser_datalad_sync.add_argument(
         "--as", dest="as_identity", help='Who is syncing: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
+    )
+    parser_datalad_sync.add_argument(
+        "--allow-invalid", action="store_true",
+        help="Send even if the dataset has PRISM validation errors (default: refuse)",
     )
     parser_datalad_sync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 

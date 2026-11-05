@@ -45,6 +45,8 @@ def cmd_publish(args) -> None:
     except ValueError as exc:
         _emit(args, {"success": False, "reason": "bad_identity", "errors": [], "message": str(exc)}, 2)
 
-    result = publish_to_server(args.project, sibling_name=args.sibling, identity=identity)
+    result = publish_to_server(
+        args.project, sibling_name=args.sibling, identity=identity, allow_invalid=bool(getattr(args, "allow_invalid", False))
+    )
     code = 0 if result["success"] else 1 if result["reason"] == "validation_errors" else 2
     _emit(args, result, code)

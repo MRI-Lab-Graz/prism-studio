@@ -124,8 +124,15 @@ dataset, so the server is its `origin`; Studio's *Sync now* (`prism_tools.py dat
 
 **Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can
 save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then ends with
-`[saved with N validation error(s)]` so the history shows it. Such a snapshot stays on your computer: publishing
-validates first and pushes nothing while there are errors.
+`[saved with N validation error(s)]` so the history shows it. Publishing and *Sync now* also refuse while there
+are errors, unless you acknowledge them the same way (`--allow-invalid`); the push is then recorded in the audit log
+as `pushed_with_errors` with the error count.
+
+The acknowledgement reaches the git hooks through one environment variable, `PRISM_ACK_INVALID=1`, which PRISM sets
+only for the one save or push you acknowledged and removes right after. The save gate (pre-commit) and the publish
+gate (pre-push) let that one command through and log it (`save_acknowledged`, `hook_acknowledged`). Like the hooks
+themselves it is advisory: anyone can set it in a terminal, so the audit log is the record, not a lock. Unsaved
+changes and a validator that cannot run are never acknowledged away.
 
 ## Publishing from a department share
 
@@ -147,8 +154,8 @@ server sibling; if validation has errors, nothing is pushed.
 - **Save first**: the push sends committed state only, so publishing (and the hook) is
   refused while the dataset has uncommitted or untracked changes (including inside
   subdatasets). Run `datalad save`, then publish.
-- **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, refused,
-  hook allowed/refused). It lives in the git dir, so it never dirties the dataset.
+- **Audit log**: `<git-dir>/prism/publish.jsonl`, one JSON line per attempt (pushed, pushed_with_errors,
+  refused, hook allowed/refused/acknowledged). It lives in the git dir, so it never dirties the dataset.
 - **Studio**: both "Publish (validated)" and "Sync now" are gated; Sync now also gets the latest first.
 - **More caveats**:
   - The gate validates with the stable schema and no library path, so the Studio validator

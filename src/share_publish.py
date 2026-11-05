@@ -229,7 +229,12 @@ def _dataset_roots(root: Path) -> list[Path]:
 
 
 def publish_to_server(
-    project_root, *, sibling_name: str | None = None, identity: Identity | None = None, line_callback=None
+    project_root,
+    *,
+    sibling_name: str | None = None,
+    identity: Identity | None = None,
+    line_callback=None,
+    allow_invalid: bool = False,
 ) -> dict:
     root = Path(project_root)
     sibling = _sibling_for(root, sibling_name)
@@ -267,11 +272,12 @@ def publish_to_server(
         return finish(
             "uncommitted_changes", _uncommitted_message(dirty), audit_result="refused", errors=dirty[:20]
         )
+    crashed = False
     try:
         errors = validate_for_publish(root)
     except Exception as exc:  # a crashed validator must refuse, not escape unaudited
-        errors = [f"Validation could not run: {exc}"]
-    if errors:
+        errors, crashed = [f"Validation could not run: {exc}"], True
+    if errors and (crashed or not allow_invalid):  # a crash is never acknowledged away
         return finish(
             "validation_errors",
             f"{len(errors)} validation error(s). Fix them before publishing.",
@@ -279,11 +285,16 @@ def publish_to_server(
             errors=errors,
         )
 
+    from contextlib import nullcontext
+
+    from src.save_gate import ack_invalid
+
     # identity applies for this call only (spec section 4): restore whatever was there before
     saved = {k: os.environ.get(k) for k in _git_identity_env_keys()}
     apply_identity(identity)
     try:
-        push = run_datalad_push(root, sibling_name=sibling, line_callback=line_callback)
+        with ack_invalid() if errors else nullcontext():  # the pre-push hook passes this one acknowledged push
+            push = run_datalad_push(root, sibling_name=sibling, line_callback=line_callback)
         outcome["push"] = push
         if push.get("success"):
             # ponytail: plain (non-RIA) share sibling assumed; RIA would need is_ria=True.
@@ -293,6 +304,13 @@ def publish_to_server(
             outcome["verify"] = verify
             if verify.get("verified"):
                 outcome["success"] = True
+                if errors:
+                    return finish(
+                        "pushed_with_errors",
+                        f"Published to the server with {len(errors)} validation error(s) (acknowledged).",
+                        audit_result="pushed_with_errors",
+                        errors=errors,
+                    )
                 return finish("pushed", "Published to the server.", audit_result="pushed")
             return finish("push_failed", f"Push not verified: {verify.get('message')}", audit_result="push_failed")
         return finish("push_failed", str(push.get("message") or "Push failed."), audit_result="push_failed")
@@ -305,7 +323,12 @@ def publish_to_server(
 
 
 def sync_with_server(
-    project_root, *, sibling_name: str | None = None, identity: Identity | None = None, line_callback=None
+    project_root,
+    *,
+    sibling_name: str | None = None,
+    identity: Identity | None = None,
+    line_callback=None,
+    allow_invalid: bool = False,
 ) -> dict:
     """Get the latest from the server, then publish: the one way a project's changes reach the server.
 
@@ -318,7 +341,9 @@ def sync_with_server(
     update = ProjectManager().update_datalad_from_server(root, sibling_name=_sibling_for(root, sibling_name))
     if not update.get("success"):
         return {"success": False, "reason": "update_failed", "message": update.get("error", ""), "errors": [], "update": update}
-    outcome = publish_to_server(root, sibling_name=sibling_name, identity=identity, line_callback=line_callback)
+    outcome = publish_to_server(
+        root, sibling_name=sibling_name, identity=identity, line_callback=line_callback, allow_invalid=allow_invalid
+    )
     outcome["update"] = update
     return outcome
 
@@ -385,16 +410,20 @@ def check_for_hook(project_root, sibling_name: str | None = None) -> list[str]:
     root = Path(project_root)
     errors = uncommitted_changes(root)
     errors = [_uncommitted_message(errors), *errors[:20]] if errors else []
+    acked = False
     if not errors:
+        from src.save_gate import acknowledged
+
         try:
             errors = validate_for_publish(root)
+            acked = bool(errors) and acknowledged()  # unsaved changes and a crash are never acknowledged away
         except Exception as exc:  # fail closed, no traceback
             errors = [f"Validation could not run: {exc}"]
     _audit(
         root,
         identity=resolve_identity(),
         sibling=_sibling_for(root, sibling_name),
-        result="hook_refused" if errors else "hook_allowed",
+        result="hook_acknowledged" if acked else "hook_refused" if errors else "hook_allowed",
         error_count=len(errors),
     )
-    return errors
+    return [] if acked else errors

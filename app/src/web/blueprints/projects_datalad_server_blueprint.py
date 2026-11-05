@@ -97,6 +97,7 @@ def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
         result = sync_with_server(
             project_path,
             sibling_name=sync_kwargs.get("sibling_name"),
+            allow_invalid=bool(sync_kwargs.get("allow_invalid")),
             line_callback=lambda line: _update_ria_job(job_id, message=line, status="running"),
         )
         if result.get("success"):
@@ -116,7 +117,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        ria_kwargs = {"sibling_name": data.get("sibling_name") or None}
+        ria_kwargs = {"sibling_name": data.get("sibling_name") or None, "allow_invalid": bool(data.get("allow_invalid"))}
 
         job_id = str(uuid.uuid4())
         _create_ria_job(job_id, kind=kind)
@@ -237,7 +238,10 @@ def datalad_server_publish():
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
     result = publish_to_server(
-        resolved, sibling_name=data.get("sibling_name") or None, identity=identity
+        resolved,
+        sibling_name=data.get("sibling_name") or None,
+        identity=identity,
+        allow_invalid=bool(data.get("allow_invalid")),
     )
     status = 200 if result["success"] else 409 if result["reason"] == "validation_errors" else 400
     return jsonify(result), status

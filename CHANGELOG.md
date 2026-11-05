@@ -19,7 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `prism_tools datalad update --project <path>` does the same. It only fast-forwards (never merges), refuses while the project
   has unsaved changes, and skips a project that has no server yet.
 
+### Fixed
+- **"Save anyway" (`--allow-invalid`) now gets through the save-gate hook.** The pre-commit hook used to refuse the
+  acknowledged save. One variable, `PRISM_ACK_INVALID`, is set only for the acknowledged command; `save-gate --check`
+  and `publish --check` (both git hooks) honour it and log it.
+
 ### Changed
+- **Publish and sync can send a dataset with acknowledged errors.** `prism_tools publish --allow-invalid`,
+  `prism_tools datalad sync --allow-invalid` and the same option in Studio's routes push despite validation errors; the
+  result is `pushed_with_errors` (errors still listed) and the audit log records it with the error count.
 - **Sync now gets the latest, then sends only a valid dataset.** `prism_tools datalad sync` and Studio's *Sync now* run
   `update`, then the validated publish (saved, valid, to the lab server). The server is the project's `origin` by default
   (it was `ria-store`). Nothing is ever merged.

@@ -134,3 +134,29 @@ def test_the_cli_and_studio_refuse_an_invalid_dataset_the_same_way(lab, capsys):
     assert cli["reason"] == job["result"]["reason"] == "validation_errors"
     assert cli["errors"] == job["result"]["errors"] == ["bad name"]
     assert not {"mine.txt", "other.txt"} & set(_server_files(server))
+
+
+def test_the_cli_and_studio_send_an_acknowledged_invalid_dataset_the_same_way(lab, capsys):
+    import json
+    from types import SimpleNamespace
+
+    import src.web.blueprints.projects_datalad_server_blueprint as studio
+    from src.cli.commands.datalad import cmd_datalad_sync
+
+    server, mine, other = lab
+    _save(mine, "mine.txt")
+    with patch("src.share_publish.validate_for_publish", return_value=["bad name"]):
+        cmd_datalad_sync(SimpleNamespace(
+            project=str(mine), sibling_name=None, as_identity="Ada <ada@example.org>", json=True, allow_invalid=True,
+        ))
+        cli = json.loads(capsys.readouterr().out)
+    assert _sync(other)["success"] is True  # other gets mine.txt first (sync never merges)
+    _save(other, "other.txt")
+    with patch("src.share_publish.validate_for_publish", return_value=["bad name"]):
+        studio._create_ria_job("ack", kind="sync")
+        studio._run_sync_job("ack", other, {"allow_invalid": True})
+        job = studio._get_ria_job("ack")
+    assert job["status"] == "complete", job
+    assert cli["reason"] == job["result"]["reason"] == "pushed_with_errors"
+    assert cli["errors"] == job["result"]["errors"] == ["bad name"]
+    assert {"mine.txt", "other.txt"} <= set(_server_files(server))
