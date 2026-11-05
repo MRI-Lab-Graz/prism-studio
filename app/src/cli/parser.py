@@ -959,7 +959,16 @@ def build_prism_tools_parsers(
     )
     parser_datalad_save.add_argument("--project", required=True, help="Project root")
     parser_datalad_save.add_argument("--message", help="Commit message (default: Save PRISM project changes)")
+    parser_datalad_save.add_argument(
+        "--allow-invalid", action="store_true",
+        help="Save even if the dataset has PRISM validation errors (default: refuse)",
+    )
     parser_datalad_save.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_datalad_status = datalad_subparsers.add_parser(
+        "status", help="Show how many changes are not yet saved as a DataLad snapshot"
+    )
+    parser_datalad_status.add_argument("--project", required=True, help="Project root")
+    parser_datalad_status.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     parser_environment = subparsers.add_parser(
         "environment",

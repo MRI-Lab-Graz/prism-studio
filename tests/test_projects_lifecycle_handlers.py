@@ -986,10 +986,11 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
                             "path": str(path),
                         }
 
-                    def save_datalad_snapshot(self, path, *, message):
+                    def save_datalad_snapshot(self, path, *, message, allow_invalid=False):
                         return {
                             "success": True,
                             "message": f'Saved with message "{message}".',
+                            "allow_invalid": allow_invalid,
                             "datalad": self.get_datalad_status(path),
                         }
 
@@ -1000,7 +1001,34 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
 
         body = response.get_json()
         self.assertTrue(body["success"])
+        self.assertIs(body["allow_invalid"], False)
         self.assertEqual(body["current_project"]["path"], str(self.project_root))
+
+    def test_projects_save_route_passes_allow_invalid_to_the_backend(self):
+        projects_module = importlib.import_module("src.web.blueprints.projects")
+        seen = {}
+
+        class _Manager:
+            def get_datalad_status(self, path, *, fast: bool = False):
+                return {"enabled": True, "available": True, "can_save": True, "path": str(path), "message": ""}
+
+            def save_datalad_snapshot(self, path, *, message, allow_invalid=False):
+                seen["allow_invalid"] = allow_invalid
+                return {"success": True, "message": "ok"}
+
+        with self.app.test_request_context(
+            "/api/projects/datalad/save", method="POST", json={"allow_invalid": True}
+        ):
+            session["current_project_path"] = str(self.project_root)
+            session["current_project_name"] = "demo_project"
+            original_manager = projects_module._project_manager
+            try:
+                projects_module._project_manager = _Manager()
+                projects_module.save_datalad_snapshot()
+            finally:
+                projects_module._project_manager = original_manager
+
+        self.assertIs(seen["allow_invalid"], True)
 
     def test_projects_enable_datalad_route_returns_current_project(self):
         projects_module = importlib.import_module("src.web.blueprints.projects")

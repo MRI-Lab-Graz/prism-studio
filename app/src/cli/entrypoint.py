@@ -79,6 +79,7 @@ from src.cli.commands.datalad import (
     cmd_datalad_identity,
     cmd_datalad_finalize,
     cmd_datalad_save,
+    cmd_datalad_status,
     cmd_datalad_sync,
 )
 from src.cli.commands.sessions import (
@@ -279,6 +280,7 @@ def main() -> None:
             "datalad_enable": cmd_datalad_enable,
             "datalad_identity": cmd_datalad_identity,
             "datalad_save": cmd_datalad_save,
+            "datalad_status": cmd_datalad_status,
             "project_set_schema_version": cmd_project_set_schema_version,
             "rsync_config": cmd_rsync_config,
             "rsync_sync": cmd_rsync_sync,

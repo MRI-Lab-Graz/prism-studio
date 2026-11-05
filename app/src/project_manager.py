@@ -1972,8 +1972,13 @@ class ProjectManager:
         path: Union[str, Path],
         *,
         message: str,
+        allow_invalid: bool = False,
     ) -> Dict[str, Any]:
         """Persist current project changes into DataLad with a user-supplied message.
+
+        Only a PRISM-valid dataset is saved, unless ``allow_invalid`` (the CLI's
+        ``--allow-invalid``, Studio's "Save anyway"). Automatic saves (autosave,
+        enable) do not come through here and are not gated.
 
         Holds the per-project DataLad lock so a concurrent status poll can't
         run git against the index being written (see
@@ -1981,13 +1986,16 @@ class ProjectManager:
         """
         project_path = Path(path)
         with self._datalad_lock_for(project_path), project_git_identity_env(project_path):
-            return self._save_datalad_snapshot_locked(project_path, message=message)
+            return self._save_datalad_snapshot_locked(
+                project_path, message=message, allow_invalid=allow_invalid
+            )
 
     def _save_datalad_snapshot_locked(
         self,
         project_path: Path,
         *,
         message: str,
+        allow_invalid: bool = False,
     ) -> Dict[str, Any]:
         status = self.get_datalad_status(project_path)
         result: Dict[str, Any] = {
@@ -2007,6 +2015,20 @@ class ProjectManager:
         if not status.get("available"):
             result["error"] = status.get("message") or "DataLad is not available in this environment."
             return result
+
+        if not allow_invalid:
+            from src.share_publish import validate_for_publish
+
+            try:
+                errors = validate_for_publish(project_path)
+                problem = f"{len(errors)} validation error(s): the dataset is not PRISM-valid." if errors else ""
+            except Exception as exc:  # a crashed validator refuses, as in publish
+                errors, problem = [], f"The validator could not run ({type(exc).__name__}: {exc})."
+            if problem:
+                result["validation_blocked"] = True
+                result["validation_errors"] = list(errors)
+                result["error"] = f"{problem} Nothing was saved. Fix them, or save anyway (--allow-invalid / 'Save anyway')."
+                return result
 
         gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,

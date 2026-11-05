@@ -111,3 +111,21 @@ def test_enabling_and_saving_datalad_do_the_same_in_the_cli_and_in_studio(tmp_pa
     assert status == 200 and body["success"] and json.loads(capsys.readouterr().out)["success"]
     assert _git_view(cli) == _git_view(studio)
     assert "Save PRISM project changes" in _git_view(cli)["messages"]
+
+    # an invalid dataset is refused the same way, writing nothing; the override saves it the same way
+    for root in (cli, studio):
+        (root / "sub-01" / "survey").mkdir(parents=True)
+        (root / "sub-01" / "survey" / "sub-01_task-x_wrongsuffix.tsv").write_text("a\n", encoding="utf-8")
+    before = _git_view(cli)
+    with pytest.raises(SystemExit) as refused:
+        cmd_datalad_save(SimpleNamespace(project=str(cli), message=None, json=True, allow_invalid=False))
+    cli_body = json.loads(capsys.readouterr().out)
+    body, status = _studio_datalad("save_datalad_snapshot", studio, monkeypatch, {})
+    assert refused.value.code == 1 and status == 400 and not cli_body["success"] and not body["success"]
+    assert cli_body["error"] == body["error"] and "--allow-invalid" in body["error"]
+    assert _git_view(cli) == _git_view(studio) == before
+
+    cmd_datalad_save(SimpleNamespace(project=str(cli), message=None, json=True, allow_invalid=True))
+    body, status = _studio_datalad("save_datalad_snapshot", studio, monkeypatch, {"allow_invalid": True})
+    assert status == 200 and body["success"] and json.loads(capsys.readouterr().out)["success"]
+    assert _git_view(cli) == _git_view(studio) != before

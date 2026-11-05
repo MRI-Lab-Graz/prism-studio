@@ -125,7 +125,19 @@ def cmd_datalad_save(args) -> None:
     from src.project_manager import DEFAULT_SNAPSHOT_MESSAGE
 
     message = str(args.message or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
-    _print_result(args, _manager().save_datalad_snapshot(args.project, message=message))
+    allow_invalid = bool(getattr(args, "allow_invalid", False))
+    _print_result(args, _manager().save_datalad_snapshot(args.project, message=message, allow_invalid=allow_invalid))
+
+
+def cmd_datalad_status(args) -> None:
+    """Show how many changes are not yet saved as a DataLad snapshot (the navbar count in Studio).
+
+    Studio's /api/projects/datalad/clean-status runs the same function."""
+    result = _manager().check_datalad_clean_status(args.project)
+    if getattr(args, "json", False):
+        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+    else:
+        print(result.get("message") or "")
 
 
 def cmd_datalad_identity(args) -> None:

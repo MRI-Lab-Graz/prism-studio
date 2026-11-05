@@ -1494,6 +1494,7 @@ class TestProjectManager(unittest.TestCase):
                 result = manager.save_datalad_snapshot(
                     project_path,
                     message="Checkpoint metadata updates",
+                    allow_invalid=True,  # the validity gate has its own tests (test_datalad_save_gate.py)
                 )
 
         self.assertTrue(result.get("success"), result)
@@ -1548,7 +1549,7 @@ class TestProjectManager(unittest.TestCase):
                         return_value=set(),
                     ):
                         return manager.save_datalad_snapshot(
-                            project_path, message="Checkpoint metadata updates"
+                            project_path, message="Checkpoint metadata updates", allow_invalid=True
                         )
 
     def test_save_datalad_snapshot_reports_what_it_saved_not_the_tracking_status(self):
