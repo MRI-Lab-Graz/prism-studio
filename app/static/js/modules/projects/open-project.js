@@ -1,5 +1,77 @@
 import { isSameProjectPath } from '../../shared/project-state.js';
-import { createDataladCard, DATALAD_DOCS_URL, DATALAD_INSTALL_COMMAND } from './datalad-card.js';
+import { enableDatalad } from '../../shared/datalad-enable.js';
+import { askGitIdentity } from './git-identity-dialog.js';
+
+const DATALAD_DOCS_URL = 'https://www.datalad.org/';
+const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';
+
+function normalizeDataladBoolean(value, defaultValue = false) {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+    const normalized = String(value || '').trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(normalized)) {
+        return true;
+    }
+    if (['false', '0', 'no', 'off'].includes(normalized)) {
+        return false;
+    }
+    return Boolean(defaultValue);
+}
+
+function normalizeDataladSetupIntent(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'enabled' || normalized === 'declined' ? normalized : 'unknown';
+}
+
+function normalizeDataladAskOnOpen(value, defaultValue = true) {
+    return normalizeDataladBoolean(value, defaultValue);
+}
+
+function normalizeProjectSummaryCount(value) {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function normalizeProjectSummaryLabels(values) {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+    return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))];
+}
+
+// The DataLad part of the project state, as the opt-in prompt reads it.
+function normalizeDataladState(raw, fallbackPath = '') {
+    const dataladState = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+    const path = (typeof dataladState.path === 'string' ? dataladState.path.trim() : '') || String(fallbackPath || '').trim();
+    const setupIntent = normalizeDataladSetupIntent(dataladState.setup_intent ?? dataladState.setupIntent);
+    return {
+        enabled: normalizeDataladBoolean(dataladState.enabled),
+        available: normalizeDataladBoolean(dataladState.available),
+        annexAvailable: normalizeDataladBoolean(dataladState.annex_available ?? dataladState.annexAvailable),
+        installCommand: String(dataladState.install_command ?? '').trim(),  // the backend knows the platform
+        canSave: normalizeDataladBoolean(dataladState.can_save ?? dataladState.canSave),
+        canEnable: normalizeDataladBoolean(dataladState.can_enable ?? dataladState.canEnable),
+        message: (typeof dataladState.message === 'string' && dataladState.message.trim())
+            || (path ? 'Current project is not a DataLad dataset.' : 'Load a project to see DataLad status.'),
+        path,
+        setupIntent,
+        askOnOpen: normalizeDataladAskOnOpen(dataladState.ask_on_open ?? dataladState.askOnOpen, setupIntent !== 'enabled'),
+    };
+}
+
+function buildMissingDataladToolsMessage(dataladState) {
+    const state = normalizeDataladState(dataladState);
+    const missingTools = [!state.available && 'DataLad', !state.annexAvailable && 'git-annex'].filter(Boolean);
+    const missingToolsLabel = missingTools.length ? missingTools.join(' and ') : 'Required DataLad tools';
+    return [
+        `${missingToolsLabel} ${missingTools.length === 1 ? 'is' : 'are'} not available in this environment.`,
+        '',
+        'Install the missing tools before enabling DataLad tracking for this project.',
+        `Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}`,
+        `Learn more: ${DATALAD_DOCS_URL}`,
+    ].join('\n');
+}
 
 export function initOpenProjectController({
     fetchWithApiFallback,
@@ -18,17 +90,27 @@ export function initOpenProjectController({
 }) {
     const DATALAD_PREFERENCES_NAMESPACE = 'datalad';
     let dataladOptInPromptToken = 0;
-    const {
-        buildMissingDataladToolsMessage,
-        normalizeDataladAskOnOpen,
-        normalizeDataladSetupIntent,
-        normalizeDataladState,
-        normalizeProjectSummaryCount,
-        normalizeProjectSummaryLabels,
-        renderProjectBoxDataladState,
-        runProjectBoxEnableDatalad,
-        setProjectBoxDataladFeedback,
-    } = createDataladCard({ fetchWithApiFallback, getCurrentProjectState, applyCurrentProject });
+
+    // Switch DataLad on (the same loop as the DataLad page); progress and the outcome go to the navbar item.
+    async function enableDataladForProject() {
+        const say = (text, kind, label) => window.setNavbarDataladFeedback?.(text, kind, label);
+        say('Switching DataLad on...', 'muted', 'Running');
+        try {
+            const data = await enableDatalad(fetchWithApiFallback, {
+                askIdentity: () => askGitIdentity({ fetchWithApiFallback }),
+                onProgress: (text) => say(text, 'muted', 'Running'),
+            });
+            const currentState = getCurrentProjectState();
+            applyCurrentProject(data.current_project && typeof data.current_project === 'object'
+                ? { ...data.current_project, datalad: data.datalad || data.current_project.datalad }
+                : { ...currentState, datalad: data.datalad });
+            say(data.message || data.datalad?.message || 'DataLad enabled.', 'success', 'Enabled');
+            return true;
+        } catch (error) {
+            say(error.message || 'Could not enable DataLad.', 'danger', 'Error');
+            return false;
+        }
+    }
 
     function setProjectValidationResult(html) {
         const resultDiv = document.getElementById('validationResult');
@@ -75,7 +157,6 @@ export function initOpenProjectController({
             return;
         }
 
-        setProjectBoxDataladFeedback(message, 'danger');
         window.setNavbarDataladFeedback?.(message, 'danger', 'Auto-save failed');
     }
 
@@ -124,7 +205,6 @@ export function initOpenProjectController({
             path: currentPath,
             datalad: nextDatalad,
         });
-        renderProjectBoxDataladState(nextDatalad, currentPath);
     }
 
     async function loadDataladPreferences(projectPath) {
@@ -218,7 +298,6 @@ export function initOpenProjectController({
             const declinedMessage = askAgain
                 ? 'DataLad setup skipped. PRISM will ask again next time you open this project.'
                 : 'DataLad setup skipped. PRISM will stop asking for this project unless you enable DataLad manually.';
-            setProjectBoxDataladFeedback(declinedMessage, 'muted');
             window.setNavbarDataladFeedback?.(declinedMessage, 'muted', askAgain ? 'Later' : 'Skipped');
         };
 
@@ -252,7 +331,6 @@ export function initOpenProjectController({
             const shortUnavailableMessage = latestDataladState.available && !latestDataladState.annexAvailable
                 ? `DataLad setup blocked: git-annex is missing. Install tools with "${latestDataladState.installCommand || DATALAD_INSTALL_COMMAND}" and try again.`
                 : `DataLad setup blocked: DataLad and git-annex are missing. Install tools with "${latestDataladState.installCommand || DATALAD_INSTALL_COMMAND}" and try again.`;
-            setProjectBoxDataladFeedback(shortUnavailableMessage, 'danger');
             window.setNavbarDataladFeedback?.(shortUnavailableMessage, 'danger', 'Missing tools');
             await persistDeclinedChoice(
                 'DataLad tools are missing on this machine.\n\nClick OK to ask again next time this project opens after you install the tools.\nClick Cancel to stop asking for this project.'
@@ -293,7 +371,7 @@ export function initOpenProjectController({
             applyDataladPreferencePatchToState(optimisticEnabledPreferences);
         }
 
-        const enabled = await runProjectBoxEnableDatalad(normalizedPath, { skipConfirmation: true });
+        const enabled = await enableDataladForProject();
         if (enabled) {
             return;
         }
@@ -536,7 +614,6 @@ export function initOpenProjectController({
 
             lastShallowProjectSummary = projectSummary;
             renderLoadedProjectState(loadedName, loadedPath, projectSummary);
-            renderProjectBoxDataladState(currentState.datalad, loadedPath);
             bindProjectBoxActionButtons();
             updateCreateProjectButton();
             updateLoadProjectButtonState();

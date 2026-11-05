@@ -4,6 +4,7 @@ PAGES = [
     "/",
     "/projects",
     "/projects/share",
+    "/projects/datalad",
     "/settings",
     "/converter",
     "/validate",

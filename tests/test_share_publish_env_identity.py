@@ -65,14 +65,12 @@ def test_cli_main_applies_env_identity(monkeypatch):
     assert calls == [1]
 
 
-def test_projects_page_has_publish_button_and_helper():
+def test_publish_button_lives_on_the_results_page_only():
+    # The Share page's "Publish (validated)" button went with the old DataLad panel ("Sync now" on the DataLad page
+    # sends a validated dataset); the projects page no longer carries a handler for a button it never had.
     section = (REPO_ROOT / "app/templates/includes/projects/push_server_section.html").read_text()
     page = (REPO_ROOT / "app/templates/projects.html").read_text()
-    assert 'id="publishProjectBtn"' in section
-    assert "js/publish.js" in page and "prismPublish" in page
-
-    # path must come from the live project-state store, like the sync button
-    start = page.index("publishProjectBtn")
-    handler = page[start:page.index("</script>", start)]
-    assert "resolveCurrentProjectPath" in handler
-    assert "const projectPath = window.currentProjectPath;" not in handler
+    results = (REPO_ROOT / "app/templates/results.html").read_text()
+    assert 'id="publishProjectBtn"' not in section
+    assert "publishProjectBtn" not in page and "js/publish.js" not in page
+    assert "js/publish.js" in results

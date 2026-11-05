@@ -68,14 +68,10 @@
                 <div class="col-md-4"><button type="submit" class="btn btn-sm btn-outline-primary">Save</button></div>
             </form>
             <div class="small mt-2" id="gitIdentityFeedback" aria-live="polite"></div>
-            {% if not current_project.path %}
-            <div class="small text-muted mt-3">Open a project to see and manage its own DataLad tracking here.</div>
-            {% endif %}
+            <div class="small text-muted mt-3">Snapshots and the lab server for the open project: <a href="{{ url_for('projects.datalad_page') }}">DataLad page</a>.</div>
         </div>
     </div>
 
-    {% include 'includes/projects/datalad_section.html' %}
-    {% include 'includes/projects/git_identity_modal.html' %}
 
     {% include 'includes/projects/settings_section.html' %}
 </div>

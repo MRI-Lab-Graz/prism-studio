@@ -45,14 +45,14 @@ def test_standard_export_without_validation_writes_a_zip_with_the_project_files(
 
 @pytest.mark.skipif(not shutil.which("ssh"), reason="ssh is not installed")
 def test_check_this_computer_reports_an_unreachable_server_in_plain_words(app_page, studio_url):
-    app_page.goto(f"{studio_url}/projects/share")
-    expect(app_page.locator("#pushServerCard")).to_be_visible()
-    if not app_page.locator("#dataladServerCheckBtn").is_visible():
-        app_page.locator('[data-bs-target="#pushServerSection"]').click()
-    app_page.fill("#dataladServerUrl", "ria+ssh://nobody@no-such-host.invalid/store")
+    # "Check this computer" moved from the Share page to the DataLad page's "More"
+    app_page.goto(f"{studio_url}/projects/datalad")
+    app_page.locator('#dataladStepCard [data-action="open-from-server"]').click()
+    app_page.fill("#dataladLocation", "nobody@no-such-host.invalid:/store")
+    check = app_page.locator('#dataladMore [data-action="doctor"]')
 
-    app_page.click("#dataladServerCheckBtn")
+    check.click()
 
-    result = app_page.locator("#dataladServerCheckResult")
+    result = app_page.locator("#dataladDoctorResult")
     expect(result).to_contain_text("Cannot reach the server", timeout=30000)
-    expect(app_page.locator("#dataladServerCheckBtn")).to_be_enabled()
+    expect(check).to_be_enabled()
