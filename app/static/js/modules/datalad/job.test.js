@@ -73,21 +73,45 @@ describe('runJob', () => {
     });
   }
 
-  it('Cancel sends DELETE to the cancel route and stops polling', async () => {
-    const fetchFn = fakeFetch([{ status: 'running', percent: 10 }, { status: 'running', percent: 20 }]);
+  it('Cancel of a running job says so honestly, stays busy and keeps polling until the job ends', async () => {
+    const fetchFn = fakeFetch([
+      { status: 'running', percent: 10 },
+      { status: 'running', percent: 50 },
+      { status: 'complete', percent: 100, result: { message: 'Sent.' } },
+    ]);
     const ui = fakeUi();
     let polls = 0;
     const sleep = async () => {
       polls += 1;
-      if (polls === 2) ui.start.mock.calls[0][0]();  // the user clicks Cancel during the second wait
+      if (polls === 2) {
+        ui.start.mock.calls[0][0]();  // the user clicks Cancel during the second wait, the job is running
+        expect(ui.end).not.toHaveBeenCalled();  // the page stays busy
+      }
     };
 
     await runJob(fetchFn, '/api/projects/datalad-server/sync/start', { project_path: '/p' }, { ui, sleep });
 
     const deletes = fetchFn.mock.calls.filter(([, o]) => o?.method === 'DELETE');
     expect(deletes.map(([u]) => u)).toEqual(['/api/projects/datalad-server/sync/j1/cancel']);
-    expect(fetchFn.mock.calls.filter(([u]) => u === STATUS)).toHaveLength(1);  // no poll after the cancel
-    expect(ui.result).toHaveBeenCalledWith('warning', 'Cancelled.');
-    expect(ui.end).toHaveBeenCalled();
+    expect(fetchFn.mock.calls.filter(([u]) => u === STATUS)).toHaveLength(3);  // polled to the end
+    expect(ui.result).toHaveBeenCalledWith(
+      'warning', 'Cancel requested. The job is already running and will finish in the background.',
+    );
+    expect(ui.result).not.toHaveBeenCalledWith('warning', 'Cancelled.');
+    expect(ui.result.mock.calls.at(-1)).toEqual(['success', 'Sent.']);
+    expect(ui.end).toHaveBeenCalledTimes(1);
+  });
+
+  it('a Cancel before the job started ends as Cancelled', async () => {
+    const fetchFn = fakeFetch([{ status: 'cancelled', percent: 0 }]);
+    const ui = fakeUi();
+    ui.start.mockImplementation((cancel) => cancel());  // clicked before the start route answered
+
+    await runJob(fetchFn, '/api/projects/datalad-server/sync/start', { project_path: '/p' }, { ui, sleep: now });
+
+    const deletes = fetchFn.mock.calls.filter(([, o]) => o?.method === 'DELETE');
+    expect(deletes).toHaveLength(1);
+    expect(ui.result.mock.calls.at(-1)).toEqual(['warning', 'Cancelled.']);
+    expect(ui.end).toHaveBeenCalledTimes(1);
   });
 });

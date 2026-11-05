@@ -1,7 +1,8 @@
 /**
  * Run one DataLad job route (sync, put on server, open from server, get data): start it, poll its status, show the
  * progress, let the user cancel. Every decision is the backend's; this only relays. `ui` draws it (page.js):
- *   start(cancel)                 progress shown; `cancel()` is what the Cancel button calls
+ *   start(cancel)                 progress shown; `cancel()` is what the Cancel button calls. The backend honours a
+ *                                 cancel only before the job starts: a running job is polled to its end.
  *   progress(percent, message)    one status poll
  *   result(kind, text)            the outcome as a plain message
  *   errors(result, sendAnyway)    the job stopped on validation errors; `sendAnyway()` repeats it acknowledged
@@ -12,17 +13,20 @@ const JOB_ROUTE = '/api/projects/datalad-server/sync';  // status and cancel of 
 const POLL_MS = 800;
 const MAX_POLLS = 2250;  // ~30 minutes
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const STILL_RUNNING = 'Cancel requested. The job is already running and will finish in the background.';
 
 export async function runJob(fetchFn, route, body, options) {
     const { ui, onComplete = null, askIdentity = async () => false, sleep = wait } = options;
     const jobUrl = (jobId, action) => `${JOB_ROUTE}/${encodeURIComponent(jobId)}/${action}`;
     let jobId = null;
-    let cancelled = false;
+    let cancelRequested = false;
+    let running = false;
 
     ui.start(() => {
-        cancelled = true;
+        if (cancelRequested) return;
+        cancelRequested = true;
         if (jobId) fetchFn(jobUrl(jobId, 'cancel'), { method: 'DELETE' }).catch(() => {});
-        ui.result('warning', 'Cancelled.');
+        ui.result('warning', running ? STILL_RUNNING : 'Cancel requested.');
     });
 
     try {
@@ -34,18 +38,18 @@ export async function runJob(fetchFn, route, body, options) {
         const started = await start.json().catch(() => ({}));
         if (!start.ok || !started.job_id) throw new Error(started.error || 'Could not start.');
         jobId = started.job_id;
-        if (cancelled) {
-            await fetchFn(jobUrl(jobId, 'cancel'), { method: 'DELETE' }).catch(() => {});
-            return;
-        }
+        if (cancelRequested) await fetchFn(jobUrl(jobId, 'cancel'), { method: 'DELETE' }).catch(() => {});
 
         for (let i = 0; i < MAX_POLLS; i += 1) {
             await sleep(POLL_MS);
-            if (cancelled) return;
             const response = await fetchFn(jobUrl(jobId, 'status'));
             if (!response.ok) throw new Error('Lost track of the job.');
             const status = await response.json();
             ui.progress(status.percent || 0, status.message || '');
+            if (status.status === 'running' && !running) {
+                running = true;
+                if (cancelRequested) ui.result('warning', STILL_RUNNING);  // the cancel came too late
+            }
 
             if (status.status === 'complete') {
                 ui.result('success', (status.result && status.result.message) || status.message || 'Done.');
@@ -71,7 +75,7 @@ export async function runJob(fetchFn, route, body, options) {
         }
         throw new Error('Gave up waiting after 30 minutes.');
     } catch (error) {
-        if (!cancelled) ui.result('danger', error.message || 'The job failed.');
+        ui.result('danger', error.message || 'The job failed.');
     } finally {
         ui.end();
     }

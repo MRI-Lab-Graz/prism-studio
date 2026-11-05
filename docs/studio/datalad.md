@@ -42,7 +42,9 @@ A server that cannot be reached is a plain notice; you can keep working and savi
   location that already holds a project is refused: open it from the server instead.
 - **Open from server...** asks for the location and a new or empty folder on this computer, copies the project
   there and opens it. The subject data is not copied yet; use *Get data* for what you need.
-- Long steps (sync, put on server, open from server, get data) show a progress bar with **Cancel**.
+- Long steps (sync, put on server, open from server, get data) show a progress bar with **Cancel**. Cancel stops a
+  step only before it has started. Once it is running, the page says *Cancel requested. The job is already running
+  and will finish in the background.*, keeps the buttons blocked and shows the result when the step ends.
 
 ## More
 
