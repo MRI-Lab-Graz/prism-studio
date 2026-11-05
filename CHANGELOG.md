@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The navbar shows how many changes are not yet saved to DataLad**, as a yellow number next to "DataLad". It is looked at again
+  after every validator run (the results page). `prism_tools datalad status --project <path> [--json]` prints the same.
+
 ### Changed
+- **Saving a DataLad snapshot needs a PRISM-valid dataset.** With validation errors the save is refused and nothing is written;
+  `prism_tools datalad save --allow-invalid` and Studio's "Save anyway" prompt override it. Automatic saves (on project switch,
+  when enabling DataLad) are not gated.
 - **The git name and email belong to the person, not the project.** They are read from and saved to the computer's git
   settings (Settings page or `prism_tools.py datalad identity`). A project no longer stores them, so they cannot travel to
   other users with a push or pull; the "several people use this login" setting and the per-project identity card are gone.

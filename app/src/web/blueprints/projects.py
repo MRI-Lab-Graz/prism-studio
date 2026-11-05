@@ -403,7 +403,9 @@ def save_datalad_snapshot():
 
     data = request.get_json(silent=True) or {}
     message = str(data.get("message") or "").strip() or DEFAULT_SNAPSHOT_MESSAGE
-    result = _project_manager.save_datalad_snapshot(project_path, message=message)
+    result = _project_manager.save_datalad_snapshot(
+        project_path, message=message, allow_invalid=bool(data.get("allow_invalid"))
+    )
     result["current_project"] = get_current_project()
     if result.get("success"):
         return jsonify(result)
