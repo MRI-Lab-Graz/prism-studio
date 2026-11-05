@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import stat
 import subprocess
 from pathlib import Path
 
@@ -64,9 +66,34 @@ def _entries(path: Path) -> tuple[list[tuple[str, str]], str]:
     return [tuple(entry.partition("\n")[::2]) for entry in filter(None, listed.stdout.split("\0"))], ""
 
 
+def _not_real(path: Path, folder: bool = False) -> str:
+    """'' when `path` is missing or a real file/folder; a symlink (also a dangling one) or anything else is refused.
+
+    is_file() follows links, so a link to a file inside a not-yet-installed dataset would be skipped now and read
+    by DataLad later.
+    """
+    try:
+        mode = os.lstat(path).st_mode
+    except FileNotFoundError:
+        return ""
+    if stat.S_ISDIR(mode) if folder else stat.S_ISREG(mode):
+        return ""
+    return f"{path} is not a regular {'folder' if folder else 'file'} (a link or something else), which is not accepted"
+
+
 def _nested_datasets(root: Path, location: str) -> tuple[list[str], str]:
     """(subdataset paths of `root`, '') once its `.datalad/config` and `.gitmodules` are checked, else ([], problem)."""
+    # git refuses some paths at checkout (a symlinked .gitmodules), DataLad still says install(ok): the files are gone
+    status = subprocess.run(["git", "-C", str(root), "status", "--porcelain"], capture_output=True, text=True)
+    if status.returncode != 0:  # e.g. git rejects `update = !command` in .gitmodules
+        return [], f"git refuses {root}, which is not accepted ({status.stderr.strip()})"
+    if status.stdout.strip():
+        detail = "; ".join(status.stdout.strip().splitlines()[:3])
+        return [], f"{root} was not checked out completely from the server ({detail})"
     config = root / ".datalad" / "config"
+    for path, folder in ((root / ".datalad", True), (config, False), (root / ".gitmodules", False)):
+        if _not_real(path, folder):
+            return [], _not_real(path, folder)
     if config.is_file():
         entries, problem = _entries(config)
         if problem:

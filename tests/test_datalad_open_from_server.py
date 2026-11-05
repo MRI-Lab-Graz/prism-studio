@@ -241,6 +241,76 @@ def test_server_config_that_could_redirect_a_checked_url_is_refused(mode, tmp_pa
         assert (target / "sub-01" / "n.txt").is_file() and "sub-01" in result["message"]
 
 
+def _server_with_links(tmp_path, mode):
+    """Two subject datasets; the root's config files are replaced by symlinks (committed with plain git)."""
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    (secret / "s.txt").write_text("secret\n", encoding="utf-8")
+    _run("git", "add", ".", cwd=secret)
+    _run("git", "commit", "-qm", "s", cwd=secret)
+    srv = tmp_path / "srv"
+    _run("datalad", "create", "-c", "text2git", str(srv), cwd=tmp_path)
+    for sub in ("sub-01", "sub-02"):
+        _run("datalad", "create", "-c", "text2git", "-d", str(srv), str(srv / sub), cwd=srv)
+    evil = f'[datalad "dataset"]\n\tid = x\n[datalad "clone.url-substitute"]\n\tevil = ,.*sub-02.*,{secret}\n'
+    (srv / "sub-01" / "evil.cfg").write_text(evil, encoding="utf-8")
+    (srv / "sub-01" / "dl").mkdir()
+    (srv / "sub-01" / "dl" / "config").write_text(evil, encoding="utf-8")
+    (srv / "sub-01" / "gm").write_text((srv / ".gitmodules").read_text(encoding="utf-8"), encoding="utf-8")
+    _run("datalad", "save", "-r", "-m", "x", cwd=srv)
+    if mode == "config-to-child":  # dangles while the root is checked, resolves once sub-01 is installed
+        (srv / ".datalad" / "config").unlink()
+        (srv / ".datalad" / "config").symlink_to("../sub-01/evil.cfg")
+    elif mode == "dangling-config":
+        (srv / ".datalad" / "config").unlink()
+        (srv / ".datalad" / "config").symlink_to("../nowhere.cfg")
+    elif mode == "datalad-dir":
+        _run("git", "rm", "-rq", ".datalad", cwd=srv)
+        shutil.rmtree(srv / ".datalad", ignore_errors=True)
+        (srv / ".datalad").symlink_to("sub-01/dl")
+    elif mode == "gitmodules":
+        (srv / ".gitmodules").unlink()
+        (srv / ".gitmodules").symlink_to("sub-01/gm")
+    _run("git", "add", "-A", ".", cwd=srv)
+    _run("git", "commit", "-qm", mode, cwd=srv)
+    return srv
+
+
+@needs_datalad
+@pytest.mark.parametrize("mode", ["config-to-child", "dangling-config", "datalad-dir", "gitmodules"])
+def test_a_symlinked_config_file_is_refused_not_skipped(mode, tmp_path, monkeypatch):
+    _identity(tmp_path, monkeypatch)
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    srv = _server_with_links(tmp_path, mode)
+    target = tmp_path / "mine"
+    result = open_from_server(str(srv), target)
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    # git itself refuses to check out a symlinked .gitmodules; DataLad still reports the clone as ok
+    refused_by = "was not checked out completely" if mode == "gitmodules" else "is not a regular"
+    assert refused_by in result["message"] and "delete" in result["message"].lower(), result["message"]
+    assert not list(target.rglob("s.txt"))  # the foreign repository was not cloned into sub-02
+    assert not (target / "sub-01" / "evil.cfg").exists()  # refused before anything nested was installed
+
+
+@needs_datalad
+def test_the_servers_own_origin_is_not_inherited(server, tmp_path):
+    """A folder location whose own (uncommitted) .git/config names another repo as origin: DataLad would add and fetch it."""
+    other = tmp_path / "other"
+    _run("git", "init", "-q", str(other), cwd=tmp_path)
+    (other / "o.txt").write_text("other\n", encoding="utf-8")
+    _run("git", "add", ".", cwd=other)
+    _run("git", "commit", "-qm", "o", cwd=other)
+    for repo in (server, server / "sub-01"):
+        _run("git", "remote", "add", "origin", str(other), cwd=repo)
+    target = tmp_path / "mine"
+    result = open_from_server(str(server), target)
+    assert result["success"] is True, result
+    for repo in (target, target / "sub-01", target / "sub-01" / "ses-1"):
+        assert _run("git", "remote", cwd=repo).split() == ["origin"], repo
+        assert "origin-2" not in _run("git", "branch", "-r", cwd=repo)
+
+
 def test_relative_and_inside_urls():
     from src.datalad_clone import nested_url_problem
 

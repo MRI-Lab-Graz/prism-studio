@@ -989,9 +989,15 @@ def run_datalad_install_nested(
 
 
 def _run_datalad_step(result: dict, command: list[str], cwd: str, timeout_seconds: int, line_callback: Any) -> dict:
-    result["command"] = shlex.join(command)
+    """Run `datalad <verb> ...` for open-from-server.
+
+    For a folder location, DataLad would also add the server's own `origin` (from its uncommitted .git/config,
+    untrusted) as `origin-2` and fetch it; inherit-local-origin=false stops that for this command.
+    """
+    run = [command[0], "-c", "datalad.install.inherit-local-origin=false", *command[1:]]
+    result["command"] = shlex.join(run)
     try:
-        run_result = _run_streaming_command(command, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback)
+        run_result = _run_streaming_command(run, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback)
     except subprocess.TimeoutExpired:
         result["message"] = f"DataLad {command[1]} timed out after {max(1, int(timeout_seconds))} seconds."
         return result

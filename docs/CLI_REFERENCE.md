@@ -864,7 +864,9 @@ their data (fetch it with Get data), each only after every address in its parent
 dataset must be a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the exact
 `--location`; anything else stops the install. The parent's committed `.datalad/config` may hold only
 `datalad.dataset.id` and `.gitmodules` only `path`, `url` and `datalad-id`; any other setting (which could redirect an
-address) stops it too. The save-gate hook goes into every dataset as soon as it is there (git
+address) stops it too, and so does a `.datalad`, `.datalad/config` or `.gitmodules` that is a link. The server's own
+`origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
+when a subdataset was added from an address rather than created in place; PRISM never does) cannot be opened this way. The save-gate hook goes into every dataset as soon as it is there (git
 does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
 repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
 `bad_location`, `bad_target`, `target_not_empty`, `no_datalad`, `no_identity`, `clone_failed`). If a nested install
