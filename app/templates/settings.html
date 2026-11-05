@@ -43,7 +43,7 @@
                 </label>
             </div>
             <div class="small mt-2" id="dataladForNewProjectsFeedback" aria-live="polite"></div>
-            <div id="gitIdentityMachine">
+            <hr>
             <div class="fw-semibold">Your name and email</div>
             <small class="text-muted d-block mb-2">Used for all your projects. Stored in your git settings for this computer.</small>
             <form class="row g-2" id="gitIdentityForm">
@@ -52,7 +52,6 @@
                 <div class="col-md-4"><button type="submit" class="btn btn-sm btn-outline-primary">Save</button></div>
             </form>
             <div class="small mt-2" id="gitIdentityFeedback" aria-live="polite"></div>
-            </div>
             {% if not current_project.path %}
             <div class="small text-muted mt-3">Open a project to see and manage its own DataLad tracking here.</div>
             {% endif %}

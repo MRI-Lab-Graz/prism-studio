@@ -41,7 +41,12 @@ def adopt_legacy_project_identity(project_root) -> None:
     path = find_config_file(str(project_root))
     if not path:
         return
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):  # project data is untrusted; the config loader reports an unreadable file
+        return
+    if not isinstance(data, dict):
+        return
     name, email = data.pop("gitUserName", None), data.pop("gitUserEmail", None)
     if name is None and email is None:
         return

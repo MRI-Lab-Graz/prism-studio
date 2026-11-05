@@ -76,6 +76,15 @@ def test_an_old_project_identity_never_replaces_the_computers(git_home, tmp_path
     assert "gitUserName" not in json.loads((proj / ".prismrc.json").read_text())
 
 
+def test_an_unreadable_project_file_does_not_stop_the_check(git_home, tmp_path):
+    git_home.write_text("[user]\n\tname = Ada\n\temail = ada@example.org\n")
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / ".prismrc.json").write_text("{not json")
+    assert datalad_preflight(proj, which=_which_all) == []
+    assert (proj / ".prismrc.json").read_text() == "{not json"
+
+
 def test_a_new_project_uses_the_computers_identity(git_home, tmp_path):
     git_home.write_text("[user]\n\tname = Ada\n\temail = ada@example.org\n")
     proj = tmp_path / "proj"
