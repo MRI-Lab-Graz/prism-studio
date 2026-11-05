@@ -32,6 +32,22 @@
 
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-light">
+            <div class="h5 mb-0"><i class="fas fa-universal-access text-secondary me-2"></i>Accessibility</div>
+        </div>
+        <div class="card-body">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="wcagEnhancedViewToggle">
+                <label class="form-check-label" for="wcagEnhancedViewToggle">
+                    <span class="d-block fw-semibold">WCAG enhanced view</span>
+                    <small class="text-muted">Off: Studio looks as it always did. On: higher-contrast greens and grey text, underlined links in running text and a thick outline around the control with the keyboard focus (WCAG 2.2 AA). Takes effect on the next page you open.</small>
+                </label>
+            </div>
+            <div class="small mt-2" id="wcagEnhancedViewFeedback" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
             <div class="h5 mb-0"><i class="fas fa-code-branch text-secondary me-2"></i>DataLad Version Control</div>
         </div>
         <div class="card-body">

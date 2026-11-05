@@ -41,6 +41,7 @@ import {
     clearGlobalLibrary,
     initBackendMonitoringToggle,
     initDataladForNewProjectsToggle,
+    initWcagEnhancedViewToggle,
     initGitIdentityForm,
     initDedicatedTerminalToggle,
     initProjectSettingsForm,
@@ -123,6 +124,7 @@ export function initializeSettingsPage() {
     const noop = () => {};
     initProjectPathPickers({ fetchWithApiFallback, validateProjectField: noop, clearCreateResult: noop });
     initDataladForNewProjectsToggle();
+    initWcagEnhancedViewToggle();
     initGitIdentityForm();
     const projectState = createProjectsCurrentStateController({ getProjectStateSnapshot, setProjectStateSnapshot });
     createDataladCard({

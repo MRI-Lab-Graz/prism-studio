@@ -425,6 +425,10 @@ class AppSettings:
     # Off by default: DataLad stays an opt-in, this only pre-selects it.
     datalad_for_new_projects: bool = False
 
+    # WCAG enhanced view: higher-contrast colours, underlined links, thick keyboard-focus outline.
+    # Off by default: Studio keeps its original look.
+    wcag_enhanced_view: bool = False
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -507,6 +511,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
                 data.get("enableStudyApplicationImport", False)
             ),
             datalad_for_new_projects=bool(data.get("dataladForNewProjects", False)),
+            wcag_enhanced_view=bool(data.get("wcagEnhancedView", False)),
         )
         settings._settings_path = settings_path
         return settings
@@ -547,6 +552,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         ),
         "enableStudyApplicationImport": settings.enable_study_application_import,
         "dataladForNewProjects": settings.datalad_for_new_projects,
+        "wcagEnhancedView": settings.wcag_enhanced_view,
     }
 
     # Remove None values
