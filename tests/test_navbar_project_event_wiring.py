@@ -43,7 +43,10 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("function setNavbarDataladFeedback(message, kind = 'muted', toggleLabel = '')", content)
         self.assertIn("async function saveNavbarDataladSnapshot()", content)
         self.assertIn("window.prompt('Commit message for this checkpoint'", content)
-        self.assertIn("navbarFetchWithApiFallback('/api/projects/datalad/save'", content)
+        # The POST itself lives in the shared module (tested in datalad-save.test.js); the navbar only calls it.
+        self.assertIn("js/shared/datalad-save.js", content)
+        self.assertIn("saveDataladSnapshot(navbarFetchWithApiFallback, saveMessage)", content)
+        self.assertNotIn("navbarFetchWithApiFallback('/api/projects/datalad/save'", content)
         self.assertIn("function getNavbarDataladOperationState()", content)
         self.assertIn("function setNavbarDataladOperationState(active, source = '')", content)
         self.assertIn("function buildNavbarAutosaveFailureMessage(autosaveResult)", content)

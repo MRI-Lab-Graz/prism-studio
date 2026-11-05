@@ -212,7 +212,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("Register Nested Dataset", content)
         self.assertIn("DataLad Structure Complete", content)
         self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
-        self.assertIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
+        # The POST itself lives in the shared module (tested in datalad-save.test.js); the card only calls it.
+        self.assertIn("saveDataladSnapshot(fetchWithApiFallback, saveMessage)", content)
+        self.assertNotIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
         self.assertIn("confirmed: true", content)
         self.assertIn("register one per click", content)
         self.assertIn("DataLad structure is complete for this project.", content)
@@ -340,7 +342,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "    initProjectsPage();\n"
             "    initProjectValidation();\n"
             "    initDataladSetupCheck();\n"
-            "    initGitIdentityCard({ fetchWithApiFallback });\n"
             "    initSessionMapCard({ fetchWithApiFallback });\n"
             "}",
             index_content,
