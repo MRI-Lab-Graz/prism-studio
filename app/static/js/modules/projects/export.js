@@ -364,6 +364,24 @@ function syncMriScrubControls() {
     });
 }
 
+/**
+ * The scope the content filters choose (includes/projects/content_scope_filters.html): the include_* and exclude_*
+ * options the export and the DataLad page's Get data both send (the backend's filters_from_options reads them).
+ */
+export function readContentScope() {
+    return {
+        include_derivatives: getById('exportDerivatives')?.checked || false,
+        include_sourcedata: getById('exportSourcedata')?.checked || false,
+        include_code: getById('exportCode')?.checked || false,
+        include_analysis: getById('exportAnalysis')?.checked || false,
+        exclude_subjects: _getUncheckedValues('export-subject-filter'),
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+        exclude_modalities: _getUncheckedValues('export-modality-filter'),
+        exclude_acq: _getUncheckedAcqByModality(),
+        exclude_tasks: _getUncheckedTaskByModality(),
+    };
+}
+
 function buildExportRequestData(currentProjectPath, overrides = {}) {
     const scrubGroups = getSelectedMriScrubGroups();
     return {
@@ -373,10 +391,7 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
         export_phenotype_bridge: getById('exportPhenotypeBridge')?.checked || false,
-        include_derivatives: getById('exportDerivatives')?.checked || false,
-        include_sourcedata: getById('exportSourcedata')?.checked || false,
-        include_code: getById('exportCode')?.checked || false,
-        include_analysis: getById('exportAnalysis')?.checked || false,
+        ...readContentScope(),
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         validation_mode: getSelectedExportValidationMode(),
         // Git LFS conversion only happens via the Folder Export button; ZIP export
@@ -385,11 +400,6 @@ function buildExportRequestData(currentProjectPath, overrides = {}) {
         // (see _resolve_exclude_version_control_metadata) so that rule lives
         // in exactly one place.
         repository_mode: getSelectedExportRepositoryMode(),
-        exclude_subjects: _getUncheckedValues('export-subject-filter'),
-        exclude_sessions: _getUncheckedValues('export-session-filter'),
-        exclude_modalities: _getUncheckedValues('export-modality-filter'),
-        exclude_acq: _getUncheckedAcqByModality(),
-        exclude_tasks: _getUncheckedTaskByModality(),
         ...overrides,
     };
 }
@@ -433,15 +443,7 @@ function buildFolderExportRequestData(currentProjectPath) {
         scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         scrub_mri_json_groups: scrubGroups.length ? scrubGroups : null,
         export_phenotype_bridge: getById('exportPhenotypeBridge')?.checked || false,
-        include_derivatives: getById('exportDerivatives')?.checked || false,
-        include_sourcedata: getById('exportSourcedata')?.checked || false,
-        include_code: getById('exportCode')?.checked || false,
-        include_analysis: getById('exportAnalysis')?.checked || false,
-        exclude_subjects: _getUncheckedValues('export-subject-filter'),
-        exclude_sessions: _getUncheckedValues('export-session-filter'),
-        exclude_modalities: _getUncheckedValues('export-modality-filter'),
-        exclude_acq: _getUncheckedAcqByModality(),
-        exclude_tasks: _getUncheckedTaskByModality(),
+        ...readContentScope(),
         materialize_annex_content: true,
     };
 }
@@ -1188,14 +1190,7 @@ export async function loadProjectStructure() {
             return;
         }
 
-        _renderCheckboxList('exportSubjectList', data.subjects || [], 'subject');
-        _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
-        _renderCheckboxListWithAcq(
-            'exportModalityList',
-            data.modalities || [],
-            data.acq_labels || {},
-            data.task_labels || {}
-        );
+        renderScopeLists(data);
         lastExportStructureStatus = {
             message: 'Current project structure loaded. Uncheck items below to narrow the export.',
             tone: 'ready',
@@ -1209,6 +1204,29 @@ export async function loadProjectStructure() {
         if (requestToken !== projectStructureLoadToken) return;
         resetDefacingUiState();
         renderProjectStructureStatus('Could not load current project structure.', 'warning');
+    }
+}
+
+/**
+ * Render the subject/session/modality lists from POST /api/projects/export/structure (all checked: everything).
+ */
+export function renderScopeLists(data) {
+    _renderCheckboxList('exportSubjectList', data.subjects || [], 'subject');
+    _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
+    _renderCheckboxListWithAcq('exportModalityList', data.modalities || [], data.acq_labels || {}, data.task_labels || {});
+}
+
+/**
+ * Keep a modality's task/acq checkboxes in step after one of the scope checkboxes changed.
+ */
+export function syncScopeFilterChange(target) {
+    if (target.classList.contains('export-modality-filter')) {
+        applyModalitySubfilterState(target);
+    } else if (target.classList.contains('export-acq-filter')) {
+        const modality = String(target.dataset.modality || '').trim();
+        if (modality) {
+            syncModalitySubfilterState(modality);
+        }
     }
 }
 
@@ -1547,14 +1565,7 @@ export function initExportForm() {
                 || target.classList.contains('export-modality-filter')
                 || target.classList.contains('export-acq-filter')
             ) {
-                if (target.classList.contains('export-modality-filter')) {
-                    applyModalitySubfilterState(target);
-                } else if (target.classList.contains('export-acq-filter')) {
-                    const modality = String(target.dataset.modality || '').trim();
-                    if (modality) {
-                        syncModalitySubfilterState(modality);
-                    }
-                }
+                syncScopeFilterChange(target);
 
                 saveExportPreferencesPatch({
                     exclude_subjects: _getUncheckedValues('export-subject-filter'),

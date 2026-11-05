@@ -1,0 +1,79 @@
+{# What to include: top-level folders and subject/session/modality lists. Shared by the export and the DataLad
+   page's Get data (both send the same exclude_*/include_* options; export.js renders and reads the lists). #}
+<div class="row g-3">
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Include top-level folders:</label>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportSubjects" checked disabled>
+            <label class="form-check-label" for="exportSubjects">
+                Dataset root files and <code>sub-*/</code> folders
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportDerivatives"{% if scope_defaults and scope_defaults.include_derivatives %} checked{% endif %}>
+            <label class="form-check-label" for="exportDerivatives">
+                <code>derivatives/</code> - Processed data
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportSourcedata"{% if scope_defaults and scope_defaults.include_sourcedata %} checked{% endif %}>
+            <label class="form-check-label" for="exportSourcedata">
+                <code>sourcedata/</code> - Raw source files (excluded by default)
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportCode"{% if scope_defaults and scope_defaults.include_code %} checked{% endif %}>
+            <label class="form-check-label" for="exportCode">
+                <code>code/</code> - Analysis scripts and recipes
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportAnalysis"{% if scope_defaults and scope_defaults.include_analysis %} checked{% endif %}>
+            <label class="form-check-label" for="exportAnalysis">
+                <code>analysis/</code> - Results and reports
+            </label>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Metadata:</label>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="exportMetadata" checked disabled>
+            <label class="form-check-label" for="exportMetadata">
+                Project metadata files (dataset_description.json, README, etc.)
+            </label>
+        </div>
+    </div>
+
+    <div class="col-12"><hr class="my-2"></div>
+
+    {% if scope_bulk_buttons %}
+    <div class="col-12 d-flex justify-content-end gap-2 mb-1">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="exportUncheckAllFilters">
+            <i class="fas fa-square me-1"></i>Uncheck all filters
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="exportCheckAllFilters">
+            <i class="fas fa-check-square me-1"></i>Check all filters
+        </button>
+    </div>
+    {% endif %}
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold">Subjects <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+        <div id="exportSubjectList">
+            <span class="text-muted small">Load a project to see available subjects.</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-bold">Sessions <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+        <div id="exportSessionList">
+            <span class="text-muted small">Load a project to see available sessions.</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label fw-bold">Modalities <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+        <div id="exportModalityList">
+            <span class="text-muted small">Load a project to see available modalities.</span>
+        </div>
+    </div>
+</div>

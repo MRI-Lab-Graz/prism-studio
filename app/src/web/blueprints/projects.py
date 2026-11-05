@@ -330,6 +330,18 @@ def share_page():
     return render_template("share.html", current_project=get_current_project())
 
 
+@projects_bp.route("/projects/datalad")
+def datalad_page():
+    """Render the DataLad page: the one next step for the current project (from GET /api/projects/datalad/state),
+    everything else under "More". Opens without a project ("Open from server...")."""
+    from src.datalad_get_data import filters_from_options
+
+    # Get data's scope starts at the CLI's defaults (`prism_tools datalad get-data` without options).
+    return render_template(
+        "datalad.html", current_project=get_current_project(), scope_defaults=filters_from_options({})
+    )
+
+
 @projects_bp.route("/api/projects/current", methods=["GET"])
 def get_current():
     """Get the current working project."""

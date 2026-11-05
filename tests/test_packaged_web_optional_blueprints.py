@@ -57,6 +57,10 @@ def _build_template_app() -> Flask:
     def prism_logo():
         return "logo"
 
+    @projects_bp.route("/projects/datalad")
+    def datalad_page():  # the navbar links to it
+        return "datalad"
+
     @projects_bp.route("/projects")
     def projects_page():
         return render_template(

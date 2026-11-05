@@ -42,6 +42,7 @@ def client():
     app.add_url_rule("/specifications", "specifications", lambda: "")
     projects_stub = Blueprint("projects", __name__)
     projects_stub.add_url_rule("/projects", "projects_page", lambda: "")
+    projects_stub.add_url_rule("/projects/datalad", "datalad_page", lambda: "")
     app.register_blueprint(projects_stub)
     for bp_name, rule, ep in [("tools_template_editor", "/template-editor", "template_editor"), ("json_editor", "/editor", "editor_index")]:
         stub = Blueprint(bp_name, bp_name)
@@ -157,8 +158,8 @@ def test_navbar_rechecks_datalad_changes_after_a_validator_run_only(client):
     assert call % "true" in client.get("/results/rid").get_data(as_text=True)
     other = client.get("/validate").get_data(as_text=True)
     assert call % "false" in other and "navbarDataladPendingCount" in other
-    # the navbar save loads the shared "refused, save anyway?" helper from a real static URL
-    assert "/static/js/shared/datalad-save.js?v=t" in other
+    # the navbar item links to the DataLad page, which saves; the navbar itself no longer does
+    assert 'href="/projects/datalad"' in other
 
 
 def test_publish_route_uncommitted_changes_is_400(client, monkeypatch):

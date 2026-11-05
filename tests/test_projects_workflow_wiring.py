@@ -758,6 +758,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_export_template_button_is_present_in_projects_export_section(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+        # the scope filters are a partial shared with the DataLad page's Get data
+        self.assertIn("{% with scope_bulk_buttons=True %}{% include 'includes/projects/content_scope_filters.html' %}", content)
+        content += EXPORT_SECTION_TEMPLATE.with_name("content_scope_filters.html").read_text(encoding="utf-8")
 
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
