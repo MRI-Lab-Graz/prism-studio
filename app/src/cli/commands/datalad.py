@@ -21,7 +21,6 @@ def cmd_datalad_doctor(args) -> None:
         sys.exit(1)
 
 
-
 def _manager():
     from src.project_manager import ProjectManager
 
@@ -69,8 +68,11 @@ def cmd_datalad_put_on_server(args) -> None:
 
 def cmd_datalad_open_from_server(args) -> None:
     """Get your own copy of a project from the lab server into an empty or new folder (Studio's "Open from server")."""
-    from src.datalad_clone import open_from_server
+    from src.datalad_clone import open_from_server, target_problem
 
+    problem = target_problem(args.target)  # the check Studio's route makes before it starts a job
+    if problem:
+        _print_result(args, {"success": False, "reason": "bad_target", "path": str(args.target), "message": problem})
     result = open_from_server(args.location, args.target, line_callback=None if args.json else print)
     _print_result(args, result)
 
@@ -78,7 +80,7 @@ def cmd_datalad_open_from_server(args) -> None:
 def cmd_datalad_get_data(args) -> None:
     """Fetch the data of your copy from the server, with the export's filters (Studio's "Get data")."""
     from src.datalad_get_data import filters_from_options, get_data
-    from src.cli.commands.export import export_data_from_args
+    from src.cli.services.export_args import export_data_from_args
 
     result = get_data(
         args.project,
