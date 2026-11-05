@@ -311,6 +311,136 @@ def test_the_servers_own_origin_is_not_inherited(server, tmp_path):
         assert "origin-2" not in _run("git", "branch", "-r", cwd=repo)
 
 
+def _server_with_trap(tmp_path, mode):
+    """A real server (sub-01/ses-1, sub-02) whose tree points a nested path elsewhere, and a victim dataset."""
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    (secret / "s.txt").write_text("secret\n", encoding="utf-8")
+    _run("git", "add", ".", cwd=secret)
+    _run("git", "commit", "-qm", "s", cwd=secret)
+    origin = tmp_path / "victim-origin"  # another DataLad dataset on this computer, sub-v not installed
+    _run("datalad", "create", "-c", "text2git", str(origin), cwd=tmp_path)
+    _run("datalad", "create", "-c", "text2git", "-d", str(origin), str(origin / "sub-v"), cwd=tmp_path)
+    _run("datalad", "save", "-r", "-m", "v", cwd=origin)
+    victim = tmp_path / "victim"
+    _run("datalad", "clone", str(origin), str(victim), cwd=tmp_path)
+    srv = tmp_path / "srv"
+    _run("datalad", "create", "-c", "text2git", str(srv), cwd=tmp_path)
+    for parent, child in ((srv, "sub-01"), (srv / "sub-01", "ses-1"), (srv, "sub-02")):
+        _run("datalad", "create", "-c", "text2git", "-d", str(parent), str(parent / child), cwd=tmp_path)
+    _run("datalad", "save", "-r", "-m", "x", cwd=srv)
+    s1 = srv / "sub-01"
+
+    def commit(repo):
+        _run("git", "add", "-A", ".", cwd=repo)
+        _run("git", "commit", "-qm", mode, cwd=repo)
+
+    def link(repo, name, to):  # the nested dataset committed as a symlink, .gitmodules unchanged
+        _run("git", "rm", "-q", "--cached", name, cwd=repo)
+        shutil.rmtree(repo / name)
+        (repo / name).symlink_to(to)
+        commit(repo)
+
+    if mode in ("deep-path", "deep-path-gm"):  # the root lists sub-01/ses-1; sub-01's own files redirect ses-1
+        if mode == "deep-path":
+            with open(s1 / ".datalad" / "config", "a", encoding="utf-8") as cfg:
+                cfg.write(f'[datalad "clone.url-substitute"]\n\tevil = ,.*ses-1.*,{secret}\n')
+        else:
+            gm = s1 / ".gitmodules"
+            gm.write_text(gm.read_text(encoding="utf-8").replace("url = ./ses-1", f"url = {secret}"), encoding="utf-8")
+        commit(s1)
+        with open(srv / ".gitmodules", "a", encoding="utf-8") as gm:
+            gm.write('[submodule "deep"]\n\tpath = sub-01/ses-1\n\turl = ./sub-01/ses-1\n')
+        commit(srv)
+    elif mode == "sub-abs-link":
+        link(srv, "sub-02", victim)
+    elif mode == "ses-link-up":
+        link(s1, "ses-1", victim)
+        commit(srv)
+    elif mode == "self-link":
+        link(srv, "sub-02", ".")
+    elif mode == "sub-rel-link":
+        link(srv, "sub-02", "sub-01")
+    return srv, victim
+
+
+@needs_datalad
+@pytest.mark.parametrize(
+    "mode, refused",
+    [
+        ("deep-path", "sub-01/ses-1"),
+        ("deep-path-gm", "sub-01/ses-1"),
+        ("sub-abs-link", "sub-02"),
+        ("ses-link-up", "ses-1"),
+        ("self-link", "sub-02"),
+        ("sub-rel-link", "sub-02"),
+    ],
+)
+def test_a_nested_path_must_be_a_real_nested_dataset_of_its_own_parent(mode, refused, tmp_path, monkeypatch):
+    """A `.gitmodules` path is installed only when it is a gitlink of that very dataset and a real folder."""
+    from src.save_gate import has_save_hook
+
+    _identity(tmp_path, monkeypatch)
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    srv, victim = _server_with_trap(tmp_path, mode)
+    target = tmp_path / "mine"
+    result = open_from_server(str(srv), target)
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    assert f"'{refused}'" in result["message"] and "is not a nested dataset" in result["message"], result["message"]
+    assert "delete" in result["message"].lower()
+    assert not list(target.rglob("s.txt"))  # the foreign repository was not cloned anywhere into the copy
+    assert not has_save_hook(victim)  # nothing was written into the victim
+    assert not (victim / "sub-v" / ".datalad").exists()  # and nothing installed in it
+
+
+def _alternates(repo, foreign):
+    info = repo / ".git" / "objects" / "info"
+    info.mkdir(parents=True, exist_ok=True)
+    (info / "alternates").write_text(f"{foreign / '.git' / 'objects'}\n", encoding="utf-8")
+
+
+@needs_datalad
+def test_a_folder_location_with_alternates_is_refused(server, tmp_path):
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    _alternates(server, secret)
+    target = tmp_path / "mine"
+    result = open_from_server(str(server), target)
+    assert result["success"] is False and result["reason"] == "bad_location", result
+    assert "alternates" in result["message"]
+    assert not target.exists()
+
+
+@needs_datalad
+def test_a_nested_server_folder_with_alternates_is_refused(server, tmp_path):
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    _alternates(server / "sub-01", secret)
+    target = tmp_path / "mine"
+    result = open_from_server(str(server), target)
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    assert "alternates" in result["message"] and "delete" in result["message"].lower()
+    assert not (target / "sub-01" / ".git" / "objects" / "info" / "alternates").exists()
+    assert not (target / "sub-01" / "notes.txt").exists()  # sub-01 was not installed
+
+
+@needs_datalad
+def test_the_checkout_check_has_a_timeout(server, tmp_path):
+    real = subprocess.run
+
+    def slow_status(cmd, *args, **kwargs):
+        if "status" in cmd:
+            assert kwargs.get("timeout") == 60
+            raise subprocess.TimeoutExpired(cmd, kwargs["timeout"])
+        return real(cmd, *args, **kwargs)
+
+    with patch("src.datalad_clone.subprocess.run", slow_status):
+        result = open_from_server(str(server), tmp_path / "mine")
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    assert "did not answer within 60 seconds" in result["message"]
+
+
 def test_relative_and_inside_urls():
     from src.datalad_clone import nested_url_problem
 

@@ -860,12 +860,15 @@ python prism_tools.py datalad put-on-server --project /absolute/path/to/my-proje
 `open-from-server` is for everybody else: it needs no project. It clones the project at `--location` (same forms and
 refusals as `put-on-server`; a relative folder is relative to your working directory) into `--target`, an empty or new
 folder given as a full path, with the server as `origin`. It installs the nested subject datasets level by level without
-their data (fetch it with Get data), each only after every address in its parent's `.gitmodules` is checked: a nested
-dataset must be a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the exact
-`--location`; anything else stops the install. The parent's committed `.datalad/config` may hold only
-`datalad.dataset.id` and `.gitmodules` only `path`, `url` and `datalad-id`; any other setting (which could redirect an
-address) stops it too, and so does a `.datalad`, `.datalad/config` or `.gitmodules` that is a link. The server's own
-`origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
+their data (fetch it with Get data). Before a dataset's nested datasets are installed, its own files are checked; a
+failed check stops the install. What is checked: the dataset was checked out completely (`git status`, at most 60
+seconds); its committed `.datalad/config` holds only `datalad.dataset.id` and its `.gitmodules` only `path`, `url` and
+`datalad-id` (any other setting could redirect an address); `.datalad`, `.datalad/config` and `.gitmodules` are not
+links; every `url` is a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the
+exact `--location`; every `path` is a nested dataset recorded in that very dataset (not a deeper path such as
+`sub-01/ses-1`, not a link) and a real folder; and, for a folder location, neither the server folder nor a nested
+dataset's server folder has `objects/info/alternates` (which would make the copy read another repository). The
+server's own `origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
 when a subdataset was added from an address rather than created in place; PRISM never does) cannot be opened this way. The save-gate hook goes into every dataset as soon as it is there (git
 does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
 repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
