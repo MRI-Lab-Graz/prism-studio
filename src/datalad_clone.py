@@ -47,38 +47,50 @@ def nested_url_problem(url: str, location: str) -> str:
     return f"'{url}' is not inside the project on the server"
 
 
+# The only keys PRISM and DataLad write in these committed, server-controlled files. Anything else (url rewriting such
+# as datalad.clone.url-substitute.* or url.*.insteadOf, source candidates, include.path, submodule update commands)
+# could send a checked url elsewhere, so it is refused: an allowlist, never a list of bad keys.
+_DATASET_CONFIG_KEYS = {"datalad.dataset.id"}
+_SUBMODULE_FIELDS = {"path", "url", "datalad-id"}
+
+
+def _entries(path: Path) -> tuple[list[tuple[str, str]], str]:
+    """Every (key, value) in a git config file, includes NOT followed (an include is just a key here)."""
+    listed = subprocess.run(
+        ["git", "config", "--no-includes", "-z", "-f", str(path), "--list"], capture_output=True, text=True
+    )
+    if listed.returncode != 0:
+        return [], f"{path} cannot be read: {listed.stderr.strip()}"
+    return [tuple(entry.partition("\n")[::2]) for entry in filter(None, listed.stdout.split("\0"))], ""
+
+
 def _nested_datasets(root: Path, location: str) -> tuple[list[str], str]:
-    """(subdataset paths of `root`, '') once every url and path in its `.gitmodules` is checked, else ([], problem)."""
-    if (root / ".datalad" / "config").is_file():
-        candidates = subprocess.run(
-            ["git", "config", "-f", str(root / ".datalad" / "config"), "--get-regexp", "subdataset-source-candidate"],
-            capture_output=True, text=True,
-        )
-        if candidates.stdout.strip():  # the server could point DataLad at any other address this way
-            return [], f"{root} sets its own places to install nested datasets from; this is refused"
+    """(subdataset paths of `root`, '') once its `.datalad/config` and `.gitmodules` are checked, else ([], problem)."""
+    config = root / ".datalad" / "config"
+    if config.is_file():
+        entries, problem = _entries(config)
+        if problem:
+            return [], problem
+        for key, _ in entries:
+            if key not in _DATASET_CONFIG_KEYS:
+                return [], f"{config} sets '{key}', which is not accepted (only datalad.dataset.id is)"
     if not (root / ".gitmodules").is_file():
         return [], ""
-    listed = subprocess.run(
-        ["git", "config", "-z", "-f", str(root / ".gitmodules"), "--get-regexp", r"^submodule\..*\.(path|url|datalad-url)$"],
-        capture_output=True, text=True,
-    )
-    if listed.returncode not in (0, 1):  # 1: no entries
-        return [], f"{root / '.gitmodules'} cannot be read: {listed.stderr.strip()}"
-    modules: dict[str, dict[str, str]] = {}
-    for entry in filter(None, listed.stdout.split("\0")):
-        key, _, value = entry.partition("\n")
-        name, _, field = key[len("submodule."):].rpartition(".")
-        modules.setdefault(name, {})[field] = value
+    entries, problem = _entries(root / ".gitmodules")
+    if problem:
+        return [], problem
     paths = []
-    for name, fields in modules.items():
-        path = fields.get("path", "")
-        if not _inside(path):
-            return [], f"the nested dataset '{name}' has the path '{path}', which is not inside {root}"
-        for url in [fields.get("url", ""), *([fields["datalad-url"]] if "datalad-url" in fields else [])]:
-            problem = nested_url_problem(url, location)
-            if problem:
-                return [], f"the nested dataset '{path}' in {root}: {problem}"
-        paths.append(path)
+    for key, value in entries:
+        section, _, rest = key.partition(".")
+        name, _, field = rest.rpartition(".")
+        if section != "submodule" or not name or field not in _SUBMODULE_FIELDS:
+            return [], f"{root / '.gitmodules'} sets '{key}', which is not accepted"
+        if field == "path":
+            if not _inside(value):
+                return [], f"the nested dataset '{name}' has the path '{value}', which is not inside {root}"
+            paths.append(value)
+        elif field == "url" and nested_url_problem(value, location):  # every url entry, also a repeated one
+            return [], f"the nested dataset '{name}' in {root}: {nested_url_problem(value, location)}"
     return paths, ""
 
 

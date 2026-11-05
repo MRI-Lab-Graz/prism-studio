@@ -176,6 +176,71 @@ def test_a_nested_dataset_url_outside_the_server_is_refused(url, tmp_path, monke
     assert has_save_hook(target)  # the incomplete copy is still gated
 
 
+def _server_with_config(tmp_path, mode):
+    """A real nested server dataset whose committed config tries to send a checked url (`./sub-01`) elsewhere."""
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    (secret / "s.txt").write_text("secret\n", encoding="utf-8")
+    _run("git", "add", ".", cwd=secret)
+    _run("git", "commit", "-qm", "s", cwd=secret)
+    srv = tmp_path / "srv"
+    _run("datalad", "create", "-c", "text2git", str(srv), cwd=tmp_path)
+    _run("datalad", "create", "-c", "text2git", "-d", str(srv), str(srv / "sub-01"), cwd=srv)
+    (srv / "sub-01" / "n.txt").write_text("legit\n", encoding="utf-8")
+    _run("datalad", "save", "-r", "-m", "x", cwd=srv)
+    cfg = srv / ".datalad" / "config"
+
+    def setting(key, value, file=cfg):
+        _run("git", "config", "-f", str(file), key, value, cwd=srv)
+
+    if mode == "url-substitute":
+        setting("datalad.clone.url-substitute.evil", f",.*sub-01.*,{secret}")
+    elif mode == "insteadof":
+        setting(f"url.{secret}.insteadOf", str(srv / "sub-01"))
+    elif mode == "level-2":
+        _run("datalad", "create", "-c", "text2git", "-d", str(srv / "sub-01"), str(srv / "sub-01" / "ses-1"), cwd=srv)
+        setting("datalad.clone.url-substitute.evil", f",.*ses-1.*,{secret}", file=srv / "sub-01" / ".datalad" / "config")
+        _run("datalad", "save", "-r", "-m", "n", cwd=srv)
+    elif mode == "include":
+        (srv / "inc.cfg").write_text(f'[datalad "get"]\n\tsubdataset-source-candidate-000x = {secret}\n', encoding="utf-8")
+        setting("include.path", "../inc.cfg")
+    elif mode == "candidate":
+        setting("datalad.get.subdataset-source-candidate-000x", str(secret))
+    elif mode == "gitmodules-key":
+        setting("submodule.sub-01.update", "!touch pwned", file=srv / ".gitmodules")
+    elif mode == "duplicate-url":
+        gm = srv / ".gitmodules"
+        gm.write_text(gm.read_text(encoding="utf-8").replace("url = ./sub-01", f"url = {secret}\n\turl = ./sub-01"))
+    _run("datalad", "save", "-r", "-m", mode, cwd=srv)
+    return srv
+
+
+@needs_datalad
+@pytest.mark.parametrize(
+    "mode", ["url-substitute", "insteadof", "level-2", "include", "candidate", "gitmodules-key", "duplicate-url"]
+)
+def test_server_config_that_could_redirect_a_checked_url_is_refused(mode, tmp_path, monkeypatch):
+    from src.save_gate import has_save_hook
+
+    _identity(tmp_path, monkeypatch)
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    srv = _server_with_config(tmp_path, mode)
+    target = tmp_path / "mine"
+    result = open_from_server(str(srv), target)
+    assert result["success"] is False and result["reason"] == "clone_failed", result
+    refused_by = "is not inside the project on the server" if mode == "duplicate-url" else "is not accepted"
+    assert refused_by in result["message"] and "delete" in result["message"].lower(), result["message"]
+    assert not list(target.rglob("s.txt"))  # the foreign repository's marker file
+    assert not list(tmp_path.rglob("pwned*"))
+    for nested in (target / "sub-01", target / "sub-01" / "ses-1"):
+        origin = subprocess.run(["git", "-C", str(nested), "remote", "get-url", "origin"], capture_output=True, text=True)
+        assert str(tmp_path / "secret") not in origin.stdout
+    assert has_save_hook(target)
+    if mode == "level-2":  # level 1 was fine and installed; level 2 was refused before installing ses-1
+        assert (target / "sub-01" / "n.txt").is_file() and "sub-01" in result["message"]
+
+
 def test_relative_and_inside_urls():
     from src.datalad_clone import nested_url_problem
 

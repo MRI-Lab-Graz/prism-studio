@@ -862,7 +862,9 @@ refusals as `put-on-server`; a relative folder is relative to your working direc
 folder given as a full path, with the server as `origin`. It installs the nested subject datasets level by level without
 their data (fetch it with Get data), each only after every address in its parent's `.gitmodules` is checked: a nested
 dataset must be a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the exact
-`--location`; anything else stops the install. The save-gate hook goes into every dataset as soon as it is there (git
+`--location`; anything else stops the install. The parent's committed `.datalad/config` may hold only
+`datalad.dataset.id` and `.gitmodules` only `path`, `url` and `datalad-id`; any other setting (which could redirect an
+address) stops it too. The save-gate hook goes into every dataset as soon as it is there (git
 does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
 repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
 `bad_location`, `bad_target`, `target_not_empty`, `no_datalad`, `no_identity`, `clone_failed`). If a nested install
