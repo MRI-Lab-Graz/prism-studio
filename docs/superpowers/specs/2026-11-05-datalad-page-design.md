@@ -1,6 +1,7 @@
 # DataLad page: share a project with the team through the lab server
 
-Date: 2026-11-05. Status: draft for approval. Written for the builder who plans and implements it.
+Date: 2026-11-05. Status: approved by the user (including: `worktree-feat-validated-sync` merged first, and the new page
+replaces the old DataLad card and Share-page panel). Written for the builder who plans and implements it.
 
 ## Intent
 
