@@ -72,6 +72,47 @@ Studio manage project-aware workflows instead of manually editing the layout. Tr
 responsibilities. Validate after structural changes so DataLad-aware edits don't
 silently drift from PRISM expectations.
 
+## Who signs your snapshots
+
+Every snapshot (a DataLad "save") records a name and an email. These belong to **you**, not to the
+project: PRISM Studio reads and writes them in your computer's git settings, and a project never stores them.
+A project can therefore be shared, pushed and pulled without one person's name ending up on another person's
+snapshots.
+
+- **Studio**: Settings > DataLad Version Control > *Your name and email*. If you enable DataLad without them,
+  Studio asks once in a pop-up.
+- **CLI**: `python prism_tools.py datalad identity --name "Your Name" --email you@example.org`
+  (without `--name`/`--email` it shows the current values).
+- **Older projects** that still carry a name and email in `.prismrc.json` are cleaned once: the values move to
+  your git settings if you have none, and are removed from the project file.
+
+## Snapshots
+
+| Step | Studio | CLI |
+|---|---|---|
+| Check this computer (git, git-annex, DataLad, name and email) | *Check DataLad setup* | `prism_tools.py datalad doctor` |
+| Turn DataLad on and save a first snapshot | *Enable DataLad* | `prism_tools.py datalad enable --project <root> --yes` |
+| Save the changes as a snapshot | *Save* | `prism_tools.py datalad save --project <root> --message "..."` |
+
+Enabling and saving are tied to validation: an existing project that does not validate cannot be put under
+DataLad, and the **save gate** refuses a snapshot of a dataset that does not validate (see
+[CLI Reference](CLI_REFERENCE.md) for `save-gate`). The refusal lists the validation errors, so fix them and
+save again. Text files (`.tsv`, `.json`, `.csv`, ...) are always kept in plain git, never in git-annex.
+
+## Working with several people
+
+The intended setup for a lab: everybody has their own copy of the project and works with their own account;
+one shared DataLad server holds the newest valid state.
+
+1. **One person edits** in PRISM Studio and saves snapshots.
+2. **Only a valid dataset reaches the server.** Publishing (below) validates first and pushes nothing if there
+   are errors.
+3. Everybody else updates their copy from the server.
+
+Step 3 is not part of PRISM Studio yet (there is no *Get latest* button or command): use DataLad itself for
+now (`datalad update --merge` in the project folder). The server can be an SSH location or a mounted network
+share; PRISM Studio only needs its address (`prism_tools.py datalad config --project <root> --url ...`).
+
 ## Publishing from a department share
 
 The rule: a dataset on the department share reaches the DataLad server only if it
