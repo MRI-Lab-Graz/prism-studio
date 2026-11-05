@@ -412,6 +412,21 @@ def save_datalad_snapshot():
     return jsonify(result), 400
 
 
+@projects_bp.route("/api/projects/datalad/update", methods=["POST"])
+def update_datalad_from_server():
+    """Get the latest saved changes from the server for the current project."""
+    project_path = str(get_current_project().get("path") or "").strip()
+    if not project_path:
+        return jsonify({"success": False, "error": "No current project loaded."}), 400
+
+    data = request.get_json(silent=True) or {}
+    result = _project_manager.update_datalad_from_server(project_path, sibling_name=data.get("sibling_name"))
+    result["current_project"] = get_current_project()
+    if result.get("success"):
+        return jsonify(result)
+    return jsonify(result), 400
+
+
 @projects_bp.route("/api/projects/datalad/remove-scans-tsv", methods=["POST"])
 def remove_scans_tsv_files():
     """Delete every `*_scans.tsv` file across the current project."""

@@ -192,7 +192,7 @@ def dispatch_prism_tools(
             handlers["datalad_sync"](args)
         elif args.action == "finalize":
             handlers["datalad_finalize"](args)
-        elif args.action in ("enable", "save"):
+        elif args.action in ("enable", "save", "update"):
             handlers[f"datalad_{args.action}"](args)
         else:
             parsers["datalad"].print_help()

@@ -215,6 +215,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         # The POST itself lives in the shared module (tested in datalad-save.test.js); the card only calls it.
         self.assertIn("saveDataladSnapshot(fetchWithApiFallback, saveMessage)", content)
         self.assertNotIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
+        # Opening a DataLad project asks the backend for the server's latest changes (shared module, own JS test).
+        self.assertIn("getLatestFromServer(fetchWithApiFallback)", content)
         self.assertIn("confirmed: true", content)
         self.assertIn("register one per click", content)
         self.assertIn("DataLad structure is complete for this project.", content)

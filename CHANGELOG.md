@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The navbar shows how many changes are not yet saved to DataLad**, as a yellow number next to "DataLad". It is looked at again
   after every validator run (the results page). `prism_tools datalad status --project <path> [--json]` prints the same.
 
+- **Get the latest from the server.** Opening a DataLad project brings in what others saved on the server;
+  `prism_tools datalad update --project <path>` does the same. It only fast-forwards (never merges), refuses while the project
+  has unsaved changes, and skips a project that has no server yet.
+
 ### Changed
+- **A snapshot saved with "Save anyway" says so.** Its message ends with `[saved with N validation error(s)]`.
 - **Saving a DataLad snapshot needs a PRISM-valid dataset.** With validation errors the save is refused and nothing is written;
   `prism_tools datalad save --allow-invalid` and Studio's "Save anyway" prompt override it. Automatic saves (on project switch,
   when enabling DataLad) are not gated.

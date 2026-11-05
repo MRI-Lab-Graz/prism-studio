@@ -129,3 +129,45 @@ def test_enabling_and_saving_datalad_do_the_same_in_the_cli_and_in_studio(tmp_pa
     body, status = _studio_datalad("save_datalad_snapshot", studio, monkeypatch, {"allow_invalid": True})
     assert status == 200 and body["success"] and json.loads(capsys.readouterr().out)["success"]
     assert _git_view(cli) == _git_view(studio) != before
+
+
+@pytest.mark.skipif(not shutil.which("datalad") or not shutil.which("git-annex"), reason="needs DataLad and git-annex")
+@pytest.mark.slow
+def test_getting_the_latest_does_the_same_in_the_cli_and_in_studio(tmp_path, monkeypatch, capsys):
+    from src.cli.commands.datalad import cmd_datalad_update
+
+    cfg = tmp_path / "gitconfig"
+    cfg.write_text("[user]\n\tname = Ada\n\temail = ada@example.org\n")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(cfg))
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("HOME", str(tmp_path))
+
+    def datalad(*args, cwd):
+        subprocess.run(["datalad", *args], cwd=cwd, check=True, capture_output=True, text=True)
+
+    server, cli, studio = tmp_path / "server", tmp_path / "cli", tmp_path / "studio"
+    datalad("create", "-c", "text2git", str(server), cwd=tmp_path)
+    for root in (cli, studio):
+        datalad("clone", str(server), str(root), cwd=tmp_path)
+    (server / "news.txt").write_text("new", encoding="utf-8")
+    datalad("save", "-m", "add news", cwd=server)
+
+    # unsaved changes refuse in both, in the same words, and change nothing
+    for root in (cli, studio):
+        (root / "draft.txt").write_text("mine", encoding="utf-8")
+    with pytest.raises(SystemExit) as refused:
+        cmd_datalad_update(SimpleNamespace(project=str(cli), sibling_name="origin", json=True))
+    cli_body = json.loads(capsys.readouterr().out)
+    body, status = _studio_datalad("update_datalad_from_server", studio, monkeypatch, {"sibling_name": "origin"})
+    assert refused.value.code == 1 and status == 400 and not cli_body["success"] and not body["success"]
+    assert cli_body["error"] == body["error"]
+    assert not (cli / "news.txt").exists() and not (studio / "news.txt").exists()
+
+    # once nothing is unsaved, both bring in the same files
+    for root in (cli, studio):
+        (root / "draft.txt").unlink()
+    cmd_datalad_update(SimpleNamespace(project=str(cli), sibling_name="origin", json=True))
+    body, status = _studio_datalad("update_datalad_from_server", studio, monkeypatch, {"sibling_name": "origin"})
+    assert status == 200 and body["success"] and json.loads(capsys.readouterr().out)["success"]
+    assert _git_view(cli) == _git_view(studio)
+    assert "add news" in _git_view(cli)["messages"]

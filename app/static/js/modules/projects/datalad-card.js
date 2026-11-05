@@ -1,6 +1,10 @@
 import { isSameProjectPath } from '../../shared/project-state.js';
 import { askGitIdentity } from './git-identity-dialog.js';
 import { saveDataladSnapshot } from '../../shared/datalad-save.js';
+import { getLatestFromServer } from '../../shared/datalad-update.js';
+
+// Projects already asked for their latest changes during this page load (UI state only).
+const latestRequestedFor = new Set();
 
 export const DATALAD_DOCS_URL = 'https://www.datalad.org/';
 export const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';
@@ -755,7 +759,15 @@ export function createDataladCard({
                 applyCurrentProject(current);
                 renderProjectBoxDataladState(current.datalad, currentPath);
                 if (current.datalad && current.datalad.enabled) {
-                    refreshDataladStatusDeep(currentPath);
+                    // Get the latest from the server once per project and page load, then show the real status.
+                    const first = !latestRequestedFor.has(currentPath);
+                    latestRequestedFor.add(currentPath);
+                    (first ? getLatestFromServer(fetchWithApiFallback) : Promise.resolve({ notice: null }))
+                        .then(({ notice }) => {
+                            if (notice) window.setNavbarDataladFeedback?.(notice.text, notice.kind, notice.label);
+                        })
+                        .catch(() => {})
+                        .finally(() => refreshDataladStatusDeep(currentPath));
                 }
             })
             .catch(() => {

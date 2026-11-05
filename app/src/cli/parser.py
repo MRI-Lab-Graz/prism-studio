@@ -963,6 +963,12 @@ def build_prism_tools_parsers(
         help="Save even if the dataset has PRISM validation errors (default: refuse)",
     )
     parser_datalad_save.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser_datalad_update = datalad_subparsers.add_parser(
+        "update", help="Get the latest saved changes from the server (never merges; refuses unsaved changes)"
+    )
+    parser_datalad_update.add_argument("--project", required=True, help="Project root")
+    parser_datalad_update.add_argument("--sibling-name", help="Server name (default: saved setting, else ria-store)")
+    parser_datalad_update.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show how many changes are not yet saved as a DataLad snapshot"
     )

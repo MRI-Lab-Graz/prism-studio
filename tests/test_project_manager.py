@@ -1490,12 +1490,8 @@ class TestProjectManager(unittest.TestCase):
             with patch(
                 "src.project_manager.ProjectManager._get_registered_nested_dataset_paths",
                 return_value=set(),
-            ):
-                result = manager.save_datalad_snapshot(
-                    project_path,
-                    message="Checkpoint metadata updates",
-                    allow_invalid=True,  # the validity gate has its own tests (test_datalad_save_gate.py)
-                )
+            ), patch("src.share_publish.validate_for_publish", return_value=[]):  # the gate has its own tests (test_datalad_save_gate.py)
+                result = manager.save_datalad_snapshot(project_path, message="Checkpoint metadata updates")
 
         self.assertTrue(result.get("success"), result)
         self.assertTrue(result.get("datalad", {}).get("gitattributes_policy_updated"))

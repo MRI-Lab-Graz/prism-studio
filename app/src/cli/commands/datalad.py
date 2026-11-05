@@ -140,6 +140,11 @@ def cmd_datalad_status(args) -> None:
         print(result.get("message") or "")
 
 
+def cmd_datalad_update(args) -> None:
+    """Get the latest saved changes from the server (Studio's "Get latest", and what it runs when a project opens)."""
+    _print_result(args, _manager().update_datalad_from_server(args.project, sibling_name=args.sibling_name))
+
+
 def cmd_datalad_identity(args) -> None:
     """Show or set the name and email git signs your saved changes with (this computer's, for all projects).
 

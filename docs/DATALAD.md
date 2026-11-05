@@ -109,9 +109,22 @@ one shared DataLad server holds the newest valid state.
    are errors.
 3. Everybody else updates their copy from the server.
 
-Step 3 is not part of PRISM Studio yet (there is no *Get latest* button or command): use DataLad itself for
-now (`datalad update --merge` in the project folder). The server can be an SSH location or a mounted network
-share; PRISM Studio only needs its address (`prism_tools.py datalad config --project <root> --url ...`).
+**Getting the latest.** When you open a DataLad project, Studio asks the server for what others have saved and
+brings it in (CLI: `prism_tools.py datalad update --project <root>`). It is deliberately careful:
+
+- It only fast-forwards. It never merges, so it cannot mix two people's work. If you and someone else both
+  saved changes, it stops, changes nothing and tells you to ask your data steward.
+- It refuses while your project has unsaved changes. Save first, then get the latest.
+- A project with no server yet is simply skipped, and a server that cannot be reached shows a message and does not
+  stop you from working.
+
+The server can be an SSH location or a mounted network share; PRISM Studio only needs its address
+(`prism_tools.py datalad config --project <root> --url ...`).
+
+**Saving despite validation errors.** If the dataset has validation errors, Save refuses and lists them. You can
+save anyway (*Save anyway*, or `--allow-invalid`); the snapshot message then ends with
+`[saved with N validation error(s)]` so the history shows it. Such a snapshot stays on your computer: publishing
+validates first and pushes nothing while there are errors.
 
 ## Publishing from a department share
 

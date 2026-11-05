@@ -896,6 +896,50 @@ def run_datalad_push(
     return result
 
 
+def run_datalad_update(
+    project_root: Path,
+    *,
+    sibling_name: str = "ria-store",
+    datalad_executable: str = "",
+    timeout_seconds: int = 3600,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """Bring in what the server has saved, fast-forward only: it never merges, so it cannot mix two people's work."""
+    root = Path(project_root)
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {"attempted": False, "success": False, "command": "", "output": "", "message": ""}
+    if not resolved:
+        result["message"] = (
+            "DataLad executable is not available in this environment. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+        return result
+
+    name = str(sibling_name or "").strip() or "ria-store"
+    command = [resolved, "update", "-s", name, "--how", "ff-only", "-r"]
+    result["attempted"] = True
+    result["command"] = shlex.join(command)
+    try:
+        run_result = _run_streaming_command(
+            command, cwd=str(root), timeout_seconds=timeout_seconds, line_callback=line_callback
+        )
+    except subprocess.TimeoutExpired:
+        result["message"] = f"DataLad update timed out after {max(1, int(timeout_seconds))} seconds."
+        return result
+    except Exception as exc:
+        result["message"] = f"DataLad update failed ({type(exc).__name__}: {exc})."
+        return result
+
+    result["output"] = run_result["output"]
+    lowered = result["output"].lower()
+    if run_result["returncode"] == 0 and "(impossible)" not in lowered and "(error)" not in lowered:
+        result["success"] = True
+        result["message"] = "DataLad update completed."
+        return result
+    result["message"] = f"DataLad update failed: {result['output'].strip() or 'Unknown DataLad error.'}"
+    return result
+
+
 def run_datalad_push_verify(
     project_root: Path,
     *,

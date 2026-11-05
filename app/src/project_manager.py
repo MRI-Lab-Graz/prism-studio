@@ -2015,19 +2015,20 @@ class ProjectManager:
             result["error"] = status.get("message") or "DataLad is not available in this environment."
             return result
 
-        if not allow_invalid:
-            from src.share_publish import validate_for_publish
+        from src.share_publish import validate_for_publish
 
-            try:
-                errors = validate_for_publish(project_path)
-                problem = f"{len(errors)} validation error(s): the dataset is not PRISM-valid." if errors else ""
-            except Exception as exc:  # a crashed validator refuses, as in publish
-                errors, problem = [], f"The validator could not run ({type(exc).__name__}: {exc})."
-            if problem:
-                result["validation_blocked"] = True
-                result["validation_errors"] = list(errors)
-                result["error"] = f"{problem} Nothing was saved. Fix them, or save anyway (--allow-invalid / 'Save anyway')."
-                return result
+        try:
+            errors = validate_for_publish(project_path)
+            problem = f"{len(errors)} validation error(s): the dataset is not PRISM-valid." if errors else ""
+        except Exception as exc:  # a crashed validator refuses, as in publish
+            errors, problem = [], f"The validator could not run ({type(exc).__name__}: {exc})."
+        if problem and not allow_invalid:
+            result["validation_blocked"] = True
+            result["validation_errors"] = list(errors)
+            result["error"] = f"{problem} Nothing was saved. Fix them, or save anyway (--allow-invalid / 'Save anyway')."
+            return result
+        if errors:  # an acknowledged invalid snapshot says so in the history
+            message = f"{str(message or '').strip() or DEFAULT_SNAPSHOT_MESSAGE} [saved with {len(errors)} validation error(s)]"
 
         gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,
@@ -2082,6 +2083,62 @@ class ProjectManager:
             return result
 
         result["error"] = save_result.get("message") or "DataLad save failed."
+        return result
+
+    def update_datalad_from_server(
+        self,
+        path: Union[str, Path],
+        *,
+        sibling_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """"Get latest": bring in what the server has saved, if that is safe.
+
+        Skipped (success) when the project has no server yet. Refused while the project has unsaved changes,
+        and never merges: when both sides changed, the update stops and says so.
+        """
+        project_path = Path(path)
+        with self._datalad_lock_for(project_path):
+            return self._update_datalad_from_server_locked(project_path, sibling_name=sibling_name)
+
+    def _update_datalad_from_server_locked(
+        self, project_path: Path, *, sibling_name: Optional[str]
+    ) -> Dict[str, Any]:
+        from src.config import load_config
+        from src.datalad_execution import run_datalad_sibling_exists, run_datalad_update
+
+        status = self.get_datalad_status(project_path)
+        result: Dict[str, Any] = {"success": False, "path": str(project_path), "updated": False, "skipped": False}
+        if not status.get("enabled") or not status.get("available"):
+            result["error"] = status.get("message") or "Current project is not a DataLad dataset."
+            return result
+
+        sibling = str(sibling_name or "").strip() or load_config(str(project_path)).datalad_sibling_name
+        executable = status.get("executable") or ""
+        if not run_datalad_sibling_exists(
+            project_path, sibling_name=sibling, datalad_executable=executable
+        ).get("exists"):
+            result.update(success=True, skipped=True, message="No server is connected to this project yet.")
+            return result
+
+        clean = self.check_datalad_clean_status(project_path)
+        if not clean.get("checked") or not clean.get("clean"):
+            result["error"] = (
+                f"{clean.get('dirty_count') or 'Some'} unsaved change(s) in this project. "
+                "Save them first, then get the latest from the server."
+            )
+            return result
+
+        before = self._git_head(project_path)
+        update = run_datalad_update(project_path, sibling_name=sibling, datalad_executable=executable)
+        if not update["success"]:
+            result["error"] = (
+                f"{update['message']}\n\nNothing was changed. If you and someone else both saved changes, "
+                "ask your data steward to combine them."
+            )
+            return result
+        result["updated"] = self._git_head(project_path) != before
+        result["success"] = True
+        result["message"] = "Got the latest changes from the server." if result["updated"] else "Already up to date."
         return result
 
     def export_project_to_plain_folder(

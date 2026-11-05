@@ -50,6 +50,7 @@
  "projects.remote_source_status": "exempt: project setup (the init-on-bids form classifies the remote URL the user typed before creating the project)",
  "projects.remove_scans_tsv_files": "cli: file-management remove-scans-tsv",
  "projects.save_datalad_snapshot": "cli: datalad save",
+ "projects.update_datalad_from_server": "cli: datalad update",
  "projects.save_dataset_description": "exempt: project setup (creating a project and its metadata is the one GUI-only part)",
  "projects.save_participants_schema": "cli: participants save-schema",
  "projects.save_project_preferences": "exempt: UI state, the form choices Studio remembers per page (recipes, export dialog, DataLad form, metadata declarations); the CLI takes the same choices as flags and nothing in the CLI reads them",
