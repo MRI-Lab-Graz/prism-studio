@@ -148,7 +148,7 @@ def handle_datalad_preflight_status():
 
 
 def handle_datalad_doctor():
-    """Run the same checks as `prism_tools.py datalad doctor` (tools, SSH key, server login)."""
+    """Run the same checks as `prism_tools.py datalad doctor` (tools, server login)."""
     return jsonify({"success": True, "checks": run_doctor(request.args.get("url") or None)})
 
 

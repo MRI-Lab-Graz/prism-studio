@@ -213,18 +213,10 @@ def _build_parser():
     return parser
 
 
-def _supports_startup_color() -> bool:
-    stream = getattr(sys, "stdout", None)
-    return bool(
-        stream
-        and hasattr(stream, "isatty")
-        and stream.isatty()
-        and os.environ.get("TERM") not in {None, "", "dumb"}
-    )
-
-
 def _startup_colorize(text: str, tone: str) -> str:
-    if not _supports_startup_color():
+    from src.cross_platform import supports_ansi_color
+
+    if not supports_ansi_color():
         return text
 
     tones = {

@@ -882,7 +882,7 @@ def build_prism_tools_parsers(
     )
     datalad_subparsers = parser_datalad.add_subparsers(dest="action", help="Action")
     parser_datalad_doctor = datalad_subparsers.add_parser(
-        "doctor", help="Check tools, SSH key and (optionally) server login"
+        "doctor", help="Check tools and (optionally) server login"
     )
     parser_datalad_doctor.add_argument(
         "--url", help="Server URL to test (ria+ssh://user@host/path, user@host:path)"

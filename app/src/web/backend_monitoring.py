@@ -17,6 +17,7 @@ from typing import Any, Callable
 from flask import session
 
 from src.config import load_app_settings
+from src.cross_platform import supports_ansi_color
 from src.project_manager import DEFAULT_ENABLE_DATALAD_MESSAGE, DEFAULT_SNAPSHOT_MESSAGE, ProjectManager
 from src.project_session_logging import record_project_session_command
 
@@ -280,29 +281,6 @@ def _absolute_input_path(filename: str) -> str:
         return str((base_dir / candidate).resolve())
     except Exception:
         return file_text
-
-
-def _supports_ansi_color() -> bool:
-    """Return True when ANSI coloring is likely supported by current terminal."""
-    if os.environ.get("NO_COLOR") is not None:
-        return False
-
-    if not getattr(sys.stdout, "isatty", lambda: False)():
-        return False
-
-    if os.name != "nt":
-        return True
-
-    # Common Windows terminals with ANSI support.
-    if os.environ.get("WT_SESSION"):
-        return True
-    if os.environ.get("ANSICON"):
-        return True
-    if str(os.environ.get("ConEmuANSI", "")).upper() == "ON":
-        return True
-
-    term = str(os.environ.get("TERM", "")).lower()
-    return "xterm" in term or "ansi" in term
 
 
 def _resolve_survey_output_dir(req) -> str:
@@ -1965,7 +1943,7 @@ def _build_structured_terminal_lines(message: str, prefix: str) -> list[str]:
     lines = [f"[{prefix}] {date_text}\t{time_text}\tACTION\t{action_text.strip()}"]
     if command_text:
         rendered_command = command_text
-        if _supports_ansi_color():
+        if supports_ansi_color():
             rendered_command = f"{_ANSI_GREEN}{command_text}{_ANSI_RESET}"
         lines.append(
             f"[{prefix}] {date_text}\t{time_text}\tCOMMAND\t{rendered_command}"

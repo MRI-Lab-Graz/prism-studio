@@ -54,6 +54,5 @@ def test_check_this_computer_reports_an_unreachable_server_in_plain_words(app_pa
     app_page.click("#dataladServerCheckBtn")
 
     result = app_page.locator("#dataladServerCheckResult")
-    expect(result).to_contain_text("ssh-key")
     expect(result).to_contain_text("Cannot reach the server", timeout=30000)
     expect(app_page.locator("#dataladServerCheckBtn")).to_be_enabled()
