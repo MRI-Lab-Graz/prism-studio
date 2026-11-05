@@ -110,6 +110,7 @@ def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
     _run_job(job_id, "Sync", "Syncing with the server...", lambda line_callback: sync_with_server(
         project_path,
         sibling_name=sync_kwargs.get("sibling_name"),
+        identity=sync_kwargs.get("identity"),
         allow_invalid=bool(sync_kwargs.get("allow_invalid")),
         line_callback=line_callback,
     ))
