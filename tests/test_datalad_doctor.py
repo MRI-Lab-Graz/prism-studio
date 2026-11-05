@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from src import datalad_doctor  # noqa: E402
 from src.datalad_doctor import (  # noqa: E402
     classify_ssh_error,
     git_install_hint,
@@ -66,7 +67,14 @@ def _run_ok(cmd):
     return 0, "git version 2.45"
 
 
-def test_all_ok_without_url_skips_server_check(tmp_path):
+def test_ssh_key_row_is_hidden_until_the_login_method_is_decided(tmp_path):
+    which, ssh_dir = _env(tmp_path, key=False)
+    res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
+    assert "ssh-key" not in res
+
+
+def test_all_ok_without_url_skips_server_check(tmp_path, monkeypatch):
+    monkeypatch.setattr(datalad_doctor, "SHOW_SSH_KEY_CHECK", True)
     which, ssh_dir = _env(tmp_path)
     res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert all(res[n]["ok"] for n in ("git", "git-annex", "datalad", "ssh", "ssh-key"))
@@ -81,7 +89,8 @@ def test_missing_tool_fails_with_fix(tmp_path):
     assert res["datalad"]["ok"] is False
 
 
-def test_no_key_fails_and_points_to_the_it_admin(tmp_path):
+def test_no_key_fails_and_points_to_the_it_admin(tmp_path, monkeypatch):
+    monkeypatch.setattr(datalad_doctor, "SHOW_SSH_KEY_CHECK", True)
     which, ssh_dir = _env(tmp_path, key=False)
     res = _by_name(run_doctor(None, which=which, run=_run_ok, ssh_dir=ssh_dir))
     assert res["ssh-key"]["ok"] is False

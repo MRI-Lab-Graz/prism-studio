@@ -297,5 +297,4 @@ def test_datalad_setup_check_works_before_any_project_exists(bare_page, studio_u
 
     result = bare_page.locator("#createDataladCheckResult")
     expect(result).to_contain_text("git-annex")
-    expect(result).to_contain_text("ssh-key")
     expect(bare_page.locator("#createDataladCheckBtn")).to_be_enabled()

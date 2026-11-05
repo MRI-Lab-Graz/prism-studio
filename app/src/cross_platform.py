@@ -345,3 +345,35 @@ def ensure_user_bin_on_path() -> None:
     parts = os.environ.get("PATH", "").split(os.pathsep)
     if os.path.isdir(user_bin) and user_bin not in parts:
         os.environ["PATH"] = os.pathsep.join(parts + [user_bin])
+
+
+def _enable_windows_vt() -> bool:
+    """Switch the Windows console to ANSI (virtual terminal) mode; False if it refuses."""
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+        mode = ctypes.c_ulong()
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            return False
+        # ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
+        return bool(kernel32.SetConsoleMode(handle, mode.value | 0x4))
+    except Exception:
+        return False
+
+
+def supports_ansi_color(stream=None, env=None, os_name=None) -> bool:
+    """True when `stream` is a terminal that shows ANSI colour.
+
+    Windows consoles (cmd, PowerShell, Windows Terminal) never set TERM, so TERM only
+    gates POSIX; on Windows the console is asked to enable ANSI mode instead.
+    """
+    stream = sys.stdout if stream is None else stream
+    env = os.environ if env is None else env
+    os_name = os.name if os_name is None else os_name
+    if "NO_COLOR" in env or not getattr(stream, "isatty", lambda: False)():
+        return False
+    if os_name == "nt":
+        return _enable_windows_vt()
+    return env.get("TERM", "") not in {"", "dumb"}

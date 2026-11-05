@@ -269,6 +269,11 @@ def _check_server(url: str, ssh_path: Optional[str], pubkey: str, run: Run) -> d
     return _result("server", False, output.strip(), fix)
 
 
+# How users log in to the DataLad server is not decided yet, so the key row is hidden.
+# The lookup and the server check stay; set True to show the row again.
+SHOW_SSH_KEY_CHECK = False
+
+
 def run_doctor(
     url: Optional[str] = None,
     *,
@@ -290,7 +295,9 @@ def run_doctor(
         results.append(_check_git_identity(which("git") or "git", run))
 
     key_path, pubkey = _find_key(ssh_dir)
-    if key_path:
+    if not SHOW_SSH_KEY_CHECK:
+        pass
+    elif key_path:
         results.append(_result("ssh-key", True, str(key_path)))
     else:
         results.append(
