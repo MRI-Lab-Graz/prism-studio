@@ -2133,6 +2133,10 @@ class ProjectManager:
 
         before = self._git_head(project_path)
         update = run_datalad_update(project_path, sibling_name=sibling, datalad_executable=executable)
+        if not update["success"] and not self._server_has_saved_branch(project_path, sibling):
+            # a server just created by put-on-server (its first send interrupted): nothing to get, the push fills it
+            result.update(success=True, message="The server has nothing saved yet.")
+            return result
         if not update["success"]:
             result["error"] = (
                 f"{update['message']}\n\nNothing was changed. If you and someone else both saved changes, "
@@ -5757,6 +5761,18 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    @staticmethod
+    def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
+        """Did the last fetch from `sibling` see a branch besides git-annex? True when git cannot say (fail safe)."""
+        process = subprocess.run(
+            ["git", "for-each-ref", "--format=%(refname)", f"refs/remotes/{sibling}/"],
+            cwd=str(project_path), capture_output=True, text=True, check=False,
+        )
+        if process.returncode != 0:
+            return True
+        branches = [ref for ref in process.stdout.split() if not ref.endswith(("/git-annex", "/HEAD"))]
+        return bool(branches)
 
     @staticmethod
     def _git_head(project_path: Path) -> Optional[str]:

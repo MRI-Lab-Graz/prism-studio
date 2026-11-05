@@ -843,6 +843,19 @@ python prism_tools.py datalad update --project /absolute/path/to/my-project
 python prism_tools.py datalad sync --project /absolute/path/to/my-project
 ```
 
+`put-on-server` is for the first person: it creates the project's dataset at `--location` (a local or network
+folder such as `/srv/lab/study` or `C:\share\study`, `user@host:path`, or `ssh://host/path`; web addresses and
+values starting with `-` are refused), names it `origin` (or `--sibling-name`) and then sends it like `sync`. Before
+anything is created on the server it refuses a project that already has that server (use `sync`), a folder that is
+not empty ("open it from the server instead"), unsaved changes, validation errors (unless `--allow-invalid`) and a
+public host while `sourcedata/` is tracked. Nested subject datasets are created too. If the send is interrupted after
+the server dataset exists, run `sync`. Studio's `POST /api/projects/datalad/put-on-server` runs the same function as a
+job (`location`, `sibling_name`, `allow_invalid`).
+
+```bash
+python prism_tools.py datalad put-on-server --project /absolute/path/to/my-project --location user@lab.example.org:/data/study
+```
+
 `status` shows how many changes are unsaved and the one next step the DataLad page offers
 (`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
 (10 s limit; an unreachable server is reported as `reachable: false`, never an error, and never changes

@@ -69,6 +69,30 @@ def cmd_datalad_sync(args) -> None:
         line_callback=None if args.json else print,
         allow_invalid=bool(getattr(args, "allow_invalid", False)),
     )
+    _print_push_result(args, result)
+
+
+def cmd_datalad_put_on_server(args) -> None:
+    """Create the project's dataset on the lab server, then send it if it validates (Studio's "Put on server")."""
+    from src.share_publish import parse_identity, put_on_server
+
+    try:
+        identity = parse_identity(args.as_identity) if getattr(args, "as_identity", None) else None
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
+    result = put_on_server(
+        args.project,
+        args.location,
+        sibling_name=args.sibling_name,
+        identity=identity,
+        line_callback=None if args.json else print,
+        allow_invalid=bool(getattr(args, "allow_invalid", False)),
+    )
+    _print_push_result(args, result)
+
+
+def _print_push_result(args, result: dict) -> None:
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     else:

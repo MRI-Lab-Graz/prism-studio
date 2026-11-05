@@ -20,6 +20,7 @@ from typing import Any
 
 from src.datalad_execution import (
     is_datalad_dataset,
+    run_datalad_create_sibling_plain,
     run_datalad_push,
     run_datalad_push_verify,
 )
@@ -228,6 +229,39 @@ def _dataset_roots(root: Path) -> list[Path]:
     return ProjectManager()._iter_datalad_dataset_roots(root)
 
 
+_NO_IDENTITY = (
+    'No identity. Pass --as "Name <email>", set PRISM_USER_NAME/PRISM_USER_EMAIL, or configure git user.name/user.email.'
+)
+
+
+def _push_refusal(root: Path, url: str, target: str, *, allow_invalid: bool) -> tuple[str, str, list[str]]:
+    """Why a push to `url` must not happen: (reason, message, errors), reason "" when it may.
+
+    The one check before anything is sent (publish, sync, put on server). When an acknowledged invalid dataset may go,
+    reason is "" and errors still lists the validation errors.
+    """
+    # sourcedata/ (raw, identifiable data) is tracked in plain git by design and is for
+    # the internal lab server only: never send it to a public host.
+    if _git(root, "ls-files", "--", "sourcedata") and _is_public_target(url):
+        return (
+            "public_target_with_sourcedata",
+            f"{target} is a public host and this project tracks sourcedata/ (raw data). "
+            "Publish only to the internal lab server.",
+            [],
+        )
+    dirty = uncommitted_changes(root)
+    if dirty:
+        return "uncommitted_changes", _uncommitted_message(dirty), dirty[:20]
+    crashed = False
+    try:
+        errors = validate_for_publish(root)
+    except Exception as exc:  # a crashed validator must refuse, not escape unaudited
+        errors, crashed = [f"Validation could not run: {exc}"], True
+    if errors and (crashed or not allow_invalid):  # a crash is never acknowledged away
+        return "validation_errors", f"{len(errors)} validation error(s). Fix them before publishing.", errors
+    return "", "", errors
+
+
 def publish_to_server(
     project_root,
     *,
@@ -249,41 +283,14 @@ def publish_to_server(
     if not is_datalad_dataset(root):
         return finish("not_a_dataset", "This folder is not a DataLad dataset.", audit_result="refused")
     if identity is None:
-        return finish(
-            "no_identity",
-            'No identity. Pass --as "Name <email>", set PRISM_USER_NAME/PRISM_USER_EMAIL, or configure git user.name/user.email.',
-            audit_result="refused",
-        )
+        return finish("no_identity", _NO_IDENTITY, audit_result="refused")
     if not has_sibling(root, sibling):
         return finish("no_sibling", f'No sibling named "{sibling}" in this dataset.', audit_result="refused")
-    # sourcedata/ (raw, identifiable data) is tracked in plain git by design and is for
-    # the internal lab server only: never send it to a public host.
-    if _git(root, "ls-files", "--", "sourcedata") and _is_public_target(
-        _git(root, "remote", "get-url", sibling)
-    ):
-        return finish(
-            "public_target_with_sourcedata",
-            f'"{sibling}" is a public host and this project tracks sourcedata/ (raw data). '
-            "Publish only to the internal lab server.",
-            audit_result="refused",
-        )
-    dirty = uncommitted_changes(root)
-    if dirty:
-        return finish(
-            "uncommitted_changes", _uncommitted_message(dirty), audit_result="refused", errors=dirty[:20]
-        )
-    crashed = False
-    try:
-        errors = validate_for_publish(root)
-    except Exception as exc:  # a crashed validator must refuse, not escape unaudited
-        errors, crashed = [f"Validation could not run: {exc}"], True
-    if errors and (crashed or not allow_invalid):  # a crash is never acknowledged away
-        return finish(
-            "validation_errors",
-            f"{len(errors)} validation error(s). Fix them before publishing.",
-            audit_result="refused",
-            errors=errors,
-        )
+    reason, message, errors = _push_refusal(
+        root, _git(root, "remote", "get-url", sibling), f'"{sibling}"', allow_invalid=allow_invalid
+    )
+    if reason:
+        return finish(reason, message, audit_result="refused", errors=errors)
 
     from src.save_gate import ack_env
 
@@ -347,6 +354,94 @@ def sync_with_server(
         root, sibling_name=sibling_name, identity=identity, line_callback=line_callback, allow_invalid=allow_invalid
     )
     outcome["update"] = update
+    return outcome
+
+
+def location_problem(location: str) -> str:
+    """'' for a server location put-on-server accepts (a folder, user@host:path, ssh://...), else why it is refused.
+
+    The location is untrusted input passed to `datalad create-sibling`: no leading '-' (an option), no control
+    characters, and no web or other URL scheme (the lab server is not a web host; a Windows path like C:\\x is a folder).
+    """
+    location = str(location or "")
+    if not location.strip():
+        return "Give the server location: a folder, user@host:path or ssh://host/path."
+    if location.strip().startswith("-"):
+        return "A server location cannot start with '-'."
+    if any(ord(c) < 32 for c in location):
+        return "A server location cannot contain control characters (such as a line break)."
+    if "://" in location and not location.strip().lower().startswith("ssh://"):
+        return "A web address cannot be the lab server. Give a folder, user@host:path or ssh://host/path."
+    return ""
+
+
+def _local_folder_in_use(root: Path, location: str) -> bool:
+    """A local or network folder that exists and is not empty (an ssh location is left to DataLad's own refusal)."""
+    from src.datalad_doctor import parse_ssh_target
+
+    if parse_ssh_target(location) is not None:
+        return False
+    folder = root / location  # a relative folder is relative to the project, as for datalad itself
+    return folder.is_dir() and any(folder.iterdir()) or folder.is_file()
+
+
+def put_on_server(
+    project_root,
+    location: str,
+    *,
+    sibling_name: str | None = "origin",
+    allow_invalid: bool = False,
+    identity: Identity | None = None,
+    line_callback=None,
+) -> dict:
+    """The first person puts the project on the lab server: create the dataset there, then the validated publish.
+
+    Everything is refused before anything is created on the server: a bad location, a project that already has a
+    server, a location already in use, unsaved changes, an invalid dataset (unless acknowledged) and a public host
+    while sourcedata/ is tracked. Same result shape as `publish_to_server`.
+    """
+    root = Path(project_root)
+    location = str(location or "").strip()
+    sibling = sibling_name or "origin"
+    identity = identity or resolve_identity()
+
+    def refuse(reason: str, message: str, errors=()) -> dict:
+        _audit(root, identity=identity, sibling=sibling, result="refused", error_count=len(errors))
+        return {"success": False, "reason": reason, "errors": list(errors), "message": message, "push": None, "verify": None}
+
+    problem = location_problem(location)
+    if problem:
+        return refuse("bad_location", problem)
+    if not is_datalad_dataset(root):
+        return refuse("not_a_dataset", "This folder is not a DataLad dataset.")
+    if identity is None:
+        return refuse("no_identity", _NO_IDENTITY)
+    if has_sibling(root, sibling):
+        return refuse(
+            "has_server", f'This project already has a server ("{sibling}"). Use Sync to send your changes to it.'
+        )
+    if _local_folder_in_use(root, location):
+        return refuse(
+            "location_exists",
+            f"{location} is not empty. If the project is already there, open it from the server instead; "
+            "otherwise choose an empty or new folder.",
+        )
+    reason, message, errors = _push_refusal(root, location, location, allow_invalid=allow_invalid)
+    if reason:
+        return refuse(reason, message, errors)
+    # --existing error: DataLad itself refuses a location that already holds a dataset (also over ssh)
+    created = run_datalad_create_sibling_plain(
+        root, remote_url=location, sibling_name=sibling, existing="error", line_callback=line_callback
+    )
+    if not created.get("success"):
+        outcome = refuse("sibling_failed", str(created.get("message") or "Could not create the dataset on the server."))
+        outcome["sibling"] = created
+        return outcome
+    # ponytail: publish validates once more (seconds on a large project); it is the one gate every push goes through
+    outcome = publish_to_server(
+        root, sibling_name=sibling, identity=identity, line_callback=line_callback, allow_invalid=allow_invalid
+    )
+    outcome["sibling"] = created
     return outcome
 
 

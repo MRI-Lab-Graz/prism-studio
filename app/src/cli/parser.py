@@ -927,6 +927,25 @@ def build_prism_tools_parsers(
     )
     parser_datalad_sync.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_datalad_put = datalad_subparsers.add_parser(
+        "put-on-server",
+        help="Create the project's dataset on the lab server, then send it (only if the dataset validates)",
+    )
+    parser_datalad_put.add_argument("--project", required=True, help="Project root")
+    parser_datalad_put.add_argument(
+        "--location", required=True,
+        help="Where the server keeps the project: a folder (local or network), user@host:path or ssh://host/path",
+    )
+    parser_datalad_put.add_argument("--sibling-name", help="Server name (default: origin)")
+    parser_datalad_put.add_argument(
+        "--as", dest="as_identity", help='Who is sending: "Name <email>" (else PRISM_USER_NAME/EMAIL, else git config)'
+    )
+    parser_datalad_put.add_argument(
+        "--allow-invalid", action="store_true",
+        help="Send even if the dataset has PRISM validation errors (default: refuse)",
+    )
+    parser_datalad_put.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_datalad_enable = datalad_subparsers.add_parser(
         "enable", help="Make the project a DataLad dataset and save a first snapshot"
     )

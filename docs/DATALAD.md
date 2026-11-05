@@ -122,6 +122,13 @@ The server can be an SSH location or a mounted network share. Each user's copy i
 dataset, so the server is its `origin`; Studio's *Sync now* (`prism_tools.py datalad sync --project <root>`) is
 *get the latest, then publish*.
 
+**Putting a project on the server (the first person).** `prism_tools.py datalad put-on-server --project <root>
+--location <folder | user@host:path | ssh://host/path>` creates the dataset on the server (subject datasets too) and
+sends the project, with the same checks as publishing: saved, valid (or acknowledged with `--allow-invalid`), and no
+public host while `sourcedata/` is tracked. All of them run before anything is created on the server. A location that is
+not empty is refused: if the project is already there, open it from the server instead. If the first send is
+interrupted, the server is already connected; *Sync now* finishes it.
+
 **What to do next.** `prism_tools.py datalad status --project <root> [--check-server] [--validate] [--json]` tells
 what the DataLad page offers next: enable DataLad, put the project on a server, save, or sync. A server that cannot be
 reached is shown as such and does not change that advice.

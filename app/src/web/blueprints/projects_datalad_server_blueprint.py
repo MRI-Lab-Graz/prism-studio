@@ -20,7 +20,7 @@ from .projects_helpers import _resolve_project_root_path
 projects_datalad_server_bp = Blueprint("projects_datalad_server", __name__)
 
 # ---------------------------------------------------------------------------
-# Async job store for "sync" jobs
+# Async job store for "sync" and "put" jobs
 # ---------------------------------------------------------------------------
 
 _ria_jobs: Dict[str, dict] = {}
@@ -84,32 +84,50 @@ def _get_ria_job(job_id: str) -> dict:
         return {k: v for k, v in job.items() if k != "cancel_event"}
 
 
-def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
-    """The same function as `prism_tools datalad sync`: get the latest, then publish a valid dataset."""
-    from src.share_publish import sync_with_server
-
+def _run_job(job_id: str, label: str, running: str, call) -> None:
+    """Run `call(line_callback)` as job `job_id`; its result dict decides complete or error."""
     cancel_event = _ria_jobs.get(job_id, {}).get("cancel_event")
     if cancel_event and cancel_event.is_set():  # a push that has begun is never interrupted
-        _update_ria_job(job_id, status="cancelled", message="Sync cancelled", percent=0)
+        _update_ria_job(job_id, status="cancelled", message=f"{label} cancelled", percent=0)
         return
     try:
-        _update_ria_job(job_id, status="running", percent=10, message="Syncing with the server...")
-        result = sync_with_server(
-            project_path,
-            sibling_name=sync_kwargs.get("sibling_name"),
-            allow_invalid=bool(sync_kwargs.get("allow_invalid")),
-            line_callback=lambda line: _update_ria_job(job_id, message=line, status="running"),
-        )
+        _update_ria_job(job_id, status="running", percent=10, message=running)
+        result = call(lambda line: _update_ria_job(job_id, message=line, status="running"))
         if result.get("success"):
             _update_ria_job(job_id, status="complete", percent=100, message=result["message"], result=result)
         else:
-            detail = "\n".join([result.get("message", "Sync failed."), *result.get("errors", [])[:20]])
+            detail = "\n".join([result.get("message", f"{label} failed."), *result.get("errors", [])[:20]])
             _update_ria_job(job_id, status="error", message=detail, error=detail, result=result)
     except Exception as exc:
         _update_ria_job(job_id, status="error", message=str(exc), error=str(exc))
 
 
-def _start_ria_job(kind: str, runner) -> tuple:
+def _run_sync_job(job_id: str, project_path, sync_kwargs: dict) -> None:
+    """The same function as `prism_tools datalad sync`: get the latest, then publish a valid dataset."""
+    from src.share_publish import sync_with_server
+
+    _run_job(job_id, "Sync", "Syncing with the server...", lambda line_callback: sync_with_server(
+        project_path,
+        sibling_name=sync_kwargs.get("sibling_name"),
+        allow_invalid=bool(sync_kwargs.get("allow_invalid")),
+        line_callback=line_callback,
+    ))
+
+
+def _run_put_job(job_id: str, project_path, put_kwargs: dict) -> None:
+    """The same function as `prism_tools datalad put-on-server`: create the dataset on the server, then publish."""
+    from src.share_publish import put_on_server
+
+    _run_job(job_id, "Put on server", "Putting the project on the server...", lambda line_callback: put_on_server(
+        project_path,
+        str(put_kwargs.get("location") or ""),
+        sibling_name=put_kwargs.get("sibling_name"),
+        allow_invalid=bool(put_kwargs.get("allow_invalid")),
+        line_callback=line_callback,
+    ))
+
+
+def _start_job(kind: str, runner) -> tuple:
     try:
         data = request.get_json() or {}
         project_path_raw = data.get("project_path")
@@ -117,7 +135,11 @@ def _start_ria_job(kind: str, runner) -> tuple:
         if resolved is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        ria_kwargs = {"sibling_name": data.get("sibling_name") or None, "allow_invalid": bool(data.get("allow_invalid"))}
+        job_kwargs = {
+            "sibling_name": data.get("sibling_name") or None,
+            "allow_invalid": bool(data.get("allow_invalid")),
+            "location": str(data.get("location") or ""),
+        }
 
         job_id = str(uuid.uuid4())
         _create_ria_job(job_id, kind=kind)
@@ -138,7 +160,7 @@ def _start_ria_job(kind: str, runner) -> tuple:
 
         t = threading.Thread(
             target=_run_with_app_context,
-            args=(job_id, resolved, ria_kwargs),
+            args=(job_id, resolved, job_kwargs),
             daemon=True,
         )
         t.start()
@@ -184,7 +206,13 @@ def datalad_server_save_config():
 
 @projects_datalad_server_bp.route("/api/projects/datalad-server/sync/start", methods=["POST"])
 def datalad_server_sync_start():
-    return _start_ria_job("sync", _run_sync_job)
+    return _start_job("sync", _run_sync_job)
+
+
+@projects_datalad_server_bp.route("/api/projects/datalad/put-on-server", methods=["POST"])
+def datalad_put_on_server():
+    """Start `prism_tools datalad put-on-server` as a job; poll it with the sync job's status and cancel routes."""
+    return _start_job("put", _run_put_job)
 
 
 @projects_datalad_server_bp.route(

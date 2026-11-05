@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **Put a project on the lab server.** `prism_tools datalad put-on-server --project <path> --location <folder |
+  user@host:path | ssh://host/path> [--sibling-name] [--allow-invalid] [--as] [--json]` creates the dataset there
+  (subject datasets too) as `origin`, then sends it with the same checks as publish (saved, valid or acknowledged, no
+  public host while `sourcedata/` is tracked), all before anything is created on the server. A non-empty location is
+  refused ("open it from the server instead"); web addresses and locations starting with `-` are refused. Studio's
+  `POST /api/projects/datalad/put-on-server` runs it as a job.
 - **`datalad status` tells the next step** (`install_datalad`, `enable`, `put_on_server`, `save`, `sync`), the server
   (`origin`, with `--check-server` whether it is reachable; unreachable is never an error), other servers, and with
   `--validate` the error count. Studio's `GET /api/projects/datalad/state` returns the same JSON as `--json`.
@@ -23,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   has unsaved changes, and skips a project that has no server yet.
 
 ### Fixed
+- **`prism_tools datalad status` ran nothing** (the command was parsed but not dispatched); it now prints the state.
+- **Get latest and Sync no longer fail on a server with nothing saved yet** (a dataset just created on the server);
+  there is nothing to get, and the push fills it.
 - **"Save anyway" (`--allow-invalid`) now gets through the save-gate hook.** The pre-commit hook used to refuse the
   acknowledged save. One variable, `PRISM_ACK_INVALID`, is set only for the acknowledged command; `save-gate --check`
   and `publish --check` (both git hooks) honour it and log it.
