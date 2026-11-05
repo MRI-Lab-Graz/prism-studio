@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable, Optional
 
+from src.datalad_clone import gate_warning, install_nested_checked
 from src.datalad_execution import is_datalad_dataset, run_datalad_get_paths
 from src.datalad_state import SERVER, _reachable
 from src.export_selection import select_content_paths, select_scope_dirs
@@ -52,10 +53,15 @@ def get_data(project_root, *, line_callback: Optional[Callable[[str], None]] = N
 
     say("Looking up which folders the server has...")
     scope = select_scope_dirs(root, **filters)
-    if scope:  # installs nested datasets of the chosen subjects, without any data
-        # The result is deliberately not checked: a nested dataset that did not install shows up below as files that
-        # cannot be fetched, which is reported with their paths.
-        run_datalad_get_paths(root, paths=scope, recursive=True, no_data=True, timeout_seconds=GET_DATA_TIMEOUT_SECONDS)
+
+    def wanted(path: str) -> bool:  # a nested dataset in, above or below a chosen folder
+        return any(path == s or s.startswith(path + "/") or path.startswith(s + "/") for s in scope)
+
+    # the nested datasets the server names are untrusted: the checked installer of open from server, never `get -n -r`
+    hooks: dict = {"installed": [], "foreign": [], "errors": []}
+    problem = install_nested_checked(root, hooks, fresh=False, wanted=wanted, line_callback=line_callback)
+    if problem:
+        return _result(False, f"Nothing was fetched: {problem}.", fetched=0)
 
     paths = select_content_paths(root, **filters)
     if not paths:
@@ -64,7 +70,9 @@ def get_data(project_root, *, line_callback: Optional[Callable[[str], None]] = N
     say(f"Fetching data for {len(paths)} file(s) from the server...")
     got = run_datalad_get_paths(root, paths=paths, jobs=4, timeout_seconds=GET_DATA_TIMEOUT_SECONDS)
     if got.get("success"):
-        return _result(True, f"Fetched the data of {len(paths)} file(s) from the server.", fetched=len(paths))
+        return _result(
+            True, f"Fetched the data of {len(paths)} file(s) from the server." + gate_warning(hooks), fetched=len(paths)
+        )
 
     failed = list(got.get("failed_paths") or [])
     if failed:

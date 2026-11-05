@@ -405,14 +405,14 @@ def _folder_server_trap(tmp_path, mode):
     for sub in ("sub-01", "sub-02"):
         _run("datalad", "create", "-c", "text2git", "-d", str(srv), str(srv / sub), cwd=tmp_path)
     _run("datalad", "save", "-r", "-m", "x", cwd=srv)
-    if mode in ("url-link", "srv-dir-link", "srv-gitfile"):  # sub-02 records the victim's commit
+    if mode in ("url-link", "cand900", "srv-dir-link", "srv-gitfile"):  # sub-02 records the victim's commit
         _run("git", "update-index", "--cacheinfo", f"160000,{head},sub-02", cwd=srv)
-    if mode == "url-link":  # a push is enough: a committed link, named as sub-02's url
+    if mode in ("url-link", "cand900"):  # a push is enough: a committed link, named as sub-02's url
         (srv / "lnk").symlink_to(victim)
         gm = srv / ".gitmodules"
         gm.write_text(gm.read_text(encoding="utf-8").replace("url = ./sub-02", "url = ./lnk"), encoding="utf-8")
         _run("git", "add", ".gitmodules", "lnk", cwd=srv)
-    if mode in ("url-link", "srv-dir-link", "srv-gitfile"):
+    if mode in ("url-link", "cand900", "srv-dir-link", "srv-gitfile"):
         _run("git", "commit", "-qm", mode, cwd=srv)
     if mode == "srv-dir-link":  # someone who can write the server folder itself
         shutil.rmtree(srv / "sub-02")
@@ -426,6 +426,10 @@ def _folder_server_trap(tmp_path, mode):
         (srv / ".git").write_text(f"gitdir: {real}\n", encoding="utf-8")
         if mode == "alt-gitfile":
             (real / "objects" / "info" / "alternates").write_text(f"{victim / '.git' / 'objects'}\n", encoding="utf-8")
+    elif mode == "cand900":  # the server folder holds a real repo at `lnk`; the copy checks out the committed link
+        (srv / "lnk").unlink()
+        _run("git", "init", "-q", str(srv / "lnk"), cwd=tmp_path)
+        _run("git", "commit", "-q", "--allow-empty", "-m", "decoy", cwd=srv / "lnk")  # clones, lacks the commit
     elif mode == "alt-commondir":  # the location's .git names a common git dir that has alternates
         common = tmp_path / "common"
         shutil.copytree(srv / ".git", common)
@@ -439,6 +443,7 @@ def _folder_server_trap(tmp_path, mode):
     "mode, reason, refused",
     [
         ("url-link", "clone_failed", "'./lnk'"),
+        ("cand900", "clone_failed", "'./lnk'"),  # every lstat on the server passes; the url rule refuses it
         ("srv-dir-link", "clone_failed", "'sub-02'"),
         ("srv-gitfile", "clone_failed", "'sub-02'"),
         ("loc-gitfile", "bad_location", ".git"),
@@ -512,15 +517,20 @@ def test_the_checkout_check_has_a_timeout(server, tmp_path):
 
 
 def test_relative_and_inside_urls():
+    """Only what DataLad and PRISM write is accepted: the url is `./<path>` of its own nested dataset."""
     from src.datalad_clone import nested_url_problem
 
-    for ok in ("./sub-01", "sub-01", "sub-01/ses-1", "/srv/lab/x/sub-01", "u@h:/srv/x/sub-01"):
-        assert nested_url_problem(ok, "/srv/lab/x" if ok.startswith("/") else "u@h:/srv/x") == "", ok
-    for bad in (
-        "/srv/lab/xy/sub-01", "/srv/lab/x/../secret", "../x", "/etc", "C:\\x", "ssh://h/x", "-oX", "a b", "", ".",
-        "u@-oProxyCommand=x:/srv/lab/x/sub", "a\nb", "ext::sh",
+    for url, path in (
+        ("./sub-01", "sub-01"), ("sub-01", "sub-01"), ("./sub-01/ses-1", "sub-01/ses-1"), ("./derivatives", "derivatives"),
+        ("./rawdata/sub-01", "rawdata/sub-01"),
     ):
-        assert nested_url_problem(bad, "/srv/lab/x"), bad
+        assert nested_url_problem(url, path) == "", url
+    for bad in (
+        "/srv/lab/x/sub-01", "u@h:/srv/x/sub-01", "/srv/lab/xy/sub-01", "/srv/lab/x/../secret", "../x", "/etc", "C:\\x",
+        "ssh://h/x", "-oX", "a b", "", ".", "u@-oProxyCommand=x:/srv/lab/x/sub", "a\nb", "ext::sh", "./lnk", "./sub-02",
+        "sub-01/../sub-01", "./sub-01/",
+    ):
+        assert nested_url_problem(bad, "sub-01"), bad
 
 
 @needs_datalad

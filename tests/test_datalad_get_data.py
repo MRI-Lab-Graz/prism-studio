@@ -311,3 +311,68 @@ def test_an_unreachable_server_through_the_command_and_studio_say_the_same(copie
     assert payload["message"] == "The server could not be reached. Check your network connection and try again."
     job = studio_job(mine, {})
     assert job["status"] == "error" and job["result"] == payload
+
+
+@pytest.fixture
+def nested(tmp_path, identity, monkeypatch):
+    """A project with the nested subject sub-01 (annexed data) on a folder server, `mine` opened from it, `theirs` a
+    teammate's copy with push access."""
+    from src.datalad_clone import open_from_server
+
+    monkeypatch.setenv("PRISM_TOOLS", str(ROOT / "prism_tools.py"))
+    monkeypatch.chdir(tmp_path)
+    theirs, server, mine = tmp_path / "theirs", tmp_path / "server", tmp_path / "mine"
+    _run("datalad", "create", "-c", "text2git", str(theirs), cwd=tmp_path)
+    _run("datalad", "create", "-c", "text2git", "-d", ".", "sub-01", cwd=theirs)
+    (theirs / "sub-01" / "data.bin").write_bytes(bytes(range(256)) * 64)
+    _run("datalad", "save", "-r", "-m", "sub-01", cwd=theirs)
+    _run("datalad", "create-sibling", "-r", "-s", "origin", str(server), cwd=theirs)
+    _run("datalad", "push", "-r", "--to", "origin", cwd=theirs)
+    opened = open_from_server(str(server), mine)
+    assert opened["success"] is True, opened
+    return theirs, server, mine
+
+
+def test_get_data_installs_a_subject_added_on_the_server_after_opening(nested):
+    from src.datalad_get_data import get_data
+    from src.project_manager import ProjectManager
+    from src.save_gate import has_save_hook
+
+    theirs, _, mine = nested
+    _run("datalad", "create", "-c", "text2git", "-d", ".", "sub-03", cwd=theirs)
+    (theirs / "sub-03" / "data.bin").write_bytes(bytes(range(255, -1, -1)) * 64)
+    _run("datalad", "save", "-r", "-m", "sub-03", cwd=theirs)
+    _run("datalad", "create-sibling", "-r", "-s", "origin", "--existing", "skip", str(theirs.parent / "server"), cwd=theirs)
+    _run("datalad", "push", "-r", "--to", "origin", cwd=theirs)
+    assert ProjectManager().update_datalad_from_server(mine)["success"] is True
+    result = get_data(mine)
+    assert result["success"] is True, result
+    assert has_content(mine / "sub-03" / "data.bin") and has_content(mine / "sub-01" / "data.bin")
+    assert has_save_hook(mine / "sub-03")
+
+
+def test_get_data_refuses_a_nested_dataset_whose_url_is_another_repository(nested, tmp_path):
+    """journey3: a teammate with push access names another repository of the user's computer as sub-04."""
+    from src.datalad_get_data import get_data
+    from src.project_manager import ProjectManager
+
+    theirs, _, mine = nested
+    secret = tmp_path / "secret"
+    _run("git", "init", "-q", str(secret), cwd=tmp_path)
+    (secret / "SECRET.txt").write_text("private notes\n", encoding="utf-8")
+    _run("git", "add", ".", cwd=secret)
+    _run("git", "commit", "-qm", "secret", cwd=secret)
+    sha = _run("git", "rev-parse", "HEAD", cwd=secret).strip()
+    _run("git", "config", "-f", ".gitmodules", "submodule.sub-04.path", "sub-04", cwd=theirs)
+    _run("git", "config", "-f", ".gitmodules", "submodule.sub-04.url", str(secret), cwd=theirs)
+    _run("git", "update-index", "--add", "--cacheinfo", f"160000,{sha},sub-04", cwd=theirs)
+    _run("git", "add", ".gitmodules", cwd=theirs)
+    _run("git", "commit", "-q", "--no-verify", "-m", "add sub-04", cwd=theirs)
+    _run("git", "push", "-q", "origin", "HEAD", cwd=theirs)
+    assert ProjectManager().update_datalad_from_server(mine)["success"] is True
+    result = get_data(mine)
+    assert result["success"] is False, result
+    assert "sub-04" in result["message"] and "not accepted" in result["message"], result["message"]
+    assert not (mine / "sub-04" / "SECRET.txt").exists()
+    remote = subprocess.run(["git", "-C", str(mine / "sub-04"), "remote", "-v"], capture_output=True, text=True)
+    assert str(secret) not in remote.stdout

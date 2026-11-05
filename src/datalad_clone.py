@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import posixpath
 import stat
 import subprocess
 from pathlib import Path
@@ -34,19 +35,16 @@ def _inside(value: str) -> bool:
     )
 
 
-def nested_url_problem(url: str, location: str) -> str:
-    """'' when a nested dataset's url (from the server's `.gitmodules`, untrusted) stays on the server, else why not.
+def nested_url_problem(url: str, path: str) -> str:
+    """'' when a nested dataset's url (from the server's `.gitmodules`, untrusted) is `./<path>` of that very dataset.
 
-    Accepted: a relative path inside the dataset, or an address under the exact `location` the user gave that also
-    passes `location_problem`. Anything else could clone another repository of this computer or run ssh with options.
+    That is what DataLad and PRISM write (`./sub-01`, `./derivatives`). Anything else, also another relative path or an
+    address on the server, could make DataLad clone another repository of this computer or run ssh with options.
     """
     url = str(url or "")
-    prefix = str(location or "").rstrip("/\\") + "/"
-    if _inside(url):
+    if _inside(url) and not url.endswith("/") and posixpath.normpath(url) == posixpath.normpath(path):
         return ""
-    if url.startswith(prefix) and _inside(url[len(prefix):]) and not location_problem(url):
-        return ""
-    return f"'{url}' is not inside the project on the server"
+    return f"'{url}' is not inside the project on the server, which is not accepted (only './{path}' is)"
 
 
 # The only keys PRISM and DataLad write in these committed, server-controlled files. Anything else (url rewriting such
@@ -137,61 +135,69 @@ def _alternates_problem(folder: Path) -> str:
     return ""
 
 
-def _origin_folder(root: Path) -> Path | None:
-    """The local server folder `root` was cloned from (git wrote it, not the server), None for an ssh server."""
-    url = subprocess.run(
-        ["git", "-C", str(root), "config", "--get", "remote.origin.url"], capture_output=True, text=True
-    ).stdout.strip()
-    return Path(url) if url and parse_ssh_target(url) is None and Path(url).is_absolute() else None
+def _remote_folders(root: Path) -> list[Path]:
+    """The local folders among `root`'s remotes (git wrote them, not the server): DataLad clones `<remote>/<path>`."""
+    listed = subprocess.run(
+        ["git", "-C", str(root), "config", "--get-regexp", r"^remote\..*\.url$"], capture_output=True, text=True
+    ).stdout.splitlines()
+    urls = [line.partition(" ")[2].strip() for line in listed]
+    return [Path(url) for url in urls if url and parse_ssh_target(url) is None and Path(url).is_absolute()]
 
 
-def _nested_datasets(root: Path, location: str) -> tuple[list[str], list[str], str]:
-    """(subdataset paths, urls, '') of `root` once its `.datalad/config` and `.gitmodules` are checked, else problem."""
-    # git refuses some paths at checkout (a symlinked .gitmodules), DataLad still says install(ok): the files are gone
+def _nested_datasets(root: Path, *, fresh: bool) -> tuple[list[str], str]:
+    """(subdataset paths, '') of `root` once its `.datalad/config` and `.gitmodules` are checked, else ([], problem).
+
+    `fresh`: `root` was just cloned, so anything git did not check out means it refused a path (a symlinked
+    .gitmodules) while DataLad still said install(ok). Your own copy may have unsaved changes; they are yours.
+    """
     try:
         status = subprocess.run(
             ["git", "-C", str(root), "status", "--porcelain"], capture_output=True, text=True, timeout=60
         )
     except subprocess.TimeoutExpired:
-        return [], [], f"git did not answer within 60 seconds for {root}, which is not accepted"
+        return [], f"git did not answer within 60 seconds for {root}, which is not accepted"
     if status.returncode != 0:  # e.g. git rejects `update = !command` in .gitmodules
-        return [], [], f"git refuses {root}, which is not accepted ({status.stderr.strip()})"
-    if status.stdout.strip():
+        return [], f"git refuses {root}, which is not accepted ({status.stderr.strip()})"
+    if fresh and status.stdout.strip():
         detail = "; ".join(status.stdout.strip().splitlines()[:3])
-        return [], [], f"{root} was not checked out completely from the server ({detail})"
+        return [], f"{root} was not checked out completely from the server ({detail})"
     config = root / ".datalad" / "config"
     for path, folder in ((root / ".datalad", True), (config, False), (root / ".gitmodules", False)):
         if _not_real(path, folder):
-            return [], [], _not_real(path, folder)
+            return [], _not_real(path, folder)
     if config.is_file():
         entries, problem = _entries(config)
         if problem:
-            return [], [], problem
+            return [], problem
         for key, _ in entries:
             if key not in _DATASET_CONFIG_KEYS:
-                return [], [], f"{config} sets '{key}', which is not accepted (only datalad.dataset.id is)"
+                return [], f"{config} sets '{key}', which is not accepted (only datalad.dataset.id is)"
     if not (root / ".gitmodules").is_file():
-        return [], [], ""
+        return [], ""
     entries, problem = _entries(root / ".gitmodules")
     if problem:
-        return [], [], problem
-    paths, urls = [], []
+        return [], problem
+    fields: dict[str, dict[str, list[str]]] = {}
     for key, value in entries:
         section, _, rest = key.partition(".")
         name, _, field = rest.rpartition(".")
         if section != "submodule" or not name or field not in _SUBMODULE_FIELDS:
-            return [], [], f"{root / '.gitmodules'} sets '{key}', which is not accepted"
-        if field == "path":
-            if not _inside(value):
-                return [], [], f"the nested dataset '{name}' has the path '{value}', which is not inside {root}"
-            if _gitlink_problem(root, value):
-                return [], [], _gitlink_problem(root, value)
-            paths.append(value)
-        elif field == "url":
-            if nested_url_problem(value, location):  # every url entry, also a repeated one
-                return [], [], f"the nested dataset '{name}' in {root}: {nested_url_problem(value, location)}"
-            urls.append(value)
-    return paths, urls, ""
+            return [], f"{root / '.gitmodules'} sets '{key}', which is not accepted"
+        fields.setdefault(name, {}).setdefault(field, []).append(value)
+    paths = []
+    for name, entry in fields.items():
+        if len(entry.get("path", [])) != 1 or not entry.get("url"):
+            return [], f"the nested dataset '{name}' in {root} needs exactly one path and a url, which is not accepted"
+        path = entry["path"][0]
+        if not _inside(path):
+            return [], f"the nested dataset '{name}' has the path '{path}', which is not inside {root}"
+        if _gitlink_problem(root, path):
+            return [], _gitlink_problem(root, path)
+        for url in entry["url"]:  # every url entry, also a repeated one
+            if nested_url_problem(url, path):
+                return [], f"the nested dataset '{name}' in {root}: {nested_url_problem(url, path)}"
+        paths.append(path)
+    return paths, ""
 
 
 def _gate(dataset: Path, hooks: dict) -> None:
@@ -203,6 +209,59 @@ def _gate(dataset: Path, hooks: dict) -> None:
         hooks[key].extend(outcome[key])
     if outcome.get("skipped"):
         hooks["skipped"] = outcome["skipped"]
+
+
+def _installed(dataset: Path) -> bool:
+    return os.path.lexists(dataset / ".git")
+
+
+def install_nested_checked(top: Path, hooks: dict, *, fresh: bool, wanted=None, line_callback=None) -> str:
+    """Install the not yet installed nested datasets under `top` level by level, without data; '' or the problem.
+
+    The one installer for nested datasets named by a server (open from server, Get data): each dataset's
+    `.datalad/config` and `.gitmodules` are checked before anything below it is installed, a folder server is read
+    only through real folders, nothing borrows another repository's objects, and every new dataset gets the save-gate
+    hook. `wanted(path relative to top)` limits what is installed; installed datasets are always looked into.
+    On a problem nothing more is installed.
+    """
+    pending = [top]
+    while pending:
+        root = pending.pop(0)
+        paths, problem = _nested_datasets(root, fresh=fresh)
+        if problem:
+            return problem
+        new = []
+        for path in paths:
+            if _installed(root / path):
+                pending.append(root / path)
+            elif wanted is None or wanted((root / path).relative_to(top).as_posix()):
+                new.append(path)
+        if not new:
+            continue
+        for base in _remote_folders(root):  # DataLad clones <remote>/<path> (the url is ./<path>, the same)
+            for path in new:
+                problem = _server_folder_problem(base, path) or _alternates_problem(base / path)
+                if problem:
+                    return f"the nested dataset source '{path}' of {root}: {problem}"
+        got = run_datalad_install_nested(root, new, line_callback=line_callback)
+        if not got.get("success"):
+            return str(got.get("message") or "the nested datasets could not be installed")
+        for path in new:
+            if _copy_alternates_problem(root / path):
+                return _copy_alternates_problem(root / path)
+            if _gitlink_problem(root, path):  # still a real folder now that it is installed
+                return _gitlink_problem(root, path)
+            _gate(root / path, hooks)
+            pending.append(root / path)
+    return ""
+
+
+def gate_warning(hooks: dict) -> str:
+    """'' or a sentence naming the datasets without the save gate (an invalid commit is not stopped there)."""
+    not_gated = [hooks["skipped"]] if hooks.get("skipped") else [
+        *hooks["errors"], *(f"{p} has another pre-commit hook" for p in hooks["foreign"])
+    ]
+    return " Warning: the save gate is not installed everywhere: " + "; ".join(not_gated) if not_gated else ""
 
 
 def open_from_server(location: str, target, *, line_callback=None) -> dict:
@@ -265,40 +324,12 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
         ))
         return outcome
 
-    if _copy_alternates_problem(target):
-        return incomplete(_copy_alternates_problem(target))
-    pending = [target]
-    while pending:
-        root = pending.pop(0)
-        paths, urls, problem = _nested_datasets(root, location)
-        if problem:
-            return incomplete(problem)
-        if not paths:
-            continue
-        origin = _origin_folder(root)  # DataLad clones <origin>/<path> or the url (relative to origin)
-        for source in [*paths, *urls] if origin else ():
-            base, rel = (origin, source) if _inside(source) else (
-                Path(location), source[len(location.rstrip("/\\")) + 1:]  # an address under the location
-            )
-            problem = _server_folder_problem(base, rel) or _alternates_problem(base / rel)
-            if problem:
-                return incomplete(f"the nested dataset source '{source}' of {root}: {problem}")
-        got = run_datalad_install_nested(root, paths, line_callback=line_callback)
-        if not got.get("success"):
-            return incomplete(str(got.get("message") or "the nested datasets could not be installed"))
-        for path in paths:
-            if _copy_alternates_problem(root / path):
-                return incomplete(_copy_alternates_problem(root / path))
-            if _gitlink_problem(root, path):  # still a real folder now that it is installed
-                return incomplete(_gitlink_problem(root, path))
-            _gate(root / path, hooks)
-            pending.append(root / path)
-
-    message = f"Opened the project from the server in {target}. Use Get data to fetch the files you need."
-    not_gated = [hooks["skipped"]] if hooks.get("skipped") else [
-        *hooks["errors"], *(f"{p} has another pre-commit hook" for p in hooks["foreign"])
-    ]
-    if not_gated:  # the copy works, but an invalid commit would no longer be stopped: say so
-        message += " Warning: the save gate is not installed everywhere: " + "; ".join(not_gated)
-    outcome["message"] = message
+    problem = _copy_alternates_problem(target) or install_nested_checked(
+        target, hooks, fresh=True, line_callback=line_callback
+    )
+    if problem:
+        return incomplete(problem)
+    # the copy works without the gate, but an invalid commit would no longer be stopped: say so
+    opened = f"Opened the project from the server in {target}. Use Get data to fetch the files you need."
+    outcome["message"] = opened + gate_warning(hooks)
     return outcome

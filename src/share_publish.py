@@ -257,7 +257,9 @@ def _push_refusal(root: Path, url: str, target: str, *, allow_invalid: bool) -> 
     return "", "", errors
 
 
-def _publish_refusal(root: Path, sibling: str, identity: Identity | None, *, allow_invalid: bool) -> tuple[str, str, list[str]]:
+def _publish_refusal(
+    root: Path, sibling: str, identity: Identity | None, *, allow_invalid: bool
+) -> tuple[str, str, list[str]]:
     """Everything `publish_to_server` refuses before sending, as `_push_refusal` returns it (sync asks first too)."""
     if not is_datalad_dataset(root):
         return "not_a_dataset", "This folder is not a DataLad dataset.", []
