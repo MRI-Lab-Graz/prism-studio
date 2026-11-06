@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`survey validate` checks a library template with the Template Editor's schema and task-name rule**, so both agree.
 - **Export:** modality names are made id-safe before they reach an `id` attribute.
 - **Validator page:** its title is the page's `h1`; underlined text links, scroll padding under the sticky navbar.
+- **`prism_tools datalad enable` registers every nested dataset**, like Studio: the backend says (`enable_continue`)
+  whether another batch is needed, or that registration is stuck; the CLI and the page only repeat the call.
+- **Open from server** accepts a new target inside folders that do not exist yet. **Put on server** reads `~` as the home
+  folder, as open-from-server does.
+- **A nested dataset's url must start with `./`** (a bare `sub-01` from the server is refused).
+- **"Save anyway" also works when the validator cannot run**; the snapshot says `[saved without validation: the validator could not run]`.
+- **A half legacy git identity** (only a name, or an email) stays in the project instead of being deleted without a trace.
+- **DataLad status:** a server with nothing saved yet counts as reachable, and the check keeps your own `core.sshCommand`.
+- **DataLad page:** a second job for the same project is refused while one is unfinished; Cancel says when the job has already started.
+- **Get data** also installs nested datasets outside `sub-*` (derivatives, code, ...) that the filters keep.
 - `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.
 
 ### Removed
