@@ -288,8 +288,10 @@ def open_from_server(location: str, target, *, line_callback=None) -> dict:
     target = Path(str(target).strip()).expanduser()
     if target.is_file() or target.is_dir() and any(target.iterdir()):
         return refuse("target_not_empty", f"{target} is not empty. Choose an empty or new folder for your copy.")
-    # the folder that will hold the copy: the target itself when it exists (empty), else its parent
-    holder = target if target.is_dir() else target.parent
+    # the folder that will hold the copy: the target itself when it exists (empty), else its nearest existing parent
+    holder = target
+    while not holder.is_dir():  # DataLad creates missing parents itself
+        holder = holder.parent
     problems = datalad_preflight(holder)
     tools = [p for p in problems if " is not installed." in p]
     if tools:

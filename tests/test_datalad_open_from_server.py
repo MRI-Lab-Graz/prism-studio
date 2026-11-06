@@ -646,3 +646,21 @@ def test_open_from_server_runs_through_the_real_dispatch(tmp_path):
     assert out.returncode == 1, out.stderr
     refused = json.loads(out.stdout)
     assert refused["reason"] == "bad_target" and "full path" in refused["message"]  # Studio's 400 says the same
+
+
+def test_a_new_target_inside_folders_that_do_not_exist_yet_is_checked_where_it_will_be_created(tmp_path):
+    """DataLad creates the parents itself; the preflight must look at the nearest folder that exists."""
+    server = tmp_path / "server"
+    server.mkdir()
+    target = tmp_path / "not" / "yet" / "mine"
+    asked = []
+
+    def preflight(holder, *a, **k):
+        asked.append(Path(holder))
+        return []
+
+    with patch("src.datalad_clone.datalad_preflight", preflight), patch(
+        "src.datalad_clone.run_datalad_clone", return_value={"success": False, "message": "stop here"}
+    ):
+        open_from_server(str(server), target)
+    assert asked == [tmp_path], asked
