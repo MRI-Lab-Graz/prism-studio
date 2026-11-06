@@ -132,3 +132,10 @@ def test_page_refreshes_the_navbar_count_after_an_action():
         TEMPLATES / "base.html"
     )
     assert "window.refreshNavbarDataladCount?.(projectPath)" in _text(PAGE_JS)
+
+
+def test_modality_names_never_reach_an_id_attribute_unescaped():
+    # A modality is a folder name; in a project cloned from the server it is untrusted (quotes are legal in folder names).
+    export_js = (Path(__file__).resolve().parents[1] / "app/static/js/modules/projects/export.js").read_text(encoding="utf-8")
+    assert 'id="acq_group_${item}"' not in export_js
+    assert "export_${kind}_${item}_" not in export_js

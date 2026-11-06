@@ -1241,7 +1241,8 @@ function _renderCheckboxListWithAcq(containerId, items, acqLabels, taskLabels = 
         return;
     }
     const html = items.map(item => {
-        const id = `export_modality_${item.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const safeItem = item.replace(/[^a-zA-Z0-9]/g, '_');
+        const id = `export_modality_${safeItem}`;
         const tasks = taskLabels[item] || [];
         const acqs = acqLabels[item] || [];
         const subfilters = [
@@ -1249,9 +1250,9 @@ function _renderCheckboxListWithAcq(containerId, items, acqLabels, taskLabels = 
             ...acqs.map(acq => ({ value: acq, kind: 'acq' })),
         ];
         const acqHtml = subfilters.length ? `
-        <div class="ms-4 mt-1" id="acq_group_${item}">
+        <div class="ms-4 mt-1" id="acq_group_${safeItem}">
             ${subfilters.map(({ value, kind }) => {
-                const acqId = `export_${kind}_${item}_${value.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const acqId = `export_${kind}_${safeItem}_${value.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 return `<div class="form-check form-check-sm">
                     <input class="form-check-input export-acq-filter" type="checkbox"
                            id="${acqId}" value="${escapeHtml(value)}" data-modality="${escapeHtml(item)}" data-filter-kind="${escapeHtml(kind)}" checked>
