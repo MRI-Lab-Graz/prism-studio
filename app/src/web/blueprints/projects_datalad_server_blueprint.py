@@ -45,11 +45,15 @@ def _prune_jobs_locked() -> None:
         _jobs.pop(job_id, None)
 
 
-def _create_job(job_id: str, *, kind: str) -> None:
+def _create_job(job_id: str, *, kind: str, key: str = "") -> bool:
+    """Register a job; False when another job on the same project/target (`key`) has not finished yet."""
     with _lock:
         _prune_jobs_locked()
+        if key and any(j.get("key") == key and j.get("done_at") is None for j in _jobs.values()):
+            return False
         now = _now()
         _jobs[job_id] = {
+            "key": key,
             "kind": kind,
             "status": "pending",
             "percent": 0,
@@ -61,6 +65,7 @@ def _create_job(job_id: str, *, kind: str) -> None:
             "updated_at": now,
             "done_at": None,
         }
+        return True
 
 
 def _update_job(job_id: str, **kwargs: object) -> None:
@@ -82,7 +87,7 @@ def _get_job(job_id: str) -> dict:
         job = _jobs.get(job_id)
         if job is None:
             return {}
-        return {k: v for k, v in job.items() if k != "cancel_event"}
+        return {k: v for k, v in job.items() if k not in ("cancel_event", "key")}
 
 
 def _run_job(job_id: str, label: str, running: str, call) -> None:
@@ -173,7 +178,8 @@ def _start_job(kind: str, runner, *, path_key: str = "project_path", resolve=_re
         }
 
         job_id = str(uuid.uuid4())
-        _create_job(job_id, kind=kind)
+        if not _create_job(job_id, kind=kind, key=str(resolved)):
+            return jsonify({"error": "Another DataLad job for this project is already running. Wait for it to finish."}), 409
 
         # The job body runs on a separate thread, which does NOT inherit
         # Flask's request-local app context -- without explicitly pushing
@@ -259,9 +265,9 @@ def datalad_server_sync_cancel(job_id: str):
         job = _jobs.get(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
-    cancel_event = job.get("cancel_event")
-    if cancel_event:
-        cancel_event.set()
+    if job.get("status") != "pending":  # a job that has begun is never interrupted: it finishes
+        return jsonify({"cancelled": False, "message": "The job has already started and finishes on its own."})
+    job["cancel_event"].set()
     return jsonify({"cancelled": True})
 
 

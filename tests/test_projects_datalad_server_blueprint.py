@@ -298,3 +298,27 @@ def test_open_from_server_route_runs_the_cli_function_with_a_new_target(tmp_path
             status = client.get(f"/api/projects/datalad-server/sync/{start.get_json()['job_id']}/status").get_json()
     assert opened.call_args.args == ("/srv/x", target)
     assert status["status"] == "complete" and status["result"]["path"] == str(target)
+
+
+def test_a_second_job_for_the_same_project_is_refused_while_one_is_unfinished(tmp_path):
+    project_dir = _project_dir(tmp_path)
+    with patch(
+        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread", side_effect=_FakeThread
+    ), _build_app().test_client() as client:
+        first = client.post("/api/projects/datalad-server/sync/start", json={"project_path": str(project_dir)})
+        assert first.status_code == 200
+        again = client.post("/api/projects/datalad/get-data", json={"project_path": str(project_dir)})
+        assert again.status_code == 409 and "already running" in again.get_json()["error"]
+        other = _project_dir(tmp_path / "other")
+        assert client.post("/api/projects/datalad-server/sync/start", json={"project_path": str(other)}).status_code == 200
+
+
+def test_cancel_only_claims_success_for_a_job_that_has_not_started(tmp_path):
+    project_dir = _project_dir(tmp_path)
+    with patch(
+        "src.web.blueprints.projects_datalad_server_blueprint.threading.Thread", side_effect=_FakeThread
+    ), _build_app().test_client() as client:
+        job_id = client.post("/api/projects/datalad-server/sync/start", json={"project_path": str(project_dir)}).get_json()["job_id"]
+        datalad_server_module._update_job(job_id, status="running")
+        reply = client.delete(f"/api/projects/datalad-server/sync/{job_id}/cancel").get_json()
+        assert reply["cancelled"] is False and "finishes" in reply["message"]
