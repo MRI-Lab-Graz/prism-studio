@@ -132,7 +132,10 @@ def check_save(project_root) -> SaveCheck:
             validate_subject_for_save(sup, root.name) if nested_subject else validate_for_publish(root)
         )
     except (Exception, SystemExit) as exc:  # fail closed
-        return SaveCheck(False, [f"Validation could not run: {exc}"], "validator_crash")
+        crash = [f"Validation could not run: {exc}"]
+        if acknowledged():  # the person chose "Save anyway": fail closed only without that explicit override
+            return SaveCheck(True, crash, "acknowledged")
+        return SaveCheck(False, crash, "validator_crash")
     if errors and acknowledged():
         return SaveCheck(True, errors, "acknowledged")
     return SaveCheck(not errors, errors, "valid" if not errors else "validation_errors")

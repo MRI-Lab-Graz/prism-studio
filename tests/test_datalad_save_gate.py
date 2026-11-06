@@ -12,7 +12,7 @@ for p in (ROOT, ROOT / "app"):
 from src.project_manager import ProjectManager  # noqa: E402
 
 
-def _save(tmp_path, errors=None, crash=None, seen=None, **kwargs):
+def _save(tmp_path, errors=None, crash=None, seen=None, envs=None, **kwargs):
     """Run the explicit Save with a canned validator answer; return (result, datalad-save-was-run)."""
     project = tmp_path / "demo_project"
     (project / ".datalad").mkdir(parents=True)
@@ -23,6 +23,8 @@ def _save(tmp_path, errors=None, crash=None, seen=None, **kwargs):
             ran["save"] = True
             if seen is not None:
                 seen.append(list(command))
+            if envs is not None:
+                envs.append(k.get("env"))
             return Mock(returncode=0, stdout="save (ok: 1)", stderr="")
         return Mock(returncode=0, stdout="", stderr="")
 
@@ -71,3 +73,11 @@ def test_a_valid_snapshot_has_no_such_note(tmp_path):
     seen = []
     _save(tmp_path, errors=[], allow_invalid=True, seen=seen)
     assert "validation error" not in " ".join(seen[0])
+
+
+def test_save_anyway_after_a_crashed_validator_is_acknowledged_and_says_so(tmp_path):
+    seen, envs = [], []
+    result, saved = _save(tmp_path, crash=RuntimeError("boom"), allow_invalid=True, seen=seen, envs=envs)
+    assert result["success"] is True and saved is True
+    assert envs[0] and envs[0].get("PRISM_ACK_INVALID") == "1"
+    assert "[saved without validation: the validator could not run]" in " ".join(seen[0])

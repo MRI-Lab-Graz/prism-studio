@@ -146,3 +146,15 @@ def test_validator_system_exit_is_refused(tmp_path, monkeypatch):
     monkeypatch.setattr(sg, "validate_for_publish", bail)
     result = sg.check_save(repo(tmp_path / "p", commits=2))
     assert not result.allowed and result.reason == "validator_crash"
+
+
+def test_an_acknowledged_save_gets_through_when_the_validator_cannot_run(tmp_path, monkeypatch):
+    """'Save anyway' is the person's explicit override; a crashed validator must not turn it into a hook refusal."""
+    def boom(root):
+        raise RuntimeError("kaput")
+
+    monkeypatch.setattr(sg, "validate_for_publish", boom)
+    monkeypatch.setenv(sg.ACK_INVALID_ENV, "1")
+    result = sg.check_save(repo(tmp_path / "p", commits=2))
+    assert result.allowed and result.reason == "acknowledged"
+    assert "kaput" in result.errors[0]

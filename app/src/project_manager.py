@@ -2028,8 +2028,10 @@ class ProjectManager:
             result["validation_errors"] = list(errors)
             result["error"] = f"{problem} Nothing was saved. Fix them, or save anyway (--allow-invalid / 'Save anyway')."
             return result
-        if errors:  # an acknowledged invalid snapshot says so in the history
-            message = f"{str(message or '').strip() or DEFAULT_SNAPSHOT_MESSAGE} [saved with {len(errors)} validation error(s)]"
+        if problem:  # an acknowledged invalid snapshot says so in the history
+            note = f"{len(errors)} validation error(s)" if errors else "validation: the validator could not run"
+            tag = f"saved with {note}" if errors else f"saved without {note}"
+            message = f"{str(message or '').strip() or DEFAULT_SNAPSHOT_MESSAGE} [{tag}]"
 
         gitattributes_policy_updated = self._ensure_datalad_editable_metadata_policy(
             project_path,
@@ -2050,7 +2052,7 @@ class ProjectManager:
             datalad_executable=status.get("executable"),
             recursive=True,
             detect_no_changes=True,
-            env=ack_env() if errors else None,  # the pre-commit hook passes this one acknowledged save
+            env=ack_env() if problem else None,  # the pre-commit hook passes this one acknowledged save
         )
         save_message = save_result.get("message")
         refreshed_status = self.get_datalad_status(project_path)
