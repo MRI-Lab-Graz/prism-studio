@@ -837,6 +837,6 @@ html[data-wcag] .studio-theme :is(p, li, small) a:not(.btn, .badge, .nav-link, .
 }
 
 /* WCAG 2.4.11: the sticky navbar must not cover the control that has the keyboard focus. */
-html[data-wcag] html {
+html[data-wcag] {
     scroll-padding-top: 6rem;
 }

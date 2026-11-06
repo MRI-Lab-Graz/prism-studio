@@ -93,6 +93,7 @@ def test_wcag_enhanced_view_toggle_page_attribute_and_css_are_wired():
     section = css[css.index("/* Accessibility (WCAG AA") :]
     bare = re.findall(r"^\s*((?:\.studio-theme|html)[^;{}]*?)\s*[,{]\s*$", section, re.M)
     assert [rule for rule in bare if "html[data-wcag]" not in rule] == []
+    assert "html[data-wcag] html" not in css  # a rule for <html> itself is html[data-wcag] {, not a descendant
 
 
 def test_settings_page_opens_without_a_project():
