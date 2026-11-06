@@ -521,14 +521,14 @@ def test_relative_and_inside_urls():
     from src.datalad_clone import nested_url_problem
 
     for url, path in (
-        ("./sub-01", "sub-01"), ("sub-01", "sub-01"), ("./sub-01/ses-1", "sub-01/ses-1"), ("./derivatives", "derivatives"),
+        ("./sub-01", "sub-01"), ("./sub-01/ses-1", "sub-01/ses-1"), ("./derivatives", "derivatives"),
         ("./rawdata/sub-01", "rawdata/sub-01"),
     ):
         assert nested_url_problem(url, path) == "", url
     for bad in (
         "/srv/lab/x/sub-01", "u@h:/srv/x/sub-01", "/srv/lab/xy/sub-01", "/srv/lab/x/../secret", "../x", "/etc", "C:\\x",
         "ssh://h/x", "-oX", "a b", "", ".", "u@-oProxyCommand=x:/srv/lab/x/sub", "a\nb", "ext::sh", "./lnk", "./sub-02",
-        "sub-01/../sub-01", "./sub-01/",
+        "sub-01/../sub-01", "./sub-01/", "sub-01",
     ):
         assert nested_url_problem(bad, "sub-01"), bad
 

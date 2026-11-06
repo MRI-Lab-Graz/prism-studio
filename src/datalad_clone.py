@@ -42,7 +42,7 @@ def nested_url_problem(url: str, path: str) -> str:
     address on the server, could make DataLad clone another repository of this computer or run ssh with options.
     """
     url = str(url or "")
-    if _inside(url) and not url.endswith("/") and posixpath.normpath(url) == posixpath.normpath(path):
+    if url.startswith("./") and _inside(url) and not url.endswith("/") and posixpath.normpath(url) == posixpath.normpath(path):
         return ""
     return f"'{url}' is not inside the project on the server, which is not accepted (only './{path}' is)"
 

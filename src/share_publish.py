@@ -408,7 +408,7 @@ def _local_folder_in_use(root: Path, location: str) -> bool:
 
     if parse_ssh_target(location) is not None:
         return False
-    folder = root / location  # a relative folder is relative to the project, as for datalad itself
+    folder = root / Path(location).expanduser()  # `~` is the home folder (as in open_from_server); a relative folder is relative to the project, as for datalad itself
     return folder.is_dir() and any(folder.iterdir()) or folder.is_file()
 
 

@@ -257,3 +257,17 @@ def test_the_cli_parser_has_put_on_server():
         "datalad", "put-on-server", "--project", "/p", "--location", "/srv/x", "--allow-invalid", "--json",
     ])
     assert (args.location, args.sibling_name, args.allow_invalid) == ("/srv/x", None, True)
+
+
+def test_a_home_folder_location_is_checked_where_open_from_server_looks(tmp_path, monkeypatch):
+    """`~/x` means the home folder for both commands: a non-empty one is refused, never a literal '~' folder."""
+    from src.share_publish import _local_folder_in_use
+
+    home = tmp_path / "home"
+    (home / "server" / "study").mkdir(parents=True)
+    (home / "server" / "study" / "file.txt").write_text("x\n", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    project = tmp_path / "project"
+    project.mkdir()
+    assert _local_folder_in_use(project, "~/server/study") is True

@@ -36,7 +36,7 @@ def adopt_legacy_project_identity(project_root) -> None:
     """Older projects kept a git name and email in .prismrc.json, which travelled with every push and pull.
 
     The name and email belong to the person: move them to this computer's git config when it has none, and
-    always remove them from the project file.
+    remove them from the project file once the computer has an identity (a half identity that cannot move stays).
     """
     path = find_config_file(str(project_root))
     if not path:
@@ -47,13 +47,18 @@ def adopt_legacy_project_identity(project_root) -> None:
         return
     if not isinstance(data, dict):
         return
-    name, email = data.pop("gitUserName", None), data.pop("gitUserEmail", None)
+    name, email = data.get("gitUserName"), data.get("gitUserEmail")
     if name is None and email is None:
         return
     from src.datalad_doctor import get_git_identity, set_git_identity
 
-    if name and email and not any(get_git_identity().values()):
+    if any(get_git_identity().values()):
+        pass  # the person's own identity wins; the project copy is only removed
+    elif name and email:
         set_git_identity(name, email)
+    else:
+        return  # a half identity cannot move: keep it in the project rather than lose it
+    data.pop("gitUserName", None), data.pop("gitUserEmail", None)
     Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
