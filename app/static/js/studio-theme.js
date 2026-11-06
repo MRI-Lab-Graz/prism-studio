@@ -20,6 +20,20 @@
       + '</label>';
   }
 
+  // The colour of a field's tier badge: green once the field is filled, its tier colour while it is empty.
+  function tierBadgeClass(label, filled) {
+    if (filled) return 'bg-success';
+    const tier = Object.values(TIERS).find((t) => t[1] === label);
+    return tier ? tier[0] : '';
+  }
+
+  // Recolour a rendered tier badge (the project page's rule, kept here so every page uses the one).
+  function setFilled(badge, filled) {
+    badge.classList.remove('bg-success', ...Object.values(TIERS).map((t) => t[0]));
+    const cls = tierBadgeClass(badge.textContent.trim(), filled);
+    if (cls) badge.classList.add(cls);
+  }
+
   // Required/Core/FAIR counts, each [filled, total] or [filled, total, title]; a total of 0 is not shown.
   function tally({ required, core, fair }) {
     const badge = (label, c, openClass) => (c && c[1] > 0)
@@ -32,6 +46,8 @@
 
   const api = {
     fieldLabelHtml,
+    tierBadgeClass,
+    setFilled,
     tally,
     fieldLabel(opts) {
       const tpl = document.createElement('template');

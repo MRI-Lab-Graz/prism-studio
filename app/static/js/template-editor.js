@@ -575,6 +575,8 @@
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
       const isEmpty = missing.has(el.getAttribute('data-field-path'));
       if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
+      const tier = el.querySelector(':scope > .studio-field-label > .badge');
+      if (tier && tier.textContent.trim() === 'REQUIRED') StudioTheme.setFilled(tier, !isEmpty);  // green once filled
     });
     // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {

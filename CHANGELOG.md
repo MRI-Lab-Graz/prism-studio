@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Survey language `auto` from Studio is no language** (#220): it no longer lands in `Technical.Language`, and `auto` keeps a German template German.
 - **`survey validate` checks a library template with the Template Editor's schema and task-name rule**, so both agree.
 - **Export:** modality names are made id-safe before they reach an `id` attribute.
+- **Template Editor:** the REQUIRED badge of a field turns green once the field is filled (it stayed red), as on the project page; the rule lives in the theme (`StudioTheme.setFilled`).
 - **Validator page:** its title is the page's `h1`; underlined text links, scroll padding under the sticky navbar.
 - **`prism_tools datalad enable` registers every nested dataset**, like Studio: the backend says (`enable_continue`)
   whether another batch is needed, or that registration is stuck; the CLI and the page only repeat the call.

@@ -175,3 +175,29 @@ def test_nothing_below_the_pickers_shows_until_a_template_is_loaded(page, projec
     page.click('label[for="modeCreate"]')
     page.click("#btnNew")  # a brand-new template also opens the workspace
     page.wait_for_selector("#editorViewTabs", state="visible")
+
+
+def _wait_for_badge(page, path, color):
+    """The badge follows the backend's completeness answer, a moment after the page loads or the field changes."""
+    page.wait_for_function(
+        "([path, color]) => document.querySelector(`[data-field-path='${path}'] > .studio-field-label > .badge`)"
+        "?.classList.contains(color)",
+        arg=[path, color],
+    )
+
+
+def test_a_filled_required_field_has_a_green_badge_and_an_empty_one_a_red_badge(page, project, studio_url):
+    _open_incomplete_template(page, project, studio_url)
+    _administration(page)
+    _wait_for_badge(page, "Technical/Language", "bg-success")  # filled
+    _wait_for_badge(page, "Technical/Respondent", "bg-danger")  # empty
+
+    page.select_option("#field_Technical_Respondent", "self")
+    _wait_for_badge(page, "Technical/Respondent", "bg-success")
+
+
+def test_the_languages_badge_is_green_once_a_language_is_chosen(page, project, studio_url):
+    _open_incomplete_template(page, project, studio_url)
+    section = page.locator("details.te-subgroup", has=page.locator(".te-subgroup-title", has_text="Languages"))
+    section.locator("summary").click()
+    _wait_for_badge(page, "I18n/Languages", "bg-success")
