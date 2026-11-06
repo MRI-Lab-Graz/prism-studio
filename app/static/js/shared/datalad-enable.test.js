@@ -39,6 +39,12 @@ describe('enableDatalad', () => {
     await expect(enableDatalad(fetchFn, { askIdentity: async () => false })).rejects.toThrow(/name and email/);
   });
 
+  it('stops with the failure when the backend says registration is stuck', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(reply({ success: true, enable_stuck: true, datalad: { subdataset_failures: ['sub-01: locked'] } }));
+    await expect(enableDatalad(fetchFn, { askIdentity: vi.fn() })).rejects.toThrow(/sub-01: locked/);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it('passes the backend error on', async () => {
     const fetchFn = vi.fn().mockResolvedValue(reply({ success: false, error: 'git-annex missing' }, false));
     await expect(enableDatalad(fetchFn, { askIdentity: vi.fn() })).rejects.toThrow('git-annex missing');

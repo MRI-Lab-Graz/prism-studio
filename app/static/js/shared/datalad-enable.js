@@ -1,7 +1,7 @@
 /**
  * Switch DataLad on for the current project (POST /api/projects/datalad/enable, the CLI's `datalad enable`).
  * One backend call registers as many nested datasets as fit in its time budget; the backend says
- * (`enable_continue`) whether another call is needed, and reports a stuck registration as a failure. This only
+ * (`enable_continue`) whether another call is needed, and flags a stuck registration (`enable_stuck`). This only
  * repeats the call while it asks for that, as the CLI does.
  *
  * @param {Function} fetchFn - fetch-compatible (the page's API-fallback fetch)
@@ -23,6 +23,9 @@ export async function enableDatalad(fetchFn, { askIdentity, onProgress = () => {
         }
         if (!response.ok || !data.success) {
             throw new Error(data.error || data.message || 'Could not enable DataLad.');
+        }
+        if (data.enable_stuck) {
+            throw new Error(`Registration is stuck on a nested dataset and made no progress: ${data.datalad?.subdataset_failures?.[0] || data.message}`);
         }
         if (!data.enable_continue) return data;
         const remaining = data.datalad?.subdatasets_remaining_count ?? 0;

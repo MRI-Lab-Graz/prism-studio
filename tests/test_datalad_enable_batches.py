@@ -26,7 +26,7 @@ def test_a_batch_that_made_no_progress_and_failed_is_stuck():
     result = enable_continuation(
         {"success": True, "datalad": {"subdatasets_remaining_count": 1, "subdatasets_created": [], "subdataset_failures": ["sub-01: locked"]}}
     )
-    assert result["success"] is False and "sub-01: locked" in result["error"] and "enable_continue" not in result
+    assert result["enable_stuck"] is True and result["success"] is True and "enable_continue" not in result
 
 
 def test_a_failed_call_is_never_continued():

@@ -211,15 +211,14 @@ def enable_continuation(result: Dict[str, Any]) -> Dict[str, Any]:
     """Say whether `enable` must be called again (nested datasets are registered in batches), or that it is stuck.
 
     One rule for the CLI and Studio: both repeat the call while ``enable_continue`` is set. A batch that registered
-    nothing and reported failures is a failure (run enable again after fixing it; it resumes).
+    nothing and reported failures is stuck (``enable_stuck``; run enable again after fixing it, it resumes).
     """
     datalad = result.get("datalad") or {}
     if not result.get("success") or int(datalad.get("subdatasets_remaining_count") or 0) <= 0:
         return result
     failures = datalad.get("subdataset_failures") or []
     if not datalad.get("subdatasets_created") and failures:
-        result["success"] = False
-        result["error"] = f"Registration is stuck on a nested dataset and made no progress: {failures[0]}"
+        result["enable_stuck"] = True
     else:
         result["enable_continue"] = True
     return result
