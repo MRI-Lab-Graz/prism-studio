@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-11-06
+
 ### Changed
 - **DataLad has its own page** (`/projects/datalad`, the **DataLad** item in the navbar, now always shown and still
   carrying the count of unsaved changes). It shows one next step for the open project, decided by the backend
@@ -21,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when DataLad is off.
 
 ### Fixed
+- **Survey language `auto` from Studio is no language** (#220): it no longer lands in `Technical.Language`, and `auto` keeps a German template German.
+- **`survey validate` checks a library template with the Template Editor's schema and task-name rule**, so both agree.
+- **Export:** modality names are made id-safe before they reach an `id` attribute.
+- **Validator page:** its title is the page's `h1`; underlined text links, scroll padding under the sticky navbar.
 - `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.
 
 ### Removed
@@ -36,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **WCAG enhanced view** (Settings, off by default): stronger contrast and focus, and the pages take the theme green.
+- **Edit the saved session mapping on the project page** (#221).
+- **Every conversion lists the subjects it wrote in `participants.tsv`.** DataLad keeps the logs and the pseudonym map out of git.
+- **A participants row without a `sub-*` folder is prescreening**: valid, and out of the sample.
 - **Get data.** `prism_tools datalad get-data --project <root> [export filters] [--json]` (Studio: `POST /api/projects/datalad/get-data`, a job) fetches the annexed data of your copy from the server with the export's filters (subjects, sessions, modalities, acq, task, derivatives, code, analysis, sourcedata). The export's "which files" logic moved out of `export_project_to_plain_folder` into `src/export_selection.py` and both use it; the export selects the same files as before. One helper adds the filter flags to the export commands and to `get-data`.
 - **Open a project from the lab server.** `prism_tools datalad open-from-server --location <folder | user@host:path |
   ssh://host/path> --target <empty or new folder> [--json]` clones the project with the server as `origin`, installs the
