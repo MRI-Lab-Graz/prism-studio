@@ -207,6 +207,24 @@ ENABLE_DATALAD_NEEDS_CONFIRMATION = (
 _CFF_CONTACT_KEYS = ("given-names", "family-names", "name", "email", "orcid", "affiliation", "website")
 
 
+def enable_continuation(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Say whether `enable` must be called again (nested datasets are registered in batches), or that it is stuck.
+
+    One rule for the CLI and Studio: both repeat the call while ``enable_continue`` is set. A batch that registered
+    nothing and reported failures is a failure (run enable again after fixing it; it resumes).
+    """
+    datalad = result.get("datalad") or {}
+    if not result.get("success") or int(datalad.get("subdatasets_remaining_count") or 0) <= 0:
+        return result
+    failures = datalad.get("subdataset_failures") or []
+    if not datalad.get("subdatasets_created") and failures:
+        result["success"] = False
+        result["error"] = f"Registration is stuck on a nested dataset and made no progress: {failures[0]}"
+    else:
+        result["enable_continue"] = True
+    return result
+
+
 class ProjectManager:
     """
     Manages PRISM project creation and validation.
@@ -3663,7 +3681,7 @@ git push -u origin main
                 "needs_git_identity": bool(missing_identity_message(project_path if project_path.is_dir() else None)),
             }
         with self._datalad_lock_for(project_path):
-            return self._enable_datalad_for_project_locked(project_path, message=message)
+            return enable_continuation(self._enable_datalad_for_project_locked(project_path, message=message))
 
     def _enable_datalad_for_project_locked(
         self,

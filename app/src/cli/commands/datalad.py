@@ -120,7 +120,11 @@ def cmd_datalad_enable(args) -> None:
         sys.exit(2)
 
     message = str(args.message or "").strip() or DEFAULT_ENABLE_DATALAD_MESSAGE
-    _print_result(args, _manager().enable_datalad_for_project(args.project, message=message))
+    manager = _manager()
+    result = manager.enable_datalad_for_project(args.project, message=message)
+    while result.get("enable_continue"):  # nested datasets are registered in batches, as Studio does
+        result = manager.enable_datalad_for_project(args.project, message=message)
+    _print_result(args, result)
 
 
 def cmd_datalad_save(args) -> None:
