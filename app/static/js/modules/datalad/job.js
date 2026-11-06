@@ -81,8 +81,22 @@ export async function runJob(fetchFn, route, body, options) {
     }
 }
 
+// UI state only: the open's success text ("Use Get data...") survives the reload that shows the new project.
+const OPENED_MESSAGE_KEY = 'prism.datalad.openedMessage';
+
+/** The text an open left for the reloaded page, once ('' when there is none). */
+export function takeOpenedMessage(storage = globalThis.sessionStorage) {
+    try {
+        const message = storage?.getItem(OPENED_MESSAGE_KEY) || '';
+        storage?.removeItem(OPENED_MESSAGE_KEY);
+        return message;
+    } catch {
+        return '';  // storage blocked: the page just shows no text
+    }
+}
+
 /** Open from server: run the job, and only when it is complete open the copy (POST /api/projects/current). */
-export function openFromServer(fetchFn, location, target, { reload, ...options }) {
+export function openFromServer(fetchFn, location, target, { reload, storage = globalThis.sessionStorage, ...options }) {
     return runJob(fetchFn, '/api/projects/datalad/open-from-server', { location, target }, {
         ...options,
         onComplete: async (result) => {
@@ -93,6 +107,11 @@ export function openFromServer(fetchFn, location, target, { reload, ...options }
             });
             const data = await response.json().catch(() => ({}));
             if (response.ok && data.success) {
+                try {
+                    storage?.setItem(OPENED_MESSAGE_KEY, result.message || '');
+                } catch {
+                    // storage blocked: the text is lost with the reload
+                }
                 reload();
             } else {
                 options.ui.result('warning', `The project was copied to ${result.path}, but could not be opened: ${data.error || 'unknown error'}`);

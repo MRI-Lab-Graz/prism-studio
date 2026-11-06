@@ -71,7 +71,7 @@ States, derived **in the backend** (`datalad status` returns a `next_step`; the 
 | Project, DataLad off | "Enable DataLad" | link "Joining a team project? Open from server..." |
 | DataLad on, no server | "Put on server..." (snapshots stay on this computer; not an error) | Save |
 | DataLad on, server, unsaved changes | "Save", then "Sync now" | |
-| DataLad on, server, nothing unsaved | "Sync now" | "Get latest" |
+| DataLad on, server, nothing unsaved | "Sync now" | "Get latest" (under More) |
 | Server not reachable | a plain notice, work continues | |
 
 "More" holds Get latest, Get data, Check this computer (`datalad doctor`), and the project's name and email link to Settings.
@@ -89,8 +89,8 @@ Create Project's DataLad question stay). This removal is the builder's recommend
 | `datalad status --project [--json]` | exists; add `server`, `next_step`, `validation` summary |
 | `datalad enable / save / update / sync / identity / doctor` | exist; `save` and `sync` and `publish` share one acknowledgement option |
 | `datalad put-on-server --project --location [--sibling-name origin] [--allow-invalid]` | new |
-| `datalad open-from-server --location --target [--get-data] [filters]` | new |
-| `datalad get-data --project [same filter flags as export]` | new |
+| `datalad open-from-server --location --target` | new (Get data is offered after opening, not forced) |
+| `datalad get-data --project [--sibling-name origin] [same filter flags as export]` | new |
 
 `--location` is one thing: a folder (e.g. on a network drive) or an ssh address. The code treats both the same way and
 does not care which; the lab has not decided how the server is reached.

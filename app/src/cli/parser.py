@@ -956,6 +956,7 @@ def build_prism_tools_parsers(
     )
     parser_datalad_get_data.add_argument("--project", required=True, help="Project root")
     add_export_filter_flags(parser_datalad_get_data)
+    parser_datalad_get_data.add_argument("--sibling-name", help="Server name (default: origin)")
     parser_datalad_get_data.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     parser_datalad_status = datalad_subparsers.add_parser(
         "status", help="Show the DataLad state, the unsaved changes and the next step"

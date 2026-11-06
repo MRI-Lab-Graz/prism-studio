@@ -84,6 +84,7 @@ def cmd_datalad_get_data(args) -> None:
 
     result = get_data(
         args.project,
+        sibling_name=getattr(args, "sibling_name", None),
         line_callback=None if args.json else print,
         **filters_from_options(export_data_from_args(args)),
     )
@@ -155,7 +156,7 @@ def cmd_datalad_status(args) -> None:
         reach = {True: "reachable", False: "not reachable", None: "not checked"}[server["reachable"]]
         print(f"Server {server['name']}: {server['url']} ({reach})")
     for name in state["other_servers"]:
-        print(f"Other server: {name}")
+        print(f"Server found as '{name}'. Use --sibling-name {name}.")
     if "valid" in state:
         print("Valid." if state["valid"] else f"{state['error_count']} validation error(s).")
 

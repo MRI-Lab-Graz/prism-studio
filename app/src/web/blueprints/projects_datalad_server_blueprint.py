@@ -144,7 +144,10 @@ def _run_get_job(job_id: str, project_path, get_kwargs: dict) -> None:
     from src.datalad_get_data import filters_from_options, get_data
 
     _run_job(job_id, "Get data", "Fetching data from the server...", lambda line_callback: get_data(
-        project_path, line_callback=line_callback, **filters_from_options(get_kwargs.get("options") or {})
+        project_path,
+        sibling_name=get_kwargs.get("sibling_name"),
+        line_callback=line_callback,
+        **filters_from_options(get_kwargs.get("options") or {}),
     ))
 
 

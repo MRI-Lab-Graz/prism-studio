@@ -4,7 +4,7 @@
  */
 
 import { renderState, sendAnywayLabel } from './render-state.js';
-import { openFromServer, runJob as runJobRoute } from './job.js';
+import { openFromServer, runJob as runJobRoute, takeOpenedMessage } from './job.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml, getById } from '../../shared/dom.js';
 import { saveDataladSnapshot } from '../../shared/datalad-save.js';
@@ -300,6 +300,8 @@ export async function initializeDataladPage() {
         loadState().then(() => getLatestOnce(path));
     });
 
+    const opened = takeOpenedMessage();  // the project was just opened from the server: offer Get data once
+    if (opened) setResult(alertHtml('success', opened));
     await loadState();
     getLatestOnce(projectPath);  // then reloads the state with the server, nested and validation checks
 }

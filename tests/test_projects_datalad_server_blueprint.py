@@ -254,6 +254,13 @@ def test_sync_route_reads_allow_invalid_from_the_body_like_the_cli_flag(tmp_path
     assert sync.call_args.kwargs["allow_invalid"] is False
 
 
+def test_get_data_route_passes_the_server_name_like_the_cli_option(tmp_path):
+    _, status, get = _start_put(
+        tmp_path, {"sibling_name": "lab"}, url="/api/projects/datalad/get-data", backend="src.datalad_get_data.get_data"
+    )
+    assert status["status"] == "complete" and get.call_args.kwargs["sibling_name"] == "lab"
+
+
 def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):
     app = _build_app()
 

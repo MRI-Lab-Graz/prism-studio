@@ -149,6 +149,15 @@ def test_status_prints_the_message_and_the_next_step_from_one_computation(monkey
     assert "3 uncommitted change(s) pending." in out and "Next step: save" in out and calls == ["/p"]
 
 
+def test_status_names_a_server_not_called_origin_and_the_option_to_use_it(monkeypatch, capsys):
+    import src.datalad_state as mod
+
+    state = {"message": "Working tree is clean.", "next_step": "put_on_server", "server": None, "other_servers": ["ria-store"]}
+    monkeypatch.setattr(mod, "datalad_state", lambda project, **kwargs: state)
+    cli.cmd_datalad_status(SimpleNamespace(project="/p", json=False))
+    assert "Server found as 'ria-store'. Use --sibling-name ria-store." in capsys.readouterr().out
+
+
 def test_parser_accepts_datalad_status():
     parser, _ = build_prism_tools_parsers(ROOT)
     a = parser.parse_args(["datalad", "status", "--project", "/p", "--json"])

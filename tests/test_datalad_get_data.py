@@ -376,3 +376,16 @@ def test_get_data_refuses_a_nested_dataset_whose_url_is_another_repository(neste
     assert not (mine / "sub-04" / "SECRET.txt").exists()
     remote = subprocess.run(["git", "-C", str(mine / "sub-04"), "remote", "-v"], capture_output=True, text=True)
     assert str(secret) not in remote.stdout
+
+
+def test_a_server_not_called_origin_is_named_and_used_with_sibling_name(copies):
+    from src.datalad_get_data import get_data
+
+    _, mine = copies
+    _run("git", "remote", "rename", "origin", "lab", cwd=mine)
+    told = get_data(mine)
+    assert told["success"] is True and told.get("skipped"), told
+    assert "Server found as 'lab'. Use --sibling-name lab." in told["message"]
+    got = cli("get-data", "--project", str(mine), "--sibling-name", "lab")
+    assert got.returncode == 0, got.stdout + got.stderr
+    assert has_content(mine / "sub-01/ses-1/anat/sub-01_ses-1_acq-hi_T1w.nii.gz")

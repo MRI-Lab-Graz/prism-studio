@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { openFromServer, runJob } from './job.js';
+import { openFromServer, runJob, takeOpenedMessage } from './job.js';
 
 const reply = (body, ok = true) => ({ ok, json: async () => body });
 const STATUS = '/api/projects/datalad-server/sync/j1/status';
@@ -36,6 +36,19 @@ describe('openFromServer', () => {
     expect(opened).toHaveLength(1);
     expect(JSON.parse(opened[0][1].body)).toEqual({ path: '/data/study' });
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the success text ("Use Get data...") across the reload, shown once', async () => {
+    const fetchFn = fakeFetch(
+      [{ status: 'complete', percent: 100, result: { success: true, path: '/data/study', message: 'Opened. Use Get data.' } }],
+      { '/api/projects/current': reply({ success: true }) },
+    );
+    const kept = new Map();
+    const storage = { setItem: (k, v) => kept.set(k, v), getItem: (k) => kept.get(k) ?? null, removeItem: (k) => kept.delete(k) };
+    await openFromServer(fetchFn, 'host:/srv/study', '/data/study', { ui: fakeUi(), reload: vi.fn(), sleep: now, storage });
+    expect(takeOpenedMessage(storage)).toBe('Opened. Use Get data.');
+    expect(takeOpenedMessage(storage)).toBe('');  // once
+    expect(kept.size).toBe(0);
   });
 
   it('does not open anything when the job ends in an error, even if its result carries a path', async () => {

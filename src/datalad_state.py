@@ -14,12 +14,12 @@ SERVER = "origin"
 REACHABLE_TIMEOUT_SECONDS = 10
 
 
-def _reachable(root: Path) -> bool:
-    """Can `origin` be asked? Never raises: a server that is down is a plain answer, not an error."""
+def _reachable(root: Path, server: str = SERVER) -> bool:
+    """Can `server` be asked? Never raises: a server that is down is a plain answer, not an error."""
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
     try:
         out = subprocess.run(
-            ["git", "-C", str(root), "ls-remote", "--exit-code", SERVER],
+            ["git", "-C", str(root), "ls-remote", "--exit-code", server],
             capture_output=True, text=True, check=False, timeout=REACHABLE_TIMEOUT_SECONDS, env=env,
         )
     except (subprocess.TimeoutExpired, OSError):

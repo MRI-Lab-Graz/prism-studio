@@ -13,7 +13,7 @@ from src.datalad_clone import gate_warning, install_nested_checked
 from src.datalad_execution import is_datalad_dataset, run_datalad_get_paths
 from src.datalad_state import SERVER, _reachable
 from src.export_selection import select_content_paths, select_scope_dirs
-from src.share_publish import has_sibling
+from src.share_publish import _git, has_sibling
 
 GET_DATA_TIMEOUT_SECONDS = 6 * 3600  # per chunk of 200 files; large MRI sets over a slow link take long
 LISTED_FAILURES = 20
@@ -40,15 +40,20 @@ def filters_from_options(data: dict) -> dict:
     }
 
 
-def get_data(project_root, *, line_callback: Optional[Callable[[str], None]] = None, **filters) -> dict:
+def get_data(
+    project_root, *, sibling_name: Optional[str] = None, line_callback: Optional[Callable[[str], None]] = None, **filters
+) -> dict:
     """Fetch the content of the files the filters keep. ``filters`` are those of ``select_content_paths``."""
     say = line_callback or (lambda _line: None)
     root = Path(project_root)
+    server = sibling_name or SERVER
     filters = {**filters_from_options({}), **filters}  # a direct call equals the command and Studio: the export's defaults
 
-    if not is_datalad_dataset(root) or not has_sibling(root, SERVER):
-        return _result(True, "This project has no server, so there is nothing to fetch from.", skipped=True, fetched=0)
-    if not _reachable(root):
+    if not is_datalad_dataset(root) or not has_sibling(root, server):
+        others = [f"Server found as '{name}'. Use --sibling-name {name}." for name in _git(root, "remote").split()]
+        message = " ".join(["This project has no server, so there is nothing to fetch from.", *others])
+        return _result(True, message, skipped=True, fetched=0)
+    if not _reachable(root, server):
         return _result(False, "The server could not be reached. Check your network connection and try again.")
 
     say("Looking up which folders the server has...")
