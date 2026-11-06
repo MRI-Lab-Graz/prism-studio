@@ -389,3 +389,22 @@ def test_a_server_not_called_origin_is_named_and_used_with_sibling_name(copies):
     got = cli("get-data", "--project", str(mine), "--sibling-name", "lab")
     assert got.returncode == 0, got.stdout + got.stderr
     assert has_content(mine / "sub-01/ses-1/anat/sub-01_ses-1_acq-hi_T1w.nii.gz")
+
+
+def test_get_data_installs_a_nested_dataset_outside_the_subjects_unless_the_filters_leave_it_out(nested):
+    from src.datalad_get_data import get_data
+    from src.project_manager import ProjectManager
+
+    theirs, _, mine = nested
+    _run("datalad", "create", "-c", "text2git", "-d", ".", "derivatives/pipeline", cwd=theirs)
+    (theirs / "derivatives" / "pipeline" / "out.bin").write_bytes(bytes(range(256)) * 32)
+    _run("datalad", "save", "-r", "-m", "pipeline", cwd=theirs)
+    _run("datalad", "create-sibling", "-r", "-s", "origin", "--existing", "skip", str(theirs.parent / "server"), cwd=theirs)
+    _run("datalad", "push", "-r", "--to", "origin", cwd=theirs)
+    assert ProjectManager().update_datalad_from_server(mine)["success"] is True
+    left_out = get_data(mine, include_derivatives=False)
+    assert left_out["success"] is True, left_out
+    assert not (mine / "derivatives" / "pipeline" / ".git").exists()
+    result = get_data(mine)
+    assert result["success"] is True, result
+    assert has_content(mine / "derivatives" / "pipeline" / "out.bin")

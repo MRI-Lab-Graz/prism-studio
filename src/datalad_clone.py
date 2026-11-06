@@ -163,8 +163,8 @@ def _nested_datasets(root: Path, *, fresh: bool) -> tuple[list[str], str]:
         return [], f"{root} was not checked out completely from the server ({detail})"
     config = root / ".datalad" / "config"
     for path, folder in ((root / ".datalad", True), (config, False), (root / ".gitmodules", False)):
-        if _not_real(path, folder):
-            return [], _not_real(path, folder)
+        if bad := _not_real(path, folder):
+            return [], bad
     if config.is_file():
         entries, problem = _entries(config)
         if problem:
@@ -191,11 +191,11 @@ def _nested_datasets(root: Path, *, fresh: bool) -> tuple[list[str], str]:
         path = entry["path"][0]
         if not _inside(path):
             return [], f"the nested dataset '{name}' has the path '{path}', which is not inside {root}"
-        if _gitlink_problem(root, path):
-            return [], _gitlink_problem(root, path)
+        if bad := _gitlink_problem(root, path):
+            return [], bad
         for url in entry["url"]:  # every url entry, also a repeated one
-            if nested_url_problem(url, path):
-                return [], f"the nested dataset '{name}' in {root}: {nested_url_problem(url, path)}"
+            if bad := nested_url_problem(url, path):
+                return [], f"the nested dataset '{name}' in {root}: {bad}"
         paths.append(path)
     return paths, ""
 
@@ -247,10 +247,8 @@ def install_nested_checked(top: Path, hooks: dict, *, fresh: bool, wanted=None, 
         if not got.get("success"):
             return str(got.get("message") or "the nested datasets could not be installed")
         for path in new:
-            if _copy_alternates_problem(root / path):
-                return _copy_alternates_problem(root / path)
-            if _gitlink_problem(root, path):  # still a real folder now that it is installed
-                return _gitlink_problem(root, path)
+            if bad := _copy_alternates_problem(root / path) or _gitlink_problem(root, path):  # still a real folder when installed
+                return bad
             _gate(root / path, hooks)
             pending.append(root / path)
     return ""

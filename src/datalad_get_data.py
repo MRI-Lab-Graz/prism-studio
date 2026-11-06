@@ -12,7 +12,7 @@ from typing import Callable, Optional
 from src.datalad_clone import gate_warning, install_nested_checked
 from src.datalad_execution import is_datalad_dataset, run_datalad_get_paths
 from src.datalad_state import SERVER, _reachable
-from src.export_selection import select_content_paths, select_scope_dirs
+from src.export_selection import ExportFilters, select_content_paths, select_scope_dirs
 from src.share_publish import _git, has_sibling
 
 GET_DATA_TIMEOUT_SECONDS = 6 * 3600  # per chunk of 200 files; large MRI sets over a slow link take long
@@ -59,7 +59,13 @@ def get_data(
     say("Looking up which folders the server has...")
     scope = select_scope_dirs(root, **filters)
 
-    def wanted(path: str) -> bool:  # a nested dataset in, above or below a chosen folder
+    top_level = ExportFilters(**filters)
+
+    def wanted(path: str) -> bool:
+        parts = tuple(path.split("/"))
+        if not parts[0].startswith("sub-"):  # derivatives, code, ...: wanted when the filters keep that top-level folder
+            return not top_level.excludes(parts[:1], is_dir=True)
+        # a subject dataset in, above or below a chosen folder
         return any(path == s or s.startswith(path + "/") or path.startswith(s + "/") for s in scope)
 
     # the nested datasets the server names are untrusted: the checked installer of open from server, never `get -n -r`
