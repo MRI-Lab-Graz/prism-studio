@@ -52,14 +52,22 @@ def check_uniqueness(library_path):
     # Note: We don't import load_schema here to avoid circular imports if any.
     # But we can try to import it locally.
     try:
-        from .schema_manager import load_schema
+        from .schema_manager import apply_schema_validation_profile, load_schema
         from jsonschema import validate, ValidationError
+        from src.prism_template_validation import (
+            relax_schema_for_library_template,
+            with_default_task_name,
+        )
         from src.survey_template_normalization import (
             normalize_survey_template_for_validation,
         )
 
         print("\nChecking schema compliance...")
-        survey_schema = load_schema("survey", version="stable")
+        # The schema the Template Editor's Save uses for a library template: Category (official
+        # library only) and the project-copy fields (Respondent, SoftwarePlatform, ...) not required.
+        survey_schema = relax_schema_for_library_template(
+            apply_schema_validation_profile(load_schema("survey", version="stable"), "project")
+        )
         biometrics_schema = load_schema("biometrics", version="stable")
 
         files = list(Path(library_path).glob("*.json"))
@@ -84,6 +92,7 @@ def check_uniqueness(library_path):
                     # VariantID autofill, paper/software platform mapping)
                     # — see docs/_archive/GUI_BACKEND_AUDIT_2026-08-07.md, P1-4.
                     data = normalize_survey_template_for_validation(data)
+                    data = with_default_task_name(data, file_path.name, "survey")
                 validate(instance=data, schema=schema)
             except ValidationError as e:
                 print(f"❌ Schema error in {file_path.name}: {e.message}")

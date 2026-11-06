@@ -131,3 +131,24 @@ class TestCheckUniquenessNormalizesSurveyFilesOnly(object):
         # single Versions entry, so the real check_uniqueness call (with
         # the real normalization function, not a spy/stub) should pass.
         assert check_uniqueness(str(tmp_path)) is True
+
+
+class TestCheckUniquenessUsesTheTemplateEditorSchema:
+    """`survey validate` must accept what the Template Editor accepts: Study.Category is
+    required for official library templates only (x-prism.officialOnlyRequired)."""
+
+    OFFICIAL = Path(__file__).resolve().parents[1] / "official/library/survey/survey-aai.json"
+
+    def _library(self, tmp_path, drop_category):
+        data = json.loads(self.OFFICIAL.read_text(encoding="utf-8"))
+        if drop_category:
+            data["Study"].pop("Category")
+        (tmp_path / "survey-aai.json").write_text(json.dumps(data), encoding="utf-8")
+        return str(tmp_path)
+
+    def test_template_without_category_passes(self, tmp_path):
+        assert check_uniqueness(self._library(tmp_path, drop_category=True)) is True
+
+    def test_template_with_category_still_passes(self, tmp_path):
+        assert check_uniqueness(self._library(tmp_path, drop_category=False)) is True
+
