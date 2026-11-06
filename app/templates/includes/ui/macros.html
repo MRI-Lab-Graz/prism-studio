@@ -1,8 +1,9 @@
-{% macro page_header(icon_class, title, subtitle='', note='') -%}
+{# h1=true: the page title is the page's h1 (its sections are h2). Other pages keep an h2 title until their headings are moved down one level too. #}
+{% macro page_header(icon_class, title, subtitle='', note='', h1=false) -%}
 <div class="studio-page-header mb-4">
-    <h1 class="h2 mb-2">
+    <{{ "h1" if h1 else "h2" }} class="{{ "h2 " if h1 }}mb-2">
         <i class="{{ icon_class }} text-primary me-2 studio-page-header-icon"></i>{{ title }}
-    </h1>
+    </{{ "h1" if h1 else "h2" }}>
     {% if subtitle %}
     <p class="text-muted mb-0">{{ subtitle }}</p>
     {% endif %}
