@@ -54,7 +54,10 @@ def check_uniqueness(library_path):
     try:
         from .schema_manager import apply_schema_validation_profile, load_schema
         from jsonschema import validate, ValidationError
-        from src.prism_template_validation import with_default_task_name
+        from src.prism_template_validation import (
+            relax_schema_for_library_template,
+            with_default_task_name,
+        )
         from src.survey_template_normalization import (
             normalize_survey_template_for_validation,
         )
@@ -62,9 +65,8 @@ def check_uniqueness(library_path):
         print("\nChecking schema compliance...")
         # The schema the Template Editor's Save uses for a library template: Category (official
         # library only) and the project-copy fields (Respondent, SoftwarePlatform, ...) not required.
-        survey_schema = apply_schema_validation_profile(
-            apply_schema_validation_profile(load_schema("survey", version="stable"), "project"),
-            "official",
+        survey_schema = relax_schema_for_library_template(
+            apply_schema_validation_profile(load_schema("survey", version="stable"), "project")
         )
         biometrics_schema = load_schema("biometrics", version="stable")
 
