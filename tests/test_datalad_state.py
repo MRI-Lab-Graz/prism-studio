@@ -173,3 +173,30 @@ def test_cli_json_and_the_route_answer_the_same_with_the_nested_check(with_serve
     with Flask(__name__).test_request_context("/api/projects/datalad/state?check_nested=1"):
         body = projects.datalad_state_route().get_json()
     assert body == cli and cli["enable_kind"] == "finish"
+
+
+def test_a_server_with_nothing_saved_yet_is_reachable(tmp_path):
+    """An empty dataset on the server (put-on-server was interrupted before the first push) still answers."""
+    import subprocess
+
+    from src.datalad_state import _reachable
+
+    server = tmp_path / "server.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(server)], check=True)
+    project = tmp_path / "project"
+    subprocess.run(["git", "init", "-q", str(project)], check=True)
+    subprocess.run(["git", "-C", str(project), "remote", "add", "origin", str(server)], check=True)
+    assert _reachable(project) is True
+
+
+def test_the_reachability_check_keeps_the_users_own_ssh_command(tmp_path, monkeypatch):
+    monkeypatch.delenv("GIT_SSH_COMMAND", raising=False)
+    import subprocess
+
+    from src.datalad_state import _ssh_command
+
+    project = tmp_path / "project"
+    subprocess.run(["git", "init", "-q", str(project)], check=True)
+    assert _ssh_command(project) == "ssh -o BatchMode=yes"
+    subprocess.run(["git", "-C", str(project), "config", "core.sshCommand", "ssh -i /my/key"], check=True)
+    assert _ssh_command(project) == "ssh -i /my/key -o BatchMode=yes"

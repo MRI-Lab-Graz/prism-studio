@@ -14,12 +14,23 @@ SERVER = "origin"
 REACHABLE_TIMEOUT_SECONDS = 10
 
 
+def _ssh_command(root: Path) -> str:
+    """The user's own ssh command (environment, then `core.sshCommand`) made non-interactive; plain `ssh` otherwise."""
+    if os.environ.get("GIT_SSH_COMMAND"):
+        return os.environ["GIT_SSH_COMMAND"]
+    configured = _git(root, "config", "core.sshCommand").strip() or "ssh"
+    return f"{configured} -o BatchMode=yes"
+
+
 def _reachable(root: Path, server: str = SERVER) -> bool:
-    """Can `server` be asked? Never raises: a server that is down is a plain answer, not an error."""
-    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
+    """Can `server` be asked? Never raises: a server that is down is a plain answer, not an error.
+
+    An empty dataset on the server (nothing pushed yet) answers too, so there is no `--exit-code`.
+    """
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": _ssh_command(root)}
     try:
         out = subprocess.run(
-            ["git", "-C", str(root), "ls-remote", "--exit-code", server],
+            ["git", "-C", str(root), "ls-remote", server],
             capture_output=True, text=True, check=False, timeout=REACHABLE_TIMEOUT_SECONDS, env=env,
         )
     except (subprocess.TimeoutExpired, OSError):
