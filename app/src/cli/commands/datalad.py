@@ -8,19 +8,8 @@ import sys
 from src.datalad_doctor import get_git_identity, run_doctor, set_git_identity
 
 
-def _server_url(args):
-    if getattr(args, "url", None):
-        return args.url
-    project = getattr(args, "project", None)
-    if project:
-        from src.config import load_config
-
-        return load_config(str(project)).datalad_ria_store_url
-    return None
-
-
 def cmd_datalad_doctor(args) -> None:
-    results = run_doctor(_server_url(args))
+    results = run_doctor(getattr(args, "url", None))
     if getattr(args, "json", False):
         print(json.dumps(results, indent=2, ensure_ascii=False))
     else:
@@ -30,21 +19,6 @@ def cmd_datalad_doctor(args) -> None:
                 print(f"       -> {r['fix']}")
     if not all(r["ok"] for r in results):
         sys.exit(1)
-
-
-
-def cmd_datalad_config(args) -> None:
-    """Save the project's DataLad server settings: what Studio's "Save" on the server panel does (one function runs both)."""
-    from pathlib import Path
-
-    from src.project_settings import save_datalad_server_config
-
-    try:
-        saved = save_datalad_server_config(Path(args.project).resolve(), args.url, args.sibling_name, args.alias)
-    except ValueError as exc:
-        print(f"Error: {exc}")
-        sys.exit(1)
-    print(f"Saved to {saved['config_path']}")
 
 
 def _manager():
@@ -62,7 +36,62 @@ def cmd_datalad_sync(args) -> None:
     except ValueError as exc:
         print(f"Error: {exc}")
         sys.exit(2)
-    result = sync_with_server(args.project, sibling_name=args.sibling_name, identity=identity, line_callback=None if args.json else print)
+    result = sync_with_server(
+        args.project,
+        sibling_name=args.sibling_name,
+        identity=identity,
+        line_callback=None if args.json else print,
+        allow_invalid=bool(getattr(args, "allow_invalid", False)),
+    )
+    _print_push_result(args, result)
+
+
+def cmd_datalad_put_on_server(args) -> None:
+    """Create the project's dataset on the lab server, then send it if it validates (Studio's "Put on server")."""
+    from src.share_publish import parse_identity, put_on_server
+
+    try:
+        identity = parse_identity(args.as_identity) if getattr(args, "as_identity", None) else None
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
+    result = put_on_server(
+        args.project,
+        args.location,
+        sibling_name=args.sibling_name,
+        identity=identity,
+        line_callback=None if args.json else print,
+        allow_invalid=bool(getattr(args, "allow_invalid", False)),
+    )
+    _print_push_result(args, result)
+
+
+def cmd_datalad_open_from_server(args) -> None:
+    """Get your own copy of a project from the lab server into an empty or new folder (Studio's "Open from server")."""
+    from src.datalad_clone import open_from_server, target_problem
+
+    problem = target_problem(args.target)  # the check Studio's route makes before it starts a job
+    if problem:
+        _print_result(args, {"success": False, "reason": "bad_target", "path": str(args.target), "message": problem})
+    result = open_from_server(args.location, args.target, line_callback=None if args.json else print)
+    _print_result(args, result)
+
+
+def cmd_datalad_get_data(args) -> None:
+    """Fetch the data of your copy from the server, with the export's filters (Studio's "Get data")."""
+    from src.datalad_get_data import filters_from_options, get_data
+    from src.cli.services.export_args import export_data_from_args
+
+    result = get_data(
+        args.project,
+        sibling_name=getattr(args, "sibling_name", None),
+        line_callback=None if args.json else print,
+        **filters_from_options(export_data_from_args(args)),
+    )
+    _print_result(args, result)
+
+
+def _print_push_result(args, result: dict) -> None:
     if args.json:
         print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     else:
@@ -104,14 +133,32 @@ def cmd_datalad_save(args) -> None:
 
 
 def cmd_datalad_status(args) -> None:
-    """Show how many changes are not yet saved as a DataLad snapshot (the navbar count in Studio).
+    """Show the project's DataLad state and the next step (Studio's DataLad page and navbar count).
 
-    Studio's /api/projects/datalad/clean-status runs the same function."""
-    result = _manager().check_datalad_clean_status(args.project)
+    Studio's /api/projects/datalad/state runs the same function."""
+    from src.datalad_state import datalad_state
+
+    state = datalad_state(
+        args.project,
+        check_server=bool(getattr(args, "check_server", False)),
+        validate=bool(getattr(args, "validate", False)),
+        check_nested=bool(getattr(args, "check_nested", False)),
+    )
     if getattr(args, "json", False):
-        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
-    else:
-        print(result.get("message") or "")
+        print(json.dumps(state, indent=2, ensure_ascii=False, default=str))
+        return
+    print(state["message"])
+    print(f"Next step: {state['next_step']}")
+    if state.get("nested_unregistered"):
+        print(f"{state['nested_unregistered']} subject dataset(s) not registered yet: run `datalad enable` to finish.")
+    server = state["server"]
+    if server:
+        reach = {True: "reachable", False: "not reachable", None: "not checked"}[server["reachable"]]
+        print(f"Server {server['name']}: {server['url']} ({reach})")
+    for name in state["other_servers"]:
+        print(f"Server found as '{name}'. Use --sibling-name {name}.")
+    if "valid" in state:
+        print("Valid." if state["valid"] else f"{state['error_count']} validation error(s).")
 
 
 def cmd_datalad_update(args) -> None:

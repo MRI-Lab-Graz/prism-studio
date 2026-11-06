@@ -50,6 +50,7 @@ from src.project_export_helpers import (
     _matches_excluded_acq_label,
 )
 from src.constants import DEFAULT_BIDS_VERSION
+from src.export_selection import ExportFilters, select_content_paths, select_scope_dirs
 from src.dataset_description import write_dataset_description
 from src.cross_platform import (
     CrossPlatformFile,
@@ -2041,12 +2042,15 @@ class ProjectManager:
             result["datalad"]["annexed_text_files_fixed_count"] = annexed_text_fix["fixed_count"]
             result["datalad"]["annexed_text_files_fixed_examples"] = annexed_text_fix["fixed_examples"]
 
+        from src.save_gate import ack_env
+
         save_result = self._run_datalad_save(
             project_path,
             message=message,
             datalad_executable=status.get("executable"),
             recursive=True,
             detect_no_changes=True,
+            env=ack_env() if errors else None,  # the pre-commit hook passes this one acknowledged save
         )
         save_message = save_result.get("message")
         refreshed_status = self.get_datalad_status(project_path)
@@ -2103,7 +2107,6 @@ class ProjectManager:
     def _update_datalad_from_server_locked(
         self, project_path: Path, *, sibling_name: Optional[str]
     ) -> Dict[str, Any]:
-        from src.config import load_config
         from src.datalad_execution import run_datalad_sibling_exists, run_datalad_update
 
         status = self.get_datalad_status(project_path)
@@ -2112,7 +2115,7 @@ class ProjectManager:
             result["error"] = status.get("message") or "Current project is not a DataLad dataset."
             return result
 
-        sibling = str(sibling_name or "").strip() or load_config(str(project_path)).datalad_sibling_name
+        sibling = str(sibling_name or "").strip() or "origin"
         executable = status.get("executable") or ""
         if not run_datalad_sibling_exists(
             project_path, sibling_name=sibling, datalad_executable=executable
@@ -2130,11 +2133,21 @@ class ProjectManager:
 
         before = self._git_head(project_path)
         update = run_datalad_update(project_path, sibling_name=sibling, datalad_executable=executable)
+        # datasets the update could not bring in; "." when the output names none
+        failed = re.findall(r"^update\((?:impossible|error)\): (.+) \(dataset\)", update["output"], re.M) or ["."]
+        if not update["success"] and not any(self._server_has_something_for(project_path / path, sibling) for path in failed):
+            # a dataset with no server copy yet (a new subject before its first sync) or an empty one just created
+            # (put-on-server whose first send was interrupted) has nothing to get: the next push fills it
+            if failed == ["."]:
+                result.update(success=True, message="The server has nothing saved yet.")
+                return result
+            update["success"] = True
         if not update["success"]:
-            result["error"] = (
-                f"{update['message']}\n\nNothing was changed. If you and someone else both saved changes, "
-                "ask your data steward to combine them."
-            )
+            if "not possible to fast-forward" in update["output"].lower():  # git's own ff-only refusal
+                hint = "If you and someone else both saved changes, ask your data steward to combine them."
+            else:
+                hint = "If this keeps happening, ask your data steward."
+            result["error"] = f"{update['message']}\n\nNothing was changed. {hint}"
             return result
         result["updated"] = self._git_head(project_path) != before
         result["success"] = True
@@ -2352,231 +2365,30 @@ class ProjectManager:
         materialization_workspace: Optional[Path] = None
         workspace_cleanup_error: Optional[str] = None
 
-        materialization_included_top_level_folders = {
-            "derivatives": include_derivatives,
-            "sourcedata": include_sourcedata,
-            "code": include_code,
-            "analysis": include_analysis,
-        }
-        materialization_exclude_subjects = {
-            str(label).strip()
-            for label in (exclude_subjects or set())
-            if str(label).strip()
-        }
-        materialization_exclude_sessions = {
-            str(label).strip()
-            for label in (exclude_sessions or set())
-            if str(label).strip()
-        }
-        materialization_exclude_modalities = {
-            str(label).strip()
-            for label in (exclude_modalities or set())
-            if str(label).strip()
-        }
-        materialization_exclude_acq = {
-            str(modality).strip(): {
-                str(label).strip() for label in labels if str(label).strip()
-            }
-            for modality, labels in (exclude_acq or {}).items()
-            if str(modality).strip() and labels
-        }
-        materialization_exclude_tasks = {
-            str(modality).strip(): {
-                str(label).strip() for label in labels if str(label).strip()
-            }
-            for modality, labels in (exclude_tasks or {}).items()
-            if str(modality).strip() and labels
-        }
+        materialization_filters = dict(
+            exclude_subjects=exclude_subjects,
+            exclude_sessions=exclude_sessions,
+            exclude_modalities=exclude_modalities,
+            exclude_acq=exclude_acq,
+            exclude_tasks=exclude_tasks,
+            include_derivatives=include_derivatives,
+            include_sourcedata=include_sourcedata,
+            include_code=include_code,
+            include_analysis=include_analysis,
+        )
+
+        _materialization_entry_filters = ExportFilters(**materialization_filters)
 
         def _materialization_should_exclude_entry(
             rel_parts: tuple[str, ...], *, is_dir: bool
         ) -> bool:
-            if not rel_parts:
-                return False
-
-            if rel_parts[0].startswith("sub-") and rel_parts[0] in materialization_exclude_subjects:
-                return True
-
-            if len(rel_parts) == 1:
-                root_name = rel_parts[0]
-                if root_name in materialization_included_top_level_folders:
-                    return not materialization_included_top_level_folders[root_name]
-                if not is_dir:
-                    survey_task_filters = materialization_exclude_tasks.get("survey", set())
-                    if survey_task_filters:
-                        task_match = re.search(
-                            r"^task-([A-Za-z0-9]+)_survey\\.json$", root_name
-                        )
-                        if task_match and task_match.group(1) in survey_task_filters:
-                            return True
-                return False
-
-            if not rel_parts[0].startswith("sub-"):
-                return False
-
-            part_index = 1
-            if (
-                part_index < len(rel_parts)
-                and rel_parts[part_index].startswith("ses-")
-            ):
-                session_label = rel_parts[part_index]
-                if session_label in materialization_exclude_sessions:
-                    return True
-                part_index += 1
-
-            if part_index >= len(rel_parts):
-                return False
-
-            modality = rel_parts[part_index]
-            if modality in materialization_exclude_modalities:
-                return True
-
-            if is_dir:
-                return False
-
-            filename = rel_parts[-1]
-            excluded_acq_labels = materialization_exclude_acq.get(modality, set())
-            if excluded_acq_labels:
-                if modality in MRI_SUFFIX_LABEL_MODALITIES:
-                    if _matches_excluded_acq_label(filename, excluded_acq_labels):
-                        return True
-                elif _matches_excluded_acq_label(filename, excluded_acq_labels):
-                    return True
-
-            excluded_task_labels = materialization_exclude_tasks.get(modality, set())
-            if excluded_task_labels:
-                task_label = _extract_export_task_label(filename, modality)
-                if task_label and task_label in excluded_task_labels:
-                    return True
-
-            return False
+            return _materialization_entry_filters.excludes(rel_parts, is_dir=is_dir)
 
         def _collect_materialization_targets(dataset_root: Path) -> List[str]:
-            selected_files: List[str] = []
-            ignored_names_for_materialization = {
-                ".git",
-                ".datalad",
-                ".gitattributes",
-                ".gitignore",
-                ".gitmodules",
-                "CHANGES",
-            }
-
-            for current_dir_raw, dirnames, filenames in os.walk(dataset_root):
-                current_dir = Path(current_dir_raw)
-
-                non_system_dirs = set(filter_system_files(dirnames))
-                kept_dirs: List[str] = []
-                for dirname in dirnames:
-                    if dirname not in non_system_dirs:
-                        continue
-                    if dirname in ignored_names_for_materialization:
-                        continue
-                    candidate_dir = current_dir / dirname
-                    try:
-                        rel_parts = candidate_dir.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
-                        continue
-                    kept_dirs.append(dirname)
-                dirnames[:] = kept_dirs
-
-                non_system_files = set(filter_system_files(filenames))
-                for filename in filenames:
-                    if filename not in non_system_files:
-                        continue
-                    if filename in ignored_names_for_materialization:
-                        continue
-                    candidate_file = current_dir / filename
-                    try:
-                        rel_parts = candidate_file.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=False):
-                        continue
-                    selected_files.append(Path(*rel_parts).as_posix())
-
-            return sorted(set(selected_files))
+            return select_content_paths(dataset_root, **materialization_filters)
 
         def _collect_materialization_recursive_scope_dirs(dataset_root: Path) -> List[str]:
-            # Prefer modality-level roots for scoped recursion. Fall back to session/subject
-            # roots only when deeper scope roots are not discoverable pre-materialization.
-            subject_dirs: Set[str] = set()
-            session_dirs: Set[str] = set()
-            modality_dirs: Set[str] = set()
-
-            subject_has_children: Dict[str, bool] = {}
-            session_has_modalities: Dict[str, bool] = {}
-            ignored_names_for_materialization = {
-                ".git",
-                ".datalad",
-                ".gitattributes",
-                ".gitignore",
-                ".gitmodules",
-                "CHANGES",
-            }
-
-            for current_dir_raw, dirnames, _filenames in os.walk(dataset_root):
-                current_dir = Path(current_dir_raw)
-
-                non_system_dirs = set(filter_system_files(dirnames))
-                kept_dirs: List[str] = []
-                for dirname in dirnames:
-                    if dirname not in non_system_dirs:
-                        continue
-                    if dirname in ignored_names_for_materialization:
-                        continue
-                    candidate_dir = current_dir / dirname
-                    try:
-                        rel_parts = candidate_dir.relative_to(dataset_root).parts
-                    except ValueError:
-                        continue
-                    if _materialization_should_exclude_entry(rel_parts, is_dir=True):
-                        continue
-                    kept_dirs.append(dirname)
-
-                    if not rel_parts or not rel_parts[0].startswith("sub-"):
-                        continue
-
-                    rel_path = Path(*rel_parts).as_posix()
-                    subject_key = rel_parts[0]
-
-                    if len(rel_parts) == 1:
-                        subject_dirs.add(rel_path)
-                        subject_has_children.setdefault(subject_key, False)
-                        continue
-
-                    subject_has_children[subject_key] = True
-
-                    part_index = 1
-                    session_key: Optional[str] = None
-                    if rel_parts[part_index].startswith("ses-"):
-                        session_key = Path(*rel_parts[:2]).as_posix()
-                        session_dirs.add(session_key)
-                        session_has_modalities.setdefault(session_key, False)
-                        part_index += 1
-
-                    if part_index >= len(rel_parts):
-                        continue
-
-                    if len(rel_parts) == part_index + 1:
-                        modality_dirs.add(rel_path)
-                        if session_key:
-                            session_has_modalities[session_key] = True
-                dirnames[:] = kept_dirs
-
-            selected_dirs: Set[str] = set(modality_dirs)
-
-            for session_dir in sorted(session_dirs):
-                if not session_has_modalities.get(session_dir, False):
-                    selected_dirs.add(session_dir)
-
-            for subject_dir in sorted(subject_dirs):
-                if not subject_has_children.get(subject_dir, False):
-                    selected_dirs.add(subject_dir)
-
-            return sorted(selected_dirs)
+            return select_scope_dirs(dataset_root, **materialization_filters)
 
         if materialize_annex_content:
             if not status.get("enabled"):
@@ -5578,6 +5390,7 @@ git push -u origin main
             "subdatasets_remaining_count": remaining_count,
             "subdatasets_progress_percent": progress_percent,
             "next_missing_subdataset": missing_paths[0] if missing_paths else "",
+            "missing_subdatasets": missing_paths,
             "subdatasets_topology_mode": topology_mode,
         }
 
@@ -5667,6 +5480,7 @@ git push -u origin main
         updated_only: bool = False,
         recursive: bool = False,
         detect_no_changes: bool = False,
+        env: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """Run a DataLad save command and normalize the result payload.
 
@@ -5706,6 +5520,7 @@ git push -u origin main
                 text=True,
                 check=False,
                 timeout=DATALAD_SAVE_STEP_TIMEOUT_SECONDS,
+                env=env,
             )
         except subprocess.TimeoutExpired:
             result["message"] = self._format_repair_timeout_message(
@@ -5752,6 +5567,28 @@ git push -u origin main
 
         result["message"] = f"DataLad save failed: {detail or 'Unknown DataLad error.'}"
         return result
+
+    @classmethod
+    def _server_has_something_for(cls, dataset: Path, sibling: str) -> bool:
+        """False when `dataset` has no copy on the server yet, or an empty one; True when unsure (fail safe)."""
+        from src.share_publish import has_sibling
+
+        return has_sibling(dataset, sibling) and cls._server_has_saved_branch(dataset, sibling)
+
+    @staticmethod
+    def _server_has_saved_branch(project_path: Path, sibling: str) -> bool:
+        """Does the server itself have a branch besides git-annex? True when it cannot be asked (fail safe)."""
+        env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_SSH_COMMAND": os.environ.get("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")}
+        try:
+            process = subprocess.run(
+                ["git", "ls-remote", "--heads", sibling],
+                cwd=str(project_path), capture_output=True, text=True, check=False, timeout=30, env=env,
+            )
+        except (subprocess.TimeoutExpired, OSError):
+            return True
+        if process.returncode != 0:
+            return True
+        return any(not line.endswith("refs/heads/git-annex") for line in process.stdout.splitlines() if line.strip())
 
     @staticmethod
     def _git_head(project_path: Path) -> Optional[str]:
@@ -6545,43 +6382,6 @@ git push -u origin main
             result["fixed_count"] += len(matched_paths)
 
         result["fixed_examples"] = result["fixed_examples"][:10]
-        return result
-
-    def get_ria_status(
-        self,
-        project_path: Path,
-        *,
-        sibling_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Cheap, synchronous status check for the "Push to DataLad Server" panel."""
-        from src.config import load_config
-        from src.datalad_execution import (
-            resolve_datalad_executable,
-            run_datalad_sibling_exists,
-        )
-
-        project_path = Path(project_path)
-        config = load_config(str(project_path))
-        name = str(sibling_name or config.datalad_sibling_name or "origin").strip() or "origin"
-
-        result: Dict[str, Any] = {
-            "datalad_dataset": (project_path / ".datalad").exists(),
-            "ria_url": config.datalad_ria_store_url,
-            "sibling_name": name,
-            "sibling_alias": config.datalad_sibling_alias,
-            "connected": False,
-        }
-
-        datalad_executable = resolve_datalad_executable()
-        if not datalad_executable or not result["datalad_dataset"]:
-            return result
-
-        exists_result = run_datalad_sibling_exists(
-            project_path,
-            sibling_name=name,
-            datalad_executable=datalad_executable,
-        )
-        result["connected"] = bool(exists_result.get("exists"))
         return result
 
     def get_rsync_status(self, project_path: Path) -> Dict[str, Any]:

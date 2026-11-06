@@ -52,51 +52,10 @@ def _project_dir(tmp_path) -> Path:
 # (start -> status, cancel -> status, config persistence)
 
 
-def test_datalad_server_status_route_uses_project_manager(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with patch(
-        "src.project_manager.ProjectManager.get_ria_status",
-        return_value={"connected": True, "sibling_name": "ria-store"},
-    ) as mock_status:
-        with app.test_client() as client:
-            response = client.get(
-                "/api/projects/datalad-server/status",
-                query_string={"project_path": str(project_dir)},
-            )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    assert payload.get("connected") is True
-    mock_status.assert_called_once_with(project_dir)
-
-
-def test_datalad_server_save_config_persists_to_prismrc(tmp_path):
-    app = _build_app()
-    project_dir = _project_dir(tmp_path)
-
-    with app.test_client() as client:
-        response = client.post(
-            "/api/projects/datalad-server/config",
-            json={
-                "project_path": str(project_dir),
-                "ria_url": "ria+ssh://user@host/store",
-                "sibling_name": "my-sibling",
-                "alias": "my-study",
-            },
-        )
-
-    assert response.status_code == 200
-    payload = response.get_json() or {}
-    assert payload.get("success") is True
-    assert payload.get("ria_url") == "ria+ssh://user@host/store"
-    assert payload.get("sibling_name") == "my-sibling"
-
-    saved = json.loads(Path(payload["config_path"]).read_text(encoding="utf-8"))
-    assert saved.get("riaStoreUrl") == "ria+ssh://user@host/store"
-    assert saved.get("siblingName") == "my-sibling"
-    assert saved.get("siblingAlias") == "my-study"
+def test_the_old_status_and_config_routes_are_gone(tmp_path):
+    with _build_app().test_client() as client:
+        assert client.get("/api/projects/datalad-server/status", query_string={"project_path": str(tmp_path)}).status_code == 404
+        assert client.post("/api/projects/datalad-server/config", json={"project_path": str(tmp_path)}).status_code == 404
 
 
 def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
@@ -121,7 +80,7 @@ def test_datalad_server_sync_job_reaches_complete_status_on_success(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             assert start_response.status_code == 200
             job_id = start_response.get_json()["job_id"]
@@ -162,7 +121,7 @@ def test_datalad_server_sync_job_reaches_error_status_on_failure(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             job_id = start_response.get_json()["job_id"]
 
@@ -206,7 +165,7 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
         with app.test_client() as client:
             start_response = client.post(
                 "/api/projects/datalad-server/sync/start",
-                json={"project_path": str(project_dir), "ria_url": "ria+ssh://user@host/store"},
+                json={"project_path": str(project_dir)},
             )
             job_id = start_response.get_json()["job_id"]
 
@@ -227,6 +186,81 @@ def test_datalad_server_sync_cancel_sets_cancel_event_before_job_runs(tmp_path):
     assert status_response.get_json()["status"] == "cancelled"
 
 
+def _start_put(tmp_path, body, url="/api/projects/datalad/put-on-server", backend="src.share_publish.put_on_server"):
+    """POST a job route, run the captured job now; returns (start response, status json, backend function mock)."""
+    app = _build_app()
+    project_dir = _project_dir(tmp_path)
+    with patch("src.web.blueprints.projects_datalad_server_blueprint.threading.Thread") as thread_cls, patch(
+        backend, return_value={"success": True, "message": "Published to the server."}
+    ) as put:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured.update(target=target, args=args)
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        thread_cls.side_effect = _capture
+        with app.test_client() as client:
+            start = client.post(url, json={"project_path": str(project_dir), **body})
+            if start.status_code != 200:
+                return start, None, put
+            captured["target"](*captured["args"])
+            status = client.get(f"/api/projects/datalad-server/sync/{start.get_json()['job_id']}/status").get_json()
+    return start, status, put
+
+
+def test_put_on_server_route_passes_the_identity_like_the_cli_as_option(tmp_path):
+    from src.share_publish import Identity
+
+    start, status, put = _start_put(
+        tmp_path, {"location": "/srv/lab/study", "name": "Ada", "email": "ada@example.org", "allow_invalid": True}
+    )
+    assert start.status_code == 200 and status["status"] == "complete"
+    args, kwargs = put.call_args
+    assert args[1] == "/srv/lab/study"
+    assert kwargs["identity"] == Identity("Ada", "ada@example.org")
+    assert kwargs["allow_invalid"] is True and kwargs["sibling_name"] is None
+
+
+def test_put_on_server_route_without_name_and_email_leaves_the_identity_to_the_backend(tmp_path):
+    _, _, put = _start_put(tmp_path, {"location": "/srv/lab/study"})
+    assert put.call_args.kwargs["identity"] is None
+
+
+def test_put_on_server_route_refuses_a_malformed_identity(tmp_path):
+    start, _, put = _start_put(tmp_path, {"location": "/srv/lab/study", "name": "Ada", "email": "not-an-email"})
+    assert start.status_code == 400 and "Identity" in start.get_json()["error"]
+    put.assert_not_called()
+
+
+def _start_sync(tmp_path, body):
+    return _start_put(
+        tmp_path, body, url="/api/projects/datalad-server/sync/start", backend="src.share_publish.sync_with_server"
+    )
+
+
+def test_sync_route_passes_the_identity_like_the_cli_as_option(tmp_path):
+    from src.share_publish import Identity
+
+    start, status, sync = _start_sync(tmp_path, {"name": "Ada", "email": "ada@example.org"})
+    assert start.status_code == 200 and status["status"] == "complete"
+    assert sync.call_args.kwargs["identity"] == Identity("Ada", "ada@example.org")
+
+
+def test_sync_route_reads_allow_invalid_from_the_body_like_the_cli_flag(tmp_path):
+    _, _, sync = _start_sync(tmp_path, {"allow_invalid": True})
+    assert sync.call_args.kwargs["allow_invalid"] is True and sync.call_args.kwargs["identity"] is None
+    _, _, sync = _start_sync(tmp_path, {})
+    assert sync.call_args.kwargs["allow_invalid"] is False
+
+
+def test_get_data_route_passes_the_server_name_like_the_cli_option(tmp_path):
+    _, status, get = _start_put(
+        tmp_path, {"sibling_name": "lab"}, url="/api/projects/datalad/get-data", backend="src.datalad_get_data.get_data"
+    )
+    assert status["status"] == "complete" and get.call_args.kwargs["sibling_name"] == "lab"
+
+
 def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):
     app = _build_app()
 
@@ -236,3 +270,31 @@ def test_datalad_server_sync_status_route_reports_job_not_found(tmp_path):
         )
 
     assert response.status_code == 404
+
+
+def test_open_from_server_route_runs_the_cli_function_with_a_new_target(tmp_path):
+    """No project is open yet: the target folder may not exist. The job result carries the path the page opens."""
+    app = _build_app()
+    target = tmp_path / "new-copy"
+    result = {"success": True, "reason": "cloned", "path": str(target), "message": "Opened."}
+    with patch("src.web.blueprints.projects_datalad_server_blueprint.threading.Thread") as thread_cls, patch(
+        "src.datalad_clone.open_from_server", return_value=result
+    ) as opened:
+        captured = {}
+
+        def _capture(target=None, args=(), daemon=None):
+            captured.update(target=target, args=args)
+            return _FakeThread(target=target, args=args, daemon=daemon)
+
+        thread_cls.side_effect = _capture
+        with app.test_client() as client:
+            assert client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x"}).status_code == 400
+            relative = client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x", "target": "mine"})
+            assert relative.status_code == 400 and "full path" in relative.get_json()["error"]  # the CLI's bad_target
+            assert not captured
+            start = client.post("/api/projects/datalad/open-from-server", json={"location": "/srv/x", "target": str(target)})
+            assert start.status_code == 200
+            captured["target"](*captured["args"])
+            status = client.get(f"/api/projects/datalad-server/sync/{start.get_json()['job_id']}/status").get_json()
+    assert opened.call_args.args == ("/srv/x", target)
+    assert status["status"] == "complete" and status["result"]["path"] == str(target)

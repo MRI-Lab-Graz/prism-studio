@@ -103,6 +103,7 @@ def test_guard_installed_after_project_selection_hook():
     "/api/projects/export", "/api/projects/export/start", "/api/projects/export/deface",
     "/api/projects/export/git-lfs", "/api/projects/datalad-server/publish",
     "/api/projects/datalad-server/sync/start",
+    "/api/projects/datalad/put-on-server", "/api/projects/datalad/get-data",  # like `datalad put-on-server/get-data`
     "/api/projects/datalad/remove-scans-tsv", "/api/projects/participants",
 ])
 def test_routes_that_export_publish_or_write_project_data_are_gated_like_their_cli_twins(path):
@@ -117,6 +118,7 @@ def test_routes_that_export_publish_or_write_project_data_are_gated_like_their_c
     ("/api/projects/export/abc123/cancel", "DELETE"),
     ("/api/projects/datalad/doctor", "GET"),            # a diagnostic
     ("/api/projects/datalad/save", "POST"),             # saving an unfinished project stays possible
+    ("/api/projects/datalad/open-from-server", "POST"),  # needs no project: it creates one
     ("/api/projects/participants", "GET"),
 ])
 def test_routes_that_open_create_inspect_or_fix_the_project_stay_open(path, method):

@@ -85,6 +85,25 @@ def test_a_project_without_a_server_is_skipped_not_an_error(two_copies):
     assert result["success"] is True and result["skipped"] is True
 
 
+def test_a_server_with_nothing_saved_yet_has_nothing_to_get(two_copies, tmp_path):
+    """Right after put-on-server created it (and the first send was interrupted) the server has no branch yet."""
+    _, mine = two_copies
+    empty = tmp_path / "empty-server"
+    _run("datalad", "create-sibling", str(empty), "-s", "new", cwd=mine)
+    result = ProjectManager().update_datalad_from_server(mine, sibling_name="new")
+    assert result["success"] is True and result["updated"] is False, result
+
+
+def test_a_server_that_is_gone_is_an_error_not_nothing_saved(two_copies, tmp_path):
+    """No fetched refs for the server must not read as 'nothing saved yet': the server itself is asked."""
+    _, mine = two_copies
+    gone = tmp_path / "gone-server"
+    _run("datalad", "create-sibling", str(gone), "-s", "new", cwd=mine)
+    shutil.rmtree(gone)
+    result = ProjectManager().update_datalad_from_server(mine, sibling_name="new")
+    assert result["success"] is False, result
+
+
 def test_a_project_without_datalad_is_refused(tmp_path):
     plain = tmp_path / "plain"
     plain.mkdir()

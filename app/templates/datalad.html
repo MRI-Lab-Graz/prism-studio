@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header, path_picker %}
+
+{% block title %}PRISM Studio - DataLad{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/projects.css', v='20260423-overflow') }}">
+{% endblock %}
+
+{% block content %}
+<div class="studio-page-shell" id="dataladRoot"
+     data-current-project-path="{{ current_project.path or '' }}"
+     data-settings-url="{{ url_for('projects_library.settings_page') }}">
+    {{ page_header(
+        'fas fa-code-branch',
+        'DataLad',
+        'Snapshots of your project, shared with your team through the lab server.',
+        'Project: ' ~ (current_project.name or current_project.path) if current_project.path else 'No project is open.'
+    ) }}
+
+    <!-- The one next step, decided by the backend (GET /api/projects/datalad/state, `prism_tools datalad status`) -->
+    <div class="card shadow-sm" id="dataladStepCard">
+        <div class="card-header bg-info bg-opacity-10">
+            <h2 class="h5 mb-0" id="dataladStepTitle">Checking this project...</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert d-none" id="dataladNotice" role="status" aria-live="polite"></div>
+            <p class="text-muted" id="dataladStepText"></p>
+            <div class="d-flex flex-wrap gap-2" id="dataladPrimary"></div>
+            <div class="d-flex flex-wrap gap-2 mt-2" id="dataladSecondary"></div>
+
+            <!-- Where the server copy lives: Put on server... and Open from server... -->
+            <form class="mt-4 d-none" id="dataladLocationForm">
+                {{ path_picker('Server location', 'dataladLocation', 'dataladLocationBrowseBtn',
+                    placeholder='user@host:/srv/datalad/study or a mounted folder',
+                    help_text='A folder on the lab server (user@host:/path) or a local or network folder. Never a public host.',
+                    button_label='Browse...') }}
+                <div class="mt-3 d-none" id="dataladTargetWrap">
+                    {{ path_picker('New folder on this computer', 'dataladTarget', 'dataladTargetBrowseBtn',
+                        placeholder='An empty or new folder',
+                        help_text='The project is copied here. The folder must be empty or not exist yet.',
+                        button_label='Browse...') }}
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary" id="dataladLocationStartBtn">Start</button>
+                    <button type="button" class="btn btn-outline-secondary" id="dataladLocationCancelBtn">Cancel</button>
+                </div>
+            </form>
+
+            <!-- Progress of a running job (sync, put on server, open from server, get data) -->
+            <div class="mt-4 d-none" id="dataladJobProgress">
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-info" id="dataladJobProgressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progress">0%</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted flex-grow-1" id="dataladJobStatusText" aria-live="polite"></small>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="dataladJobCancelBtn">
+                        <i class="fas fa-ban me-1"></i>Cancel
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3" id="dataladJobResult" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+            <h2 class="h5 mb-0"><i class="fas fa-ellipsis-h text-secondary me-2" aria-hidden="true"></i>More</h2>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2" id="dataladMore"></div>
+            <div class="mt-3" id="dataladDoctorResult" aria-live="polite"></div>
+
+            <!-- Get data: the export's scope filters, default everything the CLI fetches without options -->
+            <form class="mt-3 d-none" id="dataladGetDataForm">
+                <p class="small text-muted">Fetch the content of the chosen files from the server. Uncheck what you do not need.</p>
+                {% include 'includes/projects/content_scope_filters.html' %}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary" id="dataladGetDataStartBtn">Get data</button>
+                    <button type="button" class="btn btn-outline-secondary" id="dataladGetDataCancelBtn">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% include 'includes/projects/git_identity_modal.html' %}
+    {% include 'includes/projects/remote_folder_modal.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}"></script>
+<script>
+    window.currentProjectPath = "{{ current_project.path or '' }}";
+    window.currentProjectName = "{{ current_project.name or '' }}";
+    window.currentProjectIcon = "{{ current_project.icon or '' }}";
+</script>
+{% endblock %}

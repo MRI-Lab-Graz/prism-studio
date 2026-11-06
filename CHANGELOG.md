@@ -7,11 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **DataLad has its own page** (`/projects/datalad`, the **DataLad** item in the navbar, now always shown and still
+  carrying the count of unsaved changes). It shows one next step for the open project, decided by the backend
+  (`datalad status`): Open from server..., Enable DataLad, Put on server..., Save, Sync now; *More* holds Get latest,
+  Get data (with the export's filters, starting at the CLI's defaults), Check this computer and the link to your name
+  and email. Long steps show progress with Cancel; validation errors are listed with *Send anyway, I understand this
+  dataset has N errors*. Every button runs the matching `prism_tools.py datalad` command. Clicking the navbar item
+  opens the page; it no longer saves. See `docs/studio/datalad.md`.
+- **`datalad status --check-nested`** (Studio: `?check_nested=1`, asked by the DataLad page, not by the navbar) counts the
+  subject datasets that are not registered yet (`nested_unregistered`, `nested_unregistered_paths`); if some are left,
+  the next step is `enable` with `enable_kind: "finish"`, shown as *Finish enabling DataLad*. `enable_kind` is `"first"`
+  when DataLad is off.
+
+### Fixed
+- `run_datalad_get_paths(..., no_data=True)` fetched the data after all: it passed `--on-failure` after `get` (DataLad rejects it there) and the fallback dropped `-n`. The option is gone, paths follow `--`, and a no-data get stays a no-data get.
+
 ### Removed
+- **The DataLad card on the Settings page and the DataLad panel on the Share page**, replaced by the DataLad page.
+  The Share page keeps the rsync backup; Settings keeps your name and email. The Share page's *Publish (validated)*
+  button went with the panel (*Sync now* sends only a valid dataset; the results page keeps *Publish*).
+- **RIA support is dropped.** The server is a plain repository (the project's `origin`). `datalad config` (and the
+  project keys `riaStoreUrl`, `siblingName`, `siblingAlias`: old ones are ignored and removed at the next save),
+  `datalad doctor --project` (use `--url`), `POST /api/projects/datalad-server/config`,
+  `GET /api/projects/datalad-server/status` and the RIA create-sibling code are gone. Sync, update and publish
+  default to the sibling `origin`.
 - **Finalize & disconnect, the RIA-store connect step and the unvalidated sync are gone** (`datalad finalize`, the Finalize
   button, "verify after sync", the alias field). Sync works with the project's own copy and the lab server.
 
 ### Added
+- **Get data.** `prism_tools datalad get-data --project <root> [export filters] [--json]` (Studio: `POST /api/projects/datalad/get-data`, a job) fetches the annexed data of your copy from the server with the export's filters (subjects, sessions, modalities, acq, task, derivatives, code, analysis, sourcedata). The export's "which files" logic moved out of `export_project_to_plain_folder` into `src/export_selection.py` and both use it; the export selects the same files as before. One helper adds the filter flags to the export commands and to `get-data`.
+- **Open a project from the lab server.** `prism_tools datalad open-from-server --location <folder | user@host:path |
+  ssh://host/path> --target <empty or new folder> [--json]` clones the project with the server as `origin`, installs the
+  nested subject datasets level by level without their data, only from addresses inside the project on the server
+  (the server's `.gitmodules` and `.datalad/config` are checked first, against the few keys PRISM writes; a nested path must be a real nested dataset of its own parent, not a link
+  or a deeper path; a folder server must be real folders, no links, `gitdir:` files or alternates), and installs the save-gate hook in every dataset (git does not copy
+  hooks). A target that is not a full path, not empty or inside a git repository, missing tools, a missing git
+  name/email and web or `-` locations are refused before cloning. Studio's `POST /api/projects/datalad/open-from-server` runs it as a job; the page then opens the copy.
+- **Put a project on the lab server.** `prism_tools datalad put-on-server --project <path> --location <folder |
+  user@host:path | ssh://host/path> [--sibling-name] [--allow-invalid] [--as] [--json]` creates the dataset there
+  (subject datasets too) as `origin`, then sends it with the same checks as publish (saved, valid or acknowledged, no
+  public host while `sourcedata/` is tracked), all before anything is created on the server. A non-empty location is
+  refused ("open it from the server instead"); web addresses and locations starting with `-` are refused. Studio's
+  `POST /api/projects/datalad/put-on-server` runs it as a job.
+- **`datalad status` tells the next step** (`install_datalad`, `enable`, `put_on_server`, `save`, `sync`), the server
+  (`origin`, with `--check-server` whether it is reachable; unreachable is never an error), other servers, and with
+  `--validate` the error count. Studio's `GET /api/projects/datalad/state` returns the same JSON as `--json`.
 - **The navbar shows how many changes are not yet saved to DataLad**, as a yellow number next to "DataLad". It is looked at again
   after every validator run (the results page). `prism_tools datalad status --project <path> [--json]` prints the same.
 
@@ -19,7 +60,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `prism_tools datalad update --project <path>` does the same. It only fast-forwards (never merges), refuses while the project
   has unsaved changes, and skips a project that has no server yet.
 
+### Fixed
+- **`prism_tools datalad status` ran nothing** (the command was parsed but not dispatched); it now prints the state.
+- **Get latest and Sync no longer fail on a server with nothing saved yet** (a dataset just created on the server);
+  there is nothing to get, and the push fills it.
+- **"Save anyway" (`--allow-invalid`) now gets through the save-gate hook.** The pre-commit hook used to refuse the
+  acknowledged save. One variable, `PRISM_ACK_INVALID`, is set only for the acknowledged command; `save-gate --check`
+  and `publish --check` (both git hooks) honour it and log it.
+
 ### Changed
+- **Publish and sync can send a dataset with acknowledged errors.** `prism_tools publish --allow-invalid`,
+  `prism_tools datalad sync --allow-invalid` and the same option in Studio's routes push despite validation errors; the
+  result is `pushed_with_errors` (errors still listed) and the audit log records it with the error count.
 - **Sync now gets the latest, then sends only a valid dataset.** `prism_tools datalad sync` and Studio's *Sync now* run
   `update`, then the validated publish (saved, valid, to the lab server). The server is the project's `origin` by default
   (it was `ria-store`). Nothing is ever merged.

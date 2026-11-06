@@ -79,6 +79,9 @@ PROJECTS_EXPORT_MODULE = (
 PROJECTS_DATALAD_SERVER_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "datalad_server.js"
 )
+PROJECTS_PUSH_SERVER_TOGGLE_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "push_server_toggle.js"
+)
 PROJECTS_RSYNC_SERVER_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "rsync_server.js"
 )
@@ -194,135 +197,46 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             core_content.index("initProjectInitOnBidsController({"),
         )
 
-    def test_open_project_loaded_state_owns_datalad_actions(self):
-        # The card logic lives in datalad-card.js; open-project.js keeps the opt-in prompt.
-        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8") + PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
+    def test_open_project_keeps_the_datalad_opt_in_prompt_and_enables_through_the_shared_module(self):
+        content = PROJECTS_OPEN_PROJECT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("function renderProjectBoxDataladState(", content)
-        # The static markup for these IDs now lives in datalad_section.html
-        # (see test_datalad_section_template_owns_static_datalad_markup below);
-        # open-project.js still "owns" them in the sense that its logic looks
-        # them up fresh via getElementById on every call.
-        self.assertIn("document.getElementById('projectBoxDataladStateBadge')", content)
-        self.assertIn("document.getElementById('projectBoxDataladEnableBtn')", content)
-        self.assertIn("document.getElementById('projectBoxDataladSaveBtn')", content)
-        self.assertIn("document.getElementById('projectBoxDataladProgressWrap')", content)
-        self.assertIn("document.getElementById('projectBoxDataladProgressBar')", content)
-        self.assertIn("document.getElementById('projectBoxDataladProgressLabel')", content)
-        self.assertIn("Register Nested Dataset", content)
-        self.assertIn("DataLad Structure Complete", content)
-        self.assertIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
-        # The POST itself lives in the shared module (tested in datalad-save.test.js); the card only calls it.
-        self.assertIn("saveDataladSnapshot(fetchWithApiFallback, saveMessage)", content)
-        self.assertNotIn("fetchWithApiFallback('/api/projects/datalad/save'", content)
-        # Opening a DataLad project asks the backend for the server's latest changes (shared module, own JS test).
-        self.assertIn("getLatestFromServer(fetchWithApiFallback)", content)
-        self.assertIn("confirmed: true", content)
-        self.assertIn("register one per click", content)
-        self.assertIn("DataLad structure is complete for this project.", content)
-        self.assertIn("backfills one missing nested dataset registration", content)
-        self.assertIn("Watch the backend terminal for progress.", content)
-        self.assertIn("subdatasetsProgressPercent", content)
-        self.assertIn("nextMissingSubdataset", content)
-        self.assertIn("window.prompt('Commit message for this checkpoint'", content)
+        # The old card module is gone; the enable loop is shared with the DataLad page (datalad-enable.test.js).
+        self.assertNotIn("datalad-card.js", content)
+        self.assertIn("import { enableDatalad } from '../../shared/datalad-enable.js';", content)
+        self.assertIn("enableDatalad(fetchWithApiFallback, {", content)
+        self.assertIn("askGitIdentity({ fetchWithApiFallback })", content)
+        self.assertNotIn("fetchWithApiFallback('/api/projects/datalad/enable'", content)
+        self.assertNotIn("projectBoxDatalad", content)  # that markup left with the Settings card
         self.assertIn("window.setNavbarDataladFeedback?.(", content)
         self.assertIn("const DATALAD_PREFERENCES_NAMESPACE = 'datalad';", content)
-        self.assertIn("export const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
-        self.assertIn("export const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';", content)
+        self.assertIn("const DATALAD_DOCS_URL = 'https://www.datalad.org/';", content)
+        self.assertIn("const DATALAD_INSTALL_COMMAND = 'uv tool install datalad --with-executables-from git-annex';", content)
         # The backend knows the platform; the JS only shows what the status says.
         self.assertIn("dataladState.install_command", content)
         self.assertIn("Suggested install command: ${state.installCommand || DATALAD_INSTALL_COMMAND}", content)
         self.assertIn("Enable DataLad conversion/tracking for this project?", content)
         self.assertIn("Are you absolutely sure that you want a DataLad conversion/tracking setup for this project?", content)
-        self.assertIn("Suggested install command", content)
         self.assertIn("/api/projects/preferences/${DATALAD_PREFERENCES_NAMESPACE}", content)
-        self.assertIn("window.prismDataladOperationState", content)
         self.assertIn("maybePromptDataladOptIn", content)
 
-    def test_datalad_section_template_owns_static_datalad_markup(self):
-        self.assertTrue(DATALAD_SECTION_TEMPLATE.exists())
-        content = DATALAD_SECTION_TEMPLATE.read_text(encoding="utf-8")
-
-        self.assertIn('id="dataladSectionCard"', content)
-        self.assertIn('style="display: none;"', content)
-        self.assertIn('id="dataladSection"', content)
-        self.assertNotIn("data-bs-toggle", content)  # always open on the Settings page
-        self.assertIn('id="projectBoxDataladStateBadge"', content)
-        self.assertIn('id="projectBoxDataladStatus"', content)
-        self.assertIn('id="projectBoxDataladHint"', content)
-        self.assertIn('id="projectBoxDataladProgressWrap"', content)
-        self.assertIn('id="projectBoxDataladProgressBar"', content)
-        self.assertIn('id="projectBoxDataladProgressLabel"', content)
-        self.assertIn('id="projectBoxDataladSaveProgressWrap"', content)
-        self.assertIn('id="projectBoxDataladSaveProgressBar"', content)
-        self.assertIn('id="projectBoxDataladSaveProgressLabel"', content)
-        self.assertIn('id="projectBoxDataladFeedback"', content)
-        self.assertIn('id="projectBoxDataladEnableBtn"', content)
-        self.assertIn('id="projectBoxDataladSaveBtn"', content)
-        self.assertIn('href="https://www.datalad.org/"', content)
-
+    def test_the_old_datalad_panels_are_gone(self):
+        # Replaced by the DataLad page (templates/datalad.html, modules/datalad/page.js).
+        for path in (
+            PROJECTS_DATALAD_CARD_MODULE,
+            PROJECTS_DATALAD_SERVER_MODULE,
+            PROJECTS_PUSH_SERVER_TOGGLE_MODULE,
+            DATALAD_SECTION_TEMPLATE,
+        ):
+            self.assertFalse(path.exists(), path)
         page_sections_content = PAGE_SECTIONS_TEMPLATE.read_text(encoding="utf-8")
         self.assertNotIn("datalad_section.html", page_sections_content)
-        self.assertIn(
-            "{% include 'includes/projects/datalad_section.html' %}",
-            (REPO_ROOT / "app" / "templates" / "settings.html").read_text(encoding="utf-8"),
+        self.assertNotIn(
+            "datalad_section.html", (REPO_ROOT / "app" / "templates" / "settings.html").read_text(encoding="utf-8")
         )
-
-    def test_settings_and_fix_actions_use_api_fallback(self):
-        settings_content = PROJECTS_SETTINGS_MODULE.read_text(encoding="utf-8")
-        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
-        maintenance_content = PROJECTS_MAINTENANCE_MODULE.read_text(encoding="utf-8")
-
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/settings/global-library');",
-            settings_content,
-        )
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/projects/library-path');",
-            settings_content,
-        )
-        self.assertIn(
-            "const response = await fetchWithApiFallback('/api/projects/fix', {",
-            maintenance_content,
-        )
-        self.assertIn(
-            "await fetchWithApiFallback('/api/projects/current', {",
-            maintenance_content,
-        )
-        self.assertIn("import {", core_content)
-        self.assertIn("} from './settings.js';", core_content)
-        self.assertIn(
-            "import { createProjectMaintenanceActions } from './maintenance-actions.js';",
-            core_content,
-        )
-        self.assertIn("const projectMaintenanceActions = createProjectMaintenanceActions({", core_content)
-        # The settings card moved to the Settings page (see test_settings_page_wiring.py).
-        self.assertNotIn("initProjectSettingsForm", core_content)
-
-    def test_projects_page_uses_single_bootstrap_entrypoint(self):
         index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
-        core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
-        bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
-        export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
-        main_content = MAIN_MODULE.read_text(encoding="utf-8")
-        template_content = PROJECTS_PAGE_TEMPLATE.read_text(encoding="utf-8")
+        for name in ("datalad-card.js", "datalad_server.js", "push_server_toggle.js", "createDataladCard", "initDataladServerSection"):
+            self.assertNotIn(name, index_content)
 
-        self.assertIn("export function initializeProjectsPage() {", index_content)
-        self.assertIn("initProjectsPage();", index_content)
-        self.assertIn("initProjectValidation();", index_content)
-        self.assertIn("let projectsPageInitialized = false;", core_content)
-        self.assertIn("export function initProjectsPage() {", core_content)
-        self.assertIn("import { initProjectsPageBootstrap } from './page-bootstrap.js';", core_content)
-        self.assertIn("initProjectsPageBootstrap({", core_content)
-        self.assertIn("export async function initProjectsPageBootstrap({", bootstrap_content)
-        self.assertNotIn("document.addEventListener('DOMContentLoaded', initProjectsPage);", core_content)
-        self.assertIn("let exportModuleInitialized = false;", export_content)
-        self.assertIn("export function initializeProjectsExport() {", export_content)
-        self.assertNotIn("document.addEventListener('DOMContentLoaded', function() {", export_content)
-        self.assertIn("ProjectsModule.initializeProjectsPage()", main_content)
-        self.assertIn("<script type=\"module\" src=\"{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}\"></script>", template_content)
-        self.assertFalse(LEGACY_PROJECTS_CORE.exists())
-        self.assertFalse(LEGACY_PROJECTS_EXPORT.exists())
         self.assertFalse(LEGACY_PROJECTS_HELPERS.exists())
         self.assertFalse(LEGACY_PROJECTS_METADATA.exists())
 
@@ -352,11 +266,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn(
             "export function initializeSharePage() {\n"
             "    initializeProjectsExport();\n"
-            "    initDataladServerSection();\n"
             "    initRsyncServerSection();\n"
-            "    // Runs after both destination sections so its show/hide of the merged\n"
-            "    // \"Push to Server\" card and its DataLad-vs-rsync toggle win last.\n"
-            "    initPushServerToggle();\n"
             "}",
             index_content,
         )
@@ -367,8 +277,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("ProjectsModule.initializeSharePage()", main_content)
 
         # The archival sections live on share.html now, not projects.html.
-        # DataLad server push and rsync backup were later merged into one
-        # "Push to Server" card/include (see f747fd83 "push server toggle").
+        # The DataLad part of "Push to Server" moved to the DataLad page; the include keeps the rsync backup.
         self.assertNotIn("export_section.html", page_sections_content)
         self.assertNotIn("push_server_section.html", page_sections_content)
         self.assertIn("includes/projects/export_section.html", share_template_content)
@@ -376,6 +285,12 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "includes/projects/push_server_section.html", share_template_content
         )
         self.assertIn('id="shareRoot"', share_template_content)
+        push_section = (PAGE_SECTIONS_TEMPLATE.parent / "push_server_section.html").read_text(encoding="utf-8")
+        for gone in ('id="dataladServerCard"', 'id="pushTargetDatalad"', 'id="publishProjectBtn"', 'id="dataladServerSyncBtn"'):
+            self.assertNotIn(gone, push_section)
+        self.assertIn('id="rsyncServerCard"', push_section)
+        self.assertIn('id="rsyncServerSyncBtn"', push_section)
+        self.assertIn("includes/projects/remote_folder_modal.html", push_section)
 
         # Projects page points users at the new page instead of scrolling to it.
         self.assertIn("url_for('projects.share_page')", projects_template_content)
@@ -386,7 +301,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         # to their own page), so each module must now reveal its own card as
         # part of its own init -- otherwise Share & Archive renders blank.
         export_content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
-        datalad_server_content = PROJECTS_DATALAD_SERVER_MODULE.read_text(encoding="utf-8")
         rsync_server_content = PROJECTS_RSYNC_SERVER_MODULE.read_text(encoding="utf-8")
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         create_content = PROJECTS_CREATE_MODULE.read_text(encoding="utf-8")
@@ -395,7 +309,6 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("showExportCard();", export_content)
-        self.assertIn("showDataladServerCard();", datalad_server_content)
         self.assertIn("showRsyncServerCard();", rsync_server_content)
 
         for module_name, content in (
@@ -758,6 +671,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
     def test_export_template_button_is_present_in_projects_export_section(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+        # the scope filters are a partial shared with the DataLad page's Get data
+        self.assertIn("{% with scope_bulk_buttons=True %}{% include 'includes/projects/content_scope_filters.html' %}", content)
+        content += EXPORT_SECTION_TEMPLATE.with_name("content_scope_filters.html").read_text(encoding="utf-8")
 
         self.assertIn('id="plainFolderExportButton"', content)
         self.assertIn('id="uploadReadyExportButton"', content)
@@ -926,36 +842,24 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
                      "Version control", "projectLoadedManageDataladLink", "projectLoadedDataladSummary"):
             self.assertNotIn(gone, render_body)
 
-        # The DataLad card itself lives on the Settings page (showDataladCard is in the shared card module).
-        card = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
-        self.assertIn("function showDataladCard()", card)
-        self.assertIn("dataladSectionCard", card)
-
-    def test_datalad_card_visibility_is_wired_by_the_settings_page_not_the_project_page(self):
+    def test_datalad_is_its_own_page_not_a_card_of_the_project_or_settings_page(self):
         core_content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
         bootstrap_content = PROJECTS_BOOTSTRAP_MODULE.read_text(encoding="utf-8")
-        index_content = (REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "index.js").read_text(encoding="utf-8")
+        index_content = PROJECTS_INDEX_MODULE.read_text(encoding="utf-8")
 
-        self.assertNotIn("showDataladCard", core_content)
-        self.assertNotIn("showDataladCard", bootstrap_content)
-        self.assertIn(").showDataladCard();", index_content)
+        for content in (core_content, bootstrap_content, index_content):
+            self.assertNotIn("showDataladCard", content)
+        self.assertIn("getElementById('dataladRoot')", MAIN_MODULE.read_text(encoding="utf-8"))
 
-    def test_show_datalad_card_populates_and_binds_when_visible(self):
-        # Finding 1 (whole-branch review): a plain GET /projects with a project
-        # already active in the session can show the card without ever running
-        # loadProjectWithoutValidation, so showDataladCard() itself must populate
-        # and bind the card rather than only toggling display.
-        content = PROJECTS_DATALAD_CARD_MODULE.read_text(encoding="utf-8")
+    def test_datalad_page_fills_itself_from_the_state_when_opened(self):
+        # Opening /projects/datalad directly (project already in the session) must show the state without any
+        # project-page flow running first, then get the latest once in the background.
+        content = (REPO_ROOT / "app" / "static" / "js" / "modules" / "datalad" / "page.js").read_text(encoding="utf-8")
+        init_body = content[content.index("export async function initializeDataladPage()"):]
 
-        show_start = content.index("function showDataladCard()")
-        show_end = content.index("\n    }\n", show_start)
-        show_body = content[show_start:show_end]
-
-        self.assertIn("if (!path) return;", show_body)
-        self.assertIn("bindProjectBoxDataladActions();", show_body)
-        self.assertIn("renderProjectBoxDataladState(", show_body)
-        self.assertIn("fetchWithApiFallback('/api/projects/current')", show_body)
-        self.assertIn("applyCurrentProject(current);", show_body)
+        self.assertIn("dataset.currentProjectPath", init_body)
+        self.assertIn("await loadState();", init_body)
+        self.assertIn("getLatestOnce(projectPath);", init_body)
 
     def test_projects_page_no_longer_owns_inline_validation_actions(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")

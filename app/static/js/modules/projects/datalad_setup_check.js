@@ -28,8 +28,7 @@ export function renderDoctorChecks(checks) {
  * A check button is `<button data-datalad-check data-result="<id>" data-url-input="<id>">`:
  * the result list goes into #<data-result>; #<data-url-input> (optional) holds the server URL to test.
  */
-async function onCheckClick(event) {
-    const btn = event.currentTarget;
+export async function runDataladCheck(btn) {
     const originalText = btn.innerHTML;
     const url = (getById(btn.dataset.urlInput)?.value || '').trim();
     setButtonLoading(btn, true, 'Checking...', originalText);
@@ -48,6 +47,6 @@ async function onCheckClick(event) {
 
 export function initDataladSetupCheck() {
     document.querySelectorAll('[data-datalad-check]').forEach((btn) => {
-        btn.addEventListener('click', onCheckClick);
+        btn.addEventListener('click', (event) => runDataladCheck(event.currentTarget));
     });
 }

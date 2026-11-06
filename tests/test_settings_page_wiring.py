@@ -93,6 +93,7 @@ def test_wcag_enhanced_view_toggle_page_attribute_and_css_are_wired():
     section = css[css.index("/* Accessibility (WCAG AA") :]
     bare = re.findall(r"^\s*((?:\.studio-theme|html)[^;{}]*?)\s*[,{]\s*$", section, re.M)
     assert [rule for rule in bare if "html[data-wcag]" not in rule] == []
+    assert "html[data-wcag] html" not in css  # a rule for <html> itself is html[data-wcag] {, not a descendant
 
 
 def test_settings_page_opens_without_a_project():
@@ -103,29 +104,21 @@ def test_settings_page_opens_without_a_project():
     assert 'path == "/settings"' in guard[: guard.index("\n\n\n")]
 
 
-# --- the DataLad card for the loaded project lives on the Settings page ---------------------------
+# --- DataLad for the loaded project lives on its own page (/projects/datalad) --------------------
 
 PROJECTS_JS = JS / "modules" / "projects"
 
 
-def test_datalad_card_moved_from_the_project_page_to_the_settings_page():
-    assert "datalad_section.html" not in _text(TEMPLATES / "includes" / "projects" / "page_sections.html")
+def test_settings_page_keeps_name_and_email_but_not_the_datalad_card():
     page = _text(TEMPLATES / "settings.html")
-    assert "includes/projects/datalad_section.html" in page
-    assert 'id="dataladSectionCard"' in _text(TEMPLATES / "includes" / "projects" / "datalad_section.html")
-
-
-def test_datalad_card_logic_is_one_module_used_by_the_open_flow_and_the_settings_page():
-    card = _text(PROJECTS_JS / "datalad-card.js")
-    opener = _text(PROJECTS_JS / "open-project.js")
     index = _text(PROJECTS_JS / "index.js")
+    settings_init = index[index.index("export function initializeSettingsPage()") :].split("\n}\n")[0]
 
-    assert "export function createDataladCard(" in card
-    for name in ("function renderProjectBoxDataladState", "function runProjectBoxEnableDatalad", "function bindProjectBoxDataladActions"):
-        assert name in card, name
-        assert name not in opener, name
-    assert "createDataladCard(" in opener
-    assert "createDataladCard(" in index and "showDataladCard()" in index
+    assert "datalad_section.html" not in page
+    assert 'id="gitIdentityForm"' in page
+    assert "url_for('projects.datalad_page')" in page  # where the project's own DataLad tracking went
+    assert "initGitIdentityForm();" in settings_init
+    assert "createDataladCard" not in settings_init and "showDataladCard" not in settings_init
 
 
 def test_project_page_no_longer_shows_datalad():
@@ -136,21 +129,6 @@ def test_project_page_no_longer_shows_datalad():
     assert "getElementById('dataladSection')" not in opener  # no in-page scroll handler any more
     assert "showDataladCard" not in boot
     assert "dataladSectionChevron" not in boot
-
-
-def test_settings_page_still_runs_the_deep_datalad_status_for_tracked_projects():
-    card = _text(PROJECTS_JS / "datalad-card.js")
-    show = card[card.index("function showDataladCard()") :]
-
-    assert "refreshDataladStatusDeep(" in show.split("\n    }\n")[0]
-
-
-def test_datalad_card_exports_only_what_other_modules_use():
-    card = _text(PROJECTS_JS / "datalad-card.js")
-    exported = card[card.rindex("    return {") :]
-
-    for name in ("formatElapsedDuration", "getSaveProgressElements", "normalizeDataladBoolean", "confirmEnableDatalad"):
-        assert name not in exported, name
 
 
 def test_no_page_hardcodes_the_wcag_green():

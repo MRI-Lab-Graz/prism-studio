@@ -184,14 +184,12 @@ def dispatch_prism_tools(
     elif args.command == "datalad":
         if args.action == "doctor":
             handlers["datalad_doctor"](args)
-        elif args.action == "config":
-            handlers["datalad_config"](args)
         elif args.action == "identity":
             handlers["datalad_identity"](args)
         elif args.action == "sync":
             handlers["datalad_sync"](args)
-        elif args.action in ("enable", "save", "update"):
-            handlers[f"datalad_{args.action}"](args)
+        elif args.action in ("enable", "save", "update", "status", "put-on-server", "open-from-server", "get-data"):
+            handlers[f"datalad_{args.action.replace('-', '_')}"](args)
         else:
             parsers["datalad"].print_help()
     elif args.command == "environment":

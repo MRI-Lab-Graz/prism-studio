@@ -123,7 +123,7 @@ def test_scripts_do_not_write_server_labels():
         f"{path.relative_to(FILES_JS)}: {line.strip()[:80]}"
         for path in FILES_JS.rglob("*.js")
         if "vendor" not in path.parts and not path.name.endswith(".test.js")
-        and path.name not in {"datalad_server.js", "rsync_server.js"}
+        and path.name != "rsync_server.js"
         for line in path.read_text(encoding="utf-8").splitlines()
         if "fa-server" in line or re.search(r">\s*Server (File|Folder)\s*<|>Server (File|Folder)'", line)
     ]

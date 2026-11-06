@@ -577,8 +577,9 @@ python prism_tools.py publish --check --project /absolute/path/to/share/my-proje
 python prism_tools.py publish --install-hook --project /absolute/path/to/share/my-project
 ```
 
-Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--check`,
-`--install-hook`, `--json`. See [DataLad](DATALAD.md#publishing-from-a-department-share)
+Options: `--project` (required), `--sibling`, `--as "Name <email>"`, `--allow-invalid`, `--check`,
+`--install-hook`, `--json`. `--allow-invalid` sends the dataset despite validation errors (you acknowledge them);
+the result is `pushed_with_errors`, still lists the errors, and the audit log records it with the error count. See [DataLad](DATALAD.md#publishing-from-a-department-share)
 for the hook's requirements and limits.
 
 ### Methods section and preregistration draft
@@ -827,18 +828,84 @@ same function (`GET /api/projects/datalad/doctor?url=...`).
 ```bash
 python prism_tools.py datalad doctor
 python prism_tools.py datalad doctor --url user@server.example.org:/data/study
-python prism_tools.py datalad doctor --project /absolute/path/to/my-project --json
+python prism_tools.py datalad doctor --url user@server.example.org:/data/study --json
 ```
 
 `update` gets what others have saved on the server. It only fast-forwards (it never
 merges), refuses while the project has unsaved changes, and skips a project that has no
 server yet. `sync` runs `update`, then sends your saved changes, and only if the dataset
 validates; unsaved changes must be saved first. The server is the project's `origin`
-(or `--sibling-name`). Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
+(or `--sibling-name`). `--allow-invalid` sends despite validation errors (as `datalad save --allow-invalid`
+saves); the result is `pushed_with_errors` and the audit log records it. Exit codes: 0 ok, 1 refused or failed, 2 bad usage.
 
 ```bash
 python prism_tools.py datalad update --project /absolute/path/to/my-project
 python prism_tools.py datalad sync --project /absolute/path/to/my-project
+```
+
+`put-on-server` is for the first person: it creates the project's dataset at `--location` (a local or network
+folder such as `/srv/lab/study` or `C:\share\study`, `user@host:path`, or `ssh://host/path`; web addresses and
+values starting with `-` are refused), names it `origin` (or `--sibling-name`) and then sends it like `sync`. Before
+anything is created on the server it refuses a project that already has that server (use `sync`), a folder that is
+not empty ("open it from the server instead"), unsaved changes, validation errors (unless `--allow-invalid`) and a
+public host while `sourcedata/` is tracked. Nested subject datasets are created too. If the send is interrupted after
+the server dataset exists, run `sync`. Studio's `POST /api/projects/datalad/put-on-server` runs the same function as a
+job (`location`, `sibling_name`, `allow_invalid`, and `name`/`email` for `--as`). An ssh location whose user or server
+name starts with `-` or contains spaces, and any location containing `::` (git transport helpers), is refused.
+
+```bash
+python prism_tools.py datalad put-on-server --project /absolute/path/to/my-project --location user@lab.example.org:/data/study
+```
+
+`open-from-server` is for everybody else: it needs no project. It clones the project at `--location` (same forms and
+refusals as `put-on-server`; a relative folder is relative to your working directory) into `--target`, an empty or new
+folder given as a full path, with the server as `origin`. It installs the nested subject datasets level by level without
+their data (fetch it with Get data). Before a dataset's nested datasets are installed, its own files are checked; a
+failed check stops the install. What is checked: the dataset was checked out completely (`git status`, at most 60
+seconds); its committed `.datalad/config` holds only `datalad.dataset.id` and its `.gitmodules` only `path`, `url` and
+`datalad-id` (any other setting could redirect an address); `.datalad`, `.datalad/config` and `.gitmodules` are not
+links; every `url` is a relative path inside the dataset (what DataLad writes, `./sub-01`) or an address under the
+exact `--location`; every `path` is a nested dataset recorded in that very dataset (not a deeper path such as
+`sub-01/ses-1`, not a link) and a real folder. For a folder location (the server is read on your computer), the
+location, every folder down to each nested dataset's source on the server and each of their `.git` must be real
+folders (a link or a `gitdir:` file is refused) without `.git/objects/info/alternates`, and no copied dataset may end
+up with an alternates file (either would make the copy read another repository of your computer). For an ssh location
+the addresses are resolved on the server and are not checked on your computer beyond the rules above. The server's own
+`origin` is not added to your copy. Known limitation: a nested dataset recorded with `datalad-url` (DataLad writes it
+when a subdataset was added from an address rather than created in place; PRISM never does) cannot be opened this way. The save-gate hook goes into every dataset as soon as it is there (git
+does not copy hooks). It stops before cloning when the target is not a full path, not empty, or inside a git
+repository, when DataLad, git or git-annex is missing, or git does not know your name and email (`reason`:
+`bad_location`, `bad_target`, `target_not_empty`, `no_datalad`, `no_identity`, `clone_failed`). If a nested install
+fails after the clone, the copy is left incomplete (and gated): delete the folder named in the message, then try again.
+Studio's `POST /api/projects/datalad/open-from-server` (`location`, `target`) runs the same function as a job (a target
+that is not a full path is refused with 400) and then opens the new copy as the current project.
+
+```bash
+python prism_tools.py datalad open-from-server --location user@lab.example.org:/data/study --target ~/projects/study
+```
+
+`get-data --project <root> [filters] [--json]` fetches the data (MRI, physio, ...) of your own copy from the server
+(`origin`). It takes the export's filter flags, added by the same helper to the `export` commands:
+`--exclude-subject`, `--exclude-session`, `--exclude-modality`, `--exclude-acq MODALITY=LABEL`, `--exclude-task MODALITY=TASK`,
+`--include-sourcedata`, `--no-derivatives`, `--no-code`, `--include-analysis` (same defaults as the export). Without filters
+everything the defaults keep is fetched. A project without `origin` is not an error (`skipped: true`, exit 0, "nothing to fetch
+from"); an unreachable server, or files no server has (listed in the message and in `failed_paths`), exit 1. Studio's
+`POST /api/projects/datalad/get-data` runs the same function as a job (the filters under the export page's option names,
+e.g. `exclude_subjects`). The selection itself is `src/export_selection.py`, which the export's "fetch annexed content"
+step uses too.
+
+```bash
+python prism_tools.py datalad get-data --project ~/projects/study --exclude-subject sub-02 --exclude-modality physio
+```
+
+`status` shows how many changes are unsaved and the one next step the DataLad page offers
+(`install_datalad`, `enable`, `put_on_server`, `save` or `sync`; `save` also when the unsaved changes cannot be counted, `checked: false`). `--check-server` asks the server whether it can be reached
+(10 s limit; an unreachable server is reported as `reachable: false`, never an error, and never changes
+the next step), `--validate` adds `valid` and `error_count`, `--json` prints what Studio's `GET /api/projects/datalad/state`
+returns. A server not called `origin` is listed in `other_servers`.
+
+```bash
+python prism_tools.py datalad status --project /absolute/path/to/my-project --check-server --json
 ```
 
 On Windows the install hint is: install Git for Windows, then (without uv)

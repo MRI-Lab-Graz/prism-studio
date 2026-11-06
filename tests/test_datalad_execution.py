@@ -6,10 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from src.datalad_execution import (
-    is_ria_url,
-    run_datalad_create_sibling,
     run_datalad_create_sibling_plain,
-    run_datalad_create_sibling_ria,
     run_datalad_push,
     run_datalad_push_verify,
     run_datalad_run,
@@ -112,11 +109,11 @@ def test_run_datalad_run_escapes_literal_curly_braces_in_command(
     assert script_arg.format() == script_with_dict_literal
 
 
-# ===== A1: RIA push/pull command construction and missing-executable guards =====
+# ===== A1: command construction and missing-executable guards =====
 #
 # These pin the exact commands the "Push to DataLad Server" feature shells
 # out to, and the shared "no datalad executable" early-return contract every
-# RIA function follows. See A2 below for the verification truth table that
+# function follows. See A2 below for the verification truth table that
 # gates whether it's ever safe to disconnect a sibling.
 
 
@@ -127,17 +124,17 @@ def test_run_datalad_sibling_exists_detects_sibling_by_name(
 
     def _fake_run(command, **kwargs):
         seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="ria-store(git)\n", stderr="")
+        return SimpleNamespace(returncode=0, stdout="origin(git)\n", stderr="")
 
     monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
 
     result = run_datalad_sibling_exists(
-        tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
+        tmp_path, sibling_name="origin", datalad_executable="/usr/bin/datalad"
     )
 
     assert result["success"] is True
     assert result["exists"] is True
-    assert seen_commands[0] == ["/usr/bin/datalad", "siblings", "-s", "ria-store"]
+    assert seen_commands[0] == ["/usr/bin/datalad", "siblings", "-s", "origin"]
 
 
 def test_run_datalad_sibling_exists_false_when_name_absent_from_output(
@@ -149,117 +146,14 @@ def test_run_datalad_sibling_exists_false_when_name_absent_from_output(
     )
 
     result = run_datalad_sibling_exists(
-        tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
+        tmp_path, sibling_name="origin", datalad_executable="/usr/bin/datalad"
     )
 
     assert result["success"] is True
     assert result["exists"] is False
 
 
-def test_run_datalad_create_sibling_ria_requires_url(tmp_path: Path):
-    result = run_datalad_create_sibling_ria(
-        tmp_path, ria_url="", datalad_executable="/usr/bin/datalad"
-    )
-
-    assert result["success"] is False
-    assert result["attempted"] is False
-    assert "No RIA store URL" in result["message"]
-
-
-def test_run_datalad_create_sibling_ria_builds_reconfigure_command(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """Sibling creation must be idempotent (--existing reconfigure) so 'Sync
-    now' can be clicked repeatedly throughout an ongoing study without
-    erroring on an already-connected sibling."""
-    seen_commands: list[list[str]] = []
-
-    monkeypatch.setattr(
-        "src.datalad_execution.subprocess.Popen",
-        _fake_popen_capturing_commands(seen_commands),
-    )
-
-    result = run_datalad_create_sibling_ria(
-        tmp_path,
-        ria_url="ria+ssh://user@host/path/to/store",
-        sibling_name="ria-store",
-        alias="my-study",
-        datalad_executable="/usr/bin/datalad",
-    )
-
-    assert result["success"] is True
-    command = seen_commands[0]
-    assert command[0:3] == ["/usr/bin/datalad", "create-sibling-ria", "ria+ssh://user@host/path/to/store"]
-    assert "--existing" in command
-    assert command[command.index("--existing") + 1] == "reconfigure"
-    assert "--new-store-ok" in command
-    assert "-r" in command
-    assert "--alias" in command
-    assert command[command.index("--alias") + 1] == "my-study"
-
-
-def test_run_datalad_create_sibling_ria_reports_failure_detail(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setattr(
-        "src.datalad_execution.subprocess.Popen",
-        lambda *a, **k: _FakeDataladPopen(
-            returncode=1, stdout_lines=["ssh: connect to host failed\n"]
-        ),
-    )
-
-    result = run_datalad_create_sibling_ria(
-        tmp_path, ria_url="ria+ssh://user@host/store", datalad_executable="/usr/bin/datalad"
-    )
-
-    assert result["success"] is False
-    assert "ssh: connect to host failed" in result["message"]
-
-
-def test_run_datalad_create_sibling_ria_streams_output_via_line_callback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """A recursive create-sibling-ria across 100+ nested subdatasets can run
-    for minutes; line_callback must receive each output line as it's
-    produced (not just a final summary), matching the terminal output
-    nested-subdataset registration already provides."""
-    monkeypatch.setattr(
-        "src.datalad_execution.subprocess.Popen",
-        lambda *a, **k: _FakeDataladPopen(
-            returncode=0, stdout_lines=["create-sibling-ria(ok): sub-001 \n", "create-sibling-ria(ok): sub-002 \n"]
-        ),
-    )
-    seen_lines: list[str] = []
-
-    result = run_datalad_create_sibling_ria(
-        tmp_path,
-        ria_url="ria+ssh://user@host/store",
-        datalad_executable="/usr/bin/datalad",
-        line_callback=seen_lines.append,
-    )
-
-    assert result["success"] is True
-    assert seen_lines == ["create-sibling-ria(ok): sub-001", "create-sibling-ria(ok): sub-002"]
-
-
-# ===== Plain (non-RIA) sibling support: for servers not initialized as a =====
-# ===== RIA store, e.g. one only ever used for rsync backups              =====
-
-
-@pytest.mark.parametrize(
-    "url,expected",
-    [
-        ("ria+ssh://user@host/store", True),
-        ("ria+file:///srv/store", True),
-        ("RIA+SSH://user@host/store", True),
-        ("ssh://user@host/path", False),
-        ("user@host:/srv/backups/study", False),
-        ("/local/backup/path", False),
-        ("", False),
-    ],
-)
-def test_is_ria_url_detects_ria_scheme_only(url, expected):
-    assert is_ria_url(url) is expected
+# ===== Plain sibling support =====
 
 
 def test_run_datalad_create_sibling_plain_requires_url(tmp_path: Path):
@@ -295,7 +189,6 @@ def test_run_datalad_create_sibling_plain_builds_reconfigure_command(
     assert "--existing" in command
     assert command[command.index("--existing") + 1] == "reconfigure"
     assert "-r" in command
-    # Unlike the RIA variant, a plain sibling has no `--alias`/`--new-store-ok`.
     assert "--alias" not in command
     assert "--new-store-ok" not in command
 
@@ -318,50 +211,6 @@ def test_run_datalad_create_sibling_plain_reports_failure_detail(
     assert "ssh: connect to host failed" in result["message"]
 
 
-def test_run_datalad_create_sibling_dispatches_ria_url_to_create_sibling_ria(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    seen_commands: list[list[str]] = []
-
-    monkeypatch.setattr(
-        "src.datalad_execution.subprocess.Popen",
-        _fake_popen_capturing_commands(seen_commands),
-    )
-
-    result = run_datalad_create_sibling(
-        tmp_path,
-        remote_url="ria+ssh://user@host/store",
-        sibling_name="ria-store",
-        datalad_executable="/usr/bin/datalad",
-    )
-
-    assert result["success"] is True
-    assert "create-sibling-ria" in seen_commands[0]
-
-
-def test_run_datalad_create_sibling_dispatches_plain_url_to_create_sibling(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    seen_commands: list[list[str]] = []
-
-    monkeypatch.setattr(
-        "src.datalad_execution.subprocess.Popen",
-        _fake_popen_capturing_commands(seen_commands),
-    )
-
-    result = run_datalad_create_sibling(
-        tmp_path,
-        remote_url="user@host:/srv/backups/study",
-        sibling_name="server",
-        datalad_executable="/usr/bin/datalad",
-    )
-
-    assert result["success"] is True
-    command = seen_commands[0]
-    assert "create-sibling" in command
-    assert "create-sibling-ria" not in command
-
-
 def test_run_datalad_push_uses_sibling_name_and_recursive_flag(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -373,14 +222,14 @@ def test_run_datalad_push_uses_sibling_name_and_recursive_flag(
     )
 
     result = run_datalad_push(
-        tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
+        tmp_path, sibling_name="origin", datalad_executable="/usr/bin/datalad"
     )
 
     assert result["success"] is True
     command = seen_commands[0]
     assert command[0:2] == ["/usr/bin/datalad", "push"]
     assert "--to" in command
-    assert command[command.index("--to") + 1] == "ria-store"
+    assert command[command.index("--to") + 1] == "origin"
     assert "-r" in command
 
 
@@ -393,7 +242,7 @@ def test_run_datalad_push_fails_on_nonzero_returncode(
     )
 
     result = run_datalad_push(
-        tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
+        tmp_path, sibling_name="origin", datalad_executable="/usr/bin/datalad"
     )
 
     assert result["success"] is False
@@ -421,7 +270,7 @@ def test_run_datalad_push_fails_on_embedded_failure_marker_despite_zero_returnco
     )
 
     result = run_datalad_push(
-        tmp_path, sibling_name="ria-store", datalad_executable="/usr/bin/datalad"
+        tmp_path, sibling_name="origin", datalad_executable="/usr/bin/datalad"
     )
 
     assert result["success"] is False
@@ -440,7 +289,7 @@ def test_run_datalad_push_streams_output_via_line_callback(
 
     result = run_datalad_push(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         datalad_executable="/usr/bin/datalad",
         line_callback=seen_lines.append,
     )
@@ -453,14 +302,13 @@ def test_run_datalad_push_streams_output_via_line_callback(
     "func,kwargs",
     [
         (run_datalad_sibling_exists, {}),
-        (run_datalad_create_sibling_ria, {"ria_url": "ria+ssh://user@host/store"}),
         (run_datalad_push, {}),
     ],
 )
-def test_ria_functions_report_missing_datalad_executable_without_running_anything(
+def test_functions_report_missing_datalad_executable_without_running_anything(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, func, kwargs
 ):
-    """Every RIA function must fail closed (never attempt a command) when no
+    """Every function must fail closed (never attempt a command) when no
     datalad executable is resolvable, rather than crashing on a subprocess
     call with an empty command list."""
 
@@ -493,7 +341,7 @@ def test_push_verify_true_when_no_annexed_content_is_outstanding(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[tmp_path],
         datalad_executable="/usr/bin/datalad",
     )
@@ -503,38 +351,10 @@ def test_push_verify_true_when_no_annexed_content_is_outstanding(
     assert result["unverified_paths"] == []
 
 
-def test_push_verify_uses_storage_sibling_name_not_git_sibling_name(
+def test_push_verify_checks_the_sibling_name_directly(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """`git annex find --not --in` needs a remote UUID git-annex can resolve,
-    which only the `-storage` half of the RIA sibling pair has -- checking
-    against the plain git remote name would either error or silently check
-    the wrong thing."""
-    seen_commands: list[list[str]] = []
-
-    def _fake_run(command, **kwargs):
-        seen_commands.append([str(item) for item in command])
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr("src.datalad_execution.subprocess.run", _fake_run)
-
-    run_datalad_push_verify(
-        tmp_path,
-        sibling_name="ria-store",
-        dataset_roots=[tmp_path],
-        datalad_executable="/usr/bin/datalad",
-    )
-
-    command = seen_commands[0]
-    assert command[-1] == "ria-store-storage"
-    assert "--not" in command and "--in" in command
-
-
-def test_push_verify_checks_plain_sibling_name_directly_when_not_ria(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """A plain sibling has no `-storage` companion -- annexed content is
-    pushed straight to `<name>`, so that's what must be checked."""
+    """Annexed content is pushed straight to `<name>`, so that is what must be checked."""
     seen_commands: list[list[str]] = []
 
     def _fake_run(command, **kwargs):
@@ -547,7 +367,6 @@ def test_push_verify_checks_plain_sibling_name_directly_when_not_ria(
         tmp_path,
         sibling_name="server",
         dataset_roots=[tmp_path],
-        is_ria=False,
         datalad_executable="/usr/bin/datalad",
     )
 
@@ -567,7 +386,7 @@ def test_push_verify_false_when_a_file_is_outstanding_on_the_sibling(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[tmp_path],
         datalad_executable="/usr/bin/datalad",
     )
@@ -593,7 +412,7 @@ def test_push_verify_false_and_unchecked_when_annex_find_itself_fails(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[tmp_path],
         datalad_executable="/usr/bin/datalad",
     )
@@ -622,7 +441,7 @@ def test_push_verify_checks_every_dataset_root_and_aggregates_failures(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[clean_root, dirty_root],
         datalad_executable="/usr/bin/datalad",
     )
@@ -644,7 +463,7 @@ def test_push_verify_false_when_annex_find_times_out(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[tmp_path],
         datalad_executable="/usr/bin/datalad",
         timeout_seconds=5,
@@ -665,7 +484,7 @@ def test_push_verify_reports_missing_executable_without_marking_verified(
 
     result = run_datalad_push_verify(
         tmp_path,
-        sibling_name="ria-store",
+        sibling_name="origin",
         dataset_roots=[tmp_path],
         datalad_executable="",
     )

@@ -29,8 +29,11 @@ _GATED_PROJECT_PREFIXES = (
     "/api/projects/anc-export", "/api/projects/openminds-export", "/api/projects/template-export",
     "/api/projects/export/start", "/api/projects/export/deface", "/api/projects/export/git-lfs",
     "/api/projects/datalad-server/publish", "/api/projects/datalad-server/sync/start",
-    "/api/projects/datalad-server/finalize/start", "/api/projects/datalad/remove-scans-tsv",
+    "/api/projects/datalad/put-on-server", "/api/projects/datalad/get-data",
+    "/api/projects/datalad/remove-scans-tsv",
 )
+# /api/projects/datalad/open-from-server stays open: it needs no project (it creates one), like its CLI twin, which
+# has no --project to gate.
 
 
 def is_gate_exempt(path: str, method: str) -> bool:

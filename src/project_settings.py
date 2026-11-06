@@ -57,26 +57,6 @@ def adopt_legacy_project_identity(project_root) -> None:
     Path(path).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def save_datalad_server_config(project_root: Path, ria_url=None, sibling_name=None, alias=None) -> dict:
-    from src.datalad_execution import sibling_label_problem
-
-    sibling_name = str(sibling_name or "").strip() or "origin"
-    alias = str(alias or "").strip()
-    for label, what in ((sibling_name, "sibling name"), (alias, "alias")):
-        if label and (problem := sibling_label_problem(label, what)):
-            raise ValueError(problem)
-    config = load_config(str(project_root))
-    config.datalad_ria_store_url = str(ria_url or "").strip() or None
-    config.datalad_sibling_name = sibling_name
-    config.datalad_sibling_alias = alias or None
-    return {
-        "ria_url": config.datalad_ria_store_url,
-        "sibling_name": config.datalad_sibling_name,
-        "sibling_alias": config.datalad_sibling_alias,
-        "config_path": _save(config, project_root),
-    }
-
-
 def save_rsync_config(project_root: Path, remote_target=None, remote_label=None, exclude_patterns=None) -> dict:
     config = load_config(str(project_root))
     config.rsync_remote_target = str(remote_target or "").strip() or None

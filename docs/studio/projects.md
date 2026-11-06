@@ -157,9 +157,10 @@ older ones are in a pull-down.
 ## Settings
 
 Global settings (libraries, monitoring, terminal, study-application import, beginner
-help mode, DataLad for new projects, and the DataLad card of the loaded project) live on
+help mode, DataLad for new projects, your name and email for snapshots) live on
 their own **Settings** page (gear icon in the navbar). On the command line:
-`prism_tools.py settings show|set`.
+`prism_tools.py settings show|set`. DataLad for the open project has its own page:
+[DataLad](datalad.md).
 
 ![PRISM Studio Settings page](../_static/screenshots/prism-studio-settings.png)
 

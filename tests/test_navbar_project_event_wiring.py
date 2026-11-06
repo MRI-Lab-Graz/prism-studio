@@ -21,6 +21,14 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));", content)
         self.assertIn("setProjectGatedLinkState('surveyExportLink', Boolean(nextPath)", content)
 
+    def test_navbar_count_reads_the_one_datalad_state(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("/api/projects/datalad/state", content)
+        self.assertIn("unsaved_count", content)
+        self.assertNotIn("clean-status", content)
+        self.assertNotIn("datalad_clean", content)
+
     def test_datalad_only_changes_do_not_emit_project_changed(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
@@ -41,17 +49,13 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn('id="navbarDataladToggleFeedback"', content)
         self.assertIn('data-can-enable="{{ \'true\' if current_project_datalad.can_enable else \'false\' }}"', content)
         self.assertIn("function setNavbarDataladFeedback(message, kind = 'muted', toggleLabel = '')", content)
-        self.assertIn("async function saveNavbarDataladSnapshot()", content)
-        self.assertIn("window.prompt('Commit message for this checkpoint'", content)
-        # The POST itself lives in the shared module (tested in datalad-save.test.js); the navbar only calls it.
-        self.assertIn("js/shared/datalad-save.js", content)
-        self.assertIn("saveDataladSnapshot(navbarFetchWithApiFallback, saveMessage)", content)
-        self.assertNotIn("navbarFetchWithApiFallback('/api/projects/datalad/save'", content)
-        self.assertIn("function getNavbarDataladOperationState()", content)
-        self.assertIn("function setNavbarDataladOperationState(active, source = '')", content)
+        # The navbar item is a link to the DataLad page; it no longer saves on click (Save is on the page).
+        self.assertIn("href=\"{{ url_for('projects.datalad_page') }}\"", content)
+        self.assertNotIn("saveNavbarDataladSnapshot", content)
+        self.assertNotIn("navbarDataladToggle?.addEventListener('click'", content)
+        self.assertNotIn("prismDataladOperationState", content)
         self.assertIn("function buildNavbarAutosaveFailureMessage(autosaveResult)", content)
         self.assertIn("const autosaveMessage = buildNavbarAutosaveFailureMessage(data.autosave_previous);", content)
-        self.assertIn("navbarDataladToggle?.addEventListener('click', async function(e)", content)
         self.assertIn("window.setNavbarDataladFeedback = setNavbarDataladFeedback;", content)
         self.assertNotIn("const navbarDataladSaveBtn = document.getElementById('navbarDataladSaveBtn');", content)
         self.assertNotIn("const navbarDataladEnableBtn = document.getElementById('navbarDataladEnableBtn');", content)
@@ -70,15 +74,9 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn("icon?.classList.add('text-success');", js_snippet)
         self.assertIn("icon?.classList.add('text-dark');", js_snippet)
         self.assertIn("icon?.classList.add('text-muted');", js_snippet)
-        # Badge is hidden entirely unless the loaded project is a DataLad dataset.
-        self.assertIn(
-            '<div id="navbarDataladStatusShell"{% if not current_project_datalad.enabled %} class="d-none"{% endif %}>',
-            content,
-        )
-        self.assertIn(
-            "getElementById('navbarDataladStatusShell')?.classList.toggle('d-none', !(nextPath && dataladState.enabled));",
-            js_snippet,
-        )
+        # The item is always shown (no project, DataLad off): it is the way to the DataLad page.
+        self.assertNotIn("navbarDataladStatusShell", content)
+        self.assertNotIn("classList.toggle('d-none', !(nextPath && dataladState.enabled))", js_snippet)
 
     def test_navbar_recent_project_loader_uses_credentialed_fallback_fetch(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")

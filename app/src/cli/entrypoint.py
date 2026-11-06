@@ -73,10 +73,12 @@ from src.cli.commands.merge_versions import cmd_merge_versions
 from src.cli.commands.publish import cmd_publish
 from src.cli.commands.save_gate import cmd_save_gate
 from src.cli.commands.datalad import (
-    cmd_datalad_config,
     cmd_datalad_doctor,
     cmd_datalad_enable,
     cmd_datalad_identity,
+    cmd_datalad_get_data,
+    cmd_datalad_open_from_server,
+    cmd_datalad_put_on_server,
     cmd_datalad_save,
     cmd_datalad_status,
     cmd_datalad_sync,
@@ -267,7 +269,6 @@ def main() -> None:
             "participants_save_schema": cmd_participants_save_schema,
             "participants_fix_bids": cmd_participants_fix_bids,
             "datalad_doctor": cmd_datalad_doctor,
-            "datalad_config": cmd_datalad_config,
             "datalad_sync": cmd_datalad_sync,
             "preregistration_draft": cmd_preregistration_draft,
             "methods_generate": cmd_methods_generate,
@@ -281,6 +282,9 @@ def main() -> None:
             "datalad_save": cmd_datalad_save,
             "datalad_update": cmd_datalad_update,
             "datalad_status": cmd_datalad_status,
+            "datalad_put_on_server": cmd_datalad_put_on_server,
+            "datalad_open_from_server": cmd_datalad_open_from_server,
+            "datalad_get_data": cmd_datalad_get_data,
             "project_set_schema_version": cmd_project_set_schema_version,
             "rsync_config": cmd_rsync_config,
             "rsync_sync": cmd_rsync_sync,

@@ -127,10 +127,85 @@ def test_the_cli_and_studio_refuse_an_invalid_dataset_the_same_way(lab, capsys):
         with pytest.raises(SystemExit) as refused:
             cmd_datalad_sync(SimpleNamespace(project=str(mine), sibling_name=None, as_identity="Ada <ada@example.org>", json=True))
         cli = json.loads(capsys.readouterr().out)
-        studio._create_ria_job("parity", kind="sync")
+        studio._create_job("parity", kind="sync")
         studio._run_sync_job("parity", other, {})
-        job = studio._get_ria_job("parity")
+        job = studio._get_job("parity")
     assert refused.value.code == 1 and job["status"] == "error"
     assert cli["reason"] == job["result"]["reason"] == "validation_errors"
     assert cli["errors"] == job["result"]["errors"] == ["bad name"]
     assert not {"mine.txt", "other.txt"} & set(_server_files(server))
+
+
+def test_the_cli_and_studio_send_an_acknowledged_invalid_dataset_the_same_way(lab, capsys):
+    import json
+    from types import SimpleNamespace
+
+    import src.web.blueprints.projects_datalad_server_blueprint as studio
+    from src.cli.commands.datalad import cmd_datalad_sync
+
+    server, mine, other = lab
+    _save(mine, "mine.txt")
+    with patch("src.share_publish.validate_for_publish", return_value=["bad name"]):
+        cmd_datalad_sync(SimpleNamespace(
+            project=str(mine), sibling_name=None, as_identity="Ada <ada@example.org>", json=True, allow_invalid=True,
+        ))
+        cli = json.loads(capsys.readouterr().out)
+    assert _sync(other)["success"] is True  # other gets mine.txt first (sync never merges)
+    _save(other, "other.txt")
+    with patch("src.share_publish.validate_for_publish", return_value=["bad name"]):
+        studio._create_job("ack", kind="sync")
+        studio._run_sync_job("ack", other, {"allow_invalid": True})
+        job = studio._get_job("ack")
+    assert job["status"] == "complete", job
+    assert cli["reason"] == job["result"]["reason"] == "pushed_with_errors"
+    assert cli["errors"] == job["result"]["errors"] == ["bad name"]
+    assert {"mine.txt", "other.txt"} <= set(_server_files(server))
+
+
+def _add_subject(root, name="sub-03"):
+    """A new nested subject dataset with a text file, registered in the parent (as `datalad enable` does)."""
+    _run("datalad", "create", "-c", "text2git", "-d", ".", name, cwd=root)
+    (root / name / "notes.txt").write_text("new subject\n", encoding="utf-8")
+    _run("datalad", "save", "-r", "-m", f"add {name}", cwd=root)
+
+
+def test_a_subject_added_after_the_server_reaches_it_with_sync(lab, tmp_path):
+    from src.datalad_clone import open_from_server
+
+    server, mine, _ = lab
+    _add_subject(mine)
+    result = _sync(mine)
+    assert result["success"] is True, result
+    assert "sub-03" in _server_files(server)
+    teammate = tmp_path / "teammate"
+    opened = open_from_server(str(server), teammate)
+    assert opened["success"] is True, opened
+    assert (teammate / "sub-03" / "notes.txt").read_text(encoding="utf-8") == "new subject\n"
+
+
+def test_a_refused_sync_creates_nothing_on_the_server(lab):
+    server, mine, _ = lab
+    _add_subject(mine)
+    result = _sync(mine, errors=["bad name"])
+    assert result["success"] is False and result["reason"] == "validation_errors"
+    assert not (server / "sub-03").exists()
+
+
+def test_a_failed_update_that_is_not_a_divergence_does_not_blame_two_people(lab):
+    from src.project_manager import ProjectManager
+
+    server, mine, _ = lab
+    _run("git", "remote", "set-url", "origin", str(server.parent / "gone"), cwd=mine)
+    result = ProjectManager().update_datalad_from_server(mine)
+    assert result["success"] is False
+    assert "both saved" not in result["error"]
+
+
+
+def test_get_latest_with_a_subject_that_is_not_on_the_server_yet_is_not_an_error(lab):
+    from src.project_manager import ProjectManager
+
+    _, mine, _ = lab
+    _add_subject(mine)  # sub-03 has no server copy until the next sync, so there is nothing to get for it
+    result = ProjectManager().update_datalad_from_server(mine)
+    assert result["success"] is True, result

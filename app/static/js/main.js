@@ -8,6 +8,7 @@ import * as ProjectsModule from './modules/projects/index.js?v=20260515-4';
 import * as ConverterModule from './modules/converter/index.js';
 import * as SurveyModule from './modules/survey/index.js';
 import * as ToolsModule from './modules/tools/index.js';
+import { initializeDataladPage } from './modules/datalad/page.js';
 
 // Make modules available globally for page scripts
 // This maintains compatibility while providing modular structure
@@ -40,5 +41,14 @@ if (document.getElementById('settingsRoot')) {
         document.addEventListener('DOMContentLoaded', () => ProjectsModule.initializeSettingsPage());
     } else {
         ProjectsModule.initializeSettingsPage();
+    }
+}
+
+// Initialize the DataLad page (the next step for the current project, everything else under "More").
+if (document.getElementById('dataladRoot')) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => initializeDataladPage());
+    } else {
+        initializeDataladPage();
     }
 }

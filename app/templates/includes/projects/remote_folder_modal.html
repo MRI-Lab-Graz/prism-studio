@@ -1,0 +1,43 @@
+<!-- Remote SSH Folder Browser Modal (shared by the rsync destination and the DataLad page's server location) -->
+<div class="modal fade" id="remoteFolderBrowserModal" tabindex="-1" aria-labelledby="remoteFolderBrowserModalLabel" aria-hidden="true" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="remoteFolderBrowserModalLabel">
+                    <i class="fas fa-folder-open text-info me-2"></i>Choose folder on <code id="remoteBrowserHostLabel">…</code>
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="px-3 pt-3 pb-2 border-bottom bg-light">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-outline-secondary" id="remoteBrowserUp" title="Go up">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <code class="small text-truncate flex-grow-1" id="remoteBrowserCurrentPath" style="word-break:break-all;"></code>
+                        <button class="btn btn-sm btn-outline-secondary" id="remoteBrowserNewFolderBtn" title="New folder">
+                            <i class="fas fa-folder-plus me-1"></i>New folder
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-2" id="remoteBrowserNewFolderRow" style="display:none;">
+                        <input type="text" class="form-control form-control-sm" id="remoteBrowserNewFolderInput" placeholder="folder-name" autocomplete="off">
+                        <button type="button" class="btn btn-sm btn-info" id="remoteBrowserNewFolderCreateBtn">Create</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="remoteBrowserNewFolderCancelBtn">Cancel</button>
+                    </div>
+                    <div class="text-danger small mt-2" id="remoteBrowserError" role="alert" style="display:none;"></div>
+                </div>
+                <div style="min-height:260px; max-height:380px; overflow-y:auto;" id="remoteBrowserList" aria-live="polite">
+                    <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
+                        <span><i class="fas fa-spinner fa-spin me-2"></i>Loading…</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="remoteBrowserSelectBtn" disabled>
+                    <i class="fas fa-check me-1"></i>Select This Folder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

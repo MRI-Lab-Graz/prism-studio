@@ -1,4 +1,4 @@
-"""Settings page > DataLad card for the loaded project, against the real datalad / git-annex."""
+"""The DataLad page (/projects/datalad) for the loaded project, against the real datalad / git-annex."""
 
 import shutil
 import subprocess
@@ -24,9 +24,12 @@ def open_datalad_card(page, studio_url, project):
     page.fill("#existingPath", str(project))
     page.click("#loadProjectBtn")
     page.wait_for_selector("#projectBoxSaveBtn")
-    page.goto(f"{studio_url}/settings#dataladSection")  # the card lives on the Settings page
-    page.wait_for_selector("#dataladSectionCard", state="visible")
-    expect(page.locator("#projectBoxDataladStateBadge")).to_be_visible()
+    page.goto(f"{studio_url}/projects/datalad")
+    expect(page.locator("#dataladStepTitle")).not_to_have_text("Checking this project...")
+
+
+def action(page, action_id):
+    return page.locator(f'#dataladStepCard [data-action="{action_id}"]')
 
 
 def enable_datalad(page):
@@ -35,22 +38,22 @@ def enable_datalad(page):
     # Wait for the request itself: a status poll flips the badge to "Tracked" while the enable
     # request is still running, and its final commit would sweep up files written in that window.
     with page.expect_response("**/api/projects/datalad/enable", timeout=120000):
-        page.click("#projectBoxDataladEnableBtn")
-    expect(page.locator("#projectBoxDataladStateBadge")).to_have_text("Tracked", timeout=120000)
-    expect(page.locator("#projectBoxDataladHint")).to_contain_text("structure is complete", timeout=120000)
+        action(page, "enable").click()
+    # the next step after switching on is putting the project on a server; snapshots stay local until then
+    expect(page.locator("#dataladStepTitle")).to_have_text("Not on a server yet", timeout=120000)
     return messages
 
 
 def test_enabling_datalad_asks_first_and_cancelling_changes_nothing(bare_page, studio_url, project):
     open_datalad_card(bare_page, studio_url, project)
-    expect(bare_page.locator("#projectBoxDataladStateBadge")).to_have_text("Not tracked")
-    expect(bare_page.locator("#projectBoxDataladSaveBtn")).to_be_disabled()
+    expect(action(bare_page, "enable")).to_have_text("Enable DataLad")
+    expect(action(bare_page, "save")).to_have_count(0)
     bare_page.once("dialog", lambda dialog: dialog.dismiss())
 
-    bare_page.click("#projectBoxDataladEnableBtn")
+    action(bare_page, "enable").click()
 
     bare_page.wait_for_timeout(1000)
-    expect(bare_page.locator("#projectBoxDataladStateBadge")).to_have_text("Not tracked")
+    expect(action(bare_page, "enable")).to_be_visible()
     assert not (project / ".git").exists()
 
 
@@ -61,16 +64,23 @@ def test_enabling_datalad_tracks_the_project(bare_page, studio_url, project):
 
     assert messages and "DataLad" in messages[0]
     assert (project / ".datalad").is_dir() and (project / ".git").is_dir()
-    expect(bare_page.locator("#projectBoxDataladEnableBtn")).to_be_disabled()
-    expect(bare_page.locator("#projectBoxDataladSaveBtn")).to_be_enabled()
+    expect(action(bare_page, "enable")).to_have_count(0)
+    expect(action(bare_page, "put-on-server")).to_be_enabled()
+    expect(action(bare_page, "save")).to_be_enabled()
 
 
 def save_snapshot(page, message=None):
-    def answer(dialog):
-        dialog.accept(message) if message is not None else dialog.accept()
+    # The test project is not PRISM-valid: the save gate refuses first (400) and asks "Save anyway?"; say yes.
+    page.allowed_http[400] = "/api/projects/datalad/save"
 
-    page.once("dialog", answer)
-    page.click("#projectBoxDataladSaveBtn")
+    def answer(dialog):
+        if dialog.type == "prompt":
+            dialog.accept(message) if message is not None else dialog.accept()
+        else:
+            dialog.accept()
+
+    page.on("dialog", answer)
+    action(page, "save").click()
 
 
 TEXT_FILES = {
@@ -105,8 +115,8 @@ def test_snapshot_commits_new_files_and_never_annexes_text_formats(bare_page, st
 
     save_snapshot(bare_page)
 
-    expect(bare_page.locator("#projectBoxDataladFeedback")).to_contain_text("saved")
-    expect(bare_page.locator("#projectBoxDataladFeedback")).to_contain_text("Checkpoint")  # the message used
+    expect(bare_page.locator("#dataladJobResult")).to_contain_text("saved")
+    expect(bare_page.locator("#dataladJobResult")).to_contain_text("Save PRISM project changes")  # the backend's default
     assert int(git(project, "rev-list", "--count", "HEAD")) > commits_before
     assert git(project, "status", "--porcelain") == ""  # everything was saved
     for relative in TEXT_FILES:
@@ -123,7 +133,7 @@ def test_snapshot_with_nothing_new_says_so_instead_of_pretending(bare_page, stud
 
     save_snapshot(bare_page)
 
-    expect(bare_page.locator("#projectBoxDataladFeedback")).to_contain_text("No DataLad changes")
+    expect(bare_page.locator("#dataladJobResult")).to_contain_text("No DataLad changes")
     assert int(git(project, "rev-list", "--count", "HEAD")) == commits
 
 
@@ -134,8 +144,9 @@ def test_snapshot_uses_the_message_the_user_typed(bare_page, studio_url, project
 
     save_snapshot(bare_page, message="After pilot week 1")
 
-    expect(bare_page.locator("#projectBoxDataladFeedback")).to_contain_text("After pilot week 1")
-    assert git(project, "log", "-1", "--format=%s") == "After pilot week 1"
+    expect(bare_page.locator("#dataladJobResult")).to_contain_text("After pilot week 1")
+    # the acknowledged invalid save is recorded in the message (it travels with the commit)
+    assert git(project, "log", "-1", "--format=%s") == "After pilot week 1 [saved with 1 validation error(s)]"
 
 
 def pending_changes(project):
@@ -184,33 +195,34 @@ def test_init_on_a_bids_dataset_with_datalad_switched_on_tracks_it(bare_page, st
     assert_tracked_and_text_is_not_annexed(root, "project.json", "participants.tsv", "dataset_description.json")
 
 
-def test_sync_to_an_unreachable_server_explains_what_is_wrong(bare_page, studio_url, project):
+def test_put_on_an_unreachable_server_explains_what_is_wrong(bare_page, studio_url, project):
     if not shutil.which("ssh"):
         pytest.skip("ssh is not installed")
     open_datalad_card(bare_page, studio_url, project)
     enable_datalad(bare_page)
-    bare_page.goto(f"{studio_url}/projects/share")
-    if not bare_page.locator("#dataladServerUrl").is_visible():
-        bare_page.locator('[data-bs-target="#pushServerSection"]').click()
-    bare_page.fill("#dataladServerUrl", "ssh://nobody@no-such-host.invalid/srv/x")
+    action(bare_page, "put-on-server").click()
+    bare_page.fill("#dataladLocation", "nobody@no-such-host.invalid:/srv/x")
 
-    bare_page.click("#dataladServerSyncBtn")
+    bare_page.click("#dataladLocationStartBtn")
 
-    result = bare_page.locator("#dataladServerResult")
-    expect(result).to_contain_text("Cannot reach the server", timeout=120000)
-    expect(result).to_contain_text("Details:")
+    # The test project has a validation error: the errors are listed first, with the acknowledgement button.
+    send_anyway = bare_page.locator("#dataladSendAnywayBtn")
+    expect(send_anyway).to_have_text("Send anyway, I understand this dataset has 1 errors", timeout=120000)
+    send_anyway.click()
+
+    result = bare_page.locator("#dataladJobResult .alert-danger")
+    expect(result).to_be_visible(timeout=120000)
+    expect(result).not_to_be_empty()
+    expect(action(bare_page, "put-on-server")).to_be_enabled()  # the step is still offered, nothing is locked
 
 
-def test_saving_the_server_settings_refuses_a_sibling_name_or_alias_that_is_not_a_plain_label(bare_page, studio_url, project):
-    request = bare_page.context.request
+def test_without_a_project_the_page_leads_with_open_from_server(bare_page, studio_url):
+    bare_page.goto(f"{studio_url}/projects/datalad")
 
-    def save(**fields):
-        return request.post(
-            f"{studio_url}/api/projects/datalad-server/config",
-            data={"project_path": str(project), "ria_url": "ria+ssh://host/store", **fields},
-        )
-
-    assert save(sibling_name="lab-server", alias="my_study.v2").ok
-    for bad in ({"sibling_name": "-x"}, {"sibling_name": "a b"}, {"alias": "../../evil"}, {"alias": "a/b"}):
-        response = save(**bad)
-        assert response.status == 400 and "plain label" in response.json()["error"], bad
+    expect(bare_page.locator("#dataladStepTitle")).to_have_text("No project open")
+    expect(action(bare_page, "open-from-server")).to_have_text("Open from server...")
+    action(bare_page, "open-from-server").click()
+    expect(bare_page.locator("#dataladTarget")).to_be_visible()  # asks where to put the copy
+    for more in ("get-latest", "get-data", "doctor"):
+        expect(bare_page.locator(f'#dataladMore [data-action="{more}"]')).to_be_visible()
+    expect(bare_page.locator("#navbarDataladToggle")).to_be_visible()  # the navbar item shows without a project

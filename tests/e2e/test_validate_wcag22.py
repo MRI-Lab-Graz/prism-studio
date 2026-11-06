@@ -22,6 +22,7 @@ def test_no_aria_attribute_is_used_where_it_is_not_allowed(app_page, studio_url)
 
 def test_links_in_running_text_are_underlined(app_page, studio_url):
     app_page.goto(f"{studio_url}{URL}", wait_until="networkidle")
+    app_page.evaluate("document.documentElement.setAttribute('data-wcag', '')")  # these rules belong to the WCAG enhanced view
     plain = app_page.evaluate(
         "[...document.querySelectorAll('p a, li a, small a')]"
         ".filter(a => !a.closest('.btn, .badge, .nav-link, .dropdown-item, nav')"
@@ -32,6 +33,7 @@ def test_links_in_running_text_are_underlined(app_page, studio_url):
 
 def test_tabbing_never_hides_the_focused_control_behind_the_sticky_navbar(app_page, studio_url):
     app_page.goto(f"{studio_url}{URL}", wait_until="networkidle")
+    app_page.evaluate("document.documentElement.setAttribute('data-wcag', '')")  # these rules belong to the WCAG enhanced view
     bar = app_page.evaluate("document.querySelector('nav.sticky-top').getBoundingClientRect().bottom")
     # Chromium centres a focused control by itself; Firefox and Safari scroll it only as far as the edge,
     # which would leave it under the bar unless the page reserves the bar's height.

@@ -324,10 +324,22 @@ def share_page():
     rsync backup for the active project.
 
     Split out from the main Projects page so distribution/archival tasks
-    (export presets, RIA store push, remote backup) don't compete with
+    (export presets, server push, remote backup) don't compete with
     project creation and study metadata authoring on the same scroll.
     """
     return render_template("share.html", current_project=get_current_project())
+
+
+@projects_bp.route("/projects/datalad")
+def datalad_page():
+    """Render the DataLad page: the one next step for the current project (from GET /api/projects/datalad/state),
+    everything else under "More". Opens without a project ("Open from server...")."""
+    from src.datalad_get_data import filters_from_options
+
+    # Get data's scope starts at the CLI's defaults (`prism_tools datalad get-data` without options).
+    return render_template(
+        "datalad.html", current_project=get_current_project(), scope_defaults=filters_from_options({})
+    )
 
 
 @projects_bp.route("/api/projects/current", methods=["GET"])
@@ -602,16 +614,18 @@ def datalad_doctor():
     return handle_datalad_doctor()
 
 
-@projects_bp.route("/api/projects/datalad/clean-status", methods=["GET"])
-def datalad_clean_status():
-    """Return whether the current project's DataLad working tree is clean."""
-    current_project = get_current_project()
-    project_path = str(current_project.get("path") or "").strip()
+@projects_bp.route("/api/projects/datalad/state", methods=["GET"])
+def datalad_state_route():
+    """DataLad state and next step of the current project: what `datalad status --json` prints."""
+    from src.datalad_state import datalad_state
+
+    project_path = str(get_current_project().get("path") or "").strip()
     if not project_path:
         return jsonify({"success": False, "error": "No current project loaded."}), 400
-
-    result = _project_manager.check_datalad_clean_status(project_path)
-    return jsonify({"success": True, "datalad_clean": result})
+    flag = lambda name: request.args.get(name) in ("1", "true")  # noqa: E731
+    return jsonify(datalad_state(
+        project_path, check_server=flag("check_server"), validate=flag("validate"), check_nested=flag("check_nested")
+    ))
 
 
 @projects_bp.route("/api/projects/remote-source-status", methods=["POST"])

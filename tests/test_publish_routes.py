@@ -42,6 +42,7 @@ def client():
     app.add_url_rule("/specifications", "specifications", lambda: "")
     projects_stub = Blueprint("projects", __name__)
     projects_stub.add_url_rule("/projects", "projects_page", lambda: "")
+    projects_stub.add_url_rule("/projects/datalad", "datalad_page", lambda: "")
     app.register_blueprint(projects_stub)
     for bp_name, rule, ep in [("tools_template_editor", "/template-editor", "template_editor"), ("json_editor", "/editor", "editor_index")]:
         stub = Blueprint(bp_name, bp_name)
@@ -104,6 +105,18 @@ def test_publish_route_ignores_any_client_valid_flag(client, monkeypatch):
     assert resp.status_code == 200 and "valid" not in seen
 
 
+@pytest.mark.parametrize("body, expected", [({}, False), ({"allow_invalid": True}, True)])
+def test_publish_route_passes_the_acknowledgement_like_the_cli_flag(client, monkeypatch, body, expected):
+    seen = {}
+    monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
+    monkeypatch.setattr(
+        srv, "publish_to_server",
+        lambda root, **kw: seen.update(kw) or {"success": True, "reason": "pushed", "errors": [], "message": "ok"},
+    )
+    client.post("/api/projects/datalad-server/publish", json={"project_path": "/p", **body})
+    assert seen["allow_invalid"] is expected
+
+
 def test_publish_route_bad_email_is_400(client, monkeypatch):
     monkeypatch.setattr(srv, "_resolve_project_root_path", lambda p: Path("/p"))
     resp = client.post("/api/projects/datalad-server/publish", json={"project_path": "/p", "name": "A", "email": "nope"})
@@ -145,8 +158,8 @@ def test_navbar_rechecks_datalad_changes_after_a_validator_run_only(client):
     assert call % "true" in client.get("/results/rid").get_data(as_text=True)
     other = client.get("/validate").get_data(as_text=True)
     assert call % "false" in other and "navbarDataladPendingCount" in other
-    # the navbar save loads the shared "refused, save anyway?" helper from a real static URL
-    assert "/static/js/shared/datalad-save.js?v=t" in other
+    # the navbar item links to the DataLad page, which saves; the navbar itself no longer does
+    assert 'href="/projects/datalad"' in other
 
 
 def test_publish_route_uncommitted_changes_is_400(client, monkeypatch):

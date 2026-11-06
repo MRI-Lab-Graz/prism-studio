@@ -102,6 +102,11 @@ and where, and common failures.
     <span class="prism-chapter-title">Share / Export</span>
     <span class="prism-chapter-outcome">Where a project leaves Studio — anonymized ZIP, plain export, or archive</span>
   </a>
+  <a class="prism-chapter-card" href="datalad.html">
+    <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10"/><path d="M18 10c0 4-6 3-12 7"/></svg></span>
+    <span class="prism-chapter-title">DataLad</span>
+    <span class="prism-chapter-outcome">Snapshots of the project, shared with your team through the lab server</span>
+  </a>
   <a class="prism-chapter-card" href="specifications.html">
     <span class="prism-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></svg></span>
     <span class="prism-chapter-title">Specifications</span>
@@ -134,5 +139,6 @@ survey_generator
 survey_customizer
 recipe_builder
 export
+datalad
 specifications
 ```

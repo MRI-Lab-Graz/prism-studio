@@ -28,9 +28,12 @@ from src.share_publish import (
 )
 
 __all__ = [
+    "ACK_INVALID_ENV",
     "SAVE_GATE_MARKER",
     "SAVE_HOOK_MARKER",
     "SaveCheck",
+    "ack_env",
+    "acknowledged",
     "audit_save",
     "check_save",
     "has_save_hook",
@@ -38,6 +41,22 @@ __all__ = [
     "install_save_hooks",
     "validate_subject_for_save",
 ]
+
+
+# Set only for the one command the user acknowledged (--allow-invalid / "Save anyway"); the git hooks
+# inherit it and let that commit or push through. Advisory, like the hooks: anyone can set it in a terminal;
+# the audit log and the snapshot message record every acknowledged invalid save or push.
+ACK_INVALID_ENV = "PRISM_ACK_INVALID"
+
+
+def acknowledged() -> bool:
+    return os.environ.get(ACK_INVALID_ENV) == "1"
+
+
+def ack_env() -> dict[str, str]:
+    """The environment for the one acknowledged child process (this process never carries the variable,
+    so a commit started meanwhile by another Studio thread stays gated)."""
+    return {**os.environ, ACK_INVALID_ENV: "1"}
 
 
 @dataclass(frozen=True)
@@ -114,6 +133,8 @@ def check_save(project_root) -> SaveCheck:
         )
     except (Exception, SystemExit) as exc:  # fail closed
         return SaveCheck(False, [f"Validation could not run: {exc}"], "validator_crash")
+    if errors and acknowledged():
+        return SaveCheck(True, errors, "acknowledged")
     return SaveCheck(not errors, errors, "valid" if not errors else "validation_errors")
 
 
@@ -215,7 +236,7 @@ def audit_save(project_root, check: SaveCheck) -> None:
             Path(project_root),
             identity=resolve_identity(),
             sibling="",
-            result="save_allowed" if check.allowed else "save_refused",
+            result="save_acknowledged" if check.reason == "acknowledged" else "save_allowed" if check.allowed else "save_refused",
             error_count=len(check.errors),
         )
     except Exception:

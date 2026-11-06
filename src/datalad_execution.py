@@ -166,43 +166,16 @@ def run_datalad_get_paths(
         )
         return (False, detail or "Unknown DataLad error.")
 
+    # No `--on-failure`: it is a global DataLad option that `get` rejects, and `ignore` would hide failures anyway.
     for chunk in target_chunks:
-        active_command = [*base_command, "--on-failure", "ignore", *chunk]
-        ok, error_message = _run_get_command(active_command)
+        ok, error_message = _run_get_command([*base_command, "--", *chunk])
 
-        if (
-            not ok
-            and no_data
-            and any(
-                fragment in str(error_message).lower()
-                for fragment in (
-                    "unknown argument: -n",
-                    "unrecognized arguments: -n",
-                    "unknown option: -n",
-                )
-            )
+        if not ok and no_data and any(
+            fragment in str(error_message).lower()
+            for fragment in ("unknown argument: -n", "unrecognized arguments: -n", "unknown option: -n")
         ):
-            active_command = [
-                *_without_no_data_flag(base_command),
-                "--on-failure",
-                "ignore",
-                *chunk,
-            ]
-            ok, error_message = _run_get_command(active_command)
-
-        if (
-            not ok
-            and "--on-failure" in str(error_message).lower()
-            and (
-                "unknown argument" in str(error_message).lower()
-                or "unrecognized arguments" in str(error_message).lower()
-            )
-        ):
-            active_command = [*(
-                _without_no_data_flag(base_command)
-                if no_data else base_command
-            ), *chunk]
-            ok, error_message = _run_get_command(active_command)
+            base_command = _without_no_data_flag(base_command)
+            ok, error_message = _run_get_command([*base_command, "--", *chunk])
 
         if not ok:
             error_messages.append(str(error_message))
@@ -488,7 +461,7 @@ def run_datalad_save(
 def run_datalad_sibling_exists(
     project_root: Path,
     *,
-    sibling_name: str = "ria-store",
+    sibling_name: str = "origin",
     datalad_executable: str = "",
     timeout_seconds: int = 60,
 ) -> dict[str, Any]:
@@ -508,7 +481,7 @@ def run_datalad_sibling_exists(
         )
         return result
 
-    name = str(sibling_name or "").strip() or "ria-store"
+    name = str(sibling_name or "").strip() or "origin"
     command = [resolved, "siblings", "-s", name]
     result["attempted"] = True
     result["command"] = shlex.join(command)
@@ -538,17 +511,13 @@ def run_datalad_sibling_exists(
     return result
 
 
-def is_ria_url(url: str) -> bool:
-    """True if `url` names a RIA store (`ria+ssh://...`, `ria+file://...`, etc.)."""
-    return str(url or "").strip().lower().startswith("ria+")
-
-
 def _run_streaming_command(
     command: list[str],
     *,
     cwd: str,
     timeout_seconds: int,
     line_callback: Any = None,
+    env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run a command with merged stdout+stderr, streaming each line to
     `line_callback` (if given) as it's produced.
@@ -570,6 +539,7 @@ def _run_streaming_command(
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        env=env,
     )
     output_lines: list[str] = []
     try:
@@ -596,52 +566,6 @@ def sibling_label_problem(label: str, what: str) -> str:
     return f"The {what} must be a plain label: letters, digits, '.', '_' and '-' only (at most 64, not starting with a symbol)."
 
 
-def run_datalad_create_sibling(
-    project_root: Path,
-    *,
-    remote_url: str,
-    sibling_name: str = "server",
-    alias: str = "",
-    recursive: bool = True,
-    existing: str = "reconfigure",
-    new_store_ok: bool = True,
-    datalad_executable: str = "",
-    timeout_seconds: int = 600,
-    line_callback: Any = None,
-) -> dict[str, Any]:
-    """Create/reconfigure a DataLad sibling, dispatching on URL scheme.
-
-    A `ria+...` URL creates/initializes a RIA store
-    (`create-sibling-ria`). Any other URL (`ssh://user@host/path`,
-    `user@host:path`, or a local path) creates a plain git+git-annex
-    sibling (`create-sibling`) instead -- for servers that were never set
-    up with a RIA layout, e.g. one only ever used for plain rsync backups.
-    """
-    if is_ria_url(remote_url):
-        return run_datalad_create_sibling_ria(
-            project_root,
-            ria_url=remote_url,
-            sibling_name=sibling_name,
-            alias=alias,
-            recursive=recursive,
-            existing=existing,
-            new_store_ok=new_store_ok,
-            datalad_executable=datalad_executable,
-            timeout_seconds=timeout_seconds,
-            line_callback=line_callback,
-        )
-    return run_datalad_create_sibling_plain(
-        project_root,
-        remote_url=remote_url,
-        sibling_name=sibling_name,
-        recursive=recursive,
-        existing=existing,
-        datalad_executable=datalad_executable,
-        timeout_seconds=timeout_seconds,
-        line_callback=line_callback,
-    )
-
-
 def run_datalad_create_sibling_plain(
     project_root: Path,
     *,
@@ -653,13 +577,9 @@ def run_datalad_create_sibling_plain(
     timeout_seconds: int = 600,
     line_callback: Any = None,
 ) -> dict[str, Any]:
-    """Create/reconfigure a plain (non-RIA) DataLad sibling over SSH or a local path.
+    """Create/reconfigure a plain DataLad sibling over SSH or a local path.
 
-    Unlike a RIA store, this is an ordinary git repository with git-annex
-    content pushed straight into it -- no `ria-layout-version`, no
-    per-dataset UUID subdirectory tree, and no separate `<name>-storage`
-    special remote. Use this for a server that was never initialized as a
-    RIA store (e.g. one that's only ever been used for plain file copies).
+    An ordinary repository with its annexed content pushed straight into it.
 
     With `recursive=True` this recurses into every nested subdataset
     internally (a single DataLad invocation, not one per subdataset), which
@@ -738,102 +658,20 @@ def run_datalad_create_sibling_plain(
     return result
 
 
-def run_datalad_create_sibling_ria(
-    project_root: Path,
-    *,
-    ria_url: str,
-    sibling_name: str = "ria-store",
-    alias: str = "",
-    recursive: bool = True,
-    existing: str = "reconfigure",
-    new_store_ok: bool = True,
-    datalad_executable: str = "",
-    timeout_seconds: int = 600,
-    line_callback: Any = None,
-) -> dict[str, Any]:
-    """See `run_datalad_create_sibling_plain` for the `line_callback` contract
-    (this is the RIA-store counterpart, same live-streaming rationale)."""
-    root = Path(project_root)
-    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
-    result: dict[str, Any] = {
-        "attempted": False,
-        "success": False,
-        "command": "",
-        "message": "",
-    }
-    if not resolved:
-        result["message"] = (
-            "DataLad executable is not available in this environment. "
-            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
-        )
-        return result
-
-    url = str(ria_url or "").strip()
-    if not url:
-        result["message"] = "No RIA store URL was provided."
-        return result
-    if url.startswith("-"):
-        result["message"] = "Refusing a URL that starts with '-'."
-        return result
-
-    name = str(sibling_name or "").strip() or "ria-store"
-    for label, what in ((name, "sibling name"), (str(alias or "").strip(), "alias")):
-        if label and (problem := sibling_label_problem(label, what)):
-            result["message"] = problem
-            return result
-    command = [resolved, "create-sibling-ria", url, "-s", name, "--existing", str(existing or "reconfigure")]
-    if recursive:
-        command.append("-r")
-    if new_store_ok:
-        command.append("--new-store-ok")
-    if str(alias or "").strip():
-        command.extend(["--alias", str(alias).strip()])
-
-    result["attempted"] = True
-    result["command"] = shlex.join(command)
-
-    try:
-        run_result = _run_streaming_command(
-            command,
-            cwd=str(root),
-            timeout_seconds=timeout_seconds,
-            line_callback=line_callback,
-        )
-    except subprocess.TimeoutExpired:
-        result["message"] = (
-            f"DataLad create-sibling-ria timed out after {max(1, int(timeout_seconds))} seconds."
-        )
-        return result
-    except Exception as exc:
-        result["message"] = f"DataLad create-sibling-ria failed ({type(exc).__name__}: {exc})."
-        return result
-
-    result["stdout"] = run_result["output"]
-    result["stderr"] = ""
-
-    if run_result["returncode"] == 0:
-        result["success"] = True
-        result["message"] = "DataLad RIA sibling created/reconfigured."
-        return result
-
-    detail = run_result["output"].strip()
-    result["message"] = f"DataLad create-sibling-ria failed: {detail or 'Unknown DataLad error.'}"
-    return result
-
-
 def run_datalad_push(
     project_root: Path,
     *,
-    sibling_name: str = "ria-store",
+    sibling_name: str = "origin",
     recursive: bool = True,
     data: str = "anything",
     since: str = "",
     datalad_executable: str = "",
     timeout_seconds: int = 7200,
     line_callback: Any = None,
+    env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """See `run_datalad_create_sibling_plain` for the `line_callback`
-    contract. `push -r` across 100+ subdatasets with real annexed content is
+    contract. `env` is the child's environment (None: inherit). `push -r` across 100+ subdatasets with real annexed content is
     the single longest-running step in the sync/finalize flow -- this is
     where live progress matters most."""
     root = Path(project_root)
@@ -853,7 +691,7 @@ def run_datalad_push(
         )
         return result
 
-    name = str(sibling_name or "").strip() or "ria-store"
+    name = str(sibling_name or "").strip() or "origin"
     command = [resolved, "push", "--to", name]
     if recursive:
         command.append("-r")
@@ -870,6 +708,7 @@ def run_datalad_push(
             cwd=str(root),
             timeout_seconds=timeout_seconds,
             line_callback=line_callback,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         result["message"] = (
@@ -899,7 +738,7 @@ def run_datalad_push(
 def run_datalad_update(
     project_root: Path,
     *,
-    sibling_name: str = "ria-store",
+    sibling_name: str = "origin",
     datalad_executable: str = "",
     timeout_seconds: int = 3600,
 ) -> dict[str, Any]:
@@ -914,7 +753,7 @@ def run_datalad_update(
         )
         return result
 
-    name = str(sibling_name or "").strip() or "ria-store"
+    name = str(sibling_name or "").strip() or "origin"
     command = [resolved, "update", "-s", name, "--how", "ff-only", "-r"]
     result["command"] = shlex.join(command)
     try:
@@ -936,12 +775,84 @@ def run_datalad_update(
     return result
 
 
+def run_datalad_clone(
+    location: str,
+    target: Path,
+    *,
+    datalad_executable: str = "",
+    timeout_seconds: int = 3600,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """`datalad clone <location> <target>`: the dataset itself, the source as `origin`; nested datasets are not touched.
+
+    `location` must already have passed `share_publish.location_problem`; `target` must be an absolute path.
+    """
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {"success": False, "command": "", "output": "", "message": ""}
+    if not resolved:
+        result["message"] = (
+            "DataLad executable is not available in this environment. "
+            f"{DATALAD_INSTALL_HINT}. Learn more: {DATALAD_DOCS_URL}"
+        )
+        return result
+    target = Path(target)
+    return _run_datalad_step(
+        result, [resolved, "clone", str(location), str(target)], str(target.parent), timeout_seconds, line_callback
+    )
+
+
+def run_datalad_install_nested(
+    dataset_root: Path,
+    paths: Sequence[str],
+    *,
+    datalad_executable: str = "",
+    timeout_seconds: int = 3600,
+    line_callback: Any = None,
+) -> dict[str, Any]:
+    """`datalad get -n <paths>`: install these nested datasets of `dataset_root` (one level, no -r), without data.
+
+    The paths (and the urls behind them) must already be checked by the caller.
+    """
+    resolved = str(datalad_executable or resolve_datalad_executable()).strip()
+    result: dict[str, Any] = {"success": False, "command": "", "output": "", "message": ""}
+    if not resolved:
+        result["message"] = f"DataLad executable is not available in this environment. {DATALAD_INSTALL_HINT}."
+        return result
+    return _run_datalad_step(
+        result, [resolved, "get", "-n", *paths], str(dataset_root), timeout_seconds, line_callback
+    )
+
+
+def _run_datalad_step(result: dict, command: list[str], cwd: str, timeout_seconds: int, line_callback: Any) -> dict:
+    """Run `datalad <verb> ...` for open-from-server.
+
+    For a folder location, DataLad would also add the server's own `origin` (from its uncommitted .git/config,
+    untrusted) as `origin-2` and fetch it; inherit-local-origin=false stops that for this command.
+    """
+    run = [command[0], "-c", "datalad.install.inherit-local-origin=false", *command[1:]]
+    result["command"] = shlex.join(run)
+    try:
+        run_result = _run_streaming_command(run, cwd=cwd, timeout_seconds=timeout_seconds, line_callback=line_callback)
+    except subprocess.TimeoutExpired:
+        result["message"] = f"DataLad {command[1]} timed out after {max(1, int(timeout_seconds))} seconds."
+        return result
+    except Exception as exc:
+        result["message"] = f"DataLad {command[1]} failed ({type(exc).__name__}: {exc})."
+        return result
+    result["output"] = run_result["output"]
+    if run_result["returncode"] != 0:
+        result["message"] = f"DataLad {command[1]} failed: {run_result['output'].strip() or 'Unknown DataLad error.'}"
+        return result
+    result["success"] = True
+    result["message"] = f"DataLad {command[1]} completed."
+    return result
+
+
 def run_datalad_push_verify(
     project_root: Path,
     *,
-    sibling_name: str = "ria-store",
+    sibling_name: str = "origin",
     dataset_roots: Sequence[Path],
-    is_ria: bool = True,
     datalad_executable: str = "",
     timeout_seconds: int = 1800,
     line_callback: Any = None,
@@ -952,15 +863,9 @@ def run_datalad_push_verify(
     push without setting a non-zero exit code, so success must be confirmed
     independently rather than trusting the push's own return code.
 
-    A RIA sibling is actually a pair: `<name>` (plain git remote, no annex
-    content) and `<name>-storage` (the ORA special remote that actually
-    holds annexed content). `git annex find --not --in` needs a remote
-    git-annex can resolve a UUID for, which only the storage sibling has, so
-    content presence must be checked against `<name>-storage`. A plain
-    (non-RIA) sibling has no such pairing -- content is pushed directly to
-    `<name>` itself, so `is_ria=False` checks that name instead.
+    Content is pushed directly to the sibling `<name>`, so that is the remote checked.
 
-    Unlike `run_datalad_push`/`run_datalad_create_sibling`, this already
+    Unlike `run_datalad_push`/`run_datalad_create_sibling_plain`, this already
     loops per dataset root as separate (fast) subprocess calls in our own
     code, so there's no need for line-level Popen streaming -- `line_callback`
     (if given) is simply called once per root with a "checking N/M" message,
@@ -982,8 +887,7 @@ def run_datalad_push_verify(
         )
         return result
 
-    name = str(sibling_name or "").strip() or "ria-store"
-    check_name = f"{name}-storage" if is_ria else name
+    check_name = str(sibling_name or "").strip() or "origin"
     git_executable = str(shutil.which("git") or "git")
     result["attempted"] = True
 

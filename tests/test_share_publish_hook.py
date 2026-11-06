@@ -22,7 +22,7 @@ def repos(tmp_path):
         run("git", "init", "-q", "--bare", str(bare), cwd=tmp_path)
     share = tmp_path / "share"
     run("git", "init", "-q", str(share), cwd=tmp_path)
-    run("git", "remote", "add", "ria-store", str(server), cwd=share)
+    run("git", "remote", "add", "lab-server", str(server), cwd=share)
     run("git", "remote", "add", "elsewhere", str(other), cwd=share)
     (share / "f").write_text("x")
     run("git", "add", "f", cwd=share)
@@ -47,25 +47,25 @@ def push(share, remote, tool=None):
 
 
 def test_hook_blocks_server_push_when_check_fails(repos, tmp_path):
-    sp.install_hook(repos, "ria-store")
-    assert push(repos, "ria-store", fake_tool(tmp_path, 1)).returncode != 0
+    sp.install_hook(repos, "lab-server")
+    assert push(repos, "lab-server", fake_tool(tmp_path, 1)).returncode != 0
 
 
 def test_hook_allows_server_push_when_check_passes(repos, tmp_path):
-    sp.install_hook(repos, "ria-store")
-    assert push(repos, "ria-store", fake_tool(tmp_path, 0)).returncode == 0
+    sp.install_hook(repos, "lab-server")
+    assert push(repos, "lab-server", fake_tool(tmp_path, 0)).returncode == 0
 
 
 def test_hook_ignores_other_remotes(repos, tmp_path):
-    sp.install_hook(repos, "ria-store")
+    sp.install_hook(repos, "lab-server")
     assert push(repos, "elsewhere", fake_tool(tmp_path, 1)).returncode == 0
 
 
 def test_hook_fails_closed_when_tool_is_missing(repos):
     if shutil.which("prism_tools"):
         pytest.skip("prism_tools is on PATH")
-    sp.install_hook(repos, "ria-store")
-    result = push(repos, "ria-store", tool=None)
+    sp.install_hook(repos, "lab-server")
+    result = push(repos, "lab-server", tool=None)
     assert result.returncode != 0 and "PRISM_TOOLS" in result.stderr
 
 
@@ -73,19 +73,19 @@ def test_install_refuses_to_overwrite_a_foreign_hook(repos):
     hook = repos / ".git" / "hooks" / "pre-push"
     hook.write_text("#!/bin/sh\necho mine\n", newline="\n")
     with pytest.raises(sp.HookExistsError):
-        sp.install_hook(repos, "ria-store")
+        sp.install_hook(repos, "lab-server")
     assert "mine" in hook.read_text()
 
 
 def test_install_is_idempotent_for_our_own_hook(repos):
-    sp.install_hook(repos, "ria-store")
-    sp.install_hook(repos, "ria-store")  # no error
+    sp.install_hook(repos, "lab-server")
+    sp.install_hook(repos, "lab-server")  # no error
     assert sp.HOOK_MARKER in (repos / ".git" / "hooks" / "pre-push").read_text()
 
 
 def test_check_for_hook_audits_and_returns_errors(repos, monkeypatch):
     monkeypatch.setattr(sp, "validate_for_publish", lambda p: ["PRISM1 bad"])
-    assert sp.check_for_hook(repos, "ria-store") == ["PRISM1 bad"]
+    assert sp.check_for_hook(repos, "lab-server") == ["PRISM1 bad"]
     assert "hook_refused" in sp.audit_path(repos).read_text()
 
 
@@ -93,7 +93,7 @@ def test_install_hook_on_plain_folder_raises_and_writes_nothing(tmp_path):
     plain = tmp_path / "plain"
     plain.mkdir()
     with pytest.raises(sp.NotAGitRepoError):
-        sp.install_hook(plain, "ria-store")
+        sp.install_hook(plain, "lab-server")
     assert list(plain.iterdir()) == []
 
 
@@ -102,9 +102,9 @@ def test_install_hook_does_not_write_through_a_dangling_symlink(repos, tmp_path)
     hook.parent.mkdir(parents=True, exist_ok=True)
     hook.symlink_to(tmp_path / "nowhere")
     with pytest.raises(sp.HookExistsError):
-        sp.install_hook(repos, "ria-store")
+        sp.install_hook(repos, "lab-server")
     assert not (tmp_path / "nowhere").exists()
 
 
 def test_hook_script_exits_when_toplevel_lookup_fails():
-    assert 'ROOT="$(git rev-parse --show-toplevel)" || exit 1' in sp._hook_script("ria-store")
+    assert 'ROOT="$(git rev-parse --show-toplevel)" || exit 1' in sp._hook_script("lab-server")

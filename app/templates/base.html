@@ -403,10 +403,10 @@
                     </span>
                     {% endif %}
                 </div>
-                <div id="navbarDataladStatusShell"{% if not current_project_datalad.enabled %} class="d-none"{% endif %}>
+                <div>
                     <a class="btn btn-sm border-0 bg-transparent px-0 py-0 d-inline-flex align-items-center text-decoration-none"
                        id="navbarDataladToggle"
-                       href="{{ url_for('projects.projects_page') }}?preserve_current=1"
+                       href="{{ url_for('projects.datalad_page') }}"
                        title="{{ current_project_datalad.message or 'Load a project to see DataLad status.' }}"
                        aria-label="DataLad status"
                        data-path="{{ current_project.path or '' }}"
@@ -418,7 +418,6 @@
                        data-message="{{ current_project_datalad.message or '' }}">
                         <i class="fas fa-code-branch me-1 {% if current_project_datalad.enabled %}text-success{% elif current_project.path %}text-dark{% else %}text-muted{% endif %}" data-navbar-datalad-icon aria-hidden="true"></i>
                         <i class="fas fa-circle-check me-1 d-none" id="navbarDataladCleanIcon" aria-hidden="true"></i>
-                        <i class="fas fa-spinner fa-spin me-1 d-none" id="navbarDataladSpinnerIcon" aria-hidden="true"></i>
                         <span data-navbar-datalad-label>DataLad</span>
                         <span class="badge rounded-pill text-bg-warning ms-1 d-none" id="navbarDataladPendingCount"></span>
                         <span class="badge rounded-pill border ms-2 d-none" id="navbarDataladToggleFeedback" aria-live="polite"></span>
@@ -530,9 +529,9 @@
                             <li><hr class="dropdown-divider"></li>
 
                             <li><h6 class="dropdown-header{% if not share_enabled %} text-muted{% endif %}">4. Share &amp; Archive</h6></li>
-                            <li><a class="dropdown-item navbar-flow-item{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-target-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export, push to a DataLad server, or back up the active project"{% endif %}>
+                            <li><a class="dropdown-item navbar-flow-item{% if not share_enabled %} disabled{% endif %}" href="{% if share_enabled %}{{ url_for('projects.share_page') }}{% else %}#{% endif %}" id="shareArchiveLink"{% if share_available %} data-target-url="{{ url_for('projects.share_page') }}"{% endif %}{% if not share_enabled %} aria-disabled="true" title="{% if not share_available %}Unavailable in this build{% elif not current_project.path %}Please load a project first{% else %}No subjects found — add data before sharing{% endif %}"{% else %} title="Export the active project or back it up with rsync"{% endif %}>
                                 <span class="navbar-flow-item-title"><i class="fas fa-cloud-upload-alt me-2 text-info"></i>Share &amp; Archive</span>
-                                <span class="navbar-flow-item-hint">Export, push to a DataLad server, or back up the project</span>
+                                <span class="navbar-flow-item-hint">Export the project or back it up with rsync</span>
                             </a></li>
                         </ul>
                     </li>
@@ -567,7 +566,7 @@
 
                     {% if settings_available %}
                     <li class="nav-item">
-                        <a class="nav-link{% if request.endpoint == 'projects_library.settings_page' %} active{% endif %}" href="{{ url_for('projects_library.settings_page') }}" title="Settings: help, DataLad, libraries and advanced options" aria-label="Settings">
+                        <a class="nav-link{% if request.endpoint == 'projects_library.settings_page' %} active{% endif %}" href="{{ url_for('projects_library.settings_page') }}" title="Settings: help, DataLad for new projects, your name and email, libraries and advanced options" aria-label="Settings">
                             <i class="fas fa-cog"></i>
                         </a>
                     </li>
@@ -966,38 +965,6 @@
             };
         }
 
-        function getNavbarDataladOperationState() {
-            const state = window.prismDataladOperationState;
-            if (!state || typeof state !== 'object' || Array.isArray(state)) {
-                return { active: false, source: '' };
-            }
-            return {
-                active: Boolean(state.active),
-                source: normalizeProjectStateValue(state.source),
-            };
-        }
-
-        function setNavbarDataladOperationState(active, source = '') {
-            window.prismDataladOperationState = {
-                active: Boolean(active),
-                source: normalizeProjectStateValue(source),
-            };
-        }
-
-        function getNavbarDataladLockMessage(operationState) {
-            const source = normalizeProjectStateValue(operationState && operationState.source);
-            if (source === 'project_box_enable') {
-                return 'A DataLad enable/repair action is already running in Project Manager. Please wait.';
-            }
-            if (source === 'project_box_save') {
-                return 'A DataLad save is already running in Project Manager. Please wait.';
-            }
-            if (source === 'navbar_save') {
-                return 'A DataLad save is already running. Please wait.';
-            }
-            return 'Another DataLad action is already running. Please wait.';
-        }
-
         function readNavbarDataladStateFromDom() {
             const toggle = document.getElementById('navbarDataladToggle');
             if (!toggle) {
@@ -1066,9 +1033,7 @@
             const nextPath = normalizeProjectStateValue(projectState && projectState.path);
             const dataladState = normalizeDataladState(projectState && projectState.datalad, { path: nextPath || toggle.dataset.path });
             const icon = toggle.querySelector('[data-navbar-datalad-icon]');
-            const statusTitleSuffix = dataladState.canSave
-                ? 'Click to save project and nested datasets with a commit message. Use Project Manager for setup.'
-                : 'Open Project Manager for DataLad setup and saves.';
+            const statusTitleSuffix = 'Open the DataLad page.';
 
             toggle.dataset.path = dataladState.path || nextPath;
             toggle.dataset.enabled = dataladState.enabled ? 'true' : 'false';
@@ -1081,8 +1046,6 @@
             toggle.dataset.askOnOpen = dataladState.askOnOpen ? 'true' : 'false';
             icon?.classList.remove('text-success', 'text-dark', 'text-muted');
             cleanIcon?.classList.add('d-none');
-            // Only show the DataLad badge for projects that actually are DataLad datasets.
-            document.getElementById('navbarDataladStatusShell')?.classList.toggle('d-none', !(nextPath && dataladState.enabled));
 
             if (!nextPath) {
                 icon?.classList.add('text-muted');
@@ -1139,7 +1102,7 @@
                 return;
             }
 
-            const cacheKey = `prism-datalad-clean-status:${normalizedPath}`;
+            const cacheKey = `prism-datalad-state:${normalizedPath}`;
             if (!force) {
                 try {
                     const cached = JSON.parse(window.sessionStorage.getItem(cacheKey) || 'null');
@@ -1154,13 +1117,14 @@
 
             const fetchToken = ++navbarDataladCleanStatusFetchToken;
             try {
-                const response = await navbarFetchWithApiFallback('/api/projects/datalad/clean-status', { method: 'GET' });
+                const response = await navbarFetchWithApiFallback('/api/projects/datalad/state', { method: 'GET' });
                 const data = await response.json().catch(() => ({ success: false }));
                 if (fetchToken !== navbarDataladCleanStatusFetchToken) return;
 
-                const cleanStatus = data && data.success ? data.datalad_clean : null;
-                const clean = cleanStatus && cleanStatus.checked ? Boolean(cleanStatus.clean) : null;
-                const count = clean === false ? Number(cleanStatus.dirty_count) || 0 : 0;
+                const cleanStatus = data && data.next_step ? data : null;
+                const unsaved = cleanStatus ? Number(cleanStatus.unsaved_count) || 0 : 0;
+                const clean = cleanStatus && cleanStatus.checked ? unsaved === 0 : null;
+                const count = clean === false ? unsaved : 0;
                 renderNavbarDataladCleanIcon(clean, count);
 
                 const cleanIcon = document.getElementById('navbarDataladCleanIcon');
@@ -1177,83 +1141,6 @@
                 if (fetchToken === navbarDataladCleanStatusFetchToken) {
                     renderNavbarDataladCleanIcon(null);
                 }
-            }
-        }
-
-        function setNavbarDataladBusy(active, busyLabel = 'Saving…') {
-            const toggle = document.getElementById('navbarDataladToggle');
-            if (!toggle) return;
-            const mainIcon = toggle.querySelector('[data-navbar-datalad-icon]');
-            const cleanIcon = document.getElementById('navbarDataladCleanIcon');
-            const spinnerIcon = document.getElementById('navbarDataladSpinnerIcon');
-
-            if (active) {
-                toggle.setAttribute('aria-busy', 'true');
-                toggle.setAttribute('aria-label', busyLabel);
-                toggle.classList.add('disabled');
-                toggle.style.pointerEvents = 'none';
-                mainIcon?.classList.add('d-none');
-                cleanIcon?.classList.add('d-none');
-                spinnerIcon?.classList.remove('d-none');
-            } else {
-                toggle.removeAttribute('aria-busy');
-                toggle.classList.remove('disabled');
-                toggle.style.pointerEvents = '';
-                spinnerIcon?.classList.add('d-none');
-                mainIcon?.classList.remove('d-none');
-                // The state-change listener (renderNavbarDataladState) restores the real aria-label.
-            }
-        }
-
-        async function saveNavbarDataladSnapshot() {
-            const currentState = ensureProjectStateStore().getState();
-            const currentPath = normalizeProjectStateValue(currentState.path);
-            const currentDatalad = normalizeDataladState(currentState.datalad, { path: currentPath });
-
-            if (!currentPath) {
-                setNavbarDataladFeedback('Load a project first.', 'danger', 'Error');
-                return;
-            }
-
-            if (!currentDatalad.canSave) {
-                window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
-                return;
-            }
-
-            const operationState = getNavbarDataladOperationState();
-            if (operationState.active && operationState.source !== 'navbar_save') {
-                setNavbarDataladFeedback(getNavbarDataladLockMessage(operationState), 'danger', 'Busy');
-                return;
-            }
-
-            const requestedMessage = window.prompt('Commit message for this checkpoint', 'Checkpoint PRISM project changes');
-            if (requestedMessage === null) {
-                return;
-            }
-
-            const saveMessage = normalizeProjectStateValue(requestedMessage) || 'Checkpoint PRISM project changes';
-            setNavbarDataladFeedback('', 'muted');
-            setNavbarDataladOperationState(true, 'navbar_save');
-            setNavbarDataladBusy(true, 'Saving…');
-
-            try {
-                const { saveDataladSnapshot } = await import("{{ url_for('static', filename='js/shared/datalad-save.js', v=prism_static_asset_token|default('', true)) }}");
-                const { response, data } = await saveDataladSnapshot(navbarFetchWithApiFallback, saveMessage);
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || data.message || 'Could not save DataLad changes.');
-                }
-
-                const nextProjectState = data.current_project && typeof data.current_project === 'object'
-                    ? data.current_project
-                    : { ...currentState, datalad: data.datalad };
-                ensureProjectStateStore().setState(nextProjectState, { forceEmit: true });
-                fetchNavbarDataladCleanStatus(normalizeProjectStateValue(nextProjectState.path) || currentPath, { force: true });
-                setNavbarDataladFeedback(data.message || (data.datalad && data.datalad.message) || 'DataLad save completed.', 'success', 'Saved');
-            } catch (error) {
-                setNavbarDataladFeedback(error.message || 'Could not save DataLad changes.', 'danger', 'Error');
-            } finally {
-                setNavbarDataladBusy(false);
-                setNavbarDataladOperationState(false);
             }
         }
 
@@ -1427,7 +1314,7 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(path));
             setProjectGatedLinkState('surveyExportLink', Boolean(path), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(path), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export the active project or back it up with rsync');
             renderNavbarDataladState(nextState);
             renderNavbarRecentProjects();
 
@@ -1482,12 +1369,14 @@
             setProjectGatedLinkState('fileManagementLink', Boolean(nextPath));
             setProjectGatedLinkState('surveyExportLink', Boolean(nextPath), 'Please load a project first', 'Export processed survey data into derivatives outputs');
             setProjectGatedLinkState('analysisOutputsLink', Boolean(nextPath), 'Please load a project first', 'Generate analysis-ready derivative outputs from prepared project data');
-            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export, push to a DataLad server, or back up the active project');
+            setProjectGatedLinkState('shareArchiveLink', resolvedHasData, 'Please load a project first', 'Export the active project or back it up with rsync');
             renderNavbarDataladState({ path: nextPath, datalad: nextDatalad });
             renderNavbarRecentProjects();
         }
 
         window.setNavbarDataladFeedback = setNavbarDataladFeedback;
+        // The DataLad page asks for a fresh count after a save, sync or update (skips the 30 s cache).
+        window.refreshNavbarDataladCount = (path) => fetchNavbarDataladCleanStatus(path, { force: true });
         window.updateNavbarProject = updateNavbarProject;
         window.getCurrentProjectState = function() {
             return ensureProjectStateStore().getState();
@@ -1563,32 +1452,6 @@
                         alert('Please load a project first');
                     }
                 });
-            });
-
-            const navbarDataladToggle = document.getElementById('navbarDataladToggle');
-            let navbarDataladSaveInFlight = false;
-            navbarDataladToggle?.addEventListener('click', async function(e) {
-                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
-                    return;
-                }
-
-                const currentState = ensureProjectStateStore().getState();
-                const currentDatalad = normalizeDataladState(currentState.datalad, { path: currentState.path });
-                if (!currentDatalad.canSave) {
-                    return;
-                }
-
-                e.preventDefault();
-                if (navbarDataladSaveInFlight) {
-                    return;
-                }
-
-                navbarDataladSaveInFlight = true;
-                try {
-                    await saveNavbarDataladSnapshot();
-                } finally {
-                    navbarDataladSaveInFlight = false;
-                }
             });
 
             loadNavbarRecentProjects();

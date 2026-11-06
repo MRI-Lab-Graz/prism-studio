@@ -27,7 +27,7 @@ projects_rsync_server_bp = Blueprint("projects_rsync_server", __name__)
 
 
 # ---------------------------------------------------------------------------
-# Async job store (same shape as the RIA sync/finalize job store)
+# Async job store (same shape as the DataLad server job store)
 # ---------------------------------------------------------------------------
 
 _rsync_jobs: Dict[str, dict] = {}

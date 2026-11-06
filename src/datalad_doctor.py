@@ -189,8 +189,6 @@ Run = Callable[[list], tuple]
 def parse_ssh_target(url: str) -> Optional[tuple]:
     """(user, host, port) for ssh-style URLs, else None (local path, https, ...)."""
     url = (url or "").strip()
-    if url.startswith("ria+"):
-        url = url[4:]
     if url.startswith("ssh://"):
         parsed = urlparse(url)
         if parsed.hostname:

@@ -5501,11 +5501,11 @@ class TestProjectManager(unittest.TestCase):
             self.assertNotIn("warning", git_lfs_info)
 
 
-def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True, seen_commands=None):
+def _make_fake_server_subprocess(*, outstanding_files=None, remove_sibling_ok=True, seen_commands=None):
     """Fake `subprocess.run` covering the annex-find-verify -> remove-sibling
     half of the create-sibling -> push -> verify -> remove-sibling chain used
     by finalize_project_upload (create/push now stream via subprocess.Popen
-    -- see `_make_fake_ria_popen` for those, which must be patched alongside
+    -- see `_make_fake_server_popen` for those, which must be patched alongside
     this one in every test below).
 
     Dispatches purely on command content so the real orchestration logic in
@@ -5537,9 +5537,9 @@ def _make_fake_ria_subprocess(*, outstanding_files=None, remove_sibling_ok=True,
     return _fake_run
 
 
-def _make_fake_ria_popen(*, seen_commands=None):
-    """Fake `subprocess.Popen` covering the create-sibling(-ria) -> push half
-    of the chain (see `_make_fake_ria_subprocess` for the other half). Both
+def _make_fake_server_popen(*, seen_commands=None):
+    """Fake `subprocess.Popen` covering the create-sibling -> push half
+    of the chain (see `_make_fake_server_subprocess` for the other half). Both
     must be patched together for `finalize_project_upload`/
     `run_datalad_upload_to_sibling` tests, since one call now uses Popen
     (streamed, for live terminal progress) and the other still uses run."""
@@ -5934,7 +5934,7 @@ class _FakeRsyncPopen:
 class TestSyncProjectToRemote(unittest.TestCase):
     """A4: sync_project_to_remote orchestration -- the rsync-based backup
     path for researchers not using DataLad. Additive-only push, gated verify,
-    and cancellation must behave the same way the RIA path's do."""
+    and cancellation must behave the same way the DataLad jobs' do."""
 
     def _project_dir(self, tmp: str) -> Path:
         project_path = Path(tmp) / "demo_project"

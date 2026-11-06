@@ -122,9 +122,5 @@ def test_datalad_sibling_urls_starting_with_dash_are_rejected(tmp_path, no_subpr
     plain = de.run_datalad_create_sibling_plain(
         tmp_path, remote_url="-oProxyCommand=x", datalad_executable="/usr/bin/datalad"
     )
-    ria = de.run_datalad_create_sibling_ria(
-        tmp_path, ria_url="-oProxyCommand=x", datalad_executable="/usr/bin/datalad"
-    )
-    for res in (plain, ria):
-        assert res["success"] is False and res["attempted"] is False
+    assert plain["success"] is False and plain["attempted"] is False
     assert no_subprocess == []
