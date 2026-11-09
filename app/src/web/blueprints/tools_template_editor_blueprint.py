@@ -312,6 +312,20 @@ def api_template_editor_validate():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/remove-language", methods=["POST"])
+def api_template_editor_remove_language():
+    from src.template_languages import remove_language
+
+    payload = request.get_json(silent=True) or {}
+    template = payload.get("template")
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+    try:
+        return jsonify({"template": remove_language(template, payload.get("language"))}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+
 @tools_template_editor_bp.route("/api/template-editor/completeness", methods=["POST"])
 def api_template_editor_completeness():
     """How complete the template in the editor is (the numbers `library template-score` prints)."""

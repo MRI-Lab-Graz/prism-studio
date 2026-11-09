@@ -277,6 +277,8 @@ def dispatch_prism_tools(
             handlers["library_save_templates"](args)
         elif args.action == "template-validate":
             handlers["library_template_validate"](args)
+        elif args.action == "template-remove-language":
+            handlers["library_template_remove_language"](args)
         elif args.action == "template-score":
             handlers["library_template_score"](args)
         elif args.action == "template-delete":

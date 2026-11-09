@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Remove Language no longer empties the general header.** Removing e.g. `en` from a template deleted it from
+  `Study.OriginalName`, `Description`, `Citation`, ... too, so a German-only template lost required fields. Only
+  item descriptions, answer levels and `Study.Instructions` are per-language now; the header is never touched, the
+  language bar ignores it, and if the default language is removed another remaining one becomes the default. The
+  logic moved into the backend (`src/template_languages.py`): Studio calls it, and
+  `prism_tools.py library template-remove-language --template T --language en [--output F]` runs the same function.
+- **Excel import: the study description comes from the General sheet, not from the first item.** `Description`,
+  `Description_<lang>` on the General sheet were dropped because the item sheet has columns of the same name, and the
+  first item's text became `Study.Description`. General-sheet descriptions are now read as study descriptions (a plain
+  `Description` fills the template's default language), item rows never feed `Study.Description`, and no empty
+  `de`/`en` entries are invented for a template that has other languages.
+
 ## [1.25.0] - 2026-11-06
 
 ### Changed

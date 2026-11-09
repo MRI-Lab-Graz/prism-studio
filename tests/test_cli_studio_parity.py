@@ -670,3 +670,25 @@ def test_session_order_is_written_identically_by_the_cli_and_studio(tmp_path):
     })
     assert (studio_project / ORDER_FILE).read_text() == (cli_project / ORDER_FILE).read_text()
     assert load_session_order(studio_project) == {"P09": {"1": "z"}}
+
+
+def test_removing_a_language_gives_the_same_template_in_the_cli_and_in_studio(tmp_path, capsys):
+    import importlib
+
+    from flask import Flask
+    from template_fixtures import project_template
+
+    from src.cli.commands.library import cmd_library_template_remove_language
+
+    template = project_template("mood")
+    source = tmp_path / "mood.json"
+    source.write_text(json.dumps(template), encoding="utf-8")
+
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    app.register_blueprint(importlib.import_module("src.web.blueprints.tools_template_editor_blueprint").tools_template_editor_bp)
+    studio = app.test_client().post(
+        "/api/template-editor/remove-language", json={"template": template, "language": "en"}
+    ).get_json()
+
+    cmd_library_template_remove_language(SimpleNamespace(template=str(source), language="en", output=None))
+    assert json.loads(capsys.readouterr().out) == studio["template"]

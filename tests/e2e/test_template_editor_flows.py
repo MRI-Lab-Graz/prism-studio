@@ -86,7 +86,9 @@ def test_default_language_offers_the_chosen_languages_and_follows_them(page, pro
     default.select_option("fr")
     page.once("dialog", lambda dialog: dialog.accept())
     languages.locator(".chip-badge", has_text="fr").click()
-    assert default.input_value() == ""
+    # the backend runs the removal; the default moves to a language the template still has
+    page.wait_for_function("() => !document.querySelector(\"[data-field-path='I18n/DefaultLanguage'] option[value='fr']\")")
+    assert default.input_value() == "de"
     assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "de", "en"]
 
 
@@ -158,6 +160,7 @@ def test_every_language_in_the_bar_has_an_x_that_removes_it(page, project, studi
     _open_template_without_items(page, project, studio_url)
     page.once("dialog", lambda dialog: dialog.accept())
     page.locator("#langBadges [data-lang='en'] [data-lang-remove]").click()
+    page.wait_for_function("() => !document.querySelector(\"#langBadges [data-lang='en']\")")
     assert page.locator("#langBadges [data-lang='en']").count() == 0
 
 
