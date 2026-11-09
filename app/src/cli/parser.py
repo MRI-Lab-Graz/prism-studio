@@ -2961,6 +2961,14 @@ def build_prism_tools_parsers(
     parser_lib_template_validate.add_argument("--schema-version", default="stable", help="Schema version")
     parser_lib_template_validate.add_argument("--json", action="store_true", help="Print the result as JSON")
 
+    parser_lib_template_remove_language = subparsers_library.add_parser(
+        "template-remove-language",
+        help="Remove a language from a template's items, levels and instructions (the general header is kept).",
+    )
+    parser_lib_template_remove_language.add_argument("--template", required=True, help="Path to the template JSON file")
+    parser_lib_template_remove_language.add_argument("--language", required=True, help="Language code to remove, e.g. en")
+    parser_lib_template_remove_language.add_argument("--output", help="Write the result here (default: print it)")
+
     parser_lib_template_score = subparsers_library.add_parser(
         "template-score",
         help="How complete a template is: required and recommended fields filled. "

@@ -134,6 +134,7 @@
  "tools_template_editor.api_template_editor_download": "exempt: hands the browser the template it already holds as a .json download (editor-only keys stripped by the same src functions save uses); reads and writes no project data",
  "tools_template_editor.api_template_editor_export_questionnaire": "cli: survey export-questionnaire-docx",
  "tools_template_editor.api_template_editor_import_excel": "cli: survey import-excel",
+ "tools_template_editor.api_template_editor_remove_language": "cli: library template-remove-language",
  "tools_template_editor.api_template_editor_import_limesurvey": "cli: survey import-limesurvey",
  "tools_template_editor.api_template_editor_import_lsq_lsg": "cli: survey import-lsq",
  "tools_template_editor.api_template_editor_import_pavlovia": "cli: survey import-pavlovia",

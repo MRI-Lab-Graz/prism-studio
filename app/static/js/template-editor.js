@@ -1336,7 +1336,7 @@
           chipText: languagePicker.languageLabel,
           onChange: (vals) => {
             const removed = currentVal.find((code) => !vals.includes(code));
-            if (removed !== undefined && !applyRemoveLanguage(removed)) keepOpenSections(renderTopLevel); // declined: the chip comes back
+            if (removed !== undefined) applyRemoveLanguage(removed).then((ok) => { if (!ok) keepOpenSections(renderTopLevel); }); // declined: the chip comes back
           },
         });
         area.setValues(currentVal);
@@ -3172,16 +3172,11 @@
   const LANG_CODE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 
   /** Calls `fn(textByLanguage)` for each translated text of Study/Technical/Metadata/I18n (Study.Instructions, ...). */
-  function forEachTopLevelText(tpl, fn) {
-    const TOP_LEVEL_ML_FIELDS = ['OriginalName', 'Description', 'Instructions', 'Citation', 'License', 'Source'];
-    for (const section of ['Study', 'Technical', 'Metadata', 'I18n']) {
-      const sec = tpl[section];
-      if (!sec || typeof sec !== 'object') continue;
-      for (const field of TOP_LEVEL_ML_FIELDS) {
-        const val = sec[field];
-        if (val && typeof val === 'object' && !Array.isArray(val)) fn(val);
-      }
-    }
+  // Only the participant-facing Instructions are per-language; the general header (OriginalName, Description, ...)
+  // is not, so it neither adds a language to the bar nor receives one (see src/template_languages.py).
+  function forEachInstructionsText(tpl, fn) {
+    const val = tpl?.Study?.Instructions;
+    if (val && typeof val === 'object' && !Array.isArray(val)) fn(val);
   }
 
   function detectLanguagesFromTemplate(tpl) {
@@ -3193,8 +3188,8 @@
       if (LANG_CODE_RE.test(code)) langSet.add(code);
     }
 
-    // Scan top-level multilingual fields in reserved sections (Study.OriginalName, Study.Instructions, etc.)
-    forEachTopLevelText(tpl, (val) => {
+    // Study.Instructions is language-keyed too
+    forEachInstructionsText(tpl, (val) => {
       for (const k of Object.keys(val)) {
         if (LANG_CODE_RE.test(k)) langSet.add(k);
       }
@@ -3449,7 +3444,7 @@
       }
     }
 
-    forEachTopLevelText(currentTemplate, (val) => { if (!(lang in val)) val[lang] = ''; });
+    forEachInstructionsText(currentTemplate, (val) => { if (!(lang in val)) val[lang] = ''; });
 
     // Declare every language the template now has (not just the new one), so none is "used but not declared"
     const i18n = (currentTemplate.I18n ||= {});
@@ -3470,69 +3465,17 @@
     if (lang) applyAddLanguage(lang);
   });
 
-  // Remove Language: strips a language key from ALL question Descriptions and Levels
-  /** Strips `code` from every item text and from I18n.Languages after a confirmation; false when declined. */
-  function applyRemoveLanguage(code) {
-    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels?`)) return false;
-
-    const items = itemKeysFromTemplate(currentTemplate);
-    for (const key of items) {
-      const item = currentTemplate[key];
-      if (!item || typeof item !== 'object') continue;
-
-      // Remove from Description
-      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
-        delete item.Description[code];
-        // If only one key left, convert back to plain string
-        const remaining = Object.keys(item.Description);
-        if (remaining.length === 1) {
-          item.Description = item.Description[remaining[0]];
-        } else if (remaining.length === 0) {
-          item.Description = '';
-        }
-      }
-
-      // Remove from Levels
-      if (item.Levels && typeof item.Levels === 'object') {
-        for (const [lk, lv] of Object.entries(item.Levels)) {
-          if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
-            delete lv[code];
-            const remaining = Object.keys(lv);
-            if (remaining.length === 1) {
-              item.Levels[lk] = lv[remaining[0]];
-            } else if (remaining.length === 0) {
-              item.Levels[lk] = '';
-            }
-          }
-        }
-      }
-
-      if (Array.isArray(item.VariantScales)) {
-        for (const variantScale of item.VariantScales) {
-          if (!variantScale || typeof variantScale !== 'object' || !variantScale.Levels || typeof variantScale.Levels !== 'object') continue;
-          for (const [lk, lv] of Object.entries(variantScale.Levels)) {
-            if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
-              delete lv[code];
-              const remaining = Object.keys(lv);
-              if (remaining.length === 1) {
-                variantScale.Levels[lk] = lv[remaining[0]];
-              } else if (remaining.length === 0) {
-                variantScale.Levels[lk] = '';
-              }
-            }
-          }
-        }
-      }
+  // Remove Language: the backend (src/template_languages.py, also `library template-remove-language`) does the work.
+  /** Asks for confirmation, then lets the backend strip `code`; false when declined or when it failed. */
+  async function applyRemoveLanguage(code) {
+    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels? (The general header is kept.)`)) return false;
+    try {
+      const data = await apiPost('/api/template-editor/remove-language', { template: currentTemplate, language: code });
+      currentTemplate = data.template;
+    } catch (e) {
+      alert(`Could not remove '${code}': ${e.message || e}`);
+      return false;
     }
-
-    forEachTopLevelText(currentTemplate, (val) => { delete val[code]; });
-
-    // Update I18n.Languages if it exists
-    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
-      currentTemplate.I18n.Languages = currentTemplate.I18n.Languages.filter(l => l !== code);
-      if (currentTemplate.I18n.DefaultLanguage === code) currentTemplate.I18n.DefaultLanguage = '';
-    }
-
     keepOpenSections(renderAll);
     return true;
   }

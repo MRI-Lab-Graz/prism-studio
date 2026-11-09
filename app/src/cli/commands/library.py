@@ -190,6 +190,24 @@ def cmd_library_template_validate(args) -> None:
         sys.exit(1)
 
 
+def cmd_library_template_remove_language(args) -> None:
+    """Remove a language from a template's items, levels and instructions, as Studio's Remove Language does
+    (the same function runs both). The general header is never touched. Prints the template, or writes --output."""
+    from src.template_languages import remove_language
+
+    try:
+        template = json.loads(Path(args.template).read_text(encoding="utf-8"))
+        result = remove_language(template, args.language)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+    text = json.dumps(result, indent=2, ensure_ascii=False)
+    if args.output:
+        Path(args.output).write_text(text + "\n", encoding="utf-8")
+    else:
+        print(text)
+
+
 def cmd_library_template_score(args) -> None:
     """How complete a template is: the numbers the template editor's rings show (the same function runs both).
     Exit 1 when it cannot be used yet (a required field is empty); recommended fields never decide that."""

@@ -159,16 +159,9 @@ INSTRUCTIONS_ALIASES = {
 }
 INSTRUCTIONS_EN_ALIASES = {"instructions_en", "taskinstructions_en"}
 INSTRUCTIONS_DE_ALIASES = {"instructions_de", "taskinstructions_de"}
-STUDY_DESC_EN_ALIASES = {
-    "study_description_en",
-    "studydescription_en",
-    "description_en",
-}
-STUDY_DESC_DE_ALIASES = {
-    "study_description_de",
-    "studydescription_de",
-    "description_de",
-}
+# Not "description_en/de": in the item table those columns are the item text.
+STUDY_DESC_EN_ALIASES = {"study_description_en", "studydescription_en"}
+STUDY_DESC_DE_ALIASES = {"study_description_de", "studydescription_de"}
 KEYWORDS_ALIASES = {"keywords", "tags"}
 AUTHORS_ALIASES = {"authors", "author", "creator", "creators"}
 DOI_ALIASES = {"doi", "digital_object_identifier"}
@@ -915,6 +908,20 @@ def _sheet_to_key_value_columns(extra_raw):
     return pd.DataFrame([out])
 
 
+def _general_sheet_column_name(col):
+    """Name a General-sheet column gets when merged next to the item table.
+
+    ``Description`` / ``Description_xx`` / ``Description[xx]`` describe the
+    study there, but in the item table the same names are the item text, so
+    they are renamed to ``StudyDescription...`` before merging.
+    """
+    parsed = _extract_lang_column(col)
+    base, lang = parsed if parsed else (str(col), None)
+    if norm_key(base) != "description":
+        return col
+    return f"StudyDescription_{lang}" if lang else "StudyDescription"
+
+
 def _merge_multi_sheet_excel(sheets):
     """Merge a multi-sheet workbook into one logical table.
 
@@ -954,10 +961,12 @@ def _merge_multi_sheet_excel(sheets):
         key_value_df = _sheet_to_key_value_columns(extra_raw)
         if key_value_df is not None:
             for col in [c for c in key_value_df.columns if c]:
-                if col in base_data.columns:
-                    continue
                 aligned = key_value_df[col].reindex(range(len(base_data)))
                 non_empty = [v for v in aligned.tolist() if _is_non_empty_cell(v)]
+                if len(non_empty) == 1:
+                    col = _general_sheet_column_name(col)
+                if col in base_data.columns:
+                    continue
                 if len(non_empty) == 1:
                     base_data[col] = non_empty[0]
                 else:
@@ -972,12 +981,14 @@ def _merge_multi_sheet_excel(sheets):
         extra_data.columns = extra_headers
 
         for col in [c for c in extra_data.columns if c]:
+            aligned = extra_data[col].reindex(range(len(base_data)))
+            non_empty = [v for v in aligned.tolist() if _is_non_empty_cell(v)]
+
+            if len(non_empty) == 1:
+                col = _general_sheet_column_name(col)
             if col in base_data.columns:
                 # Keep first sheet authoritative for duplicate column names.
                 continue
-
-            aligned = extra_data[col].reindex(range(len(base_data)))
-            non_empty = [v for v in aligned.tolist() if _is_non_empty_cell(v)]
 
             if len(non_empty) == 1:
                 # Typical "general metadata" column: one value for the whole survey.
@@ -1123,6 +1134,7 @@ def extract_excel_templates(
     instructions_idx = find_column_idx(header_row, INSTRUCTIONS_ALIASES)
     instructions_en_idx = find_column_idx(header_row, INSTRUCTIONS_EN_ALIASES)
     instructions_de_idx = find_column_idx(header_row, INSTRUCTIONS_DE_ALIASES)
+    study_desc_idx = find_column_idx(header_row, {"studydescription", "study_description"})
     study_desc_en_idx = find_column_idx(header_row, STUDY_DESC_EN_ALIASES)
     study_desc_de_idx = find_column_idx(header_row, STUDY_DESC_DE_ALIASES)
     keywords_idx = find_column_idx(header_row, KEYWORDS_ALIASES)
@@ -1348,6 +1360,7 @@ def extract_excel_templates(
         instructions = get_val(row, instructions_idx)
         instructions_en = get_val(row, instructions_en_idx)
         instructions_de = get_val(row, instructions_de_idx)
+        study_desc = get_val(row, study_desc_idx)
         study_desc_en = get_val(row, study_desc_en_idx)
         study_desc_de = get_val(row, study_desc_de_idx)
         keywords = get_val(row, keywords_idx)
@@ -1492,6 +1505,8 @@ def extract_excel_templates(
             if cleaned and key not in meta:
                 meta[key] = cleaned
 
+        if _clean_cell(study_desc) and "StudyDescription" not in meta:
+            meta["StudyDescription"] = _clean_cell(study_desc)
         if _clean_cell(study_desc_en) and "StudyDescription_en" not in meta:
             meta["StudyDescription_en"] = _clean_cell(study_desc_en)
         if _clean_cell(study_desc_de) and "StudyDescription_de" not in meta:
@@ -2045,9 +2060,10 @@ def extract_excel_templates(
 
             study_desc_map = _collect_meta_lang_values(meta, "StudyDescription")
             if not any(v for v in study_desc_map.values()):
-                study_desc_map[default_language] = f"Imported {prefix} survey data"
-            study_desc_map.setdefault("de", "")
-            study_desc_map.setdefault("en", "")
+                study_desc_map[default_language] = (
+                    _clean_cell(meta.get("StudyDescription"))
+                    or f"Imported {prefix} survey data"
+                )
 
             construct_map = _collect_meta_lang_values(meta, "Construct")
             if not any(v for v in construct_map.values()):
