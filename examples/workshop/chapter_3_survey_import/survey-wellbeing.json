@@ -3,7 +3,15 @@
     "StimulusType": "Questionnaire",
     "FileFormat": "tsv",
     "Language": "en",
-    "Respondent": "self"
+    "Respondent": "self",
+    "SoftwarePlatform": "Other",
+    "AdministrationMethod": "online"
+  },
+  "I18n": {
+    "Languages": [
+      "de",
+      "en"
+    ]
   },
   "Study": {
     "TaskName": "wellbeing",
@@ -35,7 +43,8 @@
     "Instructions": {
       "en": "Please indicate for each of the five statements which is closest to how you have been feeling over the last two weeks. Notice that higher numbers mean better well-being.",
       "de": "Bitte geben Sie für jede der fünf Aussagen an, welche am ehesten beschreibt, wie Sie sich in den letzten zwei Wochen gefühlt haben. Beachten Sie, dass höhere Zahlen besseres Wohlbefinden bedeuten."
-    }
+    },
+    "Category": "Well-being & Life Satisfaction"
   },
   "WB01": {
     "Description": {
