@@ -1,0 +1,37 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Campus Coffee Habits",
+    "TaskName": "cch",
+    "Description": "Made-up questionnaire for the PRISM class: coffee habits (items 1-8) and attitudes (items 9-12)"
+  },
+  "Scores": [
+    {
+      "Name": "Habit",
+      "Description": "How often the coffee habits apply (cch01-cch08)",
+      "Items": ["cch01", "cch02", "cch03", "cch04", "cch05", "cch06", "cch07", "cch08"],
+      "Method": "sum",
+      "Range": {"min": 8, "max": 40}
+    },
+    {
+      "Name": "Attitude",
+      "Description": "Agreement with the coffee statements (cch09-cch12)",
+      "Items": ["cch09", "cch10", "cch11", "cch12"],
+      "Method": "sum",
+      "Range": {"min": 4, "max": 20}
+    },
+    {
+      "Name": "Total",
+      "Description": "Habit and attitude together (cch01-cch12)",
+      "Items": ["cch01", "cch02", "cch03", "cch04", "cch05", "cch06", "cch07", "cch08", "cch09", "cch10", "cch11", "cch12"],
+      "Method": "sum",
+      "Range": {"min": 12, "max": 60}
+    }
+  ],
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Habit = sum of items 1-8, Attitude = sum of items 9-12, Total = sum of items 1-12. Higher scores mean more coffee habits. Items 13 (cups per day) and 14 (decaf) are not part of a score."
+    }
+  }
+}
