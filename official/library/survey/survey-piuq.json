@@ -23,16 +23,13 @@
         "ShortName": "PIUQ",
         "Category": "Addictive & Problematic Behaviors",
         "Authors": [
-            "Demetrovics",
-            "Z",
-            "Szeredi",
-            "B",
-            "& RÃ³zsa",
-            "S"
+            "Demetrovics, Z.",
+            "Szeredi, B.",
+            "Rózsa, S."
         ],
         "Year": 2008,
         "DOI": "",
-        "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
+        "Citation": "Demetrovics, Z., Szeredi, B., & Rózsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
         "ItemCount": 18,
         "License": "It seems that the PIUQ can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Demetrovics et al., 2008 ).",
         "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piuq.html",

@@ -17,19 +17,19 @@
     },
     "Study": {
         "OriginalName": {
-            "en": "Social Intelligence (TromsÃ¸ Social Intelligence Scale, TSIS)",
-            "de": "Soziale Intelligenz (TromsÃ¸ Social Intelligence Scale, TSIS)"
+            "en": "Social Intelligence (Tromsø Social Intelligence Scale, TSIS)",
+            "de": "Soziale Intelligenz (Tromsø Social Intelligence Scale, TSIS)"
         },
         "ShortName": "TSIS",
         "Category": "Cognitive & Executive Function",
         "Authors": [
             "D.H. Silvera",
             "M. Martinussen",
-            "& T. I. Dahl"
+            "T. I. Dahl"
         ],
         "Year": 2001,
         "DOI": "",
-        "Citation": "D.H. Silvera, M. Martinussen, & T. I. Dahl. (2001). The TromsÃ¸\nSocial Intelligence Scale, a self-report measure of social\nintelligence. Scandinavian Journal of Psychology, 42, 313-319.",
+        "Citation": "D.H. Silvera, M. Martinussen, & T. I. Dahl. (2001). The Tromsø\nSocial Intelligence Scale, a self-report measure of social\nintelligence. Scandinavian Journal of Psychology, 42, 313-319.",
         "ItemCount": 10,
         "License": "It seems that this scale can be used for research, but you need to acknowledge the authors and their research paper when writing about it ( Silvera et al., 2001 ).",
         "Source": "https://www.psytoolkit.org/survey-library/social-intelligence-tsis.html",
