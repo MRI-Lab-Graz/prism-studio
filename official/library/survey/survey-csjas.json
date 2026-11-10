@@ -23,8 +23,7 @@
         "ShortName": "CSJAS",
         "Category": "Beliefs, Values & Worldview",
         "Authors": [
-            "Lahtinen",
-            "O"
+            "Lahtinen, O."
         ],
         "Year": 2024,
         "DOI": "10.1111/sjop.13018",
@@ -98,7 +97,7 @@
     },
     "CSJAS03": {
         "Description": {
-            "en": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)",
+            "en": "Microaggressions<sup>⚹</sup> should be challenged often and actively.<BR>(<sup>⚹</sup> = verbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)",
             "de": "Mikroaggressionen<sup>â¹</sup> sollten oft und aktiv angegangen werden.<BR>(<sup>â¹</sup>â=âverbale Kommunikation oder Handlung, die als Ausdruck einer negativen Einstellung gegenüber einer Minderheitengruppe angesehen werden kann, unabhängig von der ursprünglichen Absicht)"
         },
         "Reversed": false,
