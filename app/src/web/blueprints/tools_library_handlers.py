@@ -25,6 +25,9 @@ def _resolve_project_library_details(
     return None, candidate_root / "code" / "library"
 
 
+PROJECT_PARTICIPANTS_NAME = "participants.json (this project)"
+
+
 def handle_list_library_files_merged(extract_template_info, global_survey_library_root):
     """List JSON files from BOTH global and project libraries, merged with source tags."""
     results = {"participants": [], "survey": [], "biometrics": [], "other": []}
@@ -38,9 +41,12 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
         lib_p = Path(library_path).resolve()
 
         participants_candidates = [lib_p / "participants.json"]
-        participants_candidates.extend(
-            [p / "participants.json" for p in lib_p.parents[:3]]
-        )
+        if source_label == "global":
+            # the global template sits next to the library folder; a project's file in a parent
+            # folder is its own data dictionary, listed separately below
+            participants_candidates.extend(
+                [p / "participants.json" for p in lib_p.parents[:3]]
+            )
         for p_cand in participants_candidates:
             if p_cand.exists() and p_cand.is_file():
                 existing_paths = {item["path"] for item in results["participants"]}
@@ -100,6 +106,14 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
                 and project_lib.is_dir()
             ):
                 _scan_library(str(project_lib), "project")
+                # the project's own participants.json (its data dictionary) next to the PRISM template
+                own = project_root / "participants.json"
+                if own.is_file():
+                    results["participants"].append(
+                        extract_template_info(
+                            str(own), PROJECT_PARTICIPANTS_NAME, source="project"
+                        )
+                    )
 
         for key in results:
             by_filename = {}

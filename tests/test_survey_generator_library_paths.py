@@ -154,3 +154,42 @@ def test_list_library_files_merged_empty_explicit_project_path_skips_session_fal
     assert payload["survey"] == []
     assert payload["sources"]["project_library_path"] is None
     assert payload["sources"]["project_library_exists"] is False
+
+
+def _participants(tmp_path, *, project_copy=False):
+    """Global library with the PRISM participants template; a project with its own BIDS participants.json."""
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.tools_library_handlers")
+    global_root = tmp_path / "global"
+    (global_root / "survey").mkdir(parents=True)
+    (global_root / "participants.json").write_text("{}", encoding="utf-8")
+    project = tmp_path / "proj"
+    (project / "code" / "library" / "survey").mkdir(parents=True)
+    (project / "participants.json").write_text("{}", encoding="utf-8")
+    if project_copy:
+        (project / "code" / "library" / "participants.json").write_text("{}", encoding="utf-8")
+    with app.test_request_context(f"/api/list-library-files-merged?project_path={project}"):
+        response = handlers.handle_list_library_files_merged(
+            extract_template_info=_extract_template_info,
+            global_survey_library_root=lambda: global_root,
+        )
+    return response.get_json()["participants"], global_root, project
+
+
+def test_the_projects_participants_file_and_the_prism_template_are_both_offered(tmp_path):
+    items, global_root, project = _participants(tmp_path)
+
+    assert sorted(i["path"] for i in items) == sorted(
+        [str(global_root / "participants.json"), str(project / "participants.json")]
+    )
+    by_path = {i["path"]: i for i in items}
+    assert by_path[str(global_root / "participants.json")]["source"] == "global"
+    assert by_path[str(project / "participants.json")]["source"] == "project"
+
+
+def test_a_project_library_copy_of_the_template_still_merges_with_the_global_one(tmp_path):
+    items, global_root, project = _participants(tmp_path, project_copy=True)
+
+    merged = [i for i in items if i["source"] == "both"]
+    assert [i["path"] for i in merged] == [str(project / "code" / "library" / "participants.json")]
+    assert str(project / "participants.json") in [i["path"] for i in items]
