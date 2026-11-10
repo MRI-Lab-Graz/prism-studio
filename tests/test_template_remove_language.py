@@ -73,3 +73,22 @@ def test_input_is_not_modified():
 def test_rejects_an_empty_code():
     with pytest.raises(ValueError):
         remove_language(_template(), "")
+
+
+def test_rejects_input_that_is_not_a_template_or_a_language_code():
+    with pytest.raises(ValueError):
+        remove_language([], "en")
+    with pytest.raises(ValueError):
+        remove_language({}, 5)
+
+
+def test_a_template_without_declared_languages_gets_none_invented():
+    tpl = _template()
+    tpl["I18n"] = {"DefaultLanguage": "en"}
+    assert remove_language(tpl, "en")["I18n"] == {"DefaultLanguage": "en"}
+
+
+def test_context_and_task_keys_are_not_items():
+    tpl = _template()
+    tpl["@context"] = {"Description": {"en": "x", "de": "y"}}
+    assert remove_language(tpl, "en")["@context"] == tpl["@context"]

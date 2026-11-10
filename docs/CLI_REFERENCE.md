@@ -160,6 +160,16 @@ project is checked:
 python prism_tools.py library template-check --project /path/to/project
 ```
 
+**`library template-remove-language`** — what Studio's Template Editor does with *Remove Language*: takes a
+language (`--language en`) out of every item description, answer level and the study instructions, and out of
+`I18n.Languages`. The general header (`OriginalName`, `Description`, `Citation`, ...) is never touched, and if the
+removed language was `I18n.DefaultLanguage`, another remaining one becomes the default. Prints the template, or writes
+it to `--output`:
+
+```bash
+python prism_tools.py library template-remove-language --template survey-mytask.json --language en --output survey-mytask.de.json
+```
+
 **`library template-score`** — how complete one template is, the numbers behind the rings
 in Studio's Template Editor: required fields filled (what a template needs before data can
 be converted or exported with it) and recommended fields filled (the FAIR ring: short name,

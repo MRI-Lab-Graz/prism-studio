@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import copy
 
-RESERVED_TOPLEVEL = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative", "_aliases", "_reverse_aliases"}
+from src.converters.template_import import TEMPLATE_SECTIONS
+
+NOT_ITEMS = TEMPLATE_SECTIONS | {"@context", "_aliases", "_reverse_aliases"}
 
 
 def _drop(texts: dict, code: str, key: str) -> None:
@@ -31,13 +33,15 @@ def _drop_levels(levels: dict, code: str) -> None:
 
 def remove_language(template: dict, code: str) -> dict:
     """A copy of `template` without language `code` in items, levels, instructions and I18n."""
-    code = (code or "").strip()
+    if not isinstance(template, dict):
+        raise ValueError("Template must be a JSON object")
+    code = code.strip() if isinstance(code, str) else ""
     if not code:
         raise ValueError("No language given")
     tpl = copy.deepcopy(template)
 
     for key, item in tpl.items():
-        if key in RESERVED_TOPLEVEL or not isinstance(item, dict):
+        if key in NOT_ITEMS or not isinstance(item, dict):
             continue
         _drop(item, code, "Description")
         if isinstance(item.get("Levels"), dict):
@@ -51,7 +55,7 @@ def remove_language(template: dict, code: str) -> dict:
         instructions.pop(code, None)
 
     i18n = tpl.get("I18n")
-    if isinstance(i18n, dict):
+    if isinstance(i18n, dict) and isinstance(i18n.get("Languages"), list):
         remaining = [x for x in i18n.get("Languages") or [] if x != code]
         i18n["Languages"] = remaining
         if i18n.get("DefaultLanguage") == code:

@@ -197,14 +197,13 @@ def cmd_library_template_remove_language(args) -> None:
 
     try:
         template = json.loads(Path(args.template).read_text(encoding="utf-8"))
-        result = remove_language(template, args.language)
+        text = json.dumps(remove_language(template, args.language), indent=2, ensure_ascii=False)
+        if args.output:
+            Path(args.output).write_text(text + "\n", encoding="utf-8")
     except (OSError, json.JSONDecodeError, ValueError) as exc:
-        print(f"Error: {exc}")
+        print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
-    text = json.dumps(result, indent=2, ensure_ascii=False)
-    if args.output:
-        Path(args.output).write_text(text + "\n", encoding="utf-8")
-    else:
+    if not args.output:
         print(text)
 
 

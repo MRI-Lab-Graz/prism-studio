@@ -47,6 +47,11 @@ state: **REQ** is the share of required fields filled (100% means the template c
 description, instructions), which never blocks anything. Hover a ring for details. The same
 numbers are available as `library template-score` on the command line.
 
+*Remove Language* (the language bar, or the chip in the Languages section) takes a language out of the item
+descriptions, answer levels and instructions only; the general header (name, description, citation, ...) keeps its
+text, so removing a language never empties a required field. The same step runs as
+`library template-remove-language` on the command line.
+
 A save always works, and the message lists the required fields that are still empty.
 Converting data or exporting a questionnaire needs a complete template and names what is
 missing.
