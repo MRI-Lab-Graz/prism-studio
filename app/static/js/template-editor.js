@@ -1167,7 +1167,7 @@
         toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
         toggleBtn.addEventListener('click', () => {
           const currentVal = ta.value || '';
-          const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+          const lang = fieldName === 'OriginalName' ? ((currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en') : 'en'; // the name is in the original language, the rest of the header in English
           const translationObj = {};
           translationObj[lang] = currentVal;
           onChange(translationObj);
@@ -2050,7 +2050,7 @@
       toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
       toggleBtn.addEventListener('click', () => {
         const currentVal = inp.value || '';
-        const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+        const lang = fieldName === 'OriginalName' ? ((currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en') : 'en'; // the name is in the original language, the rest of the header in English
         const translationObj = {};
         translationObj[lang] = currentVal;
         onChange(translationObj);

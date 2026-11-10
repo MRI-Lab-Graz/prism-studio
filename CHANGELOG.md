@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **General header text is English by default.** *Convert to multilingual* on a header field (description, citation,
+  license, ...) writes the existing text under `en`; only `OriginalName` uses the template's original language
+  (`Technical.Language`). In an Excel import a General-sheet `Description` without a language suffix becomes
+  `Study.Description.en`; `Description_<lang>` columns still name their own language.
+
 ### Fixed
 - **Remove Language no longer empties the general header.** Removing e.g. `en` from a template deleted it from
   `Study.OriginalName`, `Description`, `Citation`, ... too, so a German-only template lost required fields. Only

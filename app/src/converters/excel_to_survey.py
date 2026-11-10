@@ -2060,9 +2060,10 @@ def extract_excel_templates(
 
             study_desc_map = _collect_meta_lang_values(meta, "StudyDescription")
             if not any(v for v in study_desc_map.values()):
-                study_desc_map[default_language] = (
-                    _clean_cell(meta.get("StudyDescription"))
-                    or f"Imported {prefix} survey data"
+                # General header text is English unless a language column says otherwise.
+                plain = _clean_cell(meta.get("StudyDescription"))
+                study_desc_map["en" if plain else default_language] = (
+                    plain or f"Imported {prefix} survey data"
                 )
 
             construct_map = _collect_meta_lang_values(meta, "Construct")

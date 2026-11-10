@@ -42,9 +42,10 @@ def _de_only(tmp_path, general):
     return extract_excel_templates(excel_file=path, check_collisions=False)["ads"]["Study"]
 
 
-def test_plain_general_description_is_the_study_description(tmp_path):
-    study = _de_only(tmp_path, {"OriginalName_de": "Skala", "Description": "Ein Screening."})
-    assert study["Description"]["de"] == "Ein Screening."
+def test_plain_general_description_is_english_by_default(tmp_path):
+    # header text is English unless a language column says otherwise; the items here are German
+    study = _de_only(tmp_path, {"OriginalName_de": "Skala", "Description": "A screening."})
+    assert study["Description"] == {"en": "A screening."}
 
 
 def test_german_only_template_has_no_empty_english_header(tmp_path):
