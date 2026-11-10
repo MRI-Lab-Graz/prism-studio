@@ -27,5 +27,11 @@ def test_a_plain_string_copy_is_reported_too():
     assert any("Study.Description" in m for m in _messages(_template("I cannot sleep")))
 
 
+def test_a_one_item_template_may_describe_itself_with_its_only_item():
+    tpl = _template({"en": "I feel sad"})
+    del tpl["ADS02"]
+    assert not any("Study.Description" in m for m in _messages(tpl))
+
+
 def test_a_real_study_description_is_not_reported():
     assert not any("Study.Description" in m for m in _messages(_template({"en": "A depression screening scale."})))

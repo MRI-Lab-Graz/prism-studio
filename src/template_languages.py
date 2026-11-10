@@ -29,7 +29,8 @@ def _text_slots(tpl: dict):
         if key in NOT_ITEMS or not isinstance(item, dict):
             continue
         yield item, "Description"
-        level_sets = [item.get("Levels")] + [s.get("Levels") for s in item.get("VariantScales") or [] if isinstance(s, dict)]
+        variants = item.get("VariantScales")
+        level_sets = [item.get("Levels")] + [s.get("Levels") for s in variants if isinstance(s, dict)] if isinstance(variants, list) else [item.get("Levels")]
         for levels in level_sets:
             if isinstance(levels, dict):
                 for level in levels:
@@ -115,7 +116,7 @@ def add_language(template: dict, code: str) -> dict:
         instructions.setdefault(code, "")
 
     i18n = section(tpl, "I18n")
-    declared = i18n.get("Languages") if isinstance(i18n.get("Languages"), list) else []
+    declared = [c for c in i18n.get("Languages") or [] if isinstance(c, str)] if isinstance(i18n.get("Languages"), list) else []
     tpl["I18n"] = {**i18n, "Languages": list(dict.fromkeys([*declared, *template_languages(tpl), code]))}
     if has_items and not section(tpl, "Technical").get("Language"):
         tpl["Technical"] = {**section(tpl, "Technical"), "Language": code}

@@ -149,6 +149,28 @@ def test_sections_of_the_wrong_type_never_crash(change, code, section, junk):
     change(tpl, code)
 
 
+@pytest.mark.parametrize("change, code", [(add_language, "fr"), (remove_language, "en")])
+def test_junk_inside_items_and_the_language_list_never_crashes(change, code):
+    tpl = _template()
+    tpl["ADS01"]["VariantScales"] = 5
+    tpl["I18n"]["Languages"] = ["en", ["x"], {"a": 1}, 3]
+    assert "fr" in template_languages(add_language(tpl, "fr")) or change is remove_language
+    change(tpl, code)
+
+
+@pytest.mark.parametrize("action", ["add", "remove"])
+@pytest.mark.parametrize("body", [[1], "x", 5, {}])
+def test_routes_answer_400_for_a_body_that_is_not_a_template_request(action, body):
+    import importlib
+    from pathlib import Path
+
+    from flask import Flask
+
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    app.register_blueprint(importlib.import_module("src.web.blueprints.tools_template_editor_blueprint").tools_template_editor_bp)
+    assert app.test_client().post(f"/api/template-editor/{action}-language", json=body).status_code == 400
+
+
 def test_add_language_rejects_a_bad_code():
     for bad in ("", "english", "E1", 5):
         with pytest.raises(ValueError):

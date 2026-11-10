@@ -209,8 +209,11 @@ def _copied_description_warnings(template: dict) -> list[dict]:
     study_texts = set(_texts(section(template, "Study").get("Description")))
     if not study_texts:
         return []
-    for key, item in template.items():
-        if key not in NOT_ITEMS and isinstance(item, dict) and study_texts & set(_texts(item.get("Description"))):
+    items = {k: v for k, v in template.items() if k not in NOT_ITEMS and isinstance(v, dict)}
+    if len(items) < 2:  # a one-item instrument may well describe itself with its only item
+        return []
+    for key, item in items.items():
+        if study_texts & set(_texts(item.get("Description"))):
             return [{
                 "path": "Study.Description",
                 "message": f"Study.Description is the same text as item {key}; describe the instrument itself "

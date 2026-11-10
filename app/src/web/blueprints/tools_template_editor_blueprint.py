@@ -313,7 +313,8 @@ def api_template_editor_validate():
 
 
 def _change_language_response(change):
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
     try:
         return jsonify({"template": change(payload.get("template"), payload.get("language"))}), 200
     except ValueError as e:  # not a JSON object, not a language code
