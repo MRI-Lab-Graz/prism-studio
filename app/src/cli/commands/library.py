@@ -190,14 +190,11 @@ def cmd_library_template_validate(args) -> None:
         sys.exit(1)
 
 
-def cmd_library_template_remove_language(args) -> None:
-    """Remove a language from a template's items, levels and instructions, as Studio's Remove Language does
-    (the same function runs both). The general header is never touched. Prints the template, or writes --output."""
-    from src.template_languages import remove_language
-
+def _change_template_language(args, change) -> None:
+    """Read --template, apply `change(template, language)`, print the result or write --output."""
     try:
         template = json.loads(Path(args.template).read_text(encoding="utf-8"))
-        text = json.dumps(remove_language(template, args.language), indent=2, ensure_ascii=False)
+        text = json.dumps(change(template, args.language), indent=2, ensure_ascii=False)
         if args.output:
             Path(args.output).write_text(text + "\n", encoding="utf-8")
     except (OSError, json.JSONDecodeError, ValueError) as exc:
@@ -205,6 +202,22 @@ def cmd_library_template_remove_language(args) -> None:
         sys.exit(1)
     if not args.output:
         print(text)
+
+
+def cmd_library_template_remove_language(args) -> None:
+    """Remove a language from a template's items, levels and instructions, as Studio's Remove Language does
+    (the same function runs both). The general header is never touched. Prints the template, or writes --output."""
+    from src.template_languages import remove_language
+
+    _change_template_language(args, remove_language)
+
+
+def cmd_library_template_add_language(args) -> None:
+    """Add a language (empty texts) to a template's items, levels and instructions and declare it in I18n.Languages,
+    as Studio's Add Language does (the same function runs both). Prints the template, or writes --output."""
+    from src.template_languages import add_language
+
+    _change_template_language(args, add_language)
 
 
 def cmd_library_template_score(args) -> None:

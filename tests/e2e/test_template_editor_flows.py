@@ -64,6 +64,7 @@ def test_languages_is_a_pull_down_and_the_pick_becomes_a_green_chip(page, projec
     field = section.locator("[data-field-path='I18n/Languages']")
     field.locator("select").wait_for()
     field.locator("select").select_option("fr")
+    page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
     assert "fr" in page.locator("#langBadges").inner_text()  # the same code as the language bar: item texts get the slot too
     chips = [t.replace("\n", " ") for t in field.locator(".chip-badge").all_inner_texts()]
     assert chips == ["de (German) ×", "en (English) ×", "fr (French) ×"]
@@ -81,6 +82,7 @@ def test_default_language_offers_the_chosen_languages_and_follows_them(page, pro
     assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "de", "en"]
 
     languages.locator("select").select_option("fr")
+    page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
     assert "fr" in default.locator("option").evaluate_all("o => o.map(x => x.value)")
 
     default.select_option("fr")
@@ -106,6 +108,7 @@ def test_the_language_bar_adds_from_a_pull_down_and_declares_the_language(page, 
     _open_incomplete_template(page, project, studio_url)
     page.click("#btnAddLang")
     page.locator("#langChooser").select_option("fr")
+    page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
     assert "fr" in page.locator("#langBadges").inner_text()
     assert "fr" in _chip_codes(_languages_section(page))
 
@@ -143,6 +146,7 @@ def test_a_language_added_to_a_template_without_items_shows_in_the_bar(page, pro
     _open_template_without_items(page, project, studio_url)
     page.click("#btnAddLang")
     page.locator("#langChooser").select_option("fr")
+    page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
     assert page.locator("#langBadges [data-lang='fr']").count() == 1
     assert page.locator("#langBadges [data-lang='en']").count() == 1  # the declared one is listed too
 

@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Add Language runs in the backend too.** The editor's Add Language (bar and Languages field) now calls
+  `src/template_languages.py::add_language`, the same function as the new
+  `prism_tools.py library template-add-language --template T --language fr [--output F]`. It adds an empty text for the
+  language to every item, answer level and the instructions (never the general header) and declares it in
+  `I18n.Languages`.
+
+### Added
+- **Warning for a copied study description.** Validate and Save now warn when `Study.Description` is the same text as an
+  item's description, which is what older Excel imports produced (they took it from the first item).
+
+### Changed
 - **General header text is English by default.** *Convert to multilingual* on a header field (description, citation,
   license, ...) writes the existing text under `en`; only `OriginalName` uses the template's original language
   (`Technical.Language`). In an Excel import a General-sheet `Description` without a language suffix becomes

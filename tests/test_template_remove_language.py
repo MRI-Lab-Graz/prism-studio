@@ -92,3 +92,64 @@ def test_context_and_task_keys_are_not_items():
     tpl = _template()
     tpl["@context"] = {"Description": {"en": "x", "de": "y"}}
     assert remove_language(tpl, "en")["@context"] == tpl["@context"]
+
+
+# --- add_language -----------------------------------------------------------
+
+from src.template_languages import add_language, template_languages  # noqa: E402
+
+
+def test_template_languages_lists_declared_instruction_item_and_level_languages():
+    tpl = _template()
+    tpl["I18n"]["Languages"] = ["fr"]
+    assert template_languages(tpl) == ["de", "en", "fr"]
+
+
+def test_add_language_adds_empty_text_to_items_levels_and_instructions():
+    out = add_language(_template(), "fr")
+    assert out["ADS01"]["Description"]["fr"] == ""
+    assert out["ADS01"]["Levels"]["0"]["fr"] == ""
+    assert out["ADS01"]["VariantScales"][0]["Levels"]["0"]["fr"] == ""
+    assert out["Study"]["Instructions"]["fr"] == ""
+    assert out["I18n"]["Languages"] == ["de", "en", "fr"]
+
+
+def test_add_language_leaves_the_header_alone():
+    out = add_language(_template(), "fr")
+    assert out["Study"]["OriginalName"] == {"en": "Depression Scale"}
+    assert out["Study"]["Description"] == {"en": "A screening scale.", "de": ""}
+
+
+def test_add_language_turns_plain_texts_into_the_original_language_entry():
+    tpl = _template()
+    tpl["ADS01"]["Description"] = "sad"
+    tpl["ADS01"]["Levels"]["0"] = "never"
+    out = add_language(tpl, "fr")
+    assert out["ADS01"]["Description"] == {"en": "sad", "fr": ""}
+    assert out["ADS01"]["Levels"]["0"] == {"en": "never", "fr": ""}
+
+
+def test_add_language_sets_the_original_language_when_none_is_set():
+    tpl = _template()
+    del tpl["Technical"]["Language"]
+    assert add_language(tpl, "fr")["Technical"]["Language"] == "fr"
+
+
+def test_add_language_twice_changes_nothing_more():
+    once = add_language(_template(), "fr")
+    assert add_language(once, "fr") == once
+
+
+@pytest.mark.parametrize("change, code", [(add_language, "fr"), (remove_language, "en")])
+@pytest.mark.parametrize("section", ["Study", "Technical", "I18n"])
+@pytest.mark.parametrize("junk", [[], "text", 5, None])
+def test_sections_of_the_wrong_type_never_crash(change, code, section, junk):
+    tpl = _template()
+    tpl[section] = junk
+    change(tpl, code)
+
+
+def test_add_language_rejects_a_bad_code():
+    for bad in ("", "english", "E1", 5):
+        with pytest.raises(ValueError):
+            add_language(_template(), bad)
