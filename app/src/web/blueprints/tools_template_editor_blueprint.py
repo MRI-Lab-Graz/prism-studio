@@ -312,18 +312,27 @@ def api_template_editor_validate():
         return jsonify({"error": str(e)}), 500
 
 
+def _change_language_response(change):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    try:
+        return jsonify({"template": change(payload.get("template"), payload.get("language"))}), 200
+    except ValueError as e:  # not a JSON object, not a language code
+        return jsonify({"error": str(e)}), 400
+
+
 @tools_template_editor_bp.route("/api/template-editor/remove-language", methods=["POST"])
 def api_template_editor_remove_language():
     from src.template_languages import remove_language
 
-    payload = request.get_json(silent=True) or {}
-    template = payload.get("template")
-    if not isinstance(template, dict):
-        return jsonify({"error": "Template must be a JSON object"}), 400
-    try:
-        return jsonify({"template": remove_language(template, payload.get("language"))}), 200
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    return _change_language_response(remove_language)
+
+
+@tools_template_editor_bp.route("/api/template-editor/add-language", methods=["POST"])
+def api_template_editor_add_language():
+    from src.template_languages import add_language
+
+    return _change_language_response(add_language)
 
 
 @tools_template_editor_bp.route("/api/template-editor/completeness", methods=["POST"])

@@ -3387,75 +3387,16 @@
     });
   }
 
-  // Add Language: adds a language key to ALL question Descriptions and Levels, and declares it in I18n.Languages
+  // Add Language: the backend (src/template_languages.py, also `library template-add-language`) does the work.
   // The bar and the Languages field both end here: one behaviour.
-  function applyAddLanguage(lang) {
-    const items = itemKeysFromTemplate(currentTemplate);
-    const primaryLang = currentTemplate.Technical?.Language || 'en';
-
-    for (const key of items) {
-      const item = currentTemplate[key];
-      if (!item || typeof item !== 'object') continue;
-
-      // Convert plain string Description to multilingual dict
-      if (typeof item.Description === 'string') {
-        const text = item.Description;
-        item.Description = {};
-        item.Description[primaryLang] = text;
-      }
-      // Add language key to Description if it's a dict
-      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
-        if (!(lang in item.Description)) {
-          item.Description[lang] = '';
-        }
-      }
-
-      // Add language key to each Levels value
-      if (item.Levels && typeof item.Levels === 'object') {
-        for (const [lk, lv] of Object.entries(item.Levels)) {
-          if (typeof lv === 'string') {
-            // Convert plain string level to multilingual dict
-            item.Levels[lk] = {};
-            item.Levels[lk][primaryLang] = lv;
-            item.Levels[lk][lang] = '';
-          } else if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
-            if (!(lang in lv)) {
-              lv[lang] = '';
-            }
-          }
-        }
-      }
-
-      if (Array.isArray(item.VariantScales)) {
-        for (const variantScale of item.VariantScales) {
-          if (!variantScale || typeof variantScale !== 'object' || !variantScale.Levels || typeof variantScale.Levels !== 'object') continue;
-          for (const [lk, lv] of Object.entries(variantScale.Levels)) {
-            if (typeof lv === 'string') {
-              variantScale.Levels[lk] = {};
-              variantScale.Levels[lk][primaryLang] = lv;
-              variantScale.Levels[lk][lang] = '';
-            } else if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
-              if (!(lang in lv)) {
-                lv[lang] = '';
-              }
-            }
-          }
-        }
-      }
+  async function applyAddLanguage(lang) {
+    try {
+      const data = await apiPost('/api/template-editor/add-language', { template: currentTemplate, language: lang });
+      currentTemplate = data.template;
+    } catch (e) {
+      alert(`Could not add '${lang}': ${e.message || e}`);
+      return;
     }
-
-    forEachInstructionsText(currentTemplate, (val) => { if (!(lang in val)) val[lang] = ''; });
-
-    // Declare every language the template now has (not just the new one), so none is "used but not declared"
-    const i18n = (currentTemplate.I18n ||= {});
-    i18n.Languages = [...new Set([...(i18n.Languages || []), ...detectLanguagesFromTemplate(currentTemplate), lang])];
-
-    // If no primary language set and this is the first, set it
-    if (!currentTemplate.Technical?.Language && items.length > 0) {
-      if (!currentTemplate.Technical) currentTemplate.Technical = {};
-      currentTemplate.Technical.Language = lang;
-    }
-
     keepOpenSections(renderAll);
   }
 

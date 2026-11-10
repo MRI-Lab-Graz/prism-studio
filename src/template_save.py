@@ -197,6 +197,32 @@ def save_templates_to_project(templates: list, *, project_root, app_root) -> dic
     }
 
 
+def _texts(value) -> list[str]:
+    values = value.values() if isinstance(value, dict) else [value]
+    return [v.strip() for v in values if isinstance(v, str) and v.strip()]
+
+
+def _copied_description_warnings(template: dict) -> list[dict]:
+    """Older Excel imports took Study.Description from the first item's text; report a description that is an item's."""
+    from src.template_languages import NOT_ITEMS, section
+
+    study_texts = set(_texts(section(template, "Study").get("Description")))
+    if not study_texts:
+        return []
+    items = {k: v for k, v in template.items() if k not in NOT_ITEMS and isinstance(v, dict)}
+    if len(items) < 2:  # a one-item instrument may well describe itself with its only item
+        return []
+    for key, item in items.items():
+        if study_texts & set(_texts(item.get("Description"))):
+            return [{
+                "path": "Study.Description",
+                "message": f"Study.Description is the same text as item {key}; describe the instrument itself "
+                "(older Excel imports took it from the first item).",
+                "severity": SEVERITY_WARNING,
+            }]
+    return []
+
+
 def template_warnings(template: dict) -> tuple[list[dict], list[dict]]:
     """(language, item) findings that do not stop a template from being used but the user should see. A check that
     cannot run is itself a warning: it is never skipped silently."""
@@ -214,7 +240,7 @@ def template_warnings(template: dict) -> tuple[list[dict], list[dict]]:
         items = [f for f in TemplateValidator.validate_item_rules_from_data(template) if f["severity"] != SEVERITY_ERROR]
     except Exception as exc:
         items = [{"path": "(template)", "message": f"The item check could not run: {exc}", "severity": SEVERITY_WARNING}]
-    return language, items
+    return language, items + _copied_description_warnings(template)
 
 
 def _language_findings(template: dict) -> list[dict]:

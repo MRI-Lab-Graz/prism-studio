@@ -92,3 +92,86 @@ def test_context_and_task_keys_are_not_items():
     tpl = _template()
     tpl["@context"] = {"Description": {"en": "x", "de": "y"}}
     assert remove_language(tpl, "en")["@context"] == tpl["@context"]
+
+
+# --- add_language -----------------------------------------------------------
+
+from src.template_languages import add_language, template_languages  # noqa: E402
+
+
+def test_template_languages_lists_declared_instruction_item_and_level_languages():
+    tpl = _template()
+    tpl["I18n"]["Languages"] = ["fr"]
+    assert template_languages(tpl) == ["de", "en", "fr"]
+
+
+def test_add_language_adds_empty_text_to_items_levels_and_instructions():
+    out = add_language(_template(), "fr")
+    assert out["ADS01"]["Description"]["fr"] == ""
+    assert out["ADS01"]["Levels"]["0"]["fr"] == ""
+    assert out["ADS01"]["VariantScales"][0]["Levels"]["0"]["fr"] == ""
+    assert out["Study"]["Instructions"]["fr"] == ""
+    assert out["I18n"]["Languages"] == ["de", "en", "fr"]
+
+
+def test_add_language_leaves_the_header_alone():
+    out = add_language(_template(), "fr")
+    assert out["Study"]["OriginalName"] == {"en": "Depression Scale"}
+    assert out["Study"]["Description"] == {"en": "A screening scale.", "de": ""}
+
+
+def test_add_language_turns_plain_texts_into_the_original_language_entry():
+    tpl = _template()
+    tpl["ADS01"]["Description"] = "sad"
+    tpl["ADS01"]["Levels"]["0"] = "never"
+    out = add_language(tpl, "fr")
+    assert out["ADS01"]["Description"] == {"en": "sad", "fr": ""}
+    assert out["ADS01"]["Levels"]["0"] == {"en": "never", "fr": ""}
+
+
+def test_add_language_sets_the_original_language_when_none_is_set():
+    tpl = _template()
+    del tpl["Technical"]["Language"]
+    assert add_language(tpl, "fr")["Technical"]["Language"] == "fr"
+
+
+def test_add_language_twice_changes_nothing_more():
+    once = add_language(_template(), "fr")
+    assert add_language(once, "fr") == once
+
+
+@pytest.mark.parametrize("change, code", [(add_language, "fr"), (remove_language, "en")])
+@pytest.mark.parametrize("section", ["Study", "Technical", "I18n"])
+@pytest.mark.parametrize("junk", [[], "text", 5, None])
+def test_sections_of_the_wrong_type_never_crash(change, code, section, junk):
+    tpl = _template()
+    tpl[section] = junk
+    change(tpl, code)
+
+
+@pytest.mark.parametrize("change, code", [(add_language, "fr"), (remove_language, "en")])
+def test_junk_inside_items_and_the_language_list_never_crashes(change, code):
+    tpl = _template()
+    tpl["ADS01"]["VariantScales"] = 5
+    tpl["I18n"]["Languages"] = ["en", ["x"], {"a": 1}, 3]
+    assert "fr" in template_languages(add_language(tpl, "fr")) or change is remove_language
+    change(tpl, code)
+
+
+@pytest.mark.parametrize("action", ["add", "remove"])
+@pytest.mark.parametrize("body", [[1], "x", 5, {}])
+def test_routes_answer_400_for_a_body_that_is_not_a_template_request(action, body):
+    import importlib
+    from pathlib import Path
+
+    from flask import Flask
+
+    app = Flask(__name__, root_path=str(Path(__file__).resolve().parents[1] / "app"))
+    app.register_blueprint(importlib.import_module("src.web.blueprints.tools_template_editor_blueprint").tools_template_editor_bp)
+    assert app.test_client().post(f"/api/template-editor/{action}-language", json=body).status_code == 400
+
+
+def test_add_language_rejects_a_bad_code():
+    for bad in ("", "english", "E1", 5):
+        with pytest.raises(ValueError):
+            add_language(_template(), bad)

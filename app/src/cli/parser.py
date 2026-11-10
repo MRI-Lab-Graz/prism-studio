@@ -2961,6 +2961,14 @@ def build_prism_tools_parsers(
     parser_lib_template_validate.add_argument("--schema-version", default="stable", help="Schema version")
     parser_lib_template_validate.add_argument("--json", action="store_true", help="Print the result as JSON")
 
+    parser_lib_template_add_language = subparsers_library.add_parser(
+        "template-add-language",
+        help="Add a language (empty texts) to a template's items, levels and instructions and declare it.",
+    )
+    parser_lib_template_add_language.add_argument("--template", required=True, help="Path to the template JSON file")
+    parser_lib_template_add_language.add_argument("--language", required=True, help="Language code to add, e.g. fr")
+    parser_lib_template_add_language.add_argument("--output", help="Write the result here (default: print it)")
+
     parser_lib_template_remove_language = subparsers_library.add_parser(
         "template-remove-language",
         help="Remove a language from a template's items, levels and instructions (the general header is kept).",

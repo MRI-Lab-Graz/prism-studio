@@ -128,6 +128,7 @@
  "tools.generate_pavlovia_endpoint": "cli: survey export-pavlovia",
  "tools.limesurvey_save_to_project": "cli: library save-templates",
  "tools.limesurvey_to_prism": "open",
+ "tools_template_editor.api_template_editor_add_language": "cli: library template-add-language",
  "tools_template_editor.api_template_editor_answer_codes": "cli: survey answer-codes",
  "tools_template_editor.api_template_editor_completeness": "cli: library template-check",
  "tools_template_editor.api_template_editor_delete": "cli: library template-delete",
