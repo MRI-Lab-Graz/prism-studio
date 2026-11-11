@@ -1,7 +1,7 @@
 # Term IDs for every modality, down to the single survey item
 
-Date: 2026-11-11. Status: DRAFT, waiting for the user's approval. Written for the builder who plans and implements it.
-Open questions for the user are in the last section; everything marked "(my call)" was decided by the author, not the user.
+Date: 2026-11-11. Status: DRAFT with the user's answers worked in, waiting for approval of the whole document. Written for the builder who plans and implements it.
+The user's answers are in the last section; everything marked "(my call)" was decided by the author, not the user.
 
 ## Intent
 
@@ -76,18 +76,24 @@ read it. Identifying single survey items is the special part; the user knows no 
 
 ### Step 2: IDs for surveys (identity only)
 
-- **Shape (my call)**: instrument `prism:<taskname>`; item `prism:<taskname>.<item-key>`; score
-  `prism:<taskname>.<score-name>`. `<item-key>` and `<score-name>` are the existing key/name lowercased with `_` written
-  as `-` (`TIPI02` -> `prism:tipi.tipi02`, `tipi_extraversion` -> `prism:tipi.tipi-extraversion`, `Total` ->
-  `prism:tipi.total`). It is the two-segment grammar the registry already has (`prism:cortisol.serum`), so `check_terms`
-  and `expand()` need no new ID rule. `Level` is `instrument`, `item` or `score`.
+- **Shape (decided by the user)**: instrument `prism:<taskname>`; item `prism:<taskname>.<item-key>`; score
+  `prism:<taskname>.score-<score-name>`. An item comes from the library template (one question a person answered), a
+  score from the recipe (a number computed from items); the fixed `score-` prefix makes the difference readable in the
+  ID and a collision impossible. `<item-key>` is the existing key lowercased with `_` written as `-`
+  (`TIPI02` -> `prism:tipi.tipi02`); it deliberately repeats the instrument name so it can never disagree with the data
+  column. `<score-name>` is the recipe's `Name`, lowercased, `_` as `-`, without a leading `<taskname>-`
+  (`tipi_extraversion` -> `prism:tipi.score-extraversion`, `Total` -> `prism:tipi.score-total`). Checked against the
+  library on 2026-11-11: all 1,268 items and 111 scores give a valid, unique ID and no item key starts with `score`.
+  `score-` is reserved: an item key that starts with it is an error. It is the two-segment grammar the registry
+  already has (`prism:cortisol.serum`), so `check_terms` and `expand()` need no new ID rule. `Level` is `instrument`,
+  `item` or `score`.
 - **Derived, not stored (my call)**: the library template and the recipe stay the only place an item or a score is
   defined. One backend function builds the survey term registry from them (the same dict shape `load_registry` returns),
   so `find_term`, `term_links` and `terms list|show --modality survey` work unchanged. No term file per item.
   A recipe without a library template (there are 104 recipes and 103 templates) gives no score IDs and is reported.
 - **Frozen**: a committed list of every released survey ID (one per line). A test fails when a released ID is missing
-  from the derived registry (renamed key, removed item, renamed task) and when an item key and a score name of one
-  instrument collide. New IDs are added to the list by a command, never by hand.
+  from the derived registry (renamed key, removed item, renamed task), when an item key starts with `score-` and when
+  two scores of one instrument get the same ID. New IDs are added to the list by a command, never by hand.
 - **One concept, one ID**: a Studio test runs the cross-registry rule over biosample, environment and the derived
   survey registry.
 - **Short forms and variants**: one template with `VariantDefinitions` is one instrument; its items keep one ID and
@@ -95,7 +101,8 @@ read it. Identifying single survey items is the special part; the user knows no 
   instruments; an item copied from another instrument names its origin in a new optional item field `DerivedFrom`
   (a `prism:` item ID). Translations never get an ID of their own.
 - **In a project**: a function resolves a survey sidecar column to an official ID when the sidecar's `Study.TaskName`
-  is a library instrument and the column is one of its items, **and** the item is unchanged in what makes it that item:
+  is a library instrument and the column is one of its items, **and** the item is unchanged in what makes it that item (decided by the user: an edited item loses the official ID, it
+  is not kept with a "modified" mark):
   the answer values (`Levels` keys, `MinValue`, `MaxValue`) and, where the sidecar has the library's language, the item
   text. Otherwise the result is "no official ID" with the reason (unknown instrument, unknown item, changed scale,
   changed wording). CLI: `terms resolve --sidecar <file> [--json]`, one line per column. Nothing is written into the
@@ -118,7 +125,7 @@ The exact field names and value rules are settled in step 3's own plan; the list
 
 - `TermURL` keeps its v1.5.4 meaning: this term **is** that thing in another vocabulary (cortisol is the SNOMED
   substance). That is always an exact statement, so it needs no relation.
-- **New `IsAbout` (my call)**: what an item, a score or an instrument measures or asks about. A list of
+- **New `IsAbout` (agreed by the user)**: what an item, a score or an instrument measures or asks about. A list of
   `{"TermURL": <URL>, "Label": <text>, "Match": "exact" | "broader" | "narrower" | "related"}`. It answers points 2 and 6
   of the list. The name follows the Neurobagel annotation Studio already reads for participants
   (`src/participants_backend.py`).
@@ -149,12 +156,11 @@ The exact field names and value rules are settled in step 3's own plan; the list
 Function and file names, the wording of messages, where the released-ID list lives, how step 2 is cut into pull
 requests (suggested: library IDs and the freeze first, project resolution second).
 
-## Open questions for the user
+## Answers of the user (2026-11-11)
 
-1. **Item ID shape**: mechanical from the existing key (`prism:tipi.tipi02`; repeats the instrument name but can never
-   disagree with the data column) or shortened (`prism:tipi.02`; nicer, but needs a rule per instrument)?
-2. **Edited items**: is "changed wording or scale = no official ID" the rule you want, or should an edited item keep the
-   ID with a "modified" mark?
-3. **`IsAbout` next to `TermURL`**: agree with two fields (is the thing / is about the thing), or one field for both?
-4. **Where survey terms resolve**: the survey library is Studio's, the namespace URL points at prism-specification.
-   Should the survey library move into the specification later, or should the URL for survey IDs point at Studio?
+1. Item IDs are mechanical from the existing key: `prism:tipi.tipi02`.
+2. Scores carry the `score-` prefix: `prism:tipi.score-total`.
+3. An edited item (wording or answer scale) loses the official ID.
+4. Two fields: `TermURL` (is the thing) and `IsAbout` (is about the thing).
+5. The survey library moves into prism-specification later; until then survey IDs are derived in Studio and their URLs
+   do not have to resolve. The move is its own project and not part of steps 2 to 5.
