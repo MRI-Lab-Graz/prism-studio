@@ -116,3 +116,31 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
                                    "Label": f"{registry[task]['Label']} {name}", "Description": _text(score.get("Description")),
                                    "Status": "official"}
     return registry, problems
+
+
+def _released_path(path: Path | None) -> Path:
+    return Path(path or terms_root().parent / "survey" / "term-ids.txt")
+
+
+def released_ids(path: Path | None = None) -> set[str]:
+    """Every survey ID that was ever released (one per line; a missing file is an empty set)."""
+    try:
+        return {line.strip() for line in _released_path(path).read_text(encoding="utf-8").splitlines() if line.strip()}
+    except OSError:
+        return set()
+
+
+def freeze_problems(registry: dict[str, dict], released: set[str]) -> list[str]:
+    """One line per released ID the registry no longer has: an ID is frozen once released."""
+    now = {t.get("TermID") for t in registry.values()}
+    return [f"{tid}: released ID is gone (an ID is frozen; restore the item, score or task name)" for tid in sorted(released - now)]
+
+
+def write_released_ids(registry: dict[str, dict], path: Path | None = None) -> list[str]:
+    """Add the registry's IDs to the released list (never removes a line); returns the IDs that were added."""
+    target = _released_path(path)
+    old = released_ids(target)
+    added = sorted({t["TermID"] for t in registry.values()} - old)
+    if added:
+        target.write_text("".join(f"{tid}\n" for tid in sorted(old | set(added))), encoding="utf-8")
+    return added

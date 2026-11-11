@@ -88,3 +88,47 @@ def test_shipped_library_gives_every_item_and_score_an_id():
     levels = collections.Counter(t["Level"] for t in reg.values())
     assert levels["instrument"] >= 103 and levels["item"] >= 1268 and levels["score"] >= 100
     assert all(key == t["TermID"].partition(":")[2] for key, t in reg.items())
+
+
+# --- released IDs are frozen; one ID names one concept --------------------------
+
+import importlib.util
+from pathlib import Path
+
+from src.survey_terms import freeze_problems, released_ids, write_released_ids
+from src.term_registry import load_registry
+
+_spec = importlib.util.spec_from_file_location(
+    "check_terms", Path(__file__).resolve().parent.parent / "scripts" / "specification" / "check_terms.py")
+check_terms = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(check_terms)
+
+
+def test_a_released_id_that_disappears_is_a_problem():
+    assert freeze_problems({"tipi": {"TermID": "prism:tipi"}}, {"prism:tipi", "prism:tipi.tipi01"}) == [
+        "prism:tipi.tipi01: released ID is gone (an ID is frozen; restore the item, score or task name)"]
+    assert freeze_problems({"tipi": {"TermID": "prism:tipi"}}, {"prism:tipi"}) == []
+
+
+def test_write_released_ids_only_adds(tmp_path):
+    path = tmp_path / "ids.txt"
+    path.write_text("prism:old\n\n", encoding="utf-8")
+    assert write_released_ids({"tipi": {"TermID": "prism:tipi"}}, path) == ["prism:tipi"]
+    assert path.read_text(encoding="utf-8") == "prism:old\nprism:tipi\n"
+    assert write_released_ids({"tipi": {"TermID": "prism:tipi"}}, path) == []
+
+
+def test_released_ids_of_a_missing_file_is_empty(tmp_path):
+    assert released_ids(tmp_path / "none.txt") == set()
+
+
+def test_shipped_released_ids_are_all_still_there():
+    reg, _ = build_survey_registry()
+    released = released_ids()
+    assert released and freeze_problems(reg, released) == []
+
+
+def test_no_survey_id_exists_in_another_modality():
+    reg, _ = build_survey_registry()
+    assert check_terms.cross_registry_problems(
+        {"biosample": load_registry("biosample"), "environment": load_registry("environment"), "survey": reg}) == []
