@@ -44,6 +44,11 @@ from .conversion_environment_handlers import (
     api_environment_rescan_mri as _api_environment_rescan_mri,
 )
 
+from .conversion_biosample_handlers import (
+    api_biosample_import as _api_biosample_import,
+    api_biosample_template as _api_biosample_template,
+)
+
 conversion_bp = Blueprint("conversion", __name__)
 
 # Batch conversion job tracking
@@ -179,3 +184,15 @@ def api_environment_convert_cancel(job_id: str):
 def api_environment_convert_metrics():
     """Get in-memory environment conversion metrics for debugging/monitoring."""
     return _api_environment_convert_metrics()
+
+
+@conversion_bp.route("/api/biosample-import", methods=["POST"])
+def api_biosample_import():
+    """Import a filled biosample template into the current project."""
+    return _api_biosample_import()
+
+
+@conversion_bp.route("/api/biosample-template", methods=["GET"])
+def api_biosample_template():
+    """Download the biosample Excel template."""
+    return _api_biosample_template()

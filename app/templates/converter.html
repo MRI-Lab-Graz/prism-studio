@@ -54,6 +54,13 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="biosample-tab" data-bs-toggle="pill" data-bs-target="#biosample-panel" type="button" role="tab" aria-controls="biosample-panel" aria-selected="false" title="Open Biosample importer" aria-label="Open Biosample importer">
+                            <i class="fas fa-vial fa-lg d-block"></i>
+                            <span class="converter-icon-label">Biosample</span>
+                            <span class="visually-hidden">Biosample Measurements</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
                         <button class="nav-link" id="physio-tab" data-bs-toggle="pill" data-bs-target="#physio-panel" type="button" role="tab" aria-controls="physio-panel" aria-selected="false" title="Open Physiology converter" aria-label="Open Physiology converter">
                             <i class="fas fa-heartbeat fa-lg d-block"></i>
                             <span class="converter-icon-label">Physiology</span>
@@ -76,6 +83,8 @@
                 {% include 'converter_survey.html' %}
 
                 {% include 'converter_biometrics.html' %}
+
+                {% include 'converter_biosample.html' %}
 
                 {% include 'converter_physio.html' %}
 

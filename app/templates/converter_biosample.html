@@ -1,0 +1,48 @@
+{% from "includes/ui/macros.html" import field_label, file_picker %}
+<!-- Biosample Panel: runs `prism_tools biosample import` -->
+<div class="tab-pane fade" id="biosample-panel" role="tabpanel" aria-labelledby="biosample-tab">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <h5 class="mb-1">Biosample Import</h5>
+                    <p class="text-muted mb-0">Fill the biosample Excel template (sheets <code>data</code> and <code>panels</code>) and import it into the project.</p>
+                </div>
+                <a class="btn btn-outline-secondary" href="{{ url_for('conversion.api_biosample_template') }}" download>
+                    <i class="fas fa-download me-2"></i>Download template
+                </a>
+            </div>
+
+            <div class="row g-3 mb-3">
+                {{ file_picker('Filled template (.xlsx, .csv)', 'biosampleFile', accept='.xlsx,.csv', wrapper_classes='col-md-6') }}
+                <div class="col-md-6">
+                    {{ field_label('Specimen type', 'optional', 'Used for panels whose SpecimenType is empty (--specimen).') }}
+                    <select class="form-select mb-2" id="biosampleSpecimen" aria-label="Specimen type">
+                        <option value="">— choose a specimen type —</option>
+                        {% for value in biosample_specimen_types %}
+                        <option value="{{ value }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="biosampleSpecimenChips"></div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="biosampleOverwrite">
+                    <label class="form-check-label" for="biosampleOverwrite">Replace existing files (--overwrite)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="biosampleDryRun">
+                    <label class="form-check-label" for="biosampleDryRun">Only show what would be written (--dry-run)</label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" type="button" id="biosampleImportBtn">
+                <i class="fas fa-file-import me-2"></i>Import
+            </button>
+
+            <div id="biosampleResult" class="mt-3"></div>
+        </div>
+    </div>
+</div>
