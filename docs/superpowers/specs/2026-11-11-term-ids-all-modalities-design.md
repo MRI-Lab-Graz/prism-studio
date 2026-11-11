@@ -1,7 +1,6 @@
 # Term IDs for every modality, down to the single survey item
 
-Date: 2026-11-11. Status: DRAFT with the user's answers worked in, waiting for approval of the whole document. Written for the builder who plans and implements it.
-The user's answers are in the last section; everything marked "(my call)" was decided by the author, not the user.
+Date: 2026-11-11. Status: approved by the user on 2026-11-11, part by part in the conversation (answers in the last section).
 
 ## Intent
 
@@ -87,10 +86,12 @@ read it. Identifying single survey items is the special part; the user knows no 
   `score-` is reserved: an item key that starts with it is an error. It is the two-segment grammar the registry
   already has (`prism:cortisol.serum`), so `check_terms` and `expand()` need no new ID rule. `Level` is `instrument`,
   `item` or `score`.
-- **Derived, not stored (my call)**: the library template and the recipe stay the only place an item or a score is
+- **Derived, not stored (agreed by the user)**: the library template and the recipe stay the only place an item or a score is
   defined. One backend function builds the survey term registry from them (the same dict shape `load_registry` returns),
   so `find_term`, `term_links` and `terms list|show --modality survey` work unchanged. No term file per item.
-  A recipe without a library template (there are 104 recipes and 103 templates) gives no score IDs and is reported.
+  A template without a recipe still gives the instrument and item IDs, only no score IDs (today all 103 templates
+  have a recipe). A recipe without a library template gives no IDs at all and is reported: a score needs its
+  instrument (today: `psqi`).
 - **Frozen**: a committed list of every released survey ID (one per line). A test fails when a released ID is missing
   from the derived registry (renamed key, removed item, renamed task), when an item key starts with `score-` and when
   two scores of one instrument get the same ID. New IDs are added to the list by a command, never by hand.
@@ -162,5 +163,7 @@ requests (suggested: library IDs and the freeze first, project resolution second
 2. Scores carry the `score-` prefix: `prism:tipi.score-total`.
 3. An edited item (wording or answer scale) loses the official ID.
 4. Two fields: `TermURL` (is the thing) and `IsAbout` (is about the thing).
-5. The survey library moves into prism-specification later; until then survey IDs are derived in Studio and their URLs
-   do not have to resolve. The move is its own project and not part of steps 2 to 5.
+5. Survey IDs are derived from template and recipe; no term file per item.
+6. Step 3 as written (`HigherMeans` on a score, `RecallPeriod` on the instrument; exact names in that step's plan).
+7. Whether the survey library moves into prism-specification is NOT decided ("a big decision", to wait). Until then
+   survey IDs live in Studio and their URLs do not have to resolve. Nothing in steps 2 to 5 may depend on the move.
