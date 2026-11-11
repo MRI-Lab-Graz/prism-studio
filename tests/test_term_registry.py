@@ -236,3 +236,33 @@ def test_find_term_prefers_the_slug_in_any_case_over_a_label():
     }
     assert find_term(reg, "DASS21")[1]["TermID"] == "prism:dass21"
     assert find_term(reg, "dass21")[1]["TermID"] == "prism:dass21"
+
+
+# --- term_links: the ontology links of a term, its parent's included -----------
+
+def test_term_links_of_a_child_come_from_its_parent():
+    from src.term_registry import term_links
+    reg = {
+        "shbg": {"TermID": "prism:shbg", "Level": "analyte", "TermURL": {"snomed": "https://snomed.info/id/55503002"}},
+        "shbg.serum": {"TermID": "prism:shbg.serum", "Level": "analyte-specimen", "Parent": "prism:shbg"},
+    }
+    assert term_links(reg, reg["shbg.serum"]) == {"snomed": {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}}
+    assert term_links(reg, reg["shbg"]) == {"snomed": {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}}
+
+
+def test_term_links_own_entry_wins_and_others_are_added():
+    from src.term_registry import term_links
+    reg = {
+        "a": {"TermID": "prism:a", "TermURL": {"snomed": "https://snomed.info/id/111111", "chebi": "http://purl.obolibrary.org/obo/CHEBI_1"}},
+        "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a", "TermURL": {"snomed": "https://snomed.info/id/222222"}},
+    }
+    links = term_links(reg, reg["a.serum"])
+    assert links["snomed"] == {"url": "https://snomed.info/id/222222", "from": "prism:a.serum"}
+    assert links["chebi"]["from"] == "prism:a"
+
+
+def test_term_links_survive_missing_parent_and_bad_types():
+    from src.term_registry import term_links
+    assert term_links({}, {"TermID": "prism:x", "Parent": "prism:gone"}) == {}
+    assert term_links({}, {"TermID": "prism:x", "TermURL": ["not", "an", "object"]}) == {}
+    assert term_links({}, {"TermID": "prism:x", "TermURL": {"snomed": 5}}) == {}

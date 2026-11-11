@@ -953,7 +953,7 @@ Look up the shipped metric terms (the term registry, see the Terms section of
     python prism_tools.py terms propose (--sidecar <sidecar.json> | --data <file.tsv>) --column <column> [--label TEXT] [--open] [--out FILE] [--modality biosample] [--json]
 
 - `list`: every term with its level, units and status.
-- `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown.
+- `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown. Its ontology links (`TermURL`, for example SNOMED CT) are listed under `Links` (`links` with `--json`), the parent term's included, each with the term it comes from.
 - `--modality survey` lists and shows the IDs of the official survey library, derived from the templates and recipes: `prism:<task>` (instrument), `prism:<task>.<item-key>` (item, e.g. `prism:tipi.tipi02`), `prism:<task>.score-<name>` (score, e.g. `prism:tipi.score-extraversion`).
 - `freeze`: adds the survey IDs that are new to `official/library/survey/term-ids.txt` (commit it); an ID is frozen once released, so it refuses (exit 1) when a released ID is gone.
 - `resolve`: gives each column of a project's survey sidecar its official item ID (`prism:<task>.<item-key>`), or `-` and the reason: `unknown instrument`, `unknown item`, `alias`, `changed scale`, `changed wording`. An item whose answer values, minimum/maximum or wording (in a language the library also has) were edited has no official ID. Nothing is written; validation does not change. Exit 1 if the file cannot be read.
