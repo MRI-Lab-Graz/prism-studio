@@ -87,6 +87,7 @@
  "src.project_session_logging:record_project_session_command": "to review",
  "src.project_structure:get_project_quick_summary": "to review",
  "src.recent_projects:find_recent_project": "UI state: which project is open (recent-projects list, launcher -rp)",
+ "src.recent_projects:recent_project_listing": "UI state: launcher list for -rp without a name",
  "src.recent_projects:recent_project_notice": "UI state: launcher banner for -rp",
  "src.recent_projects:record_recent": "UI state: which project is open (recent-projects list)",
  "src.remote_browse:create_remote_directory": "to review",
