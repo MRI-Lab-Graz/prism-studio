@@ -25,7 +25,15 @@ ID_PREFIXES = ("prism", "bids")
 _SLUG = re.compile(r"^[a-z][a-z0-9-]{0,62}$")  # at most 63 characters per segment
 _CF_NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 _LOINC = re.compile(r"^\d+-\d$")
+_LOCAL_ID = re.compile(r"[a-z][a-z0-9-]{0,62}(\.[a-z][a-z0-9-]{0,62})?")  # <analyte>[.<specimen>]
 _STATUSES = ("official", "deprecated")
+# TermURL: one canonical URL per external vocabulary; add a system here to allow it.
+_TERMURL = {
+    "snomed": re.compile(r"^https://snomed\.info/id/\d{6,18}$"),
+    "loinc": re.compile(r"^https://loinc\.org/\d+-\d$"),
+    "chebi": re.compile(r"^https?://purl\.obolibrary\.org/obo/CHEBI_\d+$"),
+    "ncit": re.compile(r"^https?://purl\.obolibrary\.org/obo/NCIT_C\d+$"),
+}
 
 
 _STRINGS = ("Level", "Label", "Description", "Parent", "SpecimenType", "Units", "LOINC", "CFStandardName", "Group")
@@ -50,6 +58,16 @@ def type_problems(term: dict, where: str) -> list[str]:
         and all(isinstance(k, str) and isinstance(v, str) for k, v in term["Levels"].items())
     ):
         problems.append(f"{where}: Levels must be an object of strings")
+    urls = term.get("TermURL")
+    if "TermURL" in term:
+        if not (isinstance(urls, dict) and all(isinstance(v, str) for v in urls.values())):
+            problems.append(f"{where}: TermURL must be an object of strings")
+        else:
+            for system, url in urls.items():
+                if system not in _TERMURL:
+                    problems.append(f"{where}: TermURL has an unknown system {system!r} (known: {', '.join(_TERMURL)})")
+                elif not _TERMURL[system].fullmatch(url):
+                    problems.append(f"{where}: TermURL {system} {url!r} must match {_TERMURL[system].pattern}")
     for key in _NUMBERS:
         if key in term and (isinstance(term[key], bool) or not isinstance(term[key], (int, float))):
             problems.append(f"{where}: {key} must be a number")
@@ -112,6 +130,10 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) 
         if "LOINC" in term and not _LOINC.fullmatch(str(term["LOINC"])):
             problems.append(f"{key}: LOINC {term['LOINC']!r} does not look like 2143-6")
 
+        loinc_url = term.get("TermURL", {}).get("loinc")
+        if loinc_url and "LOINC" in term and loinc_url.rpartition("/")[2] != str(term["LOINC"]):
+            problems.append(f"{key}: TermURL loinc {loinc_url!r} disagrees with LOINC {term['LOINC']!r}")
+
         if "CFStandardName" in term and not _CF_NAME.fullmatch(term["CFStandardName"]):
             problems.append(f"{key}: CFStandardName {term['CFStandardName']!r} must match {_CF_NAME.pattern}")
 
@@ -153,6 +175,33 @@ def check_registry(registry: dict[str, dict], specimen_types: list[str] | None) 
             owner = claims.setdefault(str(name).lower(), key)
             if owner != key:
                 problems.append(f"{key}: {name!r} is already claimed by {owner!r}")
+    return problems
+
+
+# The prism: prefix is a namespace: prism:<local> is the URL of the term's file, found by looking the
+# local ID up in every modality's term folder. w3id.org redirects to wherever the repository is published.
+NAMESPACE = "https://w3id.org/prism-specification/terms/"
+
+
+def expand(term_id: str, repo: Path = Path(__file__).resolve().parent.parent) -> str:
+    """The URL of a prism: term (ValueError when the ID is not a term of this repository)."""
+    prefix, _, local = term_id.partition(":")
+    if prefix != "prism" or not _LOCAL_ID.fullmatch(local):
+        raise ValueError(f"{term_id!r} is not a prism:<id> term")
+    for modality in term_modalities(repo):
+        if (Path(repo) / "terms" / modality / f"{local}.json").is_file():
+            return f"{NAMESPACE}{modality}/{local}"
+    raise ValueError(f"{term_id!r} is not a term of this repository")
+
+
+def cross_registry_problems(registries: dict[str, dict[str, dict]]) -> list[str]:
+    """A TermID names one concept: the same local ID in two modalities is a problem."""
+    seen: dict[str, str] = {}
+    problems = []
+    for modality, registry in registries.items():
+        for key in registry:
+            if seen.setdefault(key, modality) != modality:
+                problems.append(f"{key}: ID exists in both {seen[key]} and {modality}; an ID must name one concept")
     return problems
 
 
@@ -205,9 +254,13 @@ def main(argv: list[str] | None = None) -> int:
     else:
         ap.error("give --all, --modality NAME, or --terms DIR and --schema FILE")
     problems = []
+    registries = {}
     for prefix, terms, context in jobs:
         registry, found = load_terms(terms)
+        registries[terms.name] = registry
         problems += [prefix + p for p in found + check_registry(registry, context)]
+    if args.all:
+        problems += cross_registry_problems(registries)
     for problem in problems:
         print(problem)
     return 1 if problems else 0

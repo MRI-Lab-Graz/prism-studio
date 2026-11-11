@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:fsh.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:fsh",
+  "SpecimenType": "serum",
+  "Units": "mU/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

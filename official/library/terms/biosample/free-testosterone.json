@@ -1,0 +1,13 @@
+{
+  "TermID": "prism:free-testosterone",
+  "Level": "analyte",
+  "Label": "free testosterone",
+  "Aliases": [
+    "free_testosterone"
+  ],
+  "Description": "Free (unbound) testosterone, the fraction not bound to SHBG or albumin; measured in serum.",
+  "TermURL": {
+    "snomed": "https://snomed.info/id/259355006"
+  },
+  "Status": "official"
+}

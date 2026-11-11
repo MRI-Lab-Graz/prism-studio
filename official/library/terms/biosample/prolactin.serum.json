@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:prolactin.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:prolactin",
+  "SpecimenType": "serum",
+  "Units": "uU/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

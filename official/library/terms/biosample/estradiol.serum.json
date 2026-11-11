@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:estradiol.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:estradiol",
+  "SpecimenType": "serum",
+  "Units": "pg/mL",
+  "MinValue": 0,
+  "Status": "official"
+}
