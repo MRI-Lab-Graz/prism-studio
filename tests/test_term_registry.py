@@ -226,3 +226,13 @@ def test_term_columns_keeps_upper_case_analyte_columns():
 
     sidecar = {"Technical": {}, "Study": {}, "Metadata": {}, "CRP": {"Units": "mg/L"}, "IL6": {"Term": "prism:il-6"}}
     assert [n for n, _ in term_columns(sidecar, "biosample")] == ["CRP", "IL6"]
+
+
+def test_find_term_prefers_the_slug_in_any_case_over_a_label():
+    from src.term_registry import find_term
+    reg = {
+        "dass.dass21": {"TermID": "prism:dass.dass21", "Label": "DASS21"},
+        "dass21": {"TermID": "prism:dass21", "Label": "DASS-21"},
+    }
+    assert find_term(reg, "DASS21")[1]["TermID"] == "prism:dass21"
+    assert find_term(reg, "dass21")[1]["TermID"] == "prism:dass21"

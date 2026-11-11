@@ -280,3 +280,39 @@ def test_terms_resolve_bad_file_exits_1(tmp_path, content):
         path.write_text(content, encoding="utf-8")
     code, out = _run("resolve", "--sidecar", str(path))
     assert code == 1 and "Error:" in out and "Traceback" not in out
+
+
+def test_terms_show_survey_dass21_is_the_instrument_in_any_case():
+    for name in ("DASS21", "dass21"):
+        code, out = _run("show", name, "--modality", "survey", "--json")
+        assert code == 0 and json.loads(out)["term"]["TermID"] == "prism:dass21"
+
+
+def test_terms_show_refuses_an_ambiguous_label(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    reg = {"a.q01": {"TermID": "prism:a.q01", "Label": "Q01"}, "b.q01": {"TermID": "prism:b.q01", "Label": "Q01"}}
+    monkeypatch.setattr(cmd, "_registry", lambda modality: (reg, []))
+    with pytest.raises(SystemExit) as exc:
+        cmd.cmd_terms_show(argparse.Namespace(modality="survey", term="Q01", json=True))
+    out = json.loads(capsys.readouterr().out)
+    assert exc.value.code == 1 and out["success"] is False and set(out["candidates"]) == {"prism:a.q01", "prism:b.q01"}
+
+
+def test_freeze_refusal_names_the_unreadable_template(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "build_survey_registry", lambda: ({}, ["survey-x.json: cannot read (boom)"]))
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x"})
+    with pytest.raises(SystemExit):
+        cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    out = capsys.readouterr().out
+    assert "survey-x.json: cannot read (boom)" in out and "prism:x: released ID is gone" in out
+
+
+def test_terms_list_json_carries_the_survey_problems(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "_registry", lambda modality: ({}, ["survey-x.json: cannot read (boom)"]))
+    cmd.cmd_terms_list(argparse.Namespace(modality="survey", json=True))
+    assert json.loads(capsys.readouterr().out)["problems"] == ["survey-x.json: cannot read (boom)"]

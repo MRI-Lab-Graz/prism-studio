@@ -215,3 +215,20 @@ def test_a_variant_scale_of_the_library_item_is_accepted(tmp_path):
 def test_the_metadata_blocks_are_not_columns(tmp_path):
     out = _resolve(tmp_path, {**_sidecar(TIPI01={}), "Metadata": {}, "I18n": {}, "Normative": {}})
     assert [c["column"] for c in out["columns"]] == ["TIPI01"]
+
+
+# --- review fix pass: item key collisions, the one NOT_ITEMS list ---------------
+
+def test_two_item_keys_with_the_same_id_are_reported_and_the_first_wins(tmp_path):
+    template = {**TIPI, "A_1": {"Description": "first"}, "a-1": {"Description": "second"}, "A-1": {"Description": "third"}}
+    reg, problems = build_survey_registry(*_lib(tmp_path, {"tipi": template}))
+    assert reg["tipi.a-1"]["Label"] == "A_1" and reg["tipi.a-1"]["Description"] == "first"
+    assert len(problems) == 2 and all("tipi.a-1" in p for p in problems)
+
+
+def test_non_item_blocks_get_no_id_and_are_no_columns(tmp_path):
+    blocks = {"Scoring": {"Method": "sum"}, "LimeSurvey": {"id": 1}, "_aliases": {}, "@context": {}}
+    reg, problems = build_survey_registry(*_lib(tmp_path, {"tipi": {**TIPI, **blocks}}))
+    assert problems == [] and not any(k.partition(".")[2] in ("scoring", "limesurvey", "-aliases", "@context") for k in reg)
+    out = _resolve(tmp_path, _sidecar(TIPI01={}, **blocks))
+    assert [c["column"] for c in out["columns"]] == ["TIPI01"]

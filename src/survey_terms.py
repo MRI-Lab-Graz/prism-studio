@@ -12,10 +12,10 @@ import json
 import re
 from pathlib import Path
 
+from src.template_languages import NOT_ITEMS as _NOT_ITEMS  # the one list of keys that are no items
 from src.term_registry import terms_root
 
 _LOCAL = re.compile(r"[a-z][a-z0-9-]{0,62}")  # one segment of a local ID
-_NOT_ITEMS = ("Technical", "Metadata", "I18n", "Study", "Normative")
 
 
 def _slug(text: str) -> str:
@@ -97,6 +97,9 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
             local = item_local_id(task, key)
             if key.lower().startswith("score-") or not _valid(local.partition(".")[2]):
                 problems.append(f"{path.name}: item key {key!r} gives no valid ID")
+                continue
+            if local in registry:
+                problems.append(f"{path.name}: item key {key!r} gives {local!r}, which already exists; ignored")
                 continue
             registry[local] = {"TermID": f"prism:{local}", "Level": "item", "Parent": f"prism:{task}", "Label": key,
                                "Description": _text(item.get("Description")), "Status": "official"}
