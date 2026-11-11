@@ -56,6 +56,24 @@ def _valid(segment: str) -> bool:
     return bool(_LOCAL.fullmatch(segment))
 
 
+def _templates(library_dir: Path, problems: list[str]) -> list[tuple[Path, str, dict]]:
+    """(file, task, template) of every readable survey template whose task name is a valid ID segment."""
+    found = []
+    for path in sorted(Path(library_dir).glob("survey-*.json")):
+        if "participant" in path.stem.lower():
+            continue
+        template = _read_object(path, problems)
+        if template is None:
+            continue
+        study = template.get("Study") if isinstance(template.get("Study"), dict) else {}
+        task = _slug(str(study.get("TaskName") or "").strip() or path.stem[len("survey-"):])
+        if _valid(task):
+            found.append((path, task, template))
+        else:
+            problems.append(f"{path.name}: task name {task!r} is not a valid ID segment")
+    return found
+
+
 def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | None = None) -> tuple[dict[str, dict], list[str]]:
     """(local ID -> term, problems) for every instrument, item and score; bad files and names are reported, never raised."""
     library_dir = Path(library_dir or terms_root().parent / "survey")
@@ -64,18 +82,9 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
     problems: list[str] = []
     tasks: dict[str, str] = {}  # task or file stem -> task
 
-    for path in sorted(library_dir.glob("survey-*.json")):
-        if "participant" in path.stem.lower():
-            continue
-        template = _read_object(path, problems)
-        if template is None:
-            continue
+    for path, task, template in _templates(library_dir, problems):
         study = template.get("Study") if isinstance(template.get("Study"), dict) else {}
         stem = path.stem[len("survey-"):]
-        task = _slug(str(study.get("TaskName") or "").strip() or stem)
-        if not _valid(task):
-            problems.append(f"{path.name}: task name {task!r} is not a valid ID segment")
-            continue
         if task in registry:
             problems.append(f"{path.name}: task {task!r} is already used by another template; ignored")
             continue
@@ -144,3 +153,68 @@ def write_released_ids(registry: dict[str, dict], path: Path | None = None) -> l
     if added:
         target.write_text("".join(f"{tid}\n" for tid in sorted(old | set(added))), encoding="utf-8")
     return added
+
+
+# --- a project's sidecar: which columns are an official item, unchanged --------------
+
+def _collapse(text) -> str:
+    return " ".join(str(text).split())
+
+
+def _texts(description, language: str) -> dict[str, str]:
+    """{language: text} of a Description given as a language object or as a plain string in `language`."""
+    if isinstance(description, dict):
+        return {k: _collapse(v) for k, v in description.items() if isinstance(v, str)}
+    return {language: _collapse(description)} if isinstance(description, str) else {}
+
+
+def _scale_matches(column: dict, scale: dict) -> bool:
+    levels, lib_levels = column.get("Levels"), scale.get("Levels")
+    if isinstance(levels, dict) and isinstance(lib_levels, dict) and {str(k) for k in levels} != {str(k) for k in lib_levels}:
+        return False
+    for bound in ("MinValue", "MaxValue"):
+        if column.get(bound) is not None and scale.get(bound) is not None and column[bound] != scale[bound]:
+            return False
+    return True
+
+
+def _item_reason(column: dict, item: dict, column_language: str, library_language: str) -> str:
+    """Why a project column is not the library item ("" when it is): alias, changed scale, changed wording."""
+    if "AliasOf" in column:
+        return "alias"
+    variants = [v for v in item.get("VariantScales") or [] if isinstance(v, dict)]
+    if not any(_scale_matches(column, scale) for scale in [item, *variants]):
+        return "changed scale"
+    ours, theirs = _texts(column.get("Description"), column_language), _texts(item.get("Description"), library_language)
+    if any(ours[lang] != theirs[lang] for lang in ours.keys() & theirs.keys()):
+        return "changed wording"
+    return ""
+
+
+def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recipe_dir: Path | None = None) -> dict:
+    """Give each column of a project's survey sidecar its official item ID, or the reason it has none.
+
+    {"instrument": TermID | None, "columns": [{"column", "term", "reason"}]}; reason is "" with a term, else one of
+    unknown instrument, unknown item, alias, changed scale, changed wording. An edited item loses its official ID.
+    Nothing is written anywhere.
+    """
+    library_dir = Path(library_dir or terms_root().parent / "survey")
+    study = sidecar.get("Study") if isinstance(sidecar.get("Study"), dict) else {}
+    technical = sidecar.get("Technical") if isinstance(sidecar.get("Technical"), dict) else {}
+    task = _slug(str(study.get("TaskName") or "").strip())
+    template = next((t for _, name, t in _templates(library_dir, []) if name == task), None) if task else None
+    columns = []
+    for key, column in sidecar.items():
+        if key in _NOT_ITEMS:
+            continue
+        item = template.get(key) if template else None
+        if template is None:
+            term, reason = None, "unknown instrument"
+        elif key in _NOT_ITEMS or not isinstance(item, dict) or "AliasOf" in item or not isinstance(column, dict):
+            term, reason = None, "unknown item"
+        else:
+            library_language = (template.get("Technical") or {}).get("Language") or "en"
+            reason = _item_reason(column, item, str(technical.get("Language") or "en"), str(library_language))
+            term = None if reason else f"prism:{item_local_id(task, key)}"
+        columns.append({"column": key, "term": term, "reason": reason})
+    return {"instrument": f"prism:{task}" if template else None, "columns": columns}

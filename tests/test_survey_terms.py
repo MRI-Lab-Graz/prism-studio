@@ -21,7 +21,7 @@ TIPI = {
 
 def _lib(tmp_path, templates, recipes=None):
     lib, rec = tmp_path / "library", tmp_path / "recipe"
-    lib.mkdir(); rec.mkdir()
+    lib.mkdir(exist_ok=True); rec.mkdir(exist_ok=True)
     for name, data in templates.items():
         (lib / f"survey-{name}.json").write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
     for name, data in (recipes or {}).items():
@@ -138,3 +138,80 @@ def test_no_survey_id_exists_in_another_modality():
     reg, _ = build_survey_registry()
     assert check_terms.cross_registry_problems(
         {"biosample": load_registry("biosample"), "environment": load_registry("environment"), "survey": reg}) == []
+
+
+# --- resolve a project's sidecar columns -----------------------------------------
+
+import copy
+
+from src.survey_terms import resolve_survey_sidecar
+
+_TIPI_LIB = {**TIPI, "TIPI03": {**TIPI["TIPI01"], "VariantScales": [{"VariantID": "v7", "MinValue": 1, "MaxValue": 7, "Levels": {str(i): str(i) for i in range(1, 8)}}]}}
+
+
+def _sidecar(**columns):
+    return {"Study": {"TaskName": "tipi"}, "Technical": {"Language": "en"}, **columns}
+
+
+def _resolve(tmp_path, sidecar):
+    return resolve_survey_sidecar(sidecar, *_lib(tmp_path, {"tipi": _TIPI_LIB}))
+
+
+def _one(out):
+    return out["columns"][0]
+
+
+def test_an_unchanged_item_resolves_to_its_official_id(tmp_path):
+    out = _resolve(tmp_path, _sidecar(TIPI01=copy.deepcopy(TIPI["TIPI01"])))
+    assert out == {"instrument": "prism:tipi", "columns": [{"column": "TIPI01", "term": "prism:tipi.tipi01", "reason": ""}]}
+
+
+@pytest.mark.parametrize("change,reason", [
+    ({"Levels": {"1": "a", "2": "b", "3": "c"}}, "changed scale"),
+    ({"MaxValue": 99}, "changed scale"),
+    ({"Description": {"en": "Something else"}}, "changed wording"),
+    ({"Description": "Something else"}, "changed wording"),
+    ({"AliasOf": "TIPI02"}, "alias"),
+])
+def test_an_edited_item_loses_the_official_id(tmp_path, change, reason):
+    column = {**copy.deepcopy(TIPI["TIPI01"]), **change}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column))) == {"column": "TIPI01", "term": None, "reason": reason}
+
+
+def test_other_whitespace_and_a_missing_scale_still_resolve(tmp_path):
+    column = {"Description": {"en": "  Extraverted,\n enthusiastic "}}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column)))["term"] == "prism:tipi.tipi01"
+
+
+def test_a_translation_the_library_lacks_still_resolves(tmp_path):
+    column = {**copy.deepcopy(TIPI["TIPI01"]), "Description": {"fr": "Extraverti"}}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column)))["term"] == "prism:tipi.tipi01"
+
+
+def test_a_plain_string_is_compared_in_the_sidecars_language(tmp_path):
+    column = {"Description": "Extraverted, enthusiastic"}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI01=column)))["term"] == "prism:tipi.tipi01"
+
+
+def test_unknown_item_and_unknown_instrument(tmp_path):
+    assert _one(_resolve(tmp_path, _sidecar(NOPE01={"Description": "x"}))) == {"column": "NOPE01", "term": None, "reason": "unknown item"}
+    out = _resolve(tmp_path, {"Study": {"TaskName": "other"}, "TIPI01": {}})
+    assert out["instrument"] is None and _one(out) == {"column": "TIPI01", "term": None, "reason": "unknown instrument"}
+
+
+@pytest.mark.parametrize("study", [None, [], "tipi", {}])
+def test_study_missing_or_not_an_object_is_unknown_instrument(tmp_path, study):
+    sidecar = {"TIPI01": {}} if study is None else {"Study": study, "TIPI01": {}}
+    out = _resolve(tmp_path, sidecar)
+    assert out["instrument"] is None and _one(out)["reason"] == "unknown instrument"
+
+
+def test_a_variant_scale_of_the_library_item_is_accepted(tmp_path):
+    column = {"Levels": {str(i): str(i) for i in range(1, 8)}, "MinValue": 1, "MaxValue": 7}
+    assert _one(_resolve(tmp_path, _sidecar(TIPI03=column)))["term"] == "prism:tipi.tipi03"
+    assert _one(_resolve(tmp_path, _sidecar(TIPI03={**column, "MaxValue": 9})))["reason"] == "changed scale"
+
+
+def test_the_metadata_blocks_are_not_columns(tmp_path):
+    out = _resolve(tmp_path, {**_sidecar(TIPI01={}), "Metadata": {}, "I18n": {}, "Normative": {}})
+    assert [c["column"] for c in out["columns"]] == ["TIPI01"]

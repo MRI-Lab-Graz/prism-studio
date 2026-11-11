@@ -258,3 +258,25 @@ def test_terms_freeze_refuses_when_a_released_id_is_gone(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
     assert exc.value.code == 1
+
+
+def test_terms_resolve_cli(tmp_path):
+    side = json.loads((REPO / "official" / "library" / "survey" / "survey-tipi.json").read_text(encoding="utf-8"))
+    side["Study"]["TaskName"] = "tipi"   # a project sidecar carries it; the library file relies on its name
+    side["TIPI02"]["MaxValue"] = 99
+    path = tmp_path / "task-tipi_survey.json"
+    path.write_text(json.dumps(side), encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(path))
+    assert code == 0 and "TIPI01\tprism:tipi.tipi01\t" in out and "TIPI02\t-\tchanged scale" in out
+    code, out = _run("resolve", "--sidecar", str(path), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["instrument"] == "prism:tipi"
+
+
+@pytest.mark.parametrize("content", [None, "[1]", "{"])
+def test_terms_resolve_bad_file_exits_1(tmp_path, content):
+    path = tmp_path / "x.json"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(path))
+    assert code == 1 and "Error:" in out and "Traceback" not in out

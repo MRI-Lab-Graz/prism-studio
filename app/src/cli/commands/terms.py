@@ -13,7 +13,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
-from src.survey_terms import build_survey_registry, freeze_problems, released_ids, write_released_ids
+from src.survey_terms import build_survey_registry, freeze_problems, released_ids, resolve_survey_sidecar, write_released_ids
 from src.term_registry import context_value, find_term, load_registry, resolve_column
 
 
@@ -51,6 +51,20 @@ def cmd_terms_freeze(args) -> None:
     added = write_released_ids(registry)
     _emit(args, {"success": True, "added": added, "problems": problems},
           "\n".join(problems + [f"added {len(added)} ID(s)"]))
+
+
+def cmd_terms_resolve(args) -> None:
+    """Give each column of a project's survey sidecar its official item ID, or say why it has none."""
+    try:
+        sidecar = json.loads(Path(args.sidecar).read_text(encoding="utf-8"))
+        if not isinstance(sidecar, dict):
+            raise ValueError("the sidecar must hold a JSON object")
+    except (OSError, ValueError) as exc:
+        _emit(args, {"success": False, "error": str(exc)}, f"Error: cannot read {args.sidecar}: {exc}")
+        sys.exit(1)
+    result = resolve_survey_sidecar(sidecar)
+    _emit(args, {"success": True, **result},
+          "\n".join(f"{c['column']}\t{c['term'] or '-'}\t{c['reason']}" for c in result["columns"]))
 
 
 def cmd_terms_show(args) -> None:
