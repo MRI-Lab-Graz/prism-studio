@@ -87,6 +87,21 @@ def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
     return None
 
 
+def term_links(registry: dict[str, dict], term: dict) -> dict[str, dict]:
+    """The ontology links of a term: {system: {"url", "from"}}, its parent's included (the term's own win).
+
+    `from` is the TermID that carries the link. Anything that is not a string URL is left out: local terms
+    are project data.
+    """
+    parent = next((t for t in registry.values() if t.get("TermID") == term.get("Parent")), None) if term.get("Parent") else None
+    links: dict[str, dict] = {}
+    for source in (parent, term):
+        urls = source.get("TermURL") if source else None
+        if isinstance(urls, dict):
+            links.update({k: {"url": v, "from": source.get("TermID")} for k, v in urls.items() if isinstance(v, str)})
+    return links
+
+
 def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
     """Parent terms whose name is contained in the probe or contains it (substring only)."""
     lowered = probe.lower()

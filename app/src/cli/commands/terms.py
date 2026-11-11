@@ -14,7 +14,7 @@ from src.term_proposal import (
     load_inherited_sidecar,
 )
 from src.survey_terms import build_survey_registry, freeze_problems, released_ids, resolve_survey_sidecar, write_released_ids
-from src.term_registry import context_value, find_term, load_registry, resolve_column, term_names
+from src.term_registry import context_value, find_term, load_registry, resolve_column, term_links, term_names
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -89,7 +89,11 @@ def cmd_terms_show(args) -> None:
     if not found:
         _emit(args, {"success": False, "error": f"unknown term: {args.term}"}, f"Error: unknown term: {args.term}")
         sys.exit(1)
-    _emit(args, {"success": True, "term": found[1]}, json.dumps(found[1], indent=2, ensure_ascii=False))
+    links = term_links(registry, found[1])
+    text = json.dumps(found[1], indent=2, ensure_ascii=False)
+    if links:
+        text += "\nLinks:\n" + "\n".join(f"  {k}: {v['url']} (from {v['from']})" for k, v in links.items())
+    _emit(args, {"success": True, "term": found[1], "links": links}, text)
 
 
 def cmd_terms_suggest(args) -> None:

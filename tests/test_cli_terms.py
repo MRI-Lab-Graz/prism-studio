@@ -316,3 +316,21 @@ def test_terms_list_json_carries_the_survey_problems(monkeypatch, capsys):
     monkeypatch.setattr(cmd, "_registry", lambda modality: ({}, ["survey-x.json: cannot read (boom)"]))
     cmd.cmd_terms_list(argparse.Namespace(modality="survey", json=True))
     assert json.loads(capsys.readouterr().out)["problems"] == ["survey-x.json: cannot read (boom)"]
+
+
+def _show(term, capsys, **kw):
+    import argparse
+    from src.cli.commands import terms as cmd
+    cmd.cmd_terms_show(argparse.Namespace(modality="biosample", term=term, json=kw.get("json", False)))
+    return capsys.readouterr().out
+
+
+def test_terms_show_gives_a_child_the_links_of_its_parent(capsys):
+    data = json.loads(_show("shbg.serum", capsys, json=True))
+    assert data["links"]["snomed"] == {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}
+    out = _show("shbg.serum", capsys)
+    assert "https://snomed.info/id/55503002" in out and "prism:shbg" in out
+
+
+def test_terms_show_without_links_prints_no_links_line(capsys):
+    assert "Links" not in _show("cortisol.serum", capsys)
