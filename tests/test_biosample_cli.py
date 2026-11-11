@@ -49,3 +49,14 @@ def test_cli_refuses_without_specimen(tmp_path, capsys):
         cmd_biosample_import(_import_args(book, project))
     assert exc.value.code != 0
     assert not (project / "sub-01").exists()
+
+
+def test_cli_refuses_missing_project(tmp_path, capsys):
+    book = tmp_path / "t.xlsx"
+    cmd_biosample_template(argparse.Namespace(output=str(book)))
+    missing = tmp_path / "typo"
+    with pytest.raises(SystemExit) as exc:
+        cmd_biosample_import(_import_args(book, missing))
+    assert exc.value.code != 0
+    assert f"{missing}: not a directory" in capsys.readouterr().err
+    assert not missing.exists()

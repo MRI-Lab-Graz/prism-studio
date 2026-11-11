@@ -202,3 +202,12 @@ def test_overwrite_keeps_the_existing_creation_date(tmp_path):
     forced = import_biosample(book, project, overwrite=True)
     assert forced.errors == []
     assert {p: (project / p).read_bytes() for p in forced.written} == before
+
+
+def test_missing_project_folder_is_refused(tmp_path):
+    book = _book(tmp_path, [_row()])
+    missing = tmp_path / "typo"
+    res = import_biosample(book, missing)
+    assert res.errors == [f"{missing}: not a directory"]
+    assert res.written == []
+    assert not missing.exists()

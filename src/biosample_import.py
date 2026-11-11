@@ -114,6 +114,9 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
     """Pivot the template's measurements into biosample files of ``project``."""
     project = Path(project)
     res = ImportResult()
+    if not project.is_dir():
+        res.errors.append(f"{project}: not a directory")
+        return res
     rows, panels, problems = read_template(Path(input_path), specimen)
     if problems:
         res.errors = problems
