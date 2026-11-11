@@ -6,6 +6,7 @@ Requires python-docx (optional dependency).
 
 from __future__ import annotations
 
+import html
 import io
 import random
 from datetime import datetime
@@ -93,6 +94,52 @@ def _set_paragraph_spacing(paragraph, before=None, after=None) -> None:
         paragraph_format.space_before = before
     if after is not None:
         paragraph_format.space_after = after
+
+
+def _question_groups(template: dict, language: str, variant_id: Optional[str], randomize: bool, random_seed) -> list:
+    """The questions as they are drawn, for the Word file and the on-screen preview alike:
+    ("matrix", [(key, item, levels), ...]) for consecutive radio items sharing one scale, else ("single", [(key, item, levels)])."""
+    all_keys = _item_keys(template)
+    visible = []
+    for key in all_keys:
+        item = template[key]
+        q_type = _detect_question_type(item)
+        if q_type == "hidden":
+            continue
+        applicable = item.get("ApplicableVersions")
+        if variant_id and isinstance(applicable, list) and len(applicable) > 0:
+            if variant_id not in applicable:
+                continue
+        levels = _get_levels(item, variant_id)
+        visible.append((key, item, q_type, levels))
+
+    if randomize:
+        rng = random.Random(random_seed)  # noqa: S311 - item order shuffle, not security-sensitive
+        rng.shuffle(visible)
+
+    groups = []
+    i = 0
+    while i < len(visible):
+        key, item, q_type, levels = visible[i]
+        if q_type == "radio" and levels:
+            sig = _levels_signature(levels, language)
+            if sig:
+                block = [(key, item, levels)]
+                j = i + 1
+                while j < len(visible):
+                    nk, ni, nt, nl = visible[j]
+                    if nt == "radio" and _levels_signature(nl, language) == sig:
+                        block.append((nk, ni, nl))
+                        j += 1
+                    else:
+                        break
+                if len(block) >= 2:
+                    groups.append(("matrix", block))
+                    i = j
+                    continue
+        groups.append(("single", [(key, item, levels)]))
+        i += 1
+    return groups
 
 
 # ── Main renderer ────────────────────────────────────────────────────
@@ -284,48 +331,7 @@ def render_questionnaire_docx(
 
     # ── Build visible items ──────────────────────────────────────────
 
-    all_keys = _item_keys(template)
-    visible = []
-    for key in all_keys:
-        item = template[key]
-        q_type = _detect_question_type(item)
-        if q_type == "hidden":
-            continue
-        applicable = item.get("ApplicableVersions")
-        if variant_id and isinstance(applicable, list) and len(applicable) > 0:
-            if variant_id not in applicable:
-                continue
-        levels = _get_levels(item, variant_id)
-        visible.append((key, item, q_type, levels))
-
-    if randomize:
-        rng = random.Random(random_seed)  # noqa: S311 - item order shuffle, not security-sensitive
-        rng.shuffle(visible)
-
-    # ── Group consecutive radio items with same scale into matrix ────
-
-    groups = []
-    i = 0
-    while i < len(visible):
-        key, item, q_type, levels = visible[i]
-        if q_type == "radio" and levels:
-            sig = _levels_signature(levels, language)
-            if sig:
-                block = [(key, item, levels)]
-                j = i + 1
-                while j < len(visible):
-                    nk, ni, nt, nl = visible[j]
-                    if nt == "radio" and _levels_signature(nl, language) == sig:
-                        block.append((nk, ni, nl))
-                        j += 1
-                    else:
-                        break
-                if len(block) >= 2:
-                    groups.append(("matrix", block))
-                    i = j
-                    continue
-        groups.append(("single", [(key, item, levels)]))
-        i += 1
+    groups = _question_groups(template, language, variant_id, randomize, random_seed)
 
     # ── Render groups ────────────────────────────────────────────────
 
@@ -570,6 +576,99 @@ def render_questionnaire_docx(
     doc.save(buf)
     buf.seek(0)
     return buf
+
+
+def render_questionnaire_html(
+    template: dict,
+    language: str = "en",
+    variant_id: Optional[str] = None,
+    options: Optional[dict] = None,
+) -> str:
+    """The questionnaire as an HTML fragment for the Studio preview: the same questions, scales and answer
+    shapes as the Word file (both come from ``_question_groups``). All template text is escaped."""
+    opts = options or {}
+    show_codes = opts.get("show_item_codes", False)
+    esc = html.escape
+    study = template.get("Study") or {}
+    out = []
+    title = _get_localized(study.get("OriginalName"), language) or "Questionnaire"
+    out.append(
+        '<div style="border-bottom:2px solid #1f8b5c;padding-bottom:0.75rem;margin-bottom:1rem;">'
+        f"<h4>{esc(title)}</h4></div>"
+    )
+    instructions = _get_localized(study.get("Instructions"), language)
+    if instructions:
+        out.append(
+            '<div style="background:#f8f9fa;border-left:4px solid #1f8b5c;padding:0.75rem 1rem;margin-bottom:1.25rem;">'
+            f"<strong>Instructions:</strong> {esc(instructions)}</div>"
+        )
+
+    def label(key, item, num):
+        code = f' <span style="color:#999;font-size:0.8rem;">[{esc(key)}]</span>' if show_codes else ""
+        reversed_ = ' <em style="color:#999;font-size:0.8rem;">(R)</em>' if item.get("Reversed") else ""
+        desc = esc(_get_localized(item.get("Description"), language))
+        return f'<span style="font-weight:700;color:#1f8b5c;">{num}.</span>{code} {desc}{reversed_}'
+
+    num = 0
+    for group_type, block in _question_groups(
+        template, language, variant_id, opts.get("randomize_items", False), opts.get("random_seed")
+    ):
+        if group_type == "matrix":
+            levels = block[0][2]
+            keys = sorted(levels, key=_safe_num)
+            cell = "padding:6px 8px;border:1px solid #dee2e6;"
+            head = "".join(
+                f'<th style="{cell}background:#e8e8e8;text-align:center;font-size:0.8rem;">'
+                f"{esc(_get_localized(levels[k], language))}</th>"
+                for k in keys
+            )
+            rows = []
+            for idx, (key, item, _levels) in enumerate(block):
+                num += 1
+                bg = "#fafbfc" if idx % 2 == 0 else "#fff"
+                circles = f'<td style="{cell}text-align:center;">○</td>' * len(keys)
+                rows.append(f'<tr style="background:{bg}"><td style="{cell}">{label(key, item, num)}</td>{circles}</tr>')
+            out.append(
+                f'<table style="width:100%;border-collapse:collapse;margin:15px 0;"><thead><tr>'
+                f'<th style="{cell}background:#e8e8e8;width:50%;"></th>{head}</tr></thead>'
+                f'<tbody>{"".join(rows)}</tbody></table>'
+            )
+            continue
+        key, item, levels = block[0]
+        q_type = _detect_question_type(item)
+        num += 1
+        part = [f'<div style="margin:0.75rem 0 0.25rem;">{label(key, item, num)}</div>']
+        item_instr = _get_localized(item.get("Instructions"), language)
+        if item_instr:
+            part.append(f'<div style="margin-left:1rem;color:#666;font-style:italic;">{esc(item_instr)}</div>')
+        keys = sorted(levels, key=_safe_num)
+        if q_type == "radio" and levels:
+            choices = "".join(f"<span>○ {esc(_get_localized(levels[k], language))}</span>" for k in keys)
+            part.append(f'<div style="margin-left:1rem;display:flex;flex-wrap:wrap;gap:0.25rem 1.5rem;">{choices}</div>')
+        elif q_type == "dropdown" and levels:
+            choices = "".join(f"<div>□ {esc(_get_localized(levels[k], language))}</div>" for k in keys)
+            part.append(f'<div style="margin-left:1.5rem;">{choices}</div>')
+        elif q_type == "numerical":
+            hints = []
+            if item.get("MinValue") is not None:
+                hints.append(f"Min: {item['MinValue']}")
+            if item.get("MaxValue") is not None:
+                hints.append(f"Max: {item['MaxValue']}")
+            if item.get("Unit"):
+                hints.append(str(item["Unit"]))
+            hint = f' <span style="color:#666;font-size:0.8rem;">({esc(", ".join(hints))})</span>' if hints else ""
+            part.append(f'<div style="margin-left:1rem;">___________{hint}</div>')
+        elif q_type == "slider":
+            sc = item.get("SliderConfig") or {}
+            low, high = sc.get("min", item.get("MinValue", 0)), sc.get("max", item.get("MaxValue", 100))
+            part.append(f'<div style="margin-left:1rem;">{esc(str(low))} |{"━" * 35}| {esc(str(high))}</div>')
+        elif q_type == "long-text":
+            part.append('<div style="margin-left:1rem;color:#999;">' + "<br>".join(["_" * 75] * 3) + "</div>")
+        else:
+            part.append(f'<div style="margin-left:1rem;color:#999;">{"_" * 55}</div>')
+        out.append("".join(part))
+    out.append(f'<div style="text-align:center;color:#999;font-size:0.75rem;margin-top:1rem;">{num} items — Generated by PRISM Studio</div>')
+    return "\n".join(out)
 
 
 def _style_matrix_table(table):

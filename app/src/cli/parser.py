@@ -2517,7 +2517,13 @@ def build_prism_tools_parsers(
         "--template", required=True, help="Path to a PRISM survey template JSON file"
     )
     parser_survey_export_questionnaire_docx.add_argument(
-        "--output", required=True, help="Path to write the .docx file"
+        "--output", required=True, help="Path to write the file (.docx, or .html with --format html)"
+    )
+    parser_survey_export_questionnaire_docx.add_argument(
+        "--format",
+        choices=["docx", "html"],
+        default="docx",
+        help="docx (default) or html: the on-screen preview Studio shows for 'Preview Questionnaire'",
     )
     parser_survey_export_questionnaire_docx.add_argument(
         "--language", default="en", help="Export language (default: en)"

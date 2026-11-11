@@ -1955,128 +1955,22 @@ document.addEventListener('DOMContentLoaded', function() {
         return template;
     }
 
-    function renderPreviewModal(lang) {
+    async function renderPreviewModal(lang) {
         if (!previewModalBody) return;
-        const template = buildPreviewTemplate();
-        // Reuse the same rendering approach as the template-editor preview
-        previewModalBody.innerHTML = '';
-
-        const study = template.Study || {};
-        // Header
-        const header = document.createElement('div');
-        header.style.cssText = 'border-bottom:2px solid var(--studio-semantic-primary, #1f8b5c);padding-bottom:0.75rem;margin-bottom:1rem;';
-        const title = getText(study.OriginalName, lang) || 'Questionnaire';
-        const h4 = document.createElement('h4');
-        h4.textContent = title;
-        header.appendChild(h4);
-        previewModalBody.appendChild(header);
-
-        // Instructions
-        if (study.Instructions) {
-            const instrText = getText(study.Instructions, lang);
-            if (instrText) {
-                const instrBox = document.createElement('div');
-                instrBox.style.cssText = 'background:#f8f9fa;border-left:4px solid var(--studio-semantic-primary, #1f8b5c);padding:0.75rem 1rem;margin-bottom:1.25rem;border-radius:0 0.375rem 0.375rem 0;';
-                instrBox.innerHTML = `<strong>Instructions:</strong> ${escapeHtml(instrText)}`;
-                previewModalBody.appendChild(instrBox);
-            }
+        // The backend draws it (the same blocks as the Word export); the text is escaped there.
+        previewModalBody.textContent = 'Loading...';
+        try {
+            const res = await fetchWithApiFallback('/api/template-editor/preview-questionnaire', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ template: buildPreviewTemplate(), language: lang || 'en' }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Preview failed (${res.status})`);
+            previewModalBody.innerHTML = data.html;
+        } catch (e) {
+            previewModalBody.textContent = 'Preview failed: ' + e.message;
         }
-
-        // Group items with same levels for matrix rendering
-        const items = [];
-        for (const key of Object.keys(template)) {
-            if (key === 'Study' || key === 'Technical' || key === 'Scoring' || key === 'LimeSurvey') continue;
-            const item = template[key];
-            if (!item || typeof item !== 'object' || !item.Description) continue;
-            const levels = item.Levels || {};
-            items.push({ key, item, levels });
-        }
-
-        // Group consecutive items with same levels
-        function levelsSig(levels) {
-            const keys = Object.keys(levels).sort((a, b) => Number(a) - Number(b));
-            if (keys.length < 2) return null;
-            return keys.map(k => `${k}=${getText(levels[k], lang)}`).join('|');
-        }
-
-        let qNum = 0;
-        let i = 0;
-        while (i < items.length) {
-            const cur = items[i];
-            const sig = levelsSig(cur.levels);
-            if (sig && Object.keys(cur.levels).length >= 2) {
-                const block = [cur];
-                let j = i + 1;
-                while (j < items.length && levelsSig(items[j].levels) === sig) {
-                    block.push(items[j]);
-                    j++;
-                }
-                if (block.length >= 2) {
-                    // Render as matrix table
-                    const sortedLk = Object.keys(cur.levels).sort((a, b) => Number(a) - Number(b));
-                    const table = document.createElement('table');
-                    table.style.cssText = 'width:100%;border-collapse:collapse;margin:15px 0;border:1px solid #dee2e6;border-radius:0.375rem;';
-                    // Header
-                    const thead = document.createElement('thead');
-                    const hr = document.createElement('tr');
-                    hr.innerHTML = '<th style="background:#e8e8e8;padding:6px 8px;text-align:left;font-size:0.85rem;width:55%;border:1px solid #dee2e6;"></th>';
-                    for (const lk of sortedLk) {
-                        const th = document.createElement('th');
-                        th.style.cssText = 'background:#e8e8e8;padding:6px 8px;text-align:center;font-size:0.78rem;font-weight:600;border:1px solid #dee2e6;';
-                        th.textContent = getText(cur.levels[lk], lang);
-                        hr.appendChild(th);
-                    }
-                    thead.appendChild(hr);
-                    table.appendChild(thead);
-                    // Rows
-                    const tbody = document.createElement('tbody');
-                    block.forEach((entry, idx) => {
-                        qNum++;
-                        const tr = document.createElement('tr');
-                        tr.style.background = idx % 2 === 0 ? '#fafbfc' : '#fff';
-                        const td = document.createElement('td');
-                        td.style.cssText = 'padding:6px 8px;font-size:0.92rem;border:1px solid #eee;';
-                        td.innerHTML = `<span style="font-weight:700;color:var(--studio-semantic-primary, #1f8b5c);">${qNum}.</span> ${escapeHtml(getText(entry.item.Description, lang))}`;
-                        tr.appendChild(td);
-                        for (const lk of sortedLk) {
-                            const rtd = document.createElement('td');
-                            rtd.style.cssText = 'text-align:center;padding:6px;border:1px solid #eee;';
-                            rtd.innerHTML = '<input type="radio" disabled>';
-                            tr.appendChild(rtd);
-                        }
-                        tbody.appendChild(tr);
-                    });
-                    table.appendChild(tbody);
-                    previewModalBody.appendChild(table);
-                    i = j;
-                    continue;
-                }
-            }
-            // Single item
-            qNum++;
-            const card = document.createElement('div');
-            card.style.cssText = 'border:1px solid #dee2e6;border-radius:0.375rem;padding:1rem;margin-bottom:0.75rem;background:#fff;';
-            card.innerHTML = `<div style="font-weight:600;color:#6c757d;font-size:0.85rem;margin-bottom:0.25rem;"><span style="font-weight:700;color:var(--studio-semantic-primary, #1f8b5c);">${qNum}.</span> ${escapeHtml(cur.key)}</div>`;
-            const desc = document.createElement('div');
-            desc.textContent = getText(cur.item.Description, lang);
-            desc.style.marginBottom = '0.5rem';
-            card.appendChild(desc);
-            // Simple text input for non-Likert
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'form-control form-control-sm';
-            input.disabled = true;
-            input.placeholder = 'Response';
-            card.appendChild(input);
-            previewModalBody.appendChild(card);
-            i++;
-        }
-
-        // Footer
-        const footer = document.createElement('div');
-        footer.style.cssText = 'text-align:center;color:#999;font-size:0.75rem;margin-top:1rem;';
-        footer.textContent = `${qNum} items — Generated by PRISM Studio`;
-        previewModalBody.appendChild(footer);
     }
 
     if (previewQuestionnaireBtn) {

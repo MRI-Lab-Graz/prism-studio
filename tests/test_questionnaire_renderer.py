@@ -258,3 +258,59 @@ def test_word_export_uses_the_limesurvey_exports_derivation(item, kind):
     from src.questionnaire_renderer import _detect_question_type
 
     assert _detect_question_type(item) == kind
+
+
+# ── the on-screen preview is drawn from the same blocks as the Word file ──
+
+def _answers_template():
+    levels = {"1": {"en": "Female"}, "2": {"en": "Male"}, "3": {"en": "Other"}}
+    many = {str(i): {"en": f"Language {i}"} for i in range(1, 22)}
+    return {
+        "Study": {"OriginalName": {"en": "Mixed"}},
+        "Technical": {"StimulusType": "Questionnaire", "Language": ""},
+        "sex": {"Description": {"en": "Sex at birth"}, "Levels": levels},
+        "lang": {"Description": {"en": "Native language"}, "Levels": many},
+        "age": {"Description": {"en": "Age in years"}, "Unit": "years", "MinValue": 18, "MaxValue": 100, "DataType": "integer"},
+        "name": {"Description": {"en": "Your <b>name</b>"}},
+    }
+
+
+def test_preview_html_shows_the_answers_of_single_items():
+    from src.questionnaire_renderer import render_questionnaire_html
+
+    html = render_questionnaire_html(_answers_template(), "en")
+
+    for label in ("Female", "Male", "Other", "Language 1", "Language 21"):
+        assert label in html
+    assert "Min: 18" in html and "Max: 100" in html
+
+
+def test_preview_html_draws_a_matrix_for_items_sharing_a_scale():
+    from src.questionnaire_renderer import render_questionnaire_html
+
+    html = render_questionnaire_html(_likert_template(), "en")
+
+    assert "<table" in html and "never" in html.lower()
+
+
+def test_preview_html_escapes_the_template_text():
+    from src.questionnaire_renderer import render_questionnaire_html
+
+    html = render_questionnaire_html(_answers_template(), "en")
+
+    assert "&lt;b&gt;name&lt;/b&gt;" in html and "<b>name</b>" not in html
+
+
+def test_every_answer_in_the_word_file_is_in_the_preview():
+    from docx import Document
+    from src.questionnaire_renderer import render_questionnaire_docx, render_questionnaire_html
+
+    template = _answers_template()
+    html = render_questionnaire_html(template, "en")
+    doc = Document(render_questionnaire_docx(template, "en"))
+    words = [p.text for p in doc.paragraphs]
+
+    for text in words:
+        for label in ("Female", "Male", "Other", "Language 7"):
+            if label in text:
+                assert label in html
