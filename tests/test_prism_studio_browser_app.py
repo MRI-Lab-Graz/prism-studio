@@ -166,3 +166,21 @@ def test_require_named_browser_exits_and_lists_installed_browsers(
     output = capsys.readouterr().out
     assert "brave" in output
     assert "safari" in output
+
+
+def test_browser_app_without_a_name_asks_for_the_list(prism_studio_module):
+    assert prism_studio_module._build_parser().parse_args(["--browser-app"]).browser_app == ""
+
+
+def test_the_browser_listing_names_the_installed_ones_and_the_flag(prism_studio_module, monkeypatch):
+    monkeypatch.setattr(prism_studio_module, "_list_installed_browser_names", lambda: ["chrome", "safari"])
+
+    assert prism_studio_module._browser_app_listing() == (
+        "Browsers on this machine: chrome, safari\nOpen Studio in one with: prism-studio.py --browser-app NAME"
+    )
+
+
+def test_the_browser_listing_says_when_none_is_found(prism_studio_module, monkeypatch):
+    monkeypatch.setattr(prism_studio_module, "_list_installed_browser_names", lambda: [])
+
+    assert prism_studio_module._browser_app_listing().startswith("No supported browser found on this machine")

@@ -184,20 +184,26 @@ def _build_parser():
     parser.add_argument(
         "--browser-app",
         metavar="NAME",
+        nargs="?",
+        const="",
         default=None,
         help=(
             "Open PRISM Studio in a specific browser instead of the OS default "
-            f"(supported names: {', '.join(sorted(_NAMED_BROWSERS))})"
+            f"(supported names: {', '.join(sorted(_NAMED_BROWSERS))}); "
+            "without a name: list the browsers installed here and exit"
         ),
     )
     parser.add_argument(
         "-rp",
         "--recent-project",
         metavar="NAME",
+        nargs="?",
+        const="",
         default=None,
         help=(
             "Open the recent project with this name (case-insensitive, part of a name is enough) "
-            "and start on the project page; if there is none, start as usual"
+            "and start on the project page; if there is none, start as usual; "
+            "without a name: list the recent projects and exit"
         ),
     )
     parser.add_argument(
@@ -1716,6 +1722,14 @@ def _open_url_with_browser_app(name: str, target: str, url: str) -> bool:
         return False
 
 
+def _browser_app_listing() -> str:
+    """What `--browser-app` (no name) prints: the browsers it can open here."""
+    installed = _list_installed_browser_names()
+    if not installed:
+        return "No supported browser found on this machine (supported: " + ", ".join(sorted(_NAMED_BROWSERS)) + ")"
+    return f"Browsers on this machine: {', '.join(installed)}\nOpen Studio in one with: prism-studio.py --browser-app NAME"
+
+
 def _require_named_browser(name: str) -> str:
     """Resolve --browser-app NAME or exit(1) listing what's installed here."""
     resolved = _resolve_named_browser(name)
@@ -1791,6 +1805,16 @@ def main():
 
     parser = _build_parser()
     args = parser.parse_args()
+
+    if args.recent_project == "" or args.browser_app == "":  # the flag without a name: list, then exit
+        if args.recent_project == "":
+            from src.recent_projects import recent_project_listing
+            from src.web.blueprints.projects_helpers import _load_recent_projects
+
+            print(recent_project_listing(_load_recent_projects()))
+        if args.browser_app == "":
+            print(_browser_app_listing())
+        sys.exit(0)
 
     apply_env_identity()  # attribute all PRISM edits before any git/datalad call
     ensure_prism_tools_env()  # the save-gate hook needs the tool for PRISM's own saves
