@@ -664,8 +664,6 @@ def render_questionnaire_html(
             part.append(f'<div style="margin-left:1rem;">{esc(str(low))} |{"━" * 35}| {esc(str(high))}</div>')
         elif q_type == "long-text":
             part.append('<div style="margin-left:1rem;color:#999;">' + "<br>".join(["_" * 75] * 3) + "</div>")
-        elif q_type == "date":
-            part.append('<div style="margin-left:1rem;">____ / ____ / ________</div>')
         else:
             part.append(f'<div style="margin-left:1rem;color:#999;">{"_" * 55}</div>')
         out.append("".join(part))
