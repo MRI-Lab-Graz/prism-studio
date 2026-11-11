@@ -30,3 +30,14 @@ def test_template_has_both_sheets_and_schema_pulldowns(tmp_path):
     assert _list_for(panels, "CollectionMethod") == [v for v in tech["CollectionMethod"]["enum"] if v]
     assert _list_for(panels, "Anticoagulant") == [v for v in tech["Anticoagulant"]["enum"] if v]
     assert _list_for(panels, "FastingRequired") == ["true", "false"]
+
+
+def test_id_columns_are_text_so_01_stays_01(tmp_path):
+    out = tmp_path / "t.xlsx"
+    write_biosample_template(out)
+    ws = load_workbook(out)["data"]
+    for name in ("participant_id", "session", "run", "sample_id"):
+        col = DATA_COLUMNS.index(name) + 1
+        assert ws.cell(row=2, column=col).number_format == "@", name
+        assert ws.cell(row=1000, column=col).number_format == "@", name
+    assert ws.cell(row=2, column=DATA_COLUMNS.index("value") + 1).number_format != "@"

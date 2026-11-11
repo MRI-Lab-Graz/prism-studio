@@ -211,3 +211,33 @@ def test_missing_project_folder_is_refused(tmp_path):
     assert res.errors == [f"{missing}: not a directory"]
     assert res.written == []
     assert not missing.exists()
+
+
+def test_lower_limit_is_per_file_and_reported(tmp_path):
+    book = _book(tmp_path, [_row(analyte="testosterone", value="<5", unit="nmol/L"),
+                            _row(pid="02", analyte="testosterone", value="<2", unit="nmol/L"),
+                            _row(pid="02", sid="s2", analyte="testosterone", value=3, unit="nmol/L")])
+    project = _project(tmp_path)
+    res = import_biosample(book, project)
+    assert res.errors == []
+    side = lambda s: json.loads((project / f"{s}/ses-1/biosample/{s}_ses-1_biosample-hormones_biosample.json")  # noqa: E731
+                                .read_text(encoding="utf-8"))["testosterone"]
+    assert side("sub-01")["LowerLimitOfDetection"] == 5.0
+    assert side("sub-02")["LowerLimitOfDetection"] == 2.0
+    assert ("panel hormones: testosterone: '<n' written as <LOD (provisional, to be confirmed with the lab), "
+            "limits seen 2, 5; each sidecar keeps the highest of its own file") in res.warnings
+
+
+def test_no_limit_in_a_file_means_no_lower_limit(tmp_path):
+    book = _book(tmp_path, [_row(value="<5"), _row(pid="02", value=3)])
+    project = _project(tmp_path)
+    assert import_biosample(book, project).errors == []
+    side = json.loads((project / "sub-02/ses-1/biosample/sub-02_ses-1_biosample-hormones_biosample.json")
+                      .read_text(encoding="utf-8"))
+    assert "LowerLimitOfDetection" not in side["cortisol"]
+
+
+def test_analytes_differing_by_case_or_space_are_named(tmp_path):
+    res = import_biosample(_book(tmp_path, [_row(analyte="Cortisol "), _row(sid="b", analyte="cortisol")]),
+                           _project(tmp_path))
+    assert any("same analyte written differently?" in e for e in res.errors), res.errors

@@ -119,3 +119,68 @@ def test_bad_file_does_not_raise(tmp_path):
     p = tmp_path / "t.xlsx"
     p.write_text("not a workbook")
     assert read_template(p)[2]
+
+
+def test_csv_row_wider_than_header_is_a_problem(tmp_path):
+    p = tmp_path / "t.csv"
+    p.write_text(",".join(DATA_COLUMNS) + "\n01,1,crp,,s1,08:30,CRP,1,5,mg/L,\n", encoding="utf-8")
+    rows, _, problems = read_template(p, specimen="serum")
+    assert rows == []
+    assert problems == ["data row 2: more cells than columns; quote decimals or use the .xlsx"]
+
+
+def test_csv_cell_under_empty_header_is_a_problem(tmp_path):
+    p = tmp_path / "t.csv"
+    p.write_text(",".join(DATA_COLUMNS) + ",\n01,1,crp,,s1,08:30,CRP,1,mg/L,,x\n", encoding="utf-8")
+    _, _, problems = read_template(p, specimen="serum")
+    assert problems == ["data row 2: more cells than columns; quote decimals or use the .xlsx"]
+
+
+def test_xlsx_cell_under_empty_header_is_a_problem(tmp_path):
+    p = _book(tmp_path, [_row() + ("stray",)], [_panel() + ("stray",)])
+    _, _, problems = read_template(p)
+    assert "data row 2: more cells than columns; quote decimals or use the .xlsx" in problems
+    assert "panels row 2: more cells than columns; quote decimals or use the .xlsx" in problems
+
+
+def test_workbook_is_closed(tmp_path, monkeypatch):
+    import src.biosample_template_reader as reader
+
+    closed = []
+    real = reader.load_workbook
+
+    def spy(*a, **k):
+        wb = real(*a, **k)
+        orig = wb.close
+        wb.close = lambda: (closed.append(True), orig())
+        return wb
+
+    monkeypatch.setattr(reader, "load_workbook", spy)
+    read_template(_book(tmp_path, [_row()], [_panel()]))
+    assert closed == [True]
+
+
+@pytest.mark.parametrize("raw,expected", [
+    (2.0099999999999998, "2.01"), (123456789.123, "123456789.123"), (1e-12, "1e-12"),
+])
+def test_fmt_keeps_precision(raw, expected):
+    assert normalise_value(raw) == (expected, None)
+
+
+def test_duplicate_panel_name_is_a_problem(tmp_path):
+    _, _, problems = read_template(_book(tmp_path, [_row()], [_panel(), _panel(spec="plasma")]))
+    assert any("panels rows 2 and 3" in m and "crp" in m for m in problems), problems
+
+
+def test_text_time_is_parsed_and_reformatted(tmp_path):
+    p = _book(tmp_path, [_row(t="8:30"), _row(sid="b", t="99:99"), _row(sid="c", t="25:61"),
+                         _row(sid="d", t="08:30:00")], [_panel()])
+    rows, _, problems = read_template(p)
+    assert rows[0]["collection_time"] == "08:30"
+    assert [m.split(":")[0] for m in problems] == ["data row 3", "data row 4", "data row 5"]
+    assert all("collection_time" in m for m in problems)
+
+
+def test_limits_are_kept_per_cell(tmp_path):
+    rows, _, _ = read_template(_book(tmp_path, [_row(value="<5"), _row(sid="b", value=2)], [_panel()]))
+    assert [r["limit"] for r in rows] == [5.0, None]

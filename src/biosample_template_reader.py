@@ -23,8 +23,9 @@ def _number(text: str) -> float:
 
 
 def _fmt(x: float) -> str:
-    # round float noise (2.0099999999999998 -> 2.01), keep value otherwise
-    return f"{round(x, 10):.10f}".rstrip("0").rstrip(".") or "0"
+    # 15 significant digits drop float noise (2.0099999999999998 -> 2.01) and keep tiny or
+    # large values (1e-12, 123456789.123); exponent text is read as a number by the validator
+    return f"{x:.15g}"
 
 
 def normalise_value(raw: object) -> tuple[str, float | None]:
@@ -67,9 +68,14 @@ def _time(v: object) -> str:
     if isinstance(v, dt.time):
         return v.strftime("%H:%M")
     s = _text(v)
-    if s and not _TIME.match(s):
-        raise ValueError(f"{s!r} must be hh:mm")
-    return s
+    if not s:
+        return s
+    try:
+        if not _TIME.match(s):
+            raise ValueError
+        return dt.datetime.strptime(s, "%H:%M").strftime("%H:%M")
+    except ValueError:
+        raise ValueError(f"{s!r} must be hh:mm") from None
 
 
 def _sheets(path: Path) -> tuple[list[list], list[list] | None]:
@@ -77,10 +83,25 @@ def _sheets(path: Path) -> tuple[list[list], list[list] | None]:
         with path.open(newline="", encoding="utf-8-sig") as f:
             return list(csv.reader(f)), None
     wb = load_workbook(path, read_only=True, data_only=True)
-    grid = lambda ws: [list(r) for r in ws.iter_rows(values_only=True)]  # noqa: E731
-    if "data" not in wb.sheetnames:
-        raise ValueError("sheet 'data' is missing")
-    return grid(wb["data"]), grid(wb["panels"]) if "panels" in wb.sheetnames else None
+    try:  # read-only keeps the file open until closed (Windows cannot delete it then)
+        grid = lambda ws: [list(r) for r in ws.iter_rows(values_only=True)]  # noqa: E731
+        if "data" not in wb.sheetnames:
+            raise ValueError("sheet 'data' is missing")
+        return grid(wb["data"]), grid(wb["panels"]) if "panels" in wb.sheetnames else None
+    finally:
+        wb.close()
+
+
+def _too_wide(r, head) -> bool:
+    """A cell beyond the header, or a filled one under an empty header (an unquoted "1,5" in a CSV).
+
+    Beyond the header even an empty CSV cell counts: "...,1,5,nmol/L," has one separator too many.
+    (xlsx rows come padded to the header's width, so there only filled cells count.)
+    """
+    return any(v is not None if i >= len(head) else not head[i] and _text(v) for i, v in enumerate(r))
+
+
+_WIDE = "more cells than columns; quote decimals or use the .xlsx"
 
 
 def _header(rows, sheet, expected, required, problems):
@@ -106,17 +127,25 @@ def read_template(path: Path, specimen: str | None = None):
     panels: dict[str, dict] = {}
     if panel_rows is not None:
         head = _header(panel_rows, "panels", PANEL_COLUMNS, ("panel",), problems)
+        first_row: dict[str, int] = {}
         for n, r in enumerate(panel_rows[1:] if head else [], start=2):
+            if _too_wide(r, head):
+                problems.append(f"panels row {n}: {_WIDE}")
+                continue
             cells = {h: _text(r[i]) if i < len(r) else "" for i, h in enumerate(head) if h}
             if not any(cells.values()):
                 continue
             if not cells["panel"]:
                 problems.append(f"panels row {n}: panel name is empty")
+            elif cells["panel"] in first_row:
+                problems.append(f"panels rows {first_row[cells['panel']]} and {n}: "
+                                f"panel {cells['panel']} is defined twice")
             elif not (cells.get("SpecimenType") or specimen):
                 problems.append(f"panels row {n}: SpecimenType is empty for panel {cells['panel']}"
                                 " (fill it in or pass --specimen)")
             else:
                 cells["SpecimenType"] = cells.get("SpecimenType") or specimen
+                first_row[cells["panel"]] = n
                 panels[cells["panel"]] = {**cells, "limits": {}}
     elif not specimen:
         problems.append("panels: sheet is missing; add a 'panels' sheet or pass --specimen")
@@ -125,6 +154,9 @@ def read_template(path: Path, specimen: str | None = None):
     units: dict[tuple[str, str], str] = {}
     head = _header(data, "data", DATA_COLUMNS, _REQUIRED, problems)
     for n, r in enumerate(data[1:] if head else [], start=2):
+        if _too_wide(r, head):
+            problems.append(f"data row {n}: {_WIDE}")
+            continue
         cells = {h: r[i] if i < len(r) else None for i, h in enumerate(head) if h in DATA_COLUMNS}
         if all(v is None or (isinstance(v, str) and not v.strip()) for v in cells.values()):
             continue
@@ -143,7 +175,7 @@ def read_template(path: Path, specimen: str | None = None):
         except ValueError as exc:
             problems.append(f"data row {n}: value {exc}")
             continue
-        row["row"] = n
+        row["row"], row["limit"] = n, limit
         rows.append(row)
 
         name, analyte = row["panel"], row["analyte"]

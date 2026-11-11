@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.biosample_template import _SCHEMA
-from src.biosample_template_reader import read_template
+from src.biosample_template_reader import _fmt, read_template
 from src.participant_ids import normalize_participant_id
 from src.session_map import SessionMapError, resolve_import_session
 from src.subject_id_matching import load_existing_participant_ids
@@ -128,8 +128,8 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
     known = load_existing_participant_ids(project)
     sessions: dict[str, str | None] = {}
 
-    # (sub, ses, run, panel) -> {(sample_id, time): {analyte: (value, row)}}
-    groups: dict[tuple, dict[tuple, dict[str, tuple[str, int]]]] = {}
+    # (sub, ses, run, panel) -> {(sample_id, time): {analyte: (value, row, limit)}}
+    groups: dict[tuple, dict[tuple, dict[str, tuple[str, int, float | None]]]] = {}
     for row in rows:
         n = row["row"]
         sub = normalize_participant_id(row["participant_id"])
@@ -163,7 +163,7 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
                 res.errors.append(f"data rows {sample[analyte][1]} and {n}: {analyte} measured twice "
                                   f"for {sub}, sample {row['sample_id'] or '(none)'}")
             else:
-                sample[analyte] = (row["value"], n)
+                sample[analyte] = (row["value"], n, row["limit"])
 
     # one sidecar entry per analyte per panel (the reader already refused two units)
     units = {(r["panel"], r["analyte"]): r["unit"] for r in rows if r["unit"]}
@@ -180,8 +180,11 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         for analyte in dict.fromkeys(r["analyte"] for r in rows if r["panel"] == name):
             col = _column(analyte)
             if not col or col in _SAMPLE_COLUMNS or col in cols:
+                same = col in cols and cols[col]["Description"].strip().lower() == analyte.strip().lower()
                 res.errors.append(f"panel {name}: analyte {analyte!r} gives column name {col!r}, "
-                                  "which is empty or already used; rename the analyte")
+                                  "which is empty or already used; "
+                                  + ("same analyte written differently? " if same else "")
+                                  + "rename the analyte")
                 continue
             entry: dict = {"Description": analyte}
             hit = resolve_column(registry, col, {"Term": analyte}, spec)
@@ -205,7 +208,10 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
                                     f"is {term_unit} (accepted, not converted)")
             limits = panel["limits"].get(analyte)
             if limits:
-                entry["LowerLimitOfDetection"] = max(limits)
+                res.warnings.append(f"panel {name}: {analyte}: '<n' written as <LOD (provisional, to be "
+                                    "confirmed with the lab), limits seen "
+                                    + ", ".join(_fmt(x) for x in sorted(set(limits)))
+                                    + "; each sidecar keeps the highest of its own file")
             cols[col] = entry
         definitions[name] = cols
 
@@ -228,8 +234,13 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         folder = Path(sub) / (f"ses-{ses}" if ses else "") / "biosample"
         stem = "_".join(p for p in (sub, f"ses-{ses}" if ses else "", f"biosample-{name}",
                                     f"run-{run}" if run else "", "biosample") if p)
+        defs = {}
+        for c in analyte_cols:  # the limit of this file's own cells, not of the whole panel
+            cells = [v[analytes[c]] for v in samples.values() if analytes[c] in v]
+            limits = [lim for _, _, lim in cells if lim is not None]
+            defs[c] = {**cols[c], "LowerLimitOfDetection": max(limits)} if limits else cols[c]
         side = _sidecar(name, panels[name], technicals[name],
-                        {**{c: _SAMPLE_COLUMNS[c] for c in sample_cols}, **{c: cols[c] for c in analyte_cols}},
+                        {**{c: _SAMPLE_COLUMNS[c] for c in sample_cols}, **defs},
                         schema["version"], _creation_date(project / folder / f"{stem}.json"))
         files[folder / f"{stem}.tsv"] = "\n".join(lines) + "\n"
         files[folder / f"{stem}.json"] = json.dumps(side, indent=2, ensure_ascii=False) + "\n"

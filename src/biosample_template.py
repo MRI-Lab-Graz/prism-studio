@@ -13,7 +13,7 @@ PANEL_COLUMNS = ("panel", "SpecimenType", "CollectionMethod", "Anticoagulant",
                  "AssayMethod", "AssayKit", "Description")
 
 _SCHEMA = Path(__file__).resolve().parents[1] / "app/schemas/stable/biosample.schema.json"
-_ROWS = 1000  # pull-downs cover this many panel rows
+_ROWS = 1000  # pull-downs and text-format id cells cover this many rows
 
 
 def specimen_types() -> list[str]:
@@ -28,6 +28,9 @@ def write_biosample_template(path: Path) -> None:
     data = wb.active
     data.title = "data"
     data.append(list(DATA_COLUMNS))
+    for name in ("participant_id", "session", "run", "sample_id"):  # text: "01" stays "01"
+        for row in range(2, _ROWS + 1):
+            data.cell(row=row, column=DATA_COLUMNS.index(name) + 1).number_format = "@"
     panels = wb.create_sheet("panels")
     panels.append(list(PANEL_COLUMNS))
     lists = {name: [v for v in tech[name]["enum"] if v]
