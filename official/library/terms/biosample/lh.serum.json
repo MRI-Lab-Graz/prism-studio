@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:lh.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:lh",
+  "SpecimenType": "serum",
+  "Units": "mU/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

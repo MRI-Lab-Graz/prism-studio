@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:free-testosterone.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:free-testosterone",
+  "SpecimenType": "serum",
+  "Units": "pg/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

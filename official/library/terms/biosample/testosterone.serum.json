@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:testosterone.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:testosterone",
+  "SpecimenType": "serum",
+  "Units": "ng/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

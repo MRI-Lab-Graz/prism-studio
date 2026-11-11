@@ -1,0 +1,10 @@
+{
+  "TermID": "prism:testosterone",
+  "Level": "analyte",
+  "Label": "testosterone",
+  "Description": "Total testosterone, the main androgen; measured in serum.",
+  "TermURL": {
+    "snomed": "https://snomed.info/id/43688007"
+  },
+  "Status": "official"
+}

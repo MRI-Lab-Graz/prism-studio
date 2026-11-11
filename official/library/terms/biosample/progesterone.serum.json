@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:progesterone.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:progesterone",
+  "SpecimenType": "serum",
+  "Units": "ng/mL",
+  "MinValue": 0,
+  "Status": "official"
+}

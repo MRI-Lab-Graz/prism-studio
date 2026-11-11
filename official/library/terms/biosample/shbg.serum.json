@@ -1,0 +1,9 @@
+{
+  "TermID": "prism:shbg.serum",
+  "Level": "analyte-specimen",
+  "Parent": "prism:shbg",
+  "SpecimenType": "serum",
+  "Units": "nmol/L",
+  "MinValue": 0,
+  "Status": "official"
+}
