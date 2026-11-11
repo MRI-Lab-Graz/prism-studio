@@ -213,7 +213,7 @@ def resolve_survey_sidecar(sidecar: dict, library_dir: Path | None = None, recip
         item = template.get(key) if template else None
         if template is None:
             term, reason = None, "unknown instrument"
-        elif key in _NOT_ITEMS or not isinstance(item, dict) or "AliasOf" in item or not isinstance(column, dict):
+        elif not isinstance(item, dict) or "AliasOf" in item or not isinstance(column, dict):
             term, reason = None, "unknown item"
         else:
             library_language = (template.get("Technical") or {}).get("Language") or "en"
