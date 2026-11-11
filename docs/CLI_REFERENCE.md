@@ -358,6 +358,21 @@ python prism_tools.py survey i18n-autotranslate \
 # or --provider libretranslate --api-url https://libretranslate.example/translate
 ```
 
+### Biosample
+
+**`biosample template`** / **`biosample import`** — write the biosample Excel template, then import the filled
+file (`.xlsx`, or `.csv` for the data sheet) into a project as `biosample/` TSV + JSON files:
+
+```bash
+python prism_tools.py biosample template --output biosample.xlsx
+python prism_tools.py biosample import --input biosample.xlsx --project /path/to/project \
+  [--specimen serum] [--overwrite] [--dry-run]
+```
+
+`--specimen` (a SpecimenType from the biosample schema) applies to panels that name none; default none.
+`--overwrite` and `--dry-run` default to off. Warnings and written paths are printed (`would write ...`
+with `--dry-run`); errors go to stderr and the exit code is non-zero.
+
 ### Biometrics
 
 **`biometrics import-excel`** — import biometrics templates from an Excel codebook:

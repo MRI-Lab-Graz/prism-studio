@@ -16,6 +16,12 @@ _SCHEMA = Path(__file__).resolve().parents[1] / "app/schemas/stable/biosample.sc
 _ROWS = 1000  # pull-downs cover this many panel rows
 
 
+def specimen_types() -> list[str]:
+    """SpecimenType values the schema allows."""
+    tech = json.loads(_SCHEMA.read_text(encoding="utf-8"))["properties"]["Technical"]["properties"]
+    return [v for v in tech["SpecimenType"]["enum"] if v]
+
+
 def write_biosample_template(path: Path) -> None:
     tech = json.loads(_SCHEMA.read_text(encoding="utf-8"))["properties"]["Technical"]["properties"]
     wb = Workbook()

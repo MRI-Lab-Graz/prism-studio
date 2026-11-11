@@ -255,6 +255,13 @@ def dispatch_prism_tools(
             handlers["biometrics_import_excel"](args)
         else:
             parsers["biometrics"].print_help()
+    elif args.command == "biosample":
+        if args.action == "template":
+            handlers["biosample_template"](args)
+        elif args.action == "import":
+            handlers["biosample_import"](args)
+        else:
+            parsers["biosample"].print_help()
     elif args.command == "physio":
         if args.action == "batch-convert":
             handlers["physio_batch_convert"](args)

@@ -1758,6 +1758,31 @@ def build_prism_tools_parsers(
         help="Default Technical.Supervisor value written to biometrics JSON.",
     )
 
+    parser_biosample = subparsers.add_parser("biosample", help="Biosample template and import")
+    biosample_subparsers = parser_biosample.add_subparsers(dest="action", help="Action")
+    parser_biosample_template = biosample_subparsers.add_parser(
+        "template", help="Write the biosample Excel template"
+    )
+    parser_biosample_template.add_argument("--output", required=True, help="Path of the .xlsx to write")
+    parser_biosample_import = biosample_subparsers.add_parser(
+        "import", help="Import a filled biosample template (xlsx or csv) into a project"
+    )
+    parser_biosample_import.add_argument("--input", required=True, help="Filled template (.xlsx or .csv)")
+    parser_biosample_import.add_argument("--project", required=True, help="Path to the PRISM project")
+    from src.biosample_template import specimen_types
+
+    parser_biosample_import.add_argument(
+        "--specimen", choices=specimen_types(), default=None,
+        help="Specimen type for panels that do not name one",
+    )
+    parser_biosample_import.add_argument(
+        "--overwrite", action="store_true", default=False, help="Replace existing files"
+    )
+    parser_biosample_import.add_argument(
+        "--dry-run", dest="dry_run", action="store_true", default=False,
+        help="Show what would be written without writing",
+    )
+
     parser_dataset = subparsers.add_parser("dataset", help="Dataset helper commands")
     dataset_subparsers = parser_dataset.add_subparsers(dest="action", help="Action")
 
@@ -3287,6 +3312,7 @@ def build_prism_tools_parsers(
         "merge-versions": parser_merge_versions,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
+        "biosample": parser_biosample,
         "physio": parser_physio,
         "library": parser_library,
         "dataset": parser_dataset,
