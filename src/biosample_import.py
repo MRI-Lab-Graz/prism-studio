@@ -18,6 +18,7 @@ from src.subject_id_matching import load_existing_participant_ids
 from src.term_registry import load_registry, resolve_column
 
 _LABEL = re.compile(r"[A-Za-z0-9]+")
+_RUN = re.compile(r"[0-9]+")  # kept as written ("01" stays "01")
 _BAD = object()  # a session label that could not be resolved
 _SAMPLE_COLUMNS = {
     "sample_id": {"Description": "Lab tube ID (pseudonymous)", "Units": "n/a", "DataType": "string"},
@@ -65,17 +66,33 @@ def _technical(panel: dict, schema_tech: dict) -> dict:
     return out
 
 
-def _sidecar(name: str, panel: dict, technical: dict, columns: dict, schema_version: str) -> dict:
+def _creation_date(existing: Path) -> str:
+    """An overwritten sidecar keeps its CreationDate (re-import is byte-identical on any day)."""
+    try:
+        date = json.loads(existing.read_text(encoding="utf-8"))["Metadata"]["CreationDate"]
+        if isinstance(date, str) and date:
+            return date
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return dt.date.today().isoformat()
+
+
+def _sidecar(name: str, panel: dict, technical: dict, columns: dict, schema_version: str,
+             creation_date: str) -> dict:
     study = {"BiosampleName": name}
     if panel.get("Description"):
         study["Description"] = panel["Description"]
     return {"Technical": technical, "Study": study,
-            "Metadata": {"SchemaVersion": schema_version, "CreationDate": dt.date.today().isoformat()},
+            "Metadata": {"SchemaVersion": schema_version, "CreationDate": creation_date},
             **columns}
 
 
 def _write_all(files: dict[Path, str]) -> None:
-    """Write every file to a temp file first, then move them in; a failure leaves nothing half-written."""
+    """Write every file to a temp file, then move each into place.
+
+    All checks run before this is called, and a failure while writing the temp files removes
+    them and leaves the project unchanged. The final moves are atomic per file, not across files.
+    """
     temps: list[tuple[str, Path]] = []
     try:
         for path, text in files.items():
@@ -129,9 +146,11 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
         ses = sessions[label]
         if ses is _BAD:
             continue  # reported once, at its first row
-        for what, value in (("session", ses), ("panel", row["panel"]), ("run", row["run"])):
-            if value and not _LABEL.fullmatch(value):
-                res.errors.append(f"data row {n}: {what} {value!r} must be letters and digits only")
+        for what, value, rule, need in (("session", ses, _LABEL, "letters and digits only"),
+                                        ("panel", row["panel"], _LABEL, "letters and digits only"),
+                                        ("run", row["run"], _RUN, "a number (run index)")):
+            if value and not rule.fullmatch(value):
+                res.errors.append(f"data row {n}: {what} {value!r} must be {need}")
                 break
         else:
             sample = groups.setdefault((sub, ses, row["run"], row["panel"]), {}).setdefault(
@@ -208,7 +227,7 @@ def import_biosample(input_path: Path, project: Path, specimen: str | None = Non
                                     f"run-{run}" if run else "", "biosample") if p)
         side = _sidecar(name, panels[name], technicals[name],
                         {**{c: _SAMPLE_COLUMNS[c] for c in sample_cols}, **{c: cols[c] for c in analyte_cols}},
-                        schema["version"])
+                        schema["version"], _creation_date(project / folder / f"{stem}.json"))
         files[folder / f"{stem}.tsv"] = "\n".join(lines) + "\n"
         files[folder / f"{stem}.json"] = json.dumps(side, indent=2, ensure_ascii=False) + "\n"
 

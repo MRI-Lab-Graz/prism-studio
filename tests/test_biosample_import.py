@@ -178,3 +178,27 @@ def test_written_files_pass_the_validator(tmp_path):
     issues, _ = validate_dataset(str(project))
     errors = [i for i in issues if i[0] == "ERROR" and "biosample" in " ".join(str(x) for x in i).lower()]
     assert errors == [], errors
+
+
+def test_run_must_be_a_number(tmp_path):
+    for run in ("a", "T1"):
+        (tmp_path / run).mkdir()
+        project = _project(tmp_path / run)
+        res = import_biosample(_book(tmp_path / run, [_row(run=run)]), project)
+        assert res.written == [] and any("row 2" in e and repr(run) in e for e in res.errors), res.errors
+        assert not (project / "sub-01").exists()
+
+
+def test_overwrite_keeps_the_existing_creation_date(tmp_path):
+    book = _book(tmp_path, [_row()])
+    project = _project(tmp_path)
+    first = import_biosample(book, project)
+    side = project / f"{STEM}.json"
+    data = json.loads(side.read_text(encoding="utf-8"))
+    data["Metadata"]["CreationDate"] = "2020-01-02"
+    side.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    before = {p: (project / p).read_bytes() for p in first.written}
+
+    forced = import_biosample(book, project, overwrite=True)
+    assert forced.errors == []
+    assert {p: (project / p).read_bytes() for p in forced.written} == before
