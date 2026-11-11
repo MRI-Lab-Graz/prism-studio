@@ -3,6 +3,7 @@ import { initParticipants } from './modules/converter/participants.js';
 import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
 import { initEnvironment } from './modules/converter/environment.js';
+import { initBiosample } from './modules/converter/biosample.js';
 import { appendConverterLogBatch, appendConverterLogLine } from './modules/converter/log-renderer.js';
 import { createConverterSessionPickerController, getSessionInputValue } from './modules/converter/session-picker.js';
 import { activateConverterTabFromQuery } from './modules/converter/tab-activation.js';
@@ -222,6 +223,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
+    initBiosample();
 
     const envDataFile = document.getElementById('envDataFile');
     if (envDataFile) {

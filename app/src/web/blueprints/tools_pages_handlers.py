@@ -3,6 +3,7 @@ from pathlib import Path
 
 from flask import jsonify, render_template
 
+from src.biosample_template import specimen_types
 from src.constants import SUPPORTED_MODALITIES
 
 from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
@@ -109,6 +110,7 @@ def handle_converter(project_path: str | None):
         "converter.html",
         default_survey_library_path=str(default_library_path or ""),
         participants_mapping_info=participants_mapping_info,
+        biosample_specimen_types=specimen_types(),
     )
 
 

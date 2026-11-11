@@ -7,6 +7,7 @@
  "conversion.api_biometrics_convert": "cli: biometrics convert",
  "conversion.api_biometrics_convert_start": "cli: biometrics convert",
  "conversion.api_biometrics_detect": "cli: biometrics detect",
+ "conversion.api_biosample_import": "cli: biosample import",
  "conversion.api_environment_convert_cancel": "exempt: job control of a running GUI task, no data effect",
  "conversion.api_environment_convert_start": "cli: environment convert",
  "conversion.api_environment_preview": "cli: environment preview",
