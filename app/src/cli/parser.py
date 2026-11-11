@@ -2200,6 +2200,7 @@ def build_prism_tools_parsers(
     for _name, _help in (
         ("list", "List the shipped terms"),
         ("show", "Show one term (ID, local name, label, alias or equivalent)"),
+        ("freeze", "Add new survey IDs to the released list (survey only; refuses when a released ID is gone)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
         ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):

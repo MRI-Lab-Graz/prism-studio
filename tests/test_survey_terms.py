@@ -128,6 +128,12 @@ def test_shipped_released_ids_are_all_still_there():
     assert released and freeze_problems(reg, released) == []
 
 
+def test_every_shipped_id_is_in_the_released_list():
+    reg, _ = build_survey_registry()
+    missing = sorted({t["TermID"] for t in reg.values()} - released_ids())
+    assert missing == [], f"run `python prism_tools.py terms freeze --modality survey` and commit term-ids.txt: {missing[:5]}"
+
+
 def test_no_survey_id_exists_in_another_modality():
     reg, _ = build_survey_registry()
     assert check_terms.cross_registry_problems(

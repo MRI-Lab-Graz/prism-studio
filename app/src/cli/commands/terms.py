@@ -13,6 +13,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
+from src.survey_terms import build_survey_registry, freeze_problems, released_ids, write_released_ids
 from src.term_registry import context_value, find_term, load_registry, resolve_column
 
 
@@ -20,9 +21,14 @@ def _emit(args, payload: dict, text: str) -> None:
     print(json.dumps(payload, ensure_ascii=False) if getattr(args, "json", False) else text)
 
 
+def _registry(modality: str) -> dict[str, dict]:
+    """The shipped terms of a modality; the survey registry is derived from the library and the recipes."""
+    return build_survey_registry()[0] if modality == "survey" else load_registry(modality)
+
+
 def cmd_terms_list(args) -> None:
     """List the shipped terms of a modality."""
-    registry = load_registry(args.modality)
+    registry = _registry(args.modality)
     terms = [registry[key] for key in sorted(registry)]
     lines = [
         f"{t.get('TermID', '?')}\t{t.get('Level', '?')}\t{t.get('Units', t.get('Label', ''))}\t{t.get('Status', '')}"
@@ -31,9 +37,25 @@ def cmd_terms_list(args) -> None:
     _emit(args, {"success": True, "modality": args.modality, "terms": terms}, "\n".join(lines))
 
 
+def cmd_terms_freeze(args) -> None:
+    """Add the survey IDs that are new to the released list; refuse when a released ID is gone."""
+    if args.modality != "survey":
+        _emit(args, {"success": False, "error": "only the survey registry is frozen this way"},
+              "Error: only the survey registry is frozen this way")
+        sys.exit(1)
+    registry, problems = build_survey_registry()
+    gone = freeze_problems(registry, released_ids())
+    if gone:
+        _emit(args, {"success": False, "problems": gone}, "\n".join(gone))
+        sys.exit(1)
+    added = write_released_ids(registry)
+    _emit(args, {"success": True, "added": added, "problems": problems},
+          "\n".join(problems + [f"added {len(added)} ID(s)"]))
+
+
 def cmd_terms_show(args) -> None:
     """Show one term by ID, local name, label, alias or equivalent."""
-    found = find_term(load_registry(args.modality), args.term)
+    found = find_term(_registry(args.modality), args.term)
     if not found:
         _emit(args, {"success": False, "error": f"unknown term: {args.term}"}, f"Error: unknown term: {args.term}")
         sys.exit(1)

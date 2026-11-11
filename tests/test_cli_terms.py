@@ -229,3 +229,32 @@ def test_propose_environment_column_from_data_file(tmp_path):
     assert code == 0, out
     (term,) = data["proposal"]["terms"]
     assert term["Level"] == "variable" and term["Units"] == "dB" and term["TermID"] == "prism:noise-db"
+
+
+# --- survey registry: instrument, item and score IDs -----------------------------
+
+def test_terms_list_survey_shows_instrument_item_and_score():
+    code, out = _run("list", "--modality", "survey")
+    assert code == 0 and "prism:tipi\tinstrument" in out
+    assert "prism:tipi.tipi02\titem" in out and "prism:tipi.score-extraversion\tscore" in out
+
+
+def test_terms_show_survey_item_by_id_and_by_its_key():
+    for name in ("prism:tipi.tipi02", "TIPI02"):
+        code, out = _run("show", name, "--modality", "survey", "--json")
+        assert code == 0 and json.loads(out)["term"]["Parent"] == "prism:tipi"
+
+
+def test_terms_freeze_is_for_survey_only():
+    code, out = _run("freeze", "--modality", "biosample")
+    assert code == 1 and "only the survey registry" in out
+
+
+def test_terms_freeze_refuses_when_a_released_id_is_gone(tmp_path, monkeypatch):
+    # run in-process against a library that lost an item the released list still holds
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:tipi.gone"})
+    with pytest.raises(SystemExit) as exc:
+        cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
+    assert exc.value.code == 1
