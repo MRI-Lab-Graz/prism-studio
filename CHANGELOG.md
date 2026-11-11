@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `I18n.Languages`.
 
 ### Added
+- **`prism-studio.py -rp` and `--browser-app` without a name list their choices.** `-rp` prints the recent projects
+  (numbered, most recent first) and `--browser-app` the browsers installed here, then both exit instead of starting Studio.
 - **Warning for a copied study description.** Validate and Save now warn when `Study.Description` is the same text as an
   item's description, which is what older Excel imports produced (they took it from the first item).
 

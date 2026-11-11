@@ -32,3 +32,11 @@ def recent_project_notice(projects: list[dict], query: str) -> str:
     names = ", ".join(str(p.get("name")) for p in projects) or None
     seen = f"recent: {names}" if names else "the recent list is empty"
     return f"No recent project matches '{query}' ({seen}); starting as usual"
+
+
+def recent_project_listing(projects: list[dict]) -> str:
+    """What `prism-studio -rp` (no name) prints: the recent projects, numbered, and how to open one."""
+    if not projects:
+        return "The recent list is empty: open a project in Studio once and it appears here."
+    lines = [f"  {i}. {p.get('name')}  {p.get('path')}" for i, p in enumerate(projects, 1)]
+    return "\n".join(["Recent projects (most recent first):", *lines, "Open one with: prism-studio.py -rp NAME"])

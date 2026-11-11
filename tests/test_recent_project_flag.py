@@ -10,7 +10,7 @@ from flask import Flask, session
 REPO = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(REPO / "app"), str(REPO)]
 
-from src.recent_projects import find_recent_project, recent_project_notice  # noqa: E402
+from src.recent_projects import find_recent_project, recent_project_listing, recent_project_notice  # noqa: E402
 
 RECENT = [
     {"name": "Highlands", "path": "/p/highlands"},
@@ -100,3 +100,24 @@ def test_the_name_is_used_once_so_a_page_cannot_switch_projects_later(client):
     c.get("/api/projects/open-recent")
     with c.session_transaction() as s:
         assert "current_project_path" not in s
+
+
+def test_the_listing_numbers_the_recent_projects_and_shows_how_to_open_one():
+    assert recent_project_listing(RECENT) == (
+        "Recent projects (most recent first):\n"
+        "  1. Highlands  /p/highlands\n"
+        "  2. high  /p/high\n"
+        "  3. Lowlands  /p/low\n"
+        "Open one with: prism-studio.py -rp NAME"
+    )
+
+
+def test_the_listing_of_an_empty_history_says_so():
+    assert recent_project_listing([]) == "The recent list is empty: open a project in Studio once and it appears here."
+
+
+def test_the_flag_without_a_name_asks_for_the_list():
+    spec = importlib.util.spec_from_file_location("ps_rp2", REPO / "app" / "prism-studio.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module._build_parser().parse_args(["-rp"]).recent_project == ""
