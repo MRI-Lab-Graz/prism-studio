@@ -318,3 +318,48 @@ class TestExportLssInclude:
             )
         assert exc_info.value.code == 1
         assert "--include" in capsys.readouterr().out
+
+
+class TestExportQuestionnaireHtml:
+    """`export-questionnaire-docx --format html` writes what Studio's Preview Questionnaire shows."""
+
+    TEMPLATE = TestExportQuestionnaireDocx.LIKERT_TEMPLATE
+
+    def test_html_format_writes_the_preview(self, tmp_path, capsys):
+        template_path = tmp_path / "template.json"
+        template_path.write_text(dump_complete(self.TEMPLATE), encoding="utf-8")
+        output = tmp_path / "out.html"
+
+        cmd_survey_export_questionnaire_docx(
+            SimpleNamespace(template=str(template_path), output=str(output), language="en", variant_id=None,
+                            options_json=None, format="html")
+        )
+
+        text = output.read_text(encoding="utf-8")
+        assert "I feel happy" in text and "Always" in text
+        assert "HTML" in capsys.readouterr().out
+
+
+def test_the_preview_route_returns_the_same_html_as_the_command(tmp_path):
+    import importlib
+    import os
+    import sys
+    from pathlib import Path
+
+    from flask import Flask
+
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    sys.path.insert(0, str(app_root))
+    handlers = importlib.import_module("src.web.blueprints.tools_template_editor_blueprint")
+    app = Flask(__name__, root_path=str(app_root))
+    app.secret_key = os.urandom(32)
+    template = TestExportQuestionnaireDocx.LIKERT_TEMPLATE
+    body = {"template": template, "language": "en", "options": {"show_item_codes": True}}
+
+    with app.test_request_context("/api/template-editor/preview-questionnaire", method="POST", json=body):
+        response = handlers.api_template_editor_preview_questionnaire()
+
+    html = response.get_json()["html"]
+    from src.questionnaire_renderer import render_questionnaire_html
+
+    assert html == render_questionnaire_html(template, "en", None, {"show_item_codes": True})

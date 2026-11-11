@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Study.Description.en`; `Description_<lang>` columns still name their own language.
 
 ### Fixed
+- **Preview Questionnaire shows the answers.** In the Survey Customizer the preview drew a text box for every item that did not
+  share its scale with the next one (sex, gender, handedness, languages ...). It is now drawn by the backend from the same
+  blocks as the Word export (`render_questionnaire_html`; `survey export-questionnaire-docx --format html` writes the same
+  page), and the second renderer in JavaScript is gone.
 - **Remove Language no longer empties the general header.** Removing e.g. `en` from a template deleted it from
   `Study.OriginalName`, `Description`, `Citation`, ... too, so a German-only template lost required fields. Only
   item descriptions, answer levels and `Study.Instructions` are per-language now; the header is never touched, the

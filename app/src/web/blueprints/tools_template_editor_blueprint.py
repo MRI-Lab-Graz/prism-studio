@@ -462,6 +462,25 @@ def api_template_editor_export_questionnaire():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_template_editor_bp.route(
+    "/api/template-editor/preview-questionnaire", methods=["POST"]
+)
+def api_template_editor_preview_questionnaire():
+    """The questionnaire as HTML for the Preview Questionnaire window: the same blocks the Word export draws."""
+    payload = request.get_json(silent=True) or {}
+    template = payload.get("template")
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+    language = (payload.get("language") or "en").strip()
+    variant = (payload.get("variant") or "").strip() or None
+    print(
+        "[PRISM] CLI equivalent: python prism_tools.py survey export-questionnaire-docx --format html --template T --output preview.html"
+    )
+    from src.questionnaire_renderer import render_questionnaire_html
+
+    return jsonify({"html": render_questionnaire_html(template, language, variant, payload.get("options") or {})})
+
+
 @tools_template_editor_bp.route("/api/template-editor/save", methods=["POST"])
 def api_template_editor_save():
     from src.template_save import TemplateExists, TemplateInvalid, save_template

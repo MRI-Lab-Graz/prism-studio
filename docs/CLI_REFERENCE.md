@@ -235,6 +235,9 @@ python prism_tools.py survey export-lss-customized \
   --customization-json my_customization.json --output custom.lss
 python prism_tools.py survey export-questionnaire-docx \
   --template library/survey/survey-gad7.json --output gad7.docx
+# the page Studio shows for "Preview Questionnaire" (same questions and answers as the Word file)
+python prism_tools.py survey export-questionnaire-docx --format html \
+  --template library/survey/survey-gad7.json --output gad7.html
 ```
 
 **`survey export-pavlovia`** — export a PRISM survey template to a

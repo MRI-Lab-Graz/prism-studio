@@ -1148,6 +1148,19 @@ def cmd_survey_export_questionnaire_docx(args) -> None:
             print("Error: --options-json must decode to a JSON object")
             sys.exit(1)
 
+    language = str(getattr(args, "language", "en") or "en")
+    variant_id = getattr(args, "variant_id", None) or None
+    if getattr(args, "format", "docx") == "html":
+        # what Studio's Preview Questionnaire shows (src.questionnaire_renderer.render_questionnaire_html)
+        from src.questionnaire_renderer import render_questionnaire_html
+
+        output_path = Path(args.output).resolve()
+        output_path.write_text(
+            render_questionnaire_html(template, language, variant_id, options), encoding="utf-8"
+        )
+        print(f"✅ Questionnaire HTML written: {output_path}")
+        return
+
     try:
         from src.questionnaire_renderer import render_questionnaire_docx
     except ImportError:
