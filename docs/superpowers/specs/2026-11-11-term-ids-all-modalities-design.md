@@ -2,7 +2,7 @@
 
 Date: 2026-11-11. Status: approved by the user on 2026-11-11, part by part in the conversation (answers in the last section).
 Steps 1 and 2 are merged (PR #234, `feat/survey-term-ids`). Extended later on 2026-11-11, before step 3: the agnostic
-principle, what each modality has to carry, and what three sources add. Parts marked **proposal** are not yet agreed.
+principle, what each modality has to carry, and what three sources add. The user agreed to all proposals of that extension ("all proposed sound important"); the field names and details are settled in each step's own design.
 
 ## Intent
 
@@ -62,7 +62,7 @@ State on 2026-11-11 (checked in the schemas and registries, not assumed):
 What follows from the table:
 
 - **Participants is a modality of this design.** It is the most direct source of subject properties and already uses
-  the `IsAbout` pattern; step 4 reuses its format exactly. (**proposal**: a step of its own after surveys.)
+  the `IsAbout` pattern; step 4 reuses its format exactly. (Agreed: a step of its own after surveys.)
 - **Two kinds of modality.** In participants, survey, biosample and biometrics a value is a property of the subject. In
   physio, events and BIDS recordings the property is "has such a recording under such conditions": the recording type
   and its conditions need IDs and links, not each sample. Environment describes the session, not the subject.
@@ -216,7 +216,7 @@ The exact field names and value rules are settled in step 3's own plan; the list
 - Curation: each link is looked up by a person and cited in the pull request. PRISM does not set out to link the whole
   library; content comes with the data.
 
-**Proposals for step 4's own design (not yet agreed):**
+**Agreed for step 4's own design (details there):**
 
 - **The kind of target per level**: an analyte links to a substance, a measured level to an observable (LOINC), a
   questionnaire to a scale, a threshold result to a finding. The design says which kind each `Level` may link to.
@@ -236,7 +236,7 @@ The exact field names and value rules are settled in step 3's own plan; the list
 - **events, physio**: columns and channels are few and generic; they get small term registries of `Level: variable`,
   the way environment has, in prism-specification.
 - An ID is given where a single column means the same thing in every project. Free, project-specific columns get none.
-- **participants** (**proposal**): the common columns get `prism:` IDs; the existing Neurobagel annotation stays the
+- **participants** (agreed as a step of its own): the common columns get `prism:` IDs; the existing Neurobagel annotation stays the
   link format.
 - For recording modalities the IDs name the recording type and its conditions (see the two kinds of modality above).
 
@@ -270,3 +270,5 @@ requests (suggested: library IDs and the freeze first, project resolution second
 9. The example selection: participants with fatigue.
 10. PRISM stays agnostic about content: "we should not worry much about content - we have much psychology stuff at the
     moment, this may change."
+11. All proposals of the 2026-11-11 extension stand: participants as its own step, the kind of target per level, compose
+    do not pre-combine, date checked on links, vocabularies as data, links on local terms, fatigue as the test case.
