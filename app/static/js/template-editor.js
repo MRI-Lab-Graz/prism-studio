@@ -588,6 +588,26 @@
     });
   }
 
+  // The selected item's required fields: the same "not filled in" rule as the backend's is_blank, shown on the badge.
+  function isBlank(v) {
+    if (v === undefined || v === null) return true;
+    if (typeof v === 'string') return !v.trim();
+    if (Array.isArray(v)) return v.length === 0;
+    if (typeof v === 'object') return isBlank(v.en);
+    return false;
+  }
+
+  function paintItemBadges() {
+    const item = currentTemplate && currentTemplate[selectedItemId];
+    if (!item || typeof item !== 'object') return;
+    itemFormEl.querySelectorAll('[data-field-path^="ITEM/"]').forEach((el) => {
+      const tier = el.querySelector(':scope > .studio-field-label > .badge');
+      if (tier && tier.textContent.trim() === 'REQUIRED') {
+        StudioTheme.setFilled(tier, !isBlank(item[el.getAttribute('data-field-path').slice(5)]));
+      }
+    });
+  }
+
   function diffObjects(base, curr, path, out) {
     const baseKeys = new Set(Object.keys(base || {}));
     const currKeys = new Set(Object.keys(curr || {}));
@@ -3001,6 +3021,7 @@
     }
 
     renderSection('ITEM', currentTemplate[selectedItemId], itemSchema, itemFormEl);
+    paintItemBadges();
     enableTooltips();
   }
 
@@ -4172,6 +4193,7 @@
   function markTemplateDirty() {
     // Only block Save — Download should remain available for mid-edit export
     btnSave.disabled = true;
+    paintItemBadges();
     refreshCompleteness();
   }
 

@@ -208,3 +208,19 @@ def test_the_languages_badge_is_green_once_a_language_is_chosen(page, project, s
     section = page.locator("details.te-subgroup", has=page.locator(".te-subgroup-title", has_text="Languages"))
     section.locator("summary").click()
     _wait_for_badge(page, "I18n/Languages", "bg-success")
+
+
+def test_an_items_required_badge_is_green_while_filled_and_red_when_emptied(page, project, studio_url):
+    _open_incomplete_template(page, project, studio_url)
+    page.click("#tabItems")
+    page.locator("#itemList .list-group-item").first.click()
+    badge = "#itemForm [data-field-path='ITEM/Description'] > .studio-field-label > .badge"
+    page.wait_for_function(f"document.querySelector(\"{badge}\")?.classList.contains('bg-success')")  # filled
+
+    texts = page.locator("#field_ITEM_Description textarea, #field_ITEM_Description input")
+    for i in range(texts.count()):
+        texts.nth(i).fill("")
+    page.wait_for_function(f"document.querySelector(\"{badge}\")?.classList.contains('bg-danger')")
+    for i in range(texts.count()):
+        texts.nth(i).fill("I drink coffee")
+    page.wait_for_function(f"document.querySelector(\"{badge}\")?.classList.contains('bg-success')")

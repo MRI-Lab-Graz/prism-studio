@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`survey validate` checks a library template with the Template Editor's schema and task-name rule**, so both agree.
 - **Export:** modality names are made id-safe before they reach an `id` attribute.
 - **Template Editor:** the REQUIRED badge of a field turns green once the field is filled (it stayed red), as on the project page; the rule lives in the theme (`StudioTheme.setFilled`).
+- **Template Editor:** the same for the Selected item form: an item's REQUIRED badges (Description, ...) turn green once filled and red again when emptied.
 - **Validator page:** its title is the page's `h1`; underlined text links, scroll padding under the sticky navbar.
 - **`prism_tools datalad enable` registers every nested dataset**, like Studio: the backend says (`enable_continue`)
   whether another batch is needed, or that registration is stuck; the CLI and the page only repeat the call.
