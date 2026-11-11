@@ -79,6 +79,8 @@ def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
     if name in registry:
         return name, registry[name]
     lowered = name.lower()
+    if lowered in registry:  # the slug in any case beats a label (survey item `DASS21` vs instrument `dass21`)
+        return lowered, registry[lowered]
     for key, term in registry.items():
         if lowered in term_names(key, term):
             return key, term

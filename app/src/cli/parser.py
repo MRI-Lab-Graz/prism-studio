@@ -2200,12 +2200,16 @@ def build_prism_tools_parsers(
     for _name, _help in (
         ("list", "List the shipped terms"),
         ("show", "Show one term (ID, local name, label, alias or equivalent)"),
+        ("freeze", "Add new survey IDs to the released list (survey only; refuses when a released ID is gone)"),
+        ("resolve", "Give a project's survey sidecar columns their official item IDs (or the reason for none)"),
         ("suggest", "Relate a column name to the registry (similar official terms)"),
         ("propose", "Build a proposal for a new metric from a sidecar column (sends nothing unless --open)"),
     ):
         _p = terms_subparsers.add_parser(_name, help=_help)
         if _name == "show":
             _p.add_argument("term", help="Term ID, e.g. prism:cortisol, or a local name")
+        if _name == "resolve":
+            _p.add_argument("--sidecar", required=True, help="The survey sidecar .json")
         if _name == "suggest":
             _p.add_argument("column", help="Column name as it appears in your sidecar")
             _p.add_argument("--specimen", help="Technical.SpecimenType of the sidecar")

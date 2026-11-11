@@ -229,3 +229,90 @@ def test_propose_environment_column_from_data_file(tmp_path):
     assert code == 0, out
     (term,) = data["proposal"]["terms"]
     assert term["Level"] == "variable" and term["Units"] == "dB" and term["TermID"] == "prism:noise-db"
+
+
+# --- survey registry: instrument, item and score IDs -----------------------------
+
+def test_terms_list_survey_shows_instrument_item_and_score():
+    code, out = _run("list", "--modality", "survey")
+    assert code == 0 and "prism:tipi\tinstrument" in out
+    assert "prism:tipi.tipi02\titem" in out and "prism:tipi.score-extraversion\tscore" in out
+
+
+def test_terms_show_survey_item_by_id_and_by_its_key():
+    for name in ("prism:tipi.tipi02", "TIPI02"):
+        code, out = _run("show", name, "--modality", "survey", "--json")
+        assert code == 0 and json.loads(out)["term"]["Parent"] == "prism:tipi"
+
+
+def test_terms_freeze_is_for_survey_only():
+    code, out = _run("freeze", "--modality", "biosample")
+    assert code == 1 and "only the survey registry" in out
+
+
+def test_terms_freeze_refuses_when_a_released_id_is_gone(tmp_path, monkeypatch):
+    # run in-process against a library that lost an item the released list still holds
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:tipi.gone"})
+    with pytest.raises(SystemExit) as exc:
+        cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
+    assert exc.value.code == 1
+
+
+def test_terms_resolve_cli(tmp_path):
+    side = json.loads((REPO / "official" / "library" / "survey" / "survey-tipi.json").read_text(encoding="utf-8"))
+    side["Study"]["TaskName"] = "tipi"   # a project sidecar carries it; the library file relies on its name
+    side["TIPI02"]["MaxValue"] = 99
+    path = tmp_path / "task-tipi_survey.json"
+    path.write_text(json.dumps(side), encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(path))
+    assert code == 0 and "TIPI01\tprism:tipi.tipi01\t" in out and "TIPI02\t-\tchanged scale" in out
+    code, out = _run("resolve", "--sidecar", str(path), "--json")
+    data = json.loads(out)
+    assert code == 0 and data["success"] and data["instrument"] == "prism:tipi"
+
+
+@pytest.mark.parametrize("content", [None, "[1]", "{"])
+def test_terms_resolve_bad_file_exits_1(tmp_path, content):
+    path = tmp_path / "x.json"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    code, out = _run("resolve", "--sidecar", str(path))
+    assert code == 1 and "Error:" in out and "Traceback" not in out
+
+
+def test_terms_show_survey_dass21_is_the_instrument_in_any_case():
+    for name in ("DASS21", "dass21"):
+        code, out = _run("show", name, "--modality", "survey", "--json")
+        assert code == 0 and json.loads(out)["term"]["TermID"] == "prism:dass21"
+
+
+def test_terms_show_refuses_an_ambiguous_label(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    reg = {"a.q01": {"TermID": "prism:a.q01", "Label": "Q01"}, "b.q01": {"TermID": "prism:b.q01", "Label": "Q01"}}
+    monkeypatch.setattr(cmd, "_registry", lambda modality: (reg, []))
+    with pytest.raises(SystemExit) as exc:
+        cmd.cmd_terms_show(argparse.Namespace(modality="survey", term="Q01", json=True))
+    out = json.loads(capsys.readouterr().out)
+    assert exc.value.code == 1 and out["success"] is False and set(out["candidates"]) == {"prism:a.q01", "prism:b.q01"}
+
+
+def test_freeze_refusal_names_the_unreadable_template(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "build_survey_registry", lambda: ({}, ["survey-x.json: cannot read (boom)"]))
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x"})
+    with pytest.raises(SystemExit):
+        cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    out = capsys.readouterr().out
+    assert "survey-x.json: cannot read (boom)" in out and "prism:x: released ID is gone" in out
+
+
+def test_terms_list_json_carries_the_survey_problems(monkeypatch, capsys):
+    import argparse
+    from src.cli.commands import terms as cmd
+    monkeypatch.setattr(cmd, "_registry", lambda modality: ({}, ["survey-x.json: cannot read (boom)"]))
+    cmd.cmd_terms_list(argparse.Namespace(modality="survey", json=True))
+    assert json.loads(capsys.readouterr().out)["problems"] == ["survey-x.json: cannot read (boom)"]
