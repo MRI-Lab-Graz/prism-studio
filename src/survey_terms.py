@@ -36,7 +36,7 @@ def score_local_id(task: str, name: str) -> str:
 def _text(value) -> str:
     """A label: English if there is one, else the first language, else a plain string."""
     if isinstance(value, dict):
-        return str(value.get("en") or next(iter(value.values()), "") or "")
+        value = value.get("en") or next((v for v in value.values() if isinstance(v, str) and v), "")
     return value if isinstance(value, str) else ""
 
 
