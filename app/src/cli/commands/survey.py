@@ -758,7 +758,8 @@ def cmd_survey_answer_codes(args):
         else:
             for s in suggestions:
                 pairs = ",".join(f"{code}={number or '?'}" for code, number in s["codes"].items())
-                print(f"{len(s['items'])} item(s) ({', '.join(s['items'][:3])}...): --set \"{pairs}\"")
+                stored = f" [stored codes: {','.join(f'{n}={c}' for n, c in s['stored'].items())}]" if "stored" in s else ""
+                print(f"{len(s['items'])} item(s) ({', '.join(s['items'][:3])}...): --set \"{pairs}\"{stored}")
         return
     try:
         mapping = dict(pair.split("=", 1) for pair in args.set.split(","))
