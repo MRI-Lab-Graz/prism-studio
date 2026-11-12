@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.converters.file_reader import read_tabular_file
+from src.converters.file_reader import infer_tabular_kind, read_tabular_file
 
 
 class MigrationError(ValueError):
@@ -19,21 +19,32 @@ def read_legacy_wide(path: Path):
     """
     import pandas as pd
 
+    path = Path(path)
+    kind = infer_tabular_kind(path) or "csv"
     try:
-        try:
-            df = read_tabular_file(path).df
-        except ValueError as exc:
-            if "tabs as delimiter" not in str(exc):
-                raise
-            # the quirk file: read it as one column (a separator that never occurs)
-            df = read_tabular_file(path, separator="\x1f").df
+        df = None
+        if kind in ("csv", "tsv"):
+            # \x1f never occurs, so the quirk file arrives as one column
+            one = read_tabular_file(path, kind=kind, separator="\x1f").df
+            if len(one.columns) == 1 and "\t" in str(one.columns[0]):
+                df = one
+        if df is None:
+            df = read_tabular_file(path, kind=kind).df
     except (ValueError, OSError) as exc:
-        raise MigrationError(f"Cannot read {Path(path).name}: {exc}") from exc
+        raise MigrationError(f"Cannot read {path.name}: {exc}") from exc
     if len(df.columns) == 1 and "\t" in str(df.columns[0]):
         names = [c.strip() for c in str(df.columns[0]).split("\t")]
-        rows = [str(v).split("\t") for v in df.iloc[:, 0].fillna("")]
-        rows = [(r + [""] * len(names))[: len(names)] for r in rows]
+        rows = []
+        for i, v in enumerate(df.iloc[:, 0].fillna(""), start=1):
+            cells = str(v).split("\t")
+            if any(c.strip() for c in cells[len(names) :]):
+                raise MigrationError(
+                    f"Data row {i} of {path.name} has more fields than the header ({len(names)})."
+                )
+            rows.append((cells + [""] * len(names))[: len(names)])
         df = pd.DataFrame(rows, columns=names, dtype=str)
+    df = df.fillna("").astype(str)
+    df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
