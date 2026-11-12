@@ -306,3 +306,30 @@ def test_migrated_template_imports_into_a_project(tmp_path):
     side = json.loads(stem.with_suffix(".json").read_text(encoding="utf-8"))
     assert side["estradiol"]["LowerLimitOfDetection"] == 5.0
     assert side["Technical"]["SpecimenType"] == "serum"
+
+
+def test_missing_output_folder_is_refused_and_nothing_created(tmp_path):
+    from src.biosample_migrate import migrate_wide
+
+    out = tmp_path / "nope" / "m.xlsx"
+    with pytest.raises(MigrationError, match="not a directory"):
+        migrate_wide(FIXTURE, out)
+    assert not out.parent.exists()
+
+
+def test_failed_write_with_overwrite_keeps_the_old_file(tmp_path, monkeypatch):
+    from openpyxl.workbook.workbook import Workbook
+
+    from src.biosample_migrate import migrate_wide
+
+    out = tmp_path / "m.xlsx"
+    out.write_bytes(b"keep")
+
+    def boom(self, filename):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Workbook, "save", boom)
+    with pytest.raises(MigrationError, match="cannot write"):
+        migrate_wide(FIXTURE, out, overwrite=True)
+    assert out.read_bytes() == b"keep"
+    assert list(tmp_path.iterdir()) == [out]

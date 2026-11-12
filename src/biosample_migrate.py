@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence
@@ -136,6 +138,8 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
         raise MigrationError(f"Panel name {panel!r} must be letters and digits only")
     if specimen is not None and specimen not in specimen_types():
         raise MigrationError(f"Specimen {specimen!r} is not one of {', '.join(specimen_types())}")
+    if not output_path.parent.is_dir():
+        raise MigrationError(f"{output_path.parent}: not a directory")
     if output_path.exists() and not overwrite:
         raise MigrationError(f"{output_path} already exists; pass --overwrite to replace it")
 
@@ -186,13 +190,22 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
 
     from openpyxl import load_workbook
 
-    write_biosample_template(output_path)
-    wb = load_workbook(output_path)
-    for r, cells in enumerate(data, start=2):
-        for c, name in enumerate(DATA_COLUMNS, start=1):
-            if v := cells.get(name):
-                wb["data"].cell(row=r, column=c, value=v).number_format = "@"  # text, never a number
-    wb["panels"].cell(row=2, column=1, value=panel)
-    wb["panels"].cell(row=2, column=PANEL_COLUMNS.index("SpecimenType") + 1, value=specimen or "serum")
-    wb.save(output_path)
+    fd, tmp_name = tempfile.mkstemp(dir=output_path.parent, suffix=".xlsx")
+    os.close(fd)
+    tmp = Path(tmp_name)
+    try:
+        write_biosample_template(tmp)
+        wb = load_workbook(tmp)
+        for r, cells in enumerate(data, start=2):
+            for c, name in enumerate(DATA_COLUMNS, start=1):
+                if v := cells.get(name):
+                    wb["data"].cell(row=r, column=c, value=v).number_format = "@"  # text, never a number
+        wb["panels"].cell(row=2, column=1, value=panel)
+        wb["panels"].cell(row=2, column=PANEL_COLUMNS.index("SpecimenType") + 1, value=specimen or "serum")
+        wb.save(tmp)
+        os.replace(tmp, output_path)
+    except OSError as exc:
+        raise MigrationError(f"{output_path}: cannot write ({exc})") from exc
+    finally:
+        tmp.unlink(missing_ok=True)
     return rep

@@ -115,3 +115,12 @@ def test_cli_migrate_wide_parser_defaults_equal_the_function_defaults():
     for name, p in inspect.signature(migrate_wide).parameters.items():
         if name not in ("input_path", "output_path"):
             assert getattr(args, name) == p.default, name
+
+
+def test_cli_migrate_wide_refuses_missing_output_folder(tmp_path, capsys):
+    out = tmp_path / "typo" / "m.xlsx"
+    with pytest.raises(SystemExit) as exc:
+        cmd_biosample_migrate_wide(_migrate_args(out))
+    assert exc.value.code == 1
+    assert f"Error: {out.parent}: not a directory" in capsys.readouterr().err
+    assert not out.parent.exists()
