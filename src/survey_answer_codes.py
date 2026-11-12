@@ -18,6 +18,12 @@ def _codes(item) -> list[str]:
     return [k for k in levels if k != _MISSING] if isinstance(levels, dict) else []
 
 
+def _stored(item) -> dict:
+    limesurvey = item.get("LimeSurvey") if isinstance(item, dict) else None
+    answer_codes = limesurvey.get("answerCodes") if isinstance(limesurvey, dict) else None
+    return answer_codes if isinstance(answer_codes, dict) else {}
+
+
 def _is_number(code: str) -> bool:
     return re.fullmatch(r"-?\d+", code) is not None
 
@@ -38,7 +44,15 @@ def suggest_answer_numbers(template: dict) -> list[dict]:
         codes = _codes(item)
         if codes and not all(_is_number(c) for c in codes):
             groups.setdefault(tuple(codes), []).append(key)
-    return [{"codes": _suggest(list(codes)), "items": items} for codes, items in groups.items()]
+    suggestions = [{"codes": _suggest(list(codes)), "items": items} for codes, items in groups.items()]
+    # numbers given earlier stay changeable: each number with the code stored in the data
+    done: dict[tuple, dict] = {}
+    for key, item in template.items():
+        stored = _stored(item)
+        if stored and _codes(item):
+            group = done.setdefault(tuple(_codes(item)), {"stored": {n: stored.get(n, n) for n in _codes(item)}, "items": []})
+            group["items"].append(key)
+    return suggestions + [{"codes": {n: n for n in g["stored"]}, **g} for g in done.values()]
 
 
 def apply_answer_numbers(template: dict, mapping: dict[str, str]) -> list[str]:
@@ -50,7 +64,8 @@ def apply_answer_numbers(template: dict, mapping: dict[str, str]) -> list[str]:
     bad = [n for n in numbers if not _is_number(n)]
     if bad or len(set(numbers)) != len(numbers):
         raise ValueError(f"Answer numbers must be distinct whole numbers, got: {', '.join(numbers)}")
-    targets = [key for key, item in template.items() if _codes(item) and set(_codes(item)) == set(mapping)]
+    targets = [key for key, item in template.items() if _codes(item) and set(_codes(item)) == set(mapping)
+               and (_stored(item) or not all(_is_number(c) for c in mapping))]  # plain numbers without stored codes: nothing to map
     if not targets:
         raise ValueError(f"No item has exactly the answer codes {', '.join(mapping)}")
     for key in targets:

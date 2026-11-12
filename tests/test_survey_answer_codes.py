@@ -139,3 +139,35 @@ def test_editor_route_refuses_a_bad_mapping():
     response = _editor_post({"template": _template(), "codes": {**ADS, "ADS1": "0"}})
     assert response.status_code == 400
     assert "distinct whole numbers" in response.get_json()["error"]
+
+
+def _mapped_template():
+    from src.survey_answer_codes import apply_answer_numbers
+
+    template = _template()
+    template["pss"]["Levels"] = _levels("0", "1", "2", "3")  # plain numbers, no stored codes
+    apply_answer_numbers(template, ADS)
+    return template
+
+
+def test_numbers_given_earlier_can_be_changed_later():
+    from src.survey_answer_codes import apply_answer_numbers, suggest_answer_numbers
+
+    template = _mapped_template()
+    numbers = {n: n for n in "0123"}
+    stored = {n: f"ADS{n}" for n in "0123"}
+    assert {"codes": numbers, "stored": stored, "items": ["ADS1_1", "ADS1_2"]} in suggest_answer_numbers(template)
+    assert all("pss" not in s["items"] for s in suggest_answer_numbers(template))  # nothing stored there
+
+    changed = apply_answer_numbers(template, {"0": "1", "1": "2", "2": "3", "3": "4"})
+    assert changed == ["ADS1_1", "ADS1_2"]  # pss has the same numbers but no stored codes: untouched
+    assert list(template["ADS1_1"]["Levels"]) == ["1", "2", "3", "4"]
+    assert template["ADS1_1"]["Levels"]["1"] == {"de": "label ADS0"}
+    assert template["ADS1_1"]["LimeSurvey"]["answerCodes"] == {"1": "ADS0", "2": "ADS1", "3": "ADS2", "4": "ADS3"}
+    assert list(template["pss"]["Levels"]) == ["0", "1", "2", "3"] and "LimeSurvey" not in template["pss"]
+
+
+def test_editor_route_lists_the_numbers_again_after_applying():
+    applied = _editor_post({"template": _template(), "codes": ADS}).get_json()["template"]
+    listed = _editor_post({"template": applied}).get_json()["suggestions"]
+    assert next(s for s in listed if "stored" in s)["stored"]["1"] == "ADS1"
