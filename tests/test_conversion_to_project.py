@@ -129,7 +129,7 @@ def test_the_copy_goes_through_the_datalad_aware_function_with_studios_message(w
     assert seen["message"] == "PRISM: Copy converted survey files into project"
     names = sorted(src.name for src, _dst in seen["pairs"])
     assert ".DS_Store" not in names and "task-pss_survey.json" in names  # the real files, not system junk
-    assert "participants.tsv" in names  # every saved subject is listed
+    assert "participants.tsv" not in names  # a conversion without a participants table stays without one
     assert result.datalad == {"tracked": True}
 
 

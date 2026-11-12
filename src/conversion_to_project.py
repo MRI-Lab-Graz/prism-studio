@@ -135,6 +135,8 @@ def _merge_participants_into_staged(project_root: Path, staged_root: Path, log) 
     for name in ("participants.tsv", "participants.json"):
         if (project_root / name).is_file():
             shutil.copy2(project_root / name, staged_root / name)
+    if not (staged_root / "participants.tsv").is_file():
+        return  # neither side has a participants table: nothing to protect or to add to
     register_subjects(
         staged_root,
         [p.name for p in staged_root.glob("sub-*") if p.is_dir()],
