@@ -24,3 +24,15 @@ def test_every_official_survey_template_is_a_valid_library_template(path):
     schema = relax_schema_for_library_template(load_schema("survey"))
     errors = validate_template_against_schema(instance=template, schema=schema)
     assert errors == []
+
+
+def test_every_official_survey_template_declares_the_current_schema_version():
+    from src.modality_versions import current_survey_schema_version
+
+    current = current_survey_schema_version()
+    stale = {
+        p.name: v
+        for p in FILES
+        if (v := json.loads(p.read_text(encoding="utf-8")).get("Metadata", {}).get("SchemaVersion")) != current
+    }
+    assert stale == {}, f"templates not at survey schema {current}: {sorted(stale)}"
