@@ -45,14 +45,20 @@ def suggest_answer_numbers(template: dict) -> list[dict]:
         if codes and not all(_is_number(c) for c in codes):
             groups.setdefault(tuple(codes), []).append(key)
     suggestions = [{"codes": _suggest(list(codes)), "items": items} for codes, items in groups.items()]
-    # numbers given earlier stay changeable: each number with the code stored in the data
-    done: dict[tuple, dict] = {}
+    # numbers given earlier stay changeable: each number with the code(s) stored in the data
+    done: dict[frozenset, dict] = {}
     for key, item in template.items():
-        stored = _stored(item)
-        if stored and _codes(item):
-            group = done.setdefault(tuple(_codes(item)), {"stored": {n: stored.get(n, n) for n in _codes(item)}, "items": []})
+        codes, stored = _codes(item), _stored(item)
+        if stored and codes and all(_is_number(c) for c in codes):
+            group = done.setdefault(frozenset(codes), {"stored": {n: [] for n in codes}, "items": []})
+            for n in codes:
+                if stored.get(n, n) not in group["stored"][n]:
+                    group["stored"][n].append(stored.get(n, n))
             group["items"].append(key)
-    return suggestions + [{"codes": {n: n for n in g["stored"]}, **g} for g in done.values()]
+    return suggestions + [
+        {"codes": {n: n for n in g["stored"]}, "stored": {n: " / ".join(c) for n, c in g["stored"].items()}, "items": g["items"]}
+        for g in done.values()
+    ]
 
 
 def apply_answer_numbers(template: dict, mapping: dict[str, str]) -> list[str]:
