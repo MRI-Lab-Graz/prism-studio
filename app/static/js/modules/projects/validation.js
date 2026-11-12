@@ -39,7 +39,7 @@ export function setRequiredFieldBorder(field, isFilled, isOptionalTier) {
     }
 }
 
-const METADATA_VALIDATION_FIELDS = [
+export const METADATA_VALIDATION_FIELDS = [
     'metadataSchemaVersion',
     'metadataName',
     'metadataAcknowledgements',
@@ -55,6 +55,7 @@ const METADATA_VALIDATION_FIELDS = [
     'smOverviewQA',
     'smSDType',
     'smSDTimepoints',
+    'smSDSessionLabels',
     'smSDConditionType',
     'smSDTypeDesc',
     'smSDBlinding',

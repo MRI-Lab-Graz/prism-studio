@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportTrack Study Metadata</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#5b6570; --line:#d8dee4; --accent:#1f6feb; --soft:#f5f7fa; --req:#b42318; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14181d; --fg:#e6e9ed; --muted:#9aa5b1; --line:#2d353e; --accent:#58a6ff; --soft:#1c2128; --req:#ff8a80; }
+  }
+  body { background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; max-width:820px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { margin-bottom:0; } h2 { margin-top:2rem; border-bottom:1px solid var(--line); padding-bottom:.25rem; }
+  .sub { color:var(--muted); margin-top:.25rem; }
+  table { width:100%; border-collapse:collapse; margin:.75rem 0; }
+  th, td { text-align:left; vertical-align:top; padding:.5rem .6rem; border-bottom:1px solid var(--line); }
+  th { width:32%; color:var(--muted); font-weight:600; }
+  code, .val { background:var(--soft); padding:.1rem .35rem; border-radius:4px; user-select:all; }
+  .req { color:var(--req); font-size:.75rem; font-weight:700; margin-left:.4rem; }
+  .core { color:var(--accent); font-size:.75rem; font-weight:700; margin-left:.4rem; }
+  .note { background:var(--soft); border-left:4px solid var(--accent); padding:.6rem .9rem; margin:1rem 0; }
+  @media (max-width:560px) { th, td { display:block; width:auto; } th { border:0; padding-bottom:0; } }
+</style>
+</head>
+<body>
+<h1>SportTrack Study Metadata</h1>
+<p class="sub">Fictive study for the PRISM Studio assignment. Copy the values below into the Study Metadata form on the Projects page. Study, ethics number and grant are invented; the authors are real (you and your instructor).</p>
+
+<div class="note">Fields marked <span class="req">REQUIRED</span> block project creation. Fields marked <span class="core">CORE</span> do not block, but count towards the FAIR score. This time you fill in <strong>only the fields listed here</strong>; the other sections may stay empty.</div>
+
+<h2>0. Project (Create New Project card)</h2>
+<table>
+<tr><th>Project Name</th><td><span class="val">sporttrack_study</span> (no spaces, no umlauts)</td></tr>
+<tr><th>Project Location</th><td>Any folder you can find again, e.g. <span class="val">Documents/prism_projects</span></td></tr>
+<tr><th>DataLad</th><td>Leave unchecked</td></tr>
+</table>
+
+<h2>1. Basics (BIDS)</h2>
+<table>
+<tr><th>Dataset Name <span class='req'>REQUIRED</span></th><td><span class="val">SportTrack: Sport Habits and Fitness in Young Adults</span></td></tr>
+<tr><th>Keywords <span class='req'>REQUIRED</span><br>(at least 3, comma separated)</th><td><span class="val">sport habits, physical activity, fitness, longitudinal, young adults</span></td></tr>
+</table>
+
+<h3>Authors <span class="req">REQUIRED</span></h3>
+<p>Add two author rows. Exactly one is corresponding, and the corresponding author needs an email.</p>
+<table>
+<tr><th>Author 1 (you)</th><td>Your own first and last name<br>Corresponding: <strong>yes</strong><br>Email: your own email address<br>Affiliation: your own university<br>ORCID: use the lookup button (leave empty if you have none)</td></tr>
+<tr><th>Author 2 (co-author)</th><td>First name: <span class="val">Karl</span><br>Last name: <span class="val">Koschutnig</span><br>Corresponding: no<br>Email: leave empty<br>ORCID: use the <strong>ORCID lookup button</strong> and pick the right entry</td></tr>
+</table>
+
+<h3>Ethics Approvals <span class="core">CORE</span></h3>
+<table>
+<tr><th>Ethics approval?</th><td>Yes</td></tr>
+<tr><th>Committee</th><td><span class="val">Ethics Committee of the Fictive University of Examplestadt</span></td></tr>
+<tr><th>Reference number</th><td><span class="val">EK-2026-0107</span></td></tr>
+</table>
+
+<h3>Funding <span class="core">CORE</span></h3>
+<table>
+<tr><th>Funded?</th><td>Yes</td></tr>
+<tr><th>Funding source (one row)</th><td>Agency: <span class="val">Fictive Science Fund</span> Grant number: <span class="val">FSF-2026-67890</span></td></tr>
+</table>
+
+
+<h2>2. Study design <span class="req">REQUIRED</span> (Timepoints)</h2>
+<table>
+<tr><th>Timepoints <span class='req'>REQUIRED</span></th><td><strong>Several timepoints (longitudinal)</strong>. This is the important one: it makes PRISM ask you to map every session label later.</td></tr>
+<tr><th>Study design type <span class='core'>CORE</span></th><td>Cohort</td></tr>
+<tr><th>Type description</th><td><span class="val">Observational longitudinal study, four measurement waves (baseline, 3, 6 and 12 months), no intervention.</span></td></tr>
+</table>
+
+<h2>3. Overview and eligibility</h2>
+<table>
+<tr><th>Dataset Overview</th><td><span class="val">Longitudinal study on how sport habits, motivation and perceived barriers change over one year in university students, and how they relate to cardiorespiratory fitness (VO2max).</span></td></tr>
+<tr><th>Inclusion criteria <span class='core'>CORE</span></th><td>One row each: <span class="val">Age 18 to 40 years</span>, <span class="val">Currently enrolled at a university</span></td></tr>
+<tr><th>Exclusion criteria</th><td>One row each: <span class="val">Injury that prevents sport</span>, <span class="val">Chronic cardiovascular disease</span></td></tr>
+<tr><th>Checked criteria</th><td>Add the criterion <strong>Age</strong>: include, min <strong>18</strong>, max <strong>40</strong>, unit <strong>years</strong>. The validator warns (PRISM602) about anyone outside 18-40.</td></tr>
+<tr><th>Target sample size</th><td><span class="val">240</span></td></tr>
+</table>
+
+<h2>4. Procedure (optional but quick)</h2>
+<table>
+<tr><th>Overview</th><td><span class="val">At baseline participants complete a treadmill test (VO2max) and the Sport Habits Questionnaire. The questionnaire is repeated online after 3, 6 and 12 months (sessions ses-1 to ses-4).</span></td></tr>
+</table>
+
+<h2>5. Data files for the next tasks</h2>
+<p>Next, <code>sporttrack_sociodemographics.tsv</code>, <code>shq_responses.xlsx</code> and <code>survey_import_template.xlsx</code> (folder <code>raw_data</code>). The assignment text explains what to do with them.</p>
+</body>
+</html>

@@ -152,3 +152,10 @@ describe('validateEligibilityCriteriaBadges', () => {
         expect(exclusionField.classes.has('required-field-empty')).toBe(false);
     });
 });
+
+describe('METADATA_VALIDATION_FIELDS', () => {
+    it('watches the "Sessions are" select, so its badge and border turn green once answered', async () => {
+        const { METADATA_VALIDATION_FIELDS } = await import('./validation.js');
+        expect(METADATA_VALIDATION_FIELDS).toContain('smSDSessionLabels');
+    });
+});
