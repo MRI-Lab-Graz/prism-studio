@@ -24,6 +24,11 @@ Two main areas:
   interpret; this is usually what becomes the main analysis output. Common methods:
   `sum`, `mean`, `formula`, `map`.
 
+A score may also carry two optional plain-text notes about its direction:
+
+- **`HigherMeans`** - what a higher score means, for example `more fatigue`.
+- **`LowerMeans`** - what a lower score means, for example `less fatigue`.
+
 Derived values are useful for intermediate logic but aren't automatically the main
 result you report — that's what `Scores` is for.
 

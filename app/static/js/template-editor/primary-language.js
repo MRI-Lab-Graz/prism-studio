@@ -5,7 +5,7 @@
 
 const LANG_CODE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
 const NON_ITEM_KEYS = new Set(['Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative', '_aliases', '_reverse_aliases']);
-const STUDY_TEXT_FIELDS = ['OriginalName', 'Description', 'Instructions', 'License'];
+const STUDY_TEXT_FIELDS = ['OriginalName', 'Description', 'Instructions', 'RecallPeriod', 'License'];
 
 const itemKeys = (template) => Object.keys(template).filter((key) => !NON_ITEM_KEYS.has(key));
 

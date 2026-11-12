@@ -44,6 +44,13 @@ describe('applyPrimaryLanguage', () => {
         expect(template.Study.TaskName).toBe('arsq'); // identifiers stay plain
     });
 
+    it('keys Study.RecallPeriod under the language too', () => {
+        const template = plain();
+        template.Study.RecallPeriod = 'die letzten 2 Wochen';
+        applyPrimaryLanguage(template, 'de');
+        expect(template.Study.RecallPeriod).toEqual({ de: 'die letzten 2 Wochen' });
+    });
+
     it('leaves texts that already have languages, and non-text fields, alone', () => {
         const template = plain();
         template.ARSQ2.Description = { en: 'I felt restless' };

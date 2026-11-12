@@ -20,7 +20,7 @@ the project-local copy is what matters.
   `ShortName` (was `Abbreviation`, still accepted), `Version`, `Authors`, `Year`
   (1900–2100), `DOI` (`10.xxxx/...`), `Citation`, `License`/`LicenseID` (SPDX
   recommended), `Source`, `ItemCount` (was `NumberOfItems`, still accepted),
-  `Instructions`, `Publisher`.
+  `Instructions`, `RecallPeriod` (the period the answers refer to, for example "past 2 weeks"; an item may set its own), `Publisher`.
 - **`Technical`** describes how the survey was actually run in *this* project:
   `StimulusType`, `FileFormat`, `Language`, `Respondent`, `AdministrationMethod`,
   `SoftwarePlatform`, `SoftwareVersion`. Often the block that still needs

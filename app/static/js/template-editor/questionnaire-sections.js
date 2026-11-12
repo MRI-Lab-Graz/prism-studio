@@ -12,7 +12,7 @@ export const QUESTIONNAIRE_SECTIONS = [
         id: 'administration',
         label: 'Administration',
         fields: [
-            'Technical/Respondent', 'Technical/AdministrationMethod', 'Study/Instructions', 'Study/AdministrationTime', 'Study/ScoringTime',
+            'Technical/Respondent', 'Technical/AdministrationMethod', 'Study/Instructions', 'Study/AdministrationTime', 'Study/ScoringTime', 'Study/RecallPeriod',
             'Study/AgeRange', 'Study/ItemCount', 'Technical/Language', 'Technical/SoftwarePlatform', 'Technical/SoftwareVersion',
         ],
     },
