@@ -171,3 +171,21 @@ def test_editor_route_lists_the_numbers_again_after_applying():
     applied = _editor_post({"template": _template(), "codes": ADS}).get_json()["template"]
     listed = _editor_post({"template": applied}).get_json()["suggestions"]
     assert next(s for s in listed if "stored" in s)["stored"]["1"] == "ADS1"
+
+
+def test_numbers_listed_once_per_number_set_with_every_stored_code():
+    from src.survey_answer_codes import suggest_answer_numbers
+
+    template = _mapped_template()
+    template["other"] = {"Levels": _levels("3", "2", "1", "0"), "LimeSurvey": {"answerCodes": {n: f"XYZ{n}" for n in "0123"}}}
+    done = [s for s in suggest_answer_numbers(template) if "stored" in s]
+    assert len(done) == 1 and done[0]["items"] == ["ADS1_1", "ADS1_2", "other"]
+    assert done[0]["stored"]["1"] == "ADS1 / XYZ1"
+
+
+def test_stale_stored_codes_on_unmapped_levels_are_not_listed_as_numbers():
+    from src.survey_answer_codes import suggest_answer_numbers
+
+    template = _template()
+    template["ADS1_1"]["LimeSurvey"]["answerCodes"] = {"0": "ADS0"}
+    assert not any("stored" in s for s in suggest_answer_numbers(template))
