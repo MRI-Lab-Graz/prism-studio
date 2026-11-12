@@ -1786,7 +1786,9 @@ def build_prism_tools_parsers(
         "migrate-wide", help="Convert a legacy wide blood sheet (one column group per analyte) to the template"
     )
     parser_biosample_migrate.add_argument("--input", required=True, help="Legacy wide sheet (.xlsx or .csv)")
-    parser_biosample_migrate.add_argument("--output", required=True, help="Path of the .xlsx to write")
+    parser_biosample_migrate.add_argument(
+        "--output", required=True, help="Path of the .xlsx to write (must end in .xlsx)"
+    )
     parser_biosample_migrate.add_argument(
         "--panel", default="bloodhormones", help="Panel name for all rows (letters and digits only)"
     )

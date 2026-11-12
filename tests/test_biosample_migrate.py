@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -333,3 +334,96 @@ def test_failed_write_with_overwrite_keeps_the_old_file(tmp_path, monkeypatch):
         migrate_wide(FIXTURE, out, overwrite=True)
     assert out.read_bytes() == b"keep"
     assert list(tmp_path.iterdir()) == [out]
+
+
+# --- Final review fixes ---------------------------------------------------------------
+
+
+def test_comment_or_unit_without_value_warns_and_is_not_dropped_empty(tmp_path):
+    src = _tiny(tmp_path, "Patient No.,Visit,A Results,A Unit,A clin. significant,B Results,B Unit\n"
+                          "s1,T0,,,haemolysed,2,mg\ns1,T1,,mg,,3,mg\ns1,T2,,,lipaemic,,\n")
+    rep = migrate_wide(src, tmp_path / "out.xlsx")
+    assert "s1 T0 A: comment 'haemolysed' has no value, not written" in rep.warnings
+    assert "s1 T1 A: unit 'mg' has no value, not written" in rep.warnings
+    assert "s1 T2 A: comment 'lipaemic' has no value, not written" in rep.warnings  # skipped row too
+    assert "A" not in rep.analytes_dropped_empty and "A" not in rep.analytes_mapped
+    assert [r["analyte"] for r in _sheet(tmp_path / "out.xlsx", "data")] == ["B", "B"]
+
+
+def test_many_comments_without_value_are_one_summary_warning(tmp_path):
+    rows = "".join(f"s{i},T0,,bad,1\n" for i in range(20))
+    src = _tiny(tmp_path, "id,visit,A Results,A clin. significant,B Results\n" + rows)
+    rep = migrate_wide(src, tmp_path / "out.xlsx")
+    hits = [w for w in rep.warnings if "no value" in w]
+    assert len(hits) == 1 and "20" in hits[0] and "s0 T0 A" in hits[0]
+
+
+def test_columns_outside_the_groups_are_named_when_not_migrated(tmp_path):
+    src = _tiny(tmp_path, "id,visit,Date,Empty,X Unit,A Results,A Results,a results,A Unit\n"
+                          "s1,T0,2020-01-01,,mg,1,9,8,mg\n")
+    rep = migrate_wide(src, tmp_path / "out.xlsx", id_column="id", session_column="visit")
+    assert "columns not migrated: Date, X Unit, A Results.1, a results" in rep.warnings
+    assert not any("Empty" in w for w in rep.warnings)
+
+
+def test_header_names_equal_after_stripping_are_a_migration_error(tmp_path):
+    with pytest.raises(MigrationError, match="duplicate column names: A Results"):
+        read_legacy_wide(_tiny(tmp_path, "id,visit,A Results,A Results \ns1,T0,1,2\n"))
+
+
+def test_duplicate_header_names_in_the_quirk_file_are_a_migration_error(tmp_path):
+    p = tmp_path / "q.csv"
+    p.write_text('"id\tvisit\tA Results\tA Results "\r\n"s1\tT0\t1\t2"\r\n', encoding="utf-8")
+    with pytest.raises(MigrationError, match="duplicate column names: A Results"):
+        read_legacy_wide(p)
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permissions")
+def test_unwritable_output_folder_is_a_migration_error(tmp_path):
+    folder = tmp_path / "ro"
+    folder.mkdir()
+    folder.chmod(0o555)
+    try:
+        if os.access(folder, os.W_OK):
+            pytest.skip("process can write to a read-only folder (root?)")
+        with pytest.raises(MigrationError, match="cannot write"):
+            migrate_wide(FIXTURE, folder / "out.xlsx")
+    finally:
+        folder.chmod(0o755)
+
+
+def test_filled_value_with_empty_unit_warns_once_per_analyte(tmp_path):
+    src = _tiny(tmp_path, "id,visit,A Results,A Unit\ns1,T0,1,mg\ns1,T1,2,\ns2,T1,3, \n")
+    rep = migrate_wide(src, tmp_path / "out.xlsx")
+    hits = [w for w in rep.warnings if w.startswith("A: no unit")]
+    assert hits == ["A: no unit in 2 row(s) (e.g. s1 T1, s2 T1); the importer will use the unit of the other rows"]
+
+
+@pytest.mark.parametrize("name", ["out.csv", "out.xls", "out"])
+def test_output_must_be_xlsx(tmp_path, name):
+    with pytest.raises(MigrationError, match=r"\.xlsx"):
+        migrate_wide(tmp_path / "missing.csv", tmp_path / name)  # refused before the input is read
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_output_suffix_is_case_insensitive(tmp_path):
+    migrate_wide(FIXTURE, tmp_path / "out.XLSX")
+    assert (tmp_path / "out.XLSX").is_file()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX permissions")
+def test_output_file_mode_follows_the_umask(tmp_path):
+    old = os.umask(0o022)
+    try:
+        migrate_wide(FIXTURE, tmp_path / "out.xlsx")
+    finally:
+        os.umask(old)
+    assert (tmp_path / "out.xlsx").stat().st_mode & 0o777 == 0o644
+
+
+def test_id_and_session_cells_are_stripped_only(tmp_path):
+    src = _tiny(tmp_path, "id,visit,A Results,A Unit\n s1 , T4.1 ,1,mg\ns1,T4.1,2,mg\n 01 ,01,3,mg\n")
+    rep = migrate_wide(src, tmp_path / "out.xlsx")
+    assert any("s1 T4.1" in w and "twice" in w for w in rep.warnings)
+    rows = _sheet(tmp_path / "out.xlsx", "data")
+    assert [(r["participant_id"], r["session"]) for r in rows] == [("s1", "T4.1"), ("s1", "T4.1"), ("01", "01")]

@@ -52,6 +52,9 @@ def read_legacy_wide(path: Path):
         df = pd.DataFrame(rows, columns=names, dtype=str)
     df = df.fillna("").astype(str)
     df.columns = [str(c).strip() for c in df.columns]
+    twice = sorted(set(df.columns[df.columns.duplicated()]))
+    if twice:
+        raise MigrationError(f"{path.name} has duplicate column names: {', '.join(twice)}")
     return df
 
 
@@ -134,6 +137,8 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
                  session_column: str | None = None, overwrite: bool = False) -> MigrationReport:
     """Write the legacy wide sheet as the biosample template; cell text is copied as written."""
     output_path = Path(output_path)
+    if output_path.suffix.lower() != ".xlsx":
+        raise MigrationError(f"{output_path}: the output must be an .xlsx file")
     if not re.fullmatch(r"[A-Za-z0-9]+", panel or ""):
         raise MigrationError(f"Panel name {panel!r} must be letters and digits only")
     if specimen is not None and specimen not in specimen_types():
@@ -150,15 +155,31 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
         raise MigrationError("No analyte columns ('<analyte> Results') found; columns seen: "
                              + ", ".join(columns))
     id_col, ses_col = _id_session(other, id_column, session_column, columns)
+    for col in (id_col, ses_col):
+        df[col] = df[col].str.strip()  # surrounding whitespace only; labels stay exact
+
+    def has_text(col):
+        return col is not None and df[col].str.strip().ne("").any()
 
     rep = MigrationReport(rows_read=len(df))
+    unused = [c for c in other if c not in (id_col, ses_col) and has_text(c)]
+    if unused:
+        rep.warnings.append("columns not migrated: " + ", ".join(unused))
     empty = {e["row_index"] for e in find_empty_data_rows(df, id_column=id_col,
                                                           data_columns=[g.value for g in groups])}
     rep.rows_skipped_empty = [f"{df.at[i, id_col]} {df.at[i, ses_col]}" for i in sorted(empty)]
     kept = df.drop(index=list(empty))
-    mapped = [g for g in groups if kept[g.value].str.strip().ne("").any()]
+    mapped = [g for g in groups if has_text(g.value)]
     rep.analytes_mapped = [g.name for g in mapped]
-    rep.analytes_dropped_empty = [g.name for g in groups if g not in mapped]
+    # comments without values are no "empty" analyte: they are named in the warnings below
+    rep.analytes_dropped_empty = [g.name for g in groups if g not in mapped and not has_text(g.flag)]
+    orphans = [f"{row[id_col]} {row[ses_col]} {g.name}: {what} {row[col].strip()!r} has no value, not written"
+               for _, row in df.iterrows() for g in groups if not row[g.value].strip()
+               for what, col in (("comment", g.flag), ("unit", g.unit)) if col and row[col].strip()]
+    if len(orphans) > 10:
+        orphans = [f"{len(orphans)} comment or unit cells have no value and are not written, e.g. "
+                   + "; ".join(orphans[:3])]
+    rep.warnings += orphans
     for g in mapped:
         if g.unit is None:
             rep.warnings.append(f"{g.name}: no unit column; rows written with an empty unit, "
@@ -173,12 +194,15 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
 
     data: list[dict[str, str]] = []
     repairs: dict[str, str] = {}
+    no_unit: dict[str, list[str]] = {}
     for _, row in kept.iterrows():
         for g in mapped:
             value = row[g.value].strip()
             if not value:
                 continue
             unit = row[g.unit].strip() if g.unit else ""
+            if g.unit and not unit:
+                no_unit.setdefault(g.name, []).append(f"{row[id_col]} {row[ses_col]}")
             fixed = repair_mojibake(unit)
             if fixed != unit:
                 repairs.setdefault(unit, fixed)
@@ -186,14 +210,17 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
                          "analyte": g.name, "value": value, "unit": fixed,
                          "comment": row[g.flag].strip() if g.flag else ""})
     rep.unit_repairs = [f"{a} -> {b}" for a, b in repairs.items()]
+    rep.warnings += [f"{name}: no unit in {len(p)} row(s) (e.g. {', '.join(p[:3])}); "
+                     "the importer will use the unit of the other rows" for name, p in no_unit.items()]
     rep.data_rows = len(data)
 
     from openpyxl import load_workbook
 
-    fd, tmp_name = tempfile.mkstemp(dir=output_path.parent, suffix=".xlsx")
-    os.close(fd)
-    tmp = Path(tmp_name)
+    tmp = None
     try:
+        fd, tmp_name = tempfile.mkstemp(dir=output_path.parent, suffix=".xlsx")
+        os.close(fd)
+        tmp = Path(tmp_name)
         write_biosample_template(tmp)
         wb = load_workbook(tmp)
         for r, cells in enumerate(data, start=2):
@@ -203,9 +230,13 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
         wb["panels"].cell(row=2, column=1, value=panel)
         wb["panels"].cell(row=2, column=PANEL_COLUMNS.index("SpecimenType") + 1, value=specimen or "serum")
         wb.save(tmp)
+        umask = os.umask(0)
+        os.umask(umask)
+        os.chmod(tmp, 0o666 & ~umask)  # mkstemp makes it owner-only
         os.replace(tmp, output_path)
     except OSError as exc:
         raise MigrationError(f"{output_path}: cannot write ({exc})") from exc
     finally:
-        tmp.unlink(missing_ok=True)
+        if tmp is not None:
+            tmp.unlink(missing_ok=True)
     return rep
