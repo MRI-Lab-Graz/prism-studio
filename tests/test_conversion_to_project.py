@@ -50,6 +50,64 @@ def test_every_converted_file_is_copied_into_the_project_but_no_system_files(wor
     assert "task-pss_survey.json" in result.copied_paths
 
 
+def _stage_id_only_participants(staged, *subjects):
+    """What a conversion into an empty staging folder leaves: a bare ID list and a minimal json."""
+    for sub in subjects:
+        (staged / sub).mkdir(exist_ok=True)
+    (staged / "participants.tsv").write_text("participant_id\n" + "".join(f"{s}\n" for s in subjects), encoding="utf-8")
+    (staged / "participants.json").write_text('{"participant_id": {"Description": "Unique participant identifier"}}', encoding="utf-8")
+
+
+def _project_participants(project, rows="participant_id\tage\nsub-001\t23\n"):
+    (project / "participants.tsv").write_text(rows, encoding="utf-8")
+    (project / "participants.json").write_text('{"participant_id": {"Description": "ID"}, "age": {"Description": "Age", "Unit": "years"}}', encoding="utf-8")
+
+
+def test_saving_never_overwrites_the_projects_participant_columns_with_the_staged_id_list(world):
+    project, staged, _source = world
+    _project_participants(project)
+    _stage_id_only_participants(staged, "sub-001")
+    before_json = (project / "participants.json").read_text(encoding="utf-8")
+
+    _save(world)
+
+    assert (project / "participants.tsv").read_text(encoding="utf-8") == "participant_id\tage\nsub-001\t23\n"
+    assert (project / "participants.json").read_text(encoding="utf-8") == before_json
+
+
+def test_saving_adds_only_the_subjects_the_project_lacks(world):
+    project, staged, _source = world
+    _project_participants(project)
+    _stage_id_only_participants(staged, "sub-001", "sub-002")
+
+    _save(world)
+
+    assert (project / "participants.tsv").read_text(encoding="utf-8") == "participant_id\tage\nsub-001\t23\nsub-002\tn/a\n"
+
+
+def test_the_log_names_only_the_subjects_really_new_to_the_project_participants_file(world):
+    project, staged, _source = world
+    _project_participants(project)
+    _stage_id_only_participants(staged, "sub-001", "sub-002")
+    messages = []
+
+    _save(world, log_fn=lambda message, level="info": messages.append(message))
+
+    added = [m for m in messages if "participants.tsv" in m]
+    assert len(added) == 1 and "added 1 new participant(s)" in added[0]
+
+
+def test_the_log_says_nothing_about_participants_when_all_subjects_are_already_there(world):
+    project, staged, _source = world
+    _project_participants(project)
+    _stage_id_only_participants(staged, "sub-001")
+    messages = []
+
+    _save(world, log_fn=lambda message, level="info": messages.append(message))
+
+    assert not [m for m in messages if "participants.tsv" in m]
+
+
 def test_the_source_file_is_archived_in_sourcedata_when_asked(world):
     project, _staged, _source = world
     _save(world)
@@ -69,7 +127,9 @@ def test_the_copy_goes_through_the_datalad_aware_function_with_studios_message(w
     result = _save(world)
 
     assert seen["message"] == "PRISM: Copy converted survey files into project"
-    assert len(seen["pairs"]) == 2  # the two real files, not .DS_Store
+    names = sorted(src.name for src, _dst in seen["pairs"])
+    assert ".DS_Store" not in names and "task-pss_survey.json" in names  # the real files, not system junk
+    assert "participants.tsv" in names  # every saved subject is listed
     assert result.datalad == {"tracked": True}
 
 

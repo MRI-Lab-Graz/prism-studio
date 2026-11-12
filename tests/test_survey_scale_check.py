@@ -50,6 +50,27 @@ def test_items_without_levels_are_not_checked():
     assert _find(["x"], None) == []
 
 
+RANGE_ONLY = {"DataType": "integer", "MinValue": 0, "MaxValue": 20}  # "hours per week", no labels
+
+
+def test_an_item_without_levels_but_with_min_max_is_checked_against_that_range():
+    (issue,) = _find(["3", "99", "20", "-1"], RANGE_ONLY)
+    assert issue["type"] == "out_of_range" and issue["severity"] == "error"
+    assert issue["range"] == "0-20" and issue["out_of_range_count"] == 2
+    assert issue["examples"] == ["P2: 99", "P4: -1"]
+
+
+def test_text_in_an_item_with_only_min_max_is_unexpected():
+    (issue,) = _find(["3", "many"], RANGE_ONLY)
+    assert issue["type"] == "unexpected_values" and issue["examples"] == ["P2: many"]
+
+
+def test_one_sided_range_only_checks_that_side():
+    assert _find(["5", "500"], {"MinValue": 0}) == []
+    (issue,) = _find(["-5", "500"], {"MinValue": 0})
+    assert issue["examples"] == ["P1: -5"]
+
+
 def test_many_violations_are_counted_and_examples_capped():
     (issue,) = _find([str(v) for v in range(10, 30)])
     assert issue["out_of_range_count"] == 20 and len(issue["examples"]) == 5

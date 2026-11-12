@@ -30,15 +30,27 @@ def find_scale_violations(
 ) -> list[dict]:
     """Issues (``out_of_range`` / ``unexpected_values``) for one survey item column.
 
-    Only items with ``Levels`` are checked. A number beyond the numeric levels is out of
-    range; anything else that is not a level (text, 1.5 on a 0-2 scale) is unexpected.
+    An item with ``Levels`` is checked against them: a number beyond the numeric levels is
+    out of range; anything else that is not a level (text, 1.5 on a 0-2 scale) is unexpected.
+    An item without labels is checked against its own ``MinValue`` / ``MaxValue`` (the
+    validator reads those too, but only after conversion): a number outside is out of range,
+    text is unexpected. An item with neither is not checked.
     """
-    levels = item_def.get("Levels") if isinstance(item_def, dict) else None
-    if not isinstance(levels, dict) or not levels:
-        return []
-    keys = [str(k).strip() for k in levels]
-    numeric_keys = [n for n in (_number(k) for k in keys) if n is not None]
-    low, high = (min(numeric_keys), max(numeric_keys)) if len(numeric_keys) == len(keys) else (None, None)
+    item_def = item_def if isinstance(item_def, dict) else {}
+    levels = item_def.get("Levels")
+    if isinstance(levels, dict) and levels:
+        keys = [str(k).strip() for k in levels]
+        numeric_keys = [n for n in (_number(k) for k in keys) if n is not None]
+        low, high = (min(numeric_keys), max(numeric_keys)) if len(numeric_keys) == len(keys) else (None, None)
+    else:
+        keys = []
+        low, high = _number(str(item_def.get("MinValue", ""))), _number(str(item_def.get("MaxValue", "")))
+        if low is None and high is None:
+            return []
+    scale = (
+        f"{_fmt(low)}-{_fmt(high)}" if low is not None and high is not None
+        else f"at least {_fmt(low)}" if low is not None else f"at most {_fmt(high)}"
+    )
 
     out_of_range: list[str] = []
     unexpected: list[str] = []
@@ -51,7 +63,12 @@ def find_scale_violations(
             continue
         number = _number(text)
         label = f"{str(pid).strip()}: {text}"
-        if number is not None and low is not None and high is not None and not low <= number <= high:
+        beyond = number is not None and (
+            (low is not None and number < low) or (high is not None and number > high)
+        )
+        if not keys and number is not None and not beyond:
+            continue  # inside MinValue..MaxValue
+        if beyond:
             out_of_range.append(label)
         else:
             unexpected.append(label)
@@ -63,9 +80,9 @@ def find_scale_violations(
         shown = ", ".join(out_of_range[:_EXAMPLES])
         issues.append({
             "type": "out_of_range", "severity": "error", "column": column,
-            "range": f"{_fmt(low)}-{_fmt(high)}", "out_of_range_count": len(out_of_range),
+            "range": scale, "out_of_range_count": len(out_of_range),
             "examples": out_of_range[:_EXAMPLES],
-            "message": f"{column}: {len(out_of_range)} answer(s) outside the scale {_fmt(low)}-{_fmt(high)} - {shown}"
+            "message": f"{column}: {len(out_of_range)} answer(s) outside the scale {scale} - {shown}"
             + (" ..." if len(out_of_range) > _EXAMPLES else ""),
         })
     if unexpected:
@@ -73,7 +90,7 @@ def find_scale_violations(
         issues.append({
             "type": "unexpected_values", "severity": "error", "column": column,
             "expected": keys, "unexpected": seen_unexpected[:10], "examples": unexpected[:_EXAMPLES],
-            "message": f"{column}: {len(unexpected)} answer(s) are not one of {', '.join(keys)} - {shown}"
+            "message": f"{column}: {len(unexpected)} answer(s) are not {'one of ' + ', '.join(keys) if keys else 'a number'} - {shown}"
             + (" ..." if len(unexpected) > _EXAMPLES else ""),
         })
     return issues
