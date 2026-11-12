@@ -373,6 +373,21 @@ python prism_tools.py biosample import --input biosample.xlsx --project /path/to
 `--overwrite` and `--dry-run` default to off. Warnings and written paths are printed (`would write ...`
 with `--dry-run`); errors go to stderr and the exit code is non-zero.
 
+**`biosample migrate-wide`** — convert a legacy wide sheet (`.xlsx` or `.csv`, one column group per analyte
+such as `Estradiol Results` / `Estradiol Unit`) into the filled biosample template, ready for `biosample import`:
+
+```bash
+python prism_tools.py biosample migrate-wide --input legacy.csv --output biosample.xlsx \
+  [--panel bloodhormones] [--specimen serum] [--id-column "Patient No."] [--session-column Visit] [--overwrite]
+```
+
+Defaults: `--panel bloodhormones`, `--specimen`, `--id-column` and `--session-column` none (the columns outside the
+analyte groups are used when there are exactly two), `--overwrite` off (an existing output is an error). Cell text
+is copied as written. Output: `Wrote <file>`, then `Rows read` (with the rows skipped for having no values),
+`Data rows written`, and, when non-empty, `Analytes written`, `Analytes dropped (empty in this file)`,
+`Units repaired` (garbled unit text fixed), `Assumptions` (for example an unverified SpecimenType) and `Warnings`.
+Errors go to stderr as `Error: ...` with exit code 1; warnings alone exit 0.
+
 ### Biometrics
 
 **`biometrics import-excel`** — import biometrics templates from an Excel codebook:
