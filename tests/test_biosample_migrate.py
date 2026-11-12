@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from src.biosample_migrate import MigrationError, read_legacy_wide, repair_mojibake
+from src.biosample_migrate import (
+    MigrationError,
+    detect_analytes,
+    read_legacy_wide,
+    repair_mojibake,
+)
 
 FIXTURE = Path(__file__).parent / "data/biosample/legacy_wide_blood.csv"
 
@@ -92,3 +97,31 @@ def test_row_with_surplus_fields_is_an_error_but_empty_surplus_is_fine(tmp_path)
         read_legacy_wide(p)
     p.write_bytes(b'"id\tvisit"\r\n"s1\tT0\t\t"\r\n"s2"\r\n')
     assert read_legacy_wide(p).values.tolist() == [["s1", "T0"], ["s2", ""]]
+
+
+def test_detects_24_analyte_groups():
+    groups, _ = detect_analytes(list(read_legacy_wide(FIXTURE).columns))
+    assert len(groups) == 24
+    by_name = {g.name: g for g in groups}
+    assert by_name["Free Testosterone"].flag is None
+    assert by_name["Free Testosterone"].unit == "Free Testosterone Unit"
+    assert by_name["Prolaktin"].value == "Prolaktin Results"
+    # double space in the header is kept in the column name, one space in the match
+    assert by_name["Levonorgestrel"].flag == "Levonorgestrel  clin. Significant? (if yes:+comment)"
+
+
+def test_other_columns_are_patient_and_visit():
+    _, other = detect_analytes(list(read_legacy_wide(FIXTURE).columns))
+    assert other == ["Patient No.", "Visit"]
+
+
+def test_results_without_unit_still_a_group():
+    groups, other = detect_analytes(["id", "pH   RESULTS", "Unit of care"])
+    assert [(g.name, g.value, g.unit, g.flag) for g in groups] == [("pH", "pH   RESULTS", None, None)]
+    assert other == ["id", "Unit of care"]
+
+
+def test_duplicate_analyte_keeps_first_group():
+    groups, other = detect_analytes(["A Results", "A Unit", "A Results", "B Results"])
+    assert [g.name for g in groups] == ["A", "B"]
+    assert other == ["A Results"]
