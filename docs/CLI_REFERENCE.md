@@ -384,7 +384,9 @@ python prism_tools.py biosample migrate-wide --input legacy.csv --output biosamp
 Defaults: `--panel bloodhormones`, `--specimen`, `--id-column` and `--session-column` none (the columns outside the
 analyte groups are used when there are exactly two), `--overwrite` off (an existing output is an error). `--output`
 must end in `.xlsx`. Cell text is copied as written; only the participant and session cells lose surrounding spaces.
-A header with the same column name twice (also after trimming spaces) is an error. Output: `Wrote <file>`, then
+A header with the same column name twice (also after trimming spaces), a control character (other than tab, line
+feed or carriage return) in a cell or header, and an `--output` that is the input file are errors. Cells are written as
+text, so a cell starting with `=` stays text and is never an Excel formula. Output: `Wrote <file>`, then
 `Rows read` (with the rows skipped for having no values), `Data rows written`, and, when non-empty,
 `Analytes written`, `Analytes dropped (empty in this file)` (no value and no comment anywhere in the file),
 `Units repaired` (garbled unit text fixed), `Assumptions` (for example an unverified SpecimenType) and `Warnings`:

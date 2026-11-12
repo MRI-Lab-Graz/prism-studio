@@ -427,3 +427,97 @@ def test_id_and_session_cells_are_stripped_only(tmp_path):
     assert any("s1 T4.1" in w and "twice" in w for w in rep.warnings)
     rows = _sheet(tmp_path / "out.xlsx", "data")
     assert [(r["participant_id"], r["session"]) for r in rows] == [("s1", "T4.1"), ("s1", "T4.1"), ("01", "01")]
+
+
+# --- Security review fixes -------------------------------------------------------------
+
+_EVIL = ["=1+1", '=HYPERLINK("http://x","y")', "=cmd|' /C calc'!A0"]
+
+
+def test_formula_text_is_written_as_text_never_a_formula(tmp_path):
+    import csv
+    import io
+    import zipfile
+
+    buf = io.StringIO()
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["id", "visit", "A Results", "A Unit", "A clin. significant"])
+    for e in _EVIL:
+        w.writerow([e + "i", e + "s", e + "v", e + "u", e + "c"])
+    out = tmp_path / "out.xlsx"
+    migrate_wide(_tiny(tmp_path, buf.getvalue()), out)
+    wb = load_workbook(out)
+    try:
+        cells = [c for ws in wb for row in ws.iter_rows(min_row=2) for c in row if c.value is not None]
+        assert cells and all(c.data_type == "s" for c in cells)
+        texts = {c.value for c in cells}
+        assert {e + k for e in _EVIL for k in "isvuc"} <= texts
+    finally:
+        wb.close()
+    with zipfile.ZipFile(out) as z:
+        sheets = [z.read(n).decode() for n in z.namelist() if n.startswith("xl/worksheets/")]
+    assert sheets and not any("<f>" in s or "<f " in s for s in sheets)
+
+
+def test_comment_starting_with_equals_imports_as_that_text(tmp_path):
+    from src.biosample_template_reader import read_template  # what import_biosample reads
+
+    src = _tiny(tmp_path, "id,visit,A Results,A Unit,A clin. significant\ns1,T0,3,mg,=1+1\n")
+    out = tmp_path / "out.xlsx"
+    migrate_wide(src, out)
+    rows, _, problems = read_template(out)
+    assert problems == []
+    assert [(r["value"], r["comment"]) for r in rows] == [("3", "=1+1")]  # text, not evaluated
+
+
+@pytest.mark.parametrize("bad", ["\x1b[31m", "\x00"])
+def test_control_characters_in_cells_are_a_migration_error(tmp_path, bad, monkeypatch):
+    import pandas as pd
+
+    import src.biosample_migrate as bm
+
+    table = pd.DataFrame({"id": ["s1", "s2"], "visit": ["T0", "T0"], "A Results": ["1", f"x{bad}y"]})
+    # an in-test table: the CSV reader itself cuts a cell at NUL, so \x00 could not arrive from a file
+    monkeypatch.setattr(bm, "read_tabular_file", lambda *a, **k: type("R", (), {"df": table})())
+    with pytest.raises(MigrationError) as exc:
+        read_legacy_wide(tmp_path / "in.csv")
+    msg = str(exc.value)
+    assert "row 2" in msg and "A Results" in msg and repr(f"x{bad}y") in msg
+    assert bad not in msg
+
+
+def test_control_character_in_a_header_is_a_migration_error(tmp_path):
+    with pytest.raises(MigrationError) as exc:
+        read_legacy_wide(_tiny(tmp_path, "id,visit,A\x1b[31m Results\ns1,T0,1\n"))
+    assert repr("A\x1b[31m Results") in str(exc.value) and "\x1b" not in str(exc.value)
+
+
+def test_messages_show_cr_and_lf_escaped(tmp_path):
+    src = _tiny(tmp_path, 'id,visit,A Results,A Unit\n"s\r1",T0,1,mg\n"s\r1",T0,2,mg\n"s\r2",T1,,\n')
+    rep = migrate_wide(src, tmp_path / "out.xlsx")
+    text = " ".join(rep.warnings + rep.rows_skipped_empty)
+    assert "s\\r1" in text and "s\\r2" in text and "\r" not in text
+    with pytest.raises(MigrationError) as exc:
+        migrate_wide(_tiny(tmp_path, 'id,"vi\nsit",score\ns1,T0,1\n', "b.csv"), tmp_path / "b.xlsx")
+    assert "vi\\nsit" in str(exc.value) and "\n" not in str(exc.value)
+
+
+def test_output_may_not_replace_the_input(tmp_path):
+    import pandas as pd
+
+    p = tmp_path / "legacy.xlsx"
+    pd.DataFrame({"id": ["s1"], "visit": ["T0"], "A Results": ["1"]}).to_excel(p, index=False)
+    before = p.read_bytes()
+    for out in (p, tmp_path / "." / "legacy.xlsx"):
+        with pytest.raises(MigrationError, match="input"):
+            migrate_wide(p, out, overwrite=True)
+    assert p.read_bytes() == before
+    with pytest.raises(MigrationError, match="input"):
+        migrate_wide(tmp_path / "new.xlsx", tmp_path / "new.xlsx")  # neither exists yet
+
+
+def test_umask_is_not_changed_while_migrating(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(os, "umask", lambda m: calls.append(m) or 0o022)
+    migrate_wide(FIXTURE, tmp_path / "out.xlsx")
+    assert calls == []

@@ -18,6 +18,17 @@ class MigrationError(ValueError):
     """A readable reason why the legacy sheet cannot be migrated."""
 
 
+_UMASK = os.umask(0)  # read once at import (single-threaded); os.umask in a call races other threads
+os.umask(_UMASK)
+# C0 controls and DEL; tab, LF and CR stay allowed (openpyxl refuses the others, terminals obey ESC)
+_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _show(text: str) -> str:
+    """Text from the input as it may be printed: unchanged when printable, else repr (CR/LF escaped)."""
+    return text if text.isprintable() else repr(text)
+
+
 def read_legacy_wide(path: Path):
     """Read .csv/.tsv/.xlsx with every cell as text.
 
@@ -52,9 +63,17 @@ def read_legacy_wide(path: Path):
         df = pd.DataFrame(rows, columns=names, dtype=str)
     df = df.fillna("").astype(str)
     df.columns = [str(c).strip() for c in df.columns]
+    for j, name in enumerate(df.columns, start=1):
+        if _CONTROL.search(name):
+            raise MigrationError(f"Column {j} name {name!r} of {path.name} holds a control character")
+    bad = df.apply(lambda col: col.str.contains(_CONTROL.pattern, regex=True)).to_numpy().nonzero()
+    if len(bad[0]):
+        r, c = bad[0][0], bad[1][0]
+        raise MigrationError(f"Data row {r + 1} of {path.name}, column {_show(df.columns[c])}: "
+                             f"{df.iat[r, c]!r} holds a control character")
     twice = sorted(set(df.columns[df.columns.duplicated()]))
     if twice:
-        raise MigrationError(f"{path.name} has duplicate column names: {', '.join(twice)}")
+        raise MigrationError(f"{path.name} has duplicate column names: {', '.join(map(_show, twice))}")
     return df
 
 
@@ -127,7 +146,7 @@ def _id_session(other: list[str], id_column: str | None, session_column: str | N
     if need and len(rest) != need:
         raise MigrationError(
             "Cannot tell the participant and session columns apart; columns outside the analyte "
-            f"groups: {', '.join(rest) or '(none)'}. Pass --id-column and --session-column.")
+            f"groups: {', '.join(map(_show, rest)) or '(none)'}. Pass --id-column and --session-column.")
     fill = iter(rest)
     return id_column or next(fill), session_column or next(fill)
 
@@ -145,18 +164,24 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
         raise MigrationError(f"Specimen {specimen!r} is not one of {', '.join(specimen_types())}")
     if not output_path.parent.is_dir():
         raise MigrationError(f"{output_path.parent}: not a directory")
+    input_path = Path(input_path)
+    same = (os.path.samefile(input_path, output_path) if input_path.exists() and output_path.exists()
+            else input_path.resolve() == output_path.resolve())
+    if same:
+        raise MigrationError(f"{output_path}: the output would replace the input; choose another file")
     if output_path.exists() and not overwrite:
         raise MigrationError(f"{output_path} already exists; pass --overwrite to replace it")
 
-    df = read_legacy_wide(Path(input_path))
+    df = read_legacy_wide(input_path)
     columns = list(df.columns)
     groups, other = detect_analytes(columns)
     if not groups:
         raise MigrationError("No analyte columns ('<analyte> Results') found; columns seen: "
-                             + ", ".join(columns))
+                             + ", ".join(map(_show, columns)))
     id_col, ses_col = _id_session(other, id_column, session_column, columns)
     for col in (id_col, ses_col):
         df[col] = df[col].str.strip()  # surrounding whitespace only; labels stay exact
+    who = lambda row: f"{_show(row[id_col])} {_show(row[ses_col])}"  # noqa: E731
 
     def has_text(col):
         return col is not None and df[col].str.strip().ne("").any()
@@ -164,16 +189,16 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
     rep = MigrationReport(rows_read=len(df))
     unused = [c for c in other if c not in (id_col, ses_col) and has_text(c)]
     if unused:
-        rep.warnings.append("columns not migrated: " + ", ".join(unused))
+        rep.warnings.append("columns not migrated: " + ", ".join(map(_show, unused)))
     empty = {e["row_index"] for e in find_empty_data_rows(df, id_column=id_col,
                                                           data_columns=[g.value for g in groups])}
-    rep.rows_skipped_empty = [f"{df.at[i, id_col]} {df.at[i, ses_col]}" for i in sorted(empty)]
+    rep.rows_skipped_empty = [who(df.loc[i]) for i in sorted(empty)]
     kept = df.drop(index=list(empty))
     mapped = [g for g in groups if has_text(g.value)]
-    rep.analytes_mapped = [g.name for g in mapped]
+    rep.analytes_mapped = [_show(g.name) for g in mapped]
     # comments without values are no "empty" analyte: they are named in the warnings below
-    rep.analytes_dropped_empty = [g.name for g in groups if g not in mapped and not has_text(g.flag)]
-    orphans = [f"{row[id_col]} {row[ses_col]} {g.name}: {what} {row[col].strip()!r} has no value, not written"
+    rep.analytes_dropped_empty = [_show(g.name) for g in groups if g not in mapped and not has_text(g.flag)]
+    orphans = [f"{who(row)} {_show(g.name)}: {what} {row[col].strip()!r} has no value, not written"
                for _, row in df.iterrows() for g in groups if not row[g.value].strip()
                for what, col in (("comment", g.flag), ("unit", g.unit)) if col and row[col].strip()]
     if len(orphans) > 10:
@@ -182,9 +207,9 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
     rep.warnings += orphans
     for g in mapped:
         if g.unit is None:
-            rep.warnings.append(f"{g.name}: no unit column; rows written with an empty unit, "
+            rep.warnings.append(f"{_show(g.name)}: no unit column; rows written with an empty unit, "
                                 "the importer needs a unit or a registry term")
-    pairs = kept[id_col] + " " + kept[ses_col]
+    pairs = kept[id_col].map(_show) + " " + kept[ses_col].map(_show)
     twice = sorted(set(pairs[pairs.duplicated()]))
     if twice:
         rep.warnings.append("participant and session twice in the sheet (the importer will refuse "
@@ -202,15 +227,15 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
                 continue
             unit = row[g.unit].strip() if g.unit else ""
             if g.unit and not unit:
-                no_unit.setdefault(g.name, []).append(f"{row[id_col]} {row[ses_col]}")
+                no_unit.setdefault(g.name, []).append(who(row))
             fixed = repair_mojibake(unit)
             if fixed != unit:
                 repairs.setdefault(unit, fixed)
             data.append({"participant_id": row[id_col], "session": row[ses_col], "panel": panel,
                          "analyte": g.name, "value": value, "unit": fixed,
                          "comment": row[g.flag].strip() if g.flag else ""})
-    rep.unit_repairs = [f"{a} -> {b}" for a, b in repairs.items()]
-    rep.warnings += [f"{name}: no unit in {len(p)} row(s) (e.g. {', '.join(p[:3])}); "
+    rep.unit_repairs = [f"{_show(a)} -> {_show(b)}" for a, b in repairs.items()]
+    rep.warnings += [f"{_show(name)}: no unit in {len(p)} row(s) (e.g. {', '.join(p[:3])}); "
                      "the importer will use the unit of the other rows" for name, p in no_unit.items()]
     rep.data_rows = len(data)
 
@@ -223,16 +248,20 @@ def migrate_wide(input_path: Path, output_path: Path, panel: str = "bloodhormone
         tmp = Path(tmp_name)
         write_biosample_template(tmp)
         wb = load_workbook(tmp)
+
+        def put(ws, r, c, v):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.data_type = "s"  # openpyxl turns "=..." into a formula Excel would run; keep it text
+            cell.number_format = "@"  # text, never a number
+
         for r, cells in enumerate(data, start=2):
             for c, name in enumerate(DATA_COLUMNS, start=1):
                 if v := cells.get(name):
-                    wb["data"].cell(row=r, column=c, value=v).number_format = "@"  # text, never a number
-        wb["panels"].cell(row=2, column=1, value=panel)
-        wb["panels"].cell(row=2, column=PANEL_COLUMNS.index("SpecimenType") + 1, value=specimen or "serum")
+                    put(wb["data"], r, c, v)
+        put(wb["panels"], 2, 1, panel)
+        put(wb["panels"], 2, PANEL_COLUMNS.index("SpecimenType") + 1, specimen or "serum")
         wb.save(tmp)
-        umask = os.umask(0)
-        os.umask(umask)
-        os.chmod(tmp, 0o666 & ~umask)  # mkstemp makes it owner-only
+        os.chmod(tmp, 0o666 & ~_UMASK)  # mkstemp makes it owner-only
         os.replace(tmp, output_path)
     except OSError as exc:
         raise MigrationError(f"{output_path}: cannot write ({exc})") from exc
