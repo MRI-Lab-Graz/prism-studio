@@ -4147,13 +4147,14 @@
       Object.entries(suggestion.codes).forEach(([code, number]) => {
         const label = document.createElement('span');
         label.className = 'mono small';
-        label.textContent = `${suggestion.stored ? suggestion.stored[code] : code} →`;
+        const shown = suggestion.stored ? suggestion.stored[code] : code;
+        label.textContent = `${shown} →`;
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'form-control form-control-sm mono';
         input.style.width = '60px';
         input.value = number;
-        input.setAttribute('aria-label', `Number for answer code ${suggestion.stored ? suggestion.stored[code] : code}`);
+        input.setAttribute('aria-label', `Number for answer code ${shown}`);
         inputs[code] = input;
         row.append(label, input);
       });
