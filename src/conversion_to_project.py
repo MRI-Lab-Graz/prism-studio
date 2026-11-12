@@ -8,6 +8,7 @@ and sync the recipe offsets.
 from __future__ import annotations
 
 import re
+import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -122,6 +123,25 @@ def cleanup_stale_tool_limesurvey_sidecars(
     return removed
 
 
+def _merge_participants_into_staged(project_root: Path, staged_root: Path, log) -> None:
+    """Keep the project's participants.tsv / .json: they replace the staged ones, then the staged subjects are added.
+
+    A conversion into an empty staging folder writes a bare ID list; copying that over the project's file would
+    drop every column the Sociodemographics import (or the user) put there. Rows already in the project stay as
+    they are, subjects it lacks are appended (``register_subjects``), and when nothing is new the file is unchanged.
+    """
+    from src.utils.io import register_subjects
+
+    for name in ("participants.tsv", "participants.json"):
+        if (project_root / name).is_file():
+            shutil.copy2(project_root / name, staged_root / name)
+    register_subjects(
+        staged_root,
+        [p.name for p in staged_root.glob("sub-*") if p.is_dir()],
+        log_fn=lambda message: log(message, "info") if "Updated participants.tsv" in message else None,
+    )
+
+
 def save_conversion_to_project(
     *,
     project_root,
@@ -143,6 +163,7 @@ def save_conversion_to_project(
     log = log_fn or _quiet
 
     log(f"Saving output to project: {project_root.name} (into project root)", "info")
+    _merge_participants_into_staged(project_root, staged_root, log)
     pairs: list[tuple[Path, Path]] = []
     for item in sorted(staged_root.rglob("*")):
         if item.is_file() and filter_system_files([item.name]):

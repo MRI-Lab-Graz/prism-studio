@@ -1945,7 +1945,8 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     from src.utils.io import register_subjects
 
-    register_subjects(dataset_root, normalized_ids_for_collision_check)
+    # Quiet: this is usually a temporary staging folder; saving into the project reports what is really new.
+    register_subjects(dataset_root, normalized_ids_for_collision_check, log_fn=lambda _message: None)
 
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
