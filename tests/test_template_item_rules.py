@@ -31,6 +31,36 @@ def test_equal_bounds_are_fine_and_open_bounds_are_ignored():
     assert CHECK({"Q1": _item(MinValue=3, MaxValue=3), "Q2": _item(MinValue=1), "Q3": _item(MaxValue=None, MinValue=None)}) == []
 
 
+def test_allowed_values_and_min_max_that_disagree_are_an_error_naming_both():
+    """Excel slip: AllowedValues 1;2;3;4 but MaxValue 7, so 5-7 would be accepted as answers."""
+    (finding,) = _by_severity(CHECK({"Q1": _item(AllowedValues=[1, 2, 3, 4], MinValue=1, MaxValue=7)}), "error")
+    assert finding["path"] == "Q1"
+    assert "MaxValue (7)" in finding["message"] and "AllowedValues" in finding["message"] and "4" in finding["message"]
+
+
+def test_levels_and_min_max_that_disagree_are_an_error_on_either_end():
+    levels = {str(n): {"en": str(n)} for n in (1, 2, 3, 4)}
+    (high,) = _by_severity(CHECK({"Q1": _item(Levels=levels, MinValue=1, MaxValue=7)}), "error")
+    assert "MaxValue (7)" in high["message"] and "Levels" in high["message"]
+    (low,) = _by_severity(CHECK({"Q1": _item(Levels=levels, MinValue=0, MaxValue=4)}), "error")
+    assert "MinValue (0)" in low["message"]
+
+
+def test_one_sided_bound_is_still_compared_to_the_allowed_values():
+    assert _by_severity(CHECK({"Q1": _item(AllowedValues=[1, 2, 3, 4], MaxValue=7)}), "error")
+
+
+def test_allowed_values_that_match_min_max_are_fine_in_any_order_and_as_text():
+    assert CHECK({"Q1": _item(AllowedValues=["4", "1", "3", "2"], MinValue=1, MaxValue=4)}) == []
+    levels = {str(n): {"en": str(n)} for n in (1, 2, 3, 4)}
+    assert CHECK({"Q1": _item(Levels=levels, MinValue=1, MaxValue=4)}) == []
+
+
+def test_text_levels_and_values_without_a_scale_are_not_compared():
+    assert CHECK({"Q1": _item(Levels={"yes": {"en": "y"}, "no": {"en": "n"}}, MinValue=0, MaxValue=1)}) == []
+    assert CHECK({"Q1": _item(MinValue=0, MaxValue=20)}) == []
+
+
 def test_warn_min_above_warn_max_is_an_error():
     (finding,) = _by_severity(CHECK({"Q1": _item(WarnMinValue=9, WarnMaxValue=2)}), "error")
     assert "WarnMinValue" in finding["message"]
