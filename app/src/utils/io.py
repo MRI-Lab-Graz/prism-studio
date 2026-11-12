@@ -244,7 +244,7 @@ def project_name_keywords(root: Path) -> tuple[str | None, list]:
     return project.get("name") or basics.get("Name"), basics.get("Keywords") or []
 
 
-def register_subjects(dataset_root: Path, subject_ids) -> None:
+def register_subjects(dataset_root: Path, subject_ids, log_fn: Any = None) -> None:
     """Make participants.tsv list these subjects (rows already there stay as they are).
 
     Run after each conversion with the subjects it wrote: a subject folder without a row fails validation.
@@ -256,5 +256,5 @@ def register_subjects(dataset_root: Path, subject_ids) -> None:
     subjects = {s for s in subject_ids if s and normalize_participant_id(s) == s}
     update_participants_tsv(
         Path(dataset_root), subjects,
-        log_fn=lambda msg: print(msg, file=sys.stderr) if "Updated participants.tsv" in msg else None,
+        log_fn=log_fn or (lambda msg: print(msg, file=sys.stderr) if "Updated participants.tsv" in msg else None),
     )

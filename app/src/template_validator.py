@@ -1105,6 +1105,27 @@ class TemplateValidator:
                 low, high = number(item.get(low_key)), number(item.get(high_key))
                 if low is not None and high is not None and low > high:
                     add(item_id, "error", f"{low_key} ({item[low_key]}) must not be greater than {high_key} ({item[high_key]})")
+            # The answers an item allows (Levels / AllowedValues) and its MinValue / MaxValue are one scale: a
+            # MaxValue beyond the highest allowed answer lets the converter accept values the scale does not have.
+            allowed = {
+                "Levels": list(item["Levels"]) if isinstance(item.get("Levels"), dict) else [],
+                "AllowedValues": item["AllowedValues"] if isinstance(item.get("AllowedValues"), list) else [],
+            }
+            for source, raw in allowed.items():
+                nums = []
+                for value in raw:
+                    try:
+                        nums.append(float(str(value).strip().replace(",", ".")))
+                    except ValueError:
+                        nums = []
+                        break  # text codes: no numeric scale to compare
+                if not nums:
+                    continue
+                for key, edge, word in (("MinValue", min(nums), "lowest"), ("MaxValue", max(nums), "highest")):
+                    bound = number(item.get(key))
+                    if bound is not None and bound != edge:
+                        add(item_id, "error", f"{key} ({item[key]}) does not match the {word} of {source} ({edge:g}); "
+                                              f"make them agree, otherwise answers outside {source} are accepted")
             if item.get("DataType") == "integer":
                 for key in ("MinValue", "MaxValue"):
                     value = number(item.get(key))
