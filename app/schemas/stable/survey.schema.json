@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v2.0.0",
-  "version": "2.0.0",
+  "$id": "https://prism.org/schemas/survey/v2.1.0",
+  "version": "2.1.0",
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Respondent", "AdministrationMethod", "SoftwarePlatform"]
@@ -256,6 +256,13 @@
           "properties": {"en": {"type": "string", "minLength": 1}},
           "description": "Instructions given to the participant"
         },
+        "RecallPeriod": {
+          "type": ["string", "object"],
+          "minLength": 1,
+          "required": ["en"],
+          "properties": {"en": {"type": "string", "minLength": 1}},
+          "description": "The period an answer refers to, for example 'past 2 weeks' or an ISO 8601 duration ('P14D'). An item may set its own."
+        },
         "Reliability": {
           "type": ["string", "object"],
           "required": ["en"],
@@ -482,6 +489,13 @@
           "Help": {
             "type": ["string", "object"],
             "description": "Help text shown with the question"
+          },
+          "RecallPeriod": {
+            "type": ["string", "object"],
+            "minLength": 1,
+            "required": ["en"],
+            "properties": {"en": {"type": "string", "minLength": 1}},
+            "description": "The period this answer refers to, for example 'today' or 'P14D'. Overrides Study.RecallPeriod."
           },
           "OtherOption": {
             "type": "object",
