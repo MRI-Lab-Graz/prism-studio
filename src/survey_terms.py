@@ -36,8 +36,14 @@ def score_local_id(task: str, name: str) -> str:
 def _text(value) -> str:
     """A label: English if there is one, else the first language, else a plain string."""
     if isinstance(value, dict):
-        return str(value.get("en") or next(iter(value.values()), "") or "")
+        value = value.get("en") or next((v for v in value.values() if isinstance(v, str) and v), "")
     return value if isinstance(value, str) else ""
+
+
+def _set_text(term: dict, key: str, value) -> None:
+    """Set term[key] to the label text of value; a missing, empty or non-text value leaves the key out."""
+    if text := _text(value):
+        term[key] = text
 
 
 def _read_object(path: Path, problems: list[str]) -> dict | None:
@@ -91,6 +97,7 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
         tasks[task] = tasks[stem] = task
         registry[task] = {"TermID": f"prism:{task}", "Level": "instrument", "Label": str(study.get("ShortName") or task),
                           "Description": _text(study.get("OriginalName")), "Status": "official"}
+        _set_text(registry[task], "RecallPeriod", study.get("RecallPeriod"))
         for key, item in template.items():
             if key in _NOT_ITEMS or not isinstance(item, dict) or "AliasOf" in item:
                 continue
@@ -103,6 +110,7 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
                 continue
             registry[local] = {"TermID": f"prism:{local}", "Level": "item", "Parent": f"prism:{task}", "Label": key,
                                "Description": _text(item.get("Description")), "Status": "official"}
+            _set_text(registry[local], "RecallPeriod", item.get("RecallPeriod"))
 
     for path in sorted(recipe_dir.glob("recipe-*.json")):
         stem = path.stem[len("recipe-"):]
@@ -127,6 +135,8 @@ def build_survey_registry(library_dir: Path | None = None, recipe_dir: Path | No
                 registry[local] = {"TermID": f"prism:{local}", "Level": "score", "Parent": f"prism:{task}",
                                    "Label": f"{registry[task]['Label']} {name}", "Description": _text(score.get("Description")),
                                    "Status": "official"}
+                for key in ("HigherMeans", "LowerMeans"):
+                    _set_text(registry[local], key, score.get(key))
     return registry, problems
 
 

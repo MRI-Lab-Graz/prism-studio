@@ -232,3 +232,39 @@ def test_non_item_blocks_get_no_id_and_are_no_columns(tmp_path):
     assert problems == [] and not any(k.partition(".")[2] in ("scoring", "limesurvey", "-aliases", "@context") for k in reg)
     out = _resolve(tmp_path, _sidecar(TIPI01={}, **blocks))
     assert [c["column"] for c in out["columns"]] == ["TIPI01"]
+
+
+def _x(study_extra=None, item_extra=None):
+    return {"Study": {"TaskName": "x", **(study_extra or {})}, "Q01": {"Description": "a"},
+            "Q02": {"Description": {"en": "Today I felt tired"}, **(item_extra or {})}}
+
+
+def test_recall_period_and_direction_reach_the_terms(tmp_path):
+    lib, rec = _lib(tmp_path, {"x": _x({"RecallPeriod": {"en": "past 2 weeks"}}, {"RecallPeriod": "today"})},
+                    {"x": {"Scores": [{"Name": "total", "HigherMeans": "more symptoms", "LowerMeans": "fewer symptoms"}]}})
+    registry, problems = build_survey_registry(lib, rec)
+    assert registry["x"]["RecallPeriod"] == "past 2 weeks"
+    assert registry["x.q02"]["RecallPeriod"] == "today" and "RecallPeriod" not in registry["x.q01"]
+    assert registry["x.score-total"]["HigherMeans"] == "more symptoms" and registry["x.score-total"]["LowerMeans"] == "fewer symptoms"
+
+
+def test_missing_empty_or_non_text_values_are_left_out(tmp_path):
+    lib, rec = _lib(tmp_path, {"x": _x({"RecallPeriod": ""}, {"RecallPeriod": 5})},
+                    {"x": {"Scores": [{"Name": "total", "HigherMeans": ["more"], "LowerMeans": 3}]}})
+    registry, problems = build_survey_registry(lib, rec)
+    assert "RecallPeriod" not in registry["x"] and "RecallPeriod" not in registry["x.q02"]
+    assert "HigherMeans" not in registry["x.score-total"] and "LowerMeans" not in registry["x.score-total"]
+
+
+def test_text_ignores_non_text_values_inside_a_language_object(tmp_path):
+    lib, rec = _lib(tmp_path, {"x": _x({"RecallPeriod": {"en": 5}}, {"Description": {"en": 5}})},
+                    {"x": {"Scores": [{"Name": "total", "HigherMeans": {"en": ["x"]}}]}})
+    registry, _ = build_survey_registry(lib, rec)
+    assert "RecallPeriod" not in registry["x"] and "HigherMeans" not in registry["x.score-total"]
+    assert registry["x.q02"]["Description"] == ""
+
+
+def test_empty_en_falls_back_to_the_first_other_language(tmp_path):
+    lib, rec = _lib(tmp_path, {"x": _x({"RecallPeriod": {"en": "", "de": "letzte 2 Wochen"}})})
+    registry, _ = build_survey_registry(lib, rec)
+    assert registry["x"]["RecallPeriod"] == "letzte 2 Wochen"

@@ -144,6 +144,16 @@
             },
             "description": "Score interpretation guidelines (e.g., {'0-15': 'Normal', '16-60': 'Elevated'})"
           },
+          "HigherMeans": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a higher score means, in a few words (for example 'more depressive symptoms')."
+          },
+          "LowerMeans": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a lower score means; only for two-sided scales, where it is not just the negation."
+          },
           "Missing": {
             "type": "string",
             "enum": ["ignore", "error", "impute"],

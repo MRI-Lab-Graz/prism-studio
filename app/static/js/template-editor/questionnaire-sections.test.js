@@ -31,6 +31,11 @@ describe('assignFields', () => {
         expect(map.get('languages')).toEqual(['I18n/Languages', 'I18n/DefaultLanguage', 'I18n/TranslationMethod']);
     });
 
+    it('lists Study/RecallPeriod in Administration right after Study/ScoringTime', () => {
+        const fields = assignFields([...schemaFields, 'Study/RecallPeriod']).get('administration');
+        expect(fields.indexOf('Study/RecallPeriod')).toBe(fields.indexOf('Study/ScoringTime') + 1);
+    });
+
     it('never hides a field the map does not know: it lands in Advanced', () => {
         expect(assignFields([...schemaFields, 'Study/NewThing']).get('advanced')).toContain('Study/NewThing');
     });
