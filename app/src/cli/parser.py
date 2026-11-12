@@ -1782,6 +1782,24 @@ def build_prism_tools_parsers(
         "--dry-run", dest="dry_run", action="store_true", default=False,
         help="Show what would be written without writing",
     )
+    parser_biosample_migrate = biosample_subparsers.add_parser(
+        "migrate-wide", help="Convert a legacy wide blood sheet (one column group per analyte) to the template"
+    )
+    parser_biosample_migrate.add_argument("--input", required=True, help="Legacy wide sheet (.xlsx or .csv)")
+    parser_biosample_migrate.add_argument(
+        "--output", required=True, help="Path of the .xlsx to write (must end in .xlsx)"
+    )
+    parser_biosample_migrate.add_argument(
+        "--panel", default="bloodhormones", help="Panel name for all rows (letters and digits only)"
+    )
+    parser_biosample_migrate.add_argument(
+        "--specimen", choices=specimen_types(), default=None, help="Specimen type of the panel"
+    )
+    parser_biosample_migrate.add_argument("--id-column", dest="id_column", default=None, help="Participant column")
+    parser_biosample_migrate.add_argument("--session-column", dest="session_column", default=None, help="Session column")
+    parser_biosample_migrate.add_argument(
+        "--overwrite", action="store_true", default=False, help="Replace an existing output file"
+    )
 
     parser_dataset = subparsers.add_parser("dataset", help="Dataset helper commands")
     dataset_subparsers = parser_dataset.add_subparsers(dest="action", help="Action")

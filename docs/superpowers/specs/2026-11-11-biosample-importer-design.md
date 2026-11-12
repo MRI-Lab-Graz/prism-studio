@@ -167,8 +167,9 @@ Each is its own branch and plan.
 - **Pull-downs** (from the spec): `SpecimenType`, `CollectionMethod` and `Anticoagulant` are
   schema enums; the others are free text or numbers. With neither sheet nor `--specimen`
   giving a specimen type, the import is an error (it is required in the schema).
-- **Fixture:** a copy of `.claude/blood_subset.csv` goes into the test data, with the
-  pseudonymous patient numbers kept as they are.
+- **Fixture:** a synthetic copy with the real file's quirks but invented ids and values goes
+  into the test data (changed 2026-11-12: the real `blood_subset.csv` holds per-patient hormone
+  values, the repository is public, so the real file is never committed).
 
 ## What is left to the builder
 

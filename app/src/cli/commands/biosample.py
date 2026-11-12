@@ -29,3 +29,32 @@ def cmd_biosample_import(args) -> None:
         print(f"Error: {message}", file=sys.stderr)
     if res.errors:
         sys.exit(1)
+
+
+def cmd_biosample_migrate_wide(args) -> None:
+    """Handle 'biosample migrate-wide': legacy wide sheet -> filled biosample template."""
+    from src.biosample_migrate import MigrationError, migrate_wide
+
+    try:
+        rep = migrate_wide(
+            Path(args.input), Path(args.output), args.panel, args.specimen,
+            args.id_column, args.session_column, args.overwrite,
+        )
+    except MigrationError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Wrote {args.output}")
+    skipped = f", skipped (no values): {', '.join(rep.rows_skipped_empty)}" if rep.rows_skipped_empty else ""
+    print(f"Rows read: {rep.rows_read}{skipped}")
+    print(f"Data rows written: {rep.data_rows}")
+    for title, items in (
+        ("Analytes written", rep.analytes_mapped),
+        ("Analytes dropped (empty in this file)", rep.analytes_dropped_empty),
+        ("Units repaired", rep.unit_repairs),
+        ("Assumptions", rep.assumptions),
+        ("Warnings", rep.warnings),
+    ):
+        if items:
+            print(f"{title}:")
+            for item in items:
+                print(f"  {item}")

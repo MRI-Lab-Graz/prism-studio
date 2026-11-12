@@ -260,6 +260,8 @@ def dispatch_prism_tools(
             handlers["biosample_template"](args)
         elif args.action == "import":
             handlers["biosample_import"](args)
+        elif args.action == "migrate-wide":
+            handlers["biosample_migrate_wide"](args)
         else:
             parsers["biosample"].print_help()
     elif args.command == "physio":

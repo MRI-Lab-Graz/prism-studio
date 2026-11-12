@@ -373,6 +373,28 @@ python prism_tools.py biosample import --input biosample.xlsx --project /path/to
 `--overwrite` and `--dry-run` default to off. Warnings and written paths are printed (`would write ...`
 with `--dry-run`); errors go to stderr and the exit code is non-zero.
 
+**`biosample migrate-wide`** — convert a legacy wide sheet (`.xlsx` or `.csv`, one column group per analyte
+such as `Estradiol Results` / `Estradiol Unit`) into the filled biosample template, ready for `biosample import`:
+
+```bash
+python prism_tools.py biosample migrate-wide --input legacy.csv --output biosample.xlsx \
+  [--panel bloodhormones] [--specimen serum] [--id-column "Patient No."] [--session-column Visit] [--overwrite]
+```
+
+Defaults: `--panel bloodhormones`, `--specimen`, `--id-column` and `--session-column` none (the columns outside the
+analyte groups are used when there are exactly two), `--overwrite` off (an existing output is an error). `--output`
+must end in `.xlsx`. Cell text is copied as written; only the participant and session cells lose surrounding spaces.
+A header with the same column name twice (also after trimming spaces), a control character (other than tab, line
+feed or carriage return) in a cell or header, and an `--output` that is the input file are errors. Cells are written as
+text, so a cell starting with `=` stays text and is never an Excel formula. Output: `Wrote <file>`, then
+`Rows read` (with the rows skipped for having no values), `Data rows written`, and, when non-empty,
+`Analytes written`, `Analytes dropped (empty in this file)` (no value and no comment anywhere in the file),
+`Units repaired` (garbled unit text fixed), `Assumptions` (for example an unverified SpecimenType) and `Warnings`:
+other columns that hold data but are not migrated (when `--id-column`/`--session-column` are given), each comment or
+unit cell without a value (not written; one summary line when there are more than ten), and values with an empty
+unit cell.
+Errors go to stderr as `Error: ...` with exit code 1; warnings alone exit 0.
+
 ### Biometrics
 
 **`biometrics import-excel`** — import biometrics templates from an Excel codebook:

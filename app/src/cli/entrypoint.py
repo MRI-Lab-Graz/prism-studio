@@ -12,7 +12,11 @@ from pathlib import Path
 from src.save_gate import ensure_prism_tools_env
 from src.share_publish import apply_env_identity
 from src.cli.commands.anonymize import cmd_anonymize
-from src.cli.commands.biosample import cmd_biosample_import, cmd_biosample_template
+from src.cli.commands.biosample import (
+    cmd_biosample_import,
+    cmd_biosample_migrate_wide,
+    cmd_biosample_template,
+)
 from src.cli.commands.biometrics import (
     cmd_biometrics_convert,
     cmd_biometrics_detect,
@@ -336,6 +340,7 @@ def main() -> None:
             "biometrics_import_excel": cmd_biometrics_import_excel,
             "biosample_template": cmd_biosample_template,
             "biosample_import": cmd_biosample_import,
+            "biosample_migrate_wide": cmd_biosample_migrate_wide,
             "physio_batch_convert": cmd_physio_batch_convert,
             "library_generate_methods_text": cmd_library_generate_methods_text,
             "library_sync": cmd_library_sync,
