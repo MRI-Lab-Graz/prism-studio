@@ -293,6 +293,23 @@ making the repository public.
   `docs/_archive/EYETRACKING_CONVERTER_DESIGN_2026-10.md`. Needs the lab's `events.tsv`, the `.edf` and
   a binocular export before the plan is written. Raw `.edf` via eye2bids stays opt-in (`requirements-eyetrack.txt`).
 
+- **LOINC as a term source for participant columns** (waiting for the term-URL definitions from the term-ID/URL work):
+  NeuroBagel has no VO2max term; LOINC 94122-9 (VO2/body weight, peak during exercise) fits. Today `src/neurobagel.py`
+  only carries SNOMED as URIs inside NeuroBagel values, so there is no term-source registry to plug into yet.
+  Plan, once the term-URL format is settled:
+  1. Add LOINC to the one shared registry of term sources (NeuroBagel, SNOMED, LOINC: prefix, URL template, code
+     check). Do not build a second registry for the sociodemographics page.
+  2. Check in two layers. Offline, always: format `digits-checkdigit` plus the LOINC mod-10 check digit (catches
+     typos). Online, optional: look the code up (NLM Clinical Table Search API is believed to be public without a key,
+     not yet verified; the LOINC FHIR server needs a login) and show the official long name so the user confirms it
+     is the right code. No network means a clear "could not reach the service", never a silent pass. Only the code
+     is sent.
+  3. Per THE RULE: logic in `src/`, CLI command (e.g. `terms check --source loinc --code 94122-9`), Studio only
+     triggers it, parity test in `tests/test_cli_studio_parity.py`. The Participant Annotation panel gets the term
+     link next to description and unit (`vo2max`: ml/kg/min).
+  4. LOINC's licence asks for its copyright notice where its names are shown: add it to the display.
+  Written 2026-11-12 during the SportTrack assignment work (`examples/sporttrack_course/`, uses `vo2max`).
+
 ## Done (Summary)
 
 Historical completion entries were moved to:
