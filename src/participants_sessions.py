@@ -292,6 +292,7 @@ def _outcomes(
         if problems and strict:
             raise SessionsNotOrderedError(problems)
 
+    warnings: list[str] = []
     assigned = res[res["session"].notna()]
     clash = assigned[assigned.duplicated(["participant", "session"], keep=False)]
     if not clash.empty:
@@ -299,15 +300,18 @@ def _outcomes(
             f"ID {pid}: session {label!r} on responses {', '.join(group['response_id'])}"
             for (pid, label), group in clash.groupby(["participant", "session"])
         ]
-        raise ValueError(
+        message = (
             "One participant would get the same session label twice; fix it with "
             "`sessions set`/`sessions unset`: " + "; ".join(lines)
         )
+        if strict:
+            raise ValueError(message)
+        warnings.append(message)  # the review table still opens: it is where this gets fixed
 
-    warnings = [
+    warnings.append(
         f"Sessions numbered by {date_column} (completed responses only): "
         f"{len(assigned)} of {len(res)} responses kept."
-    ]
+    )
     warnings.extend(problems)
     applied = res[res["reason"].isin(["skipped", "override", "included"])]
     if len(applied):
