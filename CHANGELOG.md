@@ -43,6 +43,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Description` fills the template's default language), item rows never feed `Study.Description`, and no empty
   `de`/`en` entries are invented for a template that has other languages.
 
+## [1.25.1] - 2026-11-12
+
+### Fixed
+- **Saving a survey import into a project no longer overwrites `participants.tsv` / `participants.json`.** The staging
+  folder's ID-only files replaced the project's own and dropped every column (e.g. from a Sociodemographics import).
+  The project's files now go into staging first and only subjects the project lacks are added; the log lists only
+  those. Project save leaves the participants files alone when the project has no participants table.
+  If a project already lost columns, restore `participants.tsv` from git/DataLad history.
+- **The convert preview checks `MinValue` / `MaxValue`** also for items without `Levels` (e.g. "hours per week", 0-20),
+  so such a value no longer surfaces only from the validator later.
+
+- **The Session assignments review opens when a session label clashes.** Relabelling a response to a label the same
+  participant already has made the table fail to open (HTTP 400), so it could not be fixed. The table now opens and lists
+  the clash as a warning; the conversion still refuses it. (`sessions review` in the CLI behaves the same.)
+
+### Added
+- **Answer code numbers can be changed at any time.** After *ADS0 → 0* was applied, the template editor lists the items
+  again in a folded "Answer code numbers" box (number and stored code); `survey answer-codes --template T --set 0=1,1=2,...`
+  does the same. Plain numeric items without stored codes are never touched.
+
 ## [1.25.0] - 2026-11-06
 
 ### Changed
