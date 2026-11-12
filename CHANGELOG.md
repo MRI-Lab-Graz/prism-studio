@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The convert preview checks `MinValue` / `MaxValue`** also for items without `Levels` (e.g. "hours per week", 0-20),
   so such a value no longer surfaces only from the validator later.
 
+- **The Session assignments review opens when a session label clashes.** Relabelling a response to a label the same
+  participant already has made the table fail to open (HTTP 400), so it could not be fixed. The table now opens and lists
+  the clash as a warning; the conversion still refuses it. (`sessions review` in the CLI behaves the same.)
+
 ### Added
 - **Answer code numbers can be changed at any time.** After *ADS0 → 0* was applied, the template editor lists the items
   again in a folded "Answer code numbers" box (number and stored code); `survey answer-codes --template T --set 0=1,1=2,...`

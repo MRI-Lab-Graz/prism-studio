@@ -8,6 +8,7 @@ orphan: true
 
 - **Survey import keeps your `participants.tsv`.** Saving a conversion into a project no longer overwrites the project's
   participants files; only new subjects are added.
+- **The session review table opens even when a relabel gives one participant the same session twice**; the clash is a warning there and the conversion still refuses it.
 - **Answer code numbers can be changed later** (ADS0 → 0): in the template editor or with `survey answer-codes --set`.
 
 See `CHANGELOG.md` for the full list of changes.
