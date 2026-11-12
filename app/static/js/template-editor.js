@@ -4220,12 +4220,20 @@
     if (signature !== answerCodesSignature) return; // the template changed meanwhile
     answerCodesAreaEl.innerHTML = '';
     suggestions.forEach((suggestion) => {
-      const box = document.createElement('div');
-      box.className = 'alert alert-warning py-2';
+      const done = !!suggestion.stored; // numbers given earlier: changeable any time, folded away
+      const box = document.createElement(done ? 'details' : 'div');
+      box.className = done ? 'alert alert-light border py-2' : 'alert alert-warning py-2';
+      if (done) {
+        const summary = document.createElement('summary');
+        summary.className = 'small';
+        summary.textContent = `Answer code numbers (${suggestion.items.length} item(s))`;
+        box.appendChild(summary);
+      }
       const text = document.createElement('div');
-      text.className = 'small mb-2';
+      text.className = 'small my-2';
       const items = suggestion.items;
-      text.textContent = `Answer codes are not numbers in ${items.length} item(s) (${items.slice(0, 3).join(', ')}${items.length > 3 ? ', …' : ''}). `
+      if (done) text.textContent = 'Each stored code and the number it stands for. Change a number if it is wrong: the levels follow, and conversion reads the stored codes as these numbers.';
+      else text.textContent = `Answer codes are not numbers in ${items.length} item(s) (${items.slice(0, 3).join(', ')}${items.length > 3 ? ', …' : ''}). `
         + 'Give each code its number: the levels get the numbers, and conversion reads the stored codes as these numbers.';
       box.appendChild(text);
       const row = document.createElement('div');
@@ -4234,13 +4242,13 @@
       Object.entries(suggestion.codes).forEach(([code, number]) => {
         const label = document.createElement('span');
         label.className = 'mono small';
-        label.textContent = `${code} →`;
+        label.textContent = `${suggestion.stored ? suggestion.stored[code] : code} →`;
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'form-control form-control-sm mono';
         input.style.width = '60px';
         input.value = number;
-        input.setAttribute('aria-label', `Number for answer code ${code}`);
+        input.setAttribute('aria-label', `Number for answer code ${suggestion.stored ? suggestion.stored[code] : code}`);
         inputs[code] = input;
         row.append(label, input);
       });
