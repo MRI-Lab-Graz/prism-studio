@@ -110,3 +110,15 @@ def test_a_named_response_has_no_number():
         frame(), "token", order=ORDER, decisions={"1": {"session": "sleepdep"}}
     )
     assert {r["response_id"]: r["number"] for r in rows}["1"] is None
+
+
+def test_review_table_opens_when_a_label_clashes_and_says_so():
+    # P01's 2nd response is relabelled "1", which the 1st response already has: the conversion
+    # refuses this, but the review table is where it is fixed, so it must still open.
+    decisions = {"2": {"session": "1"}}
+    rows, warnings = session_assignment_table(frame(), "token", decisions=decisions)
+    assert [r["response_id"] for r in rows if r["participant"] == "P01"] == ["1", "2"]
+    clash = [w for w in warnings if "same session label twice" in w]
+    assert clash and "P01" in clash[0] and "1, 2" in clash[0]
+    with pytest.raises(ValueError, match="same session label twice"):
+        number_sessions_by_date(frame(), "token", decisions=decisions)
