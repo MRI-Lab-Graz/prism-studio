@@ -68,7 +68,6 @@ from .survey_core import (
     _build_bids_survey_filename,
     _determine_task_runs,
     _resolve_existing_project_root,
-    _apply_alias_map_to_dataframe,
     _inject_missing_token,
     _apply_technical_overrides,
 )
@@ -130,7 +129,6 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _is_language_dict,
     _pick_language_value,
     _localize_survey_template,
-    _apply_alias_map_to_dataframe,
     _inject_missing_token,
     _apply_technical_overrides,
     _survey_lsa._infer_lsa_language_and_tech,
@@ -1305,6 +1303,24 @@ def _read_table_as_dataframe(
     raise ValueError(f"Unsupported table kind: {kind}")
 
 
+def _stored_item_map(project_path, templates, item_to_task) -> dict[str, str]:
+    """``{file column: item}`` of the loaded templates' stored maps, minus columns that are another
+    loaded template's item (those are never renamed)."""
+    from src.item_map import free_columns, item_alias_map
+
+    stored = item_alias_map(project_path, tasks=templates)
+    return {c: i for c, i in stored.items() if free_columns([c], item_to_task.get(i, ""), item_to_task)}
+
+
+def _rename_item_columns(df, alias_map: dict[str, str]):
+    """Rename the columns by the item map in one step, so a swap or a shift keeps every column."""
+    df = df.rename(columns=alias_map)
+    clash = sorted({str(c) for c in df.columns[df.columns.duplicated()] if c in alias_map.values()})
+    if clash:
+        raise ValueError(f"The item map renames a column onto a column the file already has: {', '.join(clash)}")
+    return df
+
+
 def _convert_survey_dataframe_to_prism_dataset(
     *,
     df,
@@ -1409,17 +1425,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         library_dir=library_dir,
         load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
-    from src.item_map import item_alias_map
-
-    stored_map = item_alias_map(project_path) if project_path else {}  # {file column: template item}
-    alias_map = stored_map or None
-    hit = sum(1 for column in df.columns if column in stored_map)
-    if hit:
-        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
     participant_template = loaded.participant_template
     participant_columns_lower = loaded.participant_columns_lower
     templates = loaded.templates
     item_to_task = loaded.item_to_task
+    alias_map = _stored_item_map(project_path, templates, item_to_task) if project_path else {}
+    hit = sum(1 for column in df.columns if column in alias_map)
+    if hit:
+        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
     template_warnings_by_task = loaded.template_warnings_by_task
     conversion_warnings: list[str] = list(loaded.warnings)
 
@@ -1487,7 +1500,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     conversion_warnings.extend(id_map_warnings)
 
     if alias_map:
-        df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
+        df = _rename_item_columns(df, alias_map)
 
     # PRISM survey conversion currently accepts long-format tables only.
     # If wide session-coded columns are detected without a session column,

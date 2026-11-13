@@ -61,7 +61,7 @@ def test_saving_an_empty_mapping_removes_the_file(tmp_path):
     assert save_item_map(tmp_path, "ads", {}, ITEMS) is None
     assert not (tmp_path / "code" / "item_maps" / "ads.json").exists()
 
-@pytest.mark.parametrize("content", ["[1]", "{not json", '{"ADS01": 3}'])
+@pytest.mark.parametrize("content", ["[1]", "{not json", '{"ADS01": 3}', "[" * 100000 + "]" * 100000])
 def test_an_invalid_file_is_skipped_and_reported(tmp_path, capsys, content):
     folder = tmp_path / "code" / "item_maps"; folder.mkdir(parents=True)
     (folder / "ads.json").write_text(content, encoding="utf-8")
@@ -87,3 +87,77 @@ def test_partly_matched_groups_of_different_size_are_never_mixed():
     got = suggest(["ADS01", "ADS02", "ADS03"], ["B01", "B07", "A01", "A02", "A09", "A10"])
     cols = [r["column"] for r in got if r["column"]]
     assert len({c[0] for c in cols}) == 1
+
+
+# --- a project with several templates: never guess from or claim another template's columns ---
+
+import json  # noqa: E402
+
+from src import item_map  # noqa: E402
+
+PSS = ["PSS01", "PSS02", "PSS03"]
+ADS_FILE = ["participant_id", "ADS01", "ADS02", "ADS03", "comment"]
+
+
+def _lib(root, **tasks):
+    folder = root / "code" / "library" / "survey"
+    folder.mkdir(parents=True, exist_ok=True)
+    for task, items in tasks.items():
+        body = items if isinstance(items, dict) else {i: {"Description": i} for i in items}
+        (folder / f"survey-{task}.json").write_text(json.dumps({"Study": {}, **body}), encoding="utf-8")
+
+
+def test_another_templates_items_are_never_guessed_for_a_task(tmp_path):
+    _lib(tmp_path, ads=ITEMS, pss=PSS)
+    assert item_map.tasks_needing_map(tmp_path, ADS_FILE) == []
+    assert all(r["column"] is None for r in item_map.suggest_for_project(tmp_path, "pss", ADS_FILE)["rows"])
+    assert item_map.apply_choices(tmp_path, "pss", ADS_FILE, None, True) is None
+    assert not (tmp_path / "code" / "item_maps").exists()
+
+
+def test_another_templates_aliases_and_mapped_columns_are_not_free(tmp_path):
+    _lib(tmp_path, ads={"ADS01": {"Aliases": ["X01"]}}, pss=["PSS01"])
+    assert "pss" not in item_map.tasks_needing_map(tmp_path, ["X01"])
+    _lib(tmp_path, ads=ITEMS)
+    save_item_map(tmp_path, "ads", {"ADS01": "A01"}, ITEMS)
+    assert item_map.tasks_needing_map(tmp_path, ["A01"]) == []
+
+
+def test_free_numbered_columns_still_flag_every_task(tmp_path):
+    _lib(tmp_path, ads=ITEMS, pss=PSS)
+    assert item_map.tasks_needing_map(tmp_path, ["participant_id", "A01", "A02", "A03"]) == ["ads", "pss"]
+
+
+def test_a_column_mapped_by_another_task_is_refused_at_save(tmp_path):
+    _lib(tmp_path, ads=ITEMS, pss=PSS)
+    columns = ["A01", "A02", "A03"]
+    item_map.apply_choices(tmp_path, "ads", columns, None, True)
+    with pytest.raises(ItemMapError, match="column 'A01' is already the item map of task 'ads'"):
+        item_map.apply_choices(tmp_path, "pss", columns, {"PSS01": "A01"}, False)
+    assert not (tmp_path / "code" / "item_maps" / "pss.json").exists()
+
+
+def test_the_library_import_refuses_a_column_another_task_maps(tmp_path):
+    from src.converters.template_import import check_library_item_map
+
+    _lib(tmp_path, ads=ITEMS, pss=PSS)
+    save_item_map(tmp_path, "ads", {"ADS01": "A01"}, ITEMS)
+    payload = {"template": {i: {} for i in PSS}, "_item_map_pending": {"task": "pss", "mapping": {"PSS01": "A01"}}}
+    with pytest.raises(ItemMapError, match="column 'A01' is already the item map of task 'ads'"):
+        check_library_item_map(payload, tmp_path)
+
+
+def test_a_corrupt_existing_map_is_refused_not_overwritten(tmp_path):
+    from src.converters.template_import import check_library_item_map
+
+    _lib(tmp_path, ads=ITEMS)
+    path = tmp_path / "code" / "item_maps" / "ads.json"
+    path.parent.mkdir(parents=True)
+    path.write_text("{not json", encoding="utf-8")
+    message = "code/item_maps/ads.json is not a valid item map; fix or delete it"
+    with pytest.raises(ItemMapError, match=message):
+        item_map.apply_choices(tmp_path, "ads", ["A01"], {"ADS01": "A01"}, False)
+    payload = {"template": {i: {} for i in ITEMS}, "_item_map_pending": {"task": "ads", "mapping": {"ADS01": "A01"}}}
+    with pytest.raises(ItemMapError, match=message):
+        check_library_item_map(payload, tmp_path)
+    assert path.read_text(encoding="utf-8") == "{not json"

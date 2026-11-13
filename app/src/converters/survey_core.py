@@ -443,54 +443,6 @@ def _load_survey_aliases_and_templates(
     )
 
 
-def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
-    """Apply an alias->canonical mapping to dataframe columns."""
-    canonical_to_cols: dict[str, list[str]] = {}
-    for c in list(df.columns):
-        canonical = alias_map.get(str(c), str(c))
-        if canonical != str(c):
-            canonical_to_cols.setdefault(canonical, []).append(str(c))
-
-    if not canonical_to_cols:
-        return df
-
-    df = df.copy()
-
-    def _as_na(series):
-        if series.dtype == object:
-            s = series.astype(str)
-            s = s.map(lambda v: v.strip() if isinstance(v, str) else v)
-            s = s.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA})
-            return s
-        return series
-
-    for canonical, cols in canonical_to_cols.items():
-        cols_present = [c for c in cols if c in df.columns]
-        if not cols_present:
-            continue
-
-        if canonical in df.columns and canonical not in cols_present:
-            cols_present = [canonical] + cols_present
-
-        if len(cols_present) == 1:
-            src = cols_present[0]
-            if src != canonical:
-                if canonical not in df.columns:
-                    df = df.rename(columns={src: canonical})
-            continue
-
-        combined = _as_na(df[cols_present[0]])
-        for c in cols_present[1:]:
-            combined = combined.combine_first(_as_na(df[c]))
-
-        df[canonical] = combined
-        for c in cols_present:
-            if c != canonical and c in df.columns:
-                df = df.drop(columns=[c])
-
-    return df
-
-
 # =============================================================================
 # TASK SELECTION (from survey_selection.py)
 # =============================================================================

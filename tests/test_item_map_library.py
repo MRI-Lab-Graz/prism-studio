@@ -196,3 +196,11 @@ def test_cli_collision_with_an_existing_map_fails_in_planning(tmp_path, monkeypa
     assert exc.value.code == 1
     assert not out.exists() or not list(out.iterdir())
     assert json.loads(path.read_text(encoding="utf-8")) == {"ADS1_1": "ADS1_2"}
+
+
+def test_the_saved_path_is_relative_to_the_project_when_given_project_json(library):
+    from src.converters.template_import import store_library_item_map
+
+    (library / "project.json").write_text("{}", encoding="utf-8")
+    payload = finish_import(_template(), "ADS", str(library), use_library=True, store_map=False)
+    assert store_library_item_map(payload, str(library / "project.json"))["path"] == "code/item_maps/ads.json"

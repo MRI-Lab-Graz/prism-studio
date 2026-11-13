@@ -11,7 +11,7 @@ import unicodedata
 from pathlib import Path
 
 from src.converters.library_wording_match import apply_library_template, public_library_match
-from src.item_map import check_item_map, load_item_map, save_item_map, template_items
+from src.item_map import _root, check_project_map, load_item_map, save_item_map, template_items
 from src.utils.naming import sanitize_task_name
 from src.prism_template_validation import strip_template_editor_internal_keys
 
@@ -58,8 +58,8 @@ def check_library_item_map(payload, project_path):
     pending = payload.get("_item_map_pending")
     if not pending:
         return None
-    merged = {**load_item_map(project_path, pending["task"]), **pending["mapping"]}
-    check_item_map(template_items(payload["template"]), merged)
+    merged = {**load_item_map(project_path, pending["task"], strict=True), **pending["mapping"]}
+    check_project_map(project_path, pending["task"], template_items(payload["template"]), merged)
     return pending["task"], merged
 
 
@@ -75,7 +75,7 @@ def store_library_item_map(payload, project_path):
         saved = save_item_map(project_path, task, merged, template_items(payload["template"]))
         if saved:
             payload["item_map"] = {
-                "task": task, "path": Path(saved).relative_to(project_path).as_posix(),
+                "task": task, "path": Path(saved).relative_to(_root(project_path)).as_posix(),
                 "entries": len(pending["mapping"]),
             }
         match = payload["library_match"]

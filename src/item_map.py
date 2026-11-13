@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 from src.converters.survey_core import _NON_ITEM_TOPLEVEL_KEYS
@@ -94,13 +94,18 @@ def _root(project_path: str | Path) -> Path:
     return path.parent if path.is_file() else path
 
 
-def map_path(project_path: str | Path, task: str) -> Path:
+def _check_task(task: str) -> str:
     if not isinstance(task, str) or not _TASK.fullmatch(task):
         raise ItemMapError(f"Invalid task name {task!r}: use letters and digits only")
-    return _root(project_path) / MAP_DIR / f"{task}.json"
+    return task
 
 
-def _read(path: Path) -> dict[str, str]:
+def map_path(project_path: str | Path, task: str) -> Path:
+    return _root(project_path) / MAP_DIR / f"{_check_task(task)}.json"
+
+
+def _read(path: Path, strict: bool = False) -> dict[str, str]:
+    """The map in ``path``; an invalid file is skipped with a warning, or with ``strict`` an ItemMapError."""
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(raw, dict):
@@ -108,14 +113,19 @@ def _read(path: Path) -> dict[str, str]:
         if not all(isinstance(k, str) and k and isinstance(v, str) and v for k, v in raw.items()):
             raise ValueError("every entry must be a non-empty item ID and column name")
         return raw
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:  # RecursionError: deeply nested JSON
+        if strict:
+            raise ItemMapError(
+                f"{(MAP_DIR / path.name).as_posix()} is not a valid item map; fix or delete it"
+            ) from exc
         print(f"[PRISM] WARNING item map {path} ignored: {exc}")
         return {}
 
 
-def load_item_map(project_path: str | Path, task: str) -> dict[str, str]:
+def load_item_map(project_path: str | Path, task: str, strict: bool = False) -> dict[str, str]:
+    """The stored map of ``task``; ``strict`` (the save paths) refuses an invalid file instead of skipping it."""
     path = map_path(project_path, task)
-    return _read(path) if path.is_file() else {}
+    return _read(path, strict) if path.is_file() else {}
 
 
 def check_item_map(items: list[str], mapping: Mapping[str, str]) -> dict[str, str]:
@@ -146,11 +156,15 @@ def save_item_map(
     return path
 
 
-def item_alias_map(project_path: str | Path) -> dict[str, str]:
-    """``{column: item}`` over every task's map; a column claimed twice is an error."""
+def item_alias_map(project_path: str | Path, tasks: Iterable[str] | None = None) -> dict[str, str]:
+    """``{column: item}`` over every task's map (only the maps of ``tasks`` when given); a column
+    claimed twice is an error."""
+    wanted = None if tasks is None else {t.lower() for t in tasks}
     aliases: dict[str, str] = {}
     owner: dict[str, str] = {}
     for path in sorted((_root(project_path) / MAP_DIR).glob("*.json")):
+        if wanted is not None and path.stem.lower() not in wanted:
+            continue
         for item, column in _read(path).items():
             if column in owner:
                 raise ItemMapError(
@@ -181,37 +195,88 @@ def read_survey_columns(path: str | Path) -> list[str]:
 
 
 def _project_template(project_path: str | Path, task: str) -> dict:
-    if not isinstance(task, str) or not _TASK.fullmatch(task):
-        raise ItemMapError(f"Invalid task name {task!r}: use letters and digits only")
-    path = _root(project_path) / "code" / "library" / "survey" / f"survey-{task}.json"
+    path = _root(project_path) / "code" / "library" / "survey" / f"survey-{_check_task(task)}.json"
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+        template = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, RecursionError) as exc:
         raise ItemMapError(f"No template for task {task!r} in the project library: {exc}") from exc
+    if not isinstance(template, dict):
+        raise ItemMapError(f"No template for task {task!r} in the project library: not a JSON object")
+    return template
+
+
+def _library(project_path: str | Path) -> dict[str, dict]:
+    """``{task: template}`` of the project library's survey templates, sorted; unreadable ones skipped."""
+    templates = {}
+    for path in sorted((_root(project_path) / "code" / "library" / "survey").glob("survey-*.json")):
+        try:
+            templates[path.stem[len("survey-"):]] = _project_template(project_path, path.stem[len("survey-"):])
+        except ItemMapError:
+            continue
+    return templates
+
+
+def _claims(project_path: str | Path) -> tuple[dict[str, str], dict[str, str]]:
+    """Which task owns a column name: ``({item or item alias: task}, {mapped column: task})`` over
+    the project library's templates and their stored maps."""
+    items: dict[str, str] = {}
+    mapped: dict[str, str] = {}
+    for task, template in _library(project_path).items():
+        for key, value in template.items():
+            if key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(value, dict):
+                continue
+            items.setdefault(key, task)
+            for alias in value.get("Aliases") or []:
+                if isinstance(alias, str):
+                    items.setdefault(alias, task)
+        for column in load_item_map(project_path, task).values():
+            mapped.setdefault(column, task)
+    return items, mapped
+
+
+def free_columns(columns: Iterable[str], task: str, *owners: Mapping[str, str]) -> list[str]:
+    """The columns ``task`` may take: none that another task owns in ``owners`` (each ``{column: task}``)."""
+    return [c for c in columns if all(o.get(c, task).lower() == task.lower() for o in owners)]
+
+
+def check_project_map(
+    project_path: str | Path, task: str, items: list[str], mapping: Mapping[str, str]
+) -> dict[str, str]:
+    """``check_item_map`` plus: no column is another task's item or stored map (every save path)."""
+    clean = check_item_map(items, mapping)
+    items_of, mapped = _claims(project_path)
+    for column in clean.values():
+        for owners, what in ((mapped, "already the item map of task"), (items_of, "an item of template")):
+            if not free_columns([column], task, owners):
+                raise ItemMapError(
+                    f"column {column!r} is {what} {owners[column]!r}; "
+                    "one column name can stand for one item per project"
+                )
+    return clean
 
 
 def tasks_needing_map(project_path: str | Path, columns: list[str]) -> list[str]:
-    """Project-library tasks with an item that is neither a column nor mapped to one."""
-    tasks = []
-    for path in sorted((_root(project_path) / "code" / "library" / "survey").glob("survey-*.json")):
-        task = path.stem[len("survey-"):]
-        try:
-            items = template_items(_project_template(project_path, task))
-            stored = load_item_map(project_path, task)
-        except ItemMapError:
-            continue
-        if any(i not in columns and stored.get(i) not in columns for i in items):
-            tasks.append(task)
-    return sorted(tasks)
+    """Project-library tasks with a missing item that a free column of the file could hold."""
+    claims = _claims(project_path)
+    return [
+        task
+        for task, template in _library(project_path).items()
+        if any(
+            r["why"] in ("number", "order")
+            for r in suggest(template_items(template), free_columns(columns, task, *claims),
+                             load_item_map(project_path, task))
+        )
+    ]
 
 
 def suggest_for_project(project_path: str | Path, task: str, columns: list[str]) -> dict:
+    """The guess for ``task``; ``columns`` in the answer are the file's columns ``task`` may take."""
     items = template_items(_project_template(project_path, task))
-    saved = load_item_map(project_path, task)
-    rows = suggest(items, columns, saved)
+    free = free_columns(columns, task, *_claims(project_path))
+    rows = suggest(items, free, load_item_map(project_path, task))
     for r in rows:
         print(f"[PRISM]   {r['item']} <- {r['column'] or '(none)'}  ({r['why']})")
-    return {"task": task, "rows": rows, "columns": columns, "saved": bool(saved)}
+    return {"task": task, "rows": rows, "columns": free}
 
 
 def apply_choices(
@@ -225,12 +290,14 @@ def apply_choices(
     if not accept and not choices:
         raise ItemMapError("nothing to save: pass accept or at least one choice")
     items = template_items(_project_template(project_path, task))
-    chosen = {r["item"]: r["column"] for r in suggest(items, columns, load_item_map(project_path, task))
-              if r["column"]} if accept else {}
+    saved = load_item_map(project_path, task, strict=True)
+    free = free_columns(columns, task, *_claims(project_path))
+    chosen = {r["item"]: r["column"] for r in suggest(items, free, saved) if r["column"]} if accept else {}
     chosen.update(choices or {})
     if not all(isinstance(v, str) for v in chosen.values()):
         raise ItemMapError("choices values must be column names (text)")
     missing = sorted({c for c in chosen.values() if c and c not in columns})
     if missing:
         raise ItemMapError(f"Not columns of the survey file: {', '.join(missing)}")
+    check_project_map(project_path, task, items, chosen)
     return save_item_map(project_path, task, chosen, items)
