@@ -161,3 +161,17 @@ def test_review_table_shows_only_new_data_but_all_of_it_skipped_or_not(tmp_path)
     # 1-3 were reviewed before; 4 is a new unfinished attempt (shown, skipped); 5 was unfinished then, finished now
     assert [(r["response_id"], r["session"]) for r in shown] == [("4", None), ("5", "1")]
     assert any("3 response(s) already handled" in w for w in warnings)
+
+
+def test_forget_clears_a_subjects_slots_and_the_seen_responses(tmp_path):
+    from src.survey_existing import forget_imports
+
+    record_imports(tmp_path, tmp_path, [("sub-1", "ses-1", ("a",)), ("sub-1", "ses-2", ("b",)), ("sub-2", "ses-1", ("c",))],
+                   seen={"1": ["", "5"], "2": ["", "5"]}, survey_id="9")
+    forgotten = forget_imports(tmp_path, subject="sub-1", session="ses-2", survey_id="9", responses=["2"])
+    assert forgotten == {"slots": [("sub-1", "ses-2")], "seen": ["2"]}
+    ledger = json.loads((tmp_path / LEDGER).read_text(encoding="utf-8"))
+    assert ledger["responses"] == {"sub-1": {"ses-1": ["a"]}, "sub-2": {"ses-1": ["c"]}}
+    assert ledger["seen"] == {"9": {"1": ["", "5"]}}
+    assert forget_imports(tmp_path, subject="sub-1")["slots"] == [("sub-1", "ses-1")]  # whole subject
+    assert "sub-1" not in json.loads((tmp_path / LEDGER).read_text(encoding="utf-8"))["responses"]

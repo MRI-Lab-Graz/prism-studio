@@ -26,9 +26,9 @@ export function sessionCellText(row) {
 }
 
 /** Manual overrides are highlighted (they mark a session-mapping problem), and so are responses
- *  the session order cannot name (to be aligned by hand); left-out rows are muted. */
+ *  the session order cannot name or that give a participant the same session twice (to be fixed by hand); left-out rows are muted. */
 export function rowClass(row) {
-    if (row.reason === NOT_ORDERED) return 'table-danger';
+    if (row.reason === NOT_ORDERED || row.clash) return 'table-danger';
     if (row.reason === 'override') return 'table-warning';
     return row.session === null ? 'text-muted' : '';
 }

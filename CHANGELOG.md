@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`sessions forget-import`** takes imported subjects/sessions or reviewed responses out of `code/survey_imports.json`
+  so a re-import treats them as new (a wrong session numbering can then be redone). Files are not deleted; the
+  command lists the folders to remove by hand.
+
+### Changed
+- **Session review: clashing rows are red.** Responses that would give one participant the same session twice are
+  marked in the table, next to the warning.
+
 ### Changed
 - **Add Language runs in the backend too.** The editor's Add Language (bar and Languages field) now calls
   `src/template_languages.py::add_language`, the same function as the new

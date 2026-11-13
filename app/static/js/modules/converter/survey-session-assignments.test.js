@@ -31,6 +31,10 @@ describe('reviewFormData', () => {
 });
 
 describe('rowClass', () => {
+    it('marks a session clash red, whatever else the row is', () => {
+        expect(rowClass({ session: '1', reason: 'override', clash: true })).toBe('table-danger');
+    });
+
     it('marks manual session overrides, mutes left-out rows, leaves the rest plain', () => {
         expect(rowClass({ session: 'pre', reason: 'override' })).toBe('table-warning');
         expect(rowClass({ session: null, reason: 'incomplete' })).toBe('text-muted');

@@ -13,6 +13,7 @@ FOLLOWS_POLICY = [
     "src/environment_conversion.py",
     "app/src/converters/survey.py",
     "src/project_registration.py",
+    "src/biosample_import.py",
 ]
 
 EXEMPT = {  # writes ses- names, but not from the data being imported

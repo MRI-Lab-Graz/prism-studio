@@ -171,7 +171,7 @@ def dispatch_prism_tools(
         else:
             parsers["methods"].print_help()
     elif args.command == "sessions":
-        if args.action in ("review", "set", "unset"):
+        if args.action in ("review", "set", "unset", "forget-import"):
             handlers[f"sessions_{args.action}"](args)
         else:
             parsers["sessions"].print_help()

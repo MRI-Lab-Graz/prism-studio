@@ -122,3 +122,8 @@ def test_review_table_opens_when_a_label_clashes_and_says_so():
     assert clash and "P01" in clash[0] and "1, 2" in clash[0]
     with pytest.raises(ValueError, match="same session label twice"):
         number_sessions_by_date(frame(), "token", decisions=decisions)
+
+
+def test_clashing_rows_are_flagged_for_the_table():
+    rows, _ = session_assignment_table(frame(), "token", decisions={"2": {"session": "1"}})
+    assert {r["response_id"]: r["clash"] for r in rows} == {"1": True, "2": True, "3": False, "4": False}

@@ -815,6 +815,16 @@ def build_prism_tools_parsers(
     parser_sessions_unset.add_argument("--response", required=True, help="LimeSurvey response id")
     parser_sessions_unset.add_argument("--survey", default="default", help="Survey id the response belongs to (shown by 'sessions review'; default: default)")
 
+    parser_sessions_forget = sessions_subparsers.add_parser(
+        "forget-import",
+        help="Forget imported responses (code/survey_imports.json) so a re-import treats them as new; files stay",
+    )
+    parser_sessions_forget.add_argument("--project", required=True, help="Project root or project.json path")
+    parser_sessions_forget.add_argument("--subject", help="Subject to forget, e.g. sub-12 (all its sessions unless --session)")
+    parser_sessions_forget.add_argument("--session", help="Only this session of --subject, e.g. ses-2 (exact string)")
+    parser_sessions_forget.add_argument("--survey", default="default", help="Survey id of the --response ids (default: default)")
+    parser_sessions_forget.add_argument("--response", action="append", default=[], help="Reviewed response id to forget (repeatable)")
+
     parser_merge_versions = subparsers.add_parser(
         "merge-versions",
         help="Merge a new version of a survey instrument (JSON or Excel) into an existing template",

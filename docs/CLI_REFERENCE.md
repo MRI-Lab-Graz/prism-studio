@@ -594,6 +594,16 @@ they survive re-exports:
 `survey convert --duplicate-handling sessions` and `participants … --sessions-from-date` apply
 them automatically.
 
+**`sessions forget-import`** — a response already imported (recorded in `code/survey_imports.json`)
+is skipped by a re-import, so fixing a wrong session numbering needs it forgotten first. The command
+takes the ledger entries out; it never deletes files, and it prints the `sub-*/ses-*` folders left to delete by hand:
+
+```bash
+python prism_tools.py sessions forget-import --project /abs/path/my-project --subject sub-12            # all its sessions
+python prism_tools.py sessions forget-import --project /abs/path/my-project --subject sub-12 --session ses-2
+python prism_tools.py sessions forget-import --project /abs/path/my-project --survey 999999 --response 502   # a reviewed response
+```
+
 The legacy `survey import-limesurvey-batch --session-map t1:ses-1,...` is a different,
 older per-import rename of LimeSurvey archives. It is refused when the output folder is a
 PRISM project (one or several timepoints): use `survey convert`, which enforces the project's
