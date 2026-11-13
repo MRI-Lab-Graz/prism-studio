@@ -27,6 +27,8 @@ describe('renderLibraryMatchCard', () => {
         expect(html).toContain('data-action="import-new"');
         expect(html).toContain('ADS1_1');
         expect(html).toContain('ads_01');
+        expect(html).toContain('saved to the project item map');
+        expect(html).not.toContain('Aliases');
     });
 
     it('shows a partial match as information only', () => {

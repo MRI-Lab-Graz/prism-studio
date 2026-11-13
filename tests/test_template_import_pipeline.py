@@ -57,7 +57,7 @@ def library(tmp_path, monkeypatch):
 def test_payload_has_what_the_editor_reads(no_library):
     payload = finish_import(_template(), "ADS")
 
-    assert set(payload) == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes"}
+    assert set(payload) == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes", "item_map"}
     assert payload["suggested_filename"] == "survey-ads.json"
     assert payload["item_count"] == 2
     assert payload["languages"] == ["de"]
@@ -100,13 +100,18 @@ def test_a_matching_library_template_is_reported_without_its_local_path(library)
 def test_use_library_returns_the_library_template_under_its_own_file_name(library):
     payload = finish_import(_template(), "ADS", project_path=library, use_library=True)
 
-    assert payload["template"]["ads_01"]["Aliases"] == ["ADS1_1"]
+    assert "Aliases" not in payload["template"]["ads_01"]
     assert payload["suggested_filename"] == "survey-ads.json"
     assert payload["item_count"] == 2
 
 
-def test_use_library_without_a_one_to_one_match_is_a_value_error(no_library):
+def test_use_library_without_a_one_to_one_match_is_a_value_error(no_library, tmp_path):
     with pytest.raises(ValueError):
+        finish_import(_template(), "ADS", project_path=str(tmp_path), use_library=True)
+
+
+def test_use_library_without_a_project_is_a_value_error(library):
+    with pytest.raises(ValueError, match="project item map"):
         finish_import(_template(), "ADS", use_library=True)
 
 
@@ -144,7 +149,7 @@ def test_every_source_returns_the_same_payload_keys(no_library):
 
     assert [r.status_code for r in (lss, pavlovia, excel)] == [200, 200, 200]
     keys = [set(r.get_json()) for r in (lss, pavlovia, excel)]
-    assert keys[0] == keys[1] == keys[2] == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes"}
+    assert keys[0] == keys[1] == keys[2] == {"template", "suggested_filename", "item_count", "languages", "library_match", "notes", "item_map"}
 
 
 def test_an_excel_import_without_a_library_match_reports_null_so_the_editor_offers_to_share(no_library):

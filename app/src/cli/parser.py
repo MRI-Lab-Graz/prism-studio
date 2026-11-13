@@ -2641,8 +2641,8 @@ def build_prism_tools_parsers(
     )
     parser_survey_limesurvey.add_argument(
         "--use-library", action="store_true",
-        help="With --select: write the matching library template (survey codes kept as Aliases) "
-        "instead of the imported questionnaire; only for exact/high matches",
+        help="With --select: write the matching library template (the survey's item codes are saved in the "
+        "project item map, so --project is required) instead of the imported questionnaire; only for exact/high matches",
     )
 
     parser_survey_codebook = survey_subparsers.add_parser(

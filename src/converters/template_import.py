@@ -8,8 +8,10 @@ does not go through here would miss the library check and the offer to share a n
 from __future__ import annotations
 
 import unicodedata
+from pathlib import Path
 
 from src.converters.library_wording_match import apply_library_template, public_library_match
+from src.item_map import save_item_map, template_items
 from src.utils.naming import sanitize_task_name
 from src.prism_template_validation import strip_template_editor_internal_keys
 
@@ -54,7 +56,8 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
 
     ``name`` labels the terminal log; ``notes`` (what the source could not represent) are printed
     and returned for the preview. With ``use_library`` the matching library template (the
-    imported item codes kept as ``Aliases``) is returned instead; ValueError if it cannot be adopted.
+    imported item codes saved in the project item map) is returned instead; ValueError if it cannot be
+    adopted or there is no project to hold the map.
     ``rename`` replaces the source's name (e.g. a LimeSurvey group called "Part 2"): it becomes
     ``Study.OriginalName`` and, sanitized, ``Study.TaskName`` and so the file name.
     """
@@ -64,14 +67,27 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
     if rename:
         template["Study"]["OriginalName"] = rename
         template["Study"]["TaskName"] = task_name(rename)
+    if use_library and not project_path:
+        raise ValueError(
+            "Using a library template saves the survey's item codes in the project item map, "
+            "so a project is needed (--project)"
+        )
     for note in notes:
         print(f"[PRISM] WARNING {note}")
     match = match_questionnaire_to_library(template, name, project_path)
+    item_map = None
     if use_library:
         template = apply_library_template(match)
+        filename = match["template_file"]
+        # Library templates mostly have no Study.TaskName: the file name (survey-<task>.json) names the task.
+        task = (template.get("Study") or {}).get("TaskName") or task_name(Path(filename).stem.removeprefix("survey-"))
+        # {library item: survey column}; identical codes need no entry
+        mapping = {lib: imp for imp, lib in match["id_map"].items() if imp != lib}
+        saved = save_item_map(project_path, task, mapping, template_items(template)) if mapping else None
+        if saved:
+            item_map = {"task": task, "path": Path(saved).relative_to(project_path).as_posix(), "entries": len(mapping)}
         print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
-              f"{len(match['id_map'])} item code(s) kept as aliases")
-        filename = match["template_file"]  # library templates have no Study.TaskName
+              f"{len(mapping)} item code(s) saved to the project item map")
     else:
         filename = f"survey-{template['Study']['TaskName']}.json"
     template = strip_template_editor_internal_keys(template)
@@ -83,4 +99,5 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
         "languages": i18n.get("Languages") or [lang for lang in [(template.get("Technical") or {}).get("Language")] if lang],
         "library_match": public_library_match(match),
         "notes": list(notes),
+        "item_map": item_map,
     }
