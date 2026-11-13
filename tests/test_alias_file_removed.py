@@ -36,7 +36,7 @@ def test_no_converter_function_takes_alias_file():
                survey_core._load_survey_aliases_and_templates):
         assert "alias_file" not in inspect.signature(fn).parameters, fn.__name__
     assert "alias_file" not in {f.name for f in __import__("dataclasses").fields(SurveyWorkflowStageOptions)}
-    for gone in ("_read_alias_rows", "_build_alias_map", "_build_canonical_aliases", "_apply_alias_file_to_dataframe"):
+    for gone in ("_read_alias_rows", "_build_alias_map", "_build_canonical_aliases", "_apply_alias_file_to_dataframe", "_canonicalize_template_items"):
         assert not hasattr(survey_core, gone)
 
 
@@ -65,6 +65,6 @@ def test_a_template_with_aliases_still_matches_its_aliased_columns(tmp_path):
 
     template = {"ads_01": {"Description": {"en": "x"}, "Levels": {"1": "a"}, "Aliases": ["ADS1_1"]}}
     (tmp_path / "survey-ads.json").write_text(dump_complete(template, "ads"), encoding="utf-8")
-    templates, _items, _dups, _warn = survey_module._load_and_preprocess_templates(tmp_path, None, compare_with_global=False)
+    templates, _items, _dups, _warn = survey_module._load_and_preprocess_templates(tmp_path, compare_with_global=False)
     assert templates["ads"]["json"]["_aliases"] == {"ADS1_1": "ads_01"}
     assert templates["ads"]["json"]["_reverse_aliases"] == {"ads_01": ["ADS1_1"]}

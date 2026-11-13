@@ -1692,15 +1692,11 @@ class TestSurveyConverterImports(unittest.TestCase):
             templates, item_to_task, duplicates, warnings = (
                 survey_templates._load_and_preprocess_templates(
                     library_dir=lib,
-                    canonical_aliases=None,
                     compare_with_global=False,
                     load_global_library_path_fn=lambda: None,
                     load_global_templates_fn=lambda: {},
                     is_participant_template_fn=lambda _: False,
                     read_json_fn=lambda _: {"Study": {"TaskName": "demo"}},
-                    canonicalize_template_items_fn=lambda sidecar, canonical_aliases: (
-                        sidecar
-                    ),
                     non_item_keys={"Study", "_aliases", "_reverse_aliases"},
                     find_matching_global_template_fn=lambda *_: (
                         None,

@@ -17,7 +17,7 @@ class _FakeParticipantsConverter:
 
 
 def _fake_load_and_preprocess_templates(
-    library_dir, canonical_aliases, compare_with_global=True
+    library_dir, compare_with_global=True
 ):
     return ({"panas": {"json": {}}}, {"panas_1": "panas"}, {}, {})
 
@@ -65,7 +65,7 @@ def test_participant_template_compare_warnings_are_collected(tmp_path):
 
 def test_duplicate_item_ids_raise_value_error(tmp_path):
     def _loader_with_duplicates(
-        library_dir, canonical_aliases, compare_with_global=True
+        library_dir, compare_with_global=True
     ):
         return ({}, {}, {"item_1": {"panas", "phq9"}}, {})
 

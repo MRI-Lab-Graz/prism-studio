@@ -69,7 +69,6 @@ from .survey_core import (
     _determine_task_runs,
     _resolve_existing_project_root,
     _apply_alias_map_to_dataframe,
-    _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
 )
@@ -132,7 +131,6 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _pick_language_value,
     _localize_survey_template,
     _apply_alias_map_to_dataframe,
-    _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
     _survey_lsa._infer_lsa_language_and_tech,
@@ -2085,7 +2083,6 @@ def _build_participant_col_renames(
 
 def _load_and_preprocess_templates(
     library_dir: Path,
-    canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
     template_version_overrides: dict[str, str] | None = None,
 ) -> tuple[
@@ -2097,14 +2094,12 @@ def _load_and_preprocess_templates(
     """Load and prepare survey templates from library."""
     return _survey_templates._load_and_preprocess_templates(
         library_dir=library_dir,
-        canonical_aliases=canonical_aliases,
         compare_with_global=compare_with_global,
         template_version_overrides=template_version_overrides,
         load_global_library_path_fn=_load_global_library_path,
         load_global_templates_fn=_load_global_templates,
         is_participant_template_fn=_is_participant_template,
         read_json_fn=_read_json,
-        canonicalize_template_items_fn=_canonicalize_template_items,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         find_matching_global_template_fn=_find_matching_global_template,
     )

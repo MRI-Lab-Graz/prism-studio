@@ -422,7 +422,6 @@ def _load_survey_aliases_and_templates(
     templates, item_to_task, duplicates, template_warnings_by_task = (
         load_and_preprocess_templates_fn(
             library_dir,
-            None,
             compare_with_global=True,
         )
     )
@@ -490,24 +489,6 @@ def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
                 df = df.drop(columns=[c])
 
     return df
-
-
-def _canonicalize_template_items(
-    *, sidecar: dict, canonical_aliases: dict[str, list[str]]
-) -> dict:
-    """Remove/merge alias item IDs inside a survey template (in-memory)."""
-    out = dict(sidecar)
-    for canonical, aliases in (canonical_aliases or {}).items():
-        for alias in aliases:
-            if alias not in out:
-                continue
-            if canonical not in out:
-                out[canonical] = out[alias]
-            try:
-                del out[alias]
-            except Exception:
-                pass
-    return out
 
 
 # =============================================================================

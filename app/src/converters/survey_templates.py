@@ -957,12 +957,10 @@ def _find_matching_global_template(
 
 def _load_and_preprocess_templates(
     library_dir: Path,
-    canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
     *,
     template_version_overrides: object = None,
     read_json_fn=_read_json,
-    canonicalize_template_items_fn=None,  # Dependency injection
     non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
     load_global_library_path_fn=None,
     load_global_templates_fn=None,
@@ -1021,12 +1019,6 @@ def _load_and_preprocess_templates(
             task_norm = task.lower() or task_from_name.lower()
 
             logger.info(f"Loading template: {json_path} (task: {task_norm})")
-
-            # Dependency injection handling for circular imports or late binding
-            if canonical_aliases and canonicalize_template_items_fn:
-                sidecar = canonicalize_template_items_fn(
-                    sidecar=sidecar, canonical_aliases=canonical_aliases
-                )
 
             requested_version = requested_versions_by_task.get(task_norm)
             sidecar = _apply_template_version_selection(
