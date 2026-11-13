@@ -1434,6 +1434,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
     alias_map = loaded.alias_map
+    if project_path:
+        from src.item_map import item_alias_map
+
+        stored_map = item_alias_map(project_path)  # {file column: template item}; an explicit alias file wins
+        alias_map = {**stored_map, **(alias_map or {})}
+        hit = sum(1 for column in df.columns if column in stored_map)
+        if hit:
+            print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
     participant_template = loaded.participant_template
     participant_columns_lower = loaded.participant_columns_lower
     templates = loaded.templates
