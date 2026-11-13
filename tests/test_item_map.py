@@ -51,7 +51,7 @@ def test_save_refuses_unknown_items_and_a_column_used_twice(tmp_path, mapping):
     with pytest.raises(ItemMapError):
         save_item_map(tmp_path, "ads", mapping, ITEMS)
 
-@pytest.mark.parametrize("task", ["../x", "a/b", "", "ads.json"])
+@pytest.mark.parametrize("task", ["../x", "a/b", "", "ads.json", "a_b", "a-b"])
 def test_the_task_name_cannot_leave_the_folder(tmp_path, task):
     with pytest.raises(ItemMapError):
         save_item_map(tmp_path, task, {"ADS01": "A01"}, ITEMS)
@@ -78,3 +78,12 @@ def test_two_tasks_claiming_one_column_is_an_error_naming_both(tmp_path):
     save_item_map(tmp_path, "bdi", {"BDI01": "X1"}, ["BDI01"])
     with pytest.raises(ItemMapError, match="ads.*bdi|bdi.*ads"):
         item_alias_map(tmp_path)
+
+def test_equal_size_groups_go_to_the_one_first_in_the_file():
+    got = _pairs(suggest(["ADS01", "ADS02"], ["B01", "B02", "A01", "A02"]))
+    assert got == {"ADS01": ("B01", "number"), "ADS02": ("B02", "number")}
+
+def test_partly_matched_groups_of_different_size_are_never_mixed():
+    got = suggest(["ADS01", "ADS02", "ADS03"], ["B01", "B07", "A01", "A02", "A09", "A10"])
+    cols = [r["column"] for r in got if r["column"]]
+    assert len({c[0] for c in cols}) == 1

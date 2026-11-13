@@ -15,7 +15,7 @@ from pathlib import Path
 from src.converters.survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
 MAP_DIR = Path("code") / "item_maps"
-_TASK = re.compile(r"[A-Za-z0-9_-]+")
+_TASK = re.compile(r"[A-Za-z0-9]+")
 _DIGITS = re.compile(r"\d+")
 
 
@@ -96,7 +96,7 @@ def _root(project_path: str | Path) -> Path:
 
 def map_path(project_path: str | Path, task: str) -> Path:
     if not isinstance(task, str) or not _TASK.fullmatch(task):
-        raise ItemMapError(f"Invalid task name {task!r}: use letters, digits, '-' and '_' only")
+        raise ItemMapError(f"Invalid task name {task!r}: use letters and digits only")
     return _root(project_path) / MAP_DIR / f"{task}.json"
 
 
