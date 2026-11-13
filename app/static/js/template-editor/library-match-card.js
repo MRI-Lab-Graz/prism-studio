@@ -27,7 +27,7 @@ export function renderLibraryMatchCard(match, escapeHtml) {
     .map(([imported, library]) => `<tr><td><code>${escapeHtml(imported)}</code></td><td><code>${escapeHtml(library)}</code></td></tr>`)
     .join('');
   const table = rows
-    ? `<details class="mt-1"><summary>Item ID mapping (${changed.length})</summary>`
+    ? `<details class="mt-1"><summary>Item ID mapping (${changed.length}), saved to the project item map</summary>`
       + `<table class="table table-sm mb-0"><thead><tr><th>Your survey</th><th>Library</th></tr></thead><tbody>${rows}</tbody></table></details>`
     : '';
   const useButton = match.adoptable

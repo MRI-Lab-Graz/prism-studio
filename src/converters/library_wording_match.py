@@ -196,20 +196,13 @@ def public_library_match(match: dict | None) -> dict | None:
 
 
 def apply_library_template(match: dict | None) -> dict:
-    """The matched library template (a copy) with the survey's codes added as ``Aliases``.
+    """The matched library template (a copy). Library IDs stay authoritative; the survey's own
+    codes go to the project item map (``finish_import``), not into the template.
 
-    Library IDs stay authoritative. Reads the library file; never writes it.
+    Reads the library file; never writes it.
     """
     if not match or not match.get("adoptable"):
         raise ValueError(
             "The library template does not match every item one-to-one; import the questionnaire as new"
         )
-    template = st._read_json(Path(match["template_path"]))
-    for imported_code, library_code in match["id_map"].items():
-        item = template.get(library_code)
-        if imported_code == library_code or not isinstance(item, dict):
-            continue
-        aliases = item.setdefault("Aliases", [])
-        if imported_code not in aliases:
-            aliases.append(imported_code)
-    return template
+    return st._read_json(Path(match["template_path"]))

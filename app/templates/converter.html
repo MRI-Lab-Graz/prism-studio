@@ -97,6 +97,32 @@
     </div>
 </div>
 
+<!-- Modal: match survey columns to template items (project item map) -->
+<div class="modal fade" id="itemMapModal" tabindex="-1" role="dialog" aria-labelledby="itemMapTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="itemMapTitle" data-role="title"></h5>
+            </div>
+            <div class="modal-body">
+                <p class="small" data-role="intro">Your file has different item names than the template. Check the guess below. It is saved for this project only (the template is not changed) and used for every later import of this survey. It applies only when this survey is converted: if another survey uses the same column names, choose the survey (Advanced options, Select specific survey) when converting.</p>
+                <div class="mb-2 d-none" data-role="task-group">
+                    <label class="form-label small" for="itemMapTask">Template</label>
+                    <select class="form-select form-select-sm" id="itemMapTask" data-role="task"></select>
+                </div>
+                <div data-role="rows"></div>
+                <div class="small text-muted mt-2" data-role="unused"></div>
+                <div class="small text-warning d-none" data-role="unmapped"></div>
+                <div class="small text-danger mt-2" data-role="status" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-role="cancel">Cancel</button>
+                <button type="button" class="btn btn-success" data-role="save">Save mapping and continue</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Add Additional Variables -->
 <div class="modal fade" id="participantMappingModal" tabindex="-1">
     <div class="modal-dialog modal-lg">

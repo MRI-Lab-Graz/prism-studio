@@ -50,7 +50,6 @@ class SurveyWorkflowStageOptions:
     name: str | None = None
     authors: tuple[str, ...] = ()
     language: str | None = None
-    alias_file: Path | None = None
     id_map_file: Path | None = None
     strict_levels: bool = False
     separator: str | None = None
@@ -246,7 +245,6 @@ class SurveyWorkflowStageService:
             "name": options.name,
             "authors": list(options.authors),
             "language": options.language,
-            "alias_file": options.alias_file,
             "id_map_file": options.id_map_file,
             "duplicate_handling": options.duplicate_handling,
             "skip_existing": options.skip_existing,

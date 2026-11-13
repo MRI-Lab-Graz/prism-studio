@@ -34,6 +34,7 @@ from .conversion_utils import (
     resolve_validation_library_path,
 )
 from .conversion_request_helpers import (
+    removed_alias_file_response,
     format_workflow_preparation_stale_response as _format_workflow_preparation_stale_response,
     resolve_requested_project_root as _shared_resolve_requested_project_root,
     resolve_uploaded_or_source_file as _resolve_uploaded_or_source_file,
@@ -361,10 +362,12 @@ def handle_api_survey_convert_preview(
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
+    if (gone := removed_alias_file_response()) is not None:
+        return gone
+
     uploaded_file, upload_error = _resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
     if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
@@ -374,16 +377,6 @@ def handle_api_survey_convert_preview(
     suffix = Path(filename).suffix.lower()
     if suffix not in _SUPPORTED_SURVEY_INPUT_SUFFIXES:
         return jsonify({"error": _SUPPORTED_SURVEY_INPUT_MESSAGE}), 400
-
-    alias_filename = None
-    if alias_upload is not None and alias_upload.filename:
-        alias_filename = secure_filename(alias_upload.filename)
-        alias_suffix = Path(alias_filename).suffix.lower()
-        if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
-            return (
-                jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}),
-                400,
-            )
 
     id_map_filename = None
     if id_map_upload is not None and id_map_upload.filename:
@@ -522,11 +515,6 @@ def handle_api_survey_convert_preview(
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        alias_path = None
-        if alias_filename and alias_upload is not None:
-            alias_path = tmp_dir_path / alias_filename
-            alias_upload.save(str(alias_path))
-
         id_map_path = None
         if id_map_filename and id_map_upload is not None:
             id_map_path = tmp_dir_path / id_map_filename
@@ -565,7 +553,6 @@ def handle_api_survey_convert_preview(
                 name="preview",
                 authors=[],
                 language=language,
-                alias_file=alias_path,
                 id_map_file=id_map_path,
                 separator=separator,
                 duplicate_handling=duplicate_handling,
@@ -594,7 +581,6 @@ def handle_api_survey_convert_preview(
                 name="preview",
                 authors=[],
                 language=language,
-                alias_file=alias_path,
                 id_map_file=id_map_path,
                 strict_levels=True if strict_levels else None,
                 duplicate_handling=duplicate_handling,
@@ -686,7 +672,6 @@ def handle_api_survey_convert_preview(
                         name="preview",
                         authors=[],
                         language=language,
-                        alias_file=alias_path,
                         id_map_file=id_map_path,
                         separator=separator,
                         duplicate_handling=duplicate_handling,
@@ -717,7 +702,6 @@ def handle_api_survey_convert_preview(
                         name="preview",
                         authors=[],
                         language=language,
-                        alias_file=alias_path,
                         id_map_file=id_map_path,
                         strict_levels=True if strict_levels else None,
                         duplicate_handling=duplicate_handling,
@@ -761,7 +745,6 @@ def handle_api_survey_convert_preview(
                             name="preview",
                             authors=[],
                             language=language,
-                            alias_file=alias_path,
                             id_map_file=id_map_path,
                             separator=separator,
                             duplicate_handling=duplicate_handling,
@@ -792,7 +775,6 @@ def handle_api_survey_convert_preview(
                             name="preview",
                             authors=[],
                             language=language,
-                            alias_file=alias_path,
                             id_map_file=id_map_path,
                             strict_levels=True if strict_levels else None,
                             duplicate_handling=duplicate_handling,

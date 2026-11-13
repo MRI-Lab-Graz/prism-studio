@@ -109,10 +109,13 @@ def test_key_call_returns_the_match_next_to_the_imported_template(library):
     assert body["library_match"]["adoptable"] is True
 
 
-def test_use_library_returns_the_library_template_with_aliases(library):
+def test_use_library_returns_the_library_template_and_saves_the_codes_in_the_item_map(library):
     body = _post(_client(), {"project_path": library, "key": "g30", "use_library": "1"}).get_json()
 
-    assert body["template"]["ads_01"]["Aliases"] == ["ADS1_1"]
+    assert "Aliases" not in body["template"]["ads_01"]
+    assert body["item_map"]["task"] == "ads"
+    saved = json.loads((Path(library) / "code" / "item_maps" / "ads.json").read_text(encoding="utf-8"))
+    assert saved == {"ads_01": "ADS1_1", "ads_02": "ADS1_2"}
     assert "ADS1_1" not in body["template"]
     assert body["suggested_filename"] == "survey-ads.json"
     assert body["item_count"] == 2
@@ -131,8 +134,10 @@ def test_use_library_works_for_a_library_template_without_task_name(tmp_path, mo
     monkeypatch.setattr(st, "_load_global_library_path", lambda: global_dir)
     drop_task_name(library_file(global_dir, name="gad", texts=ADS, levels=ADS_LEVELS))
     before = {p.name: p.read_bytes() for p in global_dir.iterdir()}
+    project = tmp_path / "project"
+    project.mkdir()
 
-    response = _post(_client(), {"key": "g30", "use_library": "1"})
+    response = _post(_client(), {"project_path": str(project), "key": "g30", "use_library": "1"})
 
     assert response.status_code == 200
     assert response.get_json()["suggested_filename"] == "survey-gad.json"

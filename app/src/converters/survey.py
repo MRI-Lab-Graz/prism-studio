@@ -68,12 +68,6 @@ from .survey_core import (
     _build_bids_survey_filename,
     _determine_task_runs,
     _resolve_existing_project_root,
-    _read_alias_rows,
-    _build_alias_map,
-    _build_canonical_aliases,
-    _apply_alias_file_to_dataframe,
-    _apply_alias_map_to_dataframe,
-    _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
 )
@@ -135,12 +129,6 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _is_language_dict,
     _pick_language_value,
     _localize_survey_template,
-    _read_alias_rows,
-    _build_alias_map,
-    _build_canonical_aliases,
-    _apply_alias_file_to_dataframe,
-    _apply_alias_map_to_dataframe,
-    _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
     _survey_lsa._infer_lsa_language_and_tech,
@@ -445,7 +433,6 @@ class SurveyResponsesConverter:
         name: str | None = None,
         authors: list[str] | None = None,
         language: str | None = None,
-        alias_file: str | Path | None = None,
         id_map_file: str | Path | None = None,
         separator: str | None = None,
         duplicate_handling: str = "error",
@@ -473,7 +460,6 @@ class SurveyResponsesConverter:
             name=name,
             authors=authors,
             language=language,
-            alias_file=alias_file,
             id_map_file=id_map_file,
             separator=separator,
             duplicate_handling=duplicate_handling,
@@ -503,7 +489,6 @@ class SurveyResponsesConverter:
         name: str | None = None,
         authors: list[str] | None = None,
         language: str | None = None,
-        alias_file: str | Path | None = None,
         id_map_file: str | Path | None = None,
         strict_levels: bool | None = None,
         duplicate_handling: str = "error",
@@ -530,7 +515,6 @@ class SurveyResponsesConverter:
             name=name,
             authors=authors,
             language=language,
-            alias_file=alias_file,
             id_map_file=id_map_file,
             strict_levels=strict_levels,
             duplicate_handling=duplicate_handling,
@@ -584,7 +568,6 @@ def _convert_survey_file_to_prism_dataset_impl(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
@@ -638,7 +621,6 @@ def _convert_survey_file_to_prism_dataset_impl(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=True,
         duplicate_handling=duplicate_handling,
@@ -724,7 +706,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
@@ -784,7 +765,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         authors=authors,
         language=effective_language,
         technical_overrides=inferred_tech,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
@@ -831,7 +811,6 @@ def convert_survey_file_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
@@ -863,7 +842,6 @@ def convert_survey_file_to_prism_dataset(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         separator=separator,
         duplicate_handling=duplicate_handling,
@@ -898,7 +876,6 @@ def convert_survey_lsa_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
@@ -929,7 +906,6 @@ def convert_survey_lsa_to_prism_dataset(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=strict_levels,
         duplicate_handling=duplicate_handling,
@@ -1327,6 +1303,24 @@ def _read_table_as_dataframe(
     raise ValueError(f"Unsupported table kind: {kind}")
 
 
+def _stored_item_map(project_path, tasks, item_to_task) -> dict[str, str]:
+    """``{file column: item}`` of the stored maps of ``tasks`` (the surveys being converted), minus
+    columns that are another loaded template's item (those are never renamed)."""
+    from src.item_map import free_columns, item_alias_map
+
+    stored = item_alias_map(project_path, tasks=tasks)
+    return {c: i for c, i in stored.items() if free_columns([c], item_to_task.get(i, ""), item_to_task)}
+
+
+def _rename_item_columns(df, alias_map: dict[str, str]):
+    """Rename the columns by the item map in one step, so a swap or a shift keeps every column."""
+    df = df.rename(columns=alias_map)
+    clash = sorted({str(c) for c in df.columns[df.columns.duplicated()] if c in alias_map.values()})
+    if clash:
+        raise ValueError(f"The item map renames a column onto a column the file already has: {', '.join(clash)}")
+    return df
+
+
 def _convert_survey_dataframe_to_prism_dataset(
     *,
     df,
@@ -1345,7 +1339,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     authors: list[str] | None,
     language: str | None,
     technical_overrides: dict | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool = True,
     duplicate_handling: str = "error",
@@ -1430,10 +1423,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     loaded = _survey_core._load_survey_aliases_and_templates(
         participants_converter=participants_converter,
         library_dir=library_dir,
-        alias_file=alias_file,
         load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
-    alias_map = loaded.alias_map
     participant_template = loaded.participant_template
     participant_columns_lower = loaded.participant_columns_lower
     templates = loaded.templates
@@ -1473,6 +1464,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         survey_filter=survey,
         templates=templates,
     )
+    # A stored map belongs to its survey: only the maps of the surveys being converted apply.
+    alias_map = (
+        _stored_item_map(project_path, selected_tasks or templates, item_to_task) if project_path else {}
+    )
+    hit = sum(1 for column in df.columns if column in alias_map)
+    if hit:
+        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
 
     # --- Determine Columns ---
     from .id_detection import has_prismmeta_columns as _has_pm
@@ -1505,7 +1503,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     conversion_warnings.extend(id_map_warnings)
 
     if alias_map:
-        df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
+        df = _rename_item_columns(df, alias_map)
 
     # PRISM survey conversion currently accepts long-format tables only.
     # If wide session-coded columns are detected without a session column,
@@ -2101,7 +2099,6 @@ def _build_participant_col_renames(
 
 def _load_and_preprocess_templates(
     library_dir: Path,
-    canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
     template_version_overrides: dict[str, str] | None = None,
 ) -> tuple[
@@ -2113,14 +2110,12 @@ def _load_and_preprocess_templates(
     """Load and prepare survey templates from library."""
     return _survey_templates._load_and_preprocess_templates(
         library_dir=library_dir,
-        canonical_aliases=canonical_aliases,
         compare_with_global=compare_with_global,
         template_version_overrides=template_version_overrides,
         load_global_library_path_fn=_load_global_library_path,
         load_global_templates_fn=_load_global_templates,
         is_participant_template_fn=_is_participant_template,
         read_json_fn=_read_json,
-        canonicalize_template_items_fn=_canonicalize_template_items,
         non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         find_matching_global_template_fn=_find_matching_global_template,
     )

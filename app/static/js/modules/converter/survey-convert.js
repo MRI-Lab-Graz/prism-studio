@@ -31,6 +31,7 @@ import { createSurveyUnmatchedTemplatesController } from './survey-unmatched-tem
 import { createSurveySessionAssignmentsController } from './survey-session-assignments.js';
 import { createSurveyImportFormStateController } from './survey-import-form-state.js';
 import { createSurveyNearItemMatchAdapter } from './survey-near-item-match-adapter.js';
+import { createItemMapDialog } from './item-map-dialog.js';
 import { createSessionMapPanel } from './session-map-panel.js';
 import { createSurveyNearItemMatchReviewController } from './survey-near-item-match-review.js';
 import { pickServerFile } from './server-picker.js';
@@ -2094,7 +2095,46 @@ export function initSurveyConvert(elements) {
         formatSignedOffset,
     });
 
+    // Project item map: the dialog only shows what /api/item-map/suggest returned and posts the choices.
+    const itemMapModalEl = document.getElementById('itemMapModal');
+    const itemMapDialog = itemMapModalEl
+        ? createItemMapDialog({
+            root: itemMapModalEl,
+            post: async (url, formData) => {
+                const response = await fetchWithApiFallback(url, { method: 'POST', body: formData });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || 'Item map request failed.');
+                return data;
+            },
+        })
+        : null;
+    async function openItemMapDialog({ announceEmpty = false } = {}) {
+        const file = getSelectedSurveyFile();
+        if (!itemMapDialog) return;
+        if (!file) {
+            if (announceEmpty) {
+                convertError.textContent = 'Item mapping needs the file uploaded from this computer; a file picked on the server cannot be mapped here.';
+                convertError.classList.remove('d-none');
+            }
+            return;
+        }
+        try {
+            const saved = await itemMapDialog.open(file, resolveCurrentProjectPath() || '');
+            if (saved === null && announceEmpty) {
+                convertInfo.textContent = 'All item names of this file are already matched.';
+                convertInfo.classList.remove('d-none');
+            }
+            if (saved) surveyWorkflowPreviewController.handlePreviewClick();
+        } catch (error) {
+            if (!announceEmpty) return; // automatic opening must not hide the preview's own error
+            convertError.textContent = error.message;
+            convertError.classList.remove('d-none');
+        }
+    }
+    document.getElementById('itemMapBtn')?.addEventListener('click', () => openItemMapDialog({ announceEmpty: true }));
+
     const surveyWorkflowPreviewController = createSurveyWorkflowPreviewController({
+        openItemMapDialog,
         convertError,
         convertInfo,
         surveyVersionWizardApplyBtn,

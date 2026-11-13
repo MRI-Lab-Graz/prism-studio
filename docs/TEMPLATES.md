@@ -95,6 +95,20 @@ copy records the administration instance.
 }
 ```
 
+## Different item names in a project
+
+If a survey file names its columns differently from a template's item IDs (`A01` instead of `ADS01`), map them once
+per project: `prism_tools.py survey item-map --input data.csv --project DIR --task ads --accept` (see
+[CLI reference](CLI_REFERENCE.md)). The map is stored in `code/item_maps/<task>.json` and every later conversion in
+that project applies it; the template itself stays unchanged. Importing a LimeSurvey questionnaire with
+**Use library template** (`--use-library --project DIR`) saves the survey's item codes in this same map; it no longer
+writes `Aliases` into the template (`Aliases` already in a template keep working).
+
+A map belongs to its survey: it is applied only when that survey is converted, so two surveys may map the same
+column names (`Q01` to `ADS01` in one, to `GAD01` in the other). When a file's columns are mapped by two surveys,
+select the survey when converting (`survey convert --survey gad`, or *Select specific survey* in Studio); without a
+selection the conversion stops and names both surveys.
+
 ## Validating templates
 
 ```bash

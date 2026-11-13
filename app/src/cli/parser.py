@@ -1252,15 +1252,6 @@ def build_prism_tools_parsers(
         help="Authors written to dataset_description.json (if created)",
     )
     parser_survey_convert.add_argument(
-        "--alias",
-        dest="alias",
-        default=None,
-        help=(
-            "Optional TSV/whitespace alias file: each line is '<canonical_id> <alias1> <alias2> ...'. "
-            "Used to map changing item IDs onto stable canonical IDs before template matching."
-        ),
-    )
-    parser_survey_convert.add_argument(
         "--project",
         dest="project",
         default=None,
@@ -2596,6 +2587,23 @@ def build_prism_tools_parsers(
         "render_questionnaire_docx's docstring for available keys.",
     )
 
+    parser_survey_item_map = survey_subparsers.add_parser(
+        "item-map",
+        help="Map a survey file's column names onto a project template's item IDs "
+        "(stored in code/item_maps; used by later conversions)",
+    )
+    parser_survey_item_map.add_argument("--input", required=True, help="Survey file (.xlsx/.csv/.tsv/.lsa)")
+    parser_survey_item_map.add_argument("--project", required=True, help="Project folder")
+    parser_survey_item_map.add_argument(
+        "--task", help="Task to map (without it: list the tasks whose items the file does not cover)"
+    )
+    parser_survey_item_map.add_argument(
+        "--accept", action="store_true", help="Save the suggested mapping (without --accept/--set nothing is written)"
+    )
+    parser_survey_item_map.add_argument(
+        "--set", nargs="+", metavar="ITEM=COLUMN", help="Set rows by hand (ITEM= clears a row); overrides --accept"
+    )
+
     parser_survey_limesurvey = survey_subparsers.add_parser(
         "import-limesurvey",
         help="Import the questionnaires of a LimeSurvey .lss/.lsa as PRISM templates. "
@@ -2624,8 +2632,8 @@ def build_prism_tools_parsers(
     )
     parser_survey_limesurvey.add_argument(
         "--use-library", action="store_true",
-        help="With --select: write the matching library template (survey codes kept as Aliases) "
-        "instead of the imported questionnaire; only for exact/high matches",
+        help="With --select: write the matching library template (the survey's item codes are saved in the "
+        "project item map, so --project is required) instead of the imported questionnaire; only for exact/high matches",
     )
 
     parser_survey_codebook = survey_subparsers.add_parser(

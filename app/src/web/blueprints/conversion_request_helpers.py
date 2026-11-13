@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from flask import request, session
+from flask import jsonify, request, session
 from src.survey_workflow_service import SurveyWorkflowStageService
 
 from .conversion_utils import require_existing_project_root, resolve_existing_project_root
@@ -17,6 +17,13 @@ class LocalPathUpload:
         import shutil
 
         shutil.copy2(self._source_path, destination)
+
+
+def removed_alias_file_response():
+    """The `--alias` file is gone (the project item map replaced it): refuse a request that still sends one."""
+    if request.files.get("alias") or request.files.get("alias_file"):
+        return jsonify({"error": "The alias file is gone; use the project item map (survey item-map)"}), 400
+    return None
 
 
 def resolve_uploaded_or_source_file(

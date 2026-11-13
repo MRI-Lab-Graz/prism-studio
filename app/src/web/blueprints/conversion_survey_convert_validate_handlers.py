@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 from src.conversion_to_project import save_conversion_to_project
 from src.survey_workflow_service import SurveyWorkflowStageService
 from .conversion_job_store import ConversionJobStore
+from .conversion_request_helpers import removed_alias_file_response
 
 _survey_convert_job_store = ConversionJobStore(log_level_key="level")
 
@@ -63,10 +64,12 @@ def handle_api_survey_convert_validate(
     def add_log(message, level="info"):
         log_messages.append({"message": message, "level": level})
 
+    if (gone := removed_alias_file_response()) is not None:
+        return gone
+
     uploaded_file, upload_error = resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
     if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
@@ -193,11 +196,6 @@ def handle_api_survey_convert_validate(
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        alias_path = None
-        if alias_upload and getattr(alias_upload, "filename", ""):
-            alias_path = tmp_dir_path / secure_filename(alias_upload.filename)
-            alias_upload.save(str(alias_path))
-
         id_map_path = None
         if id_map_upload and getattr(id_map_upload, "filename", ""):
             id_map_filename = secure_filename(id_map_upload.filename)
@@ -229,7 +227,6 @@ def handle_api_survey_convert_validate(
                     force=True,
                     name="preflight",
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,
@@ -392,7 +389,6 @@ def handle_api_survey_convert_validate(
                     force=True,
                     name=dataset_name,
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,
@@ -752,10 +748,12 @@ def handle_api_survey_convert_validate_start(
     def add_log(message, level="info"):
         upfront_logs.append({"message": message, "level": level})
 
+    if (gone := removed_alias_file_response()) is not None:
+        return gone
+
     uploaded_file, upload_error = resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
     if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
@@ -894,11 +892,6 @@ def handle_api_survey_convert_validate_start(
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        alias_path = None
-        if alias_upload and getattr(alias_upload, "filename", ""):
-            alias_path = tmp_dir_path / secure_filename(alias_upload.filename)
-            alias_upload.save(str(alias_path))
-
         id_map_path = None
         if id_map_upload and getattr(id_map_upload, "filename", ""):
             id_map_filename = secure_filename(id_map_upload.filename)
@@ -913,7 +906,6 @@ def handle_api_survey_convert_validate_start(
     config: dict[str, Any] = {
         "tmp_dir": tmp_dir,
         "input_path": input_path,
-        "alias_path": alias_path,
         "id_map_path": id_map_path,
         "filename": filename,
         "suffix": suffix,
@@ -1054,7 +1046,6 @@ def _run_survey_convert_validate_job(
     tmp_dir = config["tmp_dir"]
     tmp_dir_path = Path(tmp_dir)
     input_path = config["input_path"]
-    alias_path = config["alias_path"]
     id_map_path = config["id_map_path"]
     filename = config["filename"]
     suffix = config["suffix"]
@@ -1106,7 +1097,6 @@ def _run_survey_convert_validate_job(
                     force=True,
                     name="preflight",
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,
@@ -1259,7 +1249,6 @@ def _run_survey_convert_validate_job(
                     force=True,
                     name=dataset_name,
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,

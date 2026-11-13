@@ -13,7 +13,7 @@ from src.survey_workflow_service import SurveyWorkflowStageOptions  # noqa: E402
 # Studio option -> the CLI flag's dest (renamed only where the CLI had a name first)
 RENAMED = {
     "input_path": "input", "output_root": "output", "library_dir": "library", "language": "lang",
-    "alias_file": "alias", "template_version_overrides": "template_versions", "task_value_offsets": "value_offsets",
+    "template_version_overrides": "template_versions", "task_value_offsets": "value_offsets",
     "project_path": "project", "id_map_file": "id_map",
 }
 # set by the adapter or internal, not an option the user picks

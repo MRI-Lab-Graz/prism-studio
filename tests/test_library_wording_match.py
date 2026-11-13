@@ -186,19 +186,18 @@ def _tree(directory):
     return {p.name: p.read_bytes() for p in sorted(directory.iterdir())}
 
 
-def test_adopting_adds_the_survey_codes_as_aliases_and_keeps_library_ids(libs):
+def test_adopting_keeps_library_ids_and_adds_no_aliases(libs):
     path = library_file(libs["global"])
     match = lwm.best_library_match(imported())
 
     adopted = lwm.apply_library_template(match)
 
     assert [k for k in adopted if k.startswith("ads_")] == ["ads_01", "ads_02", "ads_03", "ads_04"]
-    assert adopted["ads_01"]["Aliases"] == ["ADS1_1"]
-    assert adopted["ads_04"]["Aliases"] == ["ADS1_4"]
+    assert not any("Aliases" in v for v in adopted.values() if isinstance(v, dict))
     assert "Aliases" not in json.loads(path.read_text(encoding="utf-8"))["ads_01"]  # file untouched
 
 
-def test_aliases_are_deduplicated_and_identical_codes_get_none(libs):
+def test_existing_aliases_stay_and_none_are_added(libs):
     path = library_file(libs["global"], codes=["ADS1_1", "ads_02", "ads_03", "ads_04"])
     data = json.loads(path.read_text(encoding="utf-8"))
     data["ads_02"]["Aliases"] = ["ADS1_2"]
@@ -207,7 +206,7 @@ def test_aliases_are_deduplicated_and_identical_codes_get_none(libs):
     adopted = lwm.apply_library_template(lwm.best_library_match(imported()))
 
     assert "Aliases" not in adopted["ADS1_1"]
-    assert adopted["ads_02"]["Aliases"] == ["ADS1_2"]
+    assert adopted["ads_02"]["Aliases"] == ["ADS1_2"]  # already there: kept as is
 
 
 def test_a_match_that_is_not_one_to_one_cannot_be_adopted(libs):

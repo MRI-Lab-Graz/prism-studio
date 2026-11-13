@@ -286,7 +286,7 @@ When PRISM converts LimeSurvey data, it matches each **question group** in the s
 The `.lsa` archive contains the `.lss` structure file inside it. PRISM can import directly from `.lsa` files in the Template Editor.
 ```
 
-When a questionnaire's wording matches a template already in the library, the import shows a **match card**. Choose **Use library template** to adopt the library template, or **Import as new** to keep the imported one. With the library template, its item IDs stay authoritative and the survey's own codes are stored in each item's `Aliases`. Partial matches are shown for information only. Nothing is ever written to the global library.
+When a questionnaire's wording matches a template already in the library, the import shows a **match card**. Choose **Use library template** to adopt the library template, or **Import as new** to keep the imported one. With the library template, its item IDs stay authoritative and the survey's own codes are saved in the project item map (`code/item_maps/<task>.json`), so a project is required (`--project` on the command line) and the data files with those codes convert as they are. Partial matches are shown for information only. Nothing is ever written to the global library.
 
 ### 7c. Open the Survey Converter
 

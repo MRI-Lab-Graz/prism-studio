@@ -284,6 +284,20 @@ global library is only read, never written.
 python prism_tools.py survey import-limesurvey --input instrument.lsa --select g30 --use-library --output ./templates
 ```
 
+**`survey item-map`** — map the column names of a survey file onto the item IDs of a project template
+(stored per task in `code/item_maps/<task>.json`; later `survey convert` runs rename the columns by it):
+
+```bash
+python prism_tools.py survey item-map --input data.csv --project ./myproject                        # tasks the file does not cover
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads             # print the guess, write nothing
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads --accept    # save the guess
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads --accept --set ADS02=A01 ADS05=
+```
+
+The guess prints one line per item (`ADS01 <- A01  (number)`; `(none)` when nothing matches). `--set ITEM=COLUMN`
+overrides a row of the guess (`ITEM=` clears it); `--set` alone saves only what was set. A column that is not in
+the file, or used for two items, is refused. Same function as the Studio item-map dialog.
+
 **`survey import-codebook`** — turn the instrument groups of an Excel/CSV/TSV codebook into PRISM
 templates (one per variable prefix), like Studio's Template Editor "Import Template Source". Every import
 (codebook, LimeSurvey, Pavlovia) goes through the same step: it is matched against the template library and

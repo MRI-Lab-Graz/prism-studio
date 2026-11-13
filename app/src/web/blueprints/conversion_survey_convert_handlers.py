@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from src.conversion_to_project import save_conversion_to_project
 from src.system_files import filter_system_files
 from src.template_save import TemplateIncomplete
+from .conversion_request_helpers import removed_alias_file_response
 
 try:
     import defusedxml.ElementTree as ET
@@ -53,10 +54,12 @@ def handle_api_survey_convert(
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
+    if (gone := removed_alias_file_response()) is not None:
+        return gone
+
     uploaded_file, upload_error = resolve_uploaded_or_source_file(
         field_names=("excel", "file")
     )
-    alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
     if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
@@ -75,16 +78,6 @@ def handle_api_survey_convert(
     requested_project_path = (
         str(requested_project_root) if requested_project_root else None
     )
-
-    alias_filename = None
-    if alias_upload and getattr(alias_upload, "filename", ""):
-        alias_filename = secure_filename(alias_upload.filename)
-        alias_suffix = Path(alias_filename).suffix.lower()
-        if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
-            return (
-                jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}),
-                400,
-            )
 
     id_map_filename = None
     if id_map_upload and getattr(id_map_upload, "filename", ""):
@@ -188,11 +181,6 @@ def handle_api_survey_convert(
             "current_project_path"
         )
 
-        alias_path = None
-        if alias_filename:
-            alias_path = tmp_dir_path / alias_filename
-            alias_upload.save(str(alias_path))
-
         id_map_path = None
         if id_map_filename:
             id_map_path = tmp_dir_path / id_map_filename
@@ -220,7 +208,6 @@ def handle_api_survey_convert(
                     force=True,
                     name="preflight",
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,
@@ -343,7 +330,6 @@ def handle_api_survey_convert(
                     force=True,
                     name=dataset_name,
                     language=language,
-                    alias_file=alias_path,
                     id_map_file=id_map_path,
                     strict_levels=strict_levels,
                     separator=separator,

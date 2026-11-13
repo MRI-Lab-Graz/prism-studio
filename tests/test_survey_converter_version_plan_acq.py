@@ -112,7 +112,6 @@ def test_selected_template_version_filters_applicable_items(tmp_path):
 
     templates, item_to_task, duplicates, warnings = _load_and_preprocess_templates(
         library_dir=library_dir,
-        canonical_aliases=None,
         compare_with_global=False,
         template_version_overrides={"wellbeing-multi": "7-likert"},
     )
@@ -162,7 +161,6 @@ def test_contextual_template_versions_preseed_base_template_when_unambiguous(tmp
 
     templates, item_to_task, duplicates, warnings = _load_and_preprocess_templates(
         library_dir=library_dir,
-        canonical_aliases=None,
         compare_with_global=False,
         template_version_overrides=[
             {"task": "wellbeing-multi", "session": "ses-1", "version": "10-vas"},

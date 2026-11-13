@@ -211,7 +211,6 @@ def cmd_survey_convert(args):
             name=args.name,
             authors=tuple(args.authors or ()),
             language=lang,
-            alias_file=Path(args.alias) if getattr(args, "alias", None) else None,
             id_map_file=Path(args.id_map) if getattr(args, "id_map", None) else None,
             strict_levels=bool(getattr(args, "strict_levels", False)),
             duplicate_handling=getattr(args, "duplicate_handling", "error"),
@@ -570,7 +569,11 @@ def cmd_survey_import_limesurvey(args):
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
-    from src.converters.template_import import finish_import
+    from src.converters.template_import import (
+        check_library_item_map,
+        finish_import,
+        store_library_item_map,
+    )
 
     input_path = Path(args.input).resolve()
     project_path = getattr(args, "project", None)
@@ -597,15 +600,47 @@ def cmd_survey_import_limesurvey(args):
         out_dir = Path(args.output).resolve()
         # Resolve every key first so a failure leaves nothing half written.
         planned = []  # (target, template)
+        payloads = []
         for key in keys:
             template, notes = limesurvey_questionnaire(xml, key, args.split)
             payload = finish_import(
-                template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name
+                template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name,
+                store_map=False,
             )
+            check_library_item_map(payload, project_path)  # an invalid merged map fails before any write
+            payloads.append(payload)
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
+        for payload in payloads:  # only now: a failure above leaves no item map behind
+            store_library_item_map(payload, project_path)
     except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
+        sys.exit(1)
+
+
+def cmd_survey_item_map(args):
+    """Map a survey file's column names onto a project template's item IDs (code/item_maps)."""
+    from src import item_map
+
+    try:
+        columns = item_map.read_survey_columns(args.input)
+        if not args.task:
+            for task in item_map.tasks_needing_map(args.project, columns):
+                print(f"[PRISM] {task}")
+            return
+        choices = {}
+        for pair in args.set or []:
+            item, sep, column = pair.partition("=")
+            if not sep or not item:
+                raise ValueError(f"--set expects ITEM=COLUMN, got {pair!r}")
+            choices[item] = column
+        if not args.accept and not choices:
+            item_map.suggest_for_project(args.project, args.task, columns)
+            return
+        path = item_map.apply_choices(args.project, args.task, columns, choices, args.accept)
+        print(f"[PRISM] Saved {path}" if path else f"[PRISM] No item map needed for {args.task}")
+    except (OSError, ValueError) as e:  # ItemMapError is a ValueError
+        print(f"Error: {e}")
         sys.exit(1)
 
 
