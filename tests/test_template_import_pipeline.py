@@ -196,3 +196,33 @@ def test_codebook_cli_uses_the_project_library(library, tmp_path, capsys):
 def test_codebook_cli_output_without_select_fails(no_library, tmp_path):
     with pytest.raises(SystemExit):
         cmd_survey_import_codebook(_args(tmp_path, output=str(tmp_path / "o")))
+
+
+# --- rename: a group called "Part 2" can be given a real name before it is written ------------------
+
+def test_rename_sets_the_name_and_the_file_name(no_library):
+    payload = finish_import(_template(task="part2"), "Part 2", rename="Händigkeit Test")
+
+    assert payload["template"]["Study"]["OriginalName"] == "Händigkeit Test"
+    assert payload["template"]["Study"]["TaskName"].lower().startswith("handigkeit")
+    assert payload["suggested_filename"] == f"survey-{payload['template']['Study']['TaskName']}.json"
+
+
+def test_rename_cannot_be_combined_with_the_library_template(library):
+    with pytest.raises(ValueError, match="rename"):
+        finish_import(_template(), "ADS", library, use_library=True, rename="X")
+
+
+def test_studio_and_cli_write_the_same_renamed_template(no_library, tmp_path):
+    from src.cli.commands.survey import cmd_survey_import_limesurvey
+
+    out = tmp_path / "out"
+    cmd_survey_import_limesurvey(SimpleNamespace(
+        input=str(FIXTURE_LSS), split="group", list=False, select=["g30"], output=str(out),
+        project=None, use_library=False, name="My Better Name"))
+    cli = json.loads(next(out.glob("*.json")).read_text(encoding="utf-8"))
+    studio = _post("import-limesurvey", FIXTURE_LSS.read_bytes(), "s.lss",
+                   {"split": "group", "key": "g30", "name": "My Better Name"}).get_json()
+
+    assert next(out.glob("*.json")).name == studio["suggested_filename"]
+    assert cli == studio["template"] and cli["Study"]["OriginalName"] == "My Better Name"

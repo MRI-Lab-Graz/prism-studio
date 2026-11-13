@@ -680,6 +680,7 @@ def api_template_editor_import_limesurvey():
 
     project_path = (request.form.get("project_path") or "").strip() or None
     use_library = (request.form.get("use_library") or "").strip().lower() in ("1", "true")
+    name = (request.form.get("name") or "").strip() or None
 
     from src.converters.limesurvey import (
         limesurvey_questionnaire,
@@ -691,7 +692,7 @@ def api_template_editor_import_limesurvey():
     command = f"python prism_tools.py survey import-limesurvey --input {file.filename} --split {split}"
     if project_path:
         command += " --project <project>"
-    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key}{' --use-library' if use_library else ''} --output <dir>" if key else ""))
+    print(f"[PRISM] CLI equivalent: {command}" + (f" --select {key}{' --use-library' if use_library else ''}{f' --name {name!r}' if name else ''} --output <dir>" if key else ""))
     try:
         xml = read_lss_xml(file.read(), file.filename)
         if not key:
@@ -700,7 +701,9 @@ def api_template_editor_import_limesurvey():
             )
             return jsonify({"questionnaires": questionnaires, "split": split}), 200
         template, notes = limesurvey_questionnaire(xml, key, split)
-        payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library, notes)
+        payload = finish_import(
+            template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name
+        )
     except ValueError as e:
         print(f"[PRISM] LimeSurvey import failed: {e}")
         return jsonify({"error": str(e)}), 400

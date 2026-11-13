@@ -7,11 +7,21 @@ does not go through here would miss the library check and the offer to share a n
 
 from __future__ import annotations
 
+import unicodedata
+
 from src.converters.library_wording_match import apply_library_template, public_library_match
+from src.utils.naming import sanitize_task_name
 from src.prism_template_validation import strip_template_editor_internal_keys
 
 # Top-level keys of a template that are not items.
 TEMPLATE_SECTIONS = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+
+
+def task_name(name):
+    """File-safe Study.TaskName for a human name. Transliterates first: sanitize_task_name
+    drops non-ASCII ("Händigkeit" -> "hndigkeit")."""
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    return sanitize_task_name(ascii_name) or "imported"
 
 
 def _describe_library_match(name, match):
@@ -39,13 +49,21 @@ def match_questionnaire_to_library(template, name, project_path=None):
     return match
 
 
-def finish_import(template, name, project_path=None, use_library=False, notes=()):
+def finish_import(template, name, project_path=None, use_library=False, notes=(), rename=None):
     """Payload for one imported template.
 
     ``name`` labels the terminal log; ``notes`` (what the source could not represent) are printed
     and returned for the preview. With ``use_library`` the matching library template (the
     imported item codes kept as ``Aliases``) is returned instead; ValueError if it cannot be adopted.
+    ``rename`` replaces the source's name (e.g. a LimeSurvey group called "Part 2"): it becomes
+    ``Study.OriginalName`` and, sanitized, ``Study.TaskName`` and so the file name.
     """
+    rename = (rename or "").strip()
+    if rename and use_library:
+        raise ValueError("rename cannot be combined with the library template (it keeps its own name)")
+    if rename:
+        template["Study"]["OriginalName"] = rename
+        template["Study"]["TaskName"] = task_name(rename)
     for note in notes:
         print(f"[PRISM] WARNING {note}")
     match = match_questionnaire_to_library(template, name, project_path)

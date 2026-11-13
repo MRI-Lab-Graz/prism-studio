@@ -548,6 +548,10 @@ function hideExcelGroupPicker(context) {
   if (context.sourceSplitSelectEl) {
     context.sourceSplitSelectEl.classList.add('d-none');
   }
+  if (context.sourceRenameRowEl) {
+    context.sourceRenameRowEl.classList.add('d-none');
+    context.sourceRenameInputEl.value = '';
+  }
   if (context.excelGroupPickerSelectEl) {
     context.excelGroupPickerSelectEl.innerHTML = '';
     // Both flows share this select; a handler from an earlier LimeSurvey import must not outlive it.
@@ -675,7 +679,8 @@ async function loadLimeSurveyQuestionnaire(context, file, key, previousEditorSta
       split: context.sourceSplitSelectEl.value,
       key,
       project_path: context.getCurrentProjectPath() || '',
-      ...(useLibrary ? { use_library: '1' } : {}),
+      // The backend refuses a rename together with the library template, so only one is sent.
+      ...(useLibrary ? { use_library: '1' } : { name: context.sourceRenameInputEl.value.trim() }),
     });
     await finishImport(context, applyImportedTemplate(context, data, file), data.notes);
   } catch (error) {
@@ -702,8 +707,13 @@ async function importLimeSurvey(context, file, previousEditorState, fromSplitCha
   context.sourceSplitSelectEl.classList.remove('d-none');
   context.excelGroupPickerRowEl.classList.remove('d-none');
 
+  // The name field is LimeSurvey-only (the Pavlovia import has no rename); empty keeps the file's name.
+  const renameable = (context.sourceSplitSelectEl.dataset.source || 'limesurvey') === 'limesurvey';
+  context.sourceRenameRowEl.classList.toggle('d-none', !renameable);
   const showCard = () => {
     const entry = questionnaires.find((q) => q.key === context.excelGroupPickerSelectEl.value);
+    context.sourceRenameInputEl.value = '';
+    context.sourceRenameInputEl.placeholder = entry ? entry.name : '';
     const html = renderLibraryMatchCard(entry && entry.library_match, context.escapeHtml);
     context.libraryMatchCardEl.innerHTML = html;
     context.libraryMatchCardEl.classList.toggle('d-none', !html);

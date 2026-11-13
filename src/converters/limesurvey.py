@@ -17,7 +17,7 @@ from src.modality_versions import current_survey_schema_version
 from src.survey_export_settings import strip_export_settings
 from src.text_sanitizer import html_to_text
 from src.converters.survey_templates import _METADATA_CODE_RE as _PRISMMETA_RE
-from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library
+from src.converters.template_import import TEMPLATE_SECTIONS, match_questionnaire_to_library, task_name
 
 
 def _get_text(element, tag):
@@ -940,12 +940,6 @@ def read_lss_xml(data, filename):
         raise ValueError(f"{filename} is not a valid .lsa archive") from exc
 
 
-def _task_name(name):
-    # Transliterate first: sanitize_task_name drops non-ASCII ("Händigkeit" -> "hndigkeit").
-    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
-    return sanitize_task_name(ascii_name) or "imported"
-
-
 def _parse_lss_for_questionnaires(xml_content):
     try:
         root = ET.fromstring(xml_content)
@@ -1046,7 +1040,7 @@ def _questionnaire_template(parsed, part):
     )
     study = template["Study"]
     study["OriginalName"] = part["name"]
-    study["TaskName"] = _task_name(part["name"])
+    study["TaskName"] = task_name(part["name"])
     study["Description"] = part["description"] or f"Imported from LimeSurvey: {part['name']}"
     stems = [
         q.get("question_i18n") or {lang: q["question"]}

@@ -8,7 +8,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.converters.limesurvey import _task_name, _utc_creation_date
+from src.converters.limesurvey import _utc_creation_date
+from src.converters.template_import import task_name
 from src.modality_versions import current_survey_schema_version
 
 _SPLITS = ("page", "survey")
@@ -190,7 +191,7 @@ def _build(survey: dict, split: str, language: str | None = None) -> list[tuple[
         }
         raw_notes = [page.get("description"), *(el.get("description") for el in els)]
         instructions = list(dict.fromkeys(n for n in raw_notes if n))  # unique, in order
-        base = task = _task_name(name)
+        base = task = task_name(name)
         n = 1
         while task in used:  # pages whose names sanitize alike get base-2, base-3, ...
             n += 1
