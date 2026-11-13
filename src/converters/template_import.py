@@ -51,13 +51,30 @@ def match_questionnaire_to_library(template, name, project_path=None):
     return match
 
 
-def finish_import(template, name, project_path=None, use_library=False, notes=(), rename=None):
+def store_library_item_map(payload, project_path):
+    """Save the pending item map a ``use_library`` payload carries; returns (and sets) ``payload["item_map"]``.
+
+    The one place that writes ``code/item_maps/<task>.json`` for an adopted library template.
+    """
+    pending = payload.pop("_item_map_pending", None)
+    if pending:
+        saved = save_item_map(project_path, pending["task"], pending["mapping"], template_items(payload["template"]))
+        if saved:
+            payload["item_map"] = {
+                "task": pending["task"], "path": Path(saved).relative_to(project_path).as_posix(),
+                "entries": len(pending["mapping"]),
+            }
+    return payload["item_map"]
+
+
+def finish_import(template, name, project_path=None, use_library=False, notes=(), rename=None, store_map=True):
     """Payload for one imported template.
 
     ``name`` labels the terminal log; ``notes`` (what the source could not represent) are printed
     and returned for the preview. With ``use_library`` the matching library template (the
     imported item codes saved in the project item map) is returned instead; ValueError if it cannot be
-    adopted or there is no project to hold the map.
+    adopted or there is no project to hold the map. ``store_map=False`` leaves the map pending in
+    the payload (``store_library_item_map`` saves it later: the CLI first writes every template).
     ``rename`` replaces the source's name (e.g. a LimeSurvey group called "Part 2"): it becomes
     ``Study.OriginalName`` and, sanitized, ``Study.TaskName`` and so the file name.
     """
@@ -75,7 +92,7 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
     for note in notes:
         print(f"[PRISM] WARNING {note}")
     match = match_questionnaire_to_library(template, name, project_path)
-    item_map = None
+    pending = None
     if use_library:
         template = apply_library_template(match)
         filename = match["template_file"]
@@ -83,21 +100,24 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
         task = (template.get("Study") or {}).get("TaskName") or task_name(Path(filename).stem.removeprefix("survey-"))
         # {library item: survey column}; identical codes need no entry
         mapping = {lib: imp for imp, lib in match["id_map"].items() if imp != lib}
-        saved = save_item_map(project_path, task, mapping, template_items(template)) if mapping else None
-        if saved:
-            item_map = {"task": task, "path": Path(saved).relative_to(project_path).as_posix(), "entries": len(mapping)}
+        if mapping:
+            pending = {"task": task, "mapping": mapping}
         print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
               f"{len(mapping)} item code(s) saved to the project item map")
     else:
         filename = f"survey-{template['Study']['TaskName']}.json"
     template = strip_template_editor_internal_keys(template)
     i18n = template.get("I18n") or {}
-    return {
+    payload = {
         "template": template,
         "suggested_filename": filename,
         "item_count": len([key for key in template if key not in TEMPLATE_SECTIONS]),
         "languages": i18n.get("Languages") or [lang for lang in [(template.get("Technical") or {}).get("Language")] if lang],
         "library_match": public_library_match(match),
         "notes": list(notes),
-        "item_map": item_map,
+        "item_map": None,
+        "_item_map_pending": pending,
     }
+    if store_map:
+        store_library_item_map(payload, project_path)
+    return payload

@@ -94,3 +94,33 @@ def test_converting_with_the_imported_codes_works_after_the_import(library):
 
     finish_import(_template(), "ADS", str(library), use_library=True)
     assert item_map.item_alias_map(str(library)) == {"ADS1_1": "ads_01", "ADS1_2": "ads_02"}
+
+
+def _cli_import(project, out, select):
+    from src.cli.commands.survey import cmd_survey_import_limesurvey
+
+    cmd_survey_import_limesurvey(SimpleNamespace(
+        input=str(FIXTURE_LSS), split="group", list=False, select=select, output=str(out),
+        project=str(project), use_library=True, name=None))
+
+
+def test_cli_failure_on_a_later_key_leaves_no_item_map(library, tmp_path):
+    with pytest.raises(SystemExit):
+        _cli_import(library, tmp_path / "out", ["g30", "g20"])  # g20 has no library match
+    assert not (library / "code" / "item_maps").exists()
+    assert not (tmp_path / "out").exists() or not list((tmp_path / "out").iterdir())
+
+
+def test_cli_existing_target_leaves_no_item_map(library, tmp_path):
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "survey-ads.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit):
+        _cli_import(library, out, ["g30"])
+    assert not (library / "code" / "item_maps").exists()
+
+
+def test_cli_success_writes_the_maps_after_the_templates(library, tmp_path):
+    _cli_import(library, tmp_path / "out", ["g30"])
+    assert (tmp_path / "out" / "survey-ads.json").exists()
+    assert (library / "code" / "item_maps" / "ads.json").exists()

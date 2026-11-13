@@ -570,7 +570,7 @@ def cmd_survey_import_limesurvey(args):
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
-    from src.converters.template_import import finish_import
+    from src.converters.template_import import finish_import, store_library_item_map
 
     input_path = Path(args.input).resolve()
     project_path = getattr(args, "project", None)
@@ -597,13 +597,18 @@ def cmd_survey_import_limesurvey(args):
         out_dir = Path(args.output).resolve()
         # Resolve every key first so a failure leaves nothing half written.
         planned = []  # (target, template)
+        payloads = []
         for key in keys:
             template, notes = limesurvey_questionnaire(xml, key, args.split)
             payload = finish_import(
-                template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name
+                template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name,
+                store_map=False,
             )
+            payloads.append(payload)
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
+        for payload in payloads:  # only now: a failure above leaves no item map behind
+            store_library_item_map(payload, project_path)
     except (OSError, ValueError) as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
