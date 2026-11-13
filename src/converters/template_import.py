@@ -11,7 +11,7 @@ import unicodedata
 from pathlib import Path
 
 from src.converters.library_wording_match import apply_library_template, public_library_match
-from src.item_map import save_item_map, template_items
+from src.item_map import check_item_map, load_item_map, save_item_map, template_items
 from src.utils.naming import sanitize_task_name
 from src.prism_template_validation import strip_template_editor_internal_keys
 
@@ -51,19 +51,36 @@ def match_questionnaire_to_library(template, name, project_path=None):
     return match
 
 
+def check_library_item_map(payload, project_path):
+    """``(task, merged map)`` a ``use_library`` payload would save: the project's existing map for the
+    task plus the survey's pairs (new wins per item). Raises ItemMapError (a ValueError) if invalid.
+    ``None`` when the payload has nothing pending."""
+    pending = payload.get("_item_map_pending")
+    if not pending:
+        return None
+    merged = {**load_item_map(project_path, pending["task"]), **pending["mapping"]}
+    check_item_map(template_items(payload["template"]), merged)
+    return pending["task"], merged
+
+
 def store_library_item_map(payload, project_path):
     """Save the pending item map a ``use_library`` payload carries; returns (and sets) ``payload["item_map"]``.
 
     The one place that writes ``code/item_maps/<task>.json`` for an adopted library template.
     """
+    checked = check_library_item_map(payload, project_path)
     pending = payload.pop("_item_map_pending", None)
-    if pending:
-        saved = save_item_map(project_path, pending["task"], pending["mapping"], template_items(payload["template"]))
+    if checked:
+        task, merged = checked
+        saved = save_item_map(project_path, task, merged, template_items(payload["template"]))
         if saved:
             payload["item_map"] = {
-                "task": pending["task"], "path": Path(saved).relative_to(project_path).as_posix(),
+                "task": task, "path": Path(saved).relative_to(project_path).as_posix(),
                 "entries": len(pending["mapping"]),
             }
+        match = payload["library_match"]
+        print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
+              f"{len(pending['mapping'])} item code(s) saved to the project item map")
     return payload["item_map"]
 
 
@@ -102,8 +119,6 @@ def finish_import(template, name, project_path=None, use_library=False, notes=()
         mapping = {lib: imp for imp, lib in match["id_map"].items() if imp != lib}
         if mapping:
             pending = {"task": task, "mapping": mapping}
-        print(f"[PRISM] Using library template '{match['template_key']}' ({match['source']}): "
-              f"{len(mapping)} item code(s) saved to the project item map")
     else:
         filename = f"survey-{template['Study']['TaskName']}.json"
     template = strip_template_editor_internal_keys(template)

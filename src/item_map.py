@@ -118,10 +118,8 @@ def load_item_map(project_path: str | Path, task: str) -> dict[str, str]:
     return _read(path) if path.is_file() else {}
 
 
-def save_item_map(
-    project_path: str | Path, task: str, mapping: Mapping[str, str], items: list[str]
-) -> Path | None:
-    path = map_path(project_path, task)
+def check_item_map(items: list[str], mapping: Mapping[str, str]) -> dict[str, str]:
+    """The cleaned ``{item: column}`` (blanks dropped, item == column dropped); ItemMapError if invalid."""
     clean = {k: v.strip() for k, v in mapping.items() if isinstance(v, str) and v.strip()}
     unknown = [k for k in clean if k not in items]
     if unknown:
@@ -130,7 +128,14 @@ def save_item_map(
     twice = sorted({c for c in columns if columns.count(c) > 1})
     if twice:
         raise ItemMapError(f"Column used for more than one item: {', '.join(twice)}")
-    clean = {k: v for k, v in clean.items() if k != v}
+    return {k: v for k, v in clean.items() if k != v}
+
+
+def save_item_map(
+    project_path: str | Path, task: str, mapping: Mapping[str, str], items: list[str]
+) -> Path | None:
+    path = map_path(project_path, task)
+    clean = check_item_map(items, mapping)
     if not clean:
         path.unlink(missing_ok=True)
         return None

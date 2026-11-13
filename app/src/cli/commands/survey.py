@@ -570,7 +570,11 @@ def cmd_survey_import_limesurvey(args):
         list_limesurvey_questionnaires,
         read_lss_xml,
     )
-    from src.converters.template_import import finish_import, store_library_item_map
+    from src.converters.template_import import (
+        check_library_item_map,
+        finish_import,
+        store_library_item_map,
+    )
 
     input_path = Path(args.input).resolve()
     project_path = getattr(args, "project", None)
@@ -604,6 +608,7 @@ def cmd_survey_import_limesurvey(args):
                 template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name,
                 store_map=False,
             )
+            check_library_item_map(payload, project_path)  # an invalid merged map fails before any write
             payloads.append(payload)
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)

@@ -124,3 +124,75 @@ def test_cli_success_writes_the_maps_after_the_templates(library, tmp_path):
     _cli_import(library, tmp_path / "out", ["g30"])
     assert (tmp_path / "out" / "survey-ads.json").exists()
     assert (library / "code" / "item_maps" / "ads.json").exists()
+
+
+def _seed(project, mapping):
+    path = project / "code" / "item_maps" / "ads.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(mapping), encoding="utf-8")
+    return path
+
+
+def test_an_existing_map_is_merged_not_replaced(tmp_path, monkeypatch):
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: tmp_path)
+    project = tmp_path / "p"
+    library_file(project / "code" / "library" / "survey", texts=ADS, levels=ADS_LEVELS,
+                 codes=["ads_01", "ads_02", "ads_03"][:2])
+    path = _seed(project, {"ads_02": "OLD", "ads_01": "KEEP"})
+    finish_import(_template(), "ADS", str(project), use_library=True)
+    assert json.loads(path.read_text(encoding="utf-8")) == {"ads_02": "ADS1_2", "ads_01": "ADS1_1"}
+
+
+def test_other_entries_of_an_existing_map_survive(library):
+    path = _seed(library, {"ads_99": "X99"})
+    # ads_99 is not an item of the template: the merged map is refused, not silently dropped
+    with pytest.raises(ValueError, match="ads_99"):
+        finish_import(_template(), "ADS", str(library), use_library=True)
+    assert json.loads(path.read_text(encoding="utf-8")) == {"ads_99": "X99"}
+
+
+def test_other_item_entries_survive_when_the_template_has_them(tmp_path, monkeypatch):
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: tmp_path)
+    project = tmp_path / "p"
+    library_file(project / "code" / "library" / "survey", texts=ADS + ["war ich froh"],
+                 levels=ADS_LEVELS, codes=["ads_01", "ads_02", "ads_03"])
+    path = _seed(project, {"ads_03": "F3"})
+    from src.converters.template_import import store_library_item_map
+    payload = {"template": {"ads_01": {}, "ads_02": {}, "ads_03": {}},
+               "item_map": None, "library_match": {"template_key": "ads", "source": "project"},
+               "_item_map_pending": {"task": "ads", "mapping": {"ads_01": "A1"}}}
+    store_library_item_map(payload, str(project))
+    assert json.loads(path.read_text(encoding="utf-8")) == {"ads_03": "F3", "ads_01": "A1"}
+
+
+def test_the_print_comes_after_the_write(library, capsys):
+    finish_import(_template(), "ADS", str(library), use_library=True, store_map=False)
+    assert "saved to the project item map" not in capsys.readouterr().out
+    finish_import(_template(), "ADS", str(library), use_library=True)
+    assert "2 item code(s) saved to the project item map" in capsys.readouterr().out
+
+
+def test_studio_and_cli_merge_identically(library, tmp_path):
+    _seed(library, {"ads_01": "OLD"})
+    studio_project = tmp_path / "studio_project"
+    shutil.copytree(library, studio_project)
+    _cli_import(library, tmp_path / "out", ["g30"])
+    resp = _client().post(
+        "/api/template-editor/import-limesurvey", content_type="multipart/form-data",
+        data={"file": (FIXTURE_LSS.open("rb"), "s.lss"), "split": "group", "key": "g30",
+              "project_path": str(studio_project), "use_library": "1"})
+    assert resp.status_code == 200
+    assert _tree(library) == _tree(studio_project)
+
+
+def test_cli_collision_with_an_existing_map_fails_in_planning(tmp_path, monkeypatch):
+    monkeypatch.setattr(st, "_load_global_library_path", lambda: tmp_path)
+    project = tmp_path / "p"
+    library_file(project / "code" / "library" / "survey", texts=ADS, levels=ADS_LEVELS, codes=["ADS1_1", "ads_02"])
+    path = _seed(project, {"ADS1_1": "ADS1_2"})  # the column the new pair ads_02 -> ADS1_2 needs
+    out = tmp_path / "out"
+    with pytest.raises(SystemExit) as exc:
+        _cli_import(project, out, ["g30"])
+    assert exc.value.code == 1
+    assert not out.exists() or not list(out.iterdir())
+    assert json.loads(path.read_text(encoding="utf-8")) == {"ADS1_1": "ADS1_2"}
