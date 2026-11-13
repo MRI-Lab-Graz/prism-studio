@@ -1,6 +1,7 @@
 import { fetchWithApiFallback } from '../../shared/api.js';
 
 export function createSurveyWorkflowPreviewController({
+    openItemMapDialog,
     convertError,
     convertInfo,
     surveyVersionWizardApplyBtn,
@@ -389,6 +390,7 @@ export function createSurveyWorkflowPreviewController({
                 if (data.conversion_summary) {
                     setSurveyPreviewSelectionState(previewSurveyTasks, previewContextKey);
                     displayConversionSummary(data.conversion_summary);
+                    if (data.conversion_summary.unknown_columns?.length > 0) openItemMapDialog();
                     if (Array.isArray(data.conversion_summary.unmatched_groups)) {
                         displayUnmatchedTemplatesCard(data.conversion_summary.unmatched_groups);
                     }
@@ -875,6 +877,7 @@ export function createSurveyWorkflowPreviewController({
                 convertError.textContent = enrichedMessage;
                 convertError.classList.remove('d-none');
                 setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
+                openItemMapDialog();
             })
             .finally(() => {
                 setIsPreviewRunning(false);
