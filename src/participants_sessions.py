@@ -295,6 +295,7 @@ def _outcomes(
     warnings: list[str] = []
     assigned = res[res["session"].notna()]
     clash = assigned[assigned.duplicated(["participant", "session"], keep=False)]
+    res["clash"] = res.index.isin(clash.index)  # the review table paints these rows red
     if not clash.empty:
         lines = [
             f"ID {pid}: session {label!r} on responses {', '.join(group['response_id'])}"
@@ -436,6 +437,7 @@ def session_assignment_table(
             "session": r["session"],
             "number": r["number"] if pd.notna(r["number"]) else None,
             "reason": r["reason"],
+            "clash": bool(r["clash"]),
         }
         for _, r in res.sort_values(["participant", "when"], kind="stable").iterrows()
     ]

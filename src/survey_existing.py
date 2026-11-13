@@ -11,6 +11,7 @@ Session labels are compared as exact strings (never normalized).
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 FINGERPRINT_COLUMNS = ("startdate", "seed", "token")
@@ -77,6 +78,38 @@ def record_imports(
         json.dumps({"version": 1, "responses": responses, "seen": all_seen}, indent=2) + "\n",
         encoding="utf-8",
     )
+
+
+def forget_imports(
+    project_root: str | Path,
+    *,
+    subject: str | None = None,
+    session: str | None = None,
+    survey_id: str = "default",
+    responses=(),
+) -> dict:
+    """Take imports out of the ledger so a re-import treats them as new: the (subject[, session])
+    slots, and the ``seen`` responses (by response id, in ``survey_id``). Files are not touched."""
+    data = _read_ledger(project_root)
+    slots = _load_ledger(project_root)
+    forgotten: dict = {"slots": [], "seen": []}
+    for sub in [subject] if subject in slots else []:
+        for ses in [session] if session else list(slots[sub]):
+            if slots[sub].pop(ses, None) is not None:
+                forgotten["slots"].append((sub, ses))
+        if not slots[sub]:
+            del slots[sub]
+    seen = data.get("seen") if isinstance(data.get("seen"), dict) else {}
+    for response_id in responses:
+        if (seen.get(survey_id) or {}).pop(str(response_id), None) is not None:
+            forgotten["seen"].append(str(response_id))
+    if not (forgotten["slots"] or forgotten["seen"]):
+        return forgotten
+    path = Path(project_root) / LEDGER
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({"version": 1, "responses": slots, "seen": seen}, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return forgotten
 
 
 class ImportIndex:

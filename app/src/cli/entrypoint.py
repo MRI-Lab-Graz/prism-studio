@@ -92,6 +92,7 @@ from src.cli.commands.datalad import (
     cmd_datalad_update,
 )
 from src.cli.commands.sessions import (
+    cmd_sessions_forget_import,
     cmd_sessions_review,
     cmd_sessions_set,
     cmd_sessions_unset,
@@ -321,6 +322,7 @@ def main() -> None:
             "sessions_review": cmd_sessions_review,
             "sessions_set": cmd_sessions_set,
             "sessions_unset": cmd_sessions_unset,
+            "sessions_forget-import": cmd_sessions_forget_import,
             "publish": cmd_publish,
             "save_gate": cmd_save_gate,
             "merge_versions": cmd_merge_versions,

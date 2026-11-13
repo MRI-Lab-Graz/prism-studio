@@ -107,3 +107,19 @@ def test_set_include_takes_an_incomplete_response_into_the_numbering(tmp_path):
                               "--project", str(project), "--json").stdout)
     row = {r["response_id"]: r for r in payload["rows"]}["1"]
     assert (row["session"], row["reason"]) == ("1", "included")
+
+
+def test_forget_import_clears_the_ledger_and_lists_the_folders_left_to_delete(tmp_path):
+    from src.survey_existing import record_imports
+
+    project = _project(tmp_path)
+    record_imports(project, project, [("sub-1", "ses-1", ("a",)), ("sub-1", "ses-2", ("b",))], seen={"4": ["", "5"]}, survey_id="9")
+    (project / "sub-1" / "ses-1").mkdir(parents=True)
+
+    result = _run("forget-import", "--project", str(project), "--subject", "sub-1", "--survey", "9", "--response", "4")
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "sub-1/ses-1" in result.stdout and "delete" in result.stdout.lower()
+    ledger = json.loads((project / "code" / "survey_imports.json").read_text(encoding="utf-8"))
+    assert ledger["responses"] == {} and ledger["seen"] == {"9": {}}
+    assert _run("forget-import", "--project", str(project)).returncode == 2  # nothing to forget named

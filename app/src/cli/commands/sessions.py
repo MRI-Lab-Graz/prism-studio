@@ -77,3 +77,21 @@ def cmd_sessions_unset(args) -> None:
     except (ValueError, OSError) as exc:
         _fail(exc)
     print(f"Response {args.response} (survey {args.survey}): decision removed (automatic rule applies)")
+
+
+def cmd_sessions_forget_import(args) -> None:
+    from src.survey_existing import forget_imports
+
+    if not (args.subject or args.response):
+        _fail(ValueError("Name what to forget: --subject (with optional --session) and/or --response"))
+    root = Path(args.project).expanduser()
+    root = root.parent if root.is_file() else root
+    forgotten = forget_imports(
+        root, subject=args.subject, session=args.session, survey_id=args.survey, responses=args.response
+    )
+    for sub, ses in forgotten["slots"]:
+        print(f"Forgot {sub}/{ses}" + (f"; delete its folder by hand: {sub}/{ses}" if any(root.glob(f"**/{sub}/{ses}")) else ""))
+    for response_id in forgotten["seen"]:
+        print(f"Forgot reviewed response {response_id} (survey {args.survey})")
+    if not (forgotten["slots"] or forgotten["seen"]):
+        print("Nothing in the ledger matched.")
