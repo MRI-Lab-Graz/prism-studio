@@ -23,7 +23,7 @@ def _run(action):
         return jsonify({"error": "No survey file uploaded"}), 400
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / ("upload" + Path(upload.filename).suffix)
+            path = Path(tmp) / Path(upload.filename).name
             upload.save(path)
             return jsonify(action(root, item_map.read_survey_columns(path), upload.filename))
     except (OSError, ValueError) as exc:  # ItemMapError is a ValueError

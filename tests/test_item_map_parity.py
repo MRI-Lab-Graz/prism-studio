@@ -96,9 +96,11 @@ def test_a_corrupt_xlsx_is_an_error_in_both(setup, capsys):
     bad.write_text("not a zip", encoding="utf-8")
     with pytest.raises(SystemExit):
         _cli(cli, bad)
-    assert "bad.xlsx" in capsys.readouterr().out
+    cli_out = capsys.readouterr().out
+    assert "bad.xlsx" in cli_out
     resp = _post(http, "/api/item-map/suggest", bad, studio)
-    assert resp.status_code == 400 and "Failed to read Excel file" in resp.get_json()["error"]
+    assert resp.status_code == 400 and "bad.xlsx" in resp.get_json()["error"]
+    assert cli_out == f"Error: {resp.get_json()['error']}\n"
 
 
 def test_an_unexpected_reader_error_becomes_an_item_map_error(tmp_path, monkeypatch):
