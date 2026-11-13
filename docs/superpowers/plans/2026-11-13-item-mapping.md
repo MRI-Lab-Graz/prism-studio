@@ -18,7 +18,7 @@
 - File: `code/item_maps/<task>.json`, content `{"<template item>": "<file column>", ...}`. Plain git, never annexed.
 - `<task>` is validated with `re.fullmatch(r"[A-Za-z0-9]+", task)` before it becomes a file name.
 - The files are untrusted project data: an invalid file is skipped and reported (`[PRISM] WARNING ...`), never a crash.
-- An explicit `--alias` file wins over a stored map.
+- (Superseded by Task 7: the `--alias` file is removed; the stored map is the only item-name mapping.)
 - TDD for every task: write the test, watch it fail, then implement. Import the module as `src.item_map`, no copy under `app/src/`.
 - Before merge: `/ponytail:ponytail-audit`, `/code-review`, `/security-review` (the feature reads project data), then re-run the tests.
 - Work on branch `feat/item-map` in a worktree (`superpowers:using-git-worktrees`).
@@ -291,8 +291,48 @@ assert.deepEqual(unmappedItems(rows), ['ADS02']);
 
 ---
 
-### Task 6: Finish the branch
+### Task 6: "Use library template" saves the project item map (instead of writing `Aliases`)
 
-- [ ] Run `python -m pytest tests -q -k "item_map or survey or cli or parity or repo or symlink or dual_tree"` and `python tests/verify_repo.py --check dual-tree-drift --no-fix`; quote the result.
+Decision (user, 2026-11-13): one item has exactly one file column (format stays `{item: column}`, no lists); the project item map replaces `Aliases` in the template and the `--alias` file.
+
+**Files:**
+- Modify: `src/converters/library_wording_match.py` (`apply_library_template`), `src/converters/template_import.py` (`finish_import`)
+- Modify: texts that say "kept as Aliases": `app/src/cli/parser.py` (`--use-library` help), `finish_import`'s print line, `app/static/js/template-editor/library-match-card.js`, `docs/LIMESURVEY_INTEGRATION.md` (~line 289), `docs/TEMPLATES.md`
+- Test: `tests/test_template_import_pipeline.py` (existing use-library tests: update), `tests/test_item_map_library.py`, parity test
+
+**Interfaces:**
+- Consumes: `save_item_map(project_path, task, mapping, items)`, `template_items(template)` from `src/item_map.py`; `match["id_map"]` = `{imported_code: library_code}`.
+- Produces: `apply_library_template(match)` returns the library template UNCHANGED (a copy, no `Aliases` added); `finish_import(..., use_library=True, project_path=...)` additionally saves `code/item_maps/<task>.json` = `{library_code: imported_code}` for every pair where the codes differ, `<task>` = the library template's `Study.TaskName`; payload gets `"item_map": {"task": str, "path": str, "entries": int} | None` (None when no code differed; nothing written then).
+
+- [ ] **Step 1: Write the failing tests.** (a) `apply_library_template` result has no `Aliases` key on any item; (b) `finish_import` with `use_library=True` and a project writes `code/item_maps/ads.json == {"ADS_01": "A01", ...}` (library code -> imported code) and reports it in `payload["item_map"]`; (c) identical codes write no file and `item_map` is None; (d) `use_library=True` without a `project_path` raises `ValueError` saying a project is needed to store the item names; (e) Studio route `POST /api/template-editor/import-limesurvey` with `use_library=1` and `project_path` and the CLI `survey import-limesurvey --select KEY --use-library --project P --output D` leave identical project trees and identical template files (parity); (f) converting a survey file that uses the imported codes into the project then succeeds (the map is applied by Task 2).
+- [ ] **Step 2: Run** them; expected FAIL.
+- [ ] **Step 3: Implement.** Remove the `Aliases` writing from `apply_library_template`; in `finish_import`, after adopting, build the map and call `save_item_map` (one place, so CLI and Studio share it). Template task name: `template["Study"]["TaskName"]`; if a library template has none, derive it with `task_name(...)` from the library file stem and say so in a code comment. Update the printed line to `Using library template '<key>' (<source>): <n> item code(s) saved to the project item map`, the match card text and the docs. Existing templates that already contain `Aliases` keep working: matching still reads them (do not touch the reading code, the schema is vendored).
+- [ ] **Step 4: Run** `python -m pytest tests/test_template_import_pipeline.py tests/test_item_map_library.py tests/test_library_wording_match.py tests/test_cli_studio_parity.py -q` and the template-editor JS tests; expected PASS.
+- [ ] **Step 5: Commit** `feat(item-map): using a library template saves the project item map, not Aliases`
+
+---
+
+### Task 7: Remove the `--alias` file (the project item map is the only way)
+
+**Files:**
+- Modify: `app/src/cli/parser.py` (`--alias`), `app/src/cli/commands/survey.py` (`alias_file=`), `src/survey_workflow_service.py` (`alias_file`), `app/src/converters/survey.py` and `app/src/converters/survey_core.py` (`alias_file` parameters, `_read_alias_rows`, `_build_alias_map`, `_build_canonical_aliases`, `_apply_alias_file_to_dataframe`, the `alias_file` branch of `_load_survey_aliases_and_templates`), `src/survey_input_checks.py` (`alias_file=None` arguments), the Flask handlers `conversion_survey_preview_handlers.py`, `conversion_survey_convert_handlers.py`, `conversion_survey_convert_validate_handlers.py` (the `alias` upload and `alias_file=alias_path`), `docs/CLI_REFERENCE.md`, `docs/RELEASE_*`/CHANGELOG
+- Test: delete or rewrite `tests/test_survey_alias_template_loading.py`, `tests/test_survey_convert_options_parity.py` (remove the `alias_file`/`alias` pair), the "explicit alias wins" test in `tests/test_item_map_conversion.py`; add `tests/test_alias_file_removed.py`
+
+**Interfaces:**
+- Consumes: `item_alias_map(project_path)` (Task 1).
+- Produces: the converter's alias map is exactly `item_alias_map(project_path)` (empty without a project). `survey convert --alias` no longer exists (argparse error `unrecognized arguments`); the Flask routes ignore no field silently: a request that still sends `alias` gets HTTP 400 `{"error": "The alias file is gone; use the project item map (survey item-map)"}` (same text from the CLI for the removed flag is not needed, argparse's error is enough).
+- Reading `Aliases`/`AliasOf` that already sit inside a template (`_reverse_aliases`, `AliasOf`) stays: templates and the schema are vendored, 0 official templates use them, user templates may.
+
+- [ ] **Step 1: Write the failing tests.** (a) `parse_args(["survey","convert",...,"--alias","x.tsv"])` exits with an argparse error; (b) `POST /api/survey-convert` (use the real route names found in the handlers) with an `alias` file returns 400 with the sentence above and writes nothing; (c) a conversion with a stored map still works and the converter has no `alias_file` parameter (`inspect.signature` of `convert_survey_xlsx_to_prism_dataset` and `SurveyWorkflowService` options has none); (d) a template that carries `Aliases` inside still matches its aliased columns (guard for the reading code that stays).
+- [ ] **Step 2: Run** them; expected FAIL.
+- [ ] **Step 3: Delete the alias-file code listed under Files**, trace every caller with `grep -rn "alias_file\|_apply_alias_file\|_read_alias_rows\|_build_alias_map\|_build_canonical_aliases" src app tests`, and keep `_apply_alias_map_to_dataframe` (the stored map still uses it). In `_convert_survey_dataframe_to_prism_dataset` the line becomes `alias_map = item_alias_map(project_path) if project_path else None`. Remove the now-dead tests; do not leave a deprecated stub.
+- [ ] **Step 4: Run** `python -m pytest tests -q -k "survey or alias or item_map or cli or parity"` and `python tests/verify_repo.py --check dual-tree-drift --no-fix`; expected PASS; quote the result.
+- [ ] **Step 5: Commit** `refactor(item-map)!: remove the --alias file, the project item map replaces it`
+
+---
+
+### Task 8: Finish the branch
+
+- [ ] Run `python -m pytest tests -q -k "item_map or survey or cli or parity or repo or symlink or dual_tree or template"` and the converter/template-editor JS tests; quote the result. The e2e failures seen so far are environmental: every accessibility test fails on main too (`node_modules/axe-core` missing); `test_converter_participants_flows.py::test_merge_without_conflicts_adds_new_people_and_columns_but_keeps_existing_values` fails on main as well. State that in the merge notes; do not claim e2e green.
 - [ ] `/ponytail:ponytail-audit`, `/code-review`, `/security-review` on the branch; apply what is worth it; re-run the tests.
-- [ ] Add a CHANGELOG entry; `superpowers:finishing-a-development-branch`.
+- [ ] Browser check of the dialog and of "Use library template" by the user (not run by any agent); CHANGELOG entry (breaking: `--alias` removed); `superpowers:finishing-a-development-branch`. No merge or push without the user's go-ahead.

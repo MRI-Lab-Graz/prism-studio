@@ -55,3 +55,8 @@ survey, guessed by Studio, checked by the user, **stored in the project and neve
 ## Left to the builder
 - Exact CLI flag names; where the converter page decides "columns do not fit"; wording of the dialog.
 - Whether a "shift all by 1" button is worth adding (not in this change).
+
+## Revision 2026-11-13 (user decisions)
+- One item has exactly one file column; the format stays `{item: column}` (no lists): each template item is unique.
+- The project item map **replaces** `Aliases` in the template and the `--alias` file: "Use library template" saves the project map instead of writing `Aliases` into the template (plan Task 6); the `--alias` file is removed (Task 7). Reading `Aliases`/`AliasOf` already inside a template stays (vendored schema, 0 official templates use them); removing them from the schema is a prism-specification change.
+- Open for the user, not decided here: `Study.Subscales` and a top-level `Scoring` section are still allowed by the template schema although subscales belong to the recipe (also a prism-specification change).
