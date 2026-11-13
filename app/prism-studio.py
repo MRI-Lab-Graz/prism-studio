@@ -738,6 +738,11 @@ modular_blueprints = [
         "session_map",
     ),
     (
+        "src.web.blueprints.item_map_blueprint",
+        "item_map_bp",
+        "item_map",
+    ),
+    (
         "src.web.blueprints.session_assignments_blueprint",
         "session_assignments_bp",
         "session_assignments",

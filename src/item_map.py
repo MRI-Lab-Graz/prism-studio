@@ -164,7 +164,12 @@ def read_survey_columns(path: str | Path) -> list[str]:
     kind = {".xlsx": "xlsx", ".csv": "csv", ".tsv": "tsv", ".lsa": "lsa"}.get(path.suffix.lower())
     if kind is None:
         raise ItemMapError("Supported formats: .xlsx, .csv, .tsv, .lsa")
-    df = _read_table_as_dataframe(input_path=path, kind=kind)
+    try:
+        df = _read_table_as_dataframe(input_path=path, kind=kind)
+    except (OSError, ValueError):
+        raise
+    except Exception as exc:  # e.g. zipfile.BadZipFile for a corrupt .xlsx/.lsa
+        raise ItemMapError(f"Cannot read {path.name}: {exc}") from exc
     if isinstance(df, tuple):  # .lsa: (dataframe, questions_map)
         df = df[0]
     return [str(c) for c in df.columns]
