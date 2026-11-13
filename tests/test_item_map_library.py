@@ -10,6 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_library_wording_match import library_file  # noqa: E402
+from test_cli_studio_parity_survey import _tree  # noqa: E402
 from test_template_import_pipeline import ADS, ADS_LEVELS, FIXTURE_LSS, _client, _template  # noqa: E402
 
 from src.converters import survey_templates as st  # noqa: E402
@@ -25,10 +26,6 @@ def library(tmp_path, monkeypatch):
     monkeypatch.setattr(st, "_load_global_library_path", lambda: global_dir)
     library_file(project / "code" / "library" / "survey", texts=ADS, levels=ADS_LEVELS)
     return project
-
-
-def _tree(root: Path) -> dict[str, str]:
-    return {p.relative_to(root).as_posix(): p.read_text(encoding="utf-8") for p in sorted(root.rglob("*")) if p.is_file()}
 
 
 def test_apply_library_template_adds_no_aliases(library):
@@ -137,7 +134,7 @@ def test_an_existing_map_is_merged_not_replaced(tmp_path, monkeypatch):
     monkeypatch.setattr(st, "_load_global_library_path", lambda: tmp_path)
     project = tmp_path / "p"
     library_file(project / "code" / "library" / "survey", texts=ADS, levels=ADS_LEVELS,
-                 codes=["ads_01", "ads_02", "ads_03"][:2])
+                 codes=["ads_01", "ads_02"])
     path = _seed(project, {"ads_02": "OLD", "ads_01": "KEEP"})
     finish_import(_template(), "ADS", str(project), use_library=True)
     assert json.loads(path.read_text(encoding="utf-8")) == {"ads_02": "ADS1_2", "ads_01": "ADS1_1"}

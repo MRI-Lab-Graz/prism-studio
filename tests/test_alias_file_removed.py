@@ -1,5 +1,6 @@
 """The --alias file is gone: the project item map (code/item_maps) is the only item-name mapping."""
 
+import dataclasses
 import inspect
 import io
 import sys
@@ -35,7 +36,7 @@ def test_no_converter_function_takes_alias_file():
     for fn in (survey_module.convert_survey_lsa_to_prism_dataset, survey_module.convert_survey_file_to_prism_dataset,
                survey_core._load_survey_aliases_and_templates):
         assert "alias_file" not in inspect.signature(fn).parameters, fn.__name__
-    assert "alias_file" not in {f.name for f in __import__("dataclasses").fields(SurveyWorkflowStageOptions)}
+    assert "alias_file" not in {f.name for f in dataclasses.fields(SurveyWorkflowStageOptions)}
     for gone in ("_read_alias_rows", "_build_alias_map", "_build_canonical_aliases", "_apply_alias_file_to_dataframe", "_canonicalize_template_items"):
         assert not hasattr(survey_core, gone)
 

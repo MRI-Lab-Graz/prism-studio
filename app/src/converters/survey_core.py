@@ -381,7 +381,7 @@ def get_allowed_values(col_def: Any) -> Optional[List[str]]:
 
 
 @dataclass(frozen=True)
-class SurveyAliasesAndTemplates:
+class SurveyTemplates:
     participant_template: Optional[dict]
     participant_columns_lower: Set[str]
     templates: Dict[str, dict]
@@ -395,8 +395,8 @@ def _load_survey_aliases_and_templates(
     participants_converter,
     library_dir: Path,
     load_and_preprocess_templates_fn,
-) -> SurveyAliasesAndTemplates:
-    """Load alias mappings and survey/participant templates for conversion.
+) -> SurveyTemplates:
+    """Load the survey and participant templates for conversion.
 
     Raises ValueError if duplicate item IDs are found across templates.
     """
@@ -433,7 +433,7 @@ def _load_survey_aliases_and_templates(
             msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
         raise ValueError("\n".join(msg_lines))
 
-    return SurveyAliasesAndTemplates(
+    return SurveyTemplates(
         participant_template=participant_template,
         participant_columns_lower=participant_columns_lower,
         templates=templates,

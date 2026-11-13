@@ -75,5 +75,5 @@ def test_duplicate_item_ids_raise_value_error(tmp_path):
         _load_survey_aliases_and_templates(
             participants_converter=_FakeParticipantsConverter(),
             library_dir=tmp_path,
-                load_and_preprocess_templates_fn=_loader_with_duplicates,
+            load_and_preprocess_templates_fn=_loader_with_duplicates,
         )

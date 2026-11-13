@@ -12,11 +12,6 @@ export function columnsFor(item, rows, columns) {
     return columns.filter((column) => !taken.has(column));
 }
 
-export function unusedColumns(rows, columns) {
-    const taken = used(rows);
-    return columns.filter((column) => !taken.has(column));
-}
-
 export function choicesToSend(rows) {
     return Object.fromEntries(rows.map((row) => [row.item, row.column || '']));
 }
@@ -25,7 +20,6 @@ export function unmappedItems(rows) {
     return rows.filter((row) => !row.column).map((row) => row.item);
 }
 
-const INTRO = 'Your file has different item names than the template. Check the guess below. It is saved for this project only (the template is not changed) and used for every later import of this survey.';
 const WARN_WHY = new Set(['order', 'none']);
 
 /**
@@ -36,8 +30,8 @@ const WARN_WHY = new Set(['order', 'none']);
  */
 export function createItemMapDialog({ root, post }) {
     const part = (role) => root.querySelector(`[data-role="${role}"]`);
-    const [title, intro, taskSelect, rowsEl, unusedEl, unmappedEl, status, cancelBtn, saveBtn] =
-        ['title', 'intro', 'task', 'rows', 'unused', 'unmapped', 'status', 'cancel', 'save'].map(part);
+    const [title, taskSelect, rowsEl, unusedEl, unmappedEl, status, cancelBtn, saveBtn] =
+        ['title', 'task', 'rows', 'unused', 'unmapped', 'status', 'cancel', 'save'].map(part);
     let state = null; // {file, projectPath, task, rows, columns}
     let settle = null;
 
@@ -52,7 +46,6 @@ export function createItemMapDialog({ root, post }) {
     function render() {
         const { rows, columns } = state;
         title.textContent = `Match survey columns to template "${state.task}"`;
-        intro.textContent = INTRO;
         rowsEl.replaceChildren(...rows.map((row) => {
             const line = document.createElement('div');
             line.className = 'input-group input-group-sm mb-1';
@@ -76,7 +69,7 @@ export function createItemMapDialog({ root, post }) {
             line.append(name, select, mark);
             return line;
         }));
-        const free = unusedColumns(rows, columns);
+        const free = columnsFor(null, rows, columns);
         unusedEl.textContent = `Columns not used: ${free.length ? free.join(', ') : '(none)'}`;
         const left = unmappedItems(rows);
         unmappedEl.textContent = left.length ? `Left unmapped: ${left.join(', ')}` : '';
@@ -85,7 +78,7 @@ export function createItemMapDialog({ root, post }) {
 
     async function loadTask(task) {
         const data = await post('/api/item-map/suggest', form({ task }));
-        state.task = data.task || task;
+        state.task = task;
         state.rows = data.rows;
         state.columns = data.columns;
         status.textContent = '';

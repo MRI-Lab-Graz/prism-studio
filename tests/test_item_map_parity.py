@@ -14,13 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 from src.cli.commands.survey import cmd_survey_item_map  # noqa: E402
 from src.web.blueprints.item_map_blueprint import item_map_bp  # noqa: E402
 from tests.template_fixtures import dump_complete  # noqa: E402
+from tests.test_cli_studio_parity_survey import _tree  # noqa: E402
 
 ITEMS = ["ADS01", "ADS02"]
 TEMPLATE = {i: {"Description": {"en": i}, "Levels": {"1": "low", "2": "high"}} for i in ITEMS}
-
-
-def _tree(root: Path) -> dict[str, str]:
-    return {p.relative_to(root).as_posix(): p.read_text(encoding="utf-8") for p in sorted(root.rglob("*")) if p.is_file()}
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { choicesToSend, columnsFor, createItemMapDialog, unmappedItems, unusedColumns } from './item-map-dialog.js';
+import { choicesToSend, columnsFor, createItemMapDialog, unmappedItems } from './item-map-dialog.js';
 
 describe('item map dialog rules', () => {
     const rows = [
@@ -14,8 +14,7 @@ describe('item map dialog rules', () => {
         expect(columnsFor('ADS01', rows, columns)).toEqual(['id', 'A01', 'A02']);
     });
 
-    it('lists unused columns, the choices to send and the unmapped items', () => {
-        expect(unusedColumns(rows, columns)).toEqual(['id', 'A02']);
+    it('lists the choices to send and the unmapped items', () => {
         expect(choicesToSend(rows)).toEqual({ ADS01: 'A01', ADS02: '' });
         expect(unmappedItems(rows)).toEqual(['ADS02']);
     });
