@@ -217,10 +217,14 @@ def apply_choices(
     accept: bool,
 ) -> Path | None:
     """Save the map: the suggestion (with ``accept``) overridden by ``choices``; '' clears a row."""
+    if not accept and not choices:
+        raise ItemMapError("nothing to save: pass accept or at least one choice")
     items = template_items(_project_template(project_path, task))
     chosen = {r["item"]: r["column"] for r in suggest(items, columns, load_item_map(project_path, task))
               if r["column"]} if accept else {}
     chosen.update(choices or {})
+    if not all(isinstance(v, str) for v in chosen.values()):
+        raise ItemMapError("choices values must be column names (text)")
     missing = sorted({c for c in chosen.values() if c and c not in columns})
     if missing:
         raise ItemMapError(f"Not columns of the survey file: {', '.join(missing)}")

@@ -98,7 +98,7 @@ def test_a_corrupt_xlsx_is_an_error_in_both(setup, capsys):
         _cli(cli, bad)
     assert "bad.xlsx" in capsys.readouterr().out
     resp = _post(http, "/api/item-map/suggest", bad, studio)
-    assert resp.status_code == 400 and "bad.xlsx" in resp.get_json()["error"]
+    assert resp.status_code == 400 and "Failed to read Excel file" in resp.get_json()["error"]
 
 
 def test_an_unexpected_reader_error_becomes_an_item_map_error(tmp_path, monkeypatch):
@@ -113,3 +113,43 @@ def test_an_unexpected_reader_error_becomes_an_item_map_error(tmp_path, monkeypa
     monkeypatch.setattr(survey, "_read_table_as_dataframe", boom)
     with pytest.raises(item_map.ItemMapError, match="Cannot read x.xlsx"):
         item_map.read_survey_columns(tmp_path / "x.xlsx")
+
+
+@pytest.mark.parametrize("bad", [["x"], 5, None])
+def test_non_text_choices_are_400_and_write_nothing(setup, bad):
+    from src import item_map
+
+    cli, studio, data, http = setup
+    with pytest.raises(item_map.ItemMapError, match="column names"):
+        item_map.apply_choices(cli, "ads", ["A01"], {"ADS01": bad}, False)
+    resp = _post(http, "/api/item-map", data, studio, task="ads", choices=json.dumps({"ADS01": bad}))
+    assert resp.status_code == 400
+    assert not (studio / "code" / "item_maps").exists() and not (cli / "code" / "item_maps").exists()
+
+
+def test_an_empty_save_does_nothing_and_keeps_an_existing_map(setup):
+    cli, studio, data, http = setup
+    _cli(cli, data, task="ads", accept=True)
+    _post(http, "/api/item-map", data, studio, task="ads", accept="1")
+    before = _tree(studio)
+    for choices in ("{}", ""):
+        resp = _post(http, "/api/item-map", data, studio, task="ads", choices=choices)
+        assert resp.status_code == 400 and "nothing to save" in resp.get_json()["error"]
+    _cli(cli, data, task="ads")  # CLI without accept/set only prints
+    assert _tree(studio) == before == _tree(cli)
+    from src import item_map
+
+    with pytest.raises(item_map.ItemMapError, match="nothing to save"):
+        item_map.apply_choices(cli, "ads", ["A01", "A02"], None, False)
+    assert _tree(cli) == before
+
+
+def test_clearing_every_row_deletes_the_map_the_same_way(setup):
+    cli, studio, data, http = setup
+    _cli(cli, data, task="ads", accept=True)
+    _post(http, "/api/item-map", data, studio, task="ads", accept="1")
+    _cli(cli, data, task="ads", set=["ADS01=", "ADS02="])
+    resp = _post(http, "/api/item-map", data, studio, task="ads", choices=json.dumps({"ADS01": "", "ADS02": ""}))
+    assert resp.get_json() == {"ok": True, "path": None}
+    assert _tree(cli) == _tree(studio)
+    assert "code/item_maps/ads.json" not in _tree(studio)
