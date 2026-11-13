@@ -211,7 +211,6 @@ def cmd_survey_convert(args):
             name=args.name,
             authors=tuple(args.authors or ()),
             language=lang,
-            alias_file=Path(args.alias) if getattr(args, "alias", None) else None,
             id_map_file=Path(args.id_map) if getattr(args, "id_map", None) else None,
             strict_levels=bool(getattr(args, "strict_levels", False)),
             duplicate_handling=getattr(args, "duplicate_handling", "error"),

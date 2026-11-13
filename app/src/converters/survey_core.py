@@ -19,7 +19,7 @@ import unicodedata
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 try:
     from survey_scale_inference import apply_implicit_numeric_level_ranges
@@ -380,68 +380,8 @@ def get_allowed_values(col_def: Any) -> Optional[List[str]]:
 # =============================================================================
 
 
-def _read_alias_rows(path: Path) -> list[list[str]]:
-    rows: list[list[str]] = []
-    with open(path, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            if not line:
-                continue
-            if line.startswith("#"):
-                continue
-            parts = [
-                p.strip() for p in (line.split("\t") if "\t" in line else line.split())
-            ]
-            parts = [p for p in parts if p]
-            if len(parts) < 2:
-                continue
-            rows.append(parts)
-    if rows:
-        first = [p.lower() for p in rows[0]]
-        if first[0] in {"canonical", "canonical_id", "canonicalid", "id"}:
-            rows = rows[1:]
-    return rows
-
-
-def _build_alias_map(rows: Iterable[list[str]]) -> dict[str, str]:
-    """Return mapping alias -> canonical (canonical maps to itself)."""
-    out: dict[str, str] = {}
-    for parts in rows:
-        canonical = str(parts[0]).strip()
-        if not canonical:
-            continue
-        out.setdefault(canonical, canonical)
-        for alias in parts[1:]:
-            a = str(alias).strip()
-            if not a:
-                continue
-            if a in out and out[a] != canonical:
-                raise ValueError(
-                    f"Alias '{a}' maps to multiple canonical IDs: {out[a]} vs {canonical}"
-                )
-            out[a] = canonical
-    return out
-
-
-def _build_canonical_aliases(rows: Iterable[list[str]]) -> dict[str, list[str]]:
-    out: dict[str, list[str]] = {}
-    for parts in rows:
-        canonical = str(parts[0]).strip()
-        if not canonical:
-            continue
-        aliases = [str(p).strip() for p in parts[1:] if str(p).strip()]
-        if not aliases:
-            continue
-        out.setdefault(canonical, [])
-        for a in aliases:
-            if a not in out[canonical]:
-                out[canonical].append(a)
-    return out
-
-
 @dataclass(frozen=True)
 class SurveyAliasesAndTemplates:
-    alias_map: Optional[Dict[str, str]]
     participant_template: Optional[dict]
     participant_columns_lower: Set[str]
     templates: Dict[str, dict]
@@ -454,23 +394,12 @@ def _load_survey_aliases_and_templates(
     *,
     participants_converter,
     library_dir: Path,
-    alias_file,
     load_and_preprocess_templates_fn,
 ) -> SurveyAliasesAndTemplates:
     """Load alias mappings and survey/participant templates for conversion.
 
     Raises ValueError if duplicate item IDs are found across templates.
     """
-    alias_map: Optional[Dict[str, str]] = None
-    canonical_aliases: Optional[Dict[str, List[str]]] = None
-    if alias_file:
-        alias_path = Path(alias_file).resolve()
-        if alias_path.exists() and alias_path.is_file():
-            rows = _read_alias_rows(alias_path)
-            if rows:
-                alias_map = _build_alias_map(rows)
-                canonical_aliases = _build_canonical_aliases(rows)
-
     raw_participant_template = participants_converter.load_template(library_dir)
     participant_template = participants_converter.normalize_template(
         raw_participant_template
@@ -493,7 +422,7 @@ def _load_survey_aliases_and_templates(
     templates, item_to_task, duplicates, template_warnings_by_task = (
         load_and_preprocess_templates_fn(
             library_dir,
-            canonical_aliases,
+            None,
             compare_with_global=True,
         )
     )
@@ -506,7 +435,6 @@ def _load_survey_aliases_and_templates(
         raise ValueError("\n".join(msg_lines))
 
     return SurveyAliasesAndTemplates(
-        alias_map=alias_map,
         participant_template=participant_template,
         participant_columns_lower=participant_columns_lower,
         templates=templates,
@@ -514,20 +442,6 @@ def _load_survey_aliases_and_templates(
         template_warnings_by_task=template_warnings_by_task,
         warnings=warnings,
     )
-
-
-def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
-    """Apply alias mapping to dataframe columns."""
-    path = Path(alias_file).resolve()
-    if not path.exists() or not path.is_file():
-        raise ValueError(f"Alias file not found: {path}")
-
-    rows = _read_alias_rows(path)
-    if not rows:
-        return df
-    alias_map = _build_alias_map(rows)
-
-    return _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
 
 def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":

@@ -256,7 +256,7 @@ def infer_tasks_against_official_templates(
         common = dict(
             input_path=input_path, library_dir=str(survey_official_dir), output_root=Path(tmp_dir) / "preflight_rawdata",
             survey=None, id_column=id_column, session_column=session_column, session=None, unknown="ignore",
-            dry_run=True, force=True, name="template_check", authors=[], language=None, alias_file=None,
+            dry_run=True, force=True, name="template_check", authors=[], language=None,
             id_map_file=None, duplicate_handling=duplicate_handling, skip_participants=True,
             fallback_project_path=project_path, app_root=app_root,
         )
@@ -420,7 +420,7 @@ def detect_version_contexts(
             input_path=input_path, library_dir=str(used_library_dir), output_root=Path(tmp_dir) / "context_rawdata",
             survey=survey, id_column=id_column, session_column=session_column, run_column=run_column,
             session=session_override, unknown="ignore", dry_run=True, force=True, name="version_context", authors=[],
-            language=None, alias_file=None, id_map_file=None, duplicate_handling=duplicate_handling,
+            language=None, id_map_file=None, duplicate_handling=duplicate_handling,
             skip_participants=True, project_path=project_path, template_version_overrides=template_version_overrides,
             allow_near_item_match=allow_near_item_match, near_match_tasks=near_match_tasks,
             task_value_offsets=task_value_offsets,

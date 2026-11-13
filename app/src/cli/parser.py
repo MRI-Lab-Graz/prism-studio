@@ -1252,15 +1252,6 @@ def build_prism_tools_parsers(
         help="Authors written to dataset_description.json (if created)",
     )
     parser_survey_convert.add_argument(
-        "--alias",
-        dest="alias",
-        default=None,
-        help=(
-            "Optional TSV/whitespace alias file: each line is '<canonical_id> <alias1> <alias2> ...'. "
-            "Used to map changing item IDs onto stable canonical IDs before template matching."
-        ),
-    )
-    parser_survey_convert.add_argument(
         "--project",
         dest="project",
         default=None,

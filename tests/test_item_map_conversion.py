@@ -68,16 +68,6 @@ def test_an_entry_for_a_column_the_file_lacks_is_ignored(project):
     assert "ADS01" in _tsv(project)[0].read_text(encoding="utf-8").splitlines()[0]
 
 
-def test_an_explicit_alias_file_wins(project, tmp_path):
-    save_item_map(project, "ads", {"ADS01": "A01"}, ITEMS)
-    alias = tmp_path / "alias.tsv"
-    alias.write_text("ADS02\tA01\n", encoding="utf-8")
-    _convert(project, alias_file=alias)
-    rows = [l.split("\t") for l in _tsv(project)[0].read_text(encoding="utf-8").splitlines()]
-    first = dict(zip(rows[0], rows[1]))
-    assert first["ADS02"] == "1" and first["ADS01"] in ("", "n/a")  # A01 went to ADS02, not ADS01
-
-
 def test_two_tasks_claiming_one_column_stops_the_conversion(project):
     save_item_map(project, "ads", {"ADS01": "X1"}, ITEMS)
     save_item_map(project, "other", {"OT01": "X1"}, ["OT01"])

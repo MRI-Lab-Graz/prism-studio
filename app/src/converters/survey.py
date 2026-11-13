@@ -68,10 +68,6 @@ from .survey_core import (
     _build_bids_survey_filename,
     _determine_task_runs,
     _resolve_existing_project_root,
-    _read_alias_rows,
-    _build_alias_map,
-    _build_canonical_aliases,
-    _apply_alias_file_to_dataframe,
     _apply_alias_map_to_dataframe,
     _canonicalize_template_items,
     _inject_missing_token,
@@ -135,10 +131,6 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _is_language_dict,
     _pick_language_value,
     _localize_survey_template,
-    _read_alias_rows,
-    _build_alias_map,
-    _build_canonical_aliases,
-    _apply_alias_file_to_dataframe,
     _apply_alias_map_to_dataframe,
     _canonicalize_template_items,
     _inject_missing_token,
@@ -445,7 +437,6 @@ class SurveyResponsesConverter:
         name: str | None = None,
         authors: list[str] | None = None,
         language: str | None = None,
-        alias_file: str | Path | None = None,
         id_map_file: str | Path | None = None,
         separator: str | None = None,
         duplicate_handling: str = "error",
@@ -473,7 +464,6 @@ class SurveyResponsesConverter:
             name=name,
             authors=authors,
             language=language,
-            alias_file=alias_file,
             id_map_file=id_map_file,
             separator=separator,
             duplicate_handling=duplicate_handling,
@@ -503,7 +493,6 @@ class SurveyResponsesConverter:
         name: str | None = None,
         authors: list[str] | None = None,
         language: str | None = None,
-        alias_file: str | Path | None = None,
         id_map_file: str | Path | None = None,
         strict_levels: bool | None = None,
         duplicate_handling: str = "error",
@@ -530,7 +519,6 @@ class SurveyResponsesConverter:
             name=name,
             authors=authors,
             language=language,
-            alias_file=alias_file,
             id_map_file=id_map_file,
             strict_levels=strict_levels,
             duplicate_handling=duplicate_handling,
@@ -584,7 +572,6 @@ def _convert_survey_file_to_prism_dataset_impl(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
@@ -638,7 +625,6 @@ def _convert_survey_file_to_prism_dataset_impl(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=True,
         duplicate_handling=duplicate_handling,
@@ -724,7 +710,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
@@ -784,7 +769,6 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         authors=authors,
         language=effective_language,
         technical_overrides=inferred_tech,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
@@ -831,7 +815,6 @@ def convert_survey_file_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     separator: str | None = None,
     duplicate_handling: str = "error",
@@ -863,7 +846,6 @@ def convert_survey_file_to_prism_dataset(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         separator=separator,
         duplicate_handling=duplicate_handling,
@@ -898,7 +880,6 @@ def convert_survey_lsa_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
@@ -929,7 +910,6 @@ def convert_survey_lsa_to_prism_dataset(
         name=name,
         authors=authors,
         language=language,
-        alias_file=alias_file,
         id_map_file=id_map_file,
         strict_levels=strict_levels,
         duplicate_handling=duplicate_handling,
@@ -1345,7 +1325,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     authors: list[str] | None,
     language: str | None,
     technical_overrides: dict | None = None,
-    alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     strict_levels: bool = True,
     duplicate_handling: str = "error",
@@ -1430,18 +1409,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     loaded = _survey_core._load_survey_aliases_and_templates(
         participants_converter=participants_converter,
         library_dir=library_dir,
-        alias_file=alias_file,
         load_and_preprocess_templates_fn=_load_and_preprocess_templates,
     )
-    alias_map = loaded.alias_map
-    if project_path:
-        from src.item_map import item_alias_map
+    from src.item_map import item_alias_map
 
-        stored_map = item_alias_map(project_path)  # {file column: template item}; an explicit alias file wins
-        alias_map = {**stored_map, **(alias_map or {})}
-        hit = sum(1 for column in df.columns if column in stored_map)
-        if hit:
-            print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
+    stored_map = item_alias_map(project_path) if project_path else {}  # {file column: template item}
+    alias_map = stored_map or None
+    hit = sum(1 for column in df.columns if column in stored_map)
+    if hit:
+        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
     participant_template = loaded.participant_template
     participant_columns_lower = loaded.participant_columns_lower
     templates = loaded.templates
