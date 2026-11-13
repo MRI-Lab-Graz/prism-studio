@@ -1303,12 +1303,12 @@ def _read_table_as_dataframe(
     raise ValueError(f"Unsupported table kind: {kind}")
 
 
-def _stored_item_map(project_path, templates, item_to_task) -> dict[str, str]:
-    """``{file column: item}`` of the loaded templates' stored maps, minus columns that are another
-    loaded template's item (those are never renamed)."""
+def _stored_item_map(project_path, tasks, item_to_task) -> dict[str, str]:
+    """``{file column: item}`` of the stored maps of ``tasks`` (the surveys being converted), minus
+    columns that are another loaded template's item (those are never renamed)."""
     from src.item_map import free_columns, item_alias_map
 
-    stored = item_alias_map(project_path, tasks=templates)
+    stored = item_alias_map(project_path, tasks=tasks)
     return {c: i for c, i in stored.items() if free_columns([c], item_to_task.get(i, ""), item_to_task)}
 
 
@@ -1429,10 +1429,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     participant_columns_lower = loaded.participant_columns_lower
     templates = loaded.templates
     item_to_task = loaded.item_to_task
-    alias_map = _stored_item_map(project_path, templates, item_to_task) if project_path else {}
-    hit = sum(1 for column in df.columns if column in alias_map)
-    if hit:
-        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
     template_warnings_by_task = loaded.template_warnings_by_task
     conversion_warnings: list[str] = list(loaded.warnings)
 
@@ -1468,6 +1464,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         survey_filter=survey,
         templates=templates,
     )
+    # A stored map belongs to its survey: only the maps of the surveys being converted apply.
+    alias_map = (
+        _stored_item_map(project_path, selected_tasks or templates, item_to_task) if project_path else {}
+    )
+    hit = sum(1 for column in df.columns if column in alias_map)
+    if hit:
+        print(f"[PRISM] Item map: {hit} column(s) renamed from code/item_maps")
 
     # --- Determine Columns ---
     from .id_detection import has_prismmeta_columns as _has_pm

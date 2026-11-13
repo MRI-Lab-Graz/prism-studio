@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **BREAKING: `survey convert --alias` is gone** (and the `alias` upload of Studio's convert, preview and validate routes,
   which now answer HTTP 400). The project item map (`code/item_maps/<task>.json`) is the only item-name mapping: use
-  `survey item-map` or the Studio item-mapping dialog.
+  `survey item-map` or the Studio item-mapping dialog. A map applies only to its own survey: two surveys may map the
+  same column names; select the survey (`survey convert --survey gad`) when converting a file both maps fit.
 
 ### Added
 - **`sessions forget-import`** takes imported subjects/sessions or reviewed responses out of `code/survey_imports.json`

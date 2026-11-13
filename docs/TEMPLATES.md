@@ -104,6 +104,11 @@ that project applies it; the template itself stays unchanged. Importing a LimeSu
 **Use library template** (`--use-library --project DIR`) saves the survey's item codes in this same map; it no longer
 writes `Aliases` into the template (`Aliases` already in a template keep working).
 
+A map belongs to its survey: it is applied only when that survey is converted, so two surveys may map the same
+column names (`Q01` to `ADS01` in one, to `GAD01` in the other). When a file's columns are mapped by two surveys,
+select the survey when converting (`survey convert --survey gad`, or *Select specific survey* in Studio); without a
+selection the conversion stops and names both surveys.
+
 ## Validating templates
 
 ```bash

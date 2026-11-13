@@ -115,12 +115,12 @@ def test_another_templates_items_are_never_guessed_for_a_task(tmp_path):
     assert not (tmp_path / "code" / "item_maps").exists()
 
 
-def test_another_templates_aliases_and_mapped_columns_are_not_free(tmp_path):
+def test_another_templates_aliases_are_not_free_but_its_mapped_columns_are(tmp_path):
     _lib(tmp_path, ads={"ADS01": {"Aliases": ["X01"]}}, pss=["PSS01"])
     assert "pss" not in item_map.tasks_needing_map(tmp_path, ["X01"])
     _lib(tmp_path, ads=ITEMS)
     save_item_map(tmp_path, "ads", {"ADS01": "A01"}, ITEMS)
-    assert item_map.tasks_needing_map(tmp_path, ["A01"]) == []
+    assert item_map.tasks_needing_map(tmp_path, ["A01"]) == ["pss"]
 
 
 def test_free_numbered_columns_still_flag_every_task(tmp_path):
@@ -128,23 +128,29 @@ def test_free_numbered_columns_still_flag_every_task(tmp_path):
     assert item_map.tasks_needing_map(tmp_path, ["participant_id", "A01", "A02", "A03"]) == ["ads", "pss"]
 
 
-def test_a_column_mapped_by_another_task_is_refused_at_save(tmp_path):
+def test_a_column_mapped_by_another_task_is_saved_too(tmp_path):
     _lib(tmp_path, ads=ITEMS, pss=PSS)
     columns = ["A01", "A02", "A03"]
     item_map.apply_choices(tmp_path, "ads", columns, None, True)
-    with pytest.raises(ItemMapError, match="column 'A01' is already the item map of task 'ads'"):
-        item_map.apply_choices(tmp_path, "pss", columns, {"PSS01": "A01"}, False)
-    assert not (tmp_path / "code" / "item_maps" / "pss.json").exists()
+    item_map.apply_choices(tmp_path, "pss", columns, {"PSS01": "A01"}, False)
+    assert load_item_map(tmp_path, "ads")["ADS01"] == "A01"
+    assert load_item_map(tmp_path, "pss") == {"PSS01": "A01"}
 
 
-def test_the_library_import_refuses_a_column_another_task_maps(tmp_path):
+def test_the_library_import_accepts_a_column_another_task_maps(tmp_path):
     from src.converters.template_import import check_library_item_map
 
     _lib(tmp_path, ads=ITEMS, pss=PSS)
     save_item_map(tmp_path, "ads", {"ADS01": "A01"}, ITEMS)
     payload = {"template": {i: {} for i in PSS}, "_item_map_pending": {"task": "pss", "mapping": {"PSS01": "A01"}}}
-    with pytest.raises(ItemMapError, match="column 'A01' is already the item map of task 'ads'"):
-        check_library_item_map(payload, tmp_path)
+    assert check_library_item_map(payload, tmp_path) == ("pss", {"PSS01": "A01"})
+
+
+def test_a_column_that_is_another_templates_item_is_refused_at_save(tmp_path):
+    _lib(tmp_path, ads=ITEMS, pss=PSS)
+    with pytest.raises(ItemMapError, match="column 'ADS01' is an item of template 'ads'"):
+        item_map.apply_choices(tmp_path, "pss", ADS_FILE, {"PSS01": "ADS01"}, False)
+    assert not (tmp_path / "code" / "item_maps" / "pss.json").exists()
 
 
 def test_a_corrupt_existing_map_is_refused_not_overwritten(tmp_path):

@@ -157,8 +157,8 @@ def save_item_map(
 
 
 def item_alias_map(project_path: str | Path, tasks: Iterable[str] | None = None) -> dict[str, str]:
-    """``{column: item}`` over every task's map (only the maps of ``tasks`` when given); a column
-    claimed twice is an error."""
+    """``{column: item}`` over every task's map (only the maps of ``tasks``, the surveys being
+    converted, when given); a column two of them claim is an error."""
     wanted = None if tasks is None else {t.lower() for t in tasks}
     aliases: dict[str, str] = {}
     owner: dict[str, str] = {}
@@ -168,7 +168,7 @@ def item_alias_map(project_path: str | Path, tasks: Iterable[str] | None = None)
         for item, column in _read(path).items():
             if column in owner:
                 raise ItemMapError(
-                    f"Column {column!r} is mapped in both item maps {owner[column]!r} and {path.stem!r}"
+                    f"Column {column!r} is mapped by both {owner[column]} and {path.stem}; select one survey"
                 )
             owner[column] = path.stem
             aliases[column] = item
@@ -216,11 +216,11 @@ def _library(project_path: str | Path) -> dict[str, dict]:
     return templates
 
 
-def _claims(project_path: str | Path) -> tuple[dict[str, str], dict[str, str]]:
-    """Which task owns a column name: ``({item or item alias: task}, {mapped column: task})`` over
-    the project library's templates and their stored maps."""
+def _claims(project_path: str | Path) -> dict[str, str]:
+    """Which task owns a column name: ``{item or item alias: task}`` over the project library's
+    templates. Stored maps own nothing: two surveys may map the same column (each is applied only
+    when its survey is converted)."""
     items: dict[str, str] = {}
-    mapped: dict[str, str] = {}
     for task, template in _library(project_path).items():
         for key, value in template.items():
             if key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(value, dict):
@@ -229,29 +229,26 @@ def _claims(project_path: str | Path) -> tuple[dict[str, str], dict[str, str]]:
             for alias in value.get("Aliases") or []:
                 if isinstance(alias, str):
                     items.setdefault(alias, task)
-        for column in load_item_map(project_path, task).values():
-            mapped.setdefault(column, task)
-    return items, mapped
+    return items
 
 
-def free_columns(columns: Iterable[str], task: str, *owners: Mapping[str, str]) -> list[str]:
-    """The columns ``task`` may take: none that another task owns in ``owners`` (each ``{column: task}``)."""
-    return [c for c in columns if all(o.get(c, task).lower() == task.lower() for o in owners)]
+def free_columns(columns: Iterable[str], task: str, owners: Mapping[str, str]) -> list[str]:
+    """The columns ``task`` may take: none that another task owns in ``owners`` (``{column: task}``)."""
+    return [c for c in columns if owners.get(c, task).lower() == task.lower()]
 
 
 def check_project_map(
     project_path: str | Path, task: str, items: list[str], mapping: Mapping[str, str]
 ) -> dict[str, str]:
-    """``check_item_map`` plus: no column is another task's item or stored map (every save path)."""
+    """``check_item_map`` plus: no column is another template's item or alias (every save path)."""
     clean = check_item_map(items, mapping)
-    items_of, mapped = _claims(project_path)
+    owners = _claims(project_path)
     for column in clean.values():
-        for owners, what in ((mapped, "already the item map of task"), (items_of, "an item of template")):
-            if not free_columns([column], task, owners):
-                raise ItemMapError(
-                    f"column {column!r} is {what} {owners[column]!r}; "
-                    "one column name can stand for one item per project"
-                )
+        if not free_columns([column], task, owners):
+            raise ItemMapError(
+                f"column {column!r} is an item of template {owners[column]!r}; "
+                "the converter never renames another template's items"
+            )
     return clean
 
 
@@ -263,7 +260,7 @@ def tasks_needing_map(project_path: str | Path, columns: list[str]) -> list[str]
         for task, template in _library(project_path).items()
         if any(
             r["why"] in ("number", "order")
-            for r in suggest(template_items(template), free_columns(columns, task, *claims),
+            for r in suggest(template_items(template), free_columns(columns, task, claims),
                              load_item_map(project_path, task))
         )
     ]
@@ -272,7 +269,7 @@ def tasks_needing_map(project_path: str | Path, columns: list[str]) -> list[str]
 def suggest_for_project(project_path: str | Path, task: str, columns: list[str]) -> dict:
     """The guess for ``task``; ``columns`` in the answer are the file's columns ``task`` may take."""
     items = template_items(_project_template(project_path, task))
-    free = free_columns(columns, task, *_claims(project_path))
+    free = free_columns(columns, task, _claims(project_path))
     rows = suggest(items, free, load_item_map(project_path, task))
     for r in rows:
         print(f"[PRISM]   {r['item']} <- {r['column'] or '(none)'}  ({r['why']})")
@@ -291,7 +288,7 @@ def apply_choices(
         raise ItemMapError("nothing to save: pass accept or at least one choice")
     items = template_items(_project_template(project_path, task))
     saved = load_item_map(project_path, task, strict=True)
-    free = free_columns(columns, task, *_claims(project_path))
+    free = free_columns(columns, task, _claims(project_path))
     chosen = {r["item"]: r["column"] for r in suggest(items, free, saved) if r["column"]} if accept else {}
     chosen.update(choices or {})
     if not all(isinstance(v, str) for v in chosen.values()):
