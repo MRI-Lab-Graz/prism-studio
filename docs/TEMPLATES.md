@@ -95,6 +95,13 @@ copy records the administration instance.
 }
 ```
 
+## Different item names in a project
+
+If a survey file names its columns differently from a template's item IDs (`A01` instead of `ADS01`), map them once
+per project: `prism_tools.py survey item-map --input data.csv --project DIR --task ads --accept` (see
+[CLI reference](CLI_REFERENCE.md)). The map is stored in `code/item_maps/<task>.json` and every later conversion in
+that project applies it; the template itself stays unchanged.
+
 ## Validating templates
 
 ```bash

@@ -609,6 +609,32 @@ def cmd_survey_import_limesurvey(args):
         sys.exit(1)
 
 
+def cmd_survey_item_map(args):
+    """Map a survey file's column names onto a project template's item IDs (code/item_maps)."""
+    from src import item_map
+
+    try:
+        columns = item_map.read_survey_columns(args.input)
+        if not args.task:
+            for task in item_map.tasks_needing_map(args.project, columns):
+                print(f"[PRISM] {task}")
+            return
+        choices = {}
+        for pair in args.set or []:
+            item, sep, column = pair.partition("=")
+            if not sep or not item:
+                raise ValueError(f"--set expects ITEM=COLUMN, got {pair!r}")
+            choices[item] = column
+        if not args.accept and not choices:
+            item_map.suggest_for_project(args.project, args.task, columns)
+            return
+        path = item_map.apply_choices(args.project, args.task, columns, choices, args.accept)
+        print(f"[PRISM] Saved {path}" if path else f"[PRISM] No item map needed for {args.task}")
+    except (OSError, ValueError) as e:  # ItemMapError is a ValueError
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
 def cmd_survey_import_codebook(args):
     """Import the instrument groups of an Excel/CSV/TSV codebook as PRISM templates. Matches the
     Template Editor's 'Import Template Source' for .xlsx/.csv/.tsv."""

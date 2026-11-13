@@ -76,6 +76,7 @@ DISPATCH_CASES = [
         "survey_export_questionnaire_docx",
     ),
     (dict(command="survey", action="import-limesurvey"), "survey_import_limesurvey"),
+    (dict(command="survey", action="item-map"), "survey_item_map"),
     (dict(command="survey", action="import-pavlovia"), "survey_import_pavlovia"),
     (dict(command="survey", action="import-codebook"), "survey_import_codebook"),
     (

@@ -154,3 +154,69 @@ def item_alias_map(project_path: str | Path) -> dict[str, str]:
             owner[column] = path.stem
             aliases[column] = item
     return aliases
+
+
+def read_survey_columns(path: str | Path) -> list[str]:
+    """Column names of a survey file as the converter sees them (an .lsa gets its renamed columns)."""
+    from src.converters.survey import _read_table_as_dataframe
+
+    path = Path(path).expanduser().resolve()
+    kind = {".xlsx": "xlsx", ".csv": "csv", ".tsv": "tsv", ".lsa": "lsa"}.get(path.suffix.lower())
+    if kind is None:
+        raise ItemMapError("Supported formats: .xlsx, .csv, .tsv, .lsa")
+    df = _read_table_as_dataframe(input_path=path, kind=kind)
+    if isinstance(df, tuple):  # .lsa: (dataframe, questions_map)
+        df = df[0]
+    return [str(c) for c in df.columns]
+
+
+def _project_template(project_path: str | Path, task: str) -> dict:
+    if not isinstance(task, str) or not _TASK.fullmatch(task):
+        raise ItemMapError(f"Invalid task name {task!r}: use letters and digits only")
+    path = _root(project_path) / "code" / "library" / "survey" / f"survey-{task}.json"
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ItemMapError(f"No template for task {task!r} in the project library: {exc}") from exc
+
+
+def tasks_needing_map(project_path: str | Path, columns: list[str]) -> list[str]:
+    """Project-library tasks with an item that is neither a column nor mapped to one."""
+    tasks = []
+    for path in sorted((_root(project_path) / "code" / "library" / "survey").glob("survey-*.json")):
+        task = path.stem[len("survey-"):]
+        try:
+            items = template_items(_project_template(project_path, task))
+            stored = load_item_map(project_path, task)
+        except ItemMapError:
+            continue
+        if any(i not in columns and stored.get(i) not in columns for i in items):
+            tasks.append(task)
+    return sorted(tasks)
+
+
+def suggest_for_project(project_path: str | Path, task: str, columns: list[str]) -> dict:
+    items = template_items(_project_template(project_path, task))
+    saved = load_item_map(project_path, task)
+    rows = suggest(items, columns, saved)
+    for r in rows:
+        print(f"[PRISM]   {r['item']} <- {r['column'] or '(none)'}  ({r['why']})")
+    return {"task": task, "rows": rows, "columns": columns, "saved": bool(saved)}
+
+
+def apply_choices(
+    project_path: str | Path,
+    task: str,
+    columns: list[str],
+    choices: Mapping[str, str] | None,
+    accept: bool,
+) -> Path | None:
+    """Save the map: the suggestion (with ``accept``) overridden by ``choices``; '' clears a row."""
+    items = template_items(_project_template(project_path, task))
+    chosen = {r["item"]: r["column"] for r in suggest(items, columns, load_item_map(project_path, task))
+              if r["column"]} if accept else {}
+    chosen.update(choices or {})
+    missing = sorted({c for c in chosen.values() if c and c not in columns})
+    if missing:
+        raise ItemMapError(f"Not columns of the survey file: {', '.join(missing)}")
+    return save_item_map(project_path, task, chosen, items)

@@ -2596,6 +2596,23 @@ def build_prism_tools_parsers(
         "render_questionnaire_docx's docstring for available keys.",
     )
 
+    parser_survey_item_map = survey_subparsers.add_parser(
+        "item-map",
+        help="Map a survey file's column names onto a project template's item IDs "
+        "(stored in code/item_maps; used by later conversions)",
+    )
+    parser_survey_item_map.add_argument("--input", required=True, help="Survey file (.xlsx/.csv/.tsv/.lsa)")
+    parser_survey_item_map.add_argument("--project", required=True, help="Project folder")
+    parser_survey_item_map.add_argument(
+        "--task", help="Task to map (without it: list the tasks whose items the file does not cover)"
+    )
+    parser_survey_item_map.add_argument(
+        "--accept", action="store_true", help="Save the suggested mapping (without --accept/--set nothing is written)"
+    )
+    parser_survey_item_map.add_argument(
+        "--set", nargs="+", metavar="ITEM=COLUMN", help="Set rows by hand (ITEM= clears a row); overrides --accept"
+    )
+
     parser_survey_limesurvey = survey_subparsers.add_parser(
         "import-limesurvey",
         help="Import the questionnaires of a LimeSurvey .lss/.lsa as PRISM templates. "
