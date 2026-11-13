@@ -336,3 +336,21 @@ Decision (user, 2026-11-13): one item has exactly one file column (format stays 
 - [ ] Run `python -m pytest tests -q -k "item_map or survey or cli or parity or repo or symlink or dual_tree or template"` and the converter/template-editor JS tests; quote the result. The e2e failures seen so far are environmental: every accessibility test fails on main too (`node_modules/axe-core` missing); `test_converter_participants_flows.py::test_merge_without_conflicts_adds_new_people_and_columns_but_keeps_existing_values` fails on main as well. State that in the merge notes; do not claim e2e green.
 - [ ] `/ponytail:ponytail-audit`, `/code-review`, `/security-review` on the branch; apply what is worth it; re-run the tests.
 - [ ] Browser check of the dialog and of "Use library template" by the user (not run by any agent); CHANGELOG entry (breaking: `--alias` removed); `superpowers:finishing-a-development-branch`. No merge or push without the user's go-ahead.
+
+---
+
+### Task 9: The survey is the layer: a stored map applies only to the survey being converted
+
+Decision (user, 2026-11-13): two surveys that reuse the same codes (`Q01..` in `depression.lsa` and in `anxiety.lsa`) must both be mappable. The map of a task is applied only when that task is among the surveys being converted.
+
+**Files:**
+- Modify: `app/src/converters/survey.py` (the stored-map step in `_convert_survey_dataframe_to_prism_dataset`: pass the SELECTED tasks, from `survey` / `_resolve_selected_tasks`, to `item_alias_map(project_path, tasks=...)`; find out whether the selection is resolved before the rename and move the rename after it if not), `src/item_map.py` (`apply_choices`, `check_item_map`/`check_library_item_map`: drop the cross-task column refusal added in the final fix wave; keep the refusal inside one task's map), `tests/test_item_map*.py`, docs/TEMPLATES.md, the dialog text if it mentions a project-wide rule.
+- Test: `tests/test_item_map_survey_layer.py`
+
+**Interfaces:**
+- Consumes: `item_alias_map(project_path, tasks: set[str] | None)` (exists since the final fix wave; `tasks=None` means all).
+- Produces: with a survey selected, only that survey's map is applied; with NO survey selected every found task counts as selected, and two selected tasks claiming one column raise `ValueError("Column 'Q01' is mapped by both ads and gad; select one survey")`; two maps sharing a column are saved without complaint.
+
+- [ ] **Step 1: Failing tests:** (a) maps `ads: {ADS01: Q01}` and `gad: {GAD01: Q01}` both save; (b) converting a file with `Q01` and survey `gad` selected yields `GAD01` and no `ADS01`; with `ads` selected the reverse; (c) no survey selected + both templates selected + both maps claim `Q01` -> the ValueError above, nothing written; (d) a project with one map and no survey selected converts as before; (e) Studio route and CLI give identical trees for (b) (parity; the Studio survey filter field is `surveyFilter` in `survey-convert.js`: confirm how the user sets it and that the route forwards it as `survey`).
+- [ ] **Step 2: Run;** expected FAIL. **Step 3: Implement** as listed; **Step 4: run** `python -m pytest tests -q --ignore=tests/e2e -k "item_map or survey or cli or parity"`; PASS. **Step 5: Commit** `feat(item-map): a stored map applies only to the survey being converted`
+- [ ] **Step 6 (user):** check in Studio that choosing the survey for each file is easy to find; if not, a small follow-up to make the survey choice visible next to the item-mapping dialog.
