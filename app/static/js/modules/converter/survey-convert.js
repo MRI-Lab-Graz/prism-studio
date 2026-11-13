@@ -2110,7 +2110,14 @@ export function initSurveyConvert(elements) {
         : null;
     async function openItemMapDialog({ announceEmpty = false } = {}) {
         const file = getSelectedSurveyFile();
-        if (!itemMapDialog || !file) return;
+        if (!itemMapDialog) return;
+        if (!file) {
+            if (announceEmpty) {
+                convertError.textContent = 'Item mapping needs the file uploaded from this computer; a file picked on the server cannot be mapped here.';
+                convertError.classList.remove('d-none');
+            }
+            return;
+        }
         try {
             const saved = await itemMapDialog.open(file, resolveCurrentProjectPath() || '');
             if (saved === null && announceEmpty) {

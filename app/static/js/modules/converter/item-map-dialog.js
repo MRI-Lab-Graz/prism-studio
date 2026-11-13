@@ -118,6 +118,7 @@ export function createItemMapDialog({ root, post }) {
 
     return {
         async open(file, projectPath) {
+            if (settle) return null; // already open: the first call keeps its promise
             state = { file, projectPath, task: '', rows: [], columns: [] };
             const { tasks } = await post('/api/item-map/suggest', form());
             if (!tasks || tasks.length === 0) return null;
