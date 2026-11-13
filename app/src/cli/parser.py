@@ -2613,6 +2613,11 @@ def build_prism_tools_parsers(
         "--select", nargs="+", metavar="KEY",
         help="Questionnaire key(s) from the listing (e.g. g30), or 'all'",
     )
+    parser_survey_limesurvey.add_argument(
+        "--name",
+        help="With a single --select KEY: name the template this instead of the group's name "
+        "(becomes Study.OriginalName; the file name is derived from it)",
+    )
     parser_survey_limesurvey.add_argument("--output", help="Directory for the template JSON files")
     parser_survey_limesurvey.add_argument(
         "--project", help="Project folder whose library (code/library/survey) is also searched for a matching template"

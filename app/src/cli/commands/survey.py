@@ -591,12 +591,17 @@ def cmd_survey_import_limesurvey(args):
         if not args.output:
             raise ValueError("--output DIR is required with --select")
         keys = [q["key"] for q in found] if args.select == ["all"] else args.select
+        name = getattr(args, "name", None)
+        if name and len(keys) != 1:
+            raise ValueError("--name renames one template: give exactly one --select KEY")
         out_dir = Path(args.output).resolve()
         # Resolve every key first so a failure leaves nothing half written.
         planned = []  # (target, template)
         for key in keys:
             template, notes = limesurvey_questionnaire(xml, key, args.split)
-            payload = finish_import(template, template["Study"]["OriginalName"], project_path, use_library, notes)
+            payload = finish_import(
+                template, template["Study"]["OriginalName"], project_path, use_library, notes, rename=name
+            )
             planned.append((out_dir / payload["suggested_filename"], payload["template"]))
         _write_planned_templates(planned, out_dir)
     except (OSError, ValueError) as e:

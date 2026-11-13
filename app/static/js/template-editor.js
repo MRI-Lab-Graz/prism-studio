@@ -13,6 +13,8 @@
   const excelGroupPickerRowEl = document.getElementById('excelGroupPickerRow');
   const excelGroupPickerSelectEl = document.getElementById('excelGroupPickerSelect');
   const btnLoadExcelGroup = document.getElementById('btnLoadExcelGroup');
+  const sourceRenameRowEl = document.getElementById('sourceRenameRow');
+  const sourceRenameInputEl = document.getElementById('sourceRenameInput');
   const sourceSplitSelectEl = document.getElementById('sourceSplitSelect');
   const libraryMatchCardEl = document.getElementById('libraryMatchCard');
   const itemListEl = document.getElementById('itemList');
@@ -4308,6 +4310,8 @@
         excelGroupPickerRowEl,
         excelGroupPickerSelectEl,
         btnLoadExcelGroup,
+        sourceRenameRowEl,
+        sourceRenameInputEl,
         sourceSplitSelectEl,
         libraryMatchCardEl,
         btnDownload,
