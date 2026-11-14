@@ -260,6 +260,34 @@ def test_terms_freeze_refuses_when_a_released_id_is_gone(tmp_path, monkeypatch):
     assert exc.value.code == 1
 
 
+def test_terms_freeze_absent_instrument_is_informational(monkeypatch, capsys, tmp_path):
+    import argparse
+    from src.cli.commands import terms as cmd
+    ids = tmp_path / "ids.txt"
+    monkeypatch.setattr(cmd, "build_survey_registry", lambda: ({"x": {"TermID": "prism:x"}}, []))
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x", "prism:bfi", "prism:bfi.bfi01"})
+    monkeypatch.setattr(cmd, "write_released_ids", lambda reg: [])
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))  # no SystemExit
+    assert "2 released ID(s) of instruments whose template is not shipped (kept, not an error): prism:bfi, prism:bfi.bfi01" in capsys.readouterr().out
+    many = {f"prism:z{i}" for i in range(7)}
+    monkeypatch.setattr(cmd, "released_ids", lambda: many)
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    out = capsys.readouterr().out
+    assert "7 released ID(s)" in out and "prism:z4" in out and "prism:z5" not in out and "..." in out
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
+    assert len(json.loads(capsys.readouterr().out)["not_shipped"]) == 7
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x", "prism:bfi", "prism:bfi.bfi01"})
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    capsys.readouterr()
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
+    out = json.loads(capsys.readouterr().out)
+    assert out["success"] and out["not_shipped"] == ["prism:bfi", "prism:bfi.bfi01"]
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x.x01"})
+    with pytest.raises(SystemExit) as exc:
+        cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    assert exc.value.code == 1
+
+
 def test_terms_resolve_cli(tmp_path):
     side = json.loads((REPO / "official" / "library" / "survey" / "survey-demo.json").read_text(encoding="utf-8"))
     side["Study"]["TaskName"] = "demo"   # a project sidecar carries it; the library file relies on its name
@@ -302,12 +330,12 @@ def test_terms_show_refuses_an_ambiguous_label(monkeypatch, capsys):
 def test_freeze_refusal_names_the_unreadable_template(monkeypatch, capsys):
     import argparse
     from src.cli.commands import terms as cmd
-    monkeypatch.setattr(cmd, "build_survey_registry", lambda: ({}, ["survey-x.json: cannot read (boom)"]))
-    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x"})
+    monkeypatch.setattr(cmd, "build_survey_registry", lambda: ({"x": {"TermID": "prism:x"}}, ["survey-x.json: cannot read (boom)"]))
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x", "prism:x.x01"})
     with pytest.raises(SystemExit):
         cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
     out = capsys.readouterr().out
-    assert "survey-x.json: cannot read (boom)" in out and "prism:x: released ID is gone" in out
+    assert "survey-x.json: cannot read (boom)" in out and "prism:x.x01: released ID is gone" in out
 
 
 def test_terms_list_json_carries_the_survey_problems(monkeypatch, capsys):
