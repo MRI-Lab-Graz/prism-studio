@@ -6,6 +6,7 @@ import sys
 from openpyxl import Workbook
 
 from src.biosample_import import import_biosample
+from src.modality_versions import current_version
 from src.biosample_template import DATA_COLUMNS, PANEL_COLUMNS
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
@@ -71,7 +72,7 @@ def test_writes_one_tsv_and_sidecar_per_subject_session_panel(tmp_path):
     side = json.loads((project / f"{STEM}.json").read_text(encoding="utf-8"))
     assert side["Technical"] == {"SpecimenType": "serum"}
     assert side["Study"] == {"BiosampleName": "hormones"}
-    assert side["Metadata"] == {"SchemaVersion": "1.1.0", "CreationDate": dt.date.today().isoformat()}
+    assert side["Metadata"] == {"SchemaVersion": current_version("biosample"), "CreationDate": dt.date.today().isoformat()}
     assert side["cortisol"] == {"Description": "cortisol", "Units": "nmol/L", "Term": "prism:cortisol.serum"}
     assert side["free_testosterone"]["LowerLimitOfDetection"] == 5.0
     assert side["free_testosterone"]["Term"] == "prism:free-testosterone.serum"
