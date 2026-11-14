@@ -238,8 +238,9 @@ def validate_recipe(
     if kind not in SUPPORTED_MODALITIES:
         errors.append(prefix + "Kind must be 'survey' or 'biometrics'")
 
-    if not _is_nonempty_str(recipe.get("RecipeVersion")):
-        errors.append(prefix + "RecipeVersion must be a non-empty string")
+    version = recipe.get("RecipeVersion")
+    if not (isinstance(version, str) and re.fullmatch(r"\d+\.\d+", version)):
+        errors.append(prefix + f"RecipeVersion must be major.minor, for example '1.0' (got {version!r}; a patch part such as '1.0.0' is not allowed)")
 
     if kind == "survey":
         survey = recipe.get("Survey")

@@ -35,7 +35,7 @@ def test_min_valid_is_respected():
 
 def test_recipe_validation_accepts_irv():
     recipe = {
-        "RecipeVersion": "1.0.0",
+        "RecipeVersion": "1.0",
         "Kind": "survey",
         "Survey": {"Name": "x", "TaskName": "x"},
         "Scores": [IRV],
