@@ -498,27 +498,27 @@ class TestTemplateMatching:
             _load_global_templates,
         )
 
-        # Simulate a parsed group with PRISMMETA pointing to BFI-S
+        # Simulate a parsed group with PRISMMETA pointing to the demo template
         prism_json = {
-            "Study": {"TaskName": "short15itembigfiveinventorybfis"},
+            "Study": {"TaskName": "prismdemonstrationquestionnaire"},
             "Technical": {},
             "Metadata": {},
-            "MBFIS01": {
+            "MDEMO01": {
                 "Description": "Rate yourself",
                 "Items": {
-                    "BFIS01": {"Description": "talkative"},
-                    "BFIS02": {"Description": "find fault"},
+                    "DEMO01": {"Description": "tidied desk"},
+                    "DEMO02": {"Description": "short walk"},
                 },
             },
             "PRISMMETAg2": {
                 "Attributes": {
                     "equation": (
                         '<div class="prism-metadata">'
-                        '<span class="meta-abbrev">BFI-S</span>'
+                        '<span class="meta-abbrev">DEMO</span>'
                         "</div>"
                     )
                 },
-                "Description": "PRISM Template Metadata\nAbbreviation: BFI-S",
+                "Description": "PRISM Template Metadata\nAbbreviation: DEMO",
             },
         }
 
@@ -526,18 +526,13 @@ class TestTemplateMatching:
         if not global_templates:
             pytest.skip("No global templates available")
 
-        # Check if BFI-S exists in global templates
-        bfis_exists = any("bfi" in k and "s" in k for k in global_templates.keys())
-        if not bfis_exists:
-            pytest.skip("BFI-S not in global templates")
-
         match = match_against_library(
-            prism_json, global_templates, group_name="short15itembigfiveinventorybfis"
+            prism_json, global_templates, group_name="prismdemonstrationquestionnaire"
         )
 
         assert (
             match is not None
-        ), "BFI-S should match via PRISMMETA abbreviation + name + item overlap"
+        ), "The demo template should match via PRISMMETA abbreviation + name + item overlap"
         assert match.confidence in (
             "exact",
             "high",
