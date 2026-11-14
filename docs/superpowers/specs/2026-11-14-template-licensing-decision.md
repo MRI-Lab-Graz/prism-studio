@@ -59,8 +59,11 @@ Lovibond).
 
 - **The move goes ahead with only the two templates that are 100% sure: `dass` and `dass21`** (plus their recipes, plus
   our own demo templates). Nothing else is moved into prism-specification.
-- **The other templates are not moved and not copied again.** They stay in Studio exactly as they are for now; this
-  record does not decide whether they are withdrawn. The user does not want to retract them over the notice question.
+- **The other templates are not moved and not copied again, and they are dropped from Studio** (decided later the same
+  day: "the templates should be dropped from Studio, move them to a local folder which is not tracked"). A verified copy
+  is kept in `/Volumes/Evo/work/prism-local-library/` (outside every repository) and Studio reads it through its
+  `globalLibraryRoot` setting. Until the removal is merged (a plan of its own, Task 8 of
+  `2026-11-14-mappings-layer-and-two-templates.md`) the files stay tracked.
 - **The rest is prepared in the background** (section "Background preparation" below), so that templates can move to
   the specification one by one when their licence is verified.
 - Why the earlier plan changed: the crawler (`harvest_psytoolkit.py`, January 2026) copied item wording from
