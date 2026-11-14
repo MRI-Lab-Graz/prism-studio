@@ -115,12 +115,13 @@ app/src/derivatives/**/*.pyc
 !demo/workshop/library/
 !demo/workshop/recipes/
 !official/library/
+!examples/multi_version_demo/code/library/
 
 # Harvest script
 scripts/harvest_testarchiv.py
 backup/
 PLAN-limesurvey-improvements.md
-examples/workshop/exercise_1_raw_data/raw_data/~$demo.xlsx
+examples/workshop/exercise_1_raw_data/raw_data/~$wellbeing.xlsx
 tmp_investigation_2/root_ds
 tmp_investigation_2/root_ds
 tmp_investigation_2/root_ds

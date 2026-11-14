@@ -3,7 +3,10 @@
     "StimulusType": "Questionnaire",
     "FileFormat": "tsv",
     "Language": "en",
-    "Respondent": "self"
+    "Respondent": "self",
+    "SoftwarePlatform": "Other",
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
   },
   "Metadata": {
     "SchemaVersion": "2.1.0",

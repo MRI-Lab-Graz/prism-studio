@@ -21,7 +21,7 @@ def test_converter():
 
     # The mapping is now in code/library/
     dataset_root = Path(__file__).parent.parent / "examples" / "workshop"
-    source_file = dataset_root / "raw_data" / "wellbeing.tsv"
+    source_file = dataset_root / "raw_data" / "demo.tsv"
 
     # For the converter test, we'll use the rawdata simulation
     # In a real scenario, this would be the actual rawdata/ folder

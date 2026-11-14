@@ -110,7 +110,7 @@ The full catalog, with fix hints for every code, is in
 straight to its entry there.
 
 ```{note}
-**If you skipped Chapter 4:** you'll also see a warning here — "Missing
+**If you skipped Chapter 4:** you'll also see an info message here — "Missing
 survey recipes for dataset-used surveys" — pointing at `demo` having
 no saved recipe yet. That's the Validator noticing the same gap Chapter 4
 fills; it isn't a sign anything earlier in this tutorial went wrong.
@@ -134,7 +134,9 @@ in action:
    now has no sidecar to inherit from, and reports as a `PRISM201` error:
    "Missing sidecar for `<file>.tsv`."
 3. Rename the file back to `task-demo_survey.json` and **Re-validate**
-   again. The 20 errors should be gone.
+   again. The 20 errors should be gone; with Chapters 1-4 done the run ends
+   with 0 errors (the BIDS warnings stay hidden unless you turn on **Show BIDS
+   Warnings**).
 
 ```{tip}
 `PRISM201` is one of only three codes that are currently **auto-fixable**

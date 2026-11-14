@@ -5,7 +5,8 @@
     "Language": "en",
     "Respondent": "self",
     "SoftwarePlatform": "Other",
-    "AdministrationMethod": "online"
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
   },
   "Metadata": {
     "SchemaVersion": "2.1.0",

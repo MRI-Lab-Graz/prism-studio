@@ -46,7 +46,7 @@ Each step is described in detail below.
 
 Navigate to **Derivatives > Survey Export** to select questionnaires from the PRISM template library.
 
-![Survey Export page showing template selection, language settings, and export options](img/limesurvey/01_export_page.png)
+*The Survey Export page has the target tool and language settings at the top, the list of templates below and the export buttons at the bottom.*
 
 **Configure the export settings:**
 
@@ -56,7 +56,7 @@ Navigate to **Derivatives > Survey Export** to select questionnaires from the PR
 
 **Select templates** by checking one or more questionnaires from the list. For each selected template, you can set the **Run** number (for repeated administrations, e.g., pre/post design):
 
-![Template selection showing checked questionnaires with run numbers and Matrix/Global badges](img/limesurvey/03a_template_selection.png)
+*Each ticked questionnaire shows its Matrix and Global options and a run number field.*
 
 Each template shows:
 - Item count and available languages (DE/EN badges)
@@ -74,7 +74,7 @@ You have two export options:
 - **Quick Export (.lss)**: Downloads the `.lss` file immediately with default settings
 - **Customize & Export**: Opens the Survey Customizer for detailed configuration
 
-![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/04_export_buttons_visible.png)
+*Below the template list are the buttons Boilerplate, Quick Export (.lss) and Customize & Export.*
 
 ### The Survey Customizer
 
@@ -340,7 +340,7 @@ After configuration, your form should look like this:
 
 Click **Preview (Dry-Run)** to see what PRISM will create **without writing any files**. This is the recommended first step before converting:
 
-![Preview results showing the conversion log with summary (2 participants, 1 task detected), Conversion Summary with matched templates table and confidence badges, and the beginning of validation results](img/limesurvey/7e_preview_log.png)
+*The preview shows the conversion log with a summary (participants, tasks detected, files to create), then the Conversion Summary and the start of the validation results.*
 
 The preview output has four sections:
 
@@ -357,7 +357,7 @@ A terminal-style log showing the full conversion process:
 
 A structured overview of how survey groups were matched to templates:
 
-![Conversion Summary showing matched templates with confidence levels, tool-specific columns count, and validation results with error details](img/limesurvey/7e_preview_summary.png)
+*The Conversion Summary lists the matched templates with a confidence level, the number of tool-specific columns and the validation results with error details.*
 
 | Column | Description |
 |--------|-------------|
@@ -379,7 +379,7 @@ PRISM validates the output against the BIDS/PRISM schema. Common validation issu
 
 If the preview shows **"Templates Required"**, some questionnaire groups have no matching template in the library:
 
-![Unmatched groups error showing four groups without templates, with Save Template buttons for each group and a Save All Templates option](img/limesurvey/7d_preview_error.png)
+*Unmatched groups are listed with a Save Template button for each and a Save All Templates button.*
 
 To resolve:
 1. Click **Save Template** for each unmatched group (or **Save All Templates**)
