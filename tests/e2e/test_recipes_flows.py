@@ -14,10 +14,13 @@ from src.converters.survey import convert_survey_file_to_prism_dataset
 from src.session_map import save_session_map
 from tests.template_fixtures import completed_official_library
 
-BRS = completed_official_library() / "survey-brs.json"  # converting needs a complete project copy
-RECIPE = Path(__file__).resolve().parents[2] / "official" / "recipe" / "survey" / "recipe-brs.json"
-DATA = "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\nP001,2,4,4,3\nP002,1,1,0,2\n"
-# BRS Total = BRS01 + BRS02 + BRS03:  P001 ses-1 = 9, P001 ses-2 = 11, P002 ses-1 = 3
+DEMO = completed_official_library() / "survey-demo.json"  # converting needs a complete project copy
+RECIPE = Path(__file__).resolve().parents[2] / "official" / "recipe" / "survey" / "recipe-demo.json"
+DATA = (
+    "participant_id,session,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\n"
+    "P001,1,3,4,2,0,0,4,0,0\nP001,2,4,4,3,0,0,4,0,0\nP002,1,1,0,2,0,0,4,0,0\n"
+)
+# DEMO06 is reversed (4 - x) by the recipe, so it adds 0 here; Total = Routine = DEMO01 + DEMO02 + DEMO03:  P001 ses-1 = 9, P001 ses-2 = 11, P002 ses-1 = 3
 
 
 @pytest.fixture
@@ -25,15 +28,15 @@ def scored_project(project, tmp_path):
     """The throwaway project holding real converter output for two subjects and two sessions."""
     library = tmp_path / "lib"
     library.mkdir()
-    shutil.copy(BRS, library / "survey-brs.json")
+    shutil.copy(DEMO, library / "survey-demo.json")
     (project / "code" / "library" / "survey").mkdir(parents=True, exist_ok=True)
-    shutil.copy(BRS, project / "code" / "library" / "survey" / "survey-brs.json")
+    shutil.copy(DEMO, project / "code" / "library" / "survey" / "survey-demo.json")
     # two sessions per subject: a "single" project would write both as ses-1
     (project / "project.json").write_text(json.dumps({
         **json.loads((project / "project.json").read_text()), "StudyDesign": {"Timepoints": "multiple"},
     }))
     save_session_map(project, {"1": "1", "2": "2"})
-    source = tmp_path / "brs.csv"
+    source = tmp_path / "demo.csv"
     source.write_text(DATA)
     convert_survey_file_to_prism_dataset(
         input_path=source, library_dir=library, output_root=project, name="t",
@@ -87,41 +90,41 @@ def test_scores_every_session_one_row_per_session_and_leaves_the_data_alone(app_
     before = data_files(scored_project)
     open_recipes(app_page, studio_url)
 
-    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_brs.csv")
+    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_demo.csv")
 
-    assert read_rows(scored_project / "derivatives/survey/long_en/e2e_brs.csv") == [
-        ["participant_id", "session", "Total"],
-        ["sub-P001", "ses-1", "9"],
-        ["sub-P001", "ses-2", "11"],
-        ["sub-P002", "ses-1", "3"],
+    assert read_rows(scored_project / "derivatives/survey/long_en/e2e_demo.csv") == [
+        ["participant_id", "session", "Total", "Routine"],
+        ["sub-P001", "ses-1", "9", "9"],
+        ["sub-P001", "ses-2", "11", "11"],
+        ["sub-P002", "ses-1", "3", "3"],
     ]
     folder = scored_project / "derivatives/survey/long_en"
-    assert (folder / "e2e_brs_codebook.json").is_file() and (folder / "e2e_brs_codebook.tsv").is_file()
+    assert (folder / "e2e_demo_codebook.json").is_file() and (folder / "e2e_demo_codebook.tsv").is_file()
     assert data_files(scored_project) == before  # "your data is not changed"
 
 
 def test_wide_layout_gives_one_row_per_participant(app_page, studio_url, scored_project):
     open_recipes(app_page, studio_url, layout="wide")
 
-    run_and_wait_for(app_page, scored_project / "derivatives/survey/wide_en/e2e_brs.csv")
+    run_and_wait_for(app_page, scored_project / "derivatives/survey/wide_en/e2e_demo.csv")
 
-    assert read_rows(scored_project / "derivatives/survey/wide_en/e2e_brs.csv") == [
-        ["participant_id", "Total_ses-1", "Total_ses-2"],
-        ["sub-P001", "9", "11"],
-        ["sub-P002", "3", ""],
+    assert read_rows(scored_project / "derivatives/survey/wide_en/e2e_demo.csv") == [
+        ["participant_id", "Total_ses-1", "Total_ses-2", "Routine_ses-1", "Routine_ses-2"],
+        ["sub-P001", "9", "11", "9", "11"],
+        ["sub-P002", "3", "", "3", ""],
     ]
 
 
 def test_raw_item_columns_are_added_only_when_asked_for(app_page, studio_url, scored_project):
     open_recipes(app_page, studio_url, include_raw=True)
 
-    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_brs.csv")
+    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_demo.csv")
 
-    rows = read_rows(scored_project / "derivatives/survey/long_en/e2e_brs.csv")
+    rows = read_rows(scored_project / "derivatives/survey/long_en/e2e_demo.csv")
     header = rows[0]
-    assert {"BRS01", "BRS02", "BRS03", "Total"} <= set(header), header
+    assert {"DEMO01", "DEMO02", "DEMO03", "Total"} <= set(header), header
     first = dict(zip(header, rows[1]))
-    assert (first["BRS01"], first["BRS02"], first["BRS03"], first["Total"]) == ("3", "4", "2", "9")
+    assert (first["DEMO01"], first["DEMO02"], first["DEMO03"], first["Total"]) == ("3", "4", "2", "9")
 
 
 def test_one_session_only_scores_just_that_session(app_page, studio_url, scored_project):
@@ -131,13 +134,13 @@ def test_one_session_only_scores_just_that_session(app_page, studio_url, scored_
 
     app_page.click("#derivRunBtn")
 
-    assert eventually(lambda: any(scored_project.glob("derivatives/**/*brs.csv")), app_page)
+    assert eventually(lambda: any(scored_project.glob("derivatives/**/*demo.csv")), app_page)
     app_page.wait_for_timeout(500)
-    [out] = list(scored_project.glob("derivatives/**/*brs.csv"))
+    [out] = list(scored_project.glob("derivatives/**/*demo.csv"))
     assert read_rows(out) == [
-        ["participant_id", "session", "Total"],
-        ["sub-P001", "ses-1", "9"],
-        ["sub-P002", "ses-1", "3"],
+        ["participant_id", "session", "Total", "Routine"],
+        ["sub-P001", "ses-1", "9", "9"],
+        ["sub-P002", "ses-1", "3", "3"],
     ]
 
 
@@ -145,9 +148,9 @@ def test_anonymizing_replaces_the_ids_consistently_and_keeps_the_scores(app_page
     open_recipes(app_page, studio_url, anonymize=True)
     out = scored_project / "derivatives/survey/long_en_anon"
 
-    run_and_wait_for(app_page, out / "e2e_brs.csv")
+    run_and_wait_for(app_page, out / "e2e_demo.csv")
 
-    rows = read_rows(out / "e2e_brs.csv")[1:]
+    rows = read_rows(out / "e2e_demo.csv")[1:]
     ids = [row[0] for row in rows]
     # no original ID survives (exact match: a random new ID may contain "P00" by chance)
     assert not {"sub-P001", "sub-P002"} & set(ids), ids
@@ -164,20 +167,20 @@ def test_anonymizing_replaces_the_ids_consistently_and_keeps_the_scores(app_page
 def test_xlsx_export_opens_and_holds_the_scores(app_page, studio_url, scored_project):
     openpyxl = pytest.importorskip("openpyxl")
     open_recipes(app_page, studio_url, fmt="xlsx")
-    out = scored_project / "derivatives/survey/long_en/e2e_brs.xlsx"
+    out = scored_project / "derivatives/survey/long_en/e2e_demo.xlsx"
 
     run_and_wait_for(app_page, out)
 
     sheet = openpyxl.load_workbook(out).active
     rows = [[cell for cell in row] for row in sheet.iter_rows(values_only=True)]
-    assert rows[0] == ("participant_id", "session", "Total") or list(rows[0]) == ["participant_id", "session", "Total"]
+    assert list(rows[0]) == ["participant_id", "session", "Total", "Routine"]
     assert [row[2] for row in rows[1:]] == [9, 11, 3]  # real numbers: Excel can sum them
 
 
 def test_sav_export_keeps_the_value_labels(app_page, studio_url, scored_project):
     pyreadstat = pytest.importorskip("pyreadstat")
     open_recipes(app_page, studio_url, fmt="sav")
-    out = scored_project / "derivatives/survey/long_en/e2e_brs.sav"
+    out = scored_project / "derivatives/survey/long_en/e2e_demo.sav"
 
     run_and_wait_for(app_page, out)
 
@@ -192,14 +195,14 @@ def test_a_custom_recipe_folder_overrides_the_official_recipe(app_page, studio_u
     recipe = json.loads(RECIPE.read_text())
     recipe["Scores"][0]["Method"] = "mean"
     recipe["Scores"][0]["Range"] = {"min": 0, "max": 4}
-    (custom / "recipe-brs.json").write_text(json.dumps(recipe))
+    (custom / "recipe-demo.json").write_text(json.dumps(recipe))
     open_recipes(app_page, studio_url)
     app_page.fill("#derivRecipeDir", str(custom))
 
-    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_brs.csv")
+    run_and_wait_for(app_page, scored_project / "derivatives/survey/long_en/e2e_demo.csv")
 
-    totals = [float(row[2]) for row in read_rows(scored_project / "derivatives/survey/long_en/e2e_brs.csv")[1:]]
-    assert totals == pytest.approx([3.0, 11 / 3, 1.0])  # the mean, not the sum
+    totals = [float(row[2]) for row in read_rows(scored_project / "derivatives/survey/long_en/e2e_demo.csv")[1:]]
+    assert totals == pytest.approx([9 / 8, 11 / 8, 3 / 8])  # the mean of the 8 items, not the sum
 
 
 def test_a_recipe_filter_that_matches_nothing_writes_nothing(app_page, studio_url, scored_project):
@@ -223,18 +226,19 @@ def test_without_a_project_the_page_says_so(bare_page, studio_url):
 
 def test_the_run_warns_about_answers_outside_the_scale_and_sums_over_missing_items(app_page, studio_url, project):
     (project / "code/library/survey").mkdir(parents=True, exist_ok=True)
-    shutil.copy(BRS, project / "code/library/survey/survey-brs.json")
-    rows = [("sub-P1", "3", "4", "2"), ("sub-P2", "n/a", "4", "2"), ("sub-P3", "9", "4", "2")]
+    shutil.copy(DEMO, project / "code/library/survey/survey-demo.json")
+    tail = ("0", "0", "4", "0", "0")
+    rows = [("sub-P1", "3", "4", "2", *tail), ("sub-P2", "n/a", "4", "2", *tail), ("sub-P3", "9", "4", "2", *tail)]
     (project / "participants.tsv").write_text("participant_id\n" + "".join(f"{r[0]}\n" for r in rows))
     for pid, *values in rows:
         folder = project / pid / "ses-1" / "survey"
         folder.mkdir(parents=True)
-        (folder / f"{pid}_ses-1_task-brs_survey.tsv").write_text("BRS01\tBRS02\tBRS03\n" + "\t".join(values) + "\n")
+        (folder / f"{pid}_ses-1_task-demo_survey.tsv").write_text("\t".join(f"DEMO0{i}" for i in range(1, 9)) + "\n" + "\t".join(values) + "\n")
 
     open_recipes(app_page, studio_url)
     app_page.click("#derivRunBtn")
 
     terminal = app_page.locator("#derivTerminal")
     expect(terminal).to_contain_text("outside the scale of the questionnaire", timeout=60000)
-    expect(terminal).to_contain_text("sub-P3 ses-1 BRS01=9")
-    expect(terminal).to_contain_text("answered only some of the 3 items")
+    expect(terminal).to_contain_text("sub-P3 ses-1 DEMO01=9")
+    expect(terminal).to_contain_text("answered only some of the 8 items")

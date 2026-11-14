@@ -8,7 +8,8 @@ from pathlib import Path
 from playwright.sync_api import expect
 
 OFFICIAL = Path(__file__).resolve().parents[2] / "official" / "library" / "survey"
-BRS_ITEMS = ["BRS01", "BRS02", "BRS03"]
+# LimeSurvey subquestion codes are shortened to 5 characters (DEMO01 -> DEM01)
+DEMO_ITEMS = ["DEM01", "DEM02", "DEM03"]
 
 
 def open_generator(page, studio_url):
@@ -49,7 +50,7 @@ def test_nothing_can_be_exported_until_a_template_is_ticked(app_page, studio_url
     for button in ("#generateLssBtn", "#generateBoilerplateBtn", "#customizeExportBtn"):
         expect(app_page.locator(button)).to_be_disabled()
 
-    row = pick(app_page, "brs")
+    row = pick(app_page, "demo")
     for button in ("#generateLssBtn", "#generateBoilerplateBtn", "#customizeExportBtn"):
         expect(app_page.locator(button)).to_be_enabled()
 
@@ -60,47 +61,47 @@ def test_nothing_can_be_exported_until_a_template_is_ticked(app_page, studio_url
 
 def test_quick_export_contains_exactly_the_template_questions(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
-    pick(app_page, "brs")
+    pick(app_page, "demo")
 
-    lss = download(app_page, "#generateLssBtn", tmp_path, "brs.lss")
+    lss = download(app_page, "#generateLssBtn", tmp_path, "demo.lss")
 
-    # LimeSurvey also gets a group row, so look for the three item codes
-    assert set(BRS_ITEMS) <= set(lss_question_codes(lss))
+    # LimeSurvey also gets a group row, so look for the first three item codes
+    assert set(DEMO_ITEMS) <= set(lss_question_codes(lss))
     assert not app_page.dialogs
 
 
 def test_an_unticked_question_is_left_out_of_the_export(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
-    row = pick(app_page, "brs")
+    row = pick(app_page, "demo")
     row.locator(".tpl-expand-btn").click()
-    row.locator(".question-checkbox[value='BRS02']").uncheck()
+    row.locator(".question-checkbox[value='DEMO02']").uncheck()
 
-    lss = download(app_page, "#generateLssBtn", tmp_path, "brs.lss")
+    lss = download(app_page, "#generateLssBtn", tmp_path, "demo.lss")
 
     codes = lss_question_codes(lss)
-    assert "BRS01" in codes and "BRS03" in codes
-    assert "BRS02" not in codes
+    assert "DEM01" in codes and "DEM03" in codes
+    assert "DEM02" not in codes
 
 
 def test_the_matrix_checkbox_decides_between_one_matrix_and_single_questions(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
-    pick(app_page, "brs")
+    pick(app_page, "demo")
     grouped = download(app_page, "#generateLssBtn", tmp_path, "grouped.lss")
-    assert "MBRS01" in lss_question_codes(grouped)  # one matrix question holding the three items
+    assert "MDEMO01" in lss_question_codes(grouped)  # one matrix question holding the items
 
     app_page.locator("#lsMatrixGroupCheckbox").uncheck()
     single = download(app_page, "#generateLssBtn", tmp_path, "single.lss")
     codes = lss_question_codes(single)
-    assert {"BRS01", "BRS02", "BRS03"} <= set(codes)
-    assert "MBRS01" not in codes
+    assert {"DEMO01", "DEMO02", "DEMO03"} <= set(codes)
+    assert "MDEMO01" not in codes
 
 
 def test_pavlovia_export_is_a_zip_with_the_experiment(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
     app_page.select_option("#targetToolSelect", "pavlovia")
-    pick(app_page, "brs")
+    pick(app_page, "demo")
 
-    archive = download(app_page, "#generateLssBtn", tmp_path, "brs.zip")
+    archive = download(app_page, "#generateLssBtn", tmp_path, "demo.zip")
 
     with zipfile.ZipFile(archive) as z:
         names = z.namelist()
@@ -111,21 +112,21 @@ def test_pavlovia_export_is_a_zip_with_the_experiment(app_page, studio_url, tmp_
 def test_pavlovia_export_leaves_out_an_unticked_question(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
     app_page.select_option("#targetToolSelect", "pavlovia")
-    row = pick(app_page, "brs")
+    row = pick(app_page, "demo")
     row.locator(".tpl-expand-btn").click()
-    row.locator(".question-checkbox[value='BRS02']").uncheck()
+    row.locator(".question-checkbox[value='DEMO02']").uncheck()
 
-    archive = download(app_page, "#generateLssBtn", tmp_path, "brs.zip")
+    archive = download(app_page, "#generateLssBtn", tmp_path, "demo.zip")
 
     with zipfile.ZipFile(archive) as z:
         text = " ".join(z.read(n).decode("utf-8", "ignore") for n in z.namelist() if n.endswith((".csv", ".psyexp")))
-    assert "BRS01" in text
-    assert "BRS02" not in text
+    assert "DEMO01" in text
+    assert "DEMO02" not in text
 
 
 def test_boilerplate_names_the_picked_instrument(app_page, studio_url, tmp_path):
     open_generator(app_page, studio_url)
-    pick(app_page, "brs")
+    pick(app_page, "demo")
 
     with app_page.expect_download() as info:
         app_page.click("#generateBoilerplateBtn")
@@ -133,7 +134,7 @@ def test_boilerplate_names_the_picked_instrument(app_page, studio_url, tmp_path)
     target = tmp_path / files[0].suggested_filename
     files[0].save_as(target)
 
-    assert "Resilience" in target.read_text() or "BRS" in target.read_text()
+    assert "demonstration" in target.read_text() or "DEMO" in target.read_text()
 
 
 def test_select_all_and_clear_work_on_a_whole_section(app_page, studio_url):
@@ -150,7 +151,7 @@ def test_select_all_and_clear_work_on_a_whole_section(app_page, studio_url):
 
 
 def test_a_template_saved_in_the_project_shows_up_as_a_project_template(app_page, studio_url, project):
-    source = json.loads((OFFICIAL / "survey-brs.json").read_text())
+    source = json.loads((OFFICIAL / "survey-demo.json").read_text())
     (project / "code" / "library" / "survey" / "survey-mine.json").write_text(
         json.dumps({**source, "Study": {**source["Study"], "OriginalName": {"en": "My own scale"}}})
     )
@@ -165,9 +166,9 @@ def test_a_template_saved_in_the_project_shows_up_as_a_project_template(app_page
 
 def test_customize_and_export_opens_the_customizer_with_the_picked_template(app_page, studio_url):
     open_generator(app_page, studio_url)
-    pick(app_page, "brs")
+    pick(app_page, "demo")
 
     app_page.click("#customizeExportBtn")
 
     app_page.wait_for_url("**/survey-customizer", timeout=15000)
-    expect(app_page.get_by_text("BRS01").first).to_be_visible(timeout=15000)
+    expect(app_page.get_by_text("DEMO01").first).to_be_visible(timeout=15000)

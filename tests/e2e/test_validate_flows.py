@@ -11,8 +11,8 @@ from playwright.sync_api import expect
 from src.converters.survey import convert_survey_file_to_prism_dataset
 from tests.template_fixtures import completed_official_library
 
-BRS = completed_official_library() / "survey-brs.json"  # converting needs a complete project copy
-DATA = "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\nP002,1,1,0,2\n"
+DEMO = completed_official_library() / "survey-demo.json"  # converting needs a complete project copy
+DATA = "participant_id,session,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\nP001,1,3,4,2,0,0,0,0,0\nP002,1,1,0,2,0,0,0,0,0\n"
 
 
 def make_project_ready(root):
@@ -34,10 +34,10 @@ def converted_project(tmp_path):
     make_project_ready(root)
     library = tmp_path / "lib"
     library.mkdir()
-    shutil.copy(BRS, library / "survey-brs.json")
+    shutil.copy(DEMO, library / "survey-demo.json")
     (root / "code" / "library" / "survey").mkdir(parents=True, exist_ok=True)
-    shutil.copy(BRS, root / "code" / "library" / "survey" / "survey-brs.json")
-    source = tmp_path / "brs.csv"
+    shutil.copy(DEMO, root / "code" / "library" / "survey" / "survey-demo.json")
+    source = tmp_path / "demo.csv"
     source.write_text(DATA)
     convert_survey_file_to_prism_dataset(
         input_path=source, library_dir=library, output_root=root, name="t",

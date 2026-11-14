@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 
 from src.session_map import save_session_map
 
-BRS_CSV = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\nP002,1,0,2\n"
+DEMO_CSV = "participant_id,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\nP001,3,4,2,0,0,0,0,0\nP002,1,0,2,0,0,0,0,0\n"
 
 
 @pytest.fixture
@@ -26,8 +26,8 @@ def open_survey_tab(page, studio_url):
     expect(page.locator("#survey-panel")).to_be_visible()
 
 
-def select_survey_file(page, tmp_path, content=BRS_CSV):
-    data = tmp_path / "brs.csv"
+def select_survey_file(page, tmp_path, content=DEMO_CSV):
+    data = tmp_path / "demo.csv"
     data.write_text(content)
     page.set_input_files("#convertSurveyFile", str(data))
     expect(page.locator("#convertIdColumn")).to_have_value("participant_id")
@@ -42,7 +42,7 @@ def test_survey_file_selection_unlocks_preview_but_not_convert(app_page, studio_
     expect(app_page.locator("#convertBtn")).to_be_disabled()  # preview comes first
 
 
-def convert_survey(page, tmp_path, session, content=BRS_CSV):
+def convert_survey(page, tmp_path, session, content=DEMO_CSV):
     """Preview, then convert; returns once the run has finished."""
     select_survey_file(page, tmp_path, content)
     if session:
@@ -63,7 +63,7 @@ def written_files(project):
 
 @pytest.mark.parametrize("session", ["1", "01", "pre"])
 @pytest.mark.usefixtures("longitudinal")
-@pytest.mark.usefixtures("project_with_brs")
+@pytest.mark.usefixtures("project_with_demo")
 def test_survey_convert_writes_prism_files_in_the_session_exactly_as_typed(app_page, studio_url, tmp_path, project, session):
     open_survey_tab(app_page, studio_url)
 
@@ -89,7 +89,7 @@ def test_survey_convert_without_a_session_asks_for_one_and_writes_nothing(app_pa
 
 
 def test_version_detection_falls_back_to_the_global_library_like_convert_does(app_page, studio_url, tmp_path):
-    """The project library is empty, so only the global BRS template can match the columns."""
+    """The project library is empty, so only the global DEMO template can match the columns."""
     open_survey_tab(app_page, studio_url)
 
     with app_page.expect_response("**/api/survey-detect-version-contexts") as detect:
@@ -109,8 +109,8 @@ def test_previewing_with_only_the_official_template_names_what_is_missing_and_le
 
     error = app_page.locator("#convertError")
     expect(error).to_contain_text("Technical/Respondent", timeout=30000)
-    expect(error).to_contain_text("code/library/survey/survey-brs.json")
-    assert (project / "code" / "library" / "survey" / "survey-brs.json").is_file()  # to fill in, in the Template editor
+    expect(error).to_contain_text("code/library/survey/survey-demo.json")
+    assert (project / "code" / "library" / "survey" / "survey-demo.json").is_file()  # to fill in, in the Template editor
     expect(app_page.locator("#convertBtn")).to_be_disabled()
     assert written_files(project) == []
 
@@ -137,15 +137,15 @@ def test_session_id_label_turns_green_once_a_session_is_chosen(app_page, studio_
 
 
 REPEATED_CSV = (
-    "participant_id,startdate,BRS01,BRS02,BRS03\n"
-    "P001,2026-09-01 10:00:00,4,4,3\n"
-    "P001,2026-03-01 10:00:00,3,4,2\n"
-    "P002,2026-03-02 10:00:00,1,0,2\n"
+    "participant_id,startdate,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\n"
+    "P001,2026-09-01 10:00:00,4,4,3,0,0,0,0,0\n"
+    "P001,2026-03-01 10:00:00,3,4,2,0,0,0,0,0\n"
+    "P002,2026-03-02 10:00:00,1,0,2,0,0,0,0,0\n"
 )
 
 
 @pytest.mark.usefixtures("longitudinal")
-@pytest.mark.usefixtures("project_with_brs")
+@pytest.mark.usefixtures("project_with_demo")
 def test_repeated_ids_become_dated_sessions_when_the_page_asks_for_it(app_page, studio_url, tmp_path, project):
     open_survey_tab(app_page, studio_url)
     app_page.select_option("#convertDuplicateHandling", "sessions")
@@ -315,10 +315,10 @@ def test_review_session_assignment_button_folds_the_table_back_in(app_page, stud
     expect(rows).to_have_count(6, timeout=15000)
 
 
-@pytest.mark.usefixtures("project_with_brs")
+@pytest.mark.usefixtures("project_with_demo")
 def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
-    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,-1,0,2\nP003,often,1,1\n")
+    select_survey_file(app_page, tmp_path, "participant_id,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\nP001,9,4,2,0,0,0,0,0\nP002,-1,0,2,0,0,0,0,0\nP003,often,1,1,0,0,0,0,0\n")
     app_page.click("#previewBtn")
     log = app_page.locator("#conversionLog")
     expect(log).to_contain_text("outside the scale 0-4", timeout=30000)
@@ -330,15 +330,15 @@ def test_preview_lists_every_answer_outside_the_scale_with_the_participant(app_p
 def test_a_semicolon_survey_file_is_read_with_auto_detect(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
     data = tmp_path / "semi.csv"
-    data.write_text("participant_id;BRS01;BRS02;BRS03\nP001;3;4;2\nP002;1;0;2\n")
+    data.write_text("participant_id;DEMO01;DEMO02;DEMO03;DEMO04;DEMO05;DEMO06;DEMO07;DEMO08\nP001;3;4;2;0;0;0;0;0\nP002;1;0;2;0;0;0;0;0\n")
     app_page.set_input_files("#convertSurveyFile", str(data))
     expect(app_page.locator("#convertIdColumn")).to_have_value("participant_id", timeout=30000)
 
 
-@pytest.mark.usefixtures("project_with_brs")
+@pytest.mark.usefixtures("project_with_demo")
 def test_preview_warns_about_skipped_rows_and_cleaned_labels(app_page, studio_url, tmp_path):
     open_survey_tab(app_page, studio_url)
-    select_survey_file(app_page, tmp_path, "participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
+    select_survey_file(app_page, tmp_path, "participant_id,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\nP9,2,2,2,0,0,0,0,0\n,3,4,2,0,0,0,0,0\nP 1,1,0,2,0,0,0,0,0\n")
     app_page.click("#previewBtn")  # a one-timepoint project asks for no session
     log = app_page.locator("#conversionLog")
     expect(log).to_contain_text("no participant ID", timeout=30000)

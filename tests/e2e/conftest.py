@@ -76,10 +76,10 @@ def project(tmp_path):
 
 
 @pytest.fixture
-def project_with_brs(project):
-    """The project holds a completed copy of the BRS template, as after the "complete your template" step:
+def project_with_demo(project):
+    """The project holds a completed copy of the DEMO template, as after the "complete your template" step:
     converting data needs a project template that says who answered and how it was administered."""
-    shutil.copy(completed_official_library() / "survey-brs.json", project / "code" / "library" / "survey" / "survey-brs.json")
+    shutil.copy(completed_official_library() / "survey-demo.json", project / "code" / "library" / "survey" / "survey-demo.json")
 
 
 def _new_page(browser, studio_url, project_path=None):
