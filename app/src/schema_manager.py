@@ -36,28 +36,22 @@ DEFAULT_SCHEMA_DIR = _resolve_default_schema_dir()
 
 
 def parse_version(version_string):
-    """Parse semantic version string to tuple of integers"""
+    """Parse a dotted version into exactly three integers.
+
+    Fewer than three parts are padded with 0, more are cut. Anything that is
+    not a string of dotted integers gives (0, 0, 0): version strings come from
+    untrusted project files and must never raise.
+    """
     try:
-        return tuple(map(int, version_string.split(".")))
-    except Exception:
+        parts = [int(p) for p in version_string.split(".")]
+    except (AttributeError, ValueError):
         return (0, 0, 0)
+    return tuple((parts + [0, 0, 0])[:3])
 
 
 def is_compatible_version(required_version, provided_version):
-    """Check if provided version is compatible with required version"""
-    req_major, req_minor, req_patch = parse_version(required_version)
-    prov_major, prov_minor, prov_patch = parse_version(provided_version)
-
-    # Same major version is required for compatibility
-    if req_major != prov_major:
-        return False
-
-    # Minor version can be higher (backward compatible)
-    if prov_minor < req_minor:
-        return False
-
-    # Patch version can be different
-    return True
+    """Same major version; minor and patch may differ (older or newer)."""
+    return parse_version(required_version)[0] == parse_version(provided_version)[0]
 
 
 def _read_schema_file(schema_path, name, version_tag):
@@ -187,7 +181,8 @@ def validate_schema_version(metadata, schema):
                 (
                     "WARNING",
                     f"Schema version mismatch: metadata uses v{metadata_version}, "
-                    f"validator expects v{schema_version}. Consider upgrading metadata.",
+                    f"validator expects v{schema_version} (different major version). "
+                    "Consider upgrading metadata.",
                 )
             )
 
