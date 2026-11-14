@@ -1,7 +1,8 @@
 # Decision: which instrument templates ship (DASS)
 
-Date: 2026-11-14. Status: **proposed**; the rule below is the user's, the DASS decision is a proposal for the user to
-confirm or change. It resolves open point 1 of `2026-11-14-mappings-layer-design.md`.
+Date: 2026-11-14. Status: **decided in principle by the user** ("we ship only 2 templates to the specifications, and
+prepare this for later usage"); the details of the DASS proposal below are the working decision until the DASS contact
+answers. It resolves open point 1 of `2026-11-14-mappings-layer-design.md`.
 
 ## The rule (decided by the user, 2026-11-14)
 
@@ -53,7 +54,48 @@ Lovibond).
    working decision; if the answer is no, the DASS templates are removed too.
 5. The release notes and `official/library/NOTICE.md` say that the library was reduced and why.
 
-## Consequences for everything that is not shipped (to be planned separately)
+
+## What the user decided (2026-11-14, after the crawler and PsyToolkit review)
+
+- **The move goes ahead with only the two templates that are 100% sure: `dass` and `dass21`** (plus their recipes, plus
+  our own demo templates). Nothing else is moved into prism-specification.
+- **The other templates are not moved and not copied again.** They stay in Studio exactly as they are for now; this
+  record does not decide whether they are withdrawn. The user does not want to retract them over the notice question.
+- **The rest is prepared in the background** (section "Background preparation" below), so that templates can move to
+  the specification one by one when their licence is verified.
+- Why the earlier plan changed: the crawler (`harvest_psytoolkit.py`, January 2026) copied item wording from
+  PsyToolkit; PsyToolkit's own terms say the copyright of the scales "typically belongs to the authors" and grant use in
+  its tool, with nothing about republishing. A notice (acknowledgement, citation) is right and will be built, but it
+  does not answer who may publish the wording. See `docs/handouts/template-licence-audit.md`.
+
+## Facts found in the two templates (to be handled when they move)
+
+- Both carry **German text** next to the English (items and instructions). The DASS terms say a translation must itself
+  be public domain and posted on the DASS site; the origin of our German wording is not recorded. **The German text does
+  not move**; the moved templates are English only.
+- Their `Study.License` is PsyToolkit's paraphrase (`dass`: "The DASS website states that the DASS is public domain ...";
+  `dass21`: "This scale can be used as long as the website, the authors, and the papers are acknowledged."). On the move,
+  the rights holder's own statements (quoted in `template-licence-evidence-2026-11-14.md`) replace them, with the
+  source URL and the retrieval date, and the three DASS conditions are written into the template.
+- Both templates still carry `Study.ItemCount` and the item flag `Reversed`, which the slim-survey schema 2.1.1 no
+  longer defines; they are cleaned as part of the move.
+- `prism:dass.*` has 67 released IDs in `term-ids.txt` (and `dass21` its own); they move unchanged.
+
+## Background preparation (no template moves; none of it needs the answers)
+
+1. **Acknowledgement and citation notice in Studio:** before a user applies a template, show its source, licence
+   statement and acknowledgement requirement; after use, write the citation and the acknowledgement into the generated
+   methods text and the project's citation file; a template without verified evidence says so in plain words.
+2. **Licence evidence pipeline:** every template that ships from the specification must carry its evidence (rights
+   holder, URL, retrieval date, quoted sentence) and a check refuses a template without it, so any instrument cleared
+   later can be added without a new decision.
+3. **Rights-holder contact policy** in the repositories and the documentation: how to ask for removal of an instrument.
+4. **Letters (drafts for the user to send):** to PsyToolkit (Stoet), to the DASS contact (is a JSON template with the
+   unmodified items "not modified"?), to Pfizer/PHQ screeners, and a template for authors ("may we share the items?").
+5. **Wording-free skeletons** (identifiers, answer scale, recipes, mappings; no item text) as a design for later, for the
+   instruments that cannot be shipped with wording; needs a legal view before anything ships.
+
+## Consequences if templates were ever withdrawn from Studio (NOT decided; kept for reference)
 
 - Studio's official library, its instrument registry index and the 104 recipes of the removed instruments go; the
   recipes are kept only for instruments that stay.
