@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation and examples no longer depend on third-party instruments.** The workshop and the beginner tutorials
+  (`TUTORIAL_BEGINNER*`, `WORKSHOP`, `EXAMPLES`) are built on the demonstration questionnaire (`demo`, items
+  `DEMO01`-`DEMO08`, recipe `recipe-demo.json` with `Total` and `Routine`); the example project is `demo_study`
+  and the numbers shown come from running the commands. `examples/wellbeing_multi_demo` is now
+  `examples/multi_version_demo` (task `demo-multi`, its own CC0 template in `code/library/survey/`). The advanced
+  Excel template example uses neutral habit statements. CLI and template examples use `demo` and `dass21`. Eight
+  Studio screenshots in `docs/img/limesurvey/` that showed third-party item text were removed and replaced by a text
+  description. README, paper and roadmap describe the library as demonstration templates, DASS and bring-your-own
+  through `globalLibraryRoot` / `personalLibraryPath`; `official/library/NOTICE.md` says the library was reduced to
+  templates that may be redistributed.
+
 ### Removed
 - **BREAKING: `survey convert --alias` is gone** (and the `alias` upload of Studio's convert, preview and validate routes,
   which now answer HTTP 400). The project item map (`code/item_maps/<task>.json`) is the only item-name mapping: use

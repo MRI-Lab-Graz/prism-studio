@@ -80,7 +80,7 @@ You have two export options:
 
 The Customizer is the recommended path for production surveys. It provides full control over the survey structure and LimeSurvey-specific settings:
 
-![Survey Customizer overview: Groups panel on the left, questions with matrix grouping on the right, export settings at the bottom](img/limesurvey/05b_customizer_top.png)
+*The Customizer shows the Groups panel on the left (one entry per loaded template, drag to reorder), the questions of the selected group with matrix grouping on the right, and the export settings below.*
 
 #### Question Group Management
 - **Reorder groups** via drag-and-drop on the left panel
@@ -91,7 +91,7 @@ The Customizer is the recommended path for production surveys. It provides full 
 #### Per-Question Settings
 Click the **gear icon** (LS) on any question to expand the LimeSurvey tool settings panel:
 
-![Per-question LimeSurvey settings: question type override, CSS class, relevance equation, help text, display columns](img/limesurvey/5c_customizer_tool_settings.png)
+*The settings panel of one question holds the question type override, CSS class, relevance equation, help text and display columns.*
 
 For each question, you can configure LimeSurvey-specific properties:
 
@@ -165,7 +165,7 @@ The Customizer also provides survey-wide LimeSurvey settings in expandable accor
 
 Click **Preview Questionnaire** in the Customizer to see a full preview of the assembled survey in a modal. This shows the questionnaire with matrix grouping and all enabled questions, helping you verify the layout before exporting:
 
-![Questionnaire Preview modal showing matrix table with items and response options](img/limesurvey/5h_customizer_questionaire_preview.png)
+*The preview shows each group as a matrix table with its items as rows and the response options as columns.*
 
 ### Exporting the .lss File
 
@@ -397,10 +397,10 @@ Once the preview looks correct, click **Convert** to write the BIDS-compatible o
 **Survey response files** (one per participant, session, and questionnaire):
 ```
 sub-001/ses-01/survey/
-  sub-001_ses-01_task-gad7_survey.tsv        # Response data (items as columns)
-  sub-001_ses-01_task-gad7_survey.json       # Metadata sidecar (from library template)
-  sub-001_ses-01_task-pss_survey.tsv         # Second questionnaire
-  sub-001_ses-01_task-pss_survey.json
+  sub-001_ses-01_task-dass21_survey.tsv        # Response data (items as columns)
+  sub-001_ses-01_task-dass21_survey.json       # Metadata sidecar (from library template)
+  sub-001_ses-01_task-demo_survey.tsv         # Second questionnaire
+  sub-001_ses-01_task-demo_survey.json
 ```
 
 **Run-numbered files** (when the same questionnaire is administered multiple times):
@@ -463,7 +463,7 @@ If you already have a survey running in LimeSurvey and want to bring it into PRI
 
 1. Navigate to **Core > Template Editor**
 
-![Template Editor with import options](img/limesurvey/10_editor_gad7_loaded.png)
+*The Template Editor opens with the import options (from file, as a new template or merged into an existing one).*
 
 2. Click **+ Create** and select **Import from file**
 3. Upload the `.lss` file (or `.lsa` archive)
@@ -525,7 +525,7 @@ Codes are made alphanumeric (no special characters), with collision resolution v
 
 To ensure smooth conversion between PRISM and LimeSurvey:
 
-- **Question codes**: Use short, alphanumeric codes matching the template item keys (e.g., `GAD701`, `PSS01`)
+- **Question codes**: Use short, alphanumeric codes matching the template item keys (e.g., `DASS2101`, `DASS2102`)
 - **Subquestion codes**: Use simple suffixes (e.g., `SQ001`, `01`)
 - **Answer codes**: Use numeric codes (e.g., `0`, `1`, `2`) rather than text codes
 - **Avoid special characters** in all codes

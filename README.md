@@ -159,10 +159,12 @@ License v3.0, see `LICENSE`; it was relicensed to AGPL-3.0 on 2026-02-06 with th
 contributors (see `RELICENSE_AGREEMENT.md`).
 
 **The bundled instrument library is content, not code, and AGPL-3.0 does not
-apply to it.** Survey templates under `official/library/survey/` carry their
-own per-instrument terms in each template's `Study.License` field. See
-[`official/library/NOTICE.md`](official/library/NOTICE.md) for provenance,
-citation requirements, and what you must check before using an instrument.
+apply to it.** The survey templates under `official/library/survey/` are a demonstration
+template and the DASS; each carries its terms in its `Study.License` field. Other
+instruments are used through your own library (`globalLibraryRoot` or
+`personalLibraryPath` in the settings). See
+[`official/library/NOTICE.md`](official/library/NOTICE.md) for provenance, terms and what you must check before
+using an instrument.
 
 **The PRISM specification is vendored from its own repository and is not AGPL-3.0.** The modality
 schemas (`app/schemas/`, except `project`, `recipe.survey`, `tool-limesurvey`, `instrument-registry` and

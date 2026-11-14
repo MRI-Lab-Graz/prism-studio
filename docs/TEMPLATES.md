@@ -25,7 +25,7 @@ the project-local copy is what matters.
   `StimulusType`, `FileFormat`, `Language`, `Respondent`, `AdministrationMethod`,
   `SoftwarePlatform`, `SoftwareVersion`. Often the block that still needs
   project-specific completion after an import or template copy.
-- **Items** are their own top-level keys (e.g. `PSS01`, `ADS03`). Required:
+- **Items** are their own top-level keys (e.g. `DEMO01`, `DEMO03`). Required:
   `Description` (string or object with an `en` key). Optional: `Levels` (response
   options, numeric keys, each a string or i18n object — keep level text as plain
   labels, scoring logic belongs in recipe files), `Reversed` (boolean), `Range`
@@ -76,7 +76,7 @@ copy records the administration instance.
     "Respondent": "self",
     "AdministrationMethod": "paper"
   },
-  "Study": { "TaskName": "pss", "OriginalName": "Perceived Stress Scale", "LicenseID": "Proprietary" }
+  "Study": { "TaskName": "demo", "OriginalName": "PRISM demonstration questionnaire", "LicenseID": "CC0-1.0" }
 }
 ```
 
@@ -97,16 +97,16 @@ copy records the administration instance.
 
 ## Different item names in a project
 
-If a survey file names its columns differently from a template's item IDs (`A01` instead of `ADS01`), map them once
-per project: `prism_tools.py survey item-map --input data.csv --project DIR --task ads --accept` (see
+If a survey file names its columns differently from a template's item IDs (`A01` instead of `DEMO01`), map them once
+per project: `prism_tools.py survey item-map --input data.csv --project DIR --task demo --accept` (see
 [CLI reference](CLI_REFERENCE.md)). The map is stored in `code/item_maps/<task>.json` and every later conversion in
 that project applies it; the template itself stays unchanged. Importing a LimeSurvey questionnaire with
 **Use library template** (`--use-library --project DIR`) saves the survey's item codes in this same map; it no longer
 writes `Aliases` into the template (`Aliases` already in a template keep working).
 
 A map belongs to its survey: it is applied only when that survey is converted, so two surveys may map the same
-column names (`Q01` to `ADS01` in one, to `GAD01` in the other). When a file's columns are mapped by two surveys,
-select the survey when converting (`survey convert --survey gad`, or *Select specific survey* in Studio); without a
+column names (`Q01` to `DEMO01` in one, to `DASS2101` in the other). When a file's columns are mapped by two surveys,
+select the survey when converting (`survey convert --survey demo`, or *Select specific survey* in Studio); without a
 selection the conversion stops and names both surveys.
 
 ## Validating templates
@@ -184,7 +184,7 @@ Use standard language codes (`["en", "de", "fr"]`, not `["English", "German"]`).
 Keep i18n structure consistent — provide every listed language for each translated
 field. Use a real DOI format (`10.1037/t00742-000` or the `https://doi.org/...`
 form). Put `Study` first among top-level keys, then items, for readability. Use
-meaningful item IDs (`PHQ01`, not `a`).
+meaningful item IDs (`DEMO01`, not `a`).
 
 Avoid: treating the official library file as the normal project editing target;
 leaving `Technical` incomplete after import; changing `TaskName` without

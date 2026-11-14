@@ -53,7 +53,7 @@ for LimeSurvey-specific export steps upstream of this screen.
 
 ## Step 3 — Advanced options (optional, collapsible)
 
-- **Select specific survey** — a free-text task/questionnaire key (e.g. `phq9`) to
+- **Select specific survey** — a free-text task/questionnaire key (e.g. `demo`) to
   target a specific instrument in a multi-survey file.
 - **Language** — defaults to "Auto (template default)".
 - **ID Mapping File (optional)** — a two-column TSV/CSV mapping source IDs to
@@ -80,8 +80,8 @@ column-mapping problems before anything is written.
 Writes the real output into your project, e.g.:
 
 ```text
-sub-001/ses-01/survey/sub-001_ses-01_task-phq9_survey.tsv
-sub-001/ses-01/survey/sub-001_ses-01_task-phq9_survey.json
+sub-001/ses-01/survey/sub-001_ses-01_task-demo_survey.tsv
+sub-001/ses-01/survey/sub-001_ses-01_task-demo_survey.json
 ```
 
 If the survey template came from the official/global library, Convert also copies it
