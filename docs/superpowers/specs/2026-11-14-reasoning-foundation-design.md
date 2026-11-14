@@ -164,6 +164,47 @@ templates warn until they were rewritten; small steps would repeat that for ever
 - Privacy: the projection describes data. It is never a cross-project index; observations are opt-in and local.
 - TDD for every step; the CLI/Studio parity rule for every Studio trigger.
 
+## Calls made after the builder check (my calls; the user may overrule any of them)
+
+A fresh reader raised nine questions. These are settled here, with what each costs if wrong.
+
+1. **Where direction lives.** `IsAbout.Higher` describes the **raw value** of a variable against one concept ("a higher
+   answer means more of this concept"). It is a fact of the sidecar or template link. Recipe `Reversed`/`Invert`
+   (template slimming) is a **scoring** fact about how an item enters a score. They do not conflict: "I have lots of
+   energy" has `Higher: more` for the concept energy (or `less` for fatigue) whatever a score does with it. A score term
+   may carry its own `IsAbout` with its own `Higher`. Step B is a pure schema addition with no cross-repo contract with
+   recipes. Cost if wrong: a recipe-derived direction would have to be added to the projection.
+2. **Projection input and output.** Input: a project folder (the dataset root); a single template or sidecar is accepted
+   for the catalogue only. Sidecar inheritance follows the BIDS inheritance Studio already implements (root-level merged
+   with subject-level). Output: a schema and the JSON-LD context, shipped in prism-specification as the **format**,
+   versioned with the specification, together with conformance example data and a small stdlib-only checker script in the
+   vendored `scripts/` (like `check_terms.py`). The **one implementation that produces it** lives in `src/` and is run by
+   the CLI. Cost if wrong: the producer would have to move into the vendored scripts.
+3. **Kinds and parents of concepts.** The kind enumeration (substance, specimen, observable, finding, scale, construct) is
+   fixed in the specification and checked by the registry check script plus maintainer review, as terms are today; a new
+   kind is a specification change. A concept's `Parent` must be of the same kind. Cost if wrong: a cross-kind hierarchy
+   (a finding under a construct) is refused until a rule allows it.
+4. **`TermURL` as string and as object.** `oneOf` in the schema: a string (the BIDS reading, a definition URL) or an
+   object `{system: URL}`. The projection emits the object form as vocabulary links and a string as a plain definition
+   URL with no vocabulary system. The system is never guessed from the URL.
+5. **The value level.** It exists only where a variable has enumerated values (`Levels` in survey, participants and
+   events). A modality without it gets none now; a modality that needs it proposes its own value structure. No new
+   structure is added to existing schemas in this design.
+6. **Generator scope.** Only the latest stable schema of each modality. Archived schemas are frozen by rule and are never
+   modified; a file pinned to an older version simply does not use the block. The generator and its test live in
+   prism-specification. BIDS passthrough data (MRI, EEG and others) does not get the block: BIDS owns those names.
+7. **Observations for non-tabular data.** The first release exports observations only for data described by a sidecar in
+   tabular form (survey, biosample, environment, biometrics, participants, events). Physio and other recordings appear in
+   the variable catalogue (recording type, channels, conditions) and in observations at file level only.
+8. **Not applicable outside surveys.** The projection emits `observed` or `missing` until a modality defines more. That
+   does not violate "missing stays missing".
+9. **Version bumps.** Each modality schema that gains the block gets a minor bump of its own `version` (as
+   CONTRIBUTING.md requires for an added optional field); the specification repository gets a patch tag per release
+   (v1.5.x). Together with the rule of section 5 this means no existing file warns.
+10. **Order against template slimming.** The template-slimming releases (removing `Subscales`, `ItemCount`, `Reversed`
+    from the survey schema) go first; the meaning block for the survey schema follows. Cost if wrong: one extra survey
+    schema release to reorder.
+
 ## Left to the builder
 
 Field spellings and the exact JSON shape of the block; the JSON-LD context details; the name and options of the CLI
@@ -173,5 +214,5 @@ pull requests; the exact wording of messages.
 ## Open points for the user
 
 1. Who owns the concept vocabulary: a concept registry in prism-specification (seeded with concepts from partners), or each
-   partner's own list that PRISM only links to? (Asked on 2026-11-14; the design assumes the registry, with partner lists
-   linkable.)
+   partner's own list that PRISM only links to? (Asked on 2026-11-14 and not yet answered; the design assumes the
+   registry, with partner lists linkable. If partners keep their own lists, step C shrinks to linking by URL.)
