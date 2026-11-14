@@ -2,17 +2,18 @@
 
 import functools
 import json
-import shutil
 import tempfile
 from pathlib import Path
 
 OFFICIAL_SURVEYS = Path(__file__).resolve().parents[1] / "official" / "library" / "survey"
-GAD7 = OFFICIAL_SURVEYS / "survey-gad7.json"
+DEMO = OFFICIAL_SURVEYS / "survey-demo.json"
+# The templates Studio ships itself; tests never depend on any other file of the official library.
+SHIPPED = ("survey-dass.json", "survey-dass21.json", "survey-demo.json")
 
 
-def library_template(task: str = "gad7") -> dict:
-    """A library template: the official GAD-7 with a task name (the library relaxation never waives that)."""
-    template = json.loads(GAD7.read_text(encoding="utf-8"))
+def library_template(task: str = "demo") -> dict:
+    """A library template: the official demo questionnaire (8 items DEMO01-08, scale 0-4) with a task name (the library relaxation never waives that)."""
+    template = json.loads(DEMO.read_text(encoding="utf-8"))
     template["Study"]["TaskName"] = task
     return template
 
@@ -45,17 +46,25 @@ def complete(template: dict, task: str = "x") -> dict:
 
 @functools.cache
 def completed_official_library() -> Path:
-    """A copy of the official survey library whose templates are complete project copies: converting data needs
+    """A copy of the shipped survey templates (dass, dass21, demo) whose templates are complete project copies: converting data needs
     that, and the official files (which leave Respondent, AdministrationMethod, SoftwarePlatform to the project)
     are never converted from directly."""
     folder = Path(tempfile.mkdtemp(prefix="prism-official-complete-"))
-    for path in OFFICIAL_SURVEYS.iterdir():
-        if path.name.startswith("survey-") and path.suffix == ".json":
-            template = json.loads(path.read_text(encoding="utf-8"))
-            (folder / path.name).write_text(json.dumps(complete(template, path.stem[len("survey-"):])), encoding="utf-8")
-        elif path.is_file():
-            shutil.copy(path, folder / path.name)
+    for name in SHIPPED:
+        template = json.loads((OFFICIAL_SURVEYS / name).read_text(encoding="utf-8"))
+        (folder / name).write_text(json.dumps(complete(template, name[len("survey-"):-len(".json")])), encoding="utf-8")
     return folder
+
+
+def bilingual(template: dict) -> dict:
+    """``template`` with every item text in English and German (the demo template is English only), for tests that
+    need a declared second language."""
+    out = json.loads(json.dumps(template))
+    for key, item in out.items():
+        if key not in _RESERVED and isinstance(item, dict) and isinstance(item.get("Description"), str):
+            item["Description"] = {"en": item["Description"], "de": f"[de] {item['Description']}"}
+    out.setdefault("I18n", {})["Languages"] = ["en", "de"]
+    return out
 
 
 def dump_complete(template: dict, task: str | None = None) -> str:
@@ -63,7 +72,7 @@ def dump_complete(template: dict, task: str | None = None) -> str:
     return json.dumps(complete(template, task or (template.get("Study") or {}).get("TaskName") or "x"))
 
 
-def project_template(task: str = "gad7") -> dict:
+def project_template(task: str = "demo") -> dict:
     """A project copy: a library template that also says how it was administered."""
     template = library_template(task)
     template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper", Respondent="self")

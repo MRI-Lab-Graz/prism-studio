@@ -4,8 +4,8 @@ Two ways answers used to be lost or misrouted:
 - a response field is ``{sid}X{gid}X{qid}{row code}``; with a numeric row code the
   question id and the row code run together (``X38486`` + ``1`` -> ``384861``), and a
   row code used by two arrays (``SQ001``) was read as the same column for both;
-- PRISM's own export shortens matrix row codes to 5 characters (``PHQ901`` ->
-  ``PHQ01``) but its CodeMap recorded the unshortened code, so a survey exported
+- PRISM's own export shortens matrix row codes to 5 characters (``DEMO01`` ->
+  ``DEM01``) but its CodeMap recorded the unshortened code, so a survey exported
   from PRISM converted back with every answer ``n/a``.
 """
 
@@ -150,12 +150,12 @@ def test_parse_lsa_responses_reads_columns_by_question_id(tmp_path):
 # ── PRISM export -> LimeSurvey -> PRISM ─────────────────────────────────
 
 
-def _phq9_customization_groups():
-    path = OFFICIAL_SURVEY_LIBRARY / "survey-phq9.json"
+def _demo_customization_groups():
+    path = OFFICIAL_SURVEY_LIBRARY / "survey-demo.json"
     template = json.loads(path.read_text(encoding="utf-8"))
     codes = [k for k, v in template.items() if isinstance(v, dict) and "Levels" in v]
     return codes, [{
-        "name": "PHQ-9", "order": 0,
+        "name": "DEMO", "order": 0,
         "questions": [
             {"sourceFile": str(path), "questionCode": code, "displayOrder": i,
              "enabled": True, "levels": template[code]["Levels"],
@@ -165,14 +165,14 @@ def _phq9_customization_groups():
     }]
 
 
-def _export_phq9(exporter):
+def _export_demo(exporter):
     from src.limesurvey_exporter import generate_lss, generate_lss_from_customization
 
-    codes, groups = _phq9_customization_groups()
+    codes, groups = _demo_customization_groups()
     if exporter == "customizer":
         xml = generate_lss_from_customization(groups, language="en", matrix_mode=True)
     else:
-        xml = generate_lss([str(OFFICIAL_SURVEY_LIBRARY / "survey-phq9.json")], matrix_mode=True)
+        xml = generate_lss([str(OFFICIAL_SURVEY_LIBRARY / "survey-demo.json")], matrix_mode=True)
     return codes, xml
 
 
@@ -195,9 +195,9 @@ def _answers_for_every_item(xml):
 def test_prism_export_converts_back_with_every_answer(tmp_path, exporter):
     from src.converters.survey import convert_survey_lsa_to_prism_dataset
 
-    codes, xml = _export_phq9(exporter)
+    codes, xml = _export_demo(exporter)
     fields, values = _answers_for_every_item(xml)
-    assert len(fields) - 2 == len(codes), "every PHQ-9 item is a matrix row"
+    assert len(fields) - 2 == len(codes), "every DEMO item is a matrix row"
     lsa = _write_lsa(tmp_path / "survey_archive_123456.lsa", xml.encode(), fields, [values])
 
     out = tmp_path / "ds"
@@ -205,7 +205,7 @@ def test_prism_export_converts_back_with_every_answer(tmp_path, exporter):
         input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=out,
         id_column="id", unknown="warn",
     )
-    tsv = next(out.rglob("*task-phq9_survey.tsv")).read_text(encoding="utf-8").splitlines()
+    tsv = next(out.rglob("*task-demo_survey.tsv")).read_text(encoding="utf-8").splitlines()
     header, row = tsv[0].split("\t"), tsv[1].split("\t")
     answered = dict(zip(header, row))
     assert {code: answered.get(code) for code in codes} == {code: "1" for code in codes}
@@ -215,6 +215,6 @@ def test_prism_export_converts_back_with_every_answer(tmp_path, exporter):
 def test_template_import_of_prism_export_restores_item_ids(exporter):
     from src.converters.limesurvey import limesurvey_questionnaire_template
 
-    codes, xml = _export_phq9(exporter)
+    codes, xml = _export_demo(exporter)
     template = limesurvey_questionnaire_template(xml.encode(), "g10")
-    assert [k for k in template if k.startswith("PHQ")] == codes
+    assert [k for k in template if k.startswith("DEMO")] == codes

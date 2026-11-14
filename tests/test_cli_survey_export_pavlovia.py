@@ -20,12 +20,12 @@ if str(APP_ROOT) not in sys.path:
 from src.cli.commands.survey import cmd_survey_export_pavlovia  # noqa: E402
 from tests.template_fixtures import complete, dump_complete
 
-GAD7_PATH = (
+DEMO_PATH = (
     Path(__file__).resolve().parent.parent
     / "official"
     / "library"
     / "survey"
-    / "survey-gad7.json"
+    / "survey-demo.json"
 )
 
 
@@ -35,13 +35,13 @@ def _args(**overrides) -> SimpleNamespace:
     return SimpleNamespace(**defaults)
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 class TestExportPavlovia:
     def test_exports_psyexp_file_from_template(self, tmp_path, capsys):
         output_dir = tmp_path / "out"
         cmd_survey_export_pavlovia(
             _args(
-                json_path=str(GAD7_PATH),
+                json_path=str(DEMO_PATH),
                 output=str(output_dir),
                 experiment_name="demo",
             )
@@ -81,13 +81,13 @@ class TestExportPavlovia:
         assert "Mood today" not in psyexp_text
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 def test_include_keeps_only_the_listed_questions(tmp_path):
     output_dir = tmp_path / "out"
     cmd_survey_export_pavlovia(
-        _args(json_path=str(GAD7_PATH), output=str(output_dir), include="GAD701,GAD702")
+        _args(json_path=str(DEMO_PATH), output=str(output_dir), include="DEMO01,DEMO02")
     )
 
     text = " ".join(p.read_text() for p in output_dir.iterdir() if p.suffix in (".psyexp", ".csv"))
-    assert "GAD701" in text and "GAD702" in text
-    assert "GAD703" not in text
+    assert "DEMO01" in text and "DEMO02" in text
+    assert "DEMO03" not in text

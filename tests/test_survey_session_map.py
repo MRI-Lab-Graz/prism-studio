@@ -14,14 +14,14 @@ from src.session_map import (
     save_session_map,
 )
 
-BRS = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
+DEMO = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-demo.json"
 
 
 @pytest.fixture
 def library(tmp_path):
     lib = tmp_path / "library" / "survey"
     lib.mkdir(parents=True)
-    (lib / "survey-brs.json").write_text(dump_complete(json.loads(BRS.read_text(encoding="utf-8")), "brs"), encoding="utf-8")
+    (lib / "survey-demo.json").write_text(dump_complete(json.loads(DEMO.read_text(encoding="utf-8")), "demo"), encoding="utf-8")
     return lib
 
 
@@ -54,7 +54,7 @@ def sessions(out, participant):
     return sorted(p.name for p in (out / participant).glob("ses-*"))
 
 
-LONG = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP001,post,4,4,3\nP002,pre,1,0,2\n"
+LONG = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,pre,3,4,2\nP001,post,4,4,3\nP002,pre,1,0,2\n"
 
 
 def test_unmapped_labels_block_and_nothing_is_written(tmp_path, library):
@@ -84,7 +84,7 @@ def test_mapped_labels_become_the_users_session_names(tmp_path, library):
 def test_two_source_labels_may_share_one_session(tmp_path, library):
     proj = project(tmp_path)
     save_session_map(proj, {"T0": "1", "pre": "1"})
-    csv_text = "participant_id,session,BRS01,BRS02,BRS03\nP001,T0,3,4,2\nP002,pre,1,0,2\n"
+    csv_text = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,T0,3,4,2\nP002,pre,1,0,2\n"
     out = convert(tmp_path, library, csv_text, proj)
     assert sessions(out, "sub-P001") == ["ses-1"] and sessions(out, "sub-P002") == ["ses-1"]
 
@@ -92,7 +92,7 @@ def test_two_source_labels_may_share_one_session(tmp_path, library):
 def test_numeric_session_column_matches_integer_keys(tmp_path, library):
     proj = project(tmp_path)
     save_session_map(proj, {"1": "a", "2": "b"})
-    csv_text = "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\nP001,2,4,4,3\n"
+    csv_text = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,1,3,4,2\nP001,2,4,4,3\n"
     out = convert(tmp_path, library, csv_text, proj)
     assert sessions(out, "sub-P001") == ["ses-a", "ses-b"]  # never ses-10
 
@@ -100,7 +100,7 @@ def test_numeric_session_column_matches_integer_keys(tmp_path, library):
 def test_zero_padded_label_is_not_the_unpadded_key(tmp_path, library):
     proj = project(tmp_path)
     save_session_map(proj, {"1": "a"})
-    csv_text = "participant_id,session,BRS01,BRS02,BRS03\nP001,01,3,4,2\n"
+    csv_text = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,01,3,4,2\n"
     with pytest.raises(SessionsNotMappedError) as info:
         convert(tmp_path, library, csv_text, proj)
     assert info.value.labels == ["01"]
@@ -109,7 +109,7 @@ def test_zero_padded_label_is_not_the_unpadded_key(tmp_path, library):
 def test_blank_session_cell_blocks_instead_of_becoming_ses_1(tmp_path, library):
     proj = project(tmp_path)
     save_session_map(proj, {"pre": "1"})
-    csv_text = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP002,,1,0,2\n"
+    csv_text = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,pre,3,4,2\nP002,,1,0,2\n"
     with pytest.raises(SessionsNotMappedError) as info:
         convert(tmp_path, library, csv_text, proj)
     assert info.value.labels == [""]
@@ -117,7 +117,7 @@ def test_blank_session_cell_blocks_instead_of_becoming_ses_1(tmp_path, library):
 
 def test_no_session_source_is_refused_in_a_longitudinal_project(tmp_path, library):
     proj = project(tmp_path)
-    csv_text = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\n"
+    csv_text = "participant_id,DEMO01,DEMO02,DEMO03\nP001,3,4,2\n"
     with pytest.raises(SessionMapError, match="session"):
         convert(tmp_path, library, csv_text, proj, session_column=None)
 
@@ -140,7 +140,7 @@ def test_without_a_project_nothing_changes(tmp_path, library):
 
 
 def test_undeclared_project_without_any_session_source_converts_as_before(tmp_path, library):
-    csv_text = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\n"
+    csv_text = "participant_id,DEMO01,DEMO02,DEMO03\nP001,3,4,2\n"
     out = convert(
         tmp_path, library, csv_text, project(tmp_path, timepoints=None),
         session_column=None, session=None,

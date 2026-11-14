@@ -10,7 +10,7 @@ V = Draft7Validator(SCHEMA)
 
 
 def _recipe(**score_extra):
-    recipe = json.loads((ROOT / "official/recipe/survey/recipe-phq9.json").read_text())
+    recipe = json.loads((ROOT / "official/recipe/survey/recipe-demo.json").read_text())
     # the official file says "1.0.0", the schema wants "1.0": a separate, older mismatch
     recipe["RecipeVersion"] = "1.0"
     recipe["Scores"] = [{**recipe["Scores"][0], **score_extra}]

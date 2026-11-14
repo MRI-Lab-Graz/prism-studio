@@ -235,14 +235,14 @@ def test_propose_environment_column_from_data_file(tmp_path):
 
 def test_terms_list_survey_shows_instrument_item_and_score():
     code, out = _run("list", "--modality", "survey")
-    assert code == 0 and "prism:tipi\tinstrument" in out
-    assert "prism:tipi.tipi02\titem" in out and "prism:tipi.score-extraversion\tscore" in out
+    assert code == 0 and "prism:demo\tinstrument" in out
+    assert "prism:demo.demo02\titem" in out and "prism:demo.score-routine\tscore" in out
 
 
 def test_terms_show_survey_item_by_id_and_by_its_key():
-    for name in ("prism:tipi.tipi02", "TIPI02"):
+    for name in ("prism:demo.demo02", "DEMO02"):
         code, out = _run("show", name, "--modality", "survey", "--json")
-        assert code == 0 and json.loads(out)["term"]["Parent"] == "prism:tipi"
+        assert code == 0 and json.loads(out)["term"]["Parent"] == "prism:demo"
 
 
 def test_terms_freeze_is_for_survey_only():
@@ -254,23 +254,23 @@ def test_terms_freeze_refuses_when_a_released_id_is_gone(tmp_path, monkeypatch):
     # run in-process against a library that lost an item the released list still holds
     import argparse
     from src.cli.commands import terms as cmd
-    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:tipi.gone"})
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:demo.gone"})
     with pytest.raises(SystemExit) as exc:
         cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
     assert exc.value.code == 1
 
 
 def test_terms_resolve_cli(tmp_path):
-    side = json.loads((REPO / "official" / "library" / "survey" / "survey-tipi.json").read_text(encoding="utf-8"))
-    side["Study"]["TaskName"] = "tipi"   # a project sidecar carries it; the library file relies on its name
-    side["TIPI02"]["MaxValue"] = 99
-    path = tmp_path / "task-tipi_survey.json"
+    side = json.loads((REPO / "official" / "library" / "survey" / "survey-demo.json").read_text(encoding="utf-8"))
+    side["Study"]["TaskName"] = "demo"   # a project sidecar carries it; the library file relies on its name
+    side["DEMO02"]["MaxValue"] = 99
+    path = tmp_path / "task-demo_survey.json"
     path.write_text(json.dumps(side), encoding="utf-8")
     code, out = _run("resolve", "--sidecar", str(path))
-    assert code == 0 and "TIPI01\tprism:tipi.tipi01\t" in out and "TIPI02\t-\tchanged scale" in out
+    assert code == 0 and "DEMO01\tprism:demo.demo01\t" in out and "DEMO02\t-\tchanged scale" in out
     code, out = _run("resolve", "--sidecar", str(path), "--json")
     data = json.loads(out)
-    assert code == 0 and data["success"] and data["instrument"] == "prism:tipi"
+    assert code == 0 and data["success"] and data["instrument"] == "prism:demo"
 
 
 @pytest.mark.parametrize("content", [None, "[1]", "{"])

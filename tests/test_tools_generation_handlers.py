@@ -269,13 +269,13 @@ def test_quick_export_honours_the_ticked_questions_per_file() -> None:
     """The page sends {path, include, ...} per file; unticked questions must not be exported."""
     app = _build_app()
     handlers = importlib.import_module("src.web.blueprints.tools_generation_handlers")
-    brs = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
+    demo = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-demo.json"
 
     with app.test_request_context(
         "/api/generate-lss",
         method="POST",
         json={
-            "files": [{"path": str(brs), "include": ["BRS01", "BRS03"], "matrix": False}],
+            "files": [{"path": str(demo), "include": ["DEMO01", "DEMO03"], "matrix": False}],
             "language": "en",
         },
     ):
@@ -283,5 +283,5 @@ def test_quick_export_honours_the_ticked_questions_per_file() -> None:
         response.direct_passthrough = False
         body = response.get_data(as_text=True)
 
-    assert "BRS01" in body and "BRS03" in body
-    assert "BRS02" not in body
+    assert "DEMO01" in body and "DEMO03" in body
+    assert "DEMO02" not in body

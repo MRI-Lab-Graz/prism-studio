@@ -8,11 +8,11 @@ from playwright.sync_api import expect
 from tests.e2e.test_converter_flows import open_survey_tab
 from tests.e2e.test_session_map_flows import PEOPLE_LONG, make_longitudinal
 
-LONG = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP002,post,1,0,2\n"
+LONG = "participant_id,session,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\nP001,pre,3,4,2,0,0,0,0,0\nP002,post,1,0,2,0,0,0,0,0\n"
 
 
 def survey_file(page, tmp_path, text=LONG):
-    data = tmp_path / "brs.csv"
+    data = tmp_path / "demo.csv"
     data.write_text(text)
     page.set_input_files("#convertSurveyFile", str(data))
 

@@ -70,21 +70,21 @@ def test_a_dry_run_writes_no_data_but_leaves_the_template_it_used(setup, capsys)
     assert not list(project.glob("sub-*"))
 
 
-from template_fixtures import GAD7, library_template  # noqa: E402
+from template_fixtures import DEMO, library_template  # noqa: E402
 
 
 def _save_args(tmp_path, **overrides):
     template = tmp_path / "gad7.json"
     template.write_text(json.dumps(library_template()), encoding="utf-8")
     args = dict(
-        project=None, to="personal", modality="survey", filename="survey-gad7.json", template=str(template),
+        project=None, to="personal", modality="survey", filename="survey-demo.json", template=str(template),
         schema_version="stable", is_global=False, force=False,
     )
     args.update(overrides)
     return SimpleNamespace(**args)
 
 
-@pytest.mark.skipif(not GAD7.exists(), reason="official library not available")
+@pytest.mark.skipif(not DEMO.exists(), reason="official library not available")
 def test_template_save_to_the_personal_library(tmp_path, monkeypatch, capsys):
     from src.cli.commands.library import cmd_library_template_save
 
@@ -95,10 +95,10 @@ def test_template_save_to_the_personal_library(tmp_path, monkeypatch, capsys):
     cmd_library_template_save(_save_args(tmp_path))
 
     assert "Saved to" in capsys.readouterr().out
-    assert (mine / "survey" / "survey-gad7.json").exists()
+    assert (mine / "survey" / "survey-demo.json").exists()
 
 
-@pytest.mark.skipif(not GAD7.exists(), reason="official library not available")
+@pytest.mark.skipif(not DEMO.exists(), reason="official library not available")
 def test_template_save_to_personal_without_a_personal_library_says_how_to_set_it(tmp_path, monkeypatch, capsys):
     from src.cli.commands.library import cmd_library_template_save
 

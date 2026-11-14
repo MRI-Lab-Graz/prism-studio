@@ -1,5 +1,5 @@
 """Found converting a real LimeSurvey 6 archive of a survey exported from PRISM:
-- the "missing items" count ignored aliases, so PHQ-9 (LimeSurvey `PHQ01`, template `PHQ901`) was
+- the "missing items" count ignored aliases, so DEMO (LimeSurvey `DEM01`, template `DEMO01`) was
   reported as 9 missing items although every answer had been converted;
 - numbers came out as LimeSurvey stores them (`55.0000000000`) for integer items;
 - a generic formula of a calculated item was written as `{a.NAOK}*2`, which LimeSurvey stores as
@@ -13,7 +13,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 
-from test_limesurvey_roundtrip_codes import _answers_for_every_item, _export_phq9, _write_lsa  # noqa: E402
+from test_limesurvey_roundtrip_codes import _answers_for_every_item, _export_demo, _write_lsa  # noqa: E402
 
 from tests.template_fixtures import completed_official_library, dump_complete  # noqa: E402
 
@@ -36,12 +36,12 @@ def test_an_item_whose_column_has_an_alias_is_not_missing():
     from src.converters.survey import _compute_missing_items_report
 
     schema = {
-        "PHQ901": {}, "PHQ902": {}, "PHQ903": {},
-        "_aliases": {"PHQ01": "PHQ901", "PHQ02": "PHQ902"},
-        "_reverse_aliases": {"PHQ901": ["PHQ01"], "PHQ902": ["PHQ02"]},
+        "DEMO01": {}, "DEMO02": {}, "DEMO03": {},
+        "_aliases": {"DEM01": "DEMO01", "DEM02": "DEMO02"},
+        "_reverse_aliases": {"DEMO01": ["DEM01"], "DEMO02": ["DEM02"]},
     }
-    report = _compute_missing_items_report({"phq9"}, {"phq9": {"json": schema}}, {"PHQ01": "phq9", "PHQ02": "phq9"})
-    assert report == {"phq9": 1}
+    report = _compute_missing_items_report({"demo"}, {"demo": {"json": schema}}, {"DEM01": "demo", "DEM02": "demo"})
+    assert report == {"demo": 1}
 
 
 def test_an_item_read_by_its_column_name_is_not_missing_even_when_the_column_is_not_mapped():
@@ -56,13 +56,13 @@ def test_an_item_read_by_its_column_name_is_not_missing_even_when_the_column_is_
 def test_a_survey_exported_from_prism_reports_no_missing_items(tmp_path):
     from src.converters.survey import convert_survey_lsa_to_prism_dataset
 
-    codes, xml = _export_phq9("customizer")
+    codes, xml = _export_demo("customizer")
     fields, values = _answers_for_every_item(xml)
     lsa = _write_lsa(tmp_path / "survey_archive_1.lsa", xml.encode(), fields, [values])
     result = convert_survey_lsa_to_prism_dataset(
         input_path=lsa, library_dir=OFFICIAL_SURVEY_LIBRARY, output_root=tmp_path / "ds", id_column="id", unknown="warn",
     )
-    assert result.missing_items_by_task == {"phq9": 0}
+    assert result.missing_items_by_task == {"demo": 0}
 
 
 # ── numbers LimeSurvey pads with zeros ───────────────────────────────────
@@ -171,20 +171,20 @@ def test_a_limesurvey_formula_is_used_as_written():
 
 @pytest.mark.parametrize("exporter", ["customizer", "quick"])
 def test_a_prism_export_matches_its_template_by_the_original_item_codes(exporter):
-    """LimeSurvey codes are shortened (PHQ901 -> PHQ01); the CodeMap in the export says which is which."""
+    """LimeSurvey codes are shortened (DEMO01 -> DEM01); the CodeMap in the export says which is which."""
     from src.converters.limesurvey import parse_lss_xml_by_groups
     from src.converters.survey_templates import match_against_library
 
-    _codes, xml = _export_phq9(exporter)
+    _codes, xml = _export_demo(exporter)
     [(name, group)] = parse_lss_xml_by_groups(xml.encode()).items()
     match = match_against_library(group, group_name=name)
-    assert match.template_key == "phq9" and match.overlap_count == 9 and match.confidence in ("exact", "high")
+    assert match.template_key == "demo" and match.overlap_count == 8 and match.confidence in ("exact", "high")
 
 
 def test_converting_a_prism_export_raises_no_match_warning(tmp_path):
     from src.converters.survey import convert_survey_lsa_to_prism_dataset
 
-    _codes, xml = _export_phq9("customizer")
+    _codes, xml = _export_demo("customizer")
     fields, values = _answers_for_every_item(xml)
     lsa = _write_lsa(tmp_path / "survey_archive_1.lsa", xml.encode(), fields, [values])
     result = convert_survey_lsa_to_prism_dataset(

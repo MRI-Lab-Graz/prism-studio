@@ -56,7 +56,7 @@ def sub_row(page, code):
 
 
 def test_a_survey_name_is_required_before_anything_is_exported(app_page, studio_url):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     downloads = []
     app_page.on("download", lambda d: downloads.append(d))
 
@@ -69,33 +69,33 @@ def test_a_survey_name_is_required_before_anything_is_exported(app_page, studio_
 
 
 def test_the_export_carries_the_survey_name_and_one_group_per_template(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs", "gad7")
+    open_customizer(app_page, studio_url, "demo", "dass21")
 
-    lss = export(app_page, tmp_path, "s.lss", survey_name="Anxiety and resilience")
+    lss = export(app_page, tmp_path, "s.lss", survey_name="Demo and stress")
 
-    assert "Anxiety and resilience" in lss.read_text()
+    assert "Demo and stress" in lss.read_text()
     names = " ".join(lss_group_names(lss))
-    assert "Resilience" in names and "Generalized Anxiety" in names
+    assert "demonstration" in names and "Depression, Anxiety" in names
     codes = lss_codes(lss)
-    assert {"BRS01", "BRS02", "BRS03"} <= set(codes)
-    # LimeSurvey subquestion codes are shortened to 5 characters (GAD701 -> GAD01)
-    assert len([c for c in codes if re.fullmatch(r"GAD0\d", c)]) == 7
+    assert {"DEM01", "DEM02", "DEM03"} <= set(codes)
+    # LimeSurvey subquestion codes are shortened to 5 characters (DASS2101 -> DAS01)
+    assert len([c for c in codes if re.fullmatch(r"DAS\d\d", c)]) == 21
 
 
 def test_a_switched_off_question_is_not_exported(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
-    sub_row(app_page, "BRS02").locator(".question-enabled").click()
+    open_customizer(app_page, studio_url, "demo")
+    sub_row(app_page, "DEMO02").locator(".question-enabled").click()
 
     lss = export(app_page, tmp_path, "s.lss")
 
     codes = lss_codes(lss)
-    assert "BRS01" in codes and "BRS03" in codes
-    assert "BRS02" not in codes
+    assert "DEM01" in codes and "DEM03" in codes  # subquestion codes are shortened to 5 characters
+    assert "DEM02" not in codes
 
 
 def test_matrix_required_switch_decides_if_the_matrix_is_mandatory(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
-    required = lambda lss: [r.findtext("mandatory") for r in lss_root(lss).find("questions").iter("row") if r.findtext("title") == "MBRS01"]
+    open_customizer(app_page, studio_url, "demo")
+    required = lambda lss: [r.findtext("mandatory") for r in lss_root(lss).find("questions").iter("row") if r.findtext("title") == "MDEMO01"]
     assert required(export(app_page, tmp_path, "a.lss")) == ["Y"]
 
     app_page.locator(".matrix-mandatory").uncheck()
@@ -104,18 +104,18 @@ def test_matrix_required_switch_decides_if_the_matrix_is_mandatory(app_page, stu
 
 
 def test_without_matrix_grouping_every_item_is_its_own_question(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     app_page.locator("#matrixMode").uncheck()
 
     lss = export(app_page, tmp_path, "s.lss")
 
     codes = lss_codes(lss)
-    assert {"BRS01", "BRS02", "BRS03"} <= set(codes)
-    assert "MBRS01" not in codes
+    assert {"DEMO01", "DEMO02", "DEMO03"} <= set(codes)
+    assert "MDEMO01" not in codes
 
 
 def test_renaming_a_group_changes_the_group_in_the_export(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     app_page.locator(".group-item .rename-group-btn").first.click()
     app_page.fill("#renameGroupName", "Coping block")
     app_page.click("#confirmRenameGroup")
@@ -127,11 +127,11 @@ def test_renaming_a_group_changes_the_group_in_the_export(app_page, studio_url, 
 
 
 def test_a_new_group_can_take_a_question_by_dragging_and_is_exported(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "gad7")
+    open_customizer(app_page, studio_url, "demo")
     app_page.locator("#addGroupBtn").click()
     app_page.fill("#newGroupName", "Extra")
     app_page.click("#confirmAddGroup")
-    expect(app_page.locator("#groupsList .group-name")).to_have_text(["Generalized Anxiety Disorder (GAD-7)", "Extra"])
+    expect(app_page.locator("#groupsList .group-name")).to_have_text(["PRISM demonstration questionnaire", "Extra"])
 
     lss = export(app_page, tmp_path, "s.lss")
 
@@ -140,18 +140,18 @@ def test_a_new_group_can_take_a_question_by_dragging_and_is_exported(app_page, s
 
 
 def test_reset_brings_back_a_switched_off_question(app_page, studio_url):
-    open_customizer(app_page, studio_url, "brs")
-    sub_row(app_page, "BRS02").locator(".question-enabled").click()
+    open_customizer(app_page, studio_url, "demo")
+    sub_row(app_page, "DEMO02").locator(".question-enabled").click()
     expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(2)
 
     app_page.click("#resetBtn")
 
     expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(3)
-    expect(sub_row(app_page, "BRS02").locator(".question-enabled")).to_be_checked()
+    expect(sub_row(app_page, "DEMO02").locator(".question-enabled")).to_be_checked()
 
 
 def test_pavlovia_target_exports_a_zip_with_every_group(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     app_page.select_option("#targetTool", "pavlovia")
 
     archive = export(app_page, tmp_path, "s.zip")
@@ -160,11 +160,11 @@ def test_pavlovia_target_exports_a_zip_with_every_group(app_page, studio_url, tm
         names = z.namelist()
         text = " ".join(z.read(n).decode("utf-8", "ignore") for n in names if n.endswith((".csv", ".psyexp")))
     assert any(n.endswith(".psyexp") for n in names)
-    assert "BRS01" in text
+    assert "DEMO01" in text
 
 
 def test_the_word_export_is_a_questionnaire_document(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
 
     docx = export(app_page, tmp_path, "s.docx", button="#exportWordBtn")
 
@@ -174,7 +174,7 @@ def test_the_word_export_is_a_questionnaire_document(app_page, studio_url, tmp_p
 
 
 def test_the_preview_shows_the_questions_as_a_respondent_sees_them(app_page, studio_url):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
 
     app_page.click("#previewQuestionnaireBtn")
 
@@ -182,16 +182,16 @@ def test_the_preview_shows_the_questions_as_a_respondent_sees_them(app_page, stu
 
 
 def test_save_to_project_copies_the_templates_into_the_project_library(app_page, studio_url, tmp_path, project):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     app_page.locator("#saveToProject").check()
 
     export(app_page, tmp_path, "s.lss")
 
-    assert (project / "code" / "library" / "survey" / "survey-brs.json").exists()
+    assert (project / "code" / "library" / "survey" / "survey-demo.json").exists()
 
 
 def test_export_languages_decide_which_languages_the_survey_carries(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "brs")
+    open_customizer(app_page, studio_url, "demo")
     english_only = export(app_page, tmp_path, "en.lss")
     assert sorted(el.text for el in lss_root(english_only).find("languages")) == ["en"]
 

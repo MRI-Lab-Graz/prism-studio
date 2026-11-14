@@ -33,7 +33,7 @@ def test_sessions_mode_without_dates_keeps_file_order():
 
 
 REPEATED = (
-    "participant_id,startdate,BRS01,BRS02,BRS03\n"
+    "participant_id,startdate,DEMO01,DEMO02,DEMO03\n"
     "P001,2026-09-01 10:00:00,4,4,3\n"
     "P001,2026-03-01 10:00:00,3,4,2\n"
 )
@@ -63,7 +63,7 @@ def test_sessions_mode_in_longitudinal_project_requires_mapping(tmp_path, librar
 def test_sessions_mode_without_repeats_still_needs_a_session_source(tmp_path, library):
     proj = project(tmp_path)
     save_session_map(proj, {"x": "pre"})  # the generated label "1" is not mapped
-    single_wave = "participant_id,startdate,BRS01,BRS02,BRS03\nP001,2026-03-01,3,4,2\n"
+    single_wave = "participant_id,startdate,DEMO01,DEMO02,DEMO03\nP001,2026-03-01,3,4,2\n"
     with pytest.raises(SessionsNotMappedError) as info:
         convert(
             tmp_path, library, single_wave, proj,

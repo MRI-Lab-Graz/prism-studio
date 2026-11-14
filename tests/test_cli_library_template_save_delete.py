@@ -28,21 +28,21 @@ from src.cli.commands.library import (  # noqa: E402
 )
 from template_fixtures import library_template  # noqa: E402
 
-GAD7_PATH = (
+DEMO_PATH = (
     Path(__file__).resolve().parent.parent
     / "official"
     / "library"
     / "survey"
-    / "survey-gad7.json"
+    / "survey-demo.json"
 )
 
 
 @pytest.fixture(autouse=True)
-def _gad7_with_a_task_name(tmp_path_factory, monkeypatch):
-    """The official GAD-7 has no task name; a library template needs one (the editor always required it)."""
-    path = tmp_path_factory.mktemp("template") / "survey-gad7.json"
+def _demo_with_a_task_name(tmp_path_factory, monkeypatch):
+    """The official demo template has no task name; a library template needs one (the editor always required it)."""
+    path = tmp_path_factory.mktemp("template") / "survey-demo.json"
     path.write_text(json.dumps(library_template()), encoding="utf-8")
-    monkeypatch.setattr(sys.modules[__name__], "GAD7_PATH", path)
+    monkeypatch.setattr(sys.modules[__name__], "DEMO_PATH", path)
 
 
 def _save_args(**overrides) -> SimpleNamespace:
@@ -65,7 +65,7 @@ def _delete_args(**overrides) -> SimpleNamespace:
     return SimpleNamespace(**defaults)
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 class TestTemplateSave:
     def test_saves_valid_template_into_project_library(self, tmp_path, capsys):
         project = tmp_path / "project"
@@ -74,13 +74,13 @@ class TestTemplateSave:
         cmd_library_template_save(
             _save_args(
                 project=str(project),
-                filename="survey-gad7.json",
-                template=str(GAD7_PATH),
+                filename="survey-demo.json",
+                template=str(DEMO_PATH),
                 is_global=True,
             )
         )
 
-        saved = project / "code" / "library" / "survey" / "survey-gad7.json"
+        saved = project / "code" / "library" / "survey" / "survey-demo.json"
         assert saved.exists()
         assert "Saved to" in capsys.readouterr().out
 
@@ -91,14 +91,14 @@ class TestTemplateSave:
         cmd_library_template_save(
             _save_args(
                 project=str(project),
-                filename="survey-gad7",
-                template=str(GAD7_PATH),
+                filename="survey-demo",
+                template=str(DEMO_PATH),
                 is_global=True,
             )
         )
 
         assert (
-            project / "code" / "library" / "survey" / "survey-gad7.json"
+            project / "code" / "library" / "survey" / "survey-demo.json"
         ).exists()
 
     def test_refuses_to_overwrite_without_force(self, tmp_path, capsys):
@@ -108,8 +108,8 @@ class TestTemplateSave:
         cmd_library_template_save(
             _save_args(
                 project=str(project),
-                filename="survey-gad7.json",
-                template=str(GAD7_PATH),
+                filename="survey-demo.json",
+                template=str(DEMO_PATH),
                 is_global=True,
             )
         )
@@ -118,8 +118,8 @@ class TestTemplateSave:
             cmd_library_template_save(
                 _save_args(
                     project=str(project),
-                    filename="survey-gad7.json",
-                    template=str(GAD7_PATH),
+                    filename="survey-demo.json",
+                    template=str(DEMO_PATH),
                     is_global=True,
                 )
             )
@@ -129,15 +129,15 @@ class TestTemplateSave:
     def test_force_overwrites_existing(self, tmp_path):
         project = tmp_path / "project"
         project.mkdir()
-        target = project / "code" / "library" / "survey" / "survey-gad7.json"
+        target = project / "code" / "library" / "survey" / "survey-demo.json"
         target.parent.mkdir(parents=True)
         target.write_text("{}", encoding="utf-8")
 
         cmd_library_template_save(
             _save_args(
                 project=str(project),
-                filename="survey-gad7.json",
-                template=str(GAD7_PATH),
+                filename="survey-demo.json",
+                template=str(DEMO_PATH),
                 force=True,
                 is_global=True,
             )
@@ -155,7 +155,7 @@ class TestTemplateSave:
                 _save_args(
                     project=str(project),
                     filename="../escape.json",
-                    template=str(GAD7_PATH),
+                    template=str(DEMO_PATH),
                 )
             )
         assert exc_info.value.code == 1
@@ -207,17 +207,17 @@ class TestTemplateSave:
         assert "JSON object" in capsys.readouterr().out
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 class TestTemplateDelete:
     def test_deletes_with_yes_flag(self, tmp_path, capsys):
         project = tmp_path / "project"
-        target = project / "code" / "library" / "survey" / "survey-gad7.json"
+        target = project / "code" / "library" / "survey" / "survey-demo.json"
         target.parent.mkdir(parents=True)
-        target.write_text(GAD7_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+        target.write_text(DEMO_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 
         cmd_library_template_delete(
             _delete_args(
-                project=str(project), filename="survey-gad7.json", yes=True
+                project=str(project), filename="survey-demo.json", yes=True
             )
         )
 
@@ -226,13 +226,13 @@ class TestTemplateDelete:
 
     def test_declining_confirmation_keeps_file(self, tmp_path, monkeypatch):
         project = tmp_path / "project"
-        target = project / "code" / "library" / "survey" / "survey-gad7.json"
+        target = project / "code" / "library" / "survey" / "survey-demo.json"
         target.parent.mkdir(parents=True)
         target.write_text("{}", encoding="utf-8")
 
         monkeypatch.setattr("builtins.input", lambda prompt: "n")
         cmd_library_template_delete(
-            _delete_args(project=str(project), filename="survey-gad7.json")
+            _delete_args(project=str(project), filename="survey-demo.json")
         )
 
         assert target.exists()
