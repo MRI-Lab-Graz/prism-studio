@@ -49,3 +49,18 @@ def test_a_pinned_older_schema_matches_its_own_files():
 
 def test_no_version_declared_is_no_issue():
     assert validate_schema_version({"Metadata": {}}, SCHEMA) == []
+
+
+def test_a_sidecar_with_an_older_minor_version_passes_the_whole_validator(tmp_path):
+    from src.validation_matrix import NONE, SIDECAR, Defect, _json, build_clean_project, run_matrix
+
+    clean = tmp_path / "control"
+    build_clean_project(clean)
+    older = Defect(
+        "sidecar_older_minor",
+        "the sidecar declares an older minor schema version",
+        NONE,
+        _json(SIDECAR, lambda d: d["Metadata"].__setitem__("SchemaVersion", "2.0.0")),
+    )
+    row = run_matrix(clean, [older])["rows"][0]
+    assert "PRISM005" not in row["got"], row
