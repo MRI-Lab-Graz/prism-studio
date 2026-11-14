@@ -25,7 +25,7 @@ If neither applies, skip `Variants` entirely — see the basics tutorial.
 
 Follow along with
 [examples/excel_template/advanced/survey_import_advanced_example.xlsx](../examples/excel_template/advanced/survey_import_advanced_example.xlsx)
-— a 10-item "Brief Wellbeing Check" with a 5-item short form.
+— a 10-item "Brief Habits Check" with a 5-item short form.
 
 Like the basics workbook, headers are locked and `DataType`/`Units`/`LicenseID`/
 `Respondent`/`AdministrationMethod`/`SoftwarePlatform`/`TranslationMethod` are
@@ -108,10 +108,10 @@ though only one has an override, and `VariantScales` carries just the 5-item ove
 ```json
 {
   "wellcheck01": {
-    "Description": { "en": "I felt cheerful and in good spirits", "de": "..." },
+    "Description": { "en": "I tidied my desk before starting work", "de": "..." },
     "Levels": {
-      "0": { "en": "at no time", "de": "..." },
-      "4": { "en": "all of the time", "de": "..." }
+      "0": { "en": "never", "de": "..." },
+      "4": { "en": "almost always", "de": "..." }
     },
     "DataType": "integer",
     "MinValue": 0.0,
