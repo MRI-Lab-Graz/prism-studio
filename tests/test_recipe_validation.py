@@ -608,3 +608,36 @@ def test_a_score_name_may_not_be_an_id_column_or_an_item_of_the_questionnaire():
     for bad in ("participant_id", "Session", "RUN", "Q2", "q1"):
         (error,) = errors_for(bad)
         assert "collides" in error, bad
+
+
+# ---------------------------------------------------------------------------
+# RecipeVersion is major.minor ("1.0"), never major.minor.patch ("1.0.0")
+# ---------------------------------------------------------------------------
+
+class TestRecipeVersionFormat:
+    def test_major_minor_is_accepted(self):
+        assert validate_recipe(_valid_survey_recipe(RecipeVersion="1.0")) == []
+        assert validate_recipe(_valid_survey_recipe(RecipeVersion="12.34")) == []
+
+    def test_major_minor_patch_is_refused_with_a_hint(self):
+        errors = validate_recipe(_valid_survey_recipe(RecipeVersion="1.0.0"))
+        assert any("RecipeVersion" in e and "1.0.0" in e and "major.minor" in e for e in errors)
+
+    def test_other_shapes_are_refused(self):
+        for bad in ("1", "v1.0", "1.0-beta", " 1.0", "", None, 1.0, ["1.0"]):
+            errors = validate_recipe(_valid_survey_recipe(RecipeVersion=bad))
+            assert any("RecipeVersion" in e for e in errors), bad
+
+
+def test_every_official_recipe_declares_a_major_minor_version():
+    import json
+    import re
+    from pathlib import Path
+
+    folder = Path(__file__).resolve().parents[1] / "official" / "recipe"
+    wrong = {
+        p.name: json.loads(p.read_text(encoding="utf-8")).get("RecipeVersion")
+        for p in sorted(folder.rglob("recipe-*.json"))
+        if not re.fullmatch(r"\d+\.\d+", str(json.loads(p.read_text(encoding="utf-8")).get("RecipeVersion")))
+    }
+    assert wrong == {}, f"{len(wrong)} official recipes: {sorted(set(map(str, wrong.values())))}"
