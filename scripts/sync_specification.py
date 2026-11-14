@@ -35,13 +35,21 @@ MAPPING = {
     "specs/": "docs/specs/",
     "scripts/": "scripts/specification/",
     "LICENSE": "app/schemas/PRISM_SPECIFICATION_LICENSE",
+    # Only the files the release lists are written or deleted: Studio's other templates and
+    # recipes in the same folders are not in the lock and stay untouched.
+    "library/survey/": "official/library/survey/",
+    "library/NOTICE.md": "official/library/NOTICE_SPECIFICATION.md",
+    "recipes/survey/": "official/recipe/survey/",
+    "mappings/": "official/library/mappings/",
+    "ids/survey-ids.txt": "official/library/survey/term-ids.txt",
 }
 
 # Studio's own formats live in the same folders; sync never writes or deletes them.
 STUDIO_OWNED = frozenset(
     [f"app/schemas/{folder}/{name}.schema.json"
      for folder in ("stable", "v0.1", "v0.2")
-     for name in ("project", "recipe.survey", "tool-limesurvey", "instrument-registry")]
+     for name in ("project", "recipe.survey", "tool-limesurvey", "instrument-registry")
+     if (folder, name) != ("stable", "recipe.survey")]  # the specification owns the current recipe schema
     + ["app/schemas/README.md", "app/schemas/citation_cff/SOURCE.md", "app/schemas/citation_cff/schema.json",
        "docs/specs/project.md"]
 )

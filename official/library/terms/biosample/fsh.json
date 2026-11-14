@@ -6,8 +6,5 @@
     "fsh"
   ],
   "Description": "Follicle-stimulating hormone (FSH), a pituitary gonadotropin; measured in serum.",
-  "TermURL": {
-    "snomed": "https://snomed.info/id/25217009"
-  },
   "Status": "official"
 }

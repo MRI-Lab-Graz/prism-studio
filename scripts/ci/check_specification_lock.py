@@ -28,8 +28,12 @@ _sys_spec.loader.exec_module(system_files)
 FIX = "edit it in prism-specification, release a tag, then run scripts/sync_specification.py"
 
 
+# Folders Studio shares with the specification: only the files the lock lists are ours to check.
+SHARED = {"official/library/", "official/library/survey/", "official/recipe/survey/"}
+
+
 def _vendored_folders() -> list[str]:
-    return sorted({target.rsplit("/", 1)[0] + "/" for target in sync.MAPPING.values()})
+    return sorted({target.rsplit("/", 1)[0] + "/" for target in sync.MAPPING.values()} - SHARED)
 
 
 def check(studio_root: Path, lock: dict) -> list[str]:

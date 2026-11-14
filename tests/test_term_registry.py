@@ -238,31 +238,109 @@ def test_find_term_prefers_the_slug_in_any_case_over_a_label():
     assert find_term(reg, "dass21")[1]["TermID"] == "prism:dass21"
 
 
-# --- term_links: the ontology links of a term, its parent's included -----------
+# --- term_links: the links of a term come from mappings/, its parent's included ---
 
-def test_term_links_of_a_child_come_from_its_parent():
+def _map(root, modality, family, content):
+    folder = root / modality
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{family}.json").write_text(content if isinstance(content, str) else json.dumps(content), encoding="utf-8")
+
+
+def test_term_links_of_a_child_come_from_its_parent(tmp_path):
+    from src.term_registry import load_mappings, term_links
+    _map(tmp_path, "biosample", "a", {"prism:a": {"SameAs": {"snomed": "https://example.org/a"}}})
+    reg = {"a": {"TermID": "prism:a"}, "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a"}}
+    maps = load_mappings("biosample", root=tmp_path)
+    expected = {"snomed": {"url": "https://example.org/a", "from": "prism:a"}}
+    assert term_links(reg, reg["a.serum"], mappings=maps) == expected
+    assert term_links(reg, reg["a"], mappings=maps) == expected
+
+
+def test_term_links_own_entry_wins_and_others_are_added(tmp_path):
+    from src.term_registry import load_mappings, term_links
+    _map(tmp_path, "biosample", "a", {
+        "prism:a": {"SameAs": {"snomed": "https://example.org/1", "chebi": "https://example.org/c"}},
+        "prism:a.serum": {"SameAs": {"snomed": "https://example.org/2"}},
+    })
+    reg = {"a": {"TermID": "prism:a"}, "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a"}}
+    links = term_links(reg, reg["a.serum"], mappings=load_mappings("biosample", root=tmp_path))
+    assert links["snomed"] == {"url": "https://example.org/2", "from": "prism:a.serum"}
+    assert links["chebi"] == {"url": "https://example.org/c", "from": "prism:a"}
+
+
+def test_term_links_survive_missing_parent_and_bad_types(tmp_path):
+    from src.term_registry import load_mappings, term_links
+    assert term_links({}, {"TermID": "prism:x", "Parent": "prism:gone"}, mappings={}) == {}
+    _map(tmp_path, "biosample", "x", {"prism:x": {"SameAs": ["not", "an", "object"]}})
+    _map(tmp_path, "biosample", "y", {"prism:y": {"SameAs": {"snomed": 5}}})
+    _map(tmp_path, "biosample", "z", "[1, 2]")
+    _map(tmp_path, "biosample", "w", "{")
+    _map(tmp_path, "biosample", "v", {"prism:v": "text"})
+    maps = load_mappings("biosample", root=tmp_path)
+    assert term_links({}, {"TermID": "prism:x"}, mappings=maps) == {}
+    assert term_links({}, {"TermID": "prism:y"}, mappings=maps) == {}
+    assert term_links({}, {"TermID": "prism:v"}, mappings=maps) == {}
+
+
+def test_term_without_mappings_has_no_links():
     from src.term_registry import term_links
-    reg = {
-        "shbg": {"TermID": "prism:shbg", "Level": "analyte", "TermURL": {"snomed": "https://snomed.info/id/55503002"}},
-        "shbg.serum": {"TermID": "prism:shbg.serum", "Level": "analyte-specimen", "Parent": "prism:shbg"},
-    }
-    assert term_links(reg, reg["shbg.serum"]) == {"snomed": {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}}
-    assert term_links(reg, reg["shbg"]) == {"snomed": {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}}
+    assert term_links({}, {"TermID": "prism:none"}, mappings={}) == {}
 
 
-def test_term_links_own_entry_wins_and_others_are_added():
+def test_load_mappings_missing_folder_is_empty(tmp_path):
+    from src.term_registry import load_mappings
+    assert load_mappings("biosample", root=tmp_path / "nope") == {}
+
+
+# The eight analytes that carried TermURL before the links moved to mappings/ (values from the old term files).
+_OLD_LINKS = {
+    "estradiol": "https://snomed.info/id/126172005",
+    "progesterone": "https://snomed.info/id/16683002",
+    "testosterone": "https://snomed.info/id/43688007",
+    "free-testosterone": "https://snomed.info/id/259355006",
+    "lh": "https://snomed.info/id/64182005",
+    "fsh": "https://snomed.info/id/25217009",
+    "prolactin": "https://snomed.info/id/70454002",
+    "shbg": "https://snomed.info/id/55503002",
+}
+
+
+def test_term_links_of_the_eight_moved_analytes_are_unchanged():
     from src.term_registry import term_links
-    reg = {
-        "a": {"TermID": "prism:a", "TermURL": {"snomed": "https://snomed.info/id/111111", "chebi": "http://purl.obolibrary.org/obo/CHEBI_1"}},
-        "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a", "TermURL": {"snomed": "https://snomed.info/id/222222"}},
-    }
-    links = term_links(reg, reg["a.serum"])
-    assert links["snomed"] == {"url": "https://snomed.info/id/222222", "from": "prism:a.serum"}
-    assert links["chebi"]["from"] == "prism:a"
+    reg = load_registry("biosample")
+    for name, url in _OLD_LINKS.items():
+        expected = {"snomed": {"url": url, "from": f"prism:{name}"}}
+        assert term_links(reg, reg[name]) == expected, name
+        children = [t for t in reg.values() if t.get("Parent") == f"prism:{name}"]
+        for child in children:
+            assert term_links(reg, child) == expected, child["TermID"]
 
 
-def test_term_links_survive_missing_parent_and_bad_types():
-    from src.term_registry import term_links
-    assert term_links({}, {"TermID": "prism:x", "Parent": "prism:gone"}) == {}
-    assert term_links({}, {"TermID": "prism:x", "TermURL": ["not", "an", "object"]}) == {}
-    assert term_links({}, {"TermID": "prism:x", "TermURL": {"snomed": 5}}) == {}
+def test_term_meaning_child_inherits_parent_measures_own_wins(tmp_path):
+    from src.term_registry import term_meaning
+    reg = {"a": {"TermID": "prism:a"}, "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a"},
+           "a.saliva": {"TermID": "prism:a.saliva", "Parent": "prism:a"}}
+    pm = [{"URL": "https://example.org/p"}]
+    om = [{"URL": "https://example.org/o"}]
+    maps = {"prism:a": {"Measures": pm, "ValueRules": [{"Name": "p"}]}, "prism:a.saliva": {"Measures": om}}
+    assert term_meaning(reg["a.serum"], maps, reg) == {"Measures": pm, "MeasuresFrom": "prism:a", "ValueRules": []}
+    assert term_meaning(reg["a.saliva"], maps, reg) == {"Measures": om, "MeasuresFrom": "prism:a.saliva", "ValueRules": []}
+    assert term_meaning(reg["a"], maps, reg)["ValueRules"] == [{"Name": "p"}]
+    assert term_meaning({"TermID": "prism:z"}, {}, reg) == {"Measures": [], "MeasuresFrom": None, "ValueRules": []}
+
+
+def test_term_meaning_survives_non_string_term_id():
+    from src.term_registry import term_meaning
+    assert term_meaning({"TermID": ["x"]}, {}, {})["Measures"] == []
+    assert term_meaning({"TermID": 5, "Parent": {}}, {}, {})["Measures"] == []
+
+
+def test_load_mappings_confines_the_modality(tmp_path):
+    from src.term_registry import load_mappings
+    (tmp_path / "ok").mkdir()
+    (tmp_path / "ok" / "a.json").write_text('{"prism:a": {"SameAs": {}}}')
+    (tmp_path / "a.json").write_text('{"prism:out": {}}')
+    assert "prism:a" in load_mappings("ok", root=tmp_path)
+    for bad in ("/tmp", "../ok", "..", ".", "", "a/b", "OK"):
+        assert load_mappings(bad, root=tmp_path / "ok") == {}
+        assert load_mappings(bad, root=tmp_path) == {}

@@ -28,7 +28,7 @@ PAGES = {
     "dataset_description": "dataset_description.md",
 }
 # Schemas documented elsewhere (grammar, recipes, internal index).
-OTHER_DOCS = {"entities"}
+OTHER_DOCS = {"entities", "recipe.survey"}  # recipe.survey: documented in PRISM Studio's RECIPES.md
 
 MAX_DEPTH = 4
 MAX_DESC = 160

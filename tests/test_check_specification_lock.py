@@ -89,3 +89,18 @@ def test_os_junk_in_vendored_folders_is_ignored(tmp_path):
     (studio / "official/library/terms/biosample/._cortisol.json").write_bytes(b"\x00")
     (studio / "docs/specs/Thumbs.db").write_bytes(b"\x00")
     assert check_mod.check(studio, lock) == []
+
+
+def test_studio_own_files_beside_locked_templates_and_recipes_pass(tmp_path):
+    studio, _ = _studio(tmp_path)
+    src = tmp_path / "src"
+    for rel in ("library/survey/survey-x.json", "recipes/survey/recipe-x.json", "ids/survey-ids.txt", "library/NOTICE.md"):
+        (src / rel).parent.mkdir(parents=True, exist_ok=True)
+        (src / rel).write_text("{}\n", encoding="utf-8")
+    lock = sync_mod.sync(src, studio, "v1.0.0")
+    for rel in ("official/library/survey/survey-other.json", "official/recipe/survey/recipe-held.json", "official/library/other.md"):
+        (studio / rel).parent.mkdir(parents=True, exist_ok=True)
+        (studio / rel).write_text("studio\n", encoding="utf-8")
+    assert check_mod.check(studio, lock) == []
+    (studio / "official/library/survey/survey-x.json").write_text("edited\n", encoding="utf-8")
+    assert any("survey-x.json" in p for p in check_mod.check(studio, lock))

@@ -40,7 +40,7 @@ MAX_PROBLEMS = 50
 MAX_LINE = 300  # characters per problem line in the log
 ALLOWED_FIELDS = frozenset(
     "TermID Level Label Aliases Description Parent SpecimenType Units AlternativeUnits "
-    "MinValue WarnMaxValue LOINC TermURL Equivalents Levels CFStandardName Group".split()
+    "MinValue WarnMaxValue LOINC Equivalents Levels CFStandardName Group".split()
 )
 REPO = Path(__file__).resolve().parents[1]
 # The term modalities before they were declared in entities.schema.json. PRISM Studio vendors these scripts
@@ -309,7 +309,7 @@ def write_terms(terms: list[dict], out_dir: Path, modality: str) -> list[Path]:
 
 SCHEMA_RELEASE_NOTE = """
 This proposal changes a modality schema. The bot prepared the release steps: the previous schema is archived
-unchanged, the minor version and `$id` of the stable schema are bumped, and the field tables of the spec page
+unchanged, the patch version and `$id` of the stable schema are bumped, and the field tables of the spec page
 are regenerated. The stable schema file is edited in place, so its diff shows only the new version, the new
 `$id` and the added values or properties; review those, the version bump and the archive copy.
 """

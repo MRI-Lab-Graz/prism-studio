@@ -58,7 +58,6 @@ def test_wheel_has_validator_entry_and_schemas(wheel):
     assert any(n.endswith("entry_points.txt") for n in names)
     assert "prism_validator/app/src/citation_cff.py" in names
     assert "prism_validator/app/schemas/citation_cff/schema.json" in names
-    assert "prism_validator/app/schemas/shared/meaning-block.json" in names
 
 
 def test_wheel_carries_every_vendored_specification_script(wheel):

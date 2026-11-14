@@ -1,0 +1,18 @@
+{
+  "snomed": {
+    "pattern": "^https://snomed\\.info/id/\\d{6,18}$",
+    "label": "SNOMED CT"
+  },
+  "loinc": {
+    "pattern": "^https://loinc\\.org/\\d+-\\d$",
+    "label": "LOINC"
+  },
+  "chebi": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/CHEBI_\\d+$",
+    "label": "ChEBI"
+  },
+  "ncit": {
+    "pattern": "^https?://purl\\.obolibrary\\.org/obo/NCIT_C\\d+$",
+    "label": "NCI Thesaurus"
+  }
+}

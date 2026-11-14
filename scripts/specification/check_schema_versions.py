@@ -1,7 +1,7 @@
 """Fail when a frozen modality schema version is edited or a version is released wrongly.
 
 Usage: check_schema_versions.py <base_ref> <head_ref>
-Rules (modality schemas only; project/entities/dataset_description are not versioned this way):
+Rules (modality schemas and recipe.survey; project/entities/dataset_description are not versioned this way):
 - files under schemas/archive/ are frozen: never modified or deleted;
 - a changed stable schema must carry a bumped `version`;
 - a bumped version needs the previous version archived, equal to the previous stable file.
@@ -16,6 +16,11 @@ import sys
 STABLE = "schemas/stable/"
 ARCHIVE = "schemas/archive/"
 SUFFIX = ".schema.json"
+EXTRA_GOVERNED = {"recipe.survey"}  # not a modality, but versioned and archived the same way
+
+
+def governed(modalities: set[str]) -> set[str]:
+    return set(modalities) | EXTRA_GOVERNED
 
 
 def _version(text: str | None) -> str | None:
@@ -93,7 +98,7 @@ def main(argv: list[str]) -> int:
         lambda p: _git_show(base, p),
         lambda p: _git_show(head, p),
         lambda p: _git_show(head, p) is not None,
-        modalities,
+        governed(modalities),
     )
     for message in errors:
         print(f"ERROR: {message}")

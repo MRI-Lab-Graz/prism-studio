@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/recipe/survey/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/recipe/survey/v1.0.1",
+  "version": "1.0.1",
   "title": "Survey Recipe Schema",
   "description": "Schema for survey scoring and analysis recipes. Recipes define transformations, score calculations, and psychometric properties separate from survey metadata.",
   "type": "object",
@@ -26,7 +26,7 @@
         },
         "TaskName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9]*$",
+          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
           "description": "Short task identifier matching the survey (e.g., 'personality', 'depression')"
         },
         "Description": {

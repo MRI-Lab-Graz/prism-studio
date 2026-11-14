@@ -6,8 +6,5 @@
     "shbg"
   ],
   "Description": "Sex hormone-binding globulin (SHBG), the transport protein for androgens and estrogens; measured in serum.",
-  "TermURL": {
-    "snomed": "https://snomed.info/id/55503002"
-  },
   "Status": "official"
 }
