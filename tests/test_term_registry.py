@@ -314,3 +314,33 @@ def test_term_links_of_the_eight_moved_analytes_are_unchanged():
         children = [t for t in reg.values() if t.get("Parent") == f"prism:{name}"]
         for child in children:
             assert term_links(reg, child) == expected, child["TermID"]
+
+
+def test_term_meaning_child_inherits_parent_measures_own_wins(tmp_path):
+    from src.term_registry import term_meaning
+    reg = {"a": {"TermID": "prism:a"}, "a.serum": {"TermID": "prism:a.serum", "Parent": "prism:a"},
+           "a.saliva": {"TermID": "prism:a.saliva", "Parent": "prism:a"}}
+    pm = [{"URL": "https://example.org/p"}]
+    om = [{"URL": "https://example.org/o"}]
+    maps = {"prism:a": {"Measures": pm, "ValueRules": [{"Name": "p"}]}, "prism:a.saliva": {"Measures": om}}
+    assert term_meaning(reg["a.serum"], maps, reg) == {"Measures": pm, "MeasuresFrom": "prism:a", "ValueRules": []}
+    assert term_meaning(reg["a.saliva"], maps, reg) == {"Measures": om, "MeasuresFrom": "prism:a.saliva", "ValueRules": []}
+    assert term_meaning(reg["a"], maps, reg)["ValueRules"] == [{"Name": "p"}]
+    assert term_meaning({"TermID": "prism:z"}, {}, reg) == {"Measures": [], "MeasuresFrom": None, "ValueRules": []}
+
+
+def test_term_meaning_survives_non_string_term_id():
+    from src.term_registry import term_meaning
+    assert term_meaning({"TermID": ["x"]}, {}, {})["Measures"] == []
+    assert term_meaning({"TermID": 5, "Parent": {}}, {}, {})["Measures"] == []
+
+
+def test_load_mappings_confines_the_modality(tmp_path):
+    from src.term_registry import load_mappings
+    (tmp_path / "ok").mkdir()
+    (tmp_path / "ok" / "a.json").write_text('{"prism:a": {"SameAs": {}}}')
+    (tmp_path / "a.json").write_text('{"prism:out": {}}')
+    assert "prism:a" in load_mappings("ok", root=tmp_path)
+    for bad in ("/tmp", "../ok", "..", ".", "", "a/b", "OK"):
+        assert load_mappings(bad, root=tmp_path / "ok") == {}
+        assert load_mappings(bad, root=tmp_path) == {}

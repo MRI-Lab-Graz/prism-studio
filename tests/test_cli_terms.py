@@ -341,8 +341,18 @@ def test_terms_show_carries_measures_and_value_rules(monkeypatch, capsys):
     data = json.loads(_show("shbg.serum", capsys, json=True))
     assert data["measures"] == entry["Measures"] and data["value_rules"] == entry["ValueRules"]
     assert data["links"]["snomed"] == {"url": "https://example.org/a", "from": "prism:shbg.serum"}
+    assert data["measures_from"] == "prism:shbg.serum"
     out = _show("shbg.serum", capsys)
     assert "Measures:" in out and "https://example.org/m" in out and "ValueRules:" in out and "r1" in out
+
+
+def test_terms_show_child_shows_the_parents_measures_with_origin(monkeypatch, capsys):
+    from src.cli.commands import terms as cmd
+    maps = {"prism:shbg": {"Measures": [{"URL": "https://example.org/m"}]}}
+    monkeypatch.setattr(cmd, "load_mappings", lambda modality: maps)
+    data = json.loads(_show("shbg.serum", capsys, json=True))
+    assert data["measures"] == maps["prism:shbg"]["Measures"] and data["measures_from"] == "prism:shbg"
+    assert "prism:shbg" in _show("shbg.serum", capsys).split("Measures")[1]
 
 
 def test_terms_show_without_mappings_has_empty_measures(capsys):
