@@ -11,6 +11,8 @@ Every modality (survey, biometrics, biosample, ...) has its own
 proposal starts at `1.0.0`. By default a validation uses the latest version of
 every modality.
 
+Within a major version a schema only adds optional things; the validator accepts a file written against an older or newer minor version of the same major version without a warning.
+
 ### Pins in project.json
 
 When a modality is first imported into a project (through Studio or the

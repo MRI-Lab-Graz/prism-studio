@@ -24,10 +24,31 @@ def test_other_major_still_warns(provided):
     assert level == "WARNING" and "mismatch" in message.lower() and provided in message
 
 
-@pytest.mark.parametrize("provided", ["2.1", "2", "abc", "", "v2.0.0", 5, ["2.0.0"], None])
-def test_odd_versions_never_raise(provided):
-    _issues(provided)  # must not raise
+@pytest.mark.parametrize("provided", ["", None, "2.1", "2"])
+def test_no_or_same_major_odd_versions_give_no_issue(provided):
+    assert _issues(provided) == []
     assert isinstance(is_compatible_version("2.1.0", provided), bool)
+
+
+@pytest.mark.parametrize("provided", ["abc", "v2.0.0", 5, ["2.0.0"]])
+def test_unreadable_versions_give_one_warning_and_never_raise(provided):
+    ((level, _),) = _issues(provided)
+    assert level == "WARNING"
+    assert isinstance(is_compatible_version("2.1.0", provided), bool)
+
+
+@pytest.mark.parametrize("provided", ["abc", "v2.0.0", 5, ["2.0.0"]])
+def test_unreadable_version_is_reported_as_unreadable_not_as_another_major(provided):
+    ((_, message),) = _issues(provided)
+    assert "Schema version mismatch" in message
+    assert "unreadable" in message
+    assert "different major version" not in message
+    assert "vv2" not in message
+
+
+def test_a_readable_other_major_still_says_different_major_version():
+    ((_, message),) = _issues("1.9.9")
+    assert "different major version" in message and "unreadable" not in message
 
 
 def test_two_part_version_is_read_as_major_minor_zero():
@@ -63,4 +84,4 @@ def test_a_sidecar_with_an_older_minor_version_passes_the_whole_validator(tmp_pa
         _json(SIDECAR, lambda d: d["Metadata"].__setitem__("SchemaVersion", "2.0.0")),
     )
     row = run_matrix(clean, [older])["rows"][0]
-    assert "PRISM005" not in row["got"], row
+    assert row["got"] == [], row

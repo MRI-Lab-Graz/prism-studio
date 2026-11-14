@@ -35,6 +35,15 @@ def _resolve_default_schema_dir() -> str:
 DEFAULT_SCHEMA_DIR = _resolve_default_schema_dir()
 
 
+def _read_version(version_string):
+    """The three integers of a dotted version, or None when it is not one."""
+    try:
+        parts = [int(p) for p in version_string.split(".")]
+    except (AttributeError, ValueError):
+        return None
+    return tuple((parts + [0, 0, 0])[:3])
+
+
 def parse_version(version_string):
     """Parse a dotted version into exactly three integers.
 
@@ -42,11 +51,7 @@ def parse_version(version_string):
     not a string of dotted integers gives (0, 0, 0): version strings come from
     untrusted project files and must never raise.
     """
-    try:
-        parts = [int(p) for p in version_string.split(".")]
-    except (AttributeError, ValueError):
-        return (0, 0, 0)
-    return tuple((parts + [0, 0, 0])[:3])
+    return _read_version(version_string) or (0, 0, 0)
 
 
 def is_compatible_version(required_version, provided_version):
@@ -177,11 +182,17 @@ def validate_schema_version(metadata, schema):
 
     if metadata_version:
         if not is_compatible_version(schema_version, metadata_version):
+            if _read_version(metadata_version) is None:
+                found = f"metadata declares an unreadable version ({metadata_version!r})"
+                reason = ""
+            else:
+                found = f"metadata uses v{metadata_version}"
+                reason = " (different major version)"
             issues.append(
                 (
                     "WARNING",
-                    f"Schema version mismatch: metadata uses v{metadata_version}, "
-                    f"validator expects v{schema_version} (different major version). "
+                    f"Schema version mismatch: {found}, "
+                    f"validator expects v{schema_version}{reason}. "
                     "Consider upgrading metadata.",
                 )
             )

@@ -31,10 +31,10 @@ def test_every_official_survey_template_declares_the_current_major_schema_versio
     from src.schema_manager import parse_version
 
     current = current_survey_schema_version()
-    stale = {
-        p.name: v
-        for p in FILES
-        if parse_version(v := json.loads(p.read_text(encoding="utf-8")).get("Metadata", {}).get("SchemaVersion"))[0]
-        != parse_version(current)[0]
-    }
+    current_major = parse_version(current)[0]
+    stale = {}
+    for p in FILES:
+        declared = json.loads(p.read_text(encoding="utf-8")).get("Metadata", {}).get("SchemaVersion")
+        if parse_version(declared)[0] != current_major:
+            stale[p.name] = declared
     assert stale == {}, f"templates not at survey schema major {current}: {sorted(stale)}"

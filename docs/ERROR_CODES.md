@@ -58,8 +58,6 @@ that still needs to be moved or renamed.
 | `PRISM008` | Template consistency error | Check `ItemCount` matches actual questions, `Subscale`/`ReverseCodedItems` exist, `Levels` keys are within `MinValue`/`MaxValue` |
 | `PRISM010` | Missing `project.json` at the project root (checked when a project is opened in Studio) | Create the project on the Projects page, or add a `project.json`; see [Project metadata](specs/project.md) |
 
-Within a major version a schema only adds optional things, so a file written against an older or newer minor version stays valid.
-
 ```json
 { "Name": "My Dataset", "BIDSVersion": "1.9.0", "DatasetType": "raw" }
 ```
