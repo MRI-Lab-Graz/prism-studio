@@ -26,6 +26,10 @@ different reasoning models later".
   in code). It is the first real partner: an author is a friend of the user and joins the project.
 - **A canonical projection is part of the specification**: a defined export of the facts that any reasoner reads, with a
   conformance test. Not only a Studio tool.
+- **PRISM owns the concept registry** (decided 2026-11-14). Partners such as AIDA-Path contribute concepts by proposal; their
+  own lists can be linked, but the IDs that data refer to are PRISM's.
+- **New modalities arrive with the mechanism.** A proposal for a new kind of data carries the meaning block (and the
+  concepts it needs) from the start, so a new modality is enriched at its beginning and never has to be retrofitted.
 - A file that declares an older minor version of a schema must not produce a warning while the major version matches.
 - Small steps; each released on its own (specification releases bump the patch version).
 - Earlier decisions that still stand: `prism:<slug>` IDs, readable and frozen once released; `TermURL` means "is that thing
@@ -41,7 +45,8 @@ different reasoning models later".
    and linked data (JSON-LD), plus a conformance test on every modality.
 4. A **versioning rule**: within a major version, a schema only adds optional things, and an older minor in a file is no
    warning.
-5. A newly proposed modality gets the block, the registry and the projection without extra work.
+5. A newly proposed modality arrives with the block filled in, its concepts proposed, and an example the projection accepts;
+   a modality schema without the block is not accepted (section 7).
 
 ## Non-goals
 
@@ -147,8 +152,37 @@ templates warn until they were rewritten; small steps would repeat that for ever
 - **E. Adoption, modality by modality**: survey (derived item IDs plus `IsAbout` in templates), biosample and
   environment, biometrics, physio, events, participants (reading the Neurobagel shape, writing ours, offering Neurobagel as
   an export).
+- **G. The proposal route** (section 7): the new-kind form and its bot, the `check_modalities.py` rule, and the Studio
+  proposal builder. It needs B, C and D, and it should be ready before the next new modality is proposed.
 - **F. First proof with AIDA-Path** (with the friend who joins): a handful of PHQ-9 items linked to their symptom names
   with a named value mapping, and the projection read by their side. A test of the foundation, not a feature.
+
+### 7. New kinds of data arrive with the mechanism
+
+Today a new kind of data is proposed with an issue form in prism-specification ("Propose a new kind of data": a
+description, the closest existing kind, a made-up sample file and two agreements). A bot only checks that these are
+present; a maintainer then builds the schema, the file-name entry and the specification page. Studio can fill the form in
+(`src/spec_contribute.py`, the Contribute page). Nothing in it asks what the columns mean. It changes so that the meaning
+comes first, from the person who knows the data best:
+
+- **The proposal form asks for the meaning.** For every variable (column, channel) in the sample: what concept it is
+  about, how closely (`Match`), which way a higher value points (`Higher`), the unit or the categories with their meaning,
+  and who or what the value describes (subject, session, recording). It also asks how missing and not-applicable values
+  are coded. For a variable with no concept yet, "none yet" is an accepted answer and is recorded as such; it is not
+  silently left out. New concepts are proposed in the same issue, the way terms are proposed with metrics today.
+- **The sample comes with its description.** Not only a data file, but a sidecar-style description that uses the meaning
+  block, so the proposal already is a PRISM description.
+- **The bot checks it.** Every sample variable has a meaning entry or an explicit "none yet"; every concept used is either
+  in the registry or proposed in the same issue; the sample passes the projection (section 4). Links that come from a
+  proposal start with `Status: unreviewed` and become `reviewed` when a maintainer merges them.
+- **The maintainer cannot skip it.** The modality check script (`check_modalities.py`, which already checks every modality
+  schema for its conventions) fails a modality schema that lacks the shared meaning block, and a modality without
+  conformance example data that the projection accepts.
+- **Studio fills the same form** from the user's own project (`terms propose` already builds a proposal from a sidecar;
+  it grows the meaning fields and the concept proposals). CLI first; the Contribute page only triggers it (THE RULE).
+
+Why at the beginning: the proposer knows what a column means, and a later maintainer would have to guess. A retrofit of an
+existing modality is a large, error-prone job; a proposal that carries the meaning costs the proposer a few lines.
 
 ## Constraints
 
@@ -213,6 +247,5 @@ pull requests; the exact wording of messages.
 
 ## Open points for the user
 
-1. Who owns the concept vocabulary: a concept registry in prism-specification (seeded with concepts from partners), or each
-   partner's own list that PRISM only links to? (Asked on 2026-11-14 and not yet answered; the design assumes the
-   registry, with partner lists linkable. If partners keep their own lists, step C shrinks to linking by URL.)
+None open on 2026-11-14. Decided in conversation: PRISM owns the concept registry; new modalities arrive with the mechanism;
+the projection is part of the specification; an older minor version stops warning.
