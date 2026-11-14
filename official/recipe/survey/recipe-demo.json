@@ -1,0 +1,77 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "DEMO",
+    "Reference": "survey-demo.json",
+    "TaskName": "demo"
+  },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for the PRISM demonstration questionnaire",
+      "Items": [
+        "DEMO01",
+        "DEMO02",
+        "DEMO03",
+        "DEMO04",
+        "DEMO05",
+        "DEMO06",
+        "DEMO07",
+        "DEMO08"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 32
+      }
+    },
+    {
+      "Name": "Routine",
+      "Description": "Subscale score over the first four items of the PRISM demonstration questionnaire",
+      "Items": [
+        "DEMO01",
+        "DEMO02",
+        "DEMO03",
+        "DEMO04"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 16
+      }
+    }
+  ],
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  },
+  "Transforms": {
+    "Invert": {
+      "Items": [
+        "DEMO06"
+      ],
+      "Scale": {
+        "min": 0,
+        "max": 4
+      }
+    }
+  }
+}

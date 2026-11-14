@@ -462,6 +462,17 @@ prism:dass21.dass2119
 prism:dass21.dass2120
 prism:dass21.dass2121
 prism:dass21.score-total
+prism:demo
+prism:demo.demo01
+prism:demo.demo02
+prism:demo.demo03
+prism:demo.demo04
+prism:demo.demo05
+prism:demo.demo06
+prism:demo.demo07
+prism:demo.demo08
+prism:demo.score-total
+prism:demo.score-routine
 prism:dmq-r
 prism:dmq-r.dmq-r01
 prism:dmq-r.dmq-r02

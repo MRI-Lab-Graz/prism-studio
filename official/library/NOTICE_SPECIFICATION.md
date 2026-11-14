@@ -5,6 +5,8 @@ ITS OWN terms, which are stated in the template and are set by the rights holder
 
 * PRISM grants no rights to any instrument. Having a template here does not give you a licence to
   the instrument; read the terms in the template.
+* The demonstration questionnaire `survey-demo.json` is the exception: it is written by the PRISM
+  maintainers and released under CC0 1.0. It measures nothing and is not a real instrument.
 * Nothing ships here unless its redistribution is verified: either a statement by the rights holder
   (kept with its source URL, the retrieval date and a saved copy) or an open licence.
 * If you hold rights to an instrument and want it removed, write to
