@@ -11,7 +11,7 @@ from pathlib import Path
 
 from flask import Flask
 
-from tests.template_fixtures import project_template
+from tests.template_fixtures import bilingual, project_template
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "app"))
@@ -21,8 +21,8 @@ from src.template_validator import TemplateValidator  # noqa: E402
 
 
 def _with_missing_french() -> dict:
-    template = copy.deepcopy(project_template("warn"))
-    template["I18n"]["Languages"] = ["en", "de", "fr"]  # GAD-7 has no French text: a warning, not an error
+    template = copy.deepcopy(bilingual(project_template("warn")))
+    template["I18n"]["Languages"] = ["en", "de", "fr"]  # the template has no French text: a warning, not an error
     return template
 
 
@@ -32,7 +32,7 @@ def test_a_clean_template_has_no_warnings():
 
 def test_template_warnings_lists_language_and_item_warnings():
     template = _with_missing_french()
-    template["bad id!"] = copy.deepcopy(template["GAD701"])
+    template["bad id!"] = copy.deepcopy(template["DEMO01"])
     language, items = template_warnings(template)
 
     assert any("'fr'" in w["message"] for w in language)

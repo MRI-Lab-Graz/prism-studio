@@ -30,12 +30,12 @@ from src.cli.commands.survey import (  # noqa: E402
     cmd_survey_export_questionnaire_docx,
 )
 
-GAD7_PATH = (
+DEMO_PATH = (
     Path(__file__).resolve().parent.parent
     / "official"
     / "library"
     / "survey"
-    / "survey-gad7.json"
+    / "survey-demo.json"
 )
 
 
@@ -51,12 +51,12 @@ def _args(**overrides) -> SimpleNamespace:
     return SimpleNamespace(**defaults)
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 class TestExportLss:
     def test_exports_lss_file_from_template(self, tmp_path, capsys):
         output = tmp_path / "export.lss"
         cmd_survey_export_lss(
-            _args(files=[str(GAD7_PATH)], output=str(output))
+            _args(files=[str(DEMO_PATH)], output=str(output))
         )
 
         assert output.exists()
@@ -87,7 +87,7 @@ class TestExportLss:
 
         cmd_survey_export_lss(
             _args(
-                files=[str(GAD7_PATH)] if GAD7_PATH.exists() else ["x.json"],
+                files=[str(DEMO_PATH)] if DEMO_PATH.exists() else ["x.json"],
                 output=str(tmp_path / "out.lss"),
                 languages="en,de",
             )
@@ -299,22 +299,22 @@ class TestExportQuestionnaireDocx:
         assert exc_info.value.code == 1
 
 
-@pytest.mark.skipif(not GAD7_PATH.exists(), reason="Global library not available")
+@pytest.mark.skipif(not DEMO_PATH.exists(), reason="Global library not available")
 class TestExportLssInclude:
     def test_include_keeps_only_the_listed_questions(self, tmp_path):
         output = tmp_path / "export.lss"
         cmd_survey_export_lss(
-            _args(files=[str(GAD7_PATH)], output=str(output), include="GAD701,GAD702", matrix=False)
+            _args(files=[str(DEMO_PATH)], output=str(output), include="DEMO01,DEMO02", matrix=False)
         )
 
         text = output.read_text()
-        assert "GAD701" in text and "GAD702" in text
-        assert "GAD703" not in text
+        assert "DEMO01" in text and "DEMO02" in text
+        assert "DEMO03" not in text
 
     def test_include_with_several_files_is_refused(self, tmp_path, capsys):
         with pytest.raises(SystemExit) as exc_info:
             cmd_survey_export_lss(
-                _args(files=[str(GAD7_PATH), str(GAD7_PATH)], output=str(tmp_path / "x.lss"), include="GAD701")
+                _args(files=[str(DEMO_PATH), str(DEMO_PATH)], output=str(tmp_path / "x.lss"), include="DEMO01")
             )
         assert exc_info.value.code == 1
         assert "--include" in capsys.readouterr().out

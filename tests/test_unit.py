@@ -161,7 +161,7 @@ class TestIssues:
             assert "File Management" in get_fix_hint(code, message), code
 
     def test_missing_survey_recipe_warning_has_its_own_code(self):
-        message = "Missing survey recipes for dataset-used surveys: brs."
+        message = "Missing survey recipes for dataset-used surveys: demo."
 
         assert infer_code_from_message(message) == "PRISM708"
         assert "Recipe builder" in get_fix_hint("PRISM708", message)

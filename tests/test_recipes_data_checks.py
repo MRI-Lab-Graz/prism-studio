@@ -11,7 +11,7 @@ def _files(*rows):
 
 
 def _warn(rows, recipe=RECIPE, template=TEMPLATE):
-    return recipe_data_warnings("brs", recipe, _files(*rows), template)
+    return recipe_data_warnings("demo", recipe, _files(*rows), template)
 
 
 def test_clean_data_gives_no_warnings():

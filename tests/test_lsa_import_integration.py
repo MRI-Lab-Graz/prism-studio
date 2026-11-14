@@ -10,7 +10,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from tests.template_fixtures import complete, dump_complete
+from tests.template_fixtures import DEMO, complete, dump_complete, library_template
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "app" / "src"))
@@ -430,7 +430,7 @@ class TestTemplateMatching:
 
         assert (
             "generalisedanxietydisorder7" in matched_names
-        ), f"GAD-7 should match via name + item overlap, got: {matched_names}"
+        ), f"The demo template should match via name + item overlap, got: {matched_names}"
 
     def test_nested_items_extracted_for_array_questions(self):
         """_extract_template_structure should include nested Items from array questions."""
@@ -690,15 +690,7 @@ class TestPrismExportRoundTrip:
             _extract_prismmeta,
         )
 
-        gad7_path = (
-            Path(__file__).resolve().parent.parent
-            / "official"
-            / "library"
-            / "survey"
-            / "survey-gad7.json"
-        )
-        if not gad7_path.exists():
-            pytest.skip("Global library not available")
+        gad7_path = DEMO
 
         lss_path = tmp_path / "export.lss"
         # matrix_mode=False: this test verifies code-normalization/library-match
@@ -730,7 +722,7 @@ class TestPrismExportRoundTrip:
             "exact",
             "high",
         ), f"Expected exact/high confidence, got {match.confidence}"
-        assert match.template_key == "gad7", f"Expected gad7, got {match.template_key}"
+        assert match.template_key == "demo", f"Expected demo, got {match.template_key}"
 
     def test_roundtrip_multi_template(self, tmp_path):
         """Export multiple templates → re-parse → all should match."""
@@ -741,14 +733,9 @@ class TestPrismExportRoundTrip:
             _load_global_templates,
         )
 
-        lib_dir = (
-            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
-        )
-        templates = ["survey-gad7.json", "survey-pss.json", "survey-bfi-s.json"]
+        lib_dir = DEMO.parent
+        templates = ["survey-demo.json", "survey-dass21.json"]
         paths = [str(lib_dir / t) for t in templates]
-
-        if not all(Path(p).exists() for p in paths):
-            pytest.skip("Global library templates not available")
 
         lss_path = tmp_path / "multi_export.lss"
         # matrix_mode=False: see test_roundtrip_single_template.
@@ -757,7 +744,7 @@ class TestPrismExportRoundTrip:
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
 
-        assert len(parsed) == 3, f"Expected 3 groups, got {len(parsed)}"
+        assert len(parsed) == 2, f"Expected 2 groups, got {len(parsed)}"
 
         global_templates = _load_global_templates()
         matches = match_groups_against_library(parsed, global_templates)
@@ -776,12 +763,11 @@ class TestPrismExportRoundTrip:
         from src.converters.survey_core import _extract_template_structure
         from src.converters.survey_templates import _ls_normalize_code
 
-        lib_dir = (
-            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
-        )
-        bfis_path = lib_dir / "survey-bfi-s.json"
-        if not bfis_path.exists():
-            pytest.skip("BFI-S template not available")
+        bfis_path = tmp_path / "survey-hyphen.json"  # codes with a hyphen, like BFI-S01
+        bfis_path.write_text(dump_complete({
+            "Study": {"OriginalName": "Hyphenated codes", "ShortName": "HY"},
+            **{f"HY-0{i}": {"Description": f"Item {i}", "Levels": {"1": "no", "2": "yes"}} for i in range(1, 4)},
+        }), encoding="utf-8")
 
         lss_path = tmp_path / "bfis.lss"
         # matrix_mode=False: see test_roundtrip_single_template.
@@ -820,12 +806,10 @@ class TestPrismExportRoundTrip:
         from src.converters.limesurvey import parse_lss_xml_by_groups
         from src.converters.survey_templates import _extract_prismmeta
 
-        lib_dir = (
-            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
-        )
-        gad7_path = lib_dir / "survey-gad7.json"
-        if not gad7_path.exists():
-            pytest.skip("GAD-7 template not available")
+        gad7_path = tmp_path / "survey-demo-authored.json"  # the demo template names no author
+        template = library_template()
+        template["Study"]["Authors"] = ["Test, T."]
+        gad7_path.write_text(json.dumps(template), encoding="utf-8")
 
         lss_path = tmp_path / "meta_test.lss"
         generate_lss([str(gad7_path)], str(lss_path), language="en")
@@ -841,8 +825,8 @@ class TestPrismExportRoundTrip:
         assert meta.get("authors"), "meta-authors should be present"
         assert meta.get("citation"), "meta-citation should be present"
         assert (
-            "GAD" in meta["abbrev"].upper()
-        ), f"Abbreviation should contain GAD, got: {meta['abbrev']}"
+            "DEMO" in meta["abbrev"].upper()
+        ), f"Abbreviation should contain DEMO, got: {meta['abbrev']}"
 
 
 class TestLsaBuildAndParse:

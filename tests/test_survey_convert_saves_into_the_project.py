@@ -26,15 +26,15 @@ READY_PROJECT = {
 
 @pytest.fixture
 def world(tmp_path):
-    template = project_template("gad7")  # a complete project template: Studio refuses to convert with an incomplete one
+    template = project_template("demo")  # a complete project template: Studio refuses to convert with an incomplete one
     item = next(k for k, v in template.items() if isinstance(v, dict) and "Levels" in v)
     project = tmp_path / "proj"
     library = project / "code" / "library" / "survey"
     library.mkdir(parents=True)
-    (library / "survey-gad7.json").write_text(json.dumps(template), encoding="utf-8")
+    (library / "survey-demo.json").write_text(json.dumps(template), encoding="utf-8")
     (project / "project.json").write_text(json.dumps(READY_PROJECT), encoding="utf-8")
     (project / "code" / "session_map.json").write_text(json.dumps({"1": "1"}), encoding="utf-8")
-    table = tmp_path / "gad7.csv"
+    table = tmp_path / "demo.csv"
     table.write_text(f"ID,{item}\nsub-001,0\nsub-002,1\n", encoding="utf-8")
     return project, table
 
@@ -43,7 +43,7 @@ def _cli_args(project_dir, table, **overrides):
     args = dict(
         input=str(table), output=str(project_dir), library=None, lang="en", survey=None, id_column="ID",
         session_column=None, run_column=None, session="1", sheet=None, unknown="ignore", dry_run=False, force=None,
-        name=None, authors=None, alias=None, project=None, template_versions=["gad7=10-likert"], value_offsets=None,
+        name=None, authors=None, alias=None, project=None, template_versions=["demo=10-likert"], value_offsets=None,
         archive_sourcedata=False,
     )
     args.update(overrides)
@@ -67,7 +67,7 @@ def test_the_cli_saves_into_the_project_through_the_datalad_aware_copy(world, mo
     cmd_survey_convert(_cli_args(project, table, archive_sourcedata=True))
 
     assert seen == ["PRISM: Copy converted survey files into project"]
-    assert (project / "sourcedata" / "gad7.csv").exists()
+    assert (project / "sourcedata" / "demo.csv").exists()
     assert json.loads((project / "project.json").read_text(encoding="utf-8"))["TemplateVersionSelections"]
     assert list(project.glob("sub-*/ses-*/survey/*.tsv"))
 
@@ -120,8 +120,8 @@ def test_the_cli_and_studios_convert_route_leave_the_same_project(world, tmp_pat
             response = client.post(
                 "/api/survey-convert",
                 data={
-                    "file": (io.BytesIO(table.read_bytes()), "gad7.csv"), "id_column": "ID", "session": "1", "language": "en",
-                    "save_to_project": "true", "archive_sourcedata": "true", "template_versions": json.dumps({"gad7": "10-likert"}),
+                    "file": (io.BytesIO(table.read_bytes()), "demo.csv"), "id_column": "ID", "session": "1", "language": "en",
+                    "save_to_project": "true", "archive_sourcedata": "true", "template_versions": json.dumps({"demo": "10-likert"}),
                     "unknown": "ignore",
                 },
                 content_type="multipart/form-data",

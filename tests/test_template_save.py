@@ -7,31 +7,31 @@ import pytest
 
 from src import config
 from src.template_save import TemplateExists, TemplateInvalid, save_template
+from tests.template_fixtures import DEMO, bilingual
 
 APP = Path(__file__).resolve().parents[1] / "app"
-GAD7 = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-gad7.json"
-pytestmark = pytest.mark.skipif(not GAD7.exists(), reason="official library not available")
+pytestmark = pytest.mark.skipif(not DEMO.exists(), reason="official library not available")
 
 
-def _gad7(*, project_copy=False):
-    """The official GAD-7 with a task name (a library template needs one); a project copy also names how it was run."""
-    template = json.loads(GAD7.read_text(encoding="utf-8"))
-    template["Study"]["TaskName"] = "gad7"
+def _demo(*, project_copy=False):
+    """The official demo questionnaire (made bilingual) with a task name (a library template needs one); a project copy also names how it was run."""
+    template = bilingual(json.loads(DEMO.read_text(encoding="utf-8")))
+    template["Study"]["TaskName"] = "demo"
     if project_copy:
         template["Technical"].update(SoftwarePlatform="Other", SoftwareVersion="1", AdministrationMethod="paper", Respondent="self")
     return template
 
 
 def test_a_valid_template_is_saved_into_the_project_library(tmp_path):
-    saved = save_template("survey", "survey-gad7", _gad7(project_copy=True), target="project", project_root=tmp_path, app_root=APP)
+    saved = save_template("survey", "survey-demo", _demo(project_copy=True), target="project", project_root=tmp_path, app_root=APP)
     path = saved.path
     assert saved.missing == [] and saved.removed == []
-    assert path == tmp_path / "code" / "library" / "survey" / "survey-gad7.json"
+    assert path == tmp_path / "code" / "library" / "survey" / "survey-demo.json"
     assert json.loads(path.read_text(encoding="utf-8"))["Study"]["TaskName"]
 
 
 def test_an_invalid_template_is_not_saved_and_says_why(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Technical"]["Respondent"] = "robot"
     with pytest.raises(TemplateInvalid) as error:
         save_template("survey", "survey-x.json", template, target="project", project_root=tmp_path, app_root=APP)
@@ -40,16 +40,16 @@ def test_an_invalid_template_is_not_saved_and_says_why(tmp_path):
 
 
 def test_an_existing_template_is_only_replaced_when_asked(tmp_path):
-    template = _gad7(project_copy=True)
-    save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP)
+    template = _demo(project_copy=True)
+    save_template("survey", "survey-demo.json", template, target="project", project_root=tmp_path, app_root=APP)
     with pytest.raises(TemplateExists):
-        save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP)
-    save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP, allow_overwrite=True)
+        save_template("survey", "survey-demo.json", template, target="project", project_root=tmp_path, app_root=APP)
+    save_template("survey", "survey-demo.json", template, target="project", project_root=tmp_path, app_root=APP, allow_overwrite=True)
 
 
 def test_a_library_template_without_a_task_name_is_saved_and_reported_missing(tmp_path):
     """The library relaxation drops the project-only fields, not the task name: for the global flag and for personal."""
-    nameless = _gad7()
+    nameless = _demo()
     nameless["Study"].pop("TaskName")
     saved = save_template("survey", "survey-x.json", nameless, target="project", project_root=tmp_path, app_root=APP, relaxed=True)
     assert "Study/TaskName" in [m["path"] for m in saved.missing]
@@ -59,10 +59,10 @@ def test_the_personal_target_uses_the_personal_library_and_reports_a_missing_tas
     mine = tmp_path / "mine"
     mine.mkdir()
     monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings(personal_library_path=str(mine)))
-    path = save_template("survey", "survey-gad7.json", _gad7(), target="personal", project_root=None, app_root=APP).path
-    assert path == mine / "survey" / "survey-gad7.json"
+    path = save_template("survey", "survey-demo.json", _demo(), target="personal", project_root=None, app_root=APP).path
+    assert path == mine / "survey" / "survey-demo.json"
 
-    nameless = _gad7()
+    nameless = _demo()
     nameless["Study"].pop("TaskName")
     saved = save_template("survey", "survey-y.json", nameless, target="personal", project_root=None, app_root=APP)
     assert "Study/TaskName" in [m["path"] for m in saved.missing]
@@ -71,15 +71,15 @@ def test_the_personal_target_uses_the_personal_library_and_reports_a_missing_tas
 def test_personal_without_a_personal_library_and_project_without_a_project_say_what_is_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "load_app_settings", lambda app_root=None: config.AppSettings())
     with pytest.raises(RuntimeError, match="Personal Template Library"):
-        save_template("survey", "survey-gad7.json", _gad7(), target="personal", project_root=None, app_root=APP)
+        save_template("survey", "survey-demo.json", _demo(), target="personal", project_root=None, app_root=APP)
     with pytest.raises(RuntimeError, match="project"):
-        save_template("survey", "survey-gad7.json", _gad7(project_copy=True), target="project", project_root=None, app_root=APP)
+        save_template("survey", "survey-demo.json", _demo(project_copy=True), target="project", project_root=None, app_root=APP)
 
 
 @pytest.mark.parametrize("bad", ["", "a/b.json", "a\\b.json"])
 def test_the_filename_must_be_a_bare_name(tmp_path, bad):
     with pytest.raises(ValueError, match="filename"):
-        save_template("survey", bad, _gad7(), target="project", project_root=tmp_path, app_root=APP)
+        save_template("survey", bad, _demo(), target="project", project_root=tmp_path, app_root=APP)
 
 
 def _technical_required(schema):
@@ -115,11 +115,11 @@ def test_project_template_needs_respondent():
 
 
 def _project_save(tmp_path, template, **kwargs):
-    return save_template("survey", "survey-gad7.json", template, target="project", project_root=tmp_path, app_root=APP, **kwargs)
+    return save_template("survey", "survey-demo.json", template, target="project", project_root=tmp_path, app_root=APP, **kwargs)
 
 
 def test_saving_with_an_empty_respondent_writes_and_warns(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Technical"]["Respondent"] = ""
     saved = _project_save(tmp_path, template)
     assert saved.path.exists()
@@ -127,7 +127,7 @@ def test_saving_with_an_empty_respondent_writes_and_warns(tmp_path):
 
 
 def test_saving_strips_export_settings(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
     template[item]["LimeSurvey"] = {"questionType": "L", "columnName": "q1"}
     saved = _project_save(tmp_path, template)
@@ -137,7 +137,7 @@ def test_saving_strips_export_settings(tmp_path):
 
 
 def test_other_schema_errors_still_refuse(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Technical"]["Respondent"] = "robot"
     with pytest.raises(TemplateInvalid):
         _project_save(tmp_path, template)
@@ -146,7 +146,7 @@ def test_other_schema_errors_still_refuse(tmp_path):
 
 @pytest.mark.parametrize("relaxed", [False, True])
 def test_a_template_without_a_whole_section_is_saved_and_lists_its_required_fields(tmp_path, relaxed):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     del template["I18n"]
     del template["Technical"]
     saved = _project_save(tmp_path, template, relaxed=relaxed)
@@ -156,7 +156,7 @@ def test_a_template_without_a_whole_section_is_saved_and_lists_its_required_fiel
 
 
 def test_another_root_level_error_still_refuses(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Study"] = "not an object"
     with pytest.raises(TemplateInvalid):
         _project_save(tmp_path, template)
@@ -179,7 +179,7 @@ def test_missing_required_fields_without_sections():
 def test_missing_english():
     from src.prism_template_validation import missing_required_fields
 
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Study"]["OriginalName"] = {"en": "", "de": "x"}
     assert {"path": "Study/OriginalName", "message": "Study/OriginalName is missing", "severity": "error"} in missing_required_fields(template, _survey_schema())
 
@@ -187,18 +187,18 @@ def test_missing_english():
 def test_a_complete_template_misses_nothing():
     from src.prism_template_validation import missing_required_fields
 
-    assert missing_required_fields(_gad7(project_copy=True), _survey_schema()) == []
+    assert missing_required_fields(_demo(project_copy=True), _survey_schema()) == []
 
 
 def test_language_consistency_findings_are_warnings_on_save(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["I18n"]["Languages"] = ["en", "de", "fr"]
     saved = _project_save(tmp_path, template)
     assert any("'fr'" in m["message"] for m in saved.missing)
 
 
 def test_a_language_finding_is_reported_once_with_its_severity(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Technical"]["Language"] = "fr"
     saved = _project_save(tmp_path, template)
     about_fr = [m for m in saved.missing if m["path"] == "Technical/Language" or "Technical.Language" in m["message"]]
@@ -206,19 +206,19 @@ def test_a_language_finding_is_reported_once_with_its_severity(tmp_path):
 
 
 def test_a_half_translated_template_gives_one_finding_per_language_and_item(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["I18n"]["Languages"] = ["en", "de", "fr", "es"]
     items = [k for k, v in template.items() if isinstance(v, dict) and "Description" in v]
     saved = _project_save(tmp_path, template)
     texts = [m for m in saved.missing if "text for:" in m["message"]]
-    # gad7 has en and de; fr and es have no text anywhere
+    # the template has en and de (bilingual); fr and es have no text anywhere
     assert len(texts) == 2 * len(items)
     assert all(m["severity"] == "warning" for m in texts)
     assert len(saved.missing) < 4 * len(items)
 
 
 def test_an_undeclared_language_is_an_error(tmp_path):
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)
     template[item]["Description"]["fr"] = "?"
     saved = _project_save(tmp_path, template)
@@ -229,7 +229,7 @@ def test_an_undeclared_language_is_an_error(tmp_path):
 def test_every_missing_entry_has_a_severity_from_the_one_vocabulary(tmp_path):
     from src.prism_template_validation import SEVERITY_ERROR, SEVERITY_WARNING
 
-    template = _gad7(project_copy=True)
+    template = _demo(project_copy=True)
     template["Technical"]["Respondent"] = ""  # required field
     template["I18n"]["Languages"] = ["en", "de", "es"]  # declared language without texts
     item = next(k for k, v in template.items() if isinstance(v, dict) and "Description" in v)

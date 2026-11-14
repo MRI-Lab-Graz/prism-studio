@@ -21,7 +21,7 @@ from src.cli.commands.survey import cmd_survey_convert  # noqa: E402
 from src.session_map import load_session_map  # noqa: E402
 from tests.template_fixtures import dump_complete  # noqa: E402
 
-BRS = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
+DEMO = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-demo.json"
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def test_set_rejects_an_invalid_target_with_exit_code_2(proj, capsys):
 def survey_args(tmp_path, proj, csv_text, **overrides):
     lib = tmp_path / "lib"
     lib.mkdir(exist_ok=True)
-    (lib / "survey-brs.json").write_text(dump_complete(json.loads(BRS.read_text(encoding="utf-8")), "brs"), encoding="utf-8")
+    (lib / "survey-demo.json").write_text(dump_complete(json.loads(DEMO.read_text(encoding="utf-8")), "demo"), encoding="utf-8")
     data = tmp_path / "in.csv"
     data.write_text(csv_text)
     values = dict(
@@ -71,7 +71,7 @@ def error_line(capsys):
     return next(line for line in out.splitlines() if line.startswith("Error:"))
 
 
-TWO = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP001,post,4,4,3\n"
+TWO = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,pre,3,4,2\nP001,post,4,4,3\n"
 
 
 def test_survey_convert_fails_naming_the_unmapped_labels(tmp_path, proj, capsys):
@@ -100,7 +100,7 @@ def test_set_then_convert_succeeds_and_writes_the_mapped_sessions(tmp_path, proj
 
 def test_session_flag_chooses_the_session_for_a_file_without_a_session_column(tmp_path, proj):
     cmd_session_map_set(SimpleNamespace(project=str(proj), label="pre", target="1"))
-    csv_text = "participant_id,BRS01,BRS02,BRS03\nP001,3,4,2\n"
+    csv_text = "participant_id,DEMO01,DEMO02,DEMO03\nP001,3,4,2\n"
     cmd_survey_convert(survey_args(tmp_path, proj, csv_text, session_column=None, session="pre"))
     assert sorted(p.name for p in (tmp_path / "out" / "sub-P001").glob("ses-*")) == ["ses-1"]
 

@@ -23,7 +23,7 @@ import pytest
 from flask import Flask
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from template_fixtures import library_template, project_template  # noqa: E402
+from template_fixtures import bilingual, library_template, project_template  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
@@ -71,7 +71,7 @@ def item_ids(template: dict) -> list[str]:
 
 
 def base() -> dict:
-    return copy.deepcopy(project_template("hostile"))
+    return copy.deepcopy(bilingual(project_template("hostile")))
 
 
 def set_path(template: dict, path: str, value) -> dict:
@@ -254,7 +254,7 @@ def test_an_item_that_is_not_an_object_is_reported_or_ignored():
 def test_a_declared_language_without_item_texts_is_at_least_a_warning():
     # by design a warning (the declared list is what the editor derives), so look at every severity
     template = base()
-    template["I18n"]["Languages"] = ["en", "de", "fr"]  # GAD-7 has en and de only
+    template["I18n"]["Languages"] = ["en", "de", "fr"]  # the demo template has en and de here (bilingual)
     found = TemplateValidator.validate_language_consistency_from_data(template, supersede_declared=True)
     assert any("'fr'" in f["message"] for f in found), "declared French but no item has French text"
 

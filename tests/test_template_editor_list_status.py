@@ -35,9 +35,9 @@ def test_an_official_template_without_task_name_is_valid_in_the_list(tmp_path, m
     official = library_template()
     official["Study"].pop("TaskName")
 
-    listed = _list(tmp_path, monkeypatch, {"survey-gad7.json": official})
+    listed = _list(tmp_path, monkeypatch, {"survey-demo.json": official})
 
-    assert listed["survey-gad7.json"]["template_valid"] is True, listed["survey-gad7.json"]
+    assert listed["survey-demo.json"]["template_valid"] is True, listed["survey-demo.json"]
 
 
 def test_no_official_template_is_a_red_cross_in_the_list(tmp_path, monkeypatch):
@@ -54,7 +54,7 @@ def test_a_template_that_really_lacks_a_global_field_is_still_marked(tmp_path, m
     broken = library_template()
     broken["Study"].pop("Citation")
 
-    listed = _list(tmp_path, monkeypatch, {"survey-gad7.json": broken})
+    listed = _list(tmp_path, monkeypatch, {"survey-demo.json": broken})
 
-    assert listed["survey-gad7.json"]["template_valid"] is False
-    assert "Citation" in listed["survey-gad7.json"]["validation_error"]
+    assert listed["survey-demo.json"]["template_valid"] is False
+    assert "Citation" in listed["survey-demo.json"]["validation_error"]

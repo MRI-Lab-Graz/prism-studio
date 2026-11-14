@@ -331,11 +331,11 @@ def test_validating_a_template_answers_the_same_in_the_cli_and_in_studio(tmp_pat
     import os
 
     from flask import Flask
-    from template_fixtures import project_template
+    from template_fixtures import bilingual, project_template
 
     from src.cli.commands.library import cmd_library_template_validate
 
-    template = project_template("mood")
+    template = bilingual(project_template("mood"))
     if damage == "required-field-gone":
         del template["Study"]["TaskName"]
     if damage == "language-missing":

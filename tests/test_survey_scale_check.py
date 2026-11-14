@@ -82,7 +82,7 @@ def test_dry_run_preview_lists_the_violations_unless_a_task_offset_is_set(tmp_pa
     from pathlib import Path
 
     src = tmp_path / "s.csv"
-    src.write_text("participant_id,BRS01,BRS02,BRS03\nP001,9,4,2\nP002,often,1,1\n")
+    src.write_text("participant_id,DEMO01,DEMO02,DEMO03\nP001,9,4,2\nP002,often,1,1\n")
     root = Path(__file__).resolve().parents[1]
     base = [sys.executable, str(root / "prism_tools.py"), "survey", "convert", "--input", str(src),
             "--output", str(tmp_path / "out"), "--session", "1", "--dry-run",
@@ -90,7 +90,7 @@ def test_dry_run_preview_lists_the_violations_unless_a_task_offset_is_set(tmp_pa
     env = {**__import__("os").environ, "PRISM_SKIP_VENV_CHECK": "1"}
     plain = subprocess.run(base, capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" in plain and "P002: often" in plain
-    shifted = subprocess.run(base + ["--value-offset", "brs=1"], capture_output=True, text=True, encoding="utf-8", env=env).stdout
+    shifted = subprocess.run(base + ["--value-offset", "demo=1"], capture_output=True, text=True, encoding="utf-8", env=env).stdout
     assert "P001: 9" not in shifted
 
 

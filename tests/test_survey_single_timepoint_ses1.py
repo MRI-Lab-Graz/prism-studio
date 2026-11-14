@@ -8,16 +8,16 @@ import pytest
 
 from src.converters.survey import convert_survey_file_to_prism_dataset
 
-BRS = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-brs.json"
-ONE_EACH = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP002,post,1,0,2\n"
-TWICE = "participant_id,session,BRS01,BRS02,BRS03\nP001,pre,3,4,2\nP001,post,4,4,3\n"
+DEMO = Path(__file__).resolve().parents[1] / "official" / "library" / "survey" / "survey-demo.json"
+ONE_EACH = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,pre,3,4,2\nP002,post,1,0,2\n"
+TWICE = "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,pre,3,4,2\nP001,post,4,4,3\n"
 
 
 @pytest.fixture
 def library(tmp_path):
     lib = tmp_path / "library" / "survey"
     lib.mkdir(parents=True)
-    (lib / "survey-brs.json").write_text(dump_complete(json.loads(BRS.read_text(encoding="utf-8")), "brs"), encoding="utf-8")
+    (lib / "survey-demo.json").write_text(dump_complete(json.loads(DEMO.read_text(encoding="utf-8")), "demo"), encoding="utf-8")
     return lib
 
 
@@ -55,13 +55,13 @@ def test_two_labels_for_one_participant_collapse_into_the_duplicate_check(tmp_pa
 
 
 def test_a_label_of_1_is_not_reported(tmp_path, library):
-    out, result = run(tmp_path, library, "participant_id,session,BRS01,BRS02,BRS03\nP001,1,3,4,2\n")
+    out, result = run(tmp_path, library, "participant_id,session,DEMO01,DEMO02,DEMO03\nP001,1,3,4,2\n")
     assert sessions(out, "sub-P001") == ["ses-1"]
     assert not any("ses-1" in w and "one timepoint" in w for w in result.conversion_warnings)
 
 
 REPEATED = (
-    "participant_id,startdate,BRS01,BRS02,BRS03\n"
+    "participant_id,startdate,DEMO01,DEMO02,DEMO03\n"
     "P001,2026-09-01 10:00:00,4,4,3\n"
     "P001,2026-03-01 10:00:00,3,4,2\n"
 )
@@ -74,6 +74,6 @@ def test_numbering_repeats_by_date_cannot_make_several_sessions_in_a_one_timepoi
 
 
 def test_numbering_unique_responses_by_date_is_fine_in_a_one_timepoint_project(tmp_path, library):
-    csv_text = "participant_id,startdate,BRS01,BRS02,BRS03\nP001,2026-03-01 10:00:00,3,4,2\n"
+    csv_text = "participant_id,startdate,DEMO01,DEMO02,DEMO03\nP001,2026-03-01 10:00:00,3,4,2\n"
     out, _ = run(tmp_path, library, csv_text, session_column=None, session=None, duplicate_handling="sessions")
     assert sessions(out, "sub-P001") == ["ses-1"]

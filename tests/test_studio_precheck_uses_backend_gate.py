@@ -34,7 +34,7 @@ def test_a_language_the_template_does_not_declare_is_reported(tmp_path):
     template = project_template()
     template["I18n"]["Languages"] = ["en"]
     for key, item in template.items():
-        if key.startswith("Q") and isinstance(item, dict):
+        if key.startswith("DEMO") and isinstance(item, dict):
             item["Description"] = {"en": "a", "de": "b"}
             break
 

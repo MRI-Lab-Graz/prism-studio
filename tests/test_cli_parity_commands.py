@@ -320,11 +320,11 @@ def test_recipes_save_rejects_invalid_recipe(tmp_path):
 def test_recipes_save_finds_official_library_template(tmp_path):
     root = tmp_path / "project"
     root.mkdir()
-    recipe = _write_recipe(tmp_path, "phq9", ["PHQ901", "PHQ902"])
+    recipe = _write_recipe(tmp_path, "demo", ["DEMO01", "DEMO02"])
 
     recipes_cmds.cmd_recipes_save(SimpleNamespace(project=str(root), recipe=str(recipe), modality=None, json=False))
 
-    assert (root / "code" / "recipes" / "survey" / "recipe-phq9.json").exists()
+    assert (root / "code" / "recipes" / "survey" / "recipe-demo.json").exists()
 
 
 # --- survey customizer-groups -----------------------------------------------

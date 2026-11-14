@@ -37,7 +37,7 @@ def test_survey_dry_run_reports_skipped_rows_and_cleaned_labels(tmp_path):
     from pathlib import Path
 
     src = tmp_path / "s.csv"
-    src.write_text("participant_id,BRS01,BRS02,BRS03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
+    src.write_text("participant_id,DEMO01,DEMO02,DEMO03\nP9,2,2,2\n,3,4,2\nP 1,1,0,2\n")
     root = Path(__file__).resolve().parents[1]
     out = subprocess.run(
         [sys.executable, str(root / "prism_tools.py"), "survey", "convert", "--input", str(src),

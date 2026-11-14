@@ -33,7 +33,7 @@ def _export(kind, tmp_path):
         "b": {"Description": "B", "Levels": {"1": "no", "2": "yes"}},
         "c": {"Description": "C", "InputType": "text"},
     }), encoding="utf-8")
-    files = [str(path), str(LIBRARY / "survey-phq9.json")]
+    files = [str(path), str(LIBRARY / "survey-demo.json")]
     if kind == "quick":
         xml = generate_lss(files, matrix_mode=True)
     else:

@@ -63,7 +63,7 @@ def test_every_missing_field_is_listed():
 def test_conversion_writes_nothing_with_an_incomplete_template(tmp_path):
     result = _convert(tmp_path, respondent="")
     assert isinstance(result, TemplateIncomplete)
-    assert f"Technical/Respondent is missing in {tmp_path / 'lib' / 'survey-gad7.json'}" in str(result)
+    assert f"Technical/Respondent is missing in {tmp_path / 'lib' / 'survey-demo.json'}" in str(result)
     assert not (tmp_path / "out").exists()
 
 
@@ -77,13 +77,13 @@ def _convert(tmp_path, respondent):
     library.mkdir()
     template = project_template()
     template["Technical"]["Respondent"] = respondent
-    (library / "survey-gad7.json").write_text(json.dumps(template), encoding="utf-8")
+    (library / "survey-demo.json").write_text(json.dumps(template), encoding="utf-8")
     csv = tmp_path / "s.csv"
-    pd.DataFrame({"participant_id": ["001"], **{f"GAD70{i}": [1] for i in range(1, 8)}}).to_csv(csv, index=False)
+    pd.DataFrame({"participant_id": ["001"], **{f"DEMO0{i}": [1] for i in range(1, 9)}}).to_csv(csv, index=False)
     try:
         convert_survey_file_to_prism_dataset(
             input_path=csv, library_dir=library, output_root=tmp_path / "out",
-            survey="gad7", id_column="participant_id", separator=",",
+            survey="demo", id_column="participant_id", separator=",",
         )
     except TemplateIncomplete as error:
         return error

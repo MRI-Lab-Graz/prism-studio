@@ -29,12 +29,12 @@ def test_build_registry_index_covers_all_official_instruments():
 
 def test_known_instrument_resolves_expected_fields():
     index = build_registry_index(OFFICIAL_SURVEY_DIR)
-    aai = index["Instruments"]["aai"]
-    assert aai["TaskName"] == "aai"
-    assert aai["SourceFile"] == "survey-aai.json"
-    assert aai["ShortName"] == "AAI"
-    assert "Veale" in aai["Citation"]
-    assert aai["Category"] == "Mood, Anxiety & Clinical Screening"
+    dass = index["Instruments"]["dass21"]
+    assert dass["TaskName"] == "dass21"
+    assert dass["SourceFile"] == "survey-dass21.json"
+    assert dass["ShortName"] == "DASS21"
+    assert "Official webpage" in dass["Citation"]
+    assert dass["Category"] == "Mood, Anxiety & Clinical Screening"
 
 
 def test_write_and_load_registry_index_roundtrip(tmp_path):
