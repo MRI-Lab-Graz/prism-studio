@@ -244,5 +244,5 @@ repositories' tests; the sync script's path mapping details; the order of the co
 
 ## Open points for the user
 
-1. Which option for the library move (see above). Steps 1 (remove the in-schema fields) and 3 (`mappings/` for biosample
+1. The library move is decided in principle by `2026-11-14-template-licensing-decision.md` (only templates that are 100% sure ship; proposed: DASS and DASS-21 as demos; everything else is removed from both repositories); its open points (DASS confirmation, frozen IDs) must be settled before step 2 starts. Steps 1 (remove the in-schema fields) and 3 (`mappings/` for biosample
    and environment) do not depend on it and can start.
