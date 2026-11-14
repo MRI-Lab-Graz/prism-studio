@@ -194,6 +194,37 @@ and mappings are our own work and can be CC BY 4.0.
 - No real ontology code is written by an implementer; examples use placeholders.
 - TDD; the CLI/Studio parity rule where Studio gets a button; Sonnet 5.5 for every subagent.
 
+## Calls made after the builder check (mine; the user may overrule any)
+
+A fresh reader raised eight questions. These are settled here, with what each costs if wrong.
+
+1. **Family per modality.** Survey: one family per instrument template, named by `Study.TaskName`; its items and its
+   recipe scores are in the same file; variants inside one template (`VariantDefinitions`, languages) are one family;
+   a short form shipped as its own template is its own family. Biosample: one family per analyte (the analyte and its
+   specimen children). Environment: one family per variable. **Biometrics is out of scope for mappings in this
+   round**: its template moves with the library, but it has no derived IDs yet; it gets mappings when it gets IDs.
+   Cost if wrong: one more family rule later.
+2. **Inheritance.** A specimen child inherits its analyte's `SameAs` and `Measures` when it has none of its own, and
+   every reader reports where a link came from (as `terms show` does today). The eight SNOMED links therefore move as
+   they are, on the analytes. Cost if wrong: copies per child later.
+3. **Removing the v1.5.6 fields.** Forward-only: each of the six schemas gets a new patch version without the fields;
+   the v1.5.6 versions stay archived. Nothing uses the fields (released the same day; Studio never synced them), so no
+   data is rejected in practice. Cost if wrong: a file written against v1.5.6 that used the fields would now fail.
+4. **Studio PR #250.** Closed without merging. Carried over into the next sync, where they still apply: the biosample
+   importer test and the biosample example template following the current schema version, the physio-archive test
+   fix, the guard that `archive/` is no schema version, the wheel test (adjusted: no `shared/` folder any more), and
+   the test that every vendored spec page is in the docs table of contents. Dropped: the `shared/` guard and the
+   `meaning.md` table-of-contents entry. Studio never read the removed fields, so step 1 needs no other Studio change.
+5. **Where Studio vendors mappings.** `official/library/mappings/` (next to `official/library/terms/`), read by
+   `terms show` and by the project overlay; the official file wins over a project file for the same official ID.
+6. **`Levels` in a mapping.** Only for an ID whose definition has `Levels` (categories or labelled answers). An item
+   with a numeric range and no `Levels` gets meaning per value through `ValueRules`, not `Levels`.
+7. **Step order when licensing waits.** If the licensing question (open point 1) is not settled when step 1 is done,
+   the `mappings/` step runs first for biosample and environment (their IDs are already in the specification), and the
+   library move and the survey mappings follow once it is settled.
+8. **No real codes by implementers** (repeated from the constraints): the migration moves the eight existing links
+   unchanged; new links come from people, by proposal.
+
 ## Left to the builder
 
 Exact JSON Schema of a mapping file; the check's messages; how the derivation script is split between the two
@@ -201,7 +232,9 @@ repositories' tests; the sync script's path mapping details; the order of the co
 
 ## Open points for the user
 
-1. The field names `SameAs`, `Measures`, `ValueRules`, `Levels` (proposed on 2026-11-14, not yet confirmed).
-2. The folder name: `mappings/` (proposed) or `ontology/` (the user's first word).
-3. The licensing carve-out for `library/` (section 8): is excluding it from CC BY 4.0, with its own notice, acceptable?
-4. Whether a project's own mappings (section 5) are part of the first version or a later step.
+1. The licensing carve-out for `library/` (section 8): is publishing the instrument templates from the specification
+   repository, excluded from its CC BY 4.0 grant and with their own notice, acceptable? Step 2 depends on it.
+2. The field names `SameAs`, `Measures`, `ValueRules`, `Levels` and the folder name `mappings/` (or `ontology/`, the
+   user's first word): both are baked into the file format and the check; a later rename is a breaking change.
+3. Whether a project's own mappings (section 5) are part of the first version or a later step (the order above
+   assumes a later step).
