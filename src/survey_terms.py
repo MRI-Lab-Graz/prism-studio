@@ -158,7 +158,7 @@ def freeze_report(registry: dict[str, dict], released: set[str]) -> tuple[list[s
     always shipped) is only listed in `not_shipped`."""
     now = {t.get("TermID") for t in registry.values()}
     gone = sorted(released - now)
-    absent = [t for t in gone if f"{t.partition('.')[0]}" not in now]
+    absent = [t for t in gone if t.partition('.')[0] not in now]
     problems = [f"{t}: released ID is gone (an ID is frozen; restore the item, score or task name)" for t in gone if t not in absent]
     return problems, absent
 

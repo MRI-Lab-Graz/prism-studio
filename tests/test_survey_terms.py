@@ -88,6 +88,7 @@ def test_shipped_library_gives_every_item_and_score_an_id():
     assert all("no library template" in p for p in problems), problems
     levels = collections.Counter(t["Level"] for t in reg.values())
     assert levels["instrument"] >= 1 and levels["item"] >= 1
+    assert {"prism:dass", "prism:dass21", "prism:demo"} <= {t["TermID"] for t in reg.values() if t["Level"] == "instrument"}
     items = collections.Counter(t["Parent"] for t in reg.values() if t["Level"] == "item")
     assert (items["prism:dass"], items["prism:dass21"], items["prism:demo"]) == (42, 21, 8)
     for task in ("dass", "dass21"):

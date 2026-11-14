@@ -68,7 +68,8 @@ def cmd_terms_freeze(args) -> None:
         _emit(args, {"success": False, "problems": problems + gone}, "\n".join(problems + gone))
         sys.exit(1)
     added = write_released_ids(registry)
-    note = [f"{len(not_shipped)} released ID(s) of instruments whose template is not shipped (kept, not an error)"] if not_shipped else []
+    note = [f"{len(not_shipped)} released ID(s) of instruments whose template is not shipped (kept, not an error): "
+             + ", ".join(not_shipped[:5]) + (", ..." if len(not_shipped) > 5 else "")] if not_shipped else []
     _emit(args, {"success": True, "added": added, "not_shipped": not_shipped, "problems": problems},
           "\n".join(problems + note + [f"added {len(added)} ID(s)"]))
 

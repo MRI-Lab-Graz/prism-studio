@@ -268,7 +268,17 @@ def test_terms_freeze_absent_instrument_is_informational(monkeypatch, capsys, tm
     monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x", "prism:bfi", "prism:bfi.bfi01"})
     monkeypatch.setattr(cmd, "write_released_ids", lambda reg: [])
     cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))  # no SystemExit
-    assert "2 released ID(s) of instruments whose template is not shipped" in capsys.readouterr().out
+    assert "2 released ID(s) of instruments whose template is not shipped (kept, not an error): prism:bfi, prism:bfi.bfi01" in capsys.readouterr().out
+    many = {f"prism:z{i}" for i in range(7)}
+    monkeypatch.setattr(cmd, "released_ids", lambda: many)
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    out = capsys.readouterr().out
+    assert "7 released ID(s)" in out and "prism:z4" in out and "prism:z5" not in out and "..." in out
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
+    assert len(json.loads(capsys.readouterr().out)["not_shipped"]) == 7
+    monkeypatch.setattr(cmd, "released_ids", lambda: {"prism:x", "prism:bfi", "prism:bfi.bfi01"})
+    cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=False))
+    capsys.readouterr()
     cmd.cmd_terms_freeze(argparse.Namespace(modality="survey", json=True))
     out = json.loads(capsys.readouterr().out)
     assert out["success"] and out["not_shipped"] == ["prism:bfi", "prism:bfi.bfi01"]
