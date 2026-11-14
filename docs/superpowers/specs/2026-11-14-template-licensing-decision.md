@@ -71,6 +71,10 @@ Lovibond).
   its tool, with nothing about republishing. A notice (acknowledgement, citation) is right and will be built, but it
   does not answer who may publish the wording. See `docs/handouts/template-licence-audit.md`.
 
+- **Recipes and mappings for all instruments ship** (the user's observation: they carry no wording), with the identifier
+  list `ids/survey-ids.txt`; four hand-written recipes (PSQI, WHO-5, TIPI and a duplicate) are held until their
+  cut-offs and notes are verified or removed. See the plan, Global Constraints.
+
 ## Facts found in the two templates (to be handled when they move)
 
 - Both carry **German text** next to the English (items and instructions). The DASS terms say a translation must itself
