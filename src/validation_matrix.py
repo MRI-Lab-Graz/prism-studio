@@ -18,15 +18,15 @@ from pathlib import Path
 from typing import Any, Callable
 
 REPO = Path(__file__).resolve().parents[1]
-SURVEY_TEMPLATE = REPO / "official" / "library" / "survey" / "survey-brs.json"
+SURVEY_TEMPLATE = REPO / "official" / "library" / "survey" / "survey-demo.json"
 
 Mutation = Callable[[Path], Any]  # changes a copy of the dataset; what it returns is ignored
 
 ANY = "ANY"  # the catalogue has no code for it: any new error or warning counts
 NONE = "NONE"  # messy but legal: the validator must stay quiet
 
-DATA = "sub-01/ses-1/survey/sub-01_ses-1_task-brs_survey.tsv"
-SIDECAR = "task-brs_survey.json"
+DATA = "sub-01/ses-1/survey/sub-01_ses-1_task-demo_survey.tsv"
+SIDECAR = "task-demo_survey.json"
 
 
 @dataclass(frozen=True)
@@ -60,8 +60,8 @@ def _json(rel: str, change: Callable[[dict], None]) -> Mutation:
 
 
 def _answer(value: str) -> Mutation:
-    """Replace the first answer of sub-01 (BRS01, a 0-4 item)."""
-    return _write(DATA, f"BRS01\tBRS02\tBRS03\n{value}\t4\t2\n")
+    """Replace the first answer of sub-01 (DEMO01, a 0-4 item)."""
+    return _write(DATA, f"DEMO01\tDEMO02\tDEMO03\n{value}\t4\t2\n")
 
 
 def _remove_subjects(root: Path) -> None:
@@ -70,14 +70,14 @@ def _remove_subjects(root: Path) -> None:
 
 
 def _remove_data_file(root: Path) -> None:
-    (root / "sub-03/ses-1/survey/sub-03_ses-1_task-brs_survey.tsv").unlink()
+    (root / "sub-03/ses-1/survey/sub-03_ses-1_task-demo_survey.tsv").unlink()
 
 
 def _second_session_for_one_subject(root: Path) -> None:
     folder = root / "sub-02" / "ses-2" / "survey"
     folder.mkdir(parents=True)
-    source = root / "sub-02" / "ses-1" / "survey" / "sub-02_ses-1_task-brs_survey.tsv"
-    (folder / "sub-02_ses-2_task-brs_survey.tsv").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    source = root / "sub-02" / "ses-1" / "survey" / "sub-02_ses-1_task-demo_survey.tsv"
+    (folder / "sub-02_ses-2_task-demo_survey.tsv").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def _participants_without_one_subject(root: Path) -> None:
@@ -108,7 +108,7 @@ def _participants_row(row: str) -> Mutation:
 def _mixed_session_padding(root: Path) -> None:
     """sub-02 uses ses-01 while everybody else uses ses-1."""
     shutil.move(root / "sub-02" / "ses-1", root / "sub-02" / "ses-01")
-    (root / "sub-02/ses-01/survey/sub-02_ses-1_task-brs_survey.tsv").rename(root / "sub-02/ses-01/survey/sub-02_ses-01_task-brs_survey.tsv")
+    (root / "sub-02/ses-01/survey/sub-02_ses-1_task-demo_survey.tsv").rename(root / "sub-02/ses-01/survey/sub-02_ses-01_task-demo_survey.tsv")
 
 
 def _stray_file(root: Path) -> None:
@@ -127,9 +127,9 @@ DEFECTS: list[Defect] = [
     Defect("filename_without_task", "a survey file name lacks the task entity", "PRISM102",
            _rename(DATA, "sub-01/ses-1/survey/sub-01_ses-1_survey.tsv")),
     Defect("subject_label_differs_from_folder", "file in sub-01/ is named sub-09", "PRISM103",
-           _rename(DATA, "sub-01/ses-1/survey/sub-09_ses-1_task-brs_survey.tsv")),
+           _rename(DATA, "sub-01/ses-1/survey/sub-09_ses-1_task-demo_survey.tsv")),
     Defect("session_label_differs_from_folder", "file in ses-1/ is named ses-2", "PRISM104",
-           _rename(DATA, "sub-01/ses-1/survey/sub-01_ses-2_task-brs_survey.tsv")),
+           _rename(DATA, "sub-01/ses-1/survey/sub-01_ses-2_task-demo_survey.tsv")),
     Defect("missing_sidecar", "the survey sidecar is absent", "PRISM201", _remove(SIDECAR)),
     Defect("sidecar_not_json", "the sidecar is not valid JSON", "PRISM202", _write(SIDECAR, "{")),
     Defect("sidecar_empty", "the sidecar file is empty", "PRISM203", _write(SIDECAR, "")),
@@ -151,7 +151,7 @@ DEFECTS: list[Defect] = [
     Defect("declared_task_without_data", "a session declares a required task that has no data", "PRISM704",
            _json("project.json", lambda d: d["Sessions"][0]["tasks"].append({"task": "ghost"}))),
     Defect("task_without_definition", "a session names a task that TaskDefinitions lacks", "PRISM705",
-           _json("project.json", lambda d: d["TaskDefinitions"].pop("brs"))),
+           _json("project.json", lambda d: d["TaskDefinitions"].pop("demo"))),
     Defect("participants_tsv_misses_a_subject", "sub-03 has a folder but no participants.tsv row", "PRISM707",
            _participants_without_one_subject),
     Defect("coded_column_without_labels", "participants.tsv has a coded column and no value labels", "PRISM709",
@@ -160,23 +160,23 @@ DEFECTS: list[Defect] = [
            _second_session_for_one_subject),
 
     # messy files a real study produces
-    Defect("ragged_row", "a data row has fewer cells than the header", ANY, _write(DATA, "BRS01\tBRS02\tBRS03\n3\t4\n")),
+    Defect("ragged_row", "a data row has fewer cells than the header", ANY, _write(DATA, "DEMO01\tDEMO02\tDEMO03\n3\t4\n")),
     Defect("extra_column_not_in_sidecar", "a data column the sidecar does not describe", ANY,
-           _write(DATA, "BRS01\tBRS02\tBRS03\tBRS99\n3\t4\t2\t1\n")),
-    Defect("header_with_trailing_space", "a column name ends with a space", ANY, _write(DATA, "BRS01 \tBRS02\tBRS03\n3\t4\t2\n")),
-    Defect("decimal_comma_answer", "an answer written 3,5 (decimal comma)", ANY, _write(DATA, "BRS01\tBRS02\tBRS03\n3,5\t4\t2\n")),
-    Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _write(DATA, "BRS01;BRS02;BRS03\n3;4;2\n")),
-    Defect("nan_in_sidecar", "NaN written into a JSON sidecar", ANY, lambda root: _write(SIDECAR, (root / SIDECAR).read_text(encoding="utf-8").replace('"Reversed": false', '"Reversed": NaN', 1))(root)),
+           _write(DATA, "DEMO01\tDEMO02\tDEMO03\tDEMO99\n3\t4\t2\t1\n")),
+    Defect("header_with_trailing_space", "a column name ends with a space", ANY, _write(DATA, "DEMO01 \tDEMO02\tDEMO03\n3\t4\t2\n")),
+    Defect("decimal_comma_answer", "an answer written 3,5 (decimal comma)", ANY, _write(DATA, "DEMO01\tDEMO02\tDEMO03\n3,5\t4\t2\n")),
+    Defect("semicolon_separated_tsv", "a .tsv separated by semicolons", ANY, _write(DATA, "DEMO01;DEMO02;DEMO03\n3;4;2\n")),
+    Defect("nan_in_sidecar", "NaN written into a JSON sidecar", ANY, lambda root: _write(SIDECAR, (root / SIDECAR).read_text(encoding="utf-8").replace('"MaxValue": 4', '"MaxValue": NaN', 1))(root)),
     Defect("participants_tsv_duplicate_id", "the same participant twice in participants.tsv", ANY, _participants_row("sub-01\t31\n")),
     Defect("non_ascii_subject_label", "sub-Müller is not a valid BIDS label", ANY, _copy_subject("03", "Müller")),
     Defect("session_padding_differs_between_subjects", "ses-1 for most subjects, ses-01 for one", "PRISM601", _mixed_session_padding),
     Defect("stray_file_at_root", "a word-processor file in the dataset root", ANY, _stray_file),
     # messy but legal: no issue may be reported
     Defect("benign_bom_and_crlf", "a data file saved by Excel (BOM, CRLF line endings)", NONE,
-           lambda root: (root / DATA).write_bytes("\ufeffBRS01\tBRS02\tBRS03\r\n3\t4\t2\r\n".encode("utf-8"))),
+           lambda root: (root / DATA).write_bytes("\ufeffDEMO01\tDEMO02\tDEMO03\r\n3\t4\t2\r\n".encode("utf-8"))),
     Defect("benign_sidecar_describes_more_items", "a file holds fewer items than the shared sidecar describes", NONE,
-           _write(DATA, "BRS01\tBRS02\n3\t4\n")),
-    Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _write(DATA, "BRS01\tBRS02\tBRS03\nn/a\t4\t2\n")),
+           _write(DATA, "DEMO01\tDEMO02\n3\t4\n")),
+    Defect("benign_missing_answer_as_n_a", "an unanswered item written n/a", NONE, _write(DATA, "DEMO01\tDEMO02\tDEMO03\nn/a\t4\t2\n")),
     Defect("benign_prescreened_row_without_folder", "participants.tsv lists a participant that has no folder (prescreened)", NONE,
            _participants_row("sub-99\t50\n")),
     Defect("benign_long_subject_label", "a 40-character alphanumeric participant label", NONE,
@@ -206,14 +206,14 @@ def build_clean_project(root: Path) -> None:
         library = work / "survey"
         library.mkdir()
         project_copy = prepare_project_survey_template_from_official(
-            json.loads(SURVEY_TEMPLATE.read_text(encoding="utf-8")), task="brs",
+            json.loads(SURVEY_TEMPLATE.read_text(encoding="utf-8")), task="demo",
             technical_defaults={"Respondent": "self", "AdministrationMethod": "online", "SoftwarePlatform": "Other"},
         )  # a project copy says who answered and how; the official file leaves that to the project
         (library / SURVEY_TEMPLATE.name).write_text(json.dumps(project_copy), encoding="utf-8")
         answers = work / "answers.csv"
         answers.write_text(
-            "participant_id,BRS01,BRS02,BRS03,BRS04,BRS05,BRS06\n"
-            "sub-01,3,4,2,3,4,2\nsub-02,1,2,2,3,3,2\nsub-03,4,4,4,3,4,1\n",
+            "participant_id,DEMO01,DEMO02,DEMO03,DEMO04,DEMO05,DEMO06,DEMO07,DEMO08\n"
+            "sub-01,3,4,2,3,4,2,1,0\nsub-02,1,2,2,3,3,2,2,2\nsub-03,4,4,4,3,4,1,3,4\n",
             encoding="utf-8",
         )
         convert_survey_file_to_prism_dataset(
@@ -230,10 +230,10 @@ def build_clean_project(root: Path) -> None:
 
 
 def _declare_project(data: dict) -> None:
-    data["Basics"] = {"Name": "clean-control", "Authors": ["Ada Example"], "Keywords": ["resilience", "wellbeing", "survey"]}
+    data["Basics"] = {"Name": "clean-control", "Authors": ["Ada Example"], "Keywords": ["survey"]}
     data["StudyDesign"] = {"Timepoints": "single"}
-    data["Sessions"] = [{"id": "ses-1", "tasks": [{"task": "brs"}]}]
-    data["TaskDefinitions"] = {"brs": {}}
+    data["Sessions"] = [{"id": "ses-1", "tasks": [{"task": "demo"}]}]
+    data["TaskDefinitions"] = {"demo": {}}
 
 
 def _validate(root: Path) -> dict[str, list[dict]]:
