@@ -21,7 +21,6 @@ RESTRICTED_SCHEMA_FILENAMES = {
     "project.schema.json",
     "dataset_description.schema.json",
     "instrument-registry.schema.json",
-    "recipe.survey.schema.json",
     "tool-limesurvey.schema.json",
 }
 

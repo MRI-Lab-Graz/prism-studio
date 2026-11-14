@@ -238,3 +238,68 @@ def test_unpacked_size_is_capped(tmp_path, monkeypatch):
 def test_a_tag_with_a_trailing_newline_is_refused():
     with pytest.raises(ValueError):
         sync_mod.archive_url("v1.0.0\n")
+
+
+_NEW = {
+    "library/survey/survey-x.json": '{"Study": "x"}\n',
+    "library/NOTICE.md": "notice\n",
+    "recipes/survey/recipe-x.json": '{"Recipe": "x"}\n',
+    "mappings/biosample/a.json": '{"Id": "a"}\n',
+    "mappings/vocabularies.json": "{}\n",
+    "ids/survey-ids.txt": "prism:x.1\n",
+    "ids/other.txt": "not mapped\n",
+}
+
+
+def test_library_recipes_mappings_and_ids_land_at_their_studio_paths(tmp_path):
+    src, studio = _source(tmp_path / "src", _NEW), _studio(tmp_path / "studio")
+    lock = sync_mod.sync(src, studio, "v1.0.0")
+    for rel in (
+        "official/library/survey/survey-x.json",
+        "official/library/NOTICE_SPECIFICATION.md",
+        "official/recipe/survey/recipe-x.json",
+        "official/library/mappings/biosample/a.json",
+        "official/library/mappings/vocabularies.json",
+        "official/library/survey/term-ids.txt",
+    ):
+        assert (studio / rel).is_file() and rel in lock["files"]
+    assert not any("other.txt" in k for k in lock["files"])
+
+
+def test_studio_templates_not_in_the_lock_are_untouched_and_a_tracked_locked_path_is_overwritten(tmp_path):
+    src, studio = _source(tmp_path / "src", _NEW), _studio(tmp_path / "studio")
+    other = studio / "official/library/survey/survey-other.json"
+    held = studio / "official/recipe/survey/recipe-held.json"
+    clash = studio / "official/library/survey/survey-x.json"
+    for p, text in ((other, "other\n"), (held, "held\n"), (clash, "old studio copy\n")):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+    before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in (other, held)}
+    lock = sync_mod.sync(src, studio, "v1.0.0")
+    assert {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in (other, held)} == before
+    assert clash.read_text(encoding="utf-8") == '{"Study": "x"}\n'
+    assert "official/library/survey/survey-x.json" in lock["files"]
+    assert not any("survey-other" in k or "recipe-held" in k for k in lock["files"])
+
+
+def test_locked_library_file_dropped_upstream_is_deleted_but_studio_neighbours_stay(tmp_path):
+    src, studio = _source(tmp_path / "src", _NEW), _studio(tmp_path / "studio")
+    other = studio / "official/library/survey/survey-other.json"
+    other.parent.mkdir(parents=True, exist_ok=True)
+    other.write_text("other\n", encoding="utf-8")
+    sync_mod.sync(src, studio, "v1.0.0")
+    (src / "library/survey/survey-x.json").unlink()
+    (src / "mappings/biosample/a.json").unlink()
+    sync_mod.sync(src, studio, "v1.1.0")
+    assert not (studio / "official/library/survey/survey-x.json").exists()
+    assert not (studio / "official/library/mappings/biosample/a.json").exists()
+    assert other.is_file()
+
+
+def test_recipe_schema_is_vendored_but_legacy_copies_stay_studio_owned(tmp_path):
+    src = _source(tmp_path / "src", {"schemas/stable/recipe.survey.schema.json": "{}\n"})
+    studio = _studio(tmp_path / "studio")
+    assert "app/schemas/stable/recipe.survey.schema.json" in sync_mod.sync(src, studio, "v1.0.0")["files"]
+    legacy = _source(tmp_path / "src2", {"schemas/v0.2/recipe.survey.schema.json": "{}\n"})
+    with pytest.raises(ValueError):
+        sync_mod.sync(legacy, _studio(tmp_path / "studio2"), "v1.0.0")
