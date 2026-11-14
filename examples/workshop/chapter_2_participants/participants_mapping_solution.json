@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "description": "SOLUTION: Mapping for wellbeing survey raw data to PRISM standard participant variables",
-  "source_file": "raw_data/wellbeing.tsv",
+  "description": "SOLUTION: Mapping for demo survey raw data to PRISM standard participant variables",
+  "source_file": "raw_data/demo.tsv",
   "mappings": {
     "participant_id": {
       "source_column": "participant_id",

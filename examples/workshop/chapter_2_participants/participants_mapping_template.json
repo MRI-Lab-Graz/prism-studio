@@ -1,7 +1,7 @@
 {
   "version": "1.0",
-  "description": "TEMPLATE: Mapping for wellbeing survey raw data to PRISM standard participant variables. Fill in the mappings for each demographic variable.",
-  "source_file": "raw_data/wellbeing.tsv",
+  "description": "TEMPLATE: Mapping for demo survey raw data to PRISM standard participant variables. Fill in the mappings for each demographic variable.",
+  "source_file": "raw_data/demo.tsv",
   "instructions": {
     "task": "Map raw demographic columns to PRISM standard variables",
     "hint_1": "participant_id and session should map directly (no value_mapping needed)",
