@@ -86,6 +86,15 @@ test after the fix; a test that never failed proves nothing.
 - `/security-review` for any change to `src/share_publish.py`, DataLad/annex code, or code that reads project data
   (`code/specification/`, uploads).
 
+## Models: Sonnet 5.5 for every subagent and every check, no switching without approval
+
+Every subagent (implementers, task reviews, scoped re-reviews, final whole-branch reviews, builder checks) runs on
+**Sonnet 5.5** (`claude-sonnet-5-5`), and the model is always set explicitly when a subagent is dispatched (an omitted
+model inherits the session's). **Never use another model** (Opus, Fable, Haiku, ...) for a subagent, for a review or for
+a check, and never switch models in the middle of a task, unless the user has approved that specific use first. This
+overrides the model-selection advice of the superpowers skills (they suggest cheaper or more capable tiers). If a task
+seems to need a different model, ask the user and wait for the answer.
+
 ## One implementation: every command lives in the backend/CLI, the GUI only calls it
 
 (This is THE RULE above; the details follow.)
