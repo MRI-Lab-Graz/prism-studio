@@ -1,0 +1,1083 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/events/v1.1.1",
+  "version": "1.1.1",
+  "title": "Events Metadata",
+  "description": "Schema for BIDS events.tsv sidecars. Events files document the timing and nature of stimuli and responses during a task.",
+  "type": "object",
+  "properties": {
+    "StimulusPresentation": {
+      "type": "object",
+      "description": "Information describing the stimulus presentation software and hardware",
+      "properties": {
+        "OperatingSystem": {
+          "type": "string",
+          "description": "Operating system used for stimulus presentation (e.g., Windows 10, macOS 12)"
+        },
+        "SoftwareName": {
+          "type": "string",
+          "description": "Name of the stimulus presentation software (e.g., PsychoPy, E-Prime, Presentation)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the stimulus presentation software"
+        },
+        "SoftwareRRID": {
+          "type": "string",
+          "description": "RRID of the stimulus presentation software (e.g., SCR_006571 for PsychoPy)"
+        },
+        "Code": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the code/scripts used for stimulus presentation (e.g., GitHub, OSF)"
+        },
+        "ScreenResolution": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Screen resolution [width, height] in pixels"
+        },
+        "ScreenRefreshRate": {
+          "type": "number",
+          "description": "Screen refresh rate in Hz"
+        },
+        "ScreenDistance": {
+          "type": "number",
+          "description": "Distance from participant's eyes to screen in cm"
+        }
+      },
+      "required": ["SoftwareName"]
+    },
+    "TaskDescription": {
+      "type": "string",
+      "description": "Detailed description of the experimental task"
+    },
+    "TaskInstructions": {
+      "type": "string", 
+      "description": "Instructions given to participants"
+    },
+    "CogAtlasID": {
+      "type": "string",
+      "format": "uri",
+      "description": "Cognitive Atlas Task ID (e.g., https://www.cognitiveatlas.org/task/id/tsk_...)"
+    },
+    "trial_type": {
+      "type": "object",
+      "description": "Description of the trial_type column",
+      "properties": {
+        "LongName": { "type": "string" },
+        "Description": { "type": "string" },
+        "Levels": { 
+          "type": "object",
+          "description": "Mapping of trial_type values to descriptions"
+        },
+        "IsAbout": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        },
+        "LevelIsAbout": {
+          "type": "object",
+          "description": "Concept links for single values, keyed by the level code of Levels.",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+            "items": {
+              "type": "object",
+              "required": [
+                "Concept"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "Concept": {
+                  "type": "string",
+                  "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                  "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+                },
+                "Match": {
+                  "type": "string",
+                  "enum": [
+                    "exact",
+                    "broader",
+                    "narrower",
+                    "related"
+                  ],
+                  "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+                },
+                "Higher": {
+                  "type": "string",
+                  "enum": [
+                    "more",
+                    "less"
+                  ],
+                  "description": "Whether a higher value means more or less of the concept."
+                },
+                "Source": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Who or what made the link (a person, a paper, a tool)."
+                },
+                "Checked": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "description": "Date the link was last checked (YYYY-MM-DD)."
+                },
+                "Status": {
+                  "type": "string",
+                  "enum": [
+                    "reviewed",
+                    "unreviewed"
+                  ],
+                  "description": "Default: unreviewed."
+                }
+              }
+            }
+          }
+        },
+        "ValueMappings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Name",
+              "Rules"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "Rules": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "When",
+                    "State"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "When": {
+                      "type": "object",
+                      "required": [
+                        "Op",
+                        "Value"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Op": {
+                          "type": "string",
+                          "enum": [
+                            "==",
+                            "!=",
+                            ">=",
+                            ">",
+                            "<=",
+                            "<",
+                            "in"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "number",
+                            "string",
+                            "array"
+                          ]
+                        }
+                      }
+                    },
+                    "State": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*$",
+                      "description": "For example present, absent, high, low."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TermURL": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      }
+    },
+    "onset": {
+      "type": "object",
+      "description": "Description of the onset column (REQUIRED in events.tsv)",
+      "properties": {
+        "LongName": { "type": "string", "default": "Event Onset" },
+        "Description": { "type": "string", "default": "Onset time of the event relative to the beginning of the acquisition" },
+        "Units": { "type": "string", "default": "s" },
+        "IsAbout": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        },
+        "ValueMappings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Name",
+              "Rules"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "Rules": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "When",
+                    "State"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "When": {
+                      "type": "object",
+                      "required": [
+                        "Op",
+                        "Value"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Op": {
+                          "type": "string",
+                          "enum": [
+                            "==",
+                            "!=",
+                            ">=",
+                            ">",
+                            "<=",
+                            "<",
+                            "in"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "number",
+                            "string",
+                            "array"
+                          ]
+                        }
+                      }
+                    },
+                    "State": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*$",
+                      "description": "For example present, absent, high, low."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TermURL": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      }
+    },
+    "duration": {
+      "type": "object",
+      "description": "Description of the duration column (REQUIRED in events.tsv)",
+      "properties": {
+        "LongName": { "type": "string", "default": "Event Duration" },
+        "Description": { "type": "string", "default": "Duration of the event" },
+        "Units": { "type": "string", "default": "s" },
+        "IsAbout": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        },
+        "ValueMappings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Name",
+              "Rules"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "Rules": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "When",
+                    "State"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "When": {
+                      "type": "object",
+                      "required": [
+                        "Op",
+                        "Value"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Op": {
+                          "type": "string",
+                          "enum": [
+                            "==",
+                            "!=",
+                            ">=",
+                            ">",
+                            "<=",
+                            "<",
+                            "in"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "number",
+                            "string",
+                            "array"
+                          ]
+                        }
+                      }
+                    },
+                    "State": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*$",
+                      "description": "For example present, absent, high, low."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TermURL": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      }
+    },
+    "response_time": {
+      "type": "object",
+      "description": "Description of response_time column if present",
+      "properties": {
+        "LongName": { "type": "string" },
+        "Description": { "type": "string" },
+        "Units": { "type": "string", "enum": ["s", "ms"] },
+        "IsAbout": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        },
+        "ValueMappings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Name",
+              "Rules"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "Rules": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "When",
+                    "State"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "When": {
+                      "type": "object",
+                      "required": [
+                        "Op",
+                        "Value"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Op": {
+                          "type": "string",
+                          "enum": [
+                            "==",
+                            "!=",
+                            ">=",
+                            ">",
+                            "<=",
+                            "<",
+                            "in"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "number",
+                            "string",
+                            "array"
+                          ]
+                        }
+                      }
+                    },
+                    "State": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*$",
+                      "description": "For example present, absent, high, low."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TermURL": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      }
+    },
+    "stim_file": {
+      "type": "object",
+      "description": "Description of stim_file column if present",
+      "properties": {
+        "LongName": { "type": "string" },
+        "Description": { "type": "string" },
+        "IsAbout": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        },
+        "ValueMappings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Name",
+              "Rules"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1
+              },
+              "Rules": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "When",
+                    "State"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "When": {
+                      "type": "object",
+                      "required": [
+                        "Op",
+                        "Value"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "Op": {
+                          "type": "string",
+                          "enum": [
+                            "==",
+                            "!=",
+                            ">=",
+                            ">",
+                            "<=",
+                            "<",
+                            "in"
+                          ]
+                        },
+                        "Value": {
+                          "type": [
+                            "number",
+                            "string",
+                            "array"
+                          ]
+                        }
+                      }
+                    },
+                    "State": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]*$",
+                      "description": "For example present, absent, high, low."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TermURL": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^https?://\\S+$"
+          }
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date this metadata file was created"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        }
+      }
+    }
+  },
+  "required": ["StimulusPresentation"],
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "LongName": { "type": "string" },
+      "Description": { "type": "string" },
+      "Levels": { "type": "object" },
+      "Units": { "type": "string" },
+      "TermURL": {
+        "type": [
+          "string",
+          "object"
+        ],
+        "description": "A string is a URL of a definition (the BIDS reading). An object maps a vocabulary name to the URL of this same thing in that vocabulary.",
+        "additionalProperties": {
+          "type": "string",
+          "pattern": "^https?://\\S+$"
+        }
+      },
+      "IsAbout": {
+        "type": "array",
+        "minItems": 1,
+        "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+        "items": {
+          "type": "object",
+          "required": [
+            "Concept"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "Concept": {
+              "type": "string",
+              "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+              "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+            },
+            "Match": {
+              "type": "string",
+              "enum": [
+                "exact",
+                "broader",
+                "narrower",
+                "related"
+              ],
+              "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+            },
+            "Higher": {
+              "type": "string",
+              "enum": [
+                "more",
+                "less"
+              ],
+              "description": "Whether a higher value means more or less of the concept."
+            },
+            "Source": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Who or what made the link (a person, a paper, a tool)."
+            },
+            "Checked": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Date the link was last checked (YYYY-MM-DD)."
+            },
+            "Status": {
+              "type": "string",
+              "enum": [
+                "reviewed",
+                "unreviewed"
+              ],
+              "description": "Default: unreviewed."
+            }
+          }
+        }
+      },
+      "LevelIsAbout": {
+        "type": "object",
+        "description": "Concept links for single values, keyed by the level code of Levels.",
+        "additionalProperties": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What this is about: one or more concepts, each with how close the match is and which way a higher value points.",
+          "items": {
+            "type": "object",
+            "required": [
+              "Concept"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "Concept": {
+                "type": "string",
+                "pattern": "^(prism:[a-z][a-z0-9.-]*|https?://\\S+)$",
+                "description": "A PRISM concept ID (prism:<slug>) or the absolute URL of a concept in an external vocabulary."
+              },
+              "Match": {
+                "type": "string",
+                "enum": [
+                  "exact",
+                  "broader",
+                  "narrower",
+                  "related"
+                ],
+                "description": "How closely the concept matches (SKOS: exactMatch, broadMatch, narrowMatch, relatedMatch). Default: exact."
+              },
+              "Higher": {
+                "type": "string",
+                "enum": [
+                  "more",
+                  "less"
+                ],
+                "description": "Whether a higher value means more or less of the concept."
+              },
+              "Source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Who or what made the link (a person, a paper, a tool)."
+              },
+              "Checked": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date the link was last checked (YYYY-MM-DD)."
+              },
+              "Status": {
+                "type": "string",
+                "enum": [
+                  "reviewed",
+                  "unreviewed"
+                ],
+                "description": "Default: unreviewed."
+              }
+            }
+          }
+        }
+      },
+      "ValueMappings": {
+        "type": "array",
+        "minItems": 1,
+        "description": "Named, sourced rules that turn a value into a state a reasoner can use. Several may exist and may disagree; none is the truth.",
+        "items": {
+          "type": "object",
+          "required": [
+            "Name",
+            "Rules"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "Name": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "Source": {
+              "type": "string",
+              "minLength": 1
+            },
+            "Rules": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "When",
+                  "State"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "When": {
+                    "type": "object",
+                    "required": [
+                      "Op",
+                      "Value"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "Op": {
+                        "type": "string",
+                        "enum": [
+                          "==",
+                          "!=",
+                          ">=",
+                          ">",
+                          "<=",
+                          "<",
+                          "in"
+                        ]
+                      },
+                      "Value": {
+                        "type": [
+                          "number",
+                          "string",
+                          "array"
+                        ]
+                      }
+                    }
+                  },
+                  "State": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]*$",
+                    "description": "For example present, absent, high, low."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

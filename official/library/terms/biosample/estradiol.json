@@ -7,8 +7,5 @@
     "oestradiol"
   ],
   "Description": "Estradiol (E2), the main estrogen; measured in serum.",
-  "TermURL": {
-    "snomed": "https://snomed.info/id/126172005"
-  },
   "Status": "official"
 }

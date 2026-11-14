@@ -1,7 +1,7 @@
 """Turn a schema patch into a reviewable schema release.
 
 The release procedure CONTRIBUTING.md describes, done by a script: archive the current stable schema
-unchanged, apply the patch to the stable schema, bump its MINOR version (and the `$id` suffix), and
+unchanged, apply the patch to the stable schema, bump its PATCH version (and the `$id` suffix), and
 regenerate the field tables of the modality's spec page. The result passes scripts/check_schema_versions.py.
 Reads from `source_root`, writes only what changed to `dest_root` (the same folder, or a bundle).
 Stdlib only.
@@ -187,7 +187,7 @@ def release(source_root, dest_root, modality: str, patch) -> list[str]:
     if not match:
         raise ReleaseError(f"{stable_rel}: version {schema.get('version')!r} is not major.minor.patch")
     old = schema["version"]
-    new = f"{match[1]}.{int(match[2]) + 1}.0"
+    new = f"{match[1]}.{match[2]}.{int(match[3]) + 1}"
     if not str(schema.get("$id", "")).endswith(f"/v{old}"):
         raise ReleaseError(f"{stable_rel}: $id {schema.get('$id')!r} does not end with /v{old}")
     patched["version"] = new

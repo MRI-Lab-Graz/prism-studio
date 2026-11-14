@@ -6,8 +6,5 @@
     "p4"
   ],
   "Description": "Progesterone, a steroid hormone of the menstrual cycle and pregnancy; measured in serum.",
-  "TermURL": {
-    "snomed": "https://snomed.info/id/16683002"
-  },
   "Status": "official"
 }

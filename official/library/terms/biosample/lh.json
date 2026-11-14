@@ -6,8 +6,5 @@
     "lh"
   ],
   "Description": "Luteinizing hormone (LH), a pituitary gonadotropin; measured in serum.",
-  "TermURL": {
-    "snomed": "https://snomed.info/id/64182005"
-  },
   "Status": "official"
 }

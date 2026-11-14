@@ -3,9 +3,12 @@ PRISM specification licence
 
 This repository has two licences, as the BIDS specification repository does:
 
-  * The specification (everything in schemas/, terms/ and specs/) is licensed
-    under the Creative Commons Attribution 4.0 International licence (CC BY 4.0),
-    the legal code of which follows in Part 1.
+  * The specification (everything in schemas/, terms/, specs/, recipes/, ids/
+    and mappings/) is licensed under the Creative Commons Attribution 4.0
+    International licence (CC BY 4.0), the legal code of which follows in
+    Part 1. This grant expressly EXCLUDES library/: the instrument templates
+    there are not ours, and their files carry their own terms, stated in
+    library/NOTICE.md and in each template.
   * The scripts (everything in scripts/ and tests/) are licensed under the MIT
     licence, which follows in Part 2. Creative Commons advises against its
     licences for software.
