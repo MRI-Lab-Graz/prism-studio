@@ -152,10 +152,20 @@ def released_ids(path: Path | None = None) -> set[str]:
         return set()
 
 
-def freeze_problems(registry: dict[str, dict], released: set[str]) -> list[str]:
-    """One line per released ID the registry no longer has: an ID is frozen once released."""
+def freeze_report(registry: dict[str, dict], released: set[str]) -> tuple[list[str], list[str]]:
+    """(problems, not_shipped). A released ID whose instrument is in the registry but which is gone is a problem (an ID
+    is frozen once released); a released ID of an instrument with no template here (third-party templates are not
+    always shipped) is only listed in `not_shipped`."""
     now = {t.get("TermID") for t in registry.values()}
-    return [f"{tid}: released ID is gone (an ID is frozen; restore the item, score or task name)" for tid in sorted(released - now)]
+    gone = sorted(released - now)
+    absent = [t for t in gone if f"{t.partition('.')[0]}" not in now]
+    problems = [f"{t}: released ID is gone (an ID is frozen; restore the item, score or task name)" for t in gone if t not in absent]
+    return problems, absent
+
+
+def freeze_problems(registry: dict[str, dict], released: set[str]) -> list[str]:
+    """The problems of `freeze_report`."""
+    return freeze_report(registry, released)[0]
 
 
 def write_released_ids(registry: dict[str, dict], path: Path | None = None) -> list[str]:

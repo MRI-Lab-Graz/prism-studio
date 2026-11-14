@@ -83,10 +83,15 @@ def test_bad_files_and_names_are_reported_not_raised(tmp_path):
 
 
 def test_shipped_library_gives_every_item_and_score_an_id():
+    # size-independent: third-party templates may be absent; dass, dass21 and demo always ship
     reg, problems = build_survey_registry()
     assert all("no library template" in p for p in problems), problems
     levels = collections.Counter(t["Level"] for t in reg.values())
-    assert levels["instrument"] >= 103 and levels["item"] >= 1268 and levels["score"] >= 100
+    assert levels["instrument"] >= 1 and levels["item"] >= 1
+    items = collections.Counter(t["Parent"] for t in reg.values() if t["Level"] == "item")
+    assert (items["prism:dass"], items["prism:dass21"], items["prism:demo"]) == (42, 21, 8)
+    for task in ("dass", "dass21"):
+        assert any(t["Level"] == "score" and t["Parent"] == f"prism:{task}" for t in reg.values())
     assert all(key == t["TermID"].partition(":")[2] for key, t in reg.items())
 
 
@@ -95,7 +100,7 @@ def test_shipped_library_gives_every_item_and_score_an_id():
 import importlib.util
 from pathlib import Path
 
-from src.survey_terms import freeze_problems, released_ids, write_released_ids
+from src.survey_terms import freeze_problems, freeze_report, released_ids, write_released_ids
 from src.term_registry import load_registry
 
 _spec = importlib.util.spec_from_file_location(
@@ -108,6 +113,27 @@ def test_a_released_id_that_disappears_is_a_problem():
     assert freeze_problems({"tipi": {"TermID": "prism:tipi"}}, {"prism:tipi", "prism:tipi.tipi01"}) == [
         "prism:tipi.tipi01: released ID is gone (an ID is frozen; restore the item, score or task name)"]
     assert freeze_problems({"tipi": {"TermID": "prism:tipi"}}, {"prism:tipi"}) == []
+
+
+def test_a_released_id_of_an_absent_instrument_is_not_shipped_not_a_problem():
+    reg = {"tipi": {"TermID": "prism:tipi"}}
+    problems, not_shipped = freeze_report(reg, {"prism:tipi", "prism:bfi", "prism:bfi.bfi01", "prism:bfi.score-total"})
+    assert problems == [] and not_shipped == ["prism:bfi", "prism:bfi.bfi01", "prism:bfi.score-total"]
+    assert freeze_problems(reg, {"prism:bfi.bfi01"}) == []
+
+
+def test_a_missing_item_of_a_present_instrument_is_still_a_problem():
+    reg = {"tipi": {"TermID": "prism:tipi"}}
+    problems, not_shipped = freeze_report(reg, {"prism:tipi.tipi01", "prism:bfi.bfi01"})
+    assert len(problems) == 1 and problems[0].startswith("prism:tipi.tipi01: released ID is gone")
+    assert not_shipped == ["prism:bfi.bfi01"]
+
+
+def test_a_shipped_id_missing_from_the_released_list_is_added_by_freeze(tmp_path):
+    path = tmp_path / "ids.txt"
+    path.write_text("prism:tipi\n", encoding="utf-8")
+    reg = {"tipi": {"TermID": "prism:tipi"}, "tipi.tipi01": {"TermID": "prism:tipi.tipi01"}}
+    assert write_released_ids(reg, path) == ["prism:tipi.tipi01"]
 
 
 def test_write_released_ids_only_adds(tmp_path):
@@ -125,7 +151,10 @@ def test_released_ids_of_a_missing_file_is_empty(tmp_path):
 def test_shipped_released_ids_are_all_still_there():
     reg, _ = build_survey_registry()
     released = released_ids()
-    assert released and freeze_problems(reg, released) == []
+    problems, not_shipped = freeze_report(reg, released)
+    shipped_tasks = {t["TermID"] for t in reg.values() if t["Level"] == "instrument"}
+    expected = {r for r in released if "prism:" + r[len("prism:"):].split(".")[0] not in shipped_tasks}
+    assert released and problems == [] and set(not_shipped) == expected
 
 
 def test_every_shipped_id_is_in_the_released_list():

@@ -13,7 +13,7 @@ from src.term_proposal import (
     deliver_proposal,
     load_inherited_sidecar,
 )
-from src.survey_terms import build_survey_registry, freeze_problems, released_ids, resolve_survey_sidecar, write_released_ids
+from src.survey_terms import build_survey_registry, freeze_report, released_ids, resolve_survey_sidecar, write_released_ids
 from src.term_registry import (
     context_value,
     find_term,
@@ -63,13 +63,14 @@ def cmd_terms_freeze(args) -> None:
               "Error: only the survey registry is frozen this way")
         sys.exit(1)
     registry, problems = build_survey_registry()
-    gone = freeze_problems(registry, released_ids())
+    gone, not_shipped = freeze_report(registry, released_ids())
     if gone:
         _emit(args, {"success": False, "problems": problems + gone}, "\n".join(problems + gone))
         sys.exit(1)
     added = write_released_ids(registry)
-    _emit(args, {"success": True, "added": added, "problems": problems},
-          "\n".join(problems + [f"added {len(added)} ID(s)"]))
+    note = [f"{len(not_shipped)} released ID(s) of instruments whose template is not shipped (kept, not an error)"] if not_shipped else []
+    _emit(args, {"success": True, "added": added, "not_shipped": not_shipped, "problems": problems},
+          "\n".join(problems + note + [f"added {len(added)} ID(s)"]))
 
 
 def cmd_terms_resolve(args) -> None:
