@@ -8,7 +8,7 @@ http://localhost:5001) and Playwright's Chromium browser installed
 Usage:
     python scripts/capture_studio_docs_screenshots.py
     python scripts/capture_studio_docs_screenshots.py --base-url http://localhost:5001 \
-        --project-path examples/wellbeing_multi_demo
+        --project-path examples/multi_version_demo
 
 Each entry in SHOTS below maps directly to a file already referenced by a
 doc page under docs/ -- see that file's "docs/*.md" comment for where it's
@@ -27,7 +27,7 @@ from playwright.sync_api import Page, sync_playwright
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "docs" / "_static" / "screenshots"
 DEFAULT_BASE_URL = "http://localhost:5001"
-DEFAULT_PROJECT_PATH = REPO_ROOT / "examples" / "wellbeing_multi_demo"
+DEFAULT_PROJECT_PATH = REPO_ROOT / "examples" / "multi_version_demo"
 
 
 def set_current_project(page: Page, base_url: str, path: str) -> None:

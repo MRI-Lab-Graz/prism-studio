@@ -120,7 +120,7 @@ def test_conflicting_duplicate_rows_keep_last_resolves_deterministically(
 def test_multi_session_same_participant_requires_one_call_per_session(
     tmp_path, library_dir, rawdata_dir
 ):
-    """By design (matching the documented wellbeing_multi_demo workflow),
+    """By design (matching the documented multi_version_demo workflow),
     one convert() call processes one session at a time. Without an
     explicit session=, it silently auto-filters to the first detected
     session — this test pins that exact behavior, then shows the correct

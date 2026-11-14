@@ -1271,7 +1271,7 @@ def build_hostile_survey_response_variants(
                 "so this must NOT raise as a duplicate even under "
                 "duplicate_handling='error'. By design, one convert() call "
                 "processes one session at a time (matching the documented "
-                "wellbeing_multi_demo workflow): a single call without an "
+                "multi_version_demo workflow): a single call without an "
                 "explicit session= auto-filters to the first detected "
                 "session only, silently leaving later sessions unconverted "
                 "with no error — the caller must repeat the call once per "

@@ -44,7 +44,7 @@ def test_a_real_bids_error_is_reported_as_an_error(tmp_path):
 def test_prism_folders_of_the_demo_dataset_draw_no_false_not_included_errors():
     info = {}
     issues = bids_validator.run_bids_validator(
-        str(ROOT / "examples" / "wellbeing_multi_demo"), backend_info=info
+        str(ROOT / "examples" / "multi_version_demo"), backend_info=info
     )
     assert info["engine"] == "bids-validator-deno" and info["version"] != "unknown"
     not_included = [i[1] for i in issues if i[1].startswith("[BIDS] NOT_INCLUDED")]

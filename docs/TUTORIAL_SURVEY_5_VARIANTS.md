@@ -111,7 +111,7 @@ mechanics.
 
 ```{note}
 For a more complex, already-finished multi-version example than this
-tutorial builds by hand, see `examples/wellbeing_multi_demo` in the
+tutorial builds by hand, see `examples/multi_version_demo` in the
 repository.
 ```
 
