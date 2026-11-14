@@ -325,12 +325,29 @@ def _show(term, capsys, **kw):
     return capsys.readouterr().out
 
 
-@pytest.mark.xfail(strict=True, reason="v1.5.7 moved TermURL into mappings/; Task 7 makes `terms show` read it from there")
 def test_terms_show_gives_a_child_the_links_of_its_parent(capsys):
     data = json.loads(_show("shbg.serum", capsys, json=True))
     assert data["links"]["snomed"] == {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}
     out = _show("shbg.serum", capsys)
     assert "https://snomed.info/id/55503002" in out and "prism:shbg" in out
+
+
+def test_terms_show_carries_measures_and_value_rules(monkeypatch, capsys):
+    from src.cli.commands import terms as cmd
+    entry = {"SameAs": {"snomed": "https://example.org/a"},
+             "Measures": [{"URL": "https://example.org/m", "Match": "exact"}],
+             "ValueRules": [{"Name": "r1", "Rules": []}]}
+    monkeypatch.setattr(cmd, "load_mappings", lambda modality: {"prism:shbg.serum": entry})
+    data = json.loads(_show("shbg.serum", capsys, json=True))
+    assert data["measures"] == entry["Measures"] and data["value_rules"] == entry["ValueRules"]
+    assert data["links"]["snomed"] == {"url": "https://example.org/a", "from": "prism:shbg.serum"}
+    out = _show("shbg.serum", capsys)
+    assert "Measures:" in out and "https://example.org/m" in out and "ValueRules:" in out and "r1" in out
+
+
+def test_terms_show_without_mappings_has_empty_measures(capsys):
+    data = json.loads(_show("cortisol.serum", capsys, json=True))
+    assert data["measures"] == [] and data["value_rules"] == [] and data["links"] == {}
 
 
 def test_terms_show_without_links_prints_no_links_line(capsys):
