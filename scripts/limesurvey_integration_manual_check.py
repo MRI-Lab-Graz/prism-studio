@@ -78,8 +78,8 @@ def main():
 
     # Load library templates
     templates_to_test = [
-        "official/library/survey/survey-gad7.json",
-        "official/library/survey/survey-tipi.json",
+        "official/library/survey/survey-demo.json",
+        "official/library/survey/survey-dass.json",
         "official/library/survey/survey-dass21.json",
     ]
 
@@ -224,7 +224,7 @@ def main():
             fail(f"Does NOT detect timing '{col}'")
 
     # Test false positives
-    false_pos = ["PANAS01", "GAD701", "participant_id", "age", "Q1"]
+    false_pos = ["PANAS01", "DEMO01", "participant_id", "age", "Q1"]
     for col in false_pos:
         if not _is_limesurvey_system_column(col):
             ok(f"Correctly ignores '{col}'")
@@ -342,8 +342,8 @@ def main():
     # ── 6. TEMPLATE PREVIEW ──────────────────────────────────────
     section("6. Template Editor Preview (API check)")
 
-    with open("official/library/survey/survey-gad7.json", "r", encoding="utf-8") as f:
-        gad7 = json.load(f)
+    with open("official/library/survey/survey-demo.json", "r", encoding="utf-8") as f:
+        demo = json.load(f)
 
     # Word export with various options
     for opts_name, opts in [
@@ -355,7 +355,7 @@ def main():
     ]:
         r = s.post(
             f"{BASE}/api/template-editor/export-questionnaire",
-            json={"template": gad7, "language": "en", "options": opts},
+            json={"template": demo, "language": "en", "options": opts},
         )
         if r.status_code == 200 and len(r.content) > 5000:
             ok(f"Word export '{opts_name}': {len(r.content)} bytes")
