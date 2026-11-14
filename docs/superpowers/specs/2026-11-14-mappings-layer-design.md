@@ -230,11 +230,19 @@ A fresh reader raised eight questions. These are settled here, with what each co
 Exact JSON Schema of a mapping file; the check's messages; how the derivation script is split between the two
 repositories' tests; the sync script's path mapping details; the order of the commits inside each step.
 
+## Decided by the user on 2026-11-14 (after the builder check)
+
+- The field names `SameAs`, `Measures`, `ValueRules`, `Levels` and the folder name `mappings/` are agreed.
+- A project's own mappings come later (not in the first version).
+- The instrument templates' licences are audited again before anything moves; if the audit is clean, the library and the
+  recipes move. The audit is `docs/handouts/template-licence-audit.md` (an untracked working document): 8 templates carry
+  an explicit grant or open licence, 27 say "can be used for research with acknowledgement" in PsyToolkit's own words,
+  63 are hedged, 1 is non-commercial (BFI-S), 3 are NOT VERIFIED, 1 is a demo; none grants republication of the item
+  wording. It is therefore **not clean for a move that publishes the wording under the specification repository**; the
+  options (move with a notice only, move only the clear templates, move the IDs and recipes but keep the wording in
+  Studio, or clarify with the authors first) are in the audit and wait for the user's decision.
+
 ## Open points for the user
 
-1. The licensing carve-out for `library/` (section 8): is publishing the instrument templates from the specification
-   repository, excluded from its CC BY 4.0 grant and with their own notice, acceptable? Step 2 depends on it.
-2. The field names `SameAs`, `Measures`, `ValueRules`, `Levels` and the folder name `mappings/` (or `ontology/`, the
-   user's first word): both are baked into the file format and the check; a later rename is a breaking change.
-3. Whether a project's own mappings (section 5) are part of the first version or a later step (the order above
-   assumes a later step).
+1. Which option for the library move (see above). Steps 1 (remove the in-schema fields) and 3 (`mappings/` for biosample
+   and environment) do not depend on it and can start.
