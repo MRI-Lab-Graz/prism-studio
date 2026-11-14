@@ -7,6 +7,7 @@ Prints one line per problem and exits 1 when there is any.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -53,7 +54,16 @@ def _terms_problems(name: str, entry: dict, schema_dir: Path, terms_dir: Path | 
     return problems
 
 
-def check(entities: dict, schema_dir: Path, terms_dir: Path | None = None) -> list[str]:
+def _meaning_problems(entities: dict, schema_dir: Path, shared_dir: Path) -> list[str]:
+    if not (shared_dir / "meaning-block.json").is_file() or not (shared_dir / "meaning-locations.json").is_file():
+        return [f"{shared_dir}: meaning-block.json and meaning-locations.json are missing; the meaning-block files are part of the specification and must be vendored with the schemas"]
+    spec = importlib.util.spec_from_file_location("meaning_block", Path(__file__).resolve().parent / "meaning_block.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.modality_problems(entities, schema_dir, shared_dir)
+
+
+def check(entities: dict, schema_dir: Path, terms_dir: Path | None = None, shared_dir: Path | None = None) -> list[str]:
     entry_validator = Draft7Validator(json.loads(ENTRY_SCHEMA.read_text(encoding="utf-8")))
     problems = []
     for name, entry in entities["modalities"].items():
@@ -61,7 +71,7 @@ def check(entities: dict, schema_dir: Path, terms_dir: Path | None = None) -> li
         if entry.get("kind") == "prism" and "suffixes" in entry:
             problems += _schema_problems(name, schema_dir)
         problems += _terms_problems(name, entry, schema_dir, terms_dir)
-    return problems
+    return problems + _meaning_problems(entities, Path(schema_dir), Path(shared_dir) if shared_dir else Path(schema_dir).parent / "shared")
 
 
 def main(argv=None) -> int:

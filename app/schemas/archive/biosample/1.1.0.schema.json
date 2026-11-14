@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/biosample/v1.1.0",
+  "version": "1.1.0",
+  "title": "Biosample Metadata",
+  "description": "Schema for assay results on biological specimens (blood, serum, plasma, saliva, urine, hair, stool, CSF). One TSV per subject/session/run, one row per sample, one column per analyte. Files are named: sub-<label>[_ses-<label>]_biosample-<label>[_run-<index>]_biosample.<tsv|json>. The <label> names the assay panel (e.g. inflammation), not the specimen. In numeric data columns the codes n/a, <LOD, <LLOQ and >ULOQ are accepted.",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Specimen, collection, storage and assay properties",
+      "properties": {
+        "SpecimenType": {
+          "type": "string",
+          "enum": ["whole-blood", "serum", "plasma", "dried-blood-spot", "saliva", "urine", "hair", "stool", "csf", "other"],
+          "description": "Type of biological specimen the assay was run on"
+        },
+        "CollectionMethod": {
+          "type": "string",
+          "enum": ["venipuncture", "capillary", "passive-drool", "swab", "other", ""],
+          "description": "How the specimen was collected"
+        },
+        "Anticoagulant": {
+          "type": "string",
+          "enum": ["EDTA", "heparin", "citrate", "none", "other", ""],
+          "description": "Anticoagulant in the collection tube (blood specimens)"
+        },
+        "FastingRequired": {
+          "type": "boolean",
+          "description": "Whether participants were required to fast before collection"
+        },
+        "ProcessingProtocol": {
+          "type": "string",
+          "description": "Free-text processing steps (clotting, centrifugation, aliquoting)"
+        },
+        "StorageTemperature": {
+          "type": "number",
+          "description": "Storage temperature in degrees Celsius (e.g. -80)"
+        },
+        "Laboratory": {
+          "type": "string",
+          "description": "Laboratory that ran the assay"
+        },
+        "AssayMethod": {
+          "type": "string",
+          "description": "Assay method (e.g. ELISA, CLIA, LC-MS/MS)"
+        },
+        "AssayKit": {
+          "type": "string",
+          "description": "Assay kit name, manufacturer and lot"
+        }
+      },
+      "required": ["SpecimenType"]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Panel-level information",
+      "properties": {
+        "BiosampleName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Assay panel identifier; must equal the biosample-<label> in the filename (e.g. inflammation)"
+        },
+        "Description": {
+          "type": ["string", "object"],
+          "description": "What this panel measures"
+        },
+        "Citation": {"type": "string", "description": "Citation for the assay protocol"},
+        "DOI": {"type": "string", "description": "DOI for the assay protocol"},
+        "Keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Keywords describing the panel"
+        }
+      },
+      "required": ["BiosampleName"]
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+        "CreationDate": {"type": "string", "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$", "description": "Date of creation"},
+        "Creator": {"type": "string"}
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"],
+  "additionalProperties": {
+    "type": "object",
+    "description": "Column definition (one per TSV column)",
+    "properties": {
+      "Term": {"type": "string", "description": "Term of the PRISM term registry (ID, local name, label or equivalent), for example prism:cortisol; Units, ranges and LOINC are then inherited and may be omitted"},
+      "Description": {"type": ["string", "object"], "description": "Description of the column"},
+      "Units": {"type": "string", "description": "Unit of measurement (e.g. mg/L, pg/mL); n/a for non-numeric columns"},
+      "AliasOf": {"type": "string", "description": "Column name of the canonical definition this is an alias for"},
+      "Aliases": {"type": "array", "items": {"type": "string"}, "description": "Alternative column names that use this same definition"},
+      "DataType": {"type": "string", "enum": ["string", "integer", "float", ""], "description": "Expected data type"},
+      "MinValue": {"type": ["number", "null"], "description": "Minimum allowed value (error below)"},
+      "MaxValue": {"type": ["number", "null"], "description": "Maximum allowed value (error above)"},
+      "WarnMinValue": {"type": ["number", "null"], "description": "Warning threshold below"},
+      "WarnMaxValue": {"type": ["number", "null"], "description": "Warning threshold above"},
+      "AllowedValues": {"type": "array", "items": {"type": ["string", "number"]}, "description": "Allowed values"},
+      "Levels": {
+        "type": "object",
+        "description": "Mapping of coded values to labels",
+        "patternProperties": {"^.*$": {"type": ["string", "object"]}}
+      },
+      "LOINC": {"type": "string", "pattern": "^\\d+-\\d$", "description": "LOINC code of the analyte (loinc.org)"},
+      "LowerLimitOfDetection": {"type": "number", "description": "Limit of detection (LOD) in Units"},
+      "LowerLimitOfQuantification": {"type": "number", "description": "Lower limit of quantification (LLOQ) in Units"},
+      "UpperLimitOfQuantification": {"type": "number", "description": "Upper limit of quantification (ULOQ) in Units"},
+      "ReferenceRange": {
+        "type": "object",
+        "description": "Clinical reference range (informational; use WarnMin/MaxValue for warnings)",
+        "properties": {
+          "min": {"type": ["number", "null"]},
+          "max": {"type": ["number", "null"]}
+        },
+        "additionalProperties": false
+      },
+      "IntraAssayCV": {"type": "number", "description": "Intra-assay coefficient of variation in percent"},
+      "InterAssayCV": {"type": "number", "description": "Inter-assay coefficient of variation in percent"}
+    },
+    "anyOf": [{"required": ["Description", "Units"]}, {"required": ["Term"]}]
+  }
+}

@@ -85,10 +85,27 @@ def _member(text: str, start: int, key: str) -> tuple[int, int]:
             i += 1
 
 
-def _span(text: str, keys: list[str]) -> tuple[int, int]:
+def _element(text: str, start: int, index: int) -> tuple[int, int]:
+    """(start, end) of element `index` of the array that starts at text[start] == "[" ."""
+    if text[start] != "[" or index < 0:
+        raise ValueError("not an array, or a negative index")
+    i = start + 1
+    for n in range(index + 1):
+        i = _skip(text, i)
+        if text[i] == "]":
+            raise ValueError(f"no element {index}")
+        end = _end_of_value(text, i)
+        if n == index:
+            return i, end
+        i = _skip(text, end)
+        if text[i] == ",":
+            i += 1
+
+
+def _span(text: str, keys: list[str | int]) -> tuple[int, int]:
     start, end = _skip(text, 0), len(text)
     for key in keys:
-        start, end = _member(text, start, key)
+        start, end = _element(text, start, key) if type(key) is int else _member(text, start, key)
     return start, end
 
 
