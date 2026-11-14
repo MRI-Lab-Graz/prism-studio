@@ -14,7 +14,16 @@ from src.term_proposal import (
     load_inherited_sidecar,
 )
 from src.survey_terms import build_survey_registry, freeze_problems, released_ids, resolve_survey_sidecar, write_released_ids
-from src.term_registry import context_value, find_term, load_registry, resolve_column, term_links, term_names
+from src.term_registry import (
+    context_value,
+    find_term,
+    load_mappings,
+    load_registry,
+    resolve_column,
+    term_links,
+    term_meaning,
+    term_names,
+)
 
 
 def _emit(args, payload: dict, text: str) -> None:
@@ -89,11 +98,17 @@ def cmd_terms_show(args) -> None:
     if not found:
         _emit(args, {"success": False, "error": f"unknown term: {args.term}"}, f"Error: unknown term: {args.term}")
         sys.exit(1)
-    links = term_links(registry, found[1])
+    mappings = load_mappings(args.modality)
+    links = term_links(registry, found[1], mappings)
+    meaning = term_meaning(found[1], mappings)
     text = json.dumps(found[1], indent=2, ensure_ascii=False)
     if links:
         text += "\nLinks:\n" + "\n".join(f"  {k}: {v['url']} (from {v['from']})" for k, v in links.items())
-    _emit(args, {"success": True, "term": found[1], "links": links}, text)
+    for label, key in (("Measures", "Measures"), ("ValueRules", "ValueRules")):
+        if meaning[key]:
+            text += f"\n{label}:\n" + "\n".join("  " + json.dumps(m, ensure_ascii=False) for m in meaning[key])
+    _emit(args, {"success": True, "term": found[1], "links": links,
+                 "measures": meaning["Measures"], "value_rules": meaning["ValueRules"]}, text)
 
 
 def cmd_terms_suggest(args) -> None:

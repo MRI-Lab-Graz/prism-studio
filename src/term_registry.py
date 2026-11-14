@@ -87,19 +87,54 @@ def find_term(registry: dict[str, dict], name: str) -> tuple[str, dict] | None:
     return None
 
 
-def term_links(registry: dict[str, dict], term: dict) -> dict[str, dict]:
-    """The ontology links of a term: {system: {"url", "from"}}, its parent's included (the term's own win).
+def mappings_root() -> Path:
+    """`official/library/mappings`, next to the terms (dev, validator image, frozen build)."""
+    return terms_root().parent / "mappings"
 
-    `from` is the TermID that carries the link. Anything that is not a string URL is left out: local terms
-    are project data.
+
+def load_mappings(modality: str = "biosample", root: Path | None = None) -> dict[str, dict]:
+    """Every mapping entry of a modality, keyed by full PRISM ID: {ID: {SameAs, Measures, ValueRules, Levels}}.
+
+    Files are `<root>/<modality>/<family>.json`. They are data, not trusted: an unreadable file, a
+    non-object file or an entry that is not an object is skipped (scripts/specification/check_mappings.py
+    reports problems). Only a plain `*.json` listing is read; no file name is used to build another path.
     """
+    folder = Path(root or mappings_root()) / modality
+    found: dict[str, dict] = {}
+    for path in sorted(folder.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict):
+            found.update({k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, dict)})
+    return found
+
+
+def term_links(
+    registry: dict[str, dict], term: dict, mappings: dict[str, dict] | None = None, modality: str = "biosample"
+) -> dict[str, dict]:
+    """The ontology links (`SameAs` of mappings/) of a term: {system: {"url", "from"}}, its parent's included.
+
+    The term's own win. `from` is the TermID that carries the link. Anything that is not a string URL is
+    left out. `mappings` defaults to the official mappings of `modality`.
+    """
+    if mappings is None:
+        mappings = load_mappings(modality)
     parent = next((t for t in registry.values() if t.get("TermID") == term.get("Parent")), None) if term.get("Parent") else None
     links: dict[str, dict] = {}
     for source in (parent, term):
-        urls = source.get("TermURL") if source else None
+        tid = source.get("TermID") if source else None
+        urls = mappings.get(tid, {}).get("SameAs") if isinstance(tid, str) else None
         if isinstance(urls, dict):
-            links.update({k: {"url": v, "from": source.get("TermID")} for k, v in urls.items() if isinstance(v, str)})
+            links.update({k: {"url": v, "from": tid} for k, v in urls.items() if isinstance(v, str)})
     return links
+
+
+def term_meaning(term: dict, mappings: dict[str, dict]) -> dict[str, list]:
+    """The term's own `Measures` and `ValueRules` (lists; anything else counts as none)."""
+    entry = mappings.get(term.get("TermID")) or {}
+    return {k: entry[k] if isinstance(entry.get(k), list) else [] for k in ("Measures", "ValueRules")}
 
 
 def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
