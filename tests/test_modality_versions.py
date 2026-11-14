@@ -92,3 +92,13 @@ def test_pin_for_a_modality_that_no_longer_exists_is_ignored(schema_dir):
 def test_override_for_an_unknown_modality_is_an_error(schema_dir):
     with pytest.raises(ModalityVersionError, match="survey, physio"):
         resolve_modality_versions(overrides={"nope": "1.0.0"}, schema_dir=schema_dir)
+
+
+def test_shared_and_archive_folders_are_not_schema_versions_or_modalities():
+    """app/schemas/shared (the meaning block) and archive/ sit next to stable/ but are neither."""
+    from src.schema_manager import DEFAULT_SCHEMA_DIR, get_available_schema_versions
+
+    versions = get_available_schema_versions(DEFAULT_SCHEMA_DIR)
+    assert "shared" not in versions and "archive" not in versions and "stable" in versions
+    assert "shared" not in modality_names() and "archive" not in modality_names()
+    assert {"2.1.0", "2.1.1", current_version("survey")} <= set(available_versions("survey"))
