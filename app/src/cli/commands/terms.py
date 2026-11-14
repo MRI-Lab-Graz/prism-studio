@@ -100,15 +100,16 @@ def cmd_terms_show(args) -> None:
         sys.exit(1)
     mappings = load_mappings(args.modality)
     links = term_links(registry, found[1], mappings)
-    meaning = term_meaning(found[1], mappings)
+    meaning = term_meaning(found[1], mappings, registry)
     text = json.dumps(found[1], indent=2, ensure_ascii=False)
     if links:
         text += "\nLinks:\n" + "\n".join(f"  {k}: {v['url']} (from {v['from']})" for k, v in links.items())
     for label, key in (("Measures", "Measures"), ("ValueRules", "ValueRules")):
         if meaning[key]:
-            text += f"\n{label}:\n" + "\n".join("  " + json.dumps(m, ensure_ascii=False) for m in meaning[key])
+            origin = f" (from {meaning['MeasuresFrom']})" if key == "Measures" else ""
+            text += f"\n{label}{origin}:\n" + "\n".join("  " + json.dumps(m, ensure_ascii=False) for m in meaning[key])
     _emit(args, {"success": True, "term": found[1], "links": links,
-                 "measures": meaning["Measures"], "value_rules": meaning["ValueRules"]}, text)
+                 "measures": meaning["Measures"], "measures_from": meaning["MeasuresFrom"], "value_rules": meaning["ValueRules"]}, text)
 
 
 def cmd_terms_suggest(args) -> None:

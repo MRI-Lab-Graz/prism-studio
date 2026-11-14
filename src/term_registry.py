@@ -7,6 +7,7 @@ docs/superpowers/specs/2026-10-22-biosample-term-registry-design.md (removed aft
 from __future__ import annotations
 
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -99,6 +100,8 @@ def load_mappings(modality: str = "biosample", root: Path | None = None) -> dict
     non-object file or an entry that is not an object is skipped (scripts/specification/check_mappings.py
     reports problems). Only a plain `*.json` listing is read; no file name is used to build another path.
     """
+    if not isinstance(modality, str) or not re.fullmatch(r"[a-z0-9_-]+", modality):
+        return {}
     folder = Path(root or mappings_root()) / modality
     found: dict[str, dict] = {}
     for path in sorted(folder.glob("*.json")):
@@ -131,10 +134,21 @@ def term_links(
     return links
 
 
-def term_meaning(term: dict, mappings: dict[str, dict]) -> dict[str, list]:
-    """The term's own `Measures` and `ValueRules` (lists; anything else counts as none)."""
-    entry = mappings.get(term.get("TermID")) or {}
-    return {k: entry[k] if isinstance(entry.get(k), list) else [] for k in ("Measures", "ValueRules")}
+def term_meaning(term: dict, mappings: dict[str, dict], registry: dict[str, dict] | None = None) -> dict:
+    """`Measures` (own, else the parent's, with `MeasuresFrom` naming the carrying ID) and the term's own `ValueRules`.
+
+    Anything that is not a list counts as none.
+    """
+    def own(t, key):
+        tid = t.get("TermID") if isinstance(t, dict) else None
+        value = mappings.get(tid, {}).get(key) if isinstance(tid, str) else None
+        return (value if isinstance(value, list) else []), tid
+
+    measures, origin = own(term, "Measures")
+    if not measures and registry and isinstance(term.get("Parent"), str):
+        parent = next((t for t in registry.values() if t.get("TermID") == term["Parent"]), None)
+        measures, origin = own(parent, "Measures")
+    return {"Measures": measures, "MeasuresFrom": origin if measures else None, "ValueRules": own(term, "ValueRules")[0]}
 
 
 def _similar(registry: dict[str, dict], probe: str) -> tuple[str, ...]:
