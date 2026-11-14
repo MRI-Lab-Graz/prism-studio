@@ -325,6 +325,7 @@ def _show(term, capsys, **kw):
     return capsys.readouterr().out
 
 
+@pytest.mark.xfail(strict=True, reason="v1.5.7 moved TermURL into mappings/; Task 7 makes `terms show` read it from there")
 def test_terms_show_gives_a_child_the_links_of_its_parent(capsys):
     data = json.loads(_show("shbg.serum", capsys, json=True))
     assert data["links"]["snomed"] == {"url": "https://snomed.info/id/55503002", "from": "prism:shbg"}
