@@ -6,11 +6,11 @@ Pre-flight for a live session. Participant-facing material is
 
 ## Must-have files
 
-- `raw_data/wellbeing.xlsx` (chapters 2 and 3)
-- `chapter_3_survey_import/survey-wellbeing.json`
-- `chapter_4_recipe/recipe-wellbeing.json`
-- `official/library/survey/survey-who5.json`
-- `official/recipe/survey/recipe-who5.json`
+- `raw_data/demo.xlsx` (chapters 2 and 3)
+- `chapter_3_survey_import/survey-demo.json`
+- `chapter_4_recipe/recipe-demo.json`
+- `official/library/survey/survey-demo.json` and `official/recipe/survey/recipe-demo.json` (the
+  demonstration template and recipe shipped with PRISM; the two files above are copies of them)
 
 ## Checks before class
 
@@ -26,12 +26,12 @@ Pre-flight for a live session. Participant-facing material is
 
 Walk chapters 1–5 yourself on a workshop machine:
 
-1. Create project `wellbeing_study`.
-2. Import demographics from `raw_data/wellbeing.xlsx` with mapping enabled —
+1. Create project `demo_study`.
+2. Import demographics from `raw_data/demo.xlsx` with mapping enabled —
    confirm `participants.tsv` **and** `participants.json` appear.
 3. Import survey responses — confirm one `.tsv` per participant plus one
    shared sidecar JSON.
-4. Save the wellbeing recipe and export.
+4. Save the demo recipe and export.
 5. Validate once and read the findings.
 
 If that passes, the session is ready.

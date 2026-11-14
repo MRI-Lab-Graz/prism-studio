@@ -14,15 +14,15 @@ Instructors: see [PREPARATION.md](PREPARATION.md) for the pre-flight checklist.
 |---|---|
 | 0 — Install and First Launch | none |
 | 1 — Create a Project | none |
-| 2 — Import Sociodemographic Data | `raw_data/wellbeing.xlsx`, `chapter_2_participants/` |
-| 3 — Import Survey Response Data | `raw_data/wellbeing.xlsx`, `chapter_3_survey_import/survey-wellbeing.json` |
-| 4 — Prepare a Recipe | `chapter_4_recipe/recipe-wellbeing.json` |
+| 2 — Import Sociodemographic Data | `raw_data/demo.xlsx`, `chapter_2_participants/` |
+| 3 — Import Survey Response Data | `raw_data/demo.xlsx`, `chapter_3_survey_import/survey-demo.json` |
+| 4 — Prepare a Recipe | `chapter_4_recipe/recipe-demo.json` |
 | 5 — Use the Validator | `chapter_5_validator/` (13 optional challenges) |
 | 6 — Enrich an Existing BIDS Dataset | downloads its own dataset |
 
-`raw_data/wellbeing.xlsx` sits outside the chapter folders on purpose: it is
+`raw_data/demo.xlsx` sits outside the chapter folders on purpose: it is
 the study's one source spreadsheet, shared by chapters 2 and 3, and it exists
-exactly once so the two chapters can never drift apart. `wellbeing.tsv` beside
+exactly once so the two chapters can never drift apart. `demo.tsv` beside
 it is the identical data as plain text, if you want to show that the importer
 doesn't care about the format.
 
@@ -36,7 +36,7 @@ start.
 | Time | Block |
 |---|---|
 | 0:00–0:10 | Launch check — everyone reaches `http://localhost:5001` |
-| 0:10–0:25 | Chapter 1 — create `wellbeing_study` |
+| 0:10–0:25 | Chapter 1 — create `demo_study` |
 | 0:25–0:50 | Chapter 2 — import demographics |
 | 0:50–1:00 | Break |
 | 1:00–1:30 | Chapter 3 — import survey responses |
@@ -53,7 +53,7 @@ not go well.
 Write these on the board. They let someone who fell behind find themselves
 without asking, which matters in a room where you can't project a screen.
 
-1. Project `wellbeing_study` appears in the project list
+1. Project `demo_study` appears in the project list
 2. `participants.tsv` and `participants.json` exist at the project root
 3. `sub-*/ses-baseline/survey/*_survey.tsv` exist, one per participant
 4. A recipe is saved and produces a score column

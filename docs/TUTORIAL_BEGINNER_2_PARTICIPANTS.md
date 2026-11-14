@@ -10,12 +10,12 @@ In this chapter, `participants.tsv` is a table with one row for each person.
 `sex`, including any codes used in the table.
 
 **Time:** ~20 minutes. **Outcome:** a matching `participants.tsv` and
-`participants.json` pair written into `wellbeing_study`, plus hands-on
+`participants.json` pair written into `demo_study`, plus hands-on
 experience with PRISM's Merge workflow for updating them later.
 
 ```{mermaid}
 flowchart LR
-    A["📄 wellbeing.xlsx<br/>raw spreadsheet<br/>age, sex, education..."] --> B["🔧 Sociodemographics<br/>Converter"]
+    A["📄 demo.xlsx<br/>raw spreadsheet<br/>age, sex, education..."] --> B["🔧 Sociodemographics<br/>Converter"]
     B --> C["📋 participants.tsv<br/>+ participants.json<br/>documented, ready to validate"]
 ```
 
@@ -56,13 +56,13 @@ something you can grep for.
 ## 1. Look at the source file
 
 Download the example spreadsheet:
-{download}`wellbeing.xlsx <../examples/workshop/raw_data/wellbeing.xlsx>`
-(also available as plain text, {download}`wellbeing.tsv <../examples/workshop/raw_data/wellbeing.tsv>`).
+{download}`demo.xlsx <../examples/workshop/raw_data/demo.xlsx>`
+(also available as plain text, {download}`demo.tsv <../examples/workshop/raw_data/demo.tsv>`).
 Working from a repository checkout instead? It is at
-`examples/workshop/raw_data/wellbeing.xlsx`. It has
+`examples/workshop/raw_data/demo.xlsx`. It has
 one row per participant with columns like `participant_id`, `session`,
-`age`, `sex`, `education`, `handedness`, `WB01`-`WB05`, `completion_date`.
-Only the demographic columns matter for this chapter — `WB01`-`WB05` are the
+`age`, `sex`, `education`, `handedness`, `DEMO01`-`DEMO08`, `completion_date`.
+Only the demographic columns matter for this chapter — `DEMO01`-`DEMO08` are the
 survey items, imported separately in chapter 3.
 
 ```{tip}
@@ -72,11 +72,11 @@ Excel-only workflow. The Participants converter also accepts CSV (`.csv`), TSV
 source files.
 ```
 
-## 2. Reopen `wellbeing_study`
+## 2. Reopen `demo_study`
 
 If Studio is still the same session you created the project in, it's
 already loaded — skip to step 3. Otherwise, go to **Open Project Manager** (in the top navigation) and
-either paste the project's path (e.g. `~/prism_projects/wellbeing_study`)
+either paste the project's path (e.g. `~/prism_projects/demo_study`)
 into **Select project folder or project.json** and click **Load Project**,
 or click it under **Recent Projects**, which lists every project you've
 created or opened before, de-duplicated by its resolved absolute path.
@@ -89,14 +89,14 @@ not a status indicator.
 
 ## 3. Open Converter → Sociodemographics
 
-With `wellbeing_study` loaded, go to **Prepare Data → Converter**. The
+With `demo_study` loaded, go to **Prepare Data → Converter**. The
 **Sociodemographics** tab is the default/first tab.
 
 ![PRISM Studio Participants converter tab](_static/screenshots/prism-studio-converter-participants.png)
 
 ## 4. Select the file and ID column
 
-- Upload `wellbeing.xlsx`. Excel files expose a sheet selector if there's
+- Upload `demo.xlsx`. Excel files expose a sheet selector if there's
   more than one sheet.
 - **Participant ID Column** defaults to "Auto-detect", which recognizes
   `participant_id` directly here — no need to override it for this file.
@@ -117,7 +117,7 @@ Click **Review Participant Fields** to preview detected columns and sample
 values before anything is written. You should see `age`, `sex`, `education`,
 `handedness` among the detected fields.
 
-If `WB01`-`WB05` show up as available-but-not-selected columns, leave them
+If `DEMO01`-`DEMO08` show up as available-but-not-selected columns, leave them
 out here — pulling survey items into `participants.tsv` would mix
 one-time-per-participant demographics with repeated-measure survey data,
 which don't belong in the same file. Use **Add Your Own Columns**
@@ -178,7 +178,7 @@ tables.
 <span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
 `participants.tsv` and `.json` now exist, and every ID is consistent. The
-raw survey codes (`WB01`-`WB05`) are still sitting in `wellbeing.xlsx`
+raw survey codes (`DEMO01`-`DEMO08`) are still sitting in `demo.xlsx`
 untouched — Chapter 3 is where those actually become data.
 
 </div>
@@ -211,10 +211,10 @@ it deliberately refuses to do.
 
 1. Make your own working copy of the source file rather than editing the
    shared example directly: copy
-   `examples/workshop/raw_data/wellbeing.tsv` somewhere
+   `examples/workshop/raw_data/demo.tsv` somewhere
    convenient (Desktop, or your project folder) and rename it, e.g.
-   `wellbeing_update.tsv`. (This file has all 20 of the same participants
-   you already imported in step 6 via `wellbeing.xlsx` — same data, just a
+   `demo_update.tsv`. (This file has all 20 of the same participants
+   you already imported in step 6 via `demo.xlsx` — same data, just a
    different format.)
 2. Open the copy in a spreadsheet or text editor and make two changes:
    - Add one new row for a participant not yet in your project — everyone
@@ -227,7 +227,7 @@ it deliberately refuses to do.
    workflow first: **Replace** (the imported file becomes the new source of
    truth), **Modify** (edit the current files in place), or **Merge** (safe
    merge from an imported table). Choose **Merge**.
-4. Upload `wellbeing_update.tsv` and click **Preview Merge**. The Merge
+4. Upload `demo_update.tsv` and click **Preview Merge**. The Merge
    Summary shows counts for matched participants, new participants, filled
    values, and conflicts. You should see `1 new participant` (DEMO021) and
    `1 conflict` (DEMO003's `age`).
@@ -259,7 +259,7 @@ Merge is the safe option for enrichment, not the tool for corrections.
 ## Common mistakes
 
 ```{warning}
-**Including `WB01`-`WB05` as participant fields.** They're repeated survey
+**Including `DEMO01`-`DEMO08` as participant fields.** They're repeated survey
 responses, not one-time demographics; keep them out of `participants.tsv`
 and import them via the Survey converter in chapter 3 instead.
 ```

@@ -1,17 +1,17 @@
 # Chapter 4: Prepare a Recipe
 
 Chapter 4 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
-This is about turning the five imported `WB01`-`WB05` responses into one
-summary score per participant. Recipe Builder only creates and saves the
+This is about turning the eight imported `DEMO01`-`DEMO08` responses into summary
+scores per participant. Recipe Builder only creates and saves the
 scoring definition; actually running it against your data happens on a
 separate page, covered in step 5 below.
 
 **Time:** ~20 minutes. **Outcome:** a saved scoring recipe for the
-`wellbeing` survey, and a computed total score for every participant.
+`demo` survey, and a computed total and subscale score for every participant.
 
 ```{mermaid}
 flowchart LR
-    A["📊 WB01-WB05<br/>item responses<br/>(kept as-is, untouched)"] --> B["🔧 Recipe Builder<br/>a saved scoring rule"]
+    A["📊 DEMO01-DEMO08<br/>item responses<br/>(kept as-is, untouched)"] --> B["🔧 Recipe Builder<br/>a saved scoring rule"]
     B --> C["📈 Computed total score<br/>per participant<br/>re-runnable, never overwrites raw data"]
 ```
 
@@ -65,32 +65,36 @@ recompute — the raw responses are never at risk.
 
 ## 2. Pick modality and template
 
-Set **Modality** to `survey`, then pick **Template**: `wellbeing` — the one
+Set **Modality** to `survey`, then pick **Template**: `demo` — the one
 you saved into the project in [Chapter 3](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md).
 Check **Include official library** if you don't see it — this widens the
 dropdown to templates you haven't used in this project yet, not just ones
 already imported.
 
-## 3. Skip reverse coding
+## 3. Reverse-code `DEMO06`
 
 The **Inversion** panel lets you reverse-code items against their scale
-range. None of `WB01`-`WB05` need this — the WHO-5-style scale used here
-already runs in the same direction for every item (higher = better
-wellbeing) — so leave this panel empty.
+range. `DEMO06` ("I felt the week dragged on") is worded in the opposite
+direction to the other seven items, so add it to the panel with the scale
+**min 0, max 4**. A raw answer of `4` then counts as `0` in every score
+that uses `DEMO06`, and `0` counts as `4`. The raw data stays untouched.
 
-## 4. Build the score
+## 4. Build the scores
 
-- In the **Item Pool**, select all five items: `WB01`-`WB05`.
+- In the **Item Pool**, select all eight items: `DEMO01`-`DEMO08`.
 - In the **Scale Canvas**, click **Add Scale** to create a new `Scores[]`
   entry:
   - **Name**: `Total`
   - **Method**: `sum`
-  - **Items**: `WB01`, `WB02`, `WB03`, `WB04`, `WB05`
-  - **Range**: each item runs 0-5 (six response levels), so five summed
-    items give a range of **min 0, max 25** — fill in the range as
+  - **Items**: `DEMO01` to `DEMO08`
+  - **Range**: each item runs 0-4 (five response levels), so eight summed
+    items give a range of **min 0, max 32** — fill in the range as
     item-scale × item-count, not by guessing.
+- Add a second scale, **Name** `Routine`, **Method** `sum`, **Items**
+  `DEMO01`-`DEMO04`, **Range** min 0, max 16. It shows that one item pool
+  can feed more than one score.
 
-You don't need `Transforms.Derived` here — a single summed total doesn't
+You don't need `Transforms.Derived` here — a summed score doesn't
 need an intermediate helper computation.
 
 ```{note}
@@ -99,7 +103,7 @@ It controls how PRISM handles missing data when computing a score. Say a
 scale has 9 items: with Min valid off, the score is computed no matter how
 many items are missing. Set to 9, PRISM only computes it when all 9 have
 valid answers. Set to 7, it still computes with at least 7 of 9 answered.
-Leave it off for this tutorial's 5-item scale (no missing data in the
+Leave it off for this tutorial's 8-item scale (no missing data in the
 example file) — for your own instruments, check the questionnaire's manual
 before deciding on a value.
 ```
@@ -116,15 +120,15 @@ step empty.
 
 ## 6. Fill in metadata and save
 
-Under Recipe Metadata, give it a **Name** (e.g. "Wellbeing Total") and a
+Under Recipe Metadata, give it a **Name** (e.g. "Demo Scores") and a
 short **Description**. Click **Save**. This writes:
 
 ```text
-code/recipes/survey/recipe-wellbeing.json
+code/recipes/survey/recipe-demo.json
 ```
 
 For comparison, a working version of this exact recipe already ships in the
-repo at `examples/workshop/chapter_4_recipe/recipe-wellbeing.json` —
+repo at `examples/workshop/chapter_4_recipe/recipe-demo.json` —
 worth a look if your saved file's `Scores` block doesn't match what you
 expected.
 
@@ -144,8 +148,19 @@ derivatives/survey/long_en/prism_survey_dataset_<recipe_id>.csv                 
 Equivalent from the terminal:
 
 ```bash
-python prism_tools.py recipes surveys --prism /path/to/wellbeing_study --format prism
+python prism_tools.py recipes surveys --prism /path/to/demo_study --format prism
 ```
+
+This writes one scores file per participant (20 for the example data). For
+`sub-DEMO001` (answers 2, 1, 3, 0, 0, 4, 0, 2) it contains:
+
+```text
+Total	Routine
+8	6
+```
+
+`DEMO06`'s raw `4` counts as `0` after the inversion, so `Total` is
+2 + 1 + 3 + 0 + 0 + 0 + 0 + 2 = 8, and `Routine` is 2 + 1 + 3 + 0 = 6.
 
 <div class="prism-persona-note" data-persona-note>
 <p class="prism-persona-note-empty" data-persona-empty>Picked a persona on the <a href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">intro page</a>? This note speaks to it.</p>
@@ -180,7 +195,7 @@ The formula is safely written down now. Chapter 5 checks whether everything
 
 ```{warning}
 **Item name mismatches.** The item names in the recipe must exactly match
-the template's `ItemID`s (`WB01`-`WB05`); a typo produces a save-time
+the template's `ItemID`s (`DEMO01`-`DEMO08`); a typo produces a save-time
 item-reference error, not a silent skip.
 ```
 

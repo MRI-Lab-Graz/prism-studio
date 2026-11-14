@@ -1,17 +1,17 @@
 # Chapter 5: Use the Validator
 
 Chapter 5 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
-This is about running PRISM's built-in checks against `wellbeing_study` and
+This is about running PRISM's built-in checks against `demo_study` and
 learning to read what they report — not about fixing every possible finding,
 which will vary by project.
 
 **Time:** ~20 minutes. **Outcome:** a validation run against
-`wellbeing_study`, hands-on experience causing and clearing a real error,
+`demo_study`, hands-on experience causing and clearing a real error,
 and enough understanding of the results to know what to do next.
 
 ```{mermaid}
 flowchart LR
-    A["📁 wellbeing_study<br/>as built so far"] --> B["🔧 Validator<br/>PRISM + BIDS checks"]
+    A["📁 demo_study<br/>as built so far"] --> B["🔧 Validator<br/>PRISM + BIDS checks"]
     B --> C["✅ Findings read & fixed<br/>a dataset you can trust"]
 ```
 
@@ -22,7 +22,7 @@ flowchart LR
 <span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
 *Four chapters of doing things "properly" are about to get checked by
-someone other than you.* This is the moment `wellbeing_study` stops being
+someone other than you.* This is the moment `demo_study` stops being
 "what you believe is correct" and starts being "what PRISM can verify is
 correct" — that gap is exactly what a reviewer or reuser would otherwise
 find for you, later, less kindly.
@@ -54,7 +54,7 @@ from-now-you will be glad it exists either way.
 ![PRISM Studio Validator start screen](_static/screenshots/prism-studio-validator.png)
 
 **Validate current project** should already be pre-selected, showing
-`wellbeing_study`'s name and path.
+`demo_study`'s name and path.
 
 ## 2. Leave Advanced Options at their defaults (for now)
 
@@ -111,7 +111,7 @@ straight to its entry there.
 
 ```{note}
 **If you skipped Chapter 4:** you'll also see a warning here — "Missing
-survey recipes for dataset-used surveys" — pointing at `wellbeing` having
+survey recipes for dataset-used surveys" — pointing at `demo` having
 no saved recipe yet. That's the Validator noticing the same gap Chapter 4
 fills; it isn't a sign anything earlier in this tutorial went wrong.
 ```
@@ -120,20 +120,20 @@ fills; it isn't a sign anything earlier in this tutorial went wrong.
 
 Rather than describe error codes in the abstract, it's worth actually
 causing and fixing one. Survey Convert (Chapter 3) writes one shared JSON
-sidecar for the whole `wellbeing` survey at the project root —
-`task-wellbeing_survey.json` — rather than one per participant, because
-every `sub-*_task-wellbeing_survey.tsv` inherits it (BIDS's inheritance
+sidecar for the whole `demo` survey at the project root —
+`task-demo_survey.json` — rather than one per participant, because
+every `sub-*_task-demo_survey.tsv` inherits it (BIDS's inheritance
 principle). That makes it an easy, safe, single-file way to see `PRISM201`
 in action:
 
-1. In your project folder, rename `task-wellbeing_survey.json` to
-   `task-wellbeing_survey.json.bak` (adding a suffix, so nothing is
+1. In your project folder, rename `task-demo_survey.json` to
+   `task-demo_survey.json.bak` (adding a suffix, so nothing is
    deleted).
-2. Click **Re-validate**. Every `wellbeing` survey file (20 of them, one
+2. Click **Re-validate**. Every `demo` survey file (20 of them, one
    per participant, if you're following along with the tutorial's data)
    now has no sidecar to inherit from, and reports as a `PRISM201` error:
    "Missing sidecar for `<file>.tsv`."
-3. Rename the file back to `task-wellbeing_survey.json` and **Re-validate**
+3. Rename the file back to `task-demo_survey.json` and **Re-validate**
    again. The 20 errors should be gone.
 
 ```{tip}
@@ -141,7 +141,7 @@ in action:
 from the CLI (`PRISM001`, `PRISM201`, `PRISM501` — see
 [Error Codes](ERROR_CODES.md)). If you'd rather test that path than rename
 the file back by hand: with the sidecar still missing, run
-`prism-validator /path/to/wellbeing_study --fix --dry-run` and read the
+`prism-validator /path/to/demo_study --fix --dry-run` and read the
 planned actions before applying anything for real. Note it doesn't restore
 your original root sidecar — it creates a fresh, minimal per-participant
 stub `.json` next to each `.tsv` instead, which is a valid but different
@@ -159,15 +159,15 @@ and warnings you'd be embarrassed to ship, is.
 ## Equivalent from the terminal
 
 ```bash
-prism-validator /path/to/wellbeing_study
+prism-validator /path/to/demo_study
 ```
 
 Auto-fix for supported issues is CLI-only (no per-issue fix button exists in
 the web results page yet):
 
 ```bash
-prism-validator /path/to/wellbeing_study --fix --dry-run
-prism-validator /path/to/wellbeing_study --fix
+prism-validator /path/to/demo_study --fix --dry-run
+prism-validator /path/to/demo_study --fix
 ```
 
 ## Optional: thirteen broken files
@@ -238,7 +238,7 @@ that actually proves it.
 
 ## Wrap-up
 
-You now have a `wellbeing_study` project with demographic data, imported
+You now have a `demo_study` project with demographic data, imported
 survey responses, a working scoring recipe, and at least one validation
 pass — the same shape of outcome the [Workshop](WORKSHOP.md)'s core path
 aims for, but built at your own pace with a full explanation at each step.
