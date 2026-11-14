@@ -74,10 +74,3 @@ describe('labels', () => {
         expect(LICENSE_FIRST).toEqual(['CC-BY-4.0', 'CC0-1.0', 'Proprietary']);
     });
 });
-
-describe('fields added by the meaning block', () => {
-    it('Study/IsAbout (an optional array of objects) has no section of its own and lands in Advanced', () => {
-        const map = assignFields(['Study/TaskName', 'Study/IsAbout']);
-        expect(map.get('advanced')).toEqual(['Study/IsAbout']);
-    });
-});

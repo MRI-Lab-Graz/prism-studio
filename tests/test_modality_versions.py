@@ -95,7 +95,7 @@ def test_override_for_an_unknown_modality_is_an_error(schema_dir):
 
 
 def test_shared_and_archive_folders_are_not_schema_versions_or_modalities():
-    """app/schemas/shared (the meaning block) and archive/ sit next to stable/ but are neither."""
+    """app/schemas/archive/ (and any non-version folder) sits next to stable/ but are neither."""
     from src.schema_manager import DEFAULT_SCHEMA_DIR, get_available_schema_versions
 
     versions = get_available_schema_versions(DEFAULT_SCHEMA_DIR)
