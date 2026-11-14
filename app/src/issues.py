@@ -113,7 +113,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     },
     "PRISM005": {
         "message": "Schema version mismatch",
-        "fix_hint": "The metadata uses an older or newer schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
+        "fix_hint": "The metadata uses a different major schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
     },
     "PRISM006": {
         "message": "FAIR compliance issue in dataset_description.json",

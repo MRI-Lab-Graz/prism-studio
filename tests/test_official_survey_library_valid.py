@@ -26,13 +26,15 @@ def test_every_official_survey_template_is_a_valid_library_template(path):
     assert errors == []
 
 
-def test_every_official_survey_template_declares_the_current_schema_version():
+def test_every_official_survey_template_declares_the_current_major_schema_version():
     from src.modality_versions import current_survey_schema_version
+    from src.schema_manager import parse_version
 
     current = current_survey_schema_version()
-    stale = {
-        p.name: v
-        for p in FILES
-        if (v := json.loads(p.read_text(encoding="utf-8")).get("Metadata", {}).get("SchemaVersion")) != current
-    }
-    assert stale == {}, f"templates not at survey schema {current}: {sorted(stale)}"
+    current_major = parse_version(current)[0]
+    stale = {}
+    for p in FILES:
+        declared = json.loads(p.read_text(encoding="utf-8")).get("Metadata", {}).get("SchemaVersion")
+        if parse_version(declared)[0] != current_major:
+            stale[p.name] = declared
+    assert stale == {}, f"templates not at survey schema major {current}: {sorted(stale)}"

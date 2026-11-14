@@ -52,7 +52,7 @@ that still needs to be moved or renamed.
 | `PRISM002` | No subjects found | Ensure `sub-<label>` folders exist at the project dataset root |
 | `PRISM003` | Invalid `dataset_description.json` | Validate JSON syntax, repair missing fields |
 | `PRISM004` | Missing `participants.tsv` | Create it with at least `participant_id`; in Studio, use the participants import step rather than hand-writing it |
-| `PRISM005` | Schema version mismatch | Update `SchemaVersion` in metadata, or pass `--schema-version` to match |
+| `PRISM005` | Schema version mismatch: the file declares a different **major** version of a schema than the validator's; an older or newer minor version of the same major is accepted | Update `SchemaVersion` in metadata to the current major version, or pass `--schema-version` to match |
 | `PRISM006` | FAIR compliance issue | Add `Description` (≥50 chars), `License`, `EthicsApprovals`, `Funding`, `Keywords` (≥3), `Authors` with ORCID/affiliation |
 | `PRISM007` | Incomplete survey template metadata | Add `References`, `Description`, `Reliability`, `AdministrationTime` |
 | `PRISM008` | Template consistency error | Check `ItemCount` matches actual questions, `Subscale`/`ReverseCodedItems` exist, `Levels` keys are within `MinValue`/`MaxValue` |
