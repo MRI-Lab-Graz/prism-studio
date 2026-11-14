@@ -343,7 +343,7 @@ def test_terms_show_carries_measures_and_value_rules(monkeypatch, capsys):
     assert data["links"]["snomed"] == {"url": "https://example.org/a", "from": "prism:shbg.serum"}
     assert data["measures_from"] == "prism:shbg.serum"
     out = _show("shbg.serum", capsys)
-    assert "Measures:" in out and "https://example.org/m" in out and "ValueRules:" in out and "r1" in out
+    assert "Measures (from prism:shbg.serum):" in out and "https://example.org/m" in out and "ValueRules:" in out and "r1" in out
 
 
 def test_terms_show_child_shows_the_parents_measures_with_origin(monkeypatch, capsys):
