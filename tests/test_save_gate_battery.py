@@ -25,7 +25,7 @@ import src.save_gate as sg
 from src.share_publish import audit_path
 
 REPO = Path(__file__).resolve().parents[1]
-DEMO = REPO / "examples" / "wellbeing_multi_demo"  # a dataset that validates green
+DEMO = REPO / "examples" / "multi_version_demo"  # a dataset that validates green
 
 needs_datalad = pytest.mark.skipif(
     not (shutil.which("git") and shutil.which("git-annex") and shutil.which("datalad")),

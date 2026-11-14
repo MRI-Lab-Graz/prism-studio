@@ -3,6 +3,15 @@
 This directory holds questionnaire templates. **These templates are content,
 not code, and the repository's AGPL-3.0 license does not apply to them.**
 
+## The library was reduced
+
+The library shipped with PRISM now contains only templates that may be
+redistributed: a demonstration questionnaire (`survey-demo.json`, CC0) and the
+DASS templates. Other instruments can still be used: put their templates in
+your own library folder (`globalLibraryRoot` or `personalLibraryPath` in the
+settings) and PRISM reads them like the shipped ones. Whether you may use an
+instrument is for you to check with its authors or publisher.
+
 ## Provenance
 
 Almost all survey templates in `survey/` were derived from the

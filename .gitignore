@@ -115,6 +115,7 @@ app/src/derivatives/**/*.pyc
 !demo/workshop/library/
 !demo/workshop/recipes/
 !official/library/
+!examples/multi_version_demo/code/library/
 
 # Harvest script
 scripts/harvest_testarchiv.py

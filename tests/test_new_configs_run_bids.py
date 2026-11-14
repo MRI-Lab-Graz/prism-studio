@@ -30,5 +30,5 @@ def test_fixer_created_config_keeps_bids_on(tmp_path):
 
 
 def test_the_demo_config_keeps_bids_on():
-    demo = ROOT / "examples" / "wellbeing_multi_demo"
+    demo = ROOT / "examples" / "multi_version_demo"
     assert load_config(str(demo)).run_bids is True

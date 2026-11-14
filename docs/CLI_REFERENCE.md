@@ -119,7 +119,7 @@ without running a scoring job. Matches the validation Studio's Recipe Builder
 typo'd item IDs in `Scores`/`Transforms`:
 
 ```bash
-python prism_tools.py recipes validate-file recipe-ads.json --known-items-from survey-ads.json
+python prism_tools.py recipes validate-file recipe-demo.json --known-items-from survey-demo.json
 ```
 
 **`recipes save`** — validate a recipe against its matching template (project library
@@ -128,7 +128,7 @@ first, then the official library) and write it to
 as Studio's Recipe Builder "Save" action:
 
 ```bash
-python prism_tools.py recipes save --project /path/to/project --recipe recipe-ads.json
+python prism_tools.py recipes save --project /path/to/project --recipe recipe-demo.json
 ```
 
 **`library`** — maintain the PRISM library:
@@ -225,19 +225,19 @@ templates (what loading templates into the Survey Customizer does); edit it,
 then pass it to `export-lss-customized`.
 
 ```bash
-python prism_tools.py survey export-lss library/survey/survey-gad7.json --output gad7.lss
+python prism_tools.py survey export-lss library/survey/survey-dass21.json --output dass21.lss
 # keep only some questions (one template; same as un-ticking questions in the GUI)
-python prism_tools.py survey export-lss library/survey/survey-gad7.json \
-  --include GAD701,GAD702 --output gad7_short.lss
+python prism_tools.py survey export-lss library/survey/survey-dass21.json \
+  --include DASS2101,DASS2102 --output dass21_short.lss
 python prism_tools.py survey customizer-groups \
-  --template library/survey/survey-gad7.json --output my_customization.json
+  --template library/survey/survey-dass21.json --output my_customization.json
 python prism_tools.py survey export-lss-customized \
   --customization-json my_customization.json --output custom.lss
 python prism_tools.py survey export-questionnaire-docx \
-  --template library/survey/survey-gad7.json --output gad7.docx
+  --template library/survey/survey-dass21.json --output dass21.docx
 # the page Studio shows for "Preview Questionnaire" (same questions and answers as the Word file)
 python prism_tools.py survey export-questionnaire-docx --format html \
-  --template library/survey/survey-gad7.json --output gad7.html
+  --template library/survey/survey-dass21.json --output dass21.html
 ```
 
 **`survey export-pavlovia`** — export a PRISM survey template to a
@@ -246,9 +246,9 @@ of the "Pavlovia/PsychoPy" option in Studio's Survey Generator "Target
 Tool" selector:
 
 ```bash
-python prism_tools.py survey export-pavlovia library/survey/survey-gad7.json \
-  --output ./pavlovia_export --experiment-name gad7_study --language en \
-  --include GAD701,GAD702   # optional: keep only these questions
+python prism_tools.py survey export-pavlovia library/survey/survey-dass21.json \
+  --output ./pavlovia_export --experiment-name dass21_study --language en \
+  --include DASS2101,DASS2102   # optional: keep only these questions
 ```
 
 Pavlovia export is single-language scoped: `--language`/`-l` picks which
@@ -289,12 +289,12 @@ python prism_tools.py survey import-limesurvey --input instrument.lsa --select g
 
 ```bash
 python prism_tools.py survey item-map --input data.csv --project ./myproject                        # tasks the file does not cover
-python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads             # print the guess, write nothing
-python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads --accept    # save the guess
-python prism_tools.py survey item-map --input data.csv --project ./myproject --task ads --accept --set ADS02=A01 ADS05=
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task demo             # print the guess, write nothing
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task demo --accept    # save the guess
+python prism_tools.py survey item-map --input data.csv --project ./myproject --task demo --accept --set DEMO02=A01 DEMO05=
 ```
 
-The guess prints one line per item (`ADS01 <- A01  (number)`; `(none)` when nothing matches). `--set ITEM=COLUMN`
+The guess prints one line per item (`DEMO01 <- A01  (number)`; `(none)` when nothing matches). `--set ITEM=COLUMN`
 overrides a row of the guess (`ITEM=` clears it); `--set` alone saves only what was set. A column that is not in
 the file, or used for two items, is refused. Same function as the Studio item-map dialog.
 
@@ -305,7 +305,7 @@ the result is printed, `--project` adds that project's library:
 
 ```bash
 python prism_tools.py survey import-codebook --input codebook.xlsx                         # list groups + library match
-python prism_tools.py survey import-codebook --input codebook.xlsx --select ads pss --output ./templates --project ./myproject
+python prism_tools.py survey import-codebook --input codebook.xlsx --select demo dass21 --output ./templates --project ./myproject
 ```
 
 (`survey import-excel` is the older importer that writes a whole library at once.)
@@ -777,9 +777,9 @@ as ambiguous and refused until made more specific.
 a single multi-variant template:
 
 ```bash
-python prism_tools.py merge-versions survey-bdi.json bdi_long.xlsx                      # auto-detects version names
-python prism_tools.py merge-versions survey-bdi.json bdi_long.json --new-version long --existing-version short
-python prism_tools.py merge-versions survey-bdi.json bdi_long.xlsx --dry-run            # preview only
+python prism_tools.py merge-versions survey-demo.json demo_long.xlsx                      # auto-detects version names
+python prism_tools.py merge-versions survey-demo.json demo_long.json --new-version long --existing-version short
+python prism_tools.py merge-versions survey-demo.json demo_long.xlsx --dry-run            # preview only
 ```
 
 ### Dataset utilities, anonymize, and export
@@ -1015,7 +1015,7 @@ Look up the shipped metric terms (the term registry, see the Terms section of
 
 - `list`: every term with its level, units and status.
 - `show`: one term; `<term>` is an ID (`prism:cortisol`), a local name, a label, an alias or an equivalent. Exit code 1 if it is unknown. Its ontology links (`SameAs` in `official/library/mappings/<modality>/`, for example SNOMED CT) are listed under `Links` (`links` with `--json`), the parent term's included, each with the term it comes from. `Measures` (a child without its own shows its parent's, with the ID it comes from; `measures`, `measures_from` with `--json`) and the term's own `ValueRules` (`value_rules`) from the same mapping files are printed when present.
-- `--modality survey` lists and shows the IDs of the official survey library, derived from the templates and recipes: `prism:<task>` (instrument), `prism:<task>.<item-key>` (item, e.g. `prism:tipi.tipi02`), `prism:<task>.score-<name>` (score, e.g. `prism:tipi.score-extraversion`). `terms show` also prints `RecallPeriod`, `HigherMeans` and `LowerMeans` when the template or recipe sets them.
+- `--modality survey` lists and shows the IDs of the official survey library, derived from the templates and recipes: `prism:<task>` (instrument), `prism:<task>.<item-key>` (item, e.g. `prism:demo.demo02`), `prism:<task>.score-<name>` (score, e.g. `prism:demo.score-routine`). `terms show` also prints `RecallPeriod`, `HigherMeans` and `LowerMeans` when the template or recipe sets them.
 - `freeze`: adds the survey IDs that are new to `official/library/survey/term-ids.txt` (commit it); an ID is frozen once released, so it refuses (exit 1) when a released ID of a shipped instrument is gone. A released ID whose instrument has no template here (third-party templates are not always shipped) is not an error: the command prints `N released ID(s) of instruments whose template is not shipped` (`not_shipped` with `--json`) and exits 0; the released list is never shortened.
 - `resolve`: gives each column of a project's survey sidecar its official item ID (`prism:<task>.<item-key>`), or `-` and the reason: `unknown instrument`, `unknown item`, `alias`, `changed scale`, `changed wording`. An item whose answer values, minimum/maximum or wording (in a language the library also has) were edited has no official ID. Nothing is written; validation does not change. Exit 1 if the file cannot be read.
 - `suggest`: how the validator relates a column name to the registry (`suggestion`, `unknown`, ...) and which official terms look similar.

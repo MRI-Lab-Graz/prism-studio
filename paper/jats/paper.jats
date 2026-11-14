@@ -271,14 +271,12 @@ a Creative Commons Attribution 4.0 International License (CC BY
   silently. Participant data stays on the local machine; the single
   network call, environmental enrichment, is opt-in.</p>
   <p><bold>The current library.</bold> The bundled library is the
-  psychology instance of the model, not the model itself: 103
-  questionnaire templates and one biometrics template, most derived from
-  the PsyToolkit library
-  (<xref alt="Stoet, 2010" rid="ref-stoet2010psytoolkit" ref-type="bibr">Stoet,
-  2010</xref>,
-  <xref alt="2017" rid="ref-stoet2017psytoolkit" ref-type="bibr">2017</xref>),
-  each with upstream licensing recorded. A project may point PRISM at
-  its own instead.</p>
+  psychology instance of the model, not the model itself: a
+  demonstration questionnaire template and the DASS templates, each with
+  its licensing recorded, plus one biometrics template. A project or a
+  user points PRISM at its own library of further instruments
+  (<monospace>globalLibraryRoot</monospace>,
+  <monospace>personalLibraryPath</monospace>).</p>
   <p><bold>Testing.</bold> 3,727 automated tests across 268 files, plus
   browser-side tests for the Studio interface, run in continuous
   integration on every push alongside static analysis
@@ -341,36 +339,6 @@ a Creative Commons Attribution 4.0 International License (CC BY
 <back>
 <ref-list>
   <title></title>
-  <ref id="ref-stoet2010psytoolkit">
-    <element-citation publication-type="article-journal">
-      <person-group person-group-type="author">
-        <name><surname>Stoet</surname><given-names>Gijsbert</given-names></name>
-      </person-group>
-      <article-title>PsyToolkit: A software package for programming psychological experiments using Linux</article-title>
-      <source>Behavior Research Methods</source>
-      <year iso-8601-date="2010">2010</year>
-      <volume>42</volume>
-      <issue>4</issue>
-      <pub-id pub-id-type="doi">10.3758/BRM.42.4.1096</pub-id>
-      <fpage>1096</fpage>
-      <lpage>1104</lpage>
-    </element-citation>
-  </ref>
-  <ref id="ref-stoet2017psytoolkit">
-    <element-citation publication-type="article-journal">
-      <person-group person-group-type="author">
-        <name><surname>Stoet</surname><given-names>Gijsbert</given-names></name>
-      </person-group>
-      <article-title>PsyToolkit: A novel web-based method for running online questionnaires and reaction-time experiments</article-title>
-      <source>Teaching of Psychology</source>
-      <year iso-8601-date="2017">2017</year>
-      <volume>44</volume>
-      <issue>1</issue>
-      <pub-id pub-id-type="doi">10.1177/0098628316677643</pub-id>
-      <fpage>24</fpage>
-      <lpage>31</lpage>
-    </element-citation>
-  </ref>
   <ref id="ref-koschutnig2026creativity">
     <element-citation>
       <person-group person-group-type="author">

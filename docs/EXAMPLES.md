@@ -15,7 +15,7 @@ repository has reusable sample assets — this page tells you which path to choo
 
 ## What's in the repository
 
-The main recommended end-to-end example is the wellbeing study — project setup,
+The main recommended end-to-end example is the demo study — project setup,
 source-data conversion, metadata completion and validation, recipe-based scoring,
 participant mapping and template work. It is taught once, as
 [Getting Started](TUTORIAL_BEGINNER.md); its data files live in

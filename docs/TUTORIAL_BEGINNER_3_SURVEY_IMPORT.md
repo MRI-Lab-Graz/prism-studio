@@ -1,8 +1,8 @@
 # Chapter 3: Import Survey Response Data
 
 Chapter 3 of [Getting Started — Your First PRISM Project](TUTORIAL_BEGINNER.md).
-This is about turning the five wellbeing-survey columns (`WB01`-`WB05`) in
-`wellbeing.xlsx` into real survey response files inside your project. It has
+This is about turning the eight demonstration-questionnaire columns (`DEMO01`-`DEMO08`) in
+`demo.xlsx` into real survey response files inside your project. It has
 two parts: getting a survey **template** in place (the JSON that describes
 what the instrument and its items are), then actually **importing the
 response data** against that template.
@@ -15,11 +15,11 @@ Archive) — see the format note in Part B, step 3.
 ```
 
 **Time:** ~25 minutes. **Outcome:** survey response files for every
-participant, written into subject-level folders under `wellbeing_study`.
+participant, written into subject-level folders under `demo_study`.
 
 ```{mermaid}
 flowchart LR
-    A["📄 wellbeing.xlsx<br/>WB01-WB05 responses<br/>+ a survey template"] --> B["🔧 Survey<br/>Converter"]
+    A["📄 demo.xlsx<br/>DEMO01-DEMO08 responses<br/>+ a survey template"] --> B["🔧 Survey<br/>Converter"]
     B --> C["📋 One survey.tsv<br/>per participant<br/>+ shared sidecar JSON"]
 ```
 
@@ -51,7 +51,7 @@ template now, saved in the project, not on anyone's laptop.
 <span class="prism-persona-note-badge">🧑🏻 Future-you <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
 *Of everything in this tutorial, this chapter is the one future-you will be
-most grateful for.* `WB01`-`WB05` mean nothing on their own eighteen months
+most grateful for.* `DEMO01`-`DEMO08` mean nothing on their own eighteen months
 from now — the template you attach here is what makes them mean something
 again.
 
@@ -65,26 +65,27 @@ to get one; do whichever suits you, then move on to Part B either way.
 
 ### Fast path: use the ready-made template
 
-Download {download}`survey-wellbeing.json <../examples/workshop/chapter_3_survey_import/survey-wellbeing.json>`
-(or find `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` in a checkout), then bring
+Download {download}`survey-demo.json <../examples/workshop/chapter_3_survey_import/survey-demo.json>`
+(or find `examples/workshop/chapter_3_survey_import/survey-demo.json` in a checkout), then bring
 it into your project from Studio:
 
 1. Open **Template Editor** → **Create or import new** → Modality `survey` → **Import Template Source**.
-2. Choose `survey-wellbeing.json`. The template opens in the editor and is validated.
+2. Choose `survey-demo.json`. The template opens in the editor and is validated.
 3. Click **Save to Project**. (If a project template with that name already exists, Studio asks
    before overwriting it.)
 
-Prefer the file system? Copying the file to `code/library/survey/survey-wellbeing.json` in your
+Prefer the file system? Copying the file to `code/library/survey/survey-demo.json` in your
 project (create the `survey/` subfolder if needed) does the same. This file already
 defines everything the import needs:
 
-- `Study.TaskName`: `wellbeing`
-- Five items, `WB01`-`WB05`, each with a 6-point response scale (0-5) and
-  bilingual (en/de) labels
-- Citation and license info for the underlying instrument (a WHO-5 adaptation)
+- `Study.TaskName`: `demo`
+- Eight items, `DEMO01`-`DEMO08`, each with a 5-point frequency scale (0-4,
+  "Never" to "Almost always")
+- Citation and license info (the PRISM demonstration questionnaire, CC0; it
+  measures nothing and is not a validated scale)
 
 Open **Template Editor** → Modality `survey` → Project Templates and confirm
-`wellbeing` shows up there, to check the template landed correctly.
+`demo` shows up there, to check the template landed correctly.
 
 ### Alternative: build your own template from a spreadsheet
 
@@ -104,11 +105,11 @@ back to this page for Part B once you have a saved template either way.
 
 ### 2. Choose the source file
 
-Select `wellbeing.xlsx` ({download}`download <../examples/workshop/raw_data/wellbeing.xlsx>`, the same file as in Chapter 2) as
+Select `demo.xlsx` ({download}`download <../examples/workshop/raw_data/demo.xlsx>`, the same file as in Chapter 2) as
 the **Survey File**.
 
 ```{tip}
-The same folder also has `wellbeing.tsv` — the identical data as a plain
+The same folder also has `demo.tsv` — the identical data as a plain
 tab-separated file. If you'd rather try the CSV/TSV path than Excel, select
 that file instead: a **Separator** dropdown appears for delimited files
 (auto-detect gets tab-separated files right, so you shouldn't need to
@@ -133,9 +134,9 @@ instrument, so there's nothing to narrow down.
 
 Click **Preview**. This runs the conversion against a temporary location
 without touching your project — check that it reports 20 participants
-found, task `wellbeing` included, and no missing items. (You'll also see a
+found, task `demo` included, and no missing items. (You'll also see a
 note about one unmapped column, `sleep` — that's expected: it isn't part of
-the `wellbeing` template, so Survey Import ignores it. Unmapped columns are
+the `demo` template, so Survey Import ignores it. Unmapped columns are
 only a problem if a column you *expected* to be picked up is missing.) Fix
 the mapping in step 3 and re-preview if anything looks off before moving
 on.
@@ -145,10 +146,10 @@ on.
 Click **Convert**. This writes the real output, e.g.:
 
 ```text
-sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-sub-DEMO002/ses-baseline/survey/sub-DEMO002_ses-baseline_task-wellbeing_survey.tsv
+sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-demo_survey.tsv
+sub-DEMO002/ses-baseline/survey/sub-DEMO002_ses-baseline_task-demo_survey.tsv
 ...
-task-wellbeing_survey.json
+task-demo_survey.json
 ```
 
 one `.tsv` per participant, but **one shared `.json` sidecar** at the
@@ -207,14 +208,14 @@ accepts:
 ## Common mistakes
 
 ```{warning}
-**Importing before a `wellbeing` template exists in the project.** Part A
+**Importing before a `demo` template exists in the project.** Part A
 has to come first; if you skip straight to Part B, the converter won't know
-how to type or label `WB01`-`WB05`.
+how to type or label `DEMO01`-`DEMO08`.
 ```
 
 ```{warning}
 **Item columns that don't match the template's `ItemID`s.** The template
-expects exactly `WB01`-`WB05`; renamed or extra columns in a modified source
+expects exactly `DEMO01`-`DEMO08`; renamed or extra columns in a modified source
 file will show up as missing/unmapped items in Preview.
 ```
 

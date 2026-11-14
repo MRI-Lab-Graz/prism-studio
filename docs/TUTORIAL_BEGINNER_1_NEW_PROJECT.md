@@ -7,13 +7,13 @@ that actually gate project creation — it doesn't import any data yet, and it
 deliberately doesn't attempt the full Study Metadata form, most of which
 belongs later in a study's lifecycle.
 
-**Time:** ~15 minutes. **Outcome:** a `wellbeing_study` project with a
+**Time:** ~15 minutes. **Outcome:** a `demo_study` project with a
 correct folder structure and complete required metadata, ready for chapter 2.
 
 ```{mermaid}
 flowchart LR
     A["📁 An idea for a study<br/>nothing on disk yet"] --> B["🔧 Create New Project<br/>+ Study Metadata"]
-    B --> C["📁 wellbeing_study/<br/>correct structure,<br/>required metadata filled in"]
+    B --> C["📁 demo_study/<br/>correct structure,<br/>required metadata filled in"]
 ```
 
 <div class="prism-persona-note" data-persona-note>
@@ -23,7 +23,7 @@ flowchart LR
 <span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
 *Your last rotation project ended as a folder called `data_final2`, and you
-promised yourself the next one wouldn't.* `wellbeing_study` is that next
+promised yourself the next one wouldn't.* `demo_study` is that next
 one. This is where you stop improvising folder structure from scratch every
 time — everything later in this series (participants, surveys, scoring,
 sharing) assumes exactly this layout, so you never have to reinvent it.
@@ -35,7 +35,7 @@ sharing) assumes exactly this layout, so you never have to reinvent it.
 
 *Three years after the Excel-files-with-no-codebook incident, "every
 project goes through PRISM, no exceptions" is lab policy now — and
-`wellbeing_study` is the one you're setting up as this semester's example
+`demo_study` is the one you're setting up as this semester's example
 for the new students.* This is the structure you'll point them to instead
 of explaining it from memory again.
 
@@ -94,12 +94,12 @@ applies here since we're starting from nothing.
 
 | Field | What to enter | Notes |
 |---|---|---|
-| Project Name | `wellbeing_study` | Letters, numbers, `_`, `-` only — no spaces. The field validates live and tells you exactly what's wrong (e.g. names a space or an umlaut) rather than just turning red. |
-| Project Location | a parent folder, e.g. `~/prism_projects` | The new project directory is created *inside* this folder, named after Project Name — so the actual target is `<Location>/wellbeing_study/`. The parent folder itself can already contain other things (other projects, unrelated files); what has to be empty or not-yet-existing is that specific `<Location>/wellbeing_study/` subfolder. |
+| Project Name | `demo_study` | Letters, numbers, `_`, `-` only — no spaces. The field validates live and tells you exactly what's wrong (e.g. names a space or an umlaut) rather than just turning red. |
+| Project Location | a parent folder, e.g. `~/prism_projects` | The new project directory is created *inside* this folder, named after Project Name — so the actual target is `<Location>/demo_study/`. The parent folder itself can already contain other things (other projects, unrelated files); what has to be empty or not-yet-existing is that specific `<Location>/demo_study/` subfolder. |
 | Use DataLad version control | leave unchecked for now | Optional. You can enable DataLad later; [DATALAD](DATALAD.md) explains when it is useful. |
 
 ```{warning}
-PRISM creates `<Location>/wellbeing_study/`. That exact folder must be new or
+PRISM creates `<Location>/demo_study/`. That exact folder must be new or
 empty; do not point it at a folder that already contains source files. Leave
 DataLad unchecked for this first project.
 ```
@@ -126,7 +126,7 @@ by default under "Core study setup").
 
 ### 1. Dataset Name
 
-Enter a human-readable dataset title, e.g. `Wellbeing Study` — minimum 3
+Enter a human-readable dataset title, e.g. `Demo Study` — minimum 3
 characters. This becomes the BIDS `Name` field in `dataset_description.json`
 and is reused in `CITATION.cff`. It doesn't have to match the Project Name
 from Part A exactly (that one's a filesystem-safe slug; this one is a real
@@ -218,7 +218,7 @@ and fix exactly what's named rather than guessing.
 ## What gets created
 
 ```text
-wellbeing_study/
+demo_study/
 ├── dataset_description.json
 ├── .bidsignore
 ├── .prismrc.json

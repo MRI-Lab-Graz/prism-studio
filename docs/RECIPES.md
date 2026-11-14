@@ -54,9 +54,9 @@ offers these as one choice per scale, "If answers are missing".
 {
   "RecipeVersion": "1.0",
   "Kind": "survey",
-  "Survey": { "TaskName": "pss" },
+  "Survey": { "TaskName": "demo" },
   "Scores": [
-    { "Name": "pss_total", "Method": "sum", "Items": ["PSS01", "PSS02", "PSS03"] }
+    { "Name": "demo_total", "Method": "sum", "Items": ["DEMO01", "DEMO02", "DEMO03"] }
   ]
 }
 ```

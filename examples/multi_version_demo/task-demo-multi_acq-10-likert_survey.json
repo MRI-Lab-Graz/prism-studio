@@ -1,0 +1,640 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Other",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.0.0",
+    "CreationDate": "2026-03-25",
+    "Creator": "PRISM Studio demo"
+  },
+  "Study": {
+    "TaskName": "demo-multi",
+    "OriginalName": "Multi-version demonstration questionnaire",
+    "Abbreviation": "DEMO-MULTI",
+    "Version": "10-likert",
+    "Versions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "VariantDefinitions": [
+      {
+        "VariantID": "10-likert",
+        "ItemCount": 10,
+        "ScaleType": "likert",
+        "Description": "10-item form with a 5-point Likert response scale"
+      },
+      {
+        "VariantID": "7-likert",
+        "ItemCount": 7,
+        "ScaleType": "likert",
+        "Description": "7-item short form with a 5-point Likert response scale"
+      },
+      {
+        "VariantID": "10-vas",
+        "ItemCount": 10,
+        "ScaleType": "vas",
+        "Description": "10-item form with a 0-100 visual analogue scale"
+      }
+    ],
+    "Authors": [
+      "PRISM maintainers"
+    ],
+    "Year": 2026,
+    "DOI": "",
+    "Citation": "Written for the PRISM examples as a demonstration; not a validated instrument.",
+    "ItemCount": 10,
+    "License": {
+      "en": "CC0 1.0 (public domain dedication)"
+    },
+    "LicenseID": "CC0-1.0",
+    "Source": "https://github.com/MRI-Lab-Graz/prism-studio/tree/main/examples/multi_version_demo",
+    "Instructions": "Please read each statement and select how much you agree."
+  },
+  "DEMO01": {
+    "Description": "I tidied my desk before starting work",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO02": {
+    "Description": "I took a short walk during a break",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO03": {
+    "Description": "I planned the next day before leaving the office",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO04": {
+    "Description": "I tried a new recipe at home",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO05": {
+    "Description": "I watered the plants on time",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO06": {
+    "Description": "I read a few pages of a book in the evening",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO07": {
+    "Description": "I spent time on my hobby",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO08": {
+    "Description": "I called a friend",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO09": {
+    "Description": "I cleaned the kitchen after dinner",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "DEMO10": {
+    "Description": "I went to bed at a regular time",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "I18n": {
+    "Languages": [
+      "en"
+    ]
+  }
+}

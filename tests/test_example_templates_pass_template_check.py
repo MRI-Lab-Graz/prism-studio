@@ -8,7 +8,7 @@ from src.survey_template_check import validate_project_templates_for_tasks
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 HANDED_OUT = [
-    "workshop/chapter_3_survey_import/survey-wellbeing.json",
+    "workshop/chapter_3_survey_import/survey-demo.json",
     "excel_template/basic/survey-mood.json",
     "excel_template/advanced/survey-wellcheck.json",
 ]

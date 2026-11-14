@@ -66,7 +66,7 @@ disagree is a room full of raised hands.
 
 ## What they leave with
 
-A `wellbeing_study` project containing demographic data, imported survey
+A `demo_study` project containing demographic data, imported survey
 responses, at least one scoring recipe, and a validation pass they can
 interpret — plus the same tutorial open in a tab, to finish the chapters you
 cut.

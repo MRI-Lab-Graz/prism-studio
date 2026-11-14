@@ -1,0 +1,77 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Other",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.0.0",
+    "CreationDate": "2026-03-26",
+    "Creator": "PRISM Studio demo"
+  },
+  "Study": {
+    "TaskName": "demo-multi",
+    "OriginalName": {
+      "en": "Multi-version demonstration questionnaire",
+      "de": "Demo-Fragebogen mit mehreren Versionen"
+    },
+    "Abbreviation": "DEMO-MULTI",
+    "Version": "10-likert",
+    "Versions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "VariantDefinitions": [
+      {
+        "VariantID": "10-likert",
+        "ItemCount": 10,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "10-item form with a 5-point Likert response scale"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ItemCount": 7,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "7-item short form with a 5-point Likert response scale"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ItemCount": 10,
+        "ScaleType": "vas",
+        "Description": {
+          "en": "10-item form with a 0-100 visual analogue scale"
+        }
+      }
+    ],
+    "Authors": [
+      "Demo",
+      "Template"
+    ],
+    "Year": 2026,
+    "DOI": "",
+    "Citation": "Demo template for variant-specific item sets and per-question scale types.",
+    "ItemCount": 10,
+    "License": {
+      "en": "Demo only"
+    },
+    "LicenseID": "Other",
+    "Source": "https://example.org/prism/demo",
+    "Instructions": {
+      "en": "Select the option that best reflects your recent experience."
+    }
+  },
+  "I18n": {
+    "Languages": [
+      "en"
+    ]
+  }
+}

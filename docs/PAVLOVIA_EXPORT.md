@@ -135,9 +135,9 @@ a question with no `Levels` and no `vas`/`visual-analogue` `ScaleType` is free t
 **PRISM:**
 ```json
 {
-  "PHQ9_10": {
-    "Description": "Suicide ideation follow-up",
-    "Relevance": "PHQ9_09 > 0"
+  "DEMO08": {
+    "Description": "Hobby follow-up",
+    "Relevance": "DEMO07 > 0"
   }
 }
 ```

@@ -44,17 +44,17 @@ def test_example_paths_in_docs_exist():
 
 
 def test_workshop_source_spreadsheet_exists_once():
-    """The wellbeing spreadsheet is shared by chapters 2 and 3.
+    """The demo spreadsheet is shared by chapters 2 and 3.
 
     Two copies is how it drifted before: 21 rows with a `sleep` column on one
-    side, a stale 10-row subset on the other, both named `wellbeing.tsv`.
+    side, a stale 10-row subset on the other, both named `demo.tsv`.
     """
     copies = sorted(
         p.relative_to(REPO).as_posix()
-        for p in REPO.glob("examples/**/wellbeing.*")
+        for p in REPO.glob("examples/**/demo.*")
         if p.suffix in {".tsv", ".xlsx"}
     )
     assert copies == [
-        "examples/workshop/raw_data/wellbeing.tsv",
-        "examples/workshop/raw_data/wellbeing.xlsx",
-    ], f"wellbeing spreadsheet must exist exactly once, found: {copies}"
+        "examples/workshop/raw_data/demo.tsv",
+        "examples/workshop/raw_data/demo.xlsx",
+    ], f"demo spreadsheet must exist exactly once, found: {copies}"

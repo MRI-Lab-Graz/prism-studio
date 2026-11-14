@@ -7,7 +7,7 @@ metadata. This page doesn't create or edit templates — for that, use the
 `/survey-generator`, a naming holdover; the screen itself is labeled "Survey
 Export.")
 
-![PRISM Studio Survey Export screen](../_static/screenshots/prism-studio-survey-export.png)
+*The Survey Export page has the target tool and language settings at the top, the template list below grouped by category, and the buttons Boilerplate, Quick Export (.lss) and Customize & Export at the bottom.*
 
 ## Step 1 — Toolbar
 

@@ -46,7 +46,7 @@ Each step is described in detail below.
 
 Navigate to **Derivatives > Survey Export** to select questionnaires from the PRISM template library.
 
-![Survey Export page showing template selection, language settings, and export options](img/limesurvey/01_export_page.png)
+*The Survey Export page has the target tool and language settings at the top, the list of templates below and the export buttons at the bottom.*
 
 **Configure the export settings:**
 
@@ -56,7 +56,7 @@ Navigate to **Derivatives > Survey Export** to select questionnaires from the PR
 
 **Select templates** by checking one or more questionnaires from the list. For each selected template, you can set the **Run** number (for repeated administrations, e.g., pre/post design):
 
-![Template selection showing checked questionnaires with run numbers and Matrix/Global badges](img/limesurvey/03a_template_selection.png)
+*Each ticked questionnaire shows its Matrix and Global options and a run number field.*
 
 Each template shows:
 - Item count and available languages (DE/EN badges)
@@ -74,13 +74,13 @@ You have two export options:
 - **Quick Export (.lss)**: Downloads the `.lss` file immediately with default settings
 - **Customize & Export**: Opens the Survey Customizer for detailed configuration
 
-![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/04_export_buttons_visible.png)
+*Below the template list are the buttons Boilerplate, Quick Export (.lss) and Customize & Export.*
 
 ### The Survey Customizer
 
 The Customizer is the recommended path for production surveys. It provides full control over the survey structure and LimeSurvey-specific settings:
 
-![Survey Customizer overview: Groups panel on the left, questions with matrix grouping on the right, export settings at the bottom](img/limesurvey/05b_customizer_top.png)
+*The Customizer shows the Groups panel on the left (one entry per loaded template, drag to reorder), the questions of the selected group with matrix grouping on the right, and the export settings below.*
 
 #### Question Group Management
 - **Reorder groups** via drag-and-drop on the left panel
@@ -91,7 +91,7 @@ The Customizer is the recommended path for production surveys. It provides full 
 #### Per-Question Settings
 Click the **gear icon** (LS) on any question to expand the LimeSurvey tool settings panel:
 
-![Per-question LimeSurvey settings: question type override, CSS class, relevance equation, help text, display columns](img/limesurvey/5c_customizer_tool_settings.png)
+*The settings panel of one question holds the question type override, CSS class, relevance equation, help text and display columns.*
 
 For each question, you can configure LimeSurvey-specific properties:
 
@@ -165,7 +165,7 @@ The Customizer also provides survey-wide LimeSurvey settings in expandable accor
 
 Click **Preview Questionnaire** in the Customizer to see a full preview of the assembled survey in a modal. This shows the questionnaire with matrix grouping and all enabled questions, helping you verify the layout before exporting:
 
-![Questionnaire Preview modal showing matrix table with items and response options](img/limesurvey/5h_customizer_questionaire_preview.png)
+*The preview shows each group as a matrix table with its items as rows and the response options as columns.*
 
 ### Exporting the .lss File
 
@@ -340,7 +340,7 @@ After configuration, your form should look like this:
 
 Click **Preview (Dry-Run)** to see what PRISM will create **without writing any files**. This is the recommended first step before converting:
 
-![Preview results showing the conversion log with summary (2 participants, 1 task detected), Conversion Summary with matched templates table and confidence badges, and the beginning of validation results](img/limesurvey/7e_preview_log.png)
+*The preview shows the conversion log with a summary (participants, tasks detected, files to create), then the Conversion Summary and the start of the validation results.*
 
 The preview output has four sections:
 
@@ -357,7 +357,7 @@ A terminal-style log showing the full conversion process:
 
 A structured overview of how survey groups were matched to templates:
 
-![Conversion Summary showing matched templates with confidence levels, tool-specific columns count, and validation results with error details](img/limesurvey/7e_preview_summary.png)
+*The Conversion Summary lists the matched templates with a confidence level, the number of tool-specific columns and the validation results with error details.*
 
 | Column | Description |
 |--------|-------------|
@@ -379,7 +379,7 @@ PRISM validates the output against the BIDS/PRISM schema. Common validation issu
 
 If the preview shows **"Templates Required"**, some questionnaire groups have no matching template in the library:
 
-![Unmatched groups error showing four groups without templates, with Save Template buttons for each group and a Save All Templates option](img/limesurvey/7d_preview_error.png)
+*Unmatched groups are listed with a Save Template button for each and a Save All Templates button.*
 
 To resolve:
 1. Click **Save Template** for each unmatched group (or **Save All Templates**)
@@ -397,10 +397,10 @@ Once the preview looks correct, click **Convert** to write the BIDS-compatible o
 **Survey response files** (one per participant, session, and questionnaire):
 ```
 sub-001/ses-01/survey/
-  sub-001_ses-01_task-gad7_survey.tsv        # Response data (items as columns)
-  sub-001_ses-01_task-gad7_survey.json       # Metadata sidecar (from library template)
-  sub-001_ses-01_task-pss_survey.tsv         # Second questionnaire
-  sub-001_ses-01_task-pss_survey.json
+  sub-001_ses-01_task-dass21_survey.tsv        # Response data (items as columns)
+  sub-001_ses-01_task-dass21_survey.json       # Metadata sidecar (from library template)
+  sub-001_ses-01_task-demo_survey.tsv         # Second questionnaire
+  sub-001_ses-01_task-demo_survey.json
 ```
 
 **Run-numbered files** (when the same questionnaire is administered multiple times):
@@ -463,7 +463,7 @@ If you already have a survey running in LimeSurvey and want to bring it into PRI
 
 1. Navigate to **Core > Template Editor**
 
-![Template Editor with import options](img/limesurvey/10_editor_gad7_loaded.png)
+*The Template Editor opens with the import options (from file, as a new template or merged into an existing one).*
 
 2. Click **+ Create** and select **Import from file**
 3. Upload the `.lss` file (or `.lsa` archive)
@@ -525,7 +525,7 @@ Codes are made alphanumeric (no special characters), with collision resolution v
 
 To ensure smooth conversion between PRISM and LimeSurvey:
 
-- **Question codes**: Use short, alphanumeric codes matching the template item keys (e.g., `GAD701`, `PSS01`)
+- **Question codes**: Use short, alphanumeric codes matching the template item keys (e.g., `DASS2101`, `DASS2102`)
 - **Subquestion codes**: Use simple suffixes (e.g., `SQ001`, `01`)
 - **Answer codes**: Use numeric codes (e.g., `0`, `1`, `2`) rather than text codes
 - **Avoid special characters** in all codes

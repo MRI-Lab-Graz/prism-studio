@@ -14,7 +14,7 @@ plan to work through it alone.
 **Time:** ~140 minutes for all six chapters (most of the added time is
 hands-on practice, plus Chapter 6's dataset download). **Outcome:** one new
 project
-(`wellbeing_study`) with sociodemographic data, imported survey responses, a
+(`demo_study`) with sociodemographic data, imported survey responses, a
 working scoring recipe, validated — plus experience enriching an existing BIDS
 dataset with the same tools.
 
@@ -36,7 +36,7 @@ browser only) and the chapters ahead will call back to it directly:
 <span class="prism-persona-text">
 
 You're a grad student who just read your program's data-sharing policy and
-realized "FAIR" isn't optional anymore. `wellbeing_study` is your first real
+realized "FAIR" isn't optional anymore. `demo_study` is your first real
 attempt at building something reusable from day one — sloppy folder
 structures, undocumented column codes, and datasets nobody can open two
 years from now are exactly what you're trying to avoid.
@@ -55,7 +55,7 @@ years from now are exactly what you're trying to avoid.
 Three years ago a collaborator sent you a folder of Excel files with columns
 named `V1`, `V2`, `Sex (1=M?)`, and no codebook — it cost you a week and a
 resubmission. Every project in your lab goes through PRISM before anyone
-touches the data now, no exceptions. `wellbeing_study` is the newest one,
+touches the data now, no exceptions. `demo_study` is the newest one,
 walked through end-to-end so you can see exactly where the process pays for
 itself.
 
@@ -71,7 +71,7 @@ itself.
 <span class="prism-persona-text">
 
 It's eighteen months from now. A reviewer wants your raw data, or you need
-to reanalyze `wellbeing_study` for a follow-up, and you have exactly one
+to reanalyze `demo_study` for a follow-up, and you have exactly one
 sentence of memory left about what "handedness" was coded as. Everything in
 this tutorial is what today-you does so that future-you doesn't have to
 guess.
@@ -143,16 +143,16 @@ Every chapter uses the same fictional dataset, already included in the
 repository under `examples/workshop/` — you don't need to create or download
 anything extra:
 
-- `examples/workshop/raw_data/wellbeing.xlsx` — one
+- `examples/workshop/raw_data/demo.xlsx` — one
   spreadsheet with both demographic columns (age, sex, education,
-  handedness) and five wellbeing-survey items (`WB01`-`WB05`) for the same
+  handedness) and eight items of the PRISM demonstration questionnaire (`DEMO01`-`DEMO08`) for the same
   fake participants. Chapter 2 uses the demographic columns; chapter 3 uses
   the survey items.
 - `examples/workshop/chapter_2_participants/` — a participant-mapping
   exercise for chapter 2: a template to fill in, and the solution.
-- `examples/workshop/chapter_3_survey_import/survey-wellbeing.json` — a
-  ready-made survey template for the instrument used in chapter 3.
-- `examples/workshop/chapter_4_recipe/recipe-wellbeing.json` — a
+- `examples/workshop/chapter_3_survey_import/survey-demo.json` — a
+  ready-made survey template (a copy of the demonstration template shipped with PRISM) used in chapter 3.
+- `examples/workshop/chapter_4_recipe/recipe-demo.json` — a
   working scoring recipe used as the worked example in chapter 4.
 - `examples/workshop/chapter_5_validator/` — thirteen deliberately broken
   files, each failing validation for a different reason, as optional practice

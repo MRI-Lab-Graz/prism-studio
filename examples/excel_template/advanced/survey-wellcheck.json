@@ -22,26 +22,26 @@
   "Study": {
     "TaskName": "wellcheck",
     "OriginalName": {
-      "en": "Brief Wellbeing Check",
-      "de": "Kurzer Wohlbefindens-Check"
+      "en": "Brief Habits Check",
+      "de": "Kurzer Gewohnheits-Check"
     },
     "ShortName": "wellcheck",
     "Version": "10-item",
-    "Citation": "PRISM Docs Team (2026). Brief Wellbeing Check (tutorial example).",
+    "Citation": "PRISM Docs Team (2026). Brief Habits Check (tutorial example).",
     "Construct": {
-      "en": "General wellbeing",
-      "de": "Allgemeines Wohlbefinden"
+      "en": "Daily habits",
+      "de": "Alltagsgewohnheiten"
     },
     "Description": {
-      "en": "I felt cheerful and in good spirits",
-      "de": "Ich fuehlte mich froehlich und guter Laune"
+      "en": "I tidied my desk before starting work",
+      "de": "Ich habe meinen Schreibtisch aufgeraeumt, bevor ich mit der Arbeit begann"
     },
     "Authors": [
       "PRISM Docs Team"
     ],
     "LicenseID": "CC-BY-4.0",
     "Keywords": [
-      "wellbeing",
+      "habits",
       "tutorial",
       "example",
       "multi-version"
@@ -71,8 +71,8 @@
       }
     ],
     "Instructions": {
-      "en": "For each statement, select the response closest to how you have felt over the last two weeks.",
-      "de": "Waehlen Sie fuer jede Aussage die Antwort, die am ehesten beschreibt, wie Sie sich in den letzten zwei Wochen gefuehlt haben."
+      "en": "For each statement, select the response closest to how often it applied to you during the past week.",
+      "de": "Waehlen Sie fuer jede Aussage die Antwort, die am ehesten beschreibt, wie oft sie in der letzten Woche auf Sie zutraf."
     }
   },
   "Metadata": {
@@ -82,29 +82,29 @@
   },
   "wellcheck01": {
     "Description": {
-      "de": "Ich fuehlte mich froehlich und guter Laune",
-      "en": "I felt cheerful and in good spirits"
+      "de": "Ich habe meinen Schreibtisch aufgeraeumt, bevor ich mit der Arbeit begann",
+      "en": "I tidied my desk before starting work"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -154,29 +154,29 @@
   },
   "wellcheck02": {
     "Description": {
-      "de": "Ich fuehlte mich ruhig und entspannt",
-      "en": "I felt calm and relaxed"
+      "de": "Ich habe in einer Pause einen kurzen Spaziergang gemacht",
+      "en": "I took a short walk during a break"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -197,29 +197,29 @@
   },
   "wellcheck03": {
     "Description": {
-      "de": "Ich fuehlte mich aktiv und tatkraeftig",
-      "en": "I felt active and vigorous"
+      "de": "Ich habe den naechsten Tag geplant, bevor ich das Buero verlassen habe",
+      "en": "I planned the next day before leaving the office"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -240,29 +240,29 @@
   },
   "wellcheck04": {
     "Description": {
-      "de": "Ich bin frisch und ausgeruht aufgewacht",
-      "en": "I woke up feeling fresh and rested"
+      "de": "Ich habe zu Hause ein neues Rezept ausprobiert",
+      "en": "I tried a new recipe at home"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -283,29 +283,29 @@
   },
   "wellcheck05": {
     "Description": {
-      "de": "Mein Alltag war voller Dinge, die mich interessieren",
-      "en": "My daily life was filled with things that interest me"
+      "de": "Ich habe die Pflanzen rechtzeitig gegossen",
+      "en": "I watered the plants on time"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -326,29 +326,29 @@
   },
   "wellcheck06": {
     "Description": {
-      "de": "Ich fuehlte mich zuversichtlich in Bezug auf die Zukunft",
-      "en": "I felt confident about the future"
+      "de": "Ich habe abends ein paar Seiten in einem Buch gelesen",
+      "en": "I read a few pages of a book in the evening"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -368,29 +368,29 @@
   },
   "wellcheck07": {
     "Description": {
-      "de": "Ich fuehlte mich von Menschen in meiner Umgebung unterstuetzt",
-      "en": "I felt supported by people around me"
+      "de": "Ich habe Zeit fuer mein Hobby verbracht",
+      "en": "I spent time on my hobby"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -410,29 +410,29 @@
   },
   "wellcheck08": {
     "Description": {
-      "de": "Ich konnte mich auf das konzentrieren, was ich tat",
-      "en": "I was able to concentrate on what I was doing"
+      "de": "Ich habe eine Freundin oder einen Freund angerufen",
+      "en": "I called a friend"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -452,29 +452,29 @@
   },
   "wellcheck09": {
     "Description": {
-      "de": "Ich hatte ein Gefuehl von Sinn in meinen taeglichen Aktivitaeten",
-      "en": "I felt a sense of purpose in my daily activities"
+      "de": "Ich habe nach dem Abendessen die Kueche aufgeraeumt",
+      "en": "I cleaned the kitchen after dinner"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",
@@ -494,29 +494,29 @@
   },
   "wellcheck10": {
     "Description": {
-      "de": "Ich war im Allgemeinen mit meinem Leben zufrieden",
-      "en": "I generally felt satisfied with my life"
+      "de": "Ich bin zu einer regelmaessigen Zeit ins Bett gegangen",
+      "en": "I went to bed at a regular time"
     },
     "Levels": {
       "0": {
-        "de": "zu keinem Zeitpunkt",
-        "en": "at no time"
+        "de": "nie",
+        "en": "never"
       },
       "1": {
-        "de": "manchmal",
-        "en": "some of the time"
+        "de": "selten",
+        "en": "rarely"
       },
       "2": {
-        "de": "mehr als die Haelfte der Zeit",
-        "en": "more than half the time"
+        "de": "manchmal",
+        "en": "sometimes"
       },
       "3": {
-        "de": "meistens",
-        "en": "most of the time"
+        "de": "oft",
+        "en": "often"
       },
       "4": {
-        "de": "die ganze Zeit",
-        "en": "all of the time"
+        "de": "fast immer",
+        "en": "almost always"
       }
     },
     "Unit": "ordinal",

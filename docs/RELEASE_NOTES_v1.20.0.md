@@ -25,7 +25,7 @@ orphan: true
   with the `--no-bids` hint.
 - **DataLad Desktop and the Austrian neurocloud:** just pin `prism-validator`. Their own Deno download script,
   lock file, `DENO_DIR`, neutral working folder and `PATH` change are no longer needed.
-- **Demo dataset.** `examples/wellbeing_multi_demo` now reports its real BIDS findings (`DEMO_GUIDE.md` is not
+- **Demo dataset.** `examples/multi_version_demo` (named `wellbeing_multi_demo` at the time) now reports its real BIDS findings (`DEMO_GUIDE.md` is not
   part of BIDS, `PARTICIPANT_ID_MISMATCH`) by default.
 - **PyPI page.** The logo and the links render correctly from this release on.
 

@@ -252,7 +252,7 @@ def test_a_report_with_errors_and_exit_code_16_keeps_its_issues(monkeypatch, tmp
 
 
 def test_real_3_0_2_output_keeps_real_problems_and_silences_prism_folders(monkeypatch):
-    dataset = ROOT / "examples" / "wellbeing_multi_demo"
+    dataset = ROOT / "examples" / "multi_version_demo"
     fixture = ROOT / "tests" / "data" / "bids_validator_3_0_2_wellbeing_report.json"
     use_engine(monkeypatch, stdout=fixture.read_text(encoding="utf-8"), returncode=16)
     messages = [i[1] for i in bids_validator.run_bids_validator(str(dataset))]

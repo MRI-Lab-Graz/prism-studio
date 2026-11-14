@@ -22,7 +22,7 @@ Good news: PRISM handles both paths with the same tools. This chapter shows that
 <div class="prism-persona-note-content" data-persona="student" hidden>
 <span class="prism-persona-note-badge">👩🏽‍🎓 The enthusiastic student <a class="prism-persona-note-change" href="TUTORIAL_BEGINNER.html#pick-a-reason-to-be-here">change</a></span>
 
-*Everything so far has been on `wellbeing_study`, a dataset you built and
+*Everything so far has been on `demo_study`, a dataset you built and
 already understand.* This chapter is the real test: a dataset you had no
 part in creating. If the last five chapters actually taught you something
 transferable, this is where that shows.
@@ -155,31 +155,31 @@ ds003138 genuinely has no survey/behavioral data — this is the real
 enrichment opportunity, using the same Survey Import workflow from
 [Chapter 3](TUTORIAL_BEGINNER_3_SURVEY_IMPORT.md). ds003138 has three
 sessions per subject (`ses-1`, `ses-2`, `ses-3`); pretend these three
-subjects completed a brief wellbeing check-in at `ses-1`.
+subjects completed the short demonstration questionnaire at `ses-1`.
 
 Create a fake survey file, `sample_survey.xlsx`:
 
-| participant_id | session | WB01 | WB02 | WB03 | WB04 | WB05 |
-|---|---|---|---|---|---|---|
-| sub-82KK02101 | 1 | 4 | 5 | 3 | 4 | 4 |
-| sub-82KK02102 | 1 | 3 | 4 | 4 | 3 | 3 |
-| sub-82KK02103 | 1 | 5 | 5 | 4 | 5 | 4 |
+| participant_id | session | DEMO01 | DEMO02 | DEMO03 | DEMO04 | DEMO05 | DEMO06 | DEMO07 | DEMO08 |
+|---|---|---|---|---|---|---|---|---|---|
+| sub-82KK02101 | 1 | 3 | 2 | 4 | 1 | 0 | 2 | 3 | 4 |
+| sub-82KK02102 | 1 | 1 | 3 | 2 | 2 | 4 | 0 | 1 | 2 |
+| sub-82KK02103 | 1 | 4 | 4 | 3 | 0 | 2 | 1 | 2 | 3 |
 
-This reuses the `wellbeing` template from Chapter 3 (all five items, since
-the template expects exactly `WB01`-`WB05` — see Chapter 3's Common
+This reuses the `demo` template from Chapter 3 (all eight items, since
+the template expects exactly `DEMO01`-`DEMO08` — see Chapter 3's Common
 Mistakes if you want to try fewer items instead, which needs a different
 template).
 
 1. **Converter** → **Survey** tab → select `sample_survey.xlsx`.
 2. **Participant ID Column**: `participant_id`. **Session Column**:
    `session`. **Session ID**: `1` (matching `ses-1`).
-3. **Preview** — confirm 3 participants found, task `wellbeing`, no missing
+3. **Preview** — confirm 3 participants found, task `demo`, no missing
    items.
 4. **Convert**.
 
 PRISM creates one `.tsv` per subject
-(`sub-82KK02101/ses-1/survey/sub-82KK02101_ses-1_task-wellbeing_survey.tsv`,
-etc.) plus the single shared root-level `task-wellbeing_survey.json`
+(`sub-82KK02101/ses-1/survey/sub-82KK02101_ses-1_task-demo_survey.tsv`,
+etc.) plus the single shared root-level `task-demo_survey.json`
 sidecar — same structure as Chapter 3, just written into an existing
 dataset instead of a fresh one.
 

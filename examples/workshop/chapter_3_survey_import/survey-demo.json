@@ -1,0 +1,151 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "en",
+    "Respondent": "self",
+    "SoftwarePlatform": "Other",
+    "AdministrationMethod": "online",
+    "SoftwareVersion": "1"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.0",
+    "CreationDate": "2026-11-14",
+    "Creator": "PRISM maintainers"
+  },
+  "I18n": {
+    "Languages": [
+      "en"
+    ]
+  },
+  "Study": {
+    "TaskName": "demo",
+    "OriginalName": "PRISM demonstration questionnaire",
+    "ShortName": "DEMO",
+    "Category": "Other / Uncategorized",
+    "Authors": [],
+    "Year": null,
+    "DOI": "",
+    "Citation": "Written for the PRISM specification as a demonstration; not a validated instrument.",
+    "License": "\"The PRISM maintainers release this demonstration questionnaire under CC0 1.0 (public domain dedication).\"",
+    "Source": "https://github.com/MRI-Lab-Graz/prism-specification",
+    "Instructions": "Please read each statement and select how often it applied to you during the past week.",
+    "LicenseID": "CC0-1.0",
+    "LicenseChecked": "2026-11-14",
+    "LicenseTerms": [
+      "Free to use, copy and change; it measures nothing and must not be used as a scale."
+    ]
+  },
+  "DEMO01": {
+    "Description": "I tidied my desk before starting work",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO02": {
+    "Description": "I took a short walk during a break",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO03": {
+    "Description": "I planned the next day before leaving the office",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO04": {
+    "Description": "I tried a new recipe at home",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO05": {
+    "Description": "I watered the plants on time",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO06": {
+    "Description": "I felt the week dragged on",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO07": {
+    "Description": "I read a few pages of a book in the evening",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  },
+  "DEMO08": {
+    "Description": "I spent time on my hobby",
+    "Levels": {
+      "0": "Never",
+      "1": "Rarely",
+      "2": "Sometimes",
+      "3": "Often",
+      "4": "Almost always"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
+  }
+}

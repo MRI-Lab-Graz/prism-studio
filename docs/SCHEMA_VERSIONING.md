@@ -126,8 +126,8 @@ and `VariantScales` (per-variant scale overrides — `VariantID`, `ScaleType`,
 
 ```json
 {
-  "WB01": {
-    "Description": { "en": "I have felt cheerful and in good spirits" },
+  "DEMO01": {
+    "Description": { "en": "I tidied my desk before starting work" },
     "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
     "DataType": "integer",
     "MinValue": 1,
@@ -153,10 +153,10 @@ is derived entirely from the template and the filename:
 2. **BIDS filename entity**: `acq-<version>` on multi-variant outputs.
 
 ```json
-{ "Study": { "TaskName": "wellbeing-multi", "Versions": ["10-likert", "7-likert", "10-vas"], "Version": "10-likert" } }
+{ "Study": { "TaskName": "demo-multi", "Versions": ["10-likert", "7-likert", "10-vas"], "Version": "10-likert" } }
 ```
 
-produces `sub-001_ses-01_task-wellbeing-multi_acq-10-likert_survey.tsv`. A
+produces `sub-001_ses-01_task-demo-multi_acq-10-likert_survey.tsv`. A
 single-version template gets no `acq` entity at all.
 
 At validation and scoring time, the version resolves from the filename's `acq`
