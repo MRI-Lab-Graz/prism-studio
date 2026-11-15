@@ -3,12 +3,14 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
+    FIELD_HINTS,
     FIELD_LABELS,
     LICENSE_FIRST,
     QUESTIONNAIRE_SECTIONS,
     assignFields,
     countMissing,
     isMissing,
+    prismIdHtml,
 } from './questionnaire-sections.js';
 
 const schema = JSON.parse(readFileSync(new URL('../../../schemas/stable/survey.schema.json', import.meta.url), 'utf8'));
@@ -72,5 +74,23 @@ describe('labels', () => {
         expect(FIELD_LABELS['Study/TaskName']).toBe('File ID (e.g. phq9)');
         expect(FIELD_LABELS['ITEM/ApplicableVersions']).toBe('Used in forms');
         expect(LICENSE_FIRST).toEqual(['CC-BY-4.0', 'CC0-1.0', 'Proprietary']);
+    });
+});
+
+describe('TermURL hint and PRISM ID row', () => {
+    it('explains TermURL in the hint', () => {
+        expect(FIELD_HINTS['Study/TermURL']).toMatch(/identified by its PRISM ID/);
+        expect(FIELD_HINTS['Study/TermURL']).toMatch(/mappings\/ layer/);
+    });
+
+    it('shows the PRISM ID as selectable text', () => {
+        const html = prismIdHtml('prism:phq9');
+        expect(html).toContain('PRISM ID:');
+        expect(html).toContain('user-select-all">prism:phq9</code>');
+    });
+
+    it('shows nothing when there is no ID', () => {
+        expect(prismIdHtml(null)).toBe('');
+        expect(prismIdHtml(undefined)).toBe('');
     });
 });

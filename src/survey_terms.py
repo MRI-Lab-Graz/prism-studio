@@ -22,6 +22,14 @@ def _slug(text: str) -> str:
     return text.lower().replace("_", "-")
 
 
+def instrument_id(template) -> str | None:
+    """`prism:<task>` of a template's `Study.TaskName` (same slug and validity rules as the registry), else None.
+    No file-stem fallback (unlike the registry builder): the schema requires TaskName, so a template without one has no ID."""
+    study = template.get("Study") if isinstance(template, dict) else None
+    task = _slug(str(study.get("TaskName") or "").strip()) if isinstance(study, dict) else ""
+    return f"prism:{task}" if _valid(task) else None
+
+
 def item_local_id(task: str, key: str) -> str:
     """`tipi`, `TIPI02` -> `tipi.tipi02`."""
     return f"{task}.{_slug(key)}"

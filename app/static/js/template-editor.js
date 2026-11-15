@@ -555,6 +555,7 @@
     const panel = document.getElementById('completionPanel');
     if (!panel) return;
     if (!completeness) {
+      topLevelFormEl.querySelectorAll('.te-prism-id').forEach((slot) => { slot.innerHTML = ''; });
       panel.style.display = 'none';
       return;
     }
@@ -568,6 +569,9 @@
       percent.recommended >= 70 ? 'done' : 'partial',
       `<strong>FAIR</strong><br>Share of the recommended fields you have filled in. It never blocks anything.${open ? `<br>Still open: ${open}` : ''}`
     );
+    topLevelFormEl.querySelectorAll('.te-prism-id').forEach((slot) => {
+      slot.innerHTML = questionnaireSections.prismIdHtml(completeness.prism_id);
+    });
     const problems = document.getElementById('completenessProblems');
     if (problems) {
       problems.innerHTML = completeness.problems.map((text) => `<div class="text-danger">${escapeHtml(text)}</div>`).join('');
@@ -1015,11 +1019,11 @@
     return parts.join('\n');
   }
 
-  function makeLabel(name, fieldSchema, isRequired, text = name) {
+  function makeLabel(name, fieldSchema, isRequired, text = name, tipOverride = '') {
     return StudioTheme.fieldLabel({
       text,
       tier: isRequired ? 'required' : 'optional',
-      tip: infoHtml(fieldSchema),
+      tip: tipOverride || infoHtml(fieldSchema),
     });
   }
 
@@ -2147,7 +2151,13 @@
     col.setAttribute('data-field-path', `${sectionKey}/${name}`);
 
     const isRequired = required.includes(name);
-    col.appendChild(makeLabel(name, fieldSchema, isRequired, questionnaireSections?.FIELD_LABELS[`${sectionKey}/${name}`] || name));
+    col.appendChild(makeLabel(name, fieldSchema, isRequired, questionnaireSections?.FIELD_LABELS[`${sectionKey}/${name}`] || name, questionnaireSections?.FIELD_HINTS[`${sectionKey}/${name}`]));
+    if (sectionKey === 'Study' && name === 'TermURL') {
+      const slot = document.createElement('div');
+      slot.className = 'te-prism-id mb-1';
+      slot.innerHTML = questionnaireSections?.prismIdHtml(completeness?.prism_id) || '';
+      col.appendChild(slot);
+    }
 
     // Special rendering: VariantScales as a card editor with VariantID dropdown from Study.Versions
     if (sectionKey === 'ITEM' && name === 'VariantScales') {
@@ -4479,11 +4489,13 @@
     }
 
     async function loadSelectedTemplate() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.loadSelectedTemplate(buildTemplateEditorSourceWorkflowContext());
     }
 
     async function loadNewTemplate() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.loadNewTemplate(buildTemplateEditorSourceWorkflowContext());
     }
@@ -4504,6 +4516,7 @@
     }
 
     async function importTemplateSource() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.importTemplateSource(buildTemplateEditorSourceWorkflowContext());
     }

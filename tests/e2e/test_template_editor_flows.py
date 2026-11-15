@@ -224,3 +224,21 @@ def test_an_items_required_badge_is_green_while_filled_and_red_when_emptied(page
     for i in range(texts.count()):
         texts.nth(i).fill("I drink coffee")
     page.wait_for_function(f"document.querySelector(\"{badge}\")?.classList.contains('bg-success')")
+
+
+def test_the_prism_id_follows_the_task_name(page, project, studio_url):
+    _open_incomplete_template(page, project, studio_url)
+    page.evaluate("document.querySelectorAll('details.te-subgroup').forEach((d) => { d.open = true; })")
+    slot = page.locator(".te-prism-id")
+    task = page.locator("#field_Study_TaskName")
+
+    page.wait_for_function("document.querySelector('.te-prism-id')?.textContent.includes('prism:')")
+    assert slot.inner_text() == f"PRISM ID: prism:{task.input_value().lower().replace('_', '-')}"
+
+    task.fill("demo")
+    page.wait_for_function("document.querySelector('.te-prism-id').textContent.includes('prism:demo')")
+    task.fill("")
+    page.wait_for_function("document.querySelector('.te-prism-id').textContent.trim() === ''")
+    task.fill("not valid!")
+    page.wait_for_timeout(500)
+    assert slot.inner_text().strip() == ""

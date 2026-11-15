@@ -344,3 +344,18 @@ def test_load_mappings_confines_the_modality(tmp_path):
     for bad in ("/tmp", "../ok", "..", ".", "", "a/b", "OK"):
         assert load_mappings(bad, root=tmp_path / "ok") == {}
         assert load_mappings(bad, root=tmp_path) == {}
+
+
+def test_instrument_id_follows_the_registry_rules():
+    from src.survey_terms import instrument_id
+
+    assert instrument_id({"Study": {"TaskName": "phq9"}}) == "prism:phq9"
+    assert instrument_id({"Study": {"TaskName": " PHQ_9 "}}) == "prism:phq-9"
+
+
+def test_instrument_id_is_none_without_a_usable_task_name():
+    from src.survey_terms import instrument_id
+
+    for template in ({}, {"Study": {}}, {"Study": {"TaskName": ""}}, {"Study": {"TaskName": "a b!"}},
+                     {"Study": {"TaskName": "9lives"}}, {"Study": "x"}, None):
+        assert instrument_id(template) is None

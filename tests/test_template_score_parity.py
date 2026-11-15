@@ -81,3 +81,19 @@ def test_the_route_and_the_command_agree_on_a_library_template(tmp_path):
 
     assert _route(template, is_global=True) == from_cli
     assert from_cli["complete"] is True
+
+
+def test_the_route_and_the_command_carry_the_same_prism_id(tmp_path):
+    template = project_template()
+    template["Study"]["TaskName"] = "demo"
+
+    from_cli = json.loads(_cli(tmp_path, template, "--json").stdout)
+
+    assert from_cli["prism_id"] == _route(template)["prism_id"] == "prism:demo"
+
+
+def test_no_prism_id_without_a_task_name(tmp_path):
+    template = project_template()
+    template["Study"].pop("TaskName")
+
+    assert json.loads(_cli(tmp_path, template, "--json").stdout)["prism_id"] is None
