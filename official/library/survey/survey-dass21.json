@@ -27,6 +27,7 @@
     "Source": "https://www2.psy.unsw.edu.au/dass/",
     "Instructions": "Please read each statement and select the response that best describes you.",
     "LicenseID": "Other",
+    "LicenseLanguages": ["en"],
     "LicenseChecked": "2026-11-14",
     "LicenseTerms": [
       "The scales may not be modified or sold for profit.",

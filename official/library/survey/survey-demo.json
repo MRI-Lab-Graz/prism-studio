@@ -27,6 +27,7 @@
     "Source": "https://github.com/MRI-Lab-Graz/prism-specification",
     "Instructions": "Please read each statement and select how often it applied to you during the past week.",
     "LicenseID": "CC0-1.0",
+    "LicenseLanguages": ["en"],
     "LicenseChecked": "2026-11-14",
     "LicenseTerms": [
       "Free to use, copy and change; it measures nothing and must not be used as a scale."
