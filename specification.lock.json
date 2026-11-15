@@ -47,7 +47,7 @@
     "docs/specs/mappings.md": "341e13f0bb3d3712dd50634cfe9ef1db7872d93b6b9d50265878987e7ac30f46",
     "docs/specs/physio.md": "b9a08f26b9d73c94e1bb513b82248493236da9bef98c9ae19a35035a0f83e9fd",
     "docs/specs/survey.md": "81afb5b90eeb2b42e2b46c92cf6dad4be91bfa2a6f2920f73ded18cfd059808f",
-    "official/library/NOTICE_SPECIFICATION.md": "4e6342625b263bb3747e2ac50a91ae88150361ecc266ccea5fa6bf4579c25513",
+    "official/library/NOTICE_SPECIFICATION.md": "710a1ad1125c652efb3f38a2d557a7888a87680a34ae96f44a2b8f6787b0d162",
     "official/library/mappings/biosample/estradiol.json": "0d914d0a3591041de639c66a5aec7ea21bd742943b1e3a1605a0808721f0d179",
     "official/library/mappings/biosample/free-testosterone.json": "cd037814390a22ec30b0516904955cf5d6025e6db8d7fcffa36887c671e492bc",
     "official/library/mappings/biosample/fsh.json": "ed498804d387c9abf1800fe66f962d533d4dd80055e8ab6ded7d23e7da394ad3",
@@ -58,10 +58,11 @@
     "official/library/mappings/biosample/testosterone.json": "b881fb153589735a538c7a567d5b9f28a0343d3d306b9db0d4b4095ba7b1743e",
     "official/library/mappings/vocabularies.json": "07bf6cee52036cad0fae22d5b0160b14553489c935b0010510178802cdc732a3",
     "official/library/survey/.gitkeep": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "official/library/survey/survey-dass.json": "7d0a4f250aa5101f7fc0fff33ef389395feea926043d2bfa5436975d1e776f6f",
-    "official/library/survey/survey-dass21.json": "45d02dbcc5282aaee9dda4945680aa7872a705ef16003977b8aaa2d44f1b0694",
-    "official/library/survey/survey-demo.json": "b7bf912558dc9d5ade1b9476a2e450acb740e5e49e836afc48d5e05e1fac48a5",
-    "official/library/survey/term-ids.txt": "e4ede61eba73113eac349954dbd8a742052966818f4f1ee384b9a744e1428f92",
+    "official/library/survey/survey-dass.json": "afb2e8cbd1cc21d76d8a8f3590c2c282090794dd455ace3f88326e233a82469d",
+    "official/library/survey/survey-dass21.json": "90e8f2790a1fa65a5a61d98e0a11f7d666b725c1b7f554f61a8b04d8f8e8470f",
+    "official/library/survey/survey-demo.json": "cdd019c7e5a7b9cd38a09d5fa771329902df60e466eba4c5c4c5951abe14cc45",
+    "official/library/survey/survey-sbi-d.json": "9b0162da99e25ba585fad772380dc4f3496d488f740c68d205b133572729835f",
+    "official/library/survey/term-ids.txt": "10487fe5e76e572a1720f59ea95f087ad78bb24f9ebea8d2716bb4e53c9fd681",
     "official/library/terms/biosample/alpha-amylase.json": "c462439429983971303d497f4f0e58ceccb9254f766b5d251253cda35d295021",
     "official/library/terms/biosample/alpha-amylase.saliva.json": "21e0747cb45b93decf735d518ca53a4168829778fc860ecb30324a2b66f08646",
     "official/library/terms/biosample/cortisol.json": "70535dda6ccc2b0b287680e31e015d885a435b7c1c7c4ddacdff7acbdc5d1d0c",
@@ -221,7 +222,7 @@
     "official/recipe/survey/recipe-webexec.json": "06338fed8b25ce19d5c15b5e3a4858cb8a31acff66de35cfc1976a392166b1e8",
     "official/recipe/survey/recipe-who5.json": "301f6f1e25e4a1584e60fe1433a16a5beef264a3a4683bb9d27c8174106879d2",
     "official/recipe/survey/recipe-zkpq.json": "555ddd23e9200d5580cd000e040cda69176a2914ea06ad2aed36aa13e2ecdace",
-    "scripts/specification/check_library.py": "5ade6975194bcda3bd3dfee83549d442d398194185ac308bdf3b30625df1a858",
+    "scripts/specification/check_library.py": "d6dc8ae64b6da88ce20951cee6a38ba98b2373424fb6c9bcc80ca3c564b671ca",
     "scripts/specification/check_mappings.py": "90cb30a99dfc561e3a84e697747b2ccdef5af5f0ae27a9b8aae33bf829abddde",
     "scripts/specification/check_modalities.py": "5608e6f3f19749eff0fcc4de27176f57ef9b615e07d39ff614c3760ef1a9ea5c",
     "scripts/specification/check_schema_versions.py": "f3e4f24182f0b199d8c4ba1157e5231dc6835407898324562437f328c375403a",
@@ -234,5 +235,5 @@
     "scripts/specification/term_proposal.py": "cf007ffb6031a4b3410e5636704f863ad889d49eecc6a37b598d6b4ec1005482"
   },
   "repository": "MRI-Lab-Graz/prism-specification",
-  "tag": "v1.5.8"
+  "tag": "v1.5.9"
 }

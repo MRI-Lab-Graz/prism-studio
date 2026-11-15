@@ -1,5 +1,5 @@
 {
-  "GeneratedOn": "2026-11-14T19:02:57+00:00",
+  "GeneratedOn": "2026-11-15T07:06:01+00:00",
   "SourceLibrary": "official/library/survey",
   "Instruments": {
     "dass": {
@@ -40,6 +40,19 @@
       "Variants": [],
       "Vocabulary": null,
       "Category": "Other / Uncategorized"
+    },
+    "sbi-d": {
+      "TaskName": "sbi-d",
+      "SourceFile": "survey-sbi-d.json",
+      "ShortName": "SBI-d",
+      "OriginalName": "SBI-d. Savoring Beliefs Inventory - deutsche Version",
+      "DOI": "10.23668/psycharchives.22766",
+      "Citation": "Limpächer, C., Kindt, T. & Hoyer, J. (2026). SBI-d. Savoring Beliefs Inventory - deutsche Version [Verfahrensdokumentation, Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.22766",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null,
+      "Category": "Well-being & Life Satisfaction"
     }
   }
 }
