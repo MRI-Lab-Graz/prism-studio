@@ -7,6 +7,7 @@ incomplete template); ``recommended`` counts the fields that make it reusable (F
 from __future__ import annotations
 
 from src.prism_template_validation import is_blank, required_field_paths
+from src.survey_terms import instrument_id
 from src.template_save import gate_findings, gate_schema
 
 # Fields a reusable instrument description should have beyond the required ones. One list, edited here.
@@ -53,6 +54,7 @@ def template_completeness(
             "missing": missing_recommended,
         },
         "problems": problems,
+        "prism_id": instrument_id(template),
         "complete": not errors,
         "percent": {
             "required": _percent(len(required) - len(missing), len(required)),

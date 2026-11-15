@@ -34,6 +34,18 @@ export const FIELD_LABELS = {
     'ITEM/ApplicableVersions': 'Used in forms',
 };
 
+// A field's help text where the schema's own description is not the right thing to say (the schema is vendored).
+export const FIELD_HINTS = {
+    'Study/TermURL': 'Link to an external definition of the construct (for example SNOMED or PhenX). Optional. PRISM does not need it: the questionnaire is identified by its PRISM ID, and links to external vocabularies are kept in the specification\'s mappings/ layer.',
+};
+
+/** The read-only "PRISM ID: prism:<task>" line (selectable text) shown next to TermURL; '' when there is no ID. */
+export function prismIdHtml(id) {
+    if (!id) return '';
+    const safe = String(id).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    return `<span class="text-muted small">PRISM ID: <code class="user-select-all">${safe}</code></span>`;
+}
+
 export const LICENSE_FIRST = ['CC-BY-4.0', 'CC0-1.0', 'Proprietary'];
 
 /** Every schema field in exactly one section (a field the map does not know goes to Advanced), in section order. */
