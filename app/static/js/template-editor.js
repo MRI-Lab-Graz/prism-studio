@@ -555,6 +555,7 @@
     const panel = document.getElementById('completionPanel');
     if (!panel) return;
     if (!completeness) {
+      topLevelFormEl.querySelectorAll('.te-prism-id').forEach((slot) => { slot.innerHTML = ''; });
       panel.style.display = 'none';
       return;
     }
@@ -4485,11 +4486,13 @@
     }
 
     async function loadSelectedTemplate() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.loadSelectedTemplate(buildTemplateEditorSourceWorkflowContext());
     }
 
     async function loadNewTemplate() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.loadNewTemplate(buildTemplateEditorSourceWorkflowContext());
     }
@@ -4510,6 +4513,7 @@
     }
 
     async function importTemplateSource() {
+      completeness = null; // the previous template's numbers and PRISM ID must not show on this one
       const workflow = await loadTemplateEditorSourceWorkflow();
       return workflow.importTemplateSource(buildTemplateEditorSourceWorkflowContext());
     }
