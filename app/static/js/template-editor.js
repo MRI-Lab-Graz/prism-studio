@@ -591,13 +591,7 @@
   }
 
   // The selected item's required fields: the same "not filled in" rule as the backend's is_blank, shown on the badge.
-  function isBlank(v) {
-    if (v === undefined || v === null) return true;
-    if (typeof v === 'string') return !v.trim();
-    if (Array.isArray(v)) return v.length === 0;
-    if (typeof v === 'object') return isBlank(v.en);
-    return false;
-  }
+  const isBlank = StudioTheme.isBlank;
 
   function paintItemBadges() {
     const item = currentTemplate && currentTemplate[selectedItemId];
@@ -920,6 +914,11 @@
     return data;
   }
 
+  // A choice field with no explicit default/example stays unset (the select shows its placeholder), never the first option.
+  function isUnsetEnum(sch) {
+    return !!sch && Array.isArray(sch.enum) && sch.default === undefined && !(Array.isArray(sch.examples) && sch.examples.length);
+  }
+
   function schemaExample(sch) {
     if (!sch || typeof sch !== 'object') return null;
     if (Array.isArray(sch.examples) && sch.examples.length) return sch.examples[0];
@@ -938,7 +937,7 @@
       const out = {};
       if (sch.properties && typeof sch.properties === 'object') {
         for (const k of Object.keys(sch.properties)) {
-          out[k] = schemaExample(sch.properties[k]);
+          if (!isUnsetEnum(sch.properties[k])) out[k] = schemaExample(sch.properties[k]);
         }
       }
       return out;
@@ -1602,11 +1601,13 @@
               const fLabel = makeLabel(fname, fSchema, itemRequired.includes(fname));
               fieldDiv.appendChild(fLabel);
 
-              if (entry[fname] === undefined) {
+              if (entry[fname] === undefined && !isUnsetEnum(fSchema)) {
                 entry[fname] = schemaExample(fSchema);
               }
+              StudioTheme.paintRequired(fieldDiv, entry[fname]);
               const fInput = createInput(fSchema, entry[fname], (v) => {
                 entry[fname] = v;
+                StudioTheme.paintRequired(fieldDiv, v);
                 onChange([...currentVal]);
                 // Update the summary title
                 const newSummary = summaryField ? `#${idx + 1}: ${String(entry[summaryField] || '').substring(0, 40)}` : `Entry #${idx + 1}`;
@@ -1850,12 +1851,14 @@
         const isReq = required.includes(name);
         fieldDiv.appendChild(makeLabel(name, subSchema, isReq));
 
-        if (objVal[name] === undefined) {
+        if (objVal[name] === undefined && !isUnsetEnum(subSchema)) {
           objVal[name] = schemaExample(subSchema);
         }
+        StudioTheme.paintRequired(fieldDiv, objVal[name]);
 
         const subInput = createInput(subSchema, objVal[name], (v) => {
           objVal[name] = v;
+          StudioTheme.paintRequired(fieldDiv, v);
           onChange(Object.assign({}, objVal));
         });
         fieldDiv.appendChild(subInput);

@@ -34,6 +34,21 @@
     if (cls) badge.classList.add(cls);
   }
 
+  // The one "not filled in" rule (same as the backend's is_blank).
+  function isBlank(v) {
+    if (v === undefined || v === null) return true;
+    if (typeof v === 'string') return !v.trim();
+    if (Array.isArray(v)) return v.length === 0;
+    if (typeof v === 'object') return isBlank(v.en);
+    return false;
+  }
+
+  // Paint the REQUIRED badge of a rendered field (direct label child) from its value: green filled, red blank.
+  function paintRequired(fieldEl, value) {
+    const tier = fieldEl.querySelector(':scope > .studio-field-label > .badge');
+    if (tier && tier.textContent.trim() === 'REQUIRED') setFilled(tier, !isBlank(value));
+  }
+
   // Required/Core/FAIR counts, each [filled, total] or [filled, total, title]; a total of 0 is not shown.
   function tally({ required, core, fair }) {
     const badge = (label, c, openClass) => (c && c[1] > 0)
@@ -48,6 +63,8 @@
     fieldLabelHtml,
     tierBadgeClass,
     setFilled,
+    isBlank,
+    paintRequired,
     tally,
     fieldLabel(opts) {
       const tpl = document.createElement('template');
