@@ -561,6 +561,8 @@
     }
     panel.style.display = 'block';
     const missing = new Set(completeness.required.missing);
+    const projectOnly = completeness.project_only || { open: [], paths: [] };  // a library template only
+    const projectOpen = new Set(projectOnly.open);
     const { required, recommended, percent } = completeness;
     setBar('teRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
     const open = recommended.missing.map((path) => escapeHtml(path.split('/')[1])).join(', ');
@@ -579,18 +581,26 @@
 
     // fields: an empty required field is red until it is filled
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
-      const isEmpty = missing.has(el.getAttribute('data-field-path'));
+      const path = el.getAttribute('data-field-path');
+      const isEmpty = missing.has(path);
+      const isOpen = projectOpen.has(path);  // empty, but only a project needs it: neutral, not red
       if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
       const tier = el.querySelector(':scope > .studio-field-label > .badge');
-      if (tier && tier.textContent.trim() === 'REQUIRED') StudioTheme.setFilled(tier, !isEmpty);  // green once filled
+      if (tier && ['REQUIRED', 'PROJECT'].includes(tier.textContent.trim())) StudioTheme.setFilled(tier, !isEmpty && !isOpen, isOpen);  // green once filled
     });
     // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
       const slot = details.querySelector('.te-subgroup-tally');
       const total = Number(details.dataset.requiredTotal || 0);
       if (!slot || !total || !questionnaireSections) return;
-      const open = questionnaireSections.countMissing((details.dataset.paths || '').split(','), missing);
-      slot.innerHTML = StudioTheme.tally({ required: [total - open, total] });
+      const paths = (details.dataset.paths || '').split(',');
+      const open = questionnaireSections.countMissing(paths, missing);
+      const projectPaths = paths.filter((path) => projectOnly.paths.includes(path));
+      const projectNotSet = questionnaireSections.countMissing(projectPaths, projectOpen);
+      slot.innerHTML = StudioTheme.tally({
+        required: [total - projectNotSet - open, total - projectNotSet],
+        project: [projectPaths.length - projectNotSet, projectPaths.length],
+      });
     });
   }
 

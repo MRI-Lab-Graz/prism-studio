@@ -97,3 +97,56 @@ def test_no_prism_id_without_a_task_name(tmp_path):
     template["Study"].pop("TaskName")
 
     assert json.loads(_cli(tmp_path, template, "--json").stdout)["prism_id"] is None
+
+
+# --- project-level fields of a library template are open, not missing and not filled ---------------------------
+
+PROJECT_ONLY = ["Technical/Respondent", "Technical/AdministrationMethod", "Technical/SoftwarePlatform"]
+
+
+def _library():
+    from tests.template_fixtures import library_template
+
+    template = library_template()
+    for field in ("Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"):
+        template["Technical"].pop(field, None)
+    return template
+
+
+def test_a_library_template_lists_its_open_project_fields_and_does_not_count_them():
+    result = template_completeness(_library(), source="survey-x.json", project=False)
+
+    assert result["project_only"]["total"] == 3 and result["project_only"]["filled"] == 0
+    assert sorted(result["project_only"]["open"]) == sorted(PROJECT_ONLY)
+    assert not set(PROJECT_ONLY) & set(result["required"]["missing"])
+    with_all = template_completeness(project_template(), source="survey-x.json", project=False)
+    assert result["required"]["total"] == with_all["required"]["total"] - 3  # filled ones count, open ones do not
+    assert result["percent"]["required"] == 100
+
+
+def test_a_filled_project_field_of_a_library_template_counts_as_filled():
+    template = _library()
+    template["Technical"]["Respondent"] = "self"
+
+    result = template_completeness(template, source="survey-x.json", project=False)
+
+    assert result["project_only"]["filled"] == 1
+    assert "Technical/Respondent" not in result["project_only"]["open"]
+    assert result["required"]["filled"] == result["required"]["total"]
+    assert result["required"]["total"] == template_completeness(_library(), source="survey-x.json", project=False)["required"]["total"] + 1
+
+
+def test_a_project_template_has_no_open_project_fields():
+    result = template_completeness(_incomplete(), source="survey-x.json", project=True)
+
+    assert "project_only" not in result
+    assert "Technical/Respondent" in result["required"]["missing"]
+
+
+def test_the_route_and_the_command_agree_on_the_open_project_fields(tmp_path):
+    template = _library()
+
+    from_cli = json.loads(_cli(tmp_path, template, "--json", "--is-global").stdout)
+
+    assert _route(template, is_global=True) == from_cli
+    assert sorted(from_cli["project_only"]["open"]) == sorted(PROJECT_ONLY)
