@@ -1,0 +1,253 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "pdi",
+    "ShortName": "PDI",
+    "OriginalName": "Pain Disability Index - deutsche Fassung",
+    "Category": "Well-being & Life Satisfaction",
+    "Authors": [
+      "Dillmann, Ulrich",
+      "Nilges, Paul",
+      "Saile, Helmut",
+      "Gerbershagen, Hans-Ulrich"
+    ],
+    "Year": 2011,
+    "Citation": "Dillmann, U., Nilges, P., Saile, H. & Gerbershagen, H. U. (2011). PDI. Pain Disability Index - deutsche Fassung [Verfahrensdokumentation und Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4505",
+    "DOI": "10.23668/psycharchives.4505",
+    "Source": "https://doi.org/10.23668/psycharchives.4505",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei dem/den Autor/en.\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Dillmann, Ulrich; Nilges, Paul; Saile, Helmut; Gerbershagen, Hans-Ulrich",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9003694",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Dillmann, U., Nilges, P., Saile, H. & Gerbershagen, H. U. (1994). Behinderungseinschätzung bei chronischen Schmerzpatienten. Der Schmerz, 8 (2), 100-110.",
+        "Year": 1994
+      },
+      {
+        "Type": "other",
+        "Citation": "Dillmann, U., Nilges, P., Saile, H. & Gerbershagen, H.U. (1994). Behinderungseinschätzung bei chronischen Schmerzpatienten. Schmerz, 8, 100-110.",
+        "Year": 1994
+      },
+      {
+        "Type": "other",
+        "Citation": "Fairbank, C.T., Couper, J., Davies, J.B. & O'Brien, J.P. (1980). The Oswestry Low Back Pain Disability Questionnaire. Physiotherapy, 66, 271-273.",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Hautzinger, M. (1988). Die CES-D Skala. Ein Depressionsmessinstrument für Untersuchungen in der Allgemeinbevölkerung. Diagnostica, 34, 167-173.",
+        "Year": 1988
+      },
+      {
+        "Type": "other",
+        "Citation": "Kammer, D. (1983). Eine Untersuchung der psychometrischen Eigenschaften des deutschen Beck-Depressionsinventars (BDI). Diagnostica, 29, 48-60.",
+        "Year": 1983
+      },
+      {
+        "Type": "other",
+        "Citation": "Luka-Krausgrill, U., Wurmthaler, C. & Becker, T. (1994). Die Beziehung zwischen Schmerzbewältigung, Beeinträchtigung und Depression bei chronischen Schmerzen. In R. Wahl & M. Hautzinger (Hrsg.), Verhaltensmedizin chronischer Schmerzen (S. 175-189). Köln: Deutscher Ärzte-Verlag.",
+        "Year": 1994
+      },
+      {
+        "Type": "other",
+        "Citation": "Nilges, P., Deuker, N. & Kirschner, P. (1992). Schmerz, Funktionsbehinderung, psychische Beeinträchtigung und Behandlungsverlauf bei Patienten mit Hüftgelenk-Prothesen. In L. Montada (Hrsg.), Bericht über den 38. Kongress der Deutschen Gesellschaft für Psychologie in Trier 1992 (S. 532). Göttingen: Hogrefe.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Pollard, C.A. (1984). Preliminary validity study of the Pain Disability Index. Perceptual and Motor Skills, 59 (3), p. 974.",
+        "Year": 1984
+      },
+      {
+        "Type": "other",
+        "Citation": "Saile, H. & Dieterich, A. (1992). Familiäre und schmerzbezogene Merkmale aus der Sicht von chronischen Schmerzpatienten und deren Partnern. Psychotherapie, Psychosomatik, Medizinische Psychologie, 42, 273-278.",
+        "Year": 1992
+      },
+      {
+        "Type": "other",
+        "Citation": "Saile, H. & Schmitz, U. (1991). Zur Überprüfung des Circumplex-Modells: Familiäre Adaptabilität und Kohäsion bei chronischen Schmerzpatienten. System Familie, 4, 223-235.",
+        "Year": 1991
+      },
+      {
+        "Type": "other",
+        "Citation": "Tait, R.C., Chibnall, J.T. & Krause, S. (1990). The Pain Disability Index: psychometric properties. Pain, 40, 171-182.",
+        "Year": 1990
+      },
+      {
+        "Type": "other",
+        "Citation": "Tait, R.C., Pollard, C.A., Margolis, R.B., Duckro, P.N., & Krause, S.J. (1987). The Pain Disability Index: psychometric and validity data. Archives of Physical and Medical Rehabilitation, 68, 438-441.",
+        "Year": 1987
+      },
+      {
+        "Type": "other",
+        "Citation": "World Health Organization (WHO). (1980). International classification of impairments, disabilities, and handicaps. Geneva: WHO.",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Wurmthaler, C., Gerbershagen, H.U., Dietz, G., Korb, J., Nilges, P. & Schilling, S. (1996). Chronifizierung und psychologische Merkmale - Die Beziehung zwischen Chronifizierungsstadien bei Schmerz und psychophysischem Befinden, Behinderung und familiären Merkmalen. Zeitschrift für Gesundheitspsychologie, 4, 113-136.",
+        "Year": 1996
+      },
+      {
+        "Type": "other",
+        "Citation": "Tait, R.C., Pollard, C.A., Margolis, R.B., Duckro, P.N. & Krause, S.J. (1987). The Pain Disability Index: psychometric and validity data. Archives of Physical and Medical Rehabilitation, 68, 438-441. (Originalfassung S. 441).",
+        "Year": 1987
+      },
+      {
+        "Type": "other",
+        "Citation": "Westhoff, G. (Hrsg.). (1993). Handbuch psychosozialer Meßinstrumente. Ein Kompendium für epidemiologische und klinische Forschung zu chronischer Krankheit (Testkurzdarstellung PDI Pain Disability Index, Pollard; PDI dt. Version, Schmitz et al.: S. 627-629). Göttingen: Hogrefe.",
+        "Year": 1993
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Psychosomatic complaints",
+      "Category: Clinical procedures / Well-being and resilience",
+      "Engl. Name: Pain Disability Index - German version"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9003694.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Chronic pain",
+        "Itemzahl": "7 items",
+        "Subskalen": "(1) Family and home responsibilities, (2) Recreation, (3) Social activities, (4) Occupation, (5) Sex life, (6) Self-care, (7) Activities necessary for life",
+        "Durchführungszeit": "A few minutes.",
+        "Auswertungsdauer": "A few minutes.",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .83-.90",
+        "Validität": "Findings on unidimensionality, criterion validity and construct validity.",
+        "Normierung": "N = 309, percentile ranks in Dillmann et al. (1994).",
+        "Anwendungsbereich": "Research, practice (professional qualification required)",
+        "Altersbereich": "Adults",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.324"
+      },
+      "sections": {
+        "Kurzabstract": "The PDI can be used with patients with chronic pain problems to determine the subjective degree of impairment in everyday life caused by the pain problem. It is based on a multidimensional concept of pain-related disability and draws on a distinction between consequences of disease and injury made by the WHO (1980), which differentiates between impairment, disability and handicap. Seven areas of life are assessed: (1) Family and home responsibilities, (2) Recreation, (3) Social activities, (4) Occupation, (5) Sex life, (6) Self-care and (7) Activities necessary for life. Reliability: Cronbach's alpha was alpha = .83-.90. Validity: The unidimensionality of the PDI was confirmed. Construct validity is supported by moderate to high correlations with the following indicators of experienced disability: (1) Down-Time: r = .40; (2) a self-developed functional rating scale for assessing specific behavioural impairments: r = .78; (3) Oswestry Low Back Pain Disability Questionnaire: r = .76. Associations were found with pain intensity (r = .23-.62), the Beck Depression Inventory (r = .26-.52) and the depression scale CES-D (r = .55). Findings in inpatient pain patients, who were assigned to three chronification stages on the basis of the Mainzer Stadienkonzept chronischer Schmerzen, also support criterion validity. Norms: Percentile ranks are available.",
+        "Diagnostische Zielsetzung": "The questionnaire can be used with patients with chronic pain problems to determine the subjective degree of impairment in everyday life caused by the pain problem. It is suitable for use as a research instrument as well as for routine use in clinical practice.",
+        "Aufbau": "The questionnaire assesses self-ratings of the extent to which people with chronic pain feel impaired in everyday life by their illness. For this purpose, seven areas of life are listed, each specified by short explanations: (1) \"Familiäre und häusliche Verpflichtungen\", (2) \"Erholung\", (3) \"Soziale Aktivitäten\", (4) \"Beruf\", (5) \"Sexualleben\", (6) \"Selbstversorgung\" and (7) \"Lebensnotwendige Tätigkeiten\". On 11-point rating scales, verbally anchored at the poles 0 = \"keine Beeinträchtigung\" and 10 = \"völlige Beeinträchtigung\", patients are to rate the degree of impairment typical for them. By summing all items, a total score is formed, which is interpreted as a global measure of the degree of impairment.",
+        "Grundlagen und Konstruktion": "The PDI was developed specifically for patients with chronic pain - regardless of the pain location or aetiology of the pain problem. It is based on a multidimensional concept of pain-related disability and draws on a distinction between consequences of disease and injury made by the WHO (1980), which differentiates between Schädigung (impairment), Behinderung (disability) and Benachteiligung (handicap). \"Pain-related disabilities\", as the PDI is intended to depict them, represent a subjectively perceived impairment of the ability to perform certain behaviours and activities that are to be regarded as \"normal\" in the statistical sense. These disabilities in turn derive from complex interrelations between biological, psychological and social factors and can vary enormously between individuals even when organic-medical factors are held constant (i.e. independently of the degree of diagnosable organic damage) (Dillmann, Nilges, Saile & Gerbershagen, 1994). An adequate assessment of pain-related disability therefore requires obtaining diagnostic information from different, complementary data sources.\nThe German-language version of the PDI is a translation of the empirically proven English original version of the instrument (Pollard, 1984; Tait, Chibnall & Krause, 1990; Tait, Pollard, Margolis, Duckro & Krause, 1987). Both the format of the items and the scaling were retained, and only individual formulations were slightly adapted. In four independent studies, the German adaptation was examined with regard to its quality criteria according to classical test theory. The studies examined a sample of n = 42 patients awaiting hip surgery (27 women, 15 men, mean age M = 58.40 years; Nilges, Deuker & Kirschner, 1992) as well as three groups of inpatient or outpatient chronic pain patients:\nn = 154 (77 women, 77 men, M = 44.95 years; Luka-Krausgrill, Wurmthaler & Becker, 1994)\nn = 40 (25 women, 15 men, M = 47.83 years; Saile & Dieterich, 1992)\nn = 82 (43 women, 39 men, M = 44.68 years; Saile & Schmitz, 1991).\nResults of factor, item and scale analyses supported retaining the PDI in its existing form.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: For the total score, internal consistencies (Cronbach's alpha) between a = .83 (Saile & Dieterich, 1992) and a = .90 (Luka-Krausgrill et al., 1994) were found.\nValidity: To examine the unidimensionality of the PDI, principal component analyses with subsequent varimax rotation were computed separately for the four studies and for the total sample. Using the scree test as the criterion for the appropriate number of factors, one-factor solutions resulted in each case. In the total sample (n = 275 complete data sets), the factor explained 59 percent of the total variance (Dillmann et al., 1994).\nThe construct validity of the PDI is supported by moderate to high correlations with the following indicators of experienced disability:\n\"Down-Time\", i.e. time spent by the patient resting or lying down during the day because of the pain (r = .40);\na self-developed \"functional rating scale\" for assessing specific behavioural impairments (r = .78);\nOswestry Low Back Pain Disability Questionnaire (OBQ; Fairbank, Couper, Davies & O'Brien, 1980; r = .76).\nCriterion validity was examined via correlations with pain-related variables and measures of psychological impairment. Specifically, the PDI was found to be associated with - pain intensity (operationalized by visual analogue scales; r = .23 and r = .62, respectively);\nthe Beck Depression Inventory (BDI; Kammer, 1983; r = .52 and r = .26, respectively);\nthe depression scale CES-D (Hautzinger, 1988; r = .55).\nFindings of a study of N = 284 inpatient pain patients (Wurmthaler et al., 1996), who were assigned to three chronification stages on the basis of the Mainzer Stadienkonzept chronischer Schmerzen, also support criterion validity; here, a tendency (p = .051) towards greater disability reported on the PDI with increasing degree of pain chronification was found.\nNorms: Percentile ranks are available, which were obtained in four studies with a total of N = 309 pain patients (Dillmann et al., 1994). An analysis of variance revealed no statistically significant differences between the PDI sum scores of the studies; likewise, no age or sex effects were found.",
+        "Testkonzept/Auswertungszeit": "Scoring takes only a few minutes.",
+        "Durchführung/Altersbereiche": "The instrument is suitable for adult patients with chronic pain.",
+        "Durchführung/Durchführungszeit": "Completion time is only a few minutes.",
+        "Bewertung": "The PDI is a very economical instrument and can therefore be used well in both everyday clinical practice and research; it can be used with chronic pain patients to depict pain-related disability from the patient's perspective reliably and validly. Since subjective impairments often do not correspond to the extent of organic damage, the self-ratings collected with the PDI represent a valuable complement to multiaxial pain diagnostics. It is recommended to additionally consider behavioural data and to draw on further data sources (e.g. disability rating by the partner; Dillmann et al., 1994).",
+        "Orginalfassung/Anderssprachlige Fassungen": "Tait, R.C., Pollard, C.A., Margolis, R.B., Duckro, P.N. & Krause, S.J. (1987). The Pain Disability Index: psychometric and validity data. Archives of Physical and Medical Rehabilitation, 68, 438-441. (Originalfassung S. 441).\nWesthoff, G. (Hrsg.). (1993). Handbuch psychosozialer Meßinstrumente. Ein Kompendium für epidemiologische und klinische Forschung zu chronischer Krankheit (Testkurzdarstellung PDI Pain Disability Index, Pollard; PDI dt. Version, Schmitz et al.: S. 627-629). Göttingen: Hogrefe.",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! You can find the contact details under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, users are no longer obliged to provide feedback."
+      }
+    },
+    "Construct": "Chronic pain",
+    "Description": "The PDI can be used with patients with chronic pain problems to determine the subjective degree of impairment in everyday life caused by the pain problem. It is based on a multidimensional concept of pain-related disability and draws on a distinction between consequences of disease and injury made by the WHO (1980), which differentiates between impairment, disability and handicap. Seven areas of life are assessed: (1) Family and home responsibilities, (2) Recreation, (3) Social activities, (4) Occupation, (5) Sex life, (6) Self-care and (7) Activities necessary for life. Reliability: Cronbach's alpha was alpha = .83-.90. Validity: The unidimensionality of the PDI was confirmed. Construct validity is supported by moderate to high correlations with the following indicators of experienced disability: (1) Down-Time: r = .40; (2) a self-developed functional rating scale for assessing specific behavioural impairments: r = .78; (3) Oswestry Low Back Pain Disability Questionnaire: r = .76. Associations were found with pain intensity (r = .23-.62), the Beck Depression Inventory (r = .26-.52) and the depression scale CES-D (r = .55). Findings in inpatient pain patients, who were assigned to three chronification stages on the basis of the Mainzer Stadienkonzept chronischer Schmerzen, also support criterion validity. Norms: Percentile ranks are available.",
+    "Reliability": "Internal consistency: Cronbach's alpha = .83-.90",
+    "Validity": "Findings on unidimensionality, criterion validity and construct validity.",
+    "Norming": "N = 309, percentile ranks in Dillmann et al. (1994).",
+    "AdministrationTime": "A few minutes.",
+    "ScoringTime": "A few minutes.",
+    "AgeRange": "Adults",
+    "Instructions": "Bitte geben Sie im folgenden an, wie stark Sie durch Ihre Schmerzen in den verschiedenen Bereichen Ihres Lebens beeinträchtigt sind. Das heißt: Wie sehr hindern die Schmerzen Sie daran, ein normales Leben zu führen? Kreuzen Sie bitte für jeden der sieben Lebensbereiche die Zahl an, die die für Sie typische Stärke der Behinderung durch Ihre Schmerzen beschreibt. Ein Wert von 0 bedeutet dabei überhaupt keine Behinderung, und ein Wert von 10 gibt an, daß Sie in diesem Bereich durch die Schmerzen völlig beeinträchtigt sind."
+  },
+  "PDI01": {
+    "Description": "Familiäre und häusliche Verpflichtungen (dieser Bereich bezieht sich auf Tätigkeiten, die das Zuhause oder die Familie betreffen. Er umfaßt Hausarbeit und Tätigkeiten rund um das Haus bzw. die Wohnung, auch Gartenarbeiten).",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI02": {
+    "Description": "Erholung (dieser Bereich umfaßt Hobbies, Sport und Freizeitaktivitäten)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI03": {
+    "Description": "Soziale Aktivitäten (dieser Bereich bezieht sich auf das Zusammensein mit Freunden und Bekannten, wie z.B. Feste, Theater - und Konzertbesuche, Essen gehen und andere soziale Aktivitäten)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI04": {
+    "Description": "Beruf (dieser Bereich bezieht sich auf Aktivitäten, die ein Teil des Berufs sind oder unmittelbar mit dem Beruf zu tun haben; gemeint ist auch Hausfrauen(männer)tätigkeit)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI05": {
+    "Description": "Sexualleben (dieser Bereich bezieht sich auf die Häufigkeit und die Qualität des Sexuallebens)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI06": {
+    "Description": "Selbstversorgung (dieser Bereich umfaßt Aktivitäten, die Selbständigkeit und Unabhängigkeit im Alltag ermöglichen, wie z.B. sich waschen und anziehen, Autofahren, ohne dabei auf fremde Hilfe angewiesen zu sein)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  },
+  "PDI07": {
+    "Description": "Lebensnotwendige Tätigkeiten (dieser Bereich bezieht sich auf absolut lebensnotwendige Tätigkeiten wie Essen, Schlafen und Atmen)",
+    "Levels": {
+      "0": "keine Beeinträchtigung",
+      "10": "völlige Beeinträchtigung"
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 10,
+    "ScaleType": "likert"
+  }
+}

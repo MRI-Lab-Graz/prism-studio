@@ -1,0 +1,482 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "dss",
+    "ShortName": "DSS",
+    "OriginalName": "Discontinuation Success Scale",
+    "Category": "Well-being & Life Satisfaction",
+    "Authors": [
+      "Lincoln, Tania",
+      "Sommer, Daniel",
+      "Könemund, Marie",
+      "Schlier, Björn"
+    ],
+    "Year": 2025,
+    "Citation": "Lincoln, T. M., Sommer, D., Könemund, M. & Schlier, B. (2025). DSS. Discontinuation Success Scale [Verfahrensdokumentation, Fragebogen auf Deutsch und Englisch]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.16318",
+    "DOI": "10.23668/psycharchives.16318",
+    "Source": "https://doi.org/10.23668/psycharchives.16318",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Lincoln, Tania; Sommer, Daniel; Könemund, Marie; Schlier, Björn",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9008689",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Lincoln, T. M., Sommer, D., Könemund, M. & Schlier, B. (2021). A rating scale to inform successful discontinuation of antipsychotics and antidepressants. Psychiatry Research 298, Artikelnummer 113768. [English items included p. 6] https://doi.org/10.1016/j.psychres.2021.113768",
+        "DOI": "10.1016/j.psychres.2021.113768",
+        "Year": 2021
+      },
+      {
+        "Type": "other",
+        "Citation": "Herz, K. (2017). Absetzen Von Neuroleptika: Versuche, Erfahrungen, Erwartungen. Unpublished Masterthesis, Universität Hamburg .",
+        "Year": 2017
+      },
+      {
+        "Type": "other",
+        "Citation": "Kreyenbuhl, J., Slade, E. P., Medoff, D. R., Brown, C. H., Ehrenreich, B., Afful, J. & Dixon, L. B. (2011). Time to discontinuation of first- and second-generation antipsychotic medications in the treatment of schizophrenia. Schizophrenia Research, 131 (1-3), 127–132. https://doi.org/10.1016/j.schres.2011.04.028",
+        "DOI": "10.1016/j.schres.2011.04.028",
+        "Year": 2011
+      },
+      {
+        "Type": "primary",
+        "Citation": "Lincoln, T. M., Sommer, D., Könemund, M. & Schlier, B. (2021). A rating scale to inform successful discontinuation of antipsychotics and antidepressants. Psychiatry Research 298, Artikelnummer 113768. [English items included p. 6] https://doi.org/10.1016/j.psychres.2021.113768",
+        "DOI": "10.1016/j.psychres.2021.113768",
+        "Year": 2021
+      },
+      {
+        "Type": "other",
+        "Citation": "Samples, H., & Mojtabai, R. (2015). Antidepressant self-discontinuation: results from the collaborative psychiatric epidemiology surveys. Psychiatric Services, 66 (5), 455–462. https://doi.org/10.1176/appi.ps.201400021",
+        "DOI": "10.1176/appi.ps.201400021",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Topp, C. W., Ostergaard, S. D., Sondergaard, S. & Bech, P. (2015). The WHO-5 Well-Being Index: a systematic review of the literature. Psychotherapy and Psychosomatics, 84 (3), 167–176. https://doi.org/10.1159/000376585",
+        "DOI": "10.1159/000376585",
+        "Year": 2015
+      },
+      {
+        "Type": "other",
+        "Citation": "Woitalla, F. (2017). Erwartungen an Das Absetzen von Neuroleptika. Unpublished Masterthesis, Universität Hamburg.",
+        "Year": 2017
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Therapy-related diagnostics",
+      "Category: Clinical procedures / Well-being and resilience",
+      "Engl. Name: Discontinuation Success Scale"
+    ],
+    "Access": "public",
+    "Notes": "Other language versions listed by the archive (not converted): en. Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9008689.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Format": "Paper-pencil",
+        "Itemzahl": "24 items",
+        "Subskalen": "Subscales: (1) Subjective discontinuation success, (2) Positive discontinuation effects, (3) Negative discontinuation effects",
+        "Durchführungszeit": "A few minutes.",
+        "Auswertungsdauer": "A few minutes.",
+        "Reliabilität": "No information available",
+        "Validität": "Findings on factorial and criterion validity as well as on measurement invariance between persons taking antidepressants and antipsychotics.",
+        "Normierung": "None. No reference values are available.",
+        "Anwendungsbereich": "Research",
+        "Altersbereich": "from 18 years",
+        "Sprachversionen": "German, English"
+      },
+      "sections": {
+        "Kurzabstract": "The Discontinuation Success Scale (DSS) assesses the subjective discontinuation success of patients who take antipsychotics or antidepressants. It consists of 24 items distributed across three subscales ((1) Subjective discontinuation success, (2) Positive discontinuation effects, (3) Negative discontinuation effects). Reliability: No information available. Validity: Factorial and criterion validity as well as measurement invariance between persons taking antidepressants and antipsychotics were computed.",
+        "Diagnostische Zielsetzung": "The diagnostic aim of the Discontinuation Success Scale (DSS) is to quantify the subjective discontinuation success of patients who take antipsychotics or antidepressants.",
+        "Aufbau": "The test consists of 24 items, to which agreement can be indicated on a five-point Likert scale (1 = \"stimme überhaupt nicht zu\", 5 = \"stimme voll und ganz zu\").",
+        "Grundlagen und Konstruktion": "The DSS was developed based on the experiences of people with actual experience of medication discontinuation, and the items were tested by means of exploratory and confirmatory factor analysis. In addition, significant associations were found between the DSS scale scores and objective discontinuation success on the one hand and subjective well-being on the other.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: No information available.\nValidity: Factorial validation with the requirement that each factor has at least four items with loadings > 0.60. EFA to validate the dimensional structure of the DSS. CFA to validate model fit based on the CFI. Testing of measurement invariance between antidepressants and antipsychotics. Testing of criterion validity using the associations between DSS scores and objective discontinuation success in relation to well-being.\nNorms: No reference values are available.",
+        "Testkonzept/Theoretischer Hintergrund": "The Discontinuation Success Scale (DSS; Lincoln, Sommer, Könemund & Schlier, 2021) is used to assess subjective discontinuation success after discontinuing psychotropic medication (antipsychotics and antidepressants). The DSS was developed to assess subjective discontinuation success in a differentiated way. The questionnaire can be used both in the therapeutic accompaniment of discontinuation success and to empirically investigate predictors of discontinuation success.",
+        "Testkonzept/Testaufbau": "The DSS comprises 24 items with three subscales - one for evaluating discontinuation success as such (subscale \"Subjective discontinuation success\"), one that assesses positive discontinuation effects (subscale \"Positive discontinuation effects\") and one that assesses negative discontinuation effects (subscale \"Negative discontinuation effects\"). The items are answered using a five-point Likert scale (1 = \"stimme überhaupt nicht zu\" to 5 = \"stimme voll und ganz zu\").",
+        "Testkonzept/Auswertungsmodus": "For each subscale, the average value is calculated by adding the raw item scores:\nSubjective discontinuation success: (item_1 + item_2 + item_3 + (6-item_4) + (6-item_5) + item_8)/6\n(Explanation: Since item 4 and item 5 are negatively keyed, a corresponding conversion is required here.)\nPositive discontinuation effects: (item_6 + item_11 + item_13 + item_14 + item_15 + item_17 + item_22 + item_23 + item_24)/9\nNegative discontinuation effects: (item_7 + item_9 + item_10 + item_12 + item_16 + item_18 + item_19+ item_20 + item_21)/9",
+        "Testkonzept/Auswertungshilfen": "Under \"Scoring procedure\", exact calculations are specified for all three subscales.",
+        "Testkonzept/Auswertungszeit": "Scoring time is a few minutes.",
+        "Durchführung/Testformen": "The DSS (Lincoln et al., 2021) is available as a 24-item version in German and English. It should be noted that currently no results on validity are available for the English translation of the items.",
+        "Durchführung/Altersbereiche": "The instrument is suitable for adults.",
+        "Durchführung/Durchführungszeit": "Administration takes a few minutes.",
+        "Durchführung/Material": "The materials include the documentation of the procedure as well as the questionnaire in German and English. A writing implement is needed to answer the items.",
+        "Durchführung/Instruktion": "The test person is instructed at the beginning of the test form with the following text:\n„Im Folgenden finden Sie einige Aussagen, die auf Ihre Erfahrungen mit dem Absetzen Ihrer Medikamente zutreffen könnten – manche mehr, manche weniger. Bitte bewerten Sie vor dem Hintergrund Ihres letzten Absetzungsversuchs, inwieweit Sie jeder der folgenden Aussagen zustimmen.“",
+        "Durchführung/Durchführungsvoraussetzungen": "There are no special administration requirements on the part of the test administrator.",
+        "Testkonstruktion": "The DSS (Lincoln et al., 2021) was developed by means of exploratory factor analysis (EFA) and confirmatory factor analysis (CFA).\nItem pool:\nThe item pool was developed based on (1) the current research literature on the topic, (2) subjective reports of people with personal discontinuation experience in online discussion forums (Herz, 2017) and (3) personal interviews with experts and with persons with personal discontinuation experience (Woitalla, 2017). The item pool contained 35 items.\nPreliminary test versions:\nThe preliminary DSS contained 35 items. These were answered on a Likert scale (1 = \"stimme überhaupt nicht zu\" to 5 = \"stimme voll und ganz zu\"). Subjective well-being was assessed using the Well-Being Index [WHO-5].\nItem selection criteria and techniques:\nThe factor-analytic validation consisted of four steps:\nVisual inspection and analysis of the principal component analysis using the nFactors package; condition: each factor should have at least four items with a loading > 0.6.\nSubsequently, EFA of the 35 items with a varimax rotation. Items with a factor loading < 0.3 were excluded. Items with loadings on different factors were excluded if they offered no added value in content for the scale.\nComputation of a CFA to evaluate the model fit of the factor solution on the basis of the Comparative Fit Index (CFI, CFI > 0.95 = good fit, CFI > 0.90 = adequate fit), the Root Mean Square Error of Approximation (RMSEA, RMSEA < 0.05 = good fit, RMSEA < 0.08 = adequate fit), and the Standardized Root Mean Square Residual (SRMR, SRMR < 0.08 = good fit).\nMeasurement of measurement invariance across antidepressants versus antipsychotics with the model-fit limits mentioned above and the Akaike Information Criterion (AIC, where lower values of a model based on the same data indicate a better fit).\nFactor-analytic results:\nItem extraction on the basis of the EFA loadings yielded 24 items that had a loading > 0.30 on their respective factor. A three-dimensional scale resulted, which reflects the subjective success of the exit, the positive effects and the negative consequences of the exit. A 24-item version showed adequate model fit for the participants who discontinued antidepressants and antipsychotics, respectively (see Table 1).\nTable 1\nFactor loadings for the exploratory factor analysis (EFA) with promax rotation for excluding items and for the subsequent confirmatory factor analysis (CFA) of the final item list (Lincoln, Sommer, Könemund & Schlier, 2021)\nEFA with 5 factors (promax rotation) | CFA loadings\n1 | 2 | 3 | 4 | 5\nSubjective discontinuation success\nAlles in Allem ist der Absetzversuch aus meiner Sicht erfolgreich gewesen. | 0.704 | 0.186 | 0.285 | 0.819\nIch habe den Zustand, den ich durch den Absetzversuch erzielen wollte, erreicht. | 0.606 | 0.292 | 0.793\nDer Absetzversuch ist nicht so gelaufen, wie ich es mir erhofft hatte. | 0.862 | -0.109 | 0.290 | 0.783\nDer Preis, den ich für den Absetzversuch gezahlt habe, war zu hoch. | -0.128 | 0.157 | 0.848 | -0.234 | 0.290 | 0.770\nIch habe die Absetzsymptome (z.B. Übelkeit, Zittern, Durchfall) im Griff. | -0.176 | 0.838 | 0.724\nIch habe keine Absetzsymptome. | -0.160 | 0.720 | 0.628\nIch war erfolgreich beim Absetzen meiner Medikamente. | -0.172 | 0.239 | 0.861\nIch habe die Medikamente, die ich absetzen wollte, nicht mehr genommen. | -0.105 | 0.918\nIch nehme immer noch jeden Tag Psychopharmaka ein. | -0.107 | 0.695 | 0.157\nMein Versuch, die Einnahme von Medikamenten einzustellen, ist gescheitert. | 0.119 | 0.501 | 0.107 | 0.526\nDie unerwünschten Nebenwirkungen des Medikaments sind zurückgegangen. | 0.461 | 0.284 | -0.169\nDer Versuch, von meinen Medikamenten loszukommen, war es wert. | 0.180 | 0.464 | 0.308\nIch musste meinen Versuch, das Medikament abzusetzen, schnell aufgeben. | 0.409 | 0.138 | 0.593\nSelbst als sich die Symptome verschlimmerten, blieb ich drogenfrei. | 0.318 | -0.214 | 0.378 | 0.366\nPositive discontinuation effects\nSeit dem Absetzversuch empfinde ich mehr Freude. | 0.905 | 0.918\nSeit dem Absetzversuch fühle ich mich lebendiger. | 0.895 | 0.908\nIch habe durch den Absetzversuch wieder mehr Lust, etwas aus meinem Leben zu machen. | 0.949 | -0.103 | 0.865\nDer Absetzversuch hat es mir ermöglicht, selbstbestimmter zu leben. | 0.836 | 0.148 | 0.854\nIch finde es gut, dass ich durch den Absetzversuch wieder mehr Gefühle spüren kann. | 0.962 | -0.136 | -0.153 | 0.793\nMeine Leistungsfähigkeit ist seit dem Absetzversuch gestiegen. | 0.638 | 0.241 | 0.783\nIm Vergleich zu der Zeit vor meinem Absetzversuch sind meine Freundschaften und Beziehungen besser geworden. | 0.761 | 0.104 | -0.166 | 0.753\nIm Vergleich zu der Zeit vor dem Absetzversuch sind meine Symptome besser geworden. | 0.500 | 0.130 | 0.190 | 0.153 | -0.115 | 0.738\nDurch den Absetzversuch kann ich besser auf die Frühwarnzeichen meiner psychischen Beschwerden/ Erkrankungen reagieren. | 0.683 | 0.615\nMein Versuch, die Medikamente abzusetzen, hat meine Lebensqualität verbessert. | 0.465 | 0.464\nIm Vergleich zu der Zeit, bevor ich versucht habe, meine Medikamente abzusetzen, bin ich jetzt besser in der Lage, mit meinen Symptomen umzugehen. | 0.385 | 0.254 | 0.147 | -0.107\nNegative discontinuation effects\nSeit dem Absetzversuch hat sich meine Stimmung verschlechtert. | 0.218 | 0.704 | 0.837\nIm Vergleich zu der Zeit vor dem Absetzversuch hat sich mein psychischer Zustand verschlechtert. | 0.246 | 0.655 | 0.819\nSeit dem Absetzversuch fühle ich mich häufiger überfordert. | 0.819 | 0.806\nDurch den Absetzversuch fühle ich mich unsicherer. | 0.798 | 0.804\nSeit dem Absetzversuch fällt es mir schwerer, mit negativen Emotionen umzugehen. | -0.159 | 1.050 | -0.233 | 0.789\nDurch den Absetzversuch ist meine Motivation, viele Dinge zu tun, gesunken. | 0.718 | 0.740\nDie Problembewältigung im Alltag gelingt mir weniger gut als in der Zeit vor dem Absetzversuch. | 0.720 | 0.706\nSeit dem Absetzversuch fällt mir der Umgang mit Rückfällen schwerer. | 0.690 | 0.654\nSeit dem Absetzversuch schlafe ich schlechter. | 0.378 | 0.105 | 0.395\nSeit ich versucht habe, das Medikament abzusetzen, habe ich oft Schwierigkeiten, mich zu konzentrieren. | 0.498 | 0.651\nMeasurement invariance:\nTo ensure sufficient group sizes (n > 100), the tests for invariance between the medication groups were based on one group that discontinued antidepressants and one group that discontinued either only antipsychotics or antipsychotics and antidepressants. Separate confirmatory factor analyses (CFA) with unconstrained loadings showed adequate fit for both groups (see Table 2).\nTable 2\nResults of the confirmatory factor analyses for global model fit and invariance testing (Lincoln, Sommer, Könemund & Schlier, 2021)\nModel | Robust CFI | Robust RMSEA | SRMR | AIC\nThree factors, whole sample | 0.919 | 0.075 | 0.067 | 24.715\nThree factors, subsample\nDiscontinuation attempt antidepressants | 0.902 | 0.077 | 0.073 | -\nThree factors, subsample\nDiscontinuation attempt antipsychotics (+ antidepressants) | 0.919 | 0.074 | 0.065 | -\nTesting measurement invariance\nThree factors, subsample grouped Three factors, (configural invariance) | 0.908 | 0.076 | 0.070 | 24.475\nFactor loadings fixed (metric invariance) | 0.905 | 0.075 | 0.080 | 24.470\nFactor loadings and intercepts fixed (scalar invariance) | 0.902 | 0.075 | 0.081 | 24.468\nFactor loadings, intercepts and mean of latent variable fixed | 0.897 | 0.077 | 0.109 | 24.493\nNotes. Robust CFI - Robust Comparative Fit Index, Robust RMSEA - Robust Root Mean Square Error of Approximation, SRMR - Standardized Root Mean Residual, AIC - Akaike Information Criterion.",
+        "Gütekriterien/Objektivität": "Owing to the questionnaire format, the standardized procedure and the written instruction, the instrument can claim objectivity with regard to its administration and scoring.",
+        "Gütekriterien/Reliabilität": "No information on reliability is available.",
+        "Gütekriterien/Validität": "Construct validity:\nConstruct validity was examined by means of exploratory and confirmatory factor analysis (see Tables 1 and 2).\nCriterion validity:\nTo measure criterion validity, associations between the DSS scores and (1) achievement status (with three groups: persons who had implemented discontinuation; persons who had implemented it partially; persons who had not implemented it) and (2) well-being, measured with the Well-Being Index [WHO-5; Topp, Ostergaard, Sondergaard & Bech, 2015] (with two groups: high vs. low well-being), were computed by means of two-way ANOVAs.\nOverall, the persons who had successfully discontinued (52.8 % of the total sample) achieved higher results with regard to the objectively perceived success of discontinuation, as well as perceived positive effects, compared with persons who had partially discontinued the medication (33.3 % of the sample) and those who had not discontinued successfully (13.1 % of the sample). In addition, persons who had successfully discontinued the medication reported perceiving fewer negative effects than persons who had partially or unsuccessfully discontinued the medication.\nSince the test refers on the one hand to the objective success of discontinuation (i.e. the extent to which the goal of discontinuation was achieved) and on the other hand to the perceived psychological and physical consequences of discontinuation, criterion validity was tested for both aspects. These were measured by (1) whether the goal of the discontinuation attempt was achieved (= no medication intake at the end of the survey period) and (2) good subjective well-being.\nThe results imply that the success of discontinuation and a person's degree of well-being do not necessarily seem to be associated with each other. However, the subscales for the perceived positive and negative effects tend to discriminate between persons with higher or lower well-being. This is independent of the type of medication, although it could be shown that for persons who only wanted to discontinue antipsychotics, there seems to be no significant association between perceived well-being and the score achieved on the DSS scale.",
+        "Gütekriterien/Normierung": "Table 3 contains descriptive data on the sample. The sample consisted of 396 patients who had made an attempt to discontinue their antipsychotic or antidepressant medication within the past five years. The age range was from 18 to 72 years.\nTable 3\nSample (Lincoln, Sommer, Könemund & Schlier, 2021)\nSociodemographic data | % | M (SD)\nGender Male Female Other | 28.5 71.2 0.3\nAge | 38.8 (12.5)\nNotes. Minimum age = 18 years, past or current intake of psychopharmacological medication.",
+        "Anwendungsmöglichkeiten": "The DSS is suitable as an instrument for future research aimed at identifying predictors of discontinuation success. If appropriate, it can also be used as a basis for a consultation within discontinuation counselling or accompaniment.",
+        "Bewertung": "Limitations of the scale are a lack of validation against an observer report of discontinuation success and the lack of information on test-retest reliability.",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! The contact details can be found under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or if no contact details (e-mail or address) are available for them, users are exempt from the obligation to provide feedback."
+      }
+    },
+    "Description": "The Discontinuation Success Scale (DSS) assesses the subjective discontinuation success of patients who take antipsychotics or antidepressants. It consists of 24 items distributed across three subscales ((1) Subjective discontinuation success, (2) Positive discontinuation effects, (3) Negative discontinuation effects). Reliability: No information available. Validity: Factorial and criterion validity as well as measurement invariance between persons taking antidepressants and antipsychotics were computed.",
+    "Reliability": "No information on reliability is available.",
+    "Validity": "Construct validity:\nConstruct validity was examined by means of exploratory and confirmatory factor analysis (see Tables 1 and 2).\nCriterion validity:\nTo measure criterion validity, associations between the DSS scores and (1) achievement status (with three groups: persons who had implemented discontinuation; persons who had implemented it partially; persons who had not implemented it) and (2) well-being, measured with the Well-Being Index [WHO-5; Topp, Ostergaard, Sondergaard & Bech, 2015] (with two groups: high vs. low well-being), were computed by means of two-way ANOVAs.\nOverall, the persons who had successfully discontinued (52.8 % of the total sample) achieved higher results with regard to the objectively perceived success of discontinuation, as well as perceived positive effects, compared with persons who had partially discontinued the medication (33.3 % of the sample) and those who had not discontinued successfully (13.1 % of the sample). In addition, persons who had successfully discontinued the medication reported perceiving fewer negative effects than persons who had partially or unsuccessfully discontinued the medication.\nSince the test refers on the one hand to the objective success of discontinuation (i.e. the extent to which the goal of discontinuation was achieved) and on the other hand to the perceived psychological and physical consequences of discontinuation, criterion validity was tested for both aspects. These were measured by (1) whether the goal of the discontinuation attempt was achieved (= no medication intake at the end of the survey period) and (2) good subjective well-being.\nThe results imply that the success of discontinuation and a person's degree of well-being do not necessarily seem to be associated with each other. However, the subscales for the perceived positive and negative effects tend to discriminate between persons with higher or lower well-being. This is independent of the type of medication, although it could be shown that for persons who only wanted to discontinue antipsychotics, there seems to be no significant association between perceived well-being and the score achieved on the DSS scale.",
+    "Norming": "Table 3 contains descriptive data on the sample. The sample consisted of 396 patients who had made an attempt to discontinue their antipsychotic or antidepressant medication within the past five years. The age range was from 18 to 72 years.\nTable 3\nSample (Lincoln, Sommer, Könemund & Schlier, 2021)\nSociodemographic data | % | M (SD)\nGender Male Female Other | 28.5 71.2 0.3\nAge | 38.8 (12.5)\nNotes. Minimum age = 18 years, past or current intake of psychopharmacological medication.",
+    "AdministrationTime": "A few minutes.",
+    "ScoringTime": "A few minutes.",
+    "AgeRange": "from 18 years",
+    "Instructions": "Folgend finden Sie einige Aussagen, die auf Ihre Erfahrung mit dem Absetzen mehr oder weniger zutreffen können. Bitte beziehen Sie die Aussagen auf den letzten Absetzversuch und bewerten Sie, wie sehr Sie jeder Aussage zustimmen."
+  },
+  "DSS01": {
+    "Description": "Alles in Allem ist der Absetzversuch aus meiner Sicht erfolgreich gewesen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS02": {
+    "Description": "Ich habe keine Absetzsymptome.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS03": {
+    "Description": "Ich habe den Zustand, den ich durch den Absetzversuch erzielen wollte, erreicht.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS04": {
+    "Description": "Für den Absetzversuch habe ich einen zu hohen Preis bezahlt.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS05": {
+    "Description": "Der Absetzversuch ist nicht so gelaufen, wie ich es mir erhofft hatte.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS06": {
+    "Description": "Im Vergleich zu der Zeit vor dem Absetzversuch sind meine Symptome besser geworden.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS07": {
+    "Description": "Im Vergleich zu der Zeit vor dem Absetzversuch hat sich mein psychischer Zustand verschlechtert.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS08": {
+    "Description": "Ich habe die Absetzsymptome (z.B. Übelkeit, Zittern, Durchfall) im Griff.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS09": {
+    "Description": "Seit dem Absetzversuch fällt mir der Umgang mit Rückfällen schwerer.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS10": {
+    "Description": "Die Problembewältigung im Alltag gelingt mir weniger gut als in der Zeit vor dem Absetzversuch.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS11": {
+    "Description": "Durch den Absetzversuch kann ich besser auf die Frühwarnzeichen meiner psychischen Beschwerden/ Erkrankungen reagieren.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS12": {
+    "Description": "Seit dem Absetzversuch hat sich meine Stimmung verschlechtert.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS13": {
+    "Description": "Meine Leistungsfähigkeit ist seit dem Absetzversuch gestiegen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS14": {
+    "Description": "Im Vergleich zu der Zeit vor meinem Absetzversuch sind meine Freundschaften und Beziehungen besser geworden.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS15": {
+    "Description": "Seit dem Absetzversuch empfinde ich mehr Freude.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS16": {
+    "Description": "Durch den Absetzversuch ist meine Motivation, viele Dinge zu tun, gesunken.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS17": {
+    "Description": "Seit dem Absetzversuch fühle ich mich lebendiger.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS18": {
+    "Description": "Seit dem Absetzversuch fällt es mir schwerer, mit negativen Emotionen umzugehen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS19": {
+    "Description": "Seit dem Absetzversuch fühle ich mich häufiger überfordert.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS20": {
+    "Description": "Durch den Absetzversuch fühle ich mich unsicherer.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS21": {
+    "Description": "Seit dem Absetzversuch schlafe ich schlechter.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS22": {
+    "Description": "Ich finde es gut, dass ich durch den Absetzversuch wieder mehr Gefühle spüren kann.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS23": {
+    "Description": "Ich habe durch den Absetzversuch wieder mehr Lust, etwas aus meinem Leben zu machen.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  },
+  "DSS24": {
+    "Description": "Der Absetzversuch hat es mir ermöglicht, selbstbestimmter zu leben.",
+    "Levels": {
+      "1": "stimme überhaupt nicht zu",
+      "2": "stimme eher nicht zu",
+      "3": "teils teils",
+      "4": "stimme eher zu",
+      "5": "stimme voll und ganz zu"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "ScaleType": "likert"
+  }
+}

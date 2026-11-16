@@ -5,18 +5,22 @@
     "Language": "en"
   },
   "Metadata": {
-    "SchemaVersion": "2.1.0",
+    "SchemaVersion": "2.1.4",
     "CreationDate": "2026-02-03",
     "Creator": "PRISM Studio"
   },
   "I18n": {
     "Languages": [
-      "en"
+      "en",
+      "de"
     ]
   },
   "Study": {
     "TaskName": "dass21",
-    "OriginalName": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
+    "OriginalName": {
+      "en": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
+      "de": "Depressions-Angst-Stress-Skalen – deutschsprachige Kurzfassung"
+    },
     "ShortName": "DASS21",
     "Category": "Mood, Anxiety & Clinical Screening",
     "Version": "21-item short form",
@@ -58,27 +62,80 @@
         "Type": "other",
         "Citation": "Lovibond, S. H. & Lovibond, P. F. (2000). Depression Anxiety and Stress Scales (DASS). In K. Corcoran & J. Fischer (Eds.), Measures for clinical practice: A sourcebook (3rd ed. vol. 2. pp. 237-239). New York: Free Press.",
         "Year": 2000
+      },
+      {
+        "Type": "translation",
+        "Citation": "Nilges, P. & Essau, C. (2021). DASS. Depressions-Angst-Stress-Skalen - deutschsprachige Kurzfassung [Verfahrensdokumentation und Fragebogen mit Auswertung]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4579",
+        "DOI": "10.23668/psycharchives.4579",
+        "URL": "https://doi.org/10.23668/psycharchives.4579",
+        "Year": 2021,
+        "Notes": "German version (Nilges & Essau, 2021), published in the Open Test Archive of the Leibniz Institute for Psychology (ZPID)."
+      },
+      {
+        "Type": "primary",
+        "Citation": "Nilges, P. & Essau, C. (2015). Die Depressions-Angst-Stress-Skalen. Der DASS - ein Screeningverfahren nicht nur für Schmerzpatienten. Der Schmerz, 29 (6), 649-657. http://dx.doi.org/10.1007/s00482-015-0019-z",
+        "DOI": "10.1007/s00482-015-0019-z",
+        "Year": 2015
       }
     ],
     "License": "\"The DASS questionnaire is in the public domain, and may be downloaded from this website.\" \"The DASS questionnaire forms may be downloaded and copied without restriction.\"",
     "Source": "https://www2.psy.unsw.edu.au/dass/",
-    "Instructions": "Please read each statement and select the response that best describes you.",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bearbeitungshinweis: Bitte lesen Sie jede Aussage und kreuzen Sie die Zahl 0, 1, 2 oder 3 an, die angeben soll, wie sehr die Aussage während der letzten Woche auf Sie zutraf. Es gibt keine richtigen oder falschen Antworten. Versuchen Sie, sich spontan für eine Antwort zu entscheiden."
+    },
     "LicenseID": "Other",
-    "LicenseLanguages": ["en"],
+    "LicenseLanguages": [
+      "en",
+      "de"
+    ],
     "LicenseChecked": "2026-11-14",
     "LicenseTerms": [
       "The scales may not be modified or sold for profit.",
       "Administering the DASS on a website or app open to members of the public is not permitted; use with defined groups such as research participants is.",
       "Please cite the DASS website: www.psy.unsw.edu.au/dass"
-    ]
+    ],
+    "Notes": "The German item and answer texts are the German version of the DASS-21 published in the Open Test Archive (Nilges & Essau, 2021; https://www.testarchiv.eu/de/test/9008223), added next to the English wording; item DASS2101 corresponds to German item 1 and so on, in the same order, with the same 0-3 answer scale. Item 8 (DASS2108, 'I felt that I was using a lot of nervous energy') is a freer translation in German ('Ich fand alles anstrengend', literally 'I found everything exhausting'). The German version was converted from the archive's PDF questionnaire (paper-pencil); the English wording is the original instrument.",
+    "LicenseByLanguage": {
+      "de": {
+        "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+        "LicenseID": "CC-BY-SA-4.0",
+        "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "CopyrightHolder": "Nilges, Paul; Essau, Cecilia Ahmoi",
+        "Source": "https://doi.org/10.23668/psycharchives.4579",
+        "LicenseChecked": "2026-11-14",
+        "LicenseTerms": [
+          "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+          "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+          "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+          "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9008223",
+          "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+        ]
+      }
+    }
   },
   "DASS2101": {
-    "Description": "I found it hard to wind down",
+    "Description": {
+      "en": "I found it hard to wind down",
+      "de": "Ich fand es schwer, mich zu beruhigen."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -86,12 +143,27 @@
     "ScaleType": "frequency"
   },
   "DASS2102": {
-    "Description": "I was aware of dryness of my mouth",
+    "Description": {
+      "en": "I was aware of dryness of my mouth",
+      "de": "Ich spürte, dass mein Mund trocken war."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -99,12 +171,27 @@
     "ScaleType": "frequency"
   },
   "DASS2103": {
-    "Description": "I couldn't seem to experience any positive feeling at all",
+    "Description": {
+      "en": "I couldn't seem to experience any positive feeling at all",
+      "de": "Ich konnte überhaupt keine positiven Gefühle mehr erleben."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -112,12 +199,27 @@
     "ScaleType": "frequency"
   },
   "DASS2104": {
-    "Description": "I experienced breathing difficulty (for example, excessively rapid breathing, breathlessness in the absence of physical exertion)",
+    "Description": {
+      "en": "I experienced breathing difficulty (for example, excessively rapid breathing, breathlessness in the absence of physical exertion)",
+      "de": "Ich hatte Atemprobleme (z.B. übermäßig schnelles Atmen, Atemlosigkeit ohne körperliche Anstrengung)."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -125,12 +227,27 @@
     "ScaleType": "frequency"
   },
   "DASS2105": {
-    "Description": "I found it difficult to work up the initiative to do things",
+    "Description": {
+      "en": "I found it difficult to work up the initiative to do things",
+      "de": "Es fiel mir schwer, mich dazu aufzuraffen, Dinge zu erledigen."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -138,12 +255,27 @@
     "ScaleType": "frequency"
   },
   "DASS2106": {
-    "Description": "I tended to over-react to situations",
+    "Description": {
+      "en": "I tended to over-react to situations",
+      "de": "Ich tendierte dazu, auf Situationen überzureagieren."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -151,12 +283,27 @@
     "ScaleType": "frequency"
   },
   "DASS2107": {
-    "Description": "I experienced trembling (for example, in the hands)",
+    "Description": {
+      "en": "I experienced trembling (for example, in the hands)",
+      "de": "Ich zitterte (z.B. an den Händen)."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -164,12 +311,27 @@
     "ScaleType": "frequency"
   },
   "DASS2108": {
-    "Description": "I felt that I was using a lot of nervous energy",
+    "Description": {
+      "en": "I felt that I was using a lot of nervous energy",
+      "de": "Ich fand alles anstrengend."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -177,12 +339,27 @@
     "ScaleType": "frequency"
   },
   "DASS2109": {
-    "Description": "I was worried about situations in which I might panic and make a fool of myself",
+    "Description": {
+      "en": "I was worried about situations in which I might panic and make a fool of myself",
+      "de": "Ich machte mir Sorgen über Situationen, in denen ich in Panik geraten und mich lächerlich machen könnte."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -190,12 +367,27 @@
     "ScaleType": "frequency"
   },
   "DASS2110": {
-    "Description": "I felt that I had nothing to look forward to",
+    "Description": {
+      "en": "I felt that I had nothing to look forward to",
+      "de": "Ich hatte das Gefühl, dass ich mich auf nichts mehr freuen konnte."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -203,12 +395,27 @@
     "ScaleType": "frequency"
   },
   "DASS2111": {
-    "Description": "I found myself getting agitated",
+    "Description": {
+      "en": "I found myself getting agitated",
+      "de": "Ich bemerkte, dass ich mich schnell aufregte."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -216,12 +423,27 @@
     "ScaleType": "frequency"
   },
   "DASS2112": {
-    "Description": "I found it difficult to relax",
+    "Description": {
+      "en": "I found it difficult to relax",
+      "de": "Ich fand es schwierig, mich zu entspannen."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -229,12 +451,27 @@
     "ScaleType": "frequency"
   },
   "DASS2113": {
-    "Description": "I felt down-hearted and blue",
+    "Description": {
+      "en": "I felt down-hearted and blue",
+      "de": "Ich fühlte mich niedergeschlagen und traurig."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -242,12 +479,27 @@
     "ScaleType": "frequency"
   },
   "DASS2114": {
-    "Description": "I was intolerant of anything that kept me from getting on with what I was doing",
+    "Description": {
+      "en": "I was intolerant of anything that kept me from getting on with what I was doing",
+      "de": "Ich reagierte ungehalten auf alles, was mich davon abhielt, meine momentane Tätigkeit fortzuführen."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -255,12 +507,27 @@
     "ScaleType": "frequency"
   },
   "DASS2115": {
-    "Description": "I felt I was close to panic",
+    "Description": {
+      "en": "I felt I was close to panic",
+      "de": "Ich fühlte mich einer Panik nahe."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -268,12 +535,27 @@
     "ScaleType": "frequency"
   },
   "DASS2116": {
-    "Description": "I was unable to become enthusiastic about anything",
+    "Description": {
+      "en": "I was unable to become enthusiastic about anything",
+      "de": "Ich war nicht in der Lage, mich für irgendetwas zu begeistern."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -281,12 +563,27 @@
     "ScaleType": "frequency"
   },
   "DASS2117": {
-    "Description": "I felt I wasn't worth much as a person",
+    "Description": {
+      "en": "I felt I wasn't worth much as a person",
+      "de": "Ich fühlte mich als Person nicht viel wert."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -294,12 +591,27 @@
     "ScaleType": "frequency"
   },
   "DASS2118": {
-    "Description": "I felt that I was rather touchy",
+    "Description": {
+      "en": "I felt that I was rather touchy",
+      "de": "Ich fand mich ziemlich empfindlich."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -307,12 +619,27 @@
     "ScaleType": "frequency"
   },
   "DASS2119": {
-    "Description": "I was aware of the action of my heart in the absence of physicalexertion (for example, sense of heart rate increase, heart missing a beat)",
+    "Description": {
+      "en": "I was aware of the action of my heart in the absence of physicalexertion (for example, sense of heart rate increase, heart missing a beat)",
+      "de": "Ich habe meinen Herzschlag gespürt, ohne dass ich mich körperlich angestrengt hatte (z.B. Gefühl von Herzrasen oder Herzstolpern)."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -320,12 +647,27 @@
     "ScaleType": "frequency"
   },
   "DASS2120": {
-    "Description": "I felt scared without any good reason",
+    "Description": {
+      "en": "I felt scared without any good reason",
+      "de": "Ich fühlte mich grundlos ängstlich."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,
@@ -333,12 +675,27 @@
     "ScaleType": "frequency"
   },
   "DASS2121": {
-    "Description": "I felt that life was meaningless",
+    "Description": {
+      "en": "I felt that life was meaningless",
+      "de": "Ich empfand das Leben als sinnlos."
+    },
     "Levels": {
-      "0": "Never",
-      "1": "Sometimes",
-      "2": "Often",
-      "3": "Almost always"
+      "0": {
+        "en": "Never",
+        "de": "Traf gar nicht auf mich zu"
+      },
+      "1": {
+        "en": "Sometimes",
+        "de": "Traf bis zu einem gewissen Grad auf mich zu oder manchmal"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Traf in beträchtlichem Maße auf mich zu oder ziemlich oft"
+      },
+      "3": {
+        "en": "Almost always",
+        "de": "Traf sehr stark auf mich zu oder die meiste Zeit"
+      }
     },
     "DataType": "integer",
     "MinValue": 0,

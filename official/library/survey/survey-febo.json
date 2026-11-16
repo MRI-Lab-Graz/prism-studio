@@ -1,0 +1,751 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "febo",
+    "ShortName": "FEBO",
+    "OriginalName": "Fragebogen zur Erfassung der Bezugsnorm-Orientierung",
+    "Category": "Educational & Occupational",
+    "Authors": [
+      "Rheinberg, Falko"
+    ],
+    "Year": 2019,
+    "Citation": "Rheinberg, F. (2019). FEBO. Fragebogen zur Bezugsnorm-Orientierung [Verfahrensdokumentation und Fragebogen mit Auswertungsbogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.4487",
+    "DOI": "10.23668/psycharchives.4487",
+    "Source": "https://doi.org/10.23668/psycharchives.4487",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Rheinberg, Falko",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors of this version, as given by the Open Test Archive page, hold the rights in the template version published there. Rights in an original instrument (which the original authors, a journal or a publisher may hold separately) are not covered by this licence statement.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9001030",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Rheinberg, F. (1980). Leistungsbeurteilung und Lernmotivation (S. 114-121: Ein Fragebogen zur Bezugsnorm-Orientierung). Göttingen: Hogrefe.",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Hoyt, C. (1941). Test reliability estimated by analysis of variance. Psychometrika, 6, 153-160.",
+        "Year": 1941
+      },
+      {
+        "Type": "other",
+        "Citation": "Krampen, G. (1985). Differentielle Effekte von Lehrerkommentaren zu Noten bei Schülern. Zeitschrift für Entwicklungspsychologie und Pädagogische Psychologie, 17 (2), 99-123.",
+        "Year": 1985
+      },
+      {
+        "Type": "other",
+        "Citation": "Lund, B., Rheinberg, F. & Gladasch, U. (2001). Ein Elterntraining zum motivationsförderlichen Erziehungsverhalten in Leistungskontexten. Zeitschrift für Pädagogische Psychologie, 15 (3/4), 130-143.",
+        "Year": 2001
+      },
+      {
+        "Type": "other",
+        "Citation": "Rheinberg, F. (1977). Soziale und individuelle Bezugsnorm: Zwei motivierungsbedeutsame Sichtweisen bei der Beurteilung von Schülerleistungen. Unveröffentlichte Dissertation, Psychologisches Institut der Ruhr-Universität Bochum.",
+        "Year": 1977
+      },
+      {
+        "Type": "other",
+        "Citation": "Rheinberg, F. (1980). Leistungsbewertung und Lernmotivation. Göttingen: Hogrefe.",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Rheinberg, F. & Wendland, M. (2000). Veränderung der Lernmotivation in Mathematik und Physik: Eine Komponentenanalyse und der Einfluss elterlicher sowie schulischer Kontextfaktoren. DFG-Projekt. Potsdam: Universität Potsdam, Institut für Psychologie.",
+        "Year": 2000
+      },
+      {
+        "Type": "other",
+        "Citation": "Rheinberg, F. & Wendland, M. (2006). Abschlussbericht DGF-Projekt (RH 14/8-1) \"Komponenten der Lernmotivation in Mathematik\". Potsdam: Universität Potsdam.",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "Richter, B. & Münzer, B. (o. J.). Redaktionelle Bearbeitung, Schablonenauswertung, Bewertungsbogen, Qualitative Analyse des Fragebogen zur Bezugsnorm-Orientierung. Bochum: Ruhr-Universität Bochum, Psychologisches Institut."
+      },
+      {
+        "Type": "other",
+        "Citation": "Schöne, C. (2008). Zielorientierung und Bezugsnormpräferenzen in Lern- und Leistungssituationen. Unveröffentlichte Dissertation, Universität Giessen.",
+        "Year": 2008
+      },
+      {
+        "Type": "other",
+        "Citation": "Wagner, H. (1977). Entwicklung und Erprobung eines Beobachtungsschlüssels zur Erfassung bezugsnormspezifischer Aspekte im Lehrerverhalten. Unveröffentlichte Diplomarbeit, Ruhr-Universität Bochum, Psychologisches Institut.",
+        "Year": 1977
+      },
+      {
+        "Type": "other",
+        "Citation": "Weinert, S., Roßbach, H.-G., Faust, G., Blossfeld, H.-P. & Artelt, C. (2013). Bildungsprozesse, Kompetenzentwicklung und Selektionsentscheidungen im Vorschul- und Schulalter (BiKS-3-10). Version: 6 [Dataset]. Berlin: Humboldt-Universität zu Berlin, Institut zur Qualitätsentwicklung im Bildungswesen (IQB). http://doi.org/10.5159/IQB_BIKS_3_10_v6",
+        "DOI": "10.5159/IQB_BIKS_3_10_v6",
+        "Year": 2013
+      }
+    ],
+    "Keywords": [
+      "Category: Attitude tests / School-related attitudes",
+      "Category: Personality tests / Other personality tests",
+      "Engl. Name: Reference Norm Orientation Questionnaire"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9001030.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Reference norm orientation",
+        "Itemzahl": "39 items",
+        "Subskalen": "(1) Performance comparison, (2) Causal attribution, (3) Individualization tendency, (4) Expectation, (5) Sanctioning strategy",
+        "Durchführungszeit": "Less than approx. 20 minutes.",
+        "Auswertungsdauer": "A few minutes.",
+        "Reliabilität": "Internal consistency: rtt = .85-.87\nTest-retest reliability: rtt = .72 (6-week interval)",
+        "Validität": "Information on construct validity.",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research",
+        "Altersbereich": "Teachers of all age groups",
+        "Ältere Versionen": "Version 1: https://doi.org/10.23668/psycharchives.2665"
+      },
+      "sections": {
+        "Kurzabstract": "The FEBO assesses reference norm orientation and can be used with teachers in psychological and educational research. The questionnaire was developed on the basis of the concept of reference norm orientation. It comprises 39 items on five subscales (performance comparison, causal attribution, individualization tendency, expectation, sanctioning strategy). Reliability: The test-retest reliability after a 6-week interval was rtt = .72. For internal consistency according to Hoyt (1941), values between rtt = .85 and rtt = .87 were found in four different samples. Validity: Correlations between the FEBO total scores and the \"Kleine Beurteilungsaufgabe\" yielded coefficients between r = .16 and r = .33 (individual reference norm) and between r = -.30 and r = -.43 (social reference norm). Factor analyses with different samples and rotation methods revealed a one-factor structure.",
+        "Diagnostische Zielsetzung": "The questionnaire assesses reference norm orientation and can find use application with teachers in psychological and educational research.",
+        "Aufbau": "The instrument comprises 39 items with a six-point response format, distributed across the subscales performance comparison (9 items), causal attribution (11 items), individualization tendency (9 items), expectation (8 items) and sanctioning strategy (2 items). A high test score indicates a rather individual reference norm and low scores indicate a stronger social reference norm orientation.",
+        "Grundlagen und Konstruktion": "The construction of the instrument made use of the concepts of classical test theory. Information on item statistics and the item pool can be found in Rheinberg (1977). The individual statements of the questionnaire were drafted on the basis of the concept of reference norm orientation. The psychometric quality was examined in N = 213 persons.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: The test-retest reliability after a 6-week interval was rtt = .72. For internal consistency according to Hoyt (1941), values between rtt = .85 and rtt = .87 were found in four different samples.\nValidity: Correlations between the FEBO total scores and the \"Kleine Beurteilungsaufgabe\" yielded coefficients between r = .16 and r = .33 (individual reference norm) and between r = -.30 and r = -.43 (social reference norm). On the basis of observational data (Wagner, 1977) from n = 9 secondary school teachers, a score for the frequency of reference-norm-specific teacher behaviours was calculated, which, however, hardly correlated (r = .13) with the FEBO score. At the same time, students were to provide information by means of a questionnaire about reference-norm-specific behaviours of these nine teachers. These student reports on teacher behaviour, averaged per class, were clearly associated with the FEBO score (r = .42). Factor analyses with different samples and rotation methods revealed a one-factor structure.\nNorms: The instrument is not normed. However, means and standard deviations are available.",
+        "Testkonzept/Theoretischer Hintergrund": "The questionnaire is based on the concept of reference norm orientation and on various findings available in this area (Rheinberg, 1977, 1980). It is intended to assess whether a teacher is oriented more towards social or towards individual reference norms. The instrument covers five reference-norm-related content areas, which are intended to make specific differences in teachers' reference norm orientation in the classroom recognizable:\n(1) Performance comparison,\n(2) Causal attribution,\n(3) Individualization tendency,\n(4) Expectation,\n(5) Sanctioning strategy.\nThe statements in these areas are designed so that they evoke agreement or rejection in the teacher, corresponding to a more social or a more individual orientation of their own normative views and expectations.",
+        "Testkonzept/Testaufbau": "The instrument consists of a total of 39 items, distributed across the subscales performance comparison (9 items), causal attribution (11 items), individualization tendency (9 items), expectation (8 items) and sanctioning strategy (2 items). The statements are answered on a six-point scale ranging from \"völlig unzutreffend\" (-3) to \"völlig zutreffend\" (+3). For the position ticked in each case, values from 1 to 6 are assigned, with a high test score indicating a rather individual reference norm.",
+        "Testkonzept/Auswertungsmodus": "25 of the items are worded inversely and must therefore be reverse-scored during scoring. Raw scores can be computed as sum scores both for the total test and for the five subscales. However, various factor analyses (Rheinberg, 1977) yielded a one-factor solution (see under \"Validity\"), which is why the author recommends calculating a total score as a general estimate of reference norm orientation. A high score indicates a high individual reference norm orientation. To compute a teacher's reference norm orientation, it is sufficient to compute the subscale mean for \"Leistungsvergleich\".",
+        "Testkonzept/Auswertungshilfen": "The answer sheet contains detailed scoring instructions by Richter and Münzer (n.d.) for entering the raw scores of the total test (quantitative analysis) and the subscales (qualitative analysis), on which the score ranges for social and individual reference norm orientation are also given. However, these classifications are relatively coarse and arbitrarily chosen, especially for the subscales. The mean is M = 146. Values between 106 and 126 (= one to two standard deviations) below the mean indicate a social reference norm orientation, whereas values greater than 166 (= one standard deviation) indicate an individual reference norm orientation.\nAt the bottom of the first three pages of the questionnaire, the raw scores of the individual items on each page can also be entered. The inversely worded items, which must therefore be reverse-scored, are marked. A scoring template is provided.",
+        "Testkonzept/Auswertungszeit": "With the template, scoring takes only a few minutes.",
+        "Durchführung/Testformen": "The instrument can be administered as a group test or an individual test. The questionnaire is also available in a version for parents (Lund, Rheinberg & Gladasch, 2001) and for the subjects mathematics and physics (Rheinberg & Wendland, 2000). It was used by the DFG research group \"Bildungsprozesse, Kompetenzentwicklung und Selektionsentscheidungen im Vorschul- und Schulalter\" (BiKS-3-10; Weinert, Roßbach, Faust, Blossfeld & Artelt, 2013) for the construction of the \"Lehrerfragebogen Welle 1\". Schöne (2008, S. 28) developed a short questionnaire based on the items of the \"Leistungsvergleich\" scale.",
+        "Durchführung/Altersbereiche": "There are no explicit age specifications. The questionnaire is aimed at teachers of all age groups.",
+        "Durchführung/Durchführungszeit": "No time limit is set for completion, but answering the items probably takes less than approx. 20 minutes.",
+        "Durchführung/Material": "The items are printed in full in Rheinberg (1980). The instrument is a paper-pencil test. An online version with automatic scoring is also available.",
+        "Durchführung/Instruktion": "The instructions can be read by the respondent independently and are likewise printed in Rheinberg (1980). A practice example is included on the questionnaire.",
+        "Durchführung/Durchführungsvoraussetzungen": "The instrument can be administered by any professional who is familiar with the principles of administering and scoring tests.",
+        "Testkonstruktion": "The construction of the instrument made use of the concepts of classical test theory. Information on item statistics and the item pool can be found in Rheinberg (1977). The individual statements of the questionnaire were drafted on the basis of the concept of reference norm orientation.\nThe distribution of the total test score does not deviate significantly from a normal distribution (N = 213). The corresponding statistics are reported.",
+        "Gütekriterien/Objektivität": "Owing to the standardized administration and scoring guidelines, the instrument can be considered largely objective. A quantitative examination of objectivity is not available.",
+        "Gütekriterien/Reliabilität": "In a sample of n = 23 trainee teachers, a test-retest reliability of rtt = .72 was calculated for an interval of 6 weeks. For internal consistency according to Hoyt (1941), values between rtt = .85 (n = 77) and rtt = .87 (n = 24) were found in four different samples.",
+        "Gütekriterien/Validität": "For different samples, correlations were calculated between the FEBO total scores and the \"Kleine Beurteilungsaufgabe\" (Rheinberg, 1980; see also PSYNDEX Tests No. 9001980). For the individual reference norm, coefficients between r = .16 (n = 57) and r = .33 (n = 77) were found; for the social reference norm they ranged between r = -.30 (n = 54) and r = -.43 (n = 77).\nOn the basis of observational data (Wagner, 1977) from n = 9 secondary school teachers, a score for the frequency of reference-norm-specific teacher behaviours was calculated, which, however, hardly correlated (r = .13) with the FEBO score. At the same time, students were to provide information by means of a questionnaire about reference-norm-specific behaviours of these nine teachers. These student reports on teacher behaviour, averaged per class, were clearly associated with the FEBO score (r = .42).\nFactor analyses with different samples and rotation methods led to one-factor solutions that explained 18% to 20% of the total variance (Rheinberg, 1977).\nKrampen (1985, S. 108) was able to show that the teachers' scores were in the middle range, which indicates neither a strongly social nor a strongly individual reference norm orientation among teachers.",
+        "Gütekriterien/Normierung": "The distribution statistics of the total test score are reported for a sample of N = 213 teachers. Norming in the strict sense is not available. Results above the mean (M < 166 points) are designated as individual, and those below the mean (M < 126 points) as social reference norm orientation. For the individual subscales, only rough evaluations of test results based on the theoretically possible values can be made.",
+        "Anwendungsmöglichkeiten": "The FEBO is intended primarily for use in psychological and educational research; its use as an instrument for individual assessment would hardly be justified owing to the lack of norms.",
+        "Bewertung": "Owing to the lack of norming and the only very coarse evaluation possibilities, use of the instrument for individual case diagnostics or in educational practice is not recommended.\nThe reliability of the FEBO proves to be satisfactory, but further studies on validity are desirable. As an alternative instrument, the short version \"Kleine Beurteilungsaufgabe\" is recommended (Rheinberg, 1980; Rheinberg & Wendland, 2006; see also PSYNDEX Tests No. 9001980).\nThe theoretical classification within the concept of reference norm orientation has been successful. The test provides at least first useful indications of the teacher's attributions and expectations in the classroom.",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! You can find the contact details under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, users are no longer obliged to provide feedback."
+      }
+    },
+    "Construct": "Reference norm orientation",
+    "Description": "The FEBO assesses reference norm orientation and can be used with teachers in psychological and educational research. The questionnaire was developed on the basis of the concept of reference norm orientation. It comprises 39 items on five subscales (performance comparison, causal attribution, individualization tendency, expectation, sanctioning strategy). Reliability: The test-retest reliability after a 6-week interval was rtt = .72. For internal consistency according to Hoyt (1941), values between rtt = .85 and rtt = .87 were found in four different samples. Validity: Correlations between the FEBO total scores and the \"Kleine Beurteilungsaufgabe\" yielded coefficients between r = .16 and r = .33 (individual reference norm) and between r = -.30 and r = -.43 (social reference norm). Factor analyses with different samples and rotation methods revealed a one-factor structure.",
+    "Reliability": "In a sample of n = 23 trainee teachers, a test-retest reliability of rtt = .72 was calculated for an interval of 6 weeks. For internal consistency according to Hoyt (1941), values between rtt = .85 (n = 77) and rtt = .87 (n = 24) were found in four different samples.",
+    "Validity": "For different samples, correlations were calculated between the FEBO total scores and the \"Kleine Beurteilungsaufgabe\" (Rheinberg, 1980; see also PSYNDEX Tests No. 9001980). For the individual reference norm, coefficients between r = .16 (n = 57) and r = .33 (n = 77) were found; for the social reference norm they ranged between r = -.30 (n = 54) and r = -.43 (n = 77).\nOn the basis of observational data (Wagner, 1977) from n = 9 secondary school teachers, a score for the frequency of reference-norm-specific teacher behaviours was calculated, which, however, hardly correlated (r = .13) with the FEBO score. At the same time, students were to provide information by means of a questionnaire about reference-norm-specific behaviours of these nine teachers. These student reports on teacher behaviour, averaged per class, were clearly associated with the FEBO score (r = .42).\nFactor analyses with different samples and rotation methods led to one-factor solutions that explained 18% to 20% of the total variance (Rheinberg, 1977).\nKrampen (1985, S. 108) was able to show that the teachers' scores were in the middle range, which indicates neither a strongly social nor a strongly individual reference norm orientation among teachers.",
+    "Norming": "The distribution statistics of the total test score are reported for a sample of N = 213 teachers. Norming in the strict sense is not available. Results above the mean (M < 166 points) are designated as individual, and those below the mean (M < 126 points) as social reference norm orientation. For the individual subscales, only rough evaluations of test results based on the theoretically possible values can be made.",
+    "AdministrationTime": "Less than approx. 20 minutes.",
+    "ScoringTime": "A few minutes.",
+    "AgeRange": "Teachers of all age groups",
+    "Instructions": "Bearbeitungsanweisung: In dem folgenden Fragebogen sind einige Aussagen formuliert, die sich auf verschiedene Aspekte des Unterrichtsalltags eines Lehrenden beziehen. Wir möchten Sie bitten, durch Ankreuzen einer Zahl (-3 bis +3) anzugeben, ob eine Aussage auf Sie zutrifft oder nicht. Den Zahlen kommt dabei folgende Bedeutung zu:\nWenn Sie z. B. der Meinung sind, daß die Aussage für Sie „weitgehend zutreffend“ ist, müßten Sie bei +2 ein Kreuz machen. Die letzte Zeile auf jeder Seite bitte frei lassen (ist nur für die Auswertung)."
+  },
+  "FEBO01": {
+    "Description": "Ehe ich bei einem Schüler von einer „Leistungsverbesserung“ sprechen kann, muss der Schüler wiederholt Leistungen zeigen, die über dem Klassendurchschnitt liegen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO02": {
+    "Description": "Bei der Unterrichtsvorbereitung überlege ich mir häufig, welche Aufgabenschwierigkeit für welchen Schüler gerade richtig ist.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO03": {
+    "Description": "Bei überdurchschnittlichen Schülern habe ich alles in allem häufiger Leistungsanstiege als Leistungsabfälle beobachten können.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO04": {
+    "Description": "Auf die Höhe der allgemeinen geistigen Fähigkeiten habe ich als Lehrer keinen oder nur geringen Einfluß.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO05": {
+    "Description": "Alles in allem könnte ich eher genaue Angaben über das generelle Leistungsniveau eines Schülers machen als genaue Angaben darüber, ob er z. Z. dem Unterricht besser oder schlechter folgen kann als vor 1 Monat.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO06": {
+    "Description": "Auf die Höhe der Anstrengung, mit der ein Schüler arbeitet, habe ich als Lehrer keinen oder nur geringen Einfluß.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO07": {
+    "Description": "Ich organisiere meinen Unterricht so, dass ich möglichst häufig Leistungsvergleiche zwischen den Schülern vornehmen kann.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO08": {
+    "Description": "Wenn ich die Leistung eines Schülers beurteilen will, so vergleiche ich sein erzieltes Ergebnis nicht so sehr mit entsprechenden Ergebnissen seiner Klassenkameraden, sondern stärker mit Ergebnissen, die dieser Schüler zuvor bei vergleichbaren Aufgaben erzielt hat.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO09": {
+    "Description": "Wenn ich einmal Leistungsvergleiche zwischen den Schülern anstelle, so tue ich das in erster Linie, um zu wissen, welchen Schülern ich schwierigere und welchen ich leichtere Aufgaben anbieten will.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO10": {
+    "Description": "Ich kann gewöhnlich vom einzelnen Schüler ziemlich sicher sagen, auf welchem Platz er in der Leistungsverteilung einer Klasse steht.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO11": {
+    "Description": "Ich wäre mir meist recht unsicher, wenn ich die Begabung oder Intelligenz eines Schülers einschätzen sollte.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO12": {
+    "Description": "Nach meinen Erfahrungen wird es in jeder Schulklasse einige geben, die ganz besonders viel und andere, die ganz besonders wenig können.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO13": {
+    "Description": "Ich halte es für gerecht, allen Schülern einer Klasse Aufgaben vom gleichen Schwierigkeitsgrad zu stellen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO14": {
+    "Description": "Wenn ich mich zur Leistung eines Schülers lobend oder tadelnd äußere, so hängen Lob und Tadel vornehmlich davon ab, ob diese Leistung über oder unter dem Klassendurchschnitt liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO15": {
+    "Description": "Ich halte es für gerecht, leistungsschwächeren Schülern einer Klasse leichtere Aufgaben zu stellen als leistungsstärkeren Schülern.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO16": {
+    "Description": "Wenn ich von einer „guten Leistung“ spreche, so meine ich ein Ergebnis, das deutlich über dem Klassendurchschnitt liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO17": {
+    "Description": "Schulleistungsunterschiede innerhalb einer Klasse lassen sich nach meinen Erfahrungen weitestgehend darauf zurückführen, dass je nach Lerngegenstand und Aufgabenstellung der eine Schüler mal mehr und der andere mal weniger angeregt wird.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO18": {
+    "Description": "Ich finde es meist recht schnell heraus, wie begabt ein Schüler ist.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO19": {
+    "Description": "Ich sorge in meinen Stunden oft dafür, dass verschiedene Schüler verschieden schwierige Aufgaben bearbeiten.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO20": {
+    "Description": "Schulleistungsunterschiede innerhalb einer Klasse lassen sich nach meinen Erfahrungen weitestgehend auf Unterschiede in der überdauernden Arbeitshaltung der Schüler zurückführen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO21": {
+    "Description": "Die Ursachen, die den Leistungen meiner Schüler zugrunde liegen mögen, sind jeweils so verschiedenartig, dass ich keine generellen Ursachenfaktoren für Schulleistungen ausmachen kann.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO22": {
+    "Description": "Nach meinen Erfahrungen bleiben die Leistungen, die ein Schüler im Laufe eines Jahres zeigt, abgesehen von kurzfristigen Schwankungen meist auf dem gleichen Niveau.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO23": {
+    "Description": "Wenn ich von einer „schlechten Leistung“ spreche, so meine ich ein Ergebnis, das unter dem vorherigen Resultat des jeweiligen Schülers liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO24": {
+    "Description": "Wenn ich im Unterricht einmal verschiedenen Schülern einer Klasse unterschiedliche Aufgaben stelle, so achte ich darauf, dass die unterschiedlichen Aufgaben nach Möglichkeit den gleichen Schwierigkeitsgrad haben.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO25": {
+    "Description": "Bei unterdurchschnittlichen Schülern habe ich alles in allem häufiger weitere Leistungsabfälle als Leistungsanstiege beobachten können.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO26": {
+    "Description": "Meistens haben sich meine Vermutungen darüber, wie ein Schüler am Schuljahresende abschneiden wird, in meinen Fächern bestätigt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO27": {
+    "Description": "Ehe ich von einer „Leistungsverschlechterung“ sprechen kann, muss der Schüler wiederholt Leistungen zeigen, die unter dem Klassendurchschnitt liegen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO28": {
+    "Description": "Ich mache mir bei der Unterrichtsvorbereitung oft Gedanken darüber, welcher Schüler welche Aufgabenschwierigkeit gerade noch schaffen könnte.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO29": {
+    "Description": "Wenn ich von einer „guten Leistung“ spreche, so meine ich damit ein Ergebnis, das über dem vorherigen Resultat des jeweiligen Schülers liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO30": {
+    "Description": "Wenn ich die Arbeitshaltung eines Schülers kenne, so kann ich relativ sicher seine „Schulkarriere“ vorhersagen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO31": {
+    "Description": "Wenn ich im Unterricht einer Klasse Aufgaben stelle, so achte ich darauf, dass ein leistungsschwächerer Schüler objektiv leichtere Aufgaben, ein leistungsstärkerer Schüler objektiv schwierigere Aufgaben erhält.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO32": {
+    "Description": "Wenn ich mich zur Leistung eines Schülers lobend oder tadelnd äußere, so hängen Lob und Tadel vornehmlich davon ab, ob diese Leistung über oder unter seinem vorherigen Leistungen liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO33": {
+    "Description": "In meinen Fächern ist es gewöhnlich so, dass ein Hochbegabter, selbst wenn er sich nicht anstrengt, immer noch mehr erreicht als ein Schwachbegabter, der sich sehr stark anstrengt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO34": {
+    "Description": "Schulleistungsunterschiede innerhalb einer Klasse lassen sich nach meiner Erfahrung weitestgehend auf Begabungsunterschiede zwischen den einzelnen Schülern zurückführen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO35": {
+    "Description": "Wenn ich von einer „schlechten Leistung“ spreche, so meine ich damit ein Ergebnis, das deutlich unter dem Klassendurchschnitt liegt.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO36": {
+    "Description": "Meistens fällt es mir leicht, die Ursachen für Schulleistungsunterschiede in meiner Klasse zu benennen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO37": {
+    "Description": "Wenn ich das Begabungsniveau eines Schülers kenne, so kann ich relativ sicher seine „Schulkarriere“ vorhersagen.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO38": {
+    "Description": "Ob sich ein Schüler anstrengt oder nicht, hängt meist mehr von ihm selbst ab als von der Aufgabe, die ich ihm stelle.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  },
+  "FEBO39": {
+    "Description": "Selbst wenn ich einen Schüler mehrere Jahre unterrichtet hätte, so könnte ich kaum vorhersagen, wie dieser Schüler im kommenden Schuljahr abschneiden wird.",
+    "Levels": {
+      "-3": "völlig unzutreffend",
+      "-2": "weitgehend unzutreffend",
+      "-1": "eher unzutreffend",
+      "1": "eher zutreffend als unzutreffend",
+      "2": "weitgehend zutreffend",
+      "3": "völlig zutreffend"
+    },
+    "DataType": "integer",
+    "MinValue": -3,
+    "MaxValue": 3,
+    "ScaleType": "likert"
+  }
+}
