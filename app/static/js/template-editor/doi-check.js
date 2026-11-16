@@ -1,8 +1,9 @@
-/** DOI check of the template editor: the same /api/projects/lookup-doi route and wording as the project page. */
+/** DOI check of the template editor: the /api/projects/lookup-doi route; the wording was taken from the earlier project-page version. */
 const UNREACHABLE = { cls: 'text-muted', text: 'Could not check DOI online (offline?).' };
 
 /** Lookup result -> {cls, text} for the feedback line; "could not be checked" is never "wrong". */
 export function doiMessage(result) {
+  if (result.status === 'ok' && result.empty) return { cls: 'text-muted', text: 'DOI is registered (no metadata returned).' };
   if (result.status === 'ok') return { cls: 'text-success', text: result.citation || result.doi };
   if (result.status === 'not_found') return { cls: 'text-danger', text: 'DOI not found (Crossref, DataCite).' };
   if (result.status === 'invalid') return { cls: 'text-danger', text: 'Not a valid DOI.' };
@@ -22,8 +23,11 @@ export async function checkDoi(value, fetchFn = fetch) {
 export function attachDoiCheck(input, fetchFn = fetch) {
   const line = document.createElement('div');
   line.className = 'form-text';
+  let latest = 0;
   input.addEventListener('change', async () => {
+    const mine = ++latest;
     const msg = await checkDoi(input.value, fetchFn);
+    if (mine !== latest) return; // a newer change is already being checked
     line.className = `form-text ${msg ? msg.cls : ''}`;
     line.textContent = msg ? msg.text : '';
   });

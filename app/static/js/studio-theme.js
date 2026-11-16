@@ -71,8 +71,9 @@
   }
 
   // Long text (a citation, a description): a text area that grows with its text, never a one-line input.
-  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes'];
-  const isLongText = (name) => LONG_TEXT.includes(name);
+  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']
+    .map((f) => `Study/${f}`).concat('Study/References/Citation');
+  const isLongText = (path) => LONG_TEXT.includes(path); // a field path like "Study/Citation", not a bare name
 
   function autoGrow(ta) {
     ta.style.height = 'auto';

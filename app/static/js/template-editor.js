@@ -1122,7 +1122,7 @@
     }
   }
 
-  function createInput(fieldSchema, value, onChange, fieldName = '') {
+  function createInput(fieldSchema, value, onChange, fieldName = '', path = '') {
     // Special handling for Description and Instructions - use textarea for better UX
     if (['Description', 'Instructions'].includes(fieldName)) {
       const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
@@ -1192,7 +1192,18 @@
       // String|object hybrid - render as textarea with convert button
       if (allowsObject && allowsString && !isTranslationObject(value)) {
         const container = document.createElement('div');
-        const ta = StudioTheme.longText((value === undefined || value === null || typeof value === 'object') ? '' : String(value), onChange, '— Not set —');
+        const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+        let ta;
+        if (StudioTheme.isLongText(path)) {
+          ta = StudioTheme.longText(text, onChange, '— Not set —');
+        } else {
+          ta = document.createElement('textarea');
+          ta.className = 'form-control';
+          ta.rows = 2;
+          ta.value = text;
+          ta.placeholder = '— Not set —';
+          ta.addEventListener('input', () => onChange(ta.value));
+        }
         container.appendChild(ta);
 
         const toggleBtn = document.createElement('button');
@@ -1646,7 +1657,7 @@
                 // Update the summary title
                 const newSummary = summaryField ? `#${idx + 1}: ${String(entry[summaryField] || '').substring(0, 40)}` : `Entry #${idx + 1}`;
                 title.textContent = newSummary;
-              });
+              }, '', `${path}/${fname}`);
               fieldDiv.appendChild(fInput);
               card.appendChild(fieldDiv);
             }
@@ -2096,7 +2107,7 @@
       const container = document.createElement('div');
       const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
       let inp;
-      if (StudioTheme.isLongText(fieldName)) {
+      if (StudioTheme.isLongText(path)) {
         inp = StudioTheme.longText(text, onChange, '— Not set —');
       } else {
         inp = document.createElement('input');
@@ -2145,7 +2156,7 @@
       return ta;
     }
 
-    if (StudioTheme.isLongText(fieldName)) {
+    if (StudioTheme.isLongText(path)) {
       return StudioTheme.longText((value === undefined || value === null) ? '' : String(value), onChange, '— Not set —');
     }
 
@@ -2688,7 +2699,7 @@
           }
         }
       }
-    }, name);
+    }, name, `${sectionKey}/${name}`);
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 

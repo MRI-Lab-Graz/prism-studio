@@ -7,6 +7,21 @@ import urllib.parse
 import urllib.request
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/\S+$", re.IGNORECASE)
+_MAX_BYTES = 1024 * 1024  # a metadata record is a few KB; refuse to read more
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Only the fixed hosts below are asked: a redirect (to anywhere) is an error, never followed."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.error.HTTPError(req.full_url, code, "redirect refused", headers, fp)
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def _open(req, timeout):
+    return _OPENER.open(req, timeout=timeout)  # nosec B310 - fixed https hosts only
 
 
 def normalize_doi(value: str) -> str:
@@ -63,20 +78,27 @@ def lookup_doi(value: str, timeout: float = 8.0) -> dict:
     not that it is wrong. 'not_found' only when every agency answered 404.
     """
     doi = normalize_doi(value)
-    if not DOI_RE.match(doi):
+    if not DOI_RE.match(doi) or ".." in doi.split("/"):
         return {"status": "invalid", "doi": doi}
     for base, fmt in _AGENCIES:
         req = urllib.request.Request(
             base + urllib.parse.quote(doi, safe="/"), headers={"User-Agent": "PRISM-Studio (DOI check)"}
         )
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310 - hardcoded https URL
-                body = json.load(resp)
+            with _open(req, timeout) as resp:
+                raw = resp.read(_MAX_BYTES + 1)
+            if len(raw) > _MAX_BYTES:
+                return {"status": "unreachable", "doi": doi}
+            body = json.loads(raw)
+            if not isinstance(body, dict):
+                return {"status": "unreachable", "doi": doi}
         except urllib.error.HTTPError as exc:
             if exc.code == 404:
                 continue
             return {"status": "unreachable", "doi": doi}
         except (urllib.error.URLError, TimeoutError, ValueError, OSError):
             return {"status": "unreachable", "doi": doi}
-        return {"status": "ok", "doi": doi, **fmt(body)}
+        work = fmt(body)
+        # registered but the agency returned no metadata: ok, flagged so the UI can say so
+        return {"status": "ok", "doi": doi, **work, **({} if work["title"] or work["authors"] else {"empty": True})}
     return {"status": "not_found", "doi": doi}
