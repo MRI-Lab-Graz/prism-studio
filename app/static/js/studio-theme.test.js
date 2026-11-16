@@ -147,6 +147,8 @@ describe('long text fields (a reference of 300 to 600 characters is shown whole)
     expect(StudioTheme.longTextRows('Study/Reliability')).toBe(6);
     expect(StudioTheme.longTextRows('Study/Description')).toBe(6);
     expect(StudioTheme.longTextRows('Study/Citation')).toBe(4);
+    expect(StudioTheme.longTextRows('Study/Construct')).toBe(2);
+    expect(StudioTheme.longTextRows('Study/PermissionsNote')).toBe(3);
     expect(StudioTheme.longTextRows('Study/References/Citation')).toBe(4);
   });
 
