@@ -102,7 +102,7 @@ describe('tally with project fields', () => {
 
 describe('long text fields (a reference of 300 to 600 characters is shown whole)', () => {
   it('names the Study-level fields that grow with their text, by path', () => {
-    for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']) expect(StudioTheme.isLongText(`Study/${f}`)).toBe(true);
+    for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']) expect(StudioTheme.isLongText(`Study/${f}`)).toBe(true);
     expect(StudioTheme.isLongText('Study/References/Citation')).toBe(true);
     expect(StudioTheme.isLongText('Study/DOI')).toBe(false);
     expect(StudioTheme.isLongText('ITEM/Description')).toBe(false); // an item's Description is not a Study field
@@ -112,7 +112,35 @@ describe('long text fields (a reference of 300 to 600 characters is shown whole)
 
   it('autoGrow sets the height to the content height, so nothing needs scrolling', () => {
     const ta = { style: {}, scrollHeight: 148 };
-    StudioTheme.autoGrow(ta);
+    StudioTheme.autoGrow(ta, 500);
     expect(ta.style.height).toBe('148px');
+    expect(ta.style.overflowY).toBe('hidden');
+  });
+
+  it('autoGrow stops at the maximum height and scrolls inside the box from there', () => {
+    const ta = { style: {}, scrollHeight: 900 };
+    StudioTheme.autoGrow(ta, 500);
+    expect(ta.style.height).toBe('500px');
+    expect(ta.style.overflowY).toBe('auto');
+  });
+
+  it('gives long descriptive fields room: 6 rows, a citation 4', () => {
+    expect(StudioTheme.longTextRows('Study/Reliability')).toBe(6);
+    expect(StudioTheme.longTextRows('Study/Description')).toBe(6);
+    expect(StudioTheme.longTextRows('Study/Citation')).toBe(4);
+    expect(StudioTheme.longTextRows('Study/References/Citation')).toBe(4);
+  });
+
+  it('longText (also the string form of a string-or-object field) is a full-width wrapping text area with that room', () => {
+    const made = [];
+    globalThis.document = { createElement: (tag) => { const el = { tag, style: {}, addEventListener() {} }; made.push(el); return el; } };
+    const kse = 'x'.repeat(700);
+    const ta = StudioTheme.longText(kse, () => {}, '— Not set —', 'Study/Reliability');
+    expect(ta.tag).toBe('textarea');
+    expect(ta.value).toBe(kse);
+    expect(ta.rows).toBe(6);
+    expect(ta.style.width).toBe('100%');
+    expect(StudioTheme.longText('c', () => {}, '', 'Study/Citation').rows).toBe(4);
+    delete globalThis.document;
   });
 });

@@ -70,32 +70,45 @@
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
-  // Long text (a citation, a description): a text area that grows with its text, never a one-line input.
-  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']
+  // Long text (a citation, a description): a full-width text area that grows with its text, never a one-line input.
+  // It starts at 6 rows (a citation 4), grows to 25 rows and scrolls inside the box from there.
+  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']
     .map((f) => `Study/${f}`).concat('Study/References/Citation');
+  const MAX_ROWS = 25;
   const isLongText = (path) => LONG_TEXT.includes(path); // a field path like "Study/Citation", not a bare name
+  const longTextRows = (path) => (/Citation$/.test(path) ? 4 : 6);
 
-  function autoGrow(ta) {
+  function autoGrow(ta, maxHeight = Infinity) {
     ta.style.height = 'auto';
-    ta.style.height = `${ta.scrollHeight}px`;
+    const h = ta.scrollHeight;
+    ta.style.height = `${Math.min(h, maxHeight)}px`;
+    ta.style.overflowY = h > maxHeight ? 'auto' : 'hidden';
   }
 
-  function longText(value, onInput, placeholder) {
+  function longText(value, onInput, placeholder, path = '') {
     const ta = document.createElement('textarea');
     ta.className = 'form-control studio-long-text';
-    ta.rows = 2;
-    ta.style.overflow = 'hidden';
+    ta.rows = longTextRows(path);
+    ta.style.width = '100%';
+    ta.style.minWidth = '0';
     ta.style.resize = 'vertical';
     ta.value = value;
     if (placeholder) ta.placeholder = placeholder;
-    ta.addEventListener('input', () => { autoGrow(ta); onInput(ta.value); });
+    const grow = () => {
+      const cs = typeof getComputedStyle === 'function' ? getComputedStyle(ta) : null;
+      const line = (cs && parseFloat(cs.lineHeight)) || 24;
+      const pad = cs ? (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
+      autoGrow(ta, line * MAX_ROWS + pad);
+    };
+    ta.addEventListener('input', () => { grow(); onInput(ta.value); });
     // a hidden section has no height yet: grow when it gets a width
-    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { if (ta.offsetWidth) autoGrow(ta); }).observe(ta);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { if (ta.offsetWidth) grow(); }).observe(ta);
     return ta;
   }
 
   const api = {
     isLongText,
+    longTextRows,
     autoGrow,
     longText,
     fieldLabelHtml,
