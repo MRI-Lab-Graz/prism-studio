@@ -315,12 +315,12 @@
     </div>
 
     <!-- Outside .feature-card: its hover transform would trap this fixed-position modal -->
-<div class="modal fade" id="exportWordModal" tabindex="-1">
+<div class="modal fade" id="exportWordModal" tabindex="-1" aria-labelledby="exportWordTitle">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="h5 modal-title"><i class="bi bi-file-earmark-word me-2"></i>Export Paper-Pencil Questionnaire</h4>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h4 class="h5 modal-title" id="exportWordTitle"><i class="bi bi-file-earmark-word me-2"></i>Export Paper-Pencil Questionnaire</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small">Configure the Word export for use as a paper-pencil instrument.</p>
