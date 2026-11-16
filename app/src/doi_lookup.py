@@ -81,7 +81,7 @@ def lookup_doi(value: str, timeout: float = 8.0) -> dict:
     if not DOI_RE.match(doi) or any(seg in ("", ".", "..") for seg in doi.split("/")):
         return {"status": "invalid", "doi": doi}
     for base, fmt in _AGENCIES:
-        req = urllib.request.Request(
+        req = urllib.request.Request(  # noqa: S310 - fixed https hosts only, DOI is percent-quoted
             base + urllib.parse.quote(doi, safe="/"), headers={"User-Agent": "PRISM-Studio (DOI check)"}
         )
         try:
