@@ -103,11 +103,18 @@ describe('tally with project fields', () => {
 describe('offersMultilingual (descriptive header fields are English only)', () => {
   it('refuses the conversion for the English-only descriptive fields', () => {
     for (const f of ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms']) {
-      expect(StudioTheme.offersMultilingual(f)).toBe(false);
+      expect(StudioTheme.offersMultilingual('Study', f)).toBe(false);
     }
   });
 
   it('keeps it for fields where any language is allowed', () => {
-    for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual(f)).toBe(true);
+    for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
+  });
+
+  it('keeps it for a same-named field outside the Study section (item level)', () => {
+    for (const f of ['Description', 'Notes', 'Keywords']) {
+      expect(StudioTheme.offersMultilingual('Questions', f)).toBe(true);
+      expect(StudioTheme.offersMultilingual(undefined, f)).toBe(true);
+    }
   });
 });

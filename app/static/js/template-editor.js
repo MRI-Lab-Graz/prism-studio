@@ -1118,7 +1118,7 @@
     }
   }
 
-  function createInput(fieldSchema, value, onChange, fieldName = '') {
+  function createInput(fieldSchema, value, onChange, fieldName = '', sectionKey = '') {
     // Special handling for Description and Instructions - use textarea for better UX
     if (['Description', 'Instructions'].includes(fieldName)) {
       const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
@@ -1208,7 +1208,7 @@
           onChange(translationObj);
           rerenderQuestionnaireInfoFor(container);
         });
-        if (StudioTheme.offersMultilingual(fieldName)) container.appendChild(toggleBtn);
+        if (StudioTheme.offersMultilingual(sectionKey, fieldName)) container.appendChild(toggleBtn);
         return container;
       }
     }
@@ -2096,7 +2096,7 @@
         // Replace this container with the translation table
         rerenderQuestionnaireInfoFor(container);
       });
-      if (StudioTheme.offersMultilingual(fieldName)) container.appendChild(toggleBtn);
+      if (StudioTheme.offersMultilingual(sectionKey, fieldName)) container.appendChild(toggleBtn);
       return container;
     }
 
@@ -2653,7 +2653,7 @@
           }
         }
       }
-    }, name);
+    }, name, sectionKey);
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 
