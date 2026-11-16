@@ -751,6 +751,19 @@ html[data-wcag] .studio-theme code {
     color: var(--bs-code-color);
 }
 
+/* This Bootswatch build hard-codes the primary blue (#4582ec, 3.71:1) in the tabs and pills (no variable). */
+html[data-wcag] .studio-theme :is(.nav-pills, .nav-tabs) .nav-link {
+    color: var(--studio-semantic-primary);
+}
+html[data-wcag] .studio-theme :is(.nav-pills, .nav-tabs) .nav-link:hover {
+    color: var(--studio-semantic-primary-hover);
+}
+html[data-wcag] .studio-theme .nav-pills .nav-link.active,
+html[data-wcag] .studio-theme .nav-pills .show > .nav-link {
+    color: #fff;
+    background-color: var(--studio-semantic-primary);
+}
+
 /* Accessibility: links use the (darker) theme green; the keyboard focus is always visible. */
 html[data-wcag] .studio-theme {
     --bs-link-color-rgb: 26, 116, 77;
