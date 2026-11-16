@@ -3,11 +3,11 @@ readiness bars follow live, and the numbers are the backend's."""
 
 import json
 
-from tests.template_fixtures import project_template
+from tests.template_fixtures import bilingual, project_template
 
 
 def _open_incomplete_template(page, project, studio_url):
-    template = project_template()
+    template = bilingual(project_template())  # the language tests need a template that already has a second language
     template["Technical"].pop("Respondent")
     template["Study"].pop("Authors", None)
     (project / "code" / "library" / "survey" / "survey-x.json").write_text(json.dumps(template), encoding="utf-8")
@@ -67,7 +67,7 @@ def test_languages_is_a_pull_down_and_the_pick_becomes_a_green_chip(page, projec
     page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
     assert "fr" in page.locator("#langBadges").inner_text()  # the same code as the language bar: item texts get the slot too
     chips = [t.replace("\n", " ") for t in field.locator(".chip-badge").all_inner_texts()]
-    assert chips == ["de (German) ×", "en (English) ×", "fr (French) ×"]
+    assert chips == ["en (English) ×", "de (German) ×", "fr (French) ×"]
     assert field.locator("select option[value='fr']").count() == 0  # a picked language leaves the list
     assert field.locator("select option[value='de']").count() == 0  # so does one the template already has
 
@@ -79,7 +79,7 @@ def test_default_language_offers_the_chosen_languages_and_follows_them(page, pro
     languages = section.locator("[data-field-path='I18n/Languages']")
     default = section.locator("select[data-field-path='I18n/DefaultLanguage']")
     default.wait_for()
-    assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "de", "en"]
+    assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "en", "de"]
 
     languages.locator("select").select_option("fr")
     page.wait_for_function("() => document.querySelector('#langBadges')?.textContent.includes('fr')")  # the backend adds it
@@ -90,8 +90,8 @@ def test_default_language_offers_the_chosen_languages_and_follows_them(page, pro
     languages.locator(".chip-badge", has_text="fr").click()
     # the backend runs the removal; the default moves to a language the template still has
     page.wait_for_function("() => !document.querySelector(\"[data-field-path='I18n/DefaultLanguage'] option[value='fr']\")")
-    assert default.input_value() == "de"
-    assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "de", "en"]
+    assert default.input_value() == "en"
+    assert default.locator("option").evaluate_all("o => o.map(x => x.value)") == ["", "en", "de"]
 
 
 def _languages_section(page):
@@ -126,7 +126,7 @@ def test_removing_a_chip_asks_first_and_declining_keeps_it(page, project, studio
     section = _languages_section(page)
     page.once("dialog", lambda dialog: dialog.dismiss())
     section.locator("[data-field-path='I18n/Languages'] .chip-badge", has_text="en").click()
-    assert _chip_codes(section) == ["de", "en"]
+    assert _chip_codes(section) == ["en", "de"]
 
 
 def _open_template_without_items(page, project, studio_url):
