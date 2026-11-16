@@ -70,7 +70,12 @@
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
+  // Descriptive fields of the Study section (not same-named item fields) are English only (a stored translation object still displays; only the offer to convert goes).
+  const ENGLISH_ONLY = ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms'];
+  const offersMultilingual = (sectionKey, fieldName) => !(sectionKey === 'Study' && ENGLISH_ONLY.includes(fieldName));
+
   const api = {
+    offersMultilingual,
     fieldLabelHtml,
     tierBadgeClass,
     setFilled,
