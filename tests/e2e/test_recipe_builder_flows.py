@@ -3,6 +3,7 @@
 import json
 import re
 import shutil
+import statistics
 
 import pytest
 from playwright.sync_api import expect
@@ -183,8 +184,9 @@ def test_irv_is_the_spread_of_the_raw_answers_and_ignores_reverse_coding(app_pag
 
     rows = read_rows(scored_project / "derivatives/survey/long_en/e2e_demo.csv")
     assert rows[0] == ["participant_id", "session", "Total", "IRV"]
-    # sample standard deviation (n-1) of the RAW answers: (3,4,2) -> 1, (4,4,3) -> 0.577, (1,0,2) -> 1
-    assert [float(row[3]) for row in rows[1:]] == pytest.approx([1.0, 0.5773502691896257, 1.0])
+    # sample standard deviation (n-1) of the RAW answers of all 8 items (DATA, reverse coding ignored)
+    raw = [[3, 4, 2, 0, 0, 4, 0, 0], [4, 4, 3, 0, 0, 4, 0, 0], [1, 0, 2, 0, 0, 4, 0, 0]]
+    assert [float(row[3]) for row in rows[1:]] == pytest.approx([statistics.stdev(r) for r in raw])
     assert [row[2] for row in rows[1:]] == ["5", "7", "7"]  # the reversed Total is unaffected by IRV
 
 
