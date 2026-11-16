@@ -5,7 +5,7 @@ from pathlib import Path
 from flask import jsonify, request
 from src.dataset_description import write_dataset_description
 from src.project_documents import regenerate_citation, remove_legacy_contributor_files
-from src.orcid_lookup import OrcidLookupError, search_orcid_candidates
+from src.orcid_lookup import orcid_search_response
 
 from .projects_helpers import _resolve_requested_or_current_project_root
 
@@ -376,56 +376,16 @@ def _sync_authors_to_project_json(project_path: Path, authors_value) -> None:
         pass  # best-effort; don't fail the main save
 
 
-def handle_search_orcid_by_name(search_candidates=search_orcid_candidates):
-    """Search ORCID candidates by given/family name using backend lookup service."""
-    given_names = str(request.args.get("given_names") or "").strip()
-    family_name = str(request.args.get("family_name") or "").strip()
-    current_orcid = str(request.args.get("current_orcid") or "").strip()
-    limit_raw = str(request.args.get("limit") or "").strip()
-
-    if not given_names and not family_name:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "Provide given_names and/or family_name for ORCID search.",
-                }
-            ),
-            400,
-        )
-
-    limit = 5
-    if limit_raw:
-        try:
-            limit = int(limit_raw)
-        except ValueError:
-            limit = 5
-
-    try:
-        candidates = search_candidates(
-            given_names,
-            family_name,
-            limit=limit,
-            preferred_orcid=current_orcid,
-        )
-    except OrcidLookupError:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "error": "ORCID lookup is currently unavailable.",
-                    "candidates": [],
-                }
-            ),
-            502,
-        )
-
-    return jsonify(
-        {
-            "success": True,
-            "candidates": candidates,
-        }
+def handle_search_orcid_by_name(search_candidates=None):
+    """Search ORCID candidates by given/family name (the same function `prism_tools orcid search` runs)."""
+    payload, status = orcid_search_response(
+        request.args.get("given_names"),
+        request.args.get("family_name"),
+        request.args.get("limit"),
+        request.args.get("current_orcid"),
+        search=search_candidates,
     )
+    return jsonify(payload), status
 
 
 def handle_get_metadata_status(get_current_project, project_manager):

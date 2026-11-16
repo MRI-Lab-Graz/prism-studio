@@ -2242,6 +2242,15 @@ def build_prism_tools_parsers(
     _p.add_argument("doi", help="10.xxxx/... or https://doi.org/10.xxxx/...")
     _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    parser_orcid = subparsers.add_parser("orcid", help="Look up ORCID iDs online")
+    orcid_subparsers = parser_orcid.add_subparsers(dest="action", required=True, help="ORCID actions")
+    _p = orcid_subparsers.add_parser("search", help="List ORCID candidates for a name (exit 1 when the lookup fails)")
+    _p.add_argument("--given-names", dest="given_names", default="", help="Given names")
+    _p.add_argument("--family-name", dest="family_name", default="", help="Family name")
+    _p.add_argument("--limit", default="", help="Maximum candidates (default 5)")
+    _p.add_argument("--current-orcid", dest="current_orcid", default="", help="An ORCID iD to keep among the candidates")
+    _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_terms = subparsers.add_parser(
         "terms",
         help="List, show and look up shipped metric terms (term registry)",
@@ -3368,6 +3377,7 @@ def build_prism_tools_parsers(
         "json_editor": parser_json_editor,
         "modality": parser_modality,
         "doi": parser_doi,
+        "orcid": parser_orcid,
         "terms": parser_terms,
         "spec": parser_spec,
         "modality-version": parser_modality_version,

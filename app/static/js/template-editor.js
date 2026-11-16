@@ -1453,6 +1453,27 @@
         });
         container.querySelector('.chip-input-row').after(pickEl);
         list.setValues(currentVal);
+        // Imported authors are plain "Family, Given": look the ORCIDs up one author at a time (same lookup and
+        // pick-one dialog as for typed authors); an author that has an ORCID is never touched.
+        const lookupBtn = document.createElement('button');
+        lookupBtn.type = 'button';
+        lookupBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        lookupBtn.innerHTML = '<i class="fas fa-id-badge me-1"></i>Look up ORCIDs';
+        const progressEl = document.createElement('span');
+        progressEl.className = 'small text-muted ms-2';
+        lookupBtn.addEventListener('click', async () => {
+          lookupBtn.disabled = true;
+          try {
+            const out = await languagePicker.lookupMissingOrcids(
+              list.getValues(),
+              (fam, giv) => lookupAuthor(fam, giv, pickEl),
+              (done, total, text) => { progressEl.textContent = text ? `Looking up ORCID ${done + 1} of ${total}: ${text}` : (total ? `Done: ${total} author(s) checked.` : 'Every author already has an ORCID.'); },
+            );
+            list.setValues(out);
+            onChange([...out]);
+          } finally { lookupBtn.disabled = false; }
+        });
+        container.append(lookupBtn, progressEl);
         return container;
       }
 

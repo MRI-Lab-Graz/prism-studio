@@ -15,7 +15,8 @@ from flask import Flask
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
 
-from src.cli.commands.lookup import cmd_doi_lookup  # noqa: E402
+from src.cli.commands.lookup import cmd_doi_lookup, cmd_orcid_search  # noqa: E402
+from src.orcid_lookup import OrcidLookupError  # noqa: E402
 from src.cli.parser import build_prism_tools_parsers  # noqa: E402
 
 
@@ -69,3 +70,36 @@ def test_doi_cli_prints_what_the_route_returns(doi, routes, capsys):
 def test_doi_lookup_is_a_cli_command():
     _root, parsers = build_prism_tools_parsers(ROOT / "app")
     assert "doi" in parsers
+
+
+CANDIDATE = {"orcid_id": "0000-0001-6234-0498", "orcid": "https://orcid.org/0000-0001-6234-0498", "given_names": "Karl",
+             "family_name": "Koschutnig", "display_name": "Karl Koschutnig", "affiliation": "University of Graz"}
+
+
+def _fake_search(given, family, limit=5, preferred_orcid=""):
+    assert (given, family) == ("Karl", "Koschutnig")
+    return [CANDIDATE][:limit]
+
+
+def _failing_search(*a, **k):
+    raise OrcidLookupError("down")
+
+
+@pytest.mark.parametrize("params,search", [
+    ({"given_names": "Karl", "family_name": "Koschutnig", "limit": "3"}, _fake_search),
+    ({"given_names": "Karl", "family_name": "Koschutnig"}, _failing_search),
+    ({}, _fake_search),
+])
+def test_orcid_cli_prints_what_the_route_returns(params, search, capsys):
+    with mock.patch("src.orcid_lookup.search_orcid_candidates", search):
+        via_route = _client().get("/api/projects/orcid/search", query_string=params).get_json()
+        via_cli = _cli_json(
+            cmd_orcid_search, capsys, given_names=params.get("given_names", ""),
+            family_name=params.get("family_name", ""), limit=params.get("limit", ""), current_orcid="",
+        )
+    assert via_cli == via_route
+
+
+def test_orcid_search_is_a_cli_command():
+    _root, parsers = build_prism_tools_parsers(ROOT / "app")
+    assert "orcid" in parsers
