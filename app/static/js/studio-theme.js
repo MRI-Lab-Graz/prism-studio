@@ -17,7 +17,7 @@
   function fieldLabelHtml({ text, tier, tip }) {
     const t = TIERS[tier];
     return '<label class="form-label studio-field-label">'
-      + (t ? `<span class="badge ${t[0]}">${t[1]}</span> ` : '')
+      + (t ? `<span class="badge ${t[0]}"${tier === 'project' ? ` title="${PROJECT_TIP}"` : ''}>${t[1]}</span> ` : '')
       + esc(text)
       + (tip ? ` <span class="info-tip text-muted" data-bs-toggle="tooltip" title="${esc(tip)}">&#9432;</span>` : '')
       + '</label>';

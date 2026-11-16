@@ -598,7 +598,7 @@
       const projectPaths = paths.filter((path) => projectOnly.paths.includes(path));
       const projectNotSet = questionnaireSections.countMissing(projectPaths, projectOpen);
       slot.innerHTML = StudioTheme.tally({
-        required: [total - projectNotSet - open, total - projectNotSet],
+        required: [total - projectPaths.length - open, total - projectPaths.length],
         project: [projectPaths.length - projectNotSet, projectPaths.length],
       });
     });

@@ -47,9 +47,8 @@ def template_completeness(
 
     missing_recommended = [path for path in RECOMMENDED if blank(path)]
     extra = {}
-    required_total, required_filled = len(required), len(required) - len(missing)
     if not project:
-        # Fields the schema requires only in a project copy: open (not missing) here; a filled one counts as filled.
+        # Fields the schema requires only in a project copy: reported here, never in ``required``.
         paths = [
             f"{section}/{field}"
             for section, fields in gate_schema(app_root=app_root, schema_version=schema_version, project=True)
@@ -57,11 +56,9 @@ def template_completeness(
             for field in fields
         ]
         open_paths = [path for path in paths if blank(path)]
-        filled = len(paths) - len(open_paths)
-        required_total, required_filled = required_total + filled, required_filled + filled
-        extra["project_only"] = {"total": len(paths), "filled": filled, "open": open_paths, "paths": paths}
+        extra["project_only"] = {"total": len(paths), "filled": len(paths) - len(open_paths), "open": open_paths, "paths": paths}
     return {
-        "required": {"total": required_total, "filled": required_filled, "missing": missing},
+        "required": {"total": len(required), "filled": len(required) - len(missing), "missing": missing},
         "recommended": {
             "total": len(RECOMMENDED),
             "filled": len(RECOMMENDED) - len(missing_recommended),
@@ -72,7 +69,7 @@ def template_completeness(
         "complete": not errors,
         **extra,
         "percent": {
-            "required": _percent(required_filled, required_total),
+            "required": _percent(len(required) - len(missing), len(required)),
             "recommended": _percent(len(RECOMMENDED) - len(missing_recommended), len(RECOMMENDED)),
         },
     }
