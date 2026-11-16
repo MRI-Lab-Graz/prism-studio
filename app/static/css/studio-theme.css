@@ -553,6 +553,12 @@
     color: var(--studio-brand-accent-text) !important;
 }
 
+/* Required in a project but open in a library template: neither green (filled) nor red (missing). */
+.studio-theme .badge.badge-tier-project {
+    background-color: var(--studio-border) !important;
+    color: var(--studio-brand-primary) !important;
+}
+
 .studio-theme .progress-bar.bg-primary {
     background-color: var(--studio-semantic-primary);
 }

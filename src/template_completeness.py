@@ -46,6 +46,17 @@ def template_completeness(
         return not isinstance(values, dict) or is_blank(values.get(field))
 
     missing_recommended = [path for path in RECOMMENDED if blank(path)]
+    extra = {}
+    if not project:
+        # Fields the schema requires only in a project copy: reported here, never in ``required``.
+        paths = [
+            f"{section}/{field}"
+            for section, fields in gate_schema(app_root=app_root, schema_version=schema_version, project=True)
+            .get("x-prism", {}).get("projectOnlyRequired", {}).items()
+            for field in fields
+        ]
+        open_paths = [path for path in paths if blank(path)]
+        extra["project_only"] = {"total": len(paths), "filled": len(paths) - len(open_paths), "open": open_paths, "paths": paths}
     return {
         "required": {"total": len(required), "filled": len(required) - len(missing), "missing": missing},
         "recommended": {
@@ -56,6 +67,7 @@ def template_completeness(
         "problems": problems,
         "prism_id": instrument_id(template),
         "complete": not errors,
+        **extra,
         "percent": {
             "required": _percent(len(required) - len(missing), len(required)),
             "recommended": _percent(len(RECOMMENDED) - len(missing_recommended), len(RECOMMENDED)),
