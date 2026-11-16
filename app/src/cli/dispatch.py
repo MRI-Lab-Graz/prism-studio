@@ -93,6 +93,8 @@ def dispatch_prism_tools(
             parsers["spec"].print_help()
     elif args.command == "doi":
         handlers["doi_lookup"](args)
+    elif args.command == "orcid":
+        handlers["orcid_search"](args)
     elif args.command == "terms":
         if args.action in ("list", "show", "suggest", "propose", "freeze", "resolve"):
             handlers[f"terms_{args.action}"](args)

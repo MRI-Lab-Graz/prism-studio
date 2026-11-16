@@ -398,3 +398,27 @@ def search_orcid_candidates(
 
     candidates.sort(key=_sort_key)
     return candidates[:normalized_limit]
+
+
+def orcid_search_response(
+    given_names: str,
+    family_name: str,
+    limit: str = "",
+    current_orcid: str = "",
+    search=None,
+) -> tuple[dict[str, Any], int]:
+    """The JSON payload and HTTP-style status of an ORCID name search (Studio's route and `prism_tools orcid search`)."""
+    given_names, family_name = str(given_names or "").strip(), str(family_name or "").strip()
+    if not given_names and not family_name:
+        return {"success": False, "error": "Provide given_names and/or family_name for ORCID search."}, 400
+    try:
+        rows = int(str(limit or "").strip() or 5)
+    except ValueError:
+        rows = 5
+    try:
+        candidates = (search or search_orcid_candidates)(
+            given_names, family_name, limit=rows, preferred_orcid=str(current_orcid or "").strip()
+        )
+    except OrcidLookupError:
+        return {"success": False, "error": "ORCID lookup is currently unavailable.", "candidates": []}, 502
+    return {"success": True, "candidates": candidates}, 200

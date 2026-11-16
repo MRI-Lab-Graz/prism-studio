@@ -35,3 +35,17 @@ export function pickCandidate(candidates, family, given) {
 export const authorFromCandidate = (candidate, family, given) => composeAuthor([
     candidate?.family_name || family, candidate?.given_names || given, candidate?.orcid_id || '',
 ]);
+
+/** Look the ORCID up for each author that has none, one at a time (the ORCID API is shared: no parallel bursts).
+ *  `lookup(family, given)` gives the stored string (it may ask the user); '' keeps the author as it was.
+ *  `onProgress(done, total, current)` is called before each author and once at the end. */
+export async function lookupMissingOrcids(authors, lookup, onProgress = () => {}) {
+    const todo = authors.map((a, i) => [i, parseAuthor(a)]).filter(([, p]) => p && !p[2]);
+    const out = [...authors];
+    for (const [n, [i, [family, given]]] of todo.entries()) {
+        onProgress(n, todo.length, authors[i]);
+        out[i] = (await lookup(family, given)) || authors[i];
+    }
+    onProgress(todo.length, todo.length, '');
+    return out;
+}
