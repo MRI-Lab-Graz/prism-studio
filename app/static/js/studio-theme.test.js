@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 const loaded = await import('./studio-theme.js');  // a plain script: global in the browser, module.exports under vitest
 const StudioTheme = globalThis.StudioTheme || loaded.default || loaded;
@@ -144,5 +145,36 @@ describe('long text fields (a reference of 300 to 600 characters is shown whole)
     expect(ta.style.width).toBe('100%');
     expect(StudioTheme.longText('c', () => {}, '', 'Study/Citation').rows).toBe(4);
     delete globalThis.document;
+  });
+});
+
+describe('offersMultilingual (descriptive header fields are English only)', () => {
+  it('refuses the conversion for the English-only descriptive fields of the Study section', () => {
+    for (const f of ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms']) {
+      expect(StudioTheme.offersMultilingual('Study', f)).toBe(false);
+    }
+  });
+
+  it('keeps it for fields where any language is allowed', () => {
+    for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
+  });
+
+  it('keeps it for a same-named field outside the Study section (item level)', () => {
+    for (const f of ['Description', 'Notes', 'Keywords']) {
+      expect(StudioTheme.offersMultilingual('Questions', f)).toBe(true);
+      expect(StudioTheme.offersMultilingual('', f)).toBe(true);
+    }
+  });
+});
+
+describe('every StudioTheme function the pages call exists', () => {
+  it('template-editor.js and its modules use only functions the theme exports (a missing one aborts the whole render)', () => {
+    const files = ['template-editor.js', 'template-editor/author-entry.js', 'template-editor/doi-check.js'];
+    for (const f of files) {
+      const src = readFileSync(new URL(`./${f}`, import.meta.url), 'utf8');
+      for (const [, name] of src.matchAll(/StudioTheme\.(\w+)\(/g)) {
+        expect(typeof StudioTheme[name], `${f} calls StudioTheme.${name}`).toBe('function');
+      }
+    }
   });
 });
