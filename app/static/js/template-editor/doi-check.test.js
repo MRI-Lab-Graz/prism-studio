@@ -41,7 +41,7 @@ describe('doiMessage for a registered DOI without metadata', () => {
 describe('attachDoiCheck', () => {
   it('shows only the result of the latest change, whatever order the answers come in', async () => {
     const listeners = {};
-    const input = { value: '', addEventListener: (ev, fn) => { listeners[ev] = fn; } };
+    const input = { value: '', addEventListener: (ev, fn) => { listeners[ev] = fn; }, after: vi.fn() };
     globalThis.document = { createElement: () => ({}) };
     const answers = [];
     const fetchFn = vi.fn(() => new Promise((resolve) => answers.push(resolve)));
@@ -55,6 +55,7 @@ describe('attachDoiCheck', () => {
     answers[0]({ json: async () => ({ status: 'not_found' }) });
     await first;
     expect(line.textContent).toBe('B');
+    expect(input.after).toHaveBeenCalledWith(line); // the input itself stays the field element, the line follows it
     delete globalThis.document;
   });
 });

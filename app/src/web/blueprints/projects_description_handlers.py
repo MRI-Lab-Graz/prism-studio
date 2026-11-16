@@ -376,14 +376,13 @@ def _sync_authors_to_project_json(project_path: Path, authors_value) -> None:
         pass  # best-effort; don't fail the main save
 
 
-def handle_search_orcid_by_name(search_candidates=None):
+def handle_search_orcid_by_name():
     """Search ORCID candidates by given/family name (the same function `prism_tools orcid search` runs)."""
     payload, status = orcid_search_response(
         request.args.get("given_names"),
         request.args.get("family_name"),
         request.args.get("limit"),
         request.args.get("current_orcid"),
-        search=search_candidates,
     )
     return jsonify(payload), status
 
