@@ -61,7 +61,7 @@ DATACITE = {"data": {"attributes": {"titles": [{"title": "KSE"}], "creators": [{
     ("not a doi", {}),
 ])
 def test_doi_cli_prints_what_the_route_returns(doi, routes, capsys):
-    with mock.patch("urllib.request.urlopen", _urlopen(routes)):
+    with mock.patch("src.doi_lookup._open", _urlopen(routes)):
         via_route = _client().get("/api/projects/lookup-doi", query_string={"doi": doi}).get_json()
         via_cli = _cli_json(cmd_doi_lookup, capsys, doi=doi)
     assert via_cli == via_route
@@ -103,3 +103,38 @@ def test_orcid_cli_prints_what_the_route_returns(params, search, capsys):
 def test_orcid_search_is_a_cli_command():
     _root, parsers = build_prism_tools_parsers(ROOT / "app")
     assert "orcid" in parsers
+
+
+def _run_main(argv, capsys):
+    """Run the real prism_tools entry point (argparse included); returns (exit code, stdout JSON)."""
+    from src.cli.entrypoint import main
+
+    capsys.readouterr()
+    with mock.patch.object(sys, "argv", ["prism_tools.py", *argv]):
+        try:
+            main()
+            code = 0
+        except SystemExit as exc:
+            code = exc.code or 0
+    return code, json.loads(capsys.readouterr().out)
+
+
+def test_doi_entrypoint_exit_codes(capsys):
+    with mock.patch("src.doi_lookup._open", _urlopen({"api.crossref.org": {"message": {"title": ["T"]}}})):
+        code, out = _run_main(["doi", "lookup", "10.1000/x1", "--json"], capsys)
+    assert (code, out["status"]) == (0, "ok")
+    with mock.patch("src.doi_lookup._open", _urlopen({"api.crossref.org": None, "api.datacite.org": None})):
+        code, out = _run_main(["doi", "lookup", "10.1000/x1", "--json"], capsys)
+    assert (code, out["status"]) == (1, "not_found")
+
+
+def test_orcid_entrypoint_exit_codes(capsys):
+    argv = ["orcid", "search", "--given-names", "Karl", "--family-name", "Koschutnig", "--json"]
+    with mock.patch("src.orcid_lookup.search_orcid_candidates", _fake_search):
+        code, out = _run_main(argv, capsys)
+    assert (code, out["success"], len(out["candidates"])) == (0, True, 1)
+    with mock.patch("src.orcid_lookup.search_orcid_candidates", _failing_search):
+        code, out = _run_main(argv, capsys)
+    assert (code, out["success"]) == (1, False)
+    code, out = _run_main(["orcid", "search", "--json"], capsys)
+    assert (code, out["success"]) == (1, False)

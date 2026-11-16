@@ -120,9 +120,13 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
 });
 
 describe('long text fields (a reference of 300 to 600 characters is shown whole)', () => {
-  it('names the fields that grow with their text', () => {
-    for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']) expect(StudioTheme.isLongText(f)).toBe(true);
-    expect(StudioTheme.isLongText('DOI')).toBe(false);
+  it('names the Study-level fields that grow with their text, by path', () => {
+    for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']) expect(StudioTheme.isLongText(`Study/${f}`)).toBe(true);
+    expect(StudioTheme.isLongText('Study/References/Citation')).toBe(true);
+    expect(StudioTheme.isLongText('Study/DOI')).toBe(false);
+    expect(StudioTheme.isLongText('ITEM/Description')).toBe(false); // an item's Description is not a Study field
+    expect(StudioTheme.isLongText('Description')).toBe(false);
+    expect(StudioTheme.isLongText('')).toBe(false);
   });
 
   it('autoGrow sets the height to the content height, so nothing needs scrolling', () => {

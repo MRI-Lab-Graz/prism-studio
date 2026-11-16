@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { checkDoi, doiMessage } from './doi-check.js';
+import { attachDoiCheck, checkDoi, doiMessage } from './doi-check.js';
 
 describe('doiMessage (the wording of the project page)', () => {
   it('shows the short citation for a found DOI', () => {
@@ -29,5 +29,32 @@ describe('checkDoi', () => {
   });
   it('a failing request is "could not check", never "wrong"', async () => {
     expect((await checkDoi('10.1/x', vi.fn().mockRejectedValue(new Error('off')))).cls).toBe('text-muted');
+  });
+});
+
+describe('doiMessage for a registered DOI without metadata', () => {
+  it('says it is registered, not wrong', () => {
+    expect(doiMessage({ status: 'ok', doi: '10.1/x', empty: true })).toEqual({ cls: 'text-muted', text: 'DOI is registered (no metadata returned).' });
+  });
+});
+
+describe('attachDoiCheck', () => {
+  it('shows only the result of the latest change, whatever order the answers come in', async () => {
+    const listeners = {};
+    const input = { value: '', addEventListener: (ev, fn) => { listeners[ev] = fn; } };
+    globalThis.document = { createElement: () => ({}) };
+    const answers = [];
+    const fetchFn = vi.fn(() => new Promise((resolve) => answers.push(resolve)));
+    const line = attachDoiCheck(input, fetchFn);
+    input.value = '10.1/a';
+    const first = listeners.change();
+    input.value = '10.1/b';
+    const second = listeners.change();
+    answers[1]({ json: async () => ({ status: 'ok', doi: '10.1/b', citation: 'B' }) });
+    await second;
+    answers[0]({ json: async () => ({ status: 'not_found' }) });
+    await first;
+    expect(line.textContent).toBe('B');
+    delete globalThis.document;
   });
 });
