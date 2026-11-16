@@ -305,6 +305,10 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  let doiCheck = null; // doi-check.js: the DOI fields check themselves on change
+  import(new URL('./template-editor/doi-check.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { doiCheck = module; if (currentTemplate) renderTopLevel(); });
+
   let questionnaireSections = null;
   import(new URL('./template-editor/questionnaire-sections.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { questionnaireSections = module; if (currentTemplate) renderTopLevel(); });
@@ -2145,6 +2149,11 @@
       onChange(inp.value);
     });
     if (isDOI && initVal !== String(value || '')) onChange(initVal);
+    if (isDOI && doiCheck) {
+      const box = document.createElement('div');
+      box.append(inp, doiCheck.attachDoiCheck(inp));
+      return box;
+    }
     return inp;
   }
 

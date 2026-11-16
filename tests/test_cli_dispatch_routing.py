@@ -16,6 +16,7 @@ DISPATCH_CASES = [
     (dict(command="anonymize"), "anonymize"),
     (dict(command="template-export"), "template_export"),
     (dict(command="modality", action="propose"), "modality_propose"),
+    (dict(command="doi", action="lookup"), "doi_lookup"),
     (dict(command="terms", action="list"), "terms_list"),
     (dict(command="terms", action="show"), "terms_show"),
     (dict(command="terms", action="suggest"), "terms_suggest"),
