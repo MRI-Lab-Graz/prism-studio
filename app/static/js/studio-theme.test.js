@@ -100,25 +100,6 @@ describe('tally with project fields', () => {
   });
 });
 
-describe('offersMultilingual (descriptive header fields are English only)', () => {
-  it('refuses the conversion for the English-only descriptive fields', () => {
-    for (const f of ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms']) {
-      expect(StudioTheme.offersMultilingual('Study', f)).toBe(false);
-    }
-  });
-
-  it('keeps it for fields where any language is allowed', () => {
-    for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual('Study', f)).toBe(true);
-  });
-
-  it('keeps it for a same-named field outside the Study section (item level)', () => {
-    for (const f of ['Description', 'Notes', 'Keywords']) {
-      expect(StudioTheme.offersMultilingual('Questions', f)).toBe(true);
-      expect(StudioTheme.offersMultilingual(undefined, f)).toBe(true);
-    }
-  });
-});
-
 describe('long text fields (a reference of 300 to 600 characters is shown whole)', () => {
   it('names the Study-level fields that grow with their text, by path', () => {
     for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']) expect(StudioTheme.isLongText(`Study/${f}`)).toBe(true);

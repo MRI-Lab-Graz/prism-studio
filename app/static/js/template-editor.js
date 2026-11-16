@@ -1124,6 +1124,10 @@
     }
   }
 
+  /** A Study long-text field (Citation, Description, ...) gets the growing text area; any other field its plain element. */
+  const longTextOr = (path, text, onChange, plain) => (
+    StudioTheme.isLongText(path) ? StudioTheme.longText(text, onChange, '— Not set —', path) : plain());
+
   function createInput(fieldSchema, value, onChange, fieldName = '', path = '') {
     // Special handling for Description and Instructions - use textarea for better UX
     if (['Description', 'Instructions'].includes(fieldName)) {
@@ -1195,17 +1199,15 @@
       if (allowsObject && allowsString && !isTranslationObject(value)) {
         const container = document.createElement('div');
         const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-        let ta;
-        if (StudioTheme.isLongText(path)) {
-          ta = StudioTheme.longText(text, onChange, '— Not set —', path);
-        } else {
-          ta = document.createElement('textarea');
-          ta.className = 'form-control';
-          ta.rows = 2;
-          ta.value = text;
-          ta.placeholder = '— Not set —';
-          ta.addEventListener('input', () => onChange(ta.value));
-        }
+        const ta = longTextOr(path, text, onChange, () => {
+          const el = document.createElement('textarea');
+          el.className = 'form-control';
+          el.rows = 2;
+          el.value = text;
+          el.placeholder = '— Not set —';
+          el.addEventListener('input', () => onChange(el.value));
+          return el;
+        });
         container.appendChild(ta);
 
         const toggleBtn = document.createElement('button');
@@ -2133,18 +2135,16 @@
     if (allowsObject && allowsString && !isTranslationObject(value)) {
       const container = document.createElement('div');
       const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-      let inp;
-      if (StudioTheme.isLongText(path)) {
-        inp = StudioTheme.longText(text, onChange, '— Not set —', path);
-      } else {
-        inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = 'form-control';
-        inp.value = text;
-        inp.placeholder = '— Not set —';
-        if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
-        inp.addEventListener('input', () => onChange(inp.value));
-      }
+      const inp = longTextOr(path, text, onChange, () => {
+        const el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'form-control';
+        el.value = text;
+        el.placeholder = '— Not set —';
+        if (fieldSchema.pattern) el.pattern = htmlInputPattern(fieldSchema.pattern);
+        el.addEventListener('input', () => onChange(el.value));
+        return el;
+      });
       container.appendChild(inp);
 
       const toggleBtn = document.createElement('button');
@@ -2208,11 +2208,7 @@
       onChange(inp.value);
     });
     if (isDOI && initVal !== String(value || '')) onChange(initVal);
-    if (isDOI && doiCheck) {
-      const box = document.createElement('div');
-      box.append(inp, doiCheck.attachDoiCheck(inp));
-      return box;
-    }
+    if (isDOI && doiCheck) doiCheck.attachDoiCheck(inp);
     return inp;
   }
 

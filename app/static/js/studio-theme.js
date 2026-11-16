@@ -70,10 +70,6 @@
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
-  // Descriptive fields of the Study section (not same-named item fields) are English only (a stored translation object still displays; only the offer to convert goes).
-  const ENGLISH_ONLY = ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms'];
-  const offersMultilingual = (sectionKey, fieldName) => !(sectionKey === 'Study' && ENGLISH_ONLY.includes(fieldName));
-
   // Long text (a citation, a description): a full-width text area that grows with its text, never a one-line input.
   // It starts at 6 rows (a citation 4), grows to 25 rows and scrolls inside the box from there.
   const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']
@@ -112,7 +108,6 @@
   }
 
   const api = {
-    offersMultilingual,
     isLongText,
     longTextRows,
     autoGrow,

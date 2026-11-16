@@ -8,6 +8,8 @@ from pathlib import Path
 
 from playwright.sync_api import expect
 
+from tests.template_fixtures import bilingual, project_template
+
 
 def open_customizer(page, studio_url, *searches):
     """Pick templates on the generator (like a user) and press Customize & Export."""
@@ -142,11 +144,11 @@ def test_a_new_group_can_take_a_question_by_dragging_and_is_exported(app_page, s
 def test_reset_brings_back_a_switched_off_question(app_page, studio_url):
     open_customizer(app_page, studio_url, "demo")
     sub_row(app_page, "DEMO02").locator(".question-enabled").click()
-    expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(2)
+    expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(7)  # the demo has 8 questions
 
     app_page.click("#resetBtn")
 
-    expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(3)
+    expect(app_page.locator("#questionsContainer .matrix-subquestion")).to_have_count(8)
     expect(sub_row(app_page, "DEMO02").locator(".question-enabled")).to_be_checked()
 
 
@@ -170,7 +172,7 @@ def test_the_word_export_is_a_questionnaire_document(app_page, studio_url, tmp_p
 
     with zipfile.ZipFile(docx) as z:
         body = z.read("word/document.xml").decode("utf-8")
-    assert "tend to bounce back" in body
+    assert "I tidied my desk before starting work" in body
 
 
 def test_the_preview_shows_the_questions_as_a_respondent_sees_them(app_page, studio_url):
@@ -178,7 +180,7 @@ def test_the_preview_shows_the_questions_as_a_respondent_sees_them(app_page, stu
 
     app_page.click("#previewQuestionnaireBtn")
 
-    expect(app_page.locator("#previewModalBody")).to_contain_text("I tend to bounce back quickly")
+    expect(app_page.locator("#previewModalBody")).to_contain_text("I tidied my desk before starting work")
 
 
 def test_save_to_project_copies_the_templates_into_the_project_library(app_page, studio_url, tmp_path, project):
@@ -190,8 +192,11 @@ def test_save_to_project_copies_the_templates_into_the_project_library(app_page,
     assert (project / "code" / "library" / "survey" / "survey-demo.json").exists()
 
 
-def test_export_languages_decide_which_languages_the_survey_carries(app_page, studio_url, tmp_path):
-    open_customizer(app_page, studio_url, "demo")
+def test_export_languages_decide_which_languages_the_survey_carries(app_page, studio_url, tmp_path, project):
+    # no shipped template has two languages: the project brings a bilingual copy of the demo
+    template = bilingual(project_template("bilingualx"))
+    (project / "code" / "library" / "survey" / "survey-bilingualx.json").write_text(json.dumps(template), encoding="utf-8")
+    open_customizer(app_page, studio_url, "bilingualx")
     english_only = export(app_page, tmp_path, "en.lss")
     assert sorted(el.text for el in lss_root(english_only).find("languages")) == ["en"]
 

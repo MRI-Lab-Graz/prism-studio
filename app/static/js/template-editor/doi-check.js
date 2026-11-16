@@ -19,13 +19,14 @@ export async function checkDoi(value, fetchFn = fetch) {
   } catch (err) { return UNREACHABLE; }
 }
 
-/** Check on change (blur), not on every keystroke; the result shows in a line below the input. */
+/** Check on change (blur), not on every keystroke; the result shows in a line right after the input (the input stays the field element). */
 export function attachDoiCheck(input, fetchFn = fetch) {
   const line = document.createElement('div');
   line.className = 'form-text';
   let latest = 0;
   input.addEventListener('change', async () => {
     const mine = ++latest;
+    if (!line.isConnected) input.after(line);
     const msg = await checkDoi(input.value, fetchFn);
     if (mine !== latest) return; // a newer change is already being checked
     line.className = `form-text ${msg ? msg.cls : ''}`;
