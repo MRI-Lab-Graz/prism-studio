@@ -118,3 +118,16 @@ describe('offersMultilingual (descriptive header fields are English only)', () =
     }
   });
 });
+
+describe('long text fields (a reference of 300 to 600 characters is shown whole)', () => {
+  it('names the fields that grow with their text', () => {
+    for (const f of ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes']) expect(StudioTheme.isLongText(f)).toBe(true);
+    expect(StudioTheme.isLongText('DOI')).toBe(false);
+  });
+
+  it('autoGrow sets the height to the content height, so nothing needs scrolling', () => {
+    const ta = { style: {}, scrollHeight: 148 };
+    StudioTheme.autoGrow(ta);
+    expect(ta.style.height).toBe('148px');
+  });
+});

@@ -1188,12 +1188,7 @@
       // String|object hybrid - render as textarea with convert button
       if (allowsObject && allowsString && !isTranslationObject(value)) {
         const container = document.createElement('div');
-        const ta = document.createElement('textarea');
-        ta.className = 'form-control';
-        ta.rows = 2;
-        ta.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-        ta.placeholder = '— Not set —';
-        ta.addEventListener('input', () => onChange(ta.value));
+        const ta = StudioTheme.longText((value === undefined || value === null || typeof value === 'object') ? '' : String(value), onChange, '— Not set —');
         container.appendChild(ta);
 
         const toggleBtn = document.createElement('button');
@@ -2074,13 +2069,19 @@
     // Render as text input with a "Convert to multilingual" toggle
     if (allowsObject && allowsString && !isTranslationObject(value)) {
       const container = document.createElement('div');
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.className = 'form-control';
-      inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-      inp.placeholder = '— Not set —';
-      if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
-      inp.addEventListener('input', () => onChange(inp.value));
+      const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+      let inp;
+      if (StudioTheme.isLongText(fieldName)) {
+        inp = StudioTheme.longText(text, onChange, '— Not set —');
+      } else {
+        inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'form-control';
+        inp.value = text;
+        inp.placeholder = '— Not set —';
+        if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
+        inp.addEventListener('input', () => onChange(inp.value));
+      }
       container.appendChild(inp);
 
       const toggleBtn = document.createElement('button');
@@ -2117,6 +2118,10 @@
         }
       });
       return ta;
+    }
+
+    if (StudioTheme.isLongText(fieldName)) {
+      return StudioTheme.longText((value === undefined || value === null) ? '' : String(value), onChange, '— Not set —');
     }
 
     const inp = document.createElement('input');
