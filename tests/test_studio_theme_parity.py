@@ -65,3 +65,12 @@ def test_tally_complete_is_green():
 def test_tally_skips_zero_total():
     assert _js("tally", {"required": [0, 0], "core": [0, 0]}) == ""
     assert _norm(_macro("tally", required=(0, 0), core=(0, 0))) == ""
+
+
+def test_tally_with_project_fields_matches():
+    _same("tally", "tally", {"required": [2, 2], "project": [0, 2], "fair": [1, 3]},
+          required=(2, 2), project=(0, 2), fair=(1, 3))
+
+
+def test_project_tier_label_matches():
+    _same("fieldLabelHtml", "field_label", {"text": "Respondent", "tier": "project"}, text="Respondent", tier="project")

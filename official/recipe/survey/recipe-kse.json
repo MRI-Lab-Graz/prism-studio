@@ -1,0 +1,64 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "KSE",
+    "Reference": "survey-kse.json",
+    "TaskName": "kse"
+  },
+  "Transforms": {
+    "Invert": {
+      "Items": [
+        "KSE01",
+        "KSE04",
+        "KSE05",
+        "KSE06",
+        "KSE09",
+        "KSE10",
+        "KSE15",
+        "KSE16",
+        "KSE19",
+        "KSE20"
+      ],
+      "Scale": {
+        "min": 1,
+        "max": 4
+      }
+    }
+  },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Sum of all 20 items after reverse-coding the 10 positively worded items",
+      "Items": [
+        "KSE01",
+        "KSE02",
+        "KSE03",
+        "KSE04",
+        "KSE05",
+        "KSE06",
+        "KSE07",
+        "KSE08",
+        "KSE09",
+        "KSE10",
+        "KSE11",
+        "KSE12",
+        "KSE13",
+        "KSE14",
+        "KSE15",
+        "KSE16",
+        "KSE17",
+        "KSE18",
+        "KSE19",
+        "KSE20"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 20,
+        "max": 80
+      },
+      "HigherMeans": "higher loneliness",
+      "Note": "Reverse-coded items are the ten positively worded items. The archive documentation states that ten of the twenty items are positively worded and does not print a numbered list; the list follows the item wording and should be confirmed with the authors."
+    }
+  ]
+}

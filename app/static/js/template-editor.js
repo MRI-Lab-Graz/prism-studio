@@ -305,6 +305,10 @@
   import(new URL('./template-editor/primary-language.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { primaryLanguage = module; renderLanguageBar(); });
 
+  let doiCheck = null; // doi-check.js: the DOI fields check themselves on change
+  import(new URL('./template-editor/doi-check.js', document.currentScript?.src || window.location.href).href)
+    .then((module) => { doiCheck = module; if (currentTemplate) renderTopLevel(); });
+
   let questionnaireSections = null;
   import(new URL('./template-editor/questionnaire-sections.js', document.currentScript?.src || window.location.href).href)
     .then((module) => { questionnaireSections = module; if (currentTemplate) renderTopLevel(); });
@@ -324,9 +328,10 @@
     .then(() => Promise.all([import(languagePickerUrl), import(chipListUrl), import(authorEntryUrl)]))
     .then(([picker, chips, authors]) => { languagePicker = { ...picker, ...chips, ...authors }; if (currentTemplate) renderTopLevel(); })
     .catch((err) => console.error('Language picker failed to load', err));
+  let orcidRuns = null; // the one ORCID lookup run of the editor (author-entry.js)
   let languagePicker = null; // language-picker.js + chip-list.js, once loaded and the code list is in
   /** The author string for typed names: ORCID is looked up; none found (or no lookup) = the names alone. */
-  async function lookupAuthor(family, given, pickEl) {
+  async function lookupAuthor(family, given, pickEl, registerCancel = () => {}) {
     const { composeAuthor, pickCandidate, authorFromCandidate } = languagePicker;
     let found = [];
     try {
@@ -346,6 +351,7 @@
         resolve(sel.value === 'none' ? composeAuthor([family, given, '']) : authorFromCandidate(found[Number(sel.value)], family, given));
       });
       pickEl.replaceChildren(sel);
+      registerCancel(() => { pickEl.replaceChildren(); resolve(composeAuthor([family, given, ''])); }); // run stopped or row gone: skip
     });
   }
 
@@ -561,6 +567,8 @@
     }
     panel.style.display = 'block';
     const missing = new Set(completeness.required.missing);
+    const projectOnly = completeness.project_only || { open: [], paths: [] };  // a library template only
+    const projectOpen = new Set(projectOnly.open);
     const { required, recommended, percent } = completeness;
     setBar('teRequired', percent.required, `${required.filled}/${required.total}`, percent.required === 100 ? 'done' : 'open');
     const open = recommended.missing.map((path) => escapeHtml(path.split('/')[1])).join(', ');
@@ -579,18 +587,26 @@
 
     // fields: an empty required field is red until it is filled
     topLevelFormEl.querySelectorAll('[data-field-path]').forEach((el) => {
-      const isEmpty = missing.has(el.getAttribute('data-field-path'));
+      const path = el.getAttribute('data-field-path');
+      const isEmpty = missing.has(path);
+      const isOpen = projectOpen.has(path);  // empty, but only a project needs it: neutral, not red
       if (el.matches('input, select, textarea')) el.classList.toggle('is-invalid', isEmpty);
       const tier = el.querySelector(':scope > .studio-field-label > .badge');
-      if (tier && tier.textContent.trim() === 'REQUIRED') StudioTheme.setFilled(tier, !isEmpty);  // green once filled
+      if (tier && ['REQUIRED', 'PROJECT'].includes(tier.textContent.trim())) StudioTheme.setFilled(tier, !isEmpty && !isOpen, isOpen);  // green once filled
     });
     // sections: the Required tally counts what is filled, and turns green when all are
     topLevelFormEl.querySelectorAll('details.te-subgroup').forEach((details) => {
       const slot = details.querySelector('.te-subgroup-tally');
       const total = Number(details.dataset.requiredTotal || 0);
       if (!slot || !total || !questionnaireSections) return;
-      const open = questionnaireSections.countMissing((details.dataset.paths || '').split(','), missing);
-      slot.innerHTML = StudioTheme.tally({ required: [total - open, total] });
+      const paths = (details.dataset.paths || '').split(',');
+      const open = questionnaireSections.countMissing(paths, missing);
+      const projectPaths = paths.filter((path) => projectOnly.paths.includes(path));
+      const projectNotSet = questionnaireSections.countMissing(projectPaths, projectOpen);
+      slot.innerHTML = StudioTheme.tally({
+        required: [total - projectPaths.length - open, total - projectPaths.length],
+        project: [projectPaths.length - projectNotSet, projectPaths.length],
+      });
     });
   }
 
@@ -1108,7 +1124,11 @@
     }
   }
 
-  function createInput(fieldSchema, value, onChange, fieldName = '') {
+  /** A Study long-text field (Citation, Description, ...) gets the growing text area; any other field its plain element. */
+  const longTextOr = (path, text, onChange, plain) => (
+    StudioTheme.isLongText(path) ? StudioTheme.longText(text, onChange, '— Not set —', path) : plain());
+
+  function createInput(fieldSchema, value, onChange, fieldName = '', path = '') {
     // Special handling for Description and Instructions - use textarea for better UX
     if (['Description', 'Instructions'].includes(fieldName)) {
       const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
@@ -1178,12 +1198,16 @@
       // String|object hybrid - render as textarea with convert button
       if (allowsObject && allowsString && !isTranslationObject(value)) {
         const container = document.createElement('div');
-        const ta = document.createElement('textarea');
-        ta.className = 'form-control';
-        ta.rows = 2;
-        ta.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-        ta.placeholder = '— Not set —';
-        ta.addEventListener('input', () => onChange(ta.value));
+        const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+        const ta = longTextOr(path, text, onChange, () => {
+          const el = document.createElement('textarea');
+          el.className = 'form-control';
+          el.rows = 2;
+          el.value = text;
+          el.placeholder = '— Not set —';
+          el.addEventListener('input', () => onChange(el.value));
+          return el;
+        });
         container.appendChild(ta);
 
         const toggleBtn = document.createElement('button');
@@ -1444,6 +1468,52 @@
         });
         container.querySelector('.chip-input-row').after(pickEl);
         list.setValues(currentVal);
+        // Imported authors are plain "Family, Given": look the ORCIDs up one author at a time (same lookup and
+        // pick-one dialog as for typed authors); an author that has an ORCID is never touched.
+        const lookupBtn = document.createElement('button');
+        lookupBtn.type = 'button';
+        lookupBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        lookupBtn.innerHTML = '<i class="fas fa-id-badge me-1"></i>Look up ORCIDs';
+        const stopBtn = document.createElement('button');
+        stopBtn.type = 'button';
+        stopBtn.className = 'btn btn-sm btn-outline-danger mt-2 ms-1';
+        stopBtn.textContent = 'Stop';
+        const progressEl = document.createElement('span');
+        progressEl.className = 'small text-muted ms-2';
+        const showRunning = (on) => { lookupBtn.disabled = on; stopBtn.hidden = !on; };
+        showRunning(!!orcidRuns?.active); // a re-render during a run shows the running state again
+        if (orcidRuns?.active) progressEl.textContent = 'ORCID lookup is running.';
+        stopBtn.addEventListener('click', () => { orcidRuns?.stop(); progressEl.textContent = 'Stopping after the current author.'; });
+        lookupBtn.addEventListener('click', async () => {
+          orcidRuns = orcidRuns || languagePicker.createOrcidRuns();
+          const run = orcidRuns.begin(currentTemplate);
+          if (!run) return;
+          const live = () => run.isValid(currentTemplate, () => container.isConnected);
+          // the row was re-rendered away: end the run, a pending pick-one dialog is skipped
+          const observer = new MutationObserver(() => { if (!container.isConnected) run.abort(); });
+          observer.observe(document.body, { childList: true, subtree: true });
+          showRunning(true);
+          try {
+            const { found, aborted } = await languagePicker.lookupMissingOrcids(
+              list.getValues(),
+              (fam, giv) => lookupAuthor(fam, giv, pickEl, (cancel) => { run.cancelPick = cancel; }),
+              {
+                isValid: live,
+                shouldStop: () => run.stopped,
+                onProgress: (done, total, text) => { progressEl.textContent = text ? `Looking up ORCID ${done + 1} of ${total}: ${text}` : (total ? `Done: ${total} author(s) checked.` : 'Every author already has an ORCID.'); },
+              },
+            );
+            if (aborted || !live()) return;
+            const current = list.getValues();
+            const merged = languagePicker.mergeOrcids(current, found); // never overwrites edits made during the run
+            if (merged.some((a, i) => a !== current[i])) { list.setValues(merged); onChange([...merged]); }
+          } finally {
+            observer.disconnect();
+            run.end();
+            if (container.isConnected) showRunning(false);
+          }
+        });
+        container.append(lookupBtn, stopBtn, progressEl);
         return container;
       }
 
@@ -1616,7 +1686,7 @@
                 // Update the summary title
                 const newSummary = summaryField ? `#${idx + 1}: ${String(entry[summaryField] || '').substring(0, 40)}` : `Entry #${idx + 1}`;
                 title.textContent = newSummary;
-              });
+              }, '', `${path}/${fname}`);
               fieldDiv.appendChild(fInput);
               card.appendChild(fieldDiv);
             }
@@ -2064,13 +2134,17 @@
     // Render as text input with a "Convert to multilingual" toggle
     if (allowsObject && allowsString && !isTranslationObject(value)) {
       const container = document.createElement('div');
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.className = 'form-control';
-      inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
-      inp.placeholder = '— Not set —';
-      if (fieldSchema.pattern) inp.pattern = htmlInputPattern(fieldSchema.pattern);
-      inp.addEventListener('input', () => onChange(inp.value));
+      const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+      const inp = longTextOr(path, text, onChange, () => {
+        const el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'form-control';
+        el.value = text;
+        el.placeholder = '— Not set —';
+        if (fieldSchema.pattern) el.pattern = htmlInputPattern(fieldSchema.pattern);
+        el.addEventListener('input', () => onChange(el.value));
+        return el;
+      });
       container.appendChild(inp);
 
       const toggleBtn = document.createElement('button');
@@ -2109,6 +2183,10 @@
       return ta;
     }
 
+    if (StudioTheme.isLongText(path)) {
+      return StudioTheme.longText((value === undefined || value === null) ? '' : String(value), onChange, '— Not set —', path);
+    }
+
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.className = 'form-control';
@@ -2130,6 +2208,7 @@
       onChange(inp.value);
     });
     if (isDOI && initVal !== String(value || '')) onChange(initVal);
+    if (isDOI && doiCheck) doiCheck.attachDoiCheck(inp);
     return inp;
   }
 
@@ -2643,7 +2722,7 @@
           }
         }
       }
-    }, name);
+    }, name, `${sectionKey}/${name}`);
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 

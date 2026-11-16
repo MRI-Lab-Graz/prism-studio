@@ -246,6 +246,11 @@ def cmd_library_template_score(args) -> None:
             print(f"{label}: {part['filled']}/{part['total']} ({result['percent'][key]}%)")
             for path in part["missing"]:
                 print(f"  - {path}")
+        if "project_only" in result:
+            part = result["project_only"]
+            print(f"Project (set when used in a project): {part['filled']}/{part['total']}")
+            for path in part["open"]:
+                print(f"  - {path}")
         for problem in result["problems"]:
             print(f"Problem: {problem}")
     if not result["complete"]:

@@ -8,13 +8,16 @@
     required: ['bg-danger', 'REQUIRED'],
     core: ['badge-tier-core', 'CORE'],
     optional: ['bg-secondary', 'OPTIONAL'],
+    // required in a project, open (neither missing nor filled) in a library template
+    project: ['badge-tier-project', 'PROJECT'],
   };
+  const PROJECT_TIP = 'Set when the questionnaire is used in a project';
 
   // Field heading: tier badge, label text, hover tip. All parts but the text are optional.
   function fieldLabelHtml({ text, tier, tip }) {
     const t = TIERS[tier];
     return '<label class="form-label studio-field-label">'
-      + (t ? `<span class="badge ${t[0]}">${t[1]}</span> ` : '')
+      + (t ? `<span class="badge ${t[0]}"${tier === 'project' ? ` title="${PROJECT_TIP}"` : ''}>${t[1]}</span> ` : '')
       + esc(text)
       + (tip ? ` <span class="info-tip text-muted" data-bs-toggle="tooltip" title="${esc(tip)}">&#9432;</span>` : '')
       + '</label>';
@@ -28,9 +31,15 @@
   }
 
   // Recolour a rendered tier badge (the project page's rule, kept here so every page uses the one).
-  function setFilled(badge, filled) {
+  // `projectOpen`: the field is required only in a project and still empty here: the neutral PROJECT state.
+  function setFilled(badge, filled, projectOpen = false) {
+    const was = badge.textContent.trim();
+    const label = projectOpen ? 'PROJECT' : (was === 'PROJECT' ? 'REQUIRED' : was);
+    if (label !== was) badge.textContent = label;
+    if (projectOpen) badge.setAttribute('title', PROJECT_TIP);
+    else if (was === 'PROJECT') badge.removeAttribute('title');
     badge.classList.remove('bg-success', ...Object.values(TIERS).map((t) => t[0]));
-    const cls = tierBadgeClass(badge.textContent.trim(), filled);
+    const cls = tierBadgeClass(label, filled && !projectOpen);
     if (cls) badge.classList.add(cls);
   }
 
@@ -50,16 +59,59 @@
   }
 
   // Required/Core/FAIR counts, each [filled, total] or [filled, total, title]; a total of 0 is not shown.
-  function tally({ required, core, fair }) {
+  // `project` ([filled, total]) counts the fields only a project needs: neutral until all are filled.
+  function tally({ required, core, fair, project }) {
     const badge = (label, c, openClass) => (c && c[1] > 0)
       ? `<span class="badge ${c[0] === c[1] ? 'bg-success' : openClass} bg-opacity-75"${c[2] ? ` title="${esc(c[2])}"` : ''}>${label} ${c[0]}/${c[1]}</span>`
       : '';
     return badge('Required', required, 'bg-danger')
+      + badge('Project', project, 'badge-tier-project')
       + badge('Core', core, 'badge-tier-core')
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
+  // Long text (a citation, a description): a full-width text area that grows with its text, never a one-line input.
+  // It starts at 6 rows (a citation 4), grows to 25 rows and scrolls inside the box from there.
+  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Construct']
+    .map((f) => `Study/${f}`).concat('Study/References/Citation');
+  const MAX_ROWS = 25;
+  const isLongText = (path) => LONG_TEXT.includes(path); // a field path like "Study/Citation", not a bare name
+  const LONG_TEXT_ROWS = { 'Study/Construct': 2, 'Study/PermissionsNote': 3 };
+  const longTextRows = (path) => LONG_TEXT_ROWS[path] || (/Citation$/.test(path) ? 4 : 6);
+
+  function autoGrow(ta, maxHeight = Infinity) {
+    ta.style.height = 'auto';
+    const h = ta.scrollHeight;
+    ta.style.height = `${Math.min(h, maxHeight)}px`;
+    ta.style.overflowY = h > maxHeight ? 'auto' : 'hidden';
+  }
+
+  function longText(value, onInput, placeholder, path = '') {
+    const ta = document.createElement('textarea');
+    ta.className = 'form-control studio-long-text';
+    ta.rows = longTextRows(path);
+    ta.style.width = '100%';
+    ta.style.minWidth = '0';
+    ta.style.resize = 'vertical';
+    ta.value = value;
+    if (placeholder) ta.placeholder = placeholder;
+    const grow = () => {
+      const cs = typeof getComputedStyle === 'function' ? getComputedStyle(ta) : null;
+      const line = (cs && parseFloat(cs.lineHeight)) || 24;
+      const pad = cs ? (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
+      autoGrow(ta, line * MAX_ROWS + pad);
+    };
+    ta.addEventListener('input', () => { grow(); onInput(ta.value); });
+    // a hidden section has no height yet: grow when it gets a width
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { if (ta.offsetWidth) grow(); }).observe(ta);
+    return ta;
+  }
+
   const api = {
+    isLongText,
+    longTextRows,
+    autoGrow,
+    longText,
     fieldLabelHtml,
     tierBadgeClass,
     setFilled,

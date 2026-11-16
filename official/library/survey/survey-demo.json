@@ -19,8 +19,10 @@
     "OriginalName": "PRISM demonstration questionnaire",
     "ShortName": "DEMO",
     "Category": "Other / Uncategorized",
-    "Authors": [],
-    "Year": null,
+    "Authors": [
+      "PRISM maintainers"
+    ],
+    "Year": 2026,
     "DOI": "",
     "Citation": "Written for the PRISM specification as a demonstration; not a validated instrument.",
     "License": "\"The PRISM maintainers release this demonstration questionnaire under CC0 1.0 (public domain dedication).\"",

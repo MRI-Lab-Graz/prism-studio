@@ -15,7 +15,15 @@ ITS OWN terms, which are stated in the template and are set by the rights holder
 * Descriptive metadata (description, notes, reliability, validity, norming, keywords, licence terms, archive
   metadata) is always English, whatever the language of the instrument. Only the instrument's own text (items,
   response levels, instructions, original name), bibliographic data and the quoted licence statement stay in the
-  original language.
+  original language. Four sections of the imported archive metadata are kept as quoted for the same reason:
+  the instruction to respondents and test administrators (`Durchführung/Instruktion`) is instrument text, and
+  `Wichtige neuere Publikationen`, `Rezensionen` and `Orginalfassung/Anderssprachlige Fassungen` are
+  bibliographic data. All other archive metadata is English.
+* No text-extraction artefacts: a template holds no Latin ligature characters (such as the single character for
+  "fi"), soft hyphens or zero-width characters in any string; `scripts/check_library.py` (rule h) names the field and
+  the character. Normal umlauts, ss, quotes and the ellipsis are fine.
+* Every template names its authors, its year and a real citation (`Study.Authors`, `Study.Year`,
+  `Study.Citation`); `scripts/check_library.py` refuses a placeholder such as "Official webpage".
 * If you hold rights to an instrument and want it removed, write to
   <contact address to be set by the maintainers>.
 * This folder is excluded from the CC BY 4.0 grant of this repository (see LICENSE). The rest of
@@ -34,3 +42,7 @@ decision. The licence of each test is always read from that test's page, never a
   the form (PDF) says 1 = stimme gar nicht zu, 7 = stimme voll zu, while the Testarchiv page text reads
   (1) stimme voll und ganz zu ... (7) stimme überhaupt nicht zu; the template gives only the two anchors of
   the form (`Study.Notes`), no scoring and no recipe until the scoring documentation has been read.
+* `survey-kse.json`: Kölner Skala zur Messung von Einsamkeit (KSE), CC BY-SA 4.0, the pilot of the import. Its
+  recipe `recipes/survey/recipe-kse.json` reverse-codes the ten positively worded items; the archive page and
+  documentation name the keying but print no numbered list, so the list follows the item wording and should be
+  confirmed with the authors.

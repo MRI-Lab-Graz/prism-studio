@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 import importlib
+from unittest.mock import patch
 from pathlib import Path
 
 from flask import Flask
@@ -134,8 +135,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         with self.app.test_request_context(
             "/api/projects/orcid/search?given_names=Karl&family_name=Koschutnig&limit=3",
             method="GET",
-        ):
-            response = self.handle_search_orcid_by_name(search_candidates=fake_search)
+        ), patch("src.orcid_lookup.search_orcid_candidates", fake_search):
+            response = self.handle_search_orcid_by_name()
 
         status_code = response[1] if isinstance(response, tuple) else 200
         resp_obj = response[0] if isinstance(response, tuple) else response
@@ -171,8 +172,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         with self.app.test_request_context(
             "/api/projects/orcid/search?given_names=Andreas&family_name=Fink&limit=5&current_orcid=0000-0001-7316-3140",
             method="GET",
-        ):
-            response = self.handle_search_orcid_by_name(search_candidates=fake_search)
+        ), patch("src.orcid_lookup.search_orcid_candidates", fake_search):
+            response = self.handle_search_orcid_by_name()
 
         status_code = response[1] if isinstance(response, tuple) else 200
         self.assertEqual(status_code, 200)
@@ -195,10 +196,8 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         with self.app.test_request_context(
             "/api/projects/orcid/search?family_name=Koschutnig",
             method="GET",
-        ):
-            response = self.handle_search_orcid_by_name(
-                search_candidates=failing_search
-            )
+        ), patch("src.orcid_lookup.search_orcid_candidates", failing_search):
+            response = self.handle_search_orcid_by_name()
 
         status_code = response[1] if isinstance(response, tuple) else 200
         resp_obj = response[0] if isinstance(response, tuple) else response

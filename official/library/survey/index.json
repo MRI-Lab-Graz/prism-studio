@@ -1,5 +1,5 @@
 {
-  "GeneratedOn": "2026-11-15T07:06:01+00:00",
+  "GeneratedOn": "2026-11-16T06:39:35+00:00",
   "SourceLibrary": "official/library/survey",
   "Instruments": {
     "dass": {
@@ -8,8 +8,8 @@
       "ShortName": "DASS",
       "OriginalName": "Depression Anxiety Stress Scales (DASS)",
       "DOI": "",
-      "Citation": "Official webpage",
-      "Version": null,
+      "Citation": "Lovibond, S. H. & Lovibond, P. F. (1995). Manual for the Depression Anxiety Stress Scales (2nd ed.). Sydney: Psychology Foundation.",
+      "Version": "42-item",
       "Versions": [],
       "Variants": [],
       "Vocabulary": null,
@@ -21,8 +21,8 @@
       "ShortName": "DASS21",
       "OriginalName": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
       "DOI": "",
-      "Citation": "Official webpage",
-      "Version": null,
+      "Citation": "Lovibond, S. H. & Lovibond, P. F. (1995). Manual for the Depression Anxiety Stress Scales (2nd ed.). Sydney: Psychology Foundation.",
+      "Version": "21-item short form",
       "Versions": [],
       "Variants": [],
       "Vocabulary": null,
@@ -40,6 +40,19 @@
       "Variants": [],
       "Vocabulary": null,
       "Category": "Other / Uncategorized"
+    },
+    "kse": {
+      "TaskName": "kse",
+      "SourceFile": "survey-kse.json",
+      "ShortName": "KSE",
+      "OriginalName": "Kölner Skala zur Messung von Einsamkeit",
+      "DOI": "10.23668/psycharchives.21079",
+      "Citation": "Stephan, E., Fäth, M. & Lamm, H. (2025). KSE. Kölner Skala zur Messung von Einsamkeit [Verfahrensdokumentation, Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.21079",
+      "Version": null,
+      "Versions": [],
+      "Variants": [],
+      "Vocabulary": null,
+      "Category": "Mood, Anxiety & Clinical Screening"
     },
     "sbi-d": {
       "TaskName": "sbi-d",

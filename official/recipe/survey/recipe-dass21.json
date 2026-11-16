@@ -35,8 +35,8 @@
       ],
       "Method": "sum",
       "Range": {
-        "min": 21,
-        "max": 147
+        "min": 0,
+        "max": 63
       }
     }
   ],

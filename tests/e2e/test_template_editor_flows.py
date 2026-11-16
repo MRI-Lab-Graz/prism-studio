@@ -242,3 +242,20 @@ def test_the_prism_id_follows_the_task_name(page, project, studio_url):
     task.fill("not valid!")
     page.wait_for_timeout(500)
     assert slot.inner_text().strip() == ""
+
+
+def test_a_library_template_shows_its_project_fields_as_open_not_green_or_red(page, project, studio_url):
+    page.goto(f"{studio_url}/template-editor", wait_until="networkidle")
+    page.select_option("#globalTemplateSelect", "survey-demo.json")
+    page.wait_for_selector("#completionPanel", state="visible")
+    administration = _administration(page)
+
+    _wait_for_badge(page, "Technical/Respondent", "badge-tier-project")
+    badge = page.locator("[data-field-path='Technical/Respondent'] > .studio-field-label > .badge")
+    assert badge.inner_text() == "PROJECT" and "bg-success" not in badge.get_attribute("class") and "bg-danger" not in badge.get_attribute("class")
+    assert "is-invalid" not in administration.locator("#field_Technical_Respondent").get_attribute("class")
+    project_badge = administration.locator(".te-subgroup-tally .badge", has_text="Project")
+    assert project_badge.inner_text() == "Project 0/3" and "bg-success" not in project_badge.get_attribute("class")
+
+    administration.locator("#field_Technical_Respondent").select_option("self")
+    _wait_for_badge(page, "Technical/Respondent", "bg-success")
