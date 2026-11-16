@@ -78,7 +78,7 @@ def lookup_doi(value: str, timeout: float = 8.0) -> dict:
     not that it is wrong. 'not_found' only when every agency answered 404.
     """
     doi = normalize_doi(value)
-    if not DOI_RE.match(doi) or ".." in doi.split("/"):
+    if not DOI_RE.match(doi) or any(seg in ("", ".", "..") for seg in doi.split("/")):
         return {"status": "invalid", "doi": doi}
     for base, fmt in _AGENCIES:
         req = urllib.request.Request(

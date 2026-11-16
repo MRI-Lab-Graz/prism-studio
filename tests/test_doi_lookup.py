@@ -103,6 +103,9 @@ def test_dot_dot_segment_is_invalid_without_network():
     with mock.patch("src.doi_lookup._open", fake):
         assert d.lookup_doi("10.1000/../x")["status"] == "invalid"
         assert d.lookup_doi("10.1000/a/../b")["status"] == "invalid"
+        assert d.lookup_doi("10.1000/./x")["status"] == "invalid"
+        assert d.lookup_doi("10.1000/.")["status"] == "invalid"
+        assert d.lookup_doi("10.1000/x/")["status"] == "invalid"
     assert fake.calls == []
 
 

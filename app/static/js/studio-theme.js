@@ -76,7 +76,8 @@
     .map((f) => `Study/${f}`).concat('Study/References/Citation');
   const MAX_ROWS = 25;
   const isLongText = (path) => LONG_TEXT.includes(path); // a field path like "Study/Citation", not a bare name
-  const longTextRows = (path) => (/Citation$/.test(path) ? 4 : 6);
+  const LONG_TEXT_ROWS = { 'Study/Construct': 2, 'Study/PermissionsNote': 3 };
+  const longTextRows = (path) => LONG_TEXT_ROWS[path] || (/Citation$/.test(path) ? 4 : 6);
 
   function autoGrow(ta, maxHeight = Infinity) {
     ta.style.height = 'auto';
