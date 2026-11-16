@@ -99,3 +99,15 @@ describe('tally with project fields', () => {
     expect(StudioTheme.tally({ project: [2, 2] })).toContain('bg-success bg-opacity-75">Project 2/2');
   });
 });
+
+describe('offersMultilingual (descriptive header fields are English only)', () => {
+  it('refuses the conversion for the English-only descriptive fields', () => {
+    for (const f of ['Description', 'Construct', 'Reliability', 'Validity', 'Norming', 'Notes', 'PermissionsNote', 'Keywords', 'Citation', 'LicenseTerms']) {
+      expect(StudioTheme.offersMultilingual(f)).toBe(false);
+    }
+  });
+
+  it('keeps it for fields where any language is allowed', () => {
+    for (const f of ['Instructions', 'OriginalName', 'Levels', 'Text']) expect(StudioTheme.offersMultilingual(f)).toBe(true);
+  });
+});

@@ -1208,7 +1208,7 @@
           onChange(translationObj);
           rerenderQuestionnaireInfoFor(container);
         });
-        container.appendChild(toggleBtn);
+        if (StudioTheme.offersMultilingual(fieldName)) container.appendChild(toggleBtn);
         return container;
       }
     }
@@ -2096,7 +2096,7 @@
         // Replace this container with the translation table
         rerenderQuestionnaireInfoFor(container);
       });
-      container.appendChild(toggleBtn);
+      if (StudioTheme.offersMultilingual(fieldName)) container.appendChild(toggleBtn);
       return container;
     }
 
