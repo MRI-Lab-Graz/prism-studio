@@ -5,8 +5,13 @@ Prints one line per problem (naming the file) and exits 1 when there is any.
 Rules: (a) Study.License quotes the rights holder, (b) Study.Source is an absolute https URL,
 (c) Study.LicenseChecked is YYYY-MM-DD, (d) Study.LicenseTerms is a list of short strings,
 (e) only languages named in Study.LicenseLanguages, (e2) descriptive Study metadata (Description, Notes,
-LicenseTerms, ...) is English: other languages only in items, Levels, Instructions, OriginalName, bibliographic
-data and the quoted Study.License evidence, (f) no Study.ItemCount, Study.Subscales or item Reversed.
+LicenseTerms, ...) is English (a quotation in quote marks of up to 300 characters may be in another language): other languages only in items, Levels, Instructions, OriginalName, bibliographic
+data, the quoted Study.License evidence and the instruction and bibliographic sections of
+ArchiveMetadata (ARCHIVE_TEXT_EXEMPT), (f) no Study.ItemCount, Study.Subscales or item Reversed, (g) bibliographic
+completeness: Study.Authors is a non-empty list, Study.Year an integer and Study.Citation a real citation (not the
+placeholder "Official webpage"), (h) no text-extraction artefacts in any string of a template: no Latin ligature
+characters (U+FB00-FB06), soft hyphen (U+00AD) or zero-width characters (U+200B-U+200D, U+FEFF); the message names the
+field and the code point. Normal umlauts, ss, quotes and the ellipsis are fine.
 """
 
 from __future__ import annotations
@@ -28,6 +33,11 @@ NON_LANGUAGE_KEYS = {"min", "max"}  # AdministrationTime / ScoringTime / AgeRang
 ENGLISH_FIELDS = ("Description", "Construct", "Reliability", "Validity", "Norming", "Notes", "PermissionsNote",
                   "RecallPeriod", "Keywords", "LicenseTerms", "ArchiveMetadata", "AdministrationTime",
                   "ScoringTime", "AgeRange")
+# Open Test Archive imports keep these ArchiveMetadata sections as quoted: the instruction to respondents and
+# test administrators is instrument text (like Study.Instructions), the other three are bibliographic data (like
+# Study.References). Keys are compared exactly; every other section, field or nested text stays English.
+ARCHIVE_TEXT_EXEMPT = frozenset({"Durchführung/Instruktion", "Wichtige neuere Publikationen", "Rezensionen",
+                                 "Orginalfassung/Anderssprachlige Fassungen"})
 ENGLISH_ONLY = ("{}: text looks German; descriptive metadata must be English "
                 "(items, instructions and the original name may be in another language)")
 _DE = set("""der die das und nicht mit von zu den dem des ein eine einer eines ist sind wird werden wurde wurden auch
@@ -44,8 +54,13 @@ _DE, _EN = _DE - _EN, _EN - _DE
 GERMAN_WORD = re.compile(r"[a-zäöüß]+")
 
 
+SHORT_QUOTE = re.compile(r'"[^"]{0,300}"|„[^“”]{0,300}[“”]|“[^”]{0,300}”|‚[^‘’]{0,300}[‘’]')
+
+
 def looks_german(text: str) -> bool:
-    """Cheap heuristic: German function words (and umlauts) clearly outweigh English ones. Not a language detector."""
+    """Cheap heuristic: German function words (and umlauts) clearly outweigh English ones. Not a language detector.
+    Quoted passages of at most 300 characters are quotations and are not counted; longer ones are."""
+    text = SHORT_QUOTE.sub(" ", text)
     words = GERMAN_WORD.findall(text.lower())
     de = sum(w in _DE for w in words)
     de += de and sum(w in _DE_WEAK for w in words)
@@ -70,10 +85,25 @@ def _strings(value, label):
             yield from _strings(v, label)
 
 
+ARTEFACTS = re.compile("[\ufb00-\ufb06\u00ad\u200b-\u200d\ufeff]")
+
+
+def artefact_problems(value, path="") -> list[str]:
+    """Rule (h): one line per string that holds a ligature, soft hyphen or zero-width character."""
+    if isinstance(value, str):
+        return [f"{path or '(template)'}: contains U+{ord(c):04X}, a text-extraction artefact; use the plain characters"
+                for c in dict.fromkeys(ARTEFACTS.findall(value))]
+    items = value.items() if isinstance(value, dict) else enumerate(value) if isinstance(value, list) else ()
+    return [line for k, v in items for line in artefact_problems(v, f"{path}.{k}" if path else str(k))]
+
+
 def english_problems(study: dict) -> list[str]:
+    """Descriptive Study metadata must be English, except the ARCHIVE_TEXT_EXEMPT sections of ArchiveMetadata."""
     out = []
     for field in ENGLISH_FIELDS:
         value, label = study.get(field), f"Study.{field}"
+        if field == "ArchiveMetadata" and isinstance(value, dict) and isinstance(value.get("sections"), dict):
+            value = {**value, "sections": {k: v for k, v in value["sections"].items() if k not in ARCHIVE_TEXT_EXEMPT}}
         if isinstance(value, dict) and field != "ArchiveMetadata":
             # an object form may only be {"en": ...}; {min, max} numbers are data
             for k, v in value.items():
@@ -153,12 +183,20 @@ def template_problems(data: dict) -> list[str]:
     out += [f"language {x!r} is not in Study.LicenseLanguages" for x in used if x not in langs]
     _langs(data, "", langs, out)
     out += english_problems(study)
+    if not (isinstance(study.get("Authors"), list) and study["Authors"]):
+        out.append("Study.Authors must be a non-empty list")
+    year = study.get("Year")
+    if not (isinstance(year, int) and not isinstance(year, bool)):
+        out.append("Study.Year must be an integer")
+    cit = study.get("Citation")
+    if not (isinstance(cit, str) and cit.strip() and cit.strip().lower() != "official webpage"):
+        out.append("Study.Citation must be a real citation, not empty or 'Official webpage'")
     for key in ("ItemCount", "Subscales"):
         if key in study:
             out.append(f"Study.{key} must not be set")
     out += [f"{k}.Reversed must not be set" for k, v in data.items()
             if k not in NON_ITEMS and isinstance(v, dict) and "Reversed" in v]
-    return out
+    return out + artefact_problems(data)
 
 
 def check(repo: Path) -> list[str]:

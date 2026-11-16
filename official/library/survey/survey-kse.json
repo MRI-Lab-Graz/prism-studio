@@ -1,0 +1,553 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "de"
+  },
+  "Metadata": {
+    "SchemaVersion": "2.1.3",
+    "CreationDate": "2026-11-16",
+    "Creator": "PRISM Studio"
+  },
+  "I18n": {
+    "Languages": [
+      "de"
+    ]
+  },
+  "Study": {
+    "TaskName": "kse",
+    "ShortName": "KSE",
+    "OriginalName": "Kölner Skala zur Messung von Einsamkeit",
+    "Category": "Mood, Anxiety & Clinical Screening",
+    "Authors": [
+      "Stephan, Ekkehard",
+      "Fäth, Matthias",
+      "Lamm, Helmut"
+    ],
+    "Year": 2025,
+    "Citation": "Stephan, E., Fäth, M. & Lamm, H. (2025). KSE. Kölner Skala zur Messung von Einsamkeit [Verfahrensdokumentation, Fragebogen]. In Leibniz-Institut für Psychologie (ZPID) (Hrsg.), Open Test Archive. Trier: ZPID. https://doi.org/10.23668/psycharchives.21079",
+    "DOI": "10.23668/psycharchives.21079",
+    "Source": "https://doi.org/10.23668/psycharchives.21079",
+    "License": "\"Copyright Autor(-Innen); CC-BY-SA 4.0\" \"Es wird vom Testarchiv online und kostenlos zur Verfügung gestellt und ist urheberrechtlich geschützt, d. h. das Urheberrecht liegt weiterhin bei den AutorInnen.\" \"Mit der Nutzung des Verfahrens verpflichte ich mich, die Bedingungen der Creative Commons Lizenz CC BY-SA 4.0 zu beachten.\" \"Sie wurden uns durch die Rechteinhaber/-innen zur weiteren Nachnutzung zur Verfügung gestellt. (Open Test Archive, Nutzungsbedingungen, https://www.testarchiv.eu/de/nutzungsbedingungen)\" \"It is made available online and free of charge by the test archive and is protected by copyright, i.e. the copyright remains with the author(s).\" \"By using this test, I agree to abide by the terms of the Creative Commons License CC BY-SA 4.0.\"",
+    "LicenseID": "CC-BY-SA-4.0",
+    "LicenseURL": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "CopyrightHolder": "Stephan, Ekkehard; Fäth, Matthias; Lamm, Helmut",
+    "LicenseChecked": "2026-11-14",
+    "LicenseLanguages": [
+      "de"
+    ],
+    "LicenseTerms": [
+      "This template is released under CC BY-SA 4.0 (ShareAlike): derived versions must carry the same licence.",
+      "Converted from the PDF questionnaire to JSON; item wording taken over unchanged.",
+      "The authors ask users to send the feedback form after using the test (a request of the Open Test Archive, not a condition added by PRISM): https://www.testarchiv.eu/de/test/9003017",
+      "Reliability, validity and norming data come from the Open Test Archive page and apply to the published version only."
+    ],
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Lamm, H. & Stephan, E. (1986). Zur Messung von Einsamkeit: Entwicklung einer deutschen Fassung des Fragebogens von Russell und Peplau. Psychologie und Praxis, 30, 132-134.",
+        "Year": 1986
+      },
+      {
+        "Type": "other",
+        "Citation": "Bücker, S. (2022). Soziale und gesundheitliche Folgen von Einsamkeit. KNE Expertise 10/2022.",
+        "Year": 2022
+      },
+      {
+        "Type": "other",
+        "Citation": "Cheek, J. M. (1979). Shyness and sociability. Unpublished master's thesis, University of Texas at Austin.",
+        "Year": 1979
+      },
+      {
+        "Type": "other",
+        "Citation": "Cole, A., Bond, C., Qualter, P., & Maes, M. (2021). A Systematic Review of the Development and Psychometric Properties of Loneliness Measures for Children and Adolescents. International Journal of Environmental Research and Public Health, 22, 18(6), 3285. https://doi.org/10.3390/ijerph18063285",
+        "DOI": "10.3390/ijerph18063285",
+        "Year": 2021
+      },
+      {
+        "Type": "other",
+        "Citation": "de Jong Gierveld, J. & Kamphuis, F. H. (1985). The development of a Rasch-type Loneliness Scale. Applied Psychological Measurement, 9, 289–299. https://doi.org/10.1177/014662168500900307",
+        "DOI": "10.1177/014662168500900307",
+        "Year": 1985
+      },
+      {
+        "Type": "other",
+        "Citation": "de Jong Gierveld, J. & van Tilburg, T. (2006). A 6-Item scale for overall, emotional, and social loneliness: Confirmatory tests on survey data. Research on Aging, 28, 582–598. https://doi.org/10.1177/0164027506289723",
+        "DOI": "10.1177/0164027506289723",
+        "Year": 2006
+      },
+      {
+        "Type": "other",
+        "Citation": "DiTommaso, E., & Spinner, B. (1993). The development and initial validation of the Social and Emotional Loneliness Scale for Adults (SELSA). Personality and individual differences, 14(1), 127–134.",
+        "Year": 1993
+      },
+      {
+        "Type": "other",
+        "Citation": "Döring, N. & Bortz, J. (1993). Psychometrische Einsamkeitsforschung: Deutsche Neukonstruktion der UCLA Loneliness Scale. Diagnostica, 39, 224-234. Entringer, T. (2022). Epidemiologie von Einsamkeit in Deutschland. KNE Expertise 4/2022.",
+        "Year": 1993
+      },
+      {
+        "Type": "other",
+        "Citation": "Fäth, M. (1987). Die Messung von Einsamkeit. Unveröffentlichte Diplomarbeit, Institut für Wirtschafts- und Sozialpsychologie der Universität Köln.",
+        "Year": 1987
+      },
+      {
+        "Type": "other",
+        "Citation": "Fahrenberg, J., Selg, H. & Hampel, R. (1978). Das Freiburger Persönlichkeitsinventar FPI. Handanweisung zur 3. ergänzten Auflage. Göttingen: Hogrefe.",
+        "Year": 1978
+      },
+      {
+        "Type": "other",
+        "Citation": "Hawkley, L., Duvoisin, R., Ackva, J., Murdoch, J., & Luhman, M. (2016). Loneliness in Older Adults in the USA and Germany: Measurement Invariance and Validation. NORC Working Paper Series, 11. Online abrufbar unter: https://www.norc.org/PDFs/WorkingPaperSeries/WP-2015-004.pdf (Stand: 24.06.2025)",
+        "Year": 2016
+      },
+      {
+        "Type": "other",
+        "Citation": "Holt-Lunstad, J., Smith, T. B., Baker, M., Harris, T., & Stephenson, D. (2015). Loneliness and social isolation as risk factors for mortality: A meta-analytic review. Perspectives on Psychological Science, 10, 227–237. https://doi.org/10.1177/1745691614568352",
+        "DOI": "10.1177/1745691614568352",
+        "Year": 2015
+      },
+      {
+        "Type": "primary",
+        "Citation": "Lamm, H. & Stephan, E. (1986). Zur Messung von Einsamkeit: Entwicklung einer deutschen Fassung des Fragebogens von Russell und Peplau. Psychologie und Praxis, 30, 132-134.",
+        "Year": 1986
+      },
+      {
+        "Type": "other",
+        "Citation": "Lamm, H. & Stephan, E. (1987). Loneliness among German university students: Some correlates. Social Behavior and Personality, 15, 161–164.",
+        "Year": 1987
+      },
+      {
+        "Type": "other",
+        "Citation": "Mund, M. (2022). Quantitative Erhebungsverfahren von Einsamkeit. KNE Expertise 3/2022.",
+        "Year": 2022
+      },
+      {
+        "Type": "other",
+        "Citation": "Mund, M., Maes, M., Drewke, P., Gutzeit, A., Jaki, I., & Qualter, P. (2023). Would the Real Loneliness Please Stand Up? The Validity of Loneliness Scores and the Reliability of Single-Item Scores. Assessment, 30(4), 1226–1248. https://doi.org/10.1177/10731911221077227",
+        "DOI": "10.1177/10731911221077227",
+        "Year": 2023
+      },
+      {
+        "Type": "other",
+        "Citation": "Peplau, L., & Perlman, D. (1982). Loneliness: A sourcebook of current theory, research, and therapy. New York: Wiley Interscience.",
+        "Year": 1982
+      },
+      {
+        "Type": "other",
+        "Citation": "Prosetzky, I. (2022). Wechselwirkung von Einsamkeit mit chronischen Erkrankungen / Einschränkungen. KNE Expertise 9/2022.",
+        "Year": 2022
+      },
+      {
+        "Type": "other",
+        "Citation": "Quast, H. (1985). Fragebogen zur Sozialen Beziehung. In R. Schwarzer (Hrsg.) (1986). Skalen zur Befindlichkeit und Persönlichkeit. Forschungsbericht Nr. 5. Berlin: Freie Universität Berlin, Institut für Psychologie.",
+        "Year": 1985
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell, D. (1982). The measurement of loneliness. In L. Pervin & D. Perlman (Eds.), Loneliness: A sourcebook of current theory, research and therapy (81–104). New York: Wiley.",
+        "Year": 1982
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell, D. (1996). UCLA Loneliness Scale (Version 3): reliability, validity, and factor structure. Journal of Personality Assessment, 66(1), 20–40. https://doi.org/10.1207/s15327752jpa6601_2",
+        "DOI": "10.1207/s15327752jpa6601_2",
+        "Year": 1996
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell, D., Peplau, L. A. & Ferguson, M. L. (1978). Developing a measure of loneliness. Journal of Personality Assessment, 42, 290–294.",
+        "Year": 1978
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell, D., Peplau, L. A., & Cutrona, C. (1980). The revised UCLA Loneliness Scale: Concurrent and discriminant validity. Journal of Personality and Social Psychology, 39, 472–480.",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Schmidt, N., & Sermat, V. (1983). Measuring loneliness in different relationships. Journal of Personality and Social Psychology, 44, 1038–1047. https://doi.org/10.1037/0022-3514.44.5.1038",
+        "DOI": "10.1037/0022-3514.44.5.1038",
+        "Year": 1983
+      },
+      {
+        "Type": "other",
+        "Citation": "Schwab, R. (1986). Zur Messung und klinisch-psychologischen Bedeutung von Einsamkeit. In A. Schorr (Hrsg.), Bericht über den 13. Kongress für Angewandte Psychologie. Bonn, September 1986 (S. 75-79). Bonn: Deutscher Psychologen Verlag.",
+        "Year": 1986
+      },
+      {
+        "Type": "other",
+        "Citation": "Stephan, E. (1987). Aspekte der Konstruktvalidität der deutschen Fassung der UCLA-Einsamkeitsskala. Unveröffentlichter Forschungsbericht, Institut für Wirtschafts- und Sozialpsychologie der Universität Köln.",
+        "Year": 1987
+      },
+      {
+        "Type": "other",
+        "Citation": "Stephan, E. & Fäth, M. (1989). Zur Validität der deutschen Fassung der UCLA-Einsamkeitsskala. Diagnostica, 35(2), 153-166.",
+        "Year": 1989
+      },
+      {
+        "Type": "other",
+        "Citation": "Veiel, H., & Herrle, J. (1989). Die empirische Unterscheidbarkeit der Konstrukte Einsamkeit und Depressivität. Zeitschrift für Klinische Psychologie. Forschung und Praxis, 18 (2), 173-180.",
+        "Year": 1989
+      },
+      {
+        "Type": "other",
+        "Citation": "Weiss, R. S. (1973). Loneliness: The experience of emotional and social isolation. Cambridge, MA, MIT Press.",
+        "Year": 1973
+      },
+      {
+        "Type": "other",
+        "Citation": "Windisch, M., & Kniel, A. (1988). Zur Messung von Einsamkeit und sozialer Abhängigkeit behinderter Menschen. Ergebnisse einer Reliabilitäts- und Validitätsanalyse. Zeitschrift für Soziologie, 17 (5), 382-389.",
+        "Year": 1988
+      },
+      {
+        "Type": "other",
+        "Citation": "Stephan, E. (2002). KSE. Kölner Skala zur Messung von Einsamkeit. In E. Brähler, J. Schumacher & B. Strauß (Hrsg.), Diagnostische Verfahren in der Psychotherapie (S. 229-231). Göttingen: Hogrefe.",
+        "Year": 2002
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell D. W. (1996). UCLA Loneliness Scale (Version 3): reliability, validity, and factor structure. Journal of Personality Assessment, 66 (1), 20–40. https://doi.org/10.1207/s15327752jpa6601_2 [UCLA Loneliness Scale (Version 3) included. p. 23]",
+        "DOI": "10.1207/s15327752jpa6601_2",
+        "Year": 1996
+      },
+      {
+        "Type": "other",
+        "Citation": "Russell, D., Peplau, L. A. & Cutrona, C. E. (1980). The revised UCLA Loneliness Scale: Concurrent and discriminant validity evidence. Journal of Personality and Social Psychology, 39 (3), 472-480. [items included p. 475]",
+        "Year": 1980
+      },
+      {
+        "Type": "other",
+        "Citation": "Westhoff, G. (Hrsg.). (1993). Handbuch psychosozialer Meßinstrumente. Ein Kompendium für epidemiologische und klinische Forschung zu chronischer Krankheit (Testkurzdarstellung UCLA-LS University of California at Los Angeles Loneliness Scale, revised, Russell et al.; LONE Fragebogen zur Sozialen Beziehung, dt. Vers. Quast; KSE Kölner Skala zur Messung von Einsamkeit, Stephan u. Fäth: S. 874-877). Göttingen: Hogrefe.",
+        "Year": 1993
+      }
+    ],
+    "Keywords": [
+      "Category: Clinical procedures / Other clinical procedures",
+      "Category: Personality tests / Personality tests on social behaviour",
+      "Engl. Name: The Revised UCLA Loneliness Scale (Russell, D., Peplau, L. A. & Cutrona, C., 1980) - Cologne version"
+    ],
+    "Access": "public",
+    "Notes": "Format: Paper-Pencil. Contact data (section Kontaktdaten) and e-mail addresses are not copied (personal data). The English descriptions are machine translations (Claude, Anthropic) of the archive's German text, not verified by the test authors; the German original is on the archive page https://www.testarchiv.eu/de/test/9003017.",
+    "ArchiveMetadata": {
+      "fields": {
+        "Sprachversionen": "German",
+        "Format": "Paper-pencil",
+        "Konstrukt": "Loneliness",
+        "Itemzahl": "20 items",
+        "Subskalen": "None.",
+        "Durchführungszeit": "2-6 minutes",
+        "Auswertungsdauer": "2 minutes per case",
+        "Reliabilität": "Internal consistency: Cronbach's alpha = .88\nTest-retest reliability: rtt = .72 (3-month interval)",
+        "Validität": "Correlation with other instruments and constructs.",
+        "Normierung": "None. Reference values: means and standard deviations.",
+        "Anwendungsbereich": "Research, (supportive in practice; professional qualification required)",
+        "Altersbereich": "14 years and older"
+      },
+      "sections": {
+        "Kurzabstract": "The KSE is an adaptation of the American original and measures loneliness with 20 items. Reliability: Internal consistency according to Cronbach's alpha and split-half reliability were .88; stability after a 3-month interval was rtt = .72. Validity: The KSE was correlated with the FPI-K and a shyness scale as well as with several constructs such as life situation, physical attractiveness and causal attribution.",
+        "Diagnostische Zielsetzung": "The KSE serves the quantitative assessment of loneliness in adults.",
+        "Aufbau": "The scale consists of a total of 20 items, half of which are worded negatively.",
+        "Grundlagen und Konstruktion": "The scale is an adaptation of the American original and was psychometrically examined in the German-speaking area, both in student samples and in a clinical subsample.",
+        "Empirische Prüfung und Gütekriterien": "Reliability: Internal consistency according to Cronbach's alpha and split-half reliability were .88; stability after a 3-month interval was rtt = .72.\nValidity: The KSE was correlated with the FPI-K and a shyness scale as well as with several constructs such as life situation, physical attractiveness and causal attribution.\nNorms: The instrument is not normed. Means and standard deviations are available, which were collected in the mid-1980s in student and clinical samples.",
+        "Testkonzept/Theoretischer Hintergrund": "The KSE is based on the American loneliness scale developed at the University of California at Los Angeles (UCLA), the revised UCLA Loneliness Scale (Russell, Peplau & Cutrona, 1980). The UCLA Loneliness Scale (UCLA-LS) is regarded as the internationally most widely used instrument for measuring loneliness. The KSE is a German version of the UCLA-LS (for further versions of the UCLA-LS see the section \"Test forms\"). In adults, the scale can be used for the quantitative assessment of loneliness.\nThe theoretical basis of the KSE is a cognitive-affective discrepancy model of loneliness (cf. Peplau & Perlman, 1982; Stephan & Fäth, 1989). In this model, loneliness is defined as the perception, experienced as unpleasant, of a deficit between the desired and the actual shape of a person's social relationships. Causes and consequences of loneliness are not assessed with the KSE (on the causality of loneliness see Bücker, 2022; Holt-Lunstad et al. 2015; Prosetzky, 2022; Stephan, 1987).",
+        "Testkonzept/Testaufbau": "The KSE consists of 10 positively worded (example: „Es gibt Menschen, denen ich mich eng verbunden fühle“) and 10 negatively worded (example: „So zurückgezogen wie ich bin, fühle ich mich unglücklich“) items. Participants are to indicate in each case how often they feel the way these statements describe. For this purpose, a four-point response scale with the alternatives „Nie“, „Selten“, „Manchmal“ and „Oft“ is provided.",
+        "Testkonzept/Auswertungsmodus": "The answers are scored from one point („Nie“) to four points („Oft“). Because the scale is keyed in the direction of high loneliness, the scores for the 10 positively worded items must be reversed for scoring. A person's test score then corresponds to the sum across all 20 items. The numerical range of the KSE is thus between 20 and 80 points.",
+        "Testkonzept/Auswertungshilfen": "Scoring by hand is simple. No templates or scoring programs have been developed for it. Norms are available for student samples (see Table 1); current population-representative norms are, to our knowledge, not available.\nFor the interpretation of KSE means, the respondents' self-ratings are also available (cf. section \"Norming\") as well as Table 1 with the item statistics (see section \"Items\").",
+        "Testkonzept/Auswertungszeit": "Scoring takes 2 minutes per questionnaire.",
+        "Durchführung/Testformen": "The KSE can be administered as an individual or group test. Comparability with the American original is high; the quality criteria of the KSE correspond to those of the revised UCLA Loneliness Scale by Russell et al. (1980).\nShort versions\nLamm & Stephan (1986, 1987) additionally propose a short form of the KSE consisting of the five items 2, 13, 14, 17 and 18. These items correlate most highly with the direct self-rating of loneliness. The short scale shows sufficient reliability with alpha = .79 and a high correlation with the total scale with r = .91. The distribution statistics of the short scale (distribution shape, central tendency, dispersion, sex differences) also largely correspond to those of the total scale.\nIn more recent population-representative longitudinal studies in Germany and the USA, a further short scale based on items 2, 11 and 14 is used (Entringer, 2022; Hawkley et al., 2016).\nOther German adaptations of the UCLA-LS\nBesides the KSE, there are further German versions of the UCLA-LS (Döring & Bortz, 1993; Quast, 1985; Schwab, 1986; Veiel & Herrle, 1989; Windisch & Kniel, 1988). However, these adaptations in part use response scales different from the American original or have not yet been comprehensively validated.\nOther American versions of the UCLA-LS\nBesides the revised UCLA-LS by Russell et al. (1980), on which the development of the KSE was based, there are two further versions of this scale: The original version by Russell, Peplau and Ferguson (1978) - referred to below as UCLA-LS version 1 - likewise contains 20 items, which, however, were without exception negatively keyed, that is, keyed in the direction of high loneliness. This methodological weakness was corrected in the later versions.\nThe revised version of this scale, the UCLA-LS version 2 by Russell et al. (1980), contains - like the present German version - 10 negatively and 10 positively keyed items in order to counteract possible response tendencies of the test takers. On a scale from \"Never\" to \"Often\", respondents are to indicate how often the respective statement (e.g. \"I feel left out\") applies to themselves.\nThe UCLA-LS version 3 by Russell (1996) was intended to simplify the scale linguistically in order to make the items more comprehensible, especially for persons with little test experience. Possible problems of this version are discussed in the section \"Evaluation\".",
+        "Durchführung/Altersbereiche": "The scale can be used for the quantitative assessment of loneliness in adolescents aged 14 and older and in adults. For younger age groups, special measurement instruments have been developed (examples are discussed by Cole et al., 2021).",
+        "Durchführung/Durchführungszeit": "The average administration time for the KSE total scale is 2-6 minutes. No time limit is provided.",
+        "Durchführung/Material": "In addition to the present documentation of the instrument, the test package contains a written questionnaire including instructions.\nThe test can be administered in writing, orally, by telephone, online or by video conference. Corresponding material for the administration of the test must be prepared.",
+        "Durchführung/Instruktion": "The standardized instruction is given below (cf. Russell et al., 1980, S. 475):\n„Bitte geben Sie an, wie oft Sie sich so fühlen, wie in den nachfolgenden Aussagen beschrieben. Kreisen Sie eine Zahl für jede Aussage ein.“",
+        "Durchführung/Durchführungsvoraussetzungen": "No special qualification of the test administrator is required.",
+        "Testkonstruktion": "The KSE is - like the UCLA-LS - conceived as a global and unidimensional measure of loneliness and was constructed according to the principles of classical test theory (cf. Russell et al., 1980). The development of the German scale is described in Lamm & Stephan (1986, 1987). The psychometric properties of the instrument from the perspective of classical as well as probabilistic test theory are discussed by Fäth (1987). In this context it should be mentioned that a loneliness scale explicitly constructed according to probabilistic test theory also exists, the RTLS (Rasch-Type Loneliness Scale; cf. de Jong-Gierveld & Kamphuis, 1985; de Jong-Gierveld & van Tilburg, 2006).",
+        "Gütekriterien/Objektivität": "Owing to the standardization, the simple calculation and the available reference values, objectivity in administration, scoring and interpretation is largely ensured for the KSE.",
+        "Gütekriterien/Reliabilität": "The KSE shows sufficient internal consistency: Cronbach's alpha was .88, and the split-half coefficients according to Spearman and Guttman were likewise .88. After a time interval of 3 months, the test-retest reliability was rtt = .72, thus reaching values similar to those of the American original scale (cf. Russell, 1982, 1996).",
+        "Gütekriterien/Validität": "To examine the validity of the KSE, the following measurement instruments and criteria, among others, were used: the short version of the Freiburger Persönlichkeitsinventar (FPI-K; Fahrenberg et al., 1978), the shyness scale by Cheek (1979), questions on the respondents' current life situation and satisfaction, self-ratings of physical attractiveness and social skills, as well as the assessment of the causes of one's own feelings of loneliness. Evidence for the convergent validity of the KSE is that loneliness goes along with dissatisfaction with one's own social contacts, low self-rated social skills, dissatisfaction with one's partner (if any), low self-rated attractiveness, low self-esteem and a rather feminine psychological gender. Loneliness is furthermore associated with higher levels of introversion, neuroticism, shyness, depressiveness and psychosomatic disturbance. Evidence for the discriminant validity of the KSE is that there are no relationships between loneliness and the personality factors (spontaneous and reactive) aggressiveness and excitability.\nThe following table shows the correlations between these constructs and the KSE.\nTable 2\nCorrelations of the KSE with selected variables (cf. Stephan & Fäth, 1989, S. 161)\nVariable | Correlation with KSE\nSelf-rated loneliness | .57 (a)\nSatisfaction with social contacts | -.65 (a)\nSatisfaction with partner | -.36 (b)\nSocial skills | -.53 (a)\nMasculinity | -.37 (a)\nExtraversion | -.39 (a)\nNeuroticism | .40 (a)\nShyness (FPI-K) | .30 (a)\nShyness (Cheek) | .55 (a)\nSelf-rated attractiveness | -.22 (a)\nSelf-esteem | -.36 (a)\nDepressiveness | .44 (a)\nPsychosomatic disturbance | .21 (a)\nSpontaneous aggressiveness | -.07 (c)\nReactive aggressiveness | -.01 (c)\nExcitability | .05 (c)\nNotes. (a): N = 247; p < .001, (b): n = 142, p < .001; (c): N = 247, p > .10.\nRespondents who had sought help at a psychological counselling centre showed clearly higher loneliness scores (n = 27, M = 49.1) than the non-clinical group (n = 247, M = 33.4; t = 6.35, df = 272, p < .001). Persons who attributed their feelings of loneliness internally-stably also showed strongly elevated loneliness (n = 21, M = 47.9) compared with persons with other attribution patterns (n = 213, M = 33.1; t = 6.73, df = 232, p < .001).",
+        "Gütekriterien/Normierung": "The results reported here are based on a sample of N = 247 students at a West German university. These persons came from different departments and semesters of study and were asked to participate in the study in courses in the winter semester 1986/87. The mean age of the students was 23.2 years; about 41 percent were female. To examine stability, some of the test persons (N = 97) completed the KSE again three months later.\nIn this group, which is considerably younger, more highly educated and sociologically more homogeneous than the general population, loneliness is rather low (M = 33.4, Min = 20, Max = 67, SD = 8.8). The raw score distribution is left-steep (Md = 32.0, skewness = 1.32), narrow-peaked (excess = 1.98) and deviates significantly from a normal distribution (KS-Z = 2.19, p < .01). Male respondents showed slightly (but not significantly) higher means than female respondents (MM = 34.1 vs. MF = 32.3), which confirms earlier findings in American students (Russell et al., 1980, S. 477) and German students (Lamm & Stephan, 1986, S. 131).\nDespite the low loneliness overall among students, the data suggest that almost one in six in this group experiences loneliness as a problem. In the direct self-ratings of loneliness, about 16 percent of respondents state that they are lonely \"fast immer\", \"sehr häufig\" or \"einigermaßen häufig\". This corresponds to a KSE total score of 45 points or more, as Table 3 shows.\nTable 3\nKSE means in the individual categories of the loneliness self-rating (cf. Stephan & Fäth, 1989, S. 162)\nCategory | n | KSE mean\n\"fast immer einsam\" | 3 | 59.85\n\"sehr häufig einsam\" | 14 | 53.07\n\"einigermaßen häufig einsam\" | 27 | 44.96\n\"teils-teils\" | 33 | 36.49\n\"einigermaßen selten einsam\" | 60 | 36.03\n\"sehr selten einsam\" | 69 | 30.45\n\"fast nie einsam\" | 68 | 28.85\nTotal | 274 | 34.91\nNote. n = sample size.\nCurrent norms for the German general population are currently not available; corresponding surveys with the KSE are being planned.",
+        "Anwendungsmöglichkeiten": "The KSE can preferably be used in sociological, psychological, educational and medical research, and also in clinical diagnostics, monitoring of treatment outcome and personality assessment. Further fields of application would be:\nMonitoring of loneliness within population-representative longitudinal studies with suitable short scales (e.g. Entringer, 2022; Mund, 2022)\nConducting internationally comparative studies on changes in loneliness and on the evaluation of interventions against loneliness\nIdentification of problem groups in the population (marginal groups and minorities, children, older people, people living alone, hospitalized persons, persons with a direct migration background, low education and/or low income)\nStudies on the impact of external shocks on the loneliness of affected groups (epidemics, economic crises, natural disasters, war, flight, displacement, etc.)",
+        "Bewertung": "With the KSE, an adaptation of the UCLA-LS that is reliable and valid according to the quality criteria of classical test theory is available. The internal consistency, temporal stability and construct validity of the scale found in American studies could be confirmed. The latter is remarkable insofar as the relevant personality constructs were naturally assessed with other measurement instruments and yet very similar correlations were found as in the American original studies.\nAs a limitation, it should be noted that the results are based on a student sample that not only differs strongly from the general population in terms of age, economic and sociological characteristics, but is also considerably more homogeneous with regard to these criteria. No disadvantage for the applicability of the KSE in heterogeneous groups or in the general population results from this. The quality criteria of the KSE in such groups are rather underestimated than overestimated by using a student study sample, as Stephan & Fäth (1989, S. 163) have shown.\nVersions of the UCLA-LS\nThe revisions of the UCLA-LS listed in the section \"Test forms\" are not consistently to be evaluated positively. The UCLA-LS version 3 by Russell (1996) does contain linguistic simplifications to increase the comprehensibility of the items, especially for older persons and persons with a low level of education. For example, one item (# 4) was reverse-keyed to avoid double negatives; the new scale consequently contains 9 positively and 11 negatively keyed items. In addition, however, both the question format and the response format were changed for all items. All items now begin with the phrase \"How often do you feel …\", and the given response categories run from \"Never\" to \"Always\" (instead of \"Often\" as in the previous version 2). In particular the two last-mentioned changes considerably impede the comparability of research results obtained with versions 2 and 3. A possible further disadvantage of the UCLA-LS version 3 is its monotonous question format, which might have a tiring and demotivating effect on some test persons. Depending on the research question and target group, version 2 would thus be preferable to version 3.\nDimensionality of the scale\nSince the early 1980s, the dimensionality of the UCLA-LS has been discussed controversially (Russell, 1982). This discussion continues to the present day (Mund, 2022; Mund et al., 2023). Confirmatory factor analyses by Russell (1996) suggest the assumption of a single bipolar loneliness factor as well as of two method factors reflecting the keying of the items (negative vs. positive).\nOther loneliness scales, in contrast, are explicitly conceived as multidimensional. These include the RTLS already mentioned in the section \"Test construction\" as well as the Social and Emotional Loneliness Scale for Adults (SELSA; DiTommaso & Spinner, 1993) and the Differential Loneliness Scale (DLS; Schmidt & Sermat, 1983). These scales take up the distinction between emotional and social loneliness based on Weiss (1973) and in part differentiate further according to different areas of life (intimate relationships, family, circle of friends, larger communities, society as a whole).",
+        "Wichtige neuere Publikationen": "Stephan, E. (2002). KSE. Kölner Skala zur Messung von Einsamkeit. In E. Brähler, J. Schumacher & B. Strauß (Hrsg.), Diagnostische Verfahren in der Psychotherapie (S. 229-231). Göttingen: Hogrefe.",
+        "Orginalfassung/Anderssprachlige Fassungen": "Russell D. W. (1996). UCLA Loneliness Scale (Version 3): reliability, validity, and factor structure. Journal of Personality Assessment, 66 (1), 20–40. https://doi.org/10.1207/s15327752jpa6601_2 [UCLA Loneliness Scale (Version 3) included. p. 23]\nRussell, D., Peplau, L. A. & Cutrona, C. E. (1980). The revised UCLA Loneliness Scale: Concurrent and discriminant validity evidence. Journal of Personality and Social Psychology, 39 (3), 472-480. [items included p. 475]",
+        "Rezensionen": "Westhoff, G. (Hrsg.). (1993). Handbuch psychosozialer Meßinstrumente. Ein Kompendium für epidemiologische und klinische Forschung zu chronischer Krankheit (Testkurzdarstellung UCLA-LS University of California at Los Angeles Loneliness Scale, revised, Russell et al.; LONE Fragebogen zur Sozialen Beziehung, dt. Vers. Quast; KSE Kölner Skala zur Messung von Einsamkeit, Stephan u. Fäth: S. 874-877). Göttingen: Hogrefe.",
+        "Testpaket (Paper-Pencil)/Rückmeldung an die Autor/-innen": "Please inform the authors about the use of the test instrument! You can find the contact details under \"Kontaktinformationen\"! If authors in the Open Test Archive have already died or no contact details (e-mail or postal address) are available for them, users are no longer obliged to provide feedback."
+      }
+    },
+    "Construct": "Loneliness",
+    "Description": "The KSE is an adaptation of the American original and measures loneliness with 20 items. Reliability: Internal consistency according to Cronbach's alpha and split-half reliability were .88; stability after a 3-month interval was rtt = .72. Validity: The KSE was correlated with the FPI-K and a shyness scale as well as with several constructs such as life situation, physical attractiveness and causal attribution.",
+    "Reliability": "The KSE shows sufficient internal consistency: Cronbach's alpha was .88, and the split-half coefficients according to Spearman and Guttman were likewise .88. After a time interval of 3 months, the test-retest reliability was rtt = .72, thus reaching values similar to those of the American original scale (cf. Russell, 1982, 1996).",
+    "Validity": "To examine the validity of the KSE, the following measurement instruments and criteria, among others, were used: the short version of the Freiburger Persönlichkeitsinventar (FPI-K; Fahrenberg et al., 1978), the shyness scale by Cheek (1979), questions on the respondents' current life situation and satisfaction, self-ratings of physical attractiveness and social skills, as well as the assessment of the causes of one's own feelings of loneliness. Evidence for the convergent validity of the KSE is that loneliness goes along with dissatisfaction with one's own social contacts, low self-rated social skills, dissatisfaction with one's partner (if any), low self-rated attractiveness, low self-esteem and a rather feminine psychological gender. Loneliness is furthermore associated with higher levels of introversion, neuroticism, shyness, depressiveness and psychosomatic disturbance. Evidence for the discriminant validity of the KSE is that there are no relationships between loneliness and the personality factors (spontaneous and reactive) aggressiveness and excitability.\nThe following table shows the correlations between these constructs and the KSE.\nTable 2\nCorrelations of the KSE with selected variables (cf. Stephan & Fäth, 1989, S. 161)\nVariable | Correlation with KSE\nSelf-rated loneliness | .57 (a)\nSatisfaction with social contacts | -.65 (a)\nSatisfaction with partner | -.36 (b)\nSocial skills | -.53 (a)\nMasculinity | -.37 (a)\nExtraversion | -.39 (a)\nNeuroticism | .40 (a)\nShyness (FPI-K) | .30 (a)\nShyness (Cheek) | .55 (a)\nSelf-rated attractiveness | -.22 (a)\nSelf-esteem | -.36 (a)\nDepressiveness | .44 (a)\nPsychosomatic disturbance | .21 (a)\nSpontaneous aggressiveness | -.07 (c)\nReactive aggressiveness | -.01 (c)\nExcitability | .05 (c)\nNotes. (a): N = 247; p < .001, (b): n = 142, p < .001; (c): N = 247, p > .10.\nRespondents who had sought help at a psychological counselling centre showed clearly higher loneliness scores (n = 27, M = 49.1) than the non-clinical group (n = 247, M = 33.4; t = 6.35, df = 272, p < .001). Persons who attributed their feelings of loneliness internally-stably also showed strongly elevated loneliness (n = 21, M = 47.9) compared with persons with other attribution patterns (n = 213, M = 33.1; t = 6.73, df = 232, p < .001).",
+    "Norming": "The results reported here are based on a sample of N = 247 students at a West German university. These persons came from different departments and semesters of study and were asked to participate in the study in courses in the winter semester 1986/87. The mean age of the students was 23.2 years; about 41 percent were female. To examine stability, some of the test persons (N = 97) completed the KSE again three months later.\nIn this group, which is considerably younger, more highly educated and sociologically more homogeneous than the general population, loneliness is rather low (M = 33.4, Min = 20, Max = 67, SD = 8.8). The raw score distribution is left-steep (Md = 32.0, skewness = 1.32), narrow-peaked (excess = 1.98) and deviates significantly from a normal distribution (KS-Z = 2.19, p < .01). Male respondents showed slightly (but not significantly) higher means than female respondents (MM = 34.1 vs. MF = 32.3), which confirms earlier findings in American students (Russell et al., 1980, S. 477) and German students (Lamm & Stephan, 1986, S. 131).\nDespite the low loneliness overall among students, the data suggest that almost one in six in this group experiences loneliness as a problem. In the direct self-ratings of loneliness, about 16 percent of respondents state that they are lonely \"fast immer\", \"sehr häufig\" or \"einigermaßen häufig\". This corresponds to a KSE total score of 45 points or more, as Table 3 shows.\nTable 3\nKSE means in the individual categories of the loneliness self-rating (cf. Stephan & Fäth, 1989, S. 162)\nCategory | n | KSE mean\n\"fast immer einsam\" | 3 | 59.85\n\"sehr häufig einsam\" | 14 | 53.07\n\"einigermaßen häufig einsam\" | 27 | 44.96\n\"teils-teils\" | 33 | 36.49\n\"einigermaßen selten einsam\" | 60 | 36.03\n\"sehr selten einsam\" | 69 | 30.45\n\"fast nie einsam\" | 68 | 28.85\nTotal | 274 | 34.91\nNote. n = sample size.\nCurrent norms for the German general population are currently not available; corresponding surveys with the KSE are being planned.",
+    "AdministrationTime": {
+      "min": 2,
+      "max": 6
+    },
+    "ScoringTime": {
+      "min": 2,
+      "max": 2
+    },
+    "AgeRange": "14 years and older",
+    "Instructions": "Bitte geben Sie an, wie oft Sie sich so fühlen, wie in den nachfolgenden Aussagen beschrieben. Kreisen Sie eine Zahl für jede Aussage ein."
+  },
+  "KSE01": {
+    "Description": "Ich fühle mich in Übereinstimmung mit den Menschen um mich herum",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE02": {
+    "Description": "Ich habe nicht genügend Gesellschaft",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE03": {
+    "Description": "Es gibt niemanden, zu dem ich mich hinwenden kann",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE04": {
+    "Description": "Ich fühle mich nicht allein",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE05": {
+    "Description": "Ich fühle mich als Mitglied einer Freundesgruppe",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE06": {
+    "Description": "Ich habe viel gemeinsam mit den Menschen um mich herum",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE07": {
+    "Description": "Ich bin mit niemandem mehr eng zusammen",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE08": {
+    "Description": "Meine Interessen und Ideen werden von den Leuten um mich herum nicht geteilt",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE09": {
+    "Description": "Ich bin eine kontaktfreudige Person",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE10": {
+    "Description": "Es gibt Menschen, denen ich mich eng verbunden fühle",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE11": {
+    "Description": "Ich fühle mich ausgeschlossen",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE12": {
+    "Description": "Meine sozialen Beziehungen sind oberflächlich",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE13": {
+    "Description": "Niemand kennt mich wirklich",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE14": {
+    "Description": "Ich fühle mich von anderen isoliert",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE15": {
+    "Description": "Ich kann Gesellschaft finden, wenn ich das wünsche",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE16": {
+    "Description": "Es gibt Menschen, die mich wirklich verstehen",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE17": {
+    "Description": "So zurückgezogen, wie ich bin, fühle ich mich unglücklich",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE18": {
+    "Description": "Menschen sind zwar um mich herum, jedoch nicht bei mir",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE19": {
+    "Description": "Es gibt Menschen, mit denen ich sprechen kann",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  },
+  "KSE20": {
+    "Description": "Es gibt Menschen, zu denen ich mich hinwenden kann",
+    "Levels": {
+      "1": "Nie",
+      "2": "Selten",
+      "3": "Manchmal",
+      "4": "Oft"
+    },
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 4,
+    "ScaleType": "likert"
+  }
+}

@@ -33,7 +33,7 @@ def test_known_instrument_resolves_expected_fields():
     assert dass["TaskName"] == "dass21"
     assert dass["SourceFile"] == "survey-dass21.json"
     assert dass["ShortName"] == "DASS21"
-    assert "Official webpage" in dass["Citation"]
+    assert "Lovibond" in dass["Citation"]
     assert dass["Category"] == "Mood, Anxiety & Clinical Screening"
 
 

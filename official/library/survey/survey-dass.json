@@ -19,10 +19,47 @@
     "OriginalName": "Depression Anxiety Stress Scales (DASS)",
     "ShortName": "DASS",
     "Category": "Mood, Anxiety & Clinical Screening",
-    "Authors": [],
-    "Year": null,
+    "Version": "42-item",
+    "Construct": "Depression, anxiety and stress (negative emotional states)",
+    "Description": "Three self-report scales measuring depression, anxiety and stress. This template is the 42-item form (DASS). Each item is answered on a 4-point frequency scale from 0 (Never) to 3 (Almost always).",
+    "Keywords": [
+      "depression",
+      "anxiety",
+      "stress",
+      "negative emotional states",
+      "self-report"
+    ],
+    "Authors": [
+      "Lovibond, S. H.",
+      "Lovibond, P. F."
+    ],
+    "Year": 1995,
     "DOI": "",
-    "Citation": "Official webpage",
+    "Citation": "Lovibond, S. H. & Lovibond, P. F. (1995). Manual for the Depression Anxiety Stress Scales (2nd ed.). Sydney: Psychology Foundation.",
+    "References": [
+      {
+        "Type": "primary",
+        "Citation": "Lovibond, S. H. & Lovibond, P. F. (1995). Manual for the Depression Anxiety Stress Scales (2nd ed.). Sydney: Psychology Foundation.",
+        "Year": 1995
+      },
+      {
+        "Type": "validation",
+        "Citation": "Lovibond, P. F., & Lovibond, S. H. (1995). The structure of negative emotional states: Comparison of the Depression Anxiety Stress Scales (DASS) with the Beck Depression and Anxiety Inventories. Behaviour research and therapy, 33(3), 335-343.",
+        "DOI": "10.1016/0005-7967(94)00075-U",
+        "URL": "https://doi.org/10.1016/0005-7967(94)00075-U",
+        "Year": 1995
+      },
+      {
+        "Type": "other",
+        "Citation": "Lovibond, S. H. & Lovibond, P. F. (1995). Depression Anxiety and Stress Scales (Instruments for Adults). [DASS]. In J. Fischer & K. Corcoran (2007), Measures for clinical practice and research: A sourcebook (4th ed.) (vol. 2, pp. 219-221). New York: Oxford University Press.",
+        "Year": 2007
+      },
+      {
+        "Type": "other",
+        "Citation": "Lovibond, S. H. & Lovibond, P. F. (2000). Depression Anxiety and Stress Scales (DASS). In K. Corcoran & J. Fischer (Eds.), Measures for clinical practice: A sourcebook (3rd ed. vol. 2. pp. 237-239). New York: Free Press.",
+        "Year": 2000
+      }
+    ],
     "License": "\"The DASS questionnaire is in the public domain, and may be downloaded from this website.\" \"The DASS questionnaire forms may be downloaded and copied without restriction.\"",
     "Source": "https://www2.psy.unsw.edu.au/dass/",
     "Instructions": "Please read each statement and select the response that best describes you.",
