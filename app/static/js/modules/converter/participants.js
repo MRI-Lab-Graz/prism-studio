@@ -67,6 +67,8 @@ export function initParticipants() {
     });
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
+    // The annotation widget loads after the preview; confirming before it is there has nothing to confirm.
+    let participantsAnnotationWidgetReady = false;
     // Annotation is a required stage: Create/Replace stays blocked until the user confirms it.
     const participantsAnnotationGate = createAnnotationGate();
 
@@ -1431,7 +1433,7 @@ export function initParticipants() {
 
             if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted || !participantsAnnotationWidgetReady;
             renderParticipantsOverwriteWarning(false);
             updateParticipantsInputVisibility();
             updateParticipantsSelectedFileName();
@@ -1448,7 +1450,7 @@ export function initParticipants() {
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
-            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (confirmAnnotBtn) confirmAnnotBtn.disabled = !participantsPreviewCompleted || !participantsAnnotationWidgetReady;
             // Re-apply the last requested show/hide state instead of forcing it closed -
             // this runs from the convert button's `finally` block too, which previously
             // clobbered the warning right after it was shown.
@@ -3261,8 +3263,9 @@ export function initParticipants() {
         updateParticipantsMergeApplyStatusBadge(previewData);
     
         const confirmAnnotBtn = document.getElementById('participantsAnnotationConfirmBtn');
+        participantsAnnotationWidgetReady = false;
         if (confirmAnnotBtn) {
-            confirmAnnotBtn.disabled = false;
+            confirmAnnotBtn.disabled = true;
         }
     
         refreshParticipantsWorkflowSummary();
@@ -3274,7 +3277,10 @@ export function initParticipants() {
         if (confirmHint) confirmHint.textContent = 'Check every column, then confirm to unlock step 4.';
 
         // Keep annotation view in sync with latest preview/schema as soon as step 1 completes.
-        loadNeurobagelWidget();
+        loadNeurobagelWidget().finally(() => {
+            participantsAnnotationWidgetReady = true; // also after a failed load: the page then says so, the button must not stay stuck
+            updateParticipantsButtonState({ skipIdAutoDetect: true });
+        });
     }
     
     function buildAnnotatedParticipantsSchemaFromWidgetState() {
