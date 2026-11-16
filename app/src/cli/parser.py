@@ -2236,6 +2236,12 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_doi = subparsers.add_parser("doi", help="Check a DOI online (Crossref, then DataCite)")
+    doi_subparsers = parser_doi.add_subparsers(dest="action", required=True, help="DOI actions")
+    _p = doi_subparsers.add_parser("lookup", help="Print the short citation of a DOI (exit 1 unless found)")
+    _p.add_argument("doi", help="10.xxxx/... or https://doi.org/10.xxxx/...")
+    _p.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
     parser_terms = subparsers.add_parser(
         "terms",
         help="List, show and look up shipped metric terms (term registry)",
@@ -3361,6 +3367,7 @@ def build_prism_tools_parsers(
         "file_management": parser_file_management,
         "json_editor": parser_json_editor,
         "modality": parser_modality,
+        "doi": parser_doi,
         "terms": parser_terms,
         "spec": parser_spec,
         "modality-version": parser_modality_version,
