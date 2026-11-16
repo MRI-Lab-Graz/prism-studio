@@ -715,6 +715,10 @@ html[data-wcag] {
     --studio-icon-primary: #1a744d;
     --studio-icon-success: #1f7a4d;
     --studio-icon-info: #1a744d;
+    /* the default red is 4.44:1 on the tinted error badges; this is the 5.5:1 hover red */
+    --studio-semantic-danger: #a13f49;
+    --studio-semantic-danger-hover: #8a343d;
+    --studio-icon-danger: #a13f49;
 }
 html[data-wcag] .studio-theme {
     --bs-primary-rgb: 26, 116, 77;

@@ -1,9 +1,15 @@
 """axe-core on what test_accessibility.py cannot see at page load, in the WCAG enhanced view:
-the hidden converter tabs, every modal, a validator results page and a specification document page."""
+the hidden converter tabs, every modal, a validator results page (clean and with an error), a specification
+document page and the states a page shows after load: no project open, an unfinished project, a failed preview
+and the item-map dialog."""
 
 import pytest
 
+from playwright.sync_api import expect
+
 from tests.e2e.conftest import _new_page
+from tests.e2e.test_converter_flows import open_survey_tab, select_survey_file
+from tests.e2e.test_project_gate_flows import _make_unfinished
 from tests.e2e.pages import PAGES
 from tests.e2e.test_accessibility import AXE
 from tests.e2e.test_validate_flows import converted_project, validate_current  # noqa: F401 (fixture)
@@ -65,3 +71,63 @@ def test_every_modal_has_no_accessibility_violations(app_page, studio_url, path)
         app_page.evaluate(f"bootstrap.Modal.getInstance(document.getElementById('{modal}')).hide()")
         app_page.wait_for_selector(f"#{modal}:not(.show)")
     assert found == {}, f"axe violations in modals on {path}: {found}"
+
+
+@pytest.mark.parametrize("path", PAGES)
+def test_page_without_a_project_has_no_accessibility_violations(browser, studio_url, path):
+    # Not bare_page: without a project some pages answer 400/409 and log it; this test is about axe only.
+    context, page, _ = _new_page(browser, studio_url)
+    try:
+        page.goto(f"{studio_url}{path}", wait_until="networkidle")
+        found = serious_violations(page)
+    finally:
+        context.close()
+    assert found == [], f"axe violations on {path} without a project: {found}"
+
+
+@pytest.mark.parametrize("path", ["/converter", "/recipes", "/file-management"])
+def test_blocked_tool_page_notice_has_no_accessibility_violations(app_page, studio_url, project, path):
+    _make_unfinished(project)
+    app_page.allowed_http[409] = "/api/"
+    app_page.goto(f"{studio_url}{path}", wait_until="networkidle")
+    expect(app_page.locator("#prismNotReadyNotice")).to_be_visible()
+    found = serious_violations(app_page)
+    assert found == [], f"axe violations in the not-ready notice on {path}: {found}"
+
+
+def test_failed_survey_preview_has_no_accessibility_violations(app_page, studio_url, tmp_path):
+    app_page.allowed_http[400] = "/api/survey-workflow-command"
+    open_survey_tab(app_page, studio_url)
+    select_survey_file(app_page, tmp_path)
+    app_page.click("#previewBtn")
+    expect(app_page.locator("#convertError")).to_be_visible(timeout=30000)
+    found = serious_violations(app_page)
+    assert found == [], f"axe violations after a failed preview: {found}"
+
+
+@pytest.mark.usefixtures("project_with_demo")
+def test_item_map_dialog_with_rows_has_no_accessibility_violations(app_page, studio_url, tmp_path):
+    app_page.allowed_http[400] = "/api/survey-detect-version-contexts"  # the file matches no template: that is the point
+    open_survey_tab(app_page, studio_url)
+    # other column names than the template's, so the dialog has rows to match
+    select_survey_file(app_page, tmp_path, "participant_id,q1,q2,q3,q4,q5,q6,q7,q8\nP001,3,4,2,0,0,0,0,0\n")
+    app_page.click("#itemMapBtn")
+    expect(app_page.locator("#itemMapModal [data-role=rows] select").first).to_be_visible(timeout=30000)
+    app_page.wait_for_timeout(400)  # the fade-in
+    found = serious_violations(app_page)
+    assert found == [], f"axe violations in the item-map dialog: {found}"
+
+
+def test_results_page_with_an_error_has_no_accessibility_violations(browser, studio_url, converted_project):
+    survey_dir = next(converted_project.glob("sub-*/**/survey"))
+    good = next(survey_dir.glob("*_survey.tsv"))
+    good.rename(good.with_name(good.name.replace("_survey.tsv", "_survey_oops.tsv")))
+    context, page, problems = _new_page(browser, studio_url, converted_project)
+    try:
+        validate_current(page, studio_url)
+        page.wait_for_load_state("networkidle")
+        found = serious_violations(page)
+    finally:
+        context.close()
+    assert found == [], f"axe violations on the results page with an error: {found}"
+    assert not problems, "\n".join(problems)
