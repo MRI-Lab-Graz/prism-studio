@@ -37,15 +37,47 @@ export const authorFromCandidate = (candidate, family, given) => composeAuthor([
 ]);
 
 /** Look the ORCID up for each author that has none, one at a time (the ORCID API is shared: no parallel bursts).
- *  `lookup(family, given)` gives the stored string (it may ask the user); '' keeps the author as it was.
- *  `onProgress(done, total, current)` is called before each author and once at the end. */
-export async function lookupMissingOrcids(authors, lookup, onProgress = () => {}) {
-    const todo = authors.map((a, i) => [i, parseAuthor(a)]).filter(([, p]) => p && !p[2]);
-    const out = [...authors];
-    for (const [n, [i, [family, given]]] of todo.entries()) {
-        onProgress(n, todo.length, authors[i]);
-        out[i] = (await lookup(family, given)) || authors[i];
+ *  `lookup(family, given)` gives the stored string (it may ask the user). Returns { found, aborted }: `found` maps an
+ *  author's original string to the string with its ORCID (only real hits); `aborted` = the run became invalid
+ *  (`isValid()` false: another template, re-rendered row, ...), then nothing may be written. `shouldStop()` ends the run
+ *  after the current author, keeping what was found. `onProgress(done, total, current)` runs before each author and at the end. */
+export async function lookupMissingOrcids(authors, lookup, { isValid = () => true, shouldStop = () => false, onProgress = () => {} } = {}) {
+    const todo = authors.map((a) => [a, parseAuthor(a)]).filter(([, p]) => p && !p[2]);
+    const hits = new Map();
+    for (const [n, [original, [family, given]]] of todo.entries()) {
+        if (!isValid()) return { found: new Map(), aborted: true };
+        if (shouldStop()) break;
+        onProgress(n, todo.length, original);
+        const result = await lookup(family, given);
+        if (!isValid()) return { found: new Map(), aborted: true };
+        if (parseAuthor(result)?.[2]) hits.set(original, result);
     }
     onProgress(todo.length, todo.length, '');
-    return out;
+    return { found: hits, aborted: false };
+}
+
+/** Apply found ORCIDs to the CURRENT author list: only authors that still exist unchanged and still have no ORCID. */
+export function mergeOrcids(current, found) {
+    return current.map((a) => (found.has(a) && !parseAuthor(a)?.[2] ? found.get(a) : a));
+}
+
+/** The one ORCID run of the editor: a second begin() while one is active gives null. */
+export function createOrcidRuns() {
+    let current = null;
+    return {
+        get active() { return current !== null; },
+        stop() { current?.stop(); },
+        begin(template) {
+            if (current) return null;
+            const run = {
+                template, stopped: false, aborted: false, cancelPick: null,
+                stop() { run.stopped = true; run.cancelPick?.(); },
+                abort() { run.aborted = true; run.cancelPick?.(); },
+                isValid: (liveTemplate, connected) => current === run && !run.aborted && liveTemplate === run.template && connected(),
+                end() { if (current === run) current = null; },
+            };
+            current = run;
+            return run;
+        },
+    };
 }

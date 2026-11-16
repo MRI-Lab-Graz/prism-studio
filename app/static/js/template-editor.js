@@ -328,9 +328,10 @@
     .then(() => Promise.all([import(languagePickerUrl), import(chipListUrl), import(authorEntryUrl)]))
     .then(([picker, chips, authors]) => { languagePicker = { ...picker, ...chips, ...authors }; if (currentTemplate) renderTopLevel(); })
     .catch((err) => console.error('Language picker failed to load', err));
+  let orcidRuns = null; // the one ORCID lookup run of the editor (author-entry.js)
   let languagePicker = null; // language-picker.js + chip-list.js, once loaded and the code list is in
   /** The author string for typed names: ORCID is looked up; none found (or no lookup) = the names alone. */
-  async function lookupAuthor(family, given, pickEl) {
+  async function lookupAuthor(family, given, pickEl, registerCancel = () => {}) {
     const { composeAuthor, pickCandidate, authorFromCandidate } = languagePicker;
     let found = [];
     try {
@@ -350,6 +351,7 @@
         resolve(sel.value === 'none' ? composeAuthor([family, given, '']) : authorFromCandidate(found[Number(sel.value)], family, given));
       });
       pickEl.replaceChildren(sel);
+      registerCancel(() => { pickEl.replaceChildren(); resolve(composeAuthor([family, given, ''])); }); // run stopped or row gone: skip
     });
   }
 
@@ -1195,7 +1197,7 @@
         const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
         let ta;
         if (StudioTheme.isLongText(path)) {
-          ta = StudioTheme.longText(text, onChange, '— Not set —');
+          ta = StudioTheme.longText(text, onChange, '— Not set —', path);
         } else {
           ta = document.createElement('textarea');
           ta.className = 'form-control';
@@ -1470,21 +1472,46 @@
         lookupBtn.type = 'button';
         lookupBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
         lookupBtn.innerHTML = '<i class="fas fa-id-badge me-1"></i>Look up ORCIDs';
+        const stopBtn = document.createElement('button');
+        stopBtn.type = 'button';
+        stopBtn.className = 'btn btn-sm btn-outline-danger mt-2 ms-1';
+        stopBtn.textContent = 'Stop';
         const progressEl = document.createElement('span');
         progressEl.className = 'small text-muted ms-2';
+        const showRunning = (on) => { lookupBtn.disabled = on; stopBtn.hidden = !on; };
+        showRunning(!!orcidRuns?.active); // a re-render during a run shows the running state again
+        if (orcidRuns?.active) progressEl.textContent = 'ORCID lookup is running.';
+        stopBtn.addEventListener('click', () => { orcidRuns?.stop(); progressEl.textContent = 'Stopping after the current author.'; });
         lookupBtn.addEventListener('click', async () => {
-          lookupBtn.disabled = true;
+          orcidRuns = orcidRuns || languagePicker.createOrcidRuns();
+          const run = orcidRuns.begin(currentTemplate);
+          if (!run) return;
+          const live = () => run.isValid(currentTemplate, () => container.isConnected);
+          // the row was re-rendered away: end the run, a pending pick-one dialog is skipped
+          const observer = new MutationObserver(() => { if (!container.isConnected) run.abort(); });
+          observer.observe(document.body, { childList: true, subtree: true });
+          showRunning(true);
           try {
-            const out = await languagePicker.lookupMissingOrcids(
+            const { found, aborted } = await languagePicker.lookupMissingOrcids(
               list.getValues(),
-              (fam, giv) => lookupAuthor(fam, giv, pickEl),
-              (done, total, text) => { progressEl.textContent = text ? `Looking up ORCID ${done + 1} of ${total}: ${text}` : (total ? `Done: ${total} author(s) checked.` : 'Every author already has an ORCID.'); },
+              (fam, giv) => lookupAuthor(fam, giv, pickEl, (cancel) => { run.cancelPick = cancel; }),
+              {
+                isValid: live,
+                shouldStop: () => run.stopped,
+                onProgress: (done, total, text) => { progressEl.textContent = text ? `Looking up ORCID ${done + 1} of ${total}: ${text}` : (total ? `Done: ${total} author(s) checked.` : 'Every author already has an ORCID.'); },
+              },
             );
-            list.setValues(out);
-            onChange([...out]);
-          } finally { lookupBtn.disabled = false; }
+            if (aborted || !live()) return;
+            const current = list.getValues();
+            const merged = languagePicker.mergeOrcids(current, found); // never overwrites edits made during the run
+            if (merged.some((a, i) => a !== current[i])) { list.setValues(merged); onChange([...merged]); }
+          } finally {
+            observer.disconnect();
+            run.end();
+            if (container.isConnected) showRunning(false);
+          }
         });
-        container.append(lookupBtn, progressEl);
+        container.append(lookupBtn, stopBtn, progressEl);
         return container;
       }
 
@@ -2108,7 +2135,7 @@
       const text = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
       let inp;
       if (StudioTheme.isLongText(path)) {
-        inp = StudioTheme.longText(text, onChange, '— Not set —');
+        inp = StudioTheme.longText(text, onChange, '— Not set —', path);
       } else {
         inp = document.createElement('input');
         inp.type = 'text';
@@ -2157,7 +2184,7 @@
     }
 
     if (StudioTheme.isLongText(path)) {
-      return StudioTheme.longText((value === undefined || value === null) ? '' : String(value), onChange, '— Not set —');
+      return StudioTheme.longText((value === undefined || value === null) ? '' : String(value), onChange, '— Not set —', path);
     }
 
     const inp = document.createElement('input');
