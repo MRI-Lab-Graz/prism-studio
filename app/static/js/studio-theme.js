@@ -70,7 +70,33 @@
       + badge('FAIR', fair, 'bg-warning text-dark');
   }
 
+  // Long text (a citation, a description): a text area that grows with its text, never a one-line input.
+  const LONG_TEXT = ['Citation', 'Description', 'Reliability', 'Validity', 'Norming', 'Notes'];
+  const isLongText = (name) => LONG_TEXT.includes(name);
+
+  function autoGrow(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = `${ta.scrollHeight}px`;
+  }
+
+  function longText(value, onInput, placeholder) {
+    const ta = document.createElement('textarea');
+    ta.className = 'form-control studio-long-text';
+    ta.rows = 2;
+    ta.style.overflow = 'hidden';
+    ta.style.resize = 'vertical';
+    ta.value = value;
+    if (placeholder) ta.placeholder = placeholder;
+    ta.addEventListener('input', () => { autoGrow(ta); onInput(ta.value); });
+    // a hidden section has no height yet: grow when it gets a width
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { if (ta.offsetWidth) autoGrow(ta); }).observe(ta);
+    return ta;
+  }
+
   const api = {
+    isLongText,
+    autoGrow,
+    longText,
     fieldLabelHtml,
     tierBadgeClass,
     setFilled,
