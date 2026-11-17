@@ -25,7 +25,7 @@ def serious_violations(page):
     if not page.evaluate("typeof axe !== 'undefined'"):
         page.add_script_tag(content=AXE.read_text(encoding="utf-8"))
     return page.evaluate(
-        "axe.run({preload: false}).then(r => r.violations.filter(v => ['serious','critical'].includes(v.impact)).map(v => v.id + ' ' + v.nodes.map(n => n.target.join(' ')).join(' | ')))"
+        "axe.run({preload: false}).then(r => r.violations.filter(v => ['serious','critical'].includes(v.impact)).map(v => v.id + ' ' + v.nodes.map(n => n.target.join(' ') + (n.any[0] && n.any[0].data && n.any[0].data.contrastRatio ? ' [' + n.any[0].data.contrastRatio + ' ' + n.any[0].data.fgColor + ' on ' + n.any[0].data.bgColor + ']' : '')).join(' | ')))"
     )
 
 

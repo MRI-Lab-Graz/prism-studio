@@ -703,6 +703,13 @@
 .studio-readiness-bar { height: 12px; }
 .w-0 { width: 0; }
 
+/* Conversion log lines (the colours log-renderer.js used to set inline), on the dark console. */
+.studio-theme .converter-log-info { color: #17a2b8; }
+.studio-theme .converter-log-success { color: #28a745; }
+.studio-theme .converter-log-warning { color: #ffc107; }
+.studio-theme .converter-log-error { color: #dc3545; }
+.studio-theme .converter-log-step { color: #6c757d; }
+
 /* View switch (Settings > "WCAG enhanced view", html[data-wcag]): without it Studio keeps its original
    look; with it the darker AA greens, grey text, link and focus rules below apply. */
 html[data-wcag] {
@@ -719,6 +726,8 @@ html[data-wcag] {
     --studio-semantic-danger: #a13f49;
     --studio-semantic-danger-hover: #8a343d;
     --studio-icon-danger: #a13f49;
+    /* the default warning text is 4.48:1 on the light-grey surfaces */
+    --studio-icon-warning: #7a6100;
 }
 html[data-wcag] .studio-theme {
     --bs-primary-rgb: 26, 116, 77;
@@ -851,8 +860,48 @@ html[data-wcag] .studio-theme {
     --bs-info-rgb: 26, 116, 77;
     --bs-success-rgb: 31, 122, 77;
     --bs-warning-rgb: 255, 213, 0;
-    --bs-danger-rgb: 184, 74, 85;
+    --bs-danger-rgb: 161, 63, 73;
 }
+
+/* Soft panels: the opaque .bg-<colour> rule above ignores bg-opacity-*, so a header meant to be a light tint is
+   drawn solid with dark text (1.9:1 on danger). Restore the tint and keep the text dark. */
+html[data-wcag] .studio-theme :is(.bg-primary, .bg-secondary, .bg-success, .bg-info, .bg-warning, .bg-danger).bg-opacity-10 {
+    color: var(--bs-body-color) !important;
+}
+html[data-wcag] .studio-theme .bg-primary.bg-opacity-10 { background-color: rgba(var(--bs-primary-rgb), 0.1) !important; }
+html[data-wcag] .studio-theme .bg-secondary.bg-opacity-10 { background-color: rgba(var(--bs-secondary-rgb), 0.1) !important; }
+html[data-wcag] .studio-theme .bg-success.bg-opacity-10 { background-color: rgba(var(--bs-success-rgb), 0.1) !important; }
+html[data-wcag] .studio-theme .bg-info.bg-opacity-10 { background-color: rgba(var(--bs-info-rgb), 0.1) !important; }
+html[data-wcag] .studio-theme .bg-warning.bg-opacity-10 { background-color: rgba(var(--bs-warning-rgb), 0.1) !important; }
+html[data-wcag] .studio-theme .bg-danger.bg-opacity-10 { background-color: rgba(var(--bs-danger-rgb), 0.1) !important; }
+/* a tinted panel is light again, so its muted text is grey, not the white that solid panels use */
+html[data-wcag] .studio-theme :is(.bg-primary, .bg-success, .bg-info).bg-opacity-10 .text-muted {
+    color: #5c636a !important;
+}
+
+/* This Bootswatch build hard-codes white text on light grey (2.07:1) in secondary alerts and table headers,
+   white on yellow (1.42:1) in a warning button given text-white, and the primary blue in link buttons. */
+html[data-wcag] .studio-theme .alert-secondary,
+html[data-wcag] .studio-theme .table-secondary {
+    --bs-table-bg: #5c636a;
+    --bs-table-border-color: #5c636a;
+    background-color: #5c636a;
+    border-color: #5c636a;
+    color: #fff;
+}
+html[data-wcag] .studio-theme .btn-warning.text-white {
+    color: var(--studio-brand-accent-text) !important;
+}
+html[data-wcag] .studio-theme .btn-link {
+    --bs-btn-color: var(--studio-semantic-primary-hover);
+    color: var(--studio-semantic-primary-hover);
+}
+
+/* Log lines on the dark console: info, success, error and step are 2.5 to 3.8:1 there; these are all above 5:1. */
+html[data-wcag] .studio-theme .converter-log-info { color: #6fd3e6; }
+html[data-wcag] .studio-theme .converter-log-success { color: #6ee08c; }
+html[data-wcag] .studio-theme .converter-log-error { color: #ff99a3; }
+html[data-wcag] .studio-theme .converter-log-step { color: #adb5bd; }
 
 /* WCAG 1.4.1: a link inside running text is told apart by more than its colour. */
 html[data-wcag] .studio-theme :is(p, li, small) a:not(.btn, .badge, .nav-link, .dropdown-item) {
